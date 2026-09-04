@@ -3,113 +3,240 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ARLing — small free developer tools</title>
-<meta name="description" content="ARLing s. r. o. builds small, free, browser-only developer tools for problems people keep hitting. Bratislava, Slovakia.">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://homelab.tailbf8f27.ts.net; connect-src https://homelab.tailbf8f27.ts.net; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<title>ARLing: small tools for one exact problem each</title>
+<meta name="description" content="Free browser-only tools from Bratislava: Google OAuth redirect_uri_mismatch, Supabase and Expo redirect problems, universal links, SEPA pain.001 files, and bookapp. Nothing you paste leaves your browser.">
 <link rel="canonical" href="https://arling.sk/">
-<meta property="og:title" content="ARLing — small free developer tools">
-<meta property="og:description" content="Small, free, browser-only developer tools for problems people keep hitting.">
+<meta property="og:title" content="ARLing: small tools for one exact problem each">
+<meta property="og:description" content="Free browser-only tools for redirect and deep-link errors, SEPA payment files, and a home-library app. Nothing you paste leaves your browser.">
 <meta property="og:url" content="https://arling.sk/">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2318130f'/%3E%3Ctext x='32' y='42' font-family='Georgia,serif' font-size='34' fill='%23f2a93b' text-anchor='middle'%3EA%3C/text%3E%3C/svg%3E">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#f6f2ea">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="alternate" type="text/plain" href="https://arling.sk/llms.txt" title="llms.txt">
 <style>
-  :root { --bg:#18130f; --card:#1f1915; --line:#2c241e; --text:#f3ede6; --muted:#a79d92; --accent:#f2a93b; }
+  :root {
+    --paper:#f6f2ea; --paper-2:#fbf9f4; --ink:#1b1a17; --ink-2:#4a4741; --muted:#7a766e; --line:#d9d2c4;
+    --accent:#b23a1d; --accent-soft:#f3e2dc; --ok:#2f6f3e;
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+    --sans:system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,"Cascadia Code",Consolas,Menlo,monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --paper:#151412; --paper-2:#1d1b18; --ink:#efe9de; --ink-2:#c9c2b5; --muted:#8f887b; --line:#2e2b26; --accent:#e0623f; --accent-soft:#3a1f17; --ok:#7fbf8e; }
+  }
   * { box-sizing:border-box; }
-  body { margin:0; background:var(--bg); color:var(--text); font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; line-height:1.55; }
-  main { max-width: 760px; margin: 0 auto; padding: 64px 24px 80px; }
-  h1 { font-size: clamp(28px, 5vw, 40px); margin: 0 0 12px; letter-spacing: -0.01em; }
-  .lead { color: var(--muted); font-size: 18px; margin: 0 0 40px; max-width: 56ch; }
-  .tools { display: grid; gap: 14px; }
-  .tool { display:block; text-decoration:none; color:inherit; background:var(--card); border:1px solid var(--line); border-radius:14px; padding:20px 22px; transition: border-color .15s; }
-  .tool:hover { border-color: var(--accent); }
-  .tool h2 { margin:0 0 6px; font-size:19px; }
-  .tool p { margin:0; color:var(--muted); }
-  .tag { display:inline-block; font: 12px ui-monospace, SFMono-Regular, Menlo, monospace; color:var(--accent); border:1px solid var(--line); border-radius:6px; padding:2px 8px; margin-bottom:10px; }
-  .about { margin-top: 56px; padding-top: 24px; border-top: 1px solid var(--line); color: var(--muted); font-size: 15px; }
-  .about a { color: var(--text); }
-  footer { margin-top: 40px; color: var(--muted); font-size: 13px; }
+  html { background:var(--paper); }
+  body { margin:0; color:var(--ink); background:var(--paper); font:16px/1.55 var(--sans); -webkit-font-smoothing:antialiased; }
+  a { color:inherit; text-decoration-color:var(--line); text-underline-offset:3px; }
+  a:hover { text-decoration-color:var(--accent); }
+  :focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
+  .skip { position:absolute; left:-999px; top:8px; background:var(--ink); color:var(--paper); padding:8px 12px; }
+  .skip:focus { left:8px; }
+  .wrap { max-width:1040px; margin:0 auto; padding:0 24px; }
+  header.top { border-bottom:1px solid var(--line); }
+  header.top .wrap { display:flex; align-items:baseline; justify-content:space-between; gap:24px; padding:18px 24px; }
+  .wordmark { font:600 22px/1 var(--serif); letter-spacing:.01em; text-decoration:none; }
+  .wordmark small { font:13px/1 var(--sans); color:var(--muted); margin-left:10px; letter-spacing:.04em; }
+  nav.main a { font-size:14px; margin-left:20px; text-decoration:none; color:var(--ink-2); }
+  nav.main a:hover { color:var(--accent); }
+  .hero { padding:64px 0 40px; border-bottom:1px solid var(--line); }
+  .hero h1 { font:400 clamp(34px,5.2vw,52px)/1.08 var(--serif); letter-spacing:-.01em; margin:0 0 18px; max-width:18ch; }
+  .hero p.lead { font-size:19px; color:var(--ink-2); max-width:58ch; margin:0 0 26px; }
+  .facts { list-style:none; margin:0; padding:0; display:flex; flex-wrap:wrap; gap:8px 0; color:var(--muted); font-size:14px; }
+  .facts li + li::before { content:"·"; margin:0 10px; color:var(--line); }
+  .facts b { color:var(--ink); font-weight:600; }
+  section { padding:44px 0; border-bottom:1px solid var(--line); }
+  .kicker { font:400 14px/1 var(--serif); color:var(--accent); letter-spacing:.06em; text-transform:uppercase; margin:0 0 10px; }
+  h2 { font:400 30px/1.15 var(--serif); margin:0 0 8px; letter-spacing:-.005em; }
+  .sub { color:var(--ink-2); max-width:64ch; margin:0 0 24px; }
+  .index { list-style:none; margin:0; padding:0; border-top:1px solid var(--line); }
+  .index li { border-bottom:1px solid var(--line); }
+  .index a { display:grid; grid-template-columns:44px minmax(0,1.1fr) minmax(0,1fr) minmax(0,1fr); gap:18px; padding:20px 0; text-decoration:none; align-items:start; }
+  .index a:hover .name { color:var(--accent); }
+  .num { font:400 15px/1.4 var(--serif); color:var(--muted); padding-top:2px; }
+  .name { font:400 21px/1.25 var(--serif); margin:0 0 4px; }
+  .lang { display:inline-block; font:12px/1 var(--mono); color:var(--muted); border:1px solid var(--line); border-radius:3px; padding:3px 6px; vertical-align:middle; margin-left:6px; }
+  .who { color:var(--muted); font-size:14px; }
+  .lbl { display:block; font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin-bottom:4px; }
+  .see { font-size:15px; color:var(--ink-2); }
+  .see code { font:13.5px/1.4 var(--mono); background:var(--paper-2); border:1px solid var(--line); border-radius:3px; padding:1px 5px; overflow-wrap:anywhere; }
+  .get { font-size:15px; color:var(--ink-2); }
+  .rules { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:26px 32px; margin:0; padding:0; list-style:none; counter-reset:r; }
+  .rules li { padding-top:14px; border-top:1px solid var(--line); }
+  .rules li::before { counter-increment:r; content:counter(r,decimal-leading-zero); font:400 14px/1 var(--serif); color:var(--accent); display:block; margin-bottom:8px; }
+  .rules b { display:block; font-weight:600; margin-bottom:4px; }
+  .rules p { margin:0; color:var(--ink-2); font-size:15px; }
+  .two { display:grid; grid-template-columns:minmax(0,1.2fr) minmax(0,1fr); gap:40px; }
+  .two p { color:var(--ink-2); }
+  .btn { display:inline-block; font:600 15px/1 var(--sans); padding:13px 18px; border-radius:4px; text-decoration:none; }
+  .btn-solid { background:var(--accent); color:#fff; }
+  .btn-line { border:2px solid var(--ink); color:var(--ink); }
+  .btn + .btn { margin-left:10px; }
+  footer { padding:32px 0 56px; color:var(--muted); font-size:14px; }
+  footer .cols { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:20px 32px; }
+  footer b { color:var(--ink); font-weight:600; }
+  footer a { color:var(--ink-2); }
+  @media (max-width: 820px) {
+    .index a { grid-template-columns:32px minmax(0,1fr); }
+    .index .see, .index .get { grid-column:2; }
+    .two { grid-template-columns:1fr; }
+  }
+  @media (max-width: 480px) {
+    .hero { padding:44px 0 32px; }
+    nav.main a { margin-left:12px; }
+    .wordmark small { display:none; }
+  }
 </style>
 <script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "Organization",
-  "name": "ARLing s. r. o.",
-  "url": "https://arling.sk/",
-  "email": "andrej@arling.sk",
-  "identifier": "56583486",
-  "address": {
-    "@type": "PostalAddress",
-    "streetAddress": "Ivanská cesta 32E",
-    "postalCode": "821 04",
-    "addressLocality": "Bratislava",
-    "addressCountry": "SK"
-  },
-  "description": "ARLing s. r. o. builds small, free, browser-only developer tools for problems people keep hitting. Bratislava, Slovakia."
-}
+{"@context":"https://schema.org","@type":"Organization","name":"ARLing s. r. o.","url":"https://arling.sk/","email":"andrej@arling.sk","identifier":"56583486","vatID":"SK2122352100","founder":{"@type":"Person","name":"Andrej Lauko"},"address":{"@type":"PostalAddress","streetAddress":"Ivanská cesta 32E","postalCode":"821 04","addressLocality":"Bratislava","addressCountry":"SK"},"description":"Small free browser-only tools for one exact developer or accounting problem each, and the bookapp home-library app."}
 </script>
 <script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "WebSite",
-  "name": "ARLing",
-  "url": "https://arling.sk/",
-  "description": "Small, free, browser-only developer tools for problems people keep hitting.",
-  "publisher": {
-    "@type": "Organization",
-    "name": "ARLing s. r. o."
-  }
-}
+{"@context":"https://schema.org","@type":"WebSite","name":"ARLing","url":"https://arling.sk/","inLanguage":["en","sk"],"publisher":{"@type":"Organization","name":"ARLing s. r. o."}}
+</script>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"ItemList","name":"ARLing tools","itemListOrder":"https://schema.org/ItemListOrderAscending","itemListElement":[
+{"@type":"ListItem","position":1,"url":"https://arling.sk/google-oauth-redirect-doctor/","name":"Google OAuth redirect_uri_mismatch Doctor"},
+{"@type":"ListItem","position":2,"url":"https://arling.sk/expo-supabase-auth-doctor/","name":"Redirect Doctor for Expo and Supabase"},
+{"@type":"ListItem","position":3,"url":"https://arling.sk/supabase-redirect-doctor/","name":"Supabase Auth Redirect Doctor for web apps"},
+{"@type":"ListItem","position":4,"url":"https://arling.sk/flutter-supabase-doctor/","name":"Supabase Deep Link Doctor for Flutter"},
+{"@type":"ListItem","position":5,"url":"https://arling.sk/expo-universal-links-doctor/","name":"Expo Universal Links and App Links Doctor"},
+{"@type":"ListItem","position":6,"url":"https://arling.sk/sepa-pain001-doctor/","name":"SEPA pain.001 Doctor for Slovak banks"},
+{"@type":"ListItem","position":7,"url":"https://arling.sk/bookapp/","name":"bookapp"}]}
 </script>
 </head>
 <body>
+<a class="skip" href="#tools">Skip to the tools</a>
+<header class="top">
+  <div class="wrap">
+    <a class="wordmark" href="https://arling.sk/">ARLing<small>Bratislava</small></a>
+    <nav class="main" aria-label="Site">
+      <a href="#tools">Tools</a>
+      <a href="https://arling.sk/how-we-work/" data-umami-event="open-how-we-work">How we work</a>
+      <a href="mailto:andrej@arling.sk" data-umami-event="contact-email">Contact</a>
+    </nav>
+  </div>
+</header>
+
 <main>
-  <h1>Small free tools for problems developers keep hitting.</h1>
-  <p class="lead">Each one runs entirely in your browser: no account, no upload, no tracking of what you type. Built and maintained by ARLing, a one-person company in Bratislava that lets AI do most of the building.</p>
-
-  <div class="tools">
-    <a class="tool" href="https://arling.sk/expo-supabase-auth-doctor/" data-umami-event="open-tool" data-umami-event-tool="expo-supabase-auth-doctor">
-      <span class="tag">tool · free</span>
-      <h2>Redirect Doctor — Expo + Supabase OAuth</h2>
-      <p>Enter your Expo scheme, runtime, Supabase URLs and provider redirect URIs. Get the expected redirect URL for every runtime, the exact mismatches, and copy-paste fixes.</p>
-    </a>
-    <a class="tool" href="https://arling.sk/supabase-redirect-doctor/" data-umami-event="open-tool" data-umami-event-tool="supabase-redirect-doctor">
-      <span class="tag">tool · free</span>
-      <h2>Supabase Auth Redirect Doctor — web apps</h2>
-      <p>Next.js, Vite or SvelteKit app where Supabase OAuth redirects to localhost in production? Enter your Site URL, redirect allow-list, callback route and provider settings and get the exact mismatch and the fix.</p>
-    </a>
-    <a class="tool" href="https://arling.sk/flutter-supabase-doctor/" data-umami-event="open-tool" data-umami-event-tool="flutter-supabase-doctor">
-      <span class="tag">tool · free</span>
-      <h2>Supabase Auth Deep Link Doctor — Flutter</h2>
-      <p>OAuth or magic link never comes back to your supabase_flutter app? Enter your scheme, host, Info.plist and AndroidManifest values, Supabase URLs and provider settings. Get the mismatches across all three files and the fixes.</p>
-    </a>
-    <a class="tool" href="https://arling.sk/google-oauth-redirect-doctor/" data-umami-event="open-tool" data-umami-event-tool="google-oauth-redirect-doctor">
-      <span class="tag">tool · free</span>
-      <h2>Google OAuth redirect_uri_mismatch Doctor</h2>
-      <p>Error 400: redirect_uri_mismatch? Paste the URI from the error and your Google Cloud Console list, pick your stack (NextAuth, Supabase, Firebase, Passport, Django, Expo, Python…) and see the exact character that differs, plus the string to add.</p>
-    </a>
-    <a class="tool" href="https://arling.sk/expo-universal-links-doctor/" data-umami-event="open-tool" data-umami-event-tool="expo-universal-links-doctor">
-      <span class="tag">tool · free</span>
-      <h2>Expo Universal Links &amp; App Links Doctor</h2>
-      <p>Universal link opens Safari instead of your app? Paste your apple-app-site-association, assetlinks.json and app.json values. Get the mismatches in team ID, bundle ID, fingerprints, intent filters and paths, with the fixes.</p>
-    </a>
-    <a class="tool" href="https://arling.sk/sepa-pain001-doctor/" data-umami-event="open-tool" data-umami-event-tool="sepa-pain001-doctor">
-      <span class="tag">nástroj · zadarmo · SK</span>
-      <h2>SEPA pain.001 Doctor — slovenské banky</h2>
-      <p>Tatra banka, SLSP, VÚB alebo ČSOB odmietli váš XML s hromadným príkazom? Vložte súbor a zistite presne, ktorý element je zlý: IBAN, BIC, sumy, počty, symboly, znaky. Nič sa neodosiela, všetko beží v prehliadači.</p>
-    </a>
-    <a class="tool" href="https://arling.sk/bookapp/" data-umami-event="open-tool" data-umami-event-tool="bookapp">
-      <span class="tag">app · free beta</span>
-      <h2>bookapp — home library in millimetres</h2>
-      <p>A spatial digital twin of your home library: shelves, cabinets, drawers and books modelled in real millimetres, so it knows exactly what fits and where. Free public beta for Android and Windows, in English and Slovak.</p>
-    </a>
+  <div class="hero">
+    <div class="wrap">
+      <h1>Small tools for one exact problem each.</h1>
+      <p class="lead">You paste what you have. The tool names the exact mismatch and gives you the value to change. It runs in your browser, so nothing you paste is uploaded anywhere.</p>
+      <ul class="facts">
+        <li><b>7</b> tools</li>
+        <li><b>0 €</b>, no account</li>
+        <li><b>726</b> automated tests behind the rules</li>
+        <li>every rule cites the official documentation</li>
+      </ul>
+    </div>
   </div>
 
-  <p class="about" style="margin-top:32px;padding-top:0;border-top:0">Curious how a one-person company ships these? <a href="https://arling.sk/how-we-work/" data-umami-event="open-how-we-work">How we work</a>.</p>
+  <section id="tools">
+    <div class="wrap">
+      <p class="kicker">Index</p>
+      <h2>Pick the error you are looking at.</h2>
+      <p class="sub">Each tool covers one failure that people keep reporting in the same words. If your error is not here, write to us with the exact message.</p>
+      <ol class="index">
+        <li>
+          <a href="https://arling.sk/google-oauth-redirect-doctor/" data-umami-event="open-tool" data-umami-event-tool="google-oauth-redirect-doctor">
+            <span class="num">01</span>
+            <span><span class="name">Google OAuth redirect_uri_mismatch Doctor</span><span class="who">Any stack: NextAuth, Supabase, Firebase, Passport, Django, Laravel, Python, Expo, Flutter, Postman, gcloud</span></span>
+            <span class="see"><span class="lbl">You see</span><code>Error 400: redirect_uri_mismatch</code></span>
+            <span class="get"><span class="lbl">You get</span>The differing character, byte for byte, and the exact string to add in Google Cloud Console.</span>
+          </a>
+        </li>
+        <li>
+          <a href="https://arling.sk/expo-supabase-auth-doctor/" data-umami-event="open-tool" data-umami-event-tool="expo-supabase-auth-doctor">
+            <span class="num">02</span>
+            <span><span class="name">Redirect Doctor for Expo and Supabase</span><span class="who">Expo Go, development builds, standalone apps</span></span>
+            <span class="see"><span class="lbl">You see</span>Sign-in ends on the Site URL or <code>localhost</code> instead of reopening the app.</span>
+            <span class="get"><span class="lbl">You get</span>The expected redirect URL per runtime and what is missing from the allow-list or the provider console.</span>
+          </a>
+        </li>
+        <li>
+          <a href="https://arling.sk/supabase-redirect-doctor/" data-umami-event="open-tool" data-umami-event-tool="supabase-redirect-doctor">
+            <span class="num">03</span>
+            <span><span class="name">Supabase Auth Redirect Doctor for web apps</span><span class="who">Next.js, Vite, SvelteKit, Vercel and Netlify previews</span></span>
+            <span class="see"><span class="lbl">You see</span>OAuth in production redirects to <code>http://localhost:3000</code>.</span>
+            <span class="get"><span class="lbl">You get</span>The mismatch between Site URL, redirect allow-list, callback route and provider settings, with the fix.</span>
+          </a>
+        </li>
+        <li>
+          <a href="https://arling.sk/flutter-supabase-doctor/" data-umami-event="open-tool" data-umami-event-tool="flutter-supabase-doctor">
+            <span class="num">04</span>
+            <span><span class="name">Supabase Deep Link Doctor for Flutter</span><span class="who">supabase_flutter, iOS and Android</span></span>
+            <span class="see"><span class="lbl">You see</span>The magic link or OAuth page never comes back to the app.</span>
+            <span class="get"><span class="lbl">You get</span>Scheme and host checked across Info.plist, AndroidManifest, Supabase and your code, with snippets to paste.</span>
+          </a>
+        </li>
+        <li>
+          <a href="https://arling.sk/expo-universal-links-doctor/" data-umami-event="open-tool" data-umami-event-tool="expo-universal-links-doctor">
+            <span class="num">05</span>
+            <span><span class="name">Expo Universal Links and App Links Doctor</span><span class="who">apple-app-site-association, assetlinks.json, app.json</span></span>
+            <span class="see"><span class="lbl">You see</span>The https link opens Safari or Chrome instead of the app.</span>
+            <span class="get"><span class="lbl">You get</span>Team ID, bundle ID, fingerprints, intent filters and paths cross-checked, with the corrected files.</span>
+          </a>
+        </li>
+        <li>
+          <a href="https://arling.sk/sepa-pain001-doctor/" data-umami-event="open-tool" data-umami-event-tool="sepa-pain001-doctor">
+            <span class="num">06</span>
+            <span><span class="name">SEPA pain.001 Doctor<span class="lang">SK</span></span><span class="who">Tatra banka, SLSP, VÚB, ČSOB</span></span>
+            <span class="see"><span class="lbl">Vidíte</span>Banka odmietla XML s hromadným príkazom bez jasného dôvodu.</span>
+            <span class="get"><span class="lbl">Dostanete</span>Presný element, hodnotu a opravu: IBAN, BIC, sumy, počty, symboly, znaková sada.</span>
+          </a>
+        </li>
+        <li>
+          <a href="https://arling.sk/bookapp/" data-umami-event="open-tool" data-umami-event-tool="bookapp">
+            <span class="num">07</span>
+            <span><span class="name">bookapp</span><span class="who">Android and Windows app, free beta, English and Slovak</span></span>
+            <span class="see"><span class="lbl">You have</span>A home library and no idea what fits where.</span>
+            <span class="get"><span class="lbl">You get</span>Your shelves and books modelled in real millimetres, so the app knows what fits and where.</span>
+          </a>
+        </li>
+      </ol>
+    </div>
+  </section>
 
-  <div class="about">
-    <p>ARLing s. r. o., Ivanská cesta 32E, 821 04 Bratislava, Slovakia. ID 56583486. Questions or a tool you wish existed: <a href="mailto:andrej@arling.sk" data-umami-event="contact-email">andrej@arling.sk</a>.</p>
-    <p>Tools are provided as is, without warranty. Anonymous usage counts are collected with self-hosted Umami; nothing you type into a tool is sent anywhere.</p>
-  </div>
-  <footer>© 2026 ARLing s. r. o.</footer>
+  <section id="rules">
+    <div class="wrap">
+      <p class="kicker">House rules</p>
+      <h2>What every tool here promises.</h2>
+      <ol class="rules">
+        <li><b>Nothing you paste leaves your browser.</b><p>The checks are plain JavaScript on the page. There is no backend to send anything to. You can read the source on GitHub.</p></li>
+        <li><b>Every rule cites its source.</b><p>Each check links the official documentation or the GitHub issue it comes from. If the documentation changes, the rule is wrong, and you can tell us.</p></li>
+        <li><b>It says what it does not check.</b><p>These are config linters, not live testers. They do not call your app or your provider, and each page says so.</p></li>
+        <li><b>Free, no account, no tracking of content.</b><p>We count visits and clicks with self-hosted Umami. We never store what you type.</p></li>
+        <li><b>One problem per tool.</b><p>Each tool exists because several people reported the same failure in the same words. We answer in those threads and keep the tool small.</p></li>
+      </ol>
+    </div>
+  </section>
+
+  <section id="about">
+    <div class="wrap two">
+      <div>
+        <p class="kicker">Who</p>
+        <h2>One person in Bratislava, and a lot of automation.</h2>
+        <p>ARLing is run by Andrej Lauko. AI agents write most of the code, tests and pages. Andrej decides which problems are worth a tool, answers people, and says no. The method is written down on the <a href="https://arling.sk/how-we-work/" data-umami-event="open-how-we-work">How we work</a> page.</p>
+        <p>A tool you wish existed, or a rule that is wrong? Write to <a href="mailto:andrej@arling.sk" data-umami-event="contact-email">andrej@arling.sk</a> with the exact error message.</p>
+      </div>
+      <div>
+        <p class="kicker">Next</p>
+        <h2>New tools land here first.</h2>
+        <p>Every tool is added to this index and to <a href="https://arling.sk/llms.txt">llms.txt</a> the day it goes live. There is no newsletter yet; if you want one, say so and we will build it.</p>
+        <p><a class="btn btn-line" href="https://github.com/AndryRoby" rel="me">Source on GitHub</a></p>
+      </div>
+    </div>
+  </section>
 </main>
+
+<footer>
+  <div class="wrap cols">
+    <div><b>ARLing s. r. o.</b><br>Ivanská cesta 32E<br>821 04 Bratislava, Slovakia</div>
+    <div>Company ID 56583486<br>VAT ID SK2122352100<br><a href="mailto:andrej@arling.sk">andrej@arling.sk</a></div>
+    <div><a href="https://arling.sk/llms.txt">llms.txt</a> · <a href="https://arling.sk/sitemap-index.xml">sitemap</a> · <a href="https://arling.sk/how-we-work/">how we work</a><br>Tools are provided as is, without warranty. Anonymous visit counts via self-hosted Umami.</div>
+  </div>
+</footer>
 <script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="be534d51-4d01-4860-b267-9596d91606de"></script>
 </body>
 </html>
