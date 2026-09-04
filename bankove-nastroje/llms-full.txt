@@ -1,0 +1,151 @@
+# Bankové nástroje pre účtovníkov: jedna Pro licencia pre štyri nástroje
+
+Live: https://arling.sk/bankove-nastroje/
+
+A bundle page (static HTML, no build step) that sells one Pro licence
+unlocking four free, client-side ARLing tools Slovak accountants use for
+bank files. This page itself does not process any payment data: it only
+sells and manages the licence key that the four tools check.
+
+## Why this exists
+
+Each of the four tools below already works on its own, for free, with no
+account and no limits. As their number grew, buying and managing a
+separate paid tier per tool became friction for anyone using more than
+one of them regularly (most accountants who need one of these need at
+least two: a payment file generator and a bank-statement reader, say).
+This page turns that into a single purchase, a single key, and a single
+place to manage it.
+
+## The four tools
+
+1. **SEPA pain.001 Doctor**: https://arling.sk/sepa-pain001-doctor/
+   Checks a finished `pain.001.001.03` XML batch payment file against the
+   bank-specific rules of Tatra banka, Slovenská sporiteľňa (SLSP), VÚB,
+   and ČSOB (IBAN/BIC, amounts, transaction counts and sums, VS/ŠS/KS
+   symbols, character set) before you import it into internet banking.
+
+2. **SEPA pain.001 Generátor**: https://arling.sk/sepa-pain001-generator/
+   Builds a `pain.001.001.03` XML batch payment file from payments pasted
+   or uploaded from Excel or CSV. Every generated file is checked
+   automatically by the same engine as SEPA pain.001 Doctor.
+
+3. **camt.053 do Excelu**: https://arling.sk/camt053-to-excel/
+   Converts a `camt.053` XML bank statement (Tatra banka, SLSP, VÚB,
+   ČSOB) into a CSV or Excel table: date, signed amount, counterparty,
+   VS/ŠS/KS, and an opening/closing balance check.
+
+4. **Párovač platieb**: https://arling.sk/parovac-platieb/
+   Matches a `camt.053` bank statement against a list of issued invoices
+   (pasted or uploaded from Excel/CSV) and sorts the result into paid,
+   unpaid, overpaid, and unmatched, even when the variabilný symbol
+   doesn't line up exactly.
+
+All four run entirely in the browser: no backend, no upload of your
+payment data, no account.
+
+## What Pro adds, in every one of the four tools
+
+- **Saved payer profiles**: company name, IBAN, BIC, bank, picked from a
+  list instead of retyped every time (Generátor, Párovač).
+- **Multiple files or accounts at once**: several payment batches, bank
+  statements, or accounts processed together instead of one at a time.
+- **Column-mapping templates** for exports from Pohoda (Stormware),
+  Omega (KROS), and Money S3 (Seyfor), on top of each tool's own
+  free-tier auto-detection.
+- **History**: the last processing runs in each tool, stored locally in
+  the browser, with re-download where applicable.
+- **Priority email support.**
+
+The free tier of every tool stays entirely free, with no cap on usage,
+files, or downloads, whether or not you have Pro. Pro is convenience for
+someone who runs one or more of these tools every month, not a
+requirement for the core functionality of any of them.
+
+## Pricing
+
+- 9 EUR / month, or
+- 79 EUR / year (29 EUR less than paying monthly for 12 months).
+
+VAT included in the price. Checkout runs through Stripe Checkout;
+ARLing s. r. o. sells under Stripe Managed Payments, so Stripe is the
+merchant of record, handles VAT, and emails the invoice automatically
+after payment. Cancel anytime from the subscription-management link in
+that email; the next billing period is simply not charged. A 14-day,
+no-questions money-back guarantee applies (andrej@arling.sk).
+
+## How the licence works
+
+After payment, this page requests a signed licence (an Ed25519 signature
+over a small JSON payload carrying the plan `"sepa-pro"` and an expiry
+date) from ARLing's licence service and stores it in the browser's
+`localStorage`. Verification happens entirely client-side with the
+browser's WebCrypto API; there is no server call on ordinary use after
+that, and no account or login is involved.
+
+Because this bundle page and all four tools are served from the same
+origin (`arling.sk`), a licence key saved by any one of them is already
+visible to the others via shared `localStorage`, nothing extra to
+configure. If that doesn't happen automatically (a different browser, or
+site data cleared), the same key can be pasted manually into the Licencia
+section of this page, or directly into any of the four tools.
+
+SEPA pain.001 Generátor also still accepts its own older, tool-specific
+plan for customers who bought Pro on that tool alone before this bundle
+existed; both plans keep working side by side, so nobody who already
+paid loses access.
+
+## Who it's for
+
+Slovak accountants, bookkeepers, and company directors who use at least
+two of the four tools above on a recurring basis (for example: generate
+a payment file, then later read the bank statement back and match it
+against invoices) and want one licence and one bill instead of four.
+
+## Privacy
+
+- No account, no login, no cookies beyond what this page itself needs to
+  manage the licence.
+- No server-side processing of bank data anywhere across the four tools;
+  each one's own conversion or check runs in your browser.
+- Analytics (self-hosted Umami) record anonymous usage counts (page
+  view, which plan was bought), never the content of what you process in
+  any of the four tools.
+- The only exception is the optional mailing-list form: if you type an
+  email address into it, that address is sent to the subscribe endpoint
+  and nothing else.
+
+## FAQ
+
+**Do I have to buy the bundle to use any of the four tools?**
+No. Every tool has a fully free tier with no limits, independent of this
+page. The bundle is worth it once you use at least two of the tools
+regularly; for occasional use of a single tool, the free tier is enough.
+
+**I already bought Pro on SEPA pain.001 Generátor alone. Does buying the
+bundle replace that, or do I need both?**
+You don't need both. Your existing Generátor-only licence keeps working
+there for as long as it's valid; buying the bundle instead gives you one
+key that also works in the other three tools. There's no need to cancel
+anything to switch.
+
+**What happens across a device I haven't opened any of the tools on
+before?**
+Open the Licencia section of this page (or the Pro section of any of the
+four tools) and paste the licence key you received by email after
+payment. No account or login is required on the new device.
+
+## Links
+
+- Bundle page: https://arling.sk/bankove-nastroje/
+- Short reference: https://arling.sk/bankove-nastroje/llms.txt
+- Source code: https://github.com/AndryRoby/bankove-nastroje
+- SEPA pain.001 Doctor: https://arling.sk/sepa-pain001-doctor/
+- SEPA pain.001 Generátor: https://arling.sk/sepa-pain001-generator/
+- camt.053 do Excelu: https://arling.sk/camt053-to-excel/
+- Párovač platieb: https://arling.sk/parovac-platieb/
+- Hub (more ARLing tools): https://arling.sk/
+
+## Contact
+
+Built by ARLing s. r. o. (Bratislava, Slovakia). andrej@arling.sk
