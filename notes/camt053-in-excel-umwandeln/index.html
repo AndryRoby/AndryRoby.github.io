@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://homelab.tailbf8f27.ts.net; connect-src 'self' https://homelab.tailbf8f27.ts.net; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<title>camt.053 in Excel umwandeln: Kontoauszug als XML aus Sparkasse, Volksbank oder UBS in eine Tabelle bringen</title>
+<meta name="description" content="Was im ISO-20022-Format camt.053 steht, warum der CSV-Export der Bank für die Buchhaltung oft nicht reicht, und wie Sie einen Kontoauszug in wenigen Schritten im Browser in eine Excel-Tabelle umwandeln, bevor Sie ihn in DATEV, Lexware oder sevDesk einspielen.">
+<link rel="canonical" href="https://arling.sk/notes/camt053-in-excel-umwandeln/">
+<meta property="og:type" content="article">
+<meta property="og:title" content="camt.053 in Excel umwandeln: Kontoauszug als XML aus Sparkasse, Volksbank oder UBS in eine Tabelle bringen">
+<meta property="og:description" content="Was im ISO-20022-Format camt.053 steht, warum der CSV-Export der Bank für die Buchhaltung oft nicht reicht, und wie Sie einen Kontoauszug in wenigen Schritten im Browser in eine Excel-Tabelle umwandeln, bevor Sie ihn in DATEV, Lexware oder sevDesk einspielen.">
+<meta property="og:url" content="https://arling.sk/notes/camt053-in-excel-umwandeln/">
+<meta property="og:locale" content="de_DE">
+<meta name="theme-color" content="#f6f2ea">
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="alternate" type="text/plain" href="https://arling.sk/llms.txt" title="llms.txt">
+<script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="be534d51-4d01-4860-b267-9596d91606de"></script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "camt.053 in Excel umwandeln: Kontoauszug als XML aus Sparkasse, Volksbank oder UBS in eine Tabelle bringen",
+  "description": "Was im ISO-20022-Format camt.053 steht, warum der CSV-Export der Bank für die Buchhaltung oft nicht reicht, und wie Sie einen Kontoauszug in wenigen Schritten im Browser in eine Excel-Tabelle umwandeln, bevor Sie ihn in DATEV, Lexware oder sevDesk einspielen.",
+  "datePublished": "2026-09-07",
+  "dateModified": "2026-09-07",
+  "inLanguage": "de",
+  "author": { "@type": "Person", "name": "Andrej Lauko", "url": "https://arling.sk/how-we-work/" },
+  "publisher": { "@type": "Organization", "name": "ARLing s. r. o.", "url": "https://arling.sk/", "email": "andrej@arling.sk", "identifier": "56583486" },
+  "mainEntityOfPage": { "@type": "WebPage", "@id": "https://arling.sk/notes/camt053-in-excel-umwandeln/" }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "ARLing", "item": "https://arling.sk/" },
+    { "@type": "ListItem", "position": 2, "name": "Notes", "item": "https://arling.sk/notes/" },
+    { "@type": "ListItem", "position": 3, "name": "camt.053 in Excel umwandeln", "item": "https://arling.sk/notes/camt053-in-excel-umwandeln/" }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Wird meine Kontoauszugsdatei irgendwohin hochgeladen?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Nein. Das Tool camt.053 in Excel liest die XML-Datei clientseitig im Browser mit der FileReader-API und sendet sie an keinen Server. Das lässt sich in den Entwicklertools des Browsers im Reiter Netzwerk nachprüfen: dort erscheint kein Request mit dem Dateiinhalt. Gespeichert wird nichts außer der Tabelle, die Sie selbst als CSV oder Excel-Datei herunterladen." }
+    },
+    {
+      "@type": "Question",
+      "name": "Kann ich mehrere Kontoauszüge auf einmal umwandeln?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Ja, die kostenlose Version wandelt mehrere camt.053-Dateien in einer Sitzung um, zum Beispiel mehrere Monate oder mehrere Konten hintereinander, und liefert für jede Datei eine eigene Tabelle mit Saldenprüfung. Die Pro-Lizenz im Bankové nástroje-Paket fügt gespeicherte Spalten-Zuordnungen und eine Verlaufsübersicht der zuletzt verarbeiteten Auszüge hinzu, für die tägliche Verwendung ist die kostenlose Version aber bereits vollständig." }
+    },
+    {
+      "@type": "Question",
+      "name": "Funktioniert das Tool auch mit Fremdwährungskonten?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Das Tool liest das Feld Amt mit dem Attribut Ccy und übernimmt die im Kontoauszug angegebene Währung unverändert je Buchung; es rechnet nicht selbst in Euro um. Bei einem Konto in US-Dollar oder Schweizer Franken erscheint die Originalwährung in der Tabelle, und ein Umrechnungskurs zum Buchungsdatum muss weiterhin gesondert ermittelt werden, etwa aus dem Kurs, den die Bank für die Buchung tatsächlich verwendet hat." }
+    },
+    {
+      "@type": "Question",
+      "name": "Was unterscheidet camt.052, camt.053 und camt.054?",
+      "acceptedAnswer": { "@type": "Answer", "text": "camt.052 ist der untertägige Kontoauszug (Intraday) mit vorläufigen Buchungen, der mehrmals am Tag abgerufen werden kann. camt.053 ist der Tagesabschluss-Kontoauszug mit endgültigen Buchungen und Anfangs- sowie Endsaldo, das gängige Format für die laufende Buchhaltung. camt.054 ist eine Einzelbenachrichtigung über eine bestimmte Gutschrift oder Belastung, zum Beispiel bei einem Rücklastschrift-Hinweis, und ersetzt keinen vollständigen Auszug." }
+    }
+  ]
+}
+</script>
+
+<style>
+  :root { --paper:#f6f2ea; --paper-2:#fbf9f4; --ink:#1b1a17; --ink-2:#4a4741; --muted:#66625a; --line:#d9d2c4; --accent:#b23a1d; --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif; --sans:system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; --mono:ui-monospace,"Cascadia Code",Consolas,Menlo,monospace; }
+  @media (prefers-color-scheme: dark) { :root { --paper:#151412; --paper-2:#1d1b18; --ink:#efe9de; --ink-2:#c9c2b5; --muted:#8f887b; --line:#2e2b26; --accent:#e0623f; } }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--paper); color:var(--ink); font:16px/1.55 var(--sans); overflow-wrap:anywhere; }
+  a { color:inherit; text-decoration-color:var(--line); text-underline-offset:3px; }
+  a:hover { text-decoration-color:var(--accent); }
+  .wrap { max-width:760px; margin:0 auto; padding:0 24px; }
+  header.top { border-bottom:1px solid var(--line); }
+  header.top .wrap { display:flex; align-items:baseline; justify-content:space-between; padding:18px 24px; flex-wrap:wrap; gap:8px; }
+  .wordmark { font:600 22px/1 var(--serif); text-decoration:none; }
+  nav a { font-size:14px; margin-left:20px; text-decoration:none; color:var(--ink-2); }
+  nav a:first-child { margin-left:0; }
+  main { max-width:70ch; }
+  h1 { font:400 clamp(28px,4.5vw,40px)/1.15 var(--serif); margin:44px 0 14px; }
+  h2 { font:400 24px/1.2 var(--serif); margin:40px 0 10px; }
+  .kicker { font:400 14px/1 var(--serif); color:var(--accent); letter-spacing:.06em; text-transform:uppercase; margin:0 0 8px; }
+  .byline { color:var(--muted); font-size:14px; margin:0 0 32px; }
+  p, li { color:var(--ink-2); max-width:70ch; }
+  ol, ul { padding-left:20px; }
+  li + li { margin-top:6px; }
+  code { font:14px/1.4 var(--mono); background:var(--paper-2); border:1px solid var(--line); border-radius:4px; padding:1px 6px; color:var(--ink); overflow-wrap:anywhere; }
+  .tool-box { border:1px solid var(--line); border-radius:4px; padding:16px 20px; margin:16px 0; background:var(--paper-2); }
+  .tool-box p { margin:0; }
+  .tool-box p + p { margin-top:8px; }
+  .btn { display:inline-block; margin-top:10px; padding:8px 16px; border:2px solid var(--accent); border-radius:4px; color:var(--accent); text-decoration:none; font-size:14px; }
+  .btn:hover { background:var(--accent); color:var(--paper-2); text-decoration:none; }
+  details { border-top:1px solid var(--line); padding:14px 0; }
+  details:last-of-type { border-bottom:1px solid var(--line); }
+  summary { cursor:pointer; font:400 18px/1.3 var(--serif); list-style:none; display:flex; justify-content:space-between; gap:12px; }
+  summary::-webkit-details-marker { display:none; }
+  summary::after { content:"+"; color:var(--accent); flex:none; font-family:var(--sans); }
+  details[open] summary::after { content:"\2013"; }
+  details p { color:var(--ink-2); margin:10px 0 0; max-width:70ch; overflow-wrap:anywhere; }
+  .sources { padding-left:20px; }
+  .sources li { font-size:14px; }
+  footer { margin-top:56px; padding:24px 0 56px; border-top:1px solid var(--line); color:var(--muted); font-size:14px; }
+  @media (max-width:480px) { nav a { margin-left:12px; font-size:13px; } }
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap"><a class="wordmark" href="https://arling.sk/">ARLing</a><nav><a href="https://arling.sk/#tools">Werkzeuge</a><a href="https://arling.sk/how-we-work/">So arbeiten wir</a><a href="https://arling.sk/privacy/">Datenschutz</a></nav></div></header>
+<main class="wrap">
+  <p class="kicker" style="margin-top:48px">Notes</p>
+  <h1>camt.053 in Excel umwandeln: Kontoauszug als XML aus Sparkasse, Volksbank oder UBS in eine Tabelle bringen</h1>
+  <p class="byline">Andrej Lauko, ARLing · 7. September 2026</p>
+
+  <p>Ihre Bank stellt den Kontoauszug im Online-Banking als camt.053-Datei bereit, eine XML-Datei, die kein Tabellenprogramm auf Anhieb lesbar öffnet. Für die Buchhaltung brauchen Sie aber eine Tabelle mit Datum, Betrag, Verwendungszweck und Gegenpartei je Zeile, nicht eine XML-Struktur mit verschachtelten Tags. Dieser Beitrag erklärt, was camt.053 überhaupt ist, welche Felder für die Buchhaltung wichtig sind, warum der CSV-Export mancher Banken dafür nicht reicht, und wie Sie die Datei in wenigen Schritten im Browser in eine Tabelle umwandeln.</p>
+
+  <h2>1. Was ist camt.053?</h2>
+  <p>camt.053 ist eine Nachricht aus dem internationalen Standard ISO 20022, offiziell „Bank to Customer Statement", die eine Bank für einen abgeschlossenen Buchungstag ausstellt. In Deutschland, Österreich und der Schweiz löst dieses XML-Format schrittweise das ältere textbasierte MT940-Format ab, das viele Banken aus historischen Gründen zusätzlich noch anbieten. Sparkassen und Volksbanken/Raiffeisenbanken stellen camt.053 im Online-Banking meist unter einer Bezeichnung wie „Kontoauszug XML" oder direkt „camt.053" im Auszugs- oder Postfach-Bereich bereit, ebenso Schweizer Banken wie UBS für Konten mit CHF- oder EUR-Kontoführung. Der Aufbau der Nachricht selbst ist bankunabhängig: Er folgt dem gleichen ISO-20022-Schema, unabhängig davon, welches Kreditinstitut ihn ausstellt.</p>
+
+  <h2>2. Was in der Datei steht</h2>
+  <p>Jede Buchung ist ein eigener Eintrag <code>Ntry</code> mit einer festen Menge an Feldern. <code>Amt</code> trägt den Betrag samt Währungsattribut, <code>CdtDbtInd</code> sagt, ob es sich um eine Gutschrift (<code>CRDT</code>) oder eine Belastung (<code>DBIT</code>) handelt, und <code>BookgDt</code> ist das Buchungsdatum. Der Verwendungszweck steht in <code>RmtInf</code>, entweder als freier Text (<code>Ustrd</code>) oder, seltener, als strukturierte Referenz. <code>EndToEndId</code> ist die Ende-zu-Ende-Referenz aus dem ursprünglichen Zahlungsauftrag und eignet sich gut, um eine Zahlung eindeutig einer Rechnung zuzuordnen, wenn der Zahlungspflichtige sie beim Überweisen mitgegeben hat. Name und IBAN der Gegenpartei stehen in eigenen Feldern, nicht im Fließtext. Am Kopf der Datei stehen außerdem der Anfangssaldo <code>OPBD</code> und der Endsaldo <code>CLBD</code> des Zeitraums, mit denen sich rechnerisch prüfen lässt, ob die Summe aller Buchungen zum ausgewiesenen Endsaldo führt.</p>
+
+  <h2>3. Warum der CSV-Export der Bank oft nicht reicht</h2>
+  <p>Viele Banken bieten im Online-Banking neben camt.053 auch einen eigenen CSV-Export an, der auf den ersten Blick einfacher wirkt. In der Praxis fehlt dort aber regelmäßig etwas, das die XML-Datei enthält: der Verwendungszweck wird auf eine feste Zeichenzahl gekürzt, IBAN und Name der Gegenpartei stehen in einer Spalte statt in zweien, und Datums- oder Dezimalformat unterscheiden sich von Bank zu Bank, sodass Excel Beträge gelegentlich als Text statt als Zahl einliest. Vor allem aber prüft ein einfacher CSV-Export nicht, ob die Summe der Buchungen zum ausgewiesenen Saldo passt: Fehlt eine Zeile beim Export, fällt das ohne eigene Kontrolle nicht auf. Da jede Bank ihr CSV-Format anders aufbaut, braucht jede Bank zudem eine eigene Umgangsweise, während camt.053 als genormtes XML bei jeder Bank die gleiche Struktur hat.</p>
+
+  <h2>4. Schritt für Schritt im Browser</h2>
+  <div class="tool-box">
+    <p>Das Tool <a href="https://arling.sk/camt053-to-excel/">camt.053 in Excel</a> hat eine deutsche Benutzeroberfläche. Sie laden die XML-Datei im Browser hoch, das Tool liest die camt.053-Nachricht (Version camt.053.001.02 oder camt.053.001.08, die beiden international gebräuchlichen ISO-20022-Versionen dieser Nachricht) und zeigt jede Buchung als Tabellenzeile mit Datum, Betrag, Verwendungszweck, Gegenpartei und IBAN. Dabei prüft es automatisch, ob Anfangssaldo plus Summe der Buchungen dem Endsaldo entspricht, und macht auf eine Abweichung aufmerksam, statt sie stillschweigend zu übernehmen.</p>
+    <p>Nichts von dem, was Sie hochladen, wird irgendwohin gesendet: Die Verarbeitung läuft vollständig im Browser, was sich im Netzwerk-Reiter der Entwicklertools nachprüfen lässt. Der Export erfolgt als CSV mit Semikolon als Trennzeichen und Komma als Dezimaltrennzeichen, also in dem Format, das die deutsche Excel-Version beim Öffnen direkt richtig erkennt, ohne Textimport-Assistent. Die kostenlose Version wandelt beliebig viele Auszüge ohne Zeilenlimit um. Das Paket <a href="https://arling.sk/bankove-nastroje/">Bankové nástroje</a> (9 EUR im Monat oder 79 EUR im Jahr, Preise inklusive Umsatzsteuer, Abrechnung über Stripe) fügt für alle vier Bank-Tools gespeicherte Einstellungen, mehrere Konten gleichzeitig und eine Verlaufsübersicht hinzu.</p>
+    <a class="btn" href="https://arling.sk/camt053-to-excel/">camt.053 in Excel öffnen</a>
+  </div>
+  <p>Ein ehrlicher Hinweis zur Herkunft des Tools: Es wurde ursprünglich für slowakische Banken gebaut und dort mit deren camt.053-Dateien getestet. Da das Nachrichtenformat selbst aber internationalen ISO-20022-Regeln folgt und nicht slowakisch-spezifisch ist, liest das Tool auch die camt.053-Dateien deutscher, österreichischer und Schweizer Banken korrekt ein. Sollte eine Bank eine unübliche Erweiterung des Formats verwenden, die das Tool nicht erkennt, schreiben Sie kurz an die im Impressum genannte Adresse.</p>
+
+  <h2>5. Was Sie vor dem Import in DATEV, Lexware oder sevDesk prüfen sollten</h2>
+  <p>Die exportierte CSV-Tabelle ist ein allgemeines Format, kein fertiges DATEV-, Lexware- oder sevDesk-Importformat. Vor dem Einspielen lohnt sich eine kurze Kontrolle: Prüfen Sie, welche Spaltenreihenfolge und welchen Zeichensatz die jeweilige Importfunktion erwartet, zum Beispiel der DATEV-Kontoauszugsmanager oder der CSV-Import in Lexware und sevDesk, und ordnen Sie die Spalten beim ersten Import einmal manuell zu. Kontrollieren Sie außerdem, ob Datumsformat (Tag.Monat.Jahr) und Dezimaltrennzeichen (Komma) mit dem übereinstimmen, was die Zielsoftware beim Import abfragt, damit Beträge nicht versehentlich als Text landen. Prüfen Sie stichprobenartig einige Zeilen gegen den ursprünglichen Kontoauszug, bevor Sie den vollständigen Import bestätigen, insbesondere den Anfangs- und Endsaldo. Fertige, gespeicherte Zuordnungsvorlagen bietet das Pro-Paket derzeit für die slowakischen Programme Pohoda, Omega und Money S3; für DATEV, Lexware und sevDesk müssen Sie die Spaltenzuordnung aktuell noch selbst einmal einrichten, was sich in den meisten Programmen anschließend als Vorlage speichern lässt.</p>
+
+  <h2>Häufig gestellte Fragen</h2>
+  <details>
+    <summary>Wird meine Kontoauszugsdatei irgendwohin hochgeladen?</summary>
+    <p>Nein. Das Tool camt.053 in Excel liest die XML-Datei clientseitig im Browser mit der FileReader-API und sendet sie an keinen Server. Das lässt sich in den Entwicklertools des Browsers im Reiter Netzwerk nachprüfen: Dort erscheint kein Request mit dem Dateiinhalt. Gespeichert wird nichts außer der Tabelle, die Sie selbst als CSV oder Excel-Datei herunterladen.</p>
+  </details>
+  <details>
+    <summary>Kann ich mehrere Kontoauszüge auf einmal umwandeln?</summary>
+    <p>Ja, die kostenlose Version wandelt mehrere camt.053-Dateien in einer Sitzung um, zum Beispiel mehrere Monate oder mehrere Konten hintereinander, und liefert für jede Datei eine eigene Tabelle mit Saldenprüfung. Die Pro-Lizenz im Bankové nástroje-Paket fügt gespeicherte Spalten-Zuordnungen und eine Verlaufsübersicht der zuletzt verarbeiteten Auszüge hinzu, für die tägliche Verwendung ist die kostenlose Version aber bereits vollständig.</p>
+  </details>
+  <details>
+    <summary>Funktioniert das Tool auch mit Fremdwährungskonten?</summary>
+    <p>Das Tool liest das Feld <code>Amt</code> mit dem Attribut <code>Ccy</code> und übernimmt die im Kontoauszug angegebene Währung unverändert je Buchung; es rechnet nicht selbst in Euro um. Bei einem Konto in US-Dollar oder Schweizer Franken erscheint die Originalwährung in der Tabelle, und ein Umrechnungskurs zum Buchungsdatum muss weiterhin gesondert ermittelt werden, etwa aus dem Kurs, den die Bank für die Buchung tatsächlich verwendet hat.</p>
+  </details>
+  <details>
+    <summary>Was unterscheidet camt.052, camt.053 und camt.054?</summary>
+    <p>camt.052 ist der untertägige Kontoauszug (Intraday) mit vorläufigen Buchungen, der mehrmals am Tag abgerufen werden kann. camt.053 ist der Tagesabschluss-Kontoauszug mit endgültigen Buchungen und Anfangs- sowie Endsaldo, das gängige Format für die laufende Buchhaltung. camt.054 ist eine Einzelbenachrichtigung über eine bestimmte Gutschrift oder Belastung, zum Beispiel bei einem Rücklastschrift-Hinweis, und ersetzt keinen vollständigen Auszug.</p>
+  </details>
+
+  <h2>Quellen</h2>
+  <ul class="sources">
+    <li>ISO 20022: <em>ISO 20022 message definitions (camt.053 Bank to Customer Statement)</em>. <a href="https://www.iso20022.org/iso-20022-message-definitions" target="_blank" rel="noopener">iso20022.org</a></li>
+  </ul>
+
+</main>
+<footer><div class="wrap">ARLing s. r. o. · <a href="https://arling.sk/">arling.sk</a> · <a href="https://arling.sk/camt053-to-excel/">camt.053 in Excel</a> · <a href="mailto:andrej@arling.sk">andrej@arling.sk</a></div></footer>
+</body>
+</html>

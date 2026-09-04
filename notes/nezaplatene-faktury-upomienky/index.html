@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://homelab.tailbf8f27.ts.net; connect-src 'self' https://homelab.tailbf8f27.ts.net; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<title>Nezaplatené faktúry: ako každý mesiac za 10 minút zistiť, kto nezaplatil, a poslať upomienky</title>
+<meta name="description" content="Postup na mesačnú kontrolu nezaplatených faktúr: spárovanie výpisu s faktúrami, tri stupne upomienok so vzormi textov, zákonný úrok z omeškania a paušál 40 eur.">
+<link rel="canonical" href="https://arling.sk/notes/nezaplatene-faktury-upomienky/">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Nezaplatené faktúry: ako každý mesiac za 10 minút zistiť, kto nezaplatil, a poslať upomienky">
+<meta property="og:description" content="Postup na mesačnú kontrolu nezaplatených faktúr: spárovanie výpisu s faktúrami, tri stupne upomienok so vzormi textov, zákonný úrok z omeškania a paušál 40 eur.">
+<meta property="og:url" content="https://arling.sk/notes/nezaplatene-faktury-upomienky/">
+<meta property="og:locale" content="sk_SK">
+<meta name="theme-color" content="#f6f2ea">
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="alternate" type="text/plain" href="https://arling.sk/llms.txt" title="llms.txt">
+<script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="be534d51-4d01-4860-b267-9596d91606de"></script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Nezaplatené faktúry: ako každý mesiac za 10 minút zistiť, kto nezaplatil, a poslať upomienky",
+  "description": "Postup na mesačnú kontrolu nezaplatených faktúr: spárovanie výpisu s faktúrami, tri stupne upomienok so vzormi textov, zákonný úrok z omeškania a paušál 40 eur.",
+  "datePublished": "2026-09-07",
+  "dateModified": "2026-09-07",
+  "inLanguage": "sk",
+  "author": { "@type": "Person", "name": "Andrej Lauko", "url": "https://arling.sk/how-we-work/" },
+  "publisher": { "@type": "Organization", "name": "ARLing s. r. o.", "url": "https://arling.sk/", "email": "andrej@arling.sk", "identifier": "56583486" },
+  "mainEntityOfPage": { "@type": "WebPage", "@id": "https://arling.sk/notes/nezaplatene-faktury-upomienky/" }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "ARLing", "item": "https://arling.sk/" },
+    { "@type": "ListItem", "position": 2, "name": "Notes", "item": "https://arling.sk/notes/" },
+    { "@type": "ListItem", "position": 3, "name": "Nezaplatené faktúry a upomienky", "item": "https://arling.sk/notes/nezaplatene-faktury-upomienky/" }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Musím upomienku posielať doporučene poštou?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Na samotný nárok na úrok z omeškania alebo paušálnu náhradu 40 eur nie je doporučené doručenie zákonnou podmienkou, tie vznikajú automaticky zo zákona po omeškaní dlžníka. Pri predžalobnej výzve sa doporučená pošta alebo iný spôsob s potvrdením o doručení odporúča preto, že v prípadnom súdnom spore treba preukázať, kedy presne bola dlžníkovi doručená a či mal reálnu možnosť zareagovať pred podaním žaloby." }
+    },
+    {
+      "@type": "Question",
+      "name": "Môžem si účtovať úrok z omeškania aj bez toho, aby to bolo dohodnuté v zmluve?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Áno. Nárok na úrok z omeškania pri platbách medzi podnikateľmi vyplýva priamo z Obchodného zákonníka a vzniká automaticky, keď dlžník neuhradí faktúru v lehote splatnosti, bez ohľadu na to, či si strany úrok v zmluve dohodli. Zmluva môže dohodnúť inú sadzbu, ak to zákon pripúšťa, no samotný nárok existuje aj bez akejkoľvek dohody." }
+    },
+    {
+      "@type": "Question",
+      "name": "Platí paušálna náhrada 40 eur aj pri jednej faktúre, ktorá mešká len pár dní?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Áno, nárok vzniká pri každom omeškaní platby v obchodnom vzťahu podľa § 369c Obchodného zákonníka, bez ohľadu na výšku faktúry alebo dĺžku omeškania, a bez toho, aby ste museli preukazovať, že vám v súvislosti s vymáhaním vznikli náklady v tejto výške. V praxi sa aj tak oplatí posúdiť, či sa pri drobnom a krátkom omeškaní oplatí vzťah s odberateľom kvôli 40 eurám zaťažovať, alebo počkať na ďalšiu splatnú faktúru." }
+    },
+    {
+      "@type": "Question",
+      "name": "Dá sa celý upomienkový proces automatizovať?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Časť áno, časť nie. Spárovanie výpisu so zoznamom faktúr a zostavenie zoznamu tých po splatnosti sa dá zautomatizovať nástrojom za pár sekúnd. Rozhodnutie, komu a kedy poslať ktorý stupeň upomienky, a samotné odoslanie s konkrétnym oslovením, by mal robiť človek: automaticky odoslaná upomienka spoľahlivému klientovi, ktorý zaplatil o deň neskôr, pôsobí zle a zbytočne kazí vzťah." }
+    }
+  ]
+}
+</script>
+
+<style>
+  :root { --paper:#f6f2ea; --paper-2:#fbf9f4; --ink:#1b1a17; --ink-2:#4a4741; --muted:#66625a; --line:#d9d2c4; --accent:#b23a1d; --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif; --sans:system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; --mono:ui-monospace,"Cascadia Code",Consolas,Menlo,monospace; }
+  @media (prefers-color-scheme: dark) { :root { --paper:#151412; --paper-2:#1d1b18; --ink:#efe9de; --ink-2:#c9c2b5; --muted:#8f887b; --line:#2e2b26; --accent:#e0623f; } }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--paper); color:var(--ink); font:16px/1.55 var(--sans); overflow-wrap:anywhere; }
+  a { color:inherit; text-decoration-color:var(--line); text-underline-offset:3px; }
+  a:hover { text-decoration-color:var(--accent); }
+  .wrap { max-width:760px; margin:0 auto; padding:0 24px; }
+  header.top { border-bottom:1px solid var(--line); }
+  header.top .wrap { display:flex; align-items:baseline; justify-content:space-between; padding:18px 24px; flex-wrap:wrap; gap:8px; }
+  .wordmark { font:600 22px/1 var(--serif); text-decoration:none; }
+  nav a { font-size:14px; margin-left:20px; text-decoration:none; color:var(--ink-2); }
+  nav a:first-child { margin-left:0; }
+  main { max-width:70ch; }
+  h1 { font:400 clamp(28px,4.5vw,40px)/1.15 var(--serif); margin:44px 0 14px; }
+  h2 { font:400 24px/1.2 var(--serif); margin:40px 0 10px; }
+  .kicker { font:400 14px/1 var(--serif); color:var(--accent); letter-spacing:.06em; text-transform:uppercase; margin:0 0 8px; }
+  .byline { color:var(--muted); font-size:14px; margin:0 0 32px; }
+  p, li { color:var(--ink-2); max-width:70ch; }
+  ol, ul { padding-left:20px; }
+  li + li { margin-top:6px; }
+  code { font:14px/1.4 var(--mono); background:var(--paper-2); border:1px solid var(--line); border-radius:4px; padding:1px 6px; color:var(--ink); overflow-wrap:anywhere; }
+  blockquote { margin:10px 0; padding:10px 16px; border-left:2px solid var(--line); color:var(--ink-2); font-size:15px; }
+  .tool-box { border:1px solid var(--line); border-radius:4px; padding:16px 20px; margin:16px 0; background:var(--paper-2); }
+  .tool-box p { margin:0; }
+  .tool-box p + p { margin-top:8px; }
+  .btn { display:inline-block; margin-top:10px; padding:8px 16px; border:2px solid var(--accent); border-radius:4px; color:var(--accent); text-decoration:none; font-size:14px; }
+  .btn:hover { background:var(--accent); color:var(--paper-2); text-decoration:none; }
+  details { border-top:1px solid var(--line); padding:14px 0; }
+  details:last-of-type { border-bottom:1px solid var(--line); }
+  summary { cursor:pointer; font:400 18px/1.3 var(--serif); list-style:none; display:flex; justify-content:space-between; gap:12px; }
+  summary::-webkit-details-marker { display:none; }
+  summary::after { content:"+"; color:var(--accent); flex:none; font-family:var(--sans); }
+  details[open] summary::after { content:"\2013"; }
+  details p { color:var(--ink-2); margin:10px 0 0; max-width:70ch; overflow-wrap:anywhere; }
+  .sources { padding-left:20px; }
+  .sources li { font-size:14px; }
+  footer { margin-top:56px; padding:24px 0 56px; border-top:1px solid var(--line); color:var(--muted); font-size:14px; }
+  @media (max-width:480px) { nav a { margin-left:12px; font-size:13px; } }
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap"><a class="wordmark" href="https://arling.sk/">ARLing</a><nav><a href="https://arling.sk/#tools">Nástroje</a><a href="https://arling.sk/how-we-work/">Ako pracujeme</a><a href="https://arling.sk/privacy/">Súkromie</a></nav></div></header>
+<main class="wrap">
+  <p class="kicker" style="margin-top:48px">Notes</p>
+  <h1>Nezaplatené faktúry: ako každý mesiac za 10 minút zistiť, kto nezaplatil, a poslať upomienky</h1>
+  <p class="byline">Andrej Lauko, ARLing · 7. septembra 2026</p>
+
+  <p>Koniec mesiaca, treba zistiť, kto ešte nezaplatil. Otvoríte zoznam vydaných faktúr, k nemu výpis z banky, a riadok po riadku porovnávate, čo sedí a čo nie. Pri desiatich faktúrach to zvládnete za pár minút. Pri päťdesiatich sa do toho jednoducho nedostanete každý mesiac, upomienky sa posúvajú, a čím neskôr odídu, tým nižšia je šanca, že klient zaplatí bez ďalšieho urgovania. Tento postup ukazuje, ako si zoznam po splatnosti pripraviť za pár minút, akými troma stupňami upomienok postupovať, a čo hovorí zákon o úroku z omeškania a paušálnej náhrade nákladov.</p>
+
+  <h2>1. Prečo sa to ručne nestíha</h2>
+  <p>Ručná kontrola nezaplatených faktúr má tri opakujúce sa problémy. Zoznam vydaných faktúr je v jednom programe (Pohoda, Omega, Money S3, SuperFaktúra, iDoklad alebo Fakturoid), výpis z banky v inom formáte, a porovnanie medzi nimi je manuálna práca, ktorú treba robiť znova každý mesiac, nie raz. Platba často nemá presne taký variabilný symbol, sumu alebo dátum, aký by sa dal jednoducho vyhľadať, takže pri rýchlom prezeraní ľahko prehliadnete faktúru, ktorá v skutočnosti zaplatená nebola. A keď sa kontrola posunie o týždeň, o toľko sa posunie aj prvá upomienka, hoci práve rýchlosť prvého upozornenia najviac rozhoduje o tom, či klient zaplatí bez ďalšieho urgovania.</p>
+
+  <h2>2. Postup: výpis a faktúry spárovať, zoznam po splatnosti von</h2>
+  <div class="tool-box">
+    <p>Do <a href="https://arling.sk/parovac-platieb/">Párovača platieb</a> nahráte výpis camt.053 (alebo jeho CSV z nástroja <a href="https://arling.sk/camt053-to-excel/">camt.053 do Excelu</a>) a zoznam vydaných faktúr skopírovaný z Excelu alebo exportovaný z účtovného programu. Nástroj vráti zoznam faktúr, ktoré sú spárované s platbou, čiastočne uhradené, a tie, ku ktorým sa žiadna platba nenašla.</p>
+    <p>Zo zoznamu nespárovaných je dôležitý ten, kde je dátum splatnosti už v minulosti: to je váš mesačný zoznam na upomienky. Nič, čo nahráte, sa nikam neposiela, párovanie beží celé v prehliadači.</p>
+    <a class="btn" href="https://arling.sk/parovac-platieb/">Otvoriť Párovač platieb</a>
+  </div>
+  <p>Tento zoznam stačí prejsť raz mesačne, ideálne v ten istý deň, aby sa vám vytvoril zvyk a upomienky chodili pravidelne, nie nárazovo, keď si na to spomeniete.</p>
+
+  <h2>3. Tri stupne upomienok</h2>
+  <p>Osvedčil sa postup s tromi stupňami, kde každý ďalší je formálnejší a má pevnejší termín než ten predchádzajúci.</p>
+  <p><b>1. Priateľská pripomienka</b>, pár dní po splatnosti, počíta s tým, že ide o prehliadnutie:</p>
+  <blockquote>Dobrý deň, podľa našich záznamov faktúra č. [číslo] na sumu [suma] eur so splatnosťou [dátum] ešte nie je uhradená. Ak ste platbu už poslali, tento e-mail berte ako bezpredmetný, prípadne nám pošlite potvrdenie o úhrade. Ďakujeme.</blockquote>
+  <p><b>2. Druhá upomienka s pevným termínom</b>, keď prvá zostane bez odozvy, obsahuje konkrétny nový termín a spomenie úrok z omeškania:</p>
+  <blockquote>Dobrý deň, faktúra č. [číslo] na sumu [suma] eur je po splatnosti [počet] dní a doteraz sme nezaznamenali úhradu ani reakciu na predchádzajúcu pripomienku. Žiadame o úhradu najneskôr do [dátum]. V opačnom prípade si budeme uplatňovať úrok z omeškania a paušálnu náhradu nákladov podľa Obchodného zákonníka.</blockquote>
+  <p><b>3. Predžalobná výzva</b>, keď ani druhá upomienka nezabrala, je formálna, stanoví posledný krátky termín a uvedie, čo bude nasledovať:</p>
+  <blockquote>Vážení, napriek dvom predchádzajúcim upomienkam nebola faktúra č. [číslo] na sumu [suma] eur so splatnosťou [dátum] doteraz uhradená. Vyzývame vás na úhradu istiny vrátane úroku z omeškania a paušálnej náhrady nákladov 40 eur, a to najneskôr do [dátum]. Po márnom uplynutí tejto lehoty budeme nútení pohľadávku uplatniť súdnou cestou, prípadne prostredníctvom tretej strany.</blockquote>
+  <p>Predžalobnú výzvu sa oplatí posielať tak, aby ste vedeli preukázať dátum doručenia, napríklad doporučene alebo e-mailom s potvrdením o prečítaní, pretože práve tento dátum sa neskôr môže riešiť pri prípadnom súdnom konaní.</p>
+
+  <h2>4. Zákonné úroky z omeškania</h2>
+  <p>Pri platbách medzi podnikateľmi má veriteľ nárok na úrok z omeškania automaticky zo zákona, aj bez toho, aby to bolo v zmluve výslovne dohodnuté. Konkrétnu sadzbu pre obchodné vzťahy neurčuje priamo Obchodný zákonník číslom, ale nariadenie vlády, ktoré ju odvodzuje od základnej referenčnej sadzby Európskej centrálnej banky: keďže sa táto sadzba v čase mení, presné percento tu zámerne neuvádzame a pred fakturáciou úroku sa oplatí overiť aktuálne platnú sadzbu podľa účinného nariadenia vlády, prípadne s účtovníkom.</p>
+
+  <h2>5. Paušálna náhrada nákladov 40 eur</h2>
+  <p>Popri úroku z omeškania má veriteľ v obchodnom vzťahu podľa § 369c Obchodného zákonníka nárok aj na paušálnu náhradu nákladov spojených s uplatnením pohľadávky vo výške 40 eur, a to za každú faktúru, pri ktorej dlžník je v omeškaní, bez toho, aby ste museli dokladovať skutočné náklady v tejto výške. Nárok vzniká popri úroku z omeškania, nie namiesto neho, a rovnako platí automaticky zo zákona, bez dohody v zmluve.</p>
+
+  <h2>6. Kedy zapojiť právnika</h2>
+  <p>Právnika alebo inkasnú spoločnosť sa oplatí zapojiť, keď predžalobná výzva ostane bez odpovede aj po uplynutí stanoveného termínu, keď dlžník platbu výslovne odmieta alebo spochybňuje faktúru samotnú, alebo keď ide o sumu, pri ktorej sa náklady na súdne vymáhanie oplatia. Pri drobných a jednorazových omeškaniach spoľahlivého klienta je zvyčajne rozumnejšie vyriešiť to priamo, telefonicky alebo e-mailom, než hneď eskalovať na právne kroky.</p>
+
+  <h2>Časté otázky</h2>
+  <details>
+    <summary>Musím upomienku posielať doporučene poštou?</summary>
+    <p>Na samotný nárok na úrok z omeškania alebo paušálnu náhradu 40 eur nie je doporučené doručenie zákonnou podmienkou, tie vznikajú automaticky zo zákona po omeškaní dlžníka. Pri predžalobnej výzve sa doporučená pošta alebo iný spôsob s potvrdením o doručení odporúča preto, že v prípadnom súdnom spore treba preukázať, kedy presne bola dlžníkovi doručená.</p>
+  </details>
+  <details>
+    <summary>Môžem si účtovať úrok z omeškania aj bez toho, aby to bolo dohodnuté v zmluve?</summary>
+    <p>Áno. Nárok na úrok z omeškania pri platbách medzi podnikateľmi vyplýva priamo z Obchodného zákonníka a vzniká automaticky, keď dlžník neuhradí faktúru v lehote splatnosti, bez ohľadu na to, či si strany úrok v zmluve dohodli.</p>
+  </details>
+  <details>
+    <summary>Platí paušálna náhrada 40 eur aj pri jednej faktúre, ktorá mešká len pár dní?</summary>
+    <p>Áno, nárok vzniká pri každom omeškaní platby v obchodnom vzťahu podľa § 369c Obchodného zákonníka, bez ohľadu na výšku faktúry alebo dĺžku omeškania. V praxi sa aj tak oplatí posúdiť, či sa pri drobnom a krátkom omeškaní oplatí vzťah s odberateľom kvôli 40 eurám zaťažovať.</p>
+  </details>
+  <details>
+    <summary>Dá sa celý upomienkový proces automatizovať?</summary>
+    <p>Časť áno, časť nie. Spárovanie výpisu so zoznamom faktúr a zostavenie zoznamu tých po splatnosti sa dá zautomatizovať nástrojom za pár sekúnd. Rozhodnutie, komu a kedy poslať ktorý stupeň upomienky, a samotné odoslanie s konkrétnym oslovením, by mal robiť človek.</p>
+  </details>
+
+  <h2>Sources</h2>
+  <ul class="sources">
+    <li>Obchodný zákonník (zákon č. 513/1991 Zb.), § 369, § 369c: úrok z omeškania a paušálna náhrada nákladov v obchodných vzťahoch. <a href="https://www.slov-lex.sk/pravne-predpisy/SK/ZZ/1991/513/" target="_blank" rel="noopener">slov-lex.sk</a></li>
+    <li>Nariadenie vlády Slovenskej republiky č. 21/2013 Z. z., ktorým sa vykonávajú niektoré ustanovenia Obchodného zákonníka. <a href="https://www.slov-lex.sk/pravne-predpisy/SK/ZZ/2013/21/" target="_blank" rel="noopener">slov-lex.sk</a></li>
+  </ul>
+
+</main>
+<footer><div class="wrap">ARLing s. r. o. · <a href="https://arling.sk/">arling.sk</a> · <a href="https://arling.sk/parovac-platieb/">Párovač platieb</a> · <a href="mailto:andrej@arling.sk">andrej@arling.sk</a></div></footer>
+</body>
+</html>

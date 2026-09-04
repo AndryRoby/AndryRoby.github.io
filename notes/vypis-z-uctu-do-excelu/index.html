@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://homelab.tailbf8f27.ts.net; connect-src 'self' https://homelab.tailbf8f27.ts.net; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<title>Výpis z účtu do Excelu: ako dostať camt.053 z Tatra banky, SLSP, VÚB a ČSOB do tabuľky</title>
+<meta name="description" content="Ako stiahnuť výpis camt.053 z internet bankingu Tatra banky, SLSP, VÚB a ČSOB, čo presne obsahuje, prečo CSV z banky často nestačí, a ako ho previesť na tabuľku pre Excel aj účtovníctvo.">
+<link rel="canonical" href="https://arling.sk/notes/vypis-z-uctu-do-excelu/">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Výpis z účtu do Excelu: ako dostať camt.053 z Tatra banky, SLSP, VÚB a ČSOB do tabuľky">
+<meta property="og:description" content="Ako stiahnuť výpis camt.053 z internet bankingu Tatra banky, SLSP, VÚB a ČSOB, čo presne obsahuje, prečo CSV z banky často nestačí, a ako ho previesť na tabuľku pre Excel aj účtovníctvo.">
+<meta property="og:url" content="https://arling.sk/notes/vypis-z-uctu-do-excelu/">
+<meta property="og:locale" content="sk_SK">
+<meta name="theme-color" content="#f6f2ea">
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="alternate" type="text/plain" href="https://arling.sk/llms.txt" title="llms.txt">
+<script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="be534d51-4d01-4860-b267-9596d91606de"></script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Výpis z účtu do Excelu: ako dostať camt.053 z Tatra banky, SLSP, VÚB a ČSOB do tabuľky",
+  "description": "Ako stiahnuť výpis camt.053 z internet bankingu Tatra banky, SLSP, VÚB a ČSOB, čo presne obsahuje, prečo CSV z banky často nestačí, a ako ho previesť na tabuľku pre Excel aj účtovníctvo.",
+  "datePublished": "2026-09-07",
+  "dateModified": "2026-09-07",
+  "inLanguage": "sk",
+  "author": { "@type": "Person", "name": "Andrej Lauko", "url": "https://arling.sk/how-we-work/" },
+  "publisher": { "@type": "Organization", "name": "ARLing s. r. o.", "url": "https://arling.sk/", "email": "andrej@arling.sk", "identifier": "56583486" },
+  "mainEntityOfPage": { "@type": "WebPage", "@id": "https://arling.sk/notes/vypis-z-uctu-do-excelu/" }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "ARLing", "item": "https://arling.sk/" },
+    { "@type": "ListItem", "position": 2, "name": "Notes", "item": "https://arling.sk/notes/" },
+    { "@type": "ListItem", "position": 3, "name": "Výpis z účtu do Excelu", "item": "https://arling.sk/notes/vypis-z-uctu-do-excelu/" }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Aký je rozdiel medzi starým výpisom MT940 a formátom camt.053?",
+      "acceptedAnswer": { "@type": "Answer", "text": "MT940 je starší textový formát podľa štandardu SWIFT, riadkovaný a bez pevnej štruktúry pre jednotlivé polia. camt.053 je novší formát podľa normy ISO 20022, zapísaný ako XML s presne pomenovanými elementmi (suma, dátum, protistrana, referencie). Tatra banka, Slovenská sporiteľňa, VÚB aj ČSOB dnes ponúkajú camt.053 ako štandardný, prípadne jediný formát výpisu pre účtovníctvo, práve preto, že sa dá strojovo spracovať bez odhadovania, kde v texte začína ktoré pole."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Prečo je suma v tabuľke niekedy záporná?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Znamienko sumy určuje pole CdtDbtInd v XML: hodnota DBIT (peniaze odišli z účtu) sa do tabuľky zapíše ako záporné číslo, hodnota CRDT (peniaze prišli) ako kladné. Vďaka tomu sa dá stĺpec so sumami priamo sčítať a porovnať so začiatočným a konečným zostatkom, ktoré výpis sám uvádza, namiesto toho, aby ste museli smer platby odhadovať zo samostatného stĺpca alebo z farby v internet bankingu." }
+    },
+    {
+      "@type": "Question",
+      "name": "Je bezpečné nahrať výpis s IBAN a sumami do nástroja v prehliadači?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Áno, pokiaľ nástroj beží celý v prehliadači a súbor sa nikam neodosiela, čo sa dá overiť aj v sieťovej karte vývojárskych nástrojov prehliadača, kde by sa pri žiadnom requeste nemal objaviť obsah súboru. Prevod camt.053 na tabuľku prebieha len lokálne v pamäti prehliadača, dáta sa nikde neukladajú okrem prípadu, že si výsledok sami stiahnete ako CSV alebo Excel." }
+    },
+    {
+      "@type": "Question",
+      "name": "Čo ak potrebujem previesť viac výpisov alebo účtov naraz?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Prevod jedného výpisu na tabuľku je zadarmo bez limitu na počet riadkov. Spracovanie viacerých súborov naraz, napríklad výpisov z viacerých bankových účtov v jednom kroku, a históriu doterajších konverzií pridáva Pro licencia v balíku Bankové nástroje. Pre jeden výpis mesačne to zvyčajne netreba." }
+    }
+  ]
+}
+</script>
+
+<style>
+  :root { --paper:#f6f2ea; --paper-2:#fbf9f4; --ink:#1b1a17; --ink-2:#4a4741; --muted:#66625a; --line:#d9d2c4; --accent:#b23a1d; --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif; --sans:system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; --mono:ui-monospace,"Cascadia Code",Consolas,Menlo,monospace; }
+  @media (prefers-color-scheme: dark) { :root { --paper:#151412; --paper-2:#1d1b18; --ink:#efe9de; --ink-2:#c9c2b5; --muted:#8f887b; --line:#2e2b26; --accent:#e0623f; } }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--paper); color:var(--ink); font:16px/1.55 var(--sans); overflow-wrap:anywhere; }
+  a { color:inherit; text-decoration-color:var(--line); text-underline-offset:3px; }
+  a:hover { text-decoration-color:var(--accent); }
+  .wrap { max-width:760px; margin:0 auto; padding:0 24px; }
+  header.top { border-bottom:1px solid var(--line); }
+  header.top .wrap { display:flex; align-items:baseline; justify-content:space-between; padding:18px 24px; flex-wrap:wrap; gap:8px; }
+  .wordmark { font:600 22px/1 var(--serif); text-decoration:none; }
+  nav a { font-size:14px; margin-left:20px; text-decoration:none; color:var(--ink-2); }
+  nav a:first-child { margin-left:0; }
+  main { max-width:70ch; }
+  h1 { font:400 clamp(28px,4.5vw,40px)/1.15 var(--serif); margin:44px 0 14px; }
+  h2 { font:400 24px/1.2 var(--serif); margin:40px 0 10px; }
+  .kicker { font:400 14px/1 var(--serif); color:var(--accent); letter-spacing:.06em; text-transform:uppercase; margin:0 0 8px; }
+  .byline { color:var(--muted); font-size:14px; margin:0 0 32px; }
+  p, li { color:var(--ink-2); max-width:70ch; }
+  ol, ul { padding-left:20px; }
+  li + li { margin-top:6px; }
+  code { font:14px/1.4 var(--mono); background:var(--paper-2); border:1px solid var(--line); border-radius:4px; padding:1px 6px; color:var(--ink); overflow-wrap:anywhere; }
+  .tool-box { border:1px solid var(--line); border-radius:4px; padding:16px 20px; margin:16px 0; background:var(--paper-2); }
+  .tool-box p { margin:0; }
+  .tool-box p + p { margin-top:8px; }
+  .btn { display:inline-block; margin-top:10px; padding:8px 16px; border:2px solid var(--accent); border-radius:4px; color:var(--accent); text-decoration:none; font-size:14px; }
+  .btn:hover { background:var(--accent); color:var(--paper-2); text-decoration:none; }
+  details { border-top:1px solid var(--line); padding:14px 0; }
+  details:last-of-type { border-bottom:1px solid var(--line); }
+  summary { cursor:pointer; font:400 18px/1.3 var(--serif); list-style:none; display:flex; justify-content:space-between; gap:12px; }
+  summary::-webkit-details-marker { display:none; }
+  summary::after { content:"+"; color:var(--accent); flex:none; font-family:var(--sans); }
+  details[open] summary::after { content:"\2013"; }
+  details p { color:var(--ink-2); margin:10px 0 0; max-width:70ch; overflow-wrap:anywhere; }
+  .sources { padding-left:20px; }
+  .sources li { font-size:14px; }
+  footer { margin-top:56px; padding:24px 0 56px; border-top:1px solid var(--line); color:var(--muted); font-size:14px; }
+  @media (max-width:480px) { nav a { margin-left:12px; font-size:13px; } }
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap"><a class="wordmark" href="https://arling.sk/">ARLing</a><nav><a href="https://arling.sk/#tools">Nástroje</a><a href="https://arling.sk/how-we-work/">Ako pracujeme</a><a href="https://arling.sk/privacy/">Súkromie</a></nav></div></header>
+<main class="wrap">
+  <p class="kicker" style="margin-top:48px">Notes</p>
+  <h1>Výpis z účtu do Excelu: ako dostať camt.053 z Tatra banky, SLSP, VÚB a ČSOB do tabuľky</h1>
+  <p class="byline">Andrej Lauko, ARLing · 7. septembra 2026</p>
+
+  <p>Na konci mesiaca potrebujete výpis z účtu v Exceli: skontrolovať pohyby, spárovať platby s faktúrami, pripraviť podklad pre účtovníctvo. Stiahnete z internet bankingu súbor, otvoríte ho a namiesto tabuľky vidíte XML plné značiek, alebo CSV, kde sú sumy zlepené v jednom stĺpci a diakritika je nečitateľná. Tento postup vysvetľuje, kde výpis vo formáte camt.053 nájdete, čo presne obsahuje, prečo hotové CSV z banky často nestačí, a ako ho za pár sekúnd previesť na tabuľku, ktorú Excel aj účtovný program prečítajú správne.</p>
+
+  <h2>1. Kde v internet bankingu nájdete XML výpis</h2>
+  <p>Všetky štyri veľké slovenské banky, Tatra banka, Slovenská sporiteľňa, VÚB aj ČSOB, ponúkajú výpis vo formáte camt.053 ako štandardný export pre účtovníctvo. Presné pomenovanie položky v menu sa medzi bankami líši, napríklad „výpis pre účtovníctvo“, „elektronický výpis“ alebo len „XML výpis“, preto tu zámerne neuvádzame presnú cestu klikania: v sekcii výpisov alebo dokumentov k účtu zvoľte pri exporte formát XML alebo priamo camt.053, vyberte účet a obdobie a súbor stiahnite. Ak banka ponúka aj starší formát (napríklad textový MT940 alebo vlastné CSV), pre ďalšie spracovanie sa oplatí siahnuť práve po camt.053: je to jediný z ponúkaných formátov, ktorý má pevnú štruktúru pre každé pole.</p>
+
+  <h2>2. Čo presne je vo výpise camt.053</h2>
+  <p>Súbor je XML podľa normy ISO 20022. Každá jednotlivá položka pohybu je zabalená v elemente <code>Ntry</code>, vnútri ktorého je suma v <code>Amt</code>, smer platby v <code>CdtDbtInd</code> (hodnota DBIT pre odchádzajúcu platbu, CRDT pre prichádzajúcu) a dátum zaúčtovania v <code>BookgDt</code>. Poznámka k platbe je v <code>RmtInf</code>: tam banka zvyčajne zapíše aj variabilný, špecifický a konštantný symbol, buď ako štruktúrovanú referenciu, alebo v poradí <code>/VS.../SS.../KS...</code> priamo v texte. Meno protistrany a jej IBAN sú v samostatných poliach pri každej položke. Na úrovni celého výpisu je ešte element <code>Bal</code> so začiatočným zostatkom (kód OPBD) a konečným zostatkom (kód CLBD): súčet všetkých pohybov pripočítaný k začiatočnému zostatku sa musí rovnať konečnému, čo je jediná spoľahlivá kontrola, že vo výpise nič nechýba.</p>
+
+  <h2>3. Prečo CSV priamo z banky často nestačí</h2>
+  <p>Viaceré internet bankingy ponúkajú popri XML aj rovno CSV export, lenže ten je zvyčajne zjednodušený. Variabilný, špecifický a konštantný symbol často skončia zlepené v jednom textovom poli spolu s poznámkou, namiesto troch samostatných stĺpcov. Kódovanie súboru sa nie vždy zhoduje s tým, čo očakáva slovenská verzia Excelu, takže mená s diakritikou sa po otvorení zobrazia ako otázniky alebo prázdne znaky. A desatinný oddeľovač býva bodka, zatiaľ čo slovenský Excel pri exporte oddelenom čiarkou očakáva desatinnú čiarku, takže sa suma naimportuje ako text namiesto čísla a nedá sa s ňou počítať ani sčítať. Výsledok potom treba ručne opravovať bunku po bunke, čo je presne tá práca, ktorej sa export mal vyhnúť.</p>
+
+  <h2>4. Ako previesť camt.053 na tabuľku v prehliadači</h2>
+  <div class="tool-box">
+    <p>Nástroj <a href="https://arling.sk/camt053-to-excel/">camt.053 do Excelu</a> nahraný alebo vložený XML súbor prevedie na tabuľku so stĺpcami dátum, suma so správnym znamienkom, protistrana a symboly VS, ŠS a KS, oddelenými presne tak, ako boli v origináli. Nad tabuľkou je súhrn so začiatočným a konečným zostatkom a kontrolou, či sa pohyby s nimi zhodujú: keď nesedia, nástroj to vypíše ako upozornenie namiesto ticha.</p>
+    <p>CSV sa dá stiahnuť s bodkočiarkou ako oddeľovačom a desatinnou čiarkou, presne v tvare, ktorý slovenský Excel otvorí bez úprav, vrátane diakritiky. Prevod beží celý v prehliadači, súbor sa nikam neodosiela, a je zadarmo bez limitu na počet riadkov.</p>
+    <a class="btn" href="https://arling.sk/camt053-to-excel/">Otvoriť camt.053 do Excelu</a>
+  </div>
+
+  <h2>5. Čo skontrolovať pred importom do Pohody, Omegy alebo Money S3</h2>
+  <p>Pred tým, ako tabuľku alebo CSV nahráte do účtovného programu, oplatí sa skontrolovať tri veci. Po prvé, súhrn zostatkov: ak kontrola v nástroji ukáže, že začiatočný zostatok plus pohyby nesedia s konečným, výpis môže byť neúplný, napríklad chýba jeden deň alebo jedna strana účtu, a treba ho stiahnuť znova. Po druhé, či sa VS, ŠS a KS preniesli do samostatných stĺpcov a nie do jedného textového poľa spolu s poznámkou, inak sa v účtovnom programe nedajú použiť na automatické párovanie s faktúrami. Po tretie, formát dátumu: každý účtovný program pri importe očakáva iný tvar (napríklad DD.MM.RRRR alebo RRRR-MM-DD), takže pred hromadným importom väčšieho výpisu je rozumné najprv skúsiť pár riadkov nanečisto.</p>
+
+  <h2>Časté otázky</h2>
+  <details>
+    <summary>Aký je rozdiel medzi starým výpisom MT940 a formátom camt.053?</summary>
+    <p>MT940 je starší textový formát podľa štandardu SWIFT, riadkovaný a bez pevnej štruktúry pre jednotlivé polia. camt.053 je novší formát podľa normy ISO 20022, zapísaný ako XML s presne pomenovanými elementmi pre sumu, dátum, protistranu a referencie. Tatra banka, Slovenská sporiteľňa, VÚB aj ČSOB dnes ponúkajú camt.053 ako štandardný, prípadne jediný formát výpisu pre účtovníctvo, práve preto, že sa dá strojovo spracovať bez odhadovania, kde v texte začína ktoré pole.</p>
+  </details>
+  <details>
+    <summary>Prečo je suma v tabuľke niekedy záporná?</summary>
+    <p>Znamienko sumy určuje pole CdtDbtInd v XML: hodnota DBIT (peniaze odišli z účtu) sa do tabuľky zapíše ako záporné číslo, hodnota CRDT (peniaze prišli) ako kladné. Vďaka tomu sa dá stĺpec so sumami priamo sčítať a porovnať so začiatočným a konečným zostatkom, ktoré výpis sám uvádza.</p>
+  </details>
+  <details>
+    <summary>Je bezpečné nahrať výpis s IBAN a sumami do nástroja v prehliadači?</summary>
+    <p>Áno, pokiaľ nástroj beží celý v prehliadači a súbor sa nikam neodosiela, čo sa dá overiť aj v sieťovej karte vývojárskych nástrojov prehliadača. Prevod camt.053 na tabuľku prebieha len lokálne v pamäti prehliadača, dáta sa nikde neukladajú okrem prípadu, že si výsledok sami stiahnete ako CSV alebo Excel.</p>
+  </details>
+  <details>
+    <summary>Čo ak potrebujem previesť viac výpisov alebo účtov naraz?</summary>
+    <p>Prevod jedného výpisu na tabuľku je zadarmo bez limitu na počet riadkov. Spracovanie viacerých súborov naraz, napríklad výpisov z viacerých bankových účtov v jednom kroku, a históriu doterajších konverzií pridáva Pro licencia v balíku <a href="https://arling.sk/bankove-nastroje/">Bankové nástroje</a>. Pre jeden výpis mesačne to zvyčajne netreba.</p>
+  </details>
+
+  <h2>Sources</h2>
+  <ul class="sources">
+    <li>ISO 20022: <em>ISO 20022 message definitions (camt.053 Bank to Customer Statement)</em>. <a href="https://www.iso20022.org/iso-20022-message-definitions" target="_blank" rel="noopener">iso20022.org</a></li>
+  </ul>
+
+</main>
+<footer><div class="wrap">ARLing s. r. o. · <a href="https://arling.sk/">arling.sk</a> · <a href="https://arling.sk/camt053-to-excel/">camt.053 do Excelu</a> · <a href="mailto:andrej@arling.sk">andrej@arling.sk</a></div></footer>
+</body>
+</html>
