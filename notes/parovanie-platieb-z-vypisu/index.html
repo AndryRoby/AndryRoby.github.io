@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://homelab.tailbf8f27.ts.net; connect-src 'self' https://homelab.tailbf8f27.ts.net; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<title>Párovanie platieb z výpisu bez ručnej práce: VS, sumy a čo robiť, keď nesedia</title>
+<meta name="description" content="Ako spárovať platby z výpisu camt.053 s faktúrami podľa variabilného symbolu a sumy, čo robiť pri čiastočných úhradách, preplatkoch a platbách bez VS, a ako to spraviť za minútu v prehliadači.">
+<link rel="canonical" href="https://arling.sk/notes/parovanie-platieb-z-vypisu/">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Párovanie platieb z výpisu bez ručnej práce: VS, sumy a čo robiť, keď nesedia">
+<meta property="og:description" content="Ako spárovať platby z výpisu camt.053 s faktúrami podľa variabilného symbolu a sumy, čo robiť pri čiastočných úhradách, preplatkoch a platbách bez VS, a ako to spraviť za minútu v prehliadači.">
+<meta property="og:url" content="https://arling.sk/notes/parovanie-platieb-z-vypisu/">
+<meta property="og:locale" content="sk_SK">
+<meta name="theme-color" content="#f6f2ea">
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="alternate" type="text/plain" href="https://arling.sk/llms.txt" title="llms.txt">
+<script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="be534d51-4d01-4860-b267-9596d91606de"></script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Párovanie platieb z výpisu bez ručnej práce: VS, sumy a čo robiť, keď nesedia",
+  "description": "Ako spárovať platby z výpisu camt.053 s faktúrami podľa variabilného symbolu a sumy, čo robiť pri čiastočných úhradách, preplatkoch a platbách bez VS, a ako to spraviť za minútu v prehliadači.",
+  "datePublished": "2026-09-06",
+  "dateModified": "2026-09-06",
+  "inLanguage": "sk",
+  "author": { "@type": "Person", "name": "Andrej Lauko", "url": "https://arling.sk/how-we-work/" },
+  "publisher": { "@type": "Organization", "name": "ARLing s. r. o.", "url": "https://arling.sk/", "email": "andrej@arling.sk", "identifier": "56583486" },
+  "mainEntityOfPage": { "@type": "WebPage", "@id": "https://arling.sk/notes/parovanie-platieb-z-vypisu/" }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "ARLing", "item": "https://arling.sk/" },
+    { "@type": "ListItem", "position": 2, "name": "Notes", "item": "https://arling.sk/notes/" },
+    { "@type": "ListItem", "position": 3, "name": "Párovanie platieb z výpisu", "item": "https://arling.sk/notes/parovanie-platieb-z-vypisu/" }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Čo je variabilný symbol a prečo je kľúčový?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Variabilný symbol (VS) je číslo, ktoré firma priradí faktúre a zákazník ho pri úhrade zadá do platobného príkazu. Banka ho prenesie do výpisu camt.053 v poli RmtInf spolu so sumou, takže je to jediný údaj vo výpise, ktorý priamo a jednoznačne odkazuje na konkrétnu faktúru. Suma sama osebe jednoznačná nie je, lebo viac faktúr môže mať rovnakú sumu, a meno protistrany sa dá napísať rôzne. Preto párovanie vždy skúša najprv VS a až potom sumu a dátum." }
+    },
+    {
+      "@type": "Question",
+      "name": "Čo robiť, keď zákazník zaplatí bez VS?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Platbu treba priradiť podľa sumy a dátumu: nájsť neuhradenú faktúru s rovnakou sumou (v rámci malej tolerancie), ktorej splatnosť je od dátumu platby v rozumnom okne, zvyčajne do 45 dní. Ak takých faktúr vyhovuje viac naraz, zhoda je nejednoznačná a treba ju priradiť ručne podľa mena protistrany alebo poznámky k platbe. Nástroj takéto zhody vždy označí len ako návrh, nikdy ako istú platbu." }
+    },
+    {
+      "@type": "Question",
+      "name": "Ako riešiť čiastočné úhrady?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Keď VS sedí, ale suma platby je nižšia než suma faktúry, ide o čiastočnú úhradu: faktúra ostáva čiastočne neuhradená a treba sledovať rozdiel. Ak je platba naopak vyššia, ide o preplatok, ktorý sa buď vráti, alebo započíta na ďalšiu faktúru s rovnakým VS. Pri splátkach na jednu faktúru treba všetky platby s rovnakým VS pred porovnaním sčítať, inak vyjde nesprávne, že faktúra je uhradená len čiastočne, hoci súčet všetkých splátok sumu faktúry pokrýva." }
+    },
+    {
+      "@type": "Question",
+      "name": "Je bezpečné nahrať výpis do nástroja v prehliadači?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Áno, pokiaľ nástroj beží celý v prehliadači a výpis sa nikam neodosiela, čo sa dá overiť aj v sieťovej karte vývojárskych nástrojov prehliadača (žiadny request s obsahom súboru). Párovač platieb spracuje výpis aj zoznam faktúr len lokálne v pamäti prehliadača a po zatvorení karty sa dáta nikde neukladajú, okrem prípadu, že si výsledok sami stiahnete ako CSV." }
+    }
+  ]
+}
+</script>
+
+<style>
+  :root { --paper:#f6f2ea; --paper-2:#fbf9f4; --ink:#1b1a17; --ink-2:#4a4741; --muted:#66625a; --line:#d9d2c4; --accent:#b23a1d; --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif; --sans:system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; --mono:ui-monospace,"Cascadia Code",Consolas,Menlo,monospace; }
+  @media (prefers-color-scheme: dark) { :root { --paper:#151412; --paper-2:#1d1b18; --ink:#efe9de; --ink-2:#c9c2b5; --muted:#8f887b; --line:#2e2b26; --accent:#e0623f; } }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--paper); color:var(--ink); font:16px/1.55 var(--sans); overflow-wrap:anywhere; }
+  a { color:inherit; text-decoration-color:var(--line); text-underline-offset:3px; }
+  a:hover { text-decoration-color:var(--accent); }
+  .wrap { max-width:760px; margin:0 auto; padding:0 24px; }
+  header.top { border-bottom:1px solid var(--line); }
+  header.top .wrap { display:flex; align-items:baseline; justify-content:space-between; padding:18px 24px; flex-wrap:wrap; gap:8px; }
+  .wordmark { font:600 22px/1 var(--serif); text-decoration:none; }
+  nav a { font-size:14px; margin-left:20px; text-decoration:none; color:var(--ink-2); }
+  nav a:first-child { margin-left:0; }
+  main { max-width:70ch; }
+  h1 { font:400 clamp(28px,4.5vw,40px)/1.15 var(--serif); margin:44px 0 14px; }
+  h2 { font:400 24px/1.2 var(--serif); margin:40px 0 10px; }
+  .kicker { font:400 14px/1 var(--serif); color:var(--accent); letter-spacing:.06em; text-transform:uppercase; margin:0 0 8px; }
+  .byline { color:var(--muted); font-size:14px; margin:0 0 32px; }
+  p, li { color:var(--ink-2); max-width:70ch; }
+  ol, ul { padding-left:20px; }
+  li + li { margin-top:6px; }
+  code { font:14px/1.4 var(--mono); background:var(--paper-2); border:1px solid var(--line); border-radius:4px; padding:1px 6px; color:var(--ink); overflow-wrap:anywhere; }
+  .tool-box { border:1px solid var(--line); border-radius:4px; padding:16px 20px; margin:16px 0; background:var(--paper-2); }
+  .tool-box p { margin:0; }
+  .tool-box p + p { margin-top:8px; }
+  .btn { display:inline-block; margin-top:10px; padding:8px 16px; border:2px solid var(--accent); border-radius:4px; color:var(--accent); text-decoration:none; font-size:14px; }
+  .btn:hover { background:var(--accent); color:var(--paper-2); text-decoration:none; }
+  details { border-top:1px solid var(--line); padding:14px 0; }
+  details:last-of-type { border-bottom:1px solid var(--line); }
+  summary { cursor:pointer; font:400 18px/1.3 var(--serif); list-style:none; display:flex; justify-content:space-between; gap:12px; }
+  summary::-webkit-details-marker { display:none; }
+  summary::after { content:"+"; color:var(--accent); flex:none; font-family:var(--sans); }
+  details[open] summary::after { content:"\2013"; }
+  details p { color:var(--ink-2); margin:10px 0 0; max-width:70ch; overflow-wrap:anywhere; }
+  .sources { padding-left:20px; }
+  .sources li { font-size:14px; }
+  footer { margin-top:56px; padding:24px 0 56px; border-top:1px solid var(--line); color:var(--muted); font-size:14px; }
+  @media (max-width:480px) { nav a { margin-left:12px; font-size:13px; } }
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap"><a class="wordmark" href="https://arling.sk/">ARLing</a><nav><a href="https://arling.sk/#tools">Nástroje</a><a href="https://arling.sk/how-we-work/">Ako pracujeme</a><a href="https://arling.sk/privacy/">Súkromie</a></nav></div></header>
+<main class="wrap">
+  <p class="kicker" style="margin-top:48px">Notes</p>
+  <h1>Párovanie platieb z výpisu bez ručnej práce: VS, sumy a čo robiť, keď nesedia</h1>
+  <p class="byline">Andrej Lauko, ARLing · 6. septembra 2026</p>
+
+  <p>Na konci mesiaca treba zistiť, ktoré faktúry sú uhradené: stiahnete výpis z banky, otvoríte zoznam vydaných faktúr v Exceli a riadok po riadku porovnávate variabilný symbol a sumu. Pri desiatich faktúrach to zaberie pár minút, pri stovke je to hodina prácneho preklikávania, pri ktorej ľahko prehliadnete platbu, ktorá nesedí presne. Tento postup ukazuje, prečo ručné párovanie zlyháva, ako fungujú dáta vo výpise camt.053, a akým postupom sa dá párovanie zautomatizovať za minútu v prehliadači.</p>
+
+  <h2>1. Prečo ručné párovanie v Exceli zlyháva</h2>
+  <p>Vzorec typu <code>ZVISLEHĽADANIE</code> alebo <code>XLOOKUP</code> podľa variabilného symbolu funguje len vtedy, keď je vo výpise aj vo faktúre zapísaný rovnaký reťazec číslic a suma sedí do centa. V praxi nesedí jedno alebo druhé pomerne často. Zákazník si preklepne VS pri platbe z mobilnej aplikácie, alebo ho zadá s medzerou či úvodnými nulami naviac. Faktúra sa platí na splátky, takže vo výpise je namiesto jednej platby viacero menších s rovnakým VS, a jednoduché porovnanie sumy ukáže len čiastočnú úhradu pri každej z nich. Zákazník zaplatí viac, než mal, napríklad zaokrúhli si sumu nahor, a vznikne preplatok, ktorý treba niekam priradiť. Platba príde úplne bez VS, čo sa stáva hlavne pri prevodoch cez mobilné bankovníctvo, kde pole pre VS ľahko ostane prázdne. A napokon suma vo výpise nesedí s faktúrou o pár centov alebo eur, lebo pri platbe zo zahraničia si banka strhla poplatok z prevádzanej sumy. Excel vie skontrolovať presnú zhodu, ale žiadny z týchto piatich prípadov nie je presná zhoda: treba logiku, ktorá skúša viac pravidiel za sebou a vie povedať, čo je isté a čo len pravdepodobné.</p>
+
+  <h2>2. Ako funguje výpis camt.053</h2>
+  <p>Camt.053 je formát podľa medzinárodnej normy ISO 20022, ktorý banka posiela namiesto starého textového výpisu. Tatra banka, Slovenská sporiteľňa, VÚB aj ČSOB ho ponúkajú ako štandardný formát výpisu pre účtovníctvo, zvyčajne pod názvom „výpis do účtovníctva“ alebo „XML výpis“ v internet bankingu, podľa spoločného „SEPA XML SK štandardu“, na ktorom sa slovenské banky dohodli. Súbor je XML a pre párovanie sú v ňom dôležité tieto polia: suma transakcie so znamienkom podľa smeru platby, dátum zaúčtovania, variabilný, špecifický a konštantný symbol v poli <code>RmtInf</code> (buď ako štruktúrovaná referencia, alebo v texte poznámky), meno protistrany a jej IBAN. Presne tieto údaje, sumu, dátum, VS a meno, potrebuje aj ručné párovanie v Exceli, len vo výpise camt.053 sú už raz štruktúrované a strojovo čitateľné, takže ich netreba prepisovať z PDF ani odčítavať z papierového výpisu.</p>
+
+  <h2>3. Postup párovania v štyroch krokoch</h2>
+  <p>Spoľahlivé párovanie ide postupne cez štyri pravidlá, od najistejšieho po najmenej isté, a pri prvej zhode sa zastaví.</p>
+  <ol>
+    <li><b>VS aj suma sedia.</b> Variabilný symbol platby sa zhoduje s VS faktúry a suma sedí do centa (prípadne v malej tolerancii pár centov). Faktúra je spárovaná a jednoznačne uhradená.</li>
+    <li><b>VS sedí, suma nie.</b> Ak je suma platby nižšia, ide o čiastočnú úhradu. Ak je vyššia, ide o preplatok. V oboch prípadoch treba faktúru označiť osobitne, nie ako bežne uhradenú.</li>
+    <li><b>Bez zhodného VS, podľa sumy a dátumu.</b> Keď platba nemá VS, ktorý by sedel na žiadnu faktúru, skúša sa nájsť faktúru s rovnakou sumou, ktorej splatnosť je od dátumu platby v rozumnom okne, napríklad do 45 dní. Ak je taká faktúra jediná možná, ponúkne sa ako návrh na spárovanie, nie ako istá zhoda.</li>
+    <li><b>Zvyšok ostáva nespárovaný.</b> Platby, ktoré nesedia na žiadnu faktúru ani podľa VS, ani podľa sumy a dátumu, treba priradiť ručne alebo preveriť, či nejde o platbu, ktorá s vydanými faktúrami vôbec nesúvisí.</li>
+  </ol>
+  <p>Pred týmto porovnávaním je dôležitý jeden medzikrok: platby s rovnakým variabilným symbolom sa najprv sčítajú. Bez toho by faktúra platená na dve alebo tri splátky vyšla pri každej jednotlivej platbe ako čiastočne uhradená, hoci súčet splátok sumu faktúry pokrýva presne.</p>
+
+  <h2>4. Čo urobiť s výsledkom</h2>
+  <p>Po spárovaní ostanú tri zoznamy, s ktorými treba niečo urobiť. Uhradené faktúry sa v účtovnom programe (Pohoda, Omega, Money S3) označia ako zaplatené, najrýchlejšie importom CSV so zoznamom čísiel faktúr, dátumov úhrady a súm, namiesto ručného zaškrtávania jednej po druhej. Faktúry po splatnosti, ktoré sa medzi platbami nenašli vôbec, sú zoznam na upomienky: čím skôr sa pošlú, tým vyššia šanca na úhradu. Preplatky sa buď vrátia zákazníkovi, alebo sa mu písomne ponúknu na započítanie voči ďalšej faktúre.</p>
+
+  <h2>5. Ako to spraviť za minútu v prehliadači</h2>
+  <div class="tool-box">
+    <p>Nástroj <a href="https://arling.sk/parovac-platieb/">Párovač platieb</a> spraví presne štyri kroky vyššie automaticky. Nahráte výpis camt.053 (alebo jeho CSV, ktoré vyrobí nástroj <a href="https://arling.sk/camt053-to-excel/">camt.053 do Excelu</a>) a k tomu vložíte zoznam faktúr z Excelu. Nástroj vráti zoznamy spárované, čiastočné a preplatky, návrhy bez VS a nespárované, a spárované sa dajú stiahnuť ako CSV na spätný import.</p>
+    <p>Nič z toho, čo nahráte, sa neposiela nikam: párovanie beží celé v prehliadači. Táto časť je zadarmo bez limitu na počet riadkov. Balík <a href="https://arling.sk/bankove-nastroje/">Bankové nástroje</a> pridáva Pro licenciu pre viac výpisov a účtov naraz, uložené mapovania stĺpcov, export pripravený pre konkrétny účtovný program a históriu predchádzajúcich párovaní.</p>
+    <a class="btn" href="https://arling.sk/parovac-platieb/">Otvoriť Párovač platieb</a>
+  </div>
+  <p>Dôležité upozornenie k presnosti: zhody podľa VS a sumy sú isté, ale zhody bez VS, len podľa sumy a dátumu, sú vždy len odhad. Nástroj ich preto vypíše do zoznamu spárovaných s osobitným označením „návrh“ a neoznačí ich automaticky za potvrdené. Tento zoznam návrhov si pred importom do účtovného programu vždy skontrolujte riadok po riadku, rovnako ako by ste museli skontrolovať akúkoľvek inú nepresnú zhodu, či už ju robí softvér, alebo si ju robíte ručne v Exceli.</p>
+
+  <h2>Časté otázky</h2>
+  <details>
+    <summary>Čo je variabilný symbol a prečo je kľúčový?</summary>
+    <p>Variabilný symbol (VS) je číslo, ktoré firma priradí faktúre a zákazník ho pri úhrade zadá do platobného príkazu. Banka ho prenesie do výpisu camt.053 spolu so sumou, takže je to jediný údaj vo výpise, ktorý priamo a jednoznačne odkazuje na konkrétnu faktúru. Suma sama osebe jednoznačná nie je, lebo viac faktúr môže mať rovnakú sumu, a meno protistrany sa dá napísať rôzne. Preto párovanie vždy skúša najprv VS a až potom sumu a dátum.</p>
+  </details>
+  <details>
+    <summary>Čo robiť, keď zákazník zaplatí bez VS?</summary>
+    <p>Platbu treba priradiť podľa sumy a dátumu: nájsť neuhradenú faktúru s rovnakou sumou, ktorej splatnosť je od dátumu platby v rozumnom okne, zvyčajne do 45 dní. Ak takých faktúr vyhovuje viac naraz, zhoda je nejednoznačná a treba ju priradiť ručne, napríklad podľa mena protistrany. Spoľahlivý nástroj takéto zhody vždy označí len ako návrh, nikdy ako istú platbu.</p>
+  </details>
+  <details>
+    <summary>Ako riešiť čiastočné úhrady?</summary>
+    <p>Keď VS sedí, ale suma platby je nižšia než suma faktúry, ide o čiastočnú úhradu: faktúra ostáva čiastočne neuhradená a treba sledovať rozdiel. Ak je platba naopak vyššia, ide o preplatok, ktorý sa buď vráti, alebo započíta na ďalšiu faktúru s rovnakým VS. Pri splátkach na jednu faktúru treba všetky platby s rovnakým VS pred porovnaním sčítať, inak vyjde nesprávne, že faktúra je uhradená len čiastočne, hoci súčet všetkých splátok sumu faktúry pokrýva.</p>
+  </details>
+  <details>
+    <summary>Je bezpečné nahrať výpis do nástroja v prehliadači?</summary>
+    <p>Áno, pokiaľ nástroj beží celý v prehliadači a výpis sa nikam neodosiela, čo sa dá overiť aj v sieťovej karte vývojárskych nástrojov prehliadača, kde sa pri žiadnom requeste neobjaví obsah súboru. Párovač platieb spracuje výpis aj zoznam faktúr len lokálne v pamäti prehliadača, dáta sa nikde neukladajú okrem prípadu, že si výsledok sami stiahnete ako CSV.</p>
+  </details>
+
+  <h2>Sources</h2>
+  <ul class="sources">
+    <li>ISO 20022: <em>ISO 20022 message definitions (camt.053 Bank to Customer Statement)</em>. <a href="https://www.iso20022.org/iso-20022-message-definitions" target="_blank" rel="noopener">iso20022.org</a></li>
+  </ul>
+
+</main>
+<footer><div class="wrap">ARLing s. r. o. · <a href="https://arling.sk/">arling.sk</a> · <a href="https://arling.sk/parovac-platieb/">Párovač platieb</a> · <a href="mailto:andrej@arling.sk">andrej@arling.sk</a></div></footer>
+</body>
+</html>
