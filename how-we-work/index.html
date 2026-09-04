@@ -3,157 +3,279 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>How We Work — ARLing</title>
-<meta name="description" content="How a one-person company in Bratislava uses AI agents to find, build and ship small free developer tools — and what stays a human decision.">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://homelab.tailbf8f27.ts.net; connect-src https://homelab.tailbf8f27.ts.net; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<title>ARLing: how we work</title>
+<meta name="description" content="How a one-person company in Bratislava uses AI agents to find, build and ship small free developer tools, and what stays a human decision.">
 <link rel="canonical" href="https://arling.sk/how-we-work/">
-<meta property="og:title" content="How We Work — ARLing">
-<meta property="og:description" content="How a one-person company uses AI agents to find, build and ship small free developer tools — and what stays a human decision.">
+<meta property="og:title" content="ARLing: how we work">
+<meta property="og:description" content="How a one-person company uses AI agents to find, build and ship small free developer tools, and what stays a human decision.">
 <meta property="og:url" content="https://arling.sk/how-we-work/">
 <meta property="og:type" content="article">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2318130f'/%3E%3Ctext x='32' y='42' font-family='Georgia,serif' font-size='34' fill='%23f2a93b' text-anchor='middle'%3EA%3C/text%3E%3C/svg%3E">
+<meta name="theme-color" content="#f6f2ea">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="alternate" type="text/plain" href="https://arling.sk/llms.txt" title="llms.txt">
 <style>
-  :root { --bg:#18130f; --card:#1f1915; --line:#2c241e; --text:#f3ede6; --muted:#a79d92; --accent:#f2a93b; }
+  :root {
+    --paper:#f6f2ea; --paper-2:#fbf9f4; --ink:#1b1a17; --ink-2:#4a4741; --muted:#66625a; --line:#d9d2c4;
+    --accent:#b23a1d; --accent-soft:#f3e2dc; --ok:#2f6f3e;
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+    --sans:system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,"Cascadia Code",Consolas,Menlo,monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --paper:#151412; --paper-2:#1d1b18; --ink:#efe9de; --ink-2:#c9c2b5; --muted:#8f887b; --line:#2e2b26; --accent:#e0623f; --accent-soft:#3a1f17; --ok:#7fbf8e; }
+    .btn-solid { color:#151412; }
+  }
   * { box-sizing:border-box; }
-  body { margin:0; background:var(--bg); color:var(--text); font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; line-height:1.55; }
-  main { max-width: 760px; margin: 0 auto; padding: 48px 24px 80px; }
-  .back { display:inline-block; color:var(--muted); text-decoration:none; font-size:14px; margin-bottom:28px; }
-  .back:hover { color:var(--accent); }
-  h1 { font-size: clamp(28px, 5vw, 40px); margin: 0 0 12px; letter-spacing: -0.01em; }
-  .lead { color: var(--muted); font-size: 18px; margin: 0 0 40px; max-width: 60ch; }
-  h2 { font-size: 22px; margin: 48px 0 16px; letter-spacing: -0.005em; }
-  h2:first-of-type { margin-top: 8px; }
-  p { margin: 0 0 14px; }
-  section p:last-child { margin-bottom: 0; }
-  .steps { list-style:none; margin:0; padding:0; display:grid; gap:12px; counter-reset: step; }
-  .steps li { position:relative; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px 18px 16px 56px; }
-  .steps li::before { counter-increment: step; content: counter(step); position:absolute; left:16px; top:16px; width:26px; height:26px; border-radius:7px; background:var(--bg); border:1px solid var(--line); color:var(--accent); font: 13px ui-monospace, SFMono-Regular, Menlo, monospace; display:flex; align-items:center; justify-content:center; }
-  .steps strong { display:block; margin-bottom:4px; }
-  .steps p { color:var(--muted); margin:0; font-size:15px; }
-  .split { display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:14px; }
-  .split > div { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px 20px; }
-  .split h3 { margin:0 0 8px; font-size:15px; color:var(--accent); text-transform:uppercase; letter-spacing:.04em; }
-  .split ul { margin:0; padding-left:18px; color:var(--muted); font-size:15px; }
-  .split li { margin-bottom:6px; }
-  .split li:last-child { margin-bottom:0; }
-  .tools { display: grid; gap: 14px; margin-top: 16px; }
-  .tool { display:block; text-decoration:none; color:inherit; background:var(--card); border:1px solid var(--line); border-radius:14px; padding:20px 22px; transition: border-color .15s; }
-  .tool:hover { border-color: var(--accent); }
-  .tool h3 { margin:0 0 6px; font-size:17px; }
-  .tool p { margin:0; color:var(--muted); font-size:15px; }
-  .tag { display:inline-block; font: 12px ui-monospace, SFMono-Regular, Menlo, monospace; color:var(--accent); border:1px solid var(--line); border-radius:6px; padding:2px 8px; margin-bottom:10px; }
-  .tag.soon { color:var(--muted); }
-  .about { margin-top: 56px; padding-top: 24px; border-top: 1px solid var(--line); color: var(--muted); font-size: 15px; }
-  .about a { color: var(--text); }
-  footer { margin-top: 40px; color: var(--muted); font-size: 13px; }
+  html { background:var(--paper); }
+  body { margin:0; color:var(--ink); background:var(--paper); font:16px/1.55 var(--sans); -webkit-font-smoothing:antialiased; }
+  a { color:inherit; text-decoration-color:var(--line); text-underline-offset:3px; }
+  a:hover { text-decoration-color:var(--accent); }
+  :focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
+  .skip { position:absolute; left:-999px; top:8px; background:var(--ink); color:var(--paper); padding:8px 12px; }
+  .skip:focus { left:8px; }
+  .wrap { max-width:1040px; margin:0 auto; padding:0 24px; }
+  header.top { border-bottom:1px solid var(--line); }
+  header.top .wrap { display:flex; align-items:baseline; justify-content:space-between; gap:24px; padding:18px 24px; }
+  .wordmark { font:600 22px/1 var(--serif); letter-spacing:.01em; text-decoration:none; }
+  .wordmark small { font:13px/1 var(--sans); color:var(--muted); margin-left:10px; letter-spacing:.04em; }
+  nav.main a { font-size:14px; margin-left:20px; text-decoration:none; color:var(--ink-2); }
+  nav.main a:hover { color:var(--accent); }
+  nav.main a[aria-current="page"] { color:var(--ink); }
+  .hero { padding:64px 0 40px; border-bottom:1px solid var(--line); }
+  .hero h1 { font:400 clamp(34px,5.2vw,52px)/1.08 var(--serif); letter-spacing:-.01em; margin:0 0 18px; max-width:18ch; }
+  .hero p.lead { font-size:19px; color:var(--ink-2); max-width:58ch; margin:0 0 26px; }
+  .facts { list-style:none; margin:0; padding:0; display:flex; flex-wrap:wrap; gap:8px 0; color:var(--muted); font-size:14px; }
+  .facts li + li::before { content:"·"; margin:0 10px; color:var(--line); }
+  .facts b { color:var(--ink); font-weight:600; }
+  section { padding:44px 0; border-bottom:1px solid var(--line); }
+  .kicker { font:400 14px/1 var(--serif); color:var(--accent); letter-spacing:.06em; text-transform:uppercase; margin:0 0 10px; }
+  h2 { font:400 30px/1.15 var(--serif); margin:0 0 8px; letter-spacing:-.005em; }
+  .sub { color:var(--ink-2); max-width:64ch; margin:0 0 24px; }
+  .prose p { color:var(--ink-2); max-width:64ch; margin:0 0 14px; }
+  .prose p:last-child { margin-bottom:0; }
+  .rules { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:26px 32px; margin:0; padding:0; list-style:none; counter-reset:r; }
+  .rules li { padding-top:14px; border-top:1px solid var(--line); }
+  .rules li::before { counter-increment:r; content:counter(r,decimal-leading-zero); font:400 14px/1 var(--serif); color:var(--accent); display:block; margin-bottom:8px; }
+  .rules b { display:block; font-weight:600; margin-bottom:4px; }
+  .rules p { margin:0; color:var(--ink-2); font-size:15px; }
+  .rules.stack { grid-template-columns:1fr; gap:0; }
+  .rules.stack li { padding:14px 0; }
+  .two { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:40px; }
+  .two h3 { font:400 20px/1.2 var(--serif); margin:0 0 6px; }
+  .index { list-style:none; margin:0; padding:0; border-top:1px solid var(--line); }
+  .index li { border-bottom:1px solid var(--line); }
+  .index a { display:grid; grid-template-columns:44px minmax(0,1.1fr) minmax(0,1fr) minmax(0,1fr); gap:18px; padding:20px 0; text-decoration:none; align-items:start; }
+  .index a:hover .name { color:var(--accent); }
+  .num { font:400 15px/1.4 var(--serif); color:var(--muted); padding-top:2px; }
+  .name { display:block; font:400 21px/1.25 var(--serif); margin:0 0 4px; }
+  .lang { display:inline-block; font:12px/1 var(--mono); color:var(--muted); border:1px solid var(--line); border-radius:3px; padding:3px 6px; vertical-align:middle; margin-left:6px; }
+  .who { display:block; color:var(--muted); font-size:14px; }
+  .lbl { display:block; font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin-bottom:4px; }
+  .see { font-size:15px; color:var(--ink-2); }
+  .see code { font:13.5px/1.4 var(--mono); background:var(--paper-2); border:1px solid var(--line); border-radius:3px; padding:1px 5px; overflow-wrap:anywhere; }
+  .get { font-size:15px; color:var(--ink-2); }
+  .btn { display:inline-block; font:600 15px/1 var(--sans); padding:13px 18px; border-radius:4px; text-decoration:none; }
+  .btn-solid { background:var(--accent); color:#fff; }
+  .btn-line { border:2px solid var(--ink); color:var(--ink); }
+  .btn + .btn { margin-left:10px; }
+  footer { padding:32px 0 56px; color:var(--muted); font-size:14px; }
+  footer .cols { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:20px 32px; }
+  footer b { color:var(--ink); font-weight:600; }
+  footer a { color:var(--ink-2); }
+  @media (max-width: 820px) {
+    .index a { grid-template-columns:32px minmax(0,1fr); }
+    .index .see, .index .get { grid-column:2; }
+    .two { grid-template-columns:1fr; }
+  }
+  @media (max-width: 480px) {
+    .hero { padding:44px 0 32px; }
+    nav.main a { margin-left:12px; }
+    .wordmark small { display:none; }
+  }
 </style>
 <script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "WebPage",
-  "name": "How We Work — ARLing",
-  "url": "https://arling.sk/how-we-work/",
-  "description": "How a one-person company in Bratislava uses AI agents to find, build and ship small free developer tools — and what stays a human decision.",
-  "isPartOf": {
-    "@type": "WebSite",
-    "name": "ARLing",
-    "url": "https://arling.sk/"
-  },
-  "publisher": {
-    "@type": "Organization",
-    "name": "ARLing s. r. o."
-  }
-}
+{"@context":"https://schema.org","@type":"WebPage","name":"ARLing: how we work","url":"https://arling.sk/how-we-work/","description":"How a one-person company in Bratislava uses AI agents to find, build and ship small free developer tools, and what stays a human decision.","isPartOf":{"@type":"WebSite","name":"ARLing","url":"https://arling.sk/"},"publisher":{"@type":"Organization","name":"ARLing s. r. o."}}
 </script>
 <script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "Organization",
-  "name": "ARLing s. r. o.",
-  "url": "https://arling.sk/",
-  "email": "andrej@arling.sk",
-  "identifier": "56583486",
-  "address": {
-    "@type": "PostalAddress",
-    "streetAddress": "Ivanská cesta 32E",
-    "postalCode": "821 04",
-    "addressLocality": "Bratislava",
-    "addressCountry": "SK"
-  },
-  "description": "ARLing s. r. o. builds small, free, browser-only developer tools for problems people keep hitting. Bratislava, Slovakia."
-}
+{"@context":"https://schema.org","@type":"Organization","name":"ARLing s. r. o.","url":"https://arling.sk/","email":"andrej@arling.sk","identifier":"56583486","vatID":"SK2122352100","founder":{"@type":"Person","name":"Andrej Lauko"},"address":{"@type":"PostalAddress","streetAddress":"Ivanská cesta 32E","postalCode":"821 04","addressLocality":"Bratislava","addressCountry":"SK"},"description":"Small free browser-only tools for one exact developer or accounting problem each, and the bookapp home-library app."}
 </script>
 </head>
 <body>
+<a class="skip" href="#method">Skip to the method</a>
+<header class="top">
+  <div class="wrap">
+    <a class="wordmark" href="https://arling.sk/">ARLing<small>Bratislava</small></a>
+    <nav class="main" aria-label="Site">
+      <a href="https://arling.sk/#tools">Tools</a>
+      <a href="https://arling.sk/how-we-work/" aria-current="page">How we work</a>
+      <a href="mailto:andrej@arling.sk" data-umami-event="contact-email">Contact</a>
+    </nav>
+  </div>
+</header>
+
 <main>
-  <a class="back" href="../">← ARLing</a>
-  <h1>How we work</h1>
-  <p class="lead">ARLing is a one-person company. I make the calls: which problem, when to stop, what gets built. AI agents do most of the actual work — the research, the code, the tests, the publishing, the watching-for-breakage. This page is that split, written out plainly.</p>
-
-  <h2>The method</h2>
-  <ol class="steps">
-    <li><strong>Find a live thread.</strong><p>I read GitHub issues, Stack Overflow questions and forum threads where several different developers are stuck on the same problem — and it has to be deterministic: a config that is either right or wrong, not a matter of taste.</p></li>
-    <li><strong>Decide in 15 minutes.</strong><p>Is it narrow enough to check without running anyone's code? Does a good free tool already solve it? If so, we skip it — the point is filling a gap, not competing with one that's already filled.</p></li>
-    <li><strong>Build in under four hours.</strong><p>AI agents write the checking logic, the test suite, the page and the small hygiene work — favicon, sitemap, llms.txt, structured data — in parallel. If it isn't done in four hours, it doesn't ship that day.</p></li>
-    <li><strong>Publish on arling.sk for free.</strong><p>No account, no email capture. Static HTML and JavaScript that runs entirely in the visitor's browser.</p></li>
-    <li><strong>Answer in the threads that started it.</strong><p>I go back to the original discussion and reply as myself, pointing to the tool only where it's actually the answer — not as an ad.</p></li>
-    <li><strong>Measure for seven days.</strong><p>Self-hosted, anonymous analytics: page views, which check people ran. Not what they typed.</p></li>
-    <li><strong>Keep or park.</strong><p>A tool that gets used stays exactly as it is. One that doesn't stays online, but I stop touching it. No tool gets a growing feature list to justify keeping it alive.</p></li>
-  </ol>
-
-  <h2>Who does what</h2>
-  <div class="split">
-    <div>
-      <h3>The human</h3>
-      <ul>
-        <li>Which problem is worth solving</li>
-        <li>Saying no to feature requests</li>
-        <li>Money, domains, accounts, hosting</li>
-        <li>The actual reply, in the actual thread</li>
-        <li>Deciding a tool is done, or dead</li>
-      </ul>
-    </div>
-    <div>
-      <h3>The AI agents</h3>
-      <ul>
-        <li>Researching the problem across issues and docs</li>
-        <li>Writing the detection logic and its tests</li>
-        <li>Building and styling the page</li>
-        <li>Sitemap, llms.txt, structured data, favicons</li>
-        <li>Watching for a tool quietly breaking</li>
+  <div class="hero">
+    <div class="wrap">
+      <h1>How we work.</h1>
+      <p class="lead">ARLing is a one-person company. I make the calls: which problem, when to stop, what gets built. AI agents do most of the actual work: research, code, tests, publishing, and watching for breakage. This page lays out that split, plainly.</p>
+      <ul class="facts">
+        <li><b>1</b> person</li>
+        <li><b>4</b> hour build budget</li>
+        <li><b>7</b> day measurement window</li>
+        <li><b>7</b> tools live</li>
       </ul>
     </div>
   </div>
 
-  <h2>Privacy</h2>
-  <p>Nothing you type into a tool leaves your browser. No backend sees your Supabase keys, your redirect URIs, or your source — the check runs where you're standing. The only thing recorded is an anonymous count: a page view, a button clicked. That comes from a self-hosted Umami instance, not a third-party analytics vendor, and it never sees the content of a form field.</p>
+  <section id="method">
+    <div class="wrap">
+      <p class="kicker">01</p>
+      <h2>Seven steps, in order.</h2>
+      <p class="sub">Every tool goes through the same sequence, every time.</p>
+      <ol class="rules">
+        <li><b>Find a live thread.</b><p>I read GitHub issues, Stack Overflow questions and forum threads where several developers are stuck on the same problem. It has to be deterministic: a config that is either right or wrong, not a matter of taste.</p></li>
+        <li><b>Decide in 15 minutes.</b><p>Is it narrow enough to check without running anyone's code? Does a good free tool already solve it? If so, we skip it. The point is filling a gap, not competing with one that is already filled.</p></li>
+        <li><b>Build in under four hours.</b><p>AI agents write the checking logic, the test suite, the page and the small hygiene work (favicon, sitemap, llms.txt, structured data) in parallel. If it is not done in four hours, it does not ship that day.</p></li>
+        <li><b>Publish on arling.sk for free.</b><p>No account, no email capture. Static HTML and JavaScript that runs entirely in the visitor's browser.</p></li>
+        <li><b>Answer in the threads that started it.</b><p>I go back to the original discussion and reply as myself, and point to the tool only where it is actually the answer, not as an ad.</p></li>
+        <li><b>Measure for seven days.</b><p>Self-hosted, anonymous analytics: page views, and which check people ran. Not what they typed.</p></li>
+        <li><b>Keep or park.</b><p>A tool that gets used stays exactly as it is. One that does not stays online, but I stop touching it. No tool gets a growing feature list just to stay alive.</p></li>
+      </ol>
+    </div>
+  </section>
 
-  <h2>How we make money</h2>
-  <p>Right now, we don't — on purpose. A free tool that solves one problem well is what actually gets used and shared in a thread; a paywall on a first visit is not. If a tool later grows a genuine paid tier (more checks, a CI integration, a Pro mode), it will be optional, clearly marked, and the free check stays free. Tool pages may eventually carry a small, clearly labeled sponsor slot. Nothing here is a roadmap promise — it happens if and when it earns its place.</p>
+  <section id="roles">
+    <div class="wrap">
+      <p class="kicker">02</p>
+      <h2>Who does what.</h2>
+      <p class="sub">The split does not move. I decide and answer. The agents research, build and watch.</p>
+      <div class="two">
+        <div>
+          <h3>The human</h3>
+          <ol class="rules stack">
+            <li><b>Which problem is worth solving</b></li>
+            <li><b>Saying no to feature requests</b></li>
+            <li><b>Money, domains, accounts, hosting</b></li>
+            <li><b>The actual reply, in the actual thread</b></li>
+            <li><b>Deciding a tool is done, or dead</b></li>
+          </ol>
+        </div>
+        <div>
+          <h3>The AI agents</h3>
+          <ol class="rules stack">
+            <li><b>Researching the problem across issues and docs</b></li>
+            <li><b>Writing the detection logic and its tests</b></li>
+            <li><b>Building and styling the page</b></li>
+            <li><b>Sitemap, llms.txt, structured data, favicons</b></li>
+            <li><b>Watching for a tool quietly breaking</b></li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </section>
 
-  <h2>The tools so far</h2>
-  <div class="tools">
-    <a class="tool" href="../expo-supabase-auth-doctor/" data-umami-event="open-tool" data-umami-event-tool="expo-supabase-auth-doctor">
-      <span class="tag">tool · free</span>
-      <h3>Redirect Doctor — Expo + Supabase OAuth</h3>
-      <p>Diagnoses OAuth / magic-link redirect mismatches across Expo runtimes: Expo Go, dev build, standalone, web.</p>
-    </a>
-    <a class="tool" href="../supabase-redirect-doctor/" data-umami-event="open-tool" data-umami-event-tool="supabase-redirect-doctor">
-      <span class="tag">tool · free</span>
-      <h3>Supabase Auth Redirect Doctor — web apps</h3>
-      <p>Diagnoses Supabase OAuth redirecting to localhost or failing on Next.js, Vite and SvelteKit apps in production.</p>
-    </a>
-    <a class="tool" href="../flutter-supabase-doctor/" data-umami-event="open-tool" data-umami-event-tool="flutter-supabase-doctor">
-      <span class="tag soon">tool · coming today</span>
-      <h3>Supabase Auth Deep Link Doctor — Flutter</h3>
-      <p>Diagnoses why signInWithOAuth or a magic link doesn't deep-link back into a supabase_flutter app on Android or iOS.</p>
-    </a>
-  </div>
+  <section id="privacy">
+    <div class="wrap prose">
+      <p class="kicker">03</p>
+      <h2>Privacy.</h2>
+      <p>Nothing you type into a tool leaves your browser. No backend sees your Supabase keys, your redirect URIs or your source. The check runs where you are standing.</p>
+      <p>The only thing recorded is an anonymous count: a page view, a button clicked. That count comes from a self-hosted Umami instance, not a third-party analytics vendor, and it never sees the content of a form field.</p>
+    </div>
+  </section>
 
-  <div class="about">
-    <p>ARLing s. r. o., Ivanská cesta 32E, 821 04 Bratislava, Slovakia. ID 56583486. Questions, or a tool you wish existed: <a href="mailto:andrej@arling.sk" data-umami-event="contact-email">andrej@arling.sk</a>.</p>
-  </div>
-  <footer>© 2026 ARLing s. r. o. · <a href="../" style="color:inherit">Back to all tools</a></footer>
+  <section id="money">
+    <div class="wrap prose">
+      <p class="kicker">04</p>
+      <h2>How we make money.</h2>
+      <p>Right now, we do not, on purpose. A free tool that solves one problem well gets used and shared in a thread. A paywall on a first visit does not.</p>
+      <p>If a tool later grows a genuine paid tier (more checks, a CI integration, a Pro mode), it will be optional and clearly marked, and the free check stays free. Tool pages may eventually carry a small, clearly labeled sponsor slot.</p>
+      <p>Nothing here is a roadmap promise. It happens if and when it earns its place.</p>
+    </div>
+  </section>
+
+  <section id="tools">
+    <div class="wrap">
+      <p class="kicker">05</p>
+      <h2>The tools so far.</h2>
+      <p class="sub">All seven, in the order they shipped.</p>
+      <ol class="index">
+        <li>
+          <a href="../google-oauth-redirect-doctor/" data-umami-event="open-tool" data-umami-event-tool="google-oauth-redirect-doctor">
+            <span class="num">01</span>
+            <span><span class="name">Google OAuth redirect_uri_mismatch Doctor</span><span class="who">Any stack: NextAuth, Supabase, Firebase, Passport, Django, Laravel, Python, Expo, Flutter, Postman, gcloud</span></span>
+            <span class="see"><span class="lbl">You see</span><code>Error 400: redirect_uri_mismatch</code></span>
+            <span class="get"><span class="lbl">You get</span>The differing character, byte for byte, and the exact string to add in Google Cloud Console.</span>
+          </a>
+        </li>
+        <li>
+          <a href="../expo-supabase-auth-doctor/" data-umami-event="open-tool" data-umami-event-tool="expo-supabase-auth-doctor">
+            <span class="num">02</span>
+            <span><span class="name">Redirect Doctor for Expo and Supabase</span><span class="who">Expo Go, development builds, standalone apps</span></span>
+            <span class="see"><span class="lbl">You see</span>Sign-in ends on the Site URL or <code>localhost</code> instead of reopening the app.</span>
+            <span class="get"><span class="lbl">You get</span>The expected redirect URL per runtime and what is missing from the allow-list or the provider console.</span>
+          </a>
+        </li>
+        <li>
+          <a href="../supabase-redirect-doctor/" data-umami-event="open-tool" data-umami-event-tool="supabase-redirect-doctor">
+            <span class="num">03</span>
+            <span><span class="name">Supabase Auth Redirect Doctor for web apps</span><span class="who">Next.js, Vite, SvelteKit, Vercel and Netlify previews</span></span>
+            <span class="see"><span class="lbl">You see</span>OAuth in production redirects to <code>http://localhost:3000</code>.</span>
+            <span class="get"><span class="lbl">You get</span>The mismatch between Site URL, redirect allow-list, callback route and provider settings, with the fix.</span>
+          </a>
+        </li>
+        <li>
+          <a href="../flutter-supabase-doctor/" data-umami-event="open-tool" data-umami-event-tool="flutter-supabase-doctor">
+            <span class="num">04</span>
+            <span><span class="name">Supabase Deep Link Doctor for Flutter</span><span class="who">supabase_flutter, iOS and Android</span></span>
+            <span class="see"><span class="lbl">You see</span>The magic link or OAuth page never comes back to the app.</span>
+            <span class="get"><span class="lbl">You get</span>Scheme and host checked across Info.plist, AndroidManifest, Supabase and your code, with snippets to paste.</span>
+          </a>
+        </li>
+        <li>
+          <a href="../expo-universal-links-doctor/" data-umami-event="open-tool" data-umami-event-tool="expo-universal-links-doctor">
+            <span class="num">05</span>
+            <span><span class="name">Expo Universal Links and App Links Doctor</span><span class="who">apple-app-site-association, assetlinks.json, app.json</span></span>
+            <span class="see"><span class="lbl">You see</span>The https link opens Safari or Chrome instead of the app.</span>
+            <span class="get"><span class="lbl">You get</span>Team ID, bundle ID, fingerprints, intent filters and paths cross-checked, with the corrected files.</span>
+          </a>
+        </li>
+        <li>
+          <a href="../sepa-pain001-doctor/" data-umami-event="open-tool" data-umami-event-tool="sepa-pain001-doctor">
+            <span class="num">06</span>
+            <span><span class="name">SEPA pain.001 Doctor<span class="lang">SK</span></span><span class="who">Tatra banka, SLSP, VÚB, ČSOB</span></span>
+            <span class="see"><span class="lbl">Vidíte</span>Banka odmietla XML s hromadným príkazom bez jasného dôvodu.</span>
+            <span class="get"><span class="lbl">Dostanete</span>Presný element, hodnotu a opravu: IBAN, BIC, sumy, počty, symboly, znaková sada.</span>
+          </a>
+        </li>
+        <li>
+          <a href="../bookapp/" data-umami-event="open-tool" data-umami-event-tool="bookapp">
+            <span class="num">07</span>
+            <span><span class="name">bookapp</span><span class="who">Android and Windows app, free beta, English and Slovak</span></span>
+            <span class="see"><span class="lbl">You have</span>A home library and no idea what fits where.</span>
+            <span class="get"><span class="lbl">You get</span>Your shelves and books modelled in real millimetres, so the app knows what fits and where.</span>
+          </a>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <section id="contact">
+    <div class="wrap">
+      <p class="kicker">06</p>
+      <h2>Questions, or a tool you wish existed.</h2>
+      <p class="sub">Write to <a href="mailto:andrej@arling.sk" data-umami-event="contact-email">andrej@arling.sk</a> with the exact error message. <a href="https://arling.sk/">Back to all tools.</a></p>
+    </div>
+  </section>
 </main>
+
+<footer>
+  <div class="wrap cols">
+    <div><b>ARLing s. r. o.</b><br>Ivanská cesta 32E<br>821 04 Bratislava, Slovakia</div>
+    <div>Company ID 56583486<br>VAT ID SK2122352100<br><a href="mailto:andrej@arling.sk" data-umami-event="contact-email">andrej@arling.sk</a></div>
+    <div><a href="https://arling.sk/llms.txt">llms.txt</a> · <a href="https://arling.sk/sitemap-index.xml">sitemap</a> · <a href="https://arling.sk/">all tools</a><br>Tools are provided as is, without warranty. Anonymous visit counts via self-hosted Umami.</div>
+  </div>
+</footer>
 <script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="be534d51-4d01-4860-b267-9596d91606de"></script>
 </body>
 </html>
