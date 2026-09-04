@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://homelab.tailbf8f27.ts.net; connect-src 'self' https://homelab.tailbf8f27.ts.net; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<title>Universal links open Safari instead of your Expo app: AASA, assetlinks and app.json checklist</title>
+<meta name="description" content="Why an Expo universal link opens Safari or Chrome instead of your app, and how to fix apple-app-site-association, assetlinks.json and app.json.">
+<link rel="canonical" href="https://arling.sk/notes/expo-universal-links-open-safari/">
+<meta property="og:title" content="Universal links open Safari instead of your Expo app: AASA, assetlinks and app.json checklist">
+<meta property="og:description" content="Why an Expo universal link opens Safari or Chrome instead of your app, and how to fix apple-app-site-association, assetlinks.json and app.json.">
+<meta property="og:url" content="https://arling.sk/notes/expo-universal-links-open-safari/">
+<meta property="og:type" content="article">
+<meta name="theme-color" content="#f6f2ea">
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="alternate" type="text/plain" href="https://arling.sk/llms.txt" title="llms.txt">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"Article","headline":"Universal links open Safari instead of your Expo app: AASA, assetlinks and app.json checklist","description":"Why an Expo universal link opens Safari or Chrome instead of your app, and how to fix apple-app-site-association, assetlinks.json and app.json.","datePublished":"2026-09-06","dateModified":"2026-09-06","inLanguage":"en","author":{"@type":"Person","name":"Andrej Lauko","url":"https://arling.sk/"},"publisher":{"@type":"Organization","name":"ARLing s. r. o.","url":"https://arling.sk/","logo":{"@type":"ImageObject","url":"https://arling.sk/favicon.svg"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://arling.sk/notes/expo-universal-links-open-safari/"}}
+</script>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"ARLing","item":"https://arling.sk/"},{"@type":"ListItem","position":2,"name":"Notes","item":"https://arling.sk/notes/"},{"@type":"ListItem","position":3,"name":"Universal links open Safari instead of your Expo app","item":"https://arling.sk/notes/expo-universal-links-open-safari/"}]}
+</script>
+<style>
+  :root { --paper:#f6f2ea; --paper-2:#fbf9f4; --ink:#1b1a17; --ink-2:#4a4741; --muted:#66625a; --line:#d9d2c4; --accent:#b23a1d; --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif; --sans:system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; --mono:ui-monospace,"Cascadia Code",Consolas,Menlo,monospace; }
+  @media (prefers-color-scheme: dark) { :root { --paper:#151412; --paper-2:#1d1b18; --ink:#efe9de; --ink-2:#c9c2b5; --muted:#8f887b; --line:#2e2b26; --accent:#e0623f; } }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--paper); color:var(--ink); font:16px/1.55 var(--sans); }
+  a { color:inherit; text-decoration-color:var(--line); text-underline-offset:3px; }
+  a:hover { text-decoration-color:var(--accent); }
+  :focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
+  .skip { position:absolute; left:-999px; top:8px; background:var(--ink); color:var(--paper); padding:8px 12px; }
+  .skip:focus { left:8px; }
+  .wrap { max-width:760px; margin:0 auto; padding:0 24px; }
+  header.top { border-bottom:1px solid var(--line); }
+  header.top .wrap { display:flex; align-items:baseline; justify-content:space-between; padding:18px 24px; }
+  .wordmark { font:600 22px/1 var(--serif); text-decoration:none; }
+  nav a { font-size:14px; margin-left:20px; text-decoration:none; color:var(--ink-2); }
+  nav a:hover { color:var(--accent); }
+  h1 { font:400 clamp(28px,4.5vw,38px)/1.15 var(--serif); margin:48px 0 8px; max-width:22ch; }
+  h2 { font:400 24px/1.2 var(--serif); margin:40px 0 8px; }
+  .kicker { font:400 14px/1 var(--serif); color:var(--accent); letter-spacing:.06em; text-transform:uppercase; margin:0 0 8px; }
+  .dateline { color:var(--muted); font-size:14px; margin:0 0 32px; }
+  p, li { color:var(--ink-2); max-width:70ch; }
+  p code, li code { background:var(--paper-2); border:1px solid var(--line); border-radius:3px; padding:1px 5px; font:14px/1.4 var(--mono); color:var(--ink); overflow-wrap:anywhere; }
+  ol { padding-left:20px; }
+  ol li { margin:0 0 8px; }
+  pre { background:var(--paper-2); border:1px solid var(--line); border-radius:4px; padding:14px 16px; overflow-x:auto; font:13px/1.5 var(--mono); color:var(--ink); max-width:100%; }
+  .fix { color:var(--muted); font-size:14px; margin:8px 0 0; }
+  .cta { border:2px solid var(--accent); border-radius:4px; padding:18px 20px; margin:16px 0 0; }
+  .cta p { margin:0; max-width:none; }
+  .cta a { color:var(--accent); font-weight:600; text-decoration:none; }
+  .cta a:hover { text-decoration:underline; }
+  .sources { padding-left:20px; }
+  .sources li { margin:0 0 6px; overflow-wrap:anywhere; }
+  .byline { border-top:1px solid var(--line); margin-top:40px; padding-top:16px; color:var(--muted); font-size:14px; }
+  footer { margin-top:56px; padding:24px 0 56px; border-top:1px solid var(--line); color:var(--muted); font-size:14px; }
+  footer a { color:var(--ink-2); }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><div class="wrap"><a class="wordmark" href="../../">ARLing</a><nav><a href="../../#tools">Tools</a><a href="../../how-we-work/">How we work</a><a href="../../privacy/">Privacy</a></nav></div></header>
+<main class="wrap" id="main">
+  <p class="kicker" style="margin-top:48px">Notes</p>
+  <h1>Universal links open Safari instead of your Expo app: AASA, assetlinks and app.json checklist</h1>
+  <p class="dateline">Andrej Lauko, ARLing · 6 September 2026</p>
+
+  <p>You add <code>associatedDomains</code> or <code>intentFilters</code> to <code>app.json</code>, build the app, and tap a <code>https://yourapp.com/...</code> link from Messages, Notes, or another app to test it. Instead of opening your Expo app, the link opens in Safari on iOS or in Chrome on Android, with no error anywhere: no crash, no console warning. On Android, <code>adb shell pm get-app-links &lt;package&gt;</code> often gives the only clue, showing <code>legacy_failure</code> under "Domain verification state" instead of <code>verified</code>. Universal Links and App Links are not deep links: iOS and Android will only hand the app a <code>https://</code> link after independently verifying, at install time, that you actually own the domain. That verification has several separate places to get wrong, and each one fails silently.</p>
+
+  <h2>1. You're testing in Expo Go</h2>
+  <p>Universal Links and App Links are checked against the installed app's bundle ID and signing key. Expo Go is itself the installed app, so it can never claim your bundle ID. Expo's own linking guide says it plainly: "Support for incoming links in Expo Go is limited. We recommend using Development builds to test your app's linking strategies." Tapping the link in Expo Go just opens the browser, no matter how correct your AASA file and app.json are.</p>
+  <p class="fix">Fix: test with a development build (<code>npx expo run:ios</code>, <code>npx expo run:android</code>, or an EAS dev-client build), or a standalone/production build.</p>
+
+  <h2>2. iOS associatedDomains has the wrong shape</h2>
+  <p>In <code>app.json</code>, <code>expo.ios.associatedDomains</code> entries must be exactly <code>applinks:&lt;domain&gt;</code>: no <code>https://</code> prefix, no path after the domain. Expo's docs call the protocol prefix out directly: "Make sure to follow Apple's specified format and not include the protocol (https) in your URL. This is a common mistake that will result in the universal links not working." An entry like <code>https://example.com</code> or <code>applinks:example.com/app</code> is silently ignored by iOS.</p>
+<pre>{
+  "expo": {
+    "ios": {
+      "associatedDomains": ["applinks:example.com"]
+    }
+  }
+}</pre>
+
+  <h2>3. The apple-app-site-association file doesn't match, or is redirected</h2>
+  <p>The AASA file hosted at <code>/.well-known/apple-app-site-association</code> needs an <code>applinks.details[]</code> entry whose <code>appID</code> (or <code>appIDs</code>) is exactly <code>&lt;Apple Team ID&gt;.&lt;Bundle Identifier&gt;</code>, for example <code>ABCDE12345.com.example.app</code>. iOS requires an exact string match: one typo and the app is never offered the link. Two hosting mistakes cause the same silent failure. First, a 301 or 302 redirect on the AASA URL: Apple's own debugging guide is explicit that a "HTTP redirect... is not supported when hosting the AASA file," so a domain that forwards to another domain must host its own copy instead. Second, the file must be served over HTTPS with <code>Content-Type: application/json</code> and no BOM at the start.</p>
+<pre>{
+  "applinks": {
+    "apps": [],
+    "details": [
+      { "appID": "ABCDE12345.com.example.app", "paths": ["/product/*"] }
+    ]
+  }
+}</pre>
+
+  <h2>4. assetlinks.json has the wrong shape, or the wrong fingerprint</h2>
+  <p><code>assetlinks.json</code> at <code>/.well-known/assetlinks.json</code> must be a JSON <em>array</em>, even for one app: a bare object at the top level fails verification. Each entry needs <code>relation: ["delegate_permission/common.handle_all_urls"]</code> and <code>target.namespace: "android_app"</code>. The most common reason a config that looks correct still fails on-device: the listed <code>sha256_cert_fingerprints</code> come from a local debug keystore, not from the actual EAS build. Get the right one with <code>eas credentials -p android</code>, selecting the build profile you're testing, then "SHA256 Fingerprint".</p>
+<pre>[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.example.myapp",
+      "sha256_cert_fingerprints": ["14:6D:E9:..."]
+    }
+  }
+]</pre>
+
+  <h2>5. Android intentFilters is missing autoVerify</h2>
+  <p>Without <code>autoVerify: true</code> on the intent-filter, Android treats the link as an ordinary, unverified filter: the browser's "Open with" chooser wins instead of your app opening directly. Expo's Android linking guide states it as a requirement, not an option: "Specifying autoVerify is required for Android App Links to work correctly." The filter also needs <code>scheme: "https"</code> and both the <code>BROWSABLE</code> and <code>DEFAULT</code> categories.</p>
+<pre>{
+  "expo": {
+    "android": {
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [{ "scheme": "https", "host": "example.com", "pathPrefix": "/product" }],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
+    }
+  }
+}</pre>
+
+  <h2>6. The path pattern doesn't actually cover the link you tested</h2>
+  <p>Both platforms match paths differently than most people expect. In the AASA file's <code>paths</code> or <code>components</code>, <code>*</code> matches a run of characters but never crosses a <code>/</code> or <code>.</code>: per Apple's TN3155 guide, <code>/product/*</code> matches <code>/product/42</code> but not <code>/product/42/reviews</code>. On Android, an intent-filter's <code>pathPrefix</code> is a literal string prefix, not a wildcard pattern, so <code>pathPrefix: "/product/42"</code> won't cover <code>/product/43</code>. A link that worked for one test path can fail for the next one for this reason alone.</p>
+  <p class="fix">Fix: pick a pattern that actually starts with, or matches, every path you intend to open, not just the one you tested first.</p>
+
+  <h2>Checklist</h2>
+  <ol>
+    <li>Confirm you tested on a development or standalone build, never Expo Go.</li>
+    <li><code>curl -I https://yourdomain/.well-known/apple-app-site-association</code>: expect HTTP 200, no redirect, <code>Content-Type: application/json</code>.</li>
+    <li><code>curl https://yourdomain/.well-known/assetlinks.json</code>: valid JSON array, correct <code>package_name</code> and fingerprint.</li>
+    <li>Reinstall the app after changing the AASA file. Apple's CDN fetches and caches it per device at install time, so an edit doesn't reach an already-installed app on its own.</li>
+    <li><code>adb shell pm get-app-links &lt;package&gt;</code>: look for <code>verified</code> under "Domain verification state," not <code>legacy_failure</code> or <code>none</code>.</li>
+    <li>On a Mac: <code>swcutil dl -d &lt;domain&gt;</code> shows what Apple's CDN actually cached; <code>swcutil verify -d &lt;domain&gt; -j &lt;file&gt; -u &lt;url&gt;</code> checks one URL against it.</li>
+  </ol>
+
+  <h2>Check it in 30 seconds</h2>
+  <div class="cta"><p>Paste your app.json, apple-app-site-association and assetlinks.json into the <a href="https://arling.sk/expo-universal-links-doctor/">Expo Universal Links Doctor</a> and it points at the exact mismatch.</p></div>
+
+  <h2>Sources</h2>
+  <ol class="sources">
+    <li>Expo, iOS Universal Links: <a href="https://docs.expo.dev/linking/ios-universal-links/">docs.expo.dev/linking/ios-universal-links</a></li>
+    <li>Expo, Android App Links: <a href="https://docs.expo.dev/linking/android-app-links/">docs.expo.dev/linking/android-app-links</a></li>
+    <li>Expo, Linking overview (Expo Go limitation): <a href="https://docs.expo.dev/linking/overview/">docs.expo.dev/linking/overview</a></li>
+    <li>Apple, Supporting associated domains: <a href="https://developer.apple.com/documentation/xcode/supporting-associated-domains">developer.apple.com/documentation/xcode/supporting-associated-domains</a></li>
+    <li>Apple, TN3155: Debugging universal links: <a href="https://developer.apple.com/documentation/technotes/tn3155-debugging-universal-links">developer.apple.com/documentation/technotes/tn3155-debugging-universal-links</a></li>
+    <li>Android, Verify Android App Links: <a href="https://developer.android.com/training/app-links/verify-android-applinks">developer.android.com/training/app-links/verify-android-applinks</a></li>
+  </ol>
+
+  <p class="byline">Andrej Lauko, ARLing · 6 September 2026</p>
+</main>
+<footer><div class="wrap">ARLing s. r. o. · <a href="https://arling.sk/">arling.sk</a> · <a href="mailto:andrej@arling.sk">andrej@arling.sk</a></div></footer>
+<script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="be534d51-4d01-4860-b267-9596d91606de"></script>
+</body>
+</html>

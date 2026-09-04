@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://homelab.tailbf8f27.ts.net; connect-src 'self' https://homelab.tailbf8f27.ts.net; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<title>Error 400: redirect_uri_mismatch, explained character by character</title>
+<meta name="description" content="Every cause of Google's Error 400: redirect_uri_mismatch in NextAuth, Supabase, and Firebase, with the exact fix for each one.">
+<link rel="canonical" href="https://arling.sk/notes/google-redirect-uri-mismatch/">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Error 400: redirect_uri_mismatch, explained character by character">
+<meta property="og:description" content="Every cause of Google's Error 400: redirect_uri_mismatch in NextAuth, Supabase, and Firebase, with the exact fix for each one.">
+<meta property="og:url" content="https://arling.sk/notes/google-redirect-uri-mismatch/">
+<meta name="theme-color" content="#f6f2ea">
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"Article","headline":"Error 400: redirect_uri_mismatch, explained character by character","datePublished":"2026-09-06","dateModified":"2026-09-06","inLanguage":"en","author":{"@type":"Person","name":"Andrej Lauko"},"publisher":{"@type":"Organization","name":"ARLing s. r. o.","url":"https://arling.sk/"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://arling.sk/notes/google-redirect-uri-mismatch/"}}
+</script>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"ARLing","item":"https://arling.sk/"},{"@type":"ListItem","position":2,"name":"Notes","item":"https://arling.sk/notes/"},{"@type":"ListItem","position":3,"name":"Error 400: redirect_uri_mismatch, explained character by character","item":"https://arling.sk/notes/google-redirect-uri-mismatch/"}]}
+</script>
+<style>
+  :root { --paper:#f6f2ea; --paper-2:#fbf9f4; --ink:#1b1a17; --ink-2:#4a4741; --muted:#66625a; --line:#d9d2c4; --accent:#b23a1d; --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif; --sans:system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; --mono:ui-monospace,"Cascadia Code",Consolas,Menlo,monospace; }
+  @media (prefers-color-scheme: dark) { :root { --paper:#151412; --paper-2:#1d1b18; --ink:#efe9de; --ink-2:#c9c2b5; --muted:#8f887b; --line:#2e2b26; --accent:#e0623f; } }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--paper); color:var(--ink); font:16px/1.55 var(--sans); }
+  a { color:inherit; text-decoration-color:var(--line); text-underline-offset:3px; }
+  a:hover { text-decoration-color:var(--accent); }
+  .wrap { max-width:720px; margin:0 auto; padding:0 24px; }
+  header.top { border-bottom:1px solid var(--line); }
+  header.top .wrap { display:flex; align-items:baseline; justify-content:space-between; padding:18px 24px; flex-wrap:wrap; gap:8px; }
+  .wordmark { font:600 22px/1 var(--serif); text-decoration:none; }
+  nav a { font-size:14px; margin-left:20px; text-decoration:none; color:var(--ink-2); }
+  main.wrap { padding-bottom:8px; }
+  h1 { font:400 clamp(28px,4.5vw,38px)/1.18 var(--serif); margin:44px 0 14px; max-width:24ch; }
+  h2 { font:400 24px/1.2 var(--serif); margin:0 0 10px; }
+  .kicker { font:400 14px/1 var(--serif); color:var(--accent); letter-spacing:.06em; text-transform:uppercase; margin:0 0 8px; }
+  p, li { color:var(--ink-2); max-width:66ch; }
+  p.lead { font-size:17px; }
+  ol, ul { padding-left:20px; }
+  ol li, ul li { margin:0 0 8px; }
+  code { font:14px var(--mono); background:var(--paper-2); border:1px solid var(--line); padding:1px 5px; border-radius:3px; overflow-wrap:anywhere; }
+  pre { font:13.5px/1.5 var(--mono); background:var(--paper-2); border:1px solid var(--line); border-radius:4px; padding:12px 14px; overflow-x:auto; margin:10px 0; }
+  pre code { border:0; padding:0; background:none; }
+  section.sec { border-top:1px solid var(--line); padding-top:26px; margin-top:36px; }
+  .num { font:400 14px/1 var(--serif); color:var(--accent); margin:0 0 6px; }
+  .try { background:var(--paper-2); border:1px solid var(--line); border-radius:4px; padding:16px 18px; }
+  .try p { margin:0; max-width:none; }
+  .byline { color:var(--muted); font-size:14px; margin-top:6px; }
+  footer { margin-top:56px; padding:24px 0 56px; border-top:1px solid var(--line); color:var(--muted); font-size:14px; }
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap"><a class="wordmark" href="https://arling.sk/">ARLing</a><nav><a href="https://arling.sk/#tools">Tools</a><a href="https://arling.sk/how-we-work/">How we work</a></nav></div></header>
+<main class="wrap">
+  <p class="kicker" style="margin-top:44px">Notes</p>
+  <h1>Error 400: redirect_uri_mismatch, explained character by character</h1>
+  <p class="byline">Andrej Lauko, ARLing · 2026-09-06</p>
+
+  <p class="lead">You click "Sign in with Google" and land on a Google page that says <code>Error 400: redirect_uri_mismatch</code>, sometimes with a "Request details" box showing the redirect_uri your app sent. Nothing else runs: Google refuses the request before your callback route ever sees it. Whatever the cause, the fix has the same shape: the redirect_uri your code sends has to match, byte for byte, an entry in Authorized redirect URIs on your OAuth 2.0 Client. This is a Google OAuth setting, not a NextAuth, Supabase, or Firebase bug specifically, but each of those stacks computes the redirect_uri differently, so the exact fix depends on which one you use. Below are the causes in the order they tend to show up, and how to fix each one.</p>
+
+  <section class="sec">
+    <p class="num">01</p>
+    <h2>The redirect_uri isn't in Authorized redirect URIs at all</h2>
+    <p>Google checks the incoming redirect_uri against an exact list: Authorized redirect URIs on your OAuth 2.0 Client, under Google Cloud Console → APIs &amp; Services → Credentials → your OAuth 2.0 Client ID. If the value your app sent isn't in that list character for character, this is the error you get, before your callback route runs at all.</p>
+    <p>Fix: copy the redirect_uri from the error page, or from the address bar, or from your browser's Network tab on the request to <code>accounts.google.com/o/oauth2/v2/auth</code>, and add it to Authorized redirect URIs on the client your app actually uses. If you have more than one Google Cloud project, confirm you are editing the right one.</p>
+  </section>
+
+  <section class="sec">
+    <p class="num">02</p>
+    <h2>http instead of https</h2>
+    <p>Google requires the https scheme for every redirect_uri except localhost. Localhost URIs, including 127.0.0.1 and [::1], are exempt from this rule; every other host must use https.</p>
+    <pre><code>Before: http://example.com/api/auth/callback/google
+After:  https://example.com/api/auth/callback/google</code></pre>
+    <p>If your redirect_uri uses http on a real domain, that alone is enough to trigger the error, independent of anything else being correct.</p>
+  </section>
+
+  <section class="sec">
+    <p class="num">03</p>
+    <h2>www vs apex, or localhost vs 127.0.0.1</h2>
+    <p>Google treats <code>https://example.com</code> and <code>https://www.example.com</code> as two unrelated hosts, not variants of one site. It treats <code>localhost</code> and <code>127.0.0.1</code> the same way: same loopback purpose, different strings, different match.</p>
+    <p>Fix: use exactly one form in your code and register that same form in Authorized redirect URIs. If your app redirects www to the apex domain (or the reverse) before the OAuth request fires, the redirect_uri has to reflect the host you land on after that redirect, not before it.</p>
+  </section>
+
+  <section class="sec">
+    <p class="num">04</p>
+    <h2>A trailing slash or letter case in the path</h2>
+    <p>Google's own validation rule is explicit: the scheme, case, and trailing slash must all match. <code>/api/auth/callback/google</code> and <code>/api/auth/callback/google/</code> are two different redirect_uris to Google, and so are <code>/Callback</code> and <code>/callback</code>.</p>
+    <p>Fix: match the path exactly, including case and the presence or absence of a trailing slash. django-allauth's callback path is fixed with a trailing slash, <code>/accounts/google/login/callback/</code>; most other stacks have none.</p>
+  </section>
+
+  <section class="sec">
+    <p class="num">05</p>
+    <h2>A query string or a fragment on the redirect_uri</h2>
+    <p>A redirect_uri can't carry a query string or a fragment. Google's validation rejects both outright: no <code>?state=...</code> and no <code>#section</code>, even if your app would otherwise strip it before use.</p>
+    <p>Fix: send the bare callback URL only. Any state or code your app needs after the redirect belongs in OAuth's own <code>state</code> parameter, never appended to redirect_uri.</p>
+  </section>
+
+  <section class="sec">
+    <p class="num">06</p>
+    <h2>NextAuth, Supabase, Firebase, and Django each expect a different callback</h2>
+    <p>Each library computes its own redirect_uri, and the value Google needs depends on which one you use:</p>
+    <ul>
+      <li><b>NextAuth v4 / Auth.js v5:</b> <code>&lt;origin&gt;/api/auth/callback/google</code> by default (Qwik and SvelteKit use <code>/auth/callback/google</code> instead; if you set a custom basePath, replace <code>/api/auth</code> with it).</li>
+      <li><b>Supabase:</b> <code>https://&lt;project-ref&gt;.supabase.co/auth/v1/callback</code>, or your custom auth domain if you've set one. This is Supabase's own callback, not your app's URL: Google redirects to Supabase first, and Supabase redirects to your app second.</li>
+      <li><b>Firebase:</b> <code>https://&lt;authDomain&gt;/__/auth/handler</code>; the trailing <code>/__/auth/handler</code> is required, and authDomain defaults to <code>&lt;project-id&gt;.firebaseapp.com</code>.</li>
+      <li><b>django-allauth:</b> <code>&lt;origin&gt;/accounts/google/login/callback/</code>, a fixed path regardless of your own URLconf.</li>
+    </ul>
+    <p>A frequent mistake with Supabase and Firebase specifically: registering your app's own URL instead of the provider's. Fix it by pointing Authorized redirect URIs at the provider's callback, not your app.</p>
+  </section>
+
+  <section class="sec">
+    <p class="num">07</p>
+    <h2>Native and command-line apps need a different client type</h2>
+    <p>Native and CLI flows don't use a Web application OAuth client, and their redirect_uri looks different. google-auth-oauthlib's <code>InstalledAppFlow.run_local_server()</code> uses <code>http://localhost:&lt;port&gt;/</code> on a Desktop client, which accepts any loopback port without pre-registering it. <code>gcloud auth application-default login</code> with a custom <code>--client-id-file</code> runs its listener on the fixed port 8085, <code>http://localhost:8085/</code>. Expo's <code>makeRedirectUri()</code> returns a custom scheme in a development build, or an <code>exp://</code> URL in Expo Go, which Google can't register at all; test with a development build instead.</p>
+    <p>A custom scheme, anything other than http or https, only works with an Android, iOS, or Desktop client type. Pasting it into a Web application client's redirect URIs produces this same error.</p>
+  </section>
+
+  <section class="sec">
+    <p class="num">08</p>
+    <h2>An invisible character you can't see</h2>
+    <p>A trailing space or a zero-width character, picked up from a copy-paste, looks identical to the correct redirect_uri but fails Google's exact match. Google's validation explicitly rejects non-printable characters in a redirect_uri.</p>
+    <p>Fix: retype the value instead of pasting it, or paste it into a plain-text editor first, where a stray space or zero-width character becomes visible.</p>
+  </section>
+
+  <section class="sec">
+    <h2>Checklist</h2>
+    <ol>
+      <li>Compare byte-for-byte: scheme (http vs https), host (www vs apex, localhost vs 127.0.0.1), port, and path, including trailing slash and letter case.</li>
+      <li>Confirm there is no query string or fragment on the redirect_uri.</li>
+      <li>Confirm you are editing the OAuth 2.0 Client ID your app's client ID and secret actually reference, and the right Google Cloud project if you have more than one.</li>
+      <li>Add the exact value to Authorized redirect URIs on that client.</li>
+      <li>Re-check after every deploy: Google Cloud Console and your environment variables drift independently of each other.</li>
+      <li>Just saved a change? Google says propagation can take a few minutes up to a few hours.</li>
+    </ol>
+  </section>
+
+  <section class="sec">
+    <h2>Check it in 30 seconds</h2>
+    <div class="try"><p>Paste the redirect_uri from the error, your Authorized redirect URIs, and your stack into the <a href="https://arling.sk/google-oauth-redirect-doctor/">Google OAuth redirect_uri_mismatch Doctor</a> to see the exact difference and the fix.</p></div>
+  </section>
+
+  <section class="sec">
+    <h2>Sources</h2>
+    <ul>
+      <li>Google Identity, "OAuth 2.0 for Web Server Applications: redirect URI validation rules": <a href="https://developers.google.com/identity/protocols/oauth2/web-server#uri-validation">developers.google.com/identity/protocols/oauth2/web-server#uri-validation</a></li>
+      <li>Google Identity, "OAuth 2.0 for Desktop and Mobile Apps": <a href="https://developers.google.com/identity/protocols/oauth2/native-app">developers.google.com/identity/protocols/oauth2/native-app</a></li>
+      <li>Auth.js, "Google provider": <a href="https://authjs.dev/getting-started/providers/google">authjs.dev/getting-started/providers/google</a></li>
+      <li>Supabase, "Login with Google": <a href="https://supabase.com/docs/guides/auth/social-login/auth-google">supabase.com/docs/guides/auth/social-login/auth-google</a></li>
+      <li>Firebase, "Redirect best practices for authentication": <a href="https://firebase.google.com/docs/auth/web/redirect-best-practices">firebase.google.com/docs/auth/web/redirect-best-practices</a></li>
+      <li>django-allauth, "Google provider": <a href="https://docs.allauth.org/en/latest/socialaccount/providers/google.html">docs.allauth.org/en/latest/socialaccount/providers/google.html</a></li>
+    </ul>
+  </section>
+</main>
+<footer><div class="wrap">ARLing s. r. o. · <a href="https://arling.sk/">arling.sk</a> · <a href="mailto:andrej@arling.sk">andrej@arling.sk</a></div></footer>
+<script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="be534d51-4d01-4860-b267-9596d91606de"></script>
+</body>
+</html>

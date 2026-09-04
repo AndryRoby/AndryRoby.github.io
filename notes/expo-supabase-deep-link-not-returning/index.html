@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://homelab.tailbf8f27.ts.net; connect-src 'self' https://homelab.tailbf8f27.ts.net; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<title>Expo + Supabase: why the OAuth deep link never comes back to the app</title>
+<meta name="description" content="Why Supabase OAuth sign-in never reopens an Expo app: what makeRedirectUri() returns per runtime, the allow-list, and the fix.">
+<link rel="canonical" href="https://arling.sk/notes/expo-supabase-deep-link-not-returning/">
+<meta property="og:title" content="Expo + Supabase: why the OAuth deep link never comes back to the app">
+<meta property="og:description" content="Why Supabase OAuth sign-in never reopens an Expo app: what makeRedirectUri() returns per runtime, the allow-list, and the fix.">
+<meta property="og:url" content="https://arling.sk/notes/expo-supabase-deep-link-not-returning/">
+<meta property="og:type" content="article">
+<meta name="theme-color" content="#f6f2ea">
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="alternate" type="text/plain" href="https://arling.sk/llms.txt" title="llms.txt">
+<style>
+  :root { --paper:#f6f2ea; --paper-2:#fbf9f4; --ink:#1b1a17; --ink-2:#4a4741; --muted:#66625a; --line:#d9d2c4; --accent:#b23a1d; --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif; --sans:system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; --mono:ui-monospace,"Cascadia Code",Consolas,Menlo,monospace; }
+  @media (prefers-color-scheme: dark) { :root { --paper:#151412; --paper-2:#1d1b18; --ink:#efe9de; --ink-2:#c9c2b5; --muted:#8f887b; --line:#2e2b26; --accent:#e0623f; } }
+  * { box-sizing:border-box; }
+  html { background:var(--paper); }
+  body { margin:0; background:var(--paper); color:var(--ink); font:16px/1.55 var(--sans); }
+  a { color:inherit; text-decoration-color:var(--line); text-underline-offset:3px; }
+  a:hover { text-decoration-color:var(--accent); }
+  :focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
+  .skip { position:absolute; left:-999px; top:8px; background:var(--ink); color:var(--paper); padding:8px 12px; }
+  .skip:focus { left:8px; }
+  .wrap { max-width:760px; margin:0 auto; padding:0 24px; }
+  header.top { border-bottom:1px solid var(--line); }
+  header.top .wrap { display:flex; align-items:baseline; justify-content:space-between; gap:24px; padding:18px 24px; }
+  .wordmark { font:600 22px/1 var(--serif); text-decoration:none; }
+  nav a { font-size:14px; margin-left:20px; text-decoration:none; color:var(--ink-2); }
+  nav a:hover { color:var(--accent); }
+  .kicker { font:400 14px/1 var(--serif); color:var(--accent); letter-spacing:.06em; text-transform:uppercase; margin:48px 0 8px; }
+  h1 { font:400 clamp(28px,4.5vw,38px)/1.15 var(--serif); margin:0 0 14px; max-width:22ch; }
+  .byline { color:var(--muted); font-size:14px; margin:0 0 28px; }
+  h2 { font:400 24px/1.2 var(--serif); margin:40px 0 10px; }
+  p, li { color:var(--ink-2); max-width:70ch; }
+  p { margin:0 0 14px; }
+  ol, ul { padding-left:20px; margin:0 0 14px; }
+  li { margin-bottom:6px; }
+  li:last-child { margin-bottom:0; }
+  code { font:.85em var(--mono); background:var(--paper-2); border:1px solid var(--line); border-radius:3px; padding:1px 5px; overflow-wrap:anywhere; }
+  pre { background:var(--paper-2); border:1px solid var(--line); border-radius:4px; padding:14px 16px; margin:0 0 14px; overflow-x:auto; max-width:70ch; }
+  pre code { background:none; border:none; padding:0; font-size:13.5px; line-height:1.5; }
+  .check { border:1px solid var(--line); border-radius:4px; padding:18px 20px; margin:0 0 14px; max-width:70ch; }
+  .check p:last-child { margin-bottom:0; }
+  footer { margin-top:56px; padding:24px 0 56px; border-top:1px solid var(--line); color:var(--muted); font-size:14px; }
+  @media (max-width:480px) { .kicker { margin-top:32px; } }
+</style>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"Article","headline":"Expo + Supabase: why the OAuth deep link never comes back to the app","datePublished":"2026-09-06","dateModified":"2026-09-06","author":{"@type":"Person","name":"Andrej Lauko"},"publisher":{"@type":"Organization","name":"ARLing s. r. o.","url":"https://arling.sk/"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://arling.sk/notes/expo-supabase-deep-link-not-returning/"},"description":"Why Supabase OAuth sign-in never reopens an Expo app: what makeRedirectUri() returns per runtime, the allow-list, and the fix."}
+</script>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"ARLing","item":"https://arling.sk/"},{"@type":"ListItem","position":2,"name":"Notes","item":"https://arling.sk/notes/"},{"@type":"ListItem","position":3,"name":"Expo + Supabase: why the OAuth deep link never comes back to the app","item":"https://arling.sk/notes/expo-supabase-deep-link-not-returning/"}]}
+</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to the article</a>
+<header class="top"><div class="wrap"><a class="wordmark" href="https://arling.sk/">ARLing</a><nav><a href="https://arling.sk/#tools">Tools</a><a href="https://arling.sk/how-we-work/">How we work</a><a href="mailto:andrej@arling.sk">Contact</a></nav></div></header>
+<main class="wrap" id="main">
+  <p class="kicker">Notes</p>
+  <h1>Expo + Supabase: why the OAuth deep link never comes back to the app</h1>
+  <p class="byline">Andrej Lauko, ARLing · 6 September 2026</p>
+
+  <p>You call <code>supabase.auth.signInWithOAuth()</code> in an Expo app, the browser opens, the user signs in with Google or another provider, and then the app never gets control back. The browser tab stays open, or it closes and you are still looking at the sign-in screen. Sometimes it lands on <code>http://localhost:3000</code> instead. In almost every report, the cause is that the URL your Expo runtime actually produces from <code>makeRedirectUri()</code> does not match what you hardcoded, what Supabase's redirect allow-list expects, or what the OAuth provider's console has on file.</p>
+
+  <h2>1. makeRedirectUri() doesn't return what you hardcoded</h2>
+  <p>Most integrations start with a hardcoded string, <code>redirectTo: 'myapp://auth-callback'</code>, passed straight into <code>signInWithOAuth()</code>. That string has to match, character for character, whatever <code>makeRedirectUri()</code> produces for the runtime the app is actually running in. It never matches every runtime at once, because Expo computes a different value depending on the environment:</p>
+  <ul>
+    <li>A development build or a standalone build uses your custom scheme directly: <code>scheme://path</code>, no leading slash on the path.</li>
+    <li>Expo Go ignores your scheme and always uses <code>exp://&lt;dev-server-host&gt;:&lt;port&gt;/--/path</code>.</li>
+    <li>Web uses your site's own URL plus the path.</li>
+  </ul>
+  <p>Call <code>makeRedirectUri({ scheme, path })</code> at runtime and pass its result into <code>redirectTo</code>, instead of hardcoding a string. One more thing it is picky about: a path with a leading slash, <code>/auth-callback</code> instead of <code>auth-callback</code>, produces a stray extra slash in the final URL, for example <code>myapp:///auth-callback</code>. Strip leading and trailing slashes from the path before you pass it in.</p>
+
+  <h2>2. The scheme itself has to be valid, or nothing can open the app</h2>
+  <p>A native redirect only works if <code>expo.scheme</code> in <code>app.json</code> is a real custom URL scheme: lowercase letters, digits, <code>+</code>, <code>-</code>, <code>.</code>, starting with a letter, no spaces. <code>http</code> and <code>https</code> cannot be used here: they are reserved, and the OS will not hand control to your app for them. If the scheme is empty or invalid, <code>makeRedirectUri()</code> still returns a string, but no app on the device claims it, so the browser has nowhere to send the user.</p>
+  <pre><code>{ "expo": { "scheme": "myapp" } }</code></pre>
+  <p>Confirm that value actually reached the native build. A stale development build or standalone binary can keep an old scheme after <code>app.json</code> changes, until you rebuild it.</p>
+
+  <h2>3. The redirect isn't on Supabase's allow-list</h2>
+  <p><code>signInWithOAuth()</code> sends <code>redirectTo</code> to Supabase, which checks it against Authentication → URL Configuration → Redirect URLs before it lets the browser go anywhere near it. No match, no redirect: Supabase falls back to the Site URL instead, silently.</p>
+  <p>The allow-list uses glob patterns, and <code>.</code> and <code>/</code> count as separator characters:</p>
+  <ul>
+    <li><code>*</code> matches a run of characters that are not <code>.</code> or <code>/</code></li>
+    <li><code>**</code> matches any run of characters, including <code>.</code> and <code>/</code></li>
+    <li><code>?</code> matches exactly one non-separator character</li>
+  </ul>
+  <p>An entry like <code>myapp://auth-callback</code> only matches that one exact path. Add <code>myapp://**</code> instead, so every path under your scheme stays covered as the app grows. If you also test in Expo Go, allow-list its dev URL separately: Expo Go never uses your custom scheme.</p>
+
+  <h2>4. Supabase Site URL still points to localhost</h2>
+  <p>Site URL is not only the default for password-reset emails: it is where Supabase sends every rejected redirect, in every environment, including production. If Site URL is still <code>http://localhost:8081</code> from early development, a redirect mismatch anywhere on this page quietly lands a production user on a URL their phone cannot reach, and the app never reopens.</p>
+  <p>Set Site URL, in Supabase → Authentication → URL Configuration, to your actual production URL, and let the redirect allow-list, not Site URL, decide where a given sign-in goes.</p>
+
+  <h2>5. The provider console is missing the exact Supabase callback</h2>
+  <p>Before the browser reaches your app, the OAuth provider redirects back to Supabase first, at a fixed URL: <code>https://&lt;project-ref&gt;.supabase.co/auth/v1/callback</code>, shown on that provider's page in the Supabase dashboard. Unlike Supabase's own allow-list, providers do not accept wildcards here. Google Cloud Console's Authorized redirect URIs, the Apple Services ID's Return URLs, and the GitHub OAuth App's Authorization callback URL all need that exact string, with no trailing slash added.</p>
+  <p>A missing or mistyped callback here fails before your app's own redirect logic ever runs: the user sees an error page from the provider, not from Supabase or from your code.</p>
+
+  <h2>6. Native code still needs skipBrowserRedirect, PKCE and exchangeCodeForSession</h2>
+  <p>Three more settings decide whether a correctly matched redirect turns into an actual session on native:</p>
+  <ul>
+    <li>Pass <code>skipBrowserRedirect: true</code> in the options to <code>signInWithOAuth()</code>. Without it, supabase-js tries to issue a browser redirect the way it would on web; on native, you open the URL yourself, typically with <code>expo-web-browser</code>.</li>
+    <li>Use <code>flowType: 'pkce'</code> when creating the client. The implicit flow returns tokens in a URL fragment, and fragments do not always survive a deep link.</li>
+    <li>Call <code>exchangeCodeForSession(url)</code> in the <code>Linking</code> listener that receives the deep link. PKCE's callback carries a <code>code</code> parameter, not a session: nothing exchanges it unless your code does.</li>
+  </ul>
+  <p>Skip any one of the three and the URL can come back to the app correctly and still leave the user signed out.</p>
+
+  <h2>7. Checklist</h2>
+  <ol>
+    <li>Build <code>redirectTo</code> with <code>makeRedirectUri({ scheme, path })</code>, never a hardcoded string.</li>
+    <li>Confirm <code>expo.scheme</code> in <code>app.json</code> is lowercase, starts with a letter, and is not <code>http</code>/<code>https</code>.</li>
+    <li>Strip leading and trailing slashes from the path you pass to <code>makeRedirectUri</code>.</li>
+    <li>Add <code>myapp://**</code> to Supabase → Authentication → URL Configuration → Redirect URLs.</li>
+    <li>Allow-list the <code>exp://</code> dev URL too if you test in Expo Go.</li>
+    <li>Set Site URL to your production URL, not <code>localhost</code>.</li>
+    <li>Add the exact <code>https://&lt;project-ref&gt;.supabase.co/auth/v1/callback</code> to the provider's console.</li>
+    <li>Set <code>flowType: 'pkce'</code> and <code>skipBrowserRedirect: true</code>, and call <code>exchangeCodeForSession(url)</code> in the deep-link handler.</li>
+  </ol>
+
+  <h2>8. Check it in 30 seconds</h2>
+  <div class="check">
+    <p>Paste your scheme, path, Site URL, redirect allow-list and provider callback into the <a href="https://arling.sk/expo-supabase-auth-doctor/">Redirect Doctor for Expo and Supabase</a> and it lists exactly which of the above does not match, for the runtime you pick.</p>
+  </div>
+
+  <h2>9. Sources</h2>
+  <ul>
+    <li><a href="https://docs.expo.dev/versions/latest/sdk/auth-session/">Expo docs: AuthSession, makeRedirectUri()</a></li>
+    <li><a href="https://docs.expo.dev/guides/linking/">Expo docs: Linking, deep link structure</a></li>
+    <li><a href="https://supabase.com/docs/guides/auth/redirect-urls">Supabase docs: Redirect URLs, Site URL fallback and allow-list glob syntax</a></li>
+    <li><a href="https://supabase.com/docs/guides/auth/native-mobile-deep-linking">Supabase docs: Native mobile deep linking</a></li>
+    <li><a href="https://supabase.com/docs/guides/auth/social-login/auth-google">Supabase docs: Google sign-in, callback URL and PKCE</a></li>
+  </ul>
+</main>
+<footer><div class="wrap">ARLing s. r. o. · <a href="https://arling.sk/">arling.sk</a> · <a href="mailto:andrej@arling.sk">andrej@arling.sk</a></div></footer>
+<script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="be534d51-4d01-4860-b267-9596d91606de"></script>
+</body>
+</html>

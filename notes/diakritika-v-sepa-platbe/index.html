@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://homelab.tailbf8f27.ts.net; connect-src 'self' https://homelab.tailbf8f27.ts.net; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<title>Diakritika v SEPA platbe: čo banky prijmú a čo odmietnu</title>
+<meta name="description" content="Prečo ČSOB odmietne SEPA XML s diakritikou, čo skutočne vyžadujú Tatra banka a VÚB, presný zoznam povolených znakov a oprava pre pain.001.">
+<link rel="canonical" href="https://arling.sk/notes/diakritika-v-sepa-platbe/">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Diakritika v SEPA platbe: čo banky prijmú a čo odmietnu">
+<meta property="og:description" content="Prečo ČSOB odmietne SEPA XML s diakritikou, čo skutočne vyžadujú Tatra banka a VÚB, presný zoznam povolených znakov a oprava pre pain.001.">
+<meta property="og:url" content="https://arling.sk/notes/diakritika-v-sepa-platbe/">
+<meta property="og:locale" content="sk_SK">
+<meta name="theme-color" content="#f6f2ea">
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Diakritika v SEPA platbe: čo banky prijmú a čo odmietnu",
+  "datePublished": "2026-09-06",
+  "dateModified": "2026-09-06",
+  "inLanguage": "sk",
+  "description": "Prečo ČSOB odmietne SEPA XML s diakritikou, čo skutočne vyžadujú Tatra banka a VÚB, presný zoznam povolených znakov a oprava pre pain.001.",
+  "author": { "@type": "Person", "name": "Andrej Lauko", "url": "https://arling.sk/" },
+  "publisher": {
+    "@type": "Organization",
+    "name": "ARLing s. r. o.",
+    "url": "https://arling.sk/"
+  },
+  "mainEntityOfPage": { "@type": "WebPage", "@id": "https://arling.sk/notes/diakritika-v-sepa-platbe/" }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "ARLing", "item": "https://arling.sk/" },
+    { "@type": "ListItem", "position": 2, "name": "Notes", "item": "https://arling.sk/notes/" },
+    { "@type": "ListItem", "position": 3, "name": "Diakritika v SEPA platbe", "item": "https://arling.sk/notes/diakritika-v-sepa-platbe/" }
+  ]
+}
+</script>
+
+<style>
+  :root { --paper:#f6f2ea; --paper-2:#fbf9f4; --ink:#1b1a17; --ink-2:#4a4741; --muted:#66625a; --line:#d9d2c4; --accent:#b23a1d; --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif; --sans:system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; --mono:ui-monospace,"Cascadia Code",Consolas,Menlo,monospace; }
+  @media (prefers-color-scheme: dark) { :root { --paper:#151412; --paper-2:#1d1b18; --ink:#efe9de; --ink-2:#c9c2b5; --muted:#8f887b; --line:#2e2b26; --accent:#e0623f; } }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--paper); color:var(--ink); font:16px/1.55 var(--sans); }
+  a { color:inherit; text-decoration-color:var(--line); text-underline-offset:3px; }
+  a:hover { text-decoration-color:var(--accent); }
+  .wrap { max-width:760px; margin:0 auto; padding:0 24px; min-width:0; }
+  header.top { border-bottom:1px solid var(--line); }
+  header.top .wrap { display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:8px 20px; padding:18px 24px; }
+  .wordmark { font:600 22px/1 var(--serif); text-decoration:none; }
+  nav a { font-size:14px; margin-left:20px; text-decoration:none; color:var(--ink-2); }
+  h1 { font:400 clamp(28px,4.5vw,40px)/1.15 var(--serif); margin:48px 0 8px; overflow-wrap:anywhere; }
+  h2 { font:400 24px/1.2 var(--serif); margin:40px 0 8px; overflow-wrap:anywhere; }
+  p, li { color:var(--ink-2); overflow-wrap:anywhere; }
+  p.lead { color:var(--ink); }
+  ol, ul { padding-left:20px; }
+  ul.plain { list-style:none; padding-left:0; }
+  ul.plain li { padding:10px 0; border-top:1px solid var(--line); }
+  ul.plain li:first-child { border-top:none; }
+  code { font:13px/1.4 var(--mono); background:var(--paper-2); border:1px solid var(--line); border-radius:3px; padding:1px 5px; overflow-wrap:anywhere; }
+  pre { margin:14px 0; padding:14px 16px; background:var(--paper-2); border:1px solid var(--line); border-radius:4px; overflow-x:auto; }
+  pre code { border:none; background:none; padding:0; font-size:13px; line-height:1.65; white-space:pre; }
+  .sources { padding-left:20px; }
+  .sources li { margin-bottom:10px; }
+  .sources cite { font-style:italic; }
+  .toolbox { margin:16px 0 0; padding:16px 18px; background:var(--paper-2); border:1px solid var(--line); border-radius:4px; }
+  .byline { margin-top:56px; padding-top:16px; border-top:1px solid var(--line); color:var(--muted); font-size:14px; }
+  footer { margin-top:40px; padding:24px 0 56px; border-top:1px solid var(--line); color:var(--muted); font-size:14px; }
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap"><a class="wordmark" href="https://arling.sk/">ARLing</a><nav><a href="https://arling.sk/#tools">Nástroje</a><a href="https://arling.sk/how-we-work/">Ako pracujeme</a></nav></div></header>
+<main class="wrap">
+
+<h1>Diakritika v SEPA platbe: čo banky prijmú a čo odmietnu</h1>
+
+<p class="lead">Vygeneruješ hromadný príkaz na úhradu z účtovného softvéru, meno platiteľa alebo príjemcu obsahuje mäkčeň či dĺžeň (napríklad „Ľubomír Šťastný" alebo „Kaviareň Dúha s. r. o."), a pri importe do internet bankingu sa niečo pokazí. Vlastná dokumentácia ČSOB pre klientov BusinessBanking Lite to opisuje priamo: <code>SEPA XML s diakritikou nie je možné do BusinessBanking Lite importovať.</code> Tatra banka, VÚB ani Slovenská sporiteľňa súbor s diakritikou takto otvorene neodmietajú, žiadna z nich ju však vo svojej špecifikácii pain.001 ani nepovoľuje. Nižšie je presný zoznam povolených znakov a miesta v XML, kde sa diakritika oplatí skontrolovať pred odoslaním.</p>
+
+<h2>1. ČSOB: súbor s diakritikou sa neimportuje vôbec</h2>
+<p>ČSOB je jediná zo štyroch bánk, ktorá dôsledok diakritiky vo svojej dokumentácii („BusinessBanking Lite a SEPA", 20. 8. 2015) uvádza priamo a jednoznačne: SEPA XML s diakritikou sa do BusinessBanking Lite nedá importovať. Nejde o to, že sa jedno pole len skráti alebo prepíše. Import odmietne celý súbor, bez ohľadu na to, koľko platieb obsahuje a či je diakritika len v jednom mene z tridsiatich.</p>
+<p>Rovnaký dokument uvádza aj presný zoznam znakov, ktoré ČSOB pri importe akceptuje, a odporúča účtovnému softvéru súbor s diakritikou vôbec nevytvárať (viď zoznam nižšie).</p>
+<p>Oprava je transliterácia, teda nahradenie diakritiky najbližším latinským znakom, nie odstránenie textu:</p>
+<pre><code>&lt;Nm&gt;Ľubomír Šťastný&lt;/Nm&gt;          →   &lt;Nm&gt;Lubomir Stastny&lt;/Nm&gt;
+&lt;Nm&gt;Kaviareň Dúha s. r. o.&lt;/Nm&gt;   →   &lt;Nm&gt;Kaviaren Duha s. r. o.&lt;/Nm&gt;</code></pre>
+<p>Ak účtovný softvér transliteráciu nevykoná sám pri exporte, uprav meno priamo v XML súbore pred odoslaním, alebo skontroluj, či export ponúka nastavenie „bez diakritiky".</p>
+
+<h2>2. Tatra banka, VÚB, Slovenská sporiteľňa: žiadny explicitný zákaz, žiadna záruka</h2>
+<p>Verejné špecifikácie Tatra banky („Prenosový formát pain.001.001.03 v štruktúre XML") a VÚB („Popis formátu pre SEPA úhrady - SCT") popisujú polia GrpHdr, PmtInf a CdtTrfTxInf do detailu, vrátane maximálnej dĺžky mena (Max70Text) alebo limitu 500 transakcií na súbor u Tatra banky. Ani jedna z nich sa k diakritike v mene alebo v správe pre príjemcu vôbec nevyjadruje. Slovenská sporiteľňa nemá pre pain.001 zverejnenú porovnateľnú špecifikáciu vôbec.</p>
+<p>To neznamená, že diakritika je pri týchto troch bankách bezpečná, len že žiadna z nich problém výslovne nezdokumentovala. Zoznam znakov, ktorý ČSOB publikuje, sa v odbore berie ako všeobecný základ platný pre celú SEPA schému, rovnaký princíp neformálne opisujú aj implementačné usmernenia EPC (European Payments Council). Ak diakritiku pošleš do Tatra banky, VÚB alebo SLSP, súbor sa v ich vlastnom internet bankingu môže načítať bez chyby, no meno sa ďalej posiela ako text, do banky príjemcu, do jeho výpisu, do jeho účtovného softvéru. Práve tam sa mäkčene a dĺžne najčastejšie menia na otázniky, medzery, alebo miznú úplne.</p>
+
+<h2>3. Presný zoznam povolených znakov</h2>
+<p>Zoznam, ktorý ČSOB vo svojej dokumentácii vypísala doslovne, sa v praxi používa ako všeobecný SEPA-bezpečný základ naprieč všetkými štyrmi bankami. Povolené sú len tieto znaky:</p>
+<pre><code>a b c d e f g h i j k l m n o p q r s t u v w x y z
+A B C D E F G H I J K L M N O P Q R S T U V W X Y Z
+0 1 2 3 4 5 6 7 8 9
+medzera a / – ? : ( ) . , ' +</code></pre>
+<p>Pomlčka v zozname je vytlačená ako en dash (–), nie ako obyčajný hyphen-minus (-). V praxi XML parser rozdiel v tvare pomlčky nerieši, dôležitejšie je vyhnúť sa znakom mimo tohto zoznamu úplne, napríklad €, %, &amp;, @, # alebo úvodzovkám iným než jednoduchá apostrofa.</p>
+<p>Slovenská a česká diakritika sa prevádza na najbližší latinský znak:</p>
+<pre><code>á ä → a     č → c      ď → d
+é → e       í → i       ľ ĺ → l
+ň → n       ó ô → o    ŕ → r
+š → s       ť → t       ú → u
+ý → y       ž → z
+česky: ě → e, ř → r, ů → u</code></pre>
+
+<h2>4. Kde presne v XML sa diakritika kontroluje</h2>
+<p>V pain.001 súbore sa diakritika najčastejšie objaví na piatich miestach:</p>
+<ul class="plain">
+  <li><code>PmtInf/Dbtr/Nm</code>: meno platiteľa, maximálne 70 znakov. Vyplnené je vždy, chyba tu sa prejaví v každej transakcii z daného bloku PmtInf.</li>
+  <li><code>CdtTrfTxInf/Cdtr/Nm</code>: meno príjemcu, maximálne 70 znakov. Kontroluje sa pre každú platbu zvlášť, pri hromadnom príkaze s desiatkami riadkov je toto najčastejšie miesto výskytu.</li>
+  <li><code>RmtInf/Ustrd</code>: správa pre príjemcu alebo popis platby, maximálne 140 znakov. Sem sa diakritika dostane najľahšie, lebo text sa často kopíruje priamo z faktúry.</li>
+  <li><code>GrpHdr/InitgPty/Nm</code>: meno iniciátora platby. Pole je nepovinné, ak je ale vyplnené, kontroluje sa rovnako ako meno platiteľa.</li>
+  <li><code>GrpHdr/MsgId</code>: interné označenie súboru, maximálne 35 znakov. Na diakritiku sa tu ľahko zabúda, pretože pole nikto priamo nevidí na obrazovke platby.</li>
+</ul>
+
+<h2>Checklist</h2>
+<ol>
+  <li>Skontroluj <code>Dbtr/Nm</code>, <code>Cdtr/Nm</code>, <code>RmtInf/Ustrd</code>, <code>GrpHdr/InitgPty/Nm</code> a <code>GrpHdr/MsgId</code> na diakritiku, nielen v názvoch firiem, aj v menách fyzických osôb.</li>
+  <li>Nahraď každý mäkčeň a dĺžeň najbližším latinským znakom (č→c, š→s, ž→z, ä→a, ô→o, ľ→l a podobne), text neskracuj ani nevynechávaj.</li>
+  <li>Over aj ostatné znaky mimo zoznamu a-z, A-Z, 0-9, medzera a / – ? : ( ) . , ' +, napríklad €, %, &amp;, @ alebo úvodzovky iné než jednoduchá apostrofa.</li>
+  <li>Ak posielaš do ČSOB, priprav sa, že import s diakritikou zlyhá pri celom súbore, nie len pri jednom poli.</li>
+  <li>Ak posielaš do Tatra banky, VÚB alebo SLSP, súbor bez diakritiky prejde bezpečnejšie: banka ho síce môže prijať aj s diakritikou, u príjemcu sa však meno môže zobraziť skomolené.</li>
+  <li>Po každej úprave spusti kontrolu znova. Ide o textové pole, po oprave sa v ňom ľahko objaví nová chyba, napríklad presiahnutá dĺžka.</li>
+</ol>
+
+<h2>Skontrolujte to za 30 sekúnd</h2>
+<p class="toolbox">Vlož svoj pain.001 súbor a vyber banku v <a href="https://arling.sk/sepa-pain001-doctor/">SEPA pain.001 Doctor</a> a nástroj vypíše každé pole s diakritikou aj s opraveným tvarom.</p>
+
+<h2>Sources</h2>
+<ol class="sources">
+  <li>ČSOB: <cite>BusinessBanking Lite a SEPA</cite> (20. 8. 2015). <a href="https://www.csob.sk/documents/11005/123723/BB_SEPA_01022016.pdf">csob.sk/documents/11005/123723/BB_SEPA_01022016.pdf</a>. Presné znenie: „SEPA XML s diakritikou nie je možné do BusinessBanking Lite importovať" a zoznam povolených znakov a-z, A-Z, 0-9, / – ? : ( ) . , ' + a medzera.</li>
+  <li>Tatra banka: <cite>Prenosový formát pain.001.001.03 v štruktúre XML</cite>. <a href="https://www.tatrabanka.sk/files/sk/personal/ucet-platby/elektronicke-bankovnictvo/internet-banking/davkove-platby/prenosovy_formatpain001.pdf">tatrabanka.sk/.../prenosovy_formatpain001.pdf</a>. Popisuje polia GrpHdr, PmtInf a CdtTrfTxInf vrátane dĺžkových limitov, bez explicitnej zmienky o diakritike.</li>
+  <li>VÚB, a. s.: <cite>Popis formátu pre SEPA úhrady - SCT</cite>. <a href="https://app.vub.sk/source/files/vubweb/sekundarna-navigacia/informacny-servis/sepa-aplikacie/sct_klient_f.pdf">app.vub.sk/.../sct_klient_f.pdf</a>. Popisuje povinné a nepovinné polia pain.001, bez explicitnej zmienky o diakritike.</li>
+</ol>
+
+<p class="byline">Andrej Lauko, ARLing. 6. septembra 2026.</p>
+</main>
+<footer><div class="wrap">ARLing s. r. o. · <a href="https://arling.sk/">arling.sk</a> · <a href="mailto:andrej@arling.sk">andrej@arling.sk</a></div></footer>
+<script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="be534d51-4d01-4860-b267-9596d91606de"></script>
+</body>
+</html>

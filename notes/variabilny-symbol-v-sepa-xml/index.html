@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://homelab.tailbf8f27.ts.net; connect-src 'self' https://homelab.tailbf8f27.ts.net; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<title>Variabilný symbol v SEPA XML: kam presne patrí</title>
+<meta name="description" content="Variabilný, špecifický a konštantný symbol nemajú v SEPA pain.001 XML vlastné polia. Kam patria v EndToEndId, v akom poradí a s akým limitom dĺžky.">
+<link rel="canonical" href="https://arling.sk/notes/variabilny-symbol-v-sepa-xml/">
+<meta property="og:title" content="Variabilný symbol v SEPA XML: kam presne patrí">
+<meta property="og:description" content="Variabilný, špecifický a konštantný symbol nemajú v SEPA pain.001 XML vlastné polia. Kam patria v EndToEndId, v akom poradí a s akým limitom dĺžky.">
+<meta property="og:url" content="https://arling.sk/notes/variabilny-symbol-v-sepa-xml/">
+<meta property="og:type" content="article">
+<meta name="theme-color" content="#f6f2ea">
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="alternate" type="text/plain" href="https://arling.sk/llms.txt" title="llms.txt">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"Article","headline":"Variabilný, špecifický a konštantný symbol v SEPA XML: kam presne patria","description":"Variabilný, špecifický a konštantný symbol nemajú v SEPA pain.001 XML vlastné polia. Kam patria v EndToEndId, v akom poradí a s akým limitom dĺžky.","datePublished":"2026-09-06","dateModified":"2026-09-06","inLanguage":"sk","author":{"@type":"Person","name":"Andrej Lauko","url":"https://arling.sk/how-we-work/"},"publisher":{"@type":"Organization","name":"ARLing s. r. o.","url":"https://arling.sk/","email":"andrej@arling.sk","identifier":"56583486"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://arling.sk/notes/variabilny-symbol-v-sepa-xml/"}}
+</script>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"ARLing","item":"https://arling.sk/"},{"@type":"ListItem","position":2,"name":"Notes","item":"https://arling.sk/notes/"},{"@type":"ListItem","position":3,"name":"Variabilný symbol v SEPA XML","item":"https://arling.sk/notes/variabilny-symbol-v-sepa-xml/"}]}
+</script>
+<style>
+  :root { --paper:#f6f2ea; --paper-2:#fbf9f4; --ink:#1b1a17; --ink-2:#4a4741; --muted:#66625a; --line:#d9d2c4; --accent:#b23a1d; --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif; --sans:system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; --mono:ui-monospace,"Cascadia Code",Consolas,Menlo,monospace; }
+  @media (prefers-color-scheme: dark) { :root { --paper:#151412; --paper-2:#1d1b18; --ink:#efe9de; --ink-2:#c9c2b5; --muted:#8f887b; --line:#2e2b26; --accent:#e0623f; } }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--paper); color:var(--ink); font:16px/1.55 var(--sans); }
+  a { color:inherit; text-decoration-color:var(--line); text-underline-offset:3px; }
+  a:hover { text-decoration-color:var(--accent); }
+  .wrap { max-width:760px; margin:0 auto; padding:0 24px; }
+  header.top { border-bottom:1px solid var(--line); }
+  header.top .wrap { display:flex; align-items:baseline; justify-content:space-between; padding:18px 24px; flex-wrap:wrap; gap:6px 0; }
+  .wordmark { font:600 22px/1 var(--serif); text-decoration:none; }
+  nav a { font-size:14px; margin-left:20px; text-decoration:none; color:var(--ink-2); }
+  h1 { font:400 clamp(28px,4.5vw,38px)/1.18 var(--serif); margin:44px 0 8px; max-width:22ch; }
+  h2 { font:400 24px/1.2 var(--serif); margin:38px 0 8px; }
+  .kicker { font:400 14px/1 var(--serif); color:var(--accent); letter-spacing:.06em; text-transform:uppercase; margin:0 0 8px; }
+  .byline { color:var(--muted); font-size:14px; margin:0 0 24px; }
+  p, li { color:var(--ink-2); max-width:66ch; }
+  p.wide, .snippet, ol, .sources { max-width:66ch; }
+  ol { padding-left:20px; }
+  li { margin:4px 0; }
+  code { font:13.5px/1.4 var(--mono); background:var(--paper-2); border:1px solid var(--line); border-radius:3px; padding:1px 5px; overflow-wrap:anywhere; }
+  .snippet { background:var(--paper-2); border:1px solid var(--line); border-radius:4px; margin:12px 0 18px; overflow:hidden; }
+  .snippet .cap { padding:6px 12px; border-bottom:1px solid var(--line); font:11px/1 var(--mono); letter-spacing:.04em; text-transform:uppercase; color:var(--muted); }
+  .snippet pre { margin:0; padding:14px 16px; font:13px/1.6 var(--mono); color:var(--ink-2); overflow-x:auto; }
+  .snippet.bad .cap { color:var(--accent); }
+  .cta { border:1px solid var(--line); border-radius:4px; padding:16px 18px; margin:14px 0 8px; background:var(--paper-2); }
+  .cta p { margin:0; max-width:none; }
+  .cta a { color:var(--accent); font-weight:600; }
+  .sources { padding-left:20px; }
+  .sources li { margin:6px 0; }
+  .sources a { word-break:break-all; }
+  footer { margin-top:56px; padding:24px 0 56px; border-top:1px solid var(--line); color:var(--muted); font-size:14px; }
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap"><a class="wordmark" href="https://arling.sk/">ARLing</a><nav><a href="https://arling.sk/#tools">Tools</a><a href="https://arling.sk/how-we-work/">How we work</a><a href="https://arling.sk/sepa-pain001-doctor/">SEPA Doctor</a></nav></div></header>
+<main class="wrap">
+  <p class="kicker" style="margin-top:44px">Notes</p>
+  <h1>Variabilný, špecifický a konštantný symbol v SEPA XML: kam presne patria</h1>
+  <p class="byline">Andrej Lauko, ARLing · 6. septembra 2026</p>
+
+  <p>Účtovný softvér (Pohoda, Money S3, KROS Omega) vyexportuje SEPA pain.001 XML pre hromadný príkaz na úhradu. Do faktúry alebo formulára zadáte variabilný symbol, prípadne aj špecifický a konštantný symbol. Súbor sa nahrá do banky, prevod prejde bez chyby, ale protistrana si platbu nevie spárovať s faktúrou. Alebo pri kontrole cez SEPA pain.001 Doctor uvidíte presne toto:</p>
+  <div class="snippet bad"><div class="cap">SEPA pain.001 Doctor</div><pre>EndToEndId "/VS123/KS0308/SS14" má VS/ŠS/KS
+v nesprávnom poradí.</pre></div>
+  <p>Dôvod je vždy rovnaký: pain.001.001.03, formát, ktorý pri hromadných platbách importuje Tatra banka, Slovenská sporiteľňa, VÚB aj ČSOB, nemá pre variabilný, špecifický ani konštantný symbol samostatné XML pole. Nižšie je presne kam patria, v akom poradí a s akým limitom dĺžky.</p>
+
+  <h2>1. VS, ŠS aj KS idú do jedného poľa: PmtId/EndToEndId</h2>
+  <p>V pain.001.001.03 neexistuje element <code>&lt;VS&gt;</code>, <code>&lt;SS&gt;</code> ani <code>&lt;KS&gt;</code>. Podľa konvencie, ktorú slovenské banky pri importe SEPA hromadných príkazov spoločne používajú, sa všetky tri symboly zapíšu ako text do <code>CdtTrfTxInf/PmtId/EndToEndId</code>, jedného povinného poľa, ktoré má pri každej platbe aj tak byť vyplnené: banka ho vracia nezmenené vo výpise, takže slúži aj ako identifikátor platby pre spätné dohľadanie.</p>
+  <div class="snippet"><div class="cap">Správne</div><pre>&lt;CdtTrfTxInf&gt;
+  &lt;PmtId&gt;
+    &lt;EndToEndId&gt;/VS2026091/SS0002/KS0308&lt;/EndToEndId&gt;
+  &lt;/PmtId&gt;
+  ...
+&lt;/CdtTrfTxInf&gt;</pre></div>
+  <p>Ak <code>EndToEndId</code> úplne chýba, SEPA pain.001 Doctor to hlási ako samostatnú chybu (<code>end_to_end_id_missing</code>): pole je povinné aj bez symbolov, takže bez neho je súbor neplatný nezávisle od toho, či VS vôbec potrebujete.</p>
+
+  <h2>2. Poradie: presne /VS.../SS.../KS...</h2>
+  <p>Konvencia Národnej banky Slovenska, na ktorú sa odvoláva aj dokumentácia ČSOB k importu SEPA súborov, vyžaduje presne toto poradie: najprv variabilný symbol, potom špecifický, potom konštantný. V príklade z úvodu je poradie prehodené: <code>/VS123/KS0308/SS14</code> namiesto <code>/VS123/SS14/KS0308</code>. Banka reťazec ako celok neoveruje, takže prevod prejde. Účtovný softvér protistrany ale symboly z <code>EndToEndId</code> vyčíta podľa pevnej pozície prefixu <code>/VS</code>, <code>/SS</code>, <code>/KS</code>: pri zlom poradí buď priradí zlé hodnoty, alebo platbu nevie spárovať s faktúrou vôbec.</p>
+
+  <h2>3. Dĺžkové limity: VS a ŠS najviac 10 číslic, KS najviac 4</h2>
+  <p>Limity zostali rovnaké ako pri klasických tuzemských platobných symboloch pred SEPA: variabilný aj špecifický symbol majú najviac 10 číslic, konštantný najviac 4. SEPA pain.001 Doctor dlhší symbol nahlási ako <code>reference_symbol_too_long</code>. Pri prekročení limitu si niektoré banky hodnotu skrátia samy, iné import odmietnu: spoliehať sa na to, ktorú z tých dvoch vaša banka spraví, sa neoplatí.</p>
+
+  <h2>4. Iba číslice, žiadne písmená ani oddeľovače</h2>
+  <p>Hodnota za <code>/VS</code>, <code>/SS</code> a <code>/KS</code> musí byť vždy len postupnosť číslic. Ak sa do nej dostane písmeno, medzera alebo ďalšia lomka (napríklad preklepom pri ručnom skladaní reťazca v exporte), SEPA pain.001 Doctor to označí ako <code>reference_symbol_non_numeric</code>: rovnaký problém ako pri poradí, spracujúci softvér protistrany si symbol nevie správne vyparsovať.</p>
+
+  <h2>5. Celý EndToEndId sa musí zmestiť do 35 znakov</h2>
+  <p>Norma ISO 20022 obmedzuje <code>EndToEndId</code> na typ Max35Text: 35 znakov vrátane lomiek a písmen VS/SS/KS. Samotné tri prefixy s maximálnou dĺžkou hodnôt (<code>/VS</code> + 10 číslic, <code>/SS</code> + 10 číslic, <code>/KS</code> + 4 číslice) zaberú až 29 znakov, takže na čokoľvek naviac ostáva len pár znakov. Ak export pripojí za symboly ešte vlastný text (napríklad číslo faktúry), SEPA pain.001 Doctor príliš dlhú hodnotu nahlási ako <code>end_to_end_id_too_long</code> a oreže ju presne na 35 znakov: konštantný symbol, ktorý bol na konci reťazca, sa tak môže stratiť bez toho, aby to bolo vidieť pri letmom pohľade na XML.</p>
+
+  <h2>Checklist</h2>
+  <ol>
+    <li>V súbore nehľadajte elementy <code>&lt;VS&gt;</code>, <code>&lt;SS&gt;</code> ani <code>&lt;KS&gt;</code>: patria do <code>PmtId/EndToEndId</code> pri každej transakcii <code>CdtTrfTxInf</code>.</li>
+    <li>Poradie v reťazci je vždy <code>/VS.../SS.../KS...</code>, presne v tomto poradí.</li>
+    <li>Variabilný a špecifický symbol majú najviac 10 číslic, konštantný najviac 4, a všetky tri len číslice.</li>
+    <li>Celý <code>EndToEndId</code>, aj s prefixami a prípadným textom naviac, nesmie presiahnuť 35 znakov.</li>
+    <li><code>EndToEndId</code> sa v rámci súboru nesmie opakovať: každá transakcia potrebuje vlastnú, jedinečnú hodnotu.</li>
+    <li>Po každej úprave XML spustite kontrolu znova: banka validuje súbor nanovo pri každom importe.</li>
+  </ol>
+
+  <h2>Skontrolujte to za 30 sekúnd</h2>
+  <div class="cta"><p>Vložte svoj pain.001 súbor do <a href="https://arling.sk/sepa-pain001-doctor/">SEPA pain.001 Doctor</a> a nástroj priamo v prehliadači skontroluje poradie, dĺžku aj formát VS, ŠS a KS v <code>EndToEndId</code>.</p></div>
+
+  <h2>Sources</h2>
+  <ol class="sources">
+    <li>Tatra banka: <a href="https://www.tatrabanka.sk/files/sk/personal/ucet-platby/elektronicke-bankovnictvo/internet-banking/davkove-platby/prenosovy_formatpain001.pdf" target="_blank" rel="noopener">Prenosový formát pain.001.001.03 v štruktúre XML</a>. Popis polí GrpHdr a PmtInf pre import hromadných príkazov.</li>
+    <li>VÚB, a.s.: <a href="https://app.vub.sk/source/files/vubweb/sekundarna-navigacia/informacny-servis/sepa-aplikacie/sct_klient_f.pdf" target="_blank" rel="noopener">Popis formátu pre SEPA úhrady - SCT</a>. Špecifikácia polí PmtId a EndToEndId pri importe SEPA úhrad.</li>
+    <li>ČSOB: <a href="https://www.csob.sk/documents/11005/123723/BB_SEPA_01022016.pdf" target="_blank" rel="noopener">BusinessBanking Lite a SEPA</a>. Konvencia zápisu VS/ŠS/KS v poradí /VS.../SS.../KS... do EndToEndId, s príkladmi zlého poradia.</li>
+    <li>ISO 20022: <a href="https://www.iso20022.org/" target="_blank" rel="noopener">iso20022.org</a>. Definícia dátového typu Max35Text, ktorým je obmedzené pole EndToEndId v pain.001.001.03.</li>
+    <li>European Payments Council: <a href="https://www.europeanpaymentscouncil.eu/" target="_blank" rel="noopener">europeanpaymentscouncil.eu</a>. SEPA Credit Transfer scheme rulebook, na ktorom stavia štruktúra pain.001 správy.</li>
+  </ol>
+</main>
+<footer><div class="wrap">ARLing s. r. o. · <a href="https://arling.sk/">arling.sk</a> · <a href="mailto:andrej@arling.sk">andrej@arling.sk</a></div></footer>
+<script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="be534d51-4d01-4860-b267-9596d91606de"></script>
+</body>
+</html>

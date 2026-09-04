@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://homelab.tailbf8f27.ts.net; connect-src 'self' https://homelab.tailbf8f27.ts.net; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<title>Hromadný príkaz z Excelu do banky: ako vyrobiť pain.001 XML pre Tatra banku, SLSP, VÚB a ČSOB</title>
+<meta name="description" content="Ako previesť platby z Excelu na SEPA pain.001 XML hromadný príkaz pre Tatra banku, SLSP, VÚB a ČSOB: presné hodnoty polí, BIC, VS/ŠS/KS a limity.">
+<link rel="canonical" href="https://arling.sk/notes/hromadny-prikaz-xml-z-excelu/">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Hromadný príkaz z Excelu do banky: ako vyrobiť pain.001 XML pre Tatra banku, SLSP, VÚB a ČSOB">
+<meta property="og:description" content="Ako previesť platby z Excelu na SEPA pain.001 XML hromadný príkaz pre Tatra banku, SLSP, VÚB a ČSOB: presné hodnoty polí, BIC, VS/ŠS/KS a limity.">
+<meta property="og:url" content="https://arling.sk/notes/hromadny-prikaz-xml-z-excelu/">
+<meta property="og:locale" content="sk_SK">
+<meta name="theme-color" content="#f6f2ea">
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Hromadný príkaz z Excelu do banky: ako vyrobiť pain.001 XML pre Tatra banku, SLSP, VÚB a ČSOB",
+  "description": "Ako previesť platby z Excelu na SEPA pain.001 XML hromadný príkaz pre Tatra banku, SLSP, VÚB a ČSOB: presné hodnoty polí, BIC, VS/ŠS/KS a limity.",
+  "datePublished": "2026-09-06",
+  "dateModified": "2026-09-06",
+  "inLanguage": "sk",
+  "author": {
+    "@type": "Person",
+    "name": "Andrej Lauko",
+    "url": "https://arling.sk/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "ARLing s. r. o.",
+    "url": "https://arling.sk/",
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": "Ivanská cesta 32E",
+      "postalCode": "821 04",
+      "addressLocality": "Bratislava",
+      "addressCountry": "SK"
+    }
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://arling.sk/notes/hromadny-prikaz-xml-z-excelu/"
+  }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "ARLing", "item": "https://arling.sk/" },
+    { "@type": "ListItem", "position": 2, "name": "Notes", "item": "https://arling.sk/notes/" },
+    { "@type": "ListItem", "position": 3, "name": "Hromadný príkaz z Excelu do banky", "item": "https://arling.sk/notes/hromadny-prikaz-xml-z-excelu/" }
+  ]
+}
+</script>
+<style>
+  :root { --paper:#f6f2ea; --paper-2:#fbf9f4; --ink:#1b1a17; --ink-2:#4a4741; --muted:#7a766e; --line:#d9d2c4; --accent:#b23a1d; --accent-soft:#f3e2dc; --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif; --sans:system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; --mono:ui-monospace,"Cascadia Code",Consolas,Menlo,monospace; }
+  @media (prefers-color-scheme: dark) { :root { --paper:#151412; --paper-2:#1d1b18; --ink:#efe9de; --ink-2:#c9c2b5; --muted:#8f887b; --line:#2e2b26; --accent:#e0623f; --accent-soft:#3a1f17; } }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--paper); color:var(--ink); font:16px/1.55 var(--sans); }
+  a { color:inherit; text-decoration-color:var(--line); text-underline-offset:3px; }
+  a:hover { text-decoration-color:var(--accent); }
+  .wrap { max-width:760px; margin:0 auto; padding:0 24px; }
+  header.top { border-bottom:1px solid var(--line); }
+  header.top .wrap { display:flex; align-items:baseline; justify-content:space-between; padding:18px 24px; flex-wrap:wrap; gap:8px 0; }
+  .wordmark { font:600 22px/1 var(--serif); text-decoration:none; }
+  nav a { font-size:14px; margin-left:20px; text-decoration:none; color:var(--ink-2); }
+  main.wrap { padding-bottom:16px; }
+  .kicker { font:400 14px/1 var(--serif); color:var(--accent); letter-spacing:.06em; text-transform:uppercase; margin:48px 0 8px; }
+  h1 { font:400 clamp(28px,4.2vw,38px)/1.15 var(--serif); margin:0 0 14px; max-width:38ch; }
+  .byline { color:var(--muted); font-size:14px; margin:0 0 32px; }
+  h2 { font:400 24px/1.2 var(--serif); margin:44px 0 10px; }
+  p, li { color:var(--ink-2); max-width:70ch; }
+  p { margin:14px 0; }
+  ol, ul { padding-left:22px; }
+  ol li, ul li { margin:6px 0; }
+  code { font-family:var(--mono); font-size:.9em; background:var(--accent-soft); color:var(--ink); padding:1px 5px; border-radius:3px; overflow-wrap:anywhere; }
+  .tablewrap { overflow-x:auto; margin:18px 0; border:1px solid var(--line); border-radius:4px; }
+  table { border-collapse:collapse; width:100%; min-width:420px; font-size:14px; }
+  th, td { text-align:left; padding:9px 14px; border-bottom:1px solid var(--line); white-space:nowrap; }
+  thead th { font:600 12px/1 var(--sans); text-transform:uppercase; letter-spacing:.04em; color:var(--muted); background:var(--paper-2); }
+  tbody td { color:var(--ink-2); }
+  tbody code { background:none; padding:0; }
+  .cta { border:1px solid var(--line); border-radius:4px; padding:18px 20px; margin:20px 0; background:var(--paper-2); }
+  .cta p { margin:0; max-width:none; }
+  .sources { padding-left:0; list-style:none; }
+  .sources li { margin:8px 0; padding-left:16px; border-left:2px solid var(--line); }
+  .sources a { color:var(--ink); }
+  footer { margin-top:56px; padding:24px 0 56px; border-top:1px solid var(--line); color:var(--muted); font-size:14px; }
+  footer a { margin-right:4px; }
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap"><a class="wordmark" href="https://arling.sk/">ARLing</a><nav><a href="https://arling.sk/#tools">Tools</a><a href="https://arling.sk/how-we-work/">How we work</a><a href="https://arling.sk/privacy/">Privacy</a></nav></div></header>
+<main class="wrap">
+  <p class="kicker">SEPA XML</p>
+  <h1>Hromadný príkaz z Excelu do banky: ako vyrobiť pain.001 XML pre Tatra banku, SLSP, VÚB a ČSOB</h1>
+  <p class="byline">Andrej Lauko, ARLing · <time datetime="2026-09-06">6. septembra 2026</time></p>
+
+  <p>Máte v Exceli zoznam platieb: faktúry dodávateľom, výplaty, nájomné. Banka namiesto tlačidla „Nahraj Excel“ ponúka pri hromadnom príkaze len import súboru vo formáte XML pain.001. Ručné prepisovanie desiatok riadkov do internet bankingu (Tatra banka, SLSP, VÚB či ČSOB) je pomalé a jedna preklepnutá číslica v IBAN stačí na to, aby platba odišla na cudzí účet. Keď sa o prevod pokúsite vzorcom v Exceli alebo v texťáku a niečo vo výslednom súbore chýba, dostanete namiesto hotového XML na import len prázdny výsledok alebo hlášku typu <code>Žiadne platby na spracovanie. Vložte aspoň jeden riadok s platbou.</code></p>
+
+  <h2>1. Čo generátor potrebuje z vášho Exceľu</h2>
+  <p>Nástroj prečíta text skopírovaný priamo z Exceľu (Ctrl+C, Ctrl+V) aj nahraný súbor .csv, .txt alebo .tsv. Oddeľovač si rozpozná sám: tabulátor pri vložení z Exceľu, bodkočiarku alebo čiarku pri CSV exporte.</p>
+  <p>Ak prvý riadok obsahuje aspoň dva rozpoznateľné názvy stĺpcov (napríklad IBAN, suma, názov, VS), berie ho ako hlavičku a stĺpce si podľa nej namapuje sám. Bez hlavičky použije predvolené poradie: IBAN, suma, názov, VS, ŠS, KS, správa. Sumu prečíta v oboch zápisoch, s bodkou aj s čiarkou ako desatinným oddeľovačom (1234,56 aj 1234.56), a dátum vo formáte YYYY-MM-DD aj D.M.YYYY. Ak automatické rozpoznanie stĺpec netrafí, vo výberoch nad náhľadom platieb ho opravíte ručne.</p>
+
+  <h2>2. Presné hodnoty, ktoré banka v XML očakáva</h2>
+  <p>Súbor musí mať menný priestor <code>urn:iso:std:iso:20022:tech:xsd:pain.001.001.03</code>: to je presne to, čo skratka pain.001.001.03 z normy ISO 20022 znamená. Bez tohto riadku ho žiadna zo štyroch bánk nespracuje ako platný hromadný príkaz. Spôsob úhrady (PmtMtd) musí byť <code>TRF</code>, úroveň služby (SvcLvl/Cd) <code>SEPA</code> a spôsob úhrady poplatkov (ChrgBr) <code>SLEV</code>. Mena je vždy EUR, so sumou zapísanou na presne dve desatinné miesta (napríklad <code>450.00</code>).</p>
+  <p>Toto sú pevné hodnoty schémy EPC SEPA Credit Transfer, ktoré generátor vyplní do každej transakcie automaticky. Pri ručnom písaní XML je práve tu najčastejšie miesto, kde niečo chýba alebo je preklepnuté, a banka súbor odmietne bez ďalšieho vysvetlenia.</p>
+
+  <h2>3. BIC banky príjemcu: kedy sa odvodí sám</h2>
+  <p>Generátor pozná prvé štyri číslice slovenského IBAN (kód banky) a z nich odvodí BIC príjemcu sám, takže ho do Exceľu nemusíte pridávať:</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Banka</th><th>Kód banky v IBAN</th><th>BIC</th></tr></thead>
+      <tbody>
+        <tr><td>Tatra banka</td><td><code>1100</code></td><td><code>TATRSKBX</code></td></tr>
+        <tr><td>Slovenská sporiteľňa</td><td><code>0900</code></td><td><code>GIBASKBX</code></td></tr>
+        <tr><td>VÚB</td><td><code>0200</code></td><td><code>SUBASKBX</code></td></tr>
+        <tr><td>ČSOB</td><td><code>7500</code></td><td><code>CEKOSKBX</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Pri VÚB je BIC príjemcu (CdtrAgt) vo vlastnej špecifikácii banky označený ako povinné pole (Mandatory): generátor ho preto vyplní vždy, keď ide o slovenský IBAN. ČSOB naopak od 1. februára 2016 BIC príjemcu pri SEPA platbe nevyžaduje, je nepovinné. Ak platíte na účet mimo týchto štyroch bánk alebo v inej krajine, doplňte BIC ručne do stĺpca BIC vo vašom Exceli.</p>
+
+  <h2>4. Variabilný, špecifický a konštantný symbol</h2>
+  <p>Formát pain.001 nemá samostatné polia pre VS, ŠS ani KS. Slovenské banky ich podľa konvencie Národnej banky Slovenska čítajú zbalené do jedného poľa EndToEndId, presne v tomto poradí: <code>/VS.../SS.../KS...</code>. Generátor toto poradie poskladá sám z troch samostatných stĺpcov vo vašom Exceli (napríklad <code>/VS20260145/SS0/KS0308</code>), takže ho nemusíte skladať ručne ani si pamätať poradie: opačné poradie prevod nezastaví, ale protistrana si platbu nevie automaticky spárovať s faktúrou.</p>
+  <p>Limity: variabilný aj špecifický symbol môžu mať najviac 10 číslic, konštantný symbol najviac 4. Keď žiadny z troch nevyplníte, do EndToEndId sa zapíše hodnota <code>NOTPROVIDED</code>, čo je predvolená hodnota podľa normy ISO 20022 pre prázdne pole.</p>
+
+  <h2>5. ČSOB a diakritika</h2>
+  <p>ČSOB vo vlastnej dokumentácii uvádza, že SEPA XML súbor s diakritikou sa do BusinessBanking Lite nedá importovať vôbec: nejde o odporúčanie, ale o tvrdé obmedzenie. Povolené znaky sú len a-z, A-Z, 0-9, medzera a <code>/ - ? : ( ) . , ' +</code>. Keď v generátore vyberiete profil ČSOB, mená platiteľa aj príjemcu a text správy pre príjemcu prevedie automaticky bez diakritiky (á→a, č→c, ž→z a podobne). Pri ostatných troch bankách diakritiku ponechá presne tak, ako ste ju napísali v Exceli.</p>
+
+  <h2>6. Koľko platieb naraz a aký dátum splatnosti</h2>
+  <p>Tatra banka vo vlastnej špecifikácii uvádza limit 500 transakcií v jednom bloku PmtInf, generátor navyše obmedzuje jeden súbor na 5000 platieb celkovo: pri väčšom počte platby rozdeľte do viacerých súborov. Dátum splatnosti, ak ho v Exceli nevyplníte alebo ho nástroj nevie rozpoznať, doplní automaticky na nasledujúci deň. VÚB akceptuje požadovaný dátum úhrady najviac 30 dní vopred, Tatra banka 31 dní: spätný dátum, teda dátum v minulosti, neakceptuje ani jedna z bánk.</p>
+
+  <h2>7. Checklist</h2>
+  <ol>
+    <li>Stĺpce IBAN, suma a názov príjemcu máte vyplnené v každom riadku.</li>
+    <li>Sumy sú kladné čísla, so správnym desatinným oddeľovačom.</li>
+    <li>IBAN príjemcu prešiel kontrolou formátu, dĺžky a kontrolného súčtu (MOD-97).</li>
+    <li>Pri platbe mimo Tatra banky, SLSP, VÚB alebo ČSOB máte BIC príjemcu doplnený ručne.</li>
+    <li>VS a ŠS majú najviac 10 číslic, KS najviac 4.</li>
+    <li>Pri profile ČSOB počítate s tým, že mená a správy budú bez diakritiky.</li>
+    <li>Súbor má najviac 500 platieb na jeden blok (Tatra banka) a najviac 5000 platieb spolu.</li>
+    <li>Dátum splatnosti je v budúcnosti a v rámci limitu vašej banky (30 alebo 31 dní).</li>
+  </ol>
+
+  <h2>8. Skontrolujte to za 30 sekúnd</h2>
+  <div class="cta">
+    <p>Vložte platby skopírované z Exceľu do <a href="https://arling.sk/sepa-pain001-generator/">SEPA pain.001 Generátora</a> a stiahnite hotový XML súbor pre svoju banku, hneď skontrolovaný.</p>
+  </div>
+
+  <h2>9. Sources</h2>
+  <ul class="sources">
+    <li>Tatra banka: <a href="https://www.tatrabanka.sk/files/sk/personal/ucet-platby/elektronicke-bankovnictvo/internet-banking/davkove-platby/prenosovy_formatpain001.pdf" target="_blank" rel="noopener">Prenosový formát pain.001.001.03 v štruktúre XML</a> (PDF)</li>
+    <li>Tatra banka: <a href="https://www.tatrabanka.sk/en/personal/account-payments/internet-banking/batch-files/" target="_blank" rel="noopener">Batch files: Send payment files</a></li>
+    <li>VÚB, a.s.: <a href="https://app.vub.sk/source/files/vubweb/sekundarna-navigacia/informacny-servis/sepa-aplikacie/sct_klient_f.pdf" target="_blank" rel="noopener">Popis formátu pre SEPA úhrady: SCT</a> (PDF)</li>
+    <li>ČSOB: <a href="https://www.csob.sk/documents/11005/123723/BB_SEPA_01022016.pdf" target="_blank" rel="noopener">BusinessBanking Lite a SEPA</a> (PDF, 20.8.2015)</li>
+    <li>ISO 20022: <a href="https://www.iso20022.org/" target="_blank" rel="noopener">pain.001.001.03, Customer Credit Transfer Initiation</a></li>
+  </ul>
+</main>
+<footer><div class="wrap">ARLing s. r. o. · IČO 56583486 · Ivanská cesta 32E, 821 04 Bratislava · <a href="https://arling.sk/">arling.sk</a> · <a href="mailto:andrej@arling.sk">andrej@arling.sk</a> · <a href="https://arling.sk/llms.txt">llms.txt</a> · <a href="https://arling.sk/sitemap.xml">sitemap.xml</a></div></footer>
+<script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="be534d51-4d01-4860-b267-9596d91606de"></script>
+</body>
+</html>

@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://homelab.tailbf8f27.ts.net; connect-src 'self' https://homelab.tailbf8f27.ts.net; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<title>Supabase Flutter deep link not working: scheme, Info.plist, AndroidManifest</title>
+<meta name="description" content="supabase_flutter deep link not working? Six places scheme, host and the underscore bug break it: Info.plist, AndroidManifest, Supabase, provider console.">
+<link rel="canonical" href="https://arling.sk/notes/supabase-flutter-deep-link-scheme/">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Supabase Flutter deep link not working: scheme, Info.plist, AndroidManifest">
+<meta property="og:description" content="supabase_flutter deep link not working? Six places scheme, host and the underscore bug break it: Info.plist, AndroidManifest, Supabase, provider console.">
+<meta property="og:url" content="https://arling.sk/notes/supabase-flutter-deep-link-scheme/">
+<meta name="theme-color" content="#f6f2ea">
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="alternate" type="text/plain" href="https://arling.sk/llms.txt" title="llms.txt">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"Article","headline":"Supabase Flutter deep link not working: scheme, Info.plist, AndroidManifest and the underscore bug","datePublished":"2026-09-06","dateModified":"2026-09-06","author":{"@type":"Person","name":"Andrej Lauko"},"publisher":{"@type":"Organization","name":"ARLing s. r. o.","url":"https://arling.sk/"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://arling.sk/notes/supabase-flutter-deep-link-scheme/"},"description":"Why a supabase_flutter OAuth or magic-link deep link never returns to the app: scheme and host rules, Info.plist, AndroidManifest, the Supabase redirect allow-list, the provider console, and the underscore bug in supabase/auth#2447."}
+</script>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"ARLing","item":"https://arling.sk/"},{"@type":"ListItem","position":2,"name":"Notes","item":"https://arling.sk/notes/"},{"@type":"ListItem","position":3,"name":"Supabase Flutter deep link scheme","item":"https://arling.sk/notes/supabase-flutter-deep-link-scheme/"}]}
+</script>
+<style>
+  :root {
+    --paper:#f6f2ea; --paper-2:#fbf9f4; --ink:#1b1a17; --ink-2:#4a4741; --muted:#66625a; --line:#d9d2c4;
+    --accent:#b23a1d; --accent-soft:#f3e2dc;
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+    --sans:system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,"Cascadia Code",Consolas,Menlo,monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --paper:#151412; --paper-2:#1d1b18; --ink:#efe9de; --ink-2:#c9c2b5; --muted:#8f887b; --line:#2e2b26; --accent:#e0623f; --accent-soft:#3a1f17; }
+  }
+  * { box-sizing:border-box; }
+  html { background:var(--paper); }
+  body { margin:0; background:var(--paper); color:var(--ink); font:16px/1.55 var(--sans); -webkit-font-smoothing:antialiased; }
+  a { color:inherit; text-decoration-color:var(--line); text-underline-offset:3px; overflow-wrap:anywhere; }
+  a:hover { text-decoration-color:var(--accent); }
+  :focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
+  .wrap { max-width:720px; margin:0 auto; padding:0 24px; }
+  header.top { border-bottom:1px solid var(--line); }
+  header.top .wrap { max-width:1040px; display:flex; align-items:baseline; justify-content:space-between; gap:16px; padding:18px 24px; flex-wrap:wrap; }
+  .wordmark { font:600 22px/1 var(--serif); text-decoration:none; }
+  nav a { font-size:14px; margin-left:20px; text-decoration:none; color:var(--ink-2); }
+  nav a:hover { color:var(--accent); }
+  main { padding-bottom:16px; }
+  .crumbs { font-size:13px; color:var(--muted); margin:28px 0 0; }
+  .crumbs a { color:var(--muted); }
+  h1 { font:400 clamp(28px,4.4vw,38px)/1.18 var(--serif); letter-spacing:-.005em; margin:14px 0 18px; max-width:26ch; }
+  h2 { font:400 24px/1.2 var(--serif); margin:0 0 10px; }
+  .kicker { font:400 14px/1 var(--serif); color:var(--accent); letter-spacing:.06em; margin:40px 0 8px; }
+  section { border-top:1px solid var(--line); padding-top:8px; margin-top:0; }
+  section:first-of-type { border-top:none; }
+  p, li { color:var(--ink-2); max-width:66ch; }
+  p { margin:0 0 14px; }
+  .lede { font-size:16.5px; }
+  code { font:13.5px/1.4 var(--mono); background:var(--paper-2); border:1px solid var(--line); border-radius:3px; padding:1px 5px; overflow-wrap:anywhere; }
+  pre { background:var(--paper-2); border:1px solid var(--line); border-radius:4px; padding:14px 16px; overflow-x:auto; margin:0 0 16px; max-width:66ch; }
+  pre code { border:none; background:none; padding:0; font-size:13.5px; line-height:1.5; }
+  ol, ul { padding-left:22px; margin:0 0 8px; }
+  li { margin-bottom:8px; }
+  .check { background:var(--paper-2); border:1px solid var(--line); border-radius:6px; padding:20px 24px; }
+  .check p { margin:0; }
+  .check a { color:var(--accent); font-weight:600; }
+  .sources li { margin-bottom:6px; }
+  .byline { color:var(--muted); font-size:14px; margin:36px 0 0; }
+  footer { margin-top:56px; padding:28px 0 56px; border-top:1px solid var(--line); color:var(--muted); font-size:14px; }
+  footer .cols { max-width:1040px; margin:0 auto; padding:0 24px; display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:16px 32px; }
+  footer b { color:var(--ink); font-weight:600; }
+  footer a { color:var(--ink-2); }
+  @media (max-width:480px) {
+    nav a { margin-left:12px; }
+  }
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap"><a class="wordmark" href="https://arling.sk/">ARLing</a><nav><a href="https://arling.sk/#tools">Tools</a><a href="https://arling.sk/how-we-work/">How we work</a><a href="mailto:andrej@arling.sk">Contact</a></nav></div></header>
+<main class="wrap">
+  <p class="crumbs"><a href="https://arling.sk/">ARLing</a> / <a href="https://arling.sk/notes/">Notes</a></p>
+  <h1>Supabase Flutter deep link not working: scheme, Info.plist, AndroidManifest and the underscore bug</h1>
+  <p class="lede">You call <code>signInWithOAuth()</code>, sign in with Google, and the browser never hands control back to the app. Instead it sits on <code>http://localhost:3000/</code>, or Android logs <code>ActivityNotFoundException: No Activity found to handle Intent { act=android.intent.action.VIEW dat=your_app://login-callback }</code>, while the Flutter app is still showing the sign-in screen. <code>supabase_flutter</code> needs five places to agree on the exact same scheme and host: your Dart code, <code>Info.plist</code>, <code>AndroidManifest.xml</code>, the Supabase redirect allow-list, and the OAuth provider console. Here is each place it breaks, one at a time.</p>
+
+  <section>
+  <p class="kicker">01</p>
+  <h2>The scheme or host has an underscore</h2>
+  <p>If <code>app.scheme</code> or <code>app.host</code> contains an underscore, for example <code>my_app://callback</code>, the redirect fails even when Info.plist, AndroidManifest and the Supabase allow-list all list it correctly. Google's OAuth redirect handling mangles underscores in redirect URLs: a scheme or host like <code>my_app</code> always fails Supabase's redirect-URL check and silently falls back to the Site URL. This is tracked upstream as <a href="https://github.com/supabase/auth/issues/2447">supabase/auth#2447</a> and there is no server-side fix. The underscore itself is the bug, so rename it to a hyphen everywhere it appears.</p>
+  <pre><code>// before
+scheme: "my_app"
+redirectTo: "my_app://login-callback"
+
+// after
+scheme: "my-app"
+redirectTo: "my-app://login-callback"</code></pre>
+  </section>
+
+  <section>
+  <p class="kicker">02</p>
+  <h2>The scheme itself is not valid</h2>
+  <p>A custom URL scheme must start with a letter and use only letters, digits, <code>+</code>, <code>-</code> and <code>.</code>. No spaces, and no case mismatch: schemes are matched case-sensitively at OS registration level, so <code>io.supabase.MyApp</code> and <code>io.supabase.myapp</code> are two different schemes to Android and iOS. And <code>http</code> or <code>https</code> are not custom schemes at all: those only work through iOS Universal Links or Android App Links, which need <code>apple-app-site-association</code>, <code>assetlinks.json</code> and <code>android:autoVerify</code> on a real https host, a separate setup from what is described here. A safe default is a reverse-domain identifier such as <code>io.supabase.myapp</code>.</p>
+  </section>
+
+  <section>
+  <p class="kicker">03</p>
+  <h2>Info.plist does not list the scheme</h2>
+  <p><code>CFBundleURLSchemes</code> in <code>ios/Runner/Info.plist</code> has to contain the exact scheme. Without it, iOS has nothing registered to hand the redirect to: Safari, or the in-app browser tab the OAuth screen opened, just sits on the URL, and the OS may report that it cannot open the link at all.</p>
+  <pre><code>&lt;key&gt;CFBundleURLTypes&lt;/key&gt;
+&lt;array&gt;
+  &lt;dict&gt;
+    &lt;key&gt;CFBundleURLSchemes&lt;/key&gt;
+    &lt;array&gt;
+      &lt;string&gt;io.supabase.myapp&lt;/string&gt;
+    &lt;/array&gt;
+  &lt;/dict&gt;
+&lt;/array&gt;</code></pre>
+  </section>
+
+  <section>
+  <p class="kicker">04</p>
+  <h2>AndroidManifest's intent-filter is missing or does not match</h2>
+  <p>Android needs an <code>&lt;intent-filter&gt;</code> on the launcher activity with <code>android:scheme</code>, and <code>android:host</code> if your redirect uses one, equal to <code>app.scheme</code> / <code>app.host</code>. Missing it entirely produces <code>ActivityNotFoundException</code> in logcat. A mismatched scheme or host, often left over from an old value, fails the same way but silently: nothing in the manifest is wrong on its own, it just never fires for this redirect. One more detail: <code>android:autoVerify="true"</code> does nothing on a custom-scheme filter. It only triggers Digital Asset Links verification for https App Links, so leave it off here.</p>
+  <pre><code>&lt;intent-filter android:autoVerify="false"&gt;
+  &lt;action android:name="android.intent.action.VIEW" /&gt;
+  &lt;category android:name="android.intent.category.DEFAULT" /&gt;
+  &lt;category android:name="android.intent.category.BROWSABLE" /&gt;
+  &lt;data android:scheme="io.supabase.myapp" android:host="login-callback" /&gt;
+&lt;/intent-filter&gt;</code></pre>
+  </section>
+
+  <section>
+  <p class="kicker">05</p>
+  <h2>redirectTo is not on the Supabase allow-list, or does not match exactly</h2>
+  <p>Whatever string <code>signInWithOAuth(redirectTo: ...)</code> sends has to equal <code>scheme://host</code> byte for byte, trailing slash included, and it has to be covered by an entry under Supabase → Authentication → URL Configuration → Redirect URLs, either the exact string or a glob such as <code>io.supabase.myapp://**</code>. If it is not covered, Supabase does not throw an error: it silently falls back to the Site URL, so the browser ends up in your web app, or on <code>localhost</code> if that is still what Site URL points to, instead of back in the mobile app. The failure looks identical to every other cause on this page, which is why it is worth checking the allow-list first.</p>
+  </section>
+
+  <section>
+  <p class="kicker">06</p>
+  <h2>The provider console has the wrong redirect URI</h2>
+  <p>Google, Apple, GitHub, Discord and Kakao all need the Supabase project's own callback in their console, not your app's scheme: <code>https://&lt;project-ref&gt;.supabase.co/auth/v1/callback</code>, an exact match, no wildcards accepted. The handshake goes provider to Supabase to app: the provider redirects to Supabase first, and only Supabase then redirects on to your app's custom scheme. Putting <code>io.supabase.myapp://login-callback</code> in the provider's own settings breaks the first hop, before your app's scheme is even involved.</p>
+  </section>
+
+  <section>
+  <h2>Checklist</h2>
+  <ol>
+    <li>Scheme and host use only lowercase letters, digits, <code>-</code> and <code>.</code>: no underscores, no spaces.</li>
+    <li>Scheme is a custom scheme, not <code>http</code> or <code>https</code>, unless Universal Links / App Links are set up separately.</li>
+    <li>Info.plist's <code>CFBundleURLSchemes</code> contains the exact scheme.</li>
+    <li>AndroidManifest's intent-filter scheme, and host if used, matches exactly, with no <code>android:autoVerify</code> on it.</li>
+    <li><code>redirectTo</code> in code equals <code>scheme://host</code> exactly, including the trailing slash.</li>
+    <li>That value, or a matching pattern, is on Supabase's Redirect URLs list.</li>
+    <li>Supabase's Site URL is a real production URL, not <code>localhost</code>.</li>
+    <li>The OAuth provider console has the exact <code>https://&lt;ref&gt;.supabase.co/auth/v1/callback</code>.</li>
+    <li><code>authFlowType</code> is <code>pkce</code> and <code>authScreenLaunchMode</code> is <code>LaunchMode.externalApplication</code>.</li>
+    <li><code>onAuthStateChange</code> has a listener, so the UI updates once the session comes back.</li>
+  </ol>
+  </section>
+
+  <section>
+  <h2>Check it in 30 seconds</h2>
+  <div class="check"><p>Paste your scheme, host, Info.plist, AndroidManifest and Supabase settings into the <a href="https://arling.sk/flutter-supabase-doctor/">Supabase Deep Link Doctor for Flutter</a> and it lists every mismatch by name, with the exact value to fix.</p></div>
+  </section>
+
+  <section>
+  <h2>Sources</h2>
+  <ul class="sources">
+    <li>Supabase Docs, <a href="https://supabase.com/docs/guides/auth/native-mobile-deep-linking">Native mobile deep linking</a>: redirect URL format, CFBundleURLSchemes, AndroidManifest intent-filter.</li>
+    <li>Supabase Docs, <a href="https://supabase.com/docs/reference/dart/auth-signinwithoauth">signInWithOAuth (Dart reference)</a>: redirectTo, authScreenLaunchMode, LaunchMode.externalApplication.</li>
+    <li>pub.dev, <a href="https://pub.dev/packages/supabase_flutter">supabase_flutter package page</a>: deep links for magic link, e-mail confirmation, password reset and OAuth.</li>
+    <li>GitHub, <a href="https://github.com/supabase/auth/issues/2447">supabase/auth issue #2447</a>: underscores in a redirect URL always fail the check and fall back to Site URL.</li>
+  </ul>
+  </section>
+
+  <p class="byline">Andrej Lauko, ARLing. 6 September 2026.</p>
+</main>
+<footer>
+  <div class="cols">
+    <div><b>ARLing s. r. o.</b><br>Ivanská cesta 32E<br>821 04 Bratislava, Slovakia</div>
+    <div>Company ID 56583486<br>VAT ID SK2122352100<br><a href="mailto:andrej@arling.sk">andrej@arling.sk</a></div>
+    <div><a href="https://arling.sk/privacy/">privacy</a> · <a href="https://arling.sk/llms.txt">llms.txt</a> · <a href="https://arling.sk/sitemap-index.xml">sitemap</a> · <a href="https://arling.sk/how-we-work/">how we work</a><br>Tools are provided as is, without warranty. Anonymous visit counts via self-hosted Umami.</div>
+  </div>
+</footer>
+<script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="be534d51-4d01-4860-b267-9596d91606de"></script>
+</body>
+</html>
