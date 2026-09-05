@@ -22,6 +22,7 @@ export const STORAGE_KEY = 'arling_lang';
 export const DICT = {
   // ── header / nav / language switch ────────────────────────────────────
   'skip': { sk: 'Skočiť na nástroje', en: 'Skip to tools', de: 'Zu den Tools springen' },
+  'wordmark': { sk: 'Bankové nástroje', en: 'Banking tools', de: 'Bankwerkzeuge' },
   'brand.sub': { sk: 'nástroj ARLing', en: 'an ARLing tool', de: 'ein ARLing-Tool' },
   'nav.tools': { sk: 'Nástroje', en: 'Tools', de: 'Tools' },
   'nav.pro': { sk: 'Cena', en: 'Pricing', de: 'Preise' },
@@ -188,8 +189,8 @@ export const DICT = {
   'r3.title': { sk: 'Šablóny pre Pohodu, Omegu a Money S3.', en: 'Presets for Pohoda, Omega and Money S3.', de: 'Vorlagen für Pohoda, Omega und Money S3.' },
   'r3.body': {
     sk: 'Predvolené mapovanie stĺpcov pre exporty z týchto troch účtovných programov, na jeden klik namiesto ručného nastavovania.',
-    en: 'Default column mapping for exports from these three Slovak accounting programs, in one click instead of setting it up by hand.',
-    de: 'Voreingestelltes Spalten-Mapping für Exporte aus diesen drei slowakischen Buchhaltungsprogrammen, per Klick statt manueller Einrichtung.',
+    en: 'Default column mapping for exports from these three Slovak/Czech accounting programs, in one click instead of setting it up by hand. camt.053 to Excel separately offers DATEV, Lexware and sevDesk presets.',
+    de: 'Voreingestelltes Spalten-Mapping für Exporte aus diesen drei slowakischen/tschechischen Buchhaltungsprogrammen, per Klick statt manueller Einrichtung. camt.053 nach Excel bietet zusätzlich Vorlagen für DATEV, Lexware und sevDesk.',
   },
   'r4.title': { sk: 'História.', en: 'History.', de: 'Verlauf.' },
   'r4.body': {
@@ -335,6 +336,7 @@ export const DICT = {
   'footer.tools.label': { sk: 'Štyri nástroje:', en: 'Four tools:', de: 'Vier Tools:' },
   'footer.all.tools': { sk: 'Všetky nástroje ARLing', en: 'All ARLing tools', de: 'Alle ARLing-Tools' },
   'footer.privacy': { sk: 'Súkromie', en: 'Privacy', de: 'Datenschutz' },
+  'footer.country': { sk: 'Slovensko', en: 'Slovakia', de: 'Slowakei' },
   'footer.note': {
     sk: 'Nič neopúšťa váš prehliadač okrem anonymných počtov použitia cez self-hosted Umami, overenia licenčného kľúča po zaplatení a e-mailu, ak sa prihlásite na odber nižšie.',
     en: 'Nothing leaves your browser except anonymous usage counts via self-hosted Umami, verifying the licence key after payment, and an email address if you sign up for updates below.',
