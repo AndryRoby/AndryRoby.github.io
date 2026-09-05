@@ -192,6 +192,12 @@ export const DICT = {
     en: 'Default column mapping for exports from these three Slovak/Czech accounting programs, in one click instead of setting it up by hand. camt.053 to Excel separately offers DATEV, Lexware and sevDesk presets.',
     de: 'Voreingestelltes Spalten-Mapping für Exporte aus diesen drei slowakischen/tschechischen Buchhaltungsprogrammen, per Klick statt manueller Einrichtung. camt.053 nach Excel bietet zusätzlich Vorlagen für DATEV, Lexware und sevDesk.',
   },
+  'r6.title': { sk: 'MT940 a DATEV Buchungsstapel z camt.053.', en: 'MT940 and DATEV Buchungsstapel from camt.053.', de: 'MT940 und DATEV Buchungsstapel aus camt.053.' },
+  'r6.body': {
+    sk: 'Výpis vo formáte camt.053 prevediete aj na MT940 (.sta) alebo priamo na DATEV Buchungsstapel (EXTF CSV) v nástroji camt.053 do Excelu. <a href="https://arling.sk/camt053-to-excel/mt940/">Viac o MT940 a DATEV</a>.',
+    en: 'Convert a camt.053 statement to MT940 (.sta) or straight to DATEV Buchungsstapel (EXTF CSV) in the camt.053 to Excel tool. <a href="https://arling.sk/camt053-to-excel/mt940/">More on MT940 and DATEV</a>.',
+    de: 'Kontoauszug im Format camt.053 auch nach MT940 (.sta) oder direkt nach DATEV Buchungsstapel (EXTF CSV) umwandeln, im Tool camt.053 nach Excel. <a href="https://arling.sk/camt053-to-excel/mt940/">Mehr zu MT940 und DATEV</a>.',
+  },
   'r4.title': { sk: 'História.', en: 'History.', de: 'Verlauf.' },
   'r4.body': {
     sk: 'Posledné spracovania v každom nástroji uložené vo vašom prehliadači, s možnosťou znova stiahnuť.',
