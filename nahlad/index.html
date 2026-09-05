@@ -143,16 +143,6 @@
   @keyframes fadein{to{opacity:.62}}
 
   /* bocny register: vie, kde prave si */
-  .rail{position:fixed;left:max(12px,calc(50% - min(670px,46vw) - 46px));width:30px;top:50%;transform:translateY(-50%);z-index:3;pointer-events:none;
-        display:flex;flex-direction:column;gap:12px;opacity:0;transition:opacity .4s var(--ease)}
-  .rail.on{opacity:1;pointer-events:auto}
-  .rail a{position:relative;display:block;width:30px;height:14px;text-decoration:none;color:var(--muted);font-family:var(--ui);font-size:11px;letter-spacing:.1em;text-transform:uppercase}
-  .rail i{position:absolute;left:0;top:50%;display:block;width:18px;height:1px;background:currentColor;transition:width .35s var(--spring),background .35s var(--ease)}
-  .rail span{position:absolute;left:38px;top:50%;transform:translate(-4px,-50%);white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .3s var(--ease),transform .3s var(--spring)}
-  .rail a:hover span,.rail a[aria-current="true"] span{opacity:1;transform:translate(0,-50%)}
-  .rail a[aria-current="true"]{color:var(--accent)}
-  .rail a[aria-current="true"] i{width:30px;background:var(--accent)}
-  @media (max-width:1500px){ .rail{display:none} }
 
   /* pripnuta scena: obsah sa meni podla scrollu */
   .steps{display:grid;grid-template-columns:5fr 6fr;gap:clamp(28px,4vw,72px);align-items:start}
@@ -191,7 +181,7 @@
   .go:hover{color:var(--accent)}
   .go:hover svg{transform:translateX(4px)}
   @media (prefers-reduced-motion:reduce){
-    .rail{opacity:1} .step{opacity:1} .stick{position:static}
+    .step{opacity:1} .stick{position:static}
     .stage .fig{position:static;opacity:1} .bars rect{transform:none}
   }
 
@@ -311,14 +301,18 @@
 
   <div class="banner r" id="pas">
     <div class="frame">
-      <img src="/press/asistent-3-live-demo.png" width="1200" height="675" decoding="async"
-           alt="Asistent odpovedá zákazníkovi v e-shope a ukazuje výrobky z jeho feedu">
+      <picture>
+        <source type="image/webp" srcset="/art/hmla-900.webp 900w, /art/hmla-1600.webp 1600w"
+                sizes="(max-width: 860px) 92vw, 89vw">
+        <img src="/art/hmla-1600.jpg" width="1600" height="900" decoding="async"
+             alt="Ranná hmla nad krajinou, pás oblakov pod hrebeňom">
+      </picture>
       <div class="over">
-        <b>Asistent odpovie z vášho feedu</b>
-        <span>Nájde výrobok, ktorý naozaj sedí, odpovie v jazyku zákazníka a odkáže na existujúcu stránku. Rozhovor sa nikam neukladá.</span>
+        <b>Nástroje, ktoré robia jednu vec poriadne</b>
+        <span>Asistent, ktorý odpovedá z vášho feedu. Výpis z banky do Excelu. Kontrola feedu skôr než ju spraví Google. Všetko beží vo vašom prehliadači alebo v EÚ.</span>
       </div>
     </div>
-    <div class="cap"><span>Skutočná snímka z ukážkového obchodu, nie ilustrácia.</span><span>Bratislava, 5. 9. 2026</span></div>
+    <div class="cap"><span>Foto Andrej Lauko, vlastná fotografia, nie stock.</span><span>Bratislava, 5. 9. 2026</span></div>
   </div>
 
   <section id="ako" class="deep">
@@ -405,13 +399,6 @@
     </div>
   </section>
 </main>
-<nav class="rail" aria-label="Kde ste">
-  <a href="#hero"><i></i><span>Úvod</span></a>
-  <a href="#ako"><i></i><span>Pohyb</span></a>
-  <a href="#postup"><i></i><span>Scroll</span></a>
-  <a href="#preco"><i></i><span>Prečo</span></a>
-  <a href="#rozhodni"><i></i><span>Rozhodni</span></a>
-</nav>
 <div class="pal" role="group" aria-label="Paleta">
   <span>Paleta</span>
   <button type="button" data-pal="ivory" aria-pressed="true">Slonovina</button>
@@ -451,22 +438,6 @@
       }).join(' ');
     });
     requestAnimationFrame(function () { h1.classList.add('in'); });
-  }
-
-  // bocny register sleduje, ktora sekcia je v strede obrazovky
-  var rail = document.querySelector('.rail');
-  if (rail) {
-    var links = Array.prototype.slice.call(rail.querySelectorAll('a'));
-    var targets = links.map(function (a) { return document.querySelector(a.getAttribute('href')); });
-    var railIo = new IntersectionObserver(function (entries) {
-      entries.forEach(function (en) {
-        var i = targets.indexOf(en.target);
-        if (i < 0 || !en.isIntersecting) return;
-        links.forEach(function (a, j) { a.setAttribute('aria-current', j === i ? 'true' : 'false'); });
-      });
-      rail.classList.add('on');
-    }, { rootMargin: '-45% 0px -45% 0px' });
-    targets.forEach(function (t) { if (t) railIo.observe(t); });
   }
 
   // pripnuta scena: krok sa meni podla toho, ktory text je v strede
