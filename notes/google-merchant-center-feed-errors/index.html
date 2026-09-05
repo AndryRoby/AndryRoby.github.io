@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://homelab.tailbf8f27.ts.net; connect-src 'self' https://homelab.tailbf8f27.ts.net; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<title>Google Merchant Center feed errors explained: the 12 rejections that block most products and how to fix each in the feed</title>
+<meta name="description" content="The 12 most common Google Merchant Center and Meta catalog disapprovals, the exact spec rule behind each, and the feed fix for Shopify and WooCommerce.">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Google Merchant Center feed errors explained: the 12 rejections that block most products and how to fix each in the feed">
+<meta property="og:description" content="The 12 most common Google Merchant Center and Meta catalog disapprovals, the exact spec rule behind each, and the feed fix for Shopify and WooCommerce.">
+<meta property="og:url" content="https://arling.sk/notes/google-merchant-center-feed-errors/">
+<meta property="og:image" content="https://arling.sk/feed-doctor/icon-512.png">
+<meta name="theme-color" content="#f6f2ea">
+<link rel="canonical" href="https://arling.sk/notes/google-merchant-center-feed-errors/">
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Google Merchant Center feed errors explained: the 12 rejections that block most products and how to fix each in the feed",
+  "description": "The 12 most common Google Merchant Center and Meta catalog disapprovals, the exact spec rule behind each, and the feed fix for Shopify and WooCommerce.",
+  "datePublished": "2026-09-05",
+  "dateModified": "2026-09-05",
+  "inLanguage": "en",
+  "author": {
+    "@type": "Person",
+    "name": "Andrej Lauko",
+    "url": "https://arling.sk/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "ARLing s. r. o.",
+    "url": "https://arling.sk/"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://arling.sk/notes/google-merchant-center-feed-errors/"
+  }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "ARLing", "item": "https://arling.sk/" },
+    { "@type": "ListItem", "position": 2, "name": "Notes", "item": "https://arling.sk/notes/" },
+    { "@type": "ListItem", "position": 3, "name": "Google Merchant Center feed errors", "item": "https://arling.sk/notes/google-merchant-center-feed-errors/" }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Why does Merchant Center disapprove a product that looks fine on the website?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Merchant Center reads only the feed row, not the live page. A stale export, a cached price, or a plugin that has not re-synced after a sale still shows the old value to Google, even though checkout charges the correct amount." }
+    },
+    {
+      "@type": "Question",
+      "name": "Do Google Shopping and Meta need two separate feeds?",
+      "acceptedAnswer": { "@type": "Answer", "text": "They read overlapping but not identical rules: availability uses in_stock versus in stock, price formatting and GTIN length differ. One feed can pass Google and fail Meta, so check each destination against its own rules rather than assuming one export satisfies both." }
+    },
+    {
+      "@type": "Question",
+      "name": "How often does a feed need to be re-checked?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Any time price, stock, or product attributes change. Google and Meta re-fetch a scheduled feed on their own interval, commonly daily, so an error introduced today can sit disapproved for a full day or more before it shows up in Diagnostics." }
+    },
+    {
+      "@type": "Question",
+      "name": "Does fixing these 12 issues guarantee approval?",
+      "acceptedAnswer": { "@type": "Answer", "text": "No. These are the attribute-level rejections that block most products, but Merchant Center and Meta also run account-level and policy reviews, misrepresentation, prohibited content, destination restrictions, that a correctly formatted feed does not resolve by itself." }
+    }
+  ]
+}
+</script>
+
+<style>
+  :root { --paper:#f6f2ea; --paper-2:#fbf9f4; --ink:#1b1a17; --ink-2:#4a4741; --muted:#66625a; --line:#d9d2c4; --accent:#b23a1d; --accent-soft:#f3e2dc; --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif; --sans:system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; --mono:ui-monospace,"Cascadia Code",Consolas,Menlo,monospace; }
+  @media (prefers-color-scheme: dark) { :root { --paper:#151412; --paper-2:#1d1b18; --ink:#efe9de; --ink-2:#c9c2b5; --muted:#8f887b; --line:#2e2b26; --accent:#e0623f; --accent-soft:#3a1f17; } }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--paper); color:var(--ink); font:16px/1.55 var(--sans); }
+  a { color:inherit; text-decoration-color:var(--line); text-underline-offset:3px; }
+  a:hover { text-decoration-color:var(--accent); }
+  .wrap { max-width:760px; margin:0 auto; padding:0 24px; }
+  header.top { border-bottom:1px solid var(--line); }
+  header.top .wrap { display:flex; align-items:baseline; justify-content:space-between; padding:18px 24px; flex-wrap:wrap; gap:8px; }
+  .wordmark { font:600 22px/1 var(--serif); text-decoration:none; }
+  nav a { font-size:14px; margin-left:20px; text-decoration:none; color:var(--ink-2); }
+  main.wrap { padding-bottom:8px; }
+  h1 { font:400 clamp(28px,4.2vw,38px)/1.18 var(--serif); margin:20px 0 10px; max-width:34ch; }
+  h2 { font:400 24px/1.2 var(--serif); margin:8px 0 10px; }
+  .kicker { font:400 13px/1 var(--serif); color:var(--accent); letter-spacing:.06em; text-transform:uppercase; margin:0 0 8px; }
+  .byline { color:var(--muted); font-size:14px; margin:0 0 28px; }
+  p, li { color:var(--ink-2); max-width:66ch; overflow-wrap:anywhere; }
+  ol { padding-left:22px; }
+  ol li { margin-bottom:10px; }
+  section.cause { border-top:1px solid var(--line); padding-top:26px; margin-top:26px; }
+  code { font-family:var(--mono); font-size:0.92em; background:var(--paper-2); border:1px solid var(--line); border-radius:3px; padding:1px 5px; color:var(--ink); }
+  pre { background:var(--paper-2); border:1px solid var(--line); border-radius:4px; padding:14px 16px; overflow-x:auto; margin:14px 0; max-width:100%; }
+  pre code { background:none; border:none; padding:0; font-size:13px; line-height:1.5; white-space:pre; }
+  .err { border-radius:4px; border:1px solid var(--line); border-left:3px solid var(--accent); background:var(--accent-soft); padding:12px 16px; margin:16px 0; }
+  .err code { background:none; border:none; padding:0; color:var(--ink); }
+  .fix-label { font-size:13px; color:var(--muted); margin:16px 0 -4px; letter-spacing:.02em; }
+  .tool-cta { display:inline-block; margin-top:6px; padding:10px 18px; border:2px solid var(--accent); border-radius:4px; text-decoration:none; color:var(--ink); font-size:15px; }
+  .tool-cta:hover { background:var(--accent-soft); }
+  .sources li { margin-bottom:6px; font-size:15px; }
+  details { border-top:1px solid var(--line); padding:14px 0; }
+  details:last-of-type { border-bottom:1px solid var(--line); }
+  summary { cursor:pointer; font:400 18px/1.3 var(--serif); list-style:none; display:flex; justify-content:space-between; gap:12px; }
+  summary::-webkit-details-marker { display:none; }
+  summary::after { content:"+"; color:var(--accent); flex:none; font-family:var(--sans); }
+  details[open] summary::after { content:"\2013"; }
+  details p { color:var(--ink-2); margin:10px 0 0; max-width:66ch; overflow-wrap:anywhere; }
+  footer { margin-top:56px; padding:24px 0 56px; border-top:1px solid var(--line); color:var(--muted); font-size:14px; }
+  @media (max-width:480px) { header.top .wrap { flex-direction:column; align-items:flex-start; } nav a { margin-left:0; margin-right:16px; } }
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap"><a class="wordmark" href="https://arling.sk/">ARLing</a><nav><a href="https://arling.sk/#tools">Tools</a><a href="https://arling.sk/feed-doctor/">Feed Doctor</a><a href="https://arling.sk/how-we-work/">How we work</a></nav></div></header>
+<main class="wrap">
+  <p class="kicker" style="margin-top:36px">Notes</p>
+  <h1>Google Merchant Center feed errors explained: the 12 rejections that block most products and how to fix each in the feed</h1>
+  <p class="byline">Andrej Lauko, ARLing · 5 September 2026</p>
+
+  <p>Google Merchant Center and Meta Commerce Manager both work the same way underneath. A scheduled fetch pulls your feed file (XML, TXT or CSV) from a URL or an upload, a parser reads it row by row against a fixed attribute list, and any item that fails a required-attribute check or a format rule gets an item-level disapproval instead of blocking the whole upload. The rest of the feed still goes live, so a batch of bad rows can sit disapproved in Diagnostics for weeks without anyone opening that tab. The twelve causes below follow Google's <a href="https://support.google.com/merchants/answer/7052112">product data specification</a> and Meta's <a href="https://www.facebook.com/business/help/120325381656392">catalog fields reference</a>, in the order they most often show up on a Shopify or WooCommerce export.</p>
+
+  <section class="cause">
+    <p class="kicker">01</p>
+    <h2>Missing or invalid id</h2>
+    <div class="err"><code>Missing value: id</code></div>
+    <p>Google's spec says to "use a unique value for each product. Use the product's SKU where possible," capped at 50 characters. Meta requires the same content id, unique within the catalog, up to 100 characters, and it must differ from any item_group_id. A feed that reuses the parent product id for every size and colour does not raise an error, it just overwrites the earlier rows in Diagnostics.</p>
+    <p class="fix-label">Fix</p>
+    <pre><code>&lt;g:id&gt;SKU-JUMPER-NAVY-M&lt;/g:id&gt;</code></pre>
+    <p>In Shopify, map id to the variant id or SKU, not the product id. In WooCommerce, export the variation SKU for every row, not the parent post ID.</p>
+  </section>
+
+  <section class="cause">
+    <p class="kicker">02</p>
+    <h2>Missing or invalid title</h2>
+    <div class="err"><code>Missing value: title</code></div>
+    <p>Google caps title at 150 characters and warns: "don't include promotional text like 'free shipping', all capital letters, or gimmicky foreign characters." Meta caps title at 200 characters, recommends under 65 to avoid truncation, and expects it "written in title case."</p>
+    <p class="fix-label">Fix</p>
+    <pre><code>&lt;g:title&gt;Merino Wool Jumper, Navy, Medium&lt;/g:title&gt;</code></pre>
+    <p>Strip any ALL-CAPS badge text or "FREE SHIPPING" string a theme or plugin appends to the title field before export.</p>
+  </section>
+
+  <section class="cause">
+    <p class="kicker">03</p>
+    <h2>Missing or invalid description</h2>
+    <div class="err"><code>Missing value: description</code></div>
+    <p>Google allows up to 5000 characters and says to "include only information about the product," no promotional text or all caps. Meta caps description at 9999 characters, plain text only, no HTML and no links, and it must differ from the title.</p>
+    <p class="fix-label">Fix</p>
+    <pre><code>&lt;g:description&gt;100% merino wool jumper, ribbed cuffs and hem, machine washable at 30 degrees.&lt;/g:description&gt;</code></pre>
+    <p>Run the description through a strip-tags step (WooCommerce's <code>wp_strip_all_tags()</code> or Shopify's <code>strip_html</code> filter) so leftover <code>&lt;p&gt;</code> and <code>&lt;br&gt;</code> tags from a WYSIWYG editor do not reach the feed.</p>
+  </section>
+
+  <section class="cause">
+    <p class="kicker">04</p>
+    <h2>Missing or invalid link</h2>
+    <div class="err"><code>Invalid value: link</code></div>
+    <p>Google requires the link to sit "on your verified domain name," start with http or https, and use "an encoded URL that complies with RFC 2396 or RFC 1738." Meta requires it to "begin with http:// or https://" and point to the business's own domain, not a marketplace or aggregator page.</p>
+    <p class="fix-label">Fix</p>
+    <pre><code>&lt;g:link&gt;https://shop.example.com/products/merino-jumper?variant=10293&lt;/g:link&gt;</code></pre>
+    <p>Replace any staging or preview domain left over from a template export, and URL-encode spaces and ampersands rather than leaving them raw.</p>
+  </section>
+
+  <section class="cause">
+    <p class="kicker">05</p>
+    <h2>Missing or invalid image_link</h2>
+    <div class="err"><code>Invalid value: image_link</code></div>
+    <p>Google raised the minimum to 500 by 500 pixels, enforced from 31 January 2027, and rejects "a placeholder or a generic image," scaled-up thumbnails, watermarks or borders. Meta requires images "at least 500 x 500 pixels" in JPEG or PNG, under 8 MB.</p>
+    <p class="fix-label">Fix</p>
+    <pre><code>&lt;g:image_link&gt;https://cdn.example.com/products/jumper-navy-1200.jpg&lt;/g:image_link&gt;</code></pre>
+    <p>Point image_link at the CDN URL of the real product photo, not the lazy-load placeholder GIF that some Shopify and WooCommerce themes render before the actual image loads.</p>
+  </section>
+
+  <section class="cause">
+    <p class="kicker">06</p>
+    <h2>Invalid price, currency, or a price that does not match checkout</h2>
+    <div class="err"><code>Price mismatch</code></div>
+    <p>Google's rule covers both problems at once: "accurately submit the product's price and currency, and match with the price from your landing page," using ISO 4217 currency codes. Meta wants the price "as a number, followed by a space and then the 3-letter ISO 4217 currency code," no currency symbols, one currency per file.</p>
+    <p class="fix-label">Fix</p>
+    <pre><code>&lt;g:price&gt;39.90 EUR&lt;/g:price&gt;
+&lt;g:sale_price&gt;29.90 EUR&lt;/g:sale_price&gt;</code></pre>
+    <p>Send price as a plain number plus a space plus the code, not "€39,90". When the store shows a discount at checkout, feed <code>sale_price</code> as well, so the feed and the cart always agree.</p>
+  </section>
+
+  <section class="cause">
+    <p class="kicker">07</p>
+    <h2>Invalid availability values</h2>
+    <div class="err"><code>Invalid value: availability</code></div>
+    <p>Google accepts exactly four values, in_stock, out_of_stock, preorder, backorder, and must "match the availability from your landing page." Meta accepts only two, in stock and out of stock, "must be written in U.S. English," lowercase, separated by a space rather than an underscore.</p>
+    <p class="fix-label">Fix</p>
+    <pre><code>&lt;g:availability&gt;in_stock&lt;/g:availability&gt;</code></pre>
+    <p>Map the plugin's raw stock boolean or a translated word explicitly to the exact enum for each destination, since Google and Meta do not share the same spelling.</p>
+  </section>
+
+  <section class="cause">
+    <p class="kicker">08</p>
+    <h2>Missing or invalid condition</h2>
+    <div class="err"><code>Invalid value: condition</code></div>
+    <p>Google's condition attribute takes new, refurbished or used, required whenever a product is not new. Meta accepts the same three values and lists condition as required for every item.</p>
+    <p class="fix-label">Fix</p>
+    <pre><code>&lt;g:condition&gt;new&lt;/g:condition&gt;</code></pre>
+    <p>Default the column to "new" in the export template instead of leaving it blank when the store never sells used stock.</p>
+  </section>
+
+  <section class="cause">
+    <p class="kicker">09</p>
+    <h2>GTIN checksum errors and duplicate GTINs</h2>
+    <div class="err"><code>Value doesn't meet requirements: gtin</code></div>
+    <p>Google caps gtin at 50 numeric characters, 14 per value, and warns plainly: "if you submit a product with an incorrect GTIN value, your product will be disapproved." Meta accepts UPC (12-digit), EAN (13-digit), JAN or ISBN-13, "no dashes or spaces."</p>
+    <p class="fix-label">Fix</p>
+    <pre><code>&lt;g:gtin&gt;4006381333931&lt;/g:gtin&gt;</code></pre>
+    <p>Strip spaces and dashes before export, check the trailing digit is a valid checksum rather than a transposed copy from a spreadsheet barcode column, and never reuse one GTIN across colour or size variants, since each is a physically different product with its own code.</p>
+  </section>
+
+  <section class="cause">
+    <p class="kicker">10</p>
+    <h2>Missing or invalid brand</h2>
+    <div class="err"><code>Missing value: brand</code></div>
+    <p>Google requires brand on new products outside a short list of exempt categories, and it rejects placeholder text outright: "don't submit values such as 'N/A', 'Generic', 'No brand', or 'Does not exist'," capped at 70 characters. Meta caps brand at 100 characters.</p>
+    <p class="fix-label">Fix</p>
+    <pre><code>&lt;g:brand&gt;Example Knitwear&lt;/g:brand&gt;</code></pre>
+    <p>For a private-label store, feed the store's own registered brand name consistently, not the word a plugin inserts by default when the field is left empty.</p>
+  </section>
+
+  <section class="cause">
+    <p class="kicker">11</p>
+    <h2>item_group_id and mismatched variant attributes</h2>
+    <div class="err"><code>Inconsistent variant attributes</code></div>
+    <p>Google requires item_group_id to be "a unique value for each group of variants," kept the same across updates, alongside consistent colour, size or material per row. Meta requires the same field to be "unique and differ from all content IDs," so it can never equal any variant's own id.</p>
+    <p class="fix-label">Fix</p>
+    <pre><code>&lt;g:item_group_id&gt;10293&lt;/g:item_group_id&gt;
+&lt;g:color&gt;Navy&lt;/g:color&gt;
+&lt;g:size&gt;M&lt;/g:size&gt;</code></pre>
+    <p>In Shopify, the product id (not the variant id) is a safe item_group_id. In WooCommerce, use the parent product ID for every variation row, and spell the colour and size attributes identically across all variants of the same product.</p>
+  </section>
+
+  <section class="cause">
+    <p class="kicker">12</p>
+    <h2>Shipping and tax setup errors</h2>
+    <div class="err"><code>Missing value: shipping</code></div>
+    <p>Google leaves shipping cost to either the feed's shipping attribute or the account's Shipping settings, and it is explicit about tax: "for the US and Canada, don't include any taxes" in the price, while "for all other countries, include value added tax (VAT) or Goods and Services Tax (GST) in the price." Meta reads shipping cost from the feed's shipping attribute or the catalog's shipping profile; leaving both empty leaves checkout cost unknown to either platform.</p>
+    <p class="fix-label">Fix</p>
+    <pre><code>&lt;g:shipping&gt;
+  &lt;g:country&gt;SK&lt;/g:country&gt;
+  &lt;g:price&gt;3.90 EUR&lt;/g:price&gt;
+&lt;/g:shipping&gt;</code></pre>
+    <p>EU stores keep VAT inside price and leave the tax attribute empty. US stores strip tax out of price and set it in either the tax attribute or Merchant Center's account-level tax settings, not both.</p>
+  </section>
+
+  <section class="cause">
+    <p class="kicker">13</p>
+    <h2>Check the feed before you submit it</h2>
+    <p>Fixing twelve attributes one export at a time does not scale past a few dozen products. <a href="https://arling.sk/feed-doctor/">Feed Doctor</a> runs 31 rules against the same checks above, entirely in your browser, for Google Shopping XML or TXT, Meta catalog CSV, Shopify's products.json, WooCommerce exports and generic XML or CSV. Nothing is uploaded anywhere; it flags exactly which id, price, GTIN or availability rows would fail before Google or Meta ever see them.</p>
+    <p><a class="tool-cta" href="https://arling.sk/feed-doctor/">Open Feed Doctor</a></p>
+  </section>
+
+  <section class="cause">
+    <p class="kicker">14</p>
+    <h2>A clean feed also feeds an AI shopping assistant</h2>
+    <p>An AI shopping assistant answers customer questions from the same feed used for Shopping ads. A missing GTIN, a stale price, or a product still marked in_stock after it sold out gives the assistant the same wrong answer a shopper would get from a broken listing page. <a href="https://arling.sk/asistent/">ARLing Asistent</a> is grounded in a store's own feed for that reason: the checks that keep a feed out of Merchant Center's disapproval queue are the same ones that keep an assistant from confidently repeating an outdated price or stock level.</p>
+  </section>
+
+  <h2>Frequently asked questions</h2>
+  <details>
+    <summary>Why does Merchant Center disapprove a product that looks fine on the website?</summary>
+    <p>Merchant Center reads only the feed row, not the live page. A stale export, a cached price, or a plugin that has not re-synced after a sale still shows the old value to Google, even though checkout charges the correct amount.</p>
+  </details>
+  <details>
+    <summary>Do Google Shopping and Meta need two separate feeds?</summary>
+    <p>They read overlapping but not identical rules: availability uses in_stock versus in stock, price formatting and GTIN length differ. One feed can pass Google and fail Meta, so check each destination against its own rules rather than assuming one export satisfies both.</p>
+  </details>
+  <details>
+    <summary>How often does a feed need to be re-checked?</summary>
+    <p>Any time price, stock, or product attributes change. Google and Meta re-fetch a scheduled feed on their own interval, commonly daily, so an error introduced today can sit disapproved for a full day or more before it shows up in Diagnostics.</p>
+  </details>
+  <details>
+    <summary>Does fixing these 12 issues guarantee approval?</summary>
+    <p>No. These are the attribute-level rejections that block most products, but Merchant Center and Meta also run account-level and policy reviews, misrepresentation, prohibited content, destination restrictions, that a correctly formatted feed does not resolve by itself.</p>
+  </details>
+
+  <h2>Sources</h2>
+  <ul class="sources">
+    <li><a href="https://support.google.com/merchants/answer/7052112">Google Merchant Center Help: Product data specification</a></li>
+    <li><a href="https://www.facebook.com/business/help/120325381656392">Meta Business Help Center: Product data specifications for catalogs in Commerce Manager</a></li>
+  </ul>
+</main>
+<footer><div class="wrap">ARLing s. r. o. · <a href="https://arling.sk/">arling.sk</a> · <a href="https://arling.sk/feed-doctor/">Feed Doctor</a> · <a href="mailto:andrej@arling.sk">andrej@arling.sk</a></div></footer>
+<script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="be534d51-4d01-4860-b267-9596d91606de"></script>
+</body>
+</html>
