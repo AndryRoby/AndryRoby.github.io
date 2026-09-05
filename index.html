@@ -56,8 +56,8 @@
   .sub { color:var(--ink-2); max-width:64ch; margin:0 0 24px; }
   .index { list-style:none; margin:0; padding:0; border-top:1px solid var(--line); }
   .index li { border-bottom:1px solid var(--line); }
-  .index a { display:grid; grid-template-columns:44px minmax(0,1.1fr) minmax(0,1fr) minmax(0,1fr); gap:18px; padding:20px 0; text-decoration:none; align-items:start; }
-  .index a:hover .name { color:var(--accent); }
+  .index > li > a { display:grid; grid-template-columns:44px minmax(0,1.1fr) minmax(0,1fr) minmax(0,1fr); gap:18px; padding:20px 0; text-decoration:none; align-items:start; }
+  .index > li > a:hover .name { color:var(--accent); }
   .num { font:400 15px/1.4 var(--serif); color:var(--muted); padding-top:2px; }
   .name { display:block; font:400 21px/1.25 var(--serif); margin:0 0 4px; }
   .lang { display:inline-block; font:12px/1 var(--mono); color:var(--muted); border:1px solid var(--line); border-radius:3px; padding:3px 6px; vertical-align:middle; margin-left:6px; }
@@ -91,7 +91,7 @@
   footer b { color:var(--ink); font-weight:600; }
   footer a { color:var(--ink-2); }
   @media (max-width: 820px) {
-    .index a { grid-template-columns:32px minmax(0,1fr); }
+    .index > li > a { grid-template-columns:32px minmax(0,1fr); }
     .index .see, .index .get { grid-column:2; }
     .two { grid-template-columns:1fr; }
   }
@@ -100,6 +100,51 @@
     nav.main a { margin-left:12px; }
     .wordmark small { display:none; }
     .subscribe-form input[type="email"], .subscribe-form button { width:100%; }
+  }
+
+  /* Audience groups: flagship rows with a screenshot, a compact dev index, a minimal experiments list */
+  .group { padding:36px 0; border-bottom:1px solid var(--line); }
+  #news { padding:28px 0; }
+  #news h2 { font:400 22px/1.2 var(--serif); margin:0; }
+  .tag { display:inline-block; font:12px/1.3 var(--sans); color:var(--ink-2); border:1px solid var(--line); border-radius:3px; padding:2px 7px; margin-left:8px; white-space:nowrap; }
+  .flagship-list { list-style:none; margin:18px 0 0; padding:0; border-top:1px solid var(--line); }
+  .flagship-list > li { border-bottom:1px solid var(--line); padding:26px 0; }
+  .flag { display:flex; gap:22px; align-items:flex-start; text-decoration:none; }
+  .flag:hover .name { color:var(--accent); }
+  .flag img.shot { width:220px; height:132px; object-fit:cover; border:1px solid var(--line); background:var(--paper-2); flex:none; display:block; }
+  .flag .body { flex:1; min-width:0; }
+  .flag .name { display:block; font:400 22px/1.25 var(--serif); margin:0 0 4px; }
+  .flag .who { display:block; color:var(--muted); font-size:14.5px; }
+  .seegrid { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:6px 24px; margin-top:12px; }
+  .subline { margin:12px 0 0; padding-left:242px; font-size:14px; color:var(--ink-2); }
+  .subline a { text-decoration-color:var(--line); }
+  .subline.subline-index { padding-left:62px; }
+  .demo-note { margin:18px 0 0; padding:12px 16px; font-size:14.5px; color:var(--ink-2); border-left:2px solid var(--accent); background:var(--accent-soft); border-radius:0 4px 4px 0; }
+  .demo-note a { color:var(--ink); }
+  .index.sub-index { margin-top:28px; }
+  .index.compact > li > a { padding:13px 0; }
+  .index.compact .name { font-size:17px; }
+  .index.compact .who, .index.compact .see, .index.compact .get { font-size:13px; }
+  .mini-list { list-style:none; margin:16px 0 0; padding:0; border-top:1px solid var(--line); }
+  .mini-list li { border-bottom:1px solid var(--line); }
+  .mini-list a { display:block; padding:16px 0; text-decoration:none; }
+  .mini-list a:hover .name { color:var(--accent); }
+  .mini-list .name { display:block; font:400 19px/1.3 var(--serif); margin-bottom:4px; }
+  .mini-list .who { display:block; color:var(--muted); font-size:14px; }
+  .one-line { margin:14px 0 0; font-size:14.5px; color:var(--ink-2); }
+  .news-list { list-style:none; margin:16px 0 0; padding:0; }
+  .news-list li { display:flex; gap:14px; padding:10px 0; border-top:1px solid var(--line); font-size:14.5px; }
+  .news-list li:first-child { border-top:none; }
+  .news-list time { flex:none; width:48px; color:var(--muted); font-size:13px; padding-top:2px; }
+  @media (max-width: 820px) {
+    .flag { flex-direction:column; gap:14px; }
+    .subline { padding-left:0; }
+    .subline.subline-index { padding-left:0; }
+    .seegrid { grid-template-columns:1fr; gap:10px; }
+  }
+  @media (max-width: 480px) {
+    .news-list li { flex-direction:column; gap:2px; }
+    .news-list time { width:auto; }
   }
 </style>
 <script type="application/ld+json">
@@ -110,24 +155,24 @@
 </script>
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"ItemList","name":"ARLing tools","itemListOrder":"https://schema.org/ItemListOrderAscending","itemListElement":[
-{"@type":"ListItem","position":1,"url":"https://arling.sk/google-oauth-redirect-doctor/","name":"Google OAuth redirect_uri_mismatch Doctor"},
-{"@type":"ListItem","position":2,"url":"https://arling.sk/expo-supabase-auth-doctor/","name":"Redirect Doctor for Expo and Supabase"},
-{"@type":"ListItem","position":3,"url":"https://arling.sk/supabase-redirect-doctor/","name":"Supabase Auth Redirect Doctor for web apps"},
-{"@type":"ListItem","position":4,"url":"https://arling.sk/flutter-supabase-doctor/","name":"Supabase Deep Link Doctor for Flutter"},
-{"@type":"ListItem","position":5,"url":"https://arling.sk/expo-universal-links-doctor/","name":"Expo Universal Links and App Links Doctor"},
-{"@type":"ListItem","position":6,"url":"https://arling.sk/sepa-pain001-doctor/","name":"SEPA pain.001 Doctor for Slovak banks"},
-{"@type":"ListItem","position":7,"url":"https://arling.sk/stripe-webhook-doctor/","name":"Stripe Webhook Signature Doctor"},
-{"@type":"ListItem","position":8,"url":"https://arling.sk/sepa-pain001-generator/","name":"SEPA pain.001 Generator for Slovak banks"},
-{"@type":"ListItem","position":9,"url":"https://arling.sk/camt053-to-excel/","name":"camt.053 bank statement to Excel"},
+{"@type":"ListItem","position":1,"url":"https://arling.sk/asistent/","name":"ARLing Asistent"},
+{"@type":"ListItem","position":2,"url":"https://arling.sk/feed-doctor/","name":"Product Feed Doctor"},
+{"@type":"ListItem","position":3,"url":"https://arling.sk/bankove-nastroje/","name":"Bankové nástroje pre účtovníkov"},
+{"@type":"ListItem","position":4,"url":"https://arling.sk/camt053-to-excel/","name":"camt.053 bank statement to Excel"},
+{"@type":"ListItem","position":5,"url":"https://arling.sk/sepa-pain001-generator/","name":"SEPA pain.001 Generator for Slovak banks"},
+{"@type":"ListItem","position":6,"url":"https://arling.sk/parovac-platieb/","name":"Párovač platieb"},
+{"@type":"ListItem","position":7,"url":"https://arling.sk/sepa-pain001-doctor/","name":"SEPA pain.001 Doctor for Slovak banks"},
+{"@type":"ListItem","position":8,"url":"https://arling.sk/google-oauth-redirect-doctor/","name":"Google OAuth redirect_uri_mismatch Doctor"},
+{"@type":"ListItem","position":9,"url":"https://arling.sk/jwt-doctor/","name":"JWT Doctor"},
 {"@type":"ListItem","position":10,"url":"https://arling.sk/cors-doctor/","name":"CORS Doctor"},
-{"@type":"ListItem","position":11,"url":"https://arling.sk/jwt-doctor/","name":"JWT Doctor"},
-{"@type":"ListItem","position":12,"url":"https://arling.sk/cookie-samesite-doctor/","name":"Cookie Doctor (SameSite, Secure, Domain)"},
-{"@type":"ListItem","position":13,"url":"https://arling.sk/redirect-loop-doctor/","name":"Redirect Loop Doctor (ERR_TOO_MANY_REDIRECTS)"},
-{"@type":"ListItem","position":14,"url":"https://arling.sk/firebase-auth-domain-doctor/","name":"Firebase Auth Domain Doctor"},
-{"@type":"ListItem","position":15,"url":"https://arling.sk/parovac-platieb/","name":"Párovač platieb"},
-{"@type":"ListItem","position":16,"url":"https://arling.sk/bankove-nastroje/","name":"Bankové nástroje pre účtovníkov"},
-{"@type":"ListItem","position":17,"url":"https://arling.sk/asistent/","name":"ARLing Asistent"},
-{"@type":"ListItem","position":18,"url":"https://arling.sk/feed-doctor/","name":"Product Feed Doctor"},
+{"@type":"ListItem","position":11,"url":"https://arling.sk/stripe-webhook-doctor/","name":"Stripe Webhook Signature Doctor"},
+{"@type":"ListItem","position":12,"url":"https://arling.sk/firebase-auth-domain-doctor/","name":"Firebase Auth Domain Doctor"},
+{"@type":"ListItem","position":13,"url":"https://arling.sk/expo-universal-links-doctor/","name":"Expo Universal Links and App Links Doctor"},
+{"@type":"ListItem","position":14,"url":"https://arling.sk/redirect-loop-doctor/","name":"Redirect Loop Doctor (ERR_TOO_MANY_REDIRECTS)"},
+{"@type":"ListItem","position":15,"url":"https://arling.sk/cookie-samesite-doctor/","name":"Cookie Doctor (SameSite, Secure, Domain)"},
+{"@type":"ListItem","position":16,"url":"https://arling.sk/supabase-redirect-doctor/","name":"Supabase Auth Redirect Doctor for web apps"},
+{"@type":"ListItem","position":17,"url":"https://arling.sk/flutter-supabase-doctor/","name":"Supabase Deep Link Doctor for Flutter"},
+{"@type":"ListItem","position":18,"url":"https://arling.sk/expo-supabase-auth-doctor/","name":"Redirect Doctor for Expo and Supabase"},
 {"@type":"ListItem","position":19,"url":"https://arling.sk/janii/","name":"Janii"},
 {"@type":"ListItem","position":20,"url":"https://arling.sk/bookapp/","name":"bookapp"}]}
 </script>
@@ -152,181 +197,236 @@
       <h1>Small tools for one exact problem each.</h1>
       <p class="lead">You paste what you have. The tool names the exact mismatch and gives you the value to change. It runs in your browser, so nothing you paste is uploaded anywhere.</p>
       <ul class="facts">
-        <li><b>20</b> tools</li>
-        <li><b>0 €</b>, no account</li>
-        <li><b>2157</b> automated tests behind the rules</li>
-        <li>every rule cites the official documentation</li>
+        <li><b>4</b> products</li>
+        <li><b>11</b> free developer tools</li>
+        <li><b>2964</b> automated tests</li>
+        <li>every Doctor rule cites the official documentation</li>
       </ul>
     </div>
   </div>
 
-  <section id="tools">
+  <section id="news">
     <div class="wrap">
-      <p class="kicker">Index</p>
-      <h2>Pick the error you are looking at.</h2>
-      <p class="sub">Each tool covers one failure that people keep reporting in the same words. If your error is not here, write to us with the exact message.</p>
-      <ol class="index">
+      <p class="kicker">Novinky</p>
+      <h2>Čo pribudlo tento týždeň.</h2>
+      <ul class="news-list">
+        <li><time>5. 9.</time><span>Hľadač darčekov v Asistentovi: tri otázky, päť tipov priamo z vášho feedu. <a href="https://arling.sk/asistent/darceky/" data-umami-event="open-news" data-umami-event-item="gift-finder">Vyskúšať</a></span></li>
+        <li><time>5. 9.</time><span>camt.053 do Excelu: export do MT940 a DATEV Buchungsstapel pre nemecké účtovníctvo. <a href="https://arling.sk/camt053-to-excel/?export=mt940#pro" data-umami-event="open-news" data-umami-event-item="mt940-datev">Čítať</a></span></li>
+        <li><time>5. 9.</time><span>Product Feed Doctor Monitor: denná kontrola feedu, e-mail keď sa niečo pokazí. <a href="https://arling.sk/feed-doctor/" data-umami-event="open-news" data-umami-event-item="feed-monitor">Čítať</a></span></li>
+        <li><time>5. 9.</time><span>Slovenská živá ukážka Asistenta na fiktívnom obchode Dobrá domácnosť. <a href="https://arling.sk/asistent/ukazka/" data-umami-event="open-news" data-umami-event-item="ukazka">Pozrieť</a></span></li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="tools" class="group">
+    <div class="wrap">
+      <p class="kicker">Pre e-shopy</p>
+      <h2>Nástroje, ktoré predávajú.</h2>
+      <p class="sub">Asistent hovorí so zákazníkmi z vášho feedu, Feed Doctor nájde chybu vo feede skôr než Google alebo Meta.</p>
+      <ul class="flagship-list">
+        <li>
+          <a class="flag" href="https://arling.sk/asistent/" data-umami-event="open-tool" data-umami-event-tool="asistent">
+            <img class="shot" src="press/asistent-hub-thumb.png" width="220" height="132" loading="lazy" alt="Hľadač darčekov ARLing Asistenta otvorený na skúšobnom e-shope Dobrá domácnosť: tri otázky a päť produktov s cenami priamo z feedu.">
+            <span class="body">
+              <span class="name">ARLing Asistent<span class="lang">SK</span><span class="lang">EN</span><span class="lang">DE</span><span class="lang">beta</span></span>
+              <span class="who">Predajný asistent pre WooCommerce a Shopify, nasadený z vášho feedu za 10 minút, bez ukladania rozhovorov. <span class="tag">zadarmo do 100 rozhovorov</span></span>
+              <span class="seegrid">
+                <span class="see"><span class="lbl">Máte</span>E-shop a zákazníkov, ktorí sa pýtajú to isté v noci aj cez víkend.</span>
+                <span class="get"><span class="lbl">Dostanete</span>Chat, ktorý odpovedá z vášho feedu a odkazuje na konkrétne produkty.</span>
+              </span>
+            </span>
+          </a>
+          <p class="subline">Aj <a href="https://arling.sk/asistent/darceky/" data-umami-event="open-tool" data-umami-event-tool="asistent-gift-finder">hľadač darčekov</a>: tri otázky, päť tipov priamo z vášho feedu (nové).</p>
+        </li>
+        <li>
+          <a class="flag" href="https://arling.sk/feed-doctor/" data-umami-event="open-tool" data-umami-event-tool="feed-doctor">
+            <img class="shot" src="press/feed-doctor-hub-thumb.png" width="220" height="132" loading="lazy" alt="Screenshot of the Product Feed Doctor landing page.">
+            <span class="body">
+              <span class="name">Product Feed Doctor</span>
+              <span class="who">Google Shopping, Meta catalog, Shopify, WooCommerce feeds checked in the browser, 31 rules. <span class="tag">free</span></span>
+              <span class="seegrid">
+                <span class="see"><span class="lbl">You have</span>A shopping feed that Google or Meta keeps rejecting, or an assistant that answers wrong because the feed is wrong.</span>
+                <span class="get"><span class="lbl">You get</span>Every missing field, bad price, invalid GTIN and duplicate id listed with a fix, nothing uploaded.</span>
+              </span>
+            </span>
+          </a>
+          <p class="subline">Also <a href="https://arling.sk/feed-doctor/" data-umami-event="open-tool" data-umami-event-tool="feed-doctor-monitor">Feed Doctor Monitor</a>: a scheduled recheck that e-mails you when the feed gets worse, from 9 €/month (new).</p>
+        </li>
+      </ul>
+      <p class="demo-note">Slovenská živá ukážka: <a href="https://arling.sk/asistent/ukazka/" data-umami-event="open-tool" data-umami-event-tool="asistent-ukazka">arling.sk/asistent/ukazka/</a>, fiktívny obchod Dobrá domácnosť so 64 produktmi z Heureka feedu, chat aj hľadač darčekov naživo.</p>
+    </div>
+  </section>
+
+  <section id="ucty" class="group">
+    <div class="wrap">
+      <p class="kicker">Pre účtovníkov a firmy</p>
+      <h2>Bankové súbory bez ručnej práce.</h2>
+      <p class="sub">Prevod výpisov, hromadné platby a párovanie faktúr. Každý nástroj funguje aj samostatne zadarmo, jedna licencia odomkne všetky štyri naraz.</p>
+      <ul class="flagship-list">
+        <li>
+          <a class="flag" href="https://arling.sk/bankove-nastroje/" data-umami-event="open-tool" data-umami-event-tool="bankove-nastroje">
+            <img class="shot" src="press/bankove-nastroje-hub-thumb.png" width="220" height="132" loading="lazy" alt="Screenshot úvodnej stránky Bankové nástroje pre účtovníkov.">
+            <span class="body">
+              <span class="name">Bankové nástroje pre účtovníkov<span class="lang">SK</span></span>
+              <span class="who">Doctor, Generátor, camt.053 → Excel, Párovač: jedna Pro licencia. <span class="tag">od 9 €</span></span>
+              <span class="seegrid">
+                <span class="see"><span class="lbl">Máte</span>Platby, výpisy a faktúry každý mesiac.</span>
+                <span class="get"><span class="lbl">Dostanete</span>Štyri nástroje bez limitov a jednu licenciu za 9&nbsp;€ mesačne alebo 79&nbsp;€ ročne.</span>
+              </span>
+            </span>
+          </a>
+        </li>
+      </ul>
+      <ol class="index sub-index">
+        <li>
+          <a href="https://arling.sk/camt053-to-excel/" data-umami-event="open-tool" data-umami-event-tool="camt053-to-excel">
+            <span class="num">01</span>
+            <span><span class="name">camt.053 výpis z banky do Excelu<span class="lang">SK</span><span class="lang">EN</span><span class="lang">DE</span></span><span class="who">Tatra banka, SLSP, VÚB, ČSOB, Sparkasse, Volksbank, UBS, každá banka s camt.053 <span class="tag">zadarmo</span></span></span>
+            <span class="see"><span class="lbl">Máte</span>Výpis z internet bankingu v XML (camt.053) a účtovný softvér chce tabuľku.</span>
+            <span class="get"><span class="lbl">Dostanete</span>CSV alebo Excel s dátumami, sumami, protistranou a symbolmi, so súhrnom a kontrolou zostatku.</span>
+          </a>
+          <p class="subline subline-index">Aj export do <a href="https://arling.sk/camt053-to-excel/?export=mt940#pro" data-umami-event="open-tool" data-umami-event-tool="camt053-mt940">MT940 a DATEV Buchungsstapel</a> pre nemecké účtovníctvo, Pro (nové).</p>
+        </li>
+        <li>
+          <a href="https://arling.sk/sepa-pain001-generator/" data-umami-event="open-tool" data-umami-event-tool="sepa-pain001-generator">
+            <span class="num">02</span>
+            <span><span class="name">SEPA pain.001 Generátor<span class="lang">SK</span><span class="lang">EN</span><span class="lang">DE</span></span><span class="who">Excel alebo CSV → XML pre Tatra banku, SLSP, VÚB, ČSOB, profil DE podľa Deutsche Kreditwirtschaft <span class="tag">zadarmo</span></span></span>
+            <span class="see"><span class="lbl">Máte</span>Zoznam platieb v Exceli a banka chce hromadný príkaz v XML.</span>
+            <span class="get"><span class="lbl">Dostanete</span>Hotový pain.001 súbor, skontrolovaný Doctorom, na stiahnutie za minútu.</span>
+          </a>
+        </li>
+        <li>
+          <a href="https://arling.sk/parovac-platieb/" data-umami-event="open-tool" data-umami-event-tool="parovac-platieb">
+            <span class="num">03</span>
+            <span><span class="name">Párovač platieb<span class="lang">SK</span></span><span class="who">Výpis camt.053 proti faktúram z Pohody, Omegy, Money S3, SuperFaktúry <span class="tag">zadarmo</span></span></span>
+            <span class="see"><span class="lbl">Máte</span>Výpis z banky a zoznam vystavených faktúr, párujete ich ručne v Exceli.</span>
+            <span class="get"><span class="lbl">Dostanete</span>Spárované, čiastočné, nezaplatené po splatnosti a nespárované platby, s exportom do CSV.</span>
+          </a>
+        </li>
+        <li>
+          <a href="https://arling.sk/sepa-pain001-doctor/" data-umami-event="open-tool" data-umami-event-tool="sepa-pain001-doctor">
+            <span class="num">04</span>
+            <span><span class="name">SEPA pain.001 Doctor<span class="lang">SK</span></span><span class="who">Tatra banka, SLSP, VÚB, ČSOB <span class="tag">zadarmo</span></span></span>
+            <span class="see"><span class="lbl">Vidíte</span>Banka odmietla XML s hromadným príkazom bez jasného dôvodu.</span>
+            <span class="get"><span class="lbl">Dostanete</span>Presný element, hodnotu a opravu: IBAN, BIC, sumy, počty, symboly, znaková sada.</span>
+          </a>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <section id="vyvojari" class="group">
+    <div class="wrap">
+      <p class="kicker">Pre vývojárov</p>
+      <h2>The exact error, the exact fix.</h2>
+      <p class="sub">Paste what you have. Each tool names the mismatch and gives you the value to change, all client-side, all free, no account.</p>
+      <ol class="index compact">
         <li>
           <a href="https://arling.sk/google-oauth-redirect-doctor/" data-umami-event="open-tool" data-umami-event-tool="google-oauth-redirect-doctor">
             <span class="num">01</span>
-            <span><span class="name">Google OAuth redirect_uri_mismatch Doctor</span><span class="who">Any stack: NextAuth, Supabase, Firebase, Passport, Django, Laravel, Python, Expo, Flutter, Postman, gcloud</span></span>
+            <span><span class="name">Google OAuth redirect_uri_mismatch Doctor</span><span class="who">Any stack: NextAuth, Supabase, Firebase, Passport, Django, Laravel, Python, Expo, Flutter, Postman, gcloud <span class="tag">free</span></span></span>
             <span class="see"><span class="lbl">You see</span><code>Error 400: redirect_uri_mismatch</code></span>
             <span class="get"><span class="lbl">You get</span>The differing character, byte for byte, and the exact string to add in Google Cloud Console.</span>
           </a>
         </li>
         <li>
-          <a href="https://arling.sk/expo-supabase-auth-doctor/" data-umami-event="open-tool" data-umami-event-tool="expo-supabase-auth-doctor">
+          <a href="https://arling.sk/jwt-doctor/" data-umami-event="open-tool" data-umami-event-tool="jwt-doctor">
             <span class="num">02</span>
-            <span><span class="name">Redirect Doctor for Expo and Supabase</span><span class="who">Expo Go, development builds, standalone apps</span></span>
-            <span class="see"><span class="lbl">You see</span>Sign-in ends on the Site URL or <code>localhost</code> instead of reopening the app.</span>
-            <span class="get"><span class="lbl">You get</span>The expected redirect URL per runtime and what is missing from the allow-list or the provider console.</span>
+            <span><span class="name">JWT Doctor</span><span class="who">Auth0, Supabase, Firebase, Cognito, Keycloak, Clerk, NextAuth, jsonwebtoken, jose <span class="tag">free</span></span></span>
+            <span class="see"><span class="lbl">You see</span><code>jwt malformed</code>, <code>invalid signature</code>, <code>jwt expired</code></span>
+            <span class="get"><span class="lbl">You get</span>Decode it and see exactly why.</span>
+          </a>
+        </li>
+        <li>
+          <a href="https://arling.sk/cors-doctor/" data-umami-event="open-tool" data-umami-event-tool="cors-doctor">
+            <span class="num">03</span>
+            <span><span class="name">CORS Doctor</span><span class="who">Express, FastAPI, Django, Rails, Laravel, Go, .NET, Supabase, Firebase Functions, S3, Cloudflare Workers <span class="tag">free</span></span></span>
+            <span class="see"><span class="lbl">You see</span><code>has been blocked by CORS policy</code></span>
+            <span class="get"><span class="lbl">You get</span>Find which header is missing and where.</span>
+          </a>
+        </li>
+        <li>
+          <a href="https://arling.sk/stripe-webhook-doctor/" data-umami-event="open-tool" data-umami-event-tool="stripe-webhook-doctor">
+            <span class="num">04</span>
+            <span><span class="name">Stripe Webhook Signature Doctor</span><span class="who">Next.js, Express, Fastify, NestJS, Django, Flask, FastAPI, Rails, Laravel, Go, .NET, serverless <span class="tag">free</span></span></span>
+            <span class="see"><span class="lbl">You see</span><code>No signatures found matching the expected signature for payload</code></span>
+            <span class="get"><span class="lbl">You get</span>The cause (parsed body, wrong secret, mode, tolerance, proxy) and the raw-body snippet for your framework.</span>
+          </a>
+        </li>
+        <li>
+          <a href="https://arling.sk/firebase-auth-domain-doctor/" data-umami-event="open-tool" data-umami-event-tool="firebase-auth-domain-doctor">
+            <span class="num">05</span>
+            <span><span class="name">Firebase Auth Domain Doctor</span><span class="who">Firebase Hosting, Vercel, Netlify, custom domains, localhost, Capacitor/webview <span class="tag">free</span></span></span>
+            <span class="see"><span class="lbl">You see</span><code>auth/unauthorized-domain</code></span>
+            <span class="get"><span class="lbl">You get</span>Check authDomain, authorized domains and the redirect flow.</span>
+          </a>
+        </li>
+        <li>
+          <a href="https://arling.sk/expo-universal-links-doctor/" data-umami-event="open-tool" data-umami-event-tool="expo-universal-links-doctor">
+            <span class="num">06</span>
+            <span><span class="name">Expo Universal Links and App Links Doctor</span><span class="who">apple-app-site-association, assetlinks.json, app.json <span class="tag">free</span></span></span>
+            <span class="see"><span class="lbl">You see</span>The https link opens Safari or Chrome instead of the app.</span>
+            <span class="get"><span class="lbl">You get</span>Team ID, bundle ID, fingerprints, intent filters and paths cross-checked, with the corrected files.</span>
+          </a>
+        </li>
+        <li>
+          <a href="https://arling.sk/redirect-loop-doctor/" data-umami-event="open-tool" data-umami-event-tool="redirect-loop-doctor">
+            <span class="num">07</span>
+            <span><span class="name">Redirect Loop Doctor (ERR_TOO_MANY_REDIRECTS)</span><span class="who">Sites behind Cloudflare, WordPress, nginx, Apache, Vercel, Netlify, load balancers <span class="tag">free</span></span></span>
+            <span class="see"><span class="lbl">You see</span><code>ERR_TOO_MANY_REDIRECTS</code></span>
+            <span class="get"><span class="lbl">You get</span>Find the loop between Cloudflare, your server and your app.</span>
+          </a>
+        </li>
+        <li>
+          <a href="https://arling.sk/cookie-samesite-doctor/" data-umami-event="open-tool" data-umami-event-tool="cookie-samesite-doctor">
+            <span class="num">08</span>
+            <span><span class="name">Cookie Doctor (SameSite, Secure, Domain)</span><span class="who">Front end and API on separate origins, cross-site iframes, Safari ITP <span class="tag">free</span></span></span>
+            <span class="see"><span class="lbl">You see</span><code>Set-Cookie</code> is sent, but the cookie is never stored or never sent back.</span>
+            <span class="get"><span class="lbl">You get</span>Find the attribute that blocks it.</span>
           </a>
         </li>
         <li>
           <a href="https://arling.sk/supabase-redirect-doctor/" data-umami-event="open-tool" data-umami-event-tool="supabase-redirect-doctor">
-            <span class="num">03</span>
-            <span><span class="name">Supabase Auth Redirect Doctor for web apps</span><span class="who">Next.js, Vite, SvelteKit, Vercel and Netlify previews</span></span>
+            <span class="num">09</span>
+            <span><span class="name">Supabase Auth Redirect Doctor for web apps</span><span class="who">Next.js, Vite, SvelteKit, Vercel and Netlify previews <span class="tag">free</span></span></span>
             <span class="see"><span class="lbl">You see</span>OAuth in production redirects to <code>http://localhost:3000</code>.</span>
             <span class="get"><span class="lbl">You get</span>The mismatch between Site URL, redirect allow-list, callback route and provider settings, with the fix.</span>
           </a>
         </li>
         <li>
           <a href="https://arling.sk/flutter-supabase-doctor/" data-umami-event="open-tool" data-umami-event-tool="flutter-supabase-doctor">
-            <span class="num">04</span>
-            <span><span class="name">Supabase Deep Link Doctor for Flutter</span><span class="who">supabase_flutter, iOS and Android</span></span>
+            <span class="num">10</span>
+            <span><span class="name">Supabase Deep Link Doctor for Flutter</span><span class="who">supabase_flutter, iOS and Android <span class="tag">free</span></span></span>
             <span class="see"><span class="lbl">You see</span>The magic link or OAuth page never comes back to the app.</span>
             <span class="get"><span class="lbl">You get</span>Scheme and host checked across Info.plist, AndroidManifest, Supabase and your code, with snippets to paste.</span>
           </a>
         </li>
         <li>
-          <a href="https://arling.sk/expo-universal-links-doctor/" data-umami-event="open-tool" data-umami-event-tool="expo-universal-links-doctor">
-            <span class="num">05</span>
-            <span><span class="name">Expo Universal Links and App Links Doctor</span><span class="who">apple-app-site-association, assetlinks.json, app.json</span></span>
-            <span class="see"><span class="lbl">You see</span>The https link opens Safari or Chrome instead of the app.</span>
-            <span class="get"><span class="lbl">You get</span>Team ID, bundle ID, fingerprints, intent filters and paths cross-checked, with the corrected files.</span>
-          </a>
-        </li>
-        <li>
-          <a href="https://arling.sk/sepa-pain001-doctor/" data-umami-event="open-tool" data-umami-event-tool="sepa-pain001-doctor">
-            <span class="num">06</span>
-            <span><span class="name">SEPA pain.001 Doctor<span class="lang">SK</span></span><span class="who">Tatra banka, SLSP, VÚB, ČSOB</span></span>
-            <span class="see"><span class="lbl">Vidíte</span>Banka odmietla XML s hromadným príkazom bez jasného dôvodu.</span>
-            <span class="get"><span class="lbl">Dostanete</span>Presný element, hodnotu a opravu: IBAN, BIC, sumy, počty, symboly, znaková sada.</span>
-          </a>
-        </li>
-        <li>
-          <a href="https://arling.sk/stripe-webhook-doctor/" data-umami-event="open-tool" data-umami-event-tool="stripe-webhook-doctor">
-            <span class="num">07</span>
-            <span><span class="name">Stripe Webhook Signature Doctor</span><span class="who">Next.js, Express, Fastify, NestJS, Django, Flask, FastAPI, Rails, Laravel, Go, .NET, serverless</span></span>
-            <span class="see"><span class="lbl">You see</span><code>No signatures found matching the expected signature for payload</code></span>
-            <span class="get"><span class="lbl">You get</span>The cause (parsed body, wrong secret, mode, tolerance, proxy) and the raw-body snippet for your framework.</span>
-          </a>
-        </li>
-        <li>
-          <a href="https://arling.sk/sepa-pain001-generator/" data-umami-event="open-tool" data-umami-event-tool="sepa-pain001-generator">
-            <span class="num">08</span>
-            <span><span class="name">SEPA pain.001 Generátor<span class="lang">SK</span><span class="lang">EN</span><span class="lang">DE</span></span><span class="who">Excel alebo CSV → XML pre Tatra banku, SLSP, VÚB, ČSOB, profil DE podľa Deutsche Kreditwirtschaft</span></span>
-            <span class="see"><span class="lbl">Máte</span>Zoznam platieb v Exceli a banka chce hromadný príkaz v XML.</span>
-            <span class="get"><span class="lbl">Dostanete</span>Hotový pain.001 súbor, skontrolovaný Doctorom, na stiahnutie za minútu.</span>
-          </a>
-        </li>
-        <li>
-          <a href="https://arling.sk/camt053-to-excel/" data-umami-event="open-tool" data-umami-event-tool="camt053-to-excel">
-            <span class="num">09</span>
-            <span><span class="name">camt.053 výpis z banky do Excelu<span class="lang">SK</span><span class="lang">EN</span><span class="lang">DE</span></span><span class="who">Tatra banka, SLSP, VÚB, ČSOB, Sparkasse, Volksbank, UBS, každá banka s camt.053</span></span>
-            <span class="see"><span class="lbl">Máte</span>Výpis z internet bankingu v XML (camt.053) a účtovný softvér chce tabuľku.</span>
-            <span class="get"><span class="lbl">Dostanete</span>CSV alebo Excel s dátumami, sumami, protistranou a symbolmi, so súhrnom a kontrolou zostatku. Pro aj MT940 a DATEV Buchungsstapel.</span>
-          </a>
-        </li>
-        <li>
-          <a href="https://arling.sk/cors-doctor/" data-umami-event="open-tool" data-umami-event-tool="cors-doctor">
-            <span class="num">10</span>
-            <span><span class="name">CORS Doctor</span><span class="who">Express, FastAPI, Django, Rails, Laravel, Go, .NET, Supabase, Firebase Functions, S3, Cloudflare Workers</span></span>
-            <span class="see"><span class="lbl">You see</span><code>has been blocked by CORS policy</code></span>
-            <span class="get"><span class="lbl">You get</span>Find which header is missing and where.</span>
-          </a>
-        </li>
-        <li>
-          <a href="https://arling.sk/jwt-doctor/" data-umami-event="open-tool" data-umami-event-tool="jwt-doctor">
+          <a href="https://arling.sk/expo-supabase-auth-doctor/" data-umami-event="open-tool" data-umami-event-tool="expo-supabase-auth-doctor">
             <span class="num">11</span>
-            <span><span class="name">JWT Doctor</span><span class="who">Auth0, Supabase, Firebase, Cognito, Keycloak, Clerk, NextAuth, jsonwebtoken, jose</span></span>
-            <span class="see"><span class="lbl">You see</span><code>jwt malformed</code>, <code>invalid signature</code>, <code>jwt expired</code></span>
-            <span class="get"><span class="lbl">You get</span>Decode it and see exactly why.</span>
-          </a>
-        </li>
-        <li>
-          <a href="https://arling.sk/cookie-samesite-doctor/" data-umami-event="open-tool" data-umami-event-tool="cookie-samesite-doctor">
-            <span class="num">12</span>
-            <span><span class="name">Cookie Doctor (SameSite, Secure, Domain)</span><span class="who">Front end and API on separate origins, cross-site iframes, Safari ITP</span></span>
-            <span class="see"><span class="lbl">You see</span><code>Set-Cookie</code> is sent, but the cookie is never stored or never sent back.</span>
-            <span class="get"><span class="lbl">You get</span>Find the attribute that blocks it.</span>
-          </a>
-        </li>
-        <li>
-          <a href="https://arling.sk/redirect-loop-doctor/" data-umami-event="open-tool" data-umami-event-tool="redirect-loop-doctor">
-            <span class="num">13</span>
-            <span><span class="name">Redirect Loop Doctor (ERR_TOO_MANY_REDIRECTS)</span><span class="who">Sites behind Cloudflare, WordPress, nginx, Apache, Vercel, Netlify, load balancers</span></span>
-            <span class="see"><span class="lbl">You see</span><code>ERR_TOO_MANY_REDIRECTS</code></span>
-            <span class="get"><span class="lbl">You get</span>Find the loop between Cloudflare, your server and your app.</span>
-          </a>
-        </li>
-        <li>
-          <a href="https://arling.sk/firebase-auth-domain-doctor/" data-umami-event="open-tool" data-umami-event-tool="firebase-auth-domain-doctor">
-            <span class="num">14</span>
-            <span><span class="name">Firebase Auth Domain Doctor</span><span class="who">Firebase Hosting, Vercel, Netlify, custom domains, localhost, Capacitor/webview</span></span>
-            <span class="see"><span class="lbl">You see</span><code>auth/unauthorized-domain</code></span>
-            <span class="get"><span class="lbl">You get</span>Check authDomain, authorized domains and the redirect flow.</span>
-          </a>
-        </li>
-        <li>
-          <a href="https://arling.sk/parovac-platieb/" data-umami-event="open-tool" data-umami-event-tool="parovac-platieb">
-            <span class="num">15</span>
-            <span><span class="name">Párovač platieb<span class="lang">SK</span></span><span class="who">Výpis camt.053 proti faktúram z Pohody, Omegy, Money S3, SuperFaktúry</span></span>
-            <span class="see"><span class="lbl">Máte</span>Výpis z banky a zoznam vystavených faktúr, párujete ich ručne v Exceli.</span>
-            <span class="get"><span class="lbl">Dostanete</span>Spárované, čiastočné, nezaplatené po splatnosti a nespárované platby, s exportom do CSV.</span>
-          </a>
-        </li>
-        <li>
-          <a href="https://arling.sk/bankove-nastroje/" data-umami-event="open-tool" data-umami-event-tool="bankove-nastroje">
-            <span class="num">16</span>
-            <span><span class="name">Bankové nástroje pre účtovníkov<span class="lang">SK</span></span><span class="who">Doctor, Generátor, camt.053 → Excel, Párovač: jedna Pro licencia</span></span>
-            <span class="see"><span class="lbl">Máte</span>Platby, výpisy a faktúry každý mesiac.</span>
-            <span class="get"><span class="lbl">Dostanete</span>Štyri nástroje bez limitov a jednu licenciu za 9&nbsp;€ mesačne.</span>
-          </a>
-        </li>
-        <li>
-          <a href="https://arling.sk/asistent/" data-umami-event="open-tool" data-umami-event-tool="asistent">
-            <span class="num">17</span>
-            <span><span class="name">ARLing Asistent<span class="lang">SK</span><span class="lang">EN</span><span class="lang">DE</span><span class="lang">beta</span></span><span class="who">Predajný asistent pre WooCommerce a Shopify, z feedu za 10 minút, bez ukladania rozhovorov, zadarmo do 100 rozhovorov mesačne</span></span>
-            <span class="see"><span class="lbl">Máte</span>E-shop a zákazníkov, ktorí sa pýtajú to isté v noci aj cez víkend.</span>
-            <span class="get"><span class="lbl">Dostanete</span>Chat, ktorý odpovedá z vášho feedu a odkazuje na konkrétne produkty. Skúšobná verzia z vlastného feedu za minútu.</span>
-          </a>
-        </li>
-        <li>
-          <a href="https://arling.sk/feed-doctor/" data-umami-event="open-tool" data-umami-event-tool="feed-doctor">
-            <span class="num">18</span>
-            <span><span class="name">Product Feed Doctor</span><span class="who">Google Shopping, Meta catalog, Shopify, WooCommerce feeds checked in the browser, 31 rules</span></span>
-            <span class="see"><span class="lbl">You have</span>A shopping feed that Google or Meta keeps rejecting, or an assistant that answers wrong because the feed is wrong.</span>
-            <span class="get"><span class="lbl">You get</span>Every missing field, bad price, invalid GTIN and duplicate id listed with a fix, nothing uploaded.</span>
-          </a>
-        </li>
-        <li>
-          <a href="https://arling.sk/janii/" data-umami-event="open-tool" data-umami-event-tool="janii">
-            <span class="num">19</span>
-            <span><span class="name">Janii</span><span class="who">Windows app for wedding photographers, free beta, runs offline on your PC</span></span>
-            <span class="see"><span class="lbl">You have</span>5 000 RAW frames from a wedding and a weekend of culling ahead.</span>
-            <span class="get"><span class="lbl">You get</span>The 500 worth showing, with the reason for each, picked on your own machine. Nothing is uploaded.</span>
-          </a>
-        </li>
-        <li>
-          <a href="https://arling.sk/bookapp/" data-umami-event="open-tool" data-umami-event-tool="bookapp">
-            <span class="num">20</span>
-            <span><span class="name">bookapp</span><span class="who">Android and Windows app, free beta, English and Slovak</span></span>
-            <span class="see"><span class="lbl">You have</span>A home library and no idea what fits where.</span>
-            <span class="get"><span class="lbl">You get</span>Your shelves and books modelled in real millimetres, so the app knows what fits and where.</span>
+            <span><span class="name">Redirect Doctor for Expo and Supabase</span><span class="who">Expo Go, development builds, standalone apps <span class="tag">free</span></span></span>
+            <span class="see"><span class="lbl">You see</span>Sign-in ends on the Site URL or <code>localhost</code> instead of reopening the app.</span>
+            <span class="get"><span class="lbl">You get</span>The expected redirect URL per runtime and what is missing from the allow-list or the provider console.</span>
           </a>
         </li>
       </ol>
+    </div>
+  </section>
+
+  <section id="experimenty" class="group">
+    <div class="wrap">
+      <p class="kicker">Experimenty</p>
+      <h2>Two things we are not pushing right now.</h2>
+      <p class="sub">A free beta and a frozen app, both still online, neither getting new work this quarter.</p>
+      <ul class="mini-list">
+        <li>
+          <a href="https://arling.sk/janii/" data-umami-event="open-tool" data-umami-event-tool="janii">
+            <span class="name">Janii<span class="tag">beta</span></span>
+            <span class="who">Windows app for wedding photographers: culls 5,000 RAW frames down to the 500 worth showing, with a reason for each, entirely on your own machine.</span>
+          </a>
+        </li>
+      </ul>
+      <p class="one-line"><b>bookapp</b>: Android and Windows app for modelling a home library in real millimetres, frozen, read-only, no new work planned. <a href="https://arling.sk/bookapp/" data-umami-event="open-tool" data-umami-event-tool="bookapp">See it</a>.</p>
     </div>
   </section>
 
