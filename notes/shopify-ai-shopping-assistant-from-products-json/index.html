@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://homelab.tailbf8f27.ts.net; connect-src 'self' https://homelab.tailbf8f27.ts.net; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<title>A Shopify AI shopping assistant built from products.json: how it answers, what it costs, and the theme.liquid setup while the app is in review</title>
+<meta name="description" content="How ARLing Asistent reads a Shopify store's public products.json feed to answer shopping questions, the theme.liquid script tag setup that works today, and what changes once the Shopify app is approved.">
+<meta property="og:type" content="article">
+<meta property="og:title" content="A Shopify AI shopping assistant built from products.json: how it answers, what it costs, and the theme.liquid setup while the app is in review">
+<meta property="og:description" content="How ARLing Asistent reads a Shopify store's public products.json feed to answer shopping questions, the theme.liquid script tag setup that works today, and what changes once the Shopify app is approved.">
+<meta property="og:url" content="https://arling.sk/notes/shopify-ai-shopping-assistant-from-products-json/">
+<meta property="og:image" content="https://arling.sk/asistent/icon-512.png">
+<meta name="theme-color" content="#f6f2ea">
+<link rel="canonical" href="https://arling.sk/notes/shopify-ai-shopping-assistant-from-products-json/">
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "A Shopify AI shopping assistant built from products.json: how it answers, what it costs, and the theme.liquid setup while the app is in review",
+  "description": "How ARLing Asistent reads a Shopify store's public products.json feed to answer shopping questions, the theme.liquid script tag setup that works today, and what changes once the Shopify app is approved.",
+  "datePublished": "2026-09-06",
+  "dateModified": "2026-09-06",
+  "inLanguage": "en",
+  "author": {
+    "@type": "Person",
+    "name": "Andrej Lauko",
+    "url": "https://arling.sk/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "ARLing s. r. o.",
+    "url": "https://arling.sk/"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://arling.sk/notes/shopify-ai-shopping-assistant-from-products-json/"
+  }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "ARLing", "item": "https://arling.sk/" },
+    { "@type": "ListItem", "position": 2, "name": "Notes", "item": "https://arling.sk/notes/" },
+    { "@type": "ListItem", "position": 3, "name": "Shopify AI shopping assistant from products.json", "item": "https://arling.sk/notes/shopify-ai-shopping-assistant-from-products-json/" }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Is my store's products.json feed public by default?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Yes. Every Shopify store serves a public catalogue at yourstore.myshopify.com/products.json (and the same path on a connected domain), listing title, description, price, variant options and images for published products. It contains no customer data, no order data and no cost price." }
+    },
+    {
+      "@type": "Question",
+      "name": "Can I turn products.json off?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Not cleanly. Shopify has no setting that disables /products.json on its own, since many themes and apps read it directly. Password-protecting the whole store under Online Store > Preferences hides pages from visitors and search engines, but store owners report the feed still answering even then, so it is not a reliable way to block it either." }
+    },
+    {
+      "@type": "Question",
+      "name": "Does the assistant store what shoppers type?",
+      "acceptedAnswer": { "@type": "Answer", "text": "No. The conversation content, the question and the answer, is never written to a database. Only daily aggregate counters (conversations, product-link clicks) are kept per store, used to enforce the monthly plan quota." }
+    },
+    {
+      "@type": "Question",
+      "name": "How do I add the assistant before the Shopify app is approved?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Create a free trial at arling.sk/asistent with your store's products.json URL and your e-mail, then add the widget's script tag to theme.liquid just before </body>, using the tenant id from that trial. Removing it later is one deletion: take the script tag back out and save." }
+    },
+    {
+      "@type": "Question",
+      "name": "What changes once the Shopify app is approved?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Installing from the Shopify App Store with no code, an embedded settings page instead of a theme edit, a theme app embed toggle instead of a manual script tag, and billing handled inside Shopify at 19 USD or 39 USD a month instead of Stripe invoicing in euros." }
+    }
+  ]
+}
+</script>
+
+<style>
+  :root { --paper:#f6f2ea; --paper-2:#fbf9f4; --ink:#1b1a17; --ink-2:#4a4741; --muted:#66625a; --line:#d9d2c4; --accent:#b23a1d; --accent-soft:#f3e2dc; --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif; --sans:system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; --mono:ui-monospace,"Cascadia Code",Consolas,Menlo,monospace; }
+  @media (prefers-color-scheme: dark) { :root { --paper:#151412; --paper-2:#1d1b18; --ink:#efe9de; --ink-2:#c9c2b5; --muted:#8f887b; --line:#2e2b26; --accent:#e0623f; --accent-soft:#3a1f17; } }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--paper); color:var(--ink); font:16px/1.55 var(--sans); }
+  a { color:inherit; text-decoration-color:var(--line); text-underline-offset:3px; }
+  a:hover { text-decoration-color:var(--accent); }
+  .wrap { max-width:760px; margin:0 auto; padding:0 24px; }
+  header.top { border-bottom:1px solid var(--line); }
+  header.top .wrap { display:flex; align-items:baseline; justify-content:space-between; padding:18px 24px; flex-wrap:wrap; gap:8px; }
+  .wordmark { font:600 22px/1 var(--serif); text-decoration:none; }
+  nav a { font-size:14px; margin-left:20px; text-decoration:none; color:var(--ink-2); }
+  main.wrap { padding-bottom:8px; }
+  h1 { font:400 clamp(28px,4.2vw,38px)/1.18 var(--serif); margin:20px 0 10px; max-width:34ch; }
+  h2 { font:400 24px/1.2 var(--serif); margin:8px 0 10px; }
+  .kicker { font:400 13px/1 var(--serif); color:var(--accent); letter-spacing:.06em; text-transform:uppercase; margin:0 0 8px; }
+  .byline { color:var(--muted); font-size:14px; margin:0 0 28px; }
+  p, li { color:var(--ink-2); max-width:66ch; overflow-wrap:anywhere; }
+  ol { padding-left:22px; }
+  ol li { margin-bottom:10px; }
+  section.cause { border-top:1px solid var(--line); padding-top:26px; margin-top:26px; }
+  code { font-family:var(--mono); font-size:0.92em; background:var(--paper-2); border:1px solid var(--line); border-radius:3px; padding:1px 5px; color:var(--ink); }
+  pre { background:var(--paper-2); border:1px solid var(--line); border-radius:4px; padding:14px 16px; overflow-x:auto; margin:14px 0; max-width:100%; }
+  pre code { background:none; border:none; padding:0; font-size:13px; line-height:1.5; white-space:pre; }
+  .err { border-radius:4px; border:1px solid var(--line); border-left:3px solid var(--accent); background:var(--accent-soft); padding:12px 16px; margin:16px 0; }
+  .err code { background:none; border:none; padding:0; color:var(--ink); }
+  .fix-label { font-size:13px; color:var(--muted); margin:16px 0 -4px; letter-spacing:.02em; }
+  .tool-cta { display:inline-block; margin-top:6px; padding:10px 18px; border:2px solid var(--accent); border-radius:4px; text-decoration:none; color:var(--ink); font-size:15px; }
+  .tool-cta:hover { background:var(--accent-soft); }
+  .sources li { margin-bottom:6px; font-size:15px; }
+  details { border-top:1px solid var(--line); padding:14px 0; }
+  details:last-of-type { border-bottom:1px solid var(--line); }
+  summary { cursor:pointer; font:400 18px/1.3 var(--serif); list-style:none; display:flex; justify-content:space-between; gap:12px; }
+  summary::-webkit-details-marker { display:none; }
+  summary::after { content:"+"; color:var(--accent); flex:none; font-family:var(--sans); }
+  details[open] summary::after { content:"\2013"; }
+  details p { color:var(--ink-2); margin:10px 0 0; max-width:66ch; overflow-wrap:anywhere; }
+  footer { margin-top:56px; padding:24px 0 56px; border-top:1px solid var(--line); color:var(--muted); font-size:14px; }
+  @media (max-width:480px) { header.top .wrap { flex-direction:column; align-items:flex-start; } nav a { margin-left:0; margin-right:16px; } }
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap"><a class="wordmark" href="https://arling.sk/">ARLing</a><nav><a href="https://arling.sk/#tools">Tools</a><a href="https://arling.sk/asistent/shopify/">Asistent for Shopify</a><a href="https://arling.sk/how-we-work/">How we work</a></nav></div></header>
+<main class="wrap">
+  <p class="kicker" style="margin-top:36px">Notes</p>
+  <h1>A Shopify AI shopping assistant built from products.json: how it answers, what it costs, and the theme.liquid setup while the app is in review</h1>
+  <p class="byline">Andrej Lauko, ARLing · 6 September 2026</p>
+
+  <p>Every Shopify store already publishes its catalogue at a public URL: <code>yourstore.myshopify.com/products.json</code>. ARLing Asistent, an AI shopping assistant, reads exactly that feed and answers customer questions from it. The Shopify App Store listing is still in preparation, so today the widget goes on a store by hand, one script tag in <code>theme.liquid</code>. This note covers what products.json contains, how a feed-grounded assistant answers and what it refuses, the setup that works today, what the approved app changes, the privacy and DPA position, and an honest comparison with Shopify Inbox and Gorgias.</p>
+
+  <section class="cause">
+    <p class="kicker">01</p>
+    <h2>What products.json actually is</h2>
+    <p>Every Shopify store, on any plan, serves a public product list at <code>/products.json</code>, both on the <code>myshopify.com</code> domain and on a connected custom domain. It is not a setting anyone switches on: theme sections and apps already rely on it to read the catalogue client-side, so it has been reachable by default since before most stores existed. A real one shows the shape directly: each entry carries <code>id</code>, <code>title</code>, <code>handle</code>, <code>body_html</code> (the description), <code>vendor</code>, <code>product_type</code>, <code>tags</code>, <code>images</code>, and a <code>variants</code> array with <code>price</code>, <code>compare_at_price</code>, <code>sku</code>, option values and a boolean <code>available</code> flag per variant. There is no raw inventory count, no cost price, and nothing about a customer or an order: it is the same marketing-facing data a shopper's browser already sees on the storefront, just as JSON instead of HTML.</p>
+    <p>One practical detail: without a <code>?limit=</code> parameter the endpoint returns a short first page, not the whole catalogue, and 250 is the largest page it hands back at once. ARLing Asistent fetches exactly the URL given, once, so add <code>?limit=250</code> to the feed URL for any catalogue bigger than a couple dozen products; anything past the first 250, or past 5,000 products total, stays invisible until pagination support is added.</p>
+    <p>Can it be turned off? Not cleanly. Shopify has no dedicated setting for it, since themes and installed apps already depend on it. Password-protecting the whole store from Online Store &gt; Preferences hides pages from visitors and search engines, but is not documented as blocking this endpoint, and several store owners report it still answering on a password-protected store. In practice: it is already public on essentially every Shopify store, and blocking just that path needs a developer-built proxy, not a setting.</p>
+  </section>
+
+  <section class="cause">
+    <p class="kicker">02</p>
+    <h2>How a feed-grounded assistant answers, and what it refuses</h2>
+    <p>Once a store's feed is ingested, each product is split and turned into a vector embedding. A shopper's question is embedded the same way, the 8 closest matching products are retrieved, and a language model answers using only those products and the store's contact e-mail, never outside knowledge. The reply is capped at 120 words, links to at most 3 real products with real prices, and is answered in whichever of Slovak, Czech, English or German the shopper's message is written in.</p>
+    <p>What it refuses: it cannot look up a specific order, since order data never reaches it, only the public catalogue. It cannot confirm stock at the exact second someone asks, since the feed refreshes once a day, so an item that just sold out can still show as available until the next refresh. A returns or shipping question gets the same answer as anything outside the catalogue: a pointer to the store's contact e-mail, since the assistant has no order history and no separate policy text, only the catalogue and that address.</p>
+  </section>
+
+  <section class="cause">
+    <p class="kicker">03</p>
+    <h2>Setup today, without the app</h2>
+    <p>Start a trial at <a href="https://arling.sk/asistent/?lang=en">arling.sk/asistent</a>: paste your store's feed URL (<code>https://your-store.myshopify.com/products.json?limit=250</code>) and your e-mail. It is free up to 100 conversations a month, no card, and the same page runs the assistant live on your own catalogue while it indexes. One rough edge: the trial page does not print your tenant id back once it is done; today the practical way to get it is your browser's Network tab on the <code>/v1/tenants</code> request, or simply asking andrej@arling.sk for it with your store's domain.</p>
+    <p>With that id, go to the Shopify admin, <b>Online Store &gt; Themes &gt; Edit code</b>, open <code>theme.liquid</code>, and add this just before <code>&lt;/body&gt;</code>:</p>
+    <pre><code>&lt;script src="https://arling-asistent.arling.workers.dev/widget.js"
+        data-tenant="TENANT_ID"
+        data-lang="auto"
+        data-position="right"
+        defer&gt;&lt;/script&gt;</code></pre>
+    <p><code>data-lang="auto"</code> follows each shopper's own browser language, and <code>data-position</code> takes <code>right</code> or <code>left</code> for which corner the bubble sits in. To remove the assistant, delete that script tag from <code>theme.liquid</code> and save: it stops appearing on the next page load, no other cleanup needed. The same underlying assistant already runs against a real store's public feed at the <a href="https://arling.sk/asistent/live/?t=8d9a6783-7ef9-4790-a63b-c52752face6b&amp;shop=allbirds.com">live demo on allbirds.com's products.json</a>, ARLing's own demo tenant reading public data, not a partnership with that store.</p>
+    <a class="tool-cta" href="https://arling.sk/asistent/shopify/">See the Shopify setup page</a>
+  </section>
+
+  <section class="cause">
+    <p class="kicker">04</p>
+    <h2>What changes once the Shopify app is approved</h2>
+    <p>The app itself, a Cloudflare Worker for OAuth, billing and the mandatory compliance webhooks, plus a theme app extension replacing the script tag with an app embed block, is built and tested against mocks, but nothing is deployed: the owner has a Shopify Partners account but has not yet created the app entry, a manual step nobody else can take for them. Once it exists and clears review, installing becomes one click from the Shopify App Store: an OAuth consent screen, an embedded admin page inside Shopify, and a toggle in the theme editor's App embeds panel instead of hand-editing <code>theme.liquid</code>.</p>
+    <p>Billing moves inside Shopify too, and the currency changes with it: the same three tiers become Free at 0 USD, Starter at 19 USD a month and Pro at 39 USD a month, charged through Shopify instead of a Stripe invoice in euros. One gap: choosing a paid plan there creates the Shopify subscription correctly, but does not yet raise the assistant's own conversation quota automatically, since no API for that exists yet; an upgrade needs a manual step behind the scenes to take effect.</p>
+  </section>
+
+  <section class="cause">
+    <p class="kicker">05</p>
+    <h2>Privacy: no conversation storage, and a DPA</h2>
+    <p>The content of a conversation, the shopper's question and the assistant's reply, is never written to a database. What is kept is a daily aggregate counter per store: how many conversations happened and how many product links were clicked, used only to enforce the monthly plan quota. Setting up a trial sends the store's feed URL, its domain and the e-mail entered in the form, once; no customer or order data is ever read or sent, since the assistant's only inputs are the public catalogue and that one contact address.</p>
+    <p>ARLing s. r. o. acts as a data processor for the messages a store's shoppers send, under a GDPR Article 28 agreement. The template is published as <a href="https://github.com/AndryRoby/arling-asistent/blob/main/legal/dpa-sk.md" target="_blank" rel="noopener">a Slovak-language DPA on GitHub</a>, with an English translation available on request at andrej@arling.sk. The assistant runs on Cloudflare Workers AI, and Cloudflare does not publicly guarantee EU-only processing for that service, so the agreement relies on Standard Contractual Clauses and Cloudflare's EU Cloud Code of Conduct certification rather than a technical location guarantee.</p>
+  </section>
+
+  <section class="cause">
+    <p class="kicker">06</p>
+    <h2>How it compares: Shopify Inbox and Gorgias</h2>
+    <p>Shopify's own Inbox app is free: its App Store listing states "Pricing: Free" with no paid tier (<a href="https://apps.shopify.com/inbox">apps.shopify.com/inbox</a>). It reads a store's products, orders and customer data through the Shopify Admin, offers an AI-powered storefront assistant with product recommendations, and can personalise replies using purchase history for shoppers signed in with Shop. That is a wider scope than ARLing Asistent, which by design never touches order or customer data, only the public catalogue; the tradeoff is that Inbox is free and native, so a store that wants order-aware replies already has a strong free option.</p>
+    <p>Gorgias is a full helpdesk with an AI layer. Its pricing page describes the AI Agent as included "on every plan, pay only when it resolves a conversation," with helpdesk plans scaling "from 50 to 5,000 tickets a month, never priced per agent" (<a href="https://www.gorgias.com/pricing">gorgias.com/pricing</a>); the exact dollar figures sit behind an interactive calculator this note could not read reliably, so none are repeated here. That per-resolution model is a different shape from ARLing Asistent's flat 19 or 39 EUR (soon USD through Shopify) for a fixed conversation volume: Gorgias charges by how often its AI closes something out, Asistent charges by how many conversations happen at all, resolved or not.</p>
+  </section>
+
+  <h2>Frequently asked questions</h2>
+  <details>
+    <summary>Is my store's products.json feed public by default?</summary>
+    <p>Yes. Every Shopify store serves a public catalogue at yourstore.myshopify.com/products.json (and the same path on a connected domain), listing title, description, price, variant options and images for published products. It contains no customer data, no order data and no cost price.</p>
+  </details>
+  <details>
+    <summary>Can I turn products.json off?</summary>
+    <p>Not cleanly. Shopify has no setting that disables /products.json on its own, since many themes and apps read it directly. Password-protecting the whole store under Online Store &gt; Preferences hides pages from visitors and search engines, but store owners report the feed still answering even then, so it is not a reliable way to block it either.</p>
+  </details>
+  <details>
+    <summary>Does the assistant store what shoppers type?</summary>
+    <p>No. The conversation content, the question and the answer, is never written to a database. Only daily aggregate counters (conversations, product-link clicks) are kept per store, used to enforce the monthly plan quota.</p>
+  </details>
+  <details>
+    <summary>How do I add the assistant before the Shopify app is approved?</summary>
+    <p>Create a free trial at arling.sk/asistent with your store's products.json URL and your e-mail, then add the widget's script tag to theme.liquid just before &lt;/body&gt;, using the tenant id from that trial. Removing it later is one deletion: take the script tag back out and save.</p>
+  </details>
+  <details>
+    <summary>What changes once the Shopify app is approved?</summary>
+    <p>Installing from the Shopify App Store with no code, an embedded settings page instead of a theme edit, a theme app embed toggle instead of a manual script tag, and billing handled inside Shopify at 19 USD or 39 USD a month instead of Stripe invoicing in euros.</p>
+  </details>
+
+  <h2>Sources</h2>
+  <ul class="sources">
+    <li><a href="https://github.com/AndryRoby/arling-asistent">ARLing Asistent: source code, worker and readme (GitHub)</a></li>
+    <li><a href="https://github.com/AndryRoby/arling-asistent/tree/main/shopify-app">ARLing Asistent for Shopify: app source and status (GitHub)</a></li>
+    <li><a href="https://arling.sk/asistent/?lang=en">ARLing Asistent: trial form and live playground</a></li>
+    <li><a href="https://apps.shopify.com/inbox">Shopify App Store: Shopify Inbox listing and pricing</a></li>
+    <li><a href="https://www.gorgias.com/pricing">Gorgias: pricing page, AI Agent and helpdesk plans</a></li>
+    <li><a href="https://help.shopify.com/en/manual/online-store/themes/password-page">Shopify Help Center: restricting access to an online store</a></li>
+  </ul>
+</main>
+<footer><div class="wrap">ARLing s. r. o. · <a href="https://arling.sk/">arling.sk</a> · <a href="https://arling.sk/asistent/shopify/">Asistent for Shopify</a> · <a href="mailto:andrej@arling.sk">andrej@arling.sk</a></div></footer>
+<script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="be534d51-4d01-4860-b267-9596d91606de"></script>
+</body>
+</html>
