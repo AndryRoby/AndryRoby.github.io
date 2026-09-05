@@ -57,10 +57,6 @@
   .proof{margin-top:22px;font-size:14px;color:var(--muted)}
   .proof b{color:var(--ink)}
 
-  .shot{border:1px solid var(--line);border-radius:14px;background:var(--card);box-shadow:0 10px 30px rgba(27,26,23,.09);overflow:hidden}
-  .shot .chrome{display:flex;gap:6px;padding:10px 12px;border-bottom:1px solid var(--line)}
-  .shot .chrome i{width:9px;height:9px;border-radius:50%;background:rgba(27,26,23,.16);display:block}
-  .shot img{display:block;width:100%;height:auto}
 
   section{padding:clamp(56px,6.5vw,116px) 0;border-top:1px solid var(--line);position:relative}
   .deep{background:var(--paper-deep)}
@@ -87,17 +83,51 @@
   .in .r,.r.in{opacity:1;transform:none;filter:none}
   .d1{transition-delay:.06s}.d2{transition-delay:.14s}.d3{transition-delay:.22s}.d4{transition-delay:.3s}.d5{transition-delay:.38s}
 
+
+  /* index hero: obsah ako v tlacenej prirucke */
+  .index{margin:clamp(18px,2vw,28px) 0 0;display:flex;flex-direction:column;gap:2px;max-width:40em}
+  .index a{display:flex;align-items:baseline;gap:10px;color:var(--ink);text-decoration:none;font-size:clamp(15px,1.05vw,17px);padding:7px 0}
+  .index .n{font-variant-numeric:tabular-nums;color:var(--accent);font-size:13px;letter-spacing:.06em;flex:none}
+  .index .dots{flex:1;border-bottom:1px dotted #a39b8c;transform:translateY(-5px);min-width:24px}
+  .index .t{flex:none;max-width:78%}
+  .index a:hover .t{color:var(--accent)}
+
+  /* kreslena scena: monolinia, nakresli sa perom, tri svetla */
+  .scene{position:relative;border:1px solid var(--line);border-radius:16px;background:var(--scene-bg,#fffdf8);padding:18px 18px 12px;transition:background .6s var(--ease),border-color .6s var(--ease)}
+  .scene svg{display:block;width:100%;height:auto}
+  .scene .s{fill:none;stroke:var(--scene-ink,#1b1a17);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:1;stroke-dashoffset:1;animation:draw 1.1s var(--ease) forwards}
+  .scene .a{stroke:var(--scene-accent,#b23a1d)}
+  .scene .g1 .s{animation-delay:.05s}.scene .g2 .s{animation-delay:.3s}.scene .g3 .s{animation-delay:.55s}.scene .g4 .s{animation-delay:.75s}.scene .g5 .s{animation-delay:.95s}.scene .g6 .s{animation-delay:1.15s}
+  @keyframes draw{to{stroke-dashoffset:0}}
+  .scene .cursor{fill:var(--scene-accent,#b23a1d);opacity:0;animation:blink 1.1s steps(2,start) infinite 1.9s}
+  @keyframes blink{50%{opacity:1}}
+  .scene .steam{animation:draw 1.1s var(--ease) forwards 1.15s, steam 4s ease-in-out 2.4s infinite}
+  @keyframes steam{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+  .scene .cap{margin:8px 2px 0;font-size:12.5px;color:var(--muted);display:flex;justify-content:space-between;gap:12px}
+  .looks{position:absolute;right:14px;top:12px;display:flex;gap:6px;z-index:1}
+  .looks button{border:1px solid var(--line);background:var(--card);color:var(--muted);font:inherit;font-size:12px;border-radius:999px;padding:4px 10px;cursor:pointer;display:flex;align-items:center;gap:6px}
+  .looks button i{width:10px;height:10px;border-radius:50%;display:block;background:var(--sw);border:1px solid rgba(27,26,23,.15)}
+  .looks button[aria-pressed="true"]{border-color:var(--ink);color:var(--ink)}
+  .scene[data-look="rano"]{--scene-bg:#fbf4e6;--scene-ink:#4a3f33;--scene-accent:#c4552f;border-color:#e6d9c4}
+  .scene[data-look="den"]{--scene-bg:#fffdf8;--scene-ink:#1b1a17;--scene-accent:#b23a1d}
+  .scene[data-look="vecer"]{--scene-bg:#1b1a17;--scene-ink:#e9e4d8;--scene-accent:#e0673f;border-color:#1b1a17}
+  .scene[data-look="vecer"] .cap{color:#a8a294}
+  .scene[data-look="vecer"] .looks button{background:#2a2825;border-color:#3d3a34;color:#c9c2b4}
+  .scene[data-look="vecer"] .looks button[aria-pressed="true"]{border-color:#e9e4d8;color:#fffdf8}
+  @media (prefers-reduced-motion:reduce){ .scene .s{stroke-dashoffset:0;animation:none} .scene .cursor{opacity:1;animation:none} .scene .steam{animation:none} }
+  @media (max-width:860px){ .index .t{max-width:70%} }
+
   footer{padding:44px 0 60px;color:var(--muted);font-size:14px;border-top:1px solid var(--line)}
 
   /* One column below 860 px. Above it the two columns simply narrow,
      because the type and the gaps are fluid, so there is no jump. */
   @media (max-width:860px){
     .hero{grid-template-columns:1fr}
-    .shot{max-width:560px}
+    .scene{max-width:560px}
   }
   @media (max-width:720px){ nav{display:none} }
   @media (min-width:1700px){
-    .shot{box-shadow:0 16px 44px rgba(27,26,23,.10)}
+    .scene{box-shadow:0 16px 44px rgba(27,26,23,.10)}
     .hero{grid-template-columns:6.5fr 5.5fr}
   }
   @media (prefers-reduced-motion:reduce){
@@ -125,13 +155,64 @@
 <main>
   <div class="wrap hero" id="hero">
     <div>
-      <h1><span class="l r d1">Papier sa hýbe</span><span class="l r d2">ako papier,</span><span class="l r d3">nie ako vesmír.</span></h1>
-      <p class="lead r d4">Toto je návrh pohybu pre arling.sk. Text sa usadí, linka sa dokreslí, atrament veľmi pomaly dýcha v pozadí. Žiadna fialová aurora, žiadne hviezdy, nič, čo by sa dalo zameniť s hocijakým iným AI startupom.</p>
-      <div class="cta r d5"><a class="btn btn-solid" href="#rozhodni">Páči sa mi to</a><a class="btn btn-line" href="https://www.ragnetiq.com/" target="_blank" rel="noopener">Porovnať s ich stránkou</a></div>
-      <p class="proof r d5"><b>0</b> knižníc &middot; <b>3 kB</b> kódu navyše &middot; vypína sa pri nastavení „obmedziť pohyb“</p>
+      <h1><span class="l r d1">Malé nástroje</span><span class="l r d2">pre jeden presný</span><span class="l r d3">problém.</span></h1>
+      <p class="lead r d4">ARLing stavia nástroje, ktoré bežia v prehliadači a nič nikam neposielajú: pre e-shopy, pre účtovníkov a pre vývojárov. Toto je návrh nového vzhľadu hubu.</p>
+      <nav class="index r d5" aria-label="Obsah">
+        <a href="#ako"><span class="n">[1]</span><span class="dots"></span><span class="t">Pre e-shopy: Asistent, Hľadač darčekov, Feed Doctor</span></a>
+        <a href="#preco"><span class="n">[2]</span><span class="dots"></span><span class="t">Pre účtovníkov: camt.053, pain.001, DATEV</span></a>
+        <a href="#rozhodni"><span class="n">[3]</span><span class="dots"></span><span class="t">Pre vývojárov: jedenásť bezplatných Doctor nástrojov</span></a>
+        <a href="#rozhodni"><span class="n">[4]</span><span class="dots"></span><span class="t">Ako pracujeme</span></a>
+      </nav>
+      <p class="proof r d5">Jedenásť nástrojov zadarmo, bez registrácie, všetko beží vo vašom prehliadači.</p>
     </div>
     <div class="r d3">
-      <div class="shot"><div class="chrome"><i></i><i></i><i></i></div><img src="/press/asistent-1-hero.png" alt="ARLing Asistent na e-shope" width="1200" height="750"></div>
+      <div class="scene" id="scene" data-look="den">
+        <div class="looks" role="group" aria-label="Svetlo">
+          <button type="button" data-look="rano" style="--sw:#e8c9a0" aria-pressed="false"><i></i>Ráno</button>
+          <button type="button" data-look="den" style="--sw:#f6f2ea" aria-pressed="true"><i></i>Deň</button>
+          <button type="button" data-look="vecer" style="--sw:#1b1a17" aria-pressed="false"><i></i>Večer</button>
+        </div>
+        <svg viewBox="0 0 600 400" role="img" aria-label="Pult e-shopu: notebook s asistentom, výpis z banky, krabice s darčekom, káva">
+          <g class="g1">
+            <path class="s" pathLength="1" d="M40 330 H560"/>
+          </g>
+          <g class="g2" transform="rotate(-6 115 275)">
+            <rect class="s" pathLength="1" x="60" y="210" width="110" height="130" rx="4"/>
+            <path class="s" pathLength="1" d="M78 236 H152"/>
+            <path class="s" pathLength="1" d="M78 252 H152"/>
+            <path class="s" pathLength="1" d="M78 268 H140"/>
+            <path class="s" pathLength="1" d="M78 284 H126"/>
+            <circle class="s a" pathLength="1" cx="140" cy="314" r="11"/>
+            <path class="s a" pathLength="1" d="M134.5 314.5 L138.5 318.5 L146 310.5"/>
+          </g>
+          <g class="g3">
+            <path class="s" pathLength="1" d="M215 318 H385 L400 330 H200 Z"/>
+            <rect class="s" pathLength="1" x="225" y="170" width="150" height="148" rx="6"/>
+            <rect class="s" pathLength="1" x="236" y="181" width="128" height="116" rx="3"/>
+          </g>
+          <g class="g4">
+            <path class="s a" pathLength="1" d="M258 205 H342 a10 10 0 0 1 10 10 V236 a10 10 0 0 1 -10 10 H278 l-12 10 v-10 h-8 a10 10 0 0 1 -10 -10 V215 a10 10 0 0 1 10 -10 Z"/>
+            <path class="s" pathLength="1" d="M264 219 H316"/>
+            <path class="s" pathLength="1" d="M264 232 H300"/>
+            <path class="s a" pathLength="1" d="M326 236 L334 216 L342 236"/>
+            <rect class="cursor" x="304" y="227" width="2" height="9"/>
+          </g>
+          <g class="g5">
+            <rect class="s" pathLength="1" x="420" y="250" width="90" height="80" rx="3"/>
+            <path class="s" pathLength="1" d="M420 268 H510"/>
+            <rect class="s" pathLength="1" x="440" y="200" width="60" height="50" rx="3"/>
+            <path class="s a" pathLength="1" d="M470 200 V250"/>
+            <path class="s a" pathLength="1" d="M470 200 c-9 -13 -22 -6 -12 3 c8 7 12 -3 12 -3 c0 0 4 10 12 3 c10 -9 -3 -16 -12 -3"/>
+          </g>
+          <g class="g6">
+            <path class="s" pathLength="1" d="M172 300 h30 v22 a8 8 0 0 1 -8 8 h-14 a8 8 0 0 1 -8 -8 z"/>
+            <path class="s" pathLength="1" d="M202 306 a7 7 0 0 1 0 14"/>
+            <path class="s steam" pathLength="1" d="M180 290 c3 -6 -3 -10 0 -16"/>
+            <path class="s steam" pathLength="1" d="M191 290 c3 -6 -3 -10 0 -16" style="animation-delay:1.25s,3s"/>
+          </g>
+        </svg>
+        <div class="cap"><span>Kreslené v kóde, 1,6 px ťah, žiadny obrázok.</span><span>Bratislava, 5. 9. 2026</span></div>
+      </div>
     </div>
   </div>
 
@@ -192,6 +273,16 @@
     });
   }, { rootMargin: '0px 0px -12% 0px', threshold: 0.1 });
   document.querySelectorAll('section').forEach(function (s) { io.observe(s); });
+
+  var scene = document.getElementById('scene');
+  if (scene) {
+    scene.querySelectorAll('.looks button').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        scene.setAttribute('data-look', btn.getAttribute('data-look'));
+        scene.querySelectorAll('.looks button').forEach(function (o) { o.setAttribute('aria-pressed', o === btn ? 'true' : 'false'); });
+      });
+    });
+  }
   var f = document.querySelector('.fibres');
   if (f) {
     var html = '';
