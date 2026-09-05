@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Náhľad pohybu, Paper v2 · ARLing</title>
+<meta name="robots" content="noindex, nofollow">
+<style>
+  :root{
+    --paper:#f6f2ea; --paper-deep:#efe9dd; --card:#fffdf8;
+    --ink:#1b1a17; --body:#3d3a34; --muted:#66625a; --line:#d9d2c4;
+    --accent:#b23a1d; --accent-light:#e0673f;
+    --display:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+    --sans:system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --dur:.55s; --ease:cubic-bezier(.2,.7,.2,1);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--paper);color:var(--body);font:17px/1.6 var(--sans);-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1140px;margin:0 auto;padding:0 24px}
+
+  /* 1. Ink wash: the one signature background. A very slow, very faint rust
+     breath, like ink soaking into paper. Two blurred blobs, nothing else. */
+  .wash{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+  .wash i{position:absolute;display:block;border-radius:50%;filter:blur(90px);opacity:.10}
+  .wash i:nth-child(1){width:52vw;height:52vw;left:-10vw;top:-12vw;background:radial-gradient(circle,#b23a1d 0%,transparent 68%);animation:breathe 26s var(--ease) infinite alternate}
+  .wash i:nth-child(2){width:44vw;height:44vw;right:-8vw;top:22vh;background:radial-gradient(circle,#8a6a3b 0%,transparent 70%);animation:breathe 34s var(--ease) infinite alternate-reverse}
+  @keyframes breathe{from{transform:translate3d(0,0,0) scale(1)}to{transform:translate3d(2.5vw,3vh,0) scale(1.12)}}
+
+  /* 2. Paper grain, static, one inline SVG, no request */
+  body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:1;opacity:.35;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='.055'/%3E%3C/svg%3E")}
+  header,main,footer{position:relative;z-index:2}
+
+  header{border-bottom:1px solid var(--line);background:rgba(246,242,234,.82);backdrop-filter:saturate(1.2) blur(8px);position:sticky;top:0;z-index:5}
+  .bar{display:flex;align-items:center;justify-content:space-between;height:66px;gap:18px}
+  .brand{display:flex;align-items:center;gap:11px;text-decoration:none;color:var(--ink)}
+  .brand svg{display:block}
+  .brand b{font:400 22px/1 var(--display);letter-spacing:-.01em}
+  .brand span{color:var(--muted);font-size:13px;border-left:1px solid var(--line);padding-left:11px}
+  nav{display:flex;gap:26px;align-items:center}
+  nav a{color:var(--body);text-decoration:none;font-size:15px;position:relative;padding:4px 0}
+  nav a::after{content:"";position:absolute;left:0;bottom:0;height:1px;width:0;background:var(--accent);transition:width .22s var(--ease)}
+  nav a:hover::after{width:100%}
+  .lang{border:1px solid var(--line);border-radius:9px;background:var(--card);color:var(--body);font:inherit;font-size:14px;padding:7px 10px}
+
+  .hero{padding:86px 0 78px;display:grid;grid-template-columns:7fr 5fr;gap:52px;align-items:center}
+  h1{font:400 64px/1.04 var(--display);letter-spacing:-.022em;color:var(--ink);margin:0 0 20px}
+  h1 .l{display:block}
+  .lead{font-size:19px;max-width:34em;margin:0 0 26px}
+  .cta{display:flex;gap:12px;flex-wrap:wrap}
+  .btn{display:inline-flex;align-items:center;height:46px;padding:0 20px;border-radius:12px;text-decoration:none;font-weight:600;font-size:15px;transition:background .14s var(--ease),color .14s var(--ease),transform .14s var(--ease)}
+  .btn-solid{background:var(--accent);color:#fff}
+  .btn-solid:hover{background:#9c3319;transform:translateY(-1px)}
+  .btn-line{border:1px solid var(--ink);color:var(--ink)}
+  .btn-line:hover{background:var(--ink);color:var(--paper)}
+  .proof{margin-top:22px;font-size:14px;color:var(--muted)}
+  .proof b{color:var(--ink)}
+
+  .shot{border:1px solid var(--line);border-radius:14px;background:var(--card);box-shadow:0 10px 30px rgba(27,26,23,.09);overflow:hidden}
+  .shot .chrome{display:flex;gap:6px;padding:10px 12px;border-bottom:1px solid var(--line)}
+  .shot .chrome i{width:9px;height:9px;border-radius:50%;background:rgba(27,26,23,.16);display:block}
+  .shot img{display:block;width:100%;height:auto}
+
+  section{padding:92px 0;border-top:1px solid var(--line);position:relative}
+  .deep{background:var(--paper-deep)}
+  .kicker{display:flex;align-items:center;gap:9px;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-bottom:10px}
+  .kicker svg{width:18px;height:18px;flex:none}
+  h2{font:400 34px/1.15 var(--display);color:var(--ink);margin:0 0 8px;letter-spacing:-.015em}
+  .rule{height:1px;background:var(--line);margin:26px 0 30px;transform-origin:left;transform:scaleX(0);transition:transform .8s var(--ease)}
+  .in .rule{transform:scaleX(1)}
+  .cols{display:grid;grid-template-columns:repeat(3,1fr);gap:30px}
+  .cols h3{font:600 17px/1.4 var(--sans);color:var(--ink);margin:0 0 6px}
+  .cols p{margin:0;font-size:15.5px}
+  .num{font-size:12px;letter-spacing:.12em;color:var(--accent);margin:0 0 6px}
+
+  .band{background:var(--ink);color:#c9c2b4;border-top:none}
+  .band h2{color:#fffdf8}
+  .band h3{color:#fffdf8}
+  .band .kicker{color:var(--accent-light)}
+  .band .rule{background:rgba(255,253,248,.18)}
+  .fibres{position:absolute;inset:0;overflow:hidden;pointer-events:none;opacity:.5}
+  .fibres i{position:absolute;width:1px;background:rgba(255,253,248,.55);animation:drift 9s linear infinite}
+  @keyframes drift{0%{opacity:0;transform:translateY(6px)}20%{opacity:.85}100%{opacity:0;transform:translateY(-14px)}}
+
+  .r{opacity:0;transform:translateY(10px);filter:blur(4px);transition:opacity var(--dur) var(--ease),transform var(--dur) var(--ease),filter var(--dur) var(--ease)}
+  .in .r,.r.in{opacity:1;transform:none;filter:none}
+  .d1{transition-delay:.06s}.d2{transition-delay:.14s}.d3{transition-delay:.22s}.d4{transition-delay:.3s}.d5{transition-delay:.38s}
+
+  footer{padding:44px 0 60px;color:var(--muted);font-size:14px;border-top:1px solid var(--line)}
+
+  @media (max-width:900px){
+    .hero{grid-template-columns:1fr;gap:34px;padding:56px 0 48px}
+    h1{font-size:34px}
+    .cols{grid-template-columns:1fr;gap:24px}
+    section{padding:56px 0}
+    nav{display:none}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation:none !important;transition:none !important}
+    .r{opacity:1;transform:none;filter:none}
+    .rule{transform:scaleX(1)}
+    html{scroll-behavior:auto}
+  }
+</style>
+</head>
+<body>
+<div class="wash" aria-hidden="true"><i></i><i></i></div>
+
+<header>
+  <div class="wrap bar">
+    <a class="brand" href="/">
+      <svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true"><defs><path id="m" fill-rule="evenodd" d="M16 2.5 L29 29.5 H3 Z M16 12.4 L22.4 25.6 H9.6 Z"/><clipPath id="mr"><rect x="16" width="16" height="32"/></clipPath></defs><use href="#m" fill="#1b1a17"/><use href="#m" fill="#b23a1d" clip-path="url(#mr)"/></svg>
+      <b>ARLing</b><span>náhľad pohybu</span>
+    </a>
+    <nav><a href="#ako">Ako sa to hýbe</a><a href="#preco">Prečo takto</a><a href="#rozhodni">Rozhodni</a></nav>
+    <select class="lang" aria-label="Jazyk"><option>Slovensky</option><option>English</option><option>Deutsch</option><option>Česky</option></select>
+  </div>
+</header>
+
+<main>
+  <div class="wrap hero" id="hero">
+    <div>
+      <h1><span class="l r d1">Papier sa hýbe</span><span class="l r d2">ako papier,</span><span class="l r d3">nie ako vesmír.</span></h1>
+      <p class="lead r d4">Toto je návrh pohybu pre arling.sk. Text sa usadí, linka sa dokreslí, atrament veľmi pomaly dýcha v pozadí. Žiadna fialová aurora, žiadne hviezdy, nič, čo by sa dalo zameniť s hocijakým iným AI startupom.</p>
+      <div class="cta r d5"><a class="btn btn-solid" href="#rozhodni">Páči sa mi to</a><a class="btn btn-line" href="https://www.ragnetiq.com/" target="_blank" rel="noopener">Porovnať s ich stránkou</a></div>
+      <p class="proof r d5"><b>0</b> knižníc &middot; <b>3 kB</b> kódu navyše &middot; vypína sa pri nastavení „obmedziť pohyb“</p>
+    </div>
+    <div class="r d3">
+      <div class="shot"><div class="chrome"><i></i><i></i><i></i></div><img src="/press/asistent-1-hero.png" alt="ARLing Asistent na e-shope" width="1200" height="750"></div>
+    </div>
+  </div>
+
+  <section id="ako" class="deep">
+    <div class="wrap">
+      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 17a8.5 8.5 0 1 1 15 0"/><path d="M12 13.5l3.5-3.2"/><circle cx="12" cy="14.5" r="1"/></svg>01 &nbsp;Pohyb</p>
+      <h2 class="r">Tri druhy pohybu, viac nie.</h2>
+      <div class="rule"></div>
+      <div class="cols">
+        <div class="r d1"><p class="num">01</p><h3>Usadenie textu</h3><p>Riadky nadpisu prídu za sebou po 60 ms: priehľadnosť, 10 px zdola a jemné rozostrenie. Trvá pol sekundy a už sa nikdy neopakuje.</p></div>
+        <div class="r d2"><p class="num">02</p><h3>Dokreslenie linky</h3><p>Vlasová linka pod nadpisom sekcie sa dokreslí zľava doprava, keď sekcia príde do obrazu. Je to jediný prvok, ktorý píše.</p></div>
+        <div class="r d3"><p class="num">03</p><h3>Dych atramentu</h3><p>Dve rozmazané škvrny v pozadí sa presúvajú 26 a 34 sekúnd na cyklus pri desaťpercentnej priehľadnosti. Vedome to nezbadáš, ale keby to chýbalo, stránka stojí.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band" id="preco">
+    <div class="fibres" aria-hidden="true"></div>
+    <div class="wrap">
+      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5l7 2.6v5.3c0 4-2.9 7.5-7 9.1-4.1-1.6-7-5.1-7-9.1V6.1z"/><path d="M9.4 12.2l1.9 1.9 3.4-3.7"/></svg>02 &nbsp;Prečo nie ich cesta</p>
+      <h2 class="r">Tmavá sekcia áno. Tmavá stránka nie.</h2>
+      <div class="rule"></div>
+      <div class="cols">
+        <div class="r d1"><h3>Odlíšenie</h3><p>Tmavý web s fialovým svetlom má dnes každý druhý AI startup. Svetlý papier s pätkovým písmom si zapamätáš, lebo ho nemá nikto.</p></div>
+        <div class="r d2"><h3>Rýchlosť</h3><p>Bez frameworku, bez Three.js, bez knižnice na plynulé rolovanie. Celý pohyb je CSS a jeden pozorovateľ, stránka ostáva pod 400 kB.</p></div>
+        <div class="r d3"><h3>Dôvera</h3><p>Predávame účtovníkom a e-shopom, nie investorom. Vlákna v papieri namiesto hviezd: pohyb, ktorý neruší pri čítaní cenníka.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="rozhodni">
+    <div class="wrap">
+      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M8.5 12.3l2.4 2.4 4.6-4.9"/></svg>03 &nbsp;Rozhodnutie</p>
+      <h2 class="r">Ideme do toho?</h2>
+      <div class="rule"></div>
+      <p class="r d1" style="max-width:40em">Ak áno, prepíšem takto hub, Asistenta, Hľadač darčekov, bankové nástroje a Feed Doctor, plus jazyky slovenčina, angličtina, nemčina a čeština. Ak ti niečo prekáža, napíš čo, je to ešte len návrh.</p>
+      <div class="cta r d2" style="margin-top:22px"><a class="btn btn-solid" href="/">Späť na arling.sk</a></div>
+    </div>
+  </section>
+</main>
+
+<footer><div class="wrap">Interný náhľad, neindexuje sa. ARLing s. r. o., Bratislava.</div></footer>
+
+<script>
+(function () {
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var hero = document.getElementById('hero');
+  if (reduce) {
+    document.querySelectorAll('.r, section').forEach(function (e) { e.classList.add('in'); });
+    return;
+  }
+  requestAnimationFrame(function () {
+    hero.querySelectorAll('.r').forEach(function (e) { e.classList.add('in'); });
+  });
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (en) {
+      if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); }
+    });
+  }, { rootMargin: '0px 0px -12% 0px', threshold: 0.1 });
+  document.querySelectorAll('section').forEach(function (s) { io.observe(s); });
+  var f = document.querySelector('.fibres');
+  if (f) {
+    var html = '';
+    for (var i = 0; i < 42; i++) {
+      var x = (i * 37) % 100, y = (i * 61) % 100, len = 6 + (i % 5) * 4, delay = (i % 9) * 1.1;
+      html += '<i style="left:' + x + '%;top:' + y + '%;height:' + len + 'px;animation-delay:' + delay + 's"></i>';
+    }
+    f.innerHTML = html;
+  }
+})();
+</script>
+</body>
+</html>
