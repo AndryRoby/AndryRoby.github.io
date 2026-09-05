@@ -153,7 +153,7 @@
   .rail a:hover span,.rail a[aria-current="true"] span{opacity:1;transform:none}
   .rail a[aria-current="true"]{color:var(--accent)}
   .rail a[aria-current="true"] i{width:30px;background:var(--accent)}
-  @media (max-width:1560px){ .rail{display:none} }
+  @media (max-width:1680px){ .rail{display:none} }
 
   /* pripnuta scena: obsah sa meni podla scrollu */
   .steps{display:grid;grid-template-columns:5fr 6fr;gap:clamp(28px,4vw,72px);align-items:start}
@@ -224,6 +224,40 @@
     .photo img{animation:none;transform:none;scale:1}
   }
 
+  /* ── široký pás v strede, ktorý sa pri scrollovaní roztiahne ── */
+  .banner{margin:clamp(28px,4vw,64px) auto clamp(10px,1.5vw,20px);width:min(1340px,92vw)}
+  .banner .frame{position:relative;overflow:hidden;border-radius:22px;background:#efece3;
+    box-shadow:0 24px 60px rgba(20,20,19,.12);width:64%;margin:0 auto;aspect-ratio:16/9}
+  .banner img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
+    transform:translate3d(calc(var(--px,0)*8px),calc(var(--py,0)*8px),0);
+    transition:transform .6s var(--ease);will-change:transform}
+  .banner .over{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;
+    padding:clamp(18px,2.4vw,34px);gap:6px;
+    background:linear-gradient(180deg,rgba(20,20,19,0) 42%,rgba(20,20,19,.55))}
+  .banner .over b{font:600 clamp(19px,2.1vw,30px)/1.15 var(--display);color:#fffdf8;letter-spacing:-.01em}
+  .banner .over span{font-family:var(--ui);font-size:clamp(13px,1vw,15px);color:#ece8dd;max-width:44ch}
+  .banner .cap{display:flex;justify-content:space-between;gap:12px;margin:10px 4px 0;
+    font-family:var(--ui);font-size:12.5px;color:var(--muted)}
+
+  /* kde to prehliadač vie, šírku aj zaoblenie riadi scroll */
+  @supports (animation-timeline: view()){
+    .banner .frame{animation:rozsir linear both;animation-timeline:view();animation-range:entry 30% cover 55%}
+    @keyframes rozsir{from{width:64%;border-radius:22px}to{width:100%;border-radius:14px}}
+    .banner img{animation:zoom linear both;animation-timeline:view();animation-range:entry 20% exit 90%}
+    @keyframes zoom{from{scale:1.16}to{scale:1.02}}
+  }
+  /* kde nevie, pás je rovno na plnú šírku a fotka len jemne dýcha */
+  @supports not (animation-timeline: view()){
+    .banner .frame{width:100%;border-radius:14px}
+    .banner img{animation:dych 40s ease-in-out infinite alternate}
+    @keyframes dych{from{scale:1.02}to{scale:1.08}}
+  }
+  @media (max-width:860px){ .banner .frame{width:100%;border-radius:14px;aspect-ratio:4/3} }
+  @media (prefers-reduced-motion:reduce){
+    .banner .frame{width:100%;border-radius:14px;animation:none}
+    .banner img{animation:none;transform:none;scale:1}
+  }
+
   footer{padding:44px 0 60px;color:var(--muted);font-size:14px;border-top:1px solid var(--line)}
 
   /* One column below 860 px. Above it the two columns simply narrow,
@@ -263,26 +297,29 @@
   <div class="wrap hero" id="hero">
     <div>
       <h1 id="h1"><span class="l">Malé nástroje</span><span class="l">pre jeden presný</span><span class="l">problém.</span></h1>
-      <p class="lead r d4">ARLing stavia nástroje, ktoré bežia v prehliadači a nič nikam neposielajú: pre e-shopy, pre účtovníkov a pre vývojárov. Toto je návrh nového vzhľadu hubu.</p>
       <nav class="index r d5" aria-label="Obsah">
         <a href="#ako"><span class="n">[1]</span><span class="t">Pre e-shopy</span><span class="dots"></span><span class="c">3 nástroje</span></a>
         <a href="#preco"><span class="n">[2]</span><span class="t">Pre účtovníkov</span><span class="dots"></span><span class="c">3 nástroje</span></a>
         <a href="#rozhodni"><span class="n">[3]</span><span class="t">Pre vývojárov</span><span class="dots"></span><span class="c">11 nástrojov</span></a>
         <a href="#rozhodni"><span class="n">[4]</span><span class="t">Ako pracujeme</span><span class="dots"></span><span class="c">1 strana</span></a>
       </nav>
-      <p class="proof r d5">Jedenásť nástrojov zadarmo, bez registrácie, všetko beží vo vašom prehliadači.</p>
     </div>
-    <div class="r d3">
-      <figure class="photo" style="margin:0">
-        <picture>
-          <source type="image/webp" srcset="/art/svetlo-900.webp 900w, /art/svetlo-1600.webp 1600w"
-                  sizes="(max-width: 860px) 92vw, 42vw">
-          <img src="/art/svetlo-1600.jpg" width="1600" height="1000" decoding="async"
-               alt="Ranné svetlo cez žalúzie na drevenej stene, biele stoličky a rastlina">
-        </picture>
-        <figcaption class="credit">Foto Andrej Lauko</figcaption>
-      </figure>
+    <div class="r d4 heroside">
+      <p class="lead" style="max-width:30em">Toto je návrh nového vzhľadu hubu. Rovnaký systém dostane každá naša stránka: slonovinový papier, bezpätkové nadpisy, pätkový text, a jeden pohyb navyše len tam, kde niečo vysvetľuje.</p>
+      <p class="proof">Jedenásť nástrojov zadarmo, bez registrácie, všetko beží vo vašom prehliadači.</p>
     </div>
+  </div>
+
+  <div class="banner r" id="pas">
+    <div class="frame">
+      <img src="/press/asistent-3-live-demo.png" width="1200" height="675" decoding="async"
+           alt="Asistent odpovedá zákazníkovi v e-shope a ukazuje výrobky z jeho feedu">
+      <div class="over">
+        <b>Asistent odpovie z vášho feedu</b>
+        <span>Nájde výrobok, ktorý naozaj sedí, odpovie v jazyku zákazníka a odkáže na existujúcu stránku. Rozhovor sa nikam neukladá.</span>
+      </div>
+    </div>
+    <div class="cap"><span>Skutočná snímka z ukážkového obchodu, nie ilustrácia.</span><span>Bratislava, 5. 9. 2026</span></div>
   </div>
 
   <section id="ako" class="deep">
@@ -460,7 +497,7 @@
   // fotka reaguje na mys, ale len kym sa mys hybe; ziadna trvala slucka
   var hoverOk = window.matchMedia && window.matchMedia('(hover: hover)').matches;
   if (hoverOk && !reduce) {
-    document.querySelectorAll('.photo').forEach(function (fig) {
+    document.querySelectorAll('.photo, .banner .frame').forEach(function (fig) {
       var pending = false, lx = 0, ly = 0;
       fig.addEventListener('pointermove', function (e) {
         var r = fig.getBoundingClientRect();
