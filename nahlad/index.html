@@ -142,6 +142,58 @@
        fill:var(--scene-ink,#1b1a17);opacity:0;animation:fadein .6s var(--ease) 1.5s forwards}
   @keyframes fadein{to{opacity:.62}}
 
+  /* bocny register: vie, kde prave si */
+  .rail{position:fixed;left:calc(50% - min(670px,46vw) - 34px);top:50%;transform:translateY(-50%);z-index:4;
+        display:flex;flex-direction:column;gap:12px;opacity:0;transition:opacity .4s var(--ease)}
+  .rail.on{opacity:1}
+  .rail a{display:flex;align-items:center;gap:9px;text-decoration:none;color:var(--muted);font-family:var(--ui);font-size:11px;
+          letter-spacing:.1em;text-transform:uppercase}
+  .rail i{display:block;width:18px;height:1px;background:currentColor;transition:width .35s var(--spring),background .35s var(--ease)}
+  .rail span{opacity:0;transform:translateX(-4px);transition:opacity .3s var(--ease),transform .3s var(--spring)}
+  .rail a:hover span,.rail a[aria-current="true"] span{opacity:1;transform:none}
+  .rail a[aria-current="true"]{color:var(--accent)}
+  .rail a[aria-current="true"] i{width:30px;background:var(--accent)}
+  @media (max-width:1240px){ .rail{display:none} }
+
+  /* pripnuta scena: obsah sa meni podla scrollu */
+  .steps{display:grid;grid-template-columns:5fr 6fr;gap:clamp(28px,4vw,72px);align-items:start}
+  .steps-text{display:flex;flex-direction:column;gap:0}
+  .step{padding:26vh 0;opacity:.32;transition:opacity .45s var(--ease)}
+  .step:first-child{padding-top:2vh}
+  .step:last-child{padding-bottom:20vh}
+  .step.act{opacity:1}
+  .step h3{font:600 clamp(21px,1.9vw,27px)/1.2 var(--display);color:var(--ink);margin:0 0 8px;letter-spacing:-.01em}
+  .step p{margin:0;max-width:34em}
+  .step .tag{font-family:var(--ui);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);display:block;margin-bottom:8px}
+  .stick{position:sticky;top:calc(50vh - 150px)}
+  .stage{position:relative;border:1px solid var(--line);border-radius:16px;background:var(--card);padding:20px;min-height:300px}
+  .stage svg{display:block;width:100%;height:auto}
+  .stage .fig{opacity:0;transition:opacity .45s var(--ease);position:absolute;inset:20px}
+  .stage .fig:first-child{position:static}
+  .stage[data-step="1"] .fig:nth-child(1),.stage[data-step="2"] .fig:nth-child(2),.stage[data-step="3"] .fig:nth-child(3){opacity:1}
+  .stage .p{fill:none;stroke:var(--ink);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+  .stage .pa{stroke:var(--accent)}
+  .stage .t{font-family:var(--ui);font-size:11px;letter-spacing:.08em;fill:var(--muted)}
+  .bars rect{transform-origin:bottom;transform:scaleY(0);transition:transform .6s var(--spring)}
+  .stage[data-step="3"] .bars rect{transform:scaleY(1)}
+  .stage[data-step="3"] .bars rect:nth-child(2){transition-delay:.08s}
+  .stage[data-step="3"] .bars rect:nth-child(3){transition-delay:.16s}
+  .stage[data-step="3"] .bars rect:nth-child(4){transition-delay:.24s}
+  @media (max-width:860px){
+    .steps{grid-template-columns:1fr}
+    .step{padding:18px 0;opacity:1}
+    .stick{position:static;margin-bottom:18px}
+  }
+  /* sipka, ktora sa pohne pri prejdeni mysou */
+  .go{font-family:var(--ui);font-weight:500;color:var(--ink);text-decoration:none;display:inline-flex;align-items:center;gap:7px}
+  .go svg{transition:transform .3s var(--spring)}
+  .go:hover{color:var(--accent)}
+  .go:hover svg{transform:translateX(4px)}
+  @media (prefers-reduced-motion:reduce){
+    .rail{opacity:1} .step{opacity:1} .stick{position:static}
+    .stage .fig{position:static;opacity:1} .bars rect{transform:none}
+  }
+
   footer{padding:44px 0 60px;color:var(--muted);font-size:14px;border-top:1px solid var(--line)}
 
   /* One column below 860 px. Above it the two columns simply narrow,
@@ -271,6 +323,75 @@
     </div>
   </section>
 
+  <section id="postup">
+    <div class="wrap">
+      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h6l2-5 3 10 2-5h5"/></svg>02 &nbsp;Scroll</p>
+      <h2 class="r">Kým scrollujete, kresba pokračuje.</h2>
+      <div class="rule"></div>
+      <div class="steps">
+        <div class="steps-text">
+          <div class="step" data-step="1">
+            <span class="tag">Krok jeden</span>
+            <h3>Prečítame váš feed</h3>
+            <p>Google Shopping, Shopify, WooCommerce, Heureka. Vezmeme názvy, ceny, dostupnosť a odkazy, nič iné.</p>
+          </div>
+          <div class="step" data-step="2">
+            <span class="tag">Krok dva</span>
+            <h3>Zákazník sa spýta vlastnými slovami</h3>
+            <p>Asistent nájde tie výrobky, ktoré naozaj sedia, a odpovie v jazyku zákazníka. Rozhovor nikam neukladáme.</p>
+          </div>
+          <div class="step" data-step="3">
+            <span class="tag">Krok tri</span>
+            <h3>Zákazník klikne na správny výrobok</h3>
+            <p>Odkaz vždy vedie na existujúcu stránku z vášho feedu. Vy vidíte, na čo sa ľudia pýtali a čo ste nemali skladom.</p>
+          </div>
+        </div>
+        <div class="stick">
+          <div class="stage" id="stage" data-step="1">
+            <svg class="fig" viewBox="0 0 460 300" role="img" aria-label="Feed obchodu">
+              <rect class="p" x="30" y="34" width="180" height="232" rx="6"/>
+              <path class="p" d="M30 66 H210"/>
+              <text class="t" x="44" y="56">feed.xml</text>
+              <g>
+                <path class="p" d="M48 92 H192"/><path class="p" d="M48 112 H166"/><path class="p" d="M48 132 H192"/>
+                <path class="p" d="M48 152 H150"/><path class="p" d="M48 172 H192"/><path class="p" d="M48 192 H172"/>
+                <path class="p" d="M48 212 H140"/><path class="p" d="M48 232 H192"/>
+              </g>
+              <path class="p pa" d="M232 150 H286 m-10 -9 l10 9 l-10 9"/>
+              <rect class="p" x="300" y="90" width="128" height="52" rx="5"/>
+              <rect class="p" x="300" y="158" width="128" height="52" rx="5"/>
+              <path class="p pa" d="M316 116 h44"/><path class="p pa" d="M316 184 h60"/>
+              <text class="t" x="300" y="240">64 výrobkov, prečítané o 05:00</text>
+            </svg>
+            <svg class="fig" viewBox="0 0 460 300" role="img" aria-label="Otázka a odpoveď">
+              <rect class="p" x="248" y="30" width="182" height="44" rx="10"/>
+              <path class="p" d="M330 74 l-8 12 v-12"/>
+              <text class="t" x="264" y="57">Hľadám ľahké tenisky do mesta</text>
+              <path class="p pa" d="M30 108 H236 a10 10 0 0 1 10 10 V196 a10 10 0 0 1 -10 10 H70 l-14 12 v-12 H30 a10 10 0 0 1 -10 -10 V118 a10 10 0 0 1 10 -10 Z" transform="translate(10,0)"/>
+              <path class="p" d="M56 136 H210"/><path class="p" d="M56 156 H184"/>
+              <rect class="p pa" x="56" y="172" width="76" height="20" rx="4"/>
+              <text class="t" x="64" y="186">Wool Runner</text>
+              <text class="t" x="30" y="248">Odpoveď v jazyku zákazníka, bez uloženia rozhovoru</text>
+            </svg>
+            <svg class="fig" viewBox="0 0 460 300" role="img" aria-label="Výsledok obchodu">
+              <path class="p" d="M40 240 H420"/>
+              <g class="bars">
+                <rect class="p pa" x="70" y="150" width="46" height="90" rx="3"/>
+                <rect class="p pa" x="150" y="120" width="46" height="120" rx="3"/>
+                <rect class="p pa" x="230" y="86" width="46" height="154" rx="3"/>
+                <rect class="p pa" x="310" y="60" width="46" height="180" rx="3"/>
+              </g>
+              <text class="t" x="70" y="262">po</text><text class="t" x="150" y="262">nasadení</text>
+              <text class="t" x="230" y="262">rastie</text><text class="t" x="310" y="262">predaj</text>
+              <text class="t" x="40" y="42">Otázky, na ktoré feed nevedel odpovedať, vidíte v prehľade</text>
+            </svg>
+          </div>
+        </div>
+      </div>
+      <p style="margin-top:18px"><a class="go" href="#hero">Späť na začiatok <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></p>
+    </div>
+  </section>
+
   <section class="band" id="preco">
     <div class="fibres" aria-hidden="true"></div>
     <div class="wrap">
@@ -295,6 +416,13 @@
     </div>
   </section>
 </main>
+<nav class="rail" aria-label="Kde ste">
+  <a href="#hero"><i></i><span>Úvod</span></a>
+  <a href="#ako"><i></i><span>Pohyb</span></a>
+  <a href="#postup"><i></i><span>Scroll</span></a>
+  <a href="#preco"><i></i><span>Prečo</span></a>
+  <a href="#rozhodni"><i></i><span>Rozhodni</span></a>
+</nav>
 <div class="pal" role="group" aria-label="Paleta">
   <span>Paleta</span>
   <button type="button" data-pal="ivory" aria-pressed="true">Slonovina</button>
@@ -308,12 +436,14 @@
   var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var hero = document.getElementById('hero');
   if (reduce) {
-    document.querySelectorAll('.r, section').forEach(function (e) { e.classList.add('in'); });
-    return;
+    document.querySelectorAll('.r, section, .step').forEach(function (e) { e.classList.add('in'); });
+    document.querySelectorAll('.step').forEach(function (e) { e.classList.add('act'); });
   }
-  requestAnimationFrame(function () {
-    hero.querySelectorAll('.r').forEach(function (e) { e.classList.add('in'); });
-  });
+  if (!reduce) {
+    requestAnimationFrame(function () {
+      hero.querySelectorAll('.r').forEach(function (e) { e.classList.add('in'); });
+    });
+  }
   var io = new IntersectionObserver(function (entries) {
     entries.forEach(function (en) {
       if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); }
@@ -332,6 +462,36 @@
       }).join(' ');
     });
     requestAnimationFrame(function () { h1.classList.add('in'); });
+  }
+
+  // bocny register sleduje, ktora sekcia je v strede obrazovky
+  var rail = document.querySelector('.rail');
+  if (rail) {
+    var links = Array.prototype.slice.call(rail.querySelectorAll('a'));
+    var targets = links.map(function (a) { return document.querySelector(a.getAttribute('href')); });
+    var railIo = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        var i = targets.indexOf(en.target);
+        if (i < 0 || !en.isIntersecting) return;
+        links.forEach(function (a, j) { a.setAttribute('aria-current', j === i ? 'true' : 'false'); });
+      });
+      rail.classList.add('on');
+    }, { rootMargin: '-45% 0px -45% 0px' });
+    targets.forEach(function (t) { if (t) railIo.observe(t); });
+  }
+
+  // pripnuta scena: krok sa meni podla toho, ktory text je v strede
+  var stage = document.getElementById('stage');
+  if (stage) {
+    var stepsEls = Array.prototype.slice.call(document.querySelectorAll('.step'));
+    var stepIo = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (!en.isIntersecting) return;
+        stepsEls.forEach(function (el) { el.classList.toggle('act', el === en.target); });
+        stage.setAttribute('data-step', en.target.getAttribute('data-step'));
+      });
+    }, { rootMargin: '-48% 0px -48% 0px' });
+    stepsEls.forEach(function (el) { stepIo.observe(el); });
   }
 
   var pal = document.querySelector('.pal');
