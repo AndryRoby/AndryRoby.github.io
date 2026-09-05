@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://homelab.tailbf8f27.ts.net; connect-src 'self' https://homelab.tailbf8f27.ts.net; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<title>An AI shopping assistant for WooCommerce that stores no conversations: what it can answer, what it cannot, and a 10-minute setup</title>
+<meta name="description" content="An AI shopping assistant for WooCommerce that answers from your product feed and stores no conversations: what it answers, what it cannot, the 10-minute setup, and pricing.">
+<meta property="og:type" content="article">
+<meta property="og:title" content="An AI shopping assistant for WooCommerce that stores no conversations: what it can answer, what it cannot, and a 10-minute setup">
+<meta property="og:description" content="An AI shopping assistant for WooCommerce that answers from your product feed and stores no conversations: what it answers, what it cannot, the 10-minute setup, and pricing.">
+<meta property="og:url" content="https://arling.sk/notes/ai-chatbot-for-woocommerce-without-storing-conversations/">
+<meta property="og:image" content="https://arling.sk/asistent/icon-512.png">
+<meta name="theme-color" content="#f6f2ea">
+<link rel="canonical" href="https://arling.sk/notes/ai-chatbot-for-woocommerce-without-storing-conversations/">
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "An AI shopping assistant for WooCommerce that stores no conversations: what it can answer, what it cannot, and a 10-minute setup",
+  "description": "An AI shopping assistant for WooCommerce that answers from your product feed and stores no conversations: what it answers, what it cannot, the 10-minute setup, and pricing.",
+  "datePublished": "2026-09-06",
+  "dateModified": "2026-09-06",
+  "inLanguage": "en",
+  "author": {
+    "@type": "Person",
+    "name": "Andrej Lauko",
+    "url": "https://arling.sk/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "ARLing s. r. o.",
+    "url": "https://arling.sk/"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://arling.sk/notes/ai-chatbot-for-woocommerce-without-storing-conversations/"
+  }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "ARLing", "item": "https://arling.sk/" },
+    { "@type": "ListItem", "position": 2, "name": "Notes", "item": "https://arling.sk/notes/" },
+    { "@type": "ListItem", "position": 3, "name": "AI chatbot for WooCommerce without storing conversations", "item": "https://arling.sk/notes/ai-chatbot-for-woocommerce-without-storing-conversations/" }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Does the assistant store what shoppers type?",
+      "acceptedAnswer": { "@type": "Answer", "text": "No. The conversation content itself, the questions and the answers, is never written to a database. Only daily aggregate counters (how many conversations, how many product-link clicks) are kept per store, used to enforce the monthly plan quota." }
+    },
+    {
+      "@type": "Question",
+      "name": "How fresh is the assistant's product data?",
+      "acceptedAnswer": { "@type": "Answer", "text": "The product feed refreshes automatically once a day. A price change or a sale that happens between refreshes is not visible to the assistant until the next one, so it can tell a shopper an item is in stock for up to a day after it actually sold out." }
+    },
+    {
+      "@type": "Question",
+      "name": "Can it look up a specific order or process a return?",
+      "acceptedAnswer": { "@type": "Answer", "text": "No. It never receives order data, only the public product catalogue. A question about returns or shipping is answered from a general policy fact entered by the store owner, not by checking an actual order or return case." }
+    },
+    {
+      "@type": "Question",
+      "name": "What data is sent when I click Connect?",
+      "acceptedAnswer": { "@type": "Answer", "text": "The store's public WooCommerce Store API product feed URL, the site's domain, and the contact e-mail entered on the settings screen, sent once after ticking the consent checkbox. Nothing is sent before that click." }
+    },
+    {
+      "@type": "Question",
+      "name": "How much does it cost?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Free up to 100 conversations a month, no card needed. Above that, 19 EUR a month for up to 1,000 conversations, or 39 EUR a month for up to 5,000, billed through Stripe. Nothing is charged automatically." }
+    }
+  ]
+}
+</script>
+
+<style>
+  :root { --paper:#f6f2ea; --paper-2:#fbf9f4; --ink:#1b1a17; --ink-2:#4a4741; --muted:#66625a; --line:#d9d2c4; --accent:#b23a1d; --accent-soft:#f3e2dc; --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif; --sans:system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; --mono:ui-monospace,"Cascadia Code",Consolas,Menlo,monospace; }
+  @media (prefers-color-scheme: dark) { :root { --paper:#151412; --paper-2:#1d1b18; --ink:#efe9de; --ink-2:#c9c2b5; --muted:#8f887b; --line:#2e2b26; --accent:#e0623f; --accent-soft:#3a1f17; } }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--paper); color:var(--ink); font:16px/1.55 var(--sans); }
+  a { color:inherit; text-decoration-color:var(--line); text-underline-offset:3px; }
+  a:hover { text-decoration-color:var(--accent); }
+  .wrap { max-width:760px; margin:0 auto; padding:0 24px; }
+  header.top { border-bottom:1px solid var(--line); }
+  header.top .wrap { display:flex; align-items:baseline; justify-content:space-between; padding:18px 24px; flex-wrap:wrap; gap:8px; }
+  .wordmark { font:600 22px/1 var(--serif); text-decoration:none; }
+  nav a { font-size:14px; margin-left:20px; text-decoration:none; color:var(--ink-2); }
+  main.wrap { padding-bottom:8px; }
+  h1 { font:400 clamp(28px,4.2vw,38px)/1.18 var(--serif); margin:20px 0 10px; max-width:34ch; }
+  h2 { font:400 24px/1.2 var(--serif); margin:8px 0 10px; }
+  .kicker { font:400 13px/1 var(--serif); color:var(--accent); letter-spacing:.06em; text-transform:uppercase; margin:0 0 8px; }
+  .byline { color:var(--muted); font-size:14px; margin:0 0 28px; }
+  p, li { color:var(--ink-2); max-width:66ch; overflow-wrap:anywhere; }
+  ol { padding-left:22px; }
+  ol li { margin-bottom:10px; }
+  section.cause { border-top:1px solid var(--line); padding-top:26px; margin-top:26px; }
+  code { font-family:var(--mono); font-size:0.92em; background:var(--paper-2); border:1px solid var(--line); border-radius:3px; padding:1px 5px; color:var(--ink); }
+  pre { background:var(--paper-2); border:1px solid var(--line); border-radius:4px; padding:14px 16px; overflow-x:auto; margin:14px 0; max-width:100%; }
+  pre code { background:none; border:none; padding:0; font-size:13px; line-height:1.5; white-space:pre; }
+  .err { border-radius:4px; border:1px solid var(--line); border-left:3px solid var(--accent); background:var(--accent-soft); padding:12px 16px; margin:16px 0; }
+  .err code { background:none; border:none; padding:0; color:var(--ink); }
+  .fix-label { font-size:13px; color:var(--muted); margin:16px 0 -4px; letter-spacing:.02em; }
+  .tool-cta { display:inline-block; margin-top:6px; padding:10px 18px; border:2px solid var(--accent); border-radius:4px; text-decoration:none; color:var(--ink); font-size:15px; }
+  .tool-cta:hover { background:var(--accent-soft); }
+  .sources li { margin-bottom:6px; font-size:15px; }
+  details { border-top:1px solid var(--line); padding:14px 0; }
+  details:last-of-type { border-bottom:1px solid var(--line); }
+  summary { cursor:pointer; font:400 18px/1.3 var(--serif); list-style:none; display:flex; justify-content:space-between; gap:12px; }
+  summary::-webkit-details-marker { display:none; }
+  summary::after { content:"+"; color:var(--accent); flex:none; font-family:var(--sans); }
+  details[open] summary::after { content:"\2013"; }
+  details p { color:var(--ink-2); margin:10px 0 0; max-width:66ch; overflow-wrap:anywhere; }
+  footer { margin-top:56px; padding:24px 0 56px; border-top:1px solid var(--line); color:var(--muted); font-size:14px; }
+  @media (max-width:480px) { header.top .wrap { flex-direction:column; align-items:flex-start; } nav a { margin-left:0; margin-right:16px; } }
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap"><a class="wordmark" href="https://arling.sk/">ARLing</a><nav><a href="https://arling.sk/#tools">Tools</a><a href="https://arling.sk/asistent/woocommerce/">Asistent for WooCommerce</a><a href="https://arling.sk/how-we-work/">How we work</a></nav></div></header>
+<main class="wrap">
+  <p class="kicker" style="margin-top:36px">Notes</p>
+  <h1>An AI shopping assistant for WooCommerce that stores no conversations: what it can answer, what it cannot, and a 10-minute setup</h1>
+  <p class="byline">Andrej Lauko, ARLing · 6 September 2026</p>
+
+  <p>Most chat widgets a WooCommerce store adds today keep a full transcript of what a shopper typed and how the widget answered, sitting in the vendor's database for as long as its retention policy allows. ARLing Asistent, a WordPress plugin for WooCommerce, is built the other way: it answers shopping questions from a store's own product feed and keeps no record of the conversation itself, only a daily count. This note covers why that difference matters, how a feed-grounded assistant actually works, what it answers well and where it stops, the setup, the pricing, and how it compares on price and data handling to Tidio's Lyro and Smartsupp's Mira.</p>
+
+  <section class="cause">
+    <p class="kicker">01</p>
+    <h2>Why most chat widgets store every conversation</h2>
+    <p>A chat widget that keeps transcripts makes the store a data controller for that content under GDPR: the store decides why the data is collected and how long it is kept, even though the vendor's server does the actual storing. That controller role brings duties many small stores never plan for: a lawful basis for keeping the transcript, a retention period that has to be justified if asked, a way to answer a shopper's access or deletion request within a month, and a data processing agreement with the vendor spelling out what it may do with the content. None of that is hard on its own, but it is another document to keep, another request to route, and another place a customer's name or order number can leak if the vendor has a breach.</p>
+    <p>There is a smaller, everyday reason too: support load. A widget that saves every conversation eventually invites someone to go looking through it, whether to audit what the bot said or to answer "what did it tell this customer." A widget that keeps nothing beyond a daily count removes that job along with the risk.</p>
+  </section>
+
+  <section class="cause">
+    <p class="kicker">02</p>
+    <h2>How a feed-grounded assistant works</h2>
+    <p>ARLing Asistent connects to a store's public WooCommerce Store API endpoint, the same JSON feed of products, prices and stock status that the storefront's own blocks already fetch in a visitor's browser. Nothing new is exposed: the plugin reads data the store already serves publicly. On connect, and again once a day, the assistant's backend downloads that feed, splits it into chunks, and turns each chunk into a vector embedding, so a shopper's question can be matched against the closest products instead of a keyword search.</p>
+    <p>When a shopper asks something in the widget, the same embedding step runs on the question, the closest matching products are retrieved, and a language model is instructed to answer using only those products and the store's own facts, such as its contact e-mail, never open knowledge from outside the feed. The answer links to up to three real products with real prices, in the shopper's own language among Slovak, Czech, English and German. When nothing in the feed matches well enough, the assistant is instructed to say plainly that it does not know, rather than invent a product or a policy, and to point at the store's contact address instead.</p>
+    <pre><code>connect sends once:
+  feed_url: https://yourstore.example/wp-json/wc/store/v1/products
+  domain:   yourstore.example
+  email:    you@yourstore.example</code></pre>
+  </section>
+
+  <section class="cause">
+    <p class="kicker">03</p>
+    <h2>What it answers well, and what it cannot</h2>
+    <p>The assistant is good at exactly the kind of question a product feed can answer: does the store carry a waterproof jacket under 80 euros, what colours a model comes in, what an item costs. It is honest about the rest. It cannot look up a specific order, since order data never reaches it, only the public catalogue. It cannot promise stock at the exact moment someone asks, because the feed that grounds it refreshes once a day: an item that sold out an hour ago can still show as available until the next refresh. Returns and shipping questions get answered from whatever policy text a store owner has entered as a shop fact, not by checking an actual return case, so a vague policy produces a vague answer.</p>
+    <p>A stale or malformed feed is the assistant's single biggest failure mode in practice: a missing price, a wrong GTIN, or a product still marked in stock after it sold out gives the assistant the same wrong answer a shopper would get from a broken listing page, delivered with the same confidence as a correct one. Running the feed through <a href="https://arling.sk/feed-doctor/">Feed Doctor</a> before connecting catches exactly that kind of error first.</p>
+  </section>
+
+  <section class="cause">
+    <p class="kicker">04</p>
+    <h2>A 10-minute setup</h2>
+    <p>Until the plugin's wordpress.org listing is approved, install it from a zip: download it from the <code>wordpress-plugin/arling-asistent</code> folder of the <a href="https://github.com/AndryRoby/arling-asistent">GitHub repository</a>, then in wp-admin go to Plugins &gt; Add New &gt; Upload Plugin, choose the zip, click Install Now, and Activate. WooCommerce needs to already be active. Once the listing clears review, the same plugin also installs by searching "ARLing Asistent" directly from Plugins &gt; Add New.</p>
+    <p>Go to WooCommerce &gt; ARLing Asistent, enter a contact e-mail, read what is about to be sent, and tick the consent checkbox before clicking Connect: nothing leaves the site before that click. What gets sent, once, is the store's public product feed URL, the site's domain, and that e-mail address, never customer or order data. The settings screen then polls status until it reads "Ready," usually within a few minutes. From there, pick a language, or leave it on Automatic to follow the visitor's browser, a colour mode, and which side of the screen the widget sits on, save, and the chat bubble appears on the storefront.</p>
+    <p><a class="tool-cta" href="https://arling.sk/asistent/woocommerce/">Get the plugin</a></p>
+  </section>
+
+  <section class="cause">
+    <p class="kicker">05</p>
+    <h2>Free tier and paid plans</h2>
+    <p>The free plan covers up to 100 conversations a month at no cost and no card. Above that, a starter plan is 19 EUR a month for up to 1,000 conversations, and a growth plan is 39 EUR a month for up to 5,000, both billed through Stripe, monthly only for now. Nothing charges automatically: a store stays on the free tier, working within its limit, until it picks a paid plan from the settings screen.</p>
+    <p>One quota detail worth knowing rather than discovering later: in this version, every call to the chat endpoint counts as one conversation toward the monthly quota, not one full back-and-forth session, so a shopper who sends several separate messages in one sitting can count as more than one conversation against the limit. Counting once per session is planned but not built yet.</p>
+  </section>
+
+  <section class="cause">
+    <p class="kicker">06</p>
+    <h2>How it compares: Tidio Lyro and Smartsupp Mira</h2>
+    <p>This is not a like-for-like comparison, since Tidio and Smartsupp are full live-chat platforms with an AI agent added on top, while ARLing Asistent is only the AI part. On price: Tidio's Lyro AI is a separate add-on starting at 32.50 USD a month, billed annually, for 50 Lyro conversations, layered on top of a paid Tidio plan (<a href="https://www.tidio.com/pricing/">tidio.com/pricing</a>). Smartsupp's Mira AI agent starts at 16 to 20 USD a month for 100 conversations, billed annually or monthly, scaling up to 5,000 (<a href="https://www.smartsupp.com/pricing/">smartsupp.com/pricing</a>). ARLing Asistent's free tier covers 100 conversations a month at no cost, and its paid tiers are 19 EUR for 1,000 and 39 EUR for 5,000.</p>
+    <p>On stored data: Tidio's own features page describes an Inbox that keeps tickets "in one place so you can access them whenever necessary" and lets a store save transcripts for its records or e-mail them out (<a href="https://www.tidio.com/features/">tidio.com/features</a>). Smartsupp's help center documents an Inbox with conversation tagging and export among its core features (<a href="https://help.smartsupp.com/en_US/conversations/">help.smartsupp.com/en_US/conversations</a>). Both are built around keeping a searchable history of what was said, which is a reasonable choice for a human support inbox; ARLing Asistent keeps none of that content, only the daily counts described above, because it never puts a human in the loop to read a transcript back.</p>
+  </section>
+
+  <h2>Frequently asked questions</h2>
+  <details>
+    <summary>Does the assistant store what shoppers type?</summary>
+    <p>No. The conversation content itself, the questions and the answers, is never written to a database. Only daily aggregate counters (how many conversations, how many product-link clicks) are kept per store, used to enforce the monthly plan quota.</p>
+  </details>
+  <details>
+    <summary>How fresh is the assistant's product data?</summary>
+    <p>The product feed refreshes automatically once a day. A price change or a sale that happens between refreshes is not visible to the assistant until the next one, so it can tell a shopper an item is in stock for up to a day after it actually sold out.</p>
+  </details>
+  <details>
+    <summary>Can it look up a specific order or process a return?</summary>
+    <p>No. It never receives order data, only the public product catalogue. A question about returns or shipping is answered from a general policy fact entered by the store owner, not by checking an actual order or return case.</p>
+  </details>
+  <details>
+    <summary>What data is sent when I click Connect?</summary>
+    <p>The store's public WooCommerce Store API product feed URL, the site's domain, and the contact e-mail entered on the settings screen, sent once after ticking the consent checkbox. Nothing is sent before that click.</p>
+  </details>
+  <details>
+    <summary>How much does it cost?</summary>
+    <p>Free up to 100 conversations a month, no card needed. Above that, 19 EUR a month for up to 1,000 conversations, or 39 EUR a month for up to 5,000, billed through Stripe. Nothing is charged automatically.</p>
+  </details>
+
+  <h2>Sources</h2>
+  <ul class="sources">
+    <li><a href="https://github.com/AndryRoby/arling-asistent">ARLing Asistent: source code, plugin zip and readme (GitHub)</a></li>
+    <li><a href="https://www.tidio.com/pricing/">Tidio: pricing, including the Lyro AI add-on</a></li>
+    <li><a href="https://www.tidio.com/features/">Tidio: features, ticket and transcript storage</a></li>
+    <li><a href="https://www.smartsupp.com/pricing/">Smartsupp: pricing, including the Mira AI agent</a></li>
+    <li><a href="https://help.smartsupp.com/en_US/conversations/">Smartsupp Help Center: Inbox and conversation management</a></li>
+  </ul>
+</main>
+<footer><div class="wrap">ARLing s. r. o. · <a href="https://arling.sk/">arling.sk</a> · <a href="https://arling.sk/asistent/woocommerce/">Asistent for WooCommerce</a> · <a href="mailto:andrej@arling.sk">andrej@arling.sk</a></div></footer>
+<script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="be534d51-4d01-4860-b267-9596d91606de"></script>
+</body>
+</html>
