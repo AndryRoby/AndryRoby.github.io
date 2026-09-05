@@ -143,9 +143,9 @@
   @keyframes fadein{to{opacity:.62}}
 
   /* bocny register: vie, kde prave si */
-  .rail{position:fixed;left:calc(50% - min(670px,46vw) - 34px);top:50%;transform:translateY(-50%);z-index:4;
+  .rail{position:fixed;left:max(14px,calc(50% - min(670px,46vw) - 52px));top:50%;transform:translateY(-50%);z-index:3;pointer-events:none;
         display:flex;flex-direction:column;gap:12px;opacity:0;transition:opacity .4s var(--ease)}
-  .rail.on{opacity:1}
+  .rail.on{opacity:1;pointer-events:auto}
   .rail a{display:flex;align-items:center;gap:9px;text-decoration:none;color:var(--muted);font-family:var(--ui);font-size:11px;
           letter-spacing:.1em;text-transform:uppercase}
   .rail i{display:block;width:18px;height:1px;background:currentColor;transition:width .35s var(--spring),background .35s var(--ease)}
@@ -153,7 +153,7 @@
   .rail a:hover span,.rail a[aria-current="true"] span{opacity:1;transform:none}
   .rail a[aria-current="true"]{color:var(--accent)}
   .rail a[aria-current="true"] i{width:30px;background:var(--accent)}
-  @media (max-width:1240px){ .rail{display:none} }
+  @media (max-width:1560px){ .rail{display:none} }
 
   /* pripnuta scena: obsah sa meni podla scrollu */
   .steps{display:grid;grid-template-columns:5fr 6fr;gap:clamp(28px,4vw,72px);align-items:start}
@@ -169,6 +169,8 @@
   .stage{position:relative;border:1px solid var(--line);border-radius:16px;background:var(--card);padding:20px;min-height:300px}
   .stage svg{display:block;width:100%;height:auto}
   .stage .fig{opacity:0;transition:opacity .45s var(--ease);position:absolute;inset:20px}
+  .stage .fig img{display:block;width:100%;height:auto;border-radius:0 0 8px 8px}
+  .stage .shot{box-shadow:none;border-radius:10px}
   .stage .fig:first-child{position:static}
   .stage[data-step="1"] .fig:nth-child(1),.stage[data-step="2"] .fig:nth-child(2),.stage[data-step="3"] .fig:nth-child(3){opacity:1}
   .stage .p{fill:none;stroke:var(--ink);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
@@ -192,6 +194,34 @@
   @media (prefers-reduced-motion:reduce){
     .rail{opacity:1} .step{opacity:1} .stick{position:static}
     .stage .fig{position:static;opacity:1} .bars rect{transform:none}
+  }
+
+  /* ── fotka v uvode: Ken Burns podla scrollu, parallax podla mysi ── */
+  .photo{position:relative;overflow:hidden;border-radius:16px;background:#efece3;
+    box-shadow:0 18px 50px rgba(20,20,19,.10);
+    clip-path:inset(0 0 100% 0);transition:clip-path 1.1s var(--spring)}
+  .in .photo,.photo.in{clip-path:inset(0 0 0 0)}
+  .photo img{display:block;width:100%;height:auto;
+    transform:translate3d(calc(var(--px,0)*7px),calc(var(--py,0)*7px),0) scale(1.06);
+    transition:transform .6s var(--ease);will-change:transform}
+  /* kde to prehliadac vie, zoom riadi scroll, nie cas */
+  @supports (animation-timeline: view()){
+    .photo img{animation:kenburns linear both;animation-timeline:view();animation-range:entry 10% exit 90%}
+    @keyframes kenburns{from{scale:1.12}to{scale:1.0}}
+  }
+  /* kde nevie, jeden velmi pomaly dych */
+  @supports not (animation-timeline: view()){
+    .photo img{animation:kenburns-t 40s ease-in-out infinite alternate}
+    @keyframes kenburns-t{from{scale:1.02}to{scale:1.09}}
+  }
+  .photo::after{content:"";position:absolute;inset:0;pointer-events:none;
+    background:linear-gradient(180deg,rgba(250,249,245,.20),rgba(250,249,245,0) 42%,rgba(20,20,19,.10));
+    mix-blend-mode:normal}
+  .photo .credit{position:absolute;left:14px;bottom:12px;z-index:2;font-family:var(--ui);font-size:11.5px;
+    letter-spacing:.08em;text-transform:uppercase;color:#fffdf8;text-shadow:0 1px 6px rgba(20,20,19,.5)}
+  @media (prefers-reduced-motion:reduce){
+    .photo{clip-path:none}
+    .photo img{animation:none;transform:none;scale:1}
   }
 
   footer{padding:44px 0 60px;color:var(--muted);font-size:14px;border-top:1px solid var(--line)}
@@ -243,70 +273,15 @@
       <p class="proof r d5">Jedenásť nástrojov zadarmo, bez registrácie, všetko beží vo vašom prehliadači.</p>
     </div>
     <div class="r d3">
-      <div class="scene" id="scene" data-look="den">
-        <div class="looks" role="group" aria-label="Svetlo">
-          <button type="button" data-look="rano" style="--sw:#e8c9a0" aria-pressed="false"><i></i>Ráno</button>
-          <button type="button" data-look="den" style="--sw:#f6f2ea" aria-pressed="true"><i></i>Deň</button>
-          <button type="button" data-look="vecer" style="--sw:#1b1a17" aria-pressed="false"><i></i>Večer</button>
-        </div>
-        <svg viewBox="0 0 600 400" role="img" aria-label="Jeden pult, tri druhy prace: vypis z uctu pre uctovnikov, asistent a darcek pre e-shopy, nastroje pre vyvojarov">
-          <g class="g1"><path class="s" pathLength="1" d="M30 330 H570"/></g>
-
-          <g class="g2" transform="rotate(-6 115 275)">
-            <rect class="s" pathLength="1" x="60" y="210" width="110" height="130" rx="4"/>
-            <path class="s" pathLength="1" d="M78 236 H152"/><path class="s" pathLength="1" d="M78 252 H152"/>
-            <path class="s" pathLength="1" d="M78 268 H140"/><path class="s" pathLength="1" d="M78 284 H126"/>
-            <circle class="s a" pathLength="1" cx="140" cy="314" r="11"/>
-            <path class="s a" pathLength="1" d="M134.5 314.5 L138.5 318.5 L146 310.5"/>
-          </g>
-
-          <g class="g6">
-            <path class="s" pathLength="1" d="M176 302 h28 v20 a8 8 0 0 1 -8 8 h-12 a8 8 0 0 1 -8 -8 z"/>
-            <path class="s" pathLength="1" d="M204 307 a7 7 0 0 1 0 13"/>
-            <path class="s steam" pathLength="1" d="M184 292 c3 -6 -3 -10 0 -16"/>
-            <path class="s steam" pathLength="1" d="M194 292 c3 -6 -3 -10 0 -16" style="animation-delay:1.25s,3s"/>
-          </g>
-
-          <g class="g3">
-            <path class="s" pathLength="1" d="M235 318 H385 L400 330 H220 Z"/>
-            <rect class="s" pathLength="1" x="242" y="176" width="142" height="142" rx="6"/>
-            <rect class="s" pathLength="1" x="252" y="186" width="122" height="112" rx="3"/>
-          </g>
-          <g class="g4">
-            <path class="s a" pathLength="1" d="M270 208 H346 a10 10 0 0 1 10 10 V239 a10 10 0 0 1 -10 10 H288 l-12 10 v-10 h-6 a10 10 0 0 1 -10 -10 V218 a10 10 0 0 1 10 -10 Z"/>
-            <path class="s" pathLength="1" d="M276 222 H322"/><path class="s" pathLength="1" d="M276 235 H306"/>
-            <path class="s a" pathLength="1" d="M330 239 L338 219 L346 239"/>
-            <rect class="cursor" x="310" y="230" width="2" height="9"/>
-          </g>
-
-          <g class="g5">
-            <rect class="s" pathLength="1" x="412" y="258" width="82" height="72" rx="3"/>
-            <path class="s" pathLength="1" d="M412 274 H494"/>
-            <rect class="s" pathLength="1" x="431" y="212" width="44" height="46" rx="3"/>
-            <path class="s a" pathLength="1" d="M453 212 V258"/>
-            <path class="s a" pathLength="1" d="M453 212 c-9 -13 -22 -6 -12 3 c8 7 12 -3 12 -3 c0 0 4 10 12 3 c10 -9 -3 -16 -12 -3"/>
-          </g>
-
-          <g class="g5">
-            <rect class="s" pathLength="1" x="512" y="268" width="58" height="62" rx="4"/>
-            <path class="s" pathLength="1" d="M512 284 H570"/>
-            <circle class="s" pathLength="1" cx="520" cy="276" r="2"/><circle class="s" pathLength="1" cx="528" cy="276" r="2"/>
-            <path class="s a" pathLength="1" d="M528 300 l-7 8 l7 8"/>
-            <path class="s a" pathLength="1" d="M537 314 l8 -18"/>
-            <path class="s a" pathLength="1" d="M554 300 l7 8 l-7 8"/>
-          </g>
-
-          <g class="g1">
-            <path class="s" pathLength="1" style="stroke-width:1;opacity:.45" d="M115 336 V350"/>
-            <path class="s" pathLength="1" style="stroke-width:1;opacity:.45" d="M340 336 V350"/>
-            <path class="s" pathLength="1" style="stroke-width:1;opacity:.45" d="M541 336 V350"/>
-          </g>
-          <text x="115" y="368" text-anchor="middle">Účtovníci</text>
-          <text x="340" y="368" text-anchor="middle">E-shopy</text>
-          <text x="541" y="368" text-anchor="middle">Vývojári</text>
-        </svg>
-        <div class="cap"><span>Jeden pult, tri druhy práce. Kreslené v kóde, žiadny obrázok.</span><span>Bratislava, 5. 9. 2026</span></div>
-      </div>
+      <figure class="photo" style="margin:0">
+        <picture>
+          <source type="image/webp" srcset="/art/svetlo-900.webp 900w, /art/svetlo-1600.webp 1600w"
+                  sizes="(max-width: 860px) 92vw, 42vw">
+          <img src="/art/svetlo-1600.jpg" width="1600" height="1000" decoding="async"
+               alt="Ranné svetlo cez žalúzie na drevenej stene, biele stoličky a rastlina">
+        </picture>
+        <figcaption class="credit">Foto Andrej Lauko</figcaption>
+      </figure>
     </div>
   </div>
 
@@ -332,59 +307,37 @@
         <div class="steps-text">
           <div class="step" data-step="1">
             <span class="tag">Krok jeden</span>
-            <h3>Prečítame váš feed</h3>
-            <p>Google Shopping, Shopify, WooCommerce, Heureka. Vezmeme názvy, ceny, dostupnosť a odkazy, nič iné.</p>
+            <h3>Skontrolujeme váš feed</h3>
+            <p>Feed Doctor prejde Google Shopping, Shopify, WooCommerce aj Heureku a povie, ktoré výrobky Google odmietne a prečo. Zadarmo a bez registrácie.</p>
           </div>
           <div class="step" data-step="2">
             <span class="tag">Krok dva</span>
             <h3>Zákazník sa spýta vlastnými slovami</h3>
-            <p>Asistent nájde tie výrobky, ktoré naozaj sedia, a odpovie v jazyku zákazníka. Rozhovor nikam neukladáme.</p>
+            <p>Asistent nájde vo vašom feede tie výrobky, ktoré naozaj sedia, a odpovie v jazyku zákazníka. Rozhovor nikam neukladáme.</p>
           </div>
           <div class="step" data-step="3">
             <span class="tag">Krok tri</span>
-            <h3>Zákazník klikne na správny výrobok</h3>
-            <p>Odkaz vždy vedie na existujúcu stránku z vášho feedu. Vy vidíte, na čo sa ľudia pýtali a čo ste nemali skladom.</p>
+            <h3>Výpis z banky prevediete do tabuľky</h3>
+            <p>camt.053 z internetbankingu premeníte na Excel, MT940 alebo DATEV. Súbor neopustí váš prehliadač.</p>
           </div>
         </div>
         <div class="stick">
           <div class="stage" id="stage" data-step="1">
-            <svg class="fig" viewBox="0 0 460 300" role="img" aria-label="Feed obchodu">
-              <rect class="p" x="30" y="34" width="180" height="232" rx="6"/>
-              <path class="p" d="M30 66 H210"/>
-              <text class="t" x="44" y="56">feed.xml</text>
-              <g>
-                <path class="p" d="M48 92 H192"/><path class="p" d="M48 112 H166"/><path class="p" d="M48 132 H192"/>
-                <path class="p" d="M48 152 H150"/><path class="p" d="M48 172 H192"/><path class="p" d="M48 192 H172"/>
-                <path class="p" d="M48 212 H140"/><path class="p" d="M48 232 H192"/>
-              </g>
-              <path class="p pa" d="M232 150 H286 m-10 -9 l10 9 l-10 9"/>
-              <rect class="p" x="300" y="90" width="128" height="52" rx="5"/>
-              <rect class="p" x="300" y="158" width="128" height="52" rx="5"/>
-              <path class="p pa" d="M316 116 h44"/><path class="p pa" d="M316 184 h60"/>
-              <text class="t" x="300" y="240">64 výrobkov, prečítané o 05:00</text>
-            </svg>
-            <svg class="fig" viewBox="0 0 460 300" role="img" aria-label="Otázka a odpoveď">
-              <rect class="p" x="248" y="30" width="182" height="44" rx="10"/>
-              <path class="p" d="M330 74 l-8 12 v-12"/>
-              <text class="t" x="264" y="57">Hľadám ľahké tenisky do mesta</text>
-              <path class="p pa" d="M30 108 H236 a10 10 0 0 1 10 10 V196 a10 10 0 0 1 -10 10 H70 l-14 12 v-12 H30 a10 10 0 0 1 -10 -10 V118 a10 10 0 0 1 10 -10 Z" transform="translate(10,0)"/>
-              <path class="p" d="M56 136 H210"/><path class="p" d="M56 156 H184"/>
-              <rect class="p pa" x="56" y="172" width="76" height="20" rx="4"/>
-              <text class="t" x="64" y="186">Wool Runner</text>
-              <text class="t" x="30" y="248">Odpoveď v jazyku zákazníka, bez uloženia rozhovoru</text>
-            </svg>
-            <svg class="fig" viewBox="0 0 460 300" role="img" aria-label="Výsledok obchodu">
-              <path class="p" d="M40 240 H420"/>
-              <g class="bars">
-                <rect class="p pa" x="70" y="150" width="46" height="90" rx="3"/>
-                <rect class="p pa" x="150" y="120" width="46" height="120" rx="3"/>
-                <rect class="p pa" x="230" y="86" width="46" height="154" rx="3"/>
-                <rect class="p pa" x="310" y="60" width="46" height="180" rx="3"/>
-              </g>
-              <text class="t" x="70" y="262">po</text><text class="t" x="150" y="262">nasadení</text>
-              <text class="t" x="230" y="262">rastie</text><text class="t" x="310" y="262">predaj</text>
-              <text class="t" x="40" y="42">Otázky, na ktoré feed nevedel odpovedať, vidíte v prehľade</text>
-            </svg>
+            <figure class="fig shot" style="margin:0">
+              <div class="chrome"><i></i><i></i><i></i></div>
+              <img src="/press/feed-doctor-2-results.png" width="1200" height="760" loading="lazy" decoding="async"
+                   alt="Feed Doctor ukazuje chyby v produktovom feede">
+            </figure>
+            <figure class="fig shot" style="margin:0">
+              <div class="chrome"><i></i><i></i><i></i></div>
+              <img src="/press/asistent-3-live-demo.png" width="1200" height="760" loading="lazy" decoding="async"
+                   alt="Asistent odpovedá zákazníkovi a ukazuje výrobky z feedu">
+            </figure>
+            <figure class="fig shot" style="margin:0">
+              <div class="chrome"><i></i><i></i><i></i></div>
+              <img src="/press/bankove-nastroje-2-camt053-table.png" width="1200" height="760" loading="lazy" decoding="async"
+                   alt="Výpis camt.053 prevedený do tabuľky">
+            </figure>
           </div>
         </div>
       </div>
@@ -501,6 +454,29 @@
       if (!b) return;
       document.documentElement.setAttribute('data-pal', b.getAttribute('data-pal'));
       pal.querySelectorAll('button').forEach(function (o) { o.setAttribute('aria-pressed', o === b ? 'true' : 'false'); });
+    });
+  }
+
+  // fotka reaguje na mys, ale len kym sa mys hybe; ziadna trvala slucka
+  var hoverOk = window.matchMedia && window.matchMedia('(hover: hover)').matches;
+  if (hoverOk && !reduce) {
+    document.querySelectorAll('.photo').forEach(function (fig) {
+      var pending = false, lx = 0, ly = 0;
+      fig.addEventListener('pointermove', function (e) {
+        var r = fig.getBoundingClientRect();
+        lx = (e.clientX - r.left) / r.width * 2 - 1;
+        ly = (e.clientY - r.top) / r.height * 2 - 1;
+        if (pending) return;
+        pending = true;
+        requestAnimationFrame(function () {
+          fig.style.setProperty('--px', (-lx).toFixed(3));
+          fig.style.setProperty('--py', (-ly).toFixed(3));
+          pending = false;
+        });
+      });
+      fig.addEventListener('pointerleave', function () {
+        fig.style.setProperty('--px', 0); fig.style.setProperty('--py', 0);
+      });
     });
   }
 
