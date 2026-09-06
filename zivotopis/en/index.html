@@ -4,7 +4,7 @@
 <script src="/style/vzhlad.js?v=93c2659f"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'sha256-wx+iQa3RlYRBErTEcZwXm3gCzmMBmOiE+WwgUie478Y=' 'sha256-7sSzErrO6RdgqgmYVPrs/cHj24fH1W/F2zHkTcXoZow='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'none'; media-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'sha256-wx+iQa3RlYRBErTEcZwXm3gCzmMBmOiE+WwgUie478Y=' 'sha256-JCnc5SpNX8F/OYUjp1Ojgf+TzeIAcd1Sva2Bd7w46Kc='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'none'; media-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#0a0908">
 <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
@@ -577,7 +577,8 @@
 (function () {
   'use strict';
 
-  /* ─────────── 1. Slovník výstupu. Rozhranie ostáva po slovensky, mení sa hárok. ─────────── */
+  /* ─────────── 1. Slovník výstupu, teda toho, čo je na hárku. Riadi ho pole Jazyk životopisu. ─────────── */
+  /* i18n-slovnik */
   var MONTHS = {
     sk: ['január','február','marec','apríl','máj','jún','júl','august','september','október','november','december'],
     cs: ['leden','únor','březen','duben','květen','červen','červenec','srpen','září','říjen','listopad','prosinec'],
@@ -614,23 +615,217 @@
           lvl:{basic:'basics',inter:'intermediate',adv:'advanced',expert:'expert'},
           langlvl:{a1:'A1',a2:'A2',b1:'B1',b2:'B2',c1:'C1',c2:'C2',native:'native speaker'} }
   };
+  /* /i18n-slovnik */
 
-  var TIPS = {
-    1: ['Fotka nie je povinná. Ak ju dáte, nech je z čelného pohľadu, na jednofarebnom pozadí a nie z dovolenky.',
-        'E-mail v tvare meno.priezvisko pôsobí vážnejšie ako prezývka z čias strednej školy.',
-        'Zhrnutie napíšte na tri až štyri riadky. Povedzte v ňom, čo viete robiť a o akú prácu sa uchádzate.'],
-    2: ['Začnite najnovšou prácou a pokračujte dozadu.',
-        'Do odrážok píšte výsledky, nie povinnosti. „Skrátila som uzávierku zo šiestich dní na tri“ povie viac ako „zodpovednosť za uzávierku“.',
-        'Dátumy nechajte súvislé. Ak máte v životopise prestávku, radšej napíšte, čo ste v nej robili.',
-        'Tri až päť odrážok na jednu pozíciu stačí. Staršie práce pokojne skráťte na jednu.'],
-    3: ['Ak máte vysokú školu a prax, strednú môžete vynechať.',
-        'Zručnosti píšte konkrétne. „Excel, kontingenčné tabuľky“ povie viac ako „práca s PC“.',
-        'Pri jazykoch uveďte úroveň A1 až C2, personalisti ju čakajú a vedia ju čítať.'],
-    4: ['Do piatich rokov praxe má životopis vojsť na jednu stranu.',
-        'Certifikát bez roku vyzerá staro. Doplňte rok, kedy ste ho získali.',
-        'Pred odoslaním si stiahnite PDF a prečítajte si ho nahlas. Preklepy tak nájdete rýchlejšie.',
-        'Uložte si zálohu do súboru. Koncept žije len v tomto prehliadači.']
+  /* ─────────── 1b. Slovník rozhrania. Riadi ho jazyk stránky, nie pole Jazyk životopisu. ─────────── */
+  /* Sú to dve rôzne veci: na /de/ má byť nemecké rozhranie, ale používateľ si aj tam môže
+     vysadiť životopis po slovensky. Preto sa berie z <html lang>, nie zo state.lang. */
+  /* i18n-slovnik */
+  var UI = {
+    sk: {
+      tvary: 3,
+      presunHore: 'Presunúť hore', presunDole: 'Presunúť dole', zmazatZaznam: 'Zmazať záznam',
+      skusenost: 'Skúsenosť', pozicia: 'Pozícia', poziciaVzor: 'Samostatná účtovníčka',
+      firma: 'Firma', firmaVzor: 'Perex Trade s. r. o.', mesto: 'Mesto', mestoVzor: 'Bratislava',
+      od: 'Od', do: 'Do', trvaDoteraz: 'Trvá doteraz',
+      naplnLabel: 'Náplň a výsledky, každá odrážka na nový riadok',
+      naplnVzor: 'Vediem podvojné účtovníctvo pre pätnásť klientov.',
+      skola: 'Škola', skolaVzor: 'Ekonomická univerzita v Bratislave',
+      odbor: 'Odbor', odborVzor: 'Účtovníctvo a audítorstvo',
+      stupen: 'Stupeň', neuvadzam: 'Neuvádzam', studiumTrva: 'Štúdium trvá',
+      zrucnost: 'Zručnosť', nazov: 'Názov', zrucnostVzor: 'Excel, kontingenčné tabuľky',
+      urovenNepovinna: 'Úroveň, nepovinná', bezUrovne: 'Bez úrovne',
+      lvlBasic: 'Základy', lvlInter: 'Mierne pokročilý', lvlAdv: 'Pokročilý', lvlExpert: 'Expert',
+      jazyk: 'Jazyk', jazykVzor: 'Angličtina', uroven: 'Úroveň',
+      a1: 'A1 začiatočník', a2: 'A2 mierne pokročilý', b1: 'B1 stredne pokročilý',
+      b2: 'B2 pokročilý', c1: 'C1 veľmi pokročilý', c2: 'C2 na úrovni rodeného hovoriaceho',
+      materinsky: 'Materinský jazyk',
+      bezFotky: 'Bez fotky', nahladFotky: 'Náhľad fotky',
+      vyplnenych: '{a} z {b} vyplnených',
+      dalej: 'Ďalej', hotovo: 'Hotovo, stiahnuť PDF',
+      strana: 'strana', strany: 'strany', stran: 'strán',
+      ulozeneO: 'Koncept uložený o {cas} do tohto prehliadača.',
+      neulozene: 'Prehliadač nedovolil uložiť koncept. Použite tlačidlo Uložiť do súboru.',
+      naozajVymazat: 'Naozaj vymazať celý životopis? Údaje zmiznú z tohto prehliadača a späť sa dajú dostať len zo súboru, ktorý ste si uložili.',
+      vymazane: 'Vymazané. Koncept sa začne ukladať znova, keď niečo napíšete.',
+      nacitaneZoSuboru: 'Životopis načítaný zo súboru {meno}.',
+      zlySubor: 'Súbor sa nepodarilo prečítať. Očakávam súbor JSON, ktorý vytvorilo tlačidlo Uložiť do súboru.',
+      zlyObrazok: 'Tento obrázok sa nepodarilo načítať. Skúste iný súbor typu JPG alebo PNG.',
+      nacitanyKoncept: 'Načítaný koncept z tohto prehliadača. Zálohu si spravte cez Uložiť do súboru.',
+      zobrazitNahlad: 'Zobraziť náhľad', skrytNahlad: 'Skryť náhľad',
+      tipy1: ['Fotka nie je povinná. Ak ju dáte, nech je z čelného pohľadu, na jednofarebnom pozadí a nie z dovolenky.',
+              'E-mail v tvare meno.priezvisko pôsobí vážnejšie ako prezývka z čias strednej školy.',
+              'Zhrnutie napíšte na tri až štyri riadky. Povedzte v ňom, čo viete robiť a o akú prácu sa uchádzate.'],
+      tipy2: ['Začnite najnovšou prácou a pokračujte dozadu.',
+              'Do odrážok píšte výsledky, nie povinnosti. „Skrátila som uzávierku zo šiestich dní na tri“ povie viac ako „zodpovednosť za uzávierku“.',
+              'Dátumy nechajte súvislé. Ak máte v životopise prestávku, radšej napíšte, čo ste v nej robili.',
+              'Tri až päť odrážok na jednu pozíciu stačí. Staršie práce pokojne skráťte na jednu.'],
+      tipy3: ['Ak máte vysokú školu a prax, strednú môžete vynechať.',
+              'Zručnosti píšte konkrétne. „Excel, kontingenčné tabuľky“ povie viac ako „práca s PC“.',
+              'Pri jazykoch uveďte úroveň A1 až C2, personalisti ju čakajú a vedia ju čítať.'],
+      tipy4: ['Do piatich rokov praxe má životopis vojsť na jednu stranu.',
+              'Certifikát bez roku vyzerá staro. Doplňte rok, kedy ste ho získali.',
+              'Pred odoslaním si stiahnite PDF a prečítajte si ho nahlas. Preklepy tak nájdete rýchlejšie.',
+              'Uložte si zálohu do súboru. Koncept žije len v tomto prehliadači.']
+    },
+    cs: {
+      tvary: 3,
+      presunHore: 'Přesunout nahoru', presunDole: 'Přesunout dolů', zmazatZaznam: 'Smazat záznam',
+      skusenost: 'Zkušenost', pozicia: 'Pozice', poziciaVzor: 'Samostatná účetní',
+      firma: 'Firma', firmaVzor: 'Perex Trade s. r. o.', mesto: 'Město', mestoVzor: 'Bratislava',
+      od: 'Od', do: 'Do', trvaDoteraz: 'Trvá dosud',
+      naplnLabel: 'Náplň a výsledky, každá odrážka na nový řádek',
+      naplnVzor: 'Vedu podvojné účetnictví pro patnáct klientů.',
+      skola: 'Škola', skolaVzor: 'Ekonomická univerzita v Bratislavě',
+      odbor: 'Obor', odborVzor: 'Účetnictví a auditorství',
+      stupen: 'Stupeň', neuvadzam: 'Neuvádím', studiumTrva: 'Studium trvá',
+      zrucnost: 'Dovednost', nazov: 'Název', zrucnostVzor: 'Excel, kontingenční tabulky',
+      urovenNepovinna: 'Úroveň, nepovinná', bezUrovne: 'Bez úrovně',
+      lvlBasic: 'Základy', lvlInter: 'Mírně pokročilý', lvlAdv: 'Pokročilý', lvlExpert: 'Expert',
+      jazyk: 'Jazyk', jazykVzor: 'Angličtina', uroven: 'Úroveň',
+      a1: 'A1 začátečník', a2: 'A2 mírně pokročilý', b1: 'B1 středně pokročilý',
+      b2: 'B2 pokročilý', c1: 'C1 velmi pokročilý', c2: 'C2 na úrovni rodilého mluvčího',
+      materinsky: 'Mateřský jazyk',
+      bezFotky: 'Bez fotky', nahladFotky: 'Náhled fotky',
+      vyplnenych: '{a} z {b} vyplněných',
+      dalej: 'Dále', hotovo: 'Hotovo, stáhnout PDF',
+      strana: 'strana', strany: 'strany', stran: 'stran',
+      ulozeneO: 'Koncept uložen v {cas} do tohoto prohlížeče.',
+      neulozene: 'Prohlížeč nedovolil uložit koncept. Použijte tlačítko Uložit do souboru.',
+      naozajVymazat: 'Opravdu smazat celý životopis? Údaje zmizí z tohoto prohlížeče a zpět se dají dostat jen ze souboru, který jste si uložili.',
+      vymazane: 'Smazáno. Koncept se začne ukládat znovu, až něco napíšete.',
+      nacitaneZoSuboru: 'Životopis načten ze souboru {meno}.',
+      zlySubor: 'Soubor se nepodařilo přečíst. Očekávám soubor JSON, který vytvořilo tlačítko Uložit do souboru.',
+      zlyObrazok: 'Tento obrázek se nepodařilo načíst. Zkuste jiný soubor typu JPG nebo PNG.',
+      nacitanyKoncept: 'Načten koncept z tohoto prohlížeče. Zálohu si udělejte přes Uložit do souboru.',
+      zobrazitNahlad: 'Zobrazit náhled', skrytNahlad: 'Skrýt náhled',
+      tipy1: ['Fotka není povinná. Pokud ji dáte, ať je z čelního pohledu, na jednobarevném pozadí a ne z dovolené.',
+              'E-mail ve tvaru jmeno.prijmeni působí vážněji než přezdívka z dob střední školy.',
+              'Shrnutí napište na tři až čtyři řádky. Řekněte v něm, co umíte dělat a o jakou práci se ucházíte.'],
+      tipy2: ['Začněte nejnovější prací a pokračujte dozadu.',
+              'Do odrážek pište výsledky, ne povinnosti. „Zkrátila jsem uzávěrku ze šesti dnů na tři“ řekne víc než „zodpovědnost za uzávěrku“.',
+              'Data nechte souvislá. Pokud máte v životopise přestávku, raději napište, co jste v ní dělali.',
+              'Tři až pět odrážek na jednu pozici stačí. Starší práce klidně zkraťte na jednu.'],
+      tipy3: ['Pokud máte vysokou školu a praxi, střední můžete vynechat.',
+              'Dovednosti pište konkrétně. „Excel, kontingenční tabulky“ řekne víc než „práce s PC“.',
+              'U jazyků uveďte úroveň A1 až C2, personalisté ji čekají a umějí ji číst.'],
+      tipy4: ['Do pěti let praxe se má životopis vejít na jednu stranu.',
+              'Certifikát bez roku vypadá staře. Doplňte rok, kdy jste ho získali.',
+              'Před odesláním si stáhněte PDF a přečtěte si ho nahlas. Překlepy tak najdete rychleji.',
+              'Uložte si zálohu do souboru. Koncept žije jen v tomto prohlížeči.']
+    },
+    de: {
+      tvary: 2,
+      presunHore: 'Nach oben verschieben', presunDole: 'Nach unten verschieben', zmazatZaznam: 'Eintrag löschen',
+      skusenost: 'Erfahrung', pozicia: 'Position', poziciaVzor: 'Buchhalterin',
+      firma: 'Unternehmen', firmaVzor: 'Perex Trade GmbH', mesto: 'Ort', mestoVzor: 'Bratislava',
+      od: 'Von', do: 'Bis', trvaDoteraz: 'Läuft noch',
+      naplnLabel: 'Aufgaben und Ergebnisse, jeder Punkt in eine neue Zeile',
+      naplnVzor: 'Ich führe die doppelte Buchhaltung für fünfzehn Kunden.',
+      skola: 'Schule', skolaVzor: 'Wirtschaftsuniversität Bratislava',
+      odbor: 'Fachrichtung', odborVzor: 'Rechnungswesen und Wirtschaftsprüfung',
+      stupen: 'Abschluss', neuvadzam: 'Keine Angabe', studiumTrva: 'Studium läuft noch',
+      zrucnost: 'Kenntnis', nazov: 'Bezeichnung', zrucnostVzor: 'Excel, Pivot-Tabellen',
+      urovenNepovinna: 'Niveau, optional', bezUrovne: 'Ohne Niveau',
+      lvlBasic: 'Grundkenntnisse', lvlInter: 'Fortgeschritten', lvlAdv: 'Sehr gut', lvlExpert: 'Experte',
+      jazyk: 'Sprache', jazykVzor: 'Englisch', uroven: 'Niveau',
+      a1: 'A1 Anfänger', a2: 'A2 Leicht fortgeschritten', b1: 'B1 Mittelstufe',
+      b2: 'B2 Fortgeschritten', c1: 'C1 Sehr fortgeschritten', c2: 'C2 Auf Muttersprachenniveau',
+      materinsky: 'Muttersprache',
+      bezFotky: 'Ohne Foto', nahladFotky: 'Vorschau des Fotos',
+      vyplnenych: '{a} von {b} ausgefüllt',
+      dalej: 'Weiter', hotovo: 'Fertig, PDF herunterladen',
+      strana: 'Seite', strany: 'Seiten', stran: 'Seiten',
+      ulozeneO: 'Entwurf um {cas} in diesem Browser gespeichert.',
+      neulozene: 'Der Browser hat das Speichern des Entwurfs nicht erlaubt. Nutzen Sie die Schaltfläche In Datei speichern.',
+      naozajVymazat: 'Möchten Sie den ganzen Lebenslauf wirklich löschen? Die Daten verschwinden aus diesem Browser und lassen sich nur aus der Datei zurückholen, die Sie gespeichert haben.',
+      vymazane: 'Gelöscht. Der Entwurf wird wieder gespeichert, sobald Sie etwas schreiben.',
+      nacitaneZoSuboru: 'Lebenslauf aus der Datei {meno} geladen.',
+      zlySubor: 'Die Datei konnte nicht gelesen werden. Erwartet wird eine JSON-Datei, die die Schaltfläche In Datei speichern erstellt hat.',
+      zlyObrazok: 'Dieses Bild konnte nicht geladen werden. Versuchen Sie eine andere Datei im Format JPG oder PNG.',
+      nacitanyKoncept: 'Entwurf aus diesem Browser geladen. Sichern Sie ihn über In Datei speichern.',
+      zobrazitNahlad: 'Vorschau anzeigen', skrytNahlad: 'Vorschau ausblenden',
+      tipy1: ['Ein Foto ist nicht Pflicht. Wenn Sie eines nutzen, dann frontal, vor einfarbigem Hintergrund und nicht aus dem Urlaub.',
+              'Eine E-Mail in der Form vorname.nachname wirkt seriöser als ein Spitzname aus der Schulzeit.',
+              'Schreiben Sie das Kurzprofil in drei bis vier Zeilen. Sagen Sie darin, was Sie können und auf welche Stelle Sie sich bewerben.'],
+      tipy2: ['Beginnen Sie mit der jüngsten Stelle und gehen Sie rückwärts weiter.',
+              'Schreiben Sie in die Punkte Ergebnisse, keine Pflichten. „Ich habe den Abschluss von sechs Tagen auf drei verkürzt“ sagt mehr als „Verantwortung für den Abschluss“.',
+              'Lassen Sie die Zeiträume lückenlos. Wenn Ihr Lebenslauf eine Lücke hat, schreiben Sie lieber, was Sie in dieser Zeit gemacht haben.',
+              'Drei bis fünf Punkte je Stelle reichen. Ältere Stellen können Sie ruhig auf einen kürzen.'],
+      tipy3: ['Wenn Sie ein Hochschulstudium und Berufspraxis haben, können Sie die Schule weglassen.',
+              'Schreiben Sie Kenntnisse konkret. „Excel, Pivot-Tabellen“ sagt mehr als „PC-Kenntnisse“.',
+              'Geben Sie bei Sprachen das Niveau A1 bis C2 an, Personaler erwarten es und können es lesen.'],
+      tipy4: ['Bis zu fünf Jahren Berufspraxis soll der Lebenslauf auf eine Seite passen.',
+              'Ein Zertifikat ohne Jahr wirkt alt. Ergänzen Sie das Jahr, in dem Sie es erworben haben.',
+              'Laden Sie vor dem Absenden das PDF herunter und lesen Sie es laut vor. Tippfehler finden Sie so schneller.',
+              'Speichern Sie eine Sicherung in eine Datei. Der Entwurf lebt nur in diesem Browser.']
+    },
+    en: {
+      tvary: 2,
+      presunHore: 'Move up', presunDole: 'Move down', zmazatZaznam: 'Delete entry',
+      skusenost: 'Experience', pozicia: 'Position', poziciaVzor: 'Accountant',
+      firma: 'Company', firmaVzor: 'Perex Trade Ltd.', mesto: 'City', mestoVzor: 'Bratislava',
+      od: 'From', do: 'To', trvaDoteraz: 'Still ongoing',
+      naplnLabel: 'Duties and results, one bullet per line',
+      naplnVzor: 'I run double-entry bookkeeping for fifteen clients.',
+      skola: 'School', skolaVzor: 'University of Economics in Bratislava',
+      odbor: 'Field of study', odborVzor: 'Accounting and auditing',
+      stupen: 'Degree', neuvadzam: 'Not stated', studiumTrva: 'Studies ongoing',
+      zrucnost: 'Skill', nazov: 'Name', zrucnostVzor: 'Excel, pivot tables',
+      urovenNepovinna: 'Level, optional', bezUrovne: 'No level',
+      lvlBasic: 'Basics', lvlInter: 'Intermediate', lvlAdv: 'Advanced', lvlExpert: 'Expert',
+      jazyk: 'Language', jazykVzor: 'English', uroven: 'Level',
+      a1: 'A1 beginner', a2: 'A2 elementary', b1: 'B1 intermediate',
+      b2: 'B2 upper intermediate', c1: 'C1 advanced', c2: 'C2 near native',
+      materinsky: 'Native language',
+      bezFotky: 'No photo', nahladFotky: 'Photo preview',
+      vyplnenych: '{a} of {b} completed',
+      dalej: 'Next', hotovo: 'Done, download PDF',
+      strana: 'page', strany: 'pages', stran: 'pages',
+      ulozeneO: 'Draft saved at {cas} in this browser.',
+      neulozene: 'The browser would not save the draft. Use the Save to file button.',
+      naozajVymazat: 'Really delete the whole CV? The data will disappear from this browser and can only be brought back from the file you saved.',
+      vymazane: 'Deleted. The draft will start saving again once you type something.',
+      nacitaneZoSuboru: 'CV loaded from the file {meno}.',
+      zlySubor: 'The file could not be read. A JSON file created by the Save to file button is expected.',
+      zlyObrazok: 'This image could not be loaded. Try another JPG or PNG file.',
+      nacitanyKoncept: 'Draft loaded from this browser. Make a backup with Save to file.',
+      zobrazitNahlad: 'Show preview', skrytNahlad: 'Hide preview',
+      tipy1: ['A photo is not required. If you add one, use a front view on a plain background, not a holiday snap.',
+              'An email in the form first.last looks more serious than a nickname from your school days.',
+              'Write the summary in three or four lines. Say in it what you can do and what job you are applying for.'],
+      tipy2: ['Start with your most recent job and work backwards.',
+              'Write results in the bullets, not duties. “I cut the month-end close from six days to three” says more than “responsible for the close”.',
+              'Keep the dates continuous. If your CV has a gap, it is better to write what you did during it.',
+              'Three to five bullets per position is enough. Older jobs can be cut down to one.'],
+      tipy3: ['If you have a university degree and work experience, you can leave out secondary school.',
+              'Write skills specifically. “Excel, pivot tables” says more than “computer literate”.',
+              'For languages give the level A1 to C2, recruiters expect it and know how to read it.'],
+      tipy4: ['Up to five years of experience a CV should fit on one page.',
+              'A certificate without a year looks old. Add the year you earned it.',
+              'Before sending, download the PDF and read it aloud. You will find typos faster that way.',
+              'Save a backup to a file. The draft lives only in this browser.']
+    }
   };
+  /* /i18n-slovnik */
+
+  /* Jazyk rozhrania sa zisťuje raz, zo stránky. Jazyk hárku si mení používateľ. */
+  var UIJAZYK = (document.documentElement.lang || 'sk').slice(0, 2).toLowerCase();
+  var U = UI[UIJAZYK] || UI.sk;
+  var LU = L[UIJAZYK] || L.sk;   /* stupne škôl a úrovne zručností v jazyku rozhrania */
+
+  function vloz(sablona, hodnoty) {
+    return String(sablona).replace(/\{(\w+)\}/g, function (cely, k) {
+      return Object.prototype.hasOwnProperty.call(hodnoty, k) ? String(hodnoty[k]) : cely;
+    });
+  }
+  /* Slovenčina a čeština majú tri tvary (1 strana, 2 strany, 5 strán), nemčina
+     a angličtina dva (1 Seite, 2 Seiten). Preto tvary: 3 alebo tvary: 2. */
+  function tvarStrany(n) {
+    if (n === 1) return U.strana;
+    if (U.tvary === 3) return n < 5 ? U.strany : U.stran;
+    return U.strany;
+  }
 
   /* ─────────── 2. Stav ─────────── */
   var KEY = 'arling-zivotopis-v1';
@@ -638,7 +833,9 @@
 
   function blank() {
     return {
-      v: 1, lang: 'sk', tpl: 'klasik',
+      /* Predvolený jazyk hárku je jazyk stránky: kto príde na /de/, chce
+         najskôr nemecký Lebenslauf. Prepnúť sa dá kedykoľvek v poli Jazyk životopisu. */
+      v: 1, lang: L[UIJAZYK] ? UIJAZYK : 'sk', tpl: 'klasik',
       personal: { title:'', first:'', last:'', birth:'', email:'', phone:'', city:'', country:'' },
       photo: '', summary: '',
       work: [], edu: [], skills: [], langs: [],
@@ -880,7 +1077,7 @@
     var perPage = (297 - 28) * 96 / 25.4; /* co sa zmesti na jednu stranu A4 */
     var pages = Math.max(1, Math.ceil((h - padPx - 3) / perPage));
     var el = $('pvPages');
-    if (el) el.textContent = pages === 1 ? '1 strana' : (pages < 5 ? pages + ' strany' : pages + ' strán');
+    if (el) el.textContent = pages + ' ' + tvarStrany(pages);
   }
   function paint() {
     var html = renderCV(state);
@@ -896,9 +1093,9 @@
 
   function acts(list, i, n) {
     return '<span class="rowacts">' +
-      '<button type="button" class="iconbtn" data-act="up" data-list="' + list + '" data-i="' + i + '" aria-label="Presunúť hore"' + (i === 0 ? ' disabled' : '') + '>' + ARROW_UP + '</button>' +
-      '<button type="button" class="iconbtn" data-act="down" data-list="' + list + '" data-i="' + i + '" aria-label="Presunúť dole"' + (i === n - 1 ? ' disabled' : '') + '>' + ARROW_DOWN + '</button>' +
-      '<button type="button" class="iconbtn" data-act="del" data-list="' + list + '" data-i="' + i + '" aria-label="Zmazať záznam">' + TRASH + '</button>' +
+      '<button type="button" class="iconbtn" data-act="up" data-list="' + list + '" data-i="' + i + '" aria-label="' + esc(U.presunHore) + '"' + (i === 0 ? ' disabled' : '') + '>' + ARROW_UP + '</button>' +
+      '<button type="button" class="iconbtn" data-act="down" data-list="' + list + '" data-i="' + i + '" aria-label="' + esc(U.presunDole) + '"' + (i === n - 1 ? ' disabled' : '') + '>' + ARROW_DOWN + '</button>' +
+      '<button type="button" class="iconbtn" data-act="del" data-list="' + list + '" data-i="' + i + '" aria-label="' + esc(U.zmazatZaznam) + '">' + TRASH + '</button>' +
       '</span>';
   }
   function opt(val, label, cur) {
@@ -906,60 +1103,59 @@
   }
   function rowWork(w, i, n) {
     return '<div class="row" data-list="work" data-i="' + i + '">' +
-      '<div class="rowhead"><span class="rowtitle">Skúsenosť ' + (i + 1) + '</span>' + acts('work', i, n) + '</div>' +
+      '<div class="rowhead"><span class="rowtitle">' + esc(U.skusenost) + ' ' + (i + 1) + '</span>' + acts('work', i, n) + '</div>' +
       '<div class="g2">' +
-        '<label class="f"><span>Pozícia</span><input type="text" data-f="role" value="' + esc(w.role) + '" placeholder="Samostatná účtovníčka"></label>' +
-        '<label class="f"><span>Firma</span><input type="text" data-f="company" value="' + esc(w.company) + '" placeholder="Perex Trade s. r. o."></label>' +
+        '<label class="f"><span>' + esc(U.pozicia) + '</span><input type="text" data-f="role" value="' + esc(w.role) + '" placeholder="' + esc(U.poziciaVzor) + '"></label>' +
+        '<label class="f"><span>' + esc(U.firma) + '</span><input type="text" data-f="company" value="' + esc(w.company) + '" placeholder="' + esc(U.firmaVzor) + '"></label>' +
       '</div>' +
       '<div class="g3">' +
-        '<label class="f"><span>Mesto</span><input type="text" data-f="city" value="' + esc(w.city) + '" placeholder="Bratislava"></label>' +
-        '<label class="f"><span>Od</span><input type="month" data-f="from" value="' + esc(w.from) + '"></label>' +
-        '<label class="f"><span>Do</span><input type="month" data-f="to" value="' + esc(w.to) + '"' + (w.current ? ' disabled' : '') + '></label>' +
+        '<label class="f"><span>' + esc(U.mesto) + '</span><input type="text" data-f="city" value="' + esc(w.city) + '" placeholder="' + esc(U.mestoVzor) + '"></label>' +
+        '<label class="f"><span>' + esc(U.od) + '</span><input type="month" data-f="from" value="' + esc(w.from) + '"></label>' +
+        '<label class="f"><span>' + esc(U.do) + '</span><input type="month" data-f="to" value="' + esc(w.to) + '"' + (w.current ? ' disabled' : '') + '></label>' +
       '</div>' +
-      '<label class="chk"><input type="checkbox" data-f="current"' + (w.current ? ' checked' : '') + '> Trvá doteraz</label>' +
-      '<label class="f"><span>Náplň a výsledky, každá odrážka na nový riadok</span><textarea data-f="bullets" rows="4" placeholder="Vediem podvojné účtovníctvo pre pätnásť klientov.">' + esc(w.bullets) + '</textarea></label>' +
+      '<label class="chk"><input type="checkbox" data-f="current"' + (w.current ? ' checked' : '') + '> ' + esc(U.trvaDoteraz) + '</label>' +
+      '<label class="f"><span>' + esc(U.naplnLabel) + '</span><textarea data-f="bullets" rows="4" placeholder="' + esc(U.naplnVzor) + '">' + esc(w.bullets) + '</textarea></label>' +
       '</div>';
   }
   function rowEdu(e, i, n) {
-    var t = L.sk.deg;
+    var t = LU.deg;
     return '<div class="row" data-list="edu" data-i="' + i + '">' +
-      '<div class="rowhead"><span class="rowtitle">Škola ' + (i + 1) + '</span>' + acts('edu', i, n) + '</div>' +
+      '<div class="rowhead"><span class="rowtitle">' + esc(U.skola) + ' ' + (i + 1) + '</span>' + acts('edu', i, n) + '</div>' +
       '<div class="g2">' +
-        '<label class="f"><span>Škola</span><input type="text" data-f="school" value="' + esc(e.school) + '" placeholder="Ekonomická univerzita v Bratislave"></label>' +
-        '<label class="f"><span>Odbor</span><input type="text" data-f="field" value="' + esc(e.field) + '" placeholder="Účtovníctvo a audítorstvo"></label>' +
+        '<label class="f"><span>' + esc(U.skola) + '</span><input type="text" data-f="school" value="' + esc(e.school) + '" placeholder="' + esc(U.skolaVzor) + '"></label>' +
+        '<label class="f"><span>' + esc(U.odbor) + '</span><input type="text" data-f="field" value="' + esc(e.field) + '" placeholder="' + esc(U.odborVzor) + '"></label>' +
       '</div>' +
       '<div class="g3">' +
-        '<label class="f"><span>Stupeň</span><select data-f="degree">' +
-          opt('', 'Neuvádzam', e.degree) + opt('zs', t.zs, e.degree) + opt('vyuc', t.vyuc, e.degree) +
+        '<label class="f"><span>' + esc(U.stupen) + '</span><select data-f="degree">' +
+          opt('', U.neuvadzam, e.degree) + opt('zs', t.zs, e.degree) + opt('vyuc', t.vyuc, e.degree) +
           opt('ss', t.ss, e.degree) + opt('bc', t.bc, e.degree) + opt('mgr', t.mgr, e.degree) + opt('phd', t.phd, e.degree) +
         '</select></label>' +
-        '<label class="f"><span>Od</span><input type="month" data-f="from" value="' + esc(e.from) + '"></label>' +
-        '<label class="f"><span>Do</span><input type="month" data-f="to" value="' + esc(e.to) + '"' + (e.current ? ' disabled' : '') + '></label>' +
+        '<label class="f"><span>' + esc(U.od) + '</span><input type="month" data-f="from" value="' + esc(e.from) + '"></label>' +
+        '<label class="f"><span>' + esc(U.do) + '</span><input type="month" data-f="to" value="' + esc(e.to) + '"' + (e.current ? ' disabled' : '') + '></label>' +
       '</div>' +
-      '<label class="chk"><input type="checkbox" data-f="current"' + (e.current ? ' checked' : '') + '> Štúdium trvá</label>' +
+      '<label class="chk"><input type="checkbox" data-f="current"' + (e.current ? ' checked' : '') + '> ' + esc(U.studiumTrva) + '</label>' +
       '</div>';
   }
   function rowSkill(x, i, n) {
-    var t = L.sk.lvl;
     return '<div class="row" data-list="skills" data-i="' + i + '">' +
-      '<div class="rowhead"><span class="rowtitle">Zručnosť ' + (i + 1) + '</span>' + acts('skills', i, n) + '</div>' +
+      '<div class="rowhead"><span class="rowtitle">' + esc(U.zrucnost) + ' ' + (i + 1) + '</span>' + acts('skills', i, n) + '</div>' +
       '<div class="g2">' +
-        '<label class="f"><span>Názov</span><input type="text" data-f="name" value="' + esc(x.name) + '" placeholder="Excel, kontingenčné tabuľky"></label>' +
-        '<label class="f"><span>Úroveň, nepovinná</span><select data-f="level">' +
-          opt('', 'Bez úrovne', x.level) + opt('basic', 'Základy', x.level) + opt('inter', 'Mierne pokročilý', x.level) +
-          opt('adv', 'Pokročilý', x.level) + opt('expert', 'Expert', x.level) +
+        '<label class="f"><span>' + esc(U.nazov) + '</span><input type="text" data-f="name" value="' + esc(x.name) + '" placeholder="' + esc(U.zrucnostVzor) + '"></label>' +
+        '<label class="f"><span>' + esc(U.urovenNepovinna) + '</span><select data-f="level">' +
+          opt('', U.bezUrovne, x.level) + opt('basic', U.lvlBasic, x.level) + opt('inter', U.lvlInter, x.level) +
+          opt('adv', U.lvlAdv, x.level) + opt('expert', U.lvlExpert, x.level) +
         '</select></label>' +
       '</div></div>';
   }
   function rowLang(x, i, n) {
     return '<div class="row" data-list="langs" data-i="' + i + '">' +
-      '<div class="rowhead"><span class="rowtitle">Jazyk ' + (i + 1) + '</span>' + acts('langs', i, n) + '</div>' +
+      '<div class="rowhead"><span class="rowtitle">' + esc(U.jazyk) + ' ' + (i + 1) + '</span>' + acts('langs', i, n) + '</div>' +
       '<div class="g2">' +
-        '<label class="f"><span>Jazyk</span><input type="text" data-f="name" value="' + esc(x.name) + '" placeholder="Angličtina"></label>' +
-        '<label class="f"><span>Úroveň</span><select data-f="level">' +
-          opt('a1', 'A1 začiatočník', x.level) + opt('a2', 'A2 mierne pokročilý', x.level) + opt('b1', 'B1 stredne pokročilý', x.level) +
-          opt('b2', 'B2 pokročilý', x.level) + opt('c1', 'C1 veľmi pokročilý', x.level) + opt('c2', 'C2 na úrovni rodeného hovoriaceho', x.level) +
-          opt('native', 'Materinský jazyk', x.level) +
+        '<label class="f"><span>' + esc(U.jazyk) + '</span><input type="text" data-f="name" value="' + esc(x.name) + '" placeholder="' + esc(U.jazykVzor) + '"></label>' +
+        '<label class="f"><span>' + esc(U.uroven) + '</span><select data-f="level">' +
+          opt('a1', U.a1, x.level) + opt('a2', U.a2, x.level) + opt('b1', U.b1, x.level) +
+          opt('b2', U.b2, x.level) + opt('c1', U.c1, x.level) + opt('c2', U.c2, x.level) +
+          opt('native', U.materinsky, x.level) +
         '</select></label>' +
       '</div></div>';
   }
@@ -989,10 +1185,10 @@
     var box = $('photoBox'), off = $('btnPhotoOff');
     if (!box) return;
     if (state.photo) {
-      box.innerHTML = '<img src="../' + esc(state.photo) + '" alt="Náhľad fotky">';
+      box.innerHTML = '<img src="../' + esc(state.photo) + '" alt="' + esc(U.nahladFotky) + '">';
       if (off) off.hidden = false;
     } else {
-      box.innerHTML = '<span>Bez fotky</span>';
+      box.innerHTML = '<span>' + esc(U.bezFotky) + '</span>';
       if (off) off.hidden = true;
     }
   }
@@ -1023,7 +1219,7 @@
     var c = checks(), done = c.filter(Boolean).length;
     var bar = $('progBar'), txt = $('progTxt');
     if (bar) bar.style.width = Math.round(done / c.length * 100) + '%';
-    if (txt) txt.textContent = done + ' z ' + c.length + ' vyplnených';
+    if (txt) txt.textContent = vloz(U.vyplnenych, { a: done, b: c.length });
     var btns = document.querySelectorAll('#steps button');
     for (var i = 0; i < btns.length; i++) {
       var n = parseInt(btns[i].getAttribute('data-step'), 10);
@@ -1034,7 +1230,7 @@
   function paintTips() {
     var ul = $('tipList');
     if (!ul) return;
-    ul.innerHTML = (TIPS[step] || []).map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('');
+    ul.innerHTML = (U['tipy' + step] || []).map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('');
   }
   function goStep(n) {
     step = Math.min(4, Math.max(1, n));
@@ -1044,7 +1240,7 @@
     }
     var prev = $('btnPrev'), next = $('btnNext');
     if (prev) prev.disabled = step === 1;
-    if (next) next.textContent = step === 4 ? 'Hotovo, stiahnuť PDF' : 'Ďalej';
+    if (next) next.textContent = step === 4 ? U.hotovo : U.dalej;
     paintProgress();
     paintTips();
     fit();
@@ -1057,9 +1253,9 @@
     try {
       localStorage.setItem(KEY, JSON.stringify(state));
       var d = new Date();
-      note('Koncept uložený o ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + ' do tohto prehliadača.');
+      note(vloz(U.ulozeneO, { cas: pad2(d.getHours()) + ':' + pad2(d.getMinutes()) }));
     } catch (e) {
-      note('Prehliadač nedovolil uložiť koncept. Použite tlačidlo Uložiť do súboru.');
+      note(U.neulozene);
     }
   }
   function scheduleSave() {
@@ -1244,10 +1440,10 @@
   if (saveBtn) saveBtn.addEventListener('click', function () { download(JSON.stringify(state, null, 2), fileName()); });
   var clearBtn = $('btnClear');
   if (clearBtn) clearBtn.addEventListener('click', function () {
-    if (!window.confirm('Naozaj vymazať celý životopis? Údaje zmiznú z tohto prehliadača a späť sa dajú dostať len zo súboru, ktorý ste si uložili.')) return;
+    if (!window.confirm(U.naozajVymazat)) return;
     try { localStorage.removeItem(KEY); } catch (e) {}
     adopt(blank(), false);
-    note('Vymazané. Koncept sa začne ukladať znova, keď niečo napíšete.');
+    note(U.vymazane);
   });
   var loadInput = $('fileLoad');
   if (loadInput) loadInput.addEventListener('change', function () {
@@ -1259,9 +1455,9 @@
         var obj = JSON.parse(String(r.result || ''));
         adopt(obj, false);
         saveNow();
-        note('Životopis načítaný zo súboru ' + f.name + '.');
+        note(vloz(U.nacitaneZoSuboru, { meno: f.name }));
       } catch (e) {
-        window.alert('Súbor sa nepodarilo prečítať. Očakávam súbor JSON, ktorý vytvorilo tlačidlo Uložiť do súboru.');
+        window.alert(U.zlySubor);
       }
       loadInput.value = '';
     };
@@ -1272,7 +1468,7 @@
     var f = photoInput.files && photoInput.files[0];
     if (!f) return;
     shrinkPhoto(f, function (data) {
-      if (!data) { window.alert('Tento obrázok sa nepodarilo načítať. Skúste iný súbor typu JPG alebo PNG.'); return; }
+      if (!data) { window.alert(U.zlyObrazok); return; }
       state.photo = data;
       paintPhoto();
       touched();
@@ -1294,11 +1490,11 @@
     if (open) {
       pv.classList.remove('pv-open');
       pvToggle.setAttribute('aria-expanded', 'false');
-      pvToggle.textContent = 'Zobraziť náhľad';
+      pvToggle.textContent = U.zobrazitNahlad;
     } else {
       pv.classList.add('pv-open');
       pvToggle.setAttribute('aria-expanded', 'true');
-      pvToggle.textContent = 'Skryť náhľad';
+      pvToggle.textContent = U.skrytNahlad;
       fit();
       pv.scrollIntoView({ block: 'start', behavior: 'auto' });
     }
@@ -1311,7 +1507,7 @@
     try { stored = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { stored = null; }
   }
   adopt(testMode ? demo() : (stored || blank()), false);
-  if (stored) note('Načítaný koncept z tohto prehliadača. Zálohu si spravte cez Uložiť do súboru.');
+  if (stored) note(U.nacitanyKoncept);
 
   if (window.ResizeObserver && frame) {
     var ro = new ResizeObserver(function () { fit(); });
