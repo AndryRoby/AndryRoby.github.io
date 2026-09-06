@@ -266,6 +266,67 @@
   .cv--kompakt .cv-contact{font-size:8.8pt;gap:1pt 10pt}
 
   /* ══ tlač: na papier ide len životopis ══ */
+  /* Životopis je sadzba na A4 v typografických bodoch, nie webová stránka.
+     paper.css dáva v nočnom režime h1 až 88 px a h2 až 48 px a špecificitou
+     prebíja .cv-name aj .cv-h2. Nadpisy potom v PDF zaberali pol strany.
+     Tu sú tie isté hodnoty ako vyššie, len so selektorom, ktorý vyhrá. */
+  body.noc .cvdoc { font-size:10.4pt; line-height:1.42 }
+  body.noc .cvdoc h1,
+  body.noc .cvdoc h2,
+  body.noc .cvdoc h3 { margin:0; font-weight:600; letter-spacing:normal }
+  body.noc .cvdoc .cv-name { font-size:22pt; line-height:1.04;
+                             letter-spacing:-.015em; font-weight:700 }
+  body.noc .cvdoc .cv-h2 { font-size:9.4pt; line-height:1.42; letter-spacing:.12em;
+                           font-weight:600; margin:0 0 5pt }
+  body.noc .cvdoc .cv-what h3 { font-size:11.4pt; line-height:1.25; font-weight:600 }
+  body.noc .cvdoc .cv-tag { font-size:10.5pt }
+  body.noc .cvdoc .cv-contact { font-size:9.4pt }
+  body.noc .cvdoc .cv-when { font-size:9pt }
+  body.noc .cvdoc .cv-org { font-size:10pt }
+  body.noc .cvdoc .cv-tags li { font-size:9.4pt }
+  body.noc .cvdoc .cv-defs { font-size:10pt }
+  body.noc .cvdoc .cv-defs dt { font-size:9.4pt }
+  body.noc .cvdoc .cv-empty { font-size:10pt }
+  body.noc .cvdoc p { margin:0 }
+  body.noc .cvdoc .cv-tag { margin:3pt 0 0 }
+  body.noc .cvdoc .cv-org { margin:1.5pt 0 0 }
+  /* Kompakt má menšie meno, to musí prebiť aj tento blok. */
+  body.noc .cvdoc.cv--kompakt .cv-name { font-size:19pt }
+
+  /* Životopis je biely dokument na papier a nesmie zdediť nočnú paletu webu.
+     paper.css nastavuje body.noc h1/h2/h3 na var(--ink) a body.noc p na
+     var(--body), čo je v noci takmer biela a svetlá sivá, a špecificitou
+     prebíja pravidlá .cvdoc vyššie. V PDF potom nebolo vidieť text.
+     Tu sú tie isté farby zopakované so selektorom, ktorý vyhrá. */
+  body.noc .cvdoc,
+  body.noc .cvdoc p,
+  body.noc .cvdoc li,
+  body.noc .cvdoc dd,
+  body.noc .cvdoc span,
+  body.noc .cvdoc b,
+  body.noc .cvdoc strong { color:#22211e }
+  body.noc .cvdoc h1,
+  body.noc .cvdoc h2,
+  body.noc .cvdoc h3 { color:#141413 }
+  body.noc .cvdoc .cv-h2 { color:#b23a1d }
+  body.noc .cvdoc .cv-tag { color:#5e5d59 }
+  body.noc .cvdoc .cv-contact { color:#3d3d3a }
+  body.noc .cvdoc .cv-contact b { color:#7a766c }
+  body.noc .cvdoc .cv-when { color:#6b675e }
+  body.noc .cvdoc .cv-org { color:#4a4740 }
+  body.noc .cvdoc .cv-tags li i { color:#7a766c }
+  body.noc .cvdoc .cv-defs dt { color:#6b675e }
+  body.noc .cvdoc .cv-empty { color:#a39b8c }
+
+  /* Pri tlači to musí platiť aj vtedy, keby prehliadač nočný režim inak
+     vyhodnotil: papier je vždy biely, text vždy tmavý. */
+  @media print{
+    .cvdoc, .cvdoc p, .cvdoc li, .cvdoc dd, .cvdoc span,
+    .cvdoc b, .cvdoc strong { color:#22211e }
+    .cvdoc h1, .cvdoc h2, .cvdoc h3 { color:#141413 }
+    .cvdoc .cv-h2 { color:#b23a1d }
+  }
+
   @media print{
     @page{size:A4;margin:14mm}
     html,body{background:#fff !important}
@@ -288,7 +349,7 @@
       <svg viewBox="0 0 488 215" width="38" height="15" aria-hidden="true" focusable="false"><path fill="#f4f4f7" fill-rule="evenodd" d="M0.00,213.00L74.00,214.00L181.00,85.00L285.00,214.00L360.00,214.00L206.00,21.00L185.00,4.00L164.00,10.00Z M221.00,0.00L263.00,50.00L395.00,50.00L409.00,55.00L419.00,76.00L401.00,96.00L313.00,98.00L411.00,214.00L487.00,214.00L422.00,139.00L457.00,123.00L482.00,88.00L482.00,48.00L463.00,19.00L417.00,0.00Z"/><path fill="#f2643c" d="M269.00,66.00L269.00,67.00L268.00,68.00L268.00,70.00L267.00,71.00L267.00,76.00L268.00,77.00L268.00,79.00L270.00,81.00L270.00,82.00L271.00,82.00L273.00,84.00L274.00,84.00L277.00,86.00L279.00,86.00L280.00,87.00L287.00,87.00L288.00,86.00L290.00,86.00L291.00,85.00L294.00,84.00L298.00,80.00L298.00,79.00L299.00,78.00L299.00,75.00L300.00,74.00L300.00,72.00L299.00,71.00L299.00,69.00L298.00,68.00L297.00,65.00L295.00,63.00L294.00,63.00L289.00,60.00L278.00,60.00L277.00,61.00L276.00,61.00L275.00,62.00L272.00,63.00Z"/></svg>
       <b>ARLing</b><span>CV</span>
     </a>
-    <nav aria-label="Site"><a href="#tvorca">Builder</a><a href="#sukromie">Your data</a><a href="#otazky">Questions</a><a href="https://arling.sk/en/#tools">Tools</a><a href="https://arling.sk/notes/">Notes</a><a href="https://arling.sk/how-we-work/">How we work</a><a href="mailto:andrej@arling.sk">Contact</a></nav>
+    <nav aria-label="Site"><a href="#tvorca">Builder</a><a href="#sukromie">Your data</a><a href="#otazky">Questions</a><a href="https://arling.sk/#tools">Tools</a><a href="https://arling.sk/notes/">Notes</a><a href="https://arling.sk/how-we-work/">How we work</a><a href="mailto:andrej@arling.sk">Contact</a></nav>
   </div>
 </header>
 
@@ -562,7 +623,7 @@
   <div class="wrap foot">
     <div><b>ARLing s. r. o.</b><br>Ivanská cesta 32E<br>821 04 Bratislava, Slovakia</div>
     <div>Company ID 56583486<br>VAT ID SK2122352100<br><a href="mailto:andrej@arling.sk">andrej@arling.sk</a></div>
-    <div><a href="https://arling.sk/privacy/">privacy</a> · <a href="https://arling.sk/podmienky/">terms</a> · <a href="https://arling.sk/gdpr/">GDPR</a> · <a href="https://arling.sk/impressum/">Impressum</a> · <a href="https://arling.sk/llms.txt">llms.txt</a> · <a href="https://arling.sk/sitemap-index.xml">sitemap</a><br>Tools are provided as is, without warranty. Anonymous visit counts via self-hosted Umami.</div>
+    <div><a href="https://arling.sk/privacy/">privacy policy</a> · <a href="https://arling.sk/podmienky/">terms</a> · <a href="https://arling.sk/gdpr/">GDPR</a> · <a href="https://arling.sk/impressum/">Impressum</a> · <a href="https://arling.sk/llms.txt">llms.txt</a> · <a href="https://arling.sk/sitemap-index.xml">sitemap</a><br>Tools are provided as is, without warranty. Anonymous visit counts via self-hosted Umami.</div>
   </div>
 </footer>
 
