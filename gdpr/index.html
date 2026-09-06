@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://homelab.tailbf8f27.ts.net; connect-src 'self' https://homelab.tailbf8f27.ts.net; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Y+ZDBJHhRkeSHjIB9vRg7pq7g4VZF+AOsrBzRLYXPYA=' https://homelab.tailbf8f27.ts.net; connect-src 'self' https://homelab.tailbf8f27.ts.net; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
 <title>Ochrana osobných údajov (GDPR)</title>
 <meta name="description" content="Ako ARLing s. r. o. spracúva osobné údaje: e-mailový zoznam, licenčné kľúče, platby cez Stripe, analytika bez cookies a vaše práva podľa GDPR.">
 <link rel="canonical" href="https://arling.sk/gdpr/">
@@ -13,6 +13,9 @@
 <meta property="og:url" content="https://arling.sk/gdpr/">
 <meta name="theme-color" content="#f6f2ea">
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="preload" href="/fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/style/paper.css">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -26,76 +29,192 @@
 }
 </script>
 <style>
-  :root { --paper:#f6f2ea; --paper-2:#fbf9f4; --ink:#1b1a17; --ink-2:#4a4741; --muted:#66625a; --line:#d9d2c4; --accent:#b23a1d; --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif; --sans:system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
-  @media (prefers-color-scheme: dark) { :root { --paper:#151412; --paper-2:#1d1b18; --ink:#efe9de; --ink-2:#c9c2b5; --muted:#8f887b; --line:#2e2b26; --accent:#e0623f; } }
-  * { box-sizing:border-box; }
-  body { margin:0; background:var(--paper); color:var(--ink); font:16px/1.55 var(--sans); }
-  a { color:inherit; text-decoration-color:var(--line); text-underline-offset:3px; }
-  a:hover { text-decoration-color:var(--accent); }
-  .wrap { max-width:760px; margin:0 auto; padding:0 24px; }
-  header.top { border-bottom:1px solid var(--line); }
-  header.top .wrap { display:flex; align-items:baseline; justify-content:space-between; padding:18px 24px; }
-  .wordmark { font:600 22px/1 var(--serif); text-decoration:none; }
-  nav a { font-size:14px; margin-left:20px; text-decoration:none; color:var(--ink-2); }
-  h1 { font:400 clamp(30px,4.5vw,40px)/1.1 var(--serif); margin:48px 0 8px; }
-  h2 { font:400 26px/1.15 var(--serif); margin:40px 0 8px; }
-  .kicker { font:400 14px/1 var(--serif); color:var(--accent); letter-spacing:.06em; text-transform:uppercase; margin:0 0 8px; }
-  p, li { color:var(--ink-2); }
-  ol { padding-left:20px; }
-  .lang { border-top:1px solid var(--line); margin-top:40px; padding-top:8px; }
-  footer { margin-top:56px; padding:24px 0 56px; border-top:1px solid var(--line); color:var(--muted); font-size:14px; }
+  /* Only this page: a reading column for the legal text and a tighter table of contents. */
+  .doc { max-width:72ch; }
+  .doc h2 { font-size:clamp(21px,1.9vw,27px); line-height:1.2; margin-top:38px; }
+  .doc h2:first-of-type { margin-top:0; }
+  .doc p { margin:0 0 12px; max-width:none; }
+  .toc a { padding:5px 0; }
+  .toc .t { white-space:normal; }
+  .band .doc h2 { color:#fffdf8; }
+  .band .rule { background:rgba(255,253,248,.2); }
+  .band .btn-line { border-color:#fffdf8; color:#fffdf8; }
+  .band .btn-line:hover { background:#fffdf8; color:var(--ink); }
+  /* Uvod je dvojstlpcovy ako otvaracia dvojstrana tlacenej prirucky: vlavo nazov dokumentu,
+     veta a platnost, vpravo jeho vlastny obsah. Prava polovica tak nesie skutocnu vec zo stranky,
+     nie kresbu ani prazdno. */
+  .toclab { font-family:var(--ui); font-size:12px; letter-spacing:.12em; text-transform:uppercase;
+            color:var(--muted); margin:0 0 2px; }
+  /* Polozka bez cisla strany nema kam viest vodic, tak ho v znacke nema. Bodkovana ciara
+     ostava len pri riadku, ktory vpravo naozaj nieco nesie. */
+  .hero .index.toc .t { flex:1 1 auto; }
 </style>
 </head>
 <body>
-<header class="top"><div class="wrap"><a class="wordmark" href="https://arling.sk/">ARLing</a><nav><a href="https://arling.sk/#tools">Tools</a><a href="https://arling.sk/how-we-work/">How we work</a><a href="https://arling.sk/podmienky/">Podmienky</a></nav></div></header>
-<main class="wrap">
-  <p class="kicker" style="margin-top:48px">GDPR</p>
-  <h1>Ochrana osobných údajov</h1>
-  <p>Tento dokument vysvetľuje, aké osobné údaje ARLing s. r. o. spracúva, prečo a ako dlho. Platné od 6. septembra 2026, verzia 1.0. Zmeny oznamujeme na tejto stránke aspoň 30 dní vopred. Dopĺňa anglickú stránku <a href="https://arling.sk/privacy/">Privacy</a> a naše <a href="https://arling.sk/podmienky/">Podmienky používania</a>.</p>
+<div class="wash" aria-hidden="true"><i></i><i></i></div>
+<a class="skip" href="#h1">Preskočiť na dokument</a>
 
-  <h2>1. Prevádzkovateľ</h2>
-  <p>Prevádzkovateľom osobných údajov je ARLing s. r. o., IČO 56583486, IČ DPH SK2122352100, so sídlom Ivanská cesta 19112/32E, 821 04 Bratislava, Slovenská republika. Kontakt vo veciach ochrany osobných údajov: <a href="mailto:andrej@arling.sk">andrej@arling.sk</a>. Zodpovednú osobu (DPO) sme neustanovili, pri rozsahu nášho spracúvania to zákon nevyžaduje.</p>
+<header>
+  <div class="wrap bar">
+    <a class="brand" href="https://arling.sk/">
+      <svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true"><defs><path id="m" fill-rule="evenodd" d="M16 2.5 L29 29.5 H3 Z M16 12.4 L22.4 25.6 H9.6 Z"/><clipPath id="mr"><rect x="16" width="16" height="32"/></clipPath></defs><use href="#m" fill="#1b1a17"/><use href="#m" fill="#b23a1d" clip-path="url(#mr)"/></svg>
+      <b>ARLing</b><span>GDPR</span>
+    </a>
+    <nav aria-label="Site">
+      <a href="https://arling.sk/#tools">Nástroje</a>
+      <a href="https://arling.sk/how-we-work/">Ako pracujeme</a>
+      <a href="https://arling.sk/podmienky/">Podmienky</a>
+    </nav>
+  </div>
+</header>
 
-  <h2>2. Čo spracúvame a čo nie</h2>
-  <p>Spracúvame len údaje popísané v tomto dokumente: e-mailovú adresu pri prihlásení na odber noviniek, technické údaje pri vydávaní licenčného kľúča a bežnú e-mailovú komunikáciu. Údaje nepredávame, nerobíme profilovanie ani automatizované rozhodovanie, nepoužívame reklamné siete a nenastavujeme cookies.</p>
+<main>
+  <div class="wrap hero" id="hero">
+    <div>
+      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5l7 2.6v5.3c0 4-2.9 7.5-7 9.1-4.1-1.6-7-5.1-7-9.1V6.1z"/><path d="M9.4 12.2l1.9 1.9 3.4-3.7"/></svg>GDPR</p>
+      <h1 id="h1"><span class="l">Ochrana</span><span class="l">osobných údajov</span></h1>
+      <p class="lead r d3">Tento dokument vysvetľuje, aké osobné údaje ARLing s. r. o. spracúva, prečo a ako dlho. Dopĺňa anglickú stránku <a href="https://arling.sk/privacy/">Súkromie</a> a naše <a href="https://arling.sk/podmienky/">Podmienky používania</a>.</p>
+      <p class="proof r d5">Platné od 6. septembra 2026, verzia 1.0. Zmeny oznamujeme na tejto stránke aspoň 30 dní vopred.</p>
+    </div>
+    <div class="r d2">
+      <p class="toclab" id="toclab">Obsah dokumentu</p>
+      <nav class="index toc r d4" aria-labelledby="toclab">
+        <a href="#s1" data-umami-event="toc-gdpr" data-umami-event-section="s1"><span class="n">[1]</span><span class="t">Prevádzkovateľ</span></a>
+        <a href="#s2" data-umami-event="toc-gdpr" data-umami-event-section="s2"><span class="n">[2]</span><span class="t">Čo spracúvame a čo nie</span></a>
+        <a href="#s3" data-umami-event="toc-gdpr" data-umami-event-section="s3"><span class="n">[3]</span><span class="t">E-mailový zoznam noviniek</span></a>
+        <a href="#s4" data-umami-event="toc-gdpr" data-umami-event-section="s4"><span class="n">[4]</span><span class="t">Vydávanie licenčných kľúčov</span></a>
+        <a href="#s5" data-umami-event="toc-gdpr" data-umami-event-section="s5"><span class="n">[5]</span><span class="t">Platby a fakturácia</span></a>
+        <a href="#s6" data-umami-event="toc-gdpr" data-umami-event-section="s6"><span class="n">[6]</span><span class="t">E-mailová komunikácia</span></a>
+        <a href="#s7" data-umami-event="toc-gdpr" data-umami-event-section="s7"><span class="n">[7]</span><span class="t">Hosting webu</span></a>
+        <a href="#s8" data-umami-event="toc-gdpr" data-umami-event-section="s8"><span class="n">[8]</span><span class="t">Analytika návštevnosti</span></a>
+        <a href="#s9" data-umami-event="toc-gdpr" data-umami-event-section="s9"><span class="n">[9]</span><span class="t">Pripojenie k hostovaným nástrojom</span></a>
+        <a href="#s10" data-umami-event="toc-gdpr" data-umami-event-section="s10"><span class="n">[10]</span><span class="t">Údaje vo vašom prehliadači</span></a>
+        <a href="#s11" data-umami-event="toc-gdpr" data-umami-event-section="s11"><span class="n">[11]</span><span class="t">Vaše práva</span></a>
+        <a href="#s12" data-umami-event="toc-gdpr" data-umami-event-section="s12"><span class="n">[12]</span><span class="t">Sťažnosť</span></a>
+        <a href="#s13" data-umami-event="toc-gdpr" data-umami-event-section="s13"><span class="n">[13]</span><span class="t">Zmeny tohto dokumentu</span></a>
+        <a href="#s14" data-umami-event="toc-gdpr" data-umami-event-section="s14"><span class="n">[14]</span><span class="t">Kontakt a súvisiace stránky</span></a>
+      </nav>
+    </div>
+  </div>
 
-  <h2>3. E-mailový zoznam noviniek</h2>
-  <p>Ak sa prihlásite na odber noviniek, uložíme e-mailovú adresu, stránku, odkiaľ ste sa prihlásili, jazyk a čas prihlásenia. Údaje sú na našom vlastnom serveri na Slovensku. Používame ich len na zasielanie noviniek o nástrojoch. Právny základ: váš súhlas (čl. 6 ods. 1 písm. a) GDPR). Súhlas môžete kedykoľvek odvolať odpoveďou na ktorýkoľvek náš e-mail alebo správou na <a href="mailto:andrej@arling.sk">andrej@arling.sk</a>, adresu potom vymažeme do 30 dní.</p>
+  <section id="doc-a" class="deep">
+    <div class="wrap"><div class="doc">
+      <h2 id="s1" class="r">1. Prevádzkovateľ</h2>
+      <div class="rule"></div>
+      <p class="r d1">Prevádzkovateľom osobných údajov je ARLing s. r. o., IČO 56583486, IČ DPH SK2122352100, so sídlom Ivanská cesta 19112/32E, 821 04 Bratislava, Slovenská republika. Kontakt vo veciach ochrany osobných údajov: <a href="mailto:andrej@arling.sk">andrej@arling.sk</a>. Zodpovednú osobu (DPO) sme neustanovili, pri rozsahu nášho spracúvania to zákon nevyžaduje.</p>
 
-  <h2>4. Vydávanie licenčných kľúčov</h2>
-  <p>Pri kúpe Pro licencie ukladáme identifikátor platobnej relácie Stripe Checkout, typ plánu, dátum vypršania a čas vydania kľúča. Vašu e-mailovú adresu neukladáme, licenčný kľúč obsahuje len skrátený hash e-mailu. Právny základ: plnenie zmluvy (čl. 6 ods. 1 písm. b) GDPR). Údaje uchovávame počas platnosti licencie a ďalšie 3 roky pre prípad reklamácie.</p>
+      <h2 id="s2" class="r d1">2. Čo spracúvame a čo nie</h2>
+      <p class="r d2">Spracúvame len údaje popísané v tomto dokumente: e-mailovú adresu pri prihlásení na odber noviniek, technické údaje pri vydávaní licenčného kľúča a bežnú e-mailovú komunikáciu. Údaje nepredávame, nerobíme profilovanie ani automatizované rozhodovanie, nepoužívame reklamné siete a nenastavujeme cookies.</p>
 
-  <h2>5. Platby a fakturácia</h2>
-  <p>Platby, faktúry a doklady o kúpe spracúva Stripe ako samostatný prevádzkovateľ a merchant of record: Stripe Payments Europe, Ltd., so sídlom v Dubline, Írsko. Zásady ochrany osobných údajov Stripe: <a href="https://stripe.com/privacy">stripe.com/privacy</a>.</p>
+      <h2 id="s3" class="r d2">3. E-mailový zoznam noviniek</h2>
+      <p class="r d3">Ak sa prihlásite na odber noviniek, uložíme e-mailovú adresu, stránku, odkiaľ ste sa prihlásili, jazyk a čas prihlásenia. Údaje sú na našom vlastnom serveri na Slovensku. Používame ich len na zasielanie noviniek o nástrojoch. Právny základ: váš súhlas (čl. 6 ods. 1 písm. a) GDPR). Súhlas môžete kedykoľvek odvolať odpoveďou na ktorýkoľvek náš e-mail alebo správou na <a href="mailto:andrej@arling.sk">andrej@arling.sk</a>, adresu potom vymažeme do 30 dní.</p>
 
-  <h2>6. E-mailová komunikácia</h2>
-  <p>Ak nám napíšete e-mail, korešpondenciu spracúvame cez Zoho Mail (Zoho Corporation B.V., Holandsko), v dátových centrách v EÚ. Uchovávame ju, kým je potrebná na vybavenie vašej otázky; účtovné doklady uchovávame 10 rokov podľa slovenského zákona.</p>
+      <h2 id="s4" class="r d3">4. Vydávanie licenčných kľúčov</h2>
+      <p class="r d4">Pri kúpe Pro licencie ukladáme identifikátor platobnej relácie Stripe Checkout, typ plánu, dátum vypršania a čas vydania kľúča. Vašu e-mailovú adresu neukladáme, licenčný kľúč obsahuje len skrátený hash e-mailu. Právny základ: plnenie zmluvy (čl. 6 ods. 1 písm. b) GDPR). Údaje uchovávame počas platnosti licencie a ďalšie 3 roky pre prípad reklamácie.</p>
 
-  <h2>7. Hosting webu</h2>
-  <p>Web arling.sk je hostovaný na GitHub Pages (GitHub, Inc., USA). GitHub uchováva serverové logy s IP adresami podľa svojho vyhlásenia o ochrane súkromia. Prenos do USA prebieha na základe rámca EU-US Data Privacy Framework a štandardných zmluvných doložiek.</p>
+      <h2 id="s5" class="r d4">5. Platby a fakturácia</h2>
+      <p class="r d5">Platby, faktúry a doklady o kúpe spracúva Stripe ako samostatný prevádzkovateľ a merchant of record: Stripe Payments Europe, Ltd., so sídlom v Dubline, Írsko. Zásady ochrany osobných údajov Stripe: <a href="https://stripe.com/privacy">stripe.com/privacy</a>.</p>
 
-  <h2>8. Analytika návštevnosti</h2>
-  <p>Návštevnosť meriame vlastným nástrojom Umami na našom serveri. Nepoužíva cookies ani fingerprinting. IP adresa sa hashuje s denne meneným saltom a neukladá sa, ukladajú sa len agregované počty zobrazení stránok a udalostí (napríklad „generate", „buy_click"). Právny základ: náš oprávnený záujem (čl. 6 ods. 1 písm. f) GDPR). Keďže vo vašom zariadení neukladáme žiadne cookies ani identifikátory, cookie lišta nie je potrebná.</p>
+      <h2 id="s6" class="r d5">6. E-mailová komunikácia</h2>
+      <p class="r d6">Ak nám napíšete e-mail, korešpondenciu spracúvame cez Zoho Mail (Zoho Corporation B.V., Holandsko), v dátových centrách v EÚ. Uchovávame ju, kým je potrebná na vybavenie vašej otázky; účtovné doklady uchovávame 10 rokov podľa slovenského zákona.</p>
 
-  <h2>9. Pripojenie k hostovaným nástrojom</h2>
-  <p>Prihlásenie na odber noviniek a overenie licencie prechádza cez šifrované TLS spojenie (Tailscale Funnel, Tailscale Inc.), ktoré vidí len metadáta šifrovanej prevádzky, nie jej obsah.</p>
+      <h2 id="s7" class="r d6">7. Hosting webu</h2>
+      <p class="r d6">Web arling.sk je hostovaný na GitHub Pages (GitHub, Inc., USA). GitHub uchováva serverové logy s IP adresami podľa svojho vyhlásenia o ochrane súkromia. Prenos do USA prebieha na základe rámca EU-US Data Privacy Framework a štandardných zmluvných doložiek.</p>
+    </div></div>
+  </section>
 
-  <h2>10. Údaje vo vašom prehliadači</h2>
-  <p>Nastavenia nástrojov a licenčný kľúč sa ukladajú len vo vašom prehliadači (localStorage), na vašom zariadení. Toto úložisko je nevyhnutné pre fungovanie nástrojov a nie je sledovaním.</p>
+  <section id="doc-b">
+    <div class="wrap"><div class="doc">
+      <h2 id="s8" class="r">8. Analytika návštevnosti</h2>
+      <div class="rule"></div>
+      <p class="r d1">Návštevnosť meriame vlastným nástrojom Umami na našom serveri. Nepoužíva cookies ani fingerprinting. IP adresa sa hashuje s denne meneným saltom a neukladá sa, ukladajú sa len agregované počty zobrazení stránok a udalostí (napríklad „generate", „buy_click"). Právny základ: náš oprávnený záujem (čl. 6 ods. 1 písm. f) GDPR). Keďže vo vašom zariadení neukladáme žiadne cookies ani identifikátory, cookie lišta nie je potrebná.</p>
 
-  <h2>11. Vaše práva</h2>
-  <p>Máte právo na prístup k údajom, ich opravu, vymazanie, obmedzenie spracúvania, prenosnosť, namietanie a odvolanie súhlasu. Žiadosť pošlite na <a href="mailto:andrej@arling.sk">andrej@arling.sk</a>, odpovieme do jedného mesiaca.</p>
+      <h2 id="s9" class="r d1">9. Pripojenie k hostovaným nástrojom</h2>
+      <p class="r d2">Prihlásenie na odber noviniek a overenie licencie prechádza cez šifrované TLS spojenie (Tailscale Funnel, Tailscale Inc.), ktoré vidí len metadáta šifrovanej prevádzky, nie jej obsah.</p>
 
-  <h2>12. Sťažnosť</h2>
-  <p>Ak sa domnievate, že vaše údaje spracúvame v rozpore s GDPR, môžete podať sťažnosť na Úrad na ochranu osobných údajov Slovenskej republiky, Hraničná 12, 820 07 Bratislava 27, <a href="https://dataprotection.gov.sk">dataprotection.gov.sk</a>.</p>
+      <h2 id="s10" class="r d2">10. Údaje vo vašom prehliadači</h2>
+      <p class="r d3">Nastavenia nástrojov a licenčný kľúč sa ukladajú len vo vašom prehliadači (localStorage), na vašom zariadení. Toto úložisko je nevyhnutné pre fungovanie nástrojov a nie je sledovaním.</p>
 
-  <h2>13. Zmeny tohto dokumentu</h2>
-  <p>Tento dokument môžeme upraviť. Zmenu vopred oznámime na tejto stránke, najmenej 30 dní pred jej účinnosťou.</p>
+      <h2 id="s11" class="r d3">11. Vaše práva</h2>
+      <p class="r d4">Máte právo na prístup k údajom, ich opravu, vymazanie, obmedzenie spracúvania, prenosnosť, namietanie a odvolanie súhlasu. Žiadosť pošlite na <a href="mailto:andrej@arling.sk">andrej@arling.sk</a>, odpovieme do jedného mesiaca.</p>
 
-  <h2>14. Kontakt a súvisiace stránky</h2>
-  <p>Otázky posielajte na <a href="mailto:andrej@arling.sk">andrej@arling.sk</a>. Súvisiace stránky: anglická stránka <a href="https://arling.sk/privacy/">Privacy</a> a <a href="https://arling.sk/podmienky/">Podmienky používania</a>.</p>
+      <h2 id="s12" class="r d4">12. Sťažnosť</h2>
+      <p class="r d5">Ak sa domnievate, že vaše údaje spracúvame v rozpore s GDPR, môžete podať sťažnosť na Úrad na ochranu osobných údajov Slovenskej republiky, Hraničná 12, 820 07 Bratislava 27, <a href="https://dataprotection.gov.sk">dataprotection.gov.sk</a>.</p>
+
+      <h2 id="s13" class="r d5">13. Zmeny tohto dokumentu</h2>
+      <p class="r d6">Tento dokument môžeme upraviť. Zmenu vopred oznámime na tejto stránke, najmenej 30 dní pred jej účinnosťou.</p>
+    </div></div>
+  </section>
+
+  <section id="kontakt" class="band">
+    <div class="wrap"><div class="doc">
+      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M8.5 12.3l2.4 2.4 4.6-4.9"/></svg>Kontakt</p>
+      <h2 id="s14" class="r">14. Kontakt a súvisiace stránky</h2>
+      <div class="rule"></div>
+      <p class="r d1">Otázky posielajte na <a href="mailto:andrej@arling.sk">andrej@arling.sk</a>. Súvisiace stránky: anglická stránka <a href="https://arling.sk/privacy/">Súkromie</a> a <a href="https://arling.sk/podmienky/">Podmienky používania</a>.</p>
+      <div class="cta r d2" style="margin-top:24px">
+        <a class="btn btn-solid" href="mailto:andrej@arling.sk" data-umami-event="contact-email">andrej@arling.sk</a>
+        <a class="btn btn-line" href="https://arling.sk/podmienky/" data-umami-event="open-podmienky">Podmienky používania</a>
+      </div>
+    </div></div>
+  </section>
 </main>
-<footer><div class="wrap">ARLing s. r. o. · <a href="https://arling.sk/">arling.sk</a> · <a href="mailto:andrej@arling.sk">andrej@arling.sk</a> · <a href="https://arling.sk/privacy/">Súkromie</a> · <a href="https://arling.sk/podmienky/">Podmienky</a> · <a href="https://arling.sk/gdpr/">GDPR</a></div></footer>
+
+<footer>
+  <div class="wrap foot">
+    <div>ARLing s. r. o. · <a href="https://arling.sk/">arling.sk</a> · <a href="mailto:andrej@arling.sk">andrej@arling.sk</a></div>
+    <div><a href="https://arling.sk/privacy/">Súkromie</a> · <a href="https://arling.sk/podmienky/">Podmienky</a> · <a href="https://arling.sk/gdpr/">GDPR</a></div>
+  </div>
+</footer>
+<script>
+(function () {
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // nadpis sa objavi po slovach, ako dobre vytlaceny titulok
+  var h1 = document.getElementById('h1');
+  if (h1) {
+    var i = 0;
+    Array.prototype.forEach.call(h1.querySelectorAll('.l'), function (line) {
+      line.innerHTML = line.textContent.split(' ').map(function (w) {
+        return '<span class="w" style="transition-delay:' + (i++ * 0.06).toFixed(2) + 's">' + w + '</span>';
+      }).join(' ');
+    });
+  }
+
+  var hero = document.getElementById('hero');
+  if (reduce) {
+    Array.prototype.forEach.call(document.querySelectorAll('.r, section'), function (e) { e.classList.add('in'); });
+    if (h1) h1.classList.add('in');
+  } else {
+    setTimeout(function () {
+      if (hero) Array.prototype.forEach.call(hero.querySelectorAll('.r'), function (e) { e.classList.add('in'); });
+      if (h1) h1.classList.add('in');
+    }, 40);
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); }
+      });
+    }, { rootMargin: '0px 0px -12% 0px', threshold: 0.08 });
+    Array.prototype.forEach.call(document.querySelectorAll('section'), function (s) { io.observe(s); });
+  }
+
+  // bocny register sleduje, ktora sekcia je v strede obrazovky
+  var rail = document.querySelector('.rail');
+  if (rail) {
+    var links = Array.prototype.slice.call(rail.querySelectorAll('a'));
+    var targets = links.map(function (a) { return document.querySelector(a.getAttribute('href')); });
+    var railIo = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        var k = targets.indexOf(en.target);
+        if (k < 0 || !en.isIntersecting) return;
+        links.forEach(function (a, j) { a.setAttribute('aria-current', j === k ? 'true' : 'false'); });
+      });
+      rail.classList.add('on');
+    }, { rootMargin: '-45% 0px -45% 0px' });
+    targets.forEach(function (t) { if (t) railIo.observe(t); });
+  }
+})();
+</script>
 <script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="be534d51-4d01-4860-b267-9596d91606de"></script>
 </body>
 </html>

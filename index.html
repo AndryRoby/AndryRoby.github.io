@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en">
+<html lang="sk">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://homelab.tailbf8f27.ts.net; connect-src https://homelab.tailbf8f27.ts.net; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Y+ZDBJHhRkeSHjIB9vRg7pq7g4VZF+AOsrBzRLYXPYA=' https://homelab.tailbf8f27.ts.net; connect-src https://homelab.tailbf8f27.ts.net; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
 <title>ARLing: small tools for one exact problem each</title>
 <meta name="description" content="Free browser-only tools from Bratislava: Google OAuth redirect_uri_mismatch, Supabase and Expo redirect problems, universal links, SEPA pain.001 files, and bookapp. Nothing you paste leaves your browser.">
 <link rel="canonical" href="https://arling.sk/">
@@ -17,136 +17,126 @@
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="manifest" href="manifest.json">
 <link rel="alternate" type="text/plain" href="https://arling.sk/llms.txt" title="llms.txt">
+<link rel="preload" href="/fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/style/paper.css">
 <style>
-  :root {
-    --paper:#f6f2ea; --paper-2:#fbf9f4; --ink:#1b1a17; --ink-2:#4a4741; --muted:#66625a; --line:#d9d2c4;
-    --accent:#b23a1d; --accent-soft:#f3e2dc; --ok:#2f6f3e;
-    --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
-    --sans:system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    --mono:ui-monospace,"Cascadia Code",Consolas,Menlo,monospace;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root { --paper:#151412; --paper-2:#1d1b18; --ink:#efe9de; --ink-2:#c9c2b5; --muted:#8f887b; --line:#2e2b26; --accent:#e0623f; --accent-soft:#3a1f17; --ok:#7fbf8e; }
-    .btn-solid { color:#151412; }
-  }
-  * { box-sizing:border-box; }
-  html { background:var(--paper); }
-  body { margin:0; color:var(--ink); background:var(--paper); font:16px/1.55 var(--sans); -webkit-font-smoothing:antialiased; }
-  a { color:inherit; text-decoration-color:var(--line); text-underline-offset:3px; }
-  a:hover { text-decoration-color:var(--accent); }
-  :focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
-  .skip { position:absolute; left:-999px; top:8px; background:var(--ink); color:var(--paper); padding:8px 12px; }
-  .skip:focus { left:8px; }
-  .wrap { max-width:1040px; margin:0 auto; padding:0 24px; }
-  header.top { border-bottom:1px solid var(--line); }
-  header.top .wrap { display:flex; align-items:baseline; justify-content:space-between; gap:24px; padding:18px 24px; }
-  .wordmark { font:600 22px/1 var(--serif); letter-spacing:.01em; text-decoration:none; }
-  .wordmark small { font:13px/1 var(--sans); color:var(--muted); margin-left:10px; letter-spacing:.04em; }
-  nav.main a { font-size:14px; margin-left:20px; text-decoration:none; color:var(--ink-2); }
-  nav.main a:hover { color:var(--accent); }
-  .hero { padding:64px 0 40px; border-bottom:1px solid var(--line); }
-  .hero h1 { font:400 clamp(34px,5.2vw,52px)/1.08 var(--serif); letter-spacing:-.01em; margin:0 0 18px; max-width:18ch; }
-  .hero p.lead { font-size:19px; color:var(--ink-2); max-width:58ch; margin:0 0 26px; }
-  .facts { list-style:none; margin:0; padding:0; display:flex; flex-wrap:wrap; gap:8px 0; color:var(--muted); font-size:14px; }
-  .facts li + li::before { content:"·"; margin:0 10px; color:var(--line); }
+  /* Only what is genuinely this page: the news list, the flagship rows with a screenshot,
+     the "Máte / Dostanete" entry rows and the subscribe form. Everything else is paper.css. */
+  .facts { list-style:none; margin:22px 0 0; padding:0; display:flex; flex-wrap:wrap; gap:2px 0;
+           font-family:var(--ui); font-size:14px; color:var(--muted); }
+  .facts li:not(:last-child)::after { content:"·"; margin:0 10px; color:var(--line); }
   .facts b { color:var(--ink); font-weight:600; }
-  section { padding:44px 0; border-bottom:1px solid var(--line); }
-  .kicker { font:400 14px/1 var(--serif); color:var(--accent); letter-spacing:.06em; text-transform:uppercase; margin:0 0 10px; }
-  h2 { font:400 30px/1.15 var(--serif); margin:0 0 8px; letter-spacing:-.005em; }
-  .sub { color:var(--ink-2); max-width:64ch; margin:0 0 24px; }
-  .index { list-style:none; margin:0; padding:0; border-top:1px solid var(--line); }
-  .index li { border-bottom:1px solid var(--line); }
-  .index > li > a { display:grid; grid-template-columns:44px minmax(0,1.1fr) minmax(0,1fr) minmax(0,1fr); gap:18px; padding:20px 0; text-decoration:none; align-items:start; }
-  .index > li > a:hover .name { color:var(--accent); }
-  .num { font:400 15px/1.4 var(--serif); color:var(--muted); padding-top:2px; }
-  .name { display:block; font:400 21px/1.25 var(--serif); margin:0 0 4px; }
-  .lang { display:inline-block; font:12px/1 var(--mono); color:var(--muted); border:1px solid var(--line); border-radius:3px; padding:3px 6px; vertical-align:middle; margin-left:6px; }
-  .who { display:block; color:var(--muted); font-size:14px; }
-  .lbl { display:block; font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin-bottom:4px; }
-  .see { font-size:15px; color:var(--ink-2); }
-  .see code { font:13.5px/1.4 var(--mono); background:var(--paper-2); border:1px solid var(--line); border-radius:3px; padding:1px 5px; overflow-wrap:anywhere; }
-  .get { font-size:15px; color:var(--ink-2); }
-  .rules { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:26px 32px; margin:0; padding:0; list-style:none; counter-reset:r; }
-  .rules li { padding-top:14px; border-top:1px solid var(--line); }
-  .rules li::before { counter-increment:r; content:counter(r,decimal-leading-zero); font:400 14px/1 var(--serif); color:var(--accent); display:block; margin-bottom:8px; }
-  .rules b { display:block; font-weight:600; margin-bottom:4px; }
-  .rules p { margin:0; color:var(--ink-2); font-size:15px; }
-  .two { display:grid; grid-template-columns:minmax(0,1.2fr) minmax(0,1fr); gap:40px; }
-  .two p { color:var(--ink-2); }
+
+  .news-list { list-style:none; margin:16px 0 0; padding:0; max-width:1020px; }
+  .news-list li { display:flex; gap:14px; padding:11px 0; border-top:1px solid var(--line); font-size:15.5px; }
+  .news-list li:first-child { border-top:none; }
+  .news-list time { flex:none; width:52px; color:var(--muted); font-family:var(--ui); font-size:13px; padding-top:3px; }
+
+  /* one row per flagship product: the screenshot we already have, framed */
+  .flagship-list { list-style:none; margin:18px 0 0; padding:0; }
+  .flagship-list > li { border-top:1px solid var(--line); padding:26px 0; }
+  .flagship-list > li:first-child { border-top:none; }
+  .flag { display:flex; gap:24px; align-items:flex-start; text-decoration:none; color:inherit; }
+  .flag:hover .name { color:var(--accent); }
+  .flag .shot { display:block; width:236px; flex:none; }
+  .flag .shot img { display:block; width:100%; height:auto; }
+  .flag .body { flex:1; min-width:0; }
+  .flag .name { display:block; font:600 clamp(19px,1.7vw,23px)/1.25 var(--display); color:var(--ink);
+                letter-spacing:-.01em; margin:0 0 5px; }
+  .who { display:block; color:var(--muted); font-size:14.5px; }
+  .seegrid { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:8px 26px; margin-top:13px; }
+  .lbl { display:block; font-family:var(--ui); font-size:11px; letter-spacing:.09em; text-transform:uppercase;
+         color:var(--accent); margin-bottom:3px; }
+  .see, .get { font-size:15px; color:var(--body); }
+  .see code { font-family:var(--mono); font-size:13px; background:var(--card); border:1px solid var(--line);
+              border-radius:4px; padding:1px 5px; overflow-wrap:anywhere; }
+  .subline { margin:13px 0 0; padding-left:260px; font-size:14.5px; color:var(--muted); max-width:1020px; }
+  .subline.subline-index { padding-left:0; }
+  .demo-note { margin:22px 0 0; padding:13px 17px; font-size:15px; color:var(--body); max-width:none;
+               border-left:2px solid var(--accent); background:color-mix(in srgb,var(--accent) 7%,var(--paper));
+               border-radius:0 6px 6px 0; }
+
+  /* the numbered entry rows: an index of tools that carries "Máte / Dostanete", not a grid of cards */
+  .entries { list-style:none; margin:26px 0 0; padding:0; }
+  .entries > li { border-top:1px solid var(--line); }
+  .entries > li > a { display:grid; grid-template-columns:46px minmax(0,1.15fr) minmax(0,1fr) minmax(0,1fr);
+                      gap:20px; padding:20px 0; text-decoration:none; color:inherit; align-items:start; }
+  .entries > li > a:hover .name { color:var(--accent); }
+  .entries .num { font-family:var(--ui); font-variant-numeric:tabular-nums; font-size:13px; letter-spacing:.06em;
+                  color:var(--accent); padding-top:5px; margin:0; }
+  .entries .name { display:block; font:600 18px/1.3 var(--display); color:var(--ink); letter-spacing:-.005em; margin:0 0 4px; }
+  .entries.compact > li > a { padding:15px 0; }
+  .entries.compact .name { font-size:17px; }
+  .entries.compact .who, .entries.compact .see, .entries.compact .get { font-size:14px; }
+
+  .mini-list { list-style:none; margin:18px 0 0; padding:0; }
+  .mini-list li { border-top:1px solid var(--line); }
+  .mini-list a { display:block; padding:17px 0; text-decoration:none; color:inherit; }
+  .mini-list a:hover .name { color:var(--accent); }
+  .mini-list .name { display:block; font:600 19px/1.3 var(--display); color:var(--ink); margin-bottom:4px; }
+  .one-line { margin:16px 0 0; font-size:15px; }
+  .one-line b { color:var(--ink); }
+
+  /* small badges that ride inside a product name */
+  .lang { display:inline-block; font-family:var(--mono); font-size:11.5px; line-height:1; color:var(--muted);
+          background:none; border:1px solid var(--line); border-radius:4px; padding:3px 6px;
+          vertical-align:middle; margin-left:6px; font-weight:400; }
+  .tag { display:inline-block; font-family:var(--ui); font-size:12px; line-height:1.3; color:var(--body);
+         border:1px solid var(--line); border-radius:4px; padding:2px 7px; margin-left:8px; white-space:nowrap; }
+
+  .rules { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(210px,100%),1fr)); gap:26px 34px;
+           margin:0; padding:0; list-style:none; counter-reset:r; }
+  .rules li { padding-top:15px; border-top:1px solid var(--line); }
+  .rules li::before { counter-increment:r; content:counter(r,decimal-leading-zero); font-family:var(--ui);
+                      font-size:12px; letter-spacing:.12em; color:var(--accent); display:block; margin-bottom:8px; }
+  .rules b { display:block; color:var(--ink); font-weight:600; margin-bottom:4px; }
+  .rules p { margin:0; font-size:15px; }
+  .band .rules li { border-top-color:rgba(255,253,248,.2); }
+  .band .rules b { color:#fffdf8; }
+  .band .rules li::before { color:var(--accent-light); }
+  .band .rule { background:rgba(255,253,248,.2); }
+
+  .two { display:grid; grid-template-columns:minmax(0,1.15fr) minmax(0,1fr); gap:var(--gap); }
   .subscribe-form { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin:18px 0 10px; }
-  .subscribe-form input[type="email"] { height:44px; min-width:0; flex:1 1 200px; padding:0 14px; border:1px solid var(--line); border-radius:4px; background:var(--paper-2); color:var(--ink); font:15px/1 var(--sans); }
+  .subscribe-form input[type="email"] { height:46px; min-width:0; flex:1 1 200px; padding:0 14px;
+        border:1px solid var(--line); border-radius:12px; background:var(--card); color:var(--ink);
+        font:15px/1 var(--ui); }
   .subscribe-form input[type="email"]::placeholder { color:var(--muted); }
   .subscribe-form .btn { flex:none; }
-  .hp { position:absolute; width:1px; height:1px; margin:-1px; padding:0; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
-  #subscribe-thanks { color:var(--ok); font-weight:600; margin:10px 0; }
-  #subscribe-error { color:var(--accent); font-weight:600; margin:10px 0; }
-  .privacy-link { font-size:13px; margin:0 0 18px; }
-  .privacy-link a { color:var(--muted); }
-  .btn { display:inline-block; font:600 15px/1 var(--sans); padding:13px 18px; border-radius:4px; text-decoration:none; }
-  .btn-solid { background:var(--accent); color:#fff; }
-  .btn-line { border:2px solid var(--ink); color:var(--ink); }
-  .btn + .btn { margin-left:10px; }
-  footer { padding:32px 0 56px; color:var(--muted); font-size:14px; }
-  footer .cols { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:20px 32px; }
-  footer b { color:var(--ink); font-weight:600; }
-  footer a { color:var(--ink-2); }
-  @media (max-width: 820px) {
-    .index > li > a { grid-template-columns:32px minmax(0,1fr); }
-    .index .see, .index .get { grid-column:2; }
-    .two { grid-template-columns:1fr; }
-  }
-  @media (max-width: 480px) {
-    .hero { padding:44px 0 32px; }
-    nav.main a { margin-left:12px; }
-    .wordmark small { display:none; }
-    .subscribe-form input[type="email"], .subscribe-form button { width:100%; }
-  }
+  .hp { position:absolute; width:1px; height:1px; margin:-1px; padding:0; overflow:hidden; clip:rect(0,0,0,0);
+        white-space:nowrap; border:0; }
+  #subscribe-thanks { color:var(--ok); font-weight:600; }
+  #subscribe-error { color:var(--accent); font-weight:600; }
+  .privacy-link { font-family:var(--ui); font-size:13.5px; margin:0 0 18px; color:var(--muted); }
+  /* uvod: skutocna snimka nastroja camt.053 do Excelu. Cela snimka je 1270 px siroka a v pasme
+     uvodu by mala text velky 5 px, tak ram ukazuje len pravu polovicu okna: suhrn vypisu,
+     kontrolu zostatku a tabulku pohybov. Nic sa neprekresluje, len sa oreze. */
+  .heroshot { margin:0; }
+  .heroshot .win { position:relative; overflow:hidden; aspect-ratio:550/617; }
+  .heroshot .win img { position:absolute; top:-1.3%; left:-106.4%; width:230.9%; max-width:none; height:auto; }
 
-  /* Audience groups: flagship rows with a screenshot, a compact dev index, a minimal experiments list */
-  .group { padding:36px 0; border-bottom:1px solid var(--line); }
-  #news { padding:28px 0; }
-  #news h2 { font:400 22px/1.2 var(--serif); margin:0; }
-  .tag { display:inline-block; font:12px/1.3 var(--sans); color:var(--ink-2); border:1px solid var(--line); border-radius:3px; padding:2px 7px; margin-left:8px; white-space:nowrap; }
-  .flagship-list { list-style:none; margin:18px 0 0; padding:0; border-top:1px solid var(--line); }
-  .flagship-list > li { border-bottom:1px solid var(--line); padding:26px 0; }
-  .flag { display:flex; gap:22px; align-items:flex-start; text-decoration:none; }
-  .flag:hover .name { color:var(--accent); }
-  .flag img.shot { width:220px; height:132px; object-fit:cover; border:1px solid var(--line); background:var(--paper-2); flex:none; display:block; }
-  .flag .body { flex:1; min-width:0; }
-  .flag .name { display:block; font:400 22px/1.25 var(--serif); margin:0 0 4px; }
-  .flag .who { display:block; color:var(--muted); font-size:14.5px; }
-  .seegrid { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:6px 24px; margin-top:12px; }
-  .subline { margin:12px 0 0; padding-left:242px; font-size:14px; color:var(--ink-2); }
-  .subline a { text-decoration-color:var(--line); }
-  .subline.subline-index { padding-left:62px; }
-  .demo-note { margin:18px 0 0; padding:12px 16px; font-size:14.5px; color:var(--ink-2); border-left:2px solid var(--accent); background:var(--accent-soft); border-radius:0 4px 4px 0; }
-  .demo-note a { color:var(--ink); }
-  .index.sub-index { margin-top:28px; }
-  .index.compact > li > a { padding:13px 0; }
-  .index.compact .name { font-size:17px; }
-  .index.compact .who, .index.compact .see, .index.compact .get { font-size:13px; }
-  .mini-list { list-style:none; margin:16px 0 0; padding:0; border-top:1px solid var(--line); }
-  .mini-list li { border-bottom:1px solid var(--line); }
-  .mini-list a { display:block; padding:16px 0; text-decoration:none; }
-  .mini-list a:hover .name { color:var(--accent); }
-  .mini-list .name { display:block; font:400 19px/1.3 var(--serif); margin-bottom:4px; }
-  .mini-list .who { display:block; color:var(--muted); font-size:14px; }
-  .one-line { margin:14px 0 0; font-size:14.5px; color:var(--ink-2); }
-  .news-list { list-style:none; margin:16px 0 0; padding:0; }
-  .news-list li { display:flex; gap:14px; padding:10px 0; border-top:1px solid var(--line); font-size:14.5px; }
-  .news-list li:first-child { border-top:none; }
-  .news-list time { flex:none; width:48px; color:var(--muted); font-size:13px; padding-top:2px; }
-  @media (max-width: 820px) {
+  @media (max-width: 900px) {
     .flag { flex-direction:column; gap:14px; }
+    /* nahlad ma 240 px, nad tuto sirku by sa len rozmazal */
+    .flag .shot { width:100%; max-width:240px; }
     .subline { padding-left:0; }
-    .subline.subline-index { padding-left:0; }
     .seegrid { grid-template-columns:1fr; gap:10px; }
+    .entries > li > a { grid-template-columns:34px minmax(0,1fr); gap:12px; }
+    .entries .see, .entries .get { grid-column:2; }
+    .two { grid-template-columns:1fr; }
   }
   @media (max-width: 480px) {
     .news-list li { flex-direction:column; gap:2px; }
     .news-list time { width:auto; }
+    .subscribe-form input[type="email"], .subscribe-form .btn { width:100%; }
   }
 </style>
+<noscript><style>
+  /* bez JavaScriptu sa nic neskryva: prichody su ozdoba, nie podmienka citatelnosti */
+  .r, .w { opacity:1 !important; transform:none !important; filter:none !important; }
+  .rule { transform:scaleX(1) !important; }
+</style></noscript>
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"Organization","name":"ARLing s. r. o.","url":"https://arling.sk/","email":"andrej@arling.sk","identifier":"56583486","vatID":"SK2122352100","founder":{"@type":"Person","name":"Andrej Lauko"},"address":{"@type":"PostalAddress","streetAddress":"Ivanská cesta 32E","postalCode":"821 04","addressLocality":"Bratislava","addressCountry":"SK"},"description":"Small free browser-only tools for one exact developer or accounting problem each, and the bookapp home-library app."}
 </script>
@@ -178,38 +168,59 @@
 </script>
 </head>
 <body>
+<div class="wash" aria-hidden="true"><i></i><i></i></div>
 <a class="skip" href="#tools">Skip to the tools</a>
-<header class="top">
-  <div class="wrap">
-    <a class="wordmark" href="https://arling.sk/">ARLing<small>Bratislava</small></a>
-    <nav class="main" aria-label="Site">
-      <a href="#tools">Tools</a>
+
+<header>
+  <div class="wrap bar">
+    <a class="brand" href="https://arling.sk/">
+      <svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true"><defs><path id="m" fill-rule="evenodd" d="M16 2.5 L29 29.5 H3 Z M16 12.4 L22.4 25.6 H9.6 Z"/><clipPath id="mr"><rect x="16" width="16" height="32"/></clipPath></defs><use href="#m" fill="#1b1a17"/><use href="#m" fill="#b23a1d" clip-path="url(#mr)"/></svg>
+      <b>ARLing</b><span>Bratislava</span>
+    </a>
+    <nav aria-label="Site">
+      <a href="#tools">Nástroje</a>
       <a href="https://arling.sk/notes/" data-umami-event="open-notes">Notes</a>
-      <a href="https://arling.sk/how-we-work/" data-umami-event="open-how-we-work">How we work</a>
-      <a href="mailto:andrej@arling.sk" data-umami-event="contact-email">Contact</a>
+      <a href="https://arling.sk/how-we-work/" data-umami-event="open-how-we-work">Ako pracujeme</a>
+      <a href="mailto:andrej@arling.sk" data-umami-event="contact-email">Kontakt</a>
     </nav>
   </div>
 </header>
 
 <main>
-  <div class="hero">
-    <div class="wrap">
-      <h1>Small tools for one exact problem each.</h1>
-      <p class="lead">You paste what you have. The tool names the exact mismatch and gives you the value to change. It runs in your browser, so nothing you paste is uploaded anywhere.</p>
-      <ul class="facts">
+  <div class="wrap hero" id="hero">
+    <div>
+      <h1 id="h1"><span class="l">Malé nástroje</span><span class="l">pre jeden presný</span><span class="l">problém.</span></h1>
+      <p class="lead r d3">Vložíte to, čo máte. Nástroj presne pomenuje, čo nesedí, a dá vám hodnotu, ktorú treba zmeniť. Beží vo vašom prehliadači, takže nič, čo vložíte, sa nikam neposiela.</p>
+      <nav class="index r d4" aria-label="Obsah">
+        <a href="#tools" data-umami-event="index-eshopy"><span class="n">[1]</span><span class="t" lang="sk">Pre e-shopy</span><span class="dots"></span><span class="c" lang="sk">2 nástroje</span></a>
+        <a href="#ucty" data-umami-event="index-uctovnici"><span class="n">[2]</span><span class="t" lang="sk">Pre účtovníkov a firmy</span><span class="dots"></span><span class="c" lang="sk">4 nástroje</span></a>
+        <a href="#vyvojari" data-umami-event="index-vyvojari"><span class="n">[3]</span><span class="t" lang="sk">Pre vývojárov</span><span class="dots"></span><span class="c" lang="sk">11 nástrojov</span></a>
+        <a href="#experimenty" data-umami-event="index-experimenty"><span class="n">[4]</span><span class="t" lang="sk">Experimenty</span><span class="dots"></span><span class="c" lang="sk">2 aplikácie</span></a>
+      </nav>
+      <ul class="facts r d5">
         <li><b>4</b> products</li>
-        <li><b>11</b> free developer tools</li>
-        <li><b>2978</b> automated tests</li>
-        <li>every Doctor rule cites the official documentation</li>
+        <li><b>11</b> bezplatných nástrojov pre vývojárov</li>
+        <li><b>2978</b> automatických testov</li>
+        <li>každé pravidlo Doctor nástrojov odkazuje na oficiálnu dokumentáciu</li>
       </ul>
+    </div>
+    <div class="r d2">
+      <figure class="shot heroshot">
+        <div class="chrome"><i></i><i></i><i></i></div>
+        <div class="win">
+          <img src="press/bankove-nastroje-2-camt053-table.png" width="1270" height="760" decoding="async" fetchpriority="high" loading="eager"
+               alt="Screenshot of the camt.053 to Excel tool: the summary of a bank statement, the balance check and the table of transactions.">
+        </div>
+      </figure>
     </div>
   </div>
 
-  <section id="news">
+  <section id="news" class="deep">
     <div class="wrap">
-      <p class="kicker">Novinky</p>
-      <h2>Čo pribudlo tento týždeň.</h2>
-      <ul class="news-list">
+      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 5a15 15 0 0 1 15 15"/></svg>Novinky</p>
+      <h2 class="r">Čo pribudlo tento týždeň.</h2>
+      <div class="rule"></div>
+      <ul class="news-list r d1">
         <li><time>5. 9.</time><span>Hľadač darčekov v Asistentovi: tri otázky, päť tipov priamo z vášho feedu. <a href="https://arling.sk/asistent/darceky/" data-umami-event="open-news" data-umami-event-item="gift-finder">Vyskúšať</a></span></li>
         <li><time>5. 9.</time><span>camt.053 do Excelu: export do MT940 a DATEV Buchungsstapel pre nemecké účtovníctvo. <a href="https://arling.sk/camt053-to-excel/?export=mt940#pro" data-umami-event="open-news" data-umami-event-item="mt940-datev">Čítať</a></span></li>
         <li><time>5. 9.</time><span>Product Feed Doctor Monitor: denná kontrola feedu, e-mail keď sa niečo pokazí. <a href="https://arling.sk/feed-doctor/" data-umami-event="open-news" data-umami-event-item="feed-monitor">Čítať</a></span></li>
@@ -218,15 +229,16 @@
     </div>
   </section>
 
-  <section id="tools" class="group">
+  <section id="tools">
     <div class="wrap">
-      <p class="kicker">Pre e-shopy</p>
-      <h2>Nástroje, ktoré predávajú.</h2>
-      <p class="sub">Asistent hovorí so zákazníkmi z vášho feedu, Feed Doctor nájde chybu vo feede skôr než Google alebo Meta.</p>
+      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h16l-1 12H5z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>Pre e-shopy</p>
+      <h2 class="r">Nástroje, ktoré predávajú.</h2>
+      <p class="sub r d1">Asistent hovorí so zákazníkmi z vášho feedu, Feed Doctor nájde chybu vo feede skôr než Google alebo Meta.</p>
+      <div class="rule"></div>
       <ul class="flagship-list">
-        <li>
+        <li class="r d1">
           <a class="flag" href="https://arling.sk/asistent/" data-umami-event="open-tool" data-umami-event-tool="asistent">
-            <img class="shot" src="press/asistent-hub-thumb.png" width="220" height="132" loading="lazy" alt="Hľadač darčekov ARLing Asistenta otvorený na skúšobnom e-shope Dobrá domácnosť: tri otázky a päť produktov s cenami priamo z feedu.">
+            <span class="shot"><img src="press/asistent-hub-thumb.png" width="240" height="144" loading="lazy" alt="Hľadač darčekov ARLing Asistenta otvorený na skúšobnom e-shope Dobrá domácnosť: tri otázky a päť produktov s cenami priamo z feedu."></span>
             <span class="body">
               <span class="name">ARLing Asistent<span class="lang">SK</span><span class="lang">EN</span><span class="lang">DE</span><span class="lang">beta</span></span>
               <span class="who">Predajný asistent pre WooCommerce a Shopify, nasadený z vášho feedu za 10 minút, bez ukladania rozhovorov. <span class="tag">zadarmo do 100 rozhovorov</span></span>
@@ -238,9 +250,9 @@
           </a>
           <p class="subline">Aj <a href="https://arling.sk/asistent/darceky/" data-umami-event="open-tool" data-umami-event-tool="asistent-gift-finder">hľadač darčekov</a>: tri otázky, päť tipov priamo z vášho feedu (nové).</p>
         </li>
-        <li>
+        <li class="r d2">
           <a class="flag" href="https://arling.sk/feed-doctor/" data-umami-event="open-tool" data-umami-event-tool="feed-doctor">
-            <img class="shot" src="press/feed-doctor-hub-thumb.png" width="220" height="132" loading="lazy" alt="Screenshot of the Product Feed Doctor landing page.">
+            <span class="shot"><img src="press/feed-doctor-hub-thumb.png" width="240" height="144" loading="lazy" alt="Screenshot of the Product Feed Doctor landing page."></span>
             <span class="body">
               <span class="name">Product Feed Doctor</span>
               <span class="who">Google Shopping, Meta catalog, Shopify, WooCommerce feeds checked in the browser, 31 rules. <span class="tag">free</span></span>
@@ -253,19 +265,20 @@
           <p class="subline">Also <a href="https://arling.sk/feed-doctor/" data-umami-event="open-tool" data-umami-event-tool="feed-doctor-monitor">Feed Doctor Monitor</a>: a scheduled recheck that e-mails you when the feed gets worse, from 9 €/month (new).</p>
         </li>
       </ul>
-      <p class="demo-note">Slovenská živá ukážka: <a href="https://arling.sk/asistent/ukazka/" data-umami-event="open-tool" data-umami-event-tool="asistent-ukazka">arling.sk/asistent/ukazka/</a>, fiktívny obchod Dobrá domácnosť so 64 produktmi z Heureka feedu, chat aj hľadač darčekov naživo.</p>
+      <p class="demo-note r d3">Slovenská živá ukážka: <a href="https://arling.sk/asistent/ukazka/" data-umami-event="open-tool" data-umami-event-tool="asistent-ukazka">arling.sk/asistent/ukazka/</a>, fiktívny obchod Dobrá domácnosť so 64 produktmi z Heureka feedu, chat aj hľadač darčekov naživo.</p>
     </div>
   </section>
 
-  <section id="ucty" class="group">
+  <section id="ucty" class="deep">
     <div class="wrap">
-      <p class="kicker">Pre účtovníkov a firmy</p>
-      <h2>Bankové súbory bez ručnej práce.</h2>
-      <p class="sub">Prevod výpisov, hromadné platby a párovanie faktúr. Každý nástroj funguje aj samostatne zadarmo, jedna licencia odomkne všetky štyri naraz.</p>
+      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>Pre účtovníkov a firmy</p>
+      <h2 class="r">Bankové súbory bez ručnej práce.</h2>
+      <p class="sub r d1">Prevod výpisov, hromadné platby a párovanie faktúr. Každý nástroj funguje aj samostatne zadarmo, jedna licencia odomkne všetky štyri naraz.</p>
+      <div class="rule"></div>
       <ul class="flagship-list">
-        <li>
+        <li class="r d1">
           <a class="flag" href="https://arling.sk/bankove-nastroje/" data-umami-event="open-tool" data-umami-event-tool="bankove-nastroje">
-            <img class="shot" src="press/bankove-nastroje-hub-thumb.png" width="220" height="132" loading="lazy" alt="Screenshot úvodnej stránky Bankové nástroje pre účtovníkov.">
+            <span class="shot"><img src="press/bankove-nastroje-hub-thumb.png" width="240" height="144" loading="lazy" alt="Screenshot úvodnej stránky Bankové nástroje pre účtovníkov."></span>
             <span class="body">
               <span class="name">Bankové nástroje pre účtovníkov<span class="lang">SK</span></span>
               <span class="who">Doctor, Generátor, camt.053 → Excel, Párovač: jedna Pro licencia. <span class="tag">od 9 €</span></span>
@@ -277,7 +290,7 @@
           </a>
         </li>
       </ul>
-      <ol class="index sub-index">
+      <ol class="entries r d2">
         <li>
           <a href="https://arling.sk/camt053-to-excel/" data-umami-event="open-tool" data-umami-event-tool="camt053-to-excel">
             <span class="num">01</span>
@@ -315,12 +328,13 @@
     </div>
   </section>
 
-  <section id="vyvojari" class="group">
+  <section id="vyvojari">
     <div class="wrap">
-      <p class="kicker">Pre vývojárov</p>
-      <h2>The exact error, the exact fix.</h2>
-      <p class="sub">Paste what you have. Each tool names the mismatch and gives you the value to change, all client-side, all free, no account.</p>
-      <ol class="index compact">
+      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="8" width="16" height="12" rx="2"/><path d="M9 8V5.5M15 8V5.5M4 13h2M18 13h2"/></svg>Pre vývojárov</p>
+      <h2 class="r">The exact error, the exact fix.</h2>
+      <p class="sub r d1">Paste what you have. Each tool names the mismatch and gives you the value to change, all client-side, all free, no account.</p>
+      <div class="rule"></div>
+      <ol class="entries compact r d2">
         <li>
           <a href="https://arling.sk/google-oauth-redirect-doctor/" data-umami-event="open-tool" data-umami-event-tool="google-oauth-redirect-doctor">
             <span class="num">01</span>
@@ -413,12 +427,13 @@
     </div>
   </section>
 
-  <section id="experimenty" class="group">
+  <section id="experimenty" class="deep">
     <div class="wrap">
-      <p class="kicker">Experimenty</p>
-      <h2>Two things we are not pushing right now.</h2>
-      <p class="sub">A free beta and a frozen app, both still online, neither getting new work this quarter.</p>
-      <ul class="mini-list">
+      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 17a8.5 8.5 0 1 1 15 0"/><path d="M12 13.5l3.5-3.2"/><circle cx="12" cy="14.5" r="1"/></svg>Experimenty</p>
+      <h2 class="r">Two things we are not pushing right now.</h2>
+      <p class="sub r d1">A free beta and a frozen app, both still online, neither getting new work this quarter.</p>
+      <div class="rule"></div>
+      <ul class="mini-list r d2">
         <li>
           <a href="https://arling.sk/janii/" data-umami-event="open-tool" data-umami-event-tool="janii">
             <span class="name">Janii<span class="tag">beta</span></span>
@@ -426,20 +441,21 @@
           </a>
         </li>
       </ul>
-      <p class="one-line"><b>bookapp</b>: Android and Windows app for modelling a home library in real millimetres, frozen, read-only, no new work planned. <a href="https://arling.sk/bookapp/" data-umami-event="open-tool" data-umami-event-tool="bookapp">See it</a>.</p>
+      <p class="one-line r d3"><b>bookapp</b>: Android and Windows app for modelling a home library in real millimetres, frozen, read-only, no new work planned. <a href="https://arling.sk/bookapp/" data-umami-event="open-tool" data-umami-event-tool="bookapp">See it</a>.</p>
     </div>
   </section>
 
-  <section id="rules">
+  <section id="rules" class="band">
     <div class="wrap">
-      <p class="kicker">House rules</p>
-      <h2>What every tool here promises.</h2>
+      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5l7 2.6v5.3c0 4-2.9 7.5-7 9.1-4.1-1.6-7-5.1-7-9.1V6.1z"/><path d="M9.4 12.2l1.9 1.9 3.4-3.7"/></svg>House rules</p>
+      <h2 class="r">What every tool here promises.</h2>
+      <div class="rule"></div>
       <ol class="rules">
-        <li><b>Nothing you paste leaves your browser.</b><p>The checks are plain JavaScript on the page. There is no backend to send anything to. You can read the source on GitHub.</p></li>
-        <li><b>Every rule cites its source.</b><p>Each check links the official documentation or the GitHub issue it comes from. If the documentation changes, the rule is wrong, and you can tell us.</p></li>
-        <li><b>It says what it does not check.</b><p>These are config linters, not live testers. They do not call your app or your provider, and each page says so.</p></li>
-        <li><b>Free, no account, no tracking of content.</b><p>We count visits and clicks with self-hosted Umami. We never store what you type.</p></li>
-        <li><b>One problem per tool.</b><p>Each tool exists because several people reported the same failure in the same words. We answer in those threads and keep the tool small.</p></li>
+        <li class="r d1"><b>Nothing you paste leaves your browser.</b><p>The checks are plain JavaScript on the page. There is no backend to send anything to. You can read the source on GitHub.</p></li>
+        <li class="r d2"><b>Every rule cites its source.</b><p>Each check links the official documentation or the GitHub issue it comes from. If the documentation changes, the rule is wrong, and you can tell us.</p></li>
+        <li class="r d3"><b>It says what it does not check.</b><p>These are config linters, not live testers. They do not call your app or your provider, and each page says so.</p></li>
+        <li class="r d4"><b>Free, no account, no tracking of content.</b><p>We count visits and clicks with self-hosted Umami. We never store what you type.</p></li>
+        <li class="r d5"><b>One problem per tool.</b><p>Each tool exists because several people reported the same failure in the same words. We answer in those threads and keep the tool small.</p></li>
       </ol>
     </div>
   </section>
@@ -447,37 +463,97 @@
   <section id="about">
     <div class="wrap two">
       <div>
-        <p class="kicker">Who</p>
-        <h2>One person in Bratislava, and a lot of automation.</h2>
-        <p>ARLing is run by Andrej Lauko. AI agents write most of the code, tests and pages. Andrej decides which problems are worth a tool, answers people, and says no. The method is written down on the <a href="https://arling.sk/how-we-work/" data-umami-event="open-how-we-work">How we work</a> page.</p>
-        <p>A tool you wish existed, or a rule that is wrong? Write to <a href="mailto:andrej@arling.sk" data-umami-event="contact-email">andrej@arling.sk</a> with the exact error message.</p>
+        <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M8.5 12.3l2.4 2.4 4.6-4.9"/></svg>Who</p>
+        <h2 class="r">One person in Bratislava, and a lot of automation.</h2>
+        <div class="rule"></div>
+        <p class="r d1">ARLing is run by Andrej Lauko. AI agents write most of the code, tests and pages. Andrej decides which problems are worth a tool, answers people, and says no. The method is written down on the <a href="https://arling.sk/how-we-work/" data-umami-event="open-how-we-work">Ako pracujeme</a> page.</p>
+        <p class="r d2">A tool you wish existed, or a rule that is wrong? Write to <a href="mailto:andrej@arling.sk" data-umami-event="contact-email">andrej@arling.sk</a> with the exact error message.</p>
       </div>
       <div>
-        <p class="kicker">Next</p>
-        <h2>New tools land here first.</h2>
-        <p>Every tool is added to this index and to <a href="https://arling.sk/llms.txt">llms.txt</a> the day it goes live. New tools only. No newsletter, no sharing. Reply to any mail to be removed.</p>
-        <form id="subscribe-form" class="subscribe-form" data-subscribe data-source="hub" data-lang="en" data-thanks="subscribe-thanks" data-error="subscribe-error" novalidate>
+        <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V4"/><path d="M4 20h16"/><path d="M8 16.5v-4M12.5 16.5V8M17 16.5v-6.5"/></svg>Next</p>
+        <h2 class="r">New tools land here first.</h2>
+        <div class="rule"></div>
+        <p class="r d1">Every tool is added to this index and to <a href="https://arling.sk/llms.txt">llms.txt</a> the day it goes live. New tools only. No newsletter, no sharing. Reply to any mail to be removed.</p>
+        <form id="subscribe-form" class="subscribe-form r d2" data-subscribe data-source="hub" data-lang="en" data-thanks="subscribe-thanks" data-error="subscribe-error" novalidate>
           <div class="hp" aria-hidden="true"><input type="text" name="website" id="subscribe-website" tabindex="-1" autocomplete="off"></div>
           <input type="email" id="subscribe-email" name="email" required autocomplete="email" inputmode="email" placeholder="you@example.com" aria-label="Email address">
-          <button class="btn btn-solid" type="submit">Notify me</button>
+          <button class="btn btn-solid" type="submit" data-umami-event="subscribe-submit">Notify me</button>
         </form>
         <p id="subscribe-thanks" hidden>Thanks. You will hear from us only when something new is live.</p>
         <p id="subscribe-error" hidden>Could not save. Write to <a href="mailto:andrej@arling.sk">andrej@arling.sk</a>.</p>
-        <p class="privacy-link"><a href="https://arling.sk/privacy/">Privacy</a> · <a href="https://arling.sk/podmienky/">Podmienky používania</a> · <a href="https://arling.sk/gdpr/">GDPR</a></p>
-        <p><a class="btn btn-line" href="https://github.com/AndryRoby" rel="me">Source on GitHub</a></p>
+        <p class="privacy-link r d3"><a href="https://arling.sk/privacy/">Privacy</a> · <a href="https://arling.sk/podmienky/">Podmienky používania</a> · <a href="https://arling.sk/gdpr/">GDPR</a></p>
+        <p class="r d3"><a class="btn btn-line" href="https://github.com/AndryRoby" rel="me" data-umami-event="open-github">Source on GitHub</a></p>
       </div>
     </div>
   </section>
 </main>
 
+<nav class="rail" aria-label="Kde ste">
+  <a href="#hero"><i></i><span>Úvod</span></a>
+  <a href="#news"><i></i><span>Novinky</span></a>
+  <a href="#tools"><i></i><span>E-shopy</span></a>
+  <a href="#ucty"><i></i><span>Účtovníci</span></a>
+  <a href="#vyvojari"><i></i><span>Vývojári</span></a>
+  <a href="#experimenty"><i></i><span>Experimenty</span></a>
+</nav>
+
 <footer>
-  <div class="wrap cols">
+  <div class="wrap foot">
     <div><b>ARLing s. r. o.</b><br>Ivanská cesta 32E<br>821 04 Bratislava, Slovakia</div>
     <div>Company ID 56583486<br>VAT ID SK2122352100<br><a href="mailto:andrej@arling.sk">andrej@arling.sk</a></div>
     <div><a href="https://arling.sk/privacy/">privacy</a> · <a href="https://arling.sk/podmienky/">podmienky</a> · <a href="https://arling.sk/gdpr/">GDPR</a> · <a href="https://arling.sk/llms.txt">llms.txt</a> · <a href="https://arling.sk/sitemap-index.xml">sitemap</a> · <a href="https://arling.sk/how-we-work/">how we work</a><br>Tools are provided as is, without warranty. Anonymous visit counts via self-hosted Umami.</div>
   </div>
 </footer>
 <script src="subscribe.js" defer></script>
+<script>
+(function () {
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // nadpis sa objavi po slovach, ako dobre vytlaceny titulok
+  var h1 = document.getElementById('h1');
+  if (h1) {
+    var i = 0;
+    Array.prototype.forEach.call(h1.querySelectorAll('.l'), function (line) {
+      line.innerHTML = line.textContent.split(' ').map(function (w) {
+        return '<span class="w" style="transition-delay:' + (i++ * 0.06).toFixed(2) + 's">' + w + '</span>';
+      }).join(' ');
+    });
+  }
+
+  var hero = document.getElementById('hero');
+  if (reduce) {
+    Array.prototype.forEach.call(document.querySelectorAll('.r, section'), function (e) { e.classList.add('in'); });
+    if (h1) h1.classList.add('in');
+  } else {
+    setTimeout(function () {
+      if (hero) Array.prototype.forEach.call(hero.querySelectorAll('.r'), function (e) { e.classList.add('in'); });
+      if (h1) h1.classList.add('in');
+    }, 40);
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); }
+      });
+    }, { rootMargin: '0px 0px -12% 0px', threshold: 0.08 });
+    Array.prototype.forEach.call(document.querySelectorAll('section'), function (s) { io.observe(s); });
+  }
+
+  // bocny register sleduje, ktora sekcia je v strede obrazovky
+  var rail = document.querySelector('.rail');
+  if (rail) {
+    var links = Array.prototype.slice.call(rail.querySelectorAll('a'));
+    var targets = links.map(function (a) { return document.querySelector(a.getAttribute('href')); });
+    var railIo = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        var k = targets.indexOf(en.target);
+        if (k < 0 || !en.isIntersecting) return;
+        links.forEach(function (a, j) { a.setAttribute('aria-current', j === k ? 'true' : 'false'); });
+      });
+      rail.classList.add('on');
+    }, { rootMargin: '-45% 0px -45% 0px' });
+    targets.forEach(function (t) { if (t) railIo.observe(t); });
+  }
+})();
+</script>
 <script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="be534d51-4d01-4860-b267-9596d91606de"></script>
 </body>
 </html>

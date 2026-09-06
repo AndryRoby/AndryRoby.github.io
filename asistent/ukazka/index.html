@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://homelab.tailbf8f27.ts.net; connect-src 'self' https://homelab.tailbf8f27.ts.net https://arling-asistent.arling.workers.dev; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-mrkNcE1wIMH3Dpa5sqd3wjsVSh+pX9aJ4piOaZ39fWk=' https://homelab.tailbf8f27.ts.net; connect-src 'self' https://homelab.tailbf8f27.ts.net https://arling-asistent.arling.workers.dev; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
 <title>Dobrá domácnosť: ukážkový obchod ARLing Asistenta</title>
 <meta name="description" content="Vymyslený slovenský e-shop so 64 výrobkami v 6 kategóriách (kuchyňa, kávovary a čaj, záhrada, upratovanie, deti, darčeky), na ktorom si vyskúšate ARLing Asistenta: opýtajte sa predavača na kávovar do 100 eur, hrniec na indukciu alebo darček pre babku. Nedá sa tu nakupovať." />
 <meta property="og:type" content="website" />
@@ -54,165 +54,170 @@
 }
 </script>
 
+<link rel="preload" href="/fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/style/paper.css">
 <style>
-  :root {
-    --paper:#f6f2ea; --paper-2:#fbf9f4; --ink:#1b1a17; --ink-2:#4a4741; --muted:#66625a; --line:#d9d2c4;
-    --accent:#b23a1d; --accent-soft:#f3e2dc; --ok:#2f6f3e; --warn:#9a6b00;
-    --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
-    --sans:system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    --mono:ui-monospace,"Cascadia Code",Consolas,Menlo,monospace;
-    color-scheme: light dark;
+
+  /* Only the demo shop's own parts: notice, question chips, category index, product rows.
+     Colours, type, header, sections, buttons come from /style/paper.css. */
+  section[id],#katalog{scroll-margin-top:calc(var(--head,67px) + 14px)}
+  /* Atribut hidden musi skryvat aj prvky, ktorym vlastne CSS nastavi display.
+     paper.css toto pravidlo nema, preto stoji tu. */
+  [hidden]{display:none !important}
+
+  /* Height of the sticky header. The motion script at the end of the page measures the
+     real one into --head; these values are only what applies before it runs, so a link
+     opened straight with a #hash does not land under the header either. */
+  :root{--head:67px}
+  @media (max-width:720px){:root{--head:90px}}
+  @media (max-width:460px){:root{--head:110px}}
+  @media (max-width:560px){.brand span{display:none}}
+
+  .notice{max-width:60ch;margin:0 0 4px;padding:14px 18px;border:1px solid var(--accent);
+    background:rgba(178,58,29,.06);border-radius:12px;font-size:15.5px;color:var(--ink)}
+  .notice b{color:var(--ink)}
+
+  .facts{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:4px 0;align-items:baseline;font-size:13.5px}
+  .facts li:not(:last-child)::after{content:"\00b7";margin:0 10px;color:var(--line)}
+  .facts b{color:var(--ink);font-weight:600}
+  @media (max-width:640px){
+    .facts{display:block}
+    .facts li{margin-bottom:4px}
+    .facts li:not(:last-child)::after{content:none}
   }
-  @media (prefers-color-scheme: dark) {
-    :root { --paper:#151412; --paper-2:#1d1b18; --ink:#efe9de; --ink-2:#c9c2b5; --muted:#8f887b; --line:#2e2b26; --accent:#e0623f; --accent-soft:#3a1f17; --ok:#7fbf8e; --warn:#caa552; }
+
+  .questions{display:flex;flex-wrap:wrap;gap:10px;margin:0 0 18px}
+  .q{font:500 15px/1.3 var(--ui);padding:12px 16px;border:1px solid var(--ink);border-radius:12px;
+    background:transparent;color:var(--ink);cursor:pointer;text-align:left;max-width:100%;
+    appearance:none;-webkit-appearance:none}
+  .q::before{content:"?";color:var(--accent);margin-right:9px}
+  .q:hover{border-color:var(--accent);color:var(--accent)}
+  .hint{font-family:var(--ui);font-size:14px;color:var(--muted);margin:0}
+  .linkbtn{font:inherit;color:var(--body);background:none;border:0;padding:0;cursor:pointer;
+    text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px}
+  .linkbtn:hover{color:var(--accent)}
+
+  .cats{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:8px 0}
+  .cats li:not(:last-child)::after{content:"\00b7";margin:0 12px;color:var(--line)}
+  .cats a{font:600 19px/1.3 var(--display);color:var(--ink);text-decoration:none}
+  .cats a:hover{color:var(--accent)}
+  .cat-count{color:var(--muted);font:14px/1 var(--ui);margin-left:5px}
+
+  #catalogue section{padding:clamp(38px,4.2vw,68px) 0}
+  #catalogue section:nth-of-type(even){background:var(--paper-deep)}
+
+  .products{display:block;margin:0;padding:0;border-top:1px solid var(--line)}
+  .product{display:grid;grid-template-columns:96px minmax(0,1fr) auto;gap:6px 22px;padding:18px 0;
+    border-bottom:1px solid var(--line);scroll-margin-top:calc(var(--head,67px) + 24px);min-width:0}
+  .product:target,.product.is-target{background:rgba(178,58,29,.07);box-shadow:0 0 0 12px rgba(178,58,29,.07)}
+  .product-img{width:96px;height:96px;border:1px solid var(--line);border-radius:6px;background:var(--card)}
+  .product-name{font:600 19px/1.3 var(--display);color:var(--ink);margin:0 0 4px;overflow-wrap:anywhere}
+  .product-meta{margin:0 0 6px;color:var(--muted);font-family:var(--ui);font-size:13.5px}
+  .product-id{font-family:var(--mono);font-size:12.5px}
+  .product-desc{margin:0 0 6px;font-size:15px;max-width:70ch;overflow-wrap:anywhere}
+  .product-params{margin:0;color:var(--muted);font-family:var(--ui);font-size:13.5px;overflow-wrap:anywhere}
+  .product-side{display:flex;flex-direction:column;align-items:flex-end;gap:6px;text-align:right;white-space:nowrap}
+  .product-price{font:600 20px/1.2 var(--display);color:var(--ink)}
+  .product-avail{font-family:var(--ui);font-size:13px;padding:3px 8px;border-radius:6px;border:1px solid var(--line)}
+  .product-avail-ok{color:var(--ok);border-color:var(--ok)}
+  .product-avail-wait{color:#8a6a1f;border-color:#8a6a1f}
+  .product-noshop{font-family:var(--ui);font-size:12px;color:var(--muted)}
+  .feed-error{color:var(--accent);padding:24px 0}
+
+  .band .btn-line{border-color:#7c7770;color:#fffdf8}
+  .band .btn-line:hover{background:#fffdf8;color:var(--ink)}
+  .band .sub{color:#d7d3c8}
+
+  footer .cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr));gap:20px 32px}
+  footer b{color:var(--ink);font-weight:600}
+  .footer-note{margin-top:14px;font-size:12px;color:var(--muted);max-width:70ch}
+
+  @media (max-width:640px){
+    .product{grid-template-columns:64px minmax(0,1fr);gap:4px 14px}
+    .product-img{width:64px;height:64px}
+    .product-side{grid-column:2;flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:flex-start;
+      text-align:left;gap:8px 12px;margin-top:4px}
+    .product-name{font-size:17px}
+    .q{width:100%}
+    .cats{flex-direction:column;gap:6px}
+    .cats li:not(:last-child)::after{content:none}
   }
-  * { box-sizing:border-box; }
-  html { background:var(--paper); scroll-behavior:smooth; }
-  body { margin:0; color:var(--ink); background:var(--paper); font:16px/1.55 var(--sans); -webkit-font-smoothing:antialiased; }
-  a { color:inherit; text-decoration-color:var(--line); text-underline-offset:3px; }
-  a:hover { text-decoration-color:var(--accent); }
-  :focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
-  img { max-width:100%; height:auto; display:block; }
-  [hidden] { display:none !important; }
-  .skip { position:absolute; left:-999px; top:8px; background:var(--ink); color:var(--paper); padding:8px 12px; z-index:10; }
-  .skip:focus { left:8px; }
-  .wrap { max-width:1040px; margin:0 auto; padding:0 24px; min-width:0; }
 
-  header.top { border-bottom:1px solid var(--line); }
-  header.top .wrap { display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:8px 24px; padding:18px 24px; }
-  .brand { display:flex; align-items:baseline; flex-wrap:wrap; gap:2px 10px; min-width:0; }
-  .wordmark { font:600 21px/1.25 var(--serif); text-decoration:none; overflow-wrap:anywhere; }
-  .wordmark-sub { font:13px/1 var(--sans); color:var(--muted); letter-spacing:.02em; white-space:nowrap; }
-  nav.main { display:flex; flex-wrap:wrap; }
-  nav.main a { font-size:14px; margin-left:20px; text-decoration:none; color:var(--ink-2); white-space:nowrap; }
-  nav.main a:first-child { margin-left:0; }
-  nav.main a:hover { color:var(--accent); }
-
-  .hero { padding:56px 0 36px; border-bottom:1px solid var(--line); }
-  h1 { font:400 44px/1.1 var(--serif); letter-spacing:-.01em; margin:0 0 18px; max-width:22ch; }
-  .hero p.lead { font-size:18px; color:var(--ink-2); max-width:60ch; margin:0 0 22px; }
-  .notice { max-width:64ch; margin:0 0 6px; padding:12px 16px; border:1px solid var(--accent); background:var(--accent-soft); border-radius:4px; font-size:15.5px; color:var(--ink); }
-  .facts { list-style:none; margin:22px 0 0; padding:0; display:flex; flex-wrap:wrap; gap:8px 0; color:var(--muted); font-size:14px; }
-  .facts li + li::before { content:"·"; margin:0 10px; color:var(--line); }
-  .facts b { color:var(--ink); font-weight:600; }
-
-  .btn { display:inline-block; font:600 15px/1 var(--sans); padding:13px 18px; border-radius:4px; text-decoration:none; cursor:pointer; border:2px solid transparent; appearance:none; -webkit-appearance:none; }
-  .btn-solid { background:var(--accent); color:#fff; border-color:var(--accent); }
-  .btn-solid:hover { background:var(--ink); border-color:var(--ink); color:var(--paper); }
-  .btn-line { border:2px solid var(--ink); color:var(--ink); background:transparent; }
-  .btn-line:hover { border-color:var(--accent); color:var(--accent); }
-  .btn + .btn { margin-left:10px; }
-
-  section { padding:44px 0; border-bottom:1px solid var(--line); }
-  .kicker { font:400 14px/1 var(--serif); color:var(--accent); letter-spacing:.06em; text-transform:uppercase; margin:0 0 10px; }
-  h2 { font:400 28px/1.2 var(--serif); margin:0 0 8px; letter-spacing:-.005em; max-width:30ch; }
-  .sub { color:var(--ink-2); max-width:64ch; margin:0 0 24px; }
-
-  .questions { display:flex; flex-wrap:wrap; gap:10px; margin:0 0 18px; }
-  .q { font:500 15px/1.3 var(--sans); padding:11px 16px; border:2px solid var(--ink); border-radius:4px; background:transparent; color:var(--ink); cursor:pointer; text-align:left; appearance:none; -webkit-appearance:none; max-width:100%; }
-  .q::before { content:"?"; font:400 15px/1 var(--serif); color:var(--accent); margin-right:9px; }
-  .q:hover { border-color:var(--accent); color:var(--accent); }
-  .hint { color:var(--muted); font-size:14px; margin:0; }
-  .linkbtn { font:inherit; color:var(--ink-2); background:none; border:0; padding:0; cursor:pointer; text-decoration:underline; text-decoration-color:var(--line); text-underline-offset:3px; }
-  .linkbtn:hover { text-decoration-color:var(--accent); color:var(--accent); }
-
-  .cats { list-style:none; margin:0; padding:0; display:flex; flex-wrap:wrap; gap:8px 0; }
-  .cats li + li::before { content:"·"; margin:0 12px; color:var(--line); }
-  .cats a { font:400 18px/1.3 var(--serif); text-decoration:none; }
-  .cats a:hover { color:var(--accent); }
-  .cat-count { color:var(--muted); font:14px/1 var(--sans); margin-left:4px; }
-
-  .products { display:block; margin:0; padding:0; border-top:1px solid var(--line); }
-  .product { display:grid; grid-template-columns:96px minmax(0,1fr) auto; gap:6px 22px; padding:18px 0; border-bottom:1px solid var(--line); scroll-margin-top:24px; min-width:0; }
-  .product:target, .product.is-target { background:var(--accent-soft); box-shadow:0 0 0 12px var(--accent-soft); }
-  .product-img { width:96px; height:96px; border:1px solid var(--line); background:#f6f2ea; }
-  .product-name { font:400 20px/1.25 var(--serif); margin:0 0 4px; overflow-wrap:anywhere; }
-  .product-meta { margin:0 0 6px; color:var(--muted); font-size:13.5px; }
-  .product-id { font:12.5px/1 var(--mono); }
-  .product-desc { margin:0 0 6px; color:var(--ink-2); font-size:15px; max-width:70ch; overflow-wrap:anywhere; }
-  .product-params { margin:0; color:var(--muted); font-size:13.5px; overflow-wrap:anywhere; }
-  .product-side { display:flex; flex-direction:column; align-items:flex-end; gap:6px; text-align:right; white-space:nowrap; }
-  .product-price { font:600 20px/1.2 var(--sans); }
-  .product-avail { font-size:13.5px; padding:3px 8px; border-radius:3px; border:1px solid var(--line); }
-  .product-avail-ok { color:var(--ok); border-color:var(--ok); }
-  .product-avail-wait { color:var(--warn); border-color:var(--warn); }
-  .product-noshop { font-size:12px; color:var(--muted); }
-  .feed-error { color:var(--accent); padding:24px 0; }
-
-  .closing { background:var(--paper-2); }
-  footer { padding:32px 0 56px; color:var(--muted); font-size:14px; }
-  footer .cols { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:20px 32px; }
-  footer b { color:var(--ink); font-weight:600; }
-  footer a { color:var(--ink-2); }
-  .footer-note { margin-top:14px; font-size:12px; color:var(--muted); max-width:70ch; }
-
-  @media (max-width:640px) {
-    h1 { font-size:32px; }
-    .hero { padding:40px 0 28px; }
-    nav.main a { margin-left:12px; }
-    .product { grid-template-columns:64px minmax(0,1fr); gap:4px 14px; }
-    .product-img { width:64px; height:64px; }
-    .product-side { grid-column:2; flex-direction:row; flex-wrap:wrap; align-items:center; justify-content:flex-start; text-align:left; gap:8px 12px; margin-top:4px; }
-    .product-name { font-size:18px; }
-    .btn + .btn { margin-left:0; margin-top:10px; }
-    .q { width:100%; }
-    .cats { flex-direction:column; gap:6px; }
-    .cats li + li::before { content:none; margin:0; }
+  /* Paper v2 finish: spacing after the hero index, and an index that stays
+     readable on a phone (no ellipsis, the count drops to its own line). */
+  .index + .cta{margin-top:clamp(18px,2vw,26px)}
+  .facts.proof{margin-top:22px}
+  @media (max-width:640px){
+    .index{border-top:1px solid var(--line)}
+    .index a{flex-wrap:wrap;gap:0 10px;padding:10px 0;border-bottom:1px solid var(--line)}
+    .index .t{white-space:normal;overflow:visible;text-overflow:clip;flex:1 1 auto}
+    .index .dots{display:none}
+    .index .c{flex:0 0 100%;padding-left:41.5px;margin-top:3px}
   }
 </style>
 </head>
 <body>
+<div class="wash" aria-hidden="true"><i></i><i></i></div>
 <a class="skip" href="#katalog">Skočiť na výrobky</a>
 
-<header class="top">
-  <div class="wrap">
-    <div class="brand">
-      <a class="wordmark" href="./">Dobrá domácnosť</a>
-      <span class="wordmark-sub">ukážkový obchod</span>
-    </div>
-    <nav class="main" aria-label="Stránka">
-      <a href="#kategorie">Kategórie</a>
-      <a href="#opytat">Opýtať sa predavača</a>
-      <a href="../">ARLing Asistent</a>
-    </nav>
+<header>
+  <div class="wrap bar">
+    <a class="brand" href="./">
+      <svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true"><defs><path id="m" fill-rule="evenodd" d="M16 2.5 L29 29.5 H3 Z M16 12.4 L22.4 25.6 H9.6 Z"/><clipPath id="mr"><rect x="16" width="16" height="32"/></clipPath></defs><use href="#m" fill="#141413"/><use href="#m" fill="#b23a1d" clip-path="url(#mr)"/></svg>
+      <b>ARLing</b><span>Dobrá domácnosť, ukážkový obchod</span>
+    </a>
+    <nav aria-label="Stránka"><a href="#kategorie">Kategórie</a><a href="#opytat">Opýtať sa predavača</a><a href="../">ARLing Asistent</a></nav>
   </div>
 </header>
 
 <main>
-  <div class="hero">
-    <div class="wrap">
-      <h1>Dobrá domácnosť, ukážkový obchod</h1>
-      <p class="lead">Kuchyňa, kávovary a čaj, záhrada, upratovanie, deti a darčeky. <span id="product-total">64</span> výrobkov v šiestich kategóriách, každý s popisom, cenou a dostupnosťou, presne tak, ako ich číta asistent z feedu.</p>
-      <p class="notice" role="note">Toto je ukážkový obchod ARLing. Výrobky nie sú skutočné, nedá sa tu nakupovať. Skúste sa opýtať predavača vpravo dole, alebo skúste tlačidlo <b>Nájdi darček</b> vedľa neho: tri otázky (pre koho, rozpočet, čo má rád) a hľadač vyberie päť tipov z kategórie Darčeky aj z celej ponuky.</p>
-      <ul class="facts">
+  <div class="wrap hero" id="hero">
+    <div>
+      <h1 id="h1"><span class="l">Dobrá domácnosť,</span><span class="l">ukážkový obchod</span></h1>
+      <p class="lead r d3">Kuchyňa, kávovary a čaj, záhrada, upratovanie, deti a darčeky. <span id="product-total">64</span> výrobkov v šiestich kategóriách, každý s popisom, cenou a dostupnosťou, presne tak, ako ich číta asistent z feedu.</p>
+      <p class="notice r d4" role="note">Toto je ukážkový obchod ARLing. Výrobky nie sú skutočné, nedá sa tu nakupovať. Skúste sa opýtať predavača vpravo dole, alebo skúste tlačidlo <b>Nájdi darček</b> vedľa neho: tri otázky (pre koho, rozpočet, čo má rád) a hľadač vyberie päť tipov z kategórie Darčeky aj z celej ponuky.</p>
+      <nav class="index r d5" aria-label="Obsah">
+        <a href="#opytat" data-umami-event="index-opytat"><span class="n">01</span><span class="t">Opýtať sa predavača</span><span class="dots"></span><span class="c">ARLing Asistent</span></a>
+        <a href="#kategorie" data-umami-event="index-kategorie"><span class="n">02</span><span class="t">Kategórie</span><span class="dots"></span><span class="c">6 kategórií</span></a>
+        <a href="#katalog" data-umami-event="index-katalog"><span class="n">03</span><span class="t">Výrobky</span><span class="dots"></span><span class="c">64 výrobkov</span></a>
+      </nav>
+      <ul class="facts proof r d6">
         <li><b>64</b> výrobkov</li>
         <li><b>6</b> kategórií</li>
         <li>zdroj: <a href="feed.xml">feed.xml</a> (Heureka XML)</li>
         <li>predavač: <a href="../">ARLing Asistent</a></li>
       </ul>
     </div>
+    <div class="shot r d3">
+      <div class="chrome" aria-hidden="true"><i></i><i></i><i></i></div>
+      <img src="/press/gift-finder-1.png" width="1200" height="718" loading="lazy" decoding="async"
+           alt="Ukážkový obchod Dobrá domácnosť s otvoreným hľadačom darčekov: päť výrobkov, pri každom cena a jeden riadok, prečo sa hodí.">
+    </div>
   </div>
 
   <section id="opytat">
     <div class="wrap">
-      <p class="kicker">Predavač</p>
-      <h2>Skúste sa opýtať</h2>
-      <p class="sub">Predavač odpovedá výhradne z feedu tohto obchodu a k odpovedi pridá odkazy na konkrétne výrobky nižšie. Kliknite na otázku, alebo napíšte vlastnú do chatu vpravo dole.</p>
-      <div class="questions">
+      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h16l-1 12H5z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>Predavač</p>
+      <h2 class="r">Skúste sa opýtať</h2>
+      <div class="rule"></div>
+      <p class="sub r d1">Predavač odpovedá výhradne z feedu tohto obchodu a k odpovedi pridá odkazy na konkrétne výrobky nižšie. Kliknite na otázku, alebo napíšte vlastnú do chatu vpravo dole.</p>
+      <div class="questions r d2">
         <button type="button" class="q" data-q="Aký kávovar do 100 eur?" data-umami-event="demo_sk_question" data-umami-event-question="Aký kávovar do 100 eur?">Aký kávovar do 100 eur?</button>
         <button type="button" class="q" data-q="Máte niečo na darček pre babku?" data-umami-event="demo_sk_question" data-umami-event-question="Máte niečo na darček pre babku?">Máte niečo na darček pre babku?</button>
         <button type="button" class="q" data-q="Ktorý hrniec je vhodný na indukciu?" data-umami-event="demo_sk_question" data-umami-event-question="Ktorý hrniec je vhodný na indukciu?">Ktorý hrniec je vhodný na indukciu?</button>
         <button type="button" class="q" data-q="Čo je skladom zo záhrady?" data-umami-event="demo_sk_question" data-umami-event-question="Čo je skladom zo záhrady?">Čo je skladom zo záhrady?</button>
       </div>
-      <p class="hint">Rozhovor sa nikde neukladá, počíta sa len počet rozhovorov. <button type="button" class="linkbtn" id="open-widget" data-umami-event="demo_sk_open">Otvoriť chat bez otázky</button></p>
+      <p class="hint r d3">Rozhovor sa nikde neukladá, počíta sa len počet rozhovorov. <button type="button" class="linkbtn" id="open-widget" data-umami-event="demo_sk_open">Otvoriť chat bez otázky</button></p>
     </div>
   </section>
 
-  <section id="kategorie">
+  <section id="kategorie" class="deep">
     <div class="wrap">
-      <p class="kicker">Kategórie</p>
-      <h2>Čo tu nájdete</h2>
-      <ul class="cats" id="categories"><li>Načítavam feed výrobkov.</li></ul>
+      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M9 10v9M15 10v9"/></svg>Kategórie</p>
+      <h2 class="r">Čo tu nájdete</h2>
+      <div class="rule"></div>
+      <ul class="cats r d2" id="categories"><li>Načítavam feed výrobkov.</li></ul>
     </div>
   </section>
 
@@ -220,12 +225,13 @@
     <div id="catalogue" aria-live="polite"></div>
   </div>
 
-  <section class="closing">
+  <section class="closing band">
     <div class="wrap">
-      <p class="kicker">Pre váš e-shop</p>
-      <h2>Rovnaký predavač na vašom e-shope za 10 minút</h2>
-      <p class="sub">ARLing Asistent sa nastaví z vášho produktového feedu (Heureka XML zo Shoptetu alebo Upgates, Google Shopping, Shopify, WooCommerce alebo bežný XML) a vloží sa jedným script tagom. Zadarmo do 100 rozhovorov mesačne, bez platobnej karty.</p>
-      <a class="btn btn-solid" href="../#playground" data-umami-event="trial_click" data-umami-event-place="ukazka">Vyskúšať s vlastným feedom</a><a class="btn btn-line" href="../shoptet/">Návod pre Shoptet a Upgates</a>
+      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="8" width="16" height="12" rx="2"/><path d="M9 8V5.5M15 8V5.5M4 13h2M18 13h2"/></svg>Pre váš e-shop</p>
+      <h2 class="r">Rovnaký predavač na vašom e-shope za 10 minút</h2>
+      <div class="rule"></div>
+      <p class="sub r d1">ARLing Asistent sa nastaví z vášho produktového feedu (Heureka XML zo Shoptetu alebo Upgates, Google Shopping, Shopify, WooCommerce alebo bežný XML) a vloží sa jedným script tagom. Zadarmo do 100 rozhovorov mesačne, bez platobnej karty.</p>
+      <div class="cta r d2"><a class="btn btn-solid" href="../#playground" data-umami-event="trial_click" data-umami-event-place="ukazka">Vyskúšať s vlastným feedom</a><a class="btn btn-line" href="../shoptet/" data-umami-event="shoptet_click" data-umami-event-place="ukazka">Návod pre Shoptet a Upgates</a></div>
     </div>
   </section>
 
@@ -256,5 +262,72 @@
 <script src="ukazka.js" defer></script>
 <script src="../widget.js" data-tenant="ce535d37-f297-4b43-89dd-30aa7b6301dd" data-lang="sk" data-answer-lang="auto" data-color="auto" data-endpoint="https://arling-asistent.arling.workers.dev" data-title="Predavač Dobrej domácnosti" data-greeting="Dobrý deň, som predavač Dobrej domácnosti. Poradím vám s výberom z našich výrobkov. Na čo sa chcete opýtať?" data-gift="1" defer></script>
 <script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="09cc54da-8172-43b3-8aa2-84e3ab5a17f1"></script>
+<script>
+(function () {
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // The sticky header wraps to two rows on a phone, so its height is not a constant.
+  // Measure it into --head; section anchors keep clear of it with scroll-margin-top.
+  // No loop: one resize listener and a ResizeObserver, both event driven.
+  var hdr = document.querySelector('header');
+  if (hdr) {
+    var setHead = function () {
+      document.documentElement.style.setProperty('--head', Math.ceil(hdr.getBoundingClientRect().height) + 'px');
+    };
+    setHead();
+    window.addEventListener('resize', setHead, { passive: true });
+    if (window.ResizeObserver) { new ResizeObserver(setHead).observe(hdr); }
+  }
+  var h1 = document.getElementById('h1');
+  if (h1 && !reduce) {
+    var i = 0;
+    Array.prototype.forEach.call(h1.querySelectorAll('.l'), function (line) {
+      line.innerHTML = line.textContent.split(' ').map(function (w) {
+        return '<span class="w" style="transition-delay:' + (i++ * 0.06).toFixed(2) + 's">' + w + '</span>';
+      }).join(' ');
+    });
+  }
+  // data-th drives the phone layout of tables; keep it equal to the column heading,
+  // so it stays right when the page is switched to another language.
+  Array.prototype.forEach.call(document.querySelectorAll('table'), function (tb) {
+    var head = tb.querySelectorAll('thead th');
+    if (!head.length) return;
+    var sync = function () {
+      Array.prototype.forEach.call(tb.querySelectorAll('tbody tr'), function (tr) {
+        Array.prototype.forEach.call(tr.children, function (td, k) {
+          var name = head[k] ? head[k].textContent.trim() : '';
+          if (name && td.hasAttribute('data-th')) td.setAttribute('data-th', name);
+        });
+      });
+    };
+    sync();
+    document.addEventListener('arling:langchange', sync);
+  });
+  if (reduce) {
+    Array.prototype.forEach.call(document.querySelectorAll('.r, .hero, section'), function (e) { e.classList.add('in'); });
+    return;
+  }
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (en) {
+      if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); }
+    });
+  }, { rootMargin: '0px 0px -12% 0px', threshold: 0.05 });
+  Array.prototype.forEach.call(document.querySelectorAll('.hero, section'), function (s) { io.observe(s); });
+
+  var rail = document.querySelector('.rail');
+  if (rail) {
+    var links = Array.prototype.slice.call(rail.querySelectorAll('a'));
+    var targets = links.map(function (a) { return document.querySelector(a.getAttribute('href')); });
+    var railIo = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        var k = targets.indexOf(en.target);
+        if (k < 0 || !en.isIntersecting) return;
+        links.forEach(function (a, j) { a.setAttribute('aria-current', j === k ? 'true' : 'false'); });
+      });
+      rail.classList.add('on');
+    }, { rootMargin: '-45% 0px -45% 0px' });
+    targets.forEach(function (t) { if (t) railIo.observe(t); });
+  }
+})();
+</script>
 </body>
 </html>

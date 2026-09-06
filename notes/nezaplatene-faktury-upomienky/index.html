@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://homelab.tailbf8f27.ts.net; connect-src 'self' https://homelab.tailbf8f27.ts.net; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-uJkDKiTVu1iwiitFPAVfAgxIRiBU6CD8W2INuvmcFHA=' https://homelab.tailbf8f27.ts.net; connect-src 'self' https://homelab.tailbf8f27.ts.net; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
 <title>Nezaplatené faktúry: ako každý mesiac za 10 minút zistiť, kto nezaplatil, a poslať upomienky</title>
 <meta name="description" content="Postup na mesačnú kontrolu nezaplatených faktúr: spárovanie výpisu s faktúrami, tri stupne upomienok so vzormi textov, zákonný úrok z omeškania a paušál 40 eur.">
 <link rel="canonical" href="https://arling.sk/notes/nezaplatene-faktury-upomienky/">
@@ -12,7 +12,7 @@
 <meta property="og:description" content="Postup na mesačnú kontrolu nezaplatených faktúr: spárovanie výpisu s faktúrami, tri stupne upomienok so vzormi textov, zákonný úrok z omeškania a paušál 40 eur.">
 <meta property="og:url" content="https://arling.sk/notes/nezaplatene-faktury-upomienky/">
 <meta property="og:locale" content="sk_SK">
-<meta name="theme-color" content="#f6f2ea">
+<meta name="theme-color" content="#faf9f5">
 <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
 <link rel="alternate" type="text/plain" href="https://arling.sk/llms.txt" title="llms.txt">
 <script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="be534d51-4d01-4860-b267-9596d91606de"></script>
@@ -71,111 +71,292 @@
 }
 </script>
 
+<link rel="preload" href="/fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/style/paper.css">
 <style>
-  :root { --paper:#f6f2ea; --paper-2:#fbf9f4; --ink:#1b1a17; --ink-2:#4a4741; --muted:#66625a; --line:#d9d2c4; --accent:#b23a1d; --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif; --sans:system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; --mono:ui-monospace,"Cascadia Code",Consolas,Menlo,monospace; }
-  @media (prefers-color-scheme: dark) { :root { --paper:#151412; --paper-2:#1d1b18; --ink:#efe9de; --ink-2:#c9c2b5; --muted:#8f887b; --line:#2e2b26; --accent:#e0623f; } }
-  * { box-sizing:border-box; }
-  body { margin:0; background:var(--paper); color:var(--ink); font:16px/1.55 var(--sans); overflow-wrap:anywhere; }
-  a { color:inherit; text-decoration-color:var(--line); text-underline-offset:3px; }
-  a:hover { text-decoration-color:var(--accent); }
-  .wrap { max-width:760px; margin:0 auto; padding:0 24px; }
-  header.top { border-bottom:1px solid var(--line); }
-  header.top .wrap { display:flex; align-items:baseline; justify-content:space-between; padding:18px 24px; flex-wrap:wrap; gap:8px; }
-  .wordmark { font:600 22px/1 var(--serif); text-decoration:none; }
-  nav a { font-size:14px; margin-left:20px; text-decoration:none; color:var(--ink-2); }
-  nav a:first-child { margin-left:0; }
-  main { max-width:70ch; }
-  h1 { font:400 clamp(28px,4.5vw,40px)/1.15 var(--serif); margin:44px 0 14px; }
-  h2 { font:400 24px/1.2 var(--serif); margin:40px 0 10px; }
-  .kicker { font:400 14px/1 var(--serif); color:var(--accent); letter-spacing:.06em; text-transform:uppercase; margin:0 0 8px; }
-  .byline { color:var(--muted); font-size:14px; margin:0 0 32px; }
-  p, li { color:var(--ink-2); max-width:70ch; }
-  ol, ul { padding-left:20px; }
-  li + li { margin-top:6px; }
-  code { font:14px/1.4 var(--mono); background:var(--paper-2); border:1px solid var(--line); border-radius:4px; padding:1px 6px; color:var(--ink); overflow-wrap:anywhere; }
-  blockquote { margin:10px 0; padding:10px 16px; border-left:2px solid var(--line); color:var(--ink-2); font-size:15px; }
-  .tool-box { border:1px solid var(--line); border-radius:4px; padding:16px 20px; margin:16px 0; background:var(--paper-2); }
-  .tool-box p { margin:0; }
-  .tool-box p + p { margin-top:8px; }
-  .btn { display:inline-block; margin-top:10px; padding:8px 16px; border:2px solid var(--accent); border-radius:4px; color:var(--accent); text-decoration:none; font-size:14px; }
-  .btn:hover { background:var(--accent); color:var(--paper-2); text-decoration:none; }
-  details { border-top:1px solid var(--line); padding:14px 0; }
-  details:last-of-type { border-bottom:1px solid var(--line); }
-  summary { cursor:pointer; font:400 18px/1.3 var(--serif); list-style:none; display:flex; justify-content:space-between; gap:12px; }
-  summary::-webkit-details-marker { display:none; }
-  summary::after { content:"+"; color:var(--accent); flex:none; font-family:var(--sans); }
-  details[open] summary::after { content:"\2013"; }
-  details p { color:var(--ink-2); margin:10px 0 0; max-width:70ch; overflow-wrap:anywhere; }
-  .sources { padding-left:20px; }
-  .sources li { font-size:14px; }
-  footer { margin-top:56px; padding:24px 0 56px; border-top:1px solid var(--line); color:var(--muted); font-size:14px; }
-  @media (max-width:480px) { nav a { margin-left:12px; font-size:13px; } }
+  /* Notes. Vzhlad, farby, typografia a pohyb su v /style/paper.css.
+     Tu ostava len to, co je pre clanok vlastne: merany pas, register, panel s nastrojom. */
+  .note{max-width:min(100%,880px);margin:0 auto}
+  .doc{max-width:min(68ch,660px);font-size:clamp(17px,1.2vw,18px);line-height:1.62}
+
+  /* uvod clanku: nadpis, datum, odkaz na nastroj */
+  .hero-note{padding:clamp(34px,4.6vw,72px) 0 clamp(20px,2.4vw,34px)}
+  /* Titul clanku je hero stranky. Hlavna veta dorastie na desktope na 64 px, ako ziada
+     paper-v2 bod 9.4. Druhy riadok titulu je vzdy vysvetlujuca cast za dvojbodkou:
+     ostava v rovnakom reze, len mensia a tlmenejsia, aby ani najdlhsi titul (141 znakov
+     v clanku o Shopify) nezabral cely prvy pohlad. Rodinu, farbu a letter-spacing
+     urcuje paper.css, tu je len mierka. */
+  .hero-note h1{font-size:clamp(32px,4.6vw,64px);line-height:1.05;margin:0 0 18px}
+  .hero-note h1 .l+.l{display:block;margin-top:.3em;font-weight:500;
+    font-size:clamp(20px,2.4vw,34px);line-height:1.2;letter-spacing:-.01em;color:var(--body)}
+  .hero-note .kicker{display:block;margin:0 0 12px}
+  .hero-note .crumbs{font-family:var(--ui);font-size:12px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--accent);margin:0 0 12px}
+  .hero-note .crumbs a{color:inherit;text-decoration:none}
+  .hero-note .crumbs a:hover{text-decoration:underline}
+  .byline,.dateline{font-family:var(--ui);font-size:14px;color:var(--muted);margin:0 0 20px;max-width:none}
+  .toolgo{margin:0}
+
+  /* rytmus clanku: vlasova linka medzi castami, ziadne velke medzery sekcii */
+  section{scroll-margin-top:86px}
+  .doc section{padding:0;border-top:none;margin:0 0 clamp(26px,2.8vw,38px)}
+  .doc section+section{border-top:1px solid var(--line);padding-top:clamp(26px,2.8vw,36px)}
+  /* Mierka nadpisov vnutri clanku, nie kopia paper.css: pas textu ma 660 px, do neho sa
+     sekcny nadpis v plnej velkosti z paper.css (42 px) nezmesti bez zalomenia. Mení sa
+     len velkost a odstupy, vsetko ostatne dedi z paper.css. */
+  .doc h2{font-size:clamp(21px,1.9vw,27px);line-height:1.22;margin:0 0 12px}
+  .doc h3{font-size:clamp(17.5px,1.3vw,20px);margin:18px 0 8px}
+  .doc p{margin:0 0 14px;max-width:none}
+  .doc .num,.doc .kicker{display:block;font-family:var(--ui);font-size:12px;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--accent);margin:0 0 7px}
+  .doc .lead,.doc .lede{font-size:clamp(18px,1.35vw,20.5px);line-height:1.55;max-width:none;margin:0 0 18px}
+  .doc ol,.doc ul{padding-left:22px;margin:0 0 16px}
+  .doc li{margin:0 0 7px}
+  .doc li:last-child{margin-bottom:0}
+  .doc a{overflow-wrap:anywhere}
+  .doc code{background:var(--paper-deep);border:1px solid var(--line);border-radius:4px;padding:1px 5px;
+    overflow-wrap:anywhere}
+  .doc pre{margin:0 0 16px;white-space:pre-wrap;overflow-wrap:break-word}
+  .doc pre code{background:none;border:none;padding:0;font-size:13.5px;line-height:1.55}
+  .doc blockquote{margin:0 0 16px;padding:8px 16px;border-left:2px solid var(--line);color:var(--muted)}
+
+  /* chybova hlaska, oprava, ukazka kodu s popisom */
+  .doc .err{background:color-mix(in srgb,var(--accent) 7%,var(--card));border:1px solid var(--line);
+    border-left:3px solid var(--accent);border-radius:8px;padding:12px 16px;margin:0 0 16px}
+  .doc .err code{background:none;border:none;padding:0;color:var(--ink)}
+  .doc .fix{margin:0 0 16px;padding-left:16px;border-left:2px solid var(--accent)}
+  .doc .fix p{margin:0 0 8px}
+  .doc .fix p:last-child{margin-bottom:0}
+  .doc .fix-label{font-family:var(--ui);font-size:12px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--muted);margin:0 0 6px}
+  .doc .snippet{background:var(--card);border:1px solid var(--line);border-radius:10px;margin:0 0 18px;
+    overflow:hidden}
+  .doc .snippet .cap{padding:8px 14px;border-bottom:1px solid var(--line);
+    font:500 11px/1.3 var(--ui);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  .doc .snippet.bad .cap{color:var(--accent)}
+  .doc .snippet pre{margin:0;border:none;border-radius:0;background:none;white-space:pre-wrap}
+
+  /* caste otazky */
+  .doc details{border-top:1px solid var(--line);padding:14px 0}
+  .doc details:last-of-type{border-bottom:1px solid var(--line);margin-bottom:16px}
+  .doc summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;gap:14px;
+    font:600 17px/1.35 var(--display);color:var(--ink)}
+  .doc summary::-webkit-details-marker{display:none}
+  .doc summary::after{content:"+";flex:none;color:var(--accent);font-family:var(--ui);font-weight:400}
+  .doc details[open] summary::after{content:"\2013"}
+  .doc details p{margin:10px 0 0}
+
+  /* zdroje */
+  .doc ul.sources{list-style:none;padding-left:0}
+  .doc ul.sources li{padding-left:14px;border-left:2px solid var(--line)}
+  .doc .sources li{margin:0 0 10px;font-size:.95em}
+  .doc .sources cite{font-style:italic}
+  .doc ul.plain{list-style:none;padding-left:0}
+  .doc ul.plain li{margin:0;padding:10px 0;border-top:1px solid var(--line)}
+  .doc ul.plain li:first-child{border-top:none}
+
+  /* panel s nastrojom: jedina tmava plocha v texte, tam sa klika */
+  .doc .tool-box,.doc .toolbox,.doc .check,.doc .try,.doc .cta{display:block;background:var(--ink);
+    color:#cfcabd;border:none;border-radius:var(--radius);padding:clamp(20px,2.2vw,28px);margin:0 0 18px}
+  .doc .tool-box p,.doc .check p,.doc .try p,.doc .cta p{max-width:none;margin:0 0 12px;color:#cfcabd}
+  .doc .toolbox{max-width:none;color:#cfcabd}
+  .doc .tool-box p:last-of-type,.doc .check p:last-child,.doc .try p:last-child,
+  .doc .cta p:last-child{margin-bottom:0}
+  .doc .tool-box a,.doc .toolbox a,.doc .check a,.doc .try a,.doc .cta a{color:#fffdf8}
+  .doc .tool-box a:hover,.doc .toolbox a:hover,.doc .check a:hover,.doc .try a:hover,
+  .doc .cta a:hover{color:var(--accent-light)}
+  .doc .tool-box code,.doc .toolbox code,.doc .check code,.doc .try code,.doc .cta code{
+    background:rgba(255,253,248,.10);border-color:rgba(255,253,248,.22);color:#fffdf8}
+  .doc .tool-box .btn{margin:14px 10px 0 0;text-decoration:none;color:#fff}
+  /* dve tlacidla vedla seba sa nesmu dotykat, na uzkom mobile sa zalomia pod seba */
+  /* druhe tlacidlo v tmavom paneli je vedlajsie: linka namiesto plochy */
+  .doc .tool-box .btn+.btn{background:none;border:1px solid rgba(255,253,248,.45);color:#fffdf8}
+  .doc .tool-box .btn+.btn:hover{background:#fffdf8;color:var(--ink)}
+  .doc .tool-cta{display:inline-flex;align-items:center;height:46px;padding:0 20px;border-radius:12px;
+    margin:2px 0 0;background:var(--accent);color:#fff;font:500 15px/1 var(--ui);text-decoration:none}
+  .doc .tool-cta:hover{background:var(--accent-dark);color:#fff}
+
+  /* bocny register drzi sa laveho okraja clanku */
+  .rail{left:max(20px,calc(50% - 620px));width:145px;gap:9px}
+  .rail a{min-width:0}
+  .rail i{flex:none}
+  .rail span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  /* Stlpec clanku je uzsi nez obsah hubu (880 px, nie 1340), tak sa register zmesti
+     uz od 1280 px: cely stoji v lavom okraji a od textu ho deli stalych 35 px.
+     Pod tou hranicou by uz do textu zasahoval, preto ho paper.css skryje. */
+  @media (min-width:1280px){.rail{display:flex}}
+
+  /* paticka je tmavy pas na konci */
+  footer.band{border-top:none;color:#a8a294}
+  footer.band a,footer.band b{color:#fffdf8}
+  footer.band .wrap{max-width:880px}
+  footer.band .cols{width:min(880px,92vw);margin:0 auto;gap:16px 32px}
+
 </style>
 </head>
 <body>
-<header class="top"><div class="wrap"><a class="wordmark" href="https://arling.sk/">ARLing</a><nav><a href="https://arling.sk/#tools">Nástroje</a><a href="https://arling.sk/how-we-work/">Ako pracujeme</a><a href="https://arling.sk/privacy/">Súkromie</a></nav></div></header>
-<main class="wrap">
-  <p class="kicker" style="margin-top:48px">Notes</p>
-  <h1>Nezaplatené faktúry: ako každý mesiac za 10 minút zistiť, kto nezaplatil, a poslať upomienky</h1>
-  <p class="byline">Andrej Lauko, ARLing · 7. septembra 2026</p>
-
-  <p>Koniec mesiaca, treba zistiť, kto ešte nezaplatil. Otvoríte zoznam vydaných faktúr, k nemu výpis z banky, a riadok po riadku porovnávate, čo sedí a čo nie. Pri desiatich faktúrach to zvládnete za pár minút. Pri päťdesiatich sa do toho jednoducho nedostanete každý mesiac, upomienky sa posúvajú, a čím neskôr odídu, tým nižšia je šanca, že klient zaplatí bez ďalšieho urgovania. Tento postup ukazuje, ako si zoznam po splatnosti pripraviť za pár minút, akými troma stupňami upomienok postupovať, a čo hovorí zákon o úroku z omeškania a paušálnej náhrade nákladov.</p>
-
-  <h2>1. Prečo sa to ručne nestíha</h2>
-  <p>Ručná kontrola nezaplatených faktúr má tri opakujúce sa problémy. Zoznam vydaných faktúr je v jednom programe (Pohoda, Omega, Money S3, SuperFaktúra, iDoklad alebo Fakturoid), výpis z banky v inom formáte, a porovnanie medzi nimi je manuálna práca, ktorú treba robiť znova každý mesiac, nie raz. Platba často nemá presne taký variabilný symbol, sumu alebo dátum, aký by sa dal jednoducho vyhľadať, takže pri rýchlom prezeraní ľahko prehliadnete faktúru, ktorá v skutočnosti zaplatená nebola. A keď sa kontrola posunie o týždeň, o toľko sa posunie aj prvá upomienka, hoci práve rýchlosť prvého upozornenia najviac rozhoduje o tom, či klient zaplatí bez ďalšieho urgovania.</p>
-
-  <h2>2. Postup: výpis a faktúry spárovať, zoznam po splatnosti von</h2>
-  <div class="tool-box">
-    <p>Do <a href="https://arling.sk/parovac-platieb/">Párovača platieb</a> nahráte výpis camt.053 (alebo jeho CSV z nástroja <a href="https://arling.sk/camt053-to-excel/">camt.053 do Excelu</a>) a zoznam vydaných faktúr skopírovaný z Excelu alebo exportovaný z účtovného programu. Nástroj vráti zoznam faktúr, ktoré sú spárované s platbou, čiastočne uhradené, a tie, ku ktorým sa žiadna platba nenašla.</p>
-    <p>Zo zoznamu nespárovaných je dôležitý ten, kde je dátum splatnosti už v minulosti: to je váš mesačný zoznam na upomienky. Nič, čo nahráte, sa nikam neposiela, párovanie beží celé v prehliadači.</p>
-    <a class="btn" href="https://arling.sk/parovac-platieb/">Otvoriť Párovač platieb</a>
+<div class="wash" aria-hidden="true"><i></i><i></i></div>
+<noscript><style>.r,.w{opacity:1;transform:none;filter:none}</style></noscript>
+<header>
+  <div class="wrap bar">
+    <a class="brand" href="https://arling.sk/">
+      <svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true"><defs><path id="m" fill-rule="evenodd" d="M16 2.5 L29 29.5 H3 Z M16 12.4 L22.4 25.6 H9.6 Z"/><clipPath id="mr"><rect x="16" width="16" height="32"/></clipPath></defs><use href="#m" fill="#1b1a17"/><use href="#m" fill="#b23a1d" clip-path="url(#mr)"/></svg>
+      <b>ARLing</b><span>Notes</span>
+    </a>
+    <nav><a href="https://arling.sk/#tools">Nástroje</a><a href="https://arling.sk/how-we-work/">Ako pracujeme</a><a href="https://arling.sk/privacy/">Súkromie</a></nav>
   </div>
-  <p>Tento zoznam stačí prejsť raz mesačne, ideálne v ten istý deň, aby sa vám vytvoril zvyk a upomienky chodili pravidelne, nie nárazovo, keď si na to spomeniete.</p>
-
-  <h2>3. Tri stupne upomienok</h2>
-  <p>Osvedčil sa postup s tromi stupňami, kde každý ďalší je formálnejší a má pevnejší termín než ten predchádzajúci.</p>
-  <p><b>1. Priateľská pripomienka</b>, pár dní po splatnosti, počíta s tým, že ide o prehliadnutie:</p>
-  <blockquote>Dobrý deň, podľa našich záznamov faktúra č. [číslo] na sumu [suma] eur so splatnosťou [dátum] ešte nie je uhradená. Ak ste platbu už poslali, tento e-mail berte ako bezpredmetný, prípadne nám pošlite potvrdenie o úhrade. Ďakujeme.</blockquote>
-  <p><b>2. Druhá upomienka s pevným termínom</b>, keď prvá zostane bez odozvy, obsahuje konkrétny nový termín a spomenie úrok z omeškania:</p>
-  <blockquote>Dobrý deň, faktúra č. [číslo] na sumu [suma] eur je po splatnosti [počet] dní a doteraz sme nezaznamenali úhradu ani reakciu na predchádzajúcu pripomienku. Žiadame o úhradu najneskôr do [dátum]. V opačnom prípade si budeme uplatňovať úrok z omeškania a paušálnu náhradu nákladov podľa Obchodného zákonníka.</blockquote>
-  <p><b>3. Predžalobná výzva</b>, keď ani druhá upomienka nezabrala, je formálna, stanoví posledný krátky termín a uvedie, čo bude nasledovať:</p>
-  <blockquote>Vážení, napriek dvom predchádzajúcim upomienkam nebola faktúra č. [číslo] na sumu [suma] eur so splatnosťou [dátum] doteraz uhradená. Vyzývame vás na úhradu istiny vrátane úroku z omeškania a paušálnej náhrady nákladov 40 eur, a to najneskôr do [dátum]. Po márnom uplynutí tejto lehoty budeme nútení pohľadávku uplatniť súdnou cestou, prípadne prostredníctvom tretej strany.</blockquote>
-  <p>Predžalobnú výzvu sa oplatí posielať tak, aby ste vedeli preukázať dátum doručenia, napríklad doporučene alebo e-mailom s potvrdením o prečítaní, pretože práve tento dátum sa neskôr môže riešiť pri prípadnom súdnom konaní.</p>
-
-  <h2>4. Zákonné úroky z omeškania</h2>
-  <p>Pri platbách medzi podnikateľmi má veriteľ nárok na úrok z omeškania automaticky zo zákona, aj bez toho, aby to bolo v zmluve výslovne dohodnuté. Konkrétnu sadzbu pre obchodné vzťahy neurčuje priamo Obchodný zákonník číslom, ale nariadenie vlády, ktoré ju odvodzuje od základnej referenčnej sadzby Európskej centrálnej banky: keďže sa táto sadzba v čase mení, presné percento tu zámerne neuvádzame a pred fakturáciou úroku sa oplatí overiť aktuálne platnú sadzbu podľa účinného nariadenia vlády, prípadne s účtovníkom.</p>
-
-  <h2>5. Paušálna náhrada nákladov 40 eur</h2>
-  <p>Popri úroku z omeškania má veriteľ v obchodnom vzťahu podľa § 369c Obchodného zákonníka nárok aj na paušálnu náhradu nákladov spojených s uplatnením pohľadávky vo výške 40 eur, a to za každú faktúru, pri ktorej dlžník je v omeškaní, bez toho, aby ste museli dokladovať skutočné náklady v tejto výške. Nárok vzniká popri úroku z omeškania, nie namiesto neho, a rovnako platí automaticky zo zákona, bez dohody v zmluve.</p>
-
-  <h2>6. Kedy zapojiť právnika</h2>
-  <p>Právnika alebo inkasnú spoločnosť sa oplatí zapojiť, keď predžalobná výzva ostane bez odpovede aj po uplynutí stanoveného termínu, keď dlžník platbu výslovne odmieta alebo spochybňuje faktúru samotnú, alebo keď ide o sumu, pri ktorej sa náklady na súdne vymáhanie oplatia. Pri drobných a jednorazových omeškaniach spoľahlivého klienta je zvyčajne rozumnejšie vyriešiť to priamo, telefonicky alebo e-mailom, než hneď eskalovať na právne kroky.</p>
-
-  <h2>Časté otázky</h2>
-  <details>
+</header>
+<main>
+  <div class="wrap">
+    <div class="note">
+      <div class="hero-note" id="hero">
+        <p class="kicker r">Notes</p>
+        <h1 id="h1" class="r d1"><span class="l">Nezaplatené faktúry:</span><span class="l">ako každý mesiac za 10 minút zistiť, kto nezaplatil, a poslať upomienky</span></h1>
+        <p class="byline r d2">Andrej Lauko, ARLing · 7. septembra 2026</p>
+        <p class="toolgo r d3"><a data-umami-event="open-parovac-platieb-hero" class="go" href="https://arling.sk/parovac-platieb/">Otvoriť Párovač platieb <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2.5 8h11M9 3.5 13.5 8 9 12.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a></p>
+      </div>
+      <div class="doc">
+        <section class="sec" id="s1">
+  <p class="r">Koniec mesiaca, treba zistiť, kto ešte nezaplatil. Otvoríte zoznam vydaných faktúr, k nemu výpis z banky, a riadok po riadku porovnávate, čo sedí a čo nie. Pri desiatich faktúrach to zvládnete za pár minút. Pri päťdesiatich sa do toho jednoducho nedostanete každý mesiac, upomienky sa posúvajú, a čím neskôr odídu, tým nižšia je šanca, že klient zaplatí bez ďalšieho urgovania. Tento postup ukazuje, ako si zoznam po splatnosti pripraviť za pár minút, akými troma stupňami upomienok postupovať, a čo hovorí zákon o úroku z omeškania a paušálnej náhrade nákladov.</p>
+        </section>
+        <section class="sec" id="s2">
+  <h2 class="r">1. Prečo sa to ručne nestíha</h2>
+  <p class="r d1">Ručná kontrola nezaplatených faktúr má tri opakujúce sa problémy. Zoznam vydaných faktúr je v jednom programe (Pohoda, Omega, Money S3, SuperFaktúra, iDoklad alebo Fakturoid), výpis z banky v inom formáte, a porovnanie medzi nimi je manuálna práca, ktorú treba robiť znova každý mesiac, nie raz. Platba často nemá presne taký variabilný symbol, sumu alebo dátum, aký by sa dal jednoducho vyhľadať, takže pri rýchlom prezeraní ľahko prehliadnete faktúru, ktorá v skutočnosti zaplatená nebola. A keď sa kontrola posunie o týždeň, o toľko sa posunie aj prvá upomienka, hoci práve rýchlosť prvého upozornenia najviac rozhoduje o tom, či klient zaplatí bez ďalšieho urgovania.</p>
+        </section>
+        <section class="sec" id="s3">
+  <h2 class="r">2. Postup: výpis a faktúry spárovať, zoznam po splatnosti von</h2>
+  <div class="tool-box r d1">
+    <p>Do <a data-umami-event="open-parovac-platieb-cta-text" href="https://arling.sk/parovac-platieb/">Párovača platieb</a> nahráte výpis camt.053 (alebo jeho CSV z nástroja <a data-umami-event="open-camt053-to-excel-text" href="https://arling.sk/camt053-to-excel/">camt.053 do Excelu</a>) a zoznam vydaných faktúr skopírovaný z Excelu alebo exportovaný z účtovného programu. Nástroj vráti zoznam faktúr, ktoré sú spárované s platbou, čiastočne uhradené, a tie, ku ktorým sa žiadna platba nenašla.</p>
+    <p>Zo zoznamu nespárovaných je dôležitý ten, kde je dátum splatnosti už v minulosti: to je váš mesačný zoznam na upomienky. Nič, čo nahráte, sa nikam neposiela, párovanie beží celé v prehliadači.</p>
+    <a data-umami-event="open-parovac-platieb-cta" class="btn btn-solid" href="https://arling.sk/parovac-platieb/">Otvoriť Párovač platieb</a>
+  </div>
+  <p class="r d2">Tento zoznam stačí prejsť raz mesačne, ideálne v ten istý deň, aby sa vám vytvoril zvyk a upomienky chodili pravidelne, nie nárazovo, keď si na to spomeniete.</p>
+        </section>
+        <section class="sec" id="s4">
+  <h2 class="r">3. Tri stupne upomienok</h2>
+  <p class="r d1">Osvedčil sa postup s tromi stupňami, kde každý ďalší je formálnejší a má pevnejší termín než ten predchádzajúci.</p>
+  <p class="r d2"><b>1. Priateľská pripomienka</b>, pár dní po splatnosti, počíta s tým, že ide o prehliadnutie:</p>
+  <blockquote class="r d3">Dobrý deň, podľa našich záznamov faktúra č. [číslo] na sumu [suma] eur so splatnosťou [dátum] ešte nie je uhradená. Ak ste platbu už poslali, tento e-mail berte ako bezpredmetný, prípadne nám pošlite potvrdenie o úhrade. Ďakujeme.</blockquote>
+  <p class="r d3"><b>2. Druhá upomienka s pevným termínom</b>, keď prvá zostane bez odozvy, obsahuje konkrétny nový termín a spomenie úrok z omeškania:</p>
+  <blockquote class="r d3">Dobrý deň, faktúra č. [číslo] na sumu [suma] eur je po splatnosti [počet] dní a doteraz sme nezaznamenali úhradu ani reakciu na predchádzajúcu pripomienku. Žiadame o úhradu najneskôr do [dátum]. V opačnom prípade si budeme uplatňovať úrok z omeškania a paušálnu náhradu nákladov podľa Obchodného zákonníka.</blockquote>
+  <p class="r d3"><b>3. Predžalobná výzva</b>, keď ani druhá upomienka nezabrala, je formálna, stanoví posledný krátky termín a uvedie, čo bude nasledovať:</p>
+  <blockquote class="r d3">Vážení, napriek dvom predchádzajúcim upomienkam nebola faktúra č. [číslo] na sumu [suma] eur so splatnosťou [dátum] doteraz uhradená. Vyzývame vás na úhradu istiny vrátane úroku z omeškania a paušálnej náhrady nákladov 40 eur, a to najneskôr do [dátum]. Po márnom uplynutí tejto lehoty budeme nútení pohľadávku uplatniť súdnou cestou, prípadne prostredníctvom tretej strany.</blockquote>
+  <p class="r d3">Predžalobnú výzvu sa oplatí posielať tak, aby ste vedeli preukázať dátum doručenia, napríklad doporučene alebo e-mailom s potvrdením o prečítaní, pretože práve tento dátum sa neskôr môže riešiť pri prípadnom súdnom konaní.</p>
+        </section>
+        <section class="sec" id="s5">
+  <h2 class="r">4. Zákonné úroky z omeškania</h2>
+  <p class="r d1">Pri platbách medzi podnikateľmi má veriteľ nárok na úrok z omeškania automaticky zo zákona, aj bez toho, aby to bolo v zmluve výslovne dohodnuté. Konkrétnu sadzbu pre obchodné vzťahy neurčuje priamo Obchodný zákonník číslom, ale nariadenie vlády, ktoré ju odvodzuje od základnej referenčnej sadzby Európskej centrálnej banky: keďže sa táto sadzba v čase mení, presné percento tu zámerne neuvádzame a pred fakturáciou úroku sa oplatí overiť aktuálne platnú sadzbu podľa účinného nariadenia vlády, prípadne s účtovníkom.</p>
+        </section>
+        <section class="sec" id="s6">
+  <h2 class="r">5. Paušálna náhrada nákladov 40 eur</h2>
+  <p class="r d1">Popri úroku z omeškania má veriteľ v obchodnom vzťahu podľa § 369c Obchodného zákonníka nárok aj na paušálnu náhradu nákladov spojených s uplatnením pohľadávky vo výške 40 eur, a to za každú faktúru, pri ktorej dlžník je v omeškaní, bez toho, aby ste museli dokladovať skutočné náklady v tejto výške. Nárok vzniká popri úroku z omeškania, nie namiesto neho, a rovnako platí automaticky zo zákona, bez dohody v zmluve.</p>
+        </section>
+        <section class="sec" id="s7">
+  <h2 class="r">6. Kedy zapojiť právnika</h2>
+  <p class="r d1">Právnika alebo inkasnú spoločnosť sa oplatí zapojiť, keď predžalobná výzva ostane bez odpovede aj po uplynutí stanoveného termínu, keď dlžník platbu výslovne odmieta alebo spochybňuje faktúru samotnú, alebo keď ide o sumu, pri ktorej sa náklady na súdne vymáhanie oplatia. Pri drobných a jednorazových omeškaniach spoľahlivého klienta je zvyčajne rozumnejšie vyriešiť to priamo, telefonicky alebo e-mailom, než hneď eskalovať na právne kroky.</p>
+        </section>
+        <section class="sec" id="s8">
+  <h2 class="r">Časté otázky</h2>
+  <details class="r d1">
     <summary>Musím upomienku posielať doporučene poštou?</summary>
     <p>Na samotný nárok na úrok z omeškania alebo paušálnu náhradu 40 eur nie je doporučené doručenie zákonnou podmienkou, tie vznikajú automaticky zo zákona po omeškaní dlžníka. Pri predžalobnej výzve sa doporučená pošta alebo iný spôsob s potvrdením o doručení odporúča preto, že v prípadnom súdnom spore treba preukázať, kedy presne bola dlžníkovi doručená.</p>
   </details>
-  <details>
+  <details class="r d2">
     <summary>Môžem si účtovať úrok z omeškania aj bez toho, aby to bolo dohodnuté v zmluve?</summary>
     <p>Áno. Nárok na úrok z omeškania pri platbách medzi podnikateľmi vyplýva priamo z Obchodného zákonníka a vzniká automaticky, keď dlžník neuhradí faktúru v lehote splatnosti, bez ohľadu na to, či si strany úrok v zmluve dohodli.</p>
   </details>
-  <details>
+  <details class="r d3">
     <summary>Platí paušálna náhrada 40 eur aj pri jednej faktúre, ktorá mešká len pár dní?</summary>
     <p>Áno, nárok vzniká pri každom omeškaní platby v obchodnom vzťahu podľa § 369c Obchodného zákonníka, bez ohľadu na výšku faktúry alebo dĺžku omeškania. V praxi sa aj tak oplatí posúdiť, či sa pri drobnom a krátkom omeškaní oplatí vzťah s odberateľom kvôli 40 eurám zaťažovať.</p>
   </details>
-  <details>
+  <details class="r d3">
     <summary>Dá sa celý upomienkový proces automatizovať?</summary>
     <p>Časť áno, časť nie. Spárovanie výpisu so zoznamom faktúr a zostavenie zoznamu tých po splatnosti sa dá zautomatizovať nástrojom za pár sekúnd. Rozhodnutie, komu a kedy poslať ktorý stupeň upomienky, a samotné odoslanie s konkrétnym oslovením, by mal robiť človek.</p>
   </details>
-
-  <h2>Sources</h2>
-  <ul class="sources">
+        </section>
+      </div>
+    </div>
+  </div>
+  <section class="deep" id="s9">
+    <div class="wrap">
+      <div class="note">
+        <div class="doc">
+  <h2 class="r">Sources</h2>
+  <ul class="sources r d1">
     <li>Obchodný zákonník (zákon č. 513/1991 Zb.), § 369, § 369c: úrok z omeškania a paušálna náhrada nákladov v obchodných vzťahoch. <a href="https://www.slov-lex.sk/pravne-predpisy/SK/ZZ/1991/513/" target="_blank" rel="noopener">slov-lex.sk</a></li>
     <li>Nariadenie vlády Slovenskej republiky č. 21/2013 Z. z., ktorým sa vykonávajú niektoré ustanovenia Obchodného zákonníka. <a href="https://www.slov-lex.sk/pravne-predpisy/SK/ZZ/2013/21/" target="_blank" rel="noopener">slov-lex.sk</a></li>
   </ul>
-
+        </div>
+      </div>
+    </div>
+  </section>
 </main>
-<footer><div class="wrap">ARLing s. r. o. · <a href="https://arling.sk/">arling.sk</a> · <a href="https://arling.sk/parovac-platieb/">Párovač platieb</a> · <a href="mailto:andrej@arling.sk">andrej@arling.sk</a></div></footer>
+<footer class="band"><div class="wrap">ARLing s. r. o. · <a href="https://arling.sk/">arling.sk</a> · <a data-umami-event="open-parovac-platieb-footer" href="https://arling.sk/parovac-platieb/">Párovač platieb</a> · <a href="mailto:andrej@arling.sk">andrej@arling.sk</a></div></footer>
+<nav class="rail" aria-label="Obsah článku">
+  <a href="#s2"><i></i><span>1. Prečo sa to ručne nestíha</span></a>
+  <a href="#s3"><i></i><span>2. Postup: výpis a faktúry spárovať, zoznam po splatnosti von</span></a>
+  <a href="#s4"><i></i><span>3. Tri stupne upomienok</span></a>
+  <a href="#s5"><i></i><span>4. Zákonné úroky z omeškania</span></a>
+  <a href="#s6"><i></i><span>5. Paušálna náhrada nákladov 40 eur</span></a>
+  <a href="#s7"><i></i><span>6. Kedy zapojiť právnika</span></a>
+  <a href="#s8"><i></i><span>Časté otázky</span></a>
+  <a href="#s9"><i></i><span>Sources</span></a>
+</nav>
+<script>
+(function () {
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var hero = document.getElementById('hero');
+  if (reduce) {
+    document.querySelectorAll('.r, section').forEach(function (e) { e.classList.add('in'); });
+  }
+  if (!reduce && hero) {
+    requestAnimationFrame(function () {
+      hero.querySelectorAll('.r').forEach(function (e) { e.classList.add('in'); });
+    });
+  }
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (en) {
+      if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); }
+    });
+  }, { rootMargin: '0px 0px -12% 0px', threshold: 0.1 });
+  document.querySelectorAll('section').forEach(function (s) { io.observe(s); });
+
+  // nadpis clanku sa objavi po slovach, ako dobre vytlaceny titulok
+  var h1 = document.getElementById('h1');
+  if (h1) {
+    var i = 0;
+    Array.prototype.forEach.call(h1.querySelectorAll('.l'), function (line) {
+      var words = line.textContent.split(' ');
+      line.textContent = '';
+      words.forEach(function (w, k) {
+        var s = document.createElement('span');
+        s.className = 'w';
+        s.style.transitionDelay = (i++ * 0.06).toFixed(2) + 's';
+        s.textContent = w;
+        line.appendChild(s);
+        if (k < words.length - 1) line.appendChild(document.createTextNode(' '));
+      });
+    });
+    requestAnimationFrame(function () { h1.classList.add('in'); });
+  }
+
+  // bocny register sleduje, ktora cast clanku je v strede obrazovky
+  var rail = document.querySelector('.rail');
+  if (rail) {
+    var links = Array.prototype.slice.call(rail.querySelectorAll('a'));
+    var targets = links.map(function (a) { return document.querySelector(a.getAttribute('href')); });
+    var railIo = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        var i = targets.indexOf(en.target);
+        if (i < 0 || !en.isIntersecting) return;
+        links.forEach(function (a, j) { a.setAttribute('aria-current', j === i ? 'true' : 'false'); });
+      });
+      rail.classList.add('on');
+    }, { rootMargin: '-45% 0px -45% 0px' });
+    targets.forEach(function (t) { if (t) railIo.observe(t); });
+  }
+})();
+</script>
 </body>
 </html>

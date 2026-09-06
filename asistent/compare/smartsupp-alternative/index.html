@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://homelab.tailbf8f27.ts.net; connect-src 'self' https://homelab.tailbf8f27.ts.net; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-mrkNcE1wIMH3Dpa5sqd3wjsVSh+pX9aJ4piOaZ39fWk=' https://homelab.tailbf8f27.ts.net; connect-src 'self' https://homelab.tailbf8f27.ts.net; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
 <title>Smartsupp alternative for WooCommerce and Shopify: ARLing Asistent</title>
 <meta name="description" content="ARLing Asistent compared with Smartsupp for Czech, Slovak, German and other EU shops: no live chat with operators, product answers from your feed only, no conversation storage, free up to 100 conversations a month, then 19 or 39 EUR. Smartsupp prices in EUR as of 5 September 2026." />
 <meta name="robots" content="index, follow" />
@@ -114,7 +114,7 @@
       "name": "How is a conversation counted?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "One chat session in the widget, however many messages. Up to 100 sessions a month are free; Starter covers 1,000 and Pro 5,000. Only the count is stored, never the content."
+        "text": "One chat session in the widget, however many messages. Up to 100 sessions a month are free; Starter covers 1,000 and Pro 3,000. Only the count is stored, never the content."
       }
     },
     {
@@ -129,188 +129,170 @@
 }
 </script>
 
+<link rel="preload" href="/fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/style/paper.css">
 <style>
-  :root {
-    --paper:#f6f2ea; --paper-2:#fbf9f4; --ink:#1b1a17; --ink-2:#4a4741; --muted:#66625a; --line:#d9d2c4;
-    --accent:#b23a1d; --accent-soft:#f3e2dc; --ok:#2f6f3e; --warn:#9a6b00;
-    --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
-    --sans:system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    --mono:ui-monospace,"Cascadia Code",Consolas,Menlo,monospace;
-    color-scheme: light dark;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root { --paper:#151412; --paper-2:#1d1b18; --ink:#efe9de; --ink-2:#c9c2b5; --muted:#8f887b; --line:#2e2b26; --accent:#e0623f; --accent-soft:#3a1f17; --ok:#7fbf8e; --warn:#caa552; }
-  }
-  * { box-sizing:border-box; }
-  html { background:var(--paper); }
-  body { margin:0; color:var(--ink); background:var(--paper); font:16px/1.55 var(--sans); -webkit-font-smoothing:antialiased; }
-  a { color:inherit; text-decoration-color:var(--line); text-underline-offset:3px; }
-  a:hover { text-decoration-color:var(--accent); }
-  :focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
-  img { max-width:100%; height:auto; display:block; }
-  [hidden] { display:none !important; }
-  .skip { position:absolute; left:-999px; top:8px; background:var(--ink); color:var(--paper); padding:8px 12px; z-index:10; }
-  .skip:focus { left:8px; }
-  .wrap { max-width:1040px; margin:0 auto; padding:0 24px; min-width:0; }
-  code { font:13.5px/1.4 var(--mono); background:var(--paper-2); border:1px solid var(--line); border-radius:3px; padding:1px 5px; overflow-wrap:anywhere; }
 
-  header.top { border-bottom:1px solid var(--line); }
-  header.top .wrap { display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:8px 24px; padding:18px 24px; }
-  .brand { display:flex; align-items:baseline; flex-wrap:wrap; gap:2px 10px; min-width:0; }
-  .wordmark { font:600 21px/1.25 var(--serif); text-decoration:none; overflow-wrap:anywhere; }
-  .wordmark-sub { font:13px/1 var(--sans); color:var(--muted); letter-spacing:.02em; text-decoration:none; white-space:nowrap; }
-  .wordmark-sub:hover { color:var(--accent); }
-  nav.main { display:flex; flex-wrap:wrap; }
-  nav.main a { font-size:14px; margin-left:20px; text-decoration:none; color:var(--ink-2); white-space:nowrap; }
-  nav.main a:first-child { margin-left:0; }
-  nav.main a:hover { color:var(--accent); }
+  /* Only what is genuinely this page's own: comparison table, price columns, FAQ, sticky bar.
+     Everything else (colours, type, header, sections, tables, buttons) comes from /style/paper.css. */
+  section[id]{scroll-margin-top:calc(var(--head,67px) + 14px)}
+  /* Atribut hidden musi skryvat aj prvky, ktorym vlastne CSS nastavi display.
+     paper.css toto pravidlo nema, preto stoji tu. */
+  [hidden]{display:none !important}
 
-  .hero { padding:64px 0 40px; border-bottom:1px solid var(--line); }
-  .hero h1 { font:400 clamp(30px,4.6vw,46px)/1.14 var(--serif); letter-spacing:-.01em; margin:0 0 18px; max-width:24ch; }
-  .hero p.lead { font-size:18px; color:var(--ink-2); max-width:62ch; margin:0 0 26px; }
-  .facts { list-style:none; margin:22px 0 0; padding:0; display:flex; flex-wrap:wrap; gap:8px 0; color:var(--muted); font-size:14px; }
-  .facts li + li::before { content:"·"; margin:0 10px; color:var(--line); }
-  .facts b { color:var(--ink); font-weight:600; }
+  /* Height of the sticky header. The motion script at the end of the page measures the
+     real one into --head; these values are only what applies before it runs, so a link
+     opened straight with a #hash does not land under the header either. */
+  :root{--head:67px}
+  @media (max-width:720px){:root{--head:90px}}
+  @media (max-width:460px){:root{--head:132px}}
 
-  .btn { display:inline-block; font:600 15px/1 var(--sans); padding:13px 18px; border-radius:4px; text-decoration:none; cursor:pointer; border:2px solid transparent; appearance:none; -webkit-appearance:none; }
-  .btn-solid { background:var(--accent); color:#fff; border-color:var(--accent); }
-  .btn-solid:hover { background:var(--ink); border-color:var(--ink); color:var(--paper); }
-  .btn-line { border:2px solid var(--ink); color:var(--ink); background:transparent; }
-  .btn-line:hover { border-color:var(--accent); color:var(--accent); }
-  .btn + .btn { margin-left:10px; }
+  /* hero artefact: the framed widget screenshot the rest of the site uses */
+  .live{margin:0}
+  .live figcaption{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;margin:10px 2px 0;
+    font-family:var(--ui);font-size:12.5px;color:var(--muted)}
+  .live figcaption span:last-child{white-space:nowrap}
+  @media (max-width:640px){.live figcaption{flex-direction:column;gap:2px}}
 
-  section { padding:44px 0; border-bottom:1px solid var(--line); }
-  section[id], header.top { scroll-margin-top:14px; }
-  .kicker { font:400 14px/1 var(--serif); color:var(--accent); letter-spacing:.06em; text-transform:uppercase; margin:0 0 10px; }
-  h2 { font:400 28px/1.2 var(--serif); margin:0 0 8px; letter-spacing:-.005em; max-width:30ch; }
-  .sub { color:var(--ink-2); max-width:64ch; margin:0 0 24px; }
-  .prose p { color:var(--ink-2); max-width:70ch; margin:0 0 14px; }
-  .prose p:last-child { margin-bottom:0; }
+  /* header: the second wordmark, the way arling.sk/asistent/ carries it */
+  .brandline{display:flex;align-items:center;gap:12px;min-width:0}
+  .wordmark-sub{font-family:var(--ui);font-size:13px;color:var(--muted);text-decoration:none;white-space:nowrap}
+  .wordmark-sub:hover{color:var(--accent)}
+  @media (max-width:1024px){.wordmark-sub{display:none}}
+  .hero h1{font-size:clamp(31px,4.6vw,64px)}
+  code{background:var(--card);border:1px solid var(--line);border-radius:4px;padding:1px 5px;overflow-wrap:anywhere}
 
-  .cmp-wrap { overflow-x:auto; }
-  @media (max-width:600px) {
-    table.cmp, table.cmp tbody, table.cmp tr, table.cmp td { display:block; width:100%; box-sizing:border-box; }
-    table.cmp thead { display:none; }
-    table.cmp tr { padding:10px 0; border-bottom:1px solid var(--line); }
-    table.cmp td { padding:4px 0; border:0; white-space:normal; }
-    table.cmp td:first-child { font-family:var(--serif); font-size:1.05em; padding-bottom:6px; }
-    table.cmp td[data-col]::before { content: attr(data-col) ": "; font-weight:600; color:var(--muted); }
-  }
-  .cmp { width:100%; border-collapse:collapse; min-width:600px; }
-  .cmp th, .cmp td { text-align:left; padding:12px 10px; border-bottom:1px solid var(--line); vertical-align:top; font-size:14.5px; }
-  .cmp th { font:600 12px/1 var(--sans); text-transform:uppercase; letter-spacing:.03em; color:var(--muted); }
-  .cmp th:not(:first-child) { color:var(--ink); font-size:13px; }
-  .cmp td:first-child { font-weight:600; color:var(--ink); width:22%; }
-  .cmp td { color:var(--ink-2); }
-  .cmp-note { color:var(--muted); font-size:13px; margin:14px 0 0; max-width:70ch; }
-  @media (max-width:660px) {
-    .cmp, .cmp tbody, .cmp tr, .cmp td { display:block; width:auto; }
-    .cmp { min-width:0; }
-    .cmp thead { position:absolute; width:1px; height:1px; margin:-1px; padding:0; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
-    .cmp tr { padding:16px 0 14px; border-bottom:1px solid var(--line); }
-    .cmp td { border-bottom:0; padding:0; }
-    .cmp td:first-child { width:auto; font:400 18px/1.3 var(--serif); margin:0 0 10px; }
-    .cmp td:not(:first-child) { padding:2px 0 2px 12px; border-left:2px solid var(--line); }
-    .cmp td:not(:first-child) + td { margin-top:10px; }
-    .cmp td:last-child { border-left-color:var(--accent); }
-    .cmp td:not(:first-child)::before { content:attr(data-col); display:block; font:600 11.5px/1 var(--sans); text-transform:uppercase; letter-spacing:.04em; color:var(--muted); margin:0 0 5px; }
+  .facts{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:4px 0;align-items:baseline;font-size:13.5px}
+  .facts li:not(:last-child)::after{content:"\00b7";margin:0 10px;color:var(--line)}
+  .facts b{color:var(--ink);font-weight:600}
+  @media (max-width:640px){
+    .facts{display:block}
+    .facts li{margin-bottom:4px}
+    .facts li:not(:last-child)::after{content:none}
   }
 
-  .price-cols { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:24px; }
-  .price-col { border:1px solid var(--line); background:var(--paper-2); padding:22px 24px; min-width:0; }
-  .price-col h3 { font:400 22px/1.2 var(--serif); margin:0 0 6px; }
-  .price-col .src { font-size:12.5px; color:var(--muted); margin:0 0 14px; overflow-wrap:anywhere; }
-  .price-col ul { margin:0; padding-left:18px; color:var(--ink-2); font-size:14.5px; }
-  .price-col li + li { margin-top:7px; }
-  .price-col li b { color:var(--ink); }
-  .price-col .btn { margin-top:18px; }
-  .pricing-note { color:var(--ink-2); font-size:14px; margin:18px 0 0; max-width:70ch; }
+  .prose p{margin:0 0 14px}
+  .prose p:last-child{margin-bottom:0}
 
-  details { border-top:1px solid var(--line); padding:14px 0; }
-  details:last-of-type { border-bottom:1px solid var(--line); }
-  summary { cursor:pointer; font:400 18px/1.3 var(--serif); list-style:none; display:flex; justify-content:space-between; gap:12px; }
-  summary::-webkit-details-marker { display:none; }
-  summary::after { content:"+"; color:var(--accent); flex:none; font-family:var(--sans); }
-  details[open] summary::after { content:"\2013"; }
-  details p { color:var(--ink-2); margin:10px 0 0; max-width:70ch; overflow-wrap:anywhere; }
-
-  footer { padding:32px 0 56px; color:var(--muted); font-size:14px; }
-  footer .cols { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:20px 32px; }
-  footer b { color:var(--ink); font-weight:600; }
-  footer a { color:var(--ink-2); }
-  .footer-note { margin-top:14px; font-size:12px; color:var(--muted); }
-
-  @media (max-width:480px) {
-    .hero { padding:44px 0 32px; }
-    nav.main a { margin-left:12px; }
-    .wordmark-sub { display:none; }
-    .btn + .btn { margin-left:0; margin-top:10px; }
+  .cmp td:first-child{font-weight:600;color:var(--ink);width:22%}
+  .cmp th:not(:first-child){color:var(--ink);font-size:13px}
+  .cmp-note{color:var(--muted);font-family:var(--ui);font-size:13px;margin:14px 0 0;max-width:70ch}
+  @media (max-width:600px){
+    .cmp td:first-child{width:auto;font:600 18px/1.3 var(--display);color:var(--ink)}
+    .cmp td:not([data-th])::before{content:none}
+    .cmp td:last-child{border-left:2px solid var(--accent)}
   }
 
-  .sticky-cta { position:fixed; left:0; right:0; bottom:0; z-index:30; background:var(--paper-2); border-top:1px solid var(--line); }
-  .sticky-cta-inner { display:flex; align-items:center; gap:10px; max-width:1040px; margin:0 auto; padding:10px 14px; }
-  .sticky-cta-text { flex:1 1 auto; min-width:0; font-size:12.5px; color:var(--ink-2); overflow-wrap:anywhere; }
-  .sticky-cta .btn { flex:none; padding:10px 14px; font-size:13.5px; margin:0; }
-  .sticky-cta-close { flex:none; width:30px; height:30px; border:1px solid var(--line); background:var(--paper); color:var(--ink-2); border-radius:4px; cursor:pointer; font:16px/1 var(--sans); padding:0; }
-  .sticky-cta-close:hover { border-color:var(--accent); color:var(--accent); }
-  @media (min-width:761px) { .sticky-cta { display:none !important; } }
-  @media print { .sticky-cta { display:none !important; } }
+  .price-cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(290px,100%),1fr));gap:18px}
+  .price-col{padding:22px 24px;min-width:0}
+  .price-col h3{margin:0 0 6px}
+  .price-col .src{font-family:var(--ui);font-size:12.5px;color:var(--muted);margin:0 0 14px;overflow-wrap:anywhere}
+  .price-col ul{margin:0;padding-left:18px;font-size:15.5px}
+  .price-col li + li{margin-top:7px}
+  .price-col li b{color:var(--ink)}
+  .price-col .btn{margin-top:18px}
+  .pricing-note{font-size:14.5px;margin:18px 0 0;max-width:70ch}
+
+  details{border-top:1px solid var(--line);padding:14px 0}
+  details:last-of-type{border-bottom:1px solid var(--line)}
+  summary{cursor:pointer;font:600 18px/1.35 var(--display);color:var(--ink);list-style:none;
+    display:flex;justify-content:space-between;gap:12px}
+  summary::-webkit-details-marker{display:none}
+  summary::after{content:"+";color:var(--accent);flex:none;font-family:var(--ui);font-weight:400}
+  details[open] summary::after{content:"\2013"}
+  details p{margin:10px 0 0;max-width:70ch;overflow-wrap:anywhere}
+
+  .band .prose p{color:#d7d3c8}
+  @media (min-width:1000px){.band .prose{column-count:2;column-gap:60px}.band .prose p{break-inside:avoid}}
+
+  footer .cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr));gap:20px 32px}
+  footer b{color:var(--ink);font-weight:600}
+  .footer-note{margin-top:14px;font-size:12px;color:var(--muted)}
+
+  .sticky-cta{position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--paper-deep);border-top:1px solid var(--line)}
+  .sticky-cta-inner{display:flex;align-items:center;gap:10px;max-width:1040px;margin:0 auto;padding:10px 14px}
+  .sticky-cta-text{flex:1 1 auto;min-width:0;font-family:var(--ui);font-size:12.5px;color:var(--body);overflow-wrap:anywhere}
+  .sticky-cta .btn{flex:none;height:40px;padding:0 14px;font-size:13.5px}
+  .sticky-cta-close{flex:none;width:30px;height:30px;border:1px solid var(--line);background:var(--card);
+    color:var(--muted);border-radius:8px;cursor:pointer;font:16px/1 var(--ui);padding:0}
+  .sticky-cta-close:hover{border-color:var(--accent);color:var(--accent)}
+  @media (min-width:761px){.sticky-cta{display:none !important}}
+  @media print{.sticky-cta{display:none !important}}
+
+  /* Paper v2 finish: the proof row needs air under the buttons. */
+  .facts.proof{margin-top:22px}
+  @media (max-width:640px){
+    /* on a phone let the headline flow instead of breaking on the desktop
+       line breaks, which leaves single words on a line of their own */
+    h1 .l{display:inline}
+    h1 .l::after{content:" "}
+  }
 </style>
 </head>
 <body>
+<div class="wash" aria-hidden="true"><i></i><i></i></div>
 
 <a class="skip" href="#comparison">Skip to the comparison</a>
-<header class="top">
-  <div class="wrap">
-    <div class="brand">
-      <a class="wordmark" href="../../">ARLing Asistent</a>
+<header>
+  <div class="wrap bar">
+    <div class="brandline">
+      <a class="brand" href="../../">
+        <svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true"><defs><path id="m" fill-rule="evenodd" d="M16 2.5 L29 29.5 H3 Z M16 12.4 L22.4 25.6 H9.6 Z"/><clipPath id="mr"><rect x="16" width="16" height="32"/></clipPath></defs><use href="#m" fill="#141413"/><use href="#m" fill="#b23a1d" clip-path="url(#mr)"/></svg>
+        <b>ARLing</b><span>Asistent</span>
+      </a>
       <a class="wordmark-sub" href="https://arling.sk/">an ARLing tool</a>
     </div>
-    <nav class="main" aria-label="Page">
-      <a href="#comparison">Comparison</a>
-      <a href="#pricing">Prices</a>
-      <a href="#stay">Who should stay</a>
-      <a href="#faq">FAQ</a>
-      <a href="../../live/">Live demo</a>
-    </nav>
+    <nav aria-label="Page"><a href="#comparison">Comparison</a><a href="#pricing">Prices</a><a href="#stay">Who should stay</a><a href="#faq">FAQ</a><a href="../../live/">Live demo</a></nav>
   </div>
 </header>
 
 <main>
-  <div class="hero">
-    <div class="wrap">
-      <h1>A Smartsupp alternative for shops that want product answers without an operator</h1>
-      <p class="lead">Smartsupp is live chat with operators, WhatsApp and Messenger in one panel, with the Mira AI agent as a separate plan, billed in CZK, EUR, PLN or USD. ARLing Asistent has no operators. It answers product questions from your feed in Slovak, Czech, German or English, links the matching products, and stores nothing about the conversation.</p>
-      <a class="btn btn-solid" href="../../#playground" data-umami-event="trial_click" data-umami-event-place="hero">Start for free</a><a class="btn btn-line" href="../../live/" data-umami-event="demo_click" data-umami-event-place="hero">See the live demo</a>
-      <ul class="facts">
+  <div class="wrap hero" id="hero">
+    <div>
+      <h1 id="h1"><span class="l">A Smartsupp</span><span class="l">alternative for shops</span><span class="l">that want product</span><span class="l">answers without</span><span class="l">an operator</span></h1>
+      <p class="lead r d3">Smartsupp is live chat with operators, WhatsApp and Messenger in one panel, with the Mira AI agent as a separate plan, billed in CZK, EUR, PLN or USD. ARLing Asistent has no operators. It answers product questions from your feed in Slovak, Czech, German or English, links the matching products, and stores nothing about the conversation.</p>
+      <div class="cta r d4"><a class="btn btn-solid" href="../../#playground" data-umami-event="trial_click" data-umami-event-place="hero">Start for free</a><a class="btn btn-line" href="../../live/" data-umami-event="demo_click" data-umami-event-place="hero">See the live demo</a></div>
+      <ul class="facts proof r d5">
         <li><b>0</b> conversations stored</li>
         <li><b>100</b> conversations/month free</li>
         <li>answers in SK · CS · EN · DE</li>
         <li>runs on Cloudflare Workers</li>
       </ul>
     </div>
+    <div class="r d3">
+      <figure class="live">
+        <div class="shot">
+          <div class="chrome" aria-hidden="true"><i></i><i></i><i></i></div>
+          <img src="/press/asistent-6-widget-ukazka.webp" width="1052" height="980" loading="lazy" decoding="async"
+               alt="Screenshot: the ARLing Asistent chat is open on the Slovak demo shop Dobrá domácnosť. A shopper asks which pot suits an induction hob and the assistant answers with two pots from the feed, with product cards and the prices 34.90 EUR and 44.90 EUR. The same products are listed on the shop page behind the chat window.">
+        </div>
+        <figcaption><span>A shopper question and an answer from your own feed, with product links.</span><span>Real screenshot from the <a href="/asistent/ukazka/" data-umami-event="ukazka_click" data-umami-event-place="hero-caption">Slovak demo shop</a></span></figcaption>
+      </figure>
+    </div>
   </div>
 
   <section id="comparison">
     <div class="wrap">
-      <p class="kicker">01</p>
-      <h2>What each one does</h2>
-      <p class="sub">Smartsupp is built around people answering chats; ARLing Asistent around a feed answering questions. Smartsupp facts are from smartsupp.com/pricing and wordpress.org, read on 5 September 2026.</p>
-      <div class="cmp-wrap">
+      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M9 10v9M15 10v9"/></svg>01</p>
+      <h2 class="r">What each one does</h2>
+      <div class="rule"></div>
+      <p class="sub r d1">Smartsupp is built around people answering chats; ARLing Asistent around a feed answering questions. Smartsupp facts are from smartsupp.com/pricing and wordpress.org, read on 5 September 2026.</p>
+      <div class="tablewrap r d2">
         <table class="cmp">
           <thead>
             <tr><th></th><th>Smartsupp</th><th>ARLing Asistent</th></tr>
           </thead>
           <tbody>
-            <tr><td>Live chat with operators</td><td data-col="Smartsupp">Yes, the core product. Plans are sized by operators (1, 3, 5 or more) and by how long history is kept.</td><td data-col="ARLing Asistent">No operators, no inbox. If it cannot answer, it points to your contact email.</td></tr>
-            <tr><td>Channels</td><td data-col="Smartsupp">Live chat, WhatsApp, Messenger, email addresses.</td><td data-col="ARLing Asistent">Website widget only.</td></tr>
-            <tr><td>AI answers</td><td data-col="Smartsupp">Mira AI Agent, a separate plan from 20 EUR a month excl. VAT for 100 conversations.</td><td data-col="ARLing Asistent">Included in every plan, the free one too.</td></tr>
-            <tr><td>Product knowledge</td><td data-col="Smartsupp">Mira "knows up to 30,000 products" (Smartsupp's wording).</td><td data-col="ARLing Asistent">Up to 5,000 products per feed; answers only from that feed and your contact details.</td></tr>
-            <tr><td>Conversation history</td><td data-col="Smartsupp">Kept: 14 days on Free, 1 year on Solo and Plus, 3 years on Expert.</td><td data-col="ARLing Asistent">None. Daily counters only (conversations, product clicks).</td></tr>
-            <tr><td>Free tier</td><td data-col="Smartsupp">0 EUR: 25 conversations a month, 1 operator, 14-day history. Mira trial: 10 conversations, 25 more after onboarding.</td><td data-col="ARLing Asistent">0 EUR: 100 conversations a month, no card, no time limit.</td></tr>
-            <tr><td>First paid plan</td><td data-col="Smartsupp">Solo: 20 EUR a month excl. VAT, or 14 EUR a month billed yearly; 1 operator, unlimited conversations.</td><td data-col="ARLing Asistent">Starter: 19 EUR a month incl. VAT, up to 1,000 conversations.</td></tr>
-            <tr><td>Billing</td><td data-col="Smartsupp">CZK, EUR, PLN or USD. Prices exclude VAT, which is added based on your billing country.</td><td data-col="ARLing Asistent">EUR, VAT included, card through Stripe.</td></tr>
-            <tr><td>WooCommerce and Shopify</td><td data-col="Smartsupp">WordPress plugin, 20,000+ active installations; WooCommerce mentioned in its changelog.</td><td data-col="ARLing Asistent">One script tag on any shop; WooCommerce plugin in review at wordpress.org; Shopify app in preparation.</td></tr>
+            <tr><td>Live chat with operators</td><td data-th="Smartsupp">Yes, the core product. Plans are sized by operators (1, 3, 5 or more) and by how long history is kept.</td><td data-th="ARLing Asistent">No operators, no inbox. If it cannot answer, it points to your contact email.</td></tr>
+            <tr><td>Channels</td><td data-th="Smartsupp">Live chat, WhatsApp, Messenger, email addresses.</td><td data-th="ARLing Asistent">Website widget only.</td></tr>
+            <tr><td>AI answers</td><td data-th="Smartsupp">Mira AI Agent, a separate plan from 20 EUR a month excl. VAT for 100 conversations.</td><td data-th="ARLing Asistent">Included in every plan, the free one too.</td></tr>
+            <tr><td>Product knowledge</td><td data-th="Smartsupp">Mira "knows up to 30,000 products" (Smartsupp's wording).</td><td data-th="ARLing Asistent">Up to 5,000 products per feed; answers only from that feed and your contact details.</td></tr>
+            <tr><td>Conversation history</td><td data-th="Smartsupp">Kept: 14 days on Free, 1 year on Solo and Plus, 3 years on Expert.</td><td data-th="ARLing Asistent">None. Daily counters only (conversations, product clicks).</td></tr>
+            <tr><td>Free tier</td><td data-th="Smartsupp">0 EUR: 25 conversations a month, 1 operator, 14-day history. Mira trial: 10 conversations, 25 more after onboarding.</td><td data-th="ARLing Asistent">0 EUR: 100 conversations a month, no card, no time limit.</td></tr>
+            <tr><td>First paid plan</td><td data-th="Smartsupp">Solo: 20 EUR a month excl. VAT, or 14 EUR a month billed yearly; 1 operator, unlimited conversations.</td><td data-th="ARLing Asistent">Starter: 19 EUR a month incl. VAT, up to 1,000 conversations.</td></tr>
+            <tr><td>Billing</td><td data-th="Smartsupp">CZK, EUR, PLN or USD. Prices exclude VAT, which is added based on your billing country.</td><td data-th="ARLing Asistent">EUR, VAT included, card through Stripe.</td></tr>
+            <tr><td>WooCommerce and Shopify</td><td data-th="Smartsupp">WordPress plugin, 20,000+ active installations; WooCommerce mentioned in its changelog.</td><td data-th="ARLing Asistent">One script tag on any shop; WooCommerce plugin in review at wordpress.org; Shopify app in preparation.</td></tr>
           </tbody>
         </table>
       </div>
@@ -318,13 +300,14 @@
     </div>
   </section>
 
-  <section id="pricing">
+  <section id="pricing" class="deep">
     <div class="wrap">
-      <p class="kicker">02</p>
-      <h2>Prices, as of 5 September 2026</h2>
-      <p class="sub">Smartsupp prices as read on 5 September 2026 from smartsupp.com/de/pricing/, which shows EUR; the English page shows USD. Smartsupp's page states that its prices exclude VAT, which is added based on your billing country; ARLing prices include VAT. So the Smartsupp figures below are net of VAT and the ARLing figures are gross. Check the linked pages before deciding.</p>
-      <div class="price-cols">
-          <div class="price-col">
+      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V4"/><path d="M4 20h16"/><path d="M8 16.5v-4M12.5 16.5V8M17 16.5v-6.5"/></svg>02</p>
+      <h2 class="r">Prices, as of 5 September 2026</h2>
+      <div class="rule"></div>
+      <p class="sub r d1">Smartsupp prices as read on 5 September 2026 from smartsupp.com/de/pricing/, which shows EUR; the English page shows USD. Smartsupp's page states that its prices exclude VAT, which is added based on your billing country; ARLing prices include VAT. So the Smartsupp figures below are net of VAT and the ARLing figures are gross. Check the linked pages before deciding.</p>
+      <div class="price-cols r d2">
+          <div class="card price-col">
             <h3>Smartsupp</h3>
             <p class="src">Source: <a href="https://www.smartsupp.com/de/pricing/" target="_blank" rel="noopener">smartsupp.com/de/pricing/</a> (EUR) and <a href="https://www.smartsupp.com/pricing/" target="_blank" rel="noopener">smartsupp.com/pricing/</a> (USD), 5 September 2026. Prices exclude VAT, which is added based on your billing country (Smartsupp's own note).</p>
             <ul>
@@ -335,13 +318,13 @@
               <li><b>Mira AI Agent:</b> 20 EUR a month excl. VAT, or 16 EUR billed yearly, 100 conversations a month, expandable to 5,000. USD page: $20, or $16 yearly.</li>
             </ul>
           </div>
-          <div class="price-col">
+          <div class="card price-col">
             <h3>ARLing Asistent</h3>
             <p class="src">Prices in EUR, VAT included, monthly billing only, card payment through Stripe.</p>
             <ul>
               <li><b>Free:</b> 0 EUR, up to 100 conversations a month, no card, no time limit.</li>
               <li><b>Starter:</b> 19 EUR a month, up to 1,000 conversations.</li>
-              <li><b>Pro:</b> 39 EUR a month, up to 5,000 conversations.</li>
+              <li><b>Pro:</b> 39 EUR a month, up to 3,000 conversations.</li>
               <li>Upgrade from your own account page once the free trial is created; cancel any time; Stripe sends the invoice. No annual plan yet.</li>
             </ul>
             <a class="btn btn-solid" href="../../#playground" data-umami-event="trial_click" data-umami-event-place="pricing">Start for free</a>
@@ -351,11 +334,12 @@
     </div>
   </section>
 
-  <section id="stay">
+  <section id="stay" class="band">
     <div class="wrap">
-      <p class="kicker">03</p>
-      <h2>Who should stay with Smartsupp</h2>
-      <div class="prose">
+      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h16l-1 12H5z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>03</p>
+      <h2 class="r">Who should stay with Smartsupp</h2>
+      <div class="rule"></div>
+      <div class="prose r d1">
         <p>Stay with Smartsupp if a person answers your chats. Operators online during the day, WhatsApp and Messenger in the same panel, chat history for support and disputes: ARLing Asistent replaces none of that. It has no operators, no inbox and no history, and we do not plan to add them.</p>
         <p>Stay as well if you invoice in Czech koruna or want one vendor for human chat and AI. ARLing Asistent bills in EUR only, through Stripe.</p>
         <p>Consider ARLing Asistent if the same product questions arrive at night and on weekends with nobody to answer, if answers should come from the catalogue only, and if you would rather the conversations were not kept anywhere. The first 100 conversations a month stay free.</p>
@@ -363,23 +347,24 @@
     </div>
   </section>
 
-  <section id="faq">
+  <section id="faq" class="deep">
     <div class="wrap">
-      <p class="kicker">04</p>
-      <h2>FAQ</h2>
-      <details>
+      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M8.5 12.3l2.4 2.4 4.6-4.9"/></svg>04</p>
+      <h2 class="r">FAQ</h2>
+      <div class="rule"></div>
+      <details class="r d1">
         <summary>Does ARLing Asistent answer in Czech and Slovak?</summary>
         <p>Yes. Slovak, Czech, English and German, set with the widget's <code>data-lang</code> attribute or left on auto, in which case it replies in the language of the question. Answers come only from the products in your feed.</p>
       </details>
-      <details>
+      <details class="r d1">
         <summary>Can I keep Smartsupp for live chat and add ARLing Asistent for product questions?</summary>
         <p>Technically yes, both are script tags; put the ARLing widget in the other corner with the <code>data-position</code> attribute. Most shops pick one.</p>
       </details>
-      <details>
+      <details class="r d1">
         <summary>How is a conversation counted?</summary>
-        <p>One chat session in the widget, however many messages. Up to 100 sessions a month are free; Starter covers 1,000 and Pro 5,000. Only the count is stored, never the content.</p>
+        <p>One chat session in the widget, however many messages. Up to 100 sessions a month are free; Starter covers 1,000 and Pro 3,000. Only the count is stored, never the content.</p>
       </details>
-      <details>
+      <details class="r d1">
         <summary>Where do the Smartsupp prices come from?</summary>
         <p>From smartsupp.com/de/pricing/ (EUR) and smartsupp.com/pricing/ (USD), read on 5 September 2026, as shown there. We do not track changes; check their page before you decide.</p>
       </details>
@@ -428,5 +413,72 @@
 
 <script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="09cc54da-8172-43b3-8aa2-84e3ab5a17f1"></script>
 <script src="../../sell.js" defer></script>
+<script>
+(function () {
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // The sticky header wraps to two rows on a phone, so its height is not a constant.
+  // Measure it into --head; section anchors keep clear of it with scroll-margin-top.
+  // No loop: one resize listener and a ResizeObserver, both event driven.
+  var hdr = document.querySelector('header');
+  if (hdr) {
+    var setHead = function () {
+      document.documentElement.style.setProperty('--head', Math.ceil(hdr.getBoundingClientRect().height) + 'px');
+    };
+    setHead();
+    window.addEventListener('resize', setHead, { passive: true });
+    if (window.ResizeObserver) { new ResizeObserver(setHead).observe(hdr); }
+  }
+  var h1 = document.getElementById('h1');
+  if (h1 && !reduce) {
+    var i = 0;
+    Array.prototype.forEach.call(h1.querySelectorAll('.l'), function (line) {
+      line.innerHTML = line.textContent.split(' ').map(function (w) {
+        return '<span class="w" style="transition-delay:' + (i++ * 0.06).toFixed(2) + 's">' + w + '</span>';
+      }).join(' ');
+    });
+  }
+  // data-th drives the phone layout of tables; keep it equal to the column heading,
+  // so it stays right when the page is switched to another language.
+  Array.prototype.forEach.call(document.querySelectorAll('table'), function (tb) {
+    var head = tb.querySelectorAll('thead th');
+    if (!head.length) return;
+    var sync = function () {
+      Array.prototype.forEach.call(tb.querySelectorAll('tbody tr'), function (tr) {
+        Array.prototype.forEach.call(tr.children, function (td, k) {
+          var name = head[k] ? head[k].textContent.trim() : '';
+          if (name && td.hasAttribute('data-th')) td.setAttribute('data-th', name);
+        });
+      });
+    };
+    sync();
+    document.addEventListener('arling:langchange', sync);
+  });
+  if (reduce) {
+    Array.prototype.forEach.call(document.querySelectorAll('.r, .hero, section'), function (e) { e.classList.add('in'); });
+    return;
+  }
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (en) {
+      if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); }
+    });
+  }, { rootMargin: '0px 0px -12% 0px', threshold: 0.05 });
+  Array.prototype.forEach.call(document.querySelectorAll('.hero, section'), function (s) { io.observe(s); });
+
+  var rail = document.querySelector('.rail');
+  if (rail) {
+    var links = Array.prototype.slice.call(rail.querySelectorAll('a'));
+    var targets = links.map(function (a) { return document.querySelector(a.getAttribute('href')); });
+    var railIo = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        var k = targets.indexOf(en.target);
+        if (k < 0 || !en.isIntersecting) return;
+        links.forEach(function (a, j) { a.setAttribute('aria-current', j === k ? 'true' : 'false'); });
+      });
+      rail.classList.add('on');
+    }, { rootMargin: '-45% 0px -45% 0px' });
+    targets.forEach(function (t) { if (t) railIo.observe(t); });
+  }
+})();
+</script>
 </body>
 </html>

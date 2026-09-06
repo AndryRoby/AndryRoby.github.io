@@ -134,179 +134,150 @@
     {
       "@type": "Question",
       "name": "Čo to stojí a ako asistenta odstránim?",
-      "acceptedAnswer": { "@type": "Answer", "text": "Do 100 rozhovorov mesačne zadarmo, bez platobnej karty. Nad tento limit plán Starter za 19 EUR mesačne (do 1 000 rozhovorov) alebo Pro za 39 EUR mesačne (do 5 000), platba kartou cez Stripe, zrušiť kedykoľvek. Odstránenie: zmažte riadok so skriptom v HTML kóde (Shoptet) alebo vo Vlastních konverzních kódech (Upgates), chat okamžite zmizne." }
+      "acceptedAnswer": { "@type": "Answer", "text": "Do 100 rozhovorov mesačne zadarmo, bez platobnej karty. Nad tento limit plán Starter za 19 EUR mesačne (do 1 000 rozhovorov) alebo Pro za 39 EUR mesačne (do 3 000), platba kartou cez Stripe, zrušiť kedykoľvek. Odstránenie: zmažte riadok so skriptom v HTML kóde (Shoptet) alebo vo Vlastních konverzních kódech (Upgates), chat okamžite zmizne." }
     }
   ]
 }
 </script>
 
+<link rel="preload" href="/fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/style/paper.css">
 <style>
-  :root {
-    --paper:#f6f2ea; --paper-2:#fbf9f4; --ink:#1b1a17; --ink-2:#4a4741; --muted:#66625a; --line:#d9d2c4;
-    --accent:#b23a1d; --accent-soft:#f3e2dc; --ok:#2f6f3e; --warn:#9a6b00;
-    --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
-    --sans:system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    --mono:ui-monospace,"Cascadia Code",Consolas,Menlo,monospace;
-    color-scheme: light dark;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root { --paper:#151412; --paper-2:#1d1b18; --ink:#efe9de; --ink-2:#c9c2b5; --muted:#8f887b; --line:#2e2b26; --accent:#e0623f; --accent-soft:#3a1f17; --ok:#7fbf8e; --warn:#caa552; }
-  }
-  * { box-sizing:border-box; }
-  html { background:var(--paper); }
-  body { margin:0; color:var(--ink); background:var(--paper); font:16px/1.55 var(--sans); -webkit-font-smoothing:antialiased; }
-  a { color:inherit; text-decoration-color:var(--line); text-underline-offset:3px; }
-  a:hover { text-decoration-color:var(--accent); }
-  :focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
-  img { max-width:100%; height:auto; display:block; }
+  /* Vlastné len pre túto stránku. Farby, písma, nadpisy, tlačidlá, hlavička,
+     pätička, karty a tabuľky sú v /style/paper.css, ktorý sa načítal vyššie. */
+  :root { color-scheme:light; }
   [hidden] { display:none !important; }
-  .skip { position:absolute; left:-999px; top:8px; background:var(--ink); color:var(--paper); padding:8px 12px; z-index:10; }
-  .skip:focus { left:8px; }
-  .wrap { max-width:1040px; margin:0 auto; padding:0 24px; min-width:0; }
-  code { font:13.5px/1.4 var(--mono); background:var(--paper-2); border:1px solid var(--line); border-radius:3px; padding:1px 5px; overflow-wrap:anywhere; }
-  pre { overflow-x:auto; white-space:pre-wrap; overflow-wrap:anywhere; background:var(--paper-2); border:1px solid var(--line); border-radius:4px; padding:14px 16px; margin:0; font:13.5px/1.5 var(--mono); }
+  section[id] { scroll-margin-top:78px; }
+  code { background:var(--paper-deep); border:1px solid var(--line); border-radius:4px; padding:1px 5px; overflow-wrap:anywhere; }
   pre code { border:0; padding:0; background:transparent; }
+  pre { white-space:pre-wrap; overflow-wrap:anywhere; }
+  .sub { max-width:64ch; margin:0 0 24px; }
 
-  header.top { border-bottom:1px solid var(--line); }
-  header.top .wrap { display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:8px 24px; padding:18px 24px; }
-  .brand { display:flex; align-items:baseline; flex-wrap:wrap; gap:2px 10px; min-width:0; }
-  .wordmark { font:600 21px/1.25 var(--serif); text-decoration:none; overflow-wrap:anywhere; }
-  .wordmark-sub { font:13px/1 var(--sans); color:var(--muted); letter-spacing:.02em; text-decoration:none; white-space:nowrap; }
+  /* hlavička: druhý odkaz značky a segmentový prepínač jazyka */
+  .brandline { display:flex; align-items:center; gap:12px; min-width:0; }
+  .wordmark-sub { font-family:var(--ui); font-size:13px; color:var(--muted); text-decoration:none; white-space:nowrap; }
   .wordmark-sub:hover { color:var(--accent); }
-  nav.main { display:flex; flex-wrap:wrap; }
-  nav.main a { font-size:14px; margin-left:20px; text-decoration:none; color:var(--ink-2); white-space:nowrap; }
-  nav.main a:first-child { margin-left:0; }
-  nav.main a:hover { color:var(--accent); }
-  .lang-switch { display:flex; align-items:center; }
-  .lang-switch a { font:600 12px/1 var(--sans); padding:6px 9px; border:1px solid var(--line); background:var(--paper); color:var(--ink-2); text-decoration:none; }
-  .lang-switch a + a { margin-left:-1px; }
-  .lang-switch a:first-child { border-radius:4px 0 0 4px; }
-  .lang-switch a:last-child { border-radius:0 4px 4px 0; }
-  .lang-switch a:hover { border-color:var(--accent); color:var(--accent); position:relative; z-index:1; }
-  .lang-switch a[aria-current="page"] { background:var(--ink); border-color:var(--ink); color:var(--paper); position:relative; z-index:1; }
+  .lang-switch { display:flex; align-items:center; flex:none; }
+  .lang-switch button, .lang-switch a { font:600 12px/1 var(--ui); padding:8px 10px; border:1px solid var(--line);
+    background:var(--card); color:var(--muted); cursor:pointer; text-decoration:none; appearance:none; -webkit-appearance:none; }
+  .lang-switch > :first-child { border-radius:10px 0 0 10px; }
+  .lang-switch > :last-child { border-radius:0 10px 10px 0; }
+  .lang-switch > * + * { margin-left:-1px; }
+  .lang-switch button:hover, .lang-switch a:hover { border-color:var(--accent); color:var(--accent); position:relative; z-index:1; }
+  .lang-switch .lang-active, .lang-switch [aria-pressed="true"], .lang-switch [aria-current="page"] {
+    background:var(--ink); border-color:var(--ink); color:var(--paper); position:relative; z-index:1; }
+  @media (max-width:1024px) { .wordmark-sub { display:none; } }
+  @media (max-width:900px) { .bar nav { gap:16px; } .bar nav a { font-size:14px; } }
 
-  .hero { padding:64px 0 40px; border-bottom:1px solid var(--line); }
-  .hero h1 { font:400 clamp(30px,4.6vw,46px)/1.14 var(--serif); letter-spacing:-.01em; margin:0 0 18px; max-width:22ch; }
-  .hero p.lead { font-size:18px; color:var(--ink-2); max-width:60ch; margin:0 0 26px; }
-  .facts { list-style:none; margin:22px 0 0; padding:0; display:flex; flex-wrap:wrap; gap:8px 0; color:var(--muted); font-size:14px; }
-  .facts li + li::before { content:"·"; margin:0 10px; color:var(--line); }
+  /* úvod: dlhší nadpis ako na hube, preto strop 64 px; rast je rovnaký ako v paper.css,
+     takže 64 px drží už od 1231 px šírky. Riadky sa lámu tam, kde chceme. */
+  .hero h1 { font-size:clamp(34px,5.2vw,64px); }
+  @media (min-width:1700px) { .hero { grid-template-columns:7fr 5fr; } }
+
+  /* riadok faktov pod úvodom */
+  .facts { list-style:none; margin:22px 0 0; padding:0; display:flex; flex-wrap:wrap; gap:4px 0; }
+  .facts li:not(:last-child)::after { content:"\00b7"; margin:0 10px; color:var(--line); }
   .facts b { color:var(--ink); font-weight:600; }
 
-  .btn { display:inline-block; font:600 15px/1 var(--sans); padding:13px 18px; border-radius:4px; text-decoration:none; cursor:pointer; border:2px solid transparent; appearance:none; -webkit-appearance:none; }
-  .btn-solid { background:var(--accent); color:#fff; border-color:var(--accent); }
-  .btn-solid:hover { background:var(--ink); border-color:var(--ink); color:var(--paper); }
-  .btn-line { border:2px solid var(--ink); color:var(--ink); background:transparent; }
-  .btn-line:hover { border-color:var(--accent); color:var(--accent); }
-  .btn + .btn { margin-left:10px; }
-  .btn:disabled { opacity:.6; cursor:default; }
+  /* úvod: skutočná snímka widgetu v ráme, celá a bez orezu. Orez 4:3 tu bol predtým a odrezal
+     z nej pätinu zľava; teraz sa ukazuje tak, ako bola odfotená, aby bolo vidieť aj obchod pod chatom.
+     Rám, tri krúžky a tieň sú v paper.css (.shot). Bočný register tiež, sekcia 15. */
+  .live { margin:0; }
+  .live figcaption { display:flex; justify-content:space-between; align-items:flex-end; gap:12px; margin:10px 2px 0;
+    font-family:var(--ui); font-size:12.5px; color:var(--muted); }
+  .live figcaption span:last-child { white-space:nowrap; }
+  @media (max-width:640px) { .live figcaption { flex-direction:column; gap:2px; } }
 
-  section { padding:44px 0; border-bottom:1px solid var(--line); }
-  section[id], header.top { scroll-margin-top:14px; }
-  .kicker { font:400 14px/1 var(--serif); color:var(--accent); letter-spacing:.06em; text-transform:uppercase; margin:0 0 10px; }
-  h2 { font:400 28px/1.2 var(--serif); margin:0 0 8px; letter-spacing:-.005em; max-width:30ch; }
-  h3 { font:400 20px/1.3 var(--serif); margin:30px 0 10px; }
-  .sub { color:var(--ink-2); max-width:64ch; margin:0 0 24px; }
-
-  .rules { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:26px 32px; margin:0; padding:0; list-style:none; counter-reset:r; }
+  /* číslované kroky */
+  .rules { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(240px,100%),1fr)); gap:26px 32px;
+    margin:0; padding:0; list-style:none; counter-reset:r; }
   .rules li { padding-top:14px; border-top:1px solid var(--line); min-width:0; }
-  .rules li::before { counter-increment:r; content:counter(r,decimal-leading-zero); font:400 14px/1 var(--serif); color:var(--accent); display:block; margin-bottom:8px; }
-  .rules li > b { display:block; font-weight:600; margin-bottom:4px; }
-  .rules p b { font-weight:600; color:var(--ink); }
-  .rules p { margin:0 0 8px; color:var(--ink-2); font-size:15px; overflow-wrap:anywhere; }
+  .rules li::before { counter-increment:r; content:counter(r,decimal-leading-zero);
+    font:500 12px/1 var(--ui); letter-spacing:.12em; color:var(--accent); display:block; margin-bottom:8px; }
+  .rules li > b { display:block; font-family:var(--display); font-weight:600; color:var(--ink); margin-bottom:4px; }
+  .rules p { margin:0 0 8px; font-size:15px; overflow-wrap:anywhere; max-width:none; }
   .rules p:last-child { margin-bottom:0; }
-  .rules .plat { display:inline-block; font:600 12px/1 var(--sans); letter-spacing:.03em; text-transform:uppercase; color:var(--ink); margin-right:4px; }
 
-  .paths-table-wrap { overflow-x:auto; margin-top:8px; }
-  .paths-table { width:100%; border-collapse:collapse; }
-  .paths-table th, .paths-table td { text-align:left; padding:12px 10px; border-bottom:1px solid var(--line); vertical-align:top; font-size:15px; }
-  .paths-table th { font:600 12px/1 var(--sans); text-transform:uppercase; letter-spacing:.03em; color:var(--muted); }
-  .paths-table td:first-child { font-weight:600; white-space:nowrap; }
-  .paths-table td { color:var(--ink-2); overflow-wrap:anywhere; }
-  @media (max-width:660px) {
-    .paths-table thead { display:none; }
-    .paths-table tr { display:block; border-top:1px solid var(--line); padding:8px 0; }
-    .paths-table td { display:block; border:0; padding:4px 0; white-space:normal; }
-    .paths-table td:first-child { color:var(--ink); padding-top:6px; }
-    .paths-table td[data-label]::before { content:attr(data-label); display:block; font:600 11px/1.4 var(--sans); letter-spacing:.03em; text-transform:uppercase; color:var(--muted); }
-  }
-
-  .pricing-table { width:100%; border-collapse:collapse; }
-  .pricing-table th, .pricing-table td { text-align:left; padding:14px 10px; border-bottom:1px solid var(--line); vertical-align:top; }
-  .pricing-table th { font:600 12px/1 var(--sans); text-transform:uppercase; letter-spacing:.03em; color:var(--muted); }
-  .pricing-table td.plan { font:600 16px/1.3 var(--sans); }
-  .pricing-table td.price { font:400 26px/1 var(--serif); white-space:nowrap; }
-  .pricing-table td.price span { font:13px/1 var(--sans); color:var(--muted); }
-  .pricing-table-wrap { overflow-x:auto; }
-  .pricing-table .btn { white-space:nowrap; }
-  .pricing-table-cta { display:none; margin:16px 0 0; }
-  @media (max-width:480px) {
-    .pricing-table th, .pricing-table td { padding:12px 6px; }
-    .pricing-table td.price { font-size:21px; }
-    .pricing-table th:last-child, .pricing-table td:last-child { display:none; }
-    .pricing-table-cta { display:block; }
-  }
-  .pricing-note { color:var(--ink-2); font-size:14px; margin:16px 0 0; }
-
+  /* zoznam o súkromí */
   .privacy-list { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:14px; }
   .privacy-list li { display:flex; gap:12px; align-items:flex-start; }
-  .privacy-list li::before { content:"\2022"; color:var(--accent); flex-shrink:0; font-family:var(--serif); }
-  .privacy-list p { margin:0; color:var(--ink-2); }
+  .privacy-list li::before { content:"\2022"; color:var(--accent); flex-shrink:0; line-height:1.5; }
+  .privacy-list p { margin:0; }
   .privacy-list b { color:var(--ink); }
+  .band .privacy-list b { color:#fffdf8; }
 
+  /* cenník: bunky tabuľky nesú plán a cenu */
+  td.plan { font-family:var(--display); font-weight:600; color:var(--ink); }
+  td.price { font:600 clamp(22px,1.9vw,28px)/1 var(--display); color:var(--ink); white-space:nowrap; }
+  td.price span { font:400 13px/1 var(--ui); color:var(--muted); }
+  .pricing-note { font-size:15px; margin:16px 0 0; }
+  .pricing-table-cta { display:none; margin:16px 0 0; }
+  @media (max-width:600px) {
+    .pricing-table-cta { display:block; }
+    .pricing-table-cta .btn { display:flex; justify-content:center; }
+    .tablewrap.plan-cta td:last-child { display:none; }
+  }
+
+  /* otázky */
   .pro-objections { margin-top:28px; }
-  .objections-label { margin:0 0 4px; font:600 13px/1 var(--sans); letter-spacing:.03em; text-transform:uppercase; color:var(--ink-2); }
+  .objections-label { margin:0 0 4px; font:500 12px/1 var(--ui); letter-spacing:.12em; text-transform:uppercase; color:var(--accent); }
+  details { border-top:1px solid var(--line); padding:14px 0; }
+  details:last-of-type { border-bottom:1px solid var(--line); }
+  summary { cursor:pointer; font:600 clamp(17px,1.4vw,19px)/1.35 var(--display); color:var(--ink);
+    list-style:none; display:flex; justify-content:space-between; gap:12px; }
+  summary::-webkit-details-marker { display:none; }
+  summary::after { content:"+"; color:var(--accent); flex:none; font-family:var(--ui); }
+  details[open] summary::after { content:"\2013"; }
+  details p { margin:10px 0 0; max-width:70ch; overflow-wrap:anywhere; }
 
+  /* prihlásenie na novinky */
   .hp { position:absolute; width:1px; height:1px; margin:-1px; padding:0; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
-  .subscribe-ask { border-top:1px solid var(--line); margin-top:20px; padding-top:20px; }
+  .subscribe-ask { border-top:1px solid var(--line); margin-top:24px; padding-top:24px; }
   .subscribe-form { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
-  .subscribe-form input[type="email"] { height:44px; min-width:0; flex:1 1 240px; padding:0 14px; border:1px solid var(--line); border-radius:4px; background:var(--paper-2); color:var(--ink); font:15px/1 var(--sans); }
+  .subscribe-form input[type="email"] { height:46px; min-width:0; flex:1 1 240px; padding:0 14px;
+    border:1px solid var(--line); border-radius:12px; background:var(--card); color:var(--ink); font:15px/1 var(--ui); }
   .subscribe-form .btn { flex:none; }
   #subscribe-thanks { color:var(--ok); font-weight:600; }
   #subscribe-error { color:var(--accent); font-weight:600; }
-  .subscribe-privacy { flex-basis:100%; margin:0; font-size:13px; color:var(--muted); }
+  .subscribe-privacy { flex:1 0 100%; margin:0; font-family:var(--ui); font-size:13px; color:var(--muted); }
   @media (max-width:480px) { .subscribe-form input[type="email"], .subscribe-form button { width:100%; } }
 
-  details { border-top:1px solid var(--line); padding:14px 0; }
-  details:last-of-type { border-bottom:1px solid var(--line); }
-  summary { cursor:pointer; font:400 18px/1.3 var(--serif); list-style:none; display:flex; justify-content:space-between; gap:12px; }
-  summary::-webkit-details-marker { display:none; }
-  summary::after { content:"+"; color:var(--accent); flex:none; font-family:var(--sans); }
-  details[open] summary::after { content:"\2013"; }
-  details p { color:var(--ink-2); margin:10px 0 0; max-width:70ch; overflow-wrap:anywhere; }
-
-  footer { padding:32px 0 56px; color:var(--muted); font-size:14px; }
-  footer .cols { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:20px 32px; }
+  /* pätička */
+  footer .cols { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr)); gap:20px 32px; }
   footer b { color:var(--ink); font-weight:600; }
-  footer a { color:var(--ink-2); }
-  .footer-note { margin-top:14px; font-size:12px; color:var(--muted); }
+  .footer-note { margin-top:14px; font-size:12.5px; }
 
-  @media (max-width:480px) {
-    .hero { padding:44px 0 32px; }
-    nav.main a { margin-left:12px; }
-    .wordmark-sub { display:none; }
-    .btn + .btn { margin-left:0; margin-top:10px; }
-  }
-
-  .sticky-cta { position:fixed; left:0; right:0; bottom:0; z-index:30; background:var(--paper-2); border-top:1px solid var(--line); }
-  .sticky-cta-inner { display:flex; align-items:center; gap:10px; max-width:1040px; margin:0 auto; padding:10px 14px; }
-  .sticky-cta-text { flex:1 1 auto; min-width:0; font-size:12.5px; color:var(--ink-2); overflow-wrap:anywhere; }
-  .sticky-cta .btn { flex:none; padding:10px 14px; font-size:13.5px; margin:0; }
-  .sticky-cta-close { flex:none; width:30px; height:30px; border:1px solid var(--line); background:var(--paper); color:var(--ink-2); border-radius:4px; cursor:pointer; font:16px/1 var(--sans); padding:0; }
+  /* spodná lišta na telefóne */
+  .sticky-cta { position:fixed; left:0; right:0; bottom:0; z-index:30; background:var(--card); border-top:1px solid var(--line); }
+  .sticky-cta-inner { display:flex; align-items:center; gap:10px; width:var(--wrap); margin:0 auto; padding:10px 0; }
+  .sticky-cta-text { flex:1 1 auto; min-width:0; font-family:var(--ui); font-size:12.5px; color:var(--muted); overflow-wrap:anywhere; }
+  .sticky-cta .btn { flex:none; height:40px; padding:0 14px; font-size:13.5px; }
+  .sticky-cta-close { flex:none; width:32px; height:32px; border:1px solid var(--line); background:var(--paper);
+    color:var(--muted); border-radius:10px; cursor:pointer; font:16px/1 var(--ui); padding:0; }
   .sticky-cta-close:hover { border-color:var(--accent); color:var(--accent); }
   @media (min-width:761px) { .sticky-cta { display:none !important; } }
   @media print { .sticky-cta { display:none !important; } }
+
+  /* tabuľka ciest v administrácii */
+  .rules p b { font-weight:600; color:var(--ink); }
+  .rules .plat { display:inline-block; font:600 11px/1 var(--ui); letter-spacing:.08em; text-transform:uppercase;
+    color:var(--accent); margin-right:6px; }
+  h3 { margin:34px 0 10px; }
+  .paths-table td:first-child { font-weight:600; color:var(--ink); }
 </style>
 </head>
 <body>
+<div class="wash" aria-hidden="true"><i></i><i></i></div>
 
 <a class="skip" href="#install">Skočiť na postup inštalácie</a>
-<header class="top">
-  <div class="wrap">
-    <div class="brand">
-      <a class="wordmark" href="../">ARLing Asistent</a>
+<header>
+  <div class="wrap bar">
+    <div class="brandline">
+      <a class="brand" href="../"><svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true"><defs><path id="m" fill-rule="evenodd" d="M16 2.5 L29 29.5 H3 Z M16 12.4 L22.4 25.6 H9.6 Z"/><clipPath id="mr"><rect x="16" width="16" height="32"/></clipPath></defs><use href="#m" fill="#141413"/><use href="#m" fill="#b23a1d" clip-path="url(#mr)"/></svg><b>ARLing</b><span>Asistent</span></a>
       <a class="wordmark-sub" href="https://arling.sk/">nástroj ARLing</a>
     </div>
-    <nav class="main" aria-label="Stránka">
+    <nav aria-label="Stránka">
       <a href="#install">Inštalácia</a>
       <a href="#cennik">Cenník</a>
       <a href="#limits">Čo vie</a>
@@ -321,12 +292,18 @@
 </header>
 
 <main>
-  <div class="hero">
-    <div class="wrap">
-      <h1>AI predajný asistent pre Shoptet a Upgates, vložíte ho za 10 minút cez HTML kód.</h1>
-      <p class="lead">Asistent si prečíta Heureka XML feed, ktorý váš e-shop už dnes generuje, a odpovedá zákazníkom na otázky o produktoch v ich jazyku, vždy s odkazmi na konkrétny tovar. Rozhovory sa neukladajú. Zadarmo do 100 rozhovorov mesačne, bez platobnej karty.</p>
-      <a class="btn btn-solid" href="../#playground" data-umami-event="trial_click" data-umami-event-place="hero">Začať zadarmo</a><a class="btn btn-line" href="#install">Pozrieť 3 kroky</a>
-      <ul class="facts">
+  <div class="wrap hero" id="hero">
+    <div>
+      <h1 id="h1"><span class="l">AI predajný asistent</span>
+<span class="l">pre Shoptet a Upgates,</span>
+<span class="l">vložíte ho za 10 minút</span>
+<span class="l">cez HTML kód.</span></h1>
+      <p class="lead r d2">Asistent si prečíta Heureka XML feed, ktorý váš e-shop už dnes generuje, a odpovedá zákazníkom na otázky o produktoch v ich jazyku, vždy s odkazmi na konkrétny tovar. Rozhovory sa neukladajú. Zadarmo do 100 rozhovorov mesačne, bez platobnej karty.</p>
+      <div class="cta r d3">
+        <a class="btn btn-solid" href="../#playground" data-umami-event="trial_click" data-umami-event-place="hero">Začať zadarmo</a>
+        <a class="btn btn-line" href="#install" data-umami-event="install_steps_click" data-umami-event-place="hero">Pozrieť 3 kroky</a>
+      </div>
+      <ul class="facts proof r d4">
         <li><b>0</b> uložených rozhovorov</li>
         <li><b>100</b> rozhovorov mesačne zadarmo</li>
         <li>číta Heureka XML feed</li>
@@ -334,24 +311,38 @@
         <li>beží na Cloudflare Workers</li>
       </ul>
     </div>
+    <div class="r d1">
+      <figure class="live">
+        <div class="shot">
+          <div class="chrome" aria-hidden="true"><i></i><i></i><i></i></div>
+          <!-- Odchýlka od paper-v2, sekcia 9 bod 8: obrázok je nad ohybom a je to prvok LCP,
+               preto loading="eager" a fetchpriority="high" namiesto loading="lazy". Rozmery width
+               a height sú skutočné rozmery súboru, takže miesto je rezervované a stránka neposkakuje. -->
+          <img src="/press/asistent-6-widget-ukazka.webp" width="1052" height="980" loading="eager" fetchpriority="high" decoding="async"
+               alt="Snímka: v ukážkovom obchode Dobrá domácnosť je otvorený chat ARLing Asistenta. Zákazník sa pýta, ktorý hrniec je vhodný na indukciu, a asistent odpovedá dvoma hrncami z feedu, s kartami výrobkov a cenami 34.90 EUR a 44.90 EUR. Za oknom chatu je zoznam tých istých výrobkov v obchode.">
+        </div>
+        <figcaption><span>Otázka zákazníka a odpoveď z vášho feedu, s odkazmi na produkty.</span><span>Skutočná snímka z <a href="/asistent/ukazka/" data-umami-event="ukazka_click" data-umami-event-place="hero-caption">ukážkového obchodu</a></span></figcaption>
+      </figure>
+    </div>
   </div>
 
-  <section id="install">
+  <section id="install" class="deep">
     <div class="wrap">
-      <p class="kicker">01</p>
-      <h2>Inštalácia v troch krokoch</h2>
-      <p class="sub">Bez doplnku z marketplace a bez zásahu do šablóny: potrebujete URL Heureka feedu a jeden riadok v HTML kóde e-shopu. Cesty v administrácii sú z nápovedy Shoptetu a Upgates z 5. septembra 2026; ak vaša administrácia vyzerá inak, hľadajte v nápovede platformy.</p>
+      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="8" width="16" height="12" rx="2"/><path d="M9 8V5.5M15 8V5.5M4 13h2M18 13h2"/></svg>01</p>
+      <h2 class="r">Inštalácia v troch krokoch</h2>
+      <div class="rule"></div>
+      <p class="sub r d1">Bez doplnku z marketplace a bez zásahu do šablóny: potrebujete URL Heureka feedu a jeden riadok v HTML kóde e-shopu. Cesty v administrácii sú z nápovedy Shoptetu a Upgates z 5. septembra 2026; ak vaša administrácia vyzerá inak, hľadajte v nápovede platformy.</p>
       <ol class="rules">
-        <li>
+        <li class="r d1">
           <b>Nájdite URL Heureka feedu.</b>
           <p><span class="plat">Shoptet</span> V administrácii <b>Prepojenie → Heureka → XML feedy</b>. Feed má tvar <code>https://www.vasadomena.sk/heureka/export/products.xml</code>; Shoptet ho generuje sám a zmeny produktov doň prepíše do 60 minút.</p>
           <p><span class="plat">Upgates</span> Zapnite bezplatný doplnok <b>Doplňky / Heureka</b>. URL feedu s unikátnym tokenom (tvar <code>.../feed-heureka-xxxxxxxxxx.xml</code>) nájdete v <b>Produkty / Export (pravidelný) → Srovnávače a agregátory → Heureka → Export produktů</b>. Feed sa generuje 4-krát denne.</p>
         </li>
-        <li>
+        <li class="r d2">
           <b>Vytvorte si skúšobný účet.</b>
           <p>Na <a href="../#playground" data-umami-event="trial_click" data-umami-event-place="step2">hlavnej stránke Asistenta</a> vložte do formulára URL feedu a e-mail. Doménu odvodíme z URL feedu. Za pár minút uvidíte na tej istej stránke chat s vlastnými produktmi a dostanete ID účtu spolu s hotovým script tagom (rovnaký ako nižšie).</p>
         </li>
-        <li>
+        <li class="r d3">
           <b>Vložte script tag do e-shopu.</b>
           <p><span class="plat">Shoptet</span> <b>Vzhľad a Obsah → Editor → HTML kód</b>, sekcia <b>Pätička</b> (kód pred koncom BODY). Sekcia má limit 8 192 znakov, náš skript má jeden riadok.</p>
           <p><span class="plat">Upgates</span> <b>Doplňky / Vlastní konverzní kódy</b>, umiestnenie <b>Všechny stránky e-shopu</b>. Nápoveda Upgates uvádza, že takto vložený JavaScript (chaty, lišty, analytika) sa na stránke vykoná. Designer ostáva zapnutý.</p>
@@ -360,38 +351,38 @@
       </ol>
 
       <h3>Script tag, ktorý vkladáte</h3>
-      <p class="sub" style="margin-bottom:10px;">Namiesto <code>ID_UCTU</code> dosaďte ID z kroku 2 (formulár vám ukáže už hotový riadok). <code>data-lang="auto"</code> nastaví jazyk chatu podľa prehliadača návštevníka; pevne slovenský chat dosiahnete hodnotou <code>sk</code>.</p>
+      <p class="sub r d1" style="margin-bottom:10px;">Namiesto <code>ID_UCTU</code> dosaďte ID z kroku 2 (formulár vám ukáže už hotový riadok). <code>data-lang="auto"</code> nastaví jazyk chatu podľa prehliadača návštevníka; pevne slovenský chat dosiahnete hodnotou <code>sk</code>.</p>
       <pre><code>&lt;script src="https://arling-asistent.arling.workers.dev/widget.js"
         data-tenant="ID_UCTU"
         data-lang="auto"
         defer&gt;&lt;/script&gt;</code></pre>
 
       <h3>Kde čo nájdete</h3>
-      <div class="paths-table-wrap">
+      <div class="tablewrap r d2">
         <table class="paths-table">
           <thead>
             <tr><th scope="col">Čo</th><th scope="col">Shoptet</th><th scope="col">Upgates</th></tr>
           </thead>
           <tbody>
             <tr>
-              <td>Heureka feed</td>
-              <td data-label="Shoptet">Prepojenie → Heureka → XML feedy; <code>/heureka/export/products.xml</code></td>
-              <td data-label="Upgates">Doplňky / Heureka (zdarma); URL v Produkty / Export (pravidelný) → Srovnávače a agregátory → Heureka → Export produktů</td>
+              <td data-th="Čo">Heureka feed</td>
+              <td data-th="Shoptet">Prepojenie → Heureka → XML feedy; <code>/heureka/export/products.xml</code></td>
+              <td data-th="Upgates">Doplňky / Heureka (zdarma); URL v Produkty / Export (pravidelný) → Srovnávače a agregátory → Heureka → Export produktů</td>
             </tr>
             <tr>
-              <td>Vloženie skriptu</td>
-              <td data-label="Shoptet">Vzhľad a Obsah → Editor → HTML kód → Pätička (do 8 192 znakov)</td>
-              <td data-label="Upgates">Doplňky / Vlastní konverzní kódy → Všechny stránky e-shopu</td>
+              <td data-th="Čo">Vloženie skriptu</td>
+              <td data-th="Shoptet">Vzhľad a Obsah → Editor → HTML kód → Pätička (do 8 192 znakov)</td>
+              <td data-th="Upgates">Doplňky / Vlastní konverzní kódy → Všechny stránky e-shopu</td>
             </tr>
             <tr>
-              <td>Obnova feedu</td>
-              <td data-label="Shoptet">zmeny produktu do 60 minút</td>
-              <td data-label="Upgates">4-krát denne (asi o 4, 10, 16 a 22 h)</td>
+              <td data-th="Čo">Obnova feedu</td>
+              <td data-th="Shoptet">zmeny produktu do 60 minút</td>
+              <td data-th="Upgates">4-krát denne (asi o 4, 10, 16 a 22 h)</td>
             </tr>
             <tr>
-              <td>Tarifa platformy</td>
-              <td data-label="Shoptet">nápoveda k HTML kódu neuvádza podmienku tarify ani doplnok; Heureka feed je vo všetkých tarifách vrátane Free</td>
-              <td data-label="Upgates">doplnok Heureka je zdarma; cenník neviaže konverzné kódy na tarifu</td>
+              <td data-th="Čo">Tarifa platformy</td>
+              <td data-th="Shoptet">nápoveda k HTML kódu neuvádza podmienku tarify ani doplnok; Heureka feed je vo všetkých tarifách vrátane Free</td>
+              <td data-th="Upgates">doplnok Heureka je zdarma; cenník neviaže konverzné kódy na tarifu</td>
             </tr>
           </tbody>
         </table>
@@ -401,31 +392,32 @@
 
   <section id="cennik">
     <div class="wrap">
-      <p class="kicker">02</p>
-      <h2>Cenník</h2>
-      <p class="sub">Do 100 rozhovorov mesačne zadarmo, navždy, bez karty. Nad tento limit jednoduchá cena podľa počtu rozhovorov za mesiac, platba cez Stripe.</p>
-      <div class="pricing-table-wrap">
-        <table class="pricing-table">
+      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V4"/><path d="M4 20h16"/><path d="M8 16.5v-4M12.5 16.5V8M17 16.5v-6.5"/></svg>02</p>
+      <h2 class="r">Cenník</h2>
+      <div class="rule"></div>
+      <p class="sub r d1">Do 100 rozhovorov mesačne zadarmo, navždy, bez karty. Nad tento limit jednoduchá cena podľa počtu rozhovorov za mesiac, platba cez Stripe.</p>
+      <div class="tablewrap plan-cta r d2">
+        <table>
           <thead>
             <tr><th>Plán</th><th>Cena</th><th>Rozhovory / mesiac</th><th></th></tr>
           </thead>
           <tbody>
             <tr>
-              <td class="plan">Free</td>
-              <td class="price">0&nbsp;&euro;</td>
-              <td>do 100</td>
+              <td class="plan" data-th="Plán">Free</td>
+              <td class="price" data-th="Cena">0&nbsp;&euro;</td>
+              <td data-th="Rozhovory / mesiac">do 100</td>
               <td><a class="btn btn-line" href="../#playground" data-umami-event="trial_click" data-umami-event-place="pricing">Začať zadarmo</a></td>
             </tr>
             <tr>
-              <td class="plan">Starter</td>
-              <td class="price">19 &euro;<span> / mesiac</span></td>
-              <td>do 1 000</td>
+              <td class="plan" data-th="Plán">Starter</td>
+              <td class="price" data-th="Cena">19 &euro;<span> / mesiac</span></td>
+              <td data-th="Rozhovory / mesiac">do 1 000</td>
               <td><a class="btn btn-line" href="../#playground" data-umami-event="trial_click" data-umami-event-place="pricing-starter">Začať zadarmo</a></td>
             </tr>
             <tr>
-              <td class="plan">Pro</td>
-              <td class="price">39 &euro;<span> / mesiac</span></td>
-              <td>do 5 000</td>
+              <td class="plan" data-th="Plán">Pro</td>
+              <td class="price" data-th="Cena">39 &euro;<span> / mesiac</span></td>
+              <td data-th="Rozhovory / mesiac">do 3 000</td>
               <td><a class="btn btn-line" href="../#playground" data-umami-event="trial_click" data-umami-event-place="pricing-pro">Začať zadarmo</a></td>
             </tr>
           </tbody>
@@ -434,7 +426,7 @@
       <p class="pricing-table-cta"><a class="btn btn-solid" href="../#playground" data-umami-event="trial_click" data-umami-event-place="pricing-mobile">Začať zadarmo</a></p>
       <p class="pricing-note">Nič sa neúčtuje automaticky: asistent beží vo voľnom pláne, kým si sami nevyberiete platený plán zo stránky svojho účtu, ktorej odkaz dostanete hneď po vytvorení účtu. Platba kartou cez Stripe, faktúru pošle Stripe e-mailom, zrušiť kedykoľvek. Ročné predplatné zatiaľ nie je v ponuke.</p>
 
-      <div class="pro-objections">
+      <div class="pro-objections r d3">
         <p class="objections-label">Skôr než to vložíte</p>
         <details>
           <summary>Ukladáte rozhovory zákazníkov?</summary>
@@ -456,27 +448,29 @@
     </div>
   </section>
 
-  <section id="limits">
+  <section id="limits" class="deep">
     <div class="wrap">
-      <p class="kicker">03</p>
-      <h2>Čo vie, čo nevie a čo o vás vieme my</h2>
-      <p class="sub">Asistent je stavaný tak, aby o vašich zákazníkoch vedel čo najmenej a aby sľuboval len to, čo dokáže.</p>
+      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5l7 2.6v5.3c0 4-2.9 7.5-7 9.1-4.1-1.6-7-5.1-7-9.1V6.1z"/><path d="M9.4 12.2l1.9 1.9 3.4-3.7"/></svg>03</p>
+      <h2 class="r">Čo vie, čo nevie a čo o vás vieme my</h2>
+      <div class="rule"></div>
+      <p class="sub r d1">Asistent je stavaný tak, aby o vašich zákazníkoch vedel čo najmenej a aby sľuboval len to, čo dokáže.</p>
       <ul class="privacy-list">
-        <li><p><b>Odpovedá len z vášho feedu.</b> Zákazník sa pýta vlastnými slovami („máte nepremokavú bundu do 80 eur?“) a asistent odpovie z názvov, popisov, cien a kategórií vo vašom Heureka feede, s najviac tromi odkazmi na konkrétne produkty, v jazyku zákazníka (slovenčina, čeština, angličtina, nemčina).</p></li>
-        <li><p><b>Nesleduje objednávky.</b> Nevie stav objednávky ani zásielky, nerieši reklamácie, kupóny ani zákaznícke účty a nie je to živý chat s človekom. Na takéto otázky zákazníka odkáže na e-mail obchodu. Ak potrebujete práve toto, Asistent pre vás nie je.</p></li>
-        <li><p><b>Keď nevie, povie to.</b> Ak sa vo feede nenájde nič k otázke, asistent to povie rovno a odkáže na váš kontaktný e-mail, namiesto hádania.</p></li>
-        <li><p><b>Rozhovory sa neukladajú.</b> Uchovávame len denné počítadlá (rozhovory, kliknutia na produkty) kvôli mesačnému limitu plánu, nikdy obsah správ. Widget nenastavuje cookies.</p></li>
-        <li><p><b>Čo o vás vieme.</b> URL feedu, doménu e-shopu a e-mail, ktorý zadáte vo formulári. Feed je verejný súbor, ktorý váš e-shop už posiela Heureke; žiadne údaje o zákazníkoch ani objednávkach sa k nám nedostanú.</p></li>
-        <li><p><b>Zmluva podľa čl. 28 GDPR.</b> ARLing s. r. o. je sprostredkovateľ pre správy návštevníkov vášho e-shopu. Vzor: <a href="https://github.com/AndryRoby/arling-asistent/blob/main/legal/dpa-sk.md" target="_blank" rel="noopener">Zmluva o spracúvaní osobných údajov (DPA)</a>.</p></li>
-        <li><p><b>Beží na sieti Cloudflare.</b> Cloudflare verejne negarantuje spracovanie Workers AI výlučne v EÚ; DPA sa opiera o štandardné zmluvné doložky (SCC) a certifikáciu Cloudflare podľa EU Cloud Code of Conduct.</p></li>
+        <li class="r d1"><p><b>Odpovedá len z vášho feedu.</b> Zákazník sa pýta vlastnými slovami („máte nepremokavú bundu do 80 eur?“) a asistent odpovie z názvov, popisov, cien a kategórií vo vašom Heureka feede, s najviac tromi odkazmi na konkrétne produkty, v jazyku zákazníka (slovenčina, čeština, angličtina, nemčina).</p></li>
+        <li class="r d2"><p><b>Nesleduje objednávky.</b> Nevie stav objednávky ani zásielky, nerieši reklamácie, kupóny ani zákaznícke účty a nie je to živý chat s človekom. Na takéto otázky zákazníka odkáže na e-mail obchodu. Ak potrebujete práve toto, Asistent pre vás nie je.</p></li>
+        <li class="r d3"><p><b>Keď nevie, povie to.</b> Ak sa vo feede nenájde nič k otázke, asistent to povie rovno a odkáže na váš kontaktný e-mail, namiesto hádania.</p></li>
+        <li class="r d4"><p><b>Rozhovory sa neukladajú.</b> Uchovávame len denné počítadlá (rozhovory, kliknutia na produkty) kvôli mesačnému limitu plánu, nikdy obsah správ. Widget nenastavuje cookies.</p></li>
+        <li class="r d5"><p><b>Čo o vás vieme.</b> URL feedu, doménu e-shopu a e-mail, ktorý zadáte vo formulári. Feed je verejný súbor, ktorý váš e-shop už posiela Heureke; žiadne údaje o zákazníkoch ani objednávkach sa k nám nedostanú.</p></li>
+        <li class="r d6"><p><b>Zmluva podľa čl. 28 GDPR.</b> ARLing s. r. o. je sprostredkovateľ pre správy návštevníkov vášho e-shopu. Vzor: <a href="https://github.com/AndryRoby/arling-asistent/blob/main/legal/dpa-sk.md" target="_blank" rel="noopener">Zmluva o spracúvaní osobných údajov (DPA)</a>.</p></li>
+        <li class="r d6"><p><b>Beží na sieti Cloudflare.</b> Cloudflare verejne negarantuje spracovanie Workers AI výlučne v EÚ; DPA sa opiera o štandardné zmluvné doložky (SCC) a certifikáciu Cloudflare podľa EU Cloud Code of Conduct.</p></li>
       </ul>
     </div>
   </section>
 
   <section id="faq">
     <div class="wrap">
-      <p class="kicker">04</p>
-      <h2>Otázky</h2>
+      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M8.5 12.3l2.4 2.4 4.6-4.9"/></svg>04</p>
+      <h2 class="r">Otázky</h2>
+<div class="rule"></div>
 
       <details>
         <summary>Potrebujem na Shoptete doplnok z marketplace alebo platenú tarifu?</summary>
@@ -500,15 +494,15 @@
       </details>
       <details>
         <summary>Čo to stojí a ako asistenta odstránim?</summary>
-        <p>Do 100 rozhovorov mesačne zadarmo, bez platobnej karty. Nad tento limit plán Starter za 19 € mesačne (do 1 000 rozhovorov) alebo Pro za 39 € mesačne (do 5 000), platba kartou cez Stripe, zrušiť kedykoľvek. Odstránenie: zmažte riadok so skriptom v HTML kóde (Shoptet) alebo vo Vlastních konverzních kódech (Upgates), chat okamžite zmizne.</p>
+        <p>Do 100 rozhovorov mesačne zadarmo, bez platobnej karty. Nad tento limit plán Starter za 19 € mesačne (do 1 000 rozhovorov) alebo Pro za 39 € mesačne (do 3 000), platba kartou cez Stripe, zrušiť kedykoľvek. Odstránenie: zmažte riadok so skriptom v HTML kóde (Shoptet) alebo vo Vlastních konverzních kódech (Upgates), chat okamžite zmizne.</p>
       </details>
 
-      <div class="subscribe-ask">
-        <p class="sub" style="margin-bottom:14px">Ešte nie? Nechajte e-mail a napíšeme vám, keď v Asistentovi pribudne niečo nové.</p>
+      <div class="subscribe-ask r d1">
+        <p class="sub r d1" style="margin-bottom:14px">Ešte nie? Nechajte e-mail a napíšeme vám, keď v Asistentovi pribudne niečo nové.</p>
         <form class="subscribe-form" data-subscribe data-source="asistent-shoptet" data-lang="sk" data-thanks="subscribe-thanks" data-error="subscribe-error">
           <input type="text" name="website" class="hp" tabindex="-1" autocomplete="off">
           <input type="email" name="email" placeholder="vy@email.sk" required>
-          <button class="btn btn-solid" type="submit">Dajte mi vedieť</button>
+          <button class="btn btn-solid" type="submit" data-umami-event="subscribe_submit" data-umami-event-place="faq">Dajte mi vedieť</button>
           <p class="subscribe-privacy">Len správy o ARLing Asistentovi. Odhlásenie jedným kliknutím, kedykoľvek.</p>
         </form>
         <p id="subscribe-thanks" hidden>Ďakujeme, ozveme sa.</p>
@@ -517,9 +511,9 @@
     </div>
   </section>
 
-  <section id="closing-cta">
+  <section id="closing-cta" class="band">
     <div class="wrap" style="text-align:center;">
-      <p class="sub" style="margin:0 auto 18px;">URL Heureka feedu, e-mail, jeden riadok v HTML kóde. Zadarmo do 100 rozhovorov mesačne, bez platobnej karty.</p>
+      <p class="sub r d1" style="margin:0 auto 18px;">URL Heureka feedu, e-mail, jeden riadok v HTML kóde. Zadarmo do 100 rozhovorov mesačne, bez platobnej karty.</p>
       <a class="btn btn-solid" href="../#playground" data-umami-event="trial_click" data-umami-event-place="closing">Začať zadarmo</a>
     </div>
   </section>
@@ -550,6 +544,14 @@
     </div>
   </footer>
 </main>
+<nav class="rail" aria-label="Kde ste">
+  <a href="#hero"><i></i><span>Úvod</span></a>
+  <a href="#install"><i></i><span>Inštalácia</span></a>
+  <a href="#cennik"><i></i><span>Cenník</span></a>
+  <a href="#limits"><i></i><span>Čo vie</span></a>
+  <a href="#faq"><i></i><span>Otázky</span></a>
+</nav>
+
 
 <div class="sticky-cta" id="sticky-cta" hidden>
   <div class="sticky-cta-inner">
@@ -562,5 +564,6 @@
 <script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="09cc54da-8172-43b3-8aa2-84e3ab5a17f1"></script>
 <script src="../subscribe.js" defer></script>
 <script src="../sell.js" defer></script>
+<script src="../paper-motion.js" defer></script>
 </body>
 </html>

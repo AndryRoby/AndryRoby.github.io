@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://homelab.tailbf8f27.ts.net; connect-src 'self' https://homelab.tailbf8f27.ts.net; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-mrkNcE1wIMH3Dpa5sqd3wjsVSh+pX9aJ4piOaZ39fWk=' https://homelab.tailbf8f27.ts.net; connect-src 'self' https://homelab.tailbf8f27.ts.net; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
 <title>ARLing Asistent: Hľadač darčekov pre e-shopy</title>
 <meta name="description" content="Tri otázky namiesto chatu (pre koho, rozpočet, čo má rád) a päť produktov z vášho feedu s dôvodom. Hľadač darčekov je režim ARLing Asistenta, žiadna nová cena, zapnete jedným atribútom v script tagu." />
 <meta property="og:type" content="website" />
@@ -55,7 +55,7 @@
     {
       "@type": "Question",
       "name": "Je hľadač darčekov nový produkt s vlastnou cenou?",
-      "acceptedAnswer": { "@type": "Answer", "text": "Nie. Je to režim existujúceho ARLing Asistenta, počíta sa do rovnakej mesačnej kvóty rozhovorov a nemá žiadny nový cenník. Zadarmo do 100 rozhovorov mesačne, potom 19 EUR do 1 000 alebo 39 EUR do 5 000 mesačne, presne ako bežný chat." }
+      "acceptedAnswer": { "@type": "Answer", "text": "Nie. Je to režim existujúceho ARLing Asistenta, počíta sa do rovnakej mesačnej kvóty rozhovorov a nemá žiadny nový cenník. Zadarmo do 100 rozhovorov mesačne, potom 19 EUR do 1 000 alebo 39 EUR do 3 000 mesačne, presne ako bežný chat." }
     },
     {
       "@type": "Question",
@@ -91,159 +91,152 @@
 }
 </script>
 
+<link rel="preload" href="/fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/style/paper.css">
 <style>
-  :root {
-    --paper:#f6f2ea; --paper-2:#fbf9f4; --ink:#1b1a17; --ink-2:#4a4741; --muted:#66625a; --line:#d9d2c4;
-    --accent:#b23a1d; --accent-soft:#f3e2dc; --ok:#2f6f3e; --warn:#9a6b00;
-    --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
-    --sans:system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    --mono:ui-monospace,"Cascadia Code",Consolas,Menlo,monospace;
-    color-scheme: light dark;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root { --paper:#151412; --paper-2:#1d1b18; --ink:#efe9de; --ink-2:#c9c2b5; --muted:#8f887b; --line:#2e2b26; --accent:#e0623f; --accent-soft:#3a1f17; --ok:#7fbf8e; --warn:#caa552; }
-  }
-  * { box-sizing:border-box; }
-  html { background:var(--paper); }
-  body { margin:0; color:var(--ink); background:var(--paper); font:16px/1.55 var(--sans); -webkit-font-smoothing:antialiased; }
-  a { color:inherit; text-decoration-color:var(--line); text-underline-offset:3px; }
-  a:hover { text-decoration-color:var(--accent); }
-  :focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
-  img { max-width:100%; height:auto; display:block; }
-  [hidden] { display:none !important; }
-  .skip { position:absolute; left:-999px; top:8px; background:var(--ink); color:var(--paper); padding:8px 12px; z-index:10; }
-  .skip:focus { left:8px; }
-  .wrap { max-width:1040px; margin:0 auto; padding:0 24px; min-width:0; }
-  code { font:13.5px/1.4 var(--mono); background:var(--paper-2); border:1px solid var(--line); border-radius:3px; padding:1px 5px; overflow-wrap:anywhere; }
-  pre { overflow-x:auto; white-space:pre-wrap; overflow-wrap:anywhere; background:var(--paper-2); border:1px solid var(--line); border-radius:4px; padding:14px 16px; margin:0; font:13.5px/1.5 var(--mono); }
-  pre code { border:0; padding:0; background:transparent; }
 
-  header.top { border-bottom:1px solid var(--line); }
-  header.top .wrap { display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:8px 24px; padding:18px 24px; }
-  .brand { display:flex; align-items:baseline; flex-wrap:wrap; gap:2px 10px; min-width:0; }
-  .wordmark { font:600 21px/1.25 var(--serif); text-decoration:none; overflow-wrap:anywhere; }
-  .wordmark-sub { font:13px/1 var(--sans); color:var(--muted); letter-spacing:.02em; text-decoration:none; white-space:nowrap; }
-  .wordmark-sub:hover { color:var(--accent); }
-  nav.main { display:flex; flex-wrap:wrap; }
-  nav.main a { font-size:14px; margin-left:20px; text-decoration:none; color:var(--ink-2); white-space:nowrap; }
-  nav.main a:first-child { margin-left:0; }
-  nav.main a:hover { color:var(--accent); }
-  .lang-switch { display:flex; align-items:center; }
-  .lang-switch a { font:600 12px/1 var(--sans); padding:6px 9px; border:1px solid var(--line); background:var(--paper); color:var(--ink-2); text-decoration:none; }
-  .lang-switch a + a { margin-left:-1px; }
-  .lang-switch a:first-child { border-radius:4px 0 0 4px; }
-  .lang-switch a:last-child { border-radius:0 4px 4px 0; }
-  .lang-switch a:hover { border-color:var(--accent); color:var(--accent); position:relative; z-index:1; }
-  .lang-switch a[aria-current="page"] { background:var(--ink); border-color:var(--ink); color:var(--paper); position:relative; z-index:1; }
+  /* Only this page's own parts: step list, screenshot frame, pricing table, limits list,
+     subscribe form, FAQ, sticky bar. Colours, type, header, sections come from /style/paper.css. */
+  section[id]{scroll-margin-top:calc(var(--head,67px) + 14px)}
+  /* Atribut hidden musi skryvat aj prvky, ktorym vlastne CSS nastavi display.
+     paper.css toto pravidlo nema, preto stoji tu. */
+  [hidden]{display:none !important}
 
-  .hero { padding:64px 0 40px; border-bottom:1px solid var(--line); }
-  .hero h1 { font:400 clamp(28px,4.4vw,44px)/1.18 var(--serif); letter-spacing:-.01em; margin:0 0 18px; max-width:24ch; }
-  .hero p.lead { font-size:18px; color:var(--ink-2); max-width:60ch; margin:0 0 26px; }
-  .facts { list-style:none; margin:22px 0 0; padding:0; display:flex; flex-wrap:wrap; gap:8px 0; color:var(--muted); font-size:14px; }
-  .facts li + li::before { content:"·"; margin:0 10px; color:var(--line); }
-  .facts b { color:var(--ink); font-weight:600; }
+  /* Height of the sticky header. The motion script at the end of the page measures the
+     real one into --head; these values are only what applies before it runs, so a link
+     opened straight with a #hash does not land under the header either. */
+  :root{--head:67px}
+  @media (max-width:720px){:root{--head:90px}}
+  @media (max-width:460px){:root{--head:110px}}
 
-  .btn { display:inline-block; font:600 15px/1 var(--sans); padding:13px 18px; border-radius:4px; text-decoration:none; cursor:pointer; border:2px solid transparent; appearance:none; -webkit-appearance:none; }
-  .btn-solid { background:var(--accent); color:#fff; border-color:var(--accent); }
-  .btn-solid:hover { background:var(--ink); border-color:var(--ink); color:var(--paper); }
-  .btn-line { border:2px solid var(--ink); color:var(--ink); background:transparent; }
-  .btn-line:hover { border-color:var(--accent); color:var(--accent); }
-  .btn + .btn { margin-left:10px; }
+  /* header: the second wordmark, the way arling.sk/asistent/ carries it */
+  .brandline{display:flex;align-items:center;gap:12px;min-width:0}
+  .wordmark-sub{font-family:var(--ui);font-size:13px;color:var(--muted);text-decoration:none;white-space:nowrap}
+  .wordmark-sub:hover{color:var(--accent)}
+  @media (max-width:1024px){.wordmark-sub{display:none}}
+  .hero h1{font-size:clamp(29px,4.6vw,64px);letter-spacing:-.018em}
+  code{background:var(--card);border:1px solid var(--line);border-radius:4px;padding:1px 5px;overflow-wrap:anywhere}
+  pre{white-space:pre-wrap;overflow-wrap:anywhere}
+  pre code{border:0;padding:0;background:transparent}
 
-  section { padding:44px 0; border-bottom:1px solid var(--line); }
-  section[id], header.top { scroll-margin-top:14px; }
-  .kicker { font:400 14px/1 var(--serif); color:var(--accent); letter-spacing:.06em; text-transform:uppercase; margin:0 0 10px; }
-  h2 { font:400 28px/1.2 var(--serif); margin:0 0 8px; letter-spacing:-.005em; max-width:30ch; }
-  .sub { color:var(--ink-2); max-width:64ch; margin:0 0 24px; }
-
-  .rules { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:26px 32px; margin:0; padding:0; list-style:none; counter-reset:r; }
-  .rules li { padding-top:14px; border-top:1px solid var(--line); min-width:0; }
-  .rules li::before { counter-increment:r; content:counter(r,decimal-leading-zero); font:400 14px/1 var(--serif); color:var(--accent); display:block; margin-bottom:8px; }
-  .rules b { display:block; font-weight:600; margin-bottom:4px; }
-  .rules p { margin:0; color:var(--ink-2); font-size:15px; overflow-wrap:anywhere; }
-
-  figure.shot { margin:0; border:1px solid var(--line); background:var(--paper-2); border-radius:4px; overflow:hidden; }
-  figure.shot img { display:block; width:100%; height:auto; border-bottom:1px solid var(--line); }
-  figure.shot figcaption { padding:12px 16px; font-size:13.5px; color:var(--muted); }
-
-  .pricing-table { width:100%; border-collapse:collapse; }
-  .pricing-table th, .pricing-table td { text-align:left; padding:14px 10px; border-bottom:1px solid var(--line); vertical-align:top; }
-  .pricing-table th { font:600 12px/1 var(--sans); text-transform:uppercase; letter-spacing:.03em; color:var(--muted); }
-  .pricing-table td.plan { font:600 16px/1.3 var(--sans); }
-  .pricing-table td.price { font:400 26px/1 var(--serif); white-space:nowrap; }
-  .pricing-table td.price span { font:13px/1 var(--sans); color:var(--muted); }
-  .pricing-table-wrap { overflow-x:auto; }
-  .pricing-table .btn { white-space:nowrap; }
-  @media (max-width:480px) {
-    .pricing-table th, .pricing-table td { padding:12px 6px; }
-    .pricing-table td.price { font-size:21px; }
-    .pricing-table .btn { padding:9px 12px; font-size:13px; }
-  }
-  .pricing-note { color:var(--ink-2); font-size:14px; margin:16px 0 0; }
-
-  .privacy-list { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:14px; }
-  .privacy-list li { display:flex; gap:12px; align-items:flex-start; }
-  .privacy-list li::before { content:"\2022"; color:var(--accent); flex-shrink:0; font-family:var(--serif); }
-  .privacy-list p { margin:0; color:var(--ink-2); }
-  .privacy-list b { color:var(--ink); }
-
-  .hp { position:absolute; width:1px; height:1px; margin:-1px; padding:0; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
-  .subscribe-ask { border-top:1px solid var(--line); margin-top:20px; padding-top:20px; }
-  .subscribe-form { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
-  .subscribe-form input[type="email"] { height:44px; min-width:0; flex:1 1 240px; padding:0 14px; border:1px solid var(--line); border-radius:4px; background:var(--paper-2); color:var(--ink); font:15px/1 var(--sans); }
-  .subscribe-form .btn { flex:none; }
-  #subscribe-thanks { color:var(--ok); font-weight:600; }
-  #subscribe-error { color:var(--accent); font-weight:600; }
-  .subscribe-privacy { flex-basis:100%; margin:0; font-size:13px; color:var(--muted); }
-  @media (max-width:480px) { .subscribe-form input[type="email"], .subscribe-form button { width:100%; } }
-
-  details { border-top:1px solid var(--line); padding:14px 0; }
-  details:last-of-type { border-bottom:1px solid var(--line); }
-  summary { cursor:pointer; font:400 18px/1.3 var(--serif); list-style:none; display:flex; justify-content:space-between; gap:12px; }
-  summary::-webkit-details-marker { display:none; }
-  summary::after { content:"+"; color:var(--accent); flex:none; font-family:var(--sans); }
-  details[open] summary::after { content:"\2013"; }
-  details p { color:var(--ink-2); margin:10px 0 0; max-width:70ch; overflow-wrap:anywhere; }
-
-  footer { padding:32px 0 56px; color:var(--muted); font-size:14px; }
-  footer .cols { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:20px 32px; }
-  footer b { color:var(--ink); font-weight:600; }
-  footer a { color:var(--ink-2); }
-  .footer-note { margin-top:14px; font-size:12px; color:var(--muted); }
-
-  @media (max-width:480px) {
-    .hero { padding:44px 0 32px; }
-    nav.main a { margin-left:12px; }
-    .wordmark-sub { display:none; }
-    .btn + .btn { margin-left:0; margin-top:10px; }
+  .facts{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:4px 0;align-items:baseline;font-size:13.5px}
+  .facts li:not(:last-child)::after{content:"\00b7";margin:0 10px;color:var(--line)}
+  .facts b{color:var(--ink);font-weight:600}
+  @media (max-width:640px){
+    .facts{display:block}
+    .facts li{margin-bottom:4px}
+    .facts li:not(:last-child)::after{content:none}
   }
 
-  .sticky-cta { position:fixed; left:0; right:0; bottom:0; z-index:30; background:var(--paper-2); border-top:1px solid var(--line); }
-  .sticky-cta-inner { display:flex; align-items:center; gap:10px; max-width:1040px; margin:0 auto; padding:10px 14px; }
-  .sticky-cta-text { flex:1 1 auto; min-width:0; font-size:12.5px; color:var(--ink-2); overflow-wrap:anywhere; }
-  .sticky-cta .btn { flex:none; padding:10px 14px; font-size:13.5px; margin:0; }
-  .sticky-cta-close { flex:none; width:30px; height:30px; border:1px solid var(--line); background:var(--paper); color:var(--ink-2); border-radius:4px; cursor:pointer; font:16px/1 var(--sans); padding:0; }
-  .sticky-cta-close:hover { border-color:var(--accent); color:var(--accent); }
-  @media (min-width:761px) { .sticky-cta { display:none !important; } }
-  @media print { .sticky-cta { display:none !important; } }
+  .rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(250px,100%),1fr));gap:26px 32px;
+    margin:0;padding:0;list-style:none;counter-reset:r}
+  .rules li{padding-top:14px;border-top:1px solid var(--line);min-width:0}
+  .rules li::before{counter-increment:r;content:counter(r,decimal-leading-zero);
+    font:500 12px/1 var(--ui);letter-spacing:.12em;color:var(--accent);display:block;margin-bottom:10px}
+  .rules b{display:block;font:600 19px/1.3 var(--display);color:var(--ink);margin-bottom:6px}
+  .rules p{margin:0;font-size:15.5px;overflow-wrap:anywhere}
+
+  figure.shot{margin:0}
+  figure.shot img{border-bottom:1px solid var(--line)}
+  figure.shot figcaption{padding:12px 16px;font-family:var(--ui);font-size:13.5px;color:var(--muted)}
+
+  .pricing-table td.plan{font:600 16px/1.3 var(--ui);color:var(--ink)}
+  .pricing-table td.price{font:600 26px/1 var(--display);color:var(--ink);white-space:nowrap}
+  .pricing-table td.price span{font:13px/1 var(--ui);color:var(--muted)}
+  .pricing-table td:not([data-th])::before{content:none}
+  .pricing-note{font-size:14.5px;margin:16px 0 0;max-width:70ch}
+
+  .privacy-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:14px}
+  .privacy-list li{display:flex;gap:12px;align-items:flex-start}
+  .privacy-list li::before{content:"\2022";color:var(--accent);flex-shrink:0}
+  .privacy-list p{margin:0}
+  .privacy-list b{color:var(--ink)}
+  .band .privacy-list p{color:#d7d3c8}
+  @media (min-width:1000px){.privacy-list{display:grid;grid-template-columns:1fr 1fr;column-gap:60px;row-gap:14px}}
+  .band .privacy-list b{color:#fffdf8}
+
+  .hp{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+  .subscribe-ask{border-top:1px solid var(--line);margin-top:24px;padding-top:22px}
+  .subscribe-form{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+  .subscribe-form input[type="email"]{height:46px;min-width:0;flex:1 1 240px;padding:0 14px;border:1px solid var(--line);
+    border-radius:12px;background:var(--card);color:var(--ink);font:15px/1 var(--ui)}
+  .subscribe-form .btn{flex:none}
+  #subscribe-thanks{color:var(--ok);font-weight:600}
+  #subscribe-error{color:var(--accent);font-weight:600}
+  .subscribe-privacy{flex-basis:100%;margin:0;font-family:var(--ui);font-size:13px;color:var(--muted)}
+  @media (max-width:480px){.subscribe-form input[type="email"],.subscribe-form button{width:100%}}
+
+  details{border-top:1px solid var(--line);padding:14px 0}
+  details:last-of-type{border-bottom:1px solid var(--line)}
+  summary{cursor:pointer;font:600 18px/1.35 var(--display);color:var(--ink);list-style:none;
+    display:flex;justify-content:space-between;gap:12px}
+  summary::-webkit-details-marker{display:none}
+  summary::after{content:"+";color:var(--accent);flex:none;font-family:var(--ui);font-weight:400}
+  details[open] summary::after{content:"\2013"}
+  details p{margin:10px 0 0;max-width:70ch;overflow-wrap:anywhere}
+
+  .lang-switch{display:flex;align-items:center}
+  .lang-switch a{font:500 12px/1 var(--ui);padding:7px 10px;border:1px solid var(--line);background:var(--card);
+    color:var(--muted);text-decoration:none}
+  .lang-switch a + a{margin-left:-1px}
+  .lang-switch a:first-child{border-radius:8px 0 0 8px}
+  .lang-switch a:last-child{border-radius:0 8px 8px 0}
+  .lang-switch a:hover{border-color:var(--accent);color:var(--accent);position:relative;z-index:1}
+  .lang-switch a[aria-current="page"]{background:var(--ink);border-color:var(--ink);color:var(--paper);position:relative;z-index:1}
+
+  footer .cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr));gap:20px 32px}
+  footer b{color:var(--ink);font-weight:600}
+  .footer-note{margin-top:14px;font-size:12px;color:var(--muted)}
+
+  .sticky-cta{position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--paper-deep);border-top:1px solid var(--line)}
+  .sticky-cta-inner{display:flex;align-items:center;gap:10px;max-width:1040px;margin:0 auto;padding:10px 14px}
+  .sticky-cta-text{flex:1 1 auto;min-width:0;font-family:var(--ui);font-size:12.5px;color:var(--body);overflow-wrap:anywhere}
+  .sticky-cta .btn{flex:none;height:40px;padding:0 14px;font-size:13.5px}
+  .sticky-cta-close{flex:none;width:30px;height:30px;border:1px solid var(--line);background:var(--card);
+    color:var(--muted);border-radius:8px;cursor:pointer;font:16px/1 var(--ui);padding:0}
+  .sticky-cta-close:hover{border-color:var(--accent);color:var(--accent)}
+  @media (min-width:761px){.sticky-cta{display:none !important}}
+  @media print{.sticky-cta{display:none !important}}
+
+  /* Paper v2 finish: spacing after the hero index, and an index that stays
+     readable on a phone (no ellipsis, the count drops to its own line). */
+  .index + .cta{margin-top:clamp(18px,2vw,26px)}
+  .facts.proof{margin-top:22px}
+  @media (max-width:640px){
+    .index{border-top:1px solid var(--line)}
+    .index a{flex-wrap:wrap;gap:0 10px;padding:10px 0;border-bottom:1px solid var(--line)}
+    .index .t{white-space:normal;overflow:visible;text-overflow:clip;flex:1 1 auto}
+    .index .dots{display:none}
+    .index .c{flex:0 0 100%;padding-left:41.5px;margin-top:3px}
+  }
+  @media (max-width:640px){
+    /* the headline is one long sentence: on a phone let it flow instead of
+       breaking on the desktop line breaks and leaving one word per line */
+    h1 .l{display:inline}
+    h1 .l::after{content:" "}
+  }
+  .cta-center{justify-content:center}
+  .pricing-table td:last-child{text-align:right}
+  .subscribe-form{max-width:660px}
+  .subscribe-privacy{flex:0 0 100%}
+  @media (max-width:600px){.pricing-table td:last-child{text-align:left}}
 </style>
 </head>
 <body>
+<div class="wash" aria-hidden="true"><i></i><i></i></div>
 
 <a class="skip" href="#how">Skočiť na vysvetlenie</a>
-<header class="top">
-  <div class="wrap">
-    <div class="brand">
-      <a class="wordmark" href="../">ARLing Asistent</a>
+<header>
+  <div class="wrap bar">
+    <div class="brandline">
+      <a class="brand" href="../">
+        <svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true"><defs><path id="m" fill-rule="evenodd" d="M16 2.5 L29 29.5 H3 Z M16 12.4 L22.4 25.6 H9.6 Z"/><clipPath id="mr"><rect x="16" width="16" height="32"/></clipPath></defs><use href="#m" fill="#141413"/><use href="#m" fill="#b23a1d" clip-path="url(#mr)"/></svg>
+        <b>ARLing</b><span>Asistent</span>
+      </a>
       <a class="wordmark-sub" href="https://arling.sk/">nástroj ARLing</a>
     </div>
-    <nav class="main" aria-label="Stránka">
-      <a href="#how">Ako funguje</a>
-      <a href="#cennik">Cenník</a>
-      <a href="#zapnutie">Zapnutie</a>
-      <a href="#faq">Otázky</a>
-      <a href="../ukazka/">Živá ukážka</a>
-    </nav>
+    <nav aria-label="Stránka"><a href="#how">Ako funguje</a><a href="#cennik">Cenník</a><a href="#zapnutie">Zapnutie</a><a href="#faq">Otázky</a><a href="../ukazka/">Živá ukážka</a></nav>
     <div class="lang-switch" role="group" aria-label="Jazyk stránky">
       <a href="./" hreflang="sk" lang="sk" aria-current="page" aria-label="Slovenčina">SK</a>
       <a href="../gift-finder/" hreflang="en" lang="en" aria-label="English">EN</a>
@@ -252,26 +245,37 @@
 </header>
 
 <main>
-  <div class="hero">
-    <div class="wrap">
-      <h1>V novembri a decembri príde na e-shop niekto, kto nevie, čo kúpiť, a bez pomoci odíde bez objednávky.</h1>
-      <p class="lead">Hľadač darčekov je režim ARLing Asistenta: namiesto chatu položí tri krátke otázky (pre koho, rozpočet, čo má rád) a z vášho vlastného feedu vyberie päť konkrétnych produktov, ku každému jednu vetu, prečo sa hodí. Rovnaký motor ako Asistent, rovnaká cena, žiadny nový nástroj na správu.</p>
-      <a class="btn btn-solid" href="../ukazka/" data-umami-event="demo_click" data-umami-event-place="hero">Vyskúšať na ukážke</a><a class="btn btn-line" href="../#playground" data-umami-event="trial_click" data-umami-event-place="hero">Vyskúšať s vlastným feedom</a>
-      <ul class="facts">
+  <div class="wrap hero" id="hero">
+    <div>
+      <h1 id="h1"><span class="l">V novembri a</span><span class="l">decembri príde na</span><span class="l">e-shop niekto, kto</span><span class="l">nevie, čo kúpiť,</span><span class="l">a bez pomoci odíde</span><span class="l">bez objednávky.</span></h1>
+      <p class="lead r d3">Hľadač darčekov je režim ARLing Asistenta: namiesto chatu položí tri krátke otázky (pre koho, rozpočet, čo má rád) a z vášho vlastného feedu vyberie päť konkrétnych produktov, ku každému jednu vetu, prečo sa hodí. Rovnaký motor ako Asistent, rovnaká cena, žiadny nový nástroj na správu.</p>
+      <nav class="index r d4" aria-label="Stránka">
+        <a href="#how" data-umami-event="index-krok-1"><span class="n">01</span><span class="t">Zákazník klikne na „Nájdi darček“</span><span class="dots"></span><span class="c">3 otázky namiesto chatu</span></a>
+        <a href="#how" data-umami-event="index-krok-2"><span class="n">02</span><span class="t">Hľadač prehľadá váš feed</span><span class="dots"></span><span class="c">váš vlastný feed</span></a>
+        <a href="#how" data-umami-event="index-krok-3"><span class="n">03</span><span class="t">Zobrazí päť tipov s dôvodom</span><span class="dots"></span><span class="c">5 produktov s dôvodom</span></a>
+      </nav>
+      <div class="cta r d5"><a class="btn btn-solid" href="../ukazka/" data-umami-event="demo_click" data-umami-event-place="hero">Vyskúšať na ukážke</a><a class="btn btn-line" href="../#playground" data-umami-event="trial_click" data-umami-event-place="hero">Vyskúšať s vlastným feedom</a></div>
+      <ul class="facts proof r d6">
         <li><b>3</b> otázky namiesto chatu</li>
         <li><b>5</b> produktov s dôvodom</li>
         <li>súčasť Asistenta, žiadna nová cena</li>
         <li>rovnaká kvóta ako chat</li>
       </ul>
     </div>
+    <div class="shot r d3">
+      <div class="chrome" aria-hidden="true"><i></i><i></i><i></i></div>
+      <img src="/press/gift-finder-1.png" width="1200" height="718" loading="lazy" decoding="async"
+           alt="Hľadač darčekov na ukážkovom obchode Dobrá domácnosť: päť výrobkov, pri každom cena a jeden riadok, prečo sa hodí.">
+    </div>
   </div>
 
   <section id="how">
     <div class="wrap">
-      <p class="kicker">01</p>
-      <h2>Ako funguje</h2>
-      <p class="sub">Tri kroky, žiadny nový formulár na strane obchodu, žiadne nové dáta.</p>
-      <ol class="rules">
+      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="9" width="17" height="11" rx="1.5"/><path d="M2.5 9h19M12 9v11"/><path d="M12 9c-1.5-3.5-2.8-4.7-4.2-4.2C6.4 5.3 6.6 7.6 8 8.4c1 .5 2.4.6 4 .6zM12 9c1.5-3.5 2.8-4.7 4.2-4.2 1.4.5 1.2 2.8-.2 3.6-1 .5-2.4.6-4 .6z"/></svg>01</p>
+      <h2 class="r">Ako funguje</h2>
+      <div class="rule"></div>
+      <p class="sub r d1">Tri kroky, žiadny nový formulár na strane obchodu, žiadne nové dáta.</p>
+      <ol class="rules r d2">
         <li>
           <b>Zákazník klikne na „Nájdi darček“.</b>
           <p>Vedľa bežnej bubliny chatu pribudne tlačidlo. Zodpovie tri krátke otázky tlačidlami alebo vlastným textom: pre koho (partner/ka, mama, otec, dieťa, kolega, kamarát/ka, sebe), rozpočet (do 20, do 50, do 100 alebo nad 100 €, podľa cien vo vašom feede) a čo má rád (voľný text alebo chipy z kategórií feedu).</p>
@@ -288,47 +292,36 @@
     </div>
   </section>
 
-  <section id="ukazka">
+  <section id="ukazka" class="deep">
     <div class="wrap">
-      <p class="kicker">02</p>
-      <h2>Ako to vyzerá</h2>
-      <p class="sub">Skutočný beh hľadača na ukážkovom obchode Dobrá domácnosť, ktorý má aj kategóriu Darčeky. Vyskúšajte si to sami tlačidlom vyššie.</p>
-      <figure class="shot">
-        <img src="screenshot.png" width="2360" height="1280" loading="lazy" alt="Hľadač darčekov otvorený na ukážkovom obchode Dobrá domácnosť, prvá otázka Pre koho hľadáte darček s tlačidlami Partner/ka, Mama, Otec, Dieťa, Kolega, Kamarát/ka, Sebe.">
-        <figcaption>Skutočný screenshot z arling.sk/asistent/ukazka/, 5. 9. 2026. Tlačidlo „Nájdi darček“ otvára tri krátke otázky namiesto chatu.</figcaption>
+      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h16l-1 12H5z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>02</p>
+      <h2 class="r">Ako to vyzerá</h2>
+      <div class="rule"></div>
+      <p class="sub r d1">Skutočný beh hľadača na ukážkovom obchode Dobrá domácnosť, ktorý má aj kategóriu Darčeky. Vyskúšajte si to sami tlačidlom vyššie.</p>
+      <figure class="shot r d2">
+        <div class="chrome" aria-hidden="true"><i></i><i></i><i></i></div>
+        <img src="screenshot.png" width="1416" height="768" loading="lazy" decoding="async"
+             alt="Snímka: hľadač darčekov otvorený na ukážkovom obchode Dobrá domácnosť, prvá otázka Pre koho hľadáte darček s tlačidlami Partner/ka, Mama, Otec, Dieťa, Kolega, Kamarát/ka, Sebe. Za panelom je zoznam výrobkov obchodu.">
+        <figcaption>Skutočný screenshot z arling.sk/asistent/ukazka/, 6. 9. 2026. Tlačidlo „Nájdi darček“ otvára tri krátke otázky namiesto chatu.</figcaption>
       </figure>
     </div>
   </section>
 
   <section id="cennik">
     <div class="wrap">
-      <p class="kicker">03</p>
-      <h2>Cenník</h2>
-      <p class="sub">Hľadač darčekov nemá vlastný cenník. Je to režim ARLing Asistenta a počíta sa presne rovnako ako bežný rozhovor v chate: jedna relácia hľadača (tri otázky a výsledok) sa počíta ako jeden rozhovor, s rovnakou mesačnou kvótou a rovnakým session dedupe.</p>
-      <div class="pricing-table-wrap">
+      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V4"/><path d="M4 20h16"/><path d="M8 16.5v-4M12.5 16.5V8M17 16.5v-6.5"/></svg>03</p>
+      <h2 class="r">Cenník</h2>
+      <div class="rule"></div>
+      <p class="sub r d1">Hľadač darčekov nemá vlastný cenník. Je to režim ARLing Asistenta a počíta sa presne rovnako ako bežný rozhovor v chate: jedna relácia hľadača (tri otázky a výsledok) sa počíta ako jeden rozhovor, s rovnakou mesačnou kvótou a rovnakým session dedupe.</p>
+      <div class="tablewrap r d2">
         <table class="pricing-table">
           <thead>
             <tr><th>Plán</th><th>Cena</th><th>Rozhovory / mesiac</th><th></th></tr>
           </thead>
           <tbody>
-            <tr>
-              <td class="plan">Free</td>
-              <td class="price">0&nbsp;&euro;</td>
-              <td>do 100</td>
-              <td><a class="btn btn-line" href="../#playground" data-umami-event="trial_click" data-umami-event-place="pricing">Začať zadarmo</a></td>
-            </tr>
-            <tr>
-              <td class="plan">Starter</td>
-              <td class="price">19 &euro;<span> / mesiac</span></td>
-              <td>do 1 000</td>
-              <td><a class="btn btn-line" href="../#playground" data-umami-event="trial_click" data-umami-event-place="pricing-starter">Začať zadarmo</a></td>
-            </tr>
-            <tr>
-              <td class="plan">Pro</td>
-              <td class="price">39 &euro;<span> / mesiac</span></td>
-              <td>do 5 000</td>
-              <td><a class="btn btn-line" href="../#playground" data-umami-event="trial_click" data-umami-event-place="pricing-pro">Začať zadarmo</a></td>
-            </tr>
+            <tr><td class="plan" data-th="Plán">Free</td><td class="price" data-th="Cena">0&nbsp;&euro;</td><td data-th="Rozhovory / mesiac">do 100</td><td><a class="btn btn-line" href="../#playground" data-umami-event="trial_click" data-umami-event-place="pricing">Začať zadarmo</a></td></tr>
+            <tr><td class="plan" data-th="Plán">Starter</td><td class="price" data-th="Cena">19 &euro;<span> / mesiac</span></td><td data-th="Rozhovory / mesiac">do 1 000</td><td><a class="btn btn-line" href="../#playground" data-umami-event="trial_click" data-umami-event-place="pricing-starter">Začať zadarmo</a></td></tr>
+            <tr><td class="plan" data-th="Plán">Pro</td><td class="price" data-th="Cena">39 &euro;<span> / mesiac</span></td><td data-th="Rozhovory / mesiac">do 3 000</td><td><a class="btn btn-line" href="../#playground" data-umami-event="trial_click" data-umami-event-place="pricing-pro">Začať zadarmo</a></td></tr>
           </tbody>
         </table>
       </div>
@@ -336,11 +329,12 @@
     </div>
   </section>
 
-  <section id="zapnutie">
+  <section id="zapnutie" class="deep">
     <div class="wrap">
-      <p class="kicker">04</p>
-      <h2>Ako to zapnúť</h2>
-      <p class="sub">Ak už máte ARLing Asistenta nainštalovaného, stačí jeden atribút v existujúcom script tagu. Bez neho sa na vašom e-shope nič nemení.</p>
+      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="8" width="16" height="12" rx="2"/><path d="M9 8V5.5M15 8V5.5M4 13h2M18 13h2"/></svg>04</p>
+      <h2 class="r">Ako to zapnúť</h2>
+      <div class="rule"></div>
+      <p class="sub r d1">Ak už máte ARLing Asistenta nainštalovaného, stačí jeden atribút v existujúcom script tagu. Bez neho sa na vašom e-shope nič nemení.</p>
       <pre><code>&lt;script src="https://arling-asistent.arling.workers.dev/widget.js"
     data-tenant="ID_UCTU"
     data-lang="auto"
@@ -350,12 +344,13 @@
     </div>
   </section>
 
-  <section id="limity">
+  <section id="limity" class="band">
     <div class="wrap">
-      <p class="kicker">05</p>
-      <h2>Čo hľadač vie, a čo nie</h2>
-      <p class="sub">Stavaný tak, aby sľuboval len to, čo skutočne dokáže.</p>
-      <ul class="privacy-list">
+      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5l7 2.6v5.3c0 4-2.9 7.5-7 9.1-4.1-1.6-7-5.1-7-9.1V6.1z"/><path d="M9.4 12.2l1.9 1.9 3.4-3.7"/></svg>05</p>
+      <h2 class="r">Čo hľadač vie, a čo nie</h2>
+      <div class="rule"></div>
+      <p class="sub r d1">Stavaný tak, aby sľuboval len to, čo skutočne dokáže.</p>
+      <ul class="privacy-list r d2">
         <li><p><b>Vyberá len z vášho feedu.</b> Neodporúča nič, čo nie je vo vašom produktovom feede, a nič si nevymýšľa, presne ako bežný chat Asistenta.</p></li>
         <li><p><b>Nepozná sklad nad rámec feedu.</b> Dostupnosť je taká, akú uvádza váš feed. Ak feed nie je aktuálny, reálny stav na sklade sa môže líšiť.</p></li>
         <li><p><b>Nezabalí darček.</b> Nerieši balenie, darčekové poukazy ani doručenie na inú adresu, to zostáva na vašom e-shope pri objednávke.</p></li>
@@ -367,44 +362,45 @@
 
   <section id="faq">
     <div class="wrap">
-      <p class="kicker">06</p>
-      <h2>Otázky</h2>
+      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M8.5 12.3l2.4 2.4 4.6-4.9"/></svg>06</p>
+      <h2 class="r">Otázky</h2>
+      <div class="rule"></div>
 
-      <details>
+      <details class="r d1">
         <summary>Je hľadač darčekov nový produkt s vlastnou cenou?</summary>
-        <p>Nie. Je to režim existujúceho ARLing Asistenta, počíta sa do rovnakej mesačnej kvóty rozhovorov a nemá žiadny nový cenník. Zadarmo do 100 rozhovorov mesačne, potom 19 € do 1 000 alebo 39 € do 5 000 mesačne, presne ako bežný chat.</p>
+        <p>Nie. Je to režim existujúceho ARLing Asistenta, počíta sa do rovnakej mesačnej kvóty rozhovorov a nemá žiadny nový cenník. Zadarmo do 100 rozhovorov mesačne, potom 19 € do 1 000 alebo 39 € do 3 000 mesačne, presne ako bežný chat.</p>
       </details>
-      <details>
+      <details class="r d1">
         <summary>Ako dlho trvá zapnutie?</summary>
         <p>Ak už máte Asistenta nainštalovaného, pridáte atribút <code>data-gift="1"</code> do existujúceho <code>&lt;script&gt;</code> tagu, uložíte stránku a tlačidlo Nájdi darček sa objaví vedľa bubliny chatu. Bez tohto atribútu sa nič nemení.</p>
       </details>
-      <details>
+      <details class="r d1">
         <summary>Odkiaľ hľadač vyberá produkty?</summary>
         <p>Výhradne z toho istého produktového feedu, ktorý používa váš Asistent. Nič si nevymýšľa a nedoporúča produkty, ktoré nie sú vo vašom feede.</p>
       </details>
-      <details>
+      <details class="r d1">
         <summary>Ukladáte, čo zákazník odpovedal (pre koho, rozpočet, záľuby)?</summary>
         <p>Nie. Odpovede sa nikde neukladajú, ani u nás, ani v databáze, presne ako obsah bežného rozhovoru s Asistentom. Ukladáme len denné počítadlá kvôli mesačnému limitu a fakturácii.</p>
       </details>
-      <details>
+      <details class="r d1">
         <summary>Čo ak sa do rozpočtu nezmestí dosť produktov?</summary>
         <p>Rozpočet sa raz rozšíri o 30 % a hľadač doplní kandidátov. Ak ani potom nie je čo ponúknuť, hľadač to úprimne povie a ponúkne prepnúť do bežného chatu s Asistentom.</p>
       </details>
-      <details>
+      <details class="r d1">
         <summary>Počíta sa jedna relácia hľadača ako jeden rozhovor?</summary>
         <p>Áno. Jedna relácia hľadača darčekov (tri otázky a výsledok) sa počíta ako jeden rozhovor, rovnako ako v chate, s rovnakým session dedupe v mesačnej kvóte.</p>
       </details>
-      <details>
+      <details class="r d1">
         <summary>Funguje to aj na Shoptete, WooCommerce alebo Shopify?</summary>
         <p>Všade, kde beží Asistent. Na Shoptete a Upgates pridáte atribút do script tagu v HTML kóde. Vo WooCommerce pluginovi (čaká na schválenie na wordpress.org) pribudne jedno zaškrtávacie políčko v nastaveniach; kým čaká na schválenie, plugin sa inštaluje zo ZIP súboru z GitHubu.</p>
       </details>
 
-      <div class="subscribe-ask">
+      <div class="subscribe-ask r d2">
         <p class="sub" style="margin-bottom:14px">Chcete vedieť, keď hľadač darčekov dostane WooCommerce prepínač alebo Shopify appku?</p>
         <form class="subscribe-form" data-subscribe data-source="asistent-gift-sk" data-lang="sk" data-thanks="subscribe-thanks" data-error="subscribe-error">
           <input type="text" name="website" class="hp" tabindex="-1" autocomplete="off">
           <input type="email" name="email" placeholder="vas@email.sk" required>
-          <button class="btn btn-solid" type="submit">Dajte mi vedieť</button>
+          <button class="btn btn-solid" type="submit" data-umami-event="subscribe_click" data-umami-event-place="gift">Dajte mi vedieť</button>
           <p class="subscribe-privacy">Len e-mail o novinkách k ARLing Asistentovi. Odhlásenie kedykoľvek jedným klikom.</p>
         </form>
         <p id="subscribe-thanks" hidden>Ďakujeme, ozveme sa.</p>
@@ -413,10 +409,10 @@
     </div>
   </section>
 
-  <section id="closing-cta">
+  <section id="closing-cta" class="deep">
     <div class="wrap" style="text-align:center;">
       <p class="sub" style="margin:0 auto 18px;">Pridajte data-gift="1" do script tagu, alebo si to najprv vyskúšajte na ukážke. Zadarmo do 100 rozhovorov mesačne.</p>
-      <a class="btn btn-solid" href="../ukazka/" data-umami-event="demo_click" data-umami-event-place="closing">Vyskúšať na ukážke</a><a class="btn btn-line" href="../#playground" data-umami-event="trial_click" data-umami-event-place="closing">Vyskúšať s vlastným feedom</a>
+      <div class="cta cta-center"><a class="btn btn-solid" href="../ukazka/" data-umami-event="demo_click" data-umami-event-place="closing">Vyskúšať na ukážke</a><a class="btn btn-line" href="../#playground" data-umami-event="trial_click" data-umami-event-place="closing">Vyskúšať s vlastným feedom</a></div>
     </div>
   </section>
 
@@ -457,5 +453,72 @@
 <script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="09cc54da-8172-43b3-8aa2-84e3ab5a17f1"></script>
 <script src="../subscribe.js" defer></script>
 <script src="../sell.js" defer></script>
+<script>
+(function () {
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // The sticky header wraps to two rows on a phone, so its height is not a constant.
+  // Measure it into --head; section anchors keep clear of it with scroll-margin-top.
+  // No loop: one resize listener and a ResizeObserver, both event driven.
+  var hdr = document.querySelector('header');
+  if (hdr) {
+    var setHead = function () {
+      document.documentElement.style.setProperty('--head', Math.ceil(hdr.getBoundingClientRect().height) + 'px');
+    };
+    setHead();
+    window.addEventListener('resize', setHead, { passive: true });
+    if (window.ResizeObserver) { new ResizeObserver(setHead).observe(hdr); }
+  }
+  var h1 = document.getElementById('h1');
+  if (h1 && !reduce) {
+    var i = 0;
+    Array.prototype.forEach.call(h1.querySelectorAll('.l'), function (line) {
+      line.innerHTML = line.textContent.split(' ').map(function (w) {
+        return '<span class="w" style="transition-delay:' + (i++ * 0.06).toFixed(2) + 's">' + w + '</span>';
+      }).join(' ');
+    });
+  }
+  // data-th drives the phone layout of tables; keep it equal to the column heading,
+  // so it stays right when the page is switched to another language.
+  Array.prototype.forEach.call(document.querySelectorAll('table'), function (tb) {
+    var head = tb.querySelectorAll('thead th');
+    if (!head.length) return;
+    var sync = function () {
+      Array.prototype.forEach.call(tb.querySelectorAll('tbody tr'), function (tr) {
+        Array.prototype.forEach.call(tr.children, function (td, k) {
+          var name = head[k] ? head[k].textContent.trim() : '';
+          if (name && td.hasAttribute('data-th')) td.setAttribute('data-th', name);
+        });
+      });
+    };
+    sync();
+    document.addEventListener('arling:langchange', sync);
+  });
+  if (reduce) {
+    Array.prototype.forEach.call(document.querySelectorAll('.r, .hero, section'), function (e) { e.classList.add('in'); });
+    return;
+  }
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (en) {
+      if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); }
+    });
+  }, { rootMargin: '0px 0px -12% 0px', threshold: 0.05 });
+  Array.prototype.forEach.call(document.querySelectorAll('.hero, section'), function (s) { io.observe(s); });
+
+  var rail = document.querySelector('.rail');
+  if (rail) {
+    var links = Array.prototype.slice.call(rail.querySelectorAll('a'));
+    var targets = links.map(function (a) { return document.querySelector(a.getAttribute('href')); });
+    var railIo = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        var k = targets.indexOf(en.target);
+        if (k < 0 || !en.isIntersecting) return;
+        links.forEach(function (a, j) { a.setAttribute('aria-current', j === k ? 'true' : 'false'); });
+      });
+      rail.classList.add('on');
+    }, { rootMargin: '-45% 0px -45% 0px' });
+    targets.forEach(function (t) { if (t) railIo.observe(t); });
+  }
+})();
+</script>
 </body>
 </html>

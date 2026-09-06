@@ -7,43 +7,97 @@
 <meta name="robots" content="noindex" />
 <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
 <link rel="alternate icon" href="./favicon.ico" />
+<!-- Vzhľad: jediný zdroj je /style/paper.css (kópia ops/design/paper/paper.css).
+     Písma ARLing sú hostené u nás, žiadne externé CDN. -->
+<link rel="preload" href="/fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/style/paper.css">
+<!-- Merania: bez tohto skriptu je data-umami-event na tlačidle nižšie mŕtvy atribút
+     a o 404 sa nedozvieme nič. Rovnaký skript aj website-id ako na index.html. -->
+<script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="c866f49f-54e4-4339-84c0-8bf720b64b09"></script>
 <style>
-  :root {
-    --paper:#f6f2ea; --paper-2:#fbf9f4; --ink:#1b1a17; --ink-2:#4a4741; --muted:#66625a; --line:#d9d2c4;
-    --accent:#b23a1d; --accent-soft:#f3e2dc;
-    --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
-    --sans:system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    --mono:ui-monospace,"Cascadia Code",Consolas,Menlo,monospace;
-    color-scheme: light dark;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root { --paper:#151412; --paper-2:#1d1b18; --ink:#efe9de; --ink-2:#c9c2b5; --muted:#8f887b; --line:#2e2b26; --accent:#e0623f; --accent-soft:#3a1f17; }
-  }
-  * { box-sizing:border-box; }
-  html { background:var(--paper); }
-  body {
-    margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px;
-    color:var(--ink); background:var(--paper); font:16px/1.55 var(--sans); -webkit-font-smoothing:antialiased;
-  }
-  a { color:inherit; text-decoration-color:var(--line); text-underline-offset:3px; }
-  a:hover { text-decoration-color:var(--accent); }
-  :focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
-  .card { max-width:480px; width:100%; text-align:center; }
-  .kicker { font:400 14px/1 var(--serif); color:var(--accent); letter-spacing:.06em; text-transform:uppercase; margin:0 0 14px; }
-  h1 { font:400 clamp(26px,4.5vw,34px)/1.2 var(--serif); letter-spacing:-.01em; margin:0 0 14px; }
-  p.sub { color:var(--ink-2); font-size:15.5px; margin:0 0 28px; }
-  .btn { display:inline-block; font:600 15px/1 var(--sans); padding:13px 20px; border-radius:4px; text-decoration:none; }
-  .btn-solid { background:var(--accent); color:#fff; }
-  .btn-solid:hover { background:var(--ink); color:var(--paper); }
-  code { font:14px/1.4 var(--mono); background:var(--paper-2); border:1px solid var(--line); border-radius:3px; padding:1px 5px; }
+  /* 404: len to, čo je vlastné tejto stránke. Zvyšok je /style/paper.css. */
+  :root { --wrap:min(1180px,92vw); }
+  .bar { flex-wrap:wrap; height:auto; min-height:66px; padding:9px 0; gap:10px 18px; }
+  .brand { flex-wrap:wrap; min-width:0; }
+  .brand-mark { display:flex; align-items:center; gap:11px; text-decoration:none; color:var(--ink); }
+  .brand-mark svg { display:block; }
+  .brand-sec { font-family:var(--ui); font-size:13px; color:var(--muted); text-decoration:none;
+    border-left:1px solid var(--line); padding-left:11px; white-space:nowrap; }
+  .brand-sec:hover { color:var(--accent); }
+  /* Pravý stĺpec nesie skutočný artefakt: snímku nástroja camt.053 do Excelu,
+     teda jedného zo štyroch, na ktoré vedie tlačidlo vedľa. Bez nej ostávala
+     pri 1440 px prázdna polovica stránky. */
+  .hero { align-items:center; min-height:calc(100vh - 260px); }
+  .code { font-family:var(--ui); font-variant-numeric:tabular-nums; font-size:12px; letter-spacing:.12em;
+    color:var(--accent); margin:0 0 10px; }
+  footer { padding:28px 0 44px; }
 </style>
+<noscript><style>
+  /* Bez JavaScriptu sa nič neprichádza: všetko je hneď viditeľné. */
+  .r, .w { opacity:1 !important; transform:none !important; filter:none !important; }
+  .rule { transform:scaleX(1) !important; }
+</style></noscript>
 </head>
 <body>
-  <div class="card">
-    <p class="kicker">Bankové nástroje pre účtovníkov</p>
-    <h1>Táto stránka neexistuje.</h1>
-    <p class="sub">Skúste sa vrátiť na hlavnú stránku a odtiaľ na jeden zo štyroch nástrojov.</p>
-    <a class="btn btn-solid" href="./">Späť na Bankové nástroje</a>
+<div class="wash" aria-hidden="true"><i></i><i></i></div>
+
+<header>
+  <div class="wrap bar">
+    <div class="brand">
+      <a class="brand-mark" href="https://arling.sk/">
+        <svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true"><defs><path id="m" fill-rule="evenodd" d="M16 2.5 L29 29.5 H3 Z M16 12.4 L22.4 25.6 H9.6 Z"/><clipPath id="mr"><rect x="16" y="0" width="16" height="32"/></clipPath></defs><use href="#m" fill="#141413"/><use href="#m" fill="#b23a1d" clip-path="url(#mr)"/></svg>
+        <b>ARLing</b>
+      </a>
+      <a class="brand-sec" href="./">Bankové nástroje</a>
+    </div>
   </div>
+</header>
+
+<main>
+  <div class="wrap hero" id="hero">
+    <div>
+      <p class="code">404</p>
+      <h1 id="h1"><span class="l">Táto stránka neexistuje.</span></h1>
+      <p class="lead r d1">Skúste sa vrátiť na hlavnú stránku a odtiaľ na jeden zo štyroch nástrojov.</p>
+      <div class="cta r d2">
+        <a class="btn btn-solid" href="./" data-umami-event="open-bankove-nastroje">Späť na Bankové nástroje</a>
+      </div>
+      <p class="proof r d3">Bankové nástroje pre účtovníkov</p>
+    </div>
+    <div class="shot r d2">
+      <div class="chrome" aria-hidden="true"><i></i><i></i><i></i></div>
+      <img src="press/bankove-nastroje-2-camt053-table.webp" width="1270" height="668"
+           loading="lazy" decoding="async"
+           alt="Snímka nástroja camt.053 do Excelu: výpis z banky prevedený na tabuľku so súhrnom a kontrolou zostatku">
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap"><a href="https://arling.sk/">Všetky nástroje ARLing</a></div>
+</footer>
+
+<script>
+(function () {
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var hero = document.getElementById('hero');
+  var h1 = document.getElementById('h1');
+  if (reduce) {
+    document.querySelectorAll('.r').forEach(function (e) { e.classList.add('in'); });
+    if (h1) h1.classList.add('in');
+    return;
+  }
+  setTimeout(function () { hero.querySelectorAll('.r').forEach(function (e) { e.classList.add('in'); }); }, 20);
+  if (h1) {
+    var line = h1.querySelector('.l');
+    var i = 0;
+    line.innerHTML = line.textContent.trim().split(/\s+/).map(function (w) {
+      return '<span class="w" style="transition-delay:' + (i++ * 0.06).toFixed(2) + 's">' + w + '</span>';
+    }).join(' ');
+    setTimeout(function () { h1.classList.add('in'); }, 20);
+  }
+})();
+</script>
 </body>
 </html>

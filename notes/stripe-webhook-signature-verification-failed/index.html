@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://homelab.tailbf8f27.ts.net; connect-src 'self' https://homelab.tailbf8f27.ts.net; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-uJkDKiTVu1iwiitFPAVfAgxIRiBU6CD8W2INuvmcFHA=' https://homelab.tailbf8f27.ts.net; connect-src 'self' https://homelab.tailbf8f27.ts.net; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
 <title>Stripe "No signatures found matching the expected signature": twelve causes, one at a time</title>
 <meta name="description" content="Twelve exact causes of Stripe webhook signature verification failing, with raw-body fixes for Next.js, Express, Fastify, Lambda and edge runtimes.">
 <meta property="og:type" content="article">
@@ -11,7 +11,7 @@
 <meta property="og:description" content="Twelve exact causes of Stripe webhook signature verification failing, with raw-body fixes for Next.js, Express, Fastify, Lambda and edge runtimes.">
 <meta property="og:url" content="https://arling.sk/notes/stripe-webhook-signature-verification-failed/">
 <meta property="og:image" content="https://arling.sk/stripe-webhook-doctor/icon-512.png">
-<meta name="theme-color" content="#f6f2ea">
+<meta name="theme-color" content="#faf9f5">
 <link rel="canonical" href="https://arling.sk/notes/stripe-webhook-signature-verification-failed/">
 <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
 
@@ -52,191 +52,287 @@
 }
 </script>
 
+<link rel="preload" href="/fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/style/paper.css">
 <style>
-  :root { --paper:#f6f2ea; --paper-2:#fbf9f4; --ink:#1b1a17; --ink-2:#4a4741; --muted:#66625a; --line:#d9d2c4; --accent:#b23a1d; --accent-soft:#f3e2dc; --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif; --sans:system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; --mono:ui-monospace,"Cascadia Code",Consolas,Menlo,monospace; }
-  @media (prefers-color-scheme: dark) { :root { --paper:#151412; --paper-2:#1d1b18; --ink:#efe9de; --ink-2:#c9c2b5; --muted:#8f887b; --line:#2e2b26; --accent:#e0623f; --accent-soft:#3a1f17; } }
-  * { box-sizing:border-box; }
-  body { margin:0; background:var(--paper); color:var(--ink); font:16px/1.55 var(--sans); }
-  a { color:inherit; text-decoration-color:var(--line); text-underline-offset:3px; }
-  a:hover { text-decoration-color:var(--accent); }
-  .wrap { max-width:760px; margin:0 auto; padding:0 24px; }
-  header.top { border-bottom:1px solid var(--line); }
-  header.top .wrap { display:flex; align-items:baseline; justify-content:space-between; padding:18px 24px; flex-wrap:wrap; gap:8px; }
-  .wordmark { font:600 22px/1 var(--serif); text-decoration:none; }
-  nav a { font-size:14px; margin-left:20px; text-decoration:none; color:var(--ink-2); }
-  main.wrap { padding-bottom:8px; }
-  h1 { font:400 clamp(28px,4.2vw,38px)/1.18 var(--serif); margin:20px 0 10px; max-width:34ch; }
-  h2 { font:400 24px/1.2 var(--serif); margin:8px 0 10px; }
-  .kicker { font:400 13px/1 var(--serif); color:var(--accent); letter-spacing:.06em; text-transform:uppercase; margin:0 0 8px; }
-  .byline { color:var(--muted); font-size:14px; margin:0 0 28px; }
-  p, li { color:var(--ink-2); max-width:66ch; overflow-wrap:anywhere; }
-  ol { padding-left:22px; }
-  ol li { margin-bottom:10px; }
-  section.cause { border-top:1px solid var(--line); padding-top:26px; margin-top:26px; }
-  code { font-family:var(--mono); font-size:0.92em; background:var(--paper-2); border:1px solid var(--line); border-radius:3px; padding:1px 5px; color:var(--ink); }
-  pre { background:var(--paper-2); border:1px solid var(--line); border-radius:4px; padding:14px 16px; overflow-x:auto; margin:14px 0; max-width:100%; }
-  pre code { background:none; border:none; padding:0; font-size:13px; line-height:1.5; white-space:pre; }
-  .err { border-radius:4px; border:1px solid var(--line); border-left:3px solid var(--accent); background:var(--accent-soft); padding:12px 16px; margin:16px 0; }
-  .err code { background:none; border:none; padding:0; color:var(--ink); }
-  .fix-label { font-size:13px; color:var(--muted); margin:16px 0 -4px; letter-spacing:.02em; }
-  .tool-cta { display:inline-block; margin-top:6px; padding:10px 18px; border:2px solid var(--accent); border-radius:4px; text-decoration:none; color:var(--ink); font-size:15px; }
-  .tool-cta:hover { background:var(--accent-soft); }
-  .sources li { margin-bottom:6px; font-size:15px; }
-  footer { margin-top:56px; padding:24px 0 56px; border-top:1px solid var(--line); color:var(--muted); font-size:14px; }
-  @media (max-width:480px) { header.top .wrap { flex-direction:column; align-items:flex-start; } nav a { margin-left:0; margin-right:16px; } }
+  /* Notes. Vzhlad, farby, typografia a pohyb su v /style/paper.css.
+     Tu ostava len to, co je pre clanok vlastne: merany pas, register, panel s nastrojom. */
+  .note{max-width:min(100%,880px);margin:0 auto}
+  .doc{max-width:min(68ch,660px);font-size:clamp(17px,1.2vw,18px);line-height:1.62}
+
+  /* uvod clanku: nadpis, datum, odkaz na nastroj */
+  .hero-note{padding:clamp(34px,4.6vw,72px) 0 clamp(20px,2.4vw,34px)}
+  /* Titul clanku je hero stranky. Hlavna veta dorastie na desktope na 64 px, ako ziada
+     paper-v2 bod 9.4. Druhy riadok titulu je vzdy vysvetlujuca cast za dvojbodkou:
+     ostava v rovnakom reze, len mensia a tlmenejsia, aby ani najdlhsi titul (141 znakov
+     v clanku o Shopify) nezabral cely prvy pohlad. Rodinu, farbu a letter-spacing
+     urcuje paper.css, tu je len mierka. */
+  .hero-note h1{font-size:clamp(32px,4.6vw,64px);line-height:1.05;margin:0 0 18px}
+  .hero-note h1 .l+.l{display:block;margin-top:.3em;font-weight:500;
+    font-size:clamp(20px,2.4vw,34px);line-height:1.2;letter-spacing:-.01em;color:var(--body)}
+  .hero-note .kicker{display:block;margin:0 0 12px}
+  .hero-note .crumbs{font-family:var(--ui);font-size:12px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--accent);margin:0 0 12px}
+  .hero-note .crumbs a{color:inherit;text-decoration:none}
+  .hero-note .crumbs a:hover{text-decoration:underline}
+  .byline,.dateline{font-family:var(--ui);font-size:14px;color:var(--muted);margin:0 0 20px;max-width:none}
+  .toolgo{margin:0}
+
+  /* rytmus clanku: vlasova linka medzi castami, ziadne velke medzery sekcii */
+  section{scroll-margin-top:86px}
+  .doc section{padding:0;border-top:none;margin:0 0 clamp(26px,2.8vw,38px)}
+  .doc section+section{border-top:1px solid var(--line);padding-top:clamp(26px,2.8vw,36px)}
+  /* Mierka nadpisov vnutri clanku, nie kopia paper.css: pas textu ma 660 px, do neho sa
+     sekcny nadpis v plnej velkosti z paper.css (42 px) nezmesti bez zalomenia. Mení sa
+     len velkost a odstupy, vsetko ostatne dedi z paper.css. */
+  .doc h2{font-size:clamp(21px,1.9vw,27px);line-height:1.22;margin:0 0 12px}
+  .doc h3{font-size:clamp(17.5px,1.3vw,20px);margin:18px 0 8px}
+  .doc p{margin:0 0 14px;max-width:none}
+  .doc .num,.doc .kicker{display:block;font-family:var(--ui);font-size:12px;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--accent);margin:0 0 7px}
+  .doc .lead,.doc .lede{font-size:clamp(18px,1.35vw,20.5px);line-height:1.55;max-width:none;margin:0 0 18px}
+  .doc ol,.doc ul{padding-left:22px;margin:0 0 16px}
+  .doc li{margin:0 0 7px}
+  .doc li:last-child{margin-bottom:0}
+  .doc a{overflow-wrap:anywhere}
+  .doc code{background:var(--paper-deep);border:1px solid var(--line);border-radius:4px;padding:1px 5px;
+    overflow-wrap:anywhere}
+  .doc pre{margin:0 0 16px;white-space:pre-wrap;overflow-wrap:break-word}
+  .doc pre code{background:none;border:none;padding:0;font-size:13.5px;line-height:1.55}
+  .doc blockquote{margin:0 0 16px;padding:8px 16px;border-left:2px solid var(--line);color:var(--muted)}
+
+  /* chybova hlaska, oprava, ukazka kodu s popisom */
+  .doc .err{background:color-mix(in srgb,var(--accent) 7%,var(--card));border:1px solid var(--line);
+    border-left:3px solid var(--accent);border-radius:8px;padding:12px 16px;margin:0 0 16px}
+  .doc .err code{background:none;border:none;padding:0;color:var(--ink)}
+  .doc .fix{margin:0 0 16px;padding-left:16px;border-left:2px solid var(--accent)}
+  .doc .fix p{margin:0 0 8px}
+  .doc .fix p:last-child{margin-bottom:0}
+  .doc .fix-label{font-family:var(--ui);font-size:12px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--muted);margin:0 0 6px}
+  .doc .snippet{background:var(--card);border:1px solid var(--line);border-radius:10px;margin:0 0 18px;
+    overflow:hidden}
+  .doc .snippet .cap{padding:8px 14px;border-bottom:1px solid var(--line);
+    font:500 11px/1.3 var(--ui);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  .doc .snippet.bad .cap{color:var(--accent)}
+  .doc .snippet pre{margin:0;border:none;border-radius:0;background:none;white-space:pre-wrap}
+
+  /* caste otazky */
+  .doc details{border-top:1px solid var(--line);padding:14px 0}
+  .doc details:last-of-type{border-bottom:1px solid var(--line);margin-bottom:16px}
+  .doc summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;gap:14px;
+    font:600 17px/1.35 var(--display);color:var(--ink)}
+  .doc summary::-webkit-details-marker{display:none}
+  .doc summary::after{content:"+";flex:none;color:var(--accent);font-family:var(--ui);font-weight:400}
+  .doc details[open] summary::after{content:"\2013"}
+  .doc details p{margin:10px 0 0}
+
+  /* zdroje */
+  .doc ul.sources{list-style:none;padding-left:0}
+  .doc ul.sources li{padding-left:14px;border-left:2px solid var(--line)}
+  .doc .sources li{margin:0 0 10px;font-size:.95em}
+  .doc .sources cite{font-style:italic}
+  .doc ul.plain{list-style:none;padding-left:0}
+  .doc ul.plain li{margin:0;padding:10px 0;border-top:1px solid var(--line)}
+  .doc ul.plain li:first-child{border-top:none}
+
+  /* panel s nastrojom: jedina tmava plocha v texte, tam sa klika */
+  .doc .tool-box,.doc .toolbox,.doc .check,.doc .try,.doc .cta{display:block;background:var(--ink);
+    color:#cfcabd;border:none;border-radius:var(--radius);padding:clamp(20px,2.2vw,28px);margin:0 0 18px}
+  .doc .tool-box p,.doc .check p,.doc .try p,.doc .cta p{max-width:none;margin:0 0 12px;color:#cfcabd}
+  .doc .toolbox{max-width:none;color:#cfcabd}
+  .doc .tool-box p:last-of-type,.doc .check p:last-child,.doc .try p:last-child,
+  .doc .cta p:last-child{margin-bottom:0}
+  .doc .tool-box a,.doc .toolbox a,.doc .check a,.doc .try a,.doc .cta a{color:#fffdf8}
+  .doc .tool-box a:hover,.doc .toolbox a:hover,.doc .check a:hover,.doc .try a:hover,
+  .doc .cta a:hover{color:var(--accent-light)}
+  .doc .tool-box code,.doc .toolbox code,.doc .check code,.doc .try code,.doc .cta code{
+    background:rgba(255,253,248,.10);border-color:rgba(255,253,248,.22);color:#fffdf8}
+  .doc .tool-box .btn{margin:14px 10px 0 0;text-decoration:none;color:#fff}
+  /* dve tlacidla vedla seba sa nesmu dotykat, na uzkom mobile sa zalomia pod seba */
+  /* druhe tlacidlo v tmavom paneli je vedlajsie: linka namiesto plochy */
+  .doc .tool-box .btn+.btn{background:none;border:1px solid rgba(255,253,248,.45);color:#fffdf8}
+  .doc .tool-box .btn+.btn:hover{background:#fffdf8;color:var(--ink)}
+  .doc .tool-cta{display:inline-flex;align-items:center;height:46px;padding:0 20px;border-radius:12px;
+    margin:2px 0 0;background:var(--accent);color:#fff;font:500 15px/1 var(--ui);text-decoration:none}
+  .doc .tool-cta:hover{background:var(--accent-dark);color:#fff}
+
+  /* bocny register drzi sa laveho okraja clanku */
+  .rail{left:max(20px,calc(50% - 620px));width:145px;gap:9px}
+  .rail a{min-width:0}
+  .rail i{flex:none}
+  .rail span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  /* Stlpec clanku je uzsi nez obsah hubu (880 px, nie 1340), tak sa register zmesti
+     uz od 1280 px: cely stoji v lavom okraji a od textu ho deli stalych 35 px.
+     Pod tou hranicou by uz do textu zasahoval, preto ho paper.css skryje. */
+  @media (min-width:1280px){.rail{display:flex}}
+
+  /* paticka je tmavy pas na konci */
+  footer.band{border-top:none;color:#a8a294}
+  footer.band a,footer.band b{color:#fffdf8}
+  footer.band .wrap{max-width:880px}
+  footer.band .cols{width:min(880px,92vw);margin:0 auto;gap:16px 32px}
+
 </style>
 </head>
 <body>
-<header class="top"><div class="wrap"><a class="wordmark" href="https://arling.sk/">ARLing</a><nav><a href="https://arling.sk/#tools">Tools</a><a href="https://arling.sk/stripe-webhook-doctor/">Stripe Webhook Doctor</a><a href="https://arling.sk/how-we-work/">How we work</a></nav></div></header>
-<main class="wrap">
-  <p class="kicker" style="margin-top:36px">Notes</p>
-  <h1>Stripe "No signatures found matching the expected signature": twelve causes, one at a time</h1>
-  <p class="byline">Andrej Lauko, ARLing · 6 September 2026</p>
-
-  <p>Stripe webhook signature verification fails with this exact message when <code>constructEvent()</code> rejects a webhook request outright, before your code ever reads the event:</p>
-  <div class="err"><code>Webhook signature verification failed. Err: No signatures found matching the expected signature for payload.</code></div>
-  <p><code>constructEvent()</code> checks exactly three inputs: the raw request body, the <code>whsec_</code> signing secret, and the <code>Stripe-Signature</code> header. It fails the same way on Next.js and on plain Express, usually because some layer before your handler already parsed or rewrote the raw body. Below are the twelve causes, one at a time.</p>
-
-  <section class="cause">
-    <p class="kicker">01</p>
-    <h2>The body already arrived as parsed JSON</h2>
-    <p>Something upstream, a global body parser, a logging proxy, an API gateway, parsed the request body into a JavaScript object before <code>constructEvent()</code> ran. Stripe's docs are direct: "Stripe requires the raw body of the request to perform signature verification... Any manipulation to the raw body of the request causes the verification to fail." A parsed object is not the raw body, even when its content looks identical.</p>
-    <p class="fix-label">Fix</p>
-    <pre><code>app.post('/webhook', express.raw({ type: 'application/json' }), (req, res) => {
+<div class="wash" aria-hidden="true"><i></i><i></i></div>
+<noscript><style>.r,.w{opacity:1;transform:none;filter:none}</style></noscript>
+<header>
+  <div class="wrap bar">
+    <a class="brand" href="https://arling.sk/">
+      <svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true"><defs><path id="m" fill-rule="evenodd" d="M16 2.5 L29 29.5 H3 Z M16 12.4 L22.4 25.6 H9.6 Z"/><clipPath id="mr"><rect x="16" width="16" height="32"/></clipPath></defs><use href="#m" fill="#1b1a17"/><use href="#m" fill="#b23a1d" clip-path="url(#mr)"/></svg>
+      <b>ARLing</b><span>Notes</span>
+    </a>
+    <nav><a href="https://arling.sk/#tools">Tools</a><a data-umami-event="open-stripe-webhook-doctor-nav" href="https://arling.sk/stripe-webhook-doctor/">Stripe Webhook Doctor</a><a href="https://arling.sk/how-we-work/">How we work</a></nav>
+  </div>
+</header>
+<main>
+  <div class="wrap">
+    <div class="note">
+      <div class="hero-note" id="hero">
+        <p class="kicker r">Notes</p>
+        <h1 id="h1" class="r d1"><span class="l">Stripe "No signatures found matching the expected signature":</span><span class="l">twelve causes, one at a time</span></h1>
+        <p class="byline r d2">Andrej Lauko, ARLing · 6 September 2026</p>
+        <p class="toolgo r d3"><a data-umami-event="open-stripe-webhook-doctor-hero" class="go" href="https://arling.sk/stripe-webhook-doctor/">Open Stripe Webhook Signature Doctor <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2.5 8h11M9 3.5 13.5 8 9 12.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a></p>
+      </div>
+      <div class="doc">
+        <section class="sec" id="s1">
+  <p class="r">Stripe webhook signature verification fails with this exact message when <code>constructEvent()</code> rejects a webhook request outright, before your code ever reads the event:</p>
+  <div class="err r d1"><code>Webhook signature verification failed. Err: No signatures found matching the expected signature for payload.</code></div>
+  <p class="r d2"><code>constructEvent()</code> checks exactly three inputs: the raw request body, the <code>whsec_</code> signing secret, and the <code>Stripe-Signature</code> header. It fails the same way on Next.js and on plain Express, usually because some layer before your handler already parsed or rewrote the raw body. Below are the twelve causes, one at a time.</p>
+        </section>
+        <section class="sec" id="s2">
+    <p class="kicker r">01</p>
+    <h2 class="r d1">The body already arrived as parsed JSON</h2>
+    <p class="r d2">Something upstream, a global body parser, a logging proxy, an API gateway, parsed the request body into a JavaScript object before <code>constructEvent()</code> ran. Stripe's docs are direct: "Stripe requires the raw body of the request to perform signature verification... Any manipulation to the raw body of the request causes the verification to fail." A parsed object is not the raw body, even when its content looks identical.</p>
+    <p class="fix-label r d3">Fix</p>
+    <pre class="r d3"><code>app.post('/webhook', express.raw({ type: 'application/json' }), (req, res) => {
   const event = stripe.webhooks.constructEvent(
     req.body, req.headers['stripe-signature'], secret
   );
 });</code></pre>
-  </section>
-
-  <section class="cause">
-    <p class="kicker">02</p>
-    <h2>The body was parsed, then re-serialized</h2>
-    <p>Some handlers call <code>JSON.parse()</code> on the body, do something with it, then call <code>JSON.stringify()</code> on the result before passing it to <code>constructEvent()</code>. Re-serializing can change whitespace or key order versus the exact bytes Stripe signed. The HMAC comparison fails even though the data looks identical.</p>
-    <p class="fix-label">Fix</p>
-    <pre><code>// wrong: constructEvent(JSON.stringify(JSON.parse(raw)), sig, secret)
+        </section>
+        <section class="sec" id="s3">
+    <p class="kicker r">02</p>
+    <h2 class="r d1">The body was parsed, then re-serialized</h2>
+    <p class="r d2">Some handlers call <code>JSON.parse()</code> on the body, do something with it, then call <code>JSON.stringify()</code> on the result before passing it to <code>constructEvent()</code>. Re-serializing can change whitespace or key order versus the exact bytes Stripe signed. The HMAC comparison fails even though the data looks identical.</p>
+    <p class="fix-label r d3">Fix</p>
+    <pre class="r d3"><code>// wrong: constructEvent(JSON.stringify(JSON.parse(raw)), sig, secret)
 const event = stripe.webhooks.constructEvent(raw, sig, secret); // keep the original bytes</code></pre>
-  </section>
-
-  <section class="cause">
-    <p class="kicker">03</p>
-    <h2>A global body parser runs before the webhook route</h2>
-    <p>In Express, <code>app.use(express.json())</code> mounted ahead of the webhook route consumes and parses the stream first. Stripe's troubleshooting docs single this out: "the order of middleware configuration matters." Scope raw-body parsing to the webhook route alone, mounted before any global parser.</p>
-    <p class="fix-label">Fix</p>
-    <pre><code>app.post('/webhook', express.raw({ type: 'application/json' }), webhookHandler);
+        </section>
+        <section class="sec" id="s4">
+    <p class="kicker r">03</p>
+    <h2 class="r d1">A global body parser runs before the webhook route</h2>
+    <p class="r d2">In Express, <code>app.use(express.json())</code> mounted ahead of the webhook route consumes and parses the stream first. Stripe's troubleshooting docs single this out: "the order of middleware configuration matters." Scope raw-body parsing to the webhook route alone, mounted before any global parser.</p>
+    <p class="fix-label r d3">Fix</p>
+    <pre class="r d3"><code>app.post('/webhook', express.raw({ type: 'application/json' }), webhookHandler);
 app.use(express.json()); // every other route, mounted after</code></pre>
-  </section>
-
-  <section class="cause">
-    <p class="kicker">04</p>
-    <h2>Next.js App Router: req.json() instead of req.text()</h2>
-    <p>A route handler under <code>app/api/.../route.ts</code> that calls <code>await req.json()</code> has already parsed the body. Stripe's own Next.js example in the stripe-node repository reads it with <code>req.text()</code> specifically, so <code>constructEvent()</code> gets the untouched string.</p>
-    <p class="fix-label">Fix</p>
-    <pre><code>export async function POST(req) {
+        </section>
+        <section class="sec" id="s5">
+    <p class="kicker r">04</p>
+    <h2 class="r d1">Next.js App Router: req.json() instead of req.text()</h2>
+    <p class="r d2">A route handler under <code>app/api/.../route.ts</code> that calls <code>await req.json()</code> has already parsed the body. Stripe's own Next.js example in the stripe-node repository reads it with <code>req.text()</code> specifically, so <code>constructEvent()</code> gets the untouched string.</p>
+    <p class="fix-label r d3">Fix</p>
+    <pre class="r d3"><code>export async function POST(req) {
   const body = await req.text(); // not req.json()
   const event = stripe.webhooks.constructEvent(
     body, req.headers.get('stripe-signature'), secret
   );
 }</code></pre>
-  </section>
-
-  <section class="cause">
-    <p class="kicker">05</p>
-    <h2>Missing await on req.text()</h2>
-    <p><code>req.text()</code> returns a Promise. Without <code>await</code>, <code>constructEvent()</code> receives the pending Promise, not a resolved string. That produces a different error, "Webhook payload must be provided as a string or a Buffer", so if that is what you see, check this line.</p>
-    <p class="fix-label">Fix</p>
-    <pre><code>const body = await req.text();</code></pre>
-  </section>
-
-  <section class="cause">
-    <p class="kicker">06</p>
-    <h2>Next.js Pages Router: default body parser not disabled</h2>
-    <p>Pages Router API routes parse the body as JSON by default. Without <code>export const config = { api: { bodyParser: false } }</code>, Next has already consumed and parsed the raw bytes before your handler runs.</p>
-    <p class="fix-label">Fix</p>
-    <pre><code>export const config = { api: { bodyParser: false } };
-
+        </section>
+        <section class="sec" id="s6">
+    <p class="kicker r">05</p>
+    <h2 class="r d1">Missing await on req.text()</h2>
+    <p class="r d2"><code>req.text()</code> returns a Promise. Without <code>await</code>, <code>constructEvent()</code> receives the pending Promise, not a resolved string. That produces a different error, "Webhook payload must be provided as a string or a Buffer", so if that is what you see, check this line.</p>
+    <p class="fix-label r d3">Fix</p>
+    <pre class="r d3"><code>const body = await req.text();</code></pre>
+        </section>
+        <section class="sec" id="s7">
+    <p class="kicker r">06</p>
+    <h2 class="r d1">Next.js Pages Router: default body parser not disabled</h2>
+    <p class="r d2">Pages Router API routes parse the body as JSON by default. Without <code>export const config = { api: { bodyParser: false } }</code>, Next has already consumed and parsed the raw bytes before your handler runs.</p>
+    <p class="fix-label r d3">Fix</p>
+    <pre class="r d3"><code>export const config = { api: { bodyParser: false } };
 async function buffer(req) {
   const chunks = [];
   for await (const chunk of req) chunks.push(chunk);
   return Buffer.concat(chunks);
 }</code></pre>
-  </section>
-
-  <section class="cause">
-    <p class="kicker">07</p>
-    <h2>The secret is an API key, not the signing secret</h2>
-    <p>The value stored as <code>STRIPE_WEBHOOK_SECRET</code> sometimes starts with <code>sk_</code> or <code>pk_</code>, an API key copied from the wrong place. Stripe's Dashboard docs describe the real thing plainly: "a signing secret beginning with <code>whsec_</code> appears" on the endpoint's own settings page. An API key never verifies a webhook signature.</p>
-    <p class="fix-label">Fix</p>
-    <p>Copy the <code>whsec_...</code> value from Dashboard, Webhooks, your endpoint, Reveal secret, or from the <code>stripe listen</code> terminal output for local testing.</p>
-  </section>
-
-  <section class="cause">
-    <p class="kicker">08</p>
-    <h2>The secret variable never reaches the handler</h2>
-    <p>If the environment variable holding the secret is unset, misspelled, or simply missing in this deployment environment, <code>constructEvent()</code> throws the same "No signatures found" error as a wrong secret. Stripe's library does not distinguish an empty secret from an incorrect one.</p>
-    <p class="fix-label">Fix</p>
-    <p>Log the first few characters of the secret at boot (never the whole value) to confirm it actually loaded in this environment, not just on your machine.</p>
-  </section>
-
-  <section class="cause">
-    <p class="kicker">09</p>
-    <h2>Using the CLI's forwarding secret against a live endpoint</h2>
-    <p>The <code>whsec_</code> value printed by <code>stripe listen</code> is generated for local forwarding, not for any registered endpoint. Stripe's docs: "Don't verify signatures on events forwarded by the CLI using the secret from a Dashboard-managed endpoint, or the other way around." Every endpoint and mode, test and live, has its own secret.</p>
-    <p class="fix-label">Fix</p>
-    <p>Use the <code>whsec_</code> secret from Dashboard, Webhooks, the specific live-mode endpoint that is actually receiving the request.</p>
-  </section>
-
-  <section class="cause">
-    <p class="kicker">10</p>
-    <h2>Reading the wrong header</h2>
-    <p>Stripe only ever sends the signature in the <code>Stripe-Signature</code> header (Node normalizes header names to lowercase). Reading any other header name, or a header renamed by a proxy along the way, never finds a valid value.</p>
-    <p class="fix-label">Fix</p>
-    <pre><code>const signature = req.headers['stripe-signature'];</code></pre>
-  </section>
-
-  <section class="cause">
-    <p class="kicker">11</p>
-    <h2>Tolerance set to zero, or a skewed server clock</h2>
-    <p><code>constructEvent()</code> compares the timestamp Stripe signed into the header against the server clock, inside a tolerance window that defaults to 300 seconds. Stripe's docs warn: "Don't use a tolerance value of 0," it disables the recency check rather than tightening it. A clock drifted past the window fails the same way, even with a correct secret and body.</p>
-    <p class="fix-label">Fix</p>
-    <p>Drop any custom tolerance argument to keep the 300-second default, and sync the server clock with NTP.</p>
-  </section>
-
-  <section class="cause">
-    <p class="kicker">12</p>
-    <h2>Serverless and edge runtimes: base64 bodies and constructEventAsync</h2>
-    <p>On AWS Lambda behind API Gateway, the body commonly arrives base64-encoded (<code>event.isBase64Encoded: true</code>) and must be decoded first. Cloudflare Workers and other edge runtimes have no Node crypto module, only the async Web Crypto API, so the synchronous <code>constructEvent()</code> throws <code>CryptoProviderOnlySupportsAsyncError</code>, whose message says: "Use <code>await constructEventAsync(...)</code> instead of <code>constructEvent(...)</code>."</p>
-    <p class="fix-label">Fix</p>
-    <pre><code>const payload = event.isBase64Encoded
+        </section>
+        <section class="sec" id="s8">
+    <p class="kicker r">07</p>
+    <h2 class="r d1">The secret is an API key, not the signing secret</h2>
+    <p class="r d2">The value stored as <code>STRIPE_WEBHOOK_SECRET</code> sometimes starts with <code>sk_</code> or <code>pk_</code>, an API key copied from the wrong place. Stripe's Dashboard docs describe the real thing plainly: "a signing secret beginning with <code>whsec_</code> appears" on the endpoint's own settings page. An API key never verifies a webhook signature.</p>
+    <p class="fix-label r d3">Fix</p>
+    <p class="r d3">Copy the <code>whsec_...</code> value from Dashboard, Webhooks, your endpoint, Reveal secret, or from the <code>stripe listen</code> terminal output for local testing.</p>
+        </section>
+        <section class="sec" id="s9">
+    <p class="kicker r">08</p>
+    <h2 class="r d1">The secret variable never reaches the handler</h2>
+    <p class="r d2">If the environment variable holding the secret is unset, misspelled, or simply missing in this deployment environment, <code>constructEvent()</code> throws the same "No signatures found" error as a wrong secret. Stripe's library does not distinguish an empty secret from an incorrect one.</p>
+    <p class="fix-label r d3">Fix</p>
+    <p class="r d3">Log the first few characters of the secret at boot (never the whole value) to confirm it actually loaded in this environment, not just on your machine.</p>
+        </section>
+        <section class="sec" id="s10">
+    <p class="kicker r">09</p>
+    <h2 class="r d1">Using the CLI's forwarding secret against a live endpoint</h2>
+    <p class="r d2">The <code>whsec_</code> value printed by <code>stripe listen</code> is generated for local forwarding, not for any registered endpoint. Stripe's docs: "Don't verify signatures on events forwarded by the CLI using the secret from a Dashboard-managed endpoint, or the other way around." Every endpoint and mode, test and live, has its own secret.</p>
+    <p class="fix-label r d3">Fix</p>
+    <p class="r d3">Use the <code>whsec_</code> secret from Dashboard, Webhooks, the specific live-mode endpoint that is actually receiving the request.</p>
+        </section>
+        <section class="sec" id="s11">
+    <p class="kicker r">10</p>
+    <h2 class="r d1">Reading the wrong header</h2>
+    <p class="r d2">Stripe only ever sends the signature in the <code>Stripe-Signature</code> header (Node normalizes header names to lowercase). Reading any other header name, or a header renamed by a proxy along the way, never finds a valid value.</p>
+    <p class="fix-label r d3">Fix</p>
+    <pre class="r d3"><code>const signature = req.headers['stripe-signature'];</code></pre>
+        </section>
+        <section class="sec" id="s12">
+    <p class="kicker r">11</p>
+    <h2 class="r d1">Tolerance set to zero, or a skewed server clock</h2>
+    <p class="r d2"><code>constructEvent()</code> compares the timestamp Stripe signed into the header against the server clock, inside a tolerance window that defaults to 300 seconds. Stripe's docs warn: "Don't use a tolerance value of 0," it disables the recency check rather than tightening it. A clock drifted past the window fails the same way, even with a correct secret and body.</p>
+    <p class="fix-label r d3">Fix</p>
+    <p class="r d3">Drop any custom tolerance argument to keep the 300-second default, and sync the server clock with NTP.</p>
+        </section>
+        <section class="sec" id="s13">
+    <p class="kicker r">12</p>
+    <h2 class="r d1">Serverless and edge runtimes: base64 bodies and constructEventAsync</h2>
+    <p class="r d2">On AWS Lambda behind API Gateway, the body commonly arrives base64-encoded (<code>event.isBase64Encoded: true</code>) and must be decoded first. Cloudflare Workers and other edge runtimes have no Node crypto module, only the async Web Crypto API, so the synchronous <code>constructEvent()</code> throws <code>CryptoProviderOnlySupportsAsyncError</code>, whose message says: "Use <code>await constructEventAsync(...)</code> instead of <code>constructEvent(...)</code>."</p>
+    <p class="fix-label r d3">Fix</p>
+    <pre class="r d3"><code>const payload = event.isBase64Encoded
   ? Buffer.from(event.body, 'base64') : event.body;
-
 // on an edge runtime:
 const stripeEvent = await stripe.webhooks.constructEventAsync(body, sig, secret);</code></pre>
-  </section>
-
-  <section class="cause">
-    <p class="kicker">13</p>
-    <h2>Checklist</h2>
-    <ol>
+        </section>
+        <section class="sec" id="s14">
+    <p class="kicker r">13</p>
+    <h2 class="r d1">Checklist</h2>
+    <ol class="r d2">
       <li>Pass the raw request body, the exact bytes Stripe sent, into <code>constructEvent()</code>, before any <code>JSON.parse</code> or re-serialization touches it.</li>
       <li>Confirm the <code>whsec_</code> secret matches the specific endpoint receiving this request. A Dashboard-created endpoint and a running <code>stripe listen</code> each generate a different one, and test and live modes each have their own.</li>
       <li>Read the signature from the <code>stripe-signature</code> header exactly, not a differently named or re-cased copy.</li>
       <li>Leave tolerance at the 300-second default, and keep the server clock synced with NTP.</li>
       <li>Re-check after every deploy. A new body parser, proxy, or changed environment variable can silently break raw-body access again.</li>
     </ol>
-  </section>
-
-  <section class="cause">
-    <p class="kicker">14</p>
-    <h2>Check it in 30 seconds</h2>
-    <p>The <a href="https://arling.sk/stripe-webhook-doctor/">Stripe Webhook Signature Doctor</a> runs these twelve checks against your framework and your pasted code, entirely in your browser.</p>
-    <p><a class="tool-cta" href="https://arling.sk/stripe-webhook-doctor/">Open Stripe Webhook Signature Doctor</a></p>
-  </section>
-
-  <section class="cause">
-    <p class="kicker">15</p>
-    <h2>Sources</h2>
-    <ul class="sources">
+        </section>
+        <section class="sec" id="s15">
+    <p class="kicker r">14</p>
+    <h2 class="r d1">Check it in 30 seconds</h2>
+    <p class="r d2">The <a data-umami-event="open-stripe-webhook-doctor-text" href="https://arling.sk/stripe-webhook-doctor/">Stripe Webhook Signature Doctor</a> runs these twelve checks against your framework and your pasted code, entirely in your browser.</p>
+    <p class="r d3"><a data-umami-event="open-stripe-webhook-doctor-cta" class="tool-cta" href="https://arling.sk/stripe-webhook-doctor/">Open Stripe Webhook Signature Doctor</a></p>
+        </section>
+      </div>
+    </div>
+  </div>
+  <section class="deep" id="s16">
+    <div class="wrap">
+      <div class="note">
+        <div class="doc">
+    <p class="kicker r">15</p>
+    <h2 class="r d1">Sources</h2>
+    <ul class="sources r d2">
       <li><a href="https://docs.stripe.com/webhooks#verify-official-libraries">Stripe docs: Receive Stripe events in your webhook endpoint, verifying signatures</a></li>
       <li><a href="https://docs.stripe.com/webhooks/signature">Stripe docs: Check webhook signatures, troubleshooting</a></li>
       <li><a href="https://docs.stripe.com/stripe-cli/overview">Stripe docs: Stripe CLI overview</a></li>
@@ -245,9 +341,84 @@ const stripeEvent = await stripe.webhooks.constructEventAsync(body, sig, secret)
       <li><a href="https://github.com/stripe/stripe-node/blob/master/src/Webhooks.ts">stripe-node source: Webhooks.ts (default tolerance, constructEventAsync)</a></li>
       <li><a href="https://github.com/stripe/stripe-node">stripe-node README: raw body requirement</a></li>
     </ul>
+        </div>
+      </div>
+    </div>
   </section>
 </main>
-<footer><div class="wrap">ARLing s. r. o. · <a href="https://arling.sk/">arling.sk</a> · <a href="mailto:andrej@arling.sk">andrej@arling.sk</a></div></footer>
+<footer class="band"><div class="wrap">ARLing s. r. o. · <a href="https://arling.sk/">arling.sk</a> · <a href="mailto:andrej@arling.sk">andrej@arling.sk</a></div></footer>
+<nav class="rail" aria-label="Article contents">
+  <a href="#s2"><i></i><span>The body already arrived as parsed JSON</span></a>
+  <a href="#s3"><i></i><span>The body was parsed, then re-serialized</span></a>
+  <a href="#s4"><i></i><span>A global body parser runs before the webhook route</span></a>
+  <a href="#s5"><i></i><span>Next.js App Router: req.json() instead of req.text()</span></a>
+  <a href="#s6"><i></i><span>Missing await on req.text()</span></a>
+  <a href="#s7"><i></i><span>Next.js Pages Router: default body parser not disabled</span></a>
+  <a href="#s8"><i></i><span>The secret is an API key, not the signing secret</span></a>
+  <a href="#s9"><i></i><span>The secret variable never reaches the handler</span></a>
+  <a href="#s10"><i></i><span>Using the CLI's forwarding secret against a live endpoint</span></a>
+  <a href="#s11"><i></i><span>Reading the wrong header</span></a>
+  <a href="#s12"><i></i><span>Tolerance set to zero, or a skewed server clock</span></a>
+  <a href="#s13"><i></i><span>Serverless and edge runtimes: base64 bodies and constructEventAsync</span></a>
+  <a href="#s14"><i></i><span>Checklist</span></a>
+  <a href="#s15"><i></i><span>Check it in 30 seconds</span></a>
+  <a href="#s16"><i></i><span>Sources</span></a>
+</nav>
 <script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="be534d51-4d01-4860-b267-9596d91606de"></script>
+<script>
+(function () {
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var hero = document.getElementById('hero');
+  if (reduce) {
+    document.querySelectorAll('.r, section').forEach(function (e) { e.classList.add('in'); });
+  }
+  if (!reduce && hero) {
+    requestAnimationFrame(function () {
+      hero.querySelectorAll('.r').forEach(function (e) { e.classList.add('in'); });
+    });
+  }
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (en) {
+      if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); }
+    });
+  }, { rootMargin: '0px 0px -12% 0px', threshold: 0.1 });
+  document.querySelectorAll('section').forEach(function (s) { io.observe(s); });
+
+  // nadpis clanku sa objavi po slovach, ako dobre vytlaceny titulok
+  var h1 = document.getElementById('h1');
+  if (h1) {
+    var i = 0;
+    Array.prototype.forEach.call(h1.querySelectorAll('.l'), function (line) {
+      var words = line.textContent.split(' ');
+      line.textContent = '';
+      words.forEach(function (w, k) {
+        var s = document.createElement('span');
+        s.className = 'w';
+        s.style.transitionDelay = (i++ * 0.06).toFixed(2) + 's';
+        s.textContent = w;
+        line.appendChild(s);
+        if (k < words.length - 1) line.appendChild(document.createTextNode(' '));
+      });
+    });
+    requestAnimationFrame(function () { h1.classList.add('in'); });
+  }
+
+  // bocny register sleduje, ktora cast clanku je v strede obrazovky
+  var rail = document.querySelector('.rail');
+  if (rail) {
+    var links = Array.prototype.slice.call(rail.querySelectorAll('a'));
+    var targets = links.map(function (a) { return document.querySelector(a.getAttribute('href')); });
+    var railIo = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        var i = targets.indexOf(en.target);
+        if (i < 0 || !en.isIntersecting) return;
+        links.forEach(function (a, j) { a.setAttribute('aria-current', j === i ? 'true' : 'false'); });
+      });
+      rail.classList.add('on');
+    }, { rootMargin: '-45% 0px -45% 0px' });
+    targets.forEach(function (t) { if (t) railIo.observe(t); });
+  }
+})();
+</script>
 </body>
 </html>

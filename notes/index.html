@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://homelab.tailbf8f27.ts.net; connect-src 'self' https://homelab.tailbf8f27.ts.net; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-xqc7e8rAayNEaAR40bsCX01ducVea2OjsfPfpnddbwc=' https://homelab.tailbf8f27.ts.net; connect-src 'self' https://homelab.tailbf8f27.ts.net; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
 <title>Notes at ARLing</title>
 <meta name="description" content="Short, exact answers to the errors developers and Slovak accountants keep searching for. Each note ends with the tool that checks it.">
 <link rel="canonical" href="https://arling.sk/notes/">
@@ -11,8 +11,11 @@
 <meta property="og:title" content="Notes at ARLing">
 <meta property="og:description" content="Short, exact answers to the errors developers and Slovak accountants keep searching for. Each note ends with the tool that checks it.">
 <meta property="og:url" content="https://arling.sk/notes/">
-<meta name="theme-color" content="#f6f2ea">
+<meta name="theme-color" content="#faf9f5">
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="preload" href="/fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/style/paper.css">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -47,185 +50,299 @@
 }
 </script>
 <style>
-  :root { --paper:#f6f2ea; --paper-2:#fbf9f4; --ink:#1b1a17; --ink-2:#4a4741; --muted:#66625a; --line:#d9d2c4; --accent:#b23a1d; --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif; --sans:system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; --mono:ui-monospace,"Cascadia Code",Consolas,Menlo,monospace; }
-  @media (prefers-color-scheme: dark) { :root { --paper:#151412; --paper-2:#1d1b18; --ink:#efe9de; --ink-2:#c9c2b5; --muted:#8f887b; --line:#2e2b26; --accent:#e0623f; } }
-  * { box-sizing:border-box; }
-  body { margin:0; background:var(--paper); color:var(--ink); font:16px/1.55 var(--sans); }
-  a { color:inherit; text-decoration-color:var(--line); text-underline-offset:3px; }
-  a:hover { text-decoration-color:var(--accent); }
-  .wrap { max-width:760px; margin:0 auto; padding:0 24px; }
-  header.top { border-bottom:1px solid var(--line); }
-  header.top .wrap { display:flex; align-items:baseline; justify-content:space-between; padding:18px 24px; }
-  .wordmark { font:600 22px/1 var(--serif); text-decoration:none; }
-  nav a { font-size:14px; margin-left:20px; text-decoration:none; color:var(--ink-2); }
-  h1 { font:400 clamp(30px,4.5vw,40px)/1.1 var(--serif); margin:48px 0 8px; }
-  .kicker { font:400 14px/1 var(--serif); color:var(--accent); letter-spacing:.06em; text-transform:uppercase; margin:0 0 8px; }
-  p, li { color:var(--ink-2); }
-  .lede { max-width:64ch; }
-  .articles { list-style:none; margin:32px 0 0; padding:0; border-top:1px solid var(--line); }
-  .articles li { border-bottom:1px solid var(--line); padding:20px 0; }
-  .articles a { text-decoration:none; }
-  .meta { display:flex; align-items:baseline; gap:10px; margin:0 0 4px; }
-  time { font:13px/1 var(--mono); color:var(--muted); }
-  .badge { display:inline-block; font:12px/1 var(--mono); color:var(--muted); border:1px solid var(--line); border-radius:3px; padding:3px 6px; }
-  .name { display:block; font:400 21px/1.3 var(--serif); color:var(--ink); margin:0 0 4px; }
-  .articles a:hover .name { color:var(--accent); }
-  .dek { margin:0; font-size:15px; }
-  footer { margin-top:56px; padding:24px 0 56px; border-top:1px solid var(--line); color:var(--muted); font-size:14px; }
+  /* Only what is specific to this index of notes. Everything else lives in /style/paper.css. */
+  .mark { display:flex; align-items:center; gap:11px; text-decoration:none; color:var(--ink); }
+  .mark b { font:600 21px/1 var(--display); letter-spacing:-.01em; }
+  .part { color:var(--muted); font-family:var(--ui); font-size:13px; border-left:1px solid var(--line);
+          padding-left:11px; margin-left:11px; }
+  .lead-sk { font-size:15.5px; color:var(--muted); max-width:36em; margin:0 0 clamp(20px,2.2vw,30px); }
+  /* No drawn scene: the hero is one column and the text is allowed to run wider. */
+  .hero { grid-template-columns:1fr; align-items:start;
+          padding:clamp(34px,4vw,62px) 0 clamp(26px,3vw,44px); }
+  .lead, .lead-sk { max-width:44em; }
+
+  /* The list of notes is an index with dotted leaders, not a grid of cards. Headlines are long,
+     so the leader and the date sit level with the last line of the headline. */
+  ol.index { list-style:none; margin:0; padding:0; }
+  ol.index li { border-bottom:1px solid var(--line); padding:14px 0 16px; }
+  ol.index li:last-child { border-bottom:none; }
+  ol.index a { align-items:flex-end; padding:0; }
+  ol.index .n { align-self:flex-start; width:2.6em; font-size:11px; letter-spacing:.1em; padding-top:5px; }
+  ol.index .t { white-space:normal; overflow:visible; flex:0 1 auto; }
+  ol.index .dots { transform:none; margin-bottom:6px; }
+  ol.index .c { white-space:nowrap; font-variant-numeric:tabular-nums; }
+  ol.index .dek { margin:6px 0 0 2.6em; font-size:15px; color:var(--muted); max-width:70ch; }
+  @media (max-width:640px) {
+    ol.index a { flex-wrap:wrap; }
+    ol.index .c { flex-basis:100%; padding-left:2.6em; margin-top:4px; }
+  }
+
+  footer.band { background:var(--ink); color:#a8a294; border-top:none; }
+  footer.band a { color:#e9e4d8; }
+  footer.band a:hover { color:#d97757; }
 </style>
 </head>
 <body>
-<header class="top"><div class="wrap"><a class="wordmark" href="https://arling.sk/">ARLing</a><nav><a href="https://arling.sk/#tools">Tools</a><a href="https://arling.sk/how-we-work/">How we work</a><a href="mailto:andrej@arling.sk">Contact</a></nav></div></header>
-<main class="wrap">
-  <p class="kicker" style="margin-top:48px">Notes</p>
-  <h1>Notes</h1>
-  <p class="lede">Short, exact answers to errors people keep searching for. Each note ends with the tool that checks it.</p>
-  <p class="lede" lang="sk">Krátke a presné odpovede na chyby, ktoré ľudia hľadajú v Googli. Poznámky v slovenčine sa týkajú SEPA platieb pre Tatra banku, SLSP, VÚB a ČSOB.</p>
+<div class="wash" aria-hidden="true"><i></i><i></i></div>
 
-  <ol class="articles">
-    <li>
-      <a href="https://arling.sk/notes/camt053-in-mt940-umwandeln-datev/">
-        <div class="meta"><time datetime="2026-09-05">5. September 2026</time><span class="badge">DE</span></div>
-        <span class="name">camt.053 in MT940 umwandeln: warum DATEV seit November 2025 einen Umweg braucht</span>
+<header>
+  <div class="wrap bar">
+    <a class="mark" href="https://arling.sk/">
+      <svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true"><defs><path id="m" fill-rule="evenodd" d="M16 2.5 L29 29.5 H3 Z M16 12.4 L22.4 25.6 H9.6 Z"/><clipPath id="mr"><rect x="16" width="16" height="32"/></clipPath></defs><use href="#m" fill="#141413"/><use href="#m" fill="#b23a1d" clip-path="url(#mr)"/></svg>
+      <b>ARLing</b><span class="part">Notes</span>
+    </a>
+    <nav><a href="https://arling.sk/#tools">Tools</a><a href="https://arling.sk/how-we-work/">How we work</a><a href="mailto:andrej@arling.sk">Contact</a></nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap hero">
+    <div>
+      <p class="kicker r">Notes</p>
+      <h1 id="h1"><span class="l">Notes</span></h1>
+      <p class="lead r d3">Short, exact answers to errors people keep searching for. Each note ends with the tool that checks it.</p>
+      <p class="lead-sk r d4" lang="sk">Krátke a presné odpovede na chyby, ktoré ľudia hľadajú v Googli. Poznámky v slovenčine sa týkajú SEPA platieb pre Tatra banku, SLSP, VÚB a ČSOB.</p>
+      <div class="cta r d5">
+        <a class="btn btn-solid" href="https://arling.sk/#tools" data-umami-event="open-tools" data-umami-event-place="notes">Tools</a>
+        <a class="btn btn-line" href="https://arling.sk/how-we-work/" data-umami-event="open-how-we-work" data-umami-event-place="notes">How we work</a>
+      </div>
+      <p class="proof r d6">ARLing s. r. o. &middot; <a href="https://arling.sk/">arling.sk</a></p>
+    </div>
+  </div>
+
+  <section class="deep">
+    <div class="wrap">
+      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>01 &nbsp;Notes</p>
+      <h2 class="r">All notes.</h2>
+      <div class="rule"></div>
+      <ol class="index">
+      <li class="r d1">
+        <a href="https://arling.sk/notes/camt053-in-mt940-umwandeln-datev/" data-umami-event="open-note" data-umami-event-note="camt053-in-mt940-umwandeln-datev">
+          <span class="n">DE</span>
+          <span class="t">camt.053 in MT940 umwandeln: warum DATEV seit November 2025 einen Umweg braucht</span>
+          <span class="dots"></span>
+          <span class="c"><time datetime="2026-09-05">5. September 2026</time></span>
+        </a>
         <p class="dek">Die deutsche Kreditwirtschaft hat MT940 im November 2025 gestrichen, Banken liefern nur noch camt.053. Warum DATEV das trotzdem nicht direkt importiert, was in MT940 und DATEV Buchungsstapel steckt, und wie man es im Browser umwandelt.</p>
-      </a>
-    </li>
-    <li>
-      <a href="https://arling.sk/notes/shopify-ai-shopping-assistant-from-products-json/">
-        <div class="meta"><time datetime="2026-09-06">6 September 2026</time><span class="badge">EN</span></div>
-        <span class="name">A Shopify AI shopping assistant built from products.json: how it answers, what it costs, and the theme.liquid setup while the app is in review</span>
+      </li>
+      <li class="r d2">
+        <a href="https://arling.sk/notes/shopify-ai-shopping-assistant-from-products-json/" data-umami-event="open-note" data-umami-event-note="shopify-ai-shopping-assistant-from-products-json">
+          <span class="n">EN</span>
+          <span class="t">A Shopify AI shopping assistant built from products.json: how it answers, what it costs, and the theme.liquid setup while the app is in review</span>
+          <span class="dots"></span>
+          <span class="c"><time datetime="2026-09-06">6 September 2026</time></span>
+        </a>
         <p class="dek">What Shopify's public products.json feed contains and whether it can be turned off, how a feed-grounded assistant answers and refuses, the theme.liquid setup today, what changes once the Shopify app is approved, and how it compares to Shopify Inbox and Gorgias.</p>
-      </a>
-    </li>
-    <li>
-      <a href="https://arling.sk/notes/ai-chatbot-for-woocommerce-without-storing-conversations/">
-        <div class="meta"><time datetime="2026-09-06">6 September 2026</time><span class="badge">EN</span></div>
-        <span class="name">An AI shopping assistant for WooCommerce that stores no conversations: what it can answer, what it cannot, and a 10-minute setup</span>
+      </li>
+      <li class="r d3">
+        <a href="https://arling.sk/notes/ai-chatbot-for-woocommerce-without-storing-conversations/" data-umami-event="open-note" data-umami-event-note="ai-chatbot-for-woocommerce-without-storing-conversations">
+          <span class="n">EN</span>
+          <span class="t">An AI shopping assistant for WooCommerce that stores no conversations: what it can answer, what it cannot, and a 10-minute setup</span>
+          <span class="dots"></span>
+          <span class="c"><time datetime="2026-09-06">6 September 2026</time></span>
+        </a>
         <p class="dek">How a feed-grounded assistant answers WooCommerce shopping questions without keeping conversation content, what it cannot do, the 10-minute plugin setup, pricing, and how it compares to Tidio Lyro and Smartsupp Mira.</p>
-      </a>
-    </li>
-    <li>
-      <a href="https://arling.sk/notes/google-merchant-center-feed-errors/">
-        <div class="meta"><time datetime="2026-09-05">5 September 2026</time><span class="badge">EN</span></div>
-        <span class="name">Google Merchant Center feed errors explained: the 12 rejections that block most products and how to fix each in the feed</span>
+      </li>
+      <li class="r d4">
+        <a href="https://arling.sk/notes/google-merchant-center-feed-errors/" data-umami-event="open-note" data-umami-event-note="google-merchant-center-feed-errors">
+          <span class="n">EN</span>
+          <span class="t">Google Merchant Center feed errors explained: the 12 rejections that block most products and how to fix each in the feed</span>
+          <span class="dots"></span>
+          <span class="c"><time datetime="2026-09-05">5 September 2026</time></span>
+        </a>
         <p class="dek">The 12 most common Google Merchant Center and Meta catalog disapprovals, the exact spec rule behind each, and the feed fix for Shopify and WooCommerce.</p>
-      </a>
-    </li>
-    <li>
-      <a href="https://arling.sk/notes/camt053-in-excel-umwandeln/">
-        <div class="meta"><time datetime="2026-09-07">7. September 2026</time><span class="badge">DE</span></div>
-        <span class="name">camt.053 in Excel umwandeln: Kontoauszug als XML aus Sparkasse, Volksbank oder UBS in eine Tabelle bringen</span>
+      </li>
+      <li class="r d5">
+        <a href="https://arling.sk/notes/camt053-in-excel-umwandeln/" data-umami-event="open-note" data-umami-event-note="camt053-in-excel-umwandeln">
+          <span class="n">DE</span>
+          <span class="t">camt.053 in Excel umwandeln: Kontoauszug als XML aus Sparkasse, Volksbank oder UBS in eine Tabelle bringen</span>
+          <span class="dots"></span>
+          <span class="c"><time datetime="2026-09-07">7. September 2026</time></span>
+        </a>
         <p class="dek">Was im ISO-20022-Format camt.053 steht, warum der CSV-Export der Bank oft nicht reicht, und wie Sie den Kontoauszug in wenigen Schritten im Browser in eine Tabelle umwandeln.</p>
-      </a>
-    </li>
-    <li>
-      <a href="https://arling.sk/notes/sepa-sammelueberweisung-aus-excel/">
-        <div class="meta"><time datetime="2026-09-07">7. September 2026</time><span class="badge">DE</span></div>
-        <span class="name">SEPA-Sammelüberweisung aus Excel: pain.001 für die Bank erzeugen, ohne jede Zeile von Hand einzutippen</span>
+      </li>
+      <li class="r d6">
+        <a href="https://arling.sk/notes/sepa-sammelueberweisung-aus-excel/" data-umami-event="open-note" data-umami-event-note="sepa-sammelueberweisung-aus-excel">
+          <span class="n">DE</span>
+          <span class="t">SEPA-Sammelüberweisung aus Excel: pain.001 für die Bank erzeugen, ohne jede Zeile von Hand einzutippen</span>
+          <span class="dots"></span>
+          <span class="c"><time datetime="2026-09-07">7. September 2026</time></span>
+        </a>
         <p class="dek">Pflichtfelder je Zahlung, die häufigsten Gründe, warum eine Bank die Datei ablehnt, und wie Sie eine SEPA-Sammelüberweisung im Browser erzeugen und prüfen.</p>
-      </a>
-    </li>
-    <li>
-      <a href="https://arling.sk/notes/vypis-z-uctu-do-excelu/">
-        <div class="meta"><time datetime="2026-09-07">7. septembra 2026</time><span class="badge">SK</span></div>
-        <span class="name">Výpis z účtu do Excelu: ako dostať camt.053 z Tatra banky, SLSP, VÚB a ČSOB do tabuľky</span>
+      </li>
+      <li class="r">
+        <a href="https://arling.sk/notes/vypis-z-uctu-do-excelu/" data-umami-event="open-note" data-umami-event-note="vypis-z-uctu-do-excelu">
+          <span class="n">SK</span>
+          <span class="t">Výpis z účtu do Excelu: ako dostať camt.053 z Tatra banky, SLSP, VÚB a ČSOB do tabuľky</span>
+          <span class="dots"></span>
+          <span class="c"><time datetime="2026-09-07">7. septembra 2026</time></span>
+        </a>
         <p class="dek">Kde v internet bankingu nájdete XML výpis, čo presne obsahuje camt.053, prečo CSV z banky často nestačí, a ako ho previesť na tabuľku za pár sekúnd.</p>
-      </a>
-    </li>
-    <li>
-      <a href="https://arling.sk/notes/hromadny-prikaz-z-excelu/">
-        <div class="meta"><time datetime="2026-09-07">7. septembra 2026</time><span class="badge">SK</span></div>
-        <span class="name">Hromadný príkaz z Excelu: ako vyrobiť SEPA pain.001 pre slovenskú banku bez ručného klikania</span>
+      </li>
+      <li class="r">
+        <a href="https://arling.sk/notes/hromadny-prikaz-z-excelu/" data-umami-event="open-note" data-umami-event-note="hromadny-prikaz-z-excelu">
+          <span class="n">SK</span>
+          <span class="t">Hromadný príkaz z Excelu: ako vyrobiť SEPA pain.001 pre slovenskú banku bez ručného klikania</span>
+          <span class="dots"></span>
+          <span class="c"><time datetime="2026-09-07">7. septembra 2026</time></span>
+        </a>
         <p class="dek">Kedy sa oplatí, čo musí byť v tabuľke, šesť najčastejších dôvodov, prečo banka súbor odmietne, a ako ho vyrobiť a rovno skontrolovať.</p>
-      </a>
-    </li>
-    <li>
-      <a href="https://arling.sk/notes/nezaplatene-faktury-upomienky/">
-        <div class="meta"><time datetime="2026-09-07">7. septembra 2026</time><span class="badge">SK</span></div>
-        <span class="name">Nezaplatené faktúry: ako každý mesiac za 10 minút zistiť, kto nezaplatil, a poslať upomienky</span>
+      </li>
+      <li class="r">
+        <a href="https://arling.sk/notes/nezaplatene-faktury-upomienky/" data-umami-event="open-note" data-umami-event-note="nezaplatene-faktury-upomienky">
+          <span class="n">SK</span>
+          <span class="t">Nezaplatené faktúry: ako každý mesiac za 10 minút zistiť, kto nezaplatil, a poslať upomienky</span>
+          <span class="dots"></span>
+          <span class="c"><time datetime="2026-09-07">7. septembra 2026</time></span>
+        </a>
         <p class="dek">Spárovanie výpisu s faktúrami, tri stupne upomienok so vzormi textov, zákonný úrok z omeškania a paušálna náhrada 40 eur.</p>
-      </a>
-    </li>
-    <li>
-      <a href="https://arling.sk/notes/parovanie-platieb-z-vypisu/">
-        <div class="meta"><time datetime="2026-09-06">6. septembra 2026</time><span class="badge">SK</span></div>
-        <span class="name">Párovanie platieb z výpisu bez ručnej práce: VS, sumy a čo robiť, keď nesedia</span>
+      </li>
+      <li class="r">
+        <a href="https://arling.sk/notes/parovanie-platieb-z-vypisu/" data-umami-event="open-note" data-umami-event-note="parovanie-platieb-z-vypisu">
+          <span class="n">SK</span>
+          <span class="t">Párovanie platieb z výpisu bez ručnej práce: VS, sumy a čo robiť, keď nesedia</span>
+          <span class="dots"></span>
+          <span class="c"><time datetime="2026-09-06">6. septembra 2026</time></span>
+        </a>
         <p class="dek">Ako spárovať platby z výpisu camt.053 s faktúrami podľa VS a sumy, a čo robiť pri čiastočných úhradách, preplatkoch a platbách bez VS.</p>
-      </a>
-    </li>
-    <li>
-      <a href="https://arling.sk/notes/google-redirect-uri-mismatch/">
-        <div class="meta"><time datetime="2026-09-06">6 September 2026</time><span class="badge">EN</span></div>
-        <span class="name">Error 400: redirect_uri_mismatch, explained character by character</span>
+      </li>
+      <li class="r">
+        <a href="https://arling.sk/notes/google-redirect-uri-mismatch/" data-umami-event="open-note" data-umami-event-note="google-redirect-uri-mismatch">
+          <span class="n">EN</span>
+          <span class="t">Error 400: redirect_uri_mismatch, explained character by character</span>
+          <span class="dots"></span>
+          <span class="c"><time datetime="2026-09-06">6 September 2026</time></span>
+        </a>
         <p class="dek">Every cause of Google's redirect_uri_mismatch across NextAuth, Supabase and Firebase, with the exact fix for each one.</p>
-      </a>
-    </li>
-    <li>
-      <a href="https://arling.sk/notes/supabase-oauth-redirects-to-localhost/">
-        <div class="meta"><time datetime="2026-09-06">6 September 2026</time><span class="badge">EN</span></div>
-        <span class="name">Supabase OAuth redirects to localhost in production: the allow-list rule nobody reads</span>
+      </li>
+      <li class="r">
+        <a href="https://arling.sk/notes/supabase-oauth-redirects-to-localhost/" data-umami-event="open-note" data-umami-event-note="supabase-oauth-redirects-to-localhost">
+          <span class="n">EN</span>
+          <span class="t">Supabase OAuth redirects to localhost in production: the allow-list rule nobody reads</span>
+          <span class="dots"></span>
+          <span class="c"><time datetime="2026-09-06">6 September 2026</time></span>
+        </a>
         <p class="dek">How Site URL and the redirect allow-list fall back to localhost, and the fix for each cause.</p>
-      </a>
-    </li>
-    <li>
-      <a href="https://arling.sk/notes/expo-supabase-deep-link-not-returning/">
-        <div class="meta"><time datetime="2026-09-06">6 September 2026</time><span class="badge">EN</span></div>
-        <span class="name">Expo + Supabase: why the OAuth deep link never comes back to the app</span>
+      </li>
+      <li class="r">
+        <a href="https://arling.sk/notes/expo-supabase-deep-link-not-returning/" data-umami-event="open-note" data-umami-event-note="expo-supabase-deep-link-not-returning">
+          <span class="n">EN</span>
+          <span class="t">Expo + Supabase: why the OAuth deep link never comes back to the app</span>
+          <span class="dots"></span>
+          <span class="c"><time datetime="2026-09-06">6 September 2026</time></span>
+        </a>
         <p class="dek">What makeRedirectUri() returns per runtime, the Supabase allow-list, and where native code breaks.</p>
-      </a>
-    </li>
-    <li>
-      <a href="https://arling.sk/notes/supabase-flutter-deep-link-scheme/">
-        <div class="meta"><time datetime="2026-09-06">6 September 2026</time><span class="badge">EN</span></div>
-        <span class="name">Supabase Flutter deep link not working: scheme, Info.plist, AndroidManifest and the underscore bug</span>
+      </li>
+      <li class="r">
+        <a href="https://arling.sk/notes/supabase-flutter-deep-link-scheme/" data-umami-event="open-note" data-umami-event-note="supabase-flutter-deep-link-scheme">
+          <span class="n">EN</span>
+          <span class="t">Supabase Flutter deep link not working: scheme, Info.plist, AndroidManifest and the underscore bug</span>
+          <span class="dots"></span>
+          <span class="c"><time datetime="2026-09-06">6 September 2026</time></span>
+        </a>
         <p class="dek">Six places scheme and host break the redirect, including the underscore bug in supabase_flutter.</p>
-      </a>
-    </li>
-    <li>
-      <a href="https://arling.sk/notes/expo-universal-links-open-safari/">
-        <div class="meta"><time datetime="2026-09-06">6 September 2026</time><span class="badge">EN</span></div>
-        <span class="name">Universal links open Safari instead of your Expo app</span>
+      </li>
+      <li class="r">
+        <a href="https://arling.sk/notes/expo-universal-links-open-safari/" data-umami-event="open-note" data-umami-event-note="expo-universal-links-open-safari">
+          <span class="n">EN</span>
+          <span class="t">Universal links open Safari instead of your Expo app</span>
+          <span class="dots"></span>
+          <span class="c"><time datetime="2026-09-06">6 September 2026</time></span>
+        </a>
         <p class="dek">How to fix apple-app-site-association, assetlinks.json and app.json, one mismatch at a time.</p>
-      </a>
-    </li>
-    <li>
-      <a href="https://arling.sk/notes/stripe-webhook-signature-verification-failed/">
-        <div class="meta"><time datetime="2026-09-06">6 September 2026</time><span class="badge">EN</span></div>
-        <span class="name">Stripe "No signatures found matching the expected signature": twelve causes, one at a time</span>
+      </li>
+      <li class="r">
+        <a href="https://arling.sk/notes/stripe-webhook-signature-verification-failed/" data-umami-event="open-note" data-umami-event-note="stripe-webhook-signature-verification-failed">
+          <span class="n">EN</span>
+          <span class="t">Stripe "No signatures found matching the expected signature": twelve causes, one at a time</span>
+          <span class="dots"></span>
+          <span class="c"><time datetime="2026-09-06">6 September 2026</time></span>
+        </a>
         <p class="dek">Twelve exact causes, with raw-body fixes for Next.js, Express, Fastify, Lambda and edge runtimes.</p>
-      </a>
-    </li>
-    <li>
-      <a href="https://arling.sk/notes/banka-odmietla-pain001/">
-        <div class="meta"><time datetime="2026-09-06">6. septembra 2026</time><span class="badge">SK</span></div>
-        <span class="name">Banka odmietla súbor pain.001: najčastejšie chyby a ako ich nájsť</span>
+      </li>
+      <li class="r">
+        <a href="https://arling.sk/notes/banka-odmietla-pain001/" data-umami-event="open-note" data-umami-event-note="banka-odmietla-pain001">
+          <span class="n">SK</span>
+          <span class="t">Banka odmietla súbor pain.001: najčastejšie chyby a ako ich nájsť</span>
+          <span class="dots"></span>
+          <span class="c"><time datetime="2026-09-06">6. septembra 2026</time></span>
+        </a>
         <p class="dek">Šesť najčastejších príčin, prečo Tatra banka, SLSP, VÚB alebo ČSOB odmietli XML, a ako ich nájsť.</p>
-      </a>
-    </li>
-    <li>
-      <a href="https://arling.sk/notes/hromadny-prikaz-xml-z-excelu/">
-        <div class="meta"><time datetime="2026-09-06">6. septembra 2026</time><span class="badge">SK</span></div>
-        <span class="name">Hromadný príkaz z Excelu do banky: ako vyrobiť pain.001 XML</span>
+      </li>
+      <li class="r">
+        <a href="https://arling.sk/notes/hromadny-prikaz-xml-z-excelu/" data-umami-event="open-note" data-umami-event-note="hromadny-prikaz-xml-z-excelu">
+          <span class="n">SK</span>
+          <span class="t">Hromadný príkaz z Excelu do banky: ako vyrobiť pain.001 XML</span>
+          <span class="dots"></span>
+          <span class="c"><time datetime="2026-09-06">6. septembra 2026</time></span>
+        </a>
         <p class="dek">Presné hodnoty polí, BIC, VS/ŠS/KS a limity pre Tatra banku, SLSP, VÚB a ČSOB.</p>
-      </a>
-    </li>
-    <li>
-      <a href="https://arling.sk/notes/variabilny-symbol-v-sepa-xml/">
-        <div class="meta"><time datetime="2026-09-06">6. septembra 2026</time><span class="badge">SK</span></div>
-        <span class="name">Variabilný symbol v SEPA XML: kam presne patrí</span>
+      </li>
+      <li class="r">
+        <a href="https://arling.sk/notes/variabilny-symbol-v-sepa-xml/" data-umami-event="open-note" data-umami-event-note="variabilny-symbol-v-sepa-xml">
+          <span class="n">SK</span>
+          <span class="t">Variabilný symbol v SEPA XML: kam presne patrí</span>
+          <span class="dots"></span>
+          <span class="c"><time datetime="2026-09-06">6. septembra 2026</time></span>
+        </a>
         <p class="dek">VS, ŠS a KS nemajú v pain.001 vlastné polia. Kam patria v EndToEndId a v akom poradí.</p>
-      </a>
-    </li>
-    <li>
-      <a href="https://arling.sk/notes/diakritika-v-sepa-platbe/">
-        <div class="meta"><time datetime="2026-09-06">6. septembra 2026</time><span class="badge">SK</span></div>
-        <span class="name">Diakritika v SEPA platbe: čo banky prijmú a čo odmietnu</span>
+      </li>
+      <li class="r">
+        <a href="https://arling.sk/notes/diakritika-v-sepa-platbe/" data-umami-event="open-note" data-umami-event-note="diakritika-v-sepa-platbe">
+          <span class="n">SK</span>
+          <span class="t">Diakritika v SEPA platbe: čo banky prijmú a čo odmietnu</span>
+          <span class="dots"></span>
+          <span class="c"><time datetime="2026-09-06">6. septembra 2026</time></span>
+        </a>
         <p class="dek">Prečo ČSOB odmietne diakritiku, čo vyžadujú ostatné banky, a presný zoznam povolených znakov.</p>
-      </a>
-    </li>
-  </ol>
+      </li>
+      </ol>
+    </div>
+  </section>
 </main>
-<footer><div class="wrap">ARLing s. r. o. · <a href="https://arling.sk/">arling.sk</a> · <a href="mailto:andrej@arling.sk">andrej@arling.sk</a> · <a href="https://arling.sk/privacy/">Súkromie</a> · <a href="https://arling.sk/podmienky/">Podmienky</a> · <a href="https://arling.sk/gdpr/">GDPR</a></div></footer>
+
+<footer class="band">
+  <div class="wrap foot">
+    <span>ARLing s. r. o. &middot; <a href="https://arling.sk/">arling.sk</a> &middot; <a href="mailto:andrej@arling.sk">andrej@arling.sk</a></span>
+    <span><a href="https://arling.sk/privacy/">Súkromie</a> &middot; <a href="https://arling.sk/podmienky/">Podmienky</a> &middot; <a href="https://arling.sk/gdpr/">GDPR</a></span>
+  </div>
+</footer>
+<script>
+(function () {
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  function typeset(h1) {
+    if (!h1) return;
+    var i = 0;
+    Array.prototype.forEach.call(h1.querySelectorAll('.l'), function (line) {
+      line.innerHTML = line.textContent.split(' ').map(function (w) {
+        return '<span class="w" style="transition-delay:' + (i++ * 0.06).toFixed(2) + 's">' + esc(w) + '</span>';
+      }).join(' ');
+    });
+    if (reduce) { h1.classList.add('in'); return; }
+    requestAnimationFrame(function () { h1.classList.add('in'); });
+  }
+  if (reduce) {
+    document.querySelectorAll('section, .hero, .r').forEach(function (e) { e.classList.add('in'); });
+  } else {
+    var hero = document.querySelector('.hero');
+    if (hero) requestAnimationFrame(function () { hero.classList.add('in'); });
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); }
+      });
+    }, { rootMargin: '0px 0px -12% 0px', threshold: 0.1 });
+    document.querySelectorAll('section').forEach(function (s) { io.observe(s); });
+    var lio = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (en.isIntersecting) { en.target.classList.add('in'); lio.unobserve(en.target); }
+      });
+    }, { rootMargin: '0px 0px -8% 0px', threshold: 0.08 });
+    document.querySelectorAll('.index li').forEach(function (l) { lio.observe(l); });
+  }
+  typeset(document.getElementById('h1'));
+})();
+</script>
 <script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="be534d51-4d01-4860-b267-9596d91606de"></script>
 </body>
 </html>

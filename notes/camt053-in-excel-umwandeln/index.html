@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://homelab.tailbf8f27.ts.net; connect-src 'self' https://homelab.tailbf8f27.ts.net; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-uJkDKiTVu1iwiitFPAVfAgxIRiBU6CD8W2INuvmcFHA=' https://homelab.tailbf8f27.ts.net; connect-src 'self' https://homelab.tailbf8f27.ts.net; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
 <title>camt.053 in Excel umwandeln: Kontoauszug als XML aus Sparkasse, Volksbank oder UBS in eine Tabelle bringen</title>
 <meta name="description" content="Was im ISO-20022-Format camt.053 steht, warum der CSV-Export der Bank für die Buchhaltung oft nicht reicht, und wie Sie einen Kontoauszug in wenigen Schritten im Browser in eine Excel-Tabelle umwandeln, bevor Sie ihn in DATEV, Lexware oder sevDesk einspielen.">
 <link rel="canonical" href="https://arling.sk/notes/camt053-in-excel-umwandeln/">
@@ -12,7 +12,7 @@
 <meta property="og:description" content="Was im ISO-20022-Format camt.053 steht, warum der CSV-Export der Bank für die Buchhaltung oft nicht reicht, und wie Sie einen Kontoauszug in wenigen Schritten im Browser in eine Excel-Tabelle umwandeln, bevor Sie ihn in DATEV, Lexware oder sevDesk einspielen.">
 <meta property="og:url" content="https://arling.sk/notes/camt053-in-excel-umwandeln/">
 <meta property="og:locale" content="de_DE">
-<meta name="theme-color" content="#f6f2ea">
+<meta name="theme-color" content="#faf9f5">
 <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
 <link rel="alternate" type="text/plain" href="https://arling.sk/llms.txt" title="llms.txt">
 <script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="be534d51-4d01-4860-b267-9596d91606de"></script>
@@ -71,99 +71,279 @@
 }
 </script>
 
+<link rel="preload" href="/fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/style/paper.css">
 <style>
-  :root { --paper:#f6f2ea; --paper-2:#fbf9f4; --ink:#1b1a17; --ink-2:#4a4741; --muted:#66625a; --line:#d9d2c4; --accent:#b23a1d; --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif; --sans:system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; --mono:ui-monospace,"Cascadia Code",Consolas,Menlo,monospace; }
-  @media (prefers-color-scheme: dark) { :root { --paper:#151412; --paper-2:#1d1b18; --ink:#efe9de; --ink-2:#c9c2b5; --muted:#8f887b; --line:#2e2b26; --accent:#e0623f; } }
-  * { box-sizing:border-box; }
-  body { margin:0; background:var(--paper); color:var(--ink); font:16px/1.55 var(--sans); overflow-wrap:anywhere; }
-  a { color:inherit; text-decoration-color:var(--line); text-underline-offset:3px; }
-  a:hover { text-decoration-color:var(--accent); }
-  .wrap { max-width:760px; margin:0 auto; padding:0 24px; }
-  header.top { border-bottom:1px solid var(--line); }
-  header.top .wrap { display:flex; align-items:baseline; justify-content:space-between; padding:18px 24px; flex-wrap:wrap; gap:8px; }
-  .wordmark { font:600 22px/1 var(--serif); text-decoration:none; }
-  nav a { font-size:14px; margin-left:20px; text-decoration:none; color:var(--ink-2); }
-  nav a:first-child { margin-left:0; }
-  main { max-width:70ch; }
-  h1 { font:400 clamp(28px,4.5vw,40px)/1.15 var(--serif); margin:44px 0 14px; }
-  h2 { font:400 24px/1.2 var(--serif); margin:40px 0 10px; }
-  .kicker { font:400 14px/1 var(--serif); color:var(--accent); letter-spacing:.06em; text-transform:uppercase; margin:0 0 8px; }
-  .byline { color:var(--muted); font-size:14px; margin:0 0 32px; }
-  p, li { color:var(--ink-2); max-width:70ch; }
-  ol, ul { padding-left:20px; }
-  li + li { margin-top:6px; }
-  code { font:14px/1.4 var(--mono); background:var(--paper-2); border:1px solid var(--line); border-radius:4px; padding:1px 6px; color:var(--ink); overflow-wrap:anywhere; }
-  .tool-box { border:1px solid var(--line); border-radius:4px; padding:16px 20px; margin:16px 0; background:var(--paper-2); }
-  .tool-box p { margin:0; }
-  .tool-box p + p { margin-top:8px; }
-  .btn { display:inline-block; margin-top:10px; padding:8px 16px; border:2px solid var(--accent); border-radius:4px; color:var(--accent); text-decoration:none; font-size:14px; }
-  .btn:hover { background:var(--accent); color:var(--paper-2); text-decoration:none; }
-  details { border-top:1px solid var(--line); padding:14px 0; }
-  details:last-of-type { border-bottom:1px solid var(--line); }
-  summary { cursor:pointer; font:400 18px/1.3 var(--serif); list-style:none; display:flex; justify-content:space-between; gap:12px; }
-  summary::-webkit-details-marker { display:none; }
-  summary::after { content:"+"; color:var(--accent); flex:none; font-family:var(--sans); }
-  details[open] summary::after { content:"\2013"; }
-  details p { color:var(--ink-2); margin:10px 0 0; max-width:70ch; overflow-wrap:anywhere; }
-  .sources { padding-left:20px; }
-  .sources li { font-size:14px; }
-  footer { margin-top:56px; padding:24px 0 56px; border-top:1px solid var(--line); color:var(--muted); font-size:14px; }
-  @media (max-width:480px) { nav a { margin-left:12px; font-size:13px; } }
+  /* Notes. Vzhlad, farby, typografia a pohyb su v /style/paper.css.
+     Tu ostava len to, co je pre clanok vlastne: merany pas, register, panel s nastrojom. */
+  .note{max-width:min(100%,880px);margin:0 auto}
+  .doc{max-width:min(68ch,660px);font-size:clamp(17px,1.2vw,18px);line-height:1.62}
+
+  /* uvod clanku: nadpis, datum, odkaz na nastroj */
+  .hero-note{padding:clamp(34px,4.6vw,72px) 0 clamp(20px,2.4vw,34px)}
+  /* Titul clanku je hero stranky. Hlavna veta dorastie na desktope na 64 px, ako ziada
+     paper-v2 bod 9.4. Druhy riadok titulu je vzdy vysvetlujuca cast za dvojbodkou:
+     ostava v rovnakom reze, len mensia a tlmenejsia, aby ani najdlhsi titul (141 znakov
+     v clanku o Shopify) nezabral cely prvy pohlad. Rodinu, farbu a letter-spacing
+     urcuje paper.css, tu je len mierka. */
+  .hero-note h1{font-size:clamp(32px,4.6vw,64px);line-height:1.05;margin:0 0 18px}
+  .hero-note h1 .l+.l{display:block;margin-top:.3em;font-weight:500;
+    font-size:clamp(20px,2.4vw,34px);line-height:1.2;letter-spacing:-.01em;color:var(--body)}
+  .hero-note .kicker{display:block;margin:0 0 12px}
+  .hero-note .crumbs{font-family:var(--ui);font-size:12px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--accent);margin:0 0 12px}
+  .hero-note .crumbs a{color:inherit;text-decoration:none}
+  .hero-note .crumbs a:hover{text-decoration:underline}
+  .byline,.dateline{font-family:var(--ui);font-size:14px;color:var(--muted);margin:0 0 20px;max-width:none}
+  .toolgo{margin:0}
+
+  /* rytmus clanku: vlasova linka medzi castami, ziadne velke medzery sekcii */
+  section{scroll-margin-top:86px}
+  .doc section{padding:0;border-top:none;margin:0 0 clamp(26px,2.8vw,38px)}
+  .doc section+section{border-top:1px solid var(--line);padding-top:clamp(26px,2.8vw,36px)}
+  /* Mierka nadpisov vnutri clanku, nie kopia paper.css: pas textu ma 660 px, do neho sa
+     sekcny nadpis v plnej velkosti z paper.css (42 px) nezmesti bez zalomenia. Mení sa
+     len velkost a odstupy, vsetko ostatne dedi z paper.css. */
+  .doc h2{font-size:clamp(21px,1.9vw,27px);line-height:1.22;margin:0 0 12px}
+  .doc h3{font-size:clamp(17.5px,1.3vw,20px);margin:18px 0 8px}
+  .doc p{margin:0 0 14px;max-width:none}
+  .doc .num,.doc .kicker{display:block;font-family:var(--ui);font-size:12px;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--accent);margin:0 0 7px}
+  .doc .lead,.doc .lede{font-size:clamp(18px,1.35vw,20.5px);line-height:1.55;max-width:none;margin:0 0 18px}
+  .doc ol,.doc ul{padding-left:22px;margin:0 0 16px}
+  .doc li{margin:0 0 7px}
+  .doc li:last-child{margin-bottom:0}
+  .doc a{overflow-wrap:anywhere}
+  .doc code{background:var(--paper-deep);border:1px solid var(--line);border-radius:4px;padding:1px 5px;
+    overflow-wrap:anywhere}
+  .doc pre{margin:0 0 16px;white-space:pre-wrap;overflow-wrap:break-word}
+  .doc pre code{background:none;border:none;padding:0;font-size:13.5px;line-height:1.55}
+  .doc blockquote{margin:0 0 16px;padding:8px 16px;border-left:2px solid var(--line);color:var(--muted)}
+
+  /* chybova hlaska, oprava, ukazka kodu s popisom */
+  .doc .err{background:color-mix(in srgb,var(--accent) 7%,var(--card));border:1px solid var(--line);
+    border-left:3px solid var(--accent);border-radius:8px;padding:12px 16px;margin:0 0 16px}
+  .doc .err code{background:none;border:none;padding:0;color:var(--ink)}
+  .doc .fix{margin:0 0 16px;padding-left:16px;border-left:2px solid var(--accent)}
+  .doc .fix p{margin:0 0 8px}
+  .doc .fix p:last-child{margin-bottom:0}
+  .doc .fix-label{font-family:var(--ui);font-size:12px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--muted);margin:0 0 6px}
+  .doc .snippet{background:var(--card);border:1px solid var(--line);border-radius:10px;margin:0 0 18px;
+    overflow:hidden}
+  .doc .snippet .cap{padding:8px 14px;border-bottom:1px solid var(--line);
+    font:500 11px/1.3 var(--ui);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  .doc .snippet.bad .cap{color:var(--accent)}
+  .doc .snippet pre{margin:0;border:none;border-radius:0;background:none;white-space:pre-wrap}
+
+  /* caste otazky */
+  .doc details{border-top:1px solid var(--line);padding:14px 0}
+  .doc details:last-of-type{border-bottom:1px solid var(--line);margin-bottom:16px}
+  .doc summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;gap:14px;
+    font:600 17px/1.35 var(--display);color:var(--ink)}
+  .doc summary::-webkit-details-marker{display:none}
+  .doc summary::after{content:"+";flex:none;color:var(--accent);font-family:var(--ui);font-weight:400}
+  .doc details[open] summary::after{content:"\2013"}
+  .doc details p{margin:10px 0 0}
+
+  /* zdroje */
+  .doc ul.sources{list-style:none;padding-left:0}
+  .doc ul.sources li{padding-left:14px;border-left:2px solid var(--line)}
+  .doc .sources li{margin:0 0 10px;font-size:.95em}
+  .doc .sources cite{font-style:italic}
+  .doc ul.plain{list-style:none;padding-left:0}
+  .doc ul.plain li{margin:0;padding:10px 0;border-top:1px solid var(--line)}
+  .doc ul.plain li:first-child{border-top:none}
+
+  /* panel s nastrojom: jedina tmava plocha v texte, tam sa klika */
+  .doc .tool-box,.doc .toolbox,.doc .check,.doc .try,.doc .cta{display:block;background:var(--ink);
+    color:#cfcabd;border:none;border-radius:var(--radius);padding:clamp(20px,2.2vw,28px);margin:0 0 18px}
+  .doc .tool-box p,.doc .check p,.doc .try p,.doc .cta p{max-width:none;margin:0 0 12px;color:#cfcabd}
+  .doc .toolbox{max-width:none;color:#cfcabd}
+  .doc .tool-box p:last-of-type,.doc .check p:last-child,.doc .try p:last-child,
+  .doc .cta p:last-child{margin-bottom:0}
+  .doc .tool-box a,.doc .toolbox a,.doc .check a,.doc .try a,.doc .cta a{color:#fffdf8}
+  .doc .tool-box a:hover,.doc .toolbox a:hover,.doc .check a:hover,.doc .try a:hover,
+  .doc .cta a:hover{color:var(--accent-light)}
+  .doc .tool-box code,.doc .toolbox code,.doc .check code,.doc .try code,.doc .cta code{
+    background:rgba(255,253,248,.10);border-color:rgba(255,253,248,.22);color:#fffdf8}
+  .doc .tool-box .btn{margin:14px 10px 0 0;text-decoration:none;color:#fff}
+  /* dve tlacidla vedla seba sa nesmu dotykat, na uzkom mobile sa zalomia pod seba */
+  /* druhe tlacidlo v tmavom paneli je vedlajsie: linka namiesto plochy */
+  .doc .tool-box .btn+.btn{background:none;border:1px solid rgba(255,253,248,.45);color:#fffdf8}
+  .doc .tool-box .btn+.btn:hover{background:#fffdf8;color:var(--ink)}
+  .doc .tool-cta{display:inline-flex;align-items:center;height:46px;padding:0 20px;border-radius:12px;
+    margin:2px 0 0;background:var(--accent);color:#fff;font:500 15px/1 var(--ui);text-decoration:none}
+  .doc .tool-cta:hover{background:var(--accent-dark);color:#fff}
+
+  /* bocny register drzi sa laveho okraja clanku */
+  .rail{left:max(20px,calc(50% - 620px));width:145px;gap:9px}
+  .rail a{min-width:0}
+  .rail i{flex:none}
+  .rail span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  /* Stlpec clanku je uzsi nez obsah hubu (880 px, nie 1340), tak sa register zmesti
+     uz od 1280 px: cely stoji v lavom okraji a od textu ho deli stalych 35 px.
+     Pod tou hranicou by uz do textu zasahoval, preto ho paper.css skryje. */
+  @media (min-width:1280px){.rail{display:flex}}
+
+  /* paticka je tmavy pas na konci */
+  footer.band{border-top:none;color:#a8a294}
+  footer.band a,footer.band b{color:#fffdf8}
+  footer.band .wrap{max-width:880px}
+  footer.band .cols{width:min(880px,92vw);margin:0 auto;gap:16px 32px}
+
 </style>
 </head>
 <body>
-<header class="top"><div class="wrap"><a class="wordmark" href="https://arling.sk/">ARLing</a><nav><a href="https://arling.sk/#tools">Werkzeuge</a><a href="https://arling.sk/how-we-work/">So arbeiten wir</a><a href="https://arling.sk/privacy/">Datenschutz</a></nav></div></header>
-<main class="wrap">
-  <p class="kicker" style="margin-top:48px">Notes</p>
-  <h1>camt.053 in Excel umwandeln: Kontoauszug als XML aus Sparkasse, Volksbank oder UBS in eine Tabelle bringen</h1>
-  <p class="byline">Andrej Lauko, ARLing · 7. September 2026</p>
-
-  <p>Ihre Bank stellt den Kontoauszug im Online-Banking als camt.053-Datei bereit, eine XML-Datei, die kein Tabellenprogramm auf Anhieb lesbar öffnet. Für die Buchhaltung brauchen Sie aber eine Tabelle mit Datum, Betrag, Verwendungszweck und Gegenpartei je Zeile, nicht eine XML-Struktur mit verschachtelten Tags. Dieser Beitrag erklärt, was camt.053 überhaupt ist, welche Felder für die Buchhaltung wichtig sind, warum der CSV-Export mancher Banken dafür nicht reicht, und wie Sie die Datei in wenigen Schritten im Browser in eine Tabelle umwandeln.</p>
-
-  <h2>1. Was ist camt.053?</h2>
-  <p>camt.053 ist eine Nachricht aus dem internationalen Standard ISO 20022, offiziell „Bank to Customer Statement", die eine Bank für einen abgeschlossenen Buchungstag ausstellt. In Deutschland, Österreich und der Schweiz löst dieses XML-Format schrittweise das ältere textbasierte MT940-Format ab, das viele Banken aus historischen Gründen zusätzlich noch anbieten. Sparkassen und Volksbanken/Raiffeisenbanken stellen camt.053 im Online-Banking meist unter einer Bezeichnung wie „Kontoauszug XML" oder direkt „camt.053" im Auszugs- oder Postfach-Bereich bereit, ebenso Schweizer Banken wie UBS für Konten mit CHF- oder EUR-Kontoführung. Der Aufbau der Nachricht selbst ist bankunabhängig: Er folgt dem gleichen ISO-20022-Schema, unabhängig davon, welches Kreditinstitut ihn ausstellt.</p>
-
-  <h2>2. Was in der Datei steht</h2>
-  <p>Jede Buchung ist ein eigener Eintrag <code>Ntry</code> mit einer festen Menge an Feldern. <code>Amt</code> trägt den Betrag samt Währungsattribut, <code>CdtDbtInd</code> sagt, ob es sich um eine Gutschrift (<code>CRDT</code>) oder eine Belastung (<code>DBIT</code>) handelt, und <code>BookgDt</code> ist das Buchungsdatum. Der Verwendungszweck steht in <code>RmtInf</code>, entweder als freier Text (<code>Ustrd</code>) oder, seltener, als strukturierte Referenz. <code>EndToEndId</code> ist die Ende-zu-Ende-Referenz aus dem ursprünglichen Zahlungsauftrag und eignet sich gut, um eine Zahlung eindeutig einer Rechnung zuzuordnen, wenn der Zahlungspflichtige sie beim Überweisen mitgegeben hat. Name und IBAN der Gegenpartei stehen in eigenen Feldern, nicht im Fließtext. Am Kopf der Datei stehen außerdem der Anfangssaldo <code>OPBD</code> und der Endsaldo <code>CLBD</code> des Zeitraums, mit denen sich rechnerisch prüfen lässt, ob die Summe aller Buchungen zum ausgewiesenen Endsaldo führt.</p>
-
-  <h2>3. Warum der CSV-Export der Bank oft nicht reicht</h2>
-  <p>Viele Banken bieten im Online-Banking neben camt.053 auch einen eigenen CSV-Export an, der auf den ersten Blick einfacher wirkt. In der Praxis fehlt dort aber regelmäßig etwas, das die XML-Datei enthält: der Verwendungszweck wird auf eine feste Zeichenzahl gekürzt, IBAN und Name der Gegenpartei stehen in einer Spalte statt in zweien, und Datums- oder Dezimalformat unterscheiden sich von Bank zu Bank, sodass Excel Beträge gelegentlich als Text statt als Zahl einliest. Vor allem aber prüft ein einfacher CSV-Export nicht, ob die Summe der Buchungen zum ausgewiesenen Saldo passt: Fehlt eine Zeile beim Export, fällt das ohne eigene Kontrolle nicht auf. Da jede Bank ihr CSV-Format anders aufbaut, braucht jede Bank zudem eine eigene Umgangsweise, während camt.053 als genormtes XML bei jeder Bank die gleiche Struktur hat.</p>
-
-  <h2>4. Schritt für Schritt im Browser</h2>
-  <div class="tool-box">
-    <p>Das Tool <a href="https://arling.sk/camt053-to-excel/de/">camt.053 in Excel</a> hat eine deutsche Benutzeroberfläche. Sie laden die XML-Datei im Browser hoch, das Tool liest die camt.053-Nachricht (Version camt.053.001.02 oder camt.053.001.08, die beiden international gebräuchlichen ISO-20022-Versionen dieser Nachricht) und zeigt jede Buchung als Tabellenzeile mit Datum, Betrag, Verwendungszweck, Gegenpartei und IBAN. Dabei prüft es automatisch, ob Anfangssaldo plus Summe der Buchungen dem Endsaldo entspricht, und macht auf eine Abweichung aufmerksam, statt sie stillschweigend zu übernehmen.</p>
-    <p>Nichts von dem, was Sie hochladen, wird irgendwohin gesendet: Die Verarbeitung läuft vollständig im Browser, was sich im Netzwerk-Reiter der Entwicklertools nachprüfen lässt. Der Export erfolgt als CSV mit Semikolon als Trennzeichen und Komma als Dezimaltrennzeichen, also in dem Format, das die deutsche Excel-Version beim Öffnen direkt richtig erkennt, ohne Textimport-Assistent. Die kostenlose Version wandelt beliebig viele Auszüge ohne Zeilenlimit um. Das Paket <a href="https://arling.sk/bankove-nastroje/?lang=de">Bankové nástroje</a> (9 EUR im Monat oder 79 EUR im Jahr, Preise inklusive Umsatzsteuer, Abrechnung über Stripe) fügt für alle vier Bank-Tools gespeicherte Einstellungen, mehrere Konten gleichzeitig und eine Verlaufsübersicht hinzu.</p>
-    <a class="btn" href="https://arling.sk/camt053-to-excel/de/">camt.053 in Excel öffnen</a>
+<div class="wash" aria-hidden="true"><i></i><i></i></div>
+<noscript><style>.r,.w{opacity:1;transform:none;filter:none}</style></noscript>
+<header>
+  <div class="wrap bar">
+    <a class="brand" href="https://arling.sk/">
+      <svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true"><defs><path id="m" fill-rule="evenodd" d="M16 2.5 L29 29.5 H3 Z M16 12.4 L22.4 25.6 H9.6 Z"/><clipPath id="mr"><rect x="16" width="16" height="32"/></clipPath></defs><use href="#m" fill="#1b1a17"/><use href="#m" fill="#b23a1d" clip-path="url(#mr)"/></svg>
+      <b>ARLing</b><span>Notes</span>
+    </a>
+    <nav><a href="https://arling.sk/#tools">Werkzeuge</a><a href="https://arling.sk/how-we-work/">So arbeiten wir</a><a href="https://arling.sk/privacy/">Datenschutz</a></nav>
   </div>
-  <p>Ein ehrlicher Hinweis zur Herkunft des Tools: Es wurde ursprünglich für slowakische Banken gebaut und dort mit deren camt.053-Dateien getestet. Da das Nachrichtenformat selbst aber internationalen ISO-20022-Regeln folgt und nicht slowakisch-spezifisch ist, liest das Tool auch die camt.053-Dateien deutscher, österreichischer und Schweizer Banken korrekt ein. Sollte eine Bank eine unübliche Erweiterung des Formats verwenden, die das Tool nicht erkennt, schreiben Sie kurz an die im Impressum genannte Adresse.</p>
-
-  <h2>5. Was Sie vor dem Import in DATEV, Lexware oder sevDesk prüfen sollten</h2>
-  <p>Die exportierte CSV-Tabelle ist ein allgemeines Format, kein fertiges DATEV-, Lexware- oder sevDesk-Importformat. Vor dem Einspielen lohnt sich eine kurze Kontrolle: Prüfen Sie, welche Spaltenreihenfolge und welchen Zeichensatz die jeweilige Importfunktion erwartet, zum Beispiel der DATEV-Kontoauszugsmanager oder der CSV-Import in Lexware und sevDesk, und ordnen Sie die Spalten beim ersten Import einmal manuell zu. Kontrollieren Sie außerdem, ob Datumsformat (Tag.Monat.Jahr) und Dezimaltrennzeichen (Komma) mit dem übereinstimmen, was die Zielsoftware beim Import abfragt, damit Beträge nicht versehentlich als Text landen. Prüfen Sie stichprobenartig einige Zeilen gegen den ursprünglichen Kontoauszug, bevor Sie den vollständigen Import bestätigen, insbesondere den Anfangs- und Endsaldo. Fertige, gespeicherte Zuordnungsvorlagen bietet das Pro-Paket derzeit für die slowakischen Programme Pohoda, Omega und Money S3; für DATEV, Lexware und sevDesk müssen Sie die Spaltenzuordnung aktuell noch selbst einmal einrichten, was sich in den meisten Programmen anschließend als Vorlage speichern lässt.</p>
-
-  <h2>Häufig gestellte Fragen</h2>
-  <details>
+</header>
+<main>
+  <div class="wrap">
+    <div class="note">
+      <div class="hero-note" id="hero">
+        <p class="kicker r">Notes</p>
+        <h1 id="h1" class="r d1"><span class="l">camt.053 in Excel umwandeln:</span><span class="l">Kontoauszug als XML aus Sparkasse, Volksbank oder UBS in eine Tabelle bringen</span></h1>
+        <p class="byline r d2">Andrej Lauko, ARLing · 7. September 2026</p>
+        <p class="toolgo r d3"><a data-umami-event="open-camt053-to-excel-de-hero" class="go" href="https://arling.sk/camt053-to-excel/de/">camt.053 in Excel öffnen <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2.5 8h11M9 3.5 13.5 8 9 12.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a></p>
+      </div>
+      <div class="doc">
+        <section class="sec" id="s1">
+  <p class="r">Ihre Bank stellt den Kontoauszug im Online-Banking als camt.053-Datei bereit, eine XML-Datei, die kein Tabellenprogramm auf Anhieb lesbar öffnet. Für die Buchhaltung brauchen Sie aber eine Tabelle mit Datum, Betrag, Verwendungszweck und Gegenpartei je Zeile, nicht eine XML-Struktur mit verschachtelten Tags. Dieser Beitrag erklärt, was camt.053 überhaupt ist, welche Felder für die Buchhaltung wichtig sind, warum der CSV-Export mancher Banken dafür nicht reicht, und wie Sie die Datei in wenigen Schritten im Browser in eine Tabelle umwandeln.</p>
+        </section>
+        <section class="sec" id="s2">
+  <h2 class="r">1. Was ist camt.053?</h2>
+  <p class="r d1">camt.053 ist eine Nachricht aus dem internationalen Standard ISO 20022, offiziell „Bank to Customer Statement", die eine Bank für einen abgeschlossenen Buchungstag ausstellt. In Deutschland, Österreich und der Schweiz löst dieses XML-Format schrittweise das ältere textbasierte MT940-Format ab, das viele Banken aus historischen Gründen zusätzlich noch anbieten. Sparkassen und Volksbanken/Raiffeisenbanken stellen camt.053 im Online-Banking meist unter einer Bezeichnung wie „Kontoauszug XML" oder direkt „camt.053" im Auszugs- oder Postfach-Bereich bereit, ebenso Schweizer Banken wie UBS für Konten mit CHF- oder EUR-Kontoführung. Der Aufbau der Nachricht selbst ist bankunabhängig: Er folgt dem gleichen ISO-20022-Schema, unabhängig davon, welches Kreditinstitut ihn ausstellt.</p>
+        </section>
+        <section class="sec" id="s3">
+  <h2 class="r">2. Was in der Datei steht</h2>
+  <p class="r d1">Jede Buchung ist ein eigener Eintrag <code>Ntry</code> mit einer festen Menge an Feldern. <code>Amt</code> trägt den Betrag samt Währungsattribut, <code>CdtDbtInd</code> sagt, ob es sich um eine Gutschrift (<code>CRDT</code>) oder eine Belastung (<code>DBIT</code>) handelt, und <code>BookgDt</code> ist das Buchungsdatum. Der Verwendungszweck steht in <code>RmtInf</code>, entweder als freier Text (<code>Ustrd</code>) oder, seltener, als strukturierte Referenz. <code>EndToEndId</code> ist die Ende-zu-Ende-Referenz aus dem ursprünglichen Zahlungsauftrag und eignet sich gut, um eine Zahlung eindeutig einer Rechnung zuzuordnen, wenn der Zahlungspflichtige sie beim Überweisen mitgegeben hat. Name und IBAN der Gegenpartei stehen in eigenen Feldern, nicht im Fließtext. Am Kopf der Datei stehen außerdem der Anfangssaldo <code>OPBD</code> und der Endsaldo <code>CLBD</code> des Zeitraums, mit denen sich rechnerisch prüfen lässt, ob die Summe aller Buchungen zum ausgewiesenen Endsaldo führt.</p>
+        </section>
+        <section class="sec" id="s4">
+  <h2 class="r">3. Warum der CSV-Export der Bank oft nicht reicht</h2>
+  <p class="r d1">Viele Banken bieten im Online-Banking neben camt.053 auch einen eigenen CSV-Export an, der auf den ersten Blick einfacher wirkt. In der Praxis fehlt dort aber regelmäßig etwas, das die XML-Datei enthält: der Verwendungszweck wird auf eine feste Zeichenzahl gekürzt, IBAN und Name der Gegenpartei stehen in einer Spalte statt in zweien, und Datums- oder Dezimalformat unterscheiden sich von Bank zu Bank, sodass Excel Beträge gelegentlich als Text statt als Zahl einliest. Vor allem aber prüft ein einfacher CSV-Export nicht, ob die Summe der Buchungen zum ausgewiesenen Saldo passt: Fehlt eine Zeile beim Export, fällt das ohne eigene Kontrolle nicht auf. Da jede Bank ihr CSV-Format anders aufbaut, braucht jede Bank zudem eine eigene Umgangsweise, während camt.053 als genormtes XML bei jeder Bank die gleiche Struktur hat.</p>
+        </section>
+        <section class="sec" id="s5">
+  <h2 class="r">4. Schritt für Schritt im Browser</h2>
+  <div class="tool-box r d1">
+    <p>Das Tool <a data-umami-event="open-camt053-to-excel-de-cta-text" href="https://arling.sk/camt053-to-excel/de/">camt.053 in Excel</a> hat eine deutsche Benutzeroberfläche. Sie laden die XML-Datei im Browser hoch, das Tool liest die camt.053-Nachricht (Version camt.053.001.02 oder camt.053.001.08, die beiden international gebräuchlichen ISO-20022-Versionen dieser Nachricht) und zeigt jede Buchung als Tabellenzeile mit Datum, Betrag, Verwendungszweck, Gegenpartei und IBAN. Dabei prüft es automatisch, ob Anfangssaldo plus Summe der Buchungen dem Endsaldo entspricht, und macht auf eine Abweichung aufmerksam, statt sie stillschweigend zu übernehmen.</p>
+    <p>Nichts von dem, was Sie hochladen, wird irgendwohin gesendet: Die Verarbeitung läuft vollständig im Browser, was sich im Netzwerk-Reiter der Entwicklertools nachprüfen lässt. Der Export erfolgt als CSV mit Semikolon als Trennzeichen und Komma als Dezimaltrennzeichen, also in dem Format, das die deutsche Excel-Version beim Öffnen direkt richtig erkennt, ohne Textimport-Assistent. Die kostenlose Version wandelt beliebig viele Auszüge ohne Zeilenlimit um. Das Paket <a data-umami-event="open-bankove-nastroje-de-text" href="https://arling.sk/bankove-nastroje/?lang=de">Bankové nástroje</a> (9 EUR im Monat oder 79 EUR im Jahr, Preise inklusive Umsatzsteuer, Abrechnung über Stripe) fügt für alle vier Bank-Tools gespeicherte Einstellungen, mehrere Konten gleichzeitig und eine Verlaufsübersicht hinzu.</p>
+    <a data-umami-event="open-camt053-to-excel-de-cta" class="btn btn-solid" href="https://arling.sk/camt053-to-excel/de/">camt.053 in Excel öffnen</a>
+  </div>
+  <p class="r d2">Ein ehrlicher Hinweis zur Herkunft des Tools: Es wurde ursprünglich für slowakische Banken gebaut und dort mit deren camt.053-Dateien getestet. Da das Nachrichtenformat selbst aber internationalen ISO-20022-Regeln folgt und nicht slowakisch-spezifisch ist, liest das Tool auch die camt.053-Dateien deutscher, österreichischer und Schweizer Banken korrekt ein. Sollte eine Bank eine unübliche Erweiterung des Formats verwenden, die das Tool nicht erkennt, schreiben Sie kurz an die im Impressum genannte Adresse.</p>
+        </section>
+        <section class="sec" id="s6">
+  <h2 class="r">5. Was Sie vor dem Import in DATEV, Lexware oder sevDesk prüfen sollten</h2>
+  <p class="r d1">Die exportierte CSV-Tabelle ist ein allgemeines Format, kein fertiges DATEV-, Lexware- oder sevDesk-Importformat. Vor dem Einspielen lohnt sich eine kurze Kontrolle: Prüfen Sie, welche Spaltenreihenfolge und welchen Zeichensatz die jeweilige Importfunktion erwartet, zum Beispiel der DATEV-Kontoauszugsmanager oder der CSV-Import in Lexware und sevDesk, und ordnen Sie die Spalten beim ersten Import einmal manuell zu. Kontrollieren Sie außerdem, ob Datumsformat (Tag.Monat.Jahr) und Dezimaltrennzeichen (Komma) mit dem übereinstimmen, was die Zielsoftware beim Import abfragt, damit Beträge nicht versehentlich als Text landen. Prüfen Sie stichprobenartig einige Zeilen gegen den ursprünglichen Kontoauszug, bevor Sie den vollständigen Import bestätigen, insbesondere den Anfangs- und Endsaldo. Fertige, gespeicherte Zuordnungsvorlagen bietet das Pro-Paket derzeit für die slowakischen Programme Pohoda, Omega und Money S3; für DATEV, Lexware und sevDesk müssen Sie die Spaltenzuordnung aktuell noch selbst einmal einrichten, was sich in den meisten Programmen anschließend als Vorlage speichern lässt.</p>
+        </section>
+        <section class="sec" id="s7">
+  <h2 class="r">Häufig gestellte Fragen</h2>
+  <details class="r d1">
     <summary>Wird meine Kontoauszugsdatei irgendwohin hochgeladen?</summary>
     <p>Nein. Das Tool camt.053 in Excel liest die XML-Datei clientseitig im Browser mit der FileReader-API und sendet sie an keinen Server. Das lässt sich in den Entwicklertools des Browsers im Reiter Netzwerk nachprüfen: Dort erscheint kein Request mit dem Dateiinhalt. Gespeichert wird nichts außer der Tabelle, die Sie selbst als CSV oder Excel-Datei herunterladen.</p>
   </details>
-  <details>
+  <details class="r d2">
     <summary>Kann ich mehrere Kontoauszüge auf einmal umwandeln?</summary>
     <p>Ja, die kostenlose Version wandelt mehrere camt.053-Dateien in einer Sitzung um, zum Beispiel mehrere Monate oder mehrere Konten hintereinander, und liefert für jede Datei eine eigene Tabelle mit Saldenprüfung. Die Pro-Lizenz im Bankové nástroje-Paket fügt gespeicherte Spalten-Zuordnungen und eine Verlaufsübersicht der zuletzt verarbeiteten Auszüge hinzu, für die tägliche Verwendung ist die kostenlose Version aber bereits vollständig.</p>
   </details>
-  <details>
+  <details class="r d3">
     <summary>Funktioniert das Tool auch mit Fremdwährungskonten?</summary>
     <p>Das Tool liest das Feld <code>Amt</code> mit dem Attribut <code>Ccy</code> und übernimmt die im Kontoauszug angegebene Währung unverändert je Buchung; es rechnet nicht selbst in Euro um. Bei einem Konto in US-Dollar oder Schweizer Franken erscheint die Originalwährung in der Tabelle, und ein Umrechnungskurs zum Buchungsdatum muss weiterhin gesondert ermittelt werden, etwa aus dem Kurs, den die Bank für die Buchung tatsächlich verwendet hat.</p>
   </details>
-  <details>
+  <details class="r d3">
     <summary>Was unterscheidet camt.052, camt.053 und camt.054?</summary>
     <p>camt.052 ist der untertägige Kontoauszug (Intraday) mit vorläufigen Buchungen, der mehrmals am Tag abgerufen werden kann. camt.053 ist der Tagesabschluss-Kontoauszug mit endgültigen Buchungen und Anfangs- sowie Endsaldo, das gängige Format für die laufende Buchhaltung. camt.054 ist eine Einzelbenachrichtigung über eine bestimmte Gutschrift oder Belastung, zum Beispiel bei einem Rücklastschrift-Hinweis, und ersetzt keinen vollständigen Auszug.</p>
   </details>
-
-  <h2>Quellen</h2>
-  <ul class="sources">
+        </section>
+      </div>
+    </div>
+  </div>
+  <section class="deep" id="s8">
+    <div class="wrap">
+      <div class="note">
+        <div class="doc">
+  <h2 class="r">Quellen</h2>
+  <ul class="sources r d1">
     <li>ISO 20022: <em>ISO 20022 message definitions (camt.053 Bank to Customer Statement)</em>. <a href="https://www.iso20022.org/iso-20022-message-definitions" target="_blank" rel="noopener">iso20022.org</a></li>
   </ul>
-
+        </div>
+      </div>
+    </div>
+  </section>
 </main>
-<footer><div class="wrap">ARLing s. r. o. · <a href="https://arling.sk/">arling.sk</a> · <a href="https://arling.sk/camt053-to-excel/de/">camt.053 in Excel</a> · <a href="mailto:andrej@arling.sk">andrej@arling.sk</a></div></footer>
+<footer class="band"><div class="wrap">ARLing s. r. o. · <a href="https://arling.sk/">arling.sk</a> · <a data-umami-event="open-camt053-to-excel-de-footer" href="https://arling.sk/camt053-to-excel/de/">camt.053 in Excel</a> · <a href="mailto:andrej@arling.sk">andrej@arling.sk</a></div></footer>
+<nav class="rail" aria-label="Inhalt des Artikels">
+  <a href="#s2"><i></i><span>1. Was ist camt.053?</span></a>
+  <a href="#s3"><i></i><span>2. Was in der Datei steht</span></a>
+  <a href="#s4"><i></i><span>3. Warum der CSV-Export der Bank oft nicht reicht</span></a>
+  <a href="#s5"><i></i><span>4. Schritt für Schritt im Browser</span></a>
+  <a href="#s6"><i></i><span>5. Was Sie vor dem Import in DATEV, Lexware oder sevDesk prüfen sollten</span></a>
+  <a href="#s7"><i></i><span>Häufig gestellte Fragen</span></a>
+  <a href="#s8"><i></i><span>Quellen</span></a>
+</nav>
+<script>
+(function () {
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var hero = document.getElementById('hero');
+  if (reduce) {
+    document.querySelectorAll('.r, section').forEach(function (e) { e.classList.add('in'); });
+  }
+  if (!reduce && hero) {
+    requestAnimationFrame(function () {
+      hero.querySelectorAll('.r').forEach(function (e) { e.classList.add('in'); });
+    });
+  }
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (en) {
+      if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); }
+    });
+  }, { rootMargin: '0px 0px -12% 0px', threshold: 0.1 });
+  document.querySelectorAll('section').forEach(function (s) { io.observe(s); });
+
+  // nadpis clanku sa objavi po slovach, ako dobre vytlaceny titulok
+  var h1 = document.getElementById('h1');
+  if (h1) {
+    var i = 0;
+    Array.prototype.forEach.call(h1.querySelectorAll('.l'), function (line) {
+      var words = line.textContent.split(' ');
+      line.textContent = '';
+      words.forEach(function (w, k) {
+        var s = document.createElement('span');
+        s.className = 'w';
+        s.style.transitionDelay = (i++ * 0.06).toFixed(2) + 's';
+        s.textContent = w;
+        line.appendChild(s);
+        if (k < words.length - 1) line.appendChild(document.createTextNode(' '));
+      });
+    });
+    requestAnimationFrame(function () { h1.classList.add('in'); });
+  }
+
+  // bocny register sleduje, ktora cast clanku je v strede obrazovky
+  var rail = document.querySelector('.rail');
+  if (rail) {
+    var links = Array.prototype.slice.call(rail.querySelectorAll('a'));
+    var targets = links.map(function (a) { return document.querySelector(a.getAttribute('href')); });
+    var railIo = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        var i = targets.indexOf(en.target);
+        if (i < 0 || !en.isIntersecting) return;
+        links.forEach(function (a, j) { a.setAttribute('aria-current', j === i ? 'true' : 'false'); });
+      });
+      rail.classList.add('on');
+    }, { rootMargin: '-45% 0px -45% 0px' });
+    targets.forEach(function (t) { if (t) railIo.observe(t); });
+  }
+})();
+</script>
 </body>
 </html>

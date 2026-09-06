@@ -21,7 +21,11 @@
 <link rel="alternate icon" href="favicon.ico" />
 <link rel="apple-touch-icon" href="icon-192.png" />
 <link rel="manifest" href="manifest.json" />
-<!-- Bez externého font CDN: len systémový font stack (viď body { font-family } nižšie). -->
+<!-- Vzhľad: jediný zdroj je /style/paper.css (kópia ops/design/paper/paper.css).
+     Písma ARLing sú hostené u nás, žiadne externé CDN. -->
+<link rel="preload" href="/fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/style/paper.css">
 <script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="c866f49f-54e4-4339-84c0-8bf720b64b09"></script>
 
 <script type="application/ld+json">
@@ -131,198 +135,223 @@
 </script>
 
 <style>
-  :root {
-    --paper:#f6f2ea; --paper-2:#fbf9f4; --ink:#1b1a17; --ink-2:#4a4741; --muted:#66625a; --line:#d9d2c4;
-    --accent:#b23a1d; --accent-soft:#f3e2dc; --ok:#2f6f3e; --warn:#9a6b00;
-    --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
-    --sans:system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    --mono:ui-monospace,"Cascadia Code",Consolas,Menlo,monospace;
-    color-scheme: light dark;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root { --paper:#151412; --paper-2:#1d1b18; --ink:#efe9de; --ink-2:#c9c2b5; --muted:#8f887b; --line:#2e2b26; --accent:#e0623f; --accent-soft:#3a1f17; --ok:#7fbf8e; --warn:#caa552; }
-  }
-  * { box-sizing:border-box; }
-  html { background:var(--paper); }
-  body { margin:0; color:var(--ink); background:var(--paper); font:16px/1.55 var(--sans); -webkit-font-smoothing:antialiased; }
-  a { color:inherit; text-decoration-color:var(--line); text-underline-offset:3px; }
-  a:hover { text-decoration-color:var(--accent); }
-  :focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
-  img { max-width:100%; height:auto; display:block; }
+  /* Bankové nástroje: len to, čo je vlastné tejto stránke.
+     Farby, písma, nadpisy, tlačidlá, hlavička, pätička, karty, tabuľky a pohyb
+     sú v /style/paper.css (jediný zdroj vzhľadu, ops/design/paper/paper.css). */
+  :root { --wrap:min(1180px,92vw); --warn:#8a5f10; --head:66px; }
   [hidden] { display:none !important; }
-  .skip { position:absolute; left:-999px; top:8px; background:var(--ink); color:var(--paper); padding:8px 12px; z-index:10; }
-  .skip:focus { left:8px; }
-  .wrap { max-width:1040px; margin:0 auto; padding:0 24px; }
-  code { font:13.5px/1.4 var(--mono); background:var(--paper-2); border:1px solid var(--line); border-radius:3px; padding:1px 5px; overflow-wrap:anywhere; }
 
-  /* Header */
-  header.top { border-bottom:1px solid var(--line); }
-  header.top .wrap { display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:8px 24px; padding:18px 24px; }
-  .brand { display:flex; align-items:baseline; flex-wrap:wrap; gap:2px 10px; min-width:0; }
-  .wordmark { font:600 21px/1.25 var(--serif); text-decoration:none; overflow-wrap:anywhere; }
-  .wordmark-sub { font:13px/1 var(--sans); color:var(--muted); letter-spacing:.02em; text-decoration:none; white-space:nowrap; }
-  .wordmark-sub:hover { color:var(--accent); }
-  .headnav { display:flex; align-items:center; flex-wrap:wrap; gap:6px 20px; }
-  nav.main { display:flex; flex-wrap:wrap; }
-  nav.main a { font-size:14px; margin-left:20px; text-decoration:none; color:var(--ink-2); white-space:nowrap; }
-  nav.main a:first-child { margin-left:0; }
-  nav.main a:hover { color:var(--accent); }
-  .lang-switch { display:flex; align-items:center; gap:0; }
-  .lang-switch button { font:600 12px/1 var(--sans); padding:6px 9px; border:1px solid var(--line); background:var(--paper); color:var(--ink-2); cursor:pointer; appearance:none; -webkit-appearance:none; }
-  .lang-switch button:first-child { border-radius:4px 0 0 4px; }
-  .lang-switch button:last-child { border-radius:0 4px 4px 0; }
+  /* Kotvy pod lepivou hlavičkou. Hlavička je position:sticky (paper.css), takže bez
+     odstupu skončí vrch sekcie schovaný za ňou. Skutočnú výšku hlavičky vie až
+     prehliadač: mení sa šírkou okna aj dĺžkou slov v inom jazyku. Preto ju skript
+     na konci stránky premeria a zapíše do --head, a tieto dve čísla sú len záloha,
+     keby JavaScript nebežal. */
+  html { scroll-padding-top:calc(var(--head) + 14px); }
+  @media (max-width:720px) { :root { --head:134px; } }
+
+  /* Hlavička: monogram, wordmark, názov časti, navigácia, prepínač jazyka */
+  .bar { flex-wrap:wrap; height:auto; min-height:66px; padding:9px 0; gap:10px 18px; }
+  .brand { flex-wrap:wrap; min-width:0; }
+  .brand-mark { display:flex; align-items:center; gap:11px; text-decoration:none; color:var(--ink); }
+  .brand-mark svg { display:block; }
+  .brand-sec { font-family:var(--ui); font-size:13px; color:var(--muted); text-decoration:none;
+    border-left:1px solid var(--line); padding-left:11px; white-space:nowrap; }
+  .brand-sec:hover { color:var(--accent); }
+  .headnav { display:flex; align-items:center; flex-wrap:wrap; gap:8px 20px; }
+  .lang-switch { display:flex; }
+  .lang-switch button { font:600 12px/1 var(--ui); padding:8px 9px; border:1px solid var(--line);
+    background:var(--card); color:var(--muted); cursor:pointer; appearance:none; -webkit-appearance:none; }
+  .lang-switch button:first-child { border-radius:9px 0 0 9px; }
+  .lang-switch button:last-child { border-radius:0 9px 9px 0; }
   .lang-switch button + button { margin-left:-1px; }
   .lang-switch button:hover { border-color:var(--accent); color:var(--accent); position:relative; z-index:1; }
-  .lang-switch button.lang-active { background:var(--ink); border-color:var(--ink); color:var(--paper); position:relative; z-index:1; }
+  .lang-switch button.lang-active { background:var(--ink); border-color:var(--ink); color:var(--paper);
+    position:relative; z-index:1; }
 
-  /* Hero */
-  .hero { padding:64px 0 40px; border-bottom:1px solid var(--line); }
-  .hero h1 { font:400 clamp(30px,4.6vw,46px)/1.14 var(--serif); letter-spacing:-.01em; margin:0 0 18px; max-width:24ch; }
-  .hero p.lead { font-size:18px; color:var(--ink-2); max-width:62ch; margin:0 0 26px; }
-  .facts { list-style:none; margin:22px 0 0; padding:0; display:flex; flex-wrap:wrap; gap:8px 0; color:var(--muted); font-size:14px; }
-  .facts li + li::before { content:"·"; margin:0 10px; color:var(--line); }
-  .facts b { color:var(--ink); font-weight:600; }
-  .hero-buttons { margin:0; }
-  .hero-alt { margin:12px 0 0; font-size:14px; }
-  .hero-alt a { color:var(--ink-2); }
-  .hero-alt a:hover { color:var(--accent); }
-
-  /* Buttons */
-  .btn { display:inline-block; font:600 15px/1 var(--sans); padding:13px 18px; border-radius:4px; text-decoration:none; cursor:pointer; border:2px solid transparent; appearance:none; -webkit-appearance:none; }
-  .btn-solid { background:var(--accent); color:#fff; border-color:var(--accent); }
-  .btn-solid:hover { background:var(--ink); border-color:var(--ink); color:var(--paper); }
-  .btn-line { border:2px solid var(--ink); color:var(--ink); background:transparent; }
-  .btn-line:hover { border-color:var(--accent); color:var(--accent); }
-  .btn + .btn { margin-left:10px; }
-  .btn:disabled { opacity:.6; cursor:default; }
-
-  /* Section frame */
-  section { padding:44px 0; border-bottom:1px solid var(--line); }
-  section[id], header.top { scroll-margin-top:14px; }
-  .kicker { font:400 14px/1 var(--serif); color:var(--accent); letter-spacing:.06em; text-transform:uppercase; margin:0 0 10px; }
-  h2 { font:400 28px/1.2 var(--serif); margin:0 0 8px; letter-spacing:-.005em; max-width:32ch; }
-  .sub { color:var(--ink-2); max-width:64ch; margin:0 0 24px; }
-
-  /* Tools index list */
-  .index { list-style:none; margin:0; padding:0; border-top:1px solid var(--line); }
-  .index li { border-bottom:1px solid var(--line); }
-  .index a { display:grid; grid-template-columns:44px minmax(0,1.1fr) minmax(0,1fr) minmax(0,1fr); gap:18px; padding:20px 0; text-decoration:none; align-items:start; }
-  .index a:hover .name { color:var(--accent); }
-  .index .num { font:400 15px/1.4 var(--serif); color:var(--muted); padding-top:2px; }
-  .index .name { display:block; font:400 21px/1.25 var(--serif); margin:0 0 4px; overflow-wrap:anywhere; }
-  .index .lang { display:inline-block; font:12px/1 var(--mono); color:var(--muted); border:1px solid var(--line); border-radius:3px; padding:3px 6px; vertical-align:middle; margin-left:6px; }
-  .index .soon { display:inline-block; font:12px/1 var(--sans); color:var(--warn); border:1px solid var(--warn); border-radius:3px; padding:3px 6px; vertical-align:middle; margin-left:6px; }
-  .index .who { display:block; color:var(--muted); font-size:14px; overflow-wrap:anywhere; }
-  .index .lbl { display:block; font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin-bottom:4px; }
-  .index .see { font-size:15px; color:var(--ink-2); overflow-wrap:anywhere; }
-  .index .get { font-size:15px; color:var(--ink-2); overflow-wrap:anywhere; }
-  @media (max-width:820px) {
-    .index a { grid-template-columns:32px minmax(0,1fr); }
-    .index .see, .index .get { grid-column:2; }
+  /* Úvod stránky */
+  .hero-alt { font-family:var(--ui); font-size:14px; margin:14px 0 0; }
+  .facts { list-style:none; padding:0; display:flex; flex-wrap:wrap; }
+  .facts li:not(:last-child)::after { content:"·"; margin:0 10px; color:var(--line); }
+  @media (max-width:560px) {
+    .facts { flex-direction:column; gap:4px; }
+    .facts li:not(:last-child)::after { content:none; }
   }
 
-  /* Rules list (Pro benefits) */
-  .rules { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:26px 32px; margin:0; padding:0; list-style:none; counter-reset:r; }
+  /* Široký pás so snímkou. paper.css počíta s fotkou (16:9, na mobile 4:3);
+     tu je to obrazovka nástroja, ktorej by orezanie zjedlo kraje tabuľky,
+     preto pás drží presný pomer strán tej snímky, ktorá sa práve zobrazuje:
+     celej nad 600 px, jej čitateľného výrezu pod ňou. */
+  .banner picture { display:contents; }
+  .banner .frame { width:100%; aspect-ratio:1230/631; border-radius:16px;
+    transform-origin:50% 50%; animation:none; }
+  /* Pás sa pri scrollovaní roztiahne, ale nie šírkou. paper.css mení width zo 64 %
+     na 100 %, a keďže pomer strán ostáva, rastie s ňou aj výška: výška dokumentu
+     sa počas scrollu menila o 183 px a plynulý skok na kotvu pod pásom skončil
+     292 px vedľa nej. Preto tu rastie mierka. Miesto na celý pás je vyhradené od
+     začiatku, obraz sa doň roztiahne a stránka sa pod ním nikam nepohne. */
+  @supports (animation-timeline: view()) {
+    .banner .frame { animation:pas-rozsir linear both; animation-timeline:view();
+      animation-range:entry 30% cover 55%; }
+    @keyframes pas-rozsir { from { transform:scale(.7); } to { transform:scale(1); } }
+  }
+  /* Na telefóne nemá pás z čoho rásť, stojí rovno na plnú šírku. */
+  @media (max-width:860px) {
+    .banner .frame { border-radius:14px; animation:none; transform:none; }
+  }
+  /* Celá snímka je široká 1230 px; na telefóne by sa zmestila na 347 px, teda na
+     28 % veľkosti, kde sú z riadkov tabuľky len farebné pruhy. Pod 600 px preto
+     ide do pásu výrez tej istej snímky: súhrn, štyri záložky a spárované faktúry
+     so sumami, v mierke, ktorá sa dá prečítať. */
+  @media (max-width:600px) {
+    .banner .frame { aspect-ratio:540/325; }
+  }
+  @media (prefers-reduced-motion:reduce) {
+    .banner .frame { animation:none; transform:none; }
+  }
+  /* Priblíženie podľa scrollu je pre fotku; snímke obrazovky by odrezalo
+     krajné stĺpce tabuľky. */
+  .banner img { animation:none; scale:1; }
+
+  /* Register štyroch nástrojov: riadky s vlasovými linkami, nie mriežka kariet */
+  .tools { list-style:none; margin:clamp(18px,2vw,26px) 0 0; padding:0; border-top:1px solid var(--line); }
+  .tools li { border-bottom:1px solid var(--line); }
+  .tools a { display:grid; grid-template-columns:46px minmax(0,1.15fr) minmax(0,1fr) minmax(0,1fr);
+    gap:18px; padding:20px 0; text-decoration:none; align-items:start; }
+  .tools .n { font-family:var(--ui); font-variant-numeric:tabular-nums; font-size:13px;
+    letter-spacing:.06em; color:var(--accent); padding-top:5px; }
+  .tools .name { display:block; font:600 clamp(18px,1.5vw,21px)/1.3 var(--display); color:var(--ink);
+    letter-spacing:-.01em; margin:0 0 5px; overflow-wrap:anywhere; }
+  .tools a:hover .name { color:var(--accent); }
+  .tools .badge { display:inline-block; font:12px/1 var(--ui); color:var(--muted);
+    border:1px solid var(--line); border-radius:999px; padding:3px 8px; margin-left:7px; vertical-align:middle; }
+  .tools .soon { color:var(--warn); border-color:var(--warn); }
+  .tools .who { display:block; color:var(--muted); font-size:14.5px; }
+  .tools .lbl { display:block; font:500 11px/1.3 var(--ui); letter-spacing:.08em; text-transform:uppercase;
+    color:var(--muted); margin-bottom:5px; }
+  .tools .see, .tools .get { font-size:15.5px; color:var(--body); overflow-wrap:anywhere; }
+  @media (max-width:900px) {
+    .tools a { grid-template-columns:32px minmax(0,1fr); gap:10px 14px; }
+    .tools .see, .tools .get { grid-column:2; }
+  }
+
+  /* Cenník: dva plány, odporúčaný má akcentový pás hore */
+  .pro-badge { display:inline-block; font:600 11px/1 var(--ui); letter-spacing:.09em; text-transform:uppercase;
+    color:var(--accent); margin:0 0 14px; }
+  .price-save { font-family:var(--ui); font-size:13px; color:var(--ok); margin:0 0 18px; }
+  .plan { display:flex; flex-direction:column; }
+  .plan .btn { display:flex; justify-content:center; margin:auto 0 12px; }
+  .fineprint { font-family:var(--ui); font-size:12.5px; color:var(--muted); margin:0; }
+  .pro-already { margin:20px 0 0; padding:12px 15px; border:1px solid var(--ok); border-radius:12px;
+    background:var(--card); font-size:15px; }
+  .objections-label { margin:32px 0 6px; font:500 12px/1 var(--ui); letter-spacing:.1em;
+    text-transform:uppercase; color:var(--muted); }
+
+  /* Čo Pro pridá */
+  .rules { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(260px,100%),1fr));
+    gap:26px var(--gap); margin:clamp(18px,2vw,26px) 0 0; padding:0; list-style:none; counter-reset:r; }
   .rules li { padding-top:14px; border-top:1px solid var(--line); min-width:0; }
-  .rules li::before { counter-increment:r; content:counter(r,decimal-leading-zero); font:400 14px/1 var(--serif); color:var(--accent); display:block; margin-bottom:8px; }
-  .rules b { display:block; font-weight:600; margin-bottom:4px; }
-  .rules p { margin:0; color:var(--ink-2); font-size:15px; overflow-wrap:anywhere; }
-  .rules-note { margin:24px 0 0; color:var(--ink-2); font-size:14.5px; max-width:70ch; }
+  .rules li::before { counter-increment:r; content:counter(r,decimal-leading-zero);
+    font:500 12px/1 var(--ui); letter-spacing:.12em; color:var(--accent); display:block; margin-bottom:9px; }
+  .rules b { display:block; font:600 17px/1.35 var(--display); color:var(--ink); margin-bottom:5px; }
+  .rules p { margin:0; font-size:15.5px; }
+  .rules-note { margin:26px 0 0; }
 
-  /* Pro pricing */
-  .pro-purchase { display:grid; grid-template-columns:1fr 1fr; gap:24px; margin-top:8px; align-items:start; }
-  @media (max-width:820px) { .pro-purchase { grid-template-columns:minmax(0,1fr); } }
-  .pro-price { border:1px solid var(--line); background:var(--paper-2); padding:24px; }
-  .pro-price.recommended { border-color:var(--accent); }
-  .pro-badge { display:inline-block; font:600 11px/1 var(--sans); letter-spacing:.05em; text-transform:uppercase; color:var(--accent); border:1px solid var(--accent); border-radius:3px; padding:4px 7px; margin:0 0 12px; }
-  .pro-price-amount { font:400 36px/1 var(--serif); margin:0 0 6px; }
-  .pro-price-amount span { font:14px/1 var(--sans); color:var(--muted); }
-  .pro-price-save { margin:0 0 16px; font-size:13px; color:var(--ok); }
-  .pro-price .btn { display:block; text-align:center; margin:0 0 12px; }
-  .pro-price .fineprint { margin:0; }
-  .pro-already { margin:18px 0 0; padding:12px 14px; border:1px solid var(--ok); background:var(--paper-2); color:var(--ink); font-size:13.5px; border-radius:4px; }
-  .pro-objections { margin-top:8px; }
-  .objections-label { margin:28px 0 4px; font:600 13px/1 var(--sans); letter-spacing:.03em; text-transform:uppercase; color:var(--ink-2); }
-
-  /* Licence box */
-  .pro-licence-box { border:1px solid var(--line); background:var(--paper); padding:20px 22px; display:flex; flex-direction:column; gap:16px; min-width:0; max-width:640px; }
-  .pro-licence-status { display:flex; align-items:center; gap:10px; flex-wrap:wrap; font-size:13.5px; color:var(--ink-2); }
-  .status-pill { display:inline-flex; align-items:center; gap:6px; padding:3px 8px; border-radius:4px; border:1px solid var(--line); background:var(--paper); color:var(--ink-2); font:11.5px/1 var(--mono); }
-  .status-pill.fail { color:var(--accent); border-color:var(--accent); background:var(--accent-soft); }
+  /* Licencia */
+  .pro-licence-box { background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    padding:20px 22px; display:flex; flex-direction:column; gap:16px; min-width:0; max-width:640px; }
+  .pro-licence-status { display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    font-family:var(--ui); font-size:13.5px; color:var(--muted); }
+  .status-pill { display:inline-flex; align-items:center; gap:6px; padding:4px 9px; border-radius:999px;
+    border:1px solid var(--line); font:11.5px/1 var(--mono); color:var(--muted); }
+  .status-pill.fail { color:var(--accent); border-color:var(--accent); }
   .status-pill.pass { color:var(--ok); border-color:var(--ok); }
   .pro-licence-actions { display:flex; gap:8px; flex-wrap:wrap; }
-  .icon-btn { font:12.5px/1 var(--mono); padding:7px 10px; border:1px solid var(--line); background:var(--paper); color:var(--ink-2); border-radius:4px; cursor:pointer; }
+  .icon-btn { font:12.5px/1 var(--mono); padding:9px 11px; border:1px solid var(--line);
+    background:var(--paper); color:var(--body); border-radius:10px; cursor:pointer; }
   .icon-btn:hover { border-color:var(--accent); color:var(--accent); }
-  .icon-btn.primary { background:var(--accent); color:#fff; border-color:var(--accent); font-weight:600; }
-  .icon-btn.primary:hover { background:var(--ink); border-color:var(--ink); color:var(--paper); }
-  .pro-licence-manual { border-top:1px solid var(--line); padding-top:14px; }
-  .pro-licence-manual label { font-size:12px; color:var(--muted); display:block; margin-bottom:8px; }
+  .icon-btn.primary { background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600; }
+  .icon-btn.primary:hover { background:var(--accent-dark); color:#fff; }
+  .pro-licence-manual { border-top:1px solid var(--line); padding-top:15px; }
+  .pro-licence-manual label { display:block; font-family:var(--ui); font-size:12.5px; color:var(--muted);
+    margin-bottom:8px; }
   .pro-licence-manual-row { display:flex; gap:8px; flex-wrap:wrap; }
-  .pro-licence-manual-row input { flex:1 1 220px; min-width:0; background:var(--paper-2); border:1px solid var(--line); border-radius:4px; padding:9px 10px; font:12.5px/1.4 var(--mono); color:var(--ink); }
+  .pro-licence-manual-row input { flex:1 1 220px; min-width:0; background:var(--paper);
+    border:1px solid var(--line); border-radius:10px; padding:10px 11px; font:12.5px/1.4 var(--mono); color:var(--ink); }
   .pro-licence-manual-row input:focus { border-color:var(--accent); outline:none; }
-  .pro-licence-error { color:var(--accent); font-size:12px; margin:8px 0 0; }
+  .pro-licence-error { font-family:var(--ui); font-size:12.5px; color:var(--accent); margin:8px 0 0; }
   .pro-licence-error:empty { display:none; }
-  .licence-crosstool { margin:22px 0 0; max-width:70ch; }
-  .licence-crosstool p { color:var(--ink-2); font-size:15px; margin:0 0 10px; }
-  .licence-crosstool ul { margin:0; padding-left:20px; color:var(--ink-2); font-size:14.5px; }
-  .licence-crosstool li + li { margin-top:4px; }
+  .licence-crosstool { margin:26px 0 0; max-width:34em; }
+  .licence-crosstool p { margin:0; }
 
-  /* Free / ask */
-  .ask { display:flex; flex-wrap:wrap; align-items:center; gap:14px 24px; margin-top:6px; }
-  .ask p { margin:0; color:var(--ink-2); max-width:56ch; }
-  .hp { position:absolute; width:1px; height:1px; margin:-1px; padding:0; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
-  .subscribe-ask, .business-ask { border-top:1px solid var(--line); margin-top:20px; padding-top:20px; }
+  /* Odber a firmy */
+  .ask { display:flex; flex-wrap:wrap; align-items:center; gap:14px 24px; }
+  .ask p { margin:0; max-width:56ch; }
+  .hp { position:absolute; width:1px; height:1px; margin:-1px; padding:0; overflow:hidden;
+    clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+  .subscribe-ask, .business-ask { border-top:1px solid var(--line); margin-top:22px; padding-top:22px; }
   .subscribe-form { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
-  .subscribe-form input[type="email"] { height:44px; min-width:0; flex:1 1 240px; padding:0 14px; border:1px solid var(--line); border-radius:4px; background:var(--paper-2); color:var(--ink); font:15px/1 var(--sans); }
+  .subscribe-form input[type="email"] { height:46px; min-width:0; flex:1 1 240px; padding:0 14px;
+    border:1px solid var(--line); border-radius:12px; background:var(--card); color:var(--ink); font:15px/1 var(--ui); }
   .subscribe-form input[type="email"]::placeholder { color:var(--muted); }
   .subscribe-form .btn { flex:none; }
   #subscribe-thanks { color:var(--ok); font-weight:600; }
   #subscribe-error { color:var(--accent); font-weight:600; }
-  .subscribe-privacy { flex-basis:100%; margin:0; }
+  .subscribe-privacy { flex-basis:100%; margin:0; font-family:var(--ui); font-size:13px; }
   @media (max-width:480px) { .subscribe-form input[type="email"], .subscribe-form button { width:100%; } }
 
-  /* FAQ */
-  details { border-top:1px solid var(--line); padding:14px 0; }
+  /* Otázky */
+  details { border-top:1px solid var(--line); padding:15px 0; }
   details:last-of-type { border-bottom:1px solid var(--line); }
-  summary { cursor:pointer; font:400 18px/1.3 var(--serif); list-style:none; display:flex; justify-content:space-between; gap:12px; }
+  summary { cursor:pointer; color:var(--ink); font:600 clamp(16.5px,1.3vw,19px)/1.35 var(--display);
+    letter-spacing:-.01em; list-style:none; display:flex; justify-content:space-between; gap:14px; }
   summary::-webkit-details-marker { display:none; }
-  summary::after { content:"+"; color:var(--accent); flex:none; font-family:var(--sans); }
+  summary::after { content:"+"; color:var(--accent); font-family:var(--ui); font-weight:400; flex:none; }
   details[open] summary::after { content:"\2013"; }
-  details p { color:var(--ink-2); margin:10px 0 0; max-width:70ch; overflow-wrap:anywhere; }
+  details p { margin:10px 0 0; }
+  .band .rule { background:rgba(255,253,248,.18); }
+  .band details, .band details:last-of-type { border-color:rgba(255,253,248,.16); }
+  .band summary { color:#fffdf8; }
+  .band summary::after { color:var(--accent-light); }
 
-  /* Footer */
-  footer { padding:32px 0 56px; color:var(--muted); font-size:14px; }
-  footer .cols { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:20px 32px; }
-  footer b { color:var(--ink); font-weight:600; }
-  footer a { color:var(--ink-2); }
-  .footer-note { margin-top:14px; font-size:12px; color:var(--muted); }
+  /* Záverečné CTA a pätička */
+  .closing { text-align:center; }
+  .closing .lead { margin:0 auto clamp(20px,2.2vw,28px); }
+  .closing .cta { justify-content:center; }
+  footer b { color:var(--ink); }
+  footer .cols { gap:20px 32px; }
+  .footer-note { margin-top:16px; font-size:12.5px; }
 
-  @media (max-width:480px) {
-    .hero { padding:44px 0 32px; }
-    nav.main a { margin-left:12px; }
-    .wordmark-sub { display:none; }
-    .btn + .btn { margin-left:0; margin-top:10px; }
-  }
-
-  /* Sticky mobile buy bar (Paper Sell): mobile only, appears after the hero, closable. */
-  .sticky-cta { position:fixed; left:0; right:0; bottom:0; z-index:30; background:var(--paper-2); border-top:1px solid var(--line); }
-  .sticky-cta-inner { display:flex; align-items:center; gap:10px; max-width:1040px; margin:0 auto; padding:10px 14px; }
-  .sticky-cta-text { flex:1 1 auto; min-width:0; font-size:12.5px; color:var(--ink-2); overflow-wrap:anywhere; }
-  .sticky-cta .btn { flex:none; padding:10px 14px; font-size:13.5px; margin:0; }
-  .sticky-cta-close { flex:none; width:30px; height:30px; border:1px solid var(--line); background:var(--paper); color:var(--ink-2); border-radius:4px; cursor:pointer; font:16px/1 var(--sans); padding:0; }
+  /* Lišta na kúpu na telefóne: až za úvodom, dá sa zavrieť */
+  .sticky-cta { position:fixed; left:0; right:0; bottom:0; z-index:30;
+    background:var(--card); border-top:1px solid var(--line); }
+  .sticky-cta-inner { display:flex; align-items:center; gap:10px; width:var(--wrap); margin:0 auto; padding:10px 0; }
+  .sticky-cta-text { flex:1 1 auto; min-width:0; font-family:var(--ui); font-size:12.5px; color:var(--muted); }
+  .sticky-cta .btn { flex:none; height:40px; padding:0 14px; font-size:13.5px; }
+  .sticky-cta-close { flex:none; width:32px; height:32px; border:1px solid var(--line); background:var(--paper);
+    color:var(--muted); border-radius:9px; cursor:pointer; font:16px/1 var(--ui); padding:0; }
   .sticky-cta-close:hover { border-color:var(--accent); color:var(--accent); }
+  @media (max-width:760px) { footer { padding-bottom:104px; } }
   @media (min-width:761px) { .sticky-cta { display:none !important; } }
   @media print { .sticky-cta { display:none !important; } }
 </style>
+<noscript><style>
+  /* Bez JavaScriptu sa nič neprichádza: všetko je hneď viditeľné. */
+  .r, .w { opacity:1 !important; transform:none !important; filter:none !important; }
+  .rule { transform:scaleX(1) !important; }
+</style></noscript>
 </head>
 <body>
+<div class="wash" aria-hidden="true"><i></i><i></i></div>
 
 <a class="skip" href="#tools" data-i18n="skip">Skočiť na nástroje</a>
-<header class="top">
-  <div class="wrap">
+<header>
+  <div class="wrap bar">
     <div class="brand">
-      <a class="wordmark" href="https://arling.sk/bankove-nastroje/" data-i18n="wordmark">Bankové nástroje</a>
-      <a class="wordmark-sub" href="https://arling.sk/" data-i18n="brand.sub">nástroj ARLing</a>
+      <a class="brand-mark" href="https://arling.sk/">
+        <svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true"><defs><path id="m" fill-rule="evenodd" d="M16 2.5 L29 29.5 H3 Z M16 12.4 L22.4 25.6 H9.6 Z"/><clipPath id="mr"><rect x="16" y="0" width="16" height="32"/></clipPath></defs><use href="#m" fill="#141413"/><use href="#m" fill="#b23a1d" clip-path="url(#mr)"/></svg>
+        <b>ARLing</b>
+      </a>
+      <a class="brand-sec" href="https://arling.sk/bankove-nastroje/" data-i18n="wordmark">Bankové nástroje</a>
     </div>
     <div class="headnav">
       <nav class="main" aria-label="Stránka">
@@ -341,56 +370,63 @@
 </header>
 
 <main>
-  <div class="hero">
-    <div class="wrap">
-      <h1 data-i18n="hero.h1">Štyri nástroje pre prácu s bankou. Jedna licencia.</h1>
-      <p class="lead" data-i18n="hero.lead">SEPA pain.001 Doctor, SEPA pain.001 Generátor, camt.053 do Excelu a Párovač platieb bežia celé vo vašom prehliadači: nič z toho, čo do nich vložíte, sa neodosiela. Jedna Pro licencia odomkne pohodlie vo všetkých štyroch naraz, free verzie ostávajú bez limitov navždy.</p>
-      <p class="hero-buttons">
+  <div class="wrap hero" id="hero">
+    <div>
+      <h1 id="h1"><span class="l" data-i18n="hero.h1">Štyri nástroje pre prácu s bankou. Jedna licencia.</span></h1>
+      <p class="lead r d3" data-i18n="hero.lead">SEPA pain.001 Doctor, SEPA pain.001 Generátor, camt.053 do Excelu a Párovač platieb bežia celé vo vašom prehliadači: nič z toho, čo do nich vložíte, sa neodosiela. Jedna Pro licencia odomkne pohodlie vo všetkých štyroch naraz, free verzie ostávajú bez limitov navždy.</p>
+      <p class="cta hero-buttons r d4">
         <a class="btn btn-solid" id="hero-buy-yearly-btn" href="https://buy.stripe.com/cNi9ANcYi19FaoW09D4ko02" data-umami-event="buy_click" data-umami-event-plan="year" data-umami-event-place="hero" data-i18n="hero.buy.yearly">Kúpiť za 79&nbsp;€ ročne</a><a class="btn btn-line" id="hero-buy-monthly-link" href="https://buy.stripe.com/5kQ4gt2jE7y354Cg8B4ko01" data-umami-event="buy_click" data-umami-event-plan="month" data-umami-event-place="hero" data-i18n="hero.buy.monthly">alebo 9&nbsp;€ mesačne</a>
       </p>
-      <p class="hero-alt"><a href="#tools" data-umami-event="demo_click" data-umami-event-place="hero" data-i18n="hero.see.tools">Pozrieť nástroje</a></p>
-      <ul class="facts">
+      <p class="hero-alt r d5"><a href="#tools" data-umami-event="demo_click" data-umami-event-place="hero" data-i18n="hero.see.tools">Pozrieť nástroje</a></p>
+      <ul class="proof facts r d5">
         <li><b>4</b> <span data-i18n="facts.tools.label">nástroje</span></li>
         <li><b>757</b> <span data-i18n="facts.tests.label">testov</span></li>
         <li data-i18n="facts.privacy">beží v prehliadači, nič sa neodosiela</li>
       </ul>
     </div>
+    <div class="shot r d2">
+      <div class="chrome" aria-hidden="true"><i></i><i></i><i></i></div>
+      <img src="press/bankove-nastroje-2-camt053-table.webp" width="1270" height="668"
+           loading="lazy" decoding="async" data-i18n-alt="shot.alt"
+           alt="Snímka nástroja camt.053 do Excelu: výpis z banky prevedený na tabuľku so súhrnom a kontrolou zostatku">
+    </div>
   </div>
 
   <section id="tools">
     <div class="wrap">
-      <p class="kicker">01</p>
-      <h2 data-i18n="s1.h2">Štyri nástroje, jeden za druhým.</h2>
-      <p class="sub" data-i18n="s1.sub">Každý funguje samostatne a zadarmo. Licencia nižšie pridá Pro do všetkých štyroch naraz.</p>
-      <ol class="index">
-        <li>
+      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>01</p>
+      <h2 class="r" data-i18n="s1.h2">Štyri nástroje, jeden za druhým.</h2>
+      <p class="lead r d1" data-i18n="s1.sub">Každý funguje samostatne a zadarmo. Licencia nižšie pridá Pro do všetkých štyroch naraz.</p>
+      <div class="rule"></div>
+      <ol class="tools">
+        <li class="r d1">
           <a href="https://arling.sk/sepa-pain001-doctor/" data-umami-event="open-tool" data-umami-event-tool="sepa-pain001-doctor">
-            <span class="num">01</span>
-            <span><span class="name"><span data-i18n="t1.name">SEPA pain.001 Doctor</span><span class="lang">SK</span><span class="soon" data-i18n="lang.soon">EN/DE čoskoro</span></span><span class="who" data-i18n="t1.who">Kontrola pain.001 pred importom do banky</span></span>
+            <span class="n">01</span>
+            <span><span class="name"><span data-i18n="t1.name">SEPA pain.001 Doctor</span><span class="badge">SK</span><span class="badge soon" data-i18n="lang.soon">EN/DE čoskoro</span></span><span class="who" data-i18n="t1.who">Kontrola pain.001 pred importom do banky</span></span>
             <span class="see"><span class="lbl" data-i18n="lbl.see">Máte</span><span data-i18n="t1.see">Hotový hromadný príkaz v XML a neviete, či ho banka prijme.</span></span>
             <span class="get"><span class="lbl" data-i18n="lbl.get">Dostanete</span><span data-i18n="t1.get">Presný element, hodnotu a opravu podľa pravidiel Tatra banky, SLSP, VÚB a ČSOB.</span></span>
           </a>
         </li>
-        <li>
+        <li class="r d2">
           <a href="https://arling.sk/sepa-pain001-generator/" data-umami-event="open-tool" data-umami-event-tool="sepa-pain001-generator">
-            <span class="num">02</span>
-            <span><span class="name"><span data-i18n="t2.name">SEPA pain.001 Generátor</span><span class="lang">SK/EN/DE</span></span><span class="who" data-i18n="t2.who">Excel alebo CSV → pain.001 XML</span></span>
+            <span class="n">02</span>
+            <span><span class="name"><span data-i18n="t2.name">SEPA pain.001 Generátor</span><span class="badge">SK/EN/DE</span></span><span class="who" data-i18n="t2.who">Excel alebo CSV → pain.001 XML</span></span>
             <span class="see"><span class="lbl" data-i18n="lbl.see">Máte</span><span data-i18n="t2.see">Zoznam platieb v Exceli a banka chce hromadný príkaz v XML.</span></span>
             <span class="get"><span class="lbl" data-i18n="lbl.get">Dostanete</span><span data-i18n="t2.get">Hotový pain.001 súbor, skontrolovaný Doctorom, na stiahnutie za minútu.</span></span>
           </a>
         </li>
-        <li>
+        <li class="r d3">
           <a href="https://arling.sk/camt053-to-excel/" data-umami-event="open-tool" data-umami-event-tool="camt053-to-excel">
-            <span class="num">03</span>
-            <span><span class="name"><span data-i18n="t3.name">camt.053 do Excelu</span><span class="lang">SK/EN/DE</span></span><span class="who" data-i18n="t3.who">Výpis z banky → tabuľka</span></span>
+            <span class="n">03</span>
+            <span><span class="name"><span data-i18n="t3.name">camt.053 do Excelu</span><span class="badge">SK/EN/DE</span></span><span class="who" data-i18n="t3.who">Výpis z banky → tabuľka</span></span>
             <span class="see"><span class="lbl" data-i18n="lbl.see">Máte</span><span data-i18n="t3.see">Výpis z internet bankingu v XML (camt.053) a účtovný softvér chce tabuľku.</span></span>
             <span class="get"><span class="lbl" data-i18n="lbl.get">Dostanete</span><span data-i18n="t3.get">CSV alebo Excel s dátumami, sumami, protistranou a symbolmi, so súhrnom a kontrolou zostatku.</span></span>
           </a>
         </li>
-        <li>
+        <li class="r d4">
           <a href="https://arling.sk/parovac-platieb/" data-umami-event="open-tool" data-umami-event-tool="parovac-platieb">
-            <span class="num">04</span>
-            <span><span class="name"><span data-i18n="t4.name">Párovač platieb</span><span class="lang">SK</span><span class="soon" data-i18n="lang.soon">EN/DE čoskoro</span></span><span class="who" data-i18n="t4.who">Výpis z banky × faktúry</span></span>
+            <span class="n">04</span>
+            <span><span class="name"><span data-i18n="t4.name">Párovač platieb</span><span class="badge">SK</span><span class="badge soon" data-i18n="lang.soon">EN/DE čoskoro</span></span><span class="who" data-i18n="t4.who">Výpis z banky × faktúry</span></span>
             <span class="see"><span class="lbl" data-i18n="lbl.see">Máte</span><span data-i18n="t4.see">Výpis z banky a zoznam vydaných faktúr, ktoré treba spárovať ručne.</span></span>
             <span class="get"><span class="lbl" data-i18n="lbl.get">Dostanete</span><span data-i18n="t4.get">Spárované platby, nezaplatené faktúry a preplatky automaticky, aj bez zhodného variabilného symbolu.</span></span>
           </a>
@@ -399,30 +435,43 @@
     </div>
   </section>
 
-  <section id="pro">
-    <div class="wrap">
-      <p class="kicker">02</p>
-      <h2 data-i18n="s2.h2">9 € mesačne, alebo 79 € ročne za všetky štyri.</h2>
-      <p class="sub" data-i18n="s2.sub">Jedna platba, jedna licencia, žiadne obmedzenie na počet nástrojov ani zariadení. DPH v cene, faktúru pošle Stripe hneď po zaplatení, zrušiť môžete kedykoľvek.</p>
+  <div class="banner r" id="pas">
+    <div class="frame">
+      <picture>
+        <source media="(max-width:600px)" srcset="press/parovac-platieb-3-mobil.webp" width="540" height="325">
+        <img src="press/parovac-platieb-2-results.webp" width="1230" height="631"
+             loading="lazy" decoding="async" data-i18n-alt="banner.alt"
+             alt="Snímka nástroja Párovač platieb: spárované faktúry, preplatky, platby po splatnosti a nespárované platby">
+      </picture>
+    </div>
+    <div class="cap"><span data-i18n="t4.name">Párovač platieb</span><span data-i18n="t4.who">Výpis z banky × faktúry</span></div>
+  </div>
 
-      <div class="pro-purchase">
-        <div class="pro-price recommended">
+  <section id="pro" class="deep">
+    <div class="wrap">
+      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V4"/><path d="M4 20h16"/><path d="M8 16.5v-4M12.5 16.5V8M17 16.5v-6.5"/></svg>02</p>
+      <h2 class="r" data-i18n="s2.h2">9 € mesačne, alebo 79 € ročne za všetky štyri.</h2>
+      <p class="lead r d1" data-i18n="s2.sub">Jedna platba, jedna licencia, žiadne obmedzenie na počet nástrojov ani zariadení. DPH v cene, faktúru pošle Stripe hneď po zaplatení, zrušiť môžete kedykoľvek.</p>
+      <div class="rule"></div>
+
+      <div class="plans">
+        <div class="card plan pick r d1">
           <p class="pro-badge" data-i18n="s2.badge.recommended">Odporúčané, ušetríte 29&nbsp;€</p>
-          <div class="pro-price-amount">79&nbsp;€ <span data-i18n="s2.year.unit">/ rok</span></div>
-          <p class="pro-price-save" data-i18n="s2.year.save">Oproti mesačnej platbe ušetríte 29&nbsp;€ za rok.</p>
+          <div class="price">79&nbsp;€ <small data-i18n="s2.year.unit">/ rok</small></div>
+          <p class="price-save" data-i18n="s2.year.save">Oproti mesačnej platbe ušetríte 29&nbsp;€ za rok.</p>
           <a class="btn btn-solid" id="pro-buy-yearly-btn" href="https://buy.stripe.com/cNi9ANcYi19FaoW09D4ko02" data-umami-event="buy_click" data-umami-event-plan="year" data-i18n="s2.year.btn">Kúpiť Pro, 79&nbsp;€/rok</a>
           <p class="fineprint" data-i18n="s2.fineprint">Platba cez Stripe. Zrušiť môžete kedykoľvek, ďalšie obdobie sa už nestrhne.</p>
         </div>
-        <div class="pro-price">
-          <div class="pro-price-amount">9&nbsp;€ <span data-i18n="s2.month.unit">/ mesiac</span></div>
-          <p class="pro-price-save">&nbsp;</p>
+        <div class="card plan r d2">
+          <div class="price">9&nbsp;€ <small data-i18n="s2.month.unit">/ mesiac</small></div>
+          <p class="price-save">&nbsp;</p>
           <a class="btn btn-solid" id="pro-buy-monthly-btn" href="https://buy.stripe.com/5kQ4gt2jE7y354Cg8B4ko01" data-umami-event="buy_click" data-umami-event-plan="month" data-i18n="s2.month.btn">Kúpiť Pro, 9&nbsp;€/mesiac</a>
           <p class="fineprint" data-i18n="s2.fineprint">Platba cez Stripe. Zrušiť môžete kedykoľvek, ďalšie obdobie sa už nestrhne.</p>
         </div>
       </div>
       <p class="pro-already" id="pro-already-note" hidden></p>
 
-      <div class="pro-objections">
+      <div class="pro-objections r d3">
         <p class="objections-label" data-i18n="s2.objections.label">Predtým, než kúpite</p>
         <details>
           <summary data-i18n="obj1.q">Sú moje dáta v bezpečí?</summary>
@@ -446,46 +495,48 @@
 
   <section id="pro-benefits">
     <div class="wrap">
-      <p class="kicker">03</p>
-      <h2 data-i18n="s3.h2">Čo Pro pridá vo všetkých štyroch nástrojoch.</h2>
-      <p class="sub" data-i18n="s3.sub">Pohodlie pre opakované mesačné spracovanie, nie odomknutá funkčnosť. Free verzia každého nástroja ostáva bez limitov.</p>
+      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M8.5 12.3l2.4 2.4 4.6-4.9"/></svg>03</p>
+      <h2 class="r" data-i18n="s3.h2">Čo Pro pridá vo všetkých štyroch nástrojoch.</h2>
+      <p class="lead r d1" data-i18n="s3.sub">Pohodlie pre opakované mesačné spracovanie, nie odomknutá funkčnosť. Free verzia každého nástroja ostáva bez limitov.</p>
+      <div class="rule"></div>
       <ol class="rules">
-        <li>
+        <li class="r d1">
           <b data-i18n="r1.title">Uložené profily platiteľov.</b>
           <p data-i18n="r1.body">Meno firmy, IBAN, BIC a banka na jeden klik v generátore aj v párovači, bez prepisovania pri každom použití.</p>
         </li>
-        <li>
+        <li class="r d2">
           <b data-i18n="r2.title">Viac súborov a účtov naraz.</b>
           <p data-i18n="r2.body">Viac výpisov, hromadných príkazov alebo bankových účtov v jednej dávke namiesto spracovania po jednom.</p>
         </li>
-        <li>
+        <li class="r d3">
           <b data-i18n="r3.title">Šablóny pre Pohodu, Omegu a Money S3.</b>
           <p data-i18n="r3.body">Predvolené mapovanie stĺpcov pre exporty z týchto troch účtovných programov, na jeden klik namiesto ručného nastavovania.</p>
         </li>
-        <li>
+        <li class="r d4">
           <b data-i18n="r6.title">MT940 a DATEV Buchungsstapel z camt.053.</b>
           <p data-i18n-html="r6.body">Výpis vo formáte camt.053 prevediete aj na MT940 (.sta) alebo priamo na DATEV Buchungsstapel (EXTF CSV) v nástroji camt.053 do Excelu. <a href="https://arling.sk/camt053-to-excel/mt940/">Viac o MT940 a DATEV</a>.</p>
         </li>
-        <li>
+        <li class="r d5">
           <b data-i18n="r4.title">História.</b>
           <p data-i18n="r4.body">Posledné spracovania v každom nástroji uložené vo vašom prehliadači, s možnosťou znova stiahnuť.</p>
         </li>
-        <li>
+        <li class="r d6">
           <b data-i18n="r5.title">Prednostná podpora e-mailom.</b>
           <p data-i18n="r5.body">Otázka alebo prípad, ktorý si niektorý z nástrojov pomýlil? Odpoveď prednostne, priamo od autora nástrojov.</p>
         </li>
       </ol>
-      <p class="rules-note" data-i18n="s3.note">Free verzia každého zo štyroch nástrojov ostáva bez limitov na počet použití, súborov ani stiahnutí, navždy.</p>
+      <p class="rules-note r d6" data-i18n="s3.note">Free verzia každého zo štyroch nástrojov ostáva bez limitov na počet použití, súborov ani stiahnutí, navždy.</p>
     </div>
   </section>
 
-  <section id="licence">
+  <section id="licence" class="deep">
     <div class="wrap">
-      <p class="kicker">04</p>
-      <h2 data-i18n="s4.h2">Aktivujte alebo spravujte licenciu.</h2>
-      <p class="sub" data-i18n="s4.sub">Po zaplatení sa stránka vráti sem a licenciu aktivuje sama, nič netreba kopírovať. Licenciu z iného počítača vložte ručne nižšie.</p>
+      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="12" r="3.5"/><path d="M11.5 12H21M18 12v3M15 12v2.2"/></svg>04</p>
+      <h2 class="r" data-i18n="s4.h2">Aktivujte alebo spravujte licenciu.</h2>
+      <p class="lead r d1" data-i18n="s4.sub">Po zaplatení sa stránka vráti sem a licenciu aktivuje sama, nič netreba kopírovať. Licenciu z iného počítača vložte ručne nižšie.</p>
+      <div class="rule"></div>
 
-      <div class="pro-licence-box">
+      <div class="pro-licence-box r d1">
         <div class="pro-licence-status">
           <span class="status-pill" id="pro-licence-pill" data-i18n="js.status.noLicence">bez licencie</span>
           <span id="pro-licence-detail"></span>
@@ -503,81 +554,95 @@
         </div>
       </div>
 
-      <div class="licence-crosstool">
+      <div class="licence-crosstool r d2">
         <p data-i18n="s4.crosstool.p">Tento istý kľúč funguje aj priamo v každom zo štyroch nástrojov, stačí ho vložiť raz (tu alebo v ktoromkoľvek z nich):</p>
-        <ul>
-          <li><a href="https://arling.sk/sepa-pain001-doctor/#pro">SEPA pain.001 Doctor</a></li>
-          <li><a href="https://arling.sk/sepa-pain001-generator/#pro">SEPA pain.001 Generátor</a></li>
-          <li><a href="https://arling.sk/camt053-to-excel/#pro">camt.053 do Excelu</a></li>
-          <li><a href="https://arling.sk/parovac-platieb/#pro">Párovač platieb</a></li>
-        </ul>
+        <div class="index">
+          <a href="https://arling.sk/sepa-pain001-doctor/#pro" data-umami-event="index-licence" data-umami-event-tool="sepa-pain001-doctor"><span class="n">01</span><span class="t" data-i18n="t1.name">SEPA pain.001 Doctor</span><span class="dots"></span></a>
+          <a href="https://arling.sk/sepa-pain001-generator/#pro" data-umami-event="index-licence" data-umami-event-tool="sepa-pain001-generator"><span class="n">02</span><span class="t" data-i18n="t2.name">SEPA pain.001 Generátor</span><span class="dots"></span></a>
+          <a href="https://arling.sk/camt053-to-excel/#pro" data-umami-event="index-licence" data-umami-event-tool="camt053-to-excel"><span class="n">03</span><span class="t" data-i18n="t3.name">camt.053 do Excelu</span><span class="dots"></span></a>
+          <a href="https://arling.sk/parovac-platieb/#pro" data-umami-event="index-licence" data-umami-event-tool="parovac-platieb"><span class="n">04</span><span class="t" data-i18n="t4.name">Párovač platieb</span><span class="dots"></span></a>
+        </div>
       </div>
     </div>
   </section>
 
   <section id="pricing">
     <div class="wrap">
-      <p class="kicker">05</p>
-      <h2 data-i18n="s5.h2">Dajte nám vedieť, alebo napíšte, čo potrebujete.</h2>
-      <p class="sub" data-i18n="s5.sub">Free verzia každého nástroja ostáva bez limitov, bez účtu, bez platby.</p>
-      <div class="ask subscribe-ask" id="subscribe">
+      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 5a15 15 0 0 1 15 15"/></svg>05</p>
+      <h2 class="r" data-i18n="s5.h2">Dajte nám vedieť, alebo napíšte, čo potrebujete.</h2>
+      <p class="lead r d1" data-i18n="s5.sub">Free verzia každého nástroja ostáva bez limitov, bez účtu, bez platby.</p>
+      <div class="rule"></div>
+      <div class="ask subscribe-ask r d1" id="subscribe">
         <p data-i18n-html="s5.subscribe.p"><b>Dajte mi vedieť o novom nástroji.</b> Len nové nástroje. Žiadny newsletter, žiadne zdieľanie. Odhlásenie odpoveďou na mail.</p>
         <form id="subscribe-form" class="subscribe-form" data-subscribe data-source="bankove-nastroje" data-lang="sk" data-thanks="subscribe-thanks" data-error="subscribe-error" novalidate>
           <div class="hp" aria-hidden="true"><input type="text" name="website" id="subscribe-website" tabindex="-1" autocomplete="off"></div>
           <input type="email" id="subscribe-email" name="email" required autocomplete="email" inputmode="email" placeholder="vas@email.sk" aria-label="E-mailová adresa" data-i18n-placeholder="s5.subscribe.email.placeholder" data-i18n-aria-label="s5.subscribe.email.aria">
-          <button class="btn btn-solid" type="submit" data-i18n="s5.subscribe.btn">Dať vedieť</button>
+          <button class="btn btn-solid" type="submit" data-umami-event="subscribe_submit" data-i18n="s5.subscribe.btn">Dať vedieť</button>
         </form>
         <p id="subscribe-thanks" hidden data-i18n="s5.subscribe.thanks">Ďakujeme. Ozveme sa len vtedy, keď bude niečo nové.</p>
         <p id="subscribe-error" hidden data-i18n-html="s5.subscribe.error">Nepodarilo sa uložiť. Napíšte na <a href="mailto:andrej@arling.sk">andrej@arling.sk</a>.</p>
         <p class="fineprint subscribe-privacy"><a href="https://arling.sk/privacy/" data-i18n="s5.subscribe.privacy">Súkromie</a></p>
       </div>
-      <div class="ask business-ask" id="business">
+      <div class="ask business-ask r d2" id="business">
         <p data-i18n-html="s5.business.p"><b>Potrebujete to pre firmu alebo účtovnú kanceláriu?</b> Viac licencií naraz, fakturácia na firmu, prípadne API. Napíšte, čo potrebujete, a odpovieme do 24 hodín.</p>
         <a class="btn btn-line" id="business-link" href="mailto:andrej@arling.sk?subject=Bankov%C3%A9%20n%C3%A1stroje%20pre%20firmu" data-umami-event="business_interest" data-i18n="s5.business.btn">Napísať, čo potrebujem</a>
       </div>
     </div>
   </section>
 
-  <section id="faq">
+  <section id="faq" class="band">
     <div class="wrap">
-      <p class="kicker">06</p>
-      <h2 data-i18n="s6.h2">Otázky, ktoré ľudia naozaj hľadajú.</h2>
-      <p class="sub" data-i18n="s6.sub">Priame odpovede o balíku a jednej licencii pre štyri nástroje.</p>
+      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5l7 2.6v5.3c0 4-2.9 7.5-7 9.1-4.1-1.6-7-5.1-7-9.1V6.1z"/><path d="M9.4 12.2l1.9 1.9 3.4-3.7"/></svg>06</p>
+      <h2 class="r" data-i18n="s6.h2">Otázky, ktoré ľudia naozaj hľadajú.</h2>
+      <p class="lead r d1" data-i18n="s6.sub">Priame odpovede o balíku a jednej licencii pre štyri nástroje.</p>
+      <div class="rule"></div>
 
-      <details>
-        <summary data-i18n="faq.q1">Čo presne dostanem v balíku Bankové nástroje?</summary>
-        <p data-i18n="faq.a1">Jednu Pro licenciu platnú vo všetkých štyroch nástrojoch naraz: SEPA pain.001 Doctor, SEPA pain.001 Generátor, camt.053 do Excelu a Párovač platieb. Free verzia každého z nich ostáva bez limitov navždy. Pro pridáva pohodlie: uložené profily platiteľov, viac súborov a účtov naraz, šablóny mapovania pre Pohodu, Omegu (KROS) a Money S3, históriu spracovaní a prednostnú e-mailovú podporu.</p>
-      </details>
-      <details>
-        <summary data-i18n="faq.q2">Ako funguje jedna licencia pre štyri nástroje?</summary>
-        <p data-i18n-html="faq.a2">Po zaplatení sa vygeneruje jeden podpísaný licenčný kľúč, ktorý sa uloží do prehliadača. Všetky štyri nástroje bežia na tej istej doméne arling.sk, takže kľúč uložený na jednej z ich stránok automaticky funguje aj na ostatných. Ak sa to z nejakého dôvodu nestane samo (iný prehliadač, vymazané dáta stránky), kľúč sa dá kedykoľvek vložiť ručne v <a href="#licence">sekcii Licencia</a> vyššie alebo priamo v ktoromkoľvek zo štyroch nástrojov.</p>
-      </details>
-      <details>
-        <summary data-i18n="faq.q3">Odosielajú sa moje dáta niekam?</summary>
-        <p data-i18n="faq.a3">Táto stránka sama osebe nespracováva žiadne platby ani výpisy, len spravuje licenciu. Spracovanie IBAN, súm a výpisov beží v jednotlivých nástrojoch celé vo vašom prehliadači, nič z toho sa neodosiela. Jediná sieťová aktivita tejto stránky je overenie licenčného kľúča po zaplatení a anonymné počítadlo použitia cez self-hosted Umami.</p>
-      </details>
-      <details>
-        <summary data-i18n="faq.q4">Čo ak chcem len jeden z nástrojov, nie všetky štyri?</summary>
-        <p data-i18n="faq.a4">Každý zo štyroch nástrojov má free verziu bez limitu na počet použití, súborov ani stiahnutí, nezávisle od tejto stránky. Balík Bankové nástroje sa oplatí, keď opakovane používate aspoň dva z nich; ak vám na príležitostné použitie stačí jeden nástroj, free verzia je presne na to určená a Pro nepotrebujete.</p>
-      </details>
-      <details>
-        <summary data-i18n="faq.q5">Ako dostanem faktúru?</summary>
-        <p data-i18n="faq.a5">Faktúru vystaví a pošle na váš e-mail Stripe hneď po zaplatení. Pri tomto predaji je ARLing s. r. o. predajcom cez Stripe Managed Payments: DPH aj vystavenie dokladu rieši priamo Stripe.</p>
-      </details>
-      <details>
-        <summary data-i18n="faq.q6">Môžem licenciu zrušiť alebo dostať peniaze naspäť?</summary>
-        <p data-i18n-html="faq.a6">Mesačné aj ročné predplatné môžete kedykoľvek zrušiť cez odkaz na správu platby, ktorý dostanete v e-maile od Stripe po zaplatení; ďalšie obdobie sa už nestrhne. Ak vám Pro nesadne, napíšte do 14 dní od kúpy na <a href="mailto:andrej@arling.sk?subject=Vr%C3%A1tenie%20Pro%20licencie">andrej@arling.sk</a> a peniaze vrátime bez zbytočných otázok.</p>
-      </details>
+      <div class="r d2">
+        <details>
+          <summary data-i18n="faq.q1">Čo presne dostanem v balíku Bankové nástroje?</summary>
+          <p data-i18n="faq.a1">Jednu Pro licenciu platnú vo všetkých štyroch nástrojoch naraz: SEPA pain.001 Doctor, SEPA pain.001 Generátor, camt.053 do Excelu a Párovač platieb. Free verzia každého z nich ostáva bez limitov navždy. Pro pridáva pohodlie: uložené profily platiteľov, viac súborov a účtov naraz, šablóny mapovania pre Pohodu, Omegu (KROS) a Money S3, históriu spracovaní a prednostnú e-mailovú podporu.</p>
+        </details>
+        <details>
+          <summary data-i18n="faq.q2">Ako funguje jedna licencia pre štyri nástroje?</summary>
+          <p data-i18n-html="faq.a2">Po zaplatení sa vygeneruje jeden podpísaný licenčný kľúč, ktorý sa uloží do prehliadača. Všetky štyri nástroje bežia na tej istej doméne arling.sk, takže kľúč uložený na jednej z ich stránok automaticky funguje aj na ostatných. Ak sa to z nejakého dôvodu nestane samo (iný prehliadač, vymazané dáta stránky), kľúč sa dá kedykoľvek vložiť ručne v <a href="#licence">sekcii Licencia</a> vyššie alebo priamo v ktoromkoľvek zo štyroch nástrojov.</p>
+        </details>
+        <details>
+          <summary data-i18n="faq.q3">Odosielajú sa moje dáta niekam?</summary>
+          <p data-i18n="faq.a3">Táto stránka sama osebe nespracováva žiadne platby ani výpisy, len spravuje licenciu. Spracovanie IBAN, súm a výpisov beží v jednotlivých nástrojoch celé vo vašom prehliadači, nič z toho sa neodosiela. Jediná sieťová aktivita tejto stránky je overenie licenčného kľúča po zaplatení a anonymné počítadlo použitia cez self-hosted Umami.</p>
+        </details>
+        <details>
+          <summary data-i18n="faq.q4">Čo ak chcem len jeden z nástrojov, nie všetky štyri?</summary>
+          <p data-i18n="faq.a4">Každý zo štyroch nástrojov má free verziu bez limitu na počet použití, súborov ani stiahnutí, nezávisle od tejto stránky. Balík Bankové nástroje sa oplatí, keď opakovane používate aspoň dva z nich; ak vám na príležitostné použitie stačí jeden nástroj, free verzia je presne na to určená a Pro nepotrebujete.</p>
+        </details>
+        <details>
+          <summary data-i18n="faq.q5">Ako dostanem faktúru?</summary>
+          <p data-i18n="faq.a5">Faktúru vystaví a pošle na váš e-mail Stripe hneď po zaplatení. Pri tomto predaji je ARLing s. r. o. predajcom cez Stripe Managed Payments: DPH aj vystavenie dokladu rieši priamo Stripe.</p>
+        </details>
+        <details>
+          <summary data-i18n="faq.q6">Môžem licenciu zrušiť alebo dostať peniaze naspäť?</summary>
+          <p data-i18n-html="faq.a6">Mesačné aj ročné predplatné môžete kedykoľvek zrušiť cez odkaz na správu platby, ktorý dostanete v e-maile od Stripe po zaplatení; ďalšie obdobie sa už nestrhne. Ak vám Pro nesadne, napíšte do 14 dní od kúpy na <a href="mailto:andrej@arling.sk?subject=Vr%C3%A1tenie%20Pro%20licencie">andrej@arling.sk</a> a peniaze vrátime bez zbytočných otázok.</p>
+        </details>
+      </div>
     </div>
   </section>
 
   <section id="closing-cta">
-    <div class="wrap" style="text-align:center;">
-      <p class="sub" style="margin:0 auto 18px;" data-i18n="s7.sub">Štyri nástroje na prácu s bankou, jedna licencia za 9&nbsp;€ mesačne alebo 79&nbsp;€ ročne. Free verzie ostávajú bez limitov navždy.</p>
-      <a class="btn btn-solid" href="https://buy.stripe.com/cNi9ANcYi19FaoW09D4ko02" data-umami-event="buy_click" data-umami-event-plan="year" data-umami-event-place="closing" data-i18n="hero.buy.yearly">Kúpiť za 79&nbsp;€ ročne</a><a class="btn btn-line" href="https://buy.stripe.com/5kQ4gt2jE7y354Cg8B4ko01" data-umami-event="buy_click" data-umami-event-plan="month" data-umami-event-place="closing" data-i18n="hero.buy.monthly">alebo 9&nbsp;€ mesačne</a>
+    <div class="wrap closing">
+      <p class="lead r" data-i18n="s7.sub">Štyri nástroje na prácu s bankou, jedna licencia za 9&nbsp;€ mesačne alebo 79&nbsp;€ ročne. Free verzie ostávajú bez limitov navždy.</p>
+      <div class="cta r d1">
+        <a class="btn btn-solid" href="https://buy.stripe.com/cNi9ANcYi19FaoW09D4ko02" data-umami-event="buy_click" data-umami-event-plan="year" data-umami-event-place="closing" data-i18n="hero.buy.yearly">Kúpiť za 79&nbsp;€ ročne</a><a class="btn btn-line" href="https://buy.stripe.com/5kQ4gt2jE7y354Cg8B4ko01" data-umami-event="buy_click" data-umami-event-plan="month" data-umami-event-place="closing" data-i18n="hero.buy.monthly">alebo 9&nbsp;€ mesačne</a>
+      </div>
     </div>
   </section>
 </main>
+
+<nav class="rail" aria-label="Kde ste">
+  <a href="#hero"><i></i><span data-i18n="rail.hero">Úvod</span></a>
+  <a href="#tools"><i></i><span data-i18n="nav.tools">Nástroje</span></a>
+  <a href="#pro"><i></i><span data-i18n="nav.pro">Cena</span></a>
+  <a href="#licence"><i></i><span data-i18n="nav.licence">Licencia</span></a>
+  <a href="#faq"><i></i><span data-i18n="nav.faq">Otázky</span></a>
+</nav>
 
 <div class="sticky-cta" id="sticky-cta" hidden>
   <div class="sticky-cta-inner">
@@ -702,17 +767,11 @@
   // ── init ─────────────────────────────────────────────────────────────
   refreshLicenceUI().then(handleSessionIdFromUrl);
 
-  // Smooth-scroll for in-page anchors
-  document.querySelectorAll('a[href^="#"]').forEach((a) => {
-    a.addEventListener('click', (e) => {
-      const id = a.getAttribute('href').slice(1);
-      if (!id) return;
-      const el = document.getElementById(id);
-      if (!el) return;
-      e.preventDefault();
-      window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 56, behavior: 'smooth' });
-    });
-  });
+  // Skoky na kotvy nechávame prehliadaču. Predtým ich preberal vlastný poslucháč,
+  // ktorý odpočítaval napevno zapísaných 56 px: na telefóne je hlavička vysoká
+  // 133 px, takže vrch sekcie aj s jej číslom skončil za ňou. Plynulý posun robí
+  // scroll-behavior:smooth a odstup od lepivej hlavičky scroll-padding-top,
+  // ktorý sa počíta zo skutočnej, premeranej výšky hlavičky (--head).
 </script>
 <script src="subscribe.js" defer></script>
 <script>
@@ -751,6 +810,86 @@
         bar.hidden = true;
       });
     }
+  }
+})();
+</script>
+<!-- Pohyb: príchod sekcií a pásu, nadpis po slovách, bočný register.
+     Žiadna knižnica, žiadny externý skript, nič nebeží v slučke po dokreslení.
+     prefers-reduced-motion: reduce vypína všetko (zvyšok rieši /style/paper.css). -->
+<script>
+(function () {
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var hero = document.getElementById('hero');
+  var h1 = document.getElementById('h1');
+
+  if (reduce) {
+    document.querySelectorAll('.r, section, .banner').forEach(function (e) { e.classList.add('in'); });
+  } else if (hero) {
+    setTimeout(function () {
+      hero.querySelectorAll('.r').forEach(function (e) { e.classList.add('in'); });
+    }, 20);
+  }
+
+  // príchod sekcií: raz, pri prvom vstupe do obrazu
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (en) {
+      if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); }
+    });
+  }, { rootMargin: '0px 0px -12% 0px', threshold: 0.1 });
+  document.querySelectorAll('section, .banner').forEach(function (s) { io.observe(s); });
+
+  // nadpis sa objaví po slovách; text prichádza z i18n.js, preto sa prekresľuje
+  // pri každej zmene jazyka (arling:langchange), nie len raz pri načítaní
+  function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  function drawHeading() {
+    if (!h1) return;
+    var src = h1.querySelector('[data-i18n]');
+    if (!src) return;
+    var text = (src.textContent || '').trim();
+    if (!text) return;
+    var lines = text.match(/[^.!?]+[.!?]*\s*/g) || [text];
+    var i = 0;
+    src.innerHTML = lines.map(function (line) {
+      var words = line.trim().split(/\s+/).map(function (w) {
+        return '<span class="w" style="transition-delay:' + (i++ * 0.06).toFixed(2) + 's">' + esc(w) + '</span>';
+      }).join(' ');
+      return '<span class="l">' + words + '</span>';
+    }).join('');
+    if (reduce) { h1.classList.add('in'); return; }
+    h1.classList.remove('in');
+    setTimeout(function () { h1.classList.add('in'); }, 20);
+  }
+  document.addEventListener('arling:langchange', drawHeading);
+  setTimeout(function () { if (h1 && !h1.querySelector('.w')) drawHeading(); }, 600);
+
+  // kotvy pod lepivou hlavičkou: jej skutočnú výšku vieme až za behu, mení sa
+  // šírkou okna aj jazykom (dlhšie slová zalomia navigáciu do ďalšieho riadku)
+  var head = document.querySelector('header');
+  if (head) {
+    var setHead = function () {
+      var h = Math.round(head.getBoundingClientRect().height);
+      if (h > 0) document.documentElement.style.setProperty('--head', h + 'px');
+    };
+    setHead();
+    if (window.ResizeObserver) { new ResizeObserver(setHead).observe(head); }
+    else { window.addEventListener('resize', setHead); }
+    document.addEventListener('arling:langchange', setHead);
+  }
+
+  // bočný register sleduje, ktorá sekcia je v strede obrazovky
+  var rail = document.querySelector('.rail');
+  if (rail) {
+    var links = Array.prototype.slice.call(rail.querySelectorAll('a'));
+    var targets = links.map(function (a) { return document.querySelector(a.getAttribute('href')); });
+    var railIo = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        var i = targets.indexOf(en.target);
+        if (i < 0 || !en.isIntersecting) return;
+        links.forEach(function (a, j) { a.setAttribute('aria-current', j === i ? 'true' : 'false'); });
+      });
+      rail.classList.add('on');
+    }, { rootMargin: '-45% 0px -45% 0px' });
+    targets.forEach(function (t) { if (t) railIo.observe(t); });
   }
 })();
 </script>

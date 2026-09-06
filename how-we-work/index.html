@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://homelab.tailbf8f27.ts.net; connect-src https://homelab.tailbf8f27.ts.net; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Y+ZDBJHhRkeSHjIB9vRg7pq7g4VZF+AOsrBzRLYXPYA=' https://homelab.tailbf8f27.ts.net; connect-src https://homelab.tailbf8f27.ts.net; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
 <title>ARLing: how we work</title>
 <meta name="description" content="How a one-person company in Bratislava uses AI agents to find, build and ship small developer and accounting tools, and what stays a human decision.">
 <link rel="canonical" href="https://arling.sk/how-we-work/">
@@ -14,95 +14,76 @@
 <meta name="theme-color" content="#f6f2ea">
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
 <link rel="alternate" type="text/plain" href="https://arling.sk/llms.txt" title="llms.txt">
+<link rel="preload" href="/fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/style/paper.css">
 <style>
-  :root {
-    --paper:#f6f2ea; --paper-2:#fbf9f4; --ink:#1b1a17; --ink-2:#4a4741; --muted:#66625a; --line:#d9d2c4;
-    --accent:#b23a1d; --accent-soft:#f3e2dc; --ok:#2f6f3e;
-    --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
-    --sans:system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    --mono:ui-monospace,"Cascadia Code",Consolas,Menlo,monospace;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root { --paper:#151412; --paper-2:#1d1b18; --ink:#efe9de; --ink-2:#c9c2b5; --muted:#8f887b; --line:#2e2b26; --accent:#e0623f; --accent-soft:#3a1f17; --ok:#7fbf8e; }
-    .btn-solid { color:#151412; }
-  }
-  * { box-sizing:border-box; }
-  html { background:var(--paper); }
-  body { margin:0; color:var(--ink); background:var(--paper); font:16px/1.55 var(--sans); -webkit-font-smoothing:antialiased; }
-  a { color:inherit; text-decoration-color:var(--line); text-underline-offset:3px; }
-  a:hover { text-decoration-color:var(--accent); }
-  :focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
-  .skip { position:absolute; left:-999px; top:8px; background:var(--ink); color:var(--paper); padding:8px 12px; }
-  .skip:focus { left:8px; }
-  .wrap { max-width:1040px; margin:0 auto; padding:0 24px; }
-  header.top { border-bottom:1px solid var(--line); }
-  header.top .wrap { display:flex; align-items:baseline; justify-content:space-between; gap:24px; padding:18px 24px; }
-  .wordmark { font:600 22px/1 var(--serif); letter-spacing:.01em; text-decoration:none; }
-  .wordmark small { font:13px/1 var(--sans); color:var(--muted); margin-left:10px; letter-spacing:.04em; }
-  nav.main a { font-size:14px; margin-left:20px; text-decoration:none; color:var(--ink-2); }
-  nav.main a:hover { color:var(--accent); }
-  nav.main a[aria-current="page"] { color:var(--ink); }
-  .hero { padding:64px 0 40px; border-bottom:1px solid var(--line); }
-  .hero h1 { font:400 clamp(34px,5.2vw,52px)/1.08 var(--serif); letter-spacing:-.01em; margin:0 0 18px; max-width:18ch; }
-  .hero p.lead { font-size:19px; color:var(--ink-2); max-width:58ch; margin:0 0 26px; }
-  .facts { list-style:none; margin:0; padding:0; display:flex; flex-wrap:wrap; gap:8px 0; color:var(--muted); font-size:14px; }
-  .facts li + li::before { content:"·"; margin:0 10px; color:var(--line); }
+  /* Only this page: the facts row, the numbered rules, the tool rows and the notes list. */
+  .facts { list-style:none; margin:22px 0 0; padding:0; display:flex; flex-wrap:wrap; gap:2px 0;
+           font-family:var(--ui); font-size:14px; color:var(--muted); }
+  .facts li:not(:last-child)::after { content:"·"; margin:0 10px; color:var(--line); }
   .facts b { color:var(--ink); font-weight:600; }
-  section { padding:44px 0; border-bottom:1px solid var(--line); }
-  .kicker { font:400 14px/1 var(--serif); color:var(--accent); letter-spacing:.06em; text-transform:uppercase; margin:0 0 10px; }
-  h2 { font:400 30px/1.15 var(--serif); margin:0 0 8px; letter-spacing:-.005em; }
-  h3 { font:400 20px/1.2 var(--serif); margin:32px 0 10px; }
-  .sub { color:var(--ink-2); max-width:64ch; margin:0 0 24px; }
-  .prose p { color:var(--ink-2); max-width:64ch; margin:0 0 14px; }
-  .prose p:last-child { margin-bottom:0; }
-  .rules { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:26px 32px; margin:0; padding:0; list-style:none; counter-reset:r; }
-  .rules li { padding-top:14px; border-top:1px solid var(--line); }
-  .rules li::before { counter-increment:r; content:counter(r,decimal-leading-zero); font:400 14px/1 var(--serif); color:var(--accent); display:block; margin-bottom:8px; }
-  .rules b { display:block; font-weight:600; margin-bottom:4px; }
-  .rules p { margin:0; color:var(--ink-2); font-size:15px; }
+  .index .t { white-space:normal; }
+
+  .rules { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(260px,100%),1fr)); gap:26px 34px;
+           margin:0; padding:0; list-style:none; counter-reset:r; }
+  .rules li { padding-top:15px; border-top:1px solid var(--line); }
+  .rules li::before { counter-increment:r; content:counter(r,decimal-leading-zero); font-family:var(--ui);
+                      font-size:12px; letter-spacing:.12em; color:var(--accent); display:block; margin-bottom:8px; }
+  .rules b { display:block; color:var(--ink); font-weight:600; margin-bottom:4px; }
+  .rules p { margin:0; font-size:15px; }
   .rules.stack { grid-template-columns:1fr; gap:0; }
   .rules.stack li { padding:14px 0; }
-  .two { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:40px; }
-  .two h3 { font:400 20px/1.2 var(--serif); margin:0 0 6px; }
-  .index { list-style:none; margin:0 0 8px; padding:0; border-top:1px solid var(--line); }
-  .index li { border-bottom:1px solid var(--line); }
-  .index a { display:grid; grid-template-columns:44px minmax(0,1.1fr) minmax(0,1fr) minmax(0,1fr); gap:18px; padding:20px 0; text-decoration:none; align-items:start; }
-  .index a:hover .name { color:var(--accent); }
-  .index-compact a { grid-template-columns:44px minmax(0,1fr); }
-  .num { font:400 15px/1.4 var(--serif); color:var(--muted); padding-top:2px; }
-  .name { display:block; font:400 21px/1.25 var(--serif); margin:0 0 4px; }
-  .lang { display:inline-block; font:12px/1 var(--mono); color:var(--muted); border:1px solid var(--line); border-radius:3px; padding:3px 6px; vertical-align:middle; margin-left:6px; }
+
+  .two { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:var(--gap); }
+  .prose p { margin:0 0 14px; }
+  .prose p:last-child { margin-bottom:0; }
+  .sub { margin:0 0 6px; }
+
+  /* index of tools: a numbered row per tool, never a grid of cards */
+  .entries { list-style:none; margin:14px 0 0; padding:0; }
+  .entries li { border-top:1px solid var(--line); }
+  .entries a { display:grid; grid-template-columns:46px minmax(0,1fr); gap:16px; padding:15px 0;
+               text-decoration:none; color:inherit; align-items:start; }
+  .entries a:hover .name { color:var(--accent); }
+  .entries .num { font-family:var(--ui); font-variant-numeric:tabular-nums; font-size:13px; letter-spacing:.06em;
+                  color:var(--accent); padding-top:4px; margin:0; }
+  .entries .name { display:block; font:600 17px/1.3 var(--display); color:var(--ink); margin:0 0 4px; }
   .who { display:block; color:var(--muted); font-size:14px; }
-  .lbl { display:block; font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin-bottom:4px; }
-  .see { font-size:15px; color:var(--ink-2); }
-  .see code { font:13.5px/1.4 var(--mono); background:var(--paper-2); border:1px solid var(--line); border-radius:3px; padding:1px 5px; overflow-wrap:anywhere; }
-  .get { font-size:15px; color:var(--ink-2); }
-  .articles { list-style:none; margin:0; padding:0; border-top:1px solid var(--line); }
-  .articles li { border-bottom:1px solid var(--line); padding:18px 0; }
-  .articles a { display:block; text-decoration:none; }
-  .articles a:hover .name { color:var(--accent); }
+  .lang { display:inline-block; font-family:var(--mono); font-size:11.5px; line-height:1; color:var(--muted);
+          background:none; border:1px solid var(--line); border-radius:4px; padding:3px 6px;
+          vertical-align:middle; margin-left:6px; font-weight:400; }
+  h3.group-h { margin:34px 0 4px; }
+
+  .articles { list-style:none; margin:0; padding:0; }
+  .articles li { border-top:1px solid var(--line); padding:16px 0; }
+  .articles a { display:block; text-decoration:none; color:inherit; }
+  .articles a:hover .name { color:var(--accent-light); }
   .articles .meta { display:flex; align-items:baseline; gap:10px; margin:0 0 4px; }
-  .articles time { font:13px/1 var(--mono); color:var(--muted); }
-  .btn { display:inline-block; font:600 15px/1 var(--sans); padding:13px 18px; border-radius:4px; text-decoration:none; }
-  .btn-solid { background:var(--accent); color:#fff; }
-  .btn-line { border:2px solid var(--ink); color:var(--ink); }
-  .btn + .btn { margin-left:10px; }
-  footer { padding:32px 0 56px; color:var(--muted); font-size:14px; }
-  footer .cols { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:20px 32px; }
-  footer b { color:var(--ink); font-weight:600; }
-  footer a { color:var(--ink-2); }
-  @media (max-width: 820px) {
-    .index a { grid-template-columns:32px minmax(0,1fr); }
-    .index-compact a { grid-template-columns:32px minmax(0,1fr); }
-    .index .see, .index .get { grid-column:2; }
+  .articles time { font-family:var(--mono); font-size:12.5px; color:var(--muted); }
+  .articles .name { display:block; font:600 17px/1.35 var(--display); }
+
+  .band .rules li, .band .articles li { border-top-color:rgba(255,253,248,.2); }
+  .band .rules b, .band .articles .name { color:#fffdf8; }
+  .band .rules li::before { color:var(--accent-light); }
+  .band .rule { background:rgba(255,253,248,.2); }
+  .band .articles time, .band .who, .band .lang { color:#a8a294; }
+  .band .lang { border-color:rgba(255,253,248,.25); }
+
+  @media (max-width: 900px) {
     .two { grid-template-columns:1fr; }
+    .entries a { grid-template-columns:34px minmax(0,1fr); gap:12px; }
   }
-  @media (max-width: 480px) {
-    .hero { padding:44px 0 32px; }
-    nav.main a { margin-left:12px; }
-    .wordmark small { display:none; }
-  }
+  /* Uvod je dvojstlpcovy: vlavo nazov, veta a fakty, vpravo obsah tejto stranky s hodnotami
+     na pravej hrane. Prava polovica tak nesie skutocny obsah, nie kresbu ani prazdno. */
+  .toclab { font-family:var(--ui); font-size:12px; letter-spacing:.12em; text-transform:uppercase;
+            color:var(--muted); margin:0 0 2px; }
 </style>
+<noscript><style>
+  /* bez JavaScriptu sa nic neskryva: prichody su ozdoba, nie podmienka citatelnosti */
+  .r, .w { opacity:1 !important; transform:none !important; filter:none !important; }
+  .rule { transform:scaleX(1) !important; }
+</style></noscript>
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"WebPage","name":"ARLing: how we work","url":"https://arling.sk/how-we-work/","dateModified":"2026-09-06","description":"How a one-person company in Bratislava uses AI agents to find, build and ship small developer and accounting tools, and what stays a human decision.","isPartOf":{"@type":"WebSite","name":"ARLing","url":"https://arling.sk/"},"publisher":{"@type":"Organization","name":"ARLing s. r. o."}}
 </script>
@@ -111,11 +92,16 @@
 </script>
 </head>
 <body>
+<div class="wash" aria-hidden="true"><i></i><i></i></div>
 <a class="skip" href="#method">Skip to the method</a>
-<header class="top">
-  <div class="wrap">
-    <a class="wordmark" href="https://arling.sk/">ARLing<small>Bratislava</small></a>
-    <nav class="main" aria-label="Site">
+
+<header>
+  <div class="wrap bar">
+    <a class="brand" href="https://arling.sk/">
+      <svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true"><defs><path id="m" fill-rule="evenodd" d="M16 2.5 L29 29.5 H3 Z M16 12.4 L22.4 25.6 H9.6 Z"/><clipPath id="mr"><rect x="16" width="16" height="32"/></clipPath></defs><use href="#m" fill="#1b1a17"/><use href="#m" fill="#b23a1d" clip-path="url(#mr)"/></svg>
+      <b>ARLing</b><span>How we work</span>
+    </a>
+    <nav aria-label="Site">
       <a href="https://arling.sk/#tools">Tools</a>
       <a href="https://arling.sk/notes/" data-umami-event="open-notes">Notes</a>
       <a href="https://arling.sk/how-we-work/" aria-current="page">How we work</a>
@@ -125,43 +111,58 @@
 </header>
 
 <main>
-  <div class="hero">
-    <div class="wrap">
-      <h1>How we work.</h1>
-      <p class="lead">ARLing is a one-person company. I make the calls: which problem, when to stop, what gets built. AI agents do most of the actual work: research, code, tests, publishing, and watching for breakage. This page lays out that split, plainly.</p>
-      <ul class="facts">
+  <div class="wrap hero" id="hero">
+    <div>
+      <h1 id="h1"><span class="l">How we</span><span class="l">work.</span></h1>
+      <p class="lead r d3">ARLing is a one-person company. I make the calls: which problem, when to stop, what gets built. AI agents do most of the actual work: research, code, tests, publishing, and watching for breakage. This page lays out that split, plainly.</p>
+      <ul class="facts r d5">
         <li><b>1</b> person</li>
         <li><b>18</b> tools live</li>
         <li><b>11</b> shipped since 4 September 2026</li>
         <li><b>1717</b> automated tests</li>
       </ul>
     </div>
+    <div class="r d2">
+      <p class="toclab" id="toclab">On this page</p>
+      <nav class="index r d4" aria-labelledby="toclab">
+        <a href="#method" data-umami-event="index-method"><span class="n">[1]</span><span class="t">Seven steps, in order</span><span class="dots"></span><span class="c">7 steps</span></a>
+        <a href="#roles" data-umami-event="index-roles"><span class="n">[2]</span><span class="t">Who does what</span><span class="dots"></span><span class="c">human, agents</span></a>
+        <a href="#privacy" data-umami-event="index-privacy"><span class="n">[3]</span><span class="t">Privacy</span><span class="dots"></span><span class="c">nothing stored</span></a>
+        <a href="#money" data-umami-event="index-money"><span class="n">[4]</span><span class="t">How we make money</span><span class="dots"></span><span class="c">1 paid tier</span></a>
+        <a href="#tools" data-umami-event="index-tools"><span class="n">[5]</span><span class="t">The tools so far</span><span class="dots"></span><span class="c">18 tools</span></a>
+        <a href="#pricing" data-umami-event="index-pricing"><span class="n">[6]</span><span class="t">What is free and what is paid</span><span class="dots"></span><span class="c">free, unlimited</span></a>
+        <a href="#notes" data-umami-event="index-notes"><span class="n">[7]</span><span class="t">Latest notes</span><span class="dots"></span><span class="c">5 of 11</span></a>
+        <a href="#contact" data-umami-event="index-contact"><span class="n">[8]</span><span class="t">Questions</span><span class="dots"></span><span class="c">e-mail</span></a>
+      </nav>
+    </div>
   </div>
 
   <section id="method">
     <div class="wrap">
-      <p class="kicker">01</p>
-      <h2>Seven steps, in order.</h2>
-      <p class="sub">Every tool goes through the same sequence, every time.</p>
+      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>01</p>
+      <h2 class="r">Seven steps, in order.</h2>
+      <p class="sub r d1">Every tool goes through the same sequence, every time.</p>
+      <div class="rule"></div>
       <ol class="rules">
-        <li><b>Find a live thread.</b><p>I read GitHub issues, Stack Overflow questions and forum threads where several developers are stuck on the same problem. It has to be deterministic: a config that is either right or wrong, not a matter of taste.</p></li>
-        <li><b>Decide in 15 minutes.</b><p>Is it narrow enough to check without running anyone's code? Does a good free tool already solve it? If so, we skip it. The point is filling a gap, not competing with one that is already filled.</p></li>
-        <li><b>Build in under four hours.</b><p>AI agents write the checking logic, the test suite, the page and the small hygiene work (favicon, sitemap, llms.txt, structured data) in parallel. If it is not done in four hours, it does not ship that day.</p></li>
-        <li><b>Publish on arling.sk.</b><p>No account, no email capture. Static HTML and JavaScript that runs entirely in the visitor's browser. A small number of tools later grow an optional paid tier; the check itself stays free either way.</p></li>
-        <li><b>Answer in the threads that started it.</b><p>I go back to the original discussion and reply as myself, and point to the tool only where it is actually the answer, not as an ad.</p></li>
-        <li><b>Measure for seven days.</b><p>Self-hosted, anonymous analytics: page views, and which check people ran. Not what they typed.</p></li>
-        <li><b>Keep or park.</b><p>A tool that gets used stays exactly as it is. One that does not stays online, but I stop touching it. No tool gets a growing feature list just to stay alive.</p></li>
+        <li class="r d1"><b>Find a live thread.</b><p>I read GitHub issues, Stack Overflow questions and forum threads where several developers are stuck on the same problem. It has to be deterministic: a config that is either right or wrong, not a matter of taste.</p></li>
+        <li class="r d2"><b>Decide in 15 minutes.</b><p>Is it narrow enough to check without running anyone's code? Does a good free tool already solve it? If so, we skip it. The point is filling a gap, not competing with one that is already filled.</p></li>
+        <li class="r d3"><b>Build in under four hours.</b><p>AI agents write the checking logic, the test suite, the page and the small hygiene work (favicon, sitemap, llms.txt, structured data) in parallel. If it is not done in four hours, it does not ship that day.</p></li>
+        <li class="r d4"><b>Publish on arling.sk.</b><p>No account, no email capture. Static HTML and JavaScript that runs entirely in the visitor's browser. A small number of tools later grow an optional paid tier; the check itself stays free either way.</p></li>
+        <li class="r d4"><b>Answer in the threads that started it.</b><p>I go back to the original discussion and reply as myself, and point to the tool only where it is actually the answer, not as an ad.</p></li>
+        <li class="r d5"><b>Measure for seven days.</b><p>Self-hosted, anonymous analytics: page views, and which check people ran. Not what they typed.</p></li>
+        <li class="r d6"><b>Keep or park.</b><p>A tool that gets used stays exactly as it is. One that does not stays online, but I stop touching it. No tool gets a growing feature list just to stay alive.</p></li>
       </ol>
     </div>
   </section>
 
-  <section id="roles">
+  <section id="roles" class="deep">
     <div class="wrap">
-      <p class="kicker">02</p>
-      <h2>Who does what.</h2>
-      <p class="sub">The split does not move. I decide and answer. The agents research, build and watch.</p>
+      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M9 10v9M15 10v9"/></svg>02</p>
+      <h2 class="r">Who does what.</h2>
+      <p class="sub r d1">The split does not move. I decide and answer. The agents research, build and watch.</p>
+      <div class="rule"></div>
       <div class="two">
-        <div>
+        <div class="r d1">
           <h3>The human</h3>
           <ol class="rules stack">
             <li><b>Which problem is worth solving</b></li>
@@ -171,7 +172,7 @@
             <li><b>Deciding a tool is done, or dead</b></li>
           </ol>
         </div>
-        <div>
+        <div class="r d3">
           <h3>The AI agents</h3>
           <ol class="rules stack">
             <li><b>Researching the problem across issues and docs</b></li>
@@ -187,31 +188,34 @@
 
   <section id="privacy">
     <div class="wrap prose">
-      <p class="kicker">03</p>
-      <h2>Privacy.</h2>
-      <p>Nothing you type into a tool leaves your browser. No backend sees your Supabase keys, your redirect URIs or your source. The check runs where you are standing.</p>
-      <p>The only thing recorded is an anonymous count: a page view, a button clicked. That count comes from a self-hosted Umami instance, not a third-party analytics vendor, and it never sees the content of a form field.</p>
+      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5l7 2.6v5.3c0 4-2.9 7.5-7 9.1-4.1-1.6-7-5.1-7-9.1V6.1z"/><path d="M9.4 12.2l1.9 1.9 3.4-3.7"/></svg>03</p>
+      <h2 class="r">Privacy.</h2>
+      <div class="rule"></div>
+      <p class="r d1">Nothing you type into a tool leaves your browser. No backend sees your Supabase keys, your redirect URIs or your source. The check runs where you are standing.</p>
+      <p class="r d2">The only thing recorded is an anonymous count: a page view, a button clicked. That count comes from a self-hosted Umami instance, not a third-party analytics vendor, and it never sees the content of a form field.</p>
     </div>
   </section>
 
-  <section id="money">
+  <section id="money" class="deep">
     <div class="wrap prose">
-      <p class="kicker">04</p>
-      <h2>How we make money.</h2>
-      <p>Most tools stay free, on purpose. A free tool that solves one problem well gets used and shared in a thread. A paywall on a first visit does not.</p>
-      <p>One exception: the bank tools bundle for accountants (SEPA pain.001 Doctor, SEPA pain.001 Generátor, camt.053 do Excelu, Párovač platieb) has an optional Pro licence, billed through Stripe. Each of those four tools keeps working, unlimited, without it.</p>
-      <p>Janii and bookapp are free public betas while we watch how people actually use them. Nothing here is a roadmap promise. A paid tier happens if and when it earns its place.</p>
+      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="12" r="3.5"/><path d="M11.5 12H21M18 12v3M15 12v2.2"/></svg>04</p>
+      <h2 class="r">How we make money.</h2>
+      <div class="rule"></div>
+      <p class="r d1">Most tools stay free, on purpose. A free tool that solves one problem well gets used and shared in a thread. A paywall on a first visit does not.</p>
+      <p class="r d2">One exception: the bank tools bundle for accountants (SEPA pain.001 Doctor, SEPA pain.001 Generátor, camt.053 do Excelu, Párovač platieb) has an optional Pro licence, billed through Stripe. Each of those four tools keeps working, unlimited, without it.</p>
+      <p class="r d3">Janii and bookapp are free public betas while we watch how people actually use them. Nothing here is a roadmap promise. A paid tier happens if and when it earns its place.</p>
     </div>
   </section>
 
   <section id="tools">
     <div class="wrap">
-      <p class="kicker">05</p>
-      <h2>The tools so far.</h2>
-      <p class="sub">18 tools, grouped by who they are for. 11 of them shipped since 4 September 2026, and every check is behind 1717 automated tests.</p>
+      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="8" width="16" height="12" rx="2"/><path d="M9 8V5.5M15 8V5.5M4 13h2M18 13h2"/></svg>05</p>
+      <h2 class="r">The tools so far.</h2>
+      <p class="sub r d1">18 tools, grouped by who they are for. 11 of them shipped since 4 September 2026, and every check is behind 1717 automated tests.</p>
+      <div class="rule"></div>
 
-      <h3>For developers</h3>
-      <ol class="index index-compact">
+      <h3 class="group-h r d1">For developers</h3>
+      <ol class="entries r d1">
         <li>
           <a href="https://arling.sk/google-oauth-redirect-doctor/" data-umami-event="open-tool" data-umami-event-tool="google-oauth-redirect-doctor">
             <span class="num">01</span>
@@ -280,8 +284,8 @@
         </li>
       </ol>
 
-      <h3>Pre účtovníkov a firmy</h3>
-      <ol class="index index-compact">
+      <h3 class="group-h r d1">For accountants and companies</h3>
+      <ol class="entries r d1">
         <li>
           <a href="https://arling.sk/sepa-pain001-doctor/" data-umami-event="open-tool" data-umami-event-tool="sepa-pain001-doctor">
             <span class="num">01</span>
@@ -314,8 +318,8 @@
         </li>
       </ol>
 
-      <h3>Apps in beta</h3>
-      <ol class="index index-compact">
+      <h3 class="group-h r d1">Apps in beta</h3>
+      <ol class="entries r d1">
         <li>
           <a href="https://arling.sk/janii/" data-umami-event="open-tool" data-umami-event-tool="janii">
             <span class="num">01</span>
@@ -332,52 +336,54 @@
     </div>
   </section>
 
-  <section id="pricing">
+  <section id="pricing" class="deep">
     <div class="wrap">
-      <p class="kicker">06</p>
-      <h2>What is free and what is paid.</h2>
-      <p class="sub">One paid tier so far. Everything else stays free, with no limits.</p>
+      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="9" width="17" height="11" rx="1.5"/><path d="M2.5 9h19M12 9v11"/><path d="M12 9c-1.5-3.5-2.8-4.7-4.2-4.2C6.4 5.3 6.6 7.6 8 8.4c1 .5 2.4.6 4 .6zM12 9c1.5-3.5 2.8-4.7 4.2-4.2 1.4.5 1.2 2.8-.2 3.6-1 .5-2.4.6-4 .6z"/></svg>06</p>
+      <h2 class="r">What is free and what is paid.</h2>
+      <p class="sub r d1">One paid tier so far. Everything else stays free, with no limits.</p>
+      <div class="rule"></div>
       <ol class="rules stack">
-        <li><b>The 11 developer Doctor tools are free, with no limits.</b><p>Redirect, deep link, universal link, CORS, JWT, cookie, redirect loop, Firebase and Stripe webhook checks: no account, no cap on how many times you run them.</p></li>
-        <li><b>The four accounting tools are free on their own, with no limits.</b><p>SEPA pain.001 Doctor, SEPA pain.001 Generátor, camt.053 do Excelu and Párovač platieb each work unlimited without a licence.</p></li>
-        <li><b>One Pro licence unlocks the bundle for accountants.</b><p>Bankové nástroje pre účtovníkov: 9 € a month or 79 € a year, billed through Stripe.</p></li>
-        <li><b>Janii and bookapp are free public betas.</b><p>No payment while we watch how people actually use them.</p></li>
-        <li><b>The e-mail list is optional.</b><p>Only for new tools landing on arling.sk. Reply to any mail to be removed.</p></li>
+        <li class="r d1"><b>The 11 developer Doctor tools are free, with no limits.</b><p>Redirect, deep link, universal link, CORS, JWT, cookie, redirect loop, Firebase and Stripe webhook checks: no account, no cap on how many times you run them.</p></li>
+        <li class="r d2"><b>The four accounting tools are free on their own, with no limits.</b><p>SEPA pain.001 Doctor, SEPA pain.001 Generátor, camt.053 do Excelu and Párovač platieb each work unlimited without a licence.</p></li>
+        <li class="r d3"><b>One Pro licence unlocks the bundle for accountants.</b><p>Bankové nástroje pre účtovníkov: 9 € a month or 79 € a year, billed through Stripe.</p></li>
+        <li class="r d4"><b>Janii and bookapp are free public betas.</b><p>No payment while we watch how people actually use them.</p></li>
+        <li class="r d5"><b>The e-mail list is optional.</b><p>Only for new tools landing on arling.sk. Reply to any mail to be removed.</p></li>
       </ol>
     </div>
   </section>
 
-  <section id="notes">
+  <section id="notes" class="band">
     <div class="wrap">
-      <p class="kicker">07</p>
-      <h2>Latest notes.</h2>
-      <p class="sub">5 of 11 short answers to errors people keep searching for, each ending with the tool that checks it. <a href="https://arling.sk/notes/">All notes.</a></p>
+      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 5a15 15 0 0 1 15 15"/></svg>07</p>
+      <h2 class="r">Latest notes.</h2>
+      <p class="sub r d1">5 of 11 short answers to errors people keep searching for, each ending with the tool that checks it. <a href="https://arling.sk/notes/">All notes.</a></p>
+      <div class="rule"></div>
       <ol class="articles">
-        <li>
+        <li class="r d1">
           <a href="https://arling.sk/notes/parovanie-platieb-z-vypisu/">
             <div class="meta"><time datetime="2026-09-06">6. septembra 2026</time><span class="lang">SK</span></div>
             <span class="name">Párovanie platieb z výpisu bez ručnej práce: VS, sumy a čo robiť, keď nesedia</span>
           </a>
         </li>
-        <li>
+        <li class="r d2">
           <a href="https://arling.sk/notes/google-redirect-uri-mismatch/">
             <div class="meta"><time datetime="2026-09-06">6 September 2026</time><span class="lang">EN</span></div>
             <span class="name">Error 400: redirect_uri_mismatch, explained character by character</span>
           </a>
         </li>
-        <li>
+        <li class="r d3">
           <a href="https://arling.sk/notes/supabase-oauth-redirects-to-localhost/">
             <div class="meta"><time datetime="2026-09-06">6 September 2026</time><span class="lang">EN</span></div>
             <span class="name">Supabase OAuth redirects to localhost in production: the allow-list rule nobody reads</span>
           </a>
         </li>
-        <li>
+        <li class="r d4">
           <a href="https://arling.sk/notes/expo-supabase-deep-link-not-returning/">
             <div class="meta"><time datetime="2026-09-06">6 September 2026</time><span class="lang">EN</span></div>
             <span class="name">Expo + Supabase: why the OAuth deep link never comes back to the app</span>
           </a>
         </li>
-        <li>
+        <li class="r d5">
           <a href="https://arling.sk/notes/supabase-flutter-deep-link-scheme/">
             <div class="meta"><time datetime="2026-09-06">6 September 2026</time><span class="lang">EN</span></div>
             <span class="name">Supabase Flutter deep link not working: scheme, Info.plist, AndroidManifest and the underscore bug</span>
@@ -389,20 +395,83 @@
 
   <section id="contact">
     <div class="wrap">
-      <p class="kicker">08</p>
-      <h2>Questions, or a tool you wish existed.</h2>
-      <p class="sub">Write to <a href="mailto:andrej@arling.sk" data-umami-event="contact-email">andrej@arling.sk</a> with the exact error message. <a href="https://arling.sk/">Back to all tools.</a></p>
+      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M8.5 12.3l2.4 2.4 4.6-4.9"/></svg>08</p>
+      <h2 class="r">Questions, or a tool you wish existed.</h2>
+      <div class="rule"></div>
+      <p class="sub r d1">Write to <a href="mailto:andrej@arling.sk" data-umami-event="contact-email">andrej@arling.sk</a> with the exact error message. <a href="https://arling.sk/">Back to all tools.</a></p>
+      <div class="cta r d2" style="margin-top:20px">
+        <a class="btn btn-solid" href="mailto:andrej@arling.sk" data-umami-event="contact-email">andrej@arling.sk</a>
+        <a class="btn btn-line" href="https://arling.sk/" data-umami-event="back-to-tools">Back to all tools</a>
+      </div>
     </div>
   </section>
 </main>
 
+<nav class="rail" aria-label="Where you are">
+  <a href="#hero"><i></i><span>Start</span></a>
+  <a href="#method"><i></i><span>Steps</span></a>
+  <a href="#roles"><i></i><span>Roles</span></a>
+  <a href="#money"><i></i><span>Money</span></a>
+  <a href="#tools"><i></i><span>Tools</span></a>
+  <a href="#notes"><i></i><span>Notes</span></a>
+</nav>
+
 <footer>
-  <div class="wrap cols">
+  <div class="wrap foot">
     <div><b>ARLing s. r. o.</b><br>Ivanská cesta 32E<br>821 04 Bratislava, Slovakia</div>
     <div>Company ID 56583486<br>VAT ID SK2122352100<br><a href="mailto:andrej@arling.sk" data-umami-event="contact-email">andrej@arling.sk</a></div>
     <div><a href="https://arling.sk/llms.txt">llms.txt</a> · <a href="https://arling.sk/sitemap-index.xml">sitemap</a> · <a href="https://arling.sk/">all tools</a><br><a href="https://arling.sk/privacy/">Privacy</a> · <a href="https://arling.sk/podmienky/">Podmienky</a> · <a href="https://arling.sk/gdpr/">GDPR</a><br>Tools are provided as is, without warranty. Anonymous visit counts via self-hosted Umami.</div>
   </div>
 </footer>
+<script>
+(function () {
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // nadpis sa objavi po slovach, ako dobre vytlaceny titulok
+  var h1 = document.getElementById('h1');
+  if (h1) {
+    var i = 0;
+    Array.prototype.forEach.call(h1.querySelectorAll('.l'), function (line) {
+      line.innerHTML = line.textContent.split(' ').map(function (w) {
+        return '<span class="w" style="transition-delay:' + (i++ * 0.06).toFixed(2) + 's">' + w + '</span>';
+      }).join(' ');
+    });
+  }
+
+  var hero = document.getElementById('hero');
+  if (reduce) {
+    Array.prototype.forEach.call(document.querySelectorAll('.r, section'), function (e) { e.classList.add('in'); });
+    if (h1) h1.classList.add('in');
+  } else {
+    setTimeout(function () {
+      if (hero) Array.prototype.forEach.call(hero.querySelectorAll('.r'), function (e) { e.classList.add('in'); });
+      if (h1) h1.classList.add('in');
+    }, 40);
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); }
+      });
+    }, { rootMargin: '0px 0px -12% 0px', threshold: 0.08 });
+    Array.prototype.forEach.call(document.querySelectorAll('section'), function (s) { io.observe(s); });
+  }
+
+  // bocny register sleduje, ktora sekcia je v strede obrazovky
+  var rail = document.querySelector('.rail');
+  if (rail) {
+    var links = Array.prototype.slice.call(rail.querySelectorAll('a'));
+    var targets = links.map(function (a) { return document.querySelector(a.getAttribute('href')); });
+    var railIo = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        var k = targets.indexOf(en.target);
+        if (k < 0 || !en.isIntersecting) return;
+        links.forEach(function (a, j) { a.setAttribute('aria-current', j === k ? 'true' : 'false'); });
+      });
+      rail.classList.add('on');
+    }, { rootMargin: '-45% 0px -45% 0px' });
+    targets.forEach(function (t) { if (t) railIo.observe(t); });
+  }
+})();
+</script>
 <script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="be534d51-4d01-4860-b267-9596d91606de"></script>
 </body>
 </html>

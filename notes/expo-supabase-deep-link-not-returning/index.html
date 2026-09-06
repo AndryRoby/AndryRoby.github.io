@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://homelab.tailbf8f27.ts.net; connect-src 'self' https://homelab.tailbf8f27.ts.net; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-uJkDKiTVu1iwiitFPAVfAgxIRiBU6CD8W2INuvmcFHA=' https://homelab.tailbf8f27.ts.net; connect-src 'self' https://homelab.tailbf8f27.ts.net; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
 <title>Expo + Supabase: why the OAuth deep link never comes back to the app</title>
 <meta name="description" content="Why Supabase OAuth sign-in never reopens an Expo app: what makeRedirectUri() returns per runtime, the allow-list, and the fix.">
 <link rel="canonical" href="https://arling.sk/notes/expo-supabase-deep-link-not-returning/">
@@ -11,42 +11,131 @@
 <meta property="og:description" content="Why Supabase OAuth sign-in never reopens an Expo app: what makeRedirectUri() returns per runtime, the allow-list, and the fix.">
 <meta property="og:url" content="https://arling.sk/notes/expo-supabase-deep-link-not-returning/">
 <meta property="og:type" content="article">
-<meta name="theme-color" content="#f6f2ea">
+<meta name="theme-color" content="#faf9f5">
 <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
 <link rel="alternate" type="text/plain" href="https://arling.sk/llms.txt" title="llms.txt">
+<link rel="preload" href="/fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/style/paper.css">
 <style>
-  :root { --paper:#f6f2ea; --paper-2:#fbf9f4; --ink:#1b1a17; --ink-2:#4a4741; --muted:#66625a; --line:#d9d2c4; --accent:#b23a1d; --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif; --sans:system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; --mono:ui-monospace,"Cascadia Code",Consolas,Menlo,monospace; }
-  @media (prefers-color-scheme: dark) { :root { --paper:#151412; --paper-2:#1d1b18; --ink:#efe9de; --ink-2:#c9c2b5; --muted:#8f887b; --line:#2e2b26; --accent:#e0623f; } }
-  * { box-sizing:border-box; }
-  html { background:var(--paper); }
-  body { margin:0; background:var(--paper); color:var(--ink); font:16px/1.55 var(--sans); }
-  a { color:inherit; text-decoration-color:var(--line); text-underline-offset:3px; }
-  a:hover { text-decoration-color:var(--accent); }
-  :focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
-  .skip { position:absolute; left:-999px; top:8px; background:var(--ink); color:var(--paper); padding:8px 12px; }
-  .skip:focus { left:8px; }
-  .wrap { max-width:760px; margin:0 auto; padding:0 24px; }
-  header.top { border-bottom:1px solid var(--line); }
-  header.top .wrap { display:flex; align-items:baseline; justify-content:space-between; gap:24px; padding:18px 24px; }
-  .wordmark { font:600 22px/1 var(--serif); text-decoration:none; }
-  nav a { font-size:14px; margin-left:20px; text-decoration:none; color:var(--ink-2); }
-  nav a:hover { color:var(--accent); }
-  .kicker { font:400 14px/1 var(--serif); color:var(--accent); letter-spacing:.06em; text-transform:uppercase; margin:48px 0 8px; }
-  h1 { font:400 clamp(28px,4.5vw,38px)/1.15 var(--serif); margin:0 0 14px; max-width:22ch; }
-  .byline { color:var(--muted); font-size:14px; margin:0 0 28px; }
-  h2 { font:400 24px/1.2 var(--serif); margin:40px 0 10px; }
-  p, li { color:var(--ink-2); max-width:70ch; }
-  p { margin:0 0 14px; }
-  ol, ul { padding-left:20px; margin:0 0 14px; }
-  li { margin-bottom:6px; }
-  li:last-child { margin-bottom:0; }
-  code { font:.85em var(--mono); background:var(--paper-2); border:1px solid var(--line); border-radius:3px; padding:1px 5px; overflow-wrap:anywhere; }
-  pre { background:var(--paper-2); border:1px solid var(--line); border-radius:4px; padding:14px 16px; margin:0 0 14px; overflow-x:auto; max-width:70ch; }
-  pre code { background:none; border:none; padding:0; font-size:13.5px; line-height:1.5; }
-  .check { border:1px solid var(--line); border-radius:4px; padding:18px 20px; margin:0 0 14px; max-width:70ch; }
-  .check p:last-child { margin-bottom:0; }
-  footer { margin-top:56px; padding:24px 0 56px; border-top:1px solid var(--line); color:var(--muted); font-size:14px; }
-  @media (max-width:480px) { .kicker { margin-top:32px; } }
+  /* Notes. Vzhlad, farby, typografia a pohyb su v /style/paper.css.
+     Tu ostava len to, co je pre clanok vlastne: merany pas, register, panel s nastrojom. */
+  .note{max-width:min(100%,880px);margin:0 auto}
+  .doc{max-width:min(68ch,660px);font-size:clamp(17px,1.2vw,18px);line-height:1.62}
+
+  /* uvod clanku: nadpis, datum, odkaz na nastroj */
+  .hero-note{padding:clamp(34px,4.6vw,72px) 0 clamp(20px,2.4vw,34px)}
+  /* Titul clanku je hero stranky. Hlavna veta dorastie na desktope na 64 px, ako ziada
+     paper-v2 bod 9.4. Druhy riadok titulu je vzdy vysvetlujuca cast za dvojbodkou:
+     ostava v rovnakom reze, len mensia a tlmenejsia, aby ani najdlhsi titul (141 znakov
+     v clanku o Shopify) nezabral cely prvy pohlad. Rodinu, farbu a letter-spacing
+     urcuje paper.css, tu je len mierka. */
+  .hero-note h1{font-size:clamp(32px,4.6vw,64px);line-height:1.05;margin:0 0 18px}
+  .hero-note h1 .l+.l{display:block;margin-top:.3em;font-weight:500;
+    font-size:clamp(20px,2.4vw,34px);line-height:1.2;letter-spacing:-.01em;color:var(--body)}
+  .hero-note .kicker{display:block;margin:0 0 12px}
+  .hero-note .crumbs{font-family:var(--ui);font-size:12px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--accent);margin:0 0 12px}
+  .hero-note .crumbs a{color:inherit;text-decoration:none}
+  .hero-note .crumbs a:hover{text-decoration:underline}
+  .byline,.dateline{font-family:var(--ui);font-size:14px;color:var(--muted);margin:0 0 20px;max-width:none}
+  .toolgo{margin:0}
+
+  /* rytmus clanku: vlasova linka medzi castami, ziadne velke medzery sekcii */
+  section{scroll-margin-top:86px}
+  .doc section{padding:0;border-top:none;margin:0 0 clamp(26px,2.8vw,38px)}
+  .doc section+section{border-top:1px solid var(--line);padding-top:clamp(26px,2.8vw,36px)}
+  /* Mierka nadpisov vnutri clanku, nie kopia paper.css: pas textu ma 660 px, do neho sa
+     sekcny nadpis v plnej velkosti z paper.css (42 px) nezmesti bez zalomenia. Mení sa
+     len velkost a odstupy, vsetko ostatne dedi z paper.css. */
+  .doc h2{font-size:clamp(21px,1.9vw,27px);line-height:1.22;margin:0 0 12px}
+  .doc h3{font-size:clamp(17.5px,1.3vw,20px);margin:18px 0 8px}
+  .doc p{margin:0 0 14px;max-width:none}
+  .doc .num,.doc .kicker{display:block;font-family:var(--ui);font-size:12px;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--accent);margin:0 0 7px}
+  .doc .lead,.doc .lede{font-size:clamp(18px,1.35vw,20.5px);line-height:1.55;max-width:none;margin:0 0 18px}
+  .doc ol,.doc ul{padding-left:22px;margin:0 0 16px}
+  .doc li{margin:0 0 7px}
+  .doc li:last-child{margin-bottom:0}
+  .doc a{overflow-wrap:anywhere}
+  .doc code{background:var(--paper-deep);border:1px solid var(--line);border-radius:4px;padding:1px 5px;
+    overflow-wrap:anywhere}
+  .doc pre{margin:0 0 16px;white-space:pre-wrap;overflow-wrap:break-word}
+  .doc pre code{background:none;border:none;padding:0;font-size:13.5px;line-height:1.55}
+  .doc blockquote{margin:0 0 16px;padding:8px 16px;border-left:2px solid var(--line);color:var(--muted)}
+
+  /* chybova hlaska, oprava, ukazka kodu s popisom */
+  .doc .err{background:color-mix(in srgb,var(--accent) 7%,var(--card));border:1px solid var(--line);
+    border-left:3px solid var(--accent);border-radius:8px;padding:12px 16px;margin:0 0 16px}
+  .doc .err code{background:none;border:none;padding:0;color:var(--ink)}
+  .doc .fix{margin:0 0 16px;padding-left:16px;border-left:2px solid var(--accent)}
+  .doc .fix p{margin:0 0 8px}
+  .doc .fix p:last-child{margin-bottom:0}
+  .doc .fix-label{font-family:var(--ui);font-size:12px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--muted);margin:0 0 6px}
+  .doc .snippet{background:var(--card);border:1px solid var(--line);border-radius:10px;margin:0 0 18px;
+    overflow:hidden}
+  .doc .snippet .cap{padding:8px 14px;border-bottom:1px solid var(--line);
+    font:500 11px/1.3 var(--ui);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  .doc .snippet.bad .cap{color:var(--accent)}
+  .doc .snippet pre{margin:0;border:none;border-radius:0;background:none;white-space:pre-wrap}
+
+  /* caste otazky */
+  .doc details{border-top:1px solid var(--line);padding:14px 0}
+  .doc details:last-of-type{border-bottom:1px solid var(--line);margin-bottom:16px}
+  .doc summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;gap:14px;
+    font:600 17px/1.35 var(--display);color:var(--ink)}
+  .doc summary::-webkit-details-marker{display:none}
+  .doc summary::after{content:"+";flex:none;color:var(--accent);font-family:var(--ui);font-weight:400}
+  .doc details[open] summary::after{content:"\2013"}
+  .doc details p{margin:10px 0 0}
+
+  /* zdroje */
+  .doc ul.sources{list-style:none;padding-left:0}
+  .doc ul.sources li{padding-left:14px;border-left:2px solid var(--line)}
+  .doc .sources li{margin:0 0 10px;font-size:.95em}
+  .doc .sources cite{font-style:italic}
+  .doc ul.plain{list-style:none;padding-left:0}
+  .doc ul.plain li{margin:0;padding:10px 0;border-top:1px solid var(--line)}
+  .doc ul.plain li:first-child{border-top:none}
+
+  /* panel s nastrojom: jedina tmava plocha v texte, tam sa klika */
+  .doc .tool-box,.doc .toolbox,.doc .check,.doc .try,.doc .cta{display:block;background:var(--ink);
+    color:#cfcabd;border:none;border-radius:var(--radius);padding:clamp(20px,2.2vw,28px);margin:0 0 18px}
+  .doc .tool-box p,.doc .check p,.doc .try p,.doc .cta p{max-width:none;margin:0 0 12px;color:#cfcabd}
+  .doc .toolbox{max-width:none;color:#cfcabd}
+  .doc .tool-box p:last-of-type,.doc .check p:last-child,.doc .try p:last-child,
+  .doc .cta p:last-child{margin-bottom:0}
+  .doc .tool-box a,.doc .toolbox a,.doc .check a,.doc .try a,.doc .cta a{color:#fffdf8}
+  .doc .tool-box a:hover,.doc .toolbox a:hover,.doc .check a:hover,.doc .try a:hover,
+  .doc .cta a:hover{color:var(--accent-light)}
+  .doc .tool-box code,.doc .toolbox code,.doc .check code,.doc .try code,.doc .cta code{
+    background:rgba(255,253,248,.10);border-color:rgba(255,253,248,.22);color:#fffdf8}
+  .doc .tool-box .btn{margin:14px 10px 0 0;text-decoration:none;color:#fff}
+  /* dve tlacidla vedla seba sa nesmu dotykat, na uzkom mobile sa zalomia pod seba */
+  /* druhe tlacidlo v tmavom paneli je vedlajsie: linka namiesto plochy */
+  .doc .tool-box .btn+.btn{background:none;border:1px solid rgba(255,253,248,.45);color:#fffdf8}
+  .doc .tool-box .btn+.btn:hover{background:#fffdf8;color:var(--ink)}
+  .doc .tool-cta{display:inline-flex;align-items:center;height:46px;padding:0 20px;border-radius:12px;
+    margin:2px 0 0;background:var(--accent);color:#fff;font:500 15px/1 var(--ui);text-decoration:none}
+  .doc .tool-cta:hover{background:var(--accent-dark);color:#fff}
+
+  /* bocny register drzi sa laveho okraja clanku */
+  .rail{left:max(20px,calc(50% - 620px));width:145px;gap:9px}
+  .rail a{min-width:0}
+  .rail i{flex:none}
+  .rail span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  /* Stlpec clanku je uzsi nez obsah hubu (880 px, nie 1340), tak sa register zmesti
+     uz od 1280 px: cely stoji v lavom okraji a od textu ho deli stalych 35 px.
+     Pod tou hranicou by uz do textu zasahoval, preto ho paper.css skryje. */
+  @media (min-width:1280px){.rail{display:flex}}
+
+  /* paticka je tmavy pas na konci */
+  footer.band{border-top:none;color:#a8a294}
+  footer.band a,footer.band b{color:#fffdf8}
+  footer.band .wrap{max-width:880px}
+  footer.band .cols{width:min(880px,92vw);margin:0 auto;gap:16px 32px}
+
 </style>
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"Article","headline":"Expo + Supabase: why the OAuth deep link never comes back to the app","datePublished":"2026-09-06","dateModified":"2026-09-06","author":{"@type":"Person","name":"Andrej Lauko"},"publisher":{"@type":"Organization","name":"ARLing s. r. o.","url":"https://arling.sk/"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://arling.sk/notes/expo-supabase-deep-link-not-returning/"},"description":"Why Supabase OAuth sign-in never reopens an Expo app: what makeRedirectUri() returns per runtime, the allow-list, and the fix."}
@@ -56,58 +145,81 @@
 </script>
 </head>
 <body>
+<div class="wash" aria-hidden="true"><i></i><i></i></div>
+<noscript><style>.r,.w{opacity:1;transform:none;filter:none}</style></noscript>
 <a class="skip" href="#main">Skip to the article</a>
-<header class="top"><div class="wrap"><a class="wordmark" href="https://arling.sk/">ARLing</a><nav><a href="https://arling.sk/#tools">Tools</a><a href="https://arling.sk/how-we-work/">How we work</a><a href="mailto:andrej@arling.sk">Contact</a></nav></div></header>
-<main class="wrap" id="main">
-  <p class="kicker">Notes</p>
-  <h1>Expo + Supabase: why the OAuth deep link never comes back to the app</h1>
-  <p class="byline">Andrej Lauko, ARLing · 6 September 2026</p>
-
-  <p>You call <code>supabase.auth.signInWithOAuth()</code> in an Expo app, the browser opens, the user signs in with Google or another provider, and then the app never gets control back. The browser tab stays open, or it closes and you are still looking at the sign-in screen. Sometimes it lands on <code>http://localhost:3000</code> instead. In almost every report, the cause is that the URL your Expo runtime actually produces from <code>makeRedirectUri()</code> does not match what you hardcoded, what Supabase's redirect allow-list expects, or what the OAuth provider's console has on file.</p>
-
-  <h2>1. makeRedirectUri() doesn't return what you hardcoded</h2>
-  <p>Most integrations start with a hardcoded string, <code>redirectTo: 'myapp://auth-callback'</code>, passed straight into <code>signInWithOAuth()</code>. That string has to match, character for character, whatever <code>makeRedirectUri()</code> produces for the runtime the app is actually running in. It never matches every runtime at once, because Expo computes a different value depending on the environment:</p>
-  <ul>
+<header>
+  <div class="wrap bar">
+    <a class="brand" href="https://arling.sk/">
+      <svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true"><defs><path id="m" fill-rule="evenodd" d="M16 2.5 L29 29.5 H3 Z M16 12.4 L22.4 25.6 H9.6 Z"/><clipPath id="mr"><rect x="16" width="16" height="32"/></clipPath></defs><use href="#m" fill="#1b1a17"/><use href="#m" fill="#b23a1d" clip-path="url(#mr)"/></svg>
+      <b>ARLing</b><span>Notes</span>
+    </a>
+    <nav><a href="https://arling.sk/#tools">Tools</a><a href="https://arling.sk/how-we-work/">How we work</a><a href="mailto:andrej@arling.sk">Contact</a></nav>
+  </div>
+</header>
+<main id="main">
+  <div class="wrap">
+    <div class="note">
+      <div class="hero-note" id="hero">
+        <p class="kicker r">Notes</p>
+        <h1 id="h1" class="r d1"><span class="l">Expo + Supabase:</span><span class="l">why the OAuth deep link never comes back to the app</span></h1>
+        <p class="byline r d2">Andrej Lauko, ARLing · 6 September 2026</p>
+        <p class="toolgo r d3"><a data-umami-event="open-expo-supabase-auth-doctor-hero" class="go" href="https://arling.sk/expo-supabase-auth-doctor/">Redirect Doctor for Expo and Supabase <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2.5 8h11M9 3.5 13.5 8 9 12.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a></p>
+      </div>
+      <div class="doc">
+        <section class="sec" id="s1">
+  <p class="r">You call <code>supabase.auth.signInWithOAuth()</code> in an Expo app, the browser opens, the user signs in with Google or another provider, and then the app never gets control back. The browser tab stays open, or it closes and you are still looking at the sign-in screen. Sometimes it lands on <code>http://localhost:3000</code> instead. In almost every report, the cause is that the URL your Expo runtime actually produces from <code>makeRedirectUri()</code> does not match what you hardcoded, what Supabase's redirect allow-list expects, or what the OAuth provider's console has on file.</p>
+        </section>
+        <section class="sec" id="s2">
+  <h2 class="r">1. makeRedirectUri() doesn't return what you hardcoded</h2>
+  <p class="r d1">Most integrations start with a hardcoded string, <code>redirectTo: 'myapp://auth-callback'</code>, passed straight into <code>signInWithOAuth()</code>. That string has to match, character for character, whatever <code>makeRedirectUri()</code> produces for the runtime the app is actually running in. It never matches every runtime at once, because Expo computes a different value depending on the environment:</p>
+  <ul class="r d2">
     <li>A development build or a standalone build uses your custom scheme directly: <code>scheme://path</code>, no leading slash on the path.</li>
     <li>Expo Go ignores your scheme and always uses <code>exp://&lt;dev-server-host&gt;:&lt;port&gt;/--/path</code>.</li>
     <li>Web uses your site's own URL plus the path.</li>
   </ul>
-  <p>Call <code>makeRedirectUri({ scheme, path })</code> at runtime and pass its result into <code>redirectTo</code>, instead of hardcoding a string. One more thing it is picky about: a path with a leading slash, <code>/auth-callback</code> instead of <code>auth-callback</code>, produces a stray extra slash in the final URL, for example <code>myapp:///auth-callback</code>. Strip leading and trailing slashes from the path before you pass it in.</p>
-
-  <h2>2. The scheme itself has to be valid, or nothing can open the app</h2>
-  <p>A native redirect only works if <code>expo.scheme</code> in <code>app.json</code> is a real custom URL scheme: lowercase letters, digits, <code>+</code>, <code>-</code>, <code>.</code>, starting with a letter, no spaces. <code>http</code> and <code>https</code> cannot be used here: they are reserved, and the OS will not hand control to your app for them. If the scheme is empty or invalid, <code>makeRedirectUri()</code> still returns a string, but no app on the device claims it, so the browser has nowhere to send the user.</p>
-  <pre><code>{ "expo": { "scheme": "myapp" } }</code></pre>
-  <p>Confirm that value actually reached the native build. A stale development build or standalone binary can keep an old scheme after <code>app.json</code> changes, until you rebuild it.</p>
-
-  <h2>3. The redirect isn't on Supabase's allow-list</h2>
-  <p><code>signInWithOAuth()</code> sends <code>redirectTo</code> to Supabase, which checks it against Authentication → URL Configuration → Redirect URLs before it lets the browser go anywhere near it. No match, no redirect: Supabase falls back to the Site URL instead, silently.</p>
-  <p>The allow-list uses glob patterns, and <code>.</code> and <code>/</code> count as separator characters:</p>
-  <ul>
+  <p class="r d3">Call <code>makeRedirectUri({ scheme, path })</code> at runtime and pass its result into <code>redirectTo</code>, instead of hardcoding a string. One more thing it is picky about: a path with a leading slash, <code>/auth-callback</code> instead of <code>auth-callback</code>, produces a stray extra slash in the final URL, for example <code>myapp:///auth-callback</code>. Strip leading and trailing slashes from the path before you pass it in.</p>
+        </section>
+        <section class="sec" id="s3">
+  <h2 class="r">2. The scheme itself has to be valid, or nothing can open the app</h2>
+  <p class="r d1">A native redirect only works if <code>expo.scheme</code> in <code>app.json</code> is a real custom URL scheme: lowercase letters, digits, <code>+</code>, <code>-</code>, <code>.</code>, starting with a letter, no spaces. <code>http</code> and <code>https</code> cannot be used here: they are reserved, and the OS will not hand control to your app for them. If the scheme is empty or invalid, <code>makeRedirectUri()</code> still returns a string, but no app on the device claims it, so the browser has nowhere to send the user.</p>
+  <pre class="r d2"><code>{ "expo": { "scheme": "myapp" } }</code></pre>
+  <p class="r d3">Confirm that value actually reached the native build. A stale development build or standalone binary can keep an old scheme after <code>app.json</code> changes, until you rebuild it.</p>
+        </section>
+        <section class="sec" id="s4">
+  <h2 class="r">3. The redirect isn't on Supabase's allow-list</h2>
+  <p class="r d1"><code>signInWithOAuth()</code> sends <code>redirectTo</code> to Supabase, which checks it against Authentication → URL Configuration → Redirect URLs before it lets the browser go anywhere near it. No match, no redirect: Supabase falls back to the Site URL instead, silently.</p>
+  <p class="r d2">The allow-list uses glob patterns, and <code>.</code> and <code>/</code> count as separator characters:</p>
+  <ul class="r d3">
     <li><code>*</code> matches a run of characters that are not <code>.</code> or <code>/</code></li>
     <li><code>**</code> matches any run of characters, including <code>.</code> and <code>/</code></li>
     <li><code>?</code> matches exactly one non-separator character</li>
   </ul>
-  <p>An entry like <code>myapp://auth-callback</code> only matches that one exact path. Add <code>myapp://**</code> instead, so every path under your scheme stays covered as the app grows. If you also test in Expo Go, allow-list its dev URL separately: Expo Go never uses your custom scheme.</p>
-
-  <h2>4. Supabase Site URL still points to localhost</h2>
-  <p>Site URL is not only the default for password-reset emails: it is where Supabase sends every rejected redirect, in every environment, including production. If Site URL is still <code>http://localhost:8081</code> from early development, a redirect mismatch anywhere on this page quietly lands a production user on a URL their phone cannot reach, and the app never reopens.</p>
-  <p>Set Site URL, in Supabase → Authentication → URL Configuration, to your actual production URL, and let the redirect allow-list, not Site URL, decide where a given sign-in goes.</p>
-
-  <h2>5. The provider console is missing the exact Supabase callback</h2>
-  <p>Before the browser reaches your app, the OAuth provider redirects back to Supabase first, at a fixed URL: <code>https://&lt;project-ref&gt;.supabase.co/auth/v1/callback</code>, shown on that provider's page in the Supabase dashboard. Unlike Supabase's own allow-list, providers do not accept wildcards here. Google Cloud Console's Authorized redirect URIs, the Apple Services ID's Return URLs, and the GitHub OAuth App's Authorization callback URL all need that exact string, with no trailing slash added.</p>
-  <p>A missing or mistyped callback here fails before your app's own redirect logic ever runs: the user sees an error page from the provider, not from Supabase or from your code.</p>
-
-  <h2>6. Native code still needs skipBrowserRedirect, PKCE and exchangeCodeForSession</h2>
-  <p>Three more settings decide whether a correctly matched redirect turns into an actual session on native:</p>
-  <ul>
+  <p class="r d3">An entry like <code>myapp://auth-callback</code> only matches that one exact path. Add <code>myapp://**</code> instead, so every path under your scheme stays covered as the app grows. If you also test in Expo Go, allow-list its dev URL separately: Expo Go never uses your custom scheme.</p>
+        </section>
+        <section class="sec" id="s5">
+  <h2 class="r">4. Supabase Site URL still points to localhost</h2>
+  <p class="r d1">Site URL is not only the default for password-reset emails: it is where Supabase sends every rejected redirect, in every environment, including production. If Site URL is still <code>http://localhost:8081</code> from early development, a redirect mismatch anywhere on this page quietly lands a production user on a URL their phone cannot reach, and the app never reopens.</p>
+  <p class="r d2">Set Site URL, in Supabase → Authentication → URL Configuration, to your actual production URL, and let the redirect allow-list, not Site URL, decide where a given sign-in goes.</p>
+        </section>
+        <section class="sec" id="s6">
+  <h2 class="r">5. The provider console is missing the exact Supabase callback</h2>
+  <p class="r d1">Before the browser reaches your app, the OAuth provider redirects back to Supabase first, at a fixed URL: <code>https://&lt;project-ref&gt;.supabase.co/auth/v1/callback</code>, shown on that provider's page in the Supabase dashboard. Unlike Supabase's own allow-list, providers do not accept wildcards here. Google Cloud Console's Authorized redirect URIs, the Apple Services ID's Return URLs, and the GitHub OAuth App's Authorization callback URL all need that exact string, with no trailing slash added.</p>
+  <p class="r d2">A missing or mistyped callback here fails before your app's own redirect logic ever runs: the user sees an error page from the provider, not from Supabase or from your code.</p>
+        </section>
+        <section class="sec" id="s7">
+  <h2 class="r">6. Native code still needs skipBrowserRedirect, PKCE and exchangeCodeForSession</h2>
+  <p class="r d1">Three more settings decide whether a correctly matched redirect turns into an actual session on native:</p>
+  <ul class="r d2">
     <li>Pass <code>skipBrowserRedirect: true</code> in the options to <code>signInWithOAuth()</code>. Without it, supabase-js tries to issue a browser redirect the way it would on web; on native, you open the URL yourself, typically with <code>expo-web-browser</code>.</li>
     <li>Use <code>flowType: 'pkce'</code> when creating the client. The implicit flow returns tokens in a URL fragment, and fragments do not always survive a deep link.</li>
     <li>Call <code>exchangeCodeForSession(url)</code> in the <code>Linking</code> listener that receives the deep link. PKCE's callback carries a <code>code</code> parameter, not a session: nothing exchanges it unless your code does.</li>
   </ul>
-  <p>Skip any one of the three and the URL can come back to the app correctly and still leave the user signed out.</p>
-
-  <h2>7. Checklist</h2>
-  <ol>
+  <p class="r d3">Skip any one of the three and the URL can come back to the app correctly and still leave the user signed out.</p>
+        </section>
+        <section class="sec" id="s8">
+  <h2 class="r">7. Checklist</h2>
+  <ol class="r d1">
     <li>Build <code>redirectTo</code> with <code>makeRedirectUri({ scheme, path })</code>, never a hardcoded string.</li>
     <li>Confirm <code>expo.scheme</code> in <code>app.json</code> is lowercase, starts with a letter, and is not <code>http</code>/<code>https</code>.</li>
     <li>Strip leading and trailing slashes from the path you pass to <code>makeRedirectUri</code>.</li>
@@ -117,22 +229,100 @@
     <li>Add the exact <code>https://&lt;project-ref&gt;.supabase.co/auth/v1/callback</code> to the provider's console.</li>
     <li>Set <code>flowType: 'pkce'</code> and <code>skipBrowserRedirect: true</code>, and call <code>exchangeCodeForSession(url)</code> in the deep-link handler.</li>
   </ol>
-
-  <h2>8. Check it in 30 seconds</h2>
-  <div class="check">
-    <p>Paste your scheme, path, Site URL, redirect allow-list and provider callback into the <a href="https://arling.sk/expo-supabase-auth-doctor/">Redirect Doctor for Expo and Supabase</a> and it lists exactly which of the above does not match, for the runtime you pick.</p>
+        </section>
+        <section class="sec" id="s9">
+  <h2 class="r">8. Check it in 30 seconds</h2>
+  <div class="check r d1">
+    <p>Paste your scheme, path, Site URL, redirect allow-list and provider callback into the <a data-umami-event="open-expo-supabase-auth-doctor-cta" href="https://arling.sk/expo-supabase-auth-doctor/">Redirect Doctor for Expo and Supabase</a> and it lists exactly which of the above does not match, for the runtime you pick.</p>
   </div>
-
-  <h2>9. Sources</h2>
-  <ul>
+        </section>
+      </div>
+    </div>
+  </div>
+  <section class="deep" id="s10">
+    <div class="wrap">
+      <div class="note">
+        <div class="doc">
+  <h2 class="r">9. Sources</h2>
+  <ul class="r d1">
     <li><a href="https://docs.expo.dev/versions/latest/sdk/auth-session/">Expo docs: AuthSession, makeRedirectUri()</a></li>
     <li><a href="https://docs.expo.dev/guides/linking/">Expo docs: Linking, deep link structure</a></li>
     <li><a href="https://supabase.com/docs/guides/auth/redirect-urls">Supabase docs: Redirect URLs, Site URL fallback and allow-list glob syntax</a></li>
     <li><a href="https://supabase.com/docs/guides/auth/native-mobile-deep-linking">Supabase docs: Native mobile deep linking</a></li>
     <li><a href="https://supabase.com/docs/guides/auth/social-login/auth-google">Supabase docs: Google sign-in, callback URL and PKCE</a></li>
   </ul>
+        </div>
+      </div>
+    </div>
+  </section>
 </main>
-<footer><div class="wrap">ARLing s. r. o. · <a href="https://arling.sk/">arling.sk</a> · <a href="mailto:andrej@arling.sk">andrej@arling.sk</a></div></footer>
+<footer class="band"><div class="wrap">ARLing s. r. o. · <a href="https://arling.sk/">arling.sk</a> · <a href="mailto:andrej@arling.sk">andrej@arling.sk</a></div></footer>
+<nav class="rail" aria-label="Article contents">
+  <a href="#s2"><i></i><span>1. makeRedirectUri() doesn't return what you hardcoded</span></a>
+  <a href="#s3"><i></i><span>2. The scheme itself has to be valid, or nothing can open the app</span></a>
+  <a href="#s4"><i></i><span>3. The redirect isn't on Supabase's allow-list</span></a>
+  <a href="#s5"><i></i><span>4. Supabase Site URL still points to localhost</span></a>
+  <a href="#s6"><i></i><span>5. The provider console is missing the exact Supabase callback</span></a>
+  <a href="#s7"><i></i><span>6. Native code still needs skipBrowserRedirect, PKCE and exchangeCodeForSession</span></a>
+  <a href="#s8"><i></i><span>7. Checklist</span></a>
+  <a href="#s9"><i></i><span>8. Check it in 30 seconds</span></a>
+  <a href="#s10"><i></i><span>9. Sources</span></a>
+</nav>
 <script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="be534d51-4d01-4860-b267-9596d91606de"></script>
+<script>
+(function () {
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var hero = document.getElementById('hero');
+  if (reduce) {
+    document.querySelectorAll('.r, section').forEach(function (e) { e.classList.add('in'); });
+  }
+  if (!reduce && hero) {
+    requestAnimationFrame(function () {
+      hero.querySelectorAll('.r').forEach(function (e) { e.classList.add('in'); });
+    });
+  }
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (en) {
+      if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); }
+    });
+  }, { rootMargin: '0px 0px -12% 0px', threshold: 0.1 });
+  document.querySelectorAll('section').forEach(function (s) { io.observe(s); });
+
+  // nadpis clanku sa objavi po slovach, ako dobre vytlaceny titulok
+  var h1 = document.getElementById('h1');
+  if (h1) {
+    var i = 0;
+    Array.prototype.forEach.call(h1.querySelectorAll('.l'), function (line) {
+      var words = line.textContent.split(' ');
+      line.textContent = '';
+      words.forEach(function (w, k) {
+        var s = document.createElement('span');
+        s.className = 'w';
+        s.style.transitionDelay = (i++ * 0.06).toFixed(2) + 's';
+        s.textContent = w;
+        line.appendChild(s);
+        if (k < words.length - 1) line.appendChild(document.createTextNode(' '));
+      });
+    });
+    requestAnimationFrame(function () { h1.classList.add('in'); });
+  }
+
+  // bocny register sleduje, ktora cast clanku je v strede obrazovky
+  var rail = document.querySelector('.rail');
+  if (rail) {
+    var links = Array.prototype.slice.call(rail.querySelectorAll('a'));
+    var targets = links.map(function (a) { return document.querySelector(a.getAttribute('href')); });
+    var railIo = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        var i = targets.indexOf(en.target);
+        if (i < 0 || !en.isIntersecting) return;
+        links.forEach(function (a, j) { a.setAttribute('aria-current', j === i ? 'true' : 'false'); });
+      });
+      rail.classList.add('on');
+    }, { rootMargin: '-45% 0px -45% 0px' });
+    targets.forEach(function (t) { if (t) railIo.observe(t); });
+  }
+})();
+</script>
 </body>
 </html>

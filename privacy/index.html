@@ -1,72 +1,183 @@
 <!doctype html>
-<html lang="en">
+<html lang="sk">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://homelab.tailbf8f27.ts.net; connect-src 'self' https://homelab.tailbf8f27.ts.net; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Y+ZDBJHhRkeSHjIB9vRg7pq7g4VZF+AOsrBzRLYXPYA=' https://homelab.tailbf8f27.ts.net; connect-src 'self' https://homelab.tailbf8f27.ts.net; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
 <title>Privacy at ARLing</title>
 <meta name="description" content="What ARLing tools and pages collect, what they never collect, and how to be removed from the e-mail list. In English and Slovak.">
 <link rel="canonical" href="https://arling.sk/privacy/">
 <meta name="theme-color" content="#f6f2ea">
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="preload" href="/fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/style/paper.css">
 <style>
-  :root { --paper:#f6f2ea; --paper-2:#fbf9f4; --ink:#1b1a17; --ink-2:#4a4741; --muted:#66625a; --line:#d9d2c4; --accent:#b23a1d; --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif; --sans:system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
-  @media (prefers-color-scheme: dark) { :root { --paper:#151412; --paper-2:#1d1b18; --ink:#efe9de; --ink-2:#c9c2b5; --muted:#8f887b; --line:#2e2b26; --accent:#e0623f; } }
-  * { box-sizing:border-box; }
-  body { margin:0; background:var(--paper); color:var(--ink); font:16px/1.55 var(--sans); }
-  a { color:inherit; text-decoration-color:var(--line); text-underline-offset:3px; }
-  a:hover { text-decoration-color:var(--accent); }
-  .wrap { max-width:760px; margin:0 auto; padding:0 24px; }
-  header.top { border-bottom:1px solid var(--line); }
-  header.top .wrap { display:flex; align-items:baseline; justify-content:space-between; padding:18px 24px; }
-  .wordmark { font:600 22px/1 var(--serif); text-decoration:none; }
-  nav a { font-size:14px; margin-left:20px; text-decoration:none; color:var(--ink-2); }
-  h1 { font:400 clamp(30px,4.5vw,40px)/1.1 var(--serif); margin:48px 0 8px; }
-  h2 { font:400 26px/1.15 var(--serif); margin:40px 0 8px; }
-  .kicker { font:400 14px/1 var(--serif); color:var(--accent); letter-spacing:.06em; text-transform:uppercase; margin:0 0 8px; }
-  p, li { color:var(--ink-2); }
-  ol { padding-left:20px; }
-  .lang { border-top:1px solid var(--line); margin-top:40px; padding-top:8px; }
-  footer { margin-top:56px; padding:24px 0 56px; border-top:1px solid var(--line); color:var(--muted); font-size:14px; }
+  /* Only this page: a reading column for the text and a tighter table of contents. */
+  .doc { max-width:72ch; }
+  .doc h2 { font-size:clamp(21px,1.9vw,27px); line-height:1.2; margin-top:38px; }
+  .doc h2:first-of-type { margin-top:0; }
+  .doc p { margin:0 0 12px; max-width:none; }
+  .doc p b { color:var(--ink); }
+  .toc a { padding:5px 0; }
+  .toc .t { white-space:normal; }
+  .band .doc h2, .band .doc p b { color:#fffdf8; }
+  .band .rule { background:rgba(255,253,248,.2); }
+  .band .btn-line { border-color:#fffdf8; color:#fffdf8; }
+  .band .btn-line:hover { background:#fffdf8; color:var(--ink); }
+  /* Uvod je dvojstlpcovy ako otvaracia dvojstrana tlacenej prirucky: vlavo nazov dokumentu,
+     veta a platnost, vpravo jeho vlastny obsah. Prava polovica tak nesie skutocnu vec zo stranky,
+     nie kresbu ani prazdno. */
+  .toclab { font-family:var(--ui); font-size:12px; letter-spacing:.12em; text-transform:uppercase;
+            color:var(--muted); margin:0 0 2px; }
+  /* Polozka bez cisla strany nema kam viest vodic, tak ho v znacke nema. Bodkovana ciara
+     ostava len pri riadku, ktory vpravo naozaj nieco nesie. */
+  .hero .index.toc .t { flex:1 1 auto; }
 </style>
 </head>
 <body>
-<header class="top"><div class="wrap"><a class="wordmark" href="https://arling.sk/">ARLing</a><nav><a href="https://arling.sk/#tools">Tools</a><a href="https://arling.sk/how-we-work/">How we work</a><a href="#sk">Slovensky</a></nav></div></header>
-<main class="wrap">
-  <p class="kicker" style="margin-top:48px">Privacy</p>
-  <h1>What we collect, and what we never collect.</h1>
-  <p>ARLing s. r. o. runs the tools on arling.sk. This page says plainly what happens to your data. Last updated 5 September 2026.</p>
+<div class="wash" aria-hidden="true"><i></i><i></i></div>
+<a class="skip" href="#h1">Skip to content</a>
 
-  <h2>1. The tools</h2>
-  <p>Every tool runs entirely in your browser. What you paste into a form (URLs, configuration, XML files) is processed on your device and never sent to us or to anyone else. You can verify this in the page source on GitHub.</p>
+<header>
+  <div class="wrap bar">
+    <a class="brand" href="https://arling.sk/">
+      <svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true"><defs><path id="m" fill-rule="evenodd" d="M16 2.5 L29 29.5 H3 Z M16 12.4 L22.4 25.6 H9.6 Z"/><clipPath id="mr"><rect x="16" width="16" height="32"/></clipPath></defs><use href="#m" fill="#1b1a17"/><use href="#m" fill="#b23a1d" clip-path="url(#mr)"/></svg>
+      <b>ARLing</b><span>Súkromie</span>
+    </a>
+    <nav aria-label="Site">
+      <a href="https://arling.sk/#tools">Nástroje</a>
+      <a href="https://arling.sk/how-we-work/">Ako pracujeme</a>
+      <a href="#sk">Slovensky</a>
+    </nav>
+  </div>
+</header>
 
-  <h2>2. Visit counts</h2>
-  <p>We count page views and button clicks with self-hosted Umami on our own server. Umami sets no cookies and stores no personal data: no IP addresses, no names, no content of what you type. It records the page, the country, the browser type and which buttons were used. That is why there is no cookie banner: there are no cookies.</p>
+<main>
+  <div class="wrap hero" id="hero">
+    <div>
+      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5l7 2.6v5.3c0 4-2.9 7.5-7 9.1-4.1-1.6-7-5.1-7-9.1V6.1z"/><path d="M9.4 12.2l1.9 1.9 3.4-3.7"/></svg>Súkromie</p>
+      <h1 id="h1"><span class="l">What we collect,</span><span class="l">and what we</span><span class="l">never collect.</span></h1>
+      <p class="lead r d3">ARLing s. r. o. runs the tools on arling.sk. This page says plainly what happens to your data.</p>
+      <p class="proof r d5">Last updated 5 September 2026.</p>
+    </div>
+    <div class="r d2">
+      <p class="toclab" id="toclab">Na tejto stránke</p>
+      <nav class="index toc r d4" aria-labelledby="toclab">
+        <a href="#s1" data-umami-event="toc-privacy" data-umami-event-section="s1"><span class="n">[1]</span><span class="t">Nástroje</span></a>
+        <a href="#s2" data-umami-event="toc-privacy" data-umami-event-section="s2"><span class="n">[2]</span><span class="t">Počítanie návštev</span></a>
+        <a href="#s3" data-umami-event="toc-privacy" data-umami-event-section="s3"><span class="n">[3]</span><span class="t">Zoznam odberateľov</span></a>
+        <a href="#s4" data-umami-event="toc-privacy" data-umami-event-section="s4"><span class="n">[4]</span><span class="t">Feed Doctor Monitor</span></a>
+        <a href="#s5" data-umami-event="toc-privacy" data-umami-event-section="s5"><span class="n">[5]</span><span class="t">E-mail a GitHub</span></a>
+        <a href="#s6" data-umami-event="toc-privacy" data-umami-event-section="s6"><span class="n">[6]</span><span class="t">Who</span></a>
+        <a href="#sk" data-umami-event="toc-privacy" data-umami-event-section="sk"><span class="n">[7]</span><span class="t">Súkromie</span><span class="dots"></span><span class="c">slovensky</span></a>
+      </nav>
+    </div>
+  </div>
 
-  <h2>3. The e-mail list</h2>
-  <p>If you enter your e-mail in a "Tell me when a new tool lands" form, we store the address, the tool where you signed up, the language and the date. Nothing else. We use it only to tell you when a new tool is live. We do not send newsletters, we do not share or sell the list, and we do not track opens.</p>
-  <p>To be removed, reply to any mail we send or write to <a href="mailto:andrej@arling.sk">andrej@arling.sk</a>. We delete the address within 7 days.</p>
+  <section id="doc-a" class="deep">
+    <div class="wrap"><div class="doc">
+      <h2 id="s1" class="r">1. The tools</h2>
+      <div class="rule"></div>
+      <p class="r d1">Every tool runs entirely in your browser. What you paste into a form (URLs, configuration, XML files) is processed on your device and never sent to us or to anyone else. You can verify this in the page source on GitHub.</p>
 
-  <h2>4. Feed Doctor Monitor</h2>
-  <p>This is the one opt-in exception to section 1: if you sign up for Feed Doctor Monitor (a paid add-on to the free Feed Doctor checker), it stores your e-mail, the feed URL and each check's results (score and issue counts); feed content is not stored. Its server fetches only the feed URL you gave it, on the schedule you chose (weekly on the free plan, daily on Pro), to alert you when something got worse. Delete it any time from the monitor page or by replying to an alert e-mail; deleting removes the e-mail, feed URL and history.</p>
+      <h2 id="s2" class="r d1">2. Visit counts</h2>
+      <p class="r d2">We count page views and button clicks with self-hosted Umami on our own server. Umami sets no cookies and stores no personal data: no IP addresses, no names, no content of what you type. It records the page, the country, the browser type and which buttons were used. That is why there is no cookie banner: there are no cookies.</p>
 
-  <h2>5. E-mail and GitHub</h2>
-  <p>If you write to us or open a GitHub issue, we keep that correspondence to answer you. Legal basis for all of the above: our legitimate interest in running the tools and your consent for the e-mail list and opt-in add-ons (GDPR art. 6(1)(a) and (f)).</p>
+      <h2 id="s3" class="r d2">3. The e-mail list</h2>
+      <p class="r d3">If you enter your e-mail in a "Tell me when a new tool lands" form, we store the address, the tool where you signed up, the language and the date. Nothing else. We use it only to tell you when a new tool is live. We do not send newsletters, we do not share or sell the list, and we do not track opens.</p>
+      <p class="r d3">To be removed, reply to any mail we send or write to <a href="mailto:andrej@arling.sk">andrej@arling.sk</a>. We delete the address within 7 days.</p>
 
-  <h2>6. Who</h2>
-  <p>ARLing s. r. o., Ivanská cesta 32E, 821 04 Bratislava, Slovakia. Company ID 56583486. Contact: <a href="mailto:andrej@arling.sk">andrej@arling.sk</a>. You have the right to access, correct or delete your data and to complain to the Slovak Data Protection Office (dataprotection.gov.sk).</p>
+      <h2 id="s4" class="r d4">4. Feed Doctor Monitor</h2>
+      <p class="r d4">This is the one opt-in exception to section 1: if you sign up for Feed Doctor Monitor (a paid add-on to the free Feed Doctor checker), it stores your e-mail, the feed URL and each check's results (score and issue counts); feed content is not stored. Its server fetches only the feed URL you gave it, on the schedule you chose (weekly on the free plan, daily on Pro), to alert you when something got worse. Delete it any time from the monitor page or by replying to an alert e-mail; deleting removes the e-mail, feed URL and history.</p>
 
-  <section id="sk" class="lang" lang="sk">
-    <p class="kicker">Súkromie</p>
-    <h2>Čo zbierame a čo nikdy nezbierame.</h2>
-    <p><b>Nástroje</b> bežia celé vo vašom prehliadači. Čo vložíte do formulára (adresy, konfigurácia, XML), sa spracuje na vašom zariadení a nikam sa neposiela.</p>
-    <p><b>Návštevnosť</b> počítame vlastným Umami na vlastnom serveri. Umami nepoužíva cookies a neukladá osobné údaje: žiadne IP adresy, mená ani obsah formulárov. Preto nemáme cookie lištu, lebo nemáme cookies.</p>
-    <p><b>E-mailový zoznam:</b> ak zadáte e-mail vo formulári „Dajte mi vedieť o novom nástroji“, uložíme adresu, nástroj, jazyk a dátum. Použijeme ho len na správu o novom nástroji. Žiadny newsletter, žiadne zdieľanie, žiadne sledovanie otvorení. Odhlásenie: odpoveďou na ktorýkoľvek mail alebo na <a href="mailto:andrej@arling.sk">andrej@arling.sk</a>; adresu zmažeme do 7 dní.</p>
-    <p><b>Feed Doctor Monitor:</b> jediná dobrovoľná výnimka z bodu o nástrojoch. Ak sa prihlásite na Feed Doctor Monitor (platené rozšírenie bezplatného kontrolóra Feed Doctor), uložíme váš e-mail, adresu feedu a výsledky kontrol (skóre a počty problémov); obsah feedu sa neukladá. Server si stiahne len zadanú adresu feedu, podľa zvoleného plánu (týždenne zdarma, denne v Pro), a upozorní vás, ak sa niečo zhoršilo. Zrušenie kedykoľvek zo stránky monitora alebo odpoveďou na upozornenie; zmaže sa e-mail, adresa feedu aj história.</p>
-    <p><b>Prevádzkovateľ:</b> ARLing s. r. o., Ivanská cesta 32E, 821 04 Bratislava, IČO 56583486. Máte právo na prístup, opravu a vymazanie údajov a právo podať sťažnosť na Úrad na ochranu osobných údajov SR.</p>
+      <h2 id="s5" class="r d5">5. E-mail and GitHub</h2>
+      <p class="r d5">If you write to us or open a GitHub issue, we keep that correspondence to answer you. Legal basis for all of the above: our legitimate interest in running the tools and your consent for the e-mail list and opt-in add-ons (GDPR art. 6(1)(a) and (f)).</p>
+    </div></div>
+  </section>
+
+  <section id="who">
+    <div class="wrap"><div class="doc">
+      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M8.5 12.3l2.4 2.4 4.6-4.9"/></svg>Kontakt</p>
+      <h2 id="s6" class="r">6. Who</h2>
+      <div class="rule"></div>
+      <p class="r d1">ARLing s. r. o., Ivanská cesta 32E, 821 04 Bratislava, Slovakia. Company ID 56583486. Contact: <a href="mailto:andrej@arling.sk">andrej@arling.sk</a>. You have the right to access, correct or delete your data and to complain to the Slovak Data Protection Office (dataprotection.gov.sk).</p>
+      <div class="cta r d2" style="margin-top:24px">
+        <a class="btn btn-solid" href="mailto:andrej@arling.sk" data-umami-event="contact-email">andrej@arling.sk</a>
+        <a class="btn btn-line" href="https://arling.sk/gdpr/" data-umami-event="open-gdpr">GDPR</a>
+      </div>
+    </div></div>
+  </section>
+
+  <section id="sk" class="band" lang="sk">
+    <div class="wrap"><div class="doc">
+      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.2 2.4 3.4 5.4 3.4 8.5s-1.2 6.1-3.4 8.5c-2.2-2.4-3.4-5.4-3.4-8.5s1.2-6.1 3.4-8.5z"/></svg>Súkromie</p>
+      <h2 class="r">Čo zbierame a čo nikdy nezbierame.</h2>
+      <div class="rule"></div>
+      <p class="r d1"><b>Nástroje</b> run entirely in your browser. Whatever you paste into a form (addresses, configuration, XML) is processed on your own device and is never sent anywhere.</p>
+      <p class="r d2"><b>Návštevnosť</b> počítame vlastným Umami na vlastnom serveri. Umami nepoužíva cookies a neukladá osobné údaje: žiadne IP adresy, mená ani obsah formulárov. Preto nemáme cookie lištu, lebo nemáme cookies.</p>
+      <p class="r d3"><b>E-mailový zoznam:</b> ak zadáte e-mail vo formulári „Dajte mi vedieť o novom nástroji“, uložíme adresu, nástroj, jazyk a dátum. Použijeme ho len na správu o novom nástroji. Žiadny newsletter, žiadne zdieľanie, žiadne sledovanie otvorení. Odhlásenie: odpoveďou na ktorýkoľvek mail alebo na <a href="mailto:andrej@arling.sk">andrej@arling.sk</a>; adresu zmažeme do 7 dní.</p>
+      <p class="r d4"><b>Feed Doctor Monitor:</b> jediná dobrovoľná výnimka z bodu o nástrojoch. Ak sa prihlásite na Feed Doctor Monitor (platené rozšírenie bezplatného kontrolóra Feed Doctor), uložíme váš e-mail, adresu feedu a výsledky kontrol (skóre a počty problémov); obsah feedu sa neukladá. Server si stiahne len zadanú adresu feedu, podľa zvoleného plánu (týždenne zdarma, denne v Pro), a upozorní vás, ak sa niečo zhoršilo. Zrušenie kedykoľvek zo stránky monitora alebo odpoveďou na upozornenie; zmaže sa e-mail, adresa feedu aj história.</p>
+      <p class="r d5"><b>Prevádzkovateľ:</b> ARLing s. r. o., Ivanská cesta 32E, 821 04 Bratislava, IČO 56583486. Máte právo na prístup, opravu a vymazanie údajov a právo podať sťažnosť na Úrad na ochranu osobných údajov SR.</p>
+    </div></div>
   </section>
 </main>
-<footer><div class="wrap">ARLing s. r. o. · <a href="https://arling.sk/">arling.sk</a> · <a href="mailto:andrej@arling.sk">andrej@arling.sk</a> · <a href="https://arling.sk/privacy/">Súkromie</a> · <a href="https://arling.sk/podmienky/">Podmienky</a> · <a href="https://arling.sk/gdpr/">GDPR</a></div></footer>
+
+<footer>
+  <div class="wrap foot">
+    <div>ARLing s. r. o. · <a href="https://arling.sk/">arling.sk</a> · <a href="mailto:andrej@arling.sk">andrej@arling.sk</a></div>
+    <div><a href="https://arling.sk/privacy/">Súkromie</a> · <a href="https://arling.sk/podmienky/">Podmienky</a> · <a href="https://arling.sk/gdpr/">GDPR</a></div>
+  </div>
+</footer>
+<script>
+(function () {
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // nadpis sa objavi po slovach, ako dobre vytlaceny titulok
+  var h1 = document.getElementById('h1');
+  if (h1) {
+    var i = 0;
+    Array.prototype.forEach.call(h1.querySelectorAll('.l'), function (line) {
+      line.innerHTML = line.textContent.split(' ').map(function (w) {
+        return '<span class="w" style="transition-delay:' + (i++ * 0.06).toFixed(2) + 's">' + w + '</span>';
+      }).join(' ');
+    });
+  }
+
+  var hero = document.getElementById('hero');
+  if (reduce) {
+    Array.prototype.forEach.call(document.querySelectorAll('.r, section'), function (e) { e.classList.add('in'); });
+    if (h1) h1.classList.add('in');
+  } else {
+    setTimeout(function () {
+      if (hero) Array.prototype.forEach.call(hero.querySelectorAll('.r'), function (e) { e.classList.add('in'); });
+      if (h1) h1.classList.add('in');
+    }, 40);
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); }
+      });
+    }, { rootMargin: '0px 0px -12% 0px', threshold: 0.08 });
+    Array.prototype.forEach.call(document.querySelectorAll('section'), function (s) { io.observe(s); });
+  }
+
+  // bocny register sleduje, ktora sekcia je v strede obrazovky
+  var rail = document.querySelector('.rail');
+  if (rail) {
+    var links = Array.prototype.slice.call(rail.querySelectorAll('a'));
+    var targets = links.map(function (a) { return document.querySelector(a.getAttribute('href')); });
+    var railIo = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        var k = targets.indexOf(en.target);
+        if (k < 0 || !en.isIntersecting) return;
+        links.forEach(function (a, j) { a.setAttribute('aria-current', j === k ? 'true' : 'false'); });
+      });
+      rail.classList.add('on');
+    }, { rootMargin: '-45% 0px -45% 0px' });
+    targets.forEach(function (t) { if (t) railIo.observe(t); });
+  }
+})();
+</script>
 <script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="be534d51-4d01-4860-b267-9596d91606de"></script>
 </body>
 </html>
