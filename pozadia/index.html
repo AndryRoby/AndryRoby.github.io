@@ -10,7 +10,7 @@
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
 <link rel="icon" href="../favicon.ico" sizes="48x48">
 <link rel="apple-touch-icon" href="../icon-180.png">
-<title>Pozadia ARLing: tri scény, jeden shader, žiadna knižnica</title>
+<title>Pozadia ARLing: desať scén, jeden shader, žiadna knižnica</title>
 <meta name="description" content="Tri živé pozadia pre stránky ARLing. Vlastný WebGL shader, jeden súbor, bez knižnice a bez cudzej domény. Vnútorná ukážka na výber scény pre jednotlivé stránky.">
 
 <link rel="preload" href="/fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
@@ -48,7 +48,7 @@
 <main>
   <section class="wrap">
     <p class="kicker r">Vnútorná ukážka</p>
-    <h1 class="r d1">Tri scény, jeden súbor, <span class="zar">žiadna knižnica</span>.</h1>
+    <h1 class="r d1">Desať scén, jeden súbor, <span class="zar">žiadna knižnica</span>.</h1>
     <div class="rule"></div>
     <p class="lead r d2">Každé pozadie je fragment shader v <code>/style/zar.js</code>. Spolu majú 6 kB, nenačítavajú nič z cudzej domény a kreslia najviac 30-krát za sekundu. Scéna sa zastaví, keď odscrolluje z obrazu alebo keď prepnete kartu. Pri nastavení „obmedziť pohyb" sa vykreslí jeden snímok a slučka sa nespustí.</p>
     <p class="r d3 mini">Na bežnej stránke patrí jedna scéna, a to do úvodu. Táto stránka je výnimka, lebo pozadia sú tu obsahom.</p>
@@ -58,11 +58,65 @@
     <div class="ukazky">
 
       <article class="ukazka r">
-        <canvas class="zar-plocha" data-zar="stuhy" aria-hidden="true"></canvas>
+        <canvas class="zar-plocha" data-zar="sopka" aria-hidden="true"></canvas>
         <div class="popis">
-          <h2>Stuhy</h2>
-          <p>Tri pásy svetla rozvlnené šumom, každý inou rýchlosťou. Ostré jadro, mäkký rozptyl.</p>
-          <p class="kde">Domovská stránka · <code>data-zar="stuhy"</code></p>
+          <h2>Sopka</h2>
+          <p>Čierny digitálny masív a jeden svetelný tok, ktorý po ňom steká. Nie hora s lávou, ale silueta, cez ktorú ide energia. Myš tok vychýli, scroll ho zrýchli.</p>
+          <p class="kde">Úvod domovskej stránky · <code>data-zar="sopka"</code></p>
+        </div>
+      </article>
+
+      <article class="ukazka r">
+        <canvas class="zar-plocha" data-zar="horizont" aria-hidden="true"></canvas>
+        <div class="popis">
+          <h2>Horizont</h2>
+          <p>Tmavá pláň a za ňou veľké mäkké svetlo, ktoré vychádza. Najtichšia scéna zo sady, preto znesie nad sebou najviac textu. Myš posúva zdroj svetla.</p>
+          <p class="kde">Úvody dlhých stránok · <code>data-zar="horizont"</code></p>
+        </div>
+      </article>
+
+      <article class="ukazka r">
+        <canvas class="zar-plocha" data-zar="tok" aria-hidden="true"></canvas>
+        <div class="popis">
+          <h2>Tok častíc</h2>
+          <p>Pole svetelných bodov, ktoré tečie po smere zo šumu. Body sa nekreslia z pamäte, počítajú sa priamo v pixeli, preto to beží aj na mobile.</p>
+          <p class="kde">Asistent, produktové stránky · <code>data-zar="tok"</code></p>
+        </div>
+      </article>
+
+      <article class="ukazka r">
+        <canvas class="zar-plocha" data-zar="mriezka" aria-hidden="true"></canvas>
+        <div class="popis">
+          <h2>Sieť v perspektíve</h2>
+          <p>Mriežka, ktorá sa vlní ako krajina a uteká k horizontu. Scroll ňou letí dopredu.</p>
+          <p class="kde">Technické stránky, dokumentácia · <code>data-zar="mriezka"</code></p>
+        </div>
+      </article>
+
+      <article class="ukazka r">
+        <canvas class="zar-plocha" data-zar="pruhy" aria-hidden="true"></canvas>
+        <div class="popis">
+          <h2>Svetelné ťahy</h2>
+          <p>Rýchle šikmé ťahy svetla. Najdynamickejšia scéna, preto má úzky pás a zvyšok plochy necháva textu.</p>
+          <p class="kde">Krátke sekcie, výzvy k akcii · <code>data-zar="pruhy"</code></p>
+        </div>
+      </article>
+
+      <article class="ukazka r">
+        <canvas class="zar-plocha" data-zar="iskry" aria-hidden="true"></canvas>
+        <div class="popis">
+          <h2>Iskry</h2>
+          <p>Prevažne tmavá plocha, po ktorej stúpajú ojedinelé žeravé body. Najtmavšia zo sady.</p>
+          <p class="kde">Sekcie s hustým textom · <code>data-zar="iskry"</code></p>
+        </div>
+      </article>
+
+      <article class="ukazka r">
+        <canvas class="zar-plocha" data-zar="dym" aria-hidden="true"></canvas>
+        <div class="popis">
+          <h2>Dym</h2>
+          <p>Stuhy dymu presvietené zospodu. Dvojnásobne skrútený šum, nie objemový render, takže je to štylizované.</p>
+          <p class="kde">Úvody článkov · <code>data-zar="dym"</code></p>
         </div>
       </article>
 
@@ -70,8 +124,17 @@
         <canvas class="zar-plocha" data-zar="vlny" aria-hidden="true"></canvas>
         <div class="popis">
           <h2>Vlny</h2>
-          <p>Hladký prelievaný prechod. Nemá kresbu, takže nesúťaží s textom.</p>
+          <p>Hladký prelievaný prechod bez kresby, takže nesúťaží s textom.</p>
           <p class="kde">Bankové nástroje · <code>data-zar="vlny"</code></p>
+        </div>
+      </article>
+
+      <article class="ukazka r">
+        <canvas class="zar-plocha" data-zar="stuhy" aria-hidden="true"></canvas>
+        <div class="popis">
+          <h2>Stuhy</h2>
+          <p>Tri pásy svetla rozvlnené šumom, každý inou rýchlosťou.</p>
+          <p class="kde">Rozcestník · <code>data-zar="stuhy"</code></p>
         </div>
       </article>
 
@@ -79,8 +142,8 @@
         <canvas class="zar-plocha" data-zar="siet" aria-hidden="true"></canvas>
         <div class="popis">
           <h2>Sieť</h2>
-          <p>Mriežka, ktorá sa vlní ako plachta a v uzloch svieti. Technická, ale nie chladná.</p>
-          <p class="kde">Nástroje a dokumentácia · <code>data-zar="siet"</code></p>
+          <p>Jemná mriežka, ktorá sa vlní ako plachta a v uzloch svieti.</p>
+          <p class="kde">Nástroje · <code>data-zar="siet"</code></p>
         </div>
       </article>
 
@@ -92,7 +155,7 @@
     <div class="rule"></div>
     <p class="r d1">Do úvodu stránky sa vloží jedno plátno a načíta sa skript. Nič iné netreba, scéna sa vyberie názvom.</p>
     <pre class="r d2"><code>&lt;canvas class="zar-plocha" data-zar="vlny" aria-hidden="true"&gt;&lt;/canvas&gt;
-&lt;script src="/style/zar.js?v=4437336a" defer&gt;&lt;/script&gt;</code></pre>
+&lt;script src="/style/zar.js?v=d7368561" defer&gt;&lt;/script&gt;</code></pre>
     <p class="r d3">Neznámy názov spadne na <code>stuhy</code>, takže preklep nikdy nerozbije stránku. Keď WebGL nie je k dispozícii, plátno sa odstráni a ostane pod ním CSS prechod, ktorý vyzerá dobre sám.</p>
   </section>
 </main>
@@ -105,7 +168,7 @@
   </div>
 </footer>
 
-<script src="/style/prepinac.js?v=e91bd4b7" defer></script>
-<script src="/style/zar.js?v=4437336a" defer></script>
+<script src="/style/prepinac.js?v=2988c181" defer></script>
+<script src="/style/zar.js?v=d7368561" defer></script>
 </body>
 </html>
