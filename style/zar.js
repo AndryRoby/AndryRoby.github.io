@@ -57,10 +57,13 @@
     'const vec3 ZERAZ  = vec3(0.97, 0.40, 0.24);',
     'const vec3 JANTAR = vec3(1.00, 0.72, 0.40);',
     'const vec3 BIELA  = vec3(1.00, 0.94, 0.88);',
+    // Stlmenie k okrajom. Bolo priostre: nasobilo nulou presne tam, kde vacsina
+    // scen svieti, takze sest z osmich vyzeralo ako cierna plocha. Teraz je to
+    // len jemne pritlmenie, nie vypnutie.
     'float utlm(vec2 uv){',
-    '  float zhora = smoothstep(1.02, 0.02, uv.y);',
-    '  float okraj = smoothstep(0.0, 0.26, uv.x) * smoothstep(1.0, 0.74, uv.x);',
-    '  return zhora * mix(0.35, 1.0, okraj);',
+    '  float zvisle = mix(0.55, 1.0, smoothstep(1.18, -0.05, uv.y));',
+    '  float okraj  = smoothstep(0.0, 0.22, uv.x) * smoothstep(1.0, 0.78, uv.x);',
+    '  return zvisle * mix(0.62, 1.0, okraj);',
     '}',
     'vec4 zloz(vec3 farba, float sila, float mierka){',
     '  float a = clamp(sila * mierka, 0.0, 0.92) + rozptyl(gl_FragCoord.xy) * 0.012;',
@@ -133,7 +136,7 @@
     '  float zaves = smoothstep(0.30, 0.95, fbm(p * 1.1 + vec2(cas * 0.012, 0.0))) * 0.42;',
     '  vec3 f = mix(UHLIK, JANTAR, clamp(b * 1.1, 0.0, 1.0));',
     '  f = mix(f, BIELA, clamp(b * 0.7 - 0.45, 0.0, 1.0));',
-    '  gl_FragColor = zloz(f, (b * 0.85 + zaves * 0.5) * utlm(uv), 0.80);',
+    '  gl_FragColor = zloz(f, (b * 1.15 + zaves * 0.85) * utlm(uv), 0.92);',
     '}',
   ].join('\n');
 
@@ -149,7 +152,7 @@
     '  float jas = luc * (0.65 + 0.5 * fbm(p * 2.4 + vec2(cas * 0.010, -cas * 0.008)));',
     '  vec3 f = mix(UHLIK, ZERAZ, clamp(jas * 1.25, 0.0, 1.0));',
     '  f = mix(f, JANTAR, clamp(jas * 0.7 - 0.30, 0.0, 1.0));',
-    '  gl_FragColor = zloz(f, jas * utlm(uv), 0.52);',
+    '  gl_FragColor = zloz(f, jas * 1.30 * utlm(uv), 0.68);',
     '}',
   ].join('\n');
 
@@ -167,7 +170,7 @@
     '  vec3 f = mix(UHLIK, ZERAZ, clamp(jas * 1.3, 0.0, 1.0));',
     '  f = mix(f, JANTAR, clamp(jas * 0.9 - 0.40, 0.0, 1.0));',
     '  f = mix(f, BIELA,  clamp(jas * 0.7 - 0.80, 0.0, 1.0));',
-    '  gl_FragColor = zloz(f, jas * utlm(uv), 0.60);',
+    '  gl_FragColor = zloz(f, jas * 1.45 * utlm(uv), 0.82);',
     '}',
   ].join('\n');
 
@@ -186,7 +189,7 @@
     '  float jas = (ciara * 0.30 + uzol * 0.95) * zivot;',
     '  vec3 c = mix(UHLIK, ZERAZ, clamp(jas * 1.4, 0.0, 1.0));',
     '  c = mix(c, JANTAR, clamp(uzol * zivot * 1.2 - 0.25, 0.0, 1.0));',
-    '  gl_FragColor = zloz(c, jas * utlm(uv), 0.78);',
+    '  gl_FragColor = zloz(c, jas * 1.30 * utlm(uv), 0.88);',
     '}',
   ].join('\n');
 
@@ -202,7 +205,7 @@
     '  jas += pow(0.12 / (d + 0.12), 2.2) * 0.35;',
     '  vec3 f = mix(UHLIK, ZERAZ, clamp(jas * 1.35, 0.0, 1.0));',
     '  f = mix(f, JANTAR, clamp(jas * 0.8 - 0.35, 0.0, 1.0));',
-    '  gl_FragColor = zloz(f, jas * utlm(uv), 0.62);',
+    '  gl_FragColor = zloz(f, jas * 1.35 * utlm(uv), 0.80);',
     '}',
   ].join('\n');
 
@@ -217,7 +220,7 @@
     '  float jas = smoothstep(0.36, 0.92, b) * smoothstep(0.02, 0.55, p.y) * smoothstep(1.2, 0.6, p.y);',
     '  vec3 f = mix(UHLIK, ZERAZ, clamp(jas * 1.1, 0.0, 1.0));',
     '  f = mix(f, JANTAR, clamp(jas * 0.6 - 0.35, 0.0, 1.0));',
-    '  gl_FragColor = zloz(f, jas * utlm(uv), 0.55);',
+    '  gl_FragColor = zloz(f, jas * 1.60 * utlm(uv), 0.78);',
     '}',
   ].join('\n');
 
@@ -242,7 +245,7 @@
     '  vec3 f = mix(UHLIK, ZERAZ, clamp(jas * 1.5, 0.0, 1.0));',
     '  f = mix(f, JANTAR, clamp(i * 1.1 - 0.20, 0.0, 1.0));',
     '  f = mix(f, BIELA,  clamp(i * 0.9 - 0.60, 0.0, 1.0));',
-    '  gl_FragColor = zloz(f, jas * utlm(uv), 0.70);',
+    '  gl_FragColor = zloz(f, jas * 1.35 * utlm(uv), 0.86);',
     '}',
   ].join('\n');
 
@@ -254,8 +257,12 @@
   function postavScenu(plocha) {
     var gl = null;
     try {
-      gl = plocha.getContext('webgl2', { alpha: true, antialias: false, depth: false, stencil: false, powerPreference: 'low-power' })
-        || plocha.getContext('webgl', { alpha: true, antialias: false, depth: false, stencil: false });
+      // preserveDrawingBuffer je tu nutnosť, nie prepych. Bez neho prehliadač
+      // po zložení snímku plátno vymaže, takže scéna, ktorá práve nekreslí
+      // (odscrollovaná, skrytá karta), zčernie. Cena je o kúsok pomalšie
+      // skladanie, zisk je, že posledný snímok ostane visieť.
+      var nast = { alpha: true, antialias: false, depth: false, stencil: false, preserveDrawingBuffer: true, powerPreference: 'low-power' };
+      gl = plocha.getContext('webgl2', nast) || plocha.getContext('webgl', nast);
     } catch (e) { gl = null; }
     if (!gl) { plocha.remove(); return null; }
 
