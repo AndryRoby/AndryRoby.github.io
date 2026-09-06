@@ -314,21 +314,6 @@
     });
   }, { rootMargin: '0px 0px -12% 0px', threshold: 0.05 });
   Array.prototype.forEach.call(document.querySelectorAll('.hero, section'), function (s) { io.observe(s); });
-
-  var rail = document.querySelector('.rail');
-  if (rail) {
-    var links = Array.prototype.slice.call(rail.querySelectorAll('a'));
-    var targets = links.map(function (a) { return document.querySelector(a.getAttribute('href')); });
-    var railIo = new IntersectionObserver(function (entries) {
-      entries.forEach(function (en) {
-        var k = targets.indexOf(en.target);
-        if (k < 0 || !en.isIntersecting) return;
-        links.forEach(function (a, j) { a.setAttribute('aria-current', j === k ? 'true' : 'false'); });
-      });
-      rail.classList.add('on');
-    }, { rootMargin: '-45% 0px -45% 0px' });
-    targets.forEach(function (t) { if (t) railIo.observe(t); });
-  }
 })();
 </script>
 </body>
