@@ -585,7 +585,10 @@ body.noc.posunute header{background:rgba(10,9,8,.72);border-bottom-color:var(--l
    sa hlavička zalamuje a pevné číslo by nadpis prekrylo. 66 px je len záloha
    pre prípad, že skript nebeží. */
 :root{--hlavicka:66px}
-body.noc main>:first-child{padding-top:var(--hlavicka)}
+/* Rezerva patrí na <main>, nie na jeho prvé dieťa. Keď sme ju dávali dieťaťu,
+   NAHRADILA jeho vlastné odsadenie a nadpis sa zlepil s hlavičkou. Takto sa
+   pripočíta a vlastné odsadenie sekcie ostane. */
+body.noc main{padding-top:var(--hlavicka)}
 
 /* Hero cez celú výšku, obsah na stred. Vzor to má takto a je to jediný dôvod,
    prečo tá stránka pôsobí priestranne: nič iné tam nad ohybom nie je. */
@@ -708,3 +711,24 @@ body.noc .lead{font-weight:400}
 body.noc b,body.noc strong{font-weight:600;color:var(--ink)}
 /* Metadáta a poznámky pod čiarou nesmú konkurovať textu. */
 body.noc .fakty,body.noc .mini,body.noc .zdroje,body.noc .byline{font-weight:400}
+
+/* Položka prepínača, ktorá vedie len na domovskú stránku daného jazyka.
+   Vyzerá inak zámerne: sľubovať preklad, ktorý neexistuje, je horšie než
+   povedať rovno, kam sa klikom dostanem. */
+.langsel .len-domov{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.langsel .len-domov span{font-size:11px;letter-spacing:.04em;color:var(--muted);opacity:.85}
+
+/* Plynulejší príchod sekcií. Predtým to bolo krátke trhnutie (.45 s, posun 8 px),
+   čo pri veľkých blokoch pôsobí ako preblik. Teraz dlhší a mäkší nábeh s malou
+   zmenou mierky: oko to prečíta ako "prišlo to", nie ako "skočilo to".
+   Východiskový stav je stále viditeľný, takže bez skriptu sa nič neskryje. */
+.r{animation:prichod .72s var(--spring) both}
+@keyframes prichod{from{opacity:.001;transform:translate3d(0,14px,0) scale(.994)}to{opacity:1;transform:none}}
+.d1{animation-delay:.06s}.d2{animation-delay:.12s}.d3{animation-delay:.18s}
+.d4{animation-delay:.24s}.d5{animation-delay:.30s}.d6{animation-delay:.36s}
+/* Kotvy nesmú skončiť pod pevnou hlavičkou. */
+html{scroll-padding-top:calc(var(--hlavicka) + 16px)}
+@media (prefers-reduced-motion:reduce){
+  .r{animation:none}
+  html{scroll-behavior:auto}
+}
