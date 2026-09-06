@@ -28,9 +28,25 @@
     { kod: 'de', href: 'https://arling.sk/de/' },
   ];
 
+  /* Stránka, ktorá si prepínač robí sama (Asistent, bankové nástroje a ďalšie
+     s vlastným i18n.js), už jeden má. Pridať druhý vedľa neho je horšie než
+     nepridať žiadny: návštevník vidí dve rôzne ovládania toho istého. */
+  function uzMaVlastny(bar) {
+    if (bar.querySelector('.langsel')) return true;
+    if (bar.querySelector('[data-lang-switch], .lang-switch, .langs, .i18n-switch')) return true;
+    // vlastný prepínač býva skupina odkazov alebo tlačidiel s kódmi jazykov
+    var kody = { sk: 1, cs: 1, en: 1, de: 1, hu: 1, pl: 1 };
+    var zhody = 0;
+    Array.prototype.forEach.call(bar.querySelectorAll('a, button'), function (el) {
+      var t = (el.textContent || '').trim().toLowerCase();
+      if (t.length === 2 && kody[t]) zhody++;
+    });
+    return zhody >= 2;
+  }
+
   function postav() {
     var bar = document.querySelector('.bar');
-    if (!bar || bar.querySelector('.langsel')) return;
+    if (!bar || uzMaVlastny(bar)) return;
 
     var tu = (document.documentElement.getAttribute('lang') || 'sk').slice(0, 2).toLowerCase();
 
