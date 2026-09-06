@@ -90,8 +90,12 @@
   .fibres i{position:absolute;width:1px;background:rgba(255,253,248,.55);animation:drift 9s linear infinite}
   @keyframes drift{0%{opacity:0;transform:translateY(6px)}20%{opacity:.85}100%{opacity:0;transform:translateY(-14px)}}
 
-  .r{opacity:0;transform:translateY(10px);filter:blur(4px);transition:opacity var(--dur) var(--ease),transform var(--dur) var(--ease),filter var(--dur) var(--ease)}
+  .r{opacity:0;transform:translateY(10px);filter:blur(4px);animation:poistka-zobraz 0s linear 3s forwards;transition:opacity var(--dur) var(--ease),transform var(--dur) var(--ease),filter var(--dur) var(--ease)}
   .in .r,.r.in{opacity:1;transform:none;filter:none}
+  /* Poistka: keby JavaScript zlyhal alebo bol vypnuty, obsah sa aj tak ukaze.
+     Bez tohto bola stranka bez skriptov uplne prazdna, co je horsie nez ziadna animacia. */
+  @keyframes poistka-zobraz{to{opacity:1;transform:none;filter:none}}
+  @media (scripting: none){ .r,.w{opacity:1 !important;transform:none !important;filter:none !important} }
   .d1{transition-delay:.06s}.d2{transition-delay:.14s}.d3{transition-delay:.22s}.d4{transition-delay:.3s}.d5{transition-delay:.38s}
 
 
@@ -255,7 +259,14 @@
     .hero{grid-template-columns:1fr}
     .scene{max-width:560px}
   }
-  @media (max-width:720px){ .bar nav{display:none} }
+  @media (max-width:720px){
+    /* Navigaciu neskryvame, len ju zalomime pod logo. Skryta navigacia bez nahrady
+       znamena, ze sa na mobile neda dostat nikam inam. */
+    .bar{flex-wrap:wrap;height:auto;padding:10px 0 4px;row-gap:6px}
+    .bar nav{order:3;width:100%;gap:18px;font-size:14px;overflow-x:auto;padding-bottom:6px;
+      scrollbar-width:none}
+    .bar nav::-webkit-scrollbar{display:none}
+  }
   @media (min-width:1700px){
     .scene{box-shadow:0 16px 44px rgba(27,26,23,.10)}
     .hero{grid-template-columns:6.5fr 5.5fr}

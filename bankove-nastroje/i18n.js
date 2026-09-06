@@ -51,6 +51,19 @@ export const DICT = {
   'facts.tests.label': { sk: 'testov', en: 'tests', de: 'Tests' },
   'facts.privacy': { sk: 'beží v prehliadači, nič sa neodosiela', en: 'runs in your browser, nothing is uploaded', de: 'läuft im Browser, nichts wird hochgeladen' },
 
+  // ── snímky nástrojov v úvode a v páse, bočný register (Paper v2) ─────
+  'shot.alt': {
+    sk: 'Snímka nástroja camt.053 do Excelu: výpis z banky prevedený na tabuľku so súhrnom a kontrolou zostatku',
+    en: 'Screenshot of camt.053 to Excel: a bank statement turned into a table with a summary and a balance check',
+    de: 'Screenshot von camt.053 nach Excel: ein Kontoauszug als Tabelle mit Zusammenfassung und Saldoprüfung',
+  },
+  'banner.alt': {
+    sk: 'Snímka nástroja Párovač platieb: spárované faktúry, preplatky, platby po splatnosti a nespárované platby',
+    en: 'Screenshot of Payment matcher: matched invoices, overpayments, overdue payments and unmatched payments',
+    de: 'Screenshot des Zahlungsabgleichs: zugeordnete Rechnungen, Überzahlungen, überfällige Zahlungen und nicht zugeordnete Zahlungen',
+  },
+  'rail.hero': { sk: 'Úvod', en: 'Start', de: 'Anfang' },
+
   // ── section 01: tools index ─────────────────────────────────────────
   's1.h2': { sk: 'Štyri nástroje, jeden za druhým.', en: 'Four tools, one after another.', de: 'Vier Tools, eines nach dem anderen.' },
   's1.sub': {
@@ -565,6 +578,7 @@ export function applyI18n(lang) {
   document.querySelectorAll('[data-i18n-html]').forEach((el) => { el.innerHTML = t(el.getAttribute('data-i18n-html'), l); });
   document.querySelectorAll('[data-i18n-placeholder]').forEach((el) => { el.setAttribute('placeholder', t(el.getAttribute('data-i18n-placeholder'), l)); });
   document.querySelectorAll('[data-i18n-aria-label]').forEach((el) => { el.setAttribute('aria-label', t(el.getAttribute('data-i18n-aria-label'), l)); });
+  document.querySelectorAll('[data-i18n-alt]').forEach((el) => { el.setAttribute('alt', t(el.getAttribute('data-i18n-alt'), l)); });
   document.querySelectorAll('[data-i18n-title]').forEach((el) => { el.setAttribute('title', t(el.getAttribute('data-i18n-title'), l)); });
 
   document.title = t('meta.title', l);

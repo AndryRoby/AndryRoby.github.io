@@ -35,6 +35,21 @@ export const DICT = {
     en: 'Bookmark this page: the link carries your account id and we do not show it anywhere else.',
   },
 
+  // hero artefact: the same framed screenshot the rest of the Asistent pages carry,
+  // so the wording stays identical with ../i18n.js.
+  'hero.shot.alt': {
+    sk: 'Snímka: v ukážkovom obchode Dobrá domácnosť je otvorený chat ARLing Asistenta. Zákazník sa pýta, ktorý hrniec je vhodný na indukciu, a asistent odpovedá dvoma hrncami z feedu, s kartami výrobkov a cenami 34.90 EUR a 44.90 EUR. Za oknom chatu je zoznam tých istých výrobkov v obchode.',
+    en: 'Screenshot: the ARLing Asistent chat is open on the Slovak demo shop Dobrá domácnosť. A shopper asks which pot suits an induction hob and the assistant answers with two pots from the feed, with product cards and the prices 34.90 EUR and 44.90 EUR. The same products are listed on the shop page behind the chat window.',
+  },
+  'hero.shot.caption': {
+    sk: 'Otázka zákazníka a odpoveď z vášho feedu, s odkazmi na produkty.',
+    en: 'A shopper question and an answer from your own feed, with product links.',
+  },
+  'hero.shot.source': {
+    sk: 'Skutočná snímka z <a href="/asistent/ukazka/" data-umami-event="ukazka_click" data-umami-event-place="hero-caption">ukážkového obchodu</a>',
+    en: 'Real screenshot from the <a href="/asistent/ukazka/" data-umami-event="ukazka_click" data-umami-event-place="hero-caption">Slovak demo shop</a>',
+  },
+
   // states
   'state.loading': { sk: 'Načítavam údaje účtu.', en: 'Loading account data.' },
   'state.missing': {
@@ -101,7 +116,7 @@ export const DICT = {
   's3.th.conversations': { sk: 'Rozhovory / mesiac', en: 'Conversations / month' },
   'price.perMonth': { sk: '/ mesiac', en: '/ month' },
   'limit.starter': { sk: 'do 1 000', en: 'up to 1,000' },
-  'limit.pro': { sk: 'do 5 000', en: 'up to 5,000' },
+  'limit.pro': { sk: 'do 3 000', en: 'up to 3,000' },
   'cta.starter': { sk: 'Prejsť na Starter', en: 'Upgrade to Starter' },
   'cta.pro': { sk: 'Prejsť na Pro', en: 'Upgrade to Pro' },
   'plan.current': { sk: 'Váš aktuálny plán', en: 'Your current plan' },
@@ -242,6 +257,7 @@ export function applyI18n(lang) {
   document.documentElement.setAttribute('lang', l);
   document.querySelectorAll('[data-i18n]').forEach((el) => { el.textContent = t(el.getAttribute('data-i18n'), l); });
   document.querySelectorAll('[data-i18n-html]').forEach((el) => { el.innerHTML = t(el.getAttribute('data-i18n-html'), l); });
+  document.querySelectorAll('[data-i18n-alt]').forEach((el) => { el.setAttribute('alt', t(el.getAttribute('data-i18n-alt'), l)); });
   document.querySelectorAll('[data-i18n-aria-label]').forEach((el) => { el.setAttribute('aria-label', t(el.getAttribute('data-i18n-aria-label'), l)); });
   document.title = t('meta.title', l);
   setMeta('meta[name="description"]', t('meta.description', l));

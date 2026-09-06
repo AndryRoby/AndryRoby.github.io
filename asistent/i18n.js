@@ -47,9 +47,11 @@ export const DICT = {
   'lang.de.aria': { sk: 'Nemčina (samostatná stránka)', en: 'German (separate page)' },
 
   // ── hero ─────────────────────────────────────────────────────────────
+  // Nadpis úvodu nesie vlastné lomenie riadkov (<span class="l">), preto ho stránka číta
+  // cez data-i18n-html. Mení sa len zápis, slová sú rovnaké ako predtým.
   'hero.h1': {
-    sk: 'Predajný asistent pre váš e-shop, nastavený za 10 minút z feedu.',
-    en: 'A sales assistant for your e-shop, set up from your feed in 10 minutes.',
+    sk: '<span class="l">Predajný asistent</span> <span class="l">pre váš e-shop,</span> <span class="l">nastavený za 10</span> <span class="l">minút z feedu.</span>',
+    en: '<span class="l">A sales assistant</span> <span class="l">for your e-shop,</span> <span class="l">set up from your</span> <span class="l">feed in 10 minutes.</span>',
   },
   'hero.lead': {
     sk: 'Vložíte URL produktového feedu a e-mail. Asistent odpovedá zákazníkom z vašich skutočných produktov, v ich jazyku, a vždy pridá odkazy na konkrétny tovar. Bez ukladania rozhovorov, bez cookies.',
@@ -57,6 +59,21 @@ export const DICT = {
   },
   'cta.startFree': { sk: 'Začať zadarmo', en: 'Start for free' },
   'hero.source': { sk: 'Zdrojový kód na GitHube', en: 'Source code on GitHub' },
+  // Snímka v úvode: alt aj popiska pod ňou sa musia prepnúť spolu so stránkou, inak by
+  // anglický návštevník čítal slovenský popis obrázka. Text popisuje presne to, čo na
+  // snímke je: ukážkový obchod Dobrá domácnosť s otvoreným chatom.
+  'hero.shot.alt': {
+    sk: 'Snímka: v ukážkovom obchode Dobrá domácnosť je otvorený chat ARLing Asistenta. Zákazník sa pýta, ktorý hrniec je vhodný na indukciu, a asistent odpovedá dvoma hrncami z feedu, s kartami výrobkov a cenami 34.90 EUR a 44.90 EUR. Za oknom chatu je zoznam tých istých výrobkov v obchode.',
+    en: 'Screenshot: the ARLing Asistent chat is open on the Slovak demo shop Dobrá domácnosť. A shopper asks which pot suits an induction hob and the assistant answers with two pots from the feed, with product cards and the prices 34.90 EUR and 44.90 EUR. The same products are listed on the shop page behind the chat window.',
+  },
+  'hero.shot.caption': {
+    sk: 'Otázka zákazníka a odpoveď z vášho feedu, s odkazmi na produkty.',
+    en: 'A shopper question and an answer from your own feed, with product links.',
+  },
+  'hero.shot.source': {
+    sk: 'Skutočná snímka z <a href="/asistent/ukazka/" data-umami-event="ukazka_click" data-umami-event-place="hero-caption">ukážkového obchodu</a>',
+    en: 'Real screenshot from the <a href="/asistent/ukazka/" data-umami-event="ukazka_click" data-umami-event-place="hero-caption">Slovak demo shop</a>',
+  },
   'hero.fact.formats': { sk: '<b>5</b> formátov feedu', en: '<b>5</b> feed formats' },
   'hero.fact.stored': { sk: '<b>0</b> rozhovorov sa ukladá', en: '<b>0</b> conversations stored' },
   'hero.fact.free': { sk: '<b>100</b> rozhovorov/mesiac zadarmo', en: '<b>100</b> conversations/month free' },
@@ -98,10 +115,10 @@ export const DICT = {
   's2.th.conversations': { sk: 'Rozhovory / mesiac', en: 'Conversations / month' },
   'pricing.limit.free': { sk: 'do 100', en: 'up to 100' },
   'pricing.limit.starter': { sk: 'do 1 000', en: 'up to 1,000' },
-  'pricing.limit.growth': { sk: 'do 5 000', en: 'up to 5,000' },
+  'pricing.limit.growth': { sk: 'do 3 000', en: 'up to 3,000' },
   's2.note': {
-    sk: 'Do 100 rozhovorov mesačne zadarmo, navždy, bez platobnej karty. Nad tento limit prejde e-shop na plán Starter (19 € mesačne, do 1 000 rozhovorov) alebo Pro (39 € mesačne, do 5 000) zo stránky svojho účtu, ktorej odkaz dostane hneď po vytvorení účtu. Platba kartou cez Stripe, zrušiť kedykoľvek. Ročné predplatné zatiaľ nie je v ponuke.',
-    en: 'Free up to 100 conversations a month, forever, no payment card. Above that, the shop upgrades to Starter (19 EUR a month, up to 1,000 conversations) or Pro (39 EUR a month, up to 5,000) from its account page, linked right after the account is created. Card payment through Stripe, cancel any time. No annual plan yet.',
+    sk: 'Do 100 rozhovorov mesačne zadarmo, navždy, bez platobnej karty. Nad tento limit prejde e-shop na plán Starter (19 € mesačne, do 1 000 rozhovorov) alebo Pro (39 € mesačne, do 3 000) zo stránky svojho účtu, ktorej odkaz dostane hneď po vytvorení účtu. Platba kartou cez Stripe, zrušiť kedykoľvek. Ročné predplatné zatiaľ nie je v ponuke.',
+    en: 'Free up to 100 conversations a month, forever, no payment card. Above that, the shop upgrades to Starter (19 EUR a month, up to 1,000 conversations) or Pro (39 EUR a month, up to 3,000) from its account page, linked right after the account is created. Card payment through Stripe, cancel any time. No annual plan yet.',
   },
   's2.objections.label': { sk: 'Predtým, než začnete', en: 'Before you start' },
 
@@ -217,8 +234,8 @@ export const DICT = {
   },
   'faq.billing.q': { sk: 'Ako funguje platba a fakturácia?', en: 'How does payment and billing work?' },
   'faq.billing.a': {
-    sk: 'Do 100 rozhovorov mesačne je používanie úplne zadarmo, bez karty. Nad tento limit prejdete na plán Starter (19 € mesačne, do 1 000 rozhovorov) alebo Pro (39 € mesačne, do 5 000 rozhovorov) zo stránky svojho účtu (arling.sk/asistent/tenant/?t=id účtu), ktorej odkaz dostanete hneď po vytvorení účtu. Platíte kartou cez Stripe, potvrdenie a faktúru pošle Stripe e-mailom, zrušiť sa dá kedykoľvek.',
-    en: 'Up to 100 conversations a month, use is completely free, no card. Above that you upgrade to Starter (19 EUR a month, up to 1,000 conversations) or Pro (39 EUR a month, up to 5,000) from your account page (arling.sk/asistent/tenant/?t=your account id), linked right after the account is created. You pay by card through Stripe, Stripe e-mails the receipt and invoice, and you can cancel any time.',
+    sk: 'Do 100 rozhovorov mesačne je používanie úplne zadarmo, bez karty. Nad tento limit prejdete na plán Starter (19 € mesačne, do 1 000 rozhovorov) alebo Pro (39 € mesačne, do 3 000 rozhovorov) zo stránky svojho účtu (arling.sk/asistent/tenant/?t=id účtu), ktorej odkaz dostanete hneď po vytvorení účtu. Platíte kartou cez Stripe, potvrdenie a faktúru pošle Stripe e-mailom, zrušiť sa dá kedykoľvek.',
+    en: 'Up to 100 conversations a month, use is completely free, no card. Above that you upgrade to Starter (19 EUR a month, up to 1,000 conversations) or Pro (39 EUR a month, up to 3,000) from your account page (arling.sk/asistent/tenant/?t=your account id), linked right after the account is created. You pay by card through Stripe, Stripe e-mails the receipt and invoice, and you can cancel any time.',
   },
 
   'subscribe.ask': { sk: 'Chcete vedieť, keď WooCommerce plugin prejde schválením na wordpress.org alebo pribudne Shopify aplikácia?', en: 'Want to know when the WooCommerce plugin is approved on wordpress.org, or when the Shopify app goes live?' },
@@ -441,6 +458,7 @@ export function applyI18n(lang) {
 
   document.querySelectorAll('[data-i18n]').forEach((el) => { el.textContent = t(el.getAttribute('data-i18n'), l); });
   document.querySelectorAll('[data-i18n-html]').forEach((el) => { el.innerHTML = t(el.getAttribute('data-i18n-html'), l); });
+  document.querySelectorAll('[data-i18n-alt]').forEach((el) => { el.setAttribute('alt', t(el.getAttribute('data-i18n-alt'), l)); });
   document.querySelectorAll('[data-i18n-placeholder]').forEach((el) => { el.setAttribute('placeholder', t(el.getAttribute('data-i18n-placeholder'), l)); });
   document.querySelectorAll('[data-i18n-aria-label]').forEach((el) => { el.setAttribute('aria-label', t(el.getAttribute('data-i18n-aria-label'), l)); });
   document.querySelectorAll('[data-i18n-title]').forEach((el) => { el.setAttribute('title', t(el.getAttribute('data-i18n-title'), l)); });
