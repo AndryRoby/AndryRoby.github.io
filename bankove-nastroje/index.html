@@ -638,14 +638,6 @@
   </section>
 </main>
 
-<nav class="rail" aria-label="Kde ste">
-  <a href="#hero"><i></i><span data-i18n="rail.hero">Úvod</span></a>
-  <a href="#tools"><i></i><span data-i18n="nav.tools">Nástroje</span></a>
-  <a href="#pro"><i></i><span data-i18n="nav.pro">Cena</span></a>
-  <a href="#licence"><i></i><span data-i18n="nav.licence">Licencia</span></a>
-  <a href="#faq"><i></i><span data-i18n="nav.faq">Otázky</span></a>
-</nav>
-
 <div class="sticky-cta" id="sticky-cta" hidden>
   <div class="sticky-cta-inner">
     <span class="sticky-cta-text" data-i18n="sticky.text">Pro pre všetky štyri nástroje: 9&nbsp;€/mesiac alebo 79&nbsp;€/rok.</span>
@@ -876,22 +868,6 @@
     if (window.ResizeObserver) { new ResizeObserver(setHead).observe(head); }
     else { window.addEventListener('resize', setHead); }
     document.addEventListener('arling:langchange', setHead);
-  }
-
-  // bočný register sleduje, ktorá sekcia je v strede obrazovky
-  var rail = document.querySelector('.rail');
-  if (rail) {
-    var links = Array.prototype.slice.call(rail.querySelectorAll('a'));
-    var targets = links.map(function (a) { return document.querySelector(a.getAttribute('href')); });
-    var railIo = new IntersectionObserver(function (entries) {
-      entries.forEach(function (en) {
-        var i = targets.indexOf(en.target);
-        if (i < 0 || !en.isIntersecting) return;
-        links.forEach(function (a, j) { a.setAttribute('aria-current', j === i ? 'true' : 'false'); });
-      });
-      rail.classList.add('on');
-    }, { rootMargin: '-45% 0px -45% 0px' });
-    targets.forEach(function (t) { if (t) railIo.observe(t); });
   }
 })();
 </script>

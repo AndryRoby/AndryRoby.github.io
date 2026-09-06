@@ -180,14 +180,10 @@
   .doc .tool-cta:hover{background:var(--accent-dark);color:#fff}
 
   /* bocny register drzi sa laveho okraja clanku */
-  .rail{left:max(20px,calc(50% - 620px));width:145px;gap:9px}
-  .rail a{min-width:0}
-  .rail i{flex:none}
-  .rail span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   /* Stlpec clanku je uzsi nez obsah hubu (880 px, nie 1340), tak sa register zmesti
      uz od 1280 px: cely stoji v lavom okraji a od textu ho deli stalych 35 px.
      Pod tou hranicou by uz do textu zasahoval, preto ho paper.css skryje. */
-  @media (min-width:1280px){.rail{display:flex}}
+  @media (min-width:1280px){}
 
   /* paticka je tmavy pas na konci */
   footer.band{border-top:none;color:#a8a294}
@@ -283,15 +279,6 @@
   </section>
 </main>
 <footer class="band"><div class="wrap">ARLing s. r. o. · <a href="https://arling.sk/">arling.sk</a> · <a data-umami-event="open-camt053-to-excel-de-footer" href="https://arling.sk/camt053-to-excel/de/">camt.053 in Excel</a> · <a href="mailto:andrej@arling.sk">andrej@arling.sk</a></div></footer>
-<nav class="rail" aria-label="Inhalt des Artikels">
-  <a href="#s2"><i></i><span>1. Was ist camt.053?</span></a>
-  <a href="#s3"><i></i><span>2. Was in der Datei steht</span></a>
-  <a href="#s4"><i></i><span>3. Warum der CSV-Export der Bank oft nicht reicht</span></a>
-  <a href="#s5"><i></i><span>4. Schritt für Schritt im Browser</span></a>
-  <a href="#s6"><i></i><span>5. Was Sie vor dem Import in DATEV, Lexware oder sevDesk prüfen sollten</span></a>
-  <a href="#s7"><i></i><span>Häufig gestellte Fragen</span></a>
-  <a href="#s8"><i></i><span>Quellen</span></a>
-</nav>
 <script>
 (function () {
   var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -328,22 +315,6 @@
       });
     });
     requestAnimationFrame(function () { h1.classList.add('in'); });
-  }
-
-  // bocny register sleduje, ktora cast clanku je v strede obrazovky
-  var rail = document.querySelector('.rail');
-  if (rail) {
-    var links = Array.prototype.slice.call(rail.querySelectorAll('a'));
-    var targets = links.map(function (a) { return document.querySelector(a.getAttribute('href')); });
-    var railIo = new IntersectionObserver(function (entries) {
-      entries.forEach(function (en) {
-        var i = targets.indexOf(en.target);
-        if (i < 0 || !en.isIntersecting) return;
-        links.forEach(function (a, j) { a.setAttribute('aria-current', j === i ? 'true' : 'false'); });
-      });
-      rail.classList.add('on');
-    }, { rootMargin: '-45% 0px -45% 0px' });
-    targets.forEach(function (t) { if (t) railIo.observe(t); });
   }
 })();
 </script>
