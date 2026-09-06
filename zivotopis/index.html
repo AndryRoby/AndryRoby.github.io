@@ -340,6 +340,67 @@
   .cv--kompakt .cv-contact{font-size:8.8pt;gap:1pt 10pt}
 
   /* ══ tlač: na papier ide len životopis ══ */
+  /* Životopis je sadzba na A4 v typografických bodoch, nie webová stránka.
+     paper.css dáva v nočnom režime h1 až 88 px a h2 až 48 px a špecificitou
+     prebíja .cv-name aj .cv-h2. Nadpisy potom v PDF zaberali pol strany.
+     Tu sú tie isté hodnoty ako vyššie, len so selektorom, ktorý vyhrá. */
+  body.noc .cvdoc { font-size:10.4pt; line-height:1.42 }
+  body.noc .cvdoc h1,
+  body.noc .cvdoc h2,
+  body.noc .cvdoc h3 { margin:0; font-weight:600; letter-spacing:normal }
+  body.noc .cvdoc .cv-name { font-size:22pt; line-height:1.04;
+                             letter-spacing:-.015em; font-weight:700 }
+  body.noc .cvdoc .cv-h2 { font-size:9.4pt; line-height:1.42; letter-spacing:.12em;
+                           font-weight:600; margin:0 0 5pt }
+  body.noc .cvdoc .cv-what h3 { font-size:11.4pt; line-height:1.25; font-weight:600 }
+  body.noc .cvdoc .cv-tag { font-size:10.5pt }
+  body.noc .cvdoc .cv-contact { font-size:9.4pt }
+  body.noc .cvdoc .cv-when { font-size:9pt }
+  body.noc .cvdoc .cv-org { font-size:10pt }
+  body.noc .cvdoc .cv-tags li { font-size:9.4pt }
+  body.noc .cvdoc .cv-defs { font-size:10pt }
+  body.noc .cvdoc .cv-defs dt { font-size:9.4pt }
+  body.noc .cvdoc .cv-empty { font-size:10pt }
+  body.noc .cvdoc p { margin:0 }
+  body.noc .cvdoc .cv-tag { margin:3pt 0 0 }
+  body.noc .cvdoc .cv-org { margin:1.5pt 0 0 }
+  /* Kompakt má menšie meno, to musí prebiť aj tento blok. */
+  body.noc .cvdoc.cv--kompakt .cv-name { font-size:19pt }
+
+  /* Životopis je biely dokument na papier a nesmie zdediť nočnú paletu webu.
+     paper.css nastavuje body.noc h1/h2/h3 na var(--ink) a body.noc p na
+     var(--body), čo je v noci takmer biela a svetlá sivá, a špecificitou
+     prebíja pravidlá .cvdoc vyššie. V PDF potom nebolo vidieť text.
+     Tu sú tie isté farby zopakované so selektorom, ktorý vyhrá. */
+  body.noc .cvdoc,
+  body.noc .cvdoc p,
+  body.noc .cvdoc li,
+  body.noc .cvdoc dd,
+  body.noc .cvdoc span,
+  body.noc .cvdoc b,
+  body.noc .cvdoc strong { color:#22211e }
+  body.noc .cvdoc h1,
+  body.noc .cvdoc h2,
+  body.noc .cvdoc h3 { color:#141413 }
+  body.noc .cvdoc .cv-h2 { color:#b23a1d }
+  body.noc .cvdoc .cv-tag { color:#5e5d59 }
+  body.noc .cvdoc .cv-contact { color:#3d3d3a }
+  body.noc .cvdoc .cv-contact b { color:#7a766c }
+  body.noc .cvdoc .cv-when { color:#6b675e }
+  body.noc .cvdoc .cv-org { color:#4a4740 }
+  body.noc .cvdoc .cv-tags li i { color:#7a766c }
+  body.noc .cvdoc .cv-defs dt { color:#6b675e }
+  body.noc .cvdoc .cv-empty { color:#a39b8c }
+
+  /* Pri tlači to musí platiť aj vtedy, keby prehliadač nočný režim inak
+     vyhodnotil: papier je vždy biely, text vždy tmavý. */
+  @media print{
+    .cvdoc, .cvdoc p, .cvdoc li, .cvdoc dd, .cvdoc span,
+    .cvdoc b, .cvdoc strong { color:#22211e }
+    .cvdoc h1, .cvdoc h2, .cvdoc h3 { color:#141413 }
+    .cvdoc .cv-h2 { color:#b23a1d }
+  }
+
   @media print{
     @page{size:A4;margin:14mm}
     html,body{background:#fff !important}
