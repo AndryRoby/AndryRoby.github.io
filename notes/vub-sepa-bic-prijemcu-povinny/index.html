@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="sk">
+<head>
+<script src="/style/vzhlad.js?v=93c2659f"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://homelab.tailbf8f27.ts.net 'sha256-TwjhiMFK2OLuSPwfDbtSCJ4h8JPIqw2/1J3P9/sldkQ=' 'sha256-2fsZTyivWuPX5O4Aq2laAns1FI2K+8dldo3R6n8WcB0=' 'sha256-G0xrT46+xEj2EU4iEwkXi+gpgvEmU15ERrWnimDQmDY=' 'sha256-0PxmtJhfdRRqQ1O7CvviHNLgLWcXX9lDBjeGvirUfHk='; connect-src 'self' https://homelab.tailbf8f27.ts.net; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0a0908">
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../../favicon.ico" sizes="48x48">
+<link rel="apple-touch-icon" href="../../icon-180.png">
+<title>VÚB označuje BIC príjemcu za povinný, Tatra banka nie: prečo to nie je jedno</title>
+<meta name="description" content="VÚB označuje BIC príjemcu v SEPA platbe za povinný, Tatra banka ho vie odvodiť z IBAN, ČSOB ho urobila nepovinným. Čo to znamená pre váš export.">
+<link rel="canonical" href="https://arling.sk/notes/vub-sepa-bic-prijemcu-povinny/">
+<meta property="og:type" content="article">
+<meta property="og:title" content="VÚB označuje BIC príjemcu za povinný, Tatra banka nie: prečo to nie je jedno">
+<meta property="og:description" content="VÚB označuje BIC príjemcu v SEPA platbe za povinný, Tatra banka ho vie odvodiť z IBAN, ČSOB ho urobila nepovinným. Čo to znamená pre váš export.">
+<meta property="og:url" content="https://arling.sk/notes/vub-sepa-bic-prijemcu-povinny/">
+<meta property="og:locale" content="sk_SK">
+
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "VÚB označuje BIC príjemcu za povinný, Tatra banka nie: prečo to nie je jedno",
+  "datePublished": "2026-09-06",
+  "dateModified": "2026-09-06",
+  "inLanguage": "sk",
+  "description": "VÚB označuje BIC príjemcu v SEPA platbe za povinný, Tatra banka ho vie odvodiť z IBAN, ČSOB ho urobila nepovinným. Čo to znamená pre váš export.",
+  "author": { "@type": "Organization", "name": "ARLing s. r. o.", "url": "https://arling.sk/" },
+  "publisher": {
+    "@type": "Organization",
+    "name": "ARLing s. r. o.",
+    "url": "https://arling.sk/"
+  },
+  "mainEntityOfPage": { "@type": "WebPage", "@id": "https://arling.sk/notes/vub-sepa-bic-prijemcu-povinny/" }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "ARLing", "item": "https://arling.sk/" },
+    { "@type": "ListItem", "position": 2, "name": "Notes", "item": "https://arling.sk/notes/" },
+    { "@type": "ListItem", "position": 3, "name": "VÚB vyžaduje BIC príjemcu", "item": "https://arling.sk/notes/vub-sepa-bic-prijemcu-povinny/" }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Musím pri SEPA platbe vždy vypĺňať BIC príjemcu?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Pre VÚB áno, vo vlastnej špecifikácii ho má označený ako povinné pole. Tatra banka a ČSOB si vedia poradiť aj bez neho, no ak jeden export posielaš do viacerých bánk, jednoduchšie je BIC vypĺňať vždy."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Aký je BIC platiteľa, keď platím z účtu vedeného vo VÚB?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "SUBASKBX. Tento kód patrí do poľa DbtrAgt/FinInstnId/BIC a je to kód samotnej VÚB, nie banky príjemcu."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Ako ďaleko dopredu môžem nastaviť dátum splatnosti platby pre VÚB?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Najviac 30 dní vopred. Tatra banka má vo vlastnej špecifikácii limit 31 dní, ide teda o blízke, nie však rovnaké čísla."
+      }
+    }
+  ]
+}
+</script>
+
+<link rel="preload" href="/fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/style/paper.css?v=e68fba59">
+<script src="/style/prepinac.js?v=2988c181" defer></script>
+<style>
+  /* Notes. Vzhlad, farby, typografia a pohyb su v /style/paper.css.
+     Tu ostava len to, co je pre clanok vlastne: merany pas, register, panel s nastrojom. */
+  .note{max-width:min(100%,880px);margin:0 auto}
+  .doc{max-width:min(68ch,660px);margin-inline:auto;font-size:clamp(17px,1.2vw,18px);line-height:1.62}
+
+  /* uvod clanku: nadpis, datum, odkaz na nastroj */
+  .hero-note{padding:clamp(34px,4.6vw,72px) 0 clamp(20px,2.4vw,34px)}
+  .hero-note h1{font-size:clamp(32px,4.6vw,64px);line-height:1.05;margin:0 0 18px}
+  .hero-note h1 .l+.l{display:block;margin-top:.3em;font-weight:500;
+    font-size:clamp(20px,2.4vw,34px);line-height:1.2;letter-spacing:-.01em;color:var(--body)}
+  .hero-note .kicker{display:block;margin:0 0 12px}
+  .hero-note .crumbs{font-family:var(--ui);font-size:12px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--accent);margin:0 0 12px}
+  .hero-note .crumbs a{color:inherit;text-decoration:none}
+  .hero-note .crumbs a:hover{text-decoration:underline}
+  .byline,.dateline{font-family:var(--ui);font-size:14px;color:var(--muted);margin:0 0 20px;max-width:none}
+  .toolgo{margin:0}
+
+  /* rytmus clanku: vlasova linka medzi castami, ziadne velke medzery sekcii */
+  section{scroll-margin-top:86px}
+  .doc section{padding:0;border-top:none;margin:0 0 clamp(26px,2.8vw,38px)}
+  .doc section+section{border-top:1px solid var(--line);padding-top:clamp(26px,2.8vw,36px)}
+  .doc h2{font-size:clamp(21px,1.9vw,27px);line-height:1.22;margin:0 0 12px}
+  .doc h3{font-size:clamp(17.5px,1.3vw,20px);margin:18px 0 8px}
+  .doc p{margin:0 0 14px;max-width:none}
+  .doc .num,.doc .kicker{display:block;font-family:var(--ui);font-size:12px;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--accent);margin:0 0 7px}
+  .doc .lead,.doc .lede{font-size:clamp(18px,1.35vw,20.5px);line-height:1.55;max-width:none;margin:0 0 18px}
+  .doc ol,.doc ul{padding-left:22px;margin:0 0 16px}
+  .doc li{margin:0 0 7px}
+  .doc li:last-child{margin-bottom:0}
+  .doc a{overflow-wrap:anywhere}
+  .doc code{background:var(--paper-deep);border:1px solid var(--line);border-radius:4px;padding:1px 5px;
+    overflow-wrap:anywhere}
+  .doc pre{margin:0 0 16px;white-space:pre-wrap;overflow-wrap:break-word}
+  .doc pre code{background:none;border:none;padding:0;font-size:13.5px;line-height:1.55}
+  .doc blockquote{margin:0 0 16px;padding:8px 16px;border-left:2px solid var(--line);color:var(--muted)}
+
+  /* tabulka odvodenia BIC z kodu banky */
+  .doc .tbl{width:100%;border-collapse:collapse;margin:0 0 16px;font-size:.95em}
+  .doc .tbl th,.doc .tbl td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line)}
+  .doc .tbl th{font:600 12px/1.3 var(--ui);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+  .doc .tbl-wrap{overflow-x:auto;margin:0 0 16px}
+  .doc .tbl-wrap .tbl{margin:0}
+
+  /* chybova hlaska, oprava, ukazka kodu s popisom */
+  .doc .err{background:color-mix(in srgb,var(--accent) 7%,var(--card));border:1px solid var(--line);
+    border-left:3px solid var(--accent);border-radius:8px;padding:12px 16px;margin:0 0 16px}
+  .doc .err code{background:none;border:none;padding:0;color:var(--ink)}
+  .doc .fix{margin:0 0 16px;padding-left:16px;border-left:2px solid var(--accent)}
+  .doc .fix p{margin:0 0 8px}
+  .doc .fix p:last-child{margin-bottom:0}
+  .doc .fix-label{font-family:var(--ui);font-size:12px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--muted);margin:0 0 6px}
+  .doc .snippet{background:var(--card);border:1px solid var(--line);border-radius:10px;margin:0 0 18px;
+    overflow:hidden}
+  .doc .snippet .cap{padding:8px 14px;border-bottom:1px solid var(--line);
+    font:500 11px/1.3 var(--ui);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  .doc .snippet.bad .cap{color:var(--accent)}
+  .doc .snippet pre{margin:0;border:none;border-radius:0;background:none;white-space:pre-wrap}
+
+  /* caste otazky */
+  .doc details{border-top:1px solid var(--line);padding:14px 0}
+  .doc details:last-of-type{border-bottom:1px solid var(--line);margin-bottom:16px}
+  .doc summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;gap:14px;
+    font:600 17px/1.35 var(--display);color:var(--ink)}
+  .doc summary::-webkit-details-marker{display:none}
+  .doc summary::after{content:"+";flex:none;color:var(--accent);font-family:var(--ui);font-weight:400}
+  .doc details[open] summary::after{content:"\2013"}
+  .doc details p{margin:10px 0 0}
+
+  /* zdroje */
+  .doc ul.sources{list-style:none;padding-left:0}
+  .doc ul.sources li{padding-left:14px;border-left:2px solid var(--line)}
+  .doc .sources li{margin:0 0 10px;font-size:.95em}
+  .doc .sources cite{font-style:italic}
+  .doc ul.plain{list-style:none;padding-left:0}
+  .doc ul.plain li{margin:0;padding:10px 0;border-top:1px solid var(--line)}
+  .doc ul.plain li:first-child{border-top:none}
+
+  /* panel s nastrojom: jedina tmava plocha v texte, tam sa klika */
+  .doc .tool-box,.doc .toolbox,.doc .check,.doc .try,.doc .cta{display:block;background:var(--ink);
+    color:#cfcabd;border:none;border-radius:var(--radius);padding:clamp(20px,2.2vw,28px);margin:0 0 18px}
+  .doc .tool-box p,.doc .check p,.doc .try p,.doc .cta p{max-width:none;margin:0 0 12px;color:#cfcabd}
+  .doc .toolbox{max-width:none;color:#cfcabd}
+  .doc .tool-box p:last-of-type,.doc .check p:last-child,.doc .try p:last-child,
+  .doc .cta p:last-child{margin-bottom:0}
+  .doc .tool-box a,.doc .toolbox a,.doc .check a,.doc .try a,.doc .cta a{color:#fffdf8}
+  .doc .tool-box a:hover,.doc .toolbox a:hover,.doc .check a:hover,.doc .try a:hover,
+  .doc .cta a:hover{color:var(--accent-light)}
+  .doc .tool-box code,.doc .toolbox code,.doc .check code,.doc .try code,.doc .cta code{
+    background:rgba(255,253,248,.10);border-color:rgba(255,253,248,.22);color:#fffdf8}
+  .doc .tool-box .btn{margin:14px 10px 0 0;text-decoration:none;color:#fff}
+  .doc .tool-box .btn+.btn{background:none;border:1px solid rgba(255,253,248,.45);color:#fffdf8}
+  .doc .tool-box .btn+.btn:hover{background:#fffdf8;color:var(--ink)}
+  .doc .tool-cta{display:inline-flex;align-items:center;height:46px;padding:0 20px;border-radius:12px;
+    margin:2px 0 0;background:var(--accent);color:#fff;font:500 15px/1 var(--ui);text-decoration:none}
+  .doc .tool-cta:hover{background:var(--accent-dark);color:#fff}
+
+  @media (min-width:1280px){}
+
+  /* paticka je tmavy pas na konci */
+  footer.band{border-top:none;color:#a8a294}
+  footer.band a,footer.band b{color:#fffdf8}
+  footer.band .wrap{max-width:880px}
+  footer.band .cols{width:min(880px,92vw);margin:0 auto;gap:16px 32px}
+
+</style>
+</head>
+<body class="noc">
+<div class="wash" aria-hidden="true"><i></i><i></i></div>
+<noscript><style>.r,.w{opacity:1;transform:none;filter:none}</style></noscript>
+<header>
+  <div class="wrap bar">
+    <a class="brand" href="https://arling.sk/">
+      <svg viewBox="0 0 488 215" width="38" height="15" aria-hidden="true" focusable="false"><path fill="#f4f4f7" fill-rule="evenodd" d="M0.00,213.00L74.00,214.00L181.00,85.00L285.00,214.00L360.00,214.00L206.00,21.00L185.00,4.00L164.00,10.00Z M221.00,0.00L263.00,50.00L395.00,50.00L409.00,55.00L419.00,76.00L401.00,96.00L313.00,98.00L411.00,214.00L487.00,214.00L422.00,139.00L457.00,123.00L482.00,88.00L482.00,48.00L463.00,19.00L417.00,0.00Z"/><path fill="#f2643c" d="M269.00,66.00L269.00,67.00L268.00,68.00L268.00,70.00L267.00,71.00L267.00,76.00L268.00,77.00L268.00,79.00L270.00,81.00L270.00,82.00L271.00,82.00L273.00,84.00L274.00,84.00L277.00,86.00L279.00,86.00L280.00,87.00L287.00,87.00L288.00,86.00L290.00,86.00L291.00,85.00L294.00,84.00L298.00,80.00L298.00,79.00L299.00,78.00L299.00,75.00L300.00,74.00L300.00,72.00L299.00,71.00L299.00,69.00L298.00,68.00L297.00,65.00L295.00,63.00L294.00,63.00L289.00,60.00L278.00,60.00L277.00,61.00L276.00,61.00L275.00,62.00L272.00,63.00Z"/></svg>
+      <b>ARLing</b><span>Notes</span>
+    </a>
+    <nav aria-label="Site"><a href="https://arling.sk/#tools">Nástroje</a><a href="https://arling.sk/notes/">Notes</a><a href="https://arling.sk/how-we-work/">Ako pracujeme</a><a href="mailto:andrej@arling.sk">Kontakt</a></nav>
+  </div>
+</header>
+<main>
+  <div class="wrap">
+    <div class="note">
+      <div class="hero-note" id="hero">
+        <h1 id="h1" class="r d1"><span class="l">VÚB označuje BIC príjemcu za povinný,</span><span class="l">Tatra banka nie: prečo to nie je jedno</span></h1>
+        <p class="byline r d2">ARLing s. r. o., ARLing. 6. septembra 2026.</p>
+        <p class="toolgo r d3"><a data-umami-event="open-sepa-pain001-doctor-hero" class="go" href="https://arling.sk/sepa-pain001-doctor/">SEPA pain.001 Doctor <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2.5 8h11M9 3.5 13.5 8 9 12.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a></p>
+      </div>
+      <div class="doc">
+        <section class="sec" id="s1">
+<p class="lead r">Máš hromadný príkaz na úhradu, v ktorom je pole BIC banky príjemcu (<code>CdtrAgt/FinInstnId/BIC</code>) prázdne, a chceš vedieť, či to prejde. Odpoveď závisí od toho, do ktorej banky súbor posielaš. VÚB vo vlastnej špecifikácii toto pole označuje priamo ako povinné. Tatra banka ho vie pri slovenskom SEPA IBAN odvodiť sama, chýbajúci teda toleruje. ČSOB ho urobila nepovinným už od 1. februára 2016. Kto robí jeden export pre viac bánk naraz, má vypĺňať BIC vždy, inak sa spolieha na to, že súbor skončí len vo VÚB.</p>
+        </section>
+        <section class="sec" id="s2">
+<h2 class="r">1. VÚB: Creditor Agent BIC je povinné pole</h2>
+<p class="r d1">Dokument VÚB „Popis formátu pre SEPA úhrady - SCT" v tabuľke polí pain.001 označuje pole <code>CdtrAgt/BIC</code> (v tabuľke pod kódom AT23) v stĺpci povinnosti hodnotou „M" (Mandatory). Nejde o odporúčanie ani o pole, ktoré si banka pri chýbajúcej hodnote len sama doplní. Je to pole, ktoré musí byť v XML vyplnené, rovnako ako IBAN alebo suma platby.</p>
+<p class="r d2">V praxi to znamená: ak importuješ do VÚB súbor, kde pri niektorej platbe chýba <code>CdtrAgt/FinInstnId/BIC</code>, import podľa tejto špecifikácie zlyhá pri danej transakcii, bez ohľadu na to, či je IBAN príjemcu správny a plne postačujúci na jednoznačné určenie jeho banky.</p>
+        </section>
+        <section class="sec" id="s3">
+<h2 class="r">2. Tatra banka: BIC vie odvodiť z IBAN, chýbajúci toleruje</h2>
+<p class="r d1">Tatra banka vo svojej špecifikácii „Prenosový formát pain.001.001.03 v štruktúre XML" opisuje opačný prístup. Ak <code>CdtrAgt/BIC</code> chýba, banka ho vie pri platnom slovenskom SEPA IBAN odvodiť sama, z kódu banky zakódovaného v samotnom IBAN (postup je nižšie). Chýbajúci BIC tu teda nie je chyba, pokiaľ je IBAN príjemcu správny.</p>
+<p class="r d2">Tatra banka ide dokonca ďalej opačným smerom: ak BIC vyplnený je, porovná prvých šesť znakov zadanej hodnoty s BIC, ktorý si sama vypočíta z IBAN. Pri nezhode platbu zamietne. Vyplnený, no nesprávny BIC je teda u Tatra banky horší než žiadny.</p>
+<p class="r d3">Ak IBAN príjemcu nepatrí banke zo SEPA priestoru, odvodenie z IBAN sa nedá vykonať a chýbajúci BIC sa stáva problémom aj u Tatra banky.</p>
+        </section>
+        <section class="sec" id="s4">
+<h2 class="r">3. ČSOB: BIC je nepovinný od 1. 2. 2016</h2>
+<p class="r d1">Dokument ČSOB „BusinessBanking Lite a SEPA" (20. 8. 2015) uvádza, že BIC banky príjemcu je pri SEPA platbách nepovinný od 1. februára 2016. ČSOB teda tento krok urobila najskôr zo všetkých troch bánk, dávno pred tým, než sa BIC pri SEPA platbách v EÚ prestal vyžadovať plošne.</p>
+        </section>
+        <section class="sec" id="s5">
+<h2 class="r">4. Dôsledok pre jeden export, viac bánk</h2>
+<p class="r d1">Väčšina účtovného softvéru generuje jeden pain.001 súbor bez ohľadu na to, do ktorej banky ho účtovník neskôr nahrá. Ak taký export necháva pole BIC prázdne (napríklad preto, že autor exportu sa spoliehal len na správanie Tatra banky alebo ČSOB), súbor prejde bez problémov všade okrem VÚB. Tam zlyhá presne na transakciách, kde BIC chýba, čo pri hromadnom príkaze s desiatkami riadkov znamená ručné dohľadávanie, ktorá platba presne nesedí.</p>
+<p class="r d2">Bezpečný postup je preto opačný: BIC príjemcu vyplniť vždy, aj keď ho tvoja banka netoleruje. Vyplnený a správny BIC neprekáža nikde, chýbajúci prekáža len vo VÚB.</p>
+        </section>
+        <section class="sec" id="s6">
+<h2 class="r">5. Dve čísla, ktoré sa oplatí zapamätať pri VÚB</h2>
+<p class="r d1">BIC platiteľa, teda samotnej VÚB, je <code>SUBASKBX</code>. Patrí do poľa <code>DbtrAgt/FinInstnId/BIC</code> a je to kód banky, z ktorej platba odchádza, nie banky príjemcu.</p>
+<p class="r d2">Dátum požadovaného zaúčtovania (<code>ReqdExctnDt</code>) môže byť u VÚB najviac 30 dní dopredu od dnešného dňa. Tatra banka má vo vlastnej špecifikácii podobný, no nie identický limit, 31 dní. Kto pripravuje platby s dátumom splatnosti o mesiac vopred, môže sa práve o jeden deň dostať mimo limitu jednej z bánk a v druhej ešte prejsť.</p>
+        </section>
+        <section class="sec" id="s7">
+<h2 class="r">6. Ako sa BIC odvodí z kódu banky v slovenskom IBAN</h2>
+<p class="r d1">Slovenský IBAN má tvar <code>SK</code> + 2 kontrolné číslice + 4-miestny kód banky + 16 číslic čísla účtu. Práve tento štvormiestny kód banky, hneď po kontrolných číslach, jednoznačne určuje banku príjemcu. Tatra banka pri odvodení BIC z IBAN používa presne tento princíp.</p>
+<div class="tbl-wrap">
+<table class="tbl r d2">
+<tr><th>Kód banky v IBAN</th><th>Banka</th><th>BIC</th></tr>
+<tr><td>1100</td><td>Tatra banka</td><td><code>TATRSKBX</code></td></tr>
+<tr><td>0900</td><td>Slovenská sporiteľňa</td><td><code>GIBASKBX</code></td></tr>
+<tr><td>0200</td><td>VÚB</td><td><code>SUBASKBX</code></td></tr>
+<tr><td>7500</td><td>ČSOB</td><td><code>CEKOSKBX</code></td></tr>
+</table>
+</div>
+<p class="r d3">Napríklad IBAN <code>SK31 0200 0000 0000 1234 5671</code> má kód banky 0200, teda BIC príjemcu je <code>SUBASKBX</code>. Tento zoznam pokrýva štyri najväčšie slovenské banky, nie je to úplný zoznam všetkých bankových kódov v SR: úplný zoznam vedie Národná banka Slovenska. Ak banka príjemcu v tabuľke nie je, odvodenie z kódu banky treba overiť inde, nie hádaním.</p>
+        </section>
+        <section class="sec" id="s8">
+<h2 class="r">Časté otázky</h2>
+<details class="r d1">
+  <summary>Musím pri SEPA platbe vždy vypĺňať BIC príjemcu?</summary>
+  <p>Pre VÚB áno, je to povinné pole. Tatra banka a ČSOB si vedia poradiť aj bez neho, ale ak jeden export posielaš do viacerých bánk, jednoduchšie a bezpečnejšie je vypĺňať ho vždy.</p>
+</details>
+<details class="r d2">
+  <summary>Aký je BIC platiteľa, keď platím z účtu vedeného vo VÚB?</summary>
+  <p><code>SUBASKBX</code>. Ide do poľa <code>DbtrAgt/FinInstnId/BIC</code>, patrí samotnej VÚB, nie banke príjemcu.</p>
+</details>
+<details class="r d3">
+  <summary>Ako ďaleko dopredu môžem nastaviť dátum splatnosti platby pre VÚB?</summary>
+  <p>Najviac 30 dní vopred. Tatra banka má podobný, no o jeden deň iný limit: 31 dní.</p>
+</details>
+        </section>
+        <section class="sec" id="s9">
+<h2 class="r">Checklist</h2>
+<ol class="r d1">
+  <li>Ak súbor ide aj do VÚB, over, že každá transakcia má vyplnené <code>CdtrAgt/FinInstnId/BIC</code>, nielen IBAN príjemcu.</li>
+  <li>Ak BIC vypĺňaš aj pre Tatra banku, over, že sa zhoduje s bankou, ktorú prezrádza kód banky v IBAN príjemcu, nezhoda znamená zamietnutie.</li>
+  <li>Pri platbách z účtu vedeného vo VÚB použi ako BIC platiteľa presne <code>SUBASKBX</code>.</li>
+  <li>Dátum <code>ReqdExctnDt</code> nastavuj najviac 30 dní dopredu, ak ide o VÚB, a najviac 31 dní, ak ide o Tatra banku.</li>
+  <li>Ak IBAN príjemcu nepatrí do SEPA priestoru, BIC treba doplniť vždy, odvodenie z IBAN sa v takom prípade nedá spraviť.</li>
+</ol>
+        </section>
+        <section class="sec" id="s10">
+<p class="toolbox r d1">Kto si to chce overiť na vlastnom súbore, môže vložiť svoj pain.001 a vybrať banku v <a data-umami-event="open-sepa-pain001-doctor-cta" href="https://arling.sk/sepa-pain001-doctor/">SEPA pain.001 Doctor</a>.</p>
+        </section>
+      </div>
+    </div>
+  </div>
+  <section class="deep" id="s11">
+    <div class="wrap">
+      <div class="note">
+        <div class="doc">
+<h2 class="r">Zdroje</h2>
+<ol class="sources r d1">
+  <li>VÚB, a. s.: <cite>Popis formátu pre SEPA úhrady - SCT</cite>. <a href="https://app.vub.sk/source/files/vubweb/sekundarna-navigacia/informacny-servis/sepa-aplikacie/sct_klient_f.pdf">app.vub.sk/.../sct_klient_f.pdf</a>. Pole Creditor Agent BIC (AT23) je v tabuľke polí označené ako povinné (M). BIC platiteľa pre VÚB: SUBASKBX. Okno dátumu <code>ReqdExctnDt</code>: maximálne 30 dní vopred. Overené v zdrojovom kóde nástroja SEPA pain.001 Doctor, kontrola 6. 9. 2026.</li>
+  <li>Tatra banka: <cite>Prenosový formát pain.001.001.03 v štruktúre XML</cite>. <a href="https://www.tatrabanka.sk/files/sk/personal/ucet-platby/elektronicke-bankovnictvo/internet-banking/davkove-platby/prenosovy_formatpain001.pdf">tatrabanka.sk/.../prenosovy_formatpain001.pdf</a>. Chýbajúci CdtrAgt/BIC banka odvodí zo správneho slovenského SEPA IBAN príjemcu, zadaný BIC porovnáva prvými 6 znakmi s vypočítaným. Okno dátumu <code>ReqdExctnDt</code>: maximálne 31 dní vopred. Overené v zdrojovom kóde nástroja SEPA pain.001 Doctor, kontrola 6. 9. 2026.</li>
+  <li>ČSOB: <cite>BusinessBanking Lite a SEPA</cite> (20. 8. 2015). <a href="https://www.csob.sk/documents/11005/123723/BB_SEPA_01022016.pdf">csob.sk/documents/11005/123723/BB_SEPA_01022016.pdf</a>. BIC banky príjemcu je pri SEPA platbách nepovinný od 1. 2. 2016. Overené v zdrojovom kóde nástroja SEPA pain.001 Doctor, kontrola 6. 9. 2026.</li>
+</ol>
+<p class="r d2" style="font-size:.9em;color:var(--muted)">Priradenie štvormiestneho kódu banky v IBAN k BIC (1100 Tatra banka, 0900 Slovenská sporiteľňa, 0200 VÚB, 7500 ČSOB) je zapísané v tom istom zdrojovom kóde ako tabuľka bankových kódov použitá na odvodenie BIC. Nejde o úplný zoznam bankových kódov v SR, len o štyri banky, ktoré nástroj podporuje.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+<footer>
+  <div class="wrap foot">
+    <div><b>ARLing s. r. o.</b><br>Ivanská cesta 32E<br>821 04 Bratislava, Slovensko</div>
+    <div>IČO 56583486<br>IČ DPH SK2122352100<br><a href="mailto:andrej@arling.sk">andrej@arling.sk</a></div>
+    <div><a href="https://arling.sk/privacy/">ochrana údajov</a> · <a href="https://arling.sk/podmienky/">podmienky</a> · <a href="https://arling.sk/gdpr/">GDPR</a> · <a href="https://arling.sk/impressum/">Impressum</a> · <a href="https://arling.sk/llms.txt">llms.txt</a> · <a href="https://arling.sk/sitemap-index.xml">mapa stránky</a><br>Nástroje sú poskytované tak, ako sú, bez záruky. Anonymné počty návštev cez vlastné Umami.</div>
+  </div>
+</footer>
+<script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="be534d51-4d01-4860-b267-9596d91606de"></script>
+<script>
+(function () {
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var hero = document.getElementById('hero');
+  if (reduce) {
+    document.querySelectorAll('.r, section').forEach(function (e) { e.classList.add('in'); });
+  }
+  if (!reduce && hero) {
+    requestAnimationFrame(function () {
+      hero.querySelectorAll('.r').forEach(function (e) { e.classList.add('in'); });
+    });
+  }
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (en) {
+      if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); }
+    });
+  }, { rootMargin: '0px 0px -12% 0px', threshold: 0.1 });
+  document.querySelectorAll('section').forEach(function (s) { io.observe(s); });
+
+  // nadpis clanku sa objavi po slovach, ako dobre vytlaceny titulok
+  var h1 = document.getElementById('h1');
+  if (h1) {
+    var i = 0;
+    Array.prototype.forEach.call(h1.querySelectorAll('.l'), function (line) {
+      var words = line.textContent.split(' ');
+      line.textContent = '';
+      words.forEach(function (w, k) {
+        var s = document.createElement('span');
+        s.className = 'w';
+        s.style.transitionDelay = (i++ * 0.06).toFixed(2) + 's';
+        s.textContent = w;
+        line.appendChild(s);
+        if (k < words.length - 1) line.appendChild(document.createTextNode(' '));
+      });
+    });
+    requestAnimationFrame(function () { h1.classList.add('in'); });
+  }
+})();
+</script>
+</body>
+</html>

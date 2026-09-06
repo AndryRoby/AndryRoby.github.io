@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="sk">
+<head>
+<script src="/style/vzhlad.js?v=93c2659f"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://homelab.tailbf8f27.ts.net 'sha256-ACzsZ9Uf4Dr0ulf+i9tTF7MqSbctoQVAl1cgomsFaYc=' 'sha256-NhVznKRe2MB7sHULr71xYpr0YNIGepMTuoXs/C6dAww=' 'sha256-DZSWQq9anqohFIlDL4j7k8JKdMhkl4AddaE6VFUE59Q=' 'sha256-0PxmtJhfdRRqQ1O7CvviHNLgLWcXX9lDBjeGvirUfHk='; connect-src 'self' https://homelab.tailbf8f27.ts.net; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0a0908">
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../../favicon.ico" sizes="48x48">
+<link rel="apple-touch-icon" href="../../icon-180.png">
+<title>Tatra banka a import hromadného príkazu: čo kontroluje</title>
+<meta name="description" content="Presný zoznam toho, čo Tatra banka overuje pri importe pain.001: menný priestor, BIC, dátum splatnosti, limit 500 transakcií, modulo 11.">
+<link rel="canonical" href="https://arling.sk/notes/tatra-banka-import-hromadneho-prikazu/">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Tatra banka a import hromadného príkazu: čo kontroluje">
+<meta property="og:description" content="Presný zoznam toho, čo Tatra banka overuje pri importe pain.001: menný priestor, BIC, dátum splatnosti, limit 500 transakcií, modulo 11.">
+<meta property="og:url" content="https://arling.sk/notes/tatra-banka-import-hromadneho-prikazu/">
+<meta property="og:locale" content="sk_SK">
+
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Tatra banka a import hromadného príkazu: čo kontroluje",
+  "datePublished": "2026-09-06",
+  "dateModified": "2026-09-06",
+  "inLanguage": "sk",
+  "description": "Presný zoznam toho, čo Tatra banka overuje pri importe pain.001: menný priestor, BIC, dátum splatnosti, limit 500 transakcií, modulo 11.",
+  "author": { "@type": "Organization", "name": "ARLing s. r. o.", "url": "https://arling.sk/" },
+  "publisher": {
+    "@type": "Organization",
+    "name": "ARLing s. r. o.",
+    "url": "https://arling.sk/"
+  },
+  "mainEntityOfPage": { "@type": "WebPage", "@id": "https://arling.sk/notes/tatra-banka-import-hromadneho-prikazu/" }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "ARLing", "item": "https://arling.sk/" },
+    { "@type": "ListItem", "position": 2, "name": "Notes", "item": "https://arling.sk/notes/" },
+    { "@type": "ListItem", "position": 3, "name": "Tatra banka a import hromadného príkazu", "item": "https://arling.sk/notes/tatra-banka-import-hromadneho-prikazu/" }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Čo ak v súbore chýba BIC banky platiteľa?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Tatra banka podľa vlastnej dokumentácie vyžaduje, aby BIC platiteľa (DbtrAgt) bol vyplnený a mal presne hodnotu TATRSKBX. Chýbajúce alebo iné BIC pole je dôvod na zamietnutie súboru vedeného v Tatra banke."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Prečo Tatra banka odmietla súbor, ktorý inde prešiel bez chyby?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Viaceré kontroly z tohto článku, napríklad limit 500 transakcií na blok PmtInf, formát GrpHdr/InitgPty/Nm alebo rovnaký dátum vo všetkých blokoch, sú zdokumentované práve u Tatra banky a iná banka ich nemusí overovať. Súbor môže formátovo vyhovovať ISO 20022 vo všeobecnosti, a napriek tomu neprejsť konkrétnym pravidlom jednej banky."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Znamená čistý výsledok kontroly, že Tatra banka platbu prijme?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Nie. Formátová kontrola overuje len to, či XML zodpovedá verejne publikovaným pravidlám Tatra banky pre pain.001.001.03. Banka môže platbu z iných dôvodov, napríklad nedostatok krytia na účte alebo interné bezpečnostné pravidlá, aj tak odmietnuť."
+      }
+    }
+  ]
+}
+</script>
+
+<link rel="preload" href="/fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/style/paper.css?v=e68fba59">
+<script src="/style/prepinac.js?v=2988c181" defer></script>
+<style>
+  /* Notes. Vzhlad, farby, typografia a pohyb su v /style/paper.css.
+     Tu ostava len to, co je pre clanok vlastne: merany pas, register, panel s nastrojom. */
+  .note{max-width:min(100%,880px);margin:0 auto}
+  .doc{max-width:min(68ch,660px);margin-inline:auto;font-size:clamp(17px,1.2vw,18px);line-height:1.62}
+
+  /* uvod clanku: nadpis, datum, odkaz na nastroj */
+  .hero-note{padding:clamp(34px,4.6vw,72px) 0 clamp(20px,2.4vw,34px)}
+  /* Titul clanku je hero stranky. Hlavna veta dorastie na desktope na 64 px, ako ziada
+     paper-v2 bod 9.4. Druhy riadok titulu je vzdy vysvetlujuca cast za dvojbodkou:
+     ostava v rovnakom reze, len mensia a tlmenejsia, aby ani najdlhsi titul (141 znakov
+     v clanku o Shopify) nezabral cely prvy pohlad. Rodinu, farbu a letter-spacing
+     urcuje paper.css, tu je len mierka. */
+  .hero-note h1{font-size:clamp(32px,4.6vw,64px);line-height:1.05;margin:0 0 18px}
+  .hero-note h1 .l+.l{display:block;margin-top:.3em;font-weight:500;
+    font-size:clamp(20px,2.4vw,34px);line-height:1.2;letter-spacing:-.01em;color:var(--body)}
+  .hero-note .kicker{display:block;margin:0 0 12px}
+  .hero-note .crumbs{font-family:var(--ui);font-size:12px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--accent);margin:0 0 12px}
+  .hero-note .crumbs a{color:inherit;text-decoration:none}
+  .hero-note .crumbs a:hover{text-decoration:underline}
+  .byline,.dateline{font-family:var(--ui);font-size:14px;color:var(--muted);margin:0 0 20px;max-width:none}
+  .toolgo{margin:0}
+
+  /* rytmus clanku: vlasova linka medzi castami, ziadne velke medzery sekcii */
+  section{scroll-margin-top:86px}
+  .doc section{padding:0;border-top:none;margin:0 0 clamp(26px,2.8vw,38px)}
+  .doc section+section{border-top:1px solid var(--line);padding-top:clamp(26px,2.8vw,36px)}
+  /* Mierka nadpisov vnutri clanku, nie kopia paper.css: pas textu ma 660 px, do neho sa
+     sekcny nadpis v plnej velkosti z paper.css (42 px) nezmesti bez zalomenia. Mení sa
+     len velkost a odstupy, vsetko ostatne dedi z paper.css. */
+  .doc h2{font-size:clamp(21px,1.9vw,27px);line-height:1.22;margin:0 0 12px}
+  .doc h3{font-size:clamp(17.5px,1.3vw,20px);margin:18px 0 8px}
+  .doc p{margin:0 0 14px;max-width:none}
+  .doc .num,.doc .kicker{display:block;font-family:var(--ui);font-size:12px;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--accent);margin:0 0 7px}
+  .doc .lead,.doc .lede{font-size:clamp(18px,1.35vw,20.5px);line-height:1.55;max-width:none;margin:0 0 18px}
+  .doc ol,.doc ul{padding-left:22px;margin:0 0 16px}
+  .doc li{margin:0 0 7px}
+  .doc li:last-child{margin-bottom:0}
+  .doc a{overflow-wrap:anywhere}
+  .doc code{background:var(--paper-deep);border:1px solid var(--line);border-radius:4px;padding:1px 5px;
+    overflow-wrap:anywhere}
+  .doc pre{margin:0 0 16px;white-space:pre-wrap;overflow-wrap:break-word}
+  .doc pre code{background:none;border:none;padding:0;font-size:13.5px;line-height:1.55}
+  .doc blockquote{margin:0 0 16px;padding:8px 16px;border-left:2px solid var(--line);color:var(--muted)}
+
+  /* chybova hlaska, oprava, ukazka kodu s popisom */
+  .doc .err{background:color-mix(in srgb,var(--accent) 7%,var(--card));border:1px solid var(--line);
+    border-left:3px solid var(--accent);border-radius:8px;padding:12px 16px;margin:0 0 16px}
+  .doc .err code{background:none;border:none;padding:0;color:var(--ink)}
+  .doc .fix{margin:0 0 16px;padding-left:16px;border-left:2px solid var(--accent)}
+  .doc .fix p{margin:0 0 8px}
+  .doc .fix p:last-child{margin-bottom:0}
+  .doc .fix-label{font-family:var(--ui);font-size:12px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--muted);margin:0 0 6px}
+  .doc .snippet{background:var(--card);border:1px solid var(--line);border-radius:10px;margin:0 0 18px;
+    overflow:hidden}
+  .doc .snippet .cap{padding:8px 14px;border-bottom:1px solid var(--line);
+    font:500 11px/1.3 var(--ui);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  .doc .snippet.bad .cap{color:var(--accent)}
+  .doc .snippet pre{margin:0;border:none;border-radius:0;background:none;white-space:pre-wrap}
+
+  /* caste otazky */
+  .doc details{border-top:1px solid var(--line);padding:14px 0}
+  .doc details:last-of-type{border-bottom:1px solid var(--line);margin-bottom:16px}
+  .doc summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;gap:14px;
+    font:600 17px/1.35 var(--display);color:var(--ink)}
+  .doc summary::-webkit-details-marker{display:none}
+  .doc summary::after{content:"+";flex:none;color:var(--accent);font-family:var(--ui);font-weight:400}
+  .doc details[open] summary::after{content:"\2013"}
+  .doc details p{margin:10px 0 0}
+
+  /* zdroje */
+  .doc ul.sources{list-style:none;padding-left:0}
+  .doc ul.sources li{padding-left:14px;border-left:2px solid var(--line)}
+  .doc .sources li{margin:0 0 10px;font-size:.95em}
+  .doc .sources cite{font-style:italic}
+  .doc ul.plain{list-style:none;padding-left:0}
+  .doc ul.plain li{margin:0;padding:10px 0;border-top:1px solid var(--line)}
+  .doc ul.plain li:first-child{border-top:none}
+
+  /* panel s nastrojom: jedina tmava plocha v texte, tam sa klika */
+  .doc .tool-box,.doc .toolbox,.doc .check,.doc .try,.doc .cta{display:block;background:var(--ink);
+    color:#cfcabd;border:none;border-radius:var(--radius);padding:clamp(20px,2.2vw,28px);margin:0 0 18px}
+  .doc .tool-box p,.doc .check p,.doc .try p,.doc .cta p{max-width:none;margin:0 0 12px;color:#cfcabd}
+  .doc .toolbox{max-width:none;color:#cfcabd}
+  .doc .tool-box p:last-of-type,.doc .check p:last-child,.doc .try p:last-child,
+  .doc .cta p:last-child{margin-bottom:0}
+  .doc .tool-box a,.doc .toolbox a,.doc .check a,.doc .try a,.doc .cta a{color:#fffdf8}
+  .doc .tool-box a:hover,.doc .toolbox a:hover,.doc .check a:hover,.doc .try a:hover,
+  .doc .cta a:hover{color:var(--accent-light)}
+  .doc .tool-box code,.doc .toolbox code,.doc .check code,.doc .try code,.doc .cta code{
+    background:rgba(255,253,248,.10);border-color:rgba(255,253,248,.22);color:#fffdf8}
+  .doc .tool-box .btn{margin:14px 10px 0 0;text-decoration:none;color:#fff}
+  /* dve tlacidla vedla seba sa nesmu dotykat, na uzkom mobile sa zalomia pod seba */
+  /* druhe tlacidlo v tmavom paneli je vedlajsie: linka namiesto plochy */
+  .doc .tool-box .btn+.btn{background:none;border:1px solid rgba(255,253,248,.45);color:#fffdf8}
+  .doc .tool-box .btn+.btn:hover{background:#fffdf8;color:var(--ink)}
+  .doc .tool-cta{display:inline-flex;align-items:center;height:46px;padding:0 20px;border-radius:12px;
+    margin:2px 0 0;background:var(--accent);color:#fff;font:500 15px/1 var(--ui);text-decoration:none}
+  .doc .tool-cta:hover{background:var(--accent-dark);color:#fff}
+
+  /* bocny register drzi sa laveho okraja clanku */
+  /* Stlpec clanku je uzsi nez obsah hubu (880 px, nie 1340), tak sa register zmesti
+     uz od 1280 px: cely stoji v lavom okraji a od textu ho deli stalych 35 px.
+     Pod tou hranicou by uz do textu zasahoval, preto ho paper.css skryje. */
+  @media (min-width:1280px){}
+
+  /* paticka je tmavy pas na konci */
+  footer.band{border-top:none;color:#a8a294}
+  footer.band a,footer.band b{color:#fffdf8}
+  footer.band .wrap{max-width:880px}
+  footer.band .cols{width:min(880px,92vw);margin:0 auto;gap:16px 32px}
+
+</style>
+</head>
+<body class="noc">
+<div class="wash" aria-hidden="true"><i></i><i></i></div>
+<noscript><style>.r,.w{opacity:1;transform:none;filter:none}</style></noscript>
+<header>
+  <div class="wrap bar">
+    <a class="brand" href="https://arling.sk/">
+      <svg viewBox="0 0 488 215" width="38" height="15" aria-hidden="true" focusable="false"><path fill="#f4f4f7" fill-rule="evenodd" d="M0.00,213.00L74.00,214.00L181.00,85.00L285.00,214.00L360.00,214.00L206.00,21.00L185.00,4.00L164.00,10.00Z M221.00,0.00L263.00,50.00L395.00,50.00L409.00,55.00L419.00,76.00L401.00,96.00L313.00,98.00L411.00,214.00L487.00,214.00L422.00,139.00L457.00,123.00L482.00,88.00L482.00,48.00L463.00,19.00L417.00,0.00Z"/><path fill="#f2643c" d="M269.00,66.00L269.00,67.00L268.00,68.00L268.00,70.00L267.00,71.00L267.00,76.00L268.00,77.00L268.00,79.00L270.00,81.00L270.00,82.00L271.00,82.00L273.00,84.00L274.00,84.00L277.00,86.00L279.00,86.00L280.00,87.00L287.00,87.00L288.00,86.00L290.00,86.00L291.00,85.00L294.00,84.00L298.00,80.00L298.00,79.00L299.00,78.00L299.00,75.00L300.00,74.00L300.00,72.00L299.00,71.00L299.00,69.00L298.00,68.00L297.00,65.00L295.00,63.00L294.00,63.00L289.00,60.00L278.00,60.00L277.00,61.00L276.00,61.00L275.00,62.00L272.00,63.00Z"/></svg>
+      <b>ARLing</b><span>Notes</span>
+    </a>
+    <nav aria-label="Site"><a href="https://arling.sk/#tools">Nástroje</a><a href="https://arling.sk/notes/">Notes</a><a href="https://arling.sk/how-we-work/">Ako pracujeme</a><a href="mailto:andrej@arling.sk">Kontakt</a></nav>
+  </div>
+</header>
+<main>
+  <div class="wrap">
+    <div class="note">
+      <div class="hero-note" id="hero">
+        <h1 id="h1" class="r d1"><span class="l">Tatra banka a import hromadného príkazu:</span><span class="l">čo kontroluje pri pain.001</span></h1>
+        <p class="byline r d2">ARLing s. r. o., ARLing. 6. septembra 2026.</p>
+      </div>
+      <div class="doc">
+        <section class="sec" id="s1">
+<p class="lead r">Vyexportuješ z účtovného softvéru hromadný príkaz na úhradu vo formáte pain.001, nahráš ho do internet bankingu Tatra banky, a import buď zlyhá bez zrozumiteľnej správy, alebo prejde len časť platieb. Tatra banka na rozdiel od Slovenskej sporiteľne zverejňuje pomerne podrobný popis formátu, ktorý pri importe hromadného príkazu skutočne overuje. Nižšie je zoznam konkrétnych kontrol, ku každej s odkazom na dokument, z ktorého pochádza.</p>
+        </section>
+        <section class="sec" id="s2">
+<h2 class="r">1. Menný priestor a povinné hodnoty PmtMtd, SvcLvl, ChrgBr</h2>
+<p class="r d1">Súbor musí byť vo verzii pain.001.001.03, teda s menným priestorom <code>urn:iso:std:iso:20022:tech:xsd:pain.001.001.03</code>. Túto verziu má vo svojom dokumente priamo v názve aj Tatra banka: <cite>Prenosový formát pain.001.001.03 v štruktúre XML</cite>.</p>
+<p class="r d2">Tri ďalšie polia majú v štandardnej SEPA úhrade vždy rovnakú hodnotu, fixovanú samotnou schémou ISO 20022 a pravidlami SEPA Credit Transfer, nie výmyslom jednej banky: <code>PmtMtd</code> musí byť <code>TRF</code>, <code>PmtTpInf/SvcLvl/Cd</code> musí byť <code>SEPA</code> a <code>ChrgBr</code> musí byť <code>SLEV</code> (náklady delené, žiadna iná hodnota nie je pre SEPA úhradu platná). Tieto tri hodnoty vo svojej vlastnej špecifikácii výslovne vypisuje aj VÚB, ktorá popisuje ten istý formát pain.001; pri Tatra banke to overené priamo citátom z jej dokumentu nemáme, ide o hodnoty spoločné celej SEPA schéme, ktoré teda platia aj pre ňu.</p>
+<p class="r d3">BIC banky platiteľa (<code>PmtInf/DbtrAgt/FinInstnId/BIC</code>) musí byť presne <code>TATRSKBX</code>. Dokument Tatra banky to uvádza priamo: BIC platiteľa „musí byť iba TATRSKBX". Účet vedený v inej banke sa cez tento kanál poslať nedá, aj keby zvyšok súboru bol formátovo v poriadku.</p>
+        </section>
+        <section class="sec" id="s3">
+<h2 class="r">2. Dátum splatnosti: nie do minulosti, najviac 31 dní dopredu, rovnaký vo všetkých blokoch</h2>
+<p class="r d1">Pole <code>ReqdExctnDt</code> udáva požadovaný dátum splatnosti platby. Dokument Tatra banky k nemu uvádza presné ohraničenie: dátum „nesmie byť spätný dátum a dopredný dátum viac ako 31 dní". Súbor s dátumom v minulosti, napríklad omylom prenesený z minulého mesiaca, banka odmietne rovnako ako súbor so splatnosťou o dva mesiace dopredu.</p>
+<p class="r d2">Ak hromadný príkaz obsahuje viac blokov <code>PmtInf</code> (napríklad platiteľ posiela z dvoch rôznych účtov v jednom súbore), Tatra banka podľa toho istého dokumentu vyžaduje, aby mali všetky bloky rovnaký dátum <code>ReqdExctnDt</code>. Rôzne dátumy naprieč blokmi v jednom súbore banka nespracuje ako samostatné dávky, ale ako chybu.</p>
+        </section>
+        <section class="sec" id="s4">
+<h2 class="r">3. Najviac 500 transakcií na jeden blok PmtInf</h2>
+<p class="r d1">Dokument Tatra banky uvádza limit veľkosti dávky doslovne: „Max. 500 transakcií v súbore". V praxi platí tento limit na jeden blok <code>PmtInf</code>: ak účtovný softvér vygeneruje jeden <code>PmtInf</code> s 600 platbami, treba ho rozdeliť na dva bloky alebo dva súbory. Väčšina účtovných programov jeden hromadný príkaz do jedného <code>PmtInf</code> aj tak nezmestí pri takomto objeme, problém sa preto najčastejšie objaví pri hromadných mzdových alebo dodávateľských platbách.</p>
+        </section>
+        <section class="sec" id="s5">
+<h2 class="r">4. Zadávateľ súboru: GrpHdr/InitgPty/Nm vo vzore [A-Za-z0-9]{1,10}/[A-Z]{2}</h2>
+<p class="r d1">Pole <code>GrpHdr/InitgPty/Nm</code> nesie meno alebo kód zadávateľa súboru. Podľa formátu Tatra banky nie je povinné, pokiaľ ho ale účtovný softvér vyplní, musí mať tvar desiatich alebo menej alfanumerických znakov, lomka, dvojpísmenový kód krajiny, napríklad <code>ABC1234567/SK</code>. Hodnota, ktorá nezodpovedá tomuto vzoru, napríklad plný názov firmy so slovami a medzerami, tomuto pravidlu nevyhovuje. Keďže pole je nepovinné, najjednoduchšia oprava je vynechať ho celé, nie ho násilne skracovať do vzoru.</p>
+        </section>
+        <section class="sec" id="s6">
+<h2 class="r">5. Správa pre príjemcu: iba jedna inštancia Ustrd</h2>
+<p class="r d1">Element <code>RmtInf/Ustrd</code> nesie správu pre príjemcu, teda text, ktorý sa mu zobrazí pri platbe. Formát Tatra banky výslovne uvádza: „Povolená je iba jedna inštancia Ustrd." Ak export z účtovníctva vygeneruje viac elementov <code>Ustrd</code> v jednej transakcii, napríklad kvôli rozdeleniu dlhého textu na viac riadkov, Tatra banka podľa dokumentu nadbytočné elementy pri spracovaní odstráni. Text sa tak môže dostať k príjemcovi neúplný, bez chybového hlásenia pri importe.</p>
+        </section>
+        <section class="sec" id="s7">
+<h2 class="r">6. Slovenský IBAN príjemcu: kontrola modulo 11</h2>
+<p class="r d1">Medzinárodný kontrolný súčet IBAN (MOD-97) overuje formálnu správnosť čísla, nie to, či zodpovedá skutočne existujúcemu účtu. Tatra banka pri slovenskom IBAN príjemcu robí navyše druhú, doménovú kontrolu: posledných desať číslic IBAN, teda základné číslo účtu, musí vyhovovať algoritmu modulo 11, kde sa číslice zľava vážia postupnosťou 6, 3, 7, 9, 10, 5, 8, 4, 2, 1 a súčet musí byť deliteľný jedenástimi.</p>
+<p class="r d2">IBAN, ktorý prejde súčtom MOD-97, ale zlyhá na tejto druhej kontrole, je typicky výsledok preklepu v čísle účtu, napríklad zámeny dvoch číslic. Tatra banka takúto platbu podľa dokumentu zamietne, aj keď formálne ide o platný IBAN.</p>
+        </section>
+        <section class="sec" id="s8">
+<h2 class="r">Checklist pred importom do Tatra banky</h2>
+<ol class="r d1">
+  <li>Menný priestor <code>xmlns</code> na elemente <code>Document</code> je presne <code>urn:iso:std:iso:20022:tech:xsd:pain.001.001.03</code>.</li>
+  <li><code>PmtMtd</code> je <code>TRF</code>, <code>SvcLvl/Cd</code> je <code>SEPA</code>, <code>ChrgBr</code> je <code>SLEV</code> vo všetkých transakciách.</li>
+  <li>BIC platiteľa je presne <code>TATRSKBX</code>, bez medzier a bez inej varianty zápisu.</li>
+  <li><code>ReqdExctnDt</code> nie je v minulosti a nie je viac ako 31 dní dopredu, rovnaký vo všetkých blokoch <code>PmtInf</code>.</li>
+  <li>Žiadny blok <code>PmtInf</code> nemá viac ako 500 transakcií <code>CdtTrfTxInf</code>.</li>
+  <li>Ak je vyplnené <code>GrpHdr/InitgPty/Nm</code>, zodpovedá vzoru <code>[A-Za-z0-9]{1,10}/[A-Z]{2}</code>, inak je pole prázdne.</li>
+  <li>Každá transakcia má najviac jeden element <code>RmtInf/Ustrd</code>.</li>
+  <li>Slovenský IBAN príjemcu prejde aj kontrolou modulo 11 na posledných desať číslic, nielen medzinárodným MOD-97.</li>
+</ol>
+        </section>
+        <section class="sec" id="s9">
+<h2 class="r">Časté otázky</h2>
+<details>
+  <summary>Čo ak v súbore chýba BIC banky platiteľa?</summary>
+  <p>Tatra banka BIC platiteľa vyžaduje vyplnený a s presnou hodnotou TATRSKBX. Prázdne pole alebo iná hodnota je dôvod na zamietnutie, pretože z IBAN platiteľa banka BIC neodvodzuje, len z IBAN príjemcu.</p>
+</details>
+<details>
+  <summary>Prečo súbor prešiel inde, ale do Tatra banky nie</summary>
+  <p>Limit 500 transakcií na blok, formát InitgPty/Nm, rovnaký dátum vo všetkých blokoch a modulo 11 kontrola IBAN sú pravidlá, ktoré Tatra banka zdokumentovala sama a iná banka ich mať nemusí. Súbor môže byť formátovo v poriadku podľa všeobecnej normy ISO 20022, a napriek tomu narazí na konkrétne pravidlo jednej banky.</p>
+</details>
+<details>
+  <summary>Znamená čistý výsledok kontroly, že platba prejde?</summary>
+  <p>Nie. Ide o kontrolu formátu XML voči verejne publikovaným pravidlám Tatra banky, nič viac. Banka môže platbu odmietnuť aj z iných dôvodov, napríklad z nedostatku krytia na účte alebo z vlastných bezpečnostných pravidiel, ktoré vo svojej verejnej dokumentácii neopisuje.</p>
+</details>
+        </section>
+        <section class="sec" id="s10">
+<p class="r d1">Kto si to chce overiť na vlastnom súbore, môže XML vložiť do <a data-umami-event="open-sepa-pain001-doctor-tatra" href="https://arling.sk/sepa-pain001-doctor/">SEPA pain.001 Doctor</a> a vybrať Tatra banku.</p>
+        </section>
+      </div>
+    </div>
+  </div>
+  <section class="deep" id="s11">
+    <div class="wrap">
+      <div class="note">
+        <div class="doc">
+<h2 class="r">Zdroje</h2>
+<ol class="sources r d1">
+  <li>Tatra banka: <cite>Prenosový formát pain.001.001.03 v štruktúre XML</cite>. <a href="https://www.tatrabanka.sk/files/sk/personal/ucet-platby/elektronicke-bankovnictvo/internet-banking/davkove-platby/prenosovy_formatpain001.pdf">tatrabanka.sk/.../prenosovy_formatpain001.pdf</a>. Zdroj pre menný priestor, BIC platiteľa TATRSKBX, limit 500 transakcií, okno dátumu ReqdExctnDt (nie spätný, max 31 dní dopredu), rovnaký dátum vo všetkých blokoch PmtInf, vzor GrpHdr/InitgPty/Nm, jednu inštanciu Ustrd a kontrolu modulo 11 slovenského IBAN príjemcu. Overené 6. 9. 2026.</li>
+  <li>VÚB, a. s.: <cite>Popis formátu pre SEPA úhrady - SCT</cite>. <a href="https://app.vub.sk/source/files/vubweb/sekundarna-navigacia/informacny-servis/sepa-aplikacie/sct_klient_f.pdf">app.vub.sk/.../sct_klient_f.pdf</a>. Zdroj pre presné hodnoty PmtMtd „TRF", SvcLvl/Cd „SEPA" a ChrgBr „SLEV" v poli pain.001, ako doklad, že ide o hodnoty spoločné viacerým bankám spracúvajúcim ten istý formát, nie o špecifikum jednej z nich. Overené 6. 9. 2026.</li>
+  <li>ISO 20022 (<a href="https://www.iso20022.org/">iso20022.org</a>) a EPC SEPA Credit Transfer rulebook (<a href="https://www.europeanpaymentscouncil.eu/">europeanpaymentscouncil.eu</a>): základná schéma pain.001.001.03 a jej menný priestor, pravidlo EUR ako jedinej meny a PmtMtd/SvcLvl/ChrgBr ako schémou fixované hodnoty. Overené 6. 9. 2026.</li>
+</ol>
+<p class="r d2" style="font-size:.85em;color:var(--muted)">Presnú citáciu Tatra banky pre hodnoty PmtMtd, SvcLvl/Cd a ChrgBr sme priamo v jej dokumente nedohľadali; v článku sú preto označené ako hodnoty fixované schémou SEPA Credit Transfer, nie ako doslovný citát Tatra banky.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+<footer>
+  <div class="wrap foot">
+    <div><b>ARLing s. r. o.</b><br>Ivanská cesta 32E<br>821 04 Bratislava, Slovensko</div>
+    <div>IČO 56583486<br>IČ DPH SK2122352100<br><a href="mailto:andrej@arling.sk">andrej@arling.sk</a></div>
+    <div><a href="https://arling.sk/privacy/">ochrana údajov</a> · <a href="https://arling.sk/podmienky/">podmienky</a> · <a href="https://arling.sk/gdpr/">GDPR</a> · <a href="https://arling.sk/impressum/">Impressum</a> · <a href="https://arling.sk/llms.txt">llms.txt</a> · <a href="https://arling.sk/sitemap-index.xml">mapa stránky</a><br>Nástroje sú poskytované tak, ako sú, bez záruky. Anonymné počty návštev cez vlastné Umami.</div>
+  </div>
+</footer>
+<script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="be534d51-4d01-4860-b267-9596d91606de"></script>
+<script>
+(function () {
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var hero = document.getElementById('hero');
+  if (reduce) {
+    document.querySelectorAll('.r, section').forEach(function (e) { e.classList.add('in'); });
+  }
+  if (!reduce && hero) {
+    requestAnimationFrame(function () {
+      hero.querySelectorAll('.r').forEach(function (e) { e.classList.add('in'); });
+    });
+  }
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (en) {
+      if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); }
+    });
+  }, { rootMargin: '0px 0px -12% 0px', threshold: 0.1 });
+  document.querySelectorAll('section').forEach(function (s) { io.observe(s); });
+
+  // nadpis clanku sa objavi po slovach, ako dobre vytlaceny titulok
+  var h1 = document.getElementById('h1');
+  if (h1) {
+    var i = 0;
+    Array.prototype.forEach.call(h1.querySelectorAll('.l'), function (line) {
+      var words = line.textContent.split(' ');
+      line.textContent = '';
+      words.forEach(function (w, k) {
+        var s = document.createElement('span');
+        s.className = 'w';
+        s.style.transitionDelay = (i++ * 0.06).toFixed(2) + 's';
+        s.textContent = w;
+        line.appendChild(s);
+        if (k < words.length - 1) line.appendChild(document.createTextNode(' '));
+      });
+    });
+    requestAnimationFrame(function () { h1.classList.add('in'); });
+  }
+})();
+</script>
+</body>
+</html>

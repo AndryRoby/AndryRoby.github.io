@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="sk">
+<head>
+<script src="/style/vzhlad.js?v=93c2659f"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://homelab.tailbf8f27.ts.net 'sha256-MZ5jwrdSSlzpslMSlvqGnWwRF7k1os+M9iMDxSwpRco=' 'sha256-JE4sVu1odUroWSJeg9x6/7c0Nul3PdCLhIkir8Ai6ek=' 'sha256-4hpM9joB8d0uOhBzB+Jgu8RRd0E053FT1rWuRz8VoKU=' 'sha256-0PxmtJhfdRRqQ1O7CvviHNLgLWcXX9lDBjeGvirUfHk='; connect-src 'self' https://homelab.tailbf8f27.ts.net; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0a0908">
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../../favicon.ico" sizes="48x48">
+<link rel="apple-touch-icon" href="../../icon-180.png">
+<title>Štruktúrovaná adresa v SEPA: ktoré polia, aké limity, aké kódy krajín</title>
+<meta name="description" content="Polia StrtNm, BldgNb, PstCd, TwnNm a Ctry v SEPA adrese, ich maximálne dĺžky, kód krajiny podľa ISO 3166-1 a tri príklady adresy, ktoré banka prijme.">
+<link rel="canonical" href="https://arling.sk/notes/sepa-adresa-ake-polia-a-limity/">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Štruktúrovaná adresa v SEPA: ktoré polia, aké limity, aké kódy krajín">
+<meta property="og:description" content="Polia StrtNm, BldgNb, PstCd, TwnNm a Ctry v SEPA adrese, ich maximálne dĺžky, kód krajiny podľa ISO 3166-1 a tri príklady adresy, ktoré banka prijme.">
+<meta property="og:url" content="https://arling.sk/notes/sepa-adresa-ake-polia-a-limity/">
+<meta property="og:locale" content="sk_SK">
+
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Štruktúrovaná adresa v SEPA: ktoré polia, aké limity, aké kódy krajín",
+  "datePublished": "2026-09-06",
+  "dateModified": "2026-09-06",
+  "inLanguage": "sk",
+  "description": "Polia StrtNm, BldgNb, PstCd, TwnNm a Ctry v SEPA adrese, ich maximálne dĺžky, kód krajiny podľa ISO 3166-1 a tri príklady adresy, ktoré banka prijme.",
+  "author": { "@type": "Organization", "name": "ARLing s. r. o.", "url": "https://arling.sk/" },
+  "publisher": {
+    "@type": "Organization",
+    "name": "ARLing s. r. o.",
+    "url": "https://arling.sk/"
+  },
+  "mainEntityOfPage": { "@type": "WebPage", "@id": "https://arling.sk/notes/sepa-adresa-ake-polia-a-limity/" }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "ARLing", "item": "https://arling.sk/" },
+    { "@type": "ListItem", "position": 2, "name": "Notes", "item": "https://arling.sk/notes/" },
+    { "@type": "ListItem", "position": 3, "name": "Štruktúrovaná adresa v SEPA", "item": "https://arling.sk/notes/sepa-adresa-ake-polia-a-limity/" }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Musím adresu v SEPA platbe vždy vyplniť?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Nie. Adresa je v pain.001 nepovinné pole aj po 15. novembri 2026. Ak ju účtovný softvér vôbec neposiela, súbor prejde bez nej. Ak ju posiela, musí mať aspoň mesto (TwnNm) a kód krajiny (Ctry)."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Čo ak je PSČ dlhšie ako 16 znakov?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Pole PstCd má podľa ISO 20022 maximum 16 znakov (Max16Text). Slovenské aj české PSČ v tvare 821 04 majú 6 znakov vrátane medzery a do limitu sa bez problémov zmestia."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Zakazuje termín 15. novembra 2026 aj starší formát pain.001.001.03?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Nie priamo. Zmena sa v schéme týka adresy, nie čísla verzie správy. Elementy StrtNm, BldgNb, PstCd, TwnNm a Ctry existujú aj v pain.001.001.03. Niektoré banky však k rovnakému alebo inému dátumu prestávajú verziu .03 prijímať z vlastného rozhodnutia, to treba overiť priamo v banke."
+      }
+    }
+  ]
+}
+</script>
+
+<link rel="preload" href="/fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/style/paper.css?v=e68fba59">
+<script src="/style/prepinac.js?v=2988c181" defer></script>
+<style>
+  /* Notes. Vzhlad, farby, typografia a pohyb su v /style/paper.css.
+     Tu ostava len to, co je pre clanok vlastne: merany pas, register, panel s nastrojom. */
+  .note{max-width:min(100%,880px);margin:0 auto}
+  .doc{max-width:min(68ch,660px);margin-inline:auto;font-size:clamp(17px,1.2vw,18px);line-height:1.62}
+
+  /* uvod clanku: nadpis, datum, odkaz na nastroj */
+  .hero-note{padding:clamp(34px,4.6vw,72px) 0 clamp(20px,2.4vw,34px)}
+  /* Titul clanku je hero stranky. Hlavna veta dorastie na desktope na 64 px, ako ziada
+     paper-v2 bod 9.4. Druhy riadok titulu je vzdy vysvetlujuca cast za dvojbodkou:
+     ostava v rovnakom reze, len mensia a tlmenejsia, aby ani najdlhsi titul (141 znakov
+     v clanku o Shopify) nezabral cely prvy pohlad. Rodinu, farbu a letter-spacing
+     urcuje paper.css, tu je len mierka. */
+  .hero-note h1{font-size:clamp(32px,4.6vw,64px);line-height:1.05;margin:0 0 18px}
+  .hero-note h1 .l+.l{display:block;margin-top:.3em;font-weight:500;
+    font-size:clamp(20px,2.4vw,34px);line-height:1.2;letter-spacing:-.01em;color:var(--body)}
+  .hero-note .kicker{display:block;margin:0 0 12px}
+  .hero-note .crumbs{font-family:var(--ui);font-size:12px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--accent);margin:0 0 12px}
+  .hero-note .crumbs a{color:inherit;text-decoration:none}
+  .hero-note .crumbs a:hover{text-decoration:underline}
+  .byline,.dateline{font-family:var(--ui);font-size:14px;color:var(--muted);margin:0 0 20px;max-width:none}
+  .toolgo{margin:0}
+
+  /* rytmus clanku: vlasova linka medzi castami, ziadne velke medzery sekcii */
+  section{scroll-margin-top:86px}
+  .doc section{padding:0;border-top:none;margin:0 0 clamp(26px,2.8vw,38px)}
+  .doc section+section{border-top:1px solid var(--line);padding-top:clamp(26px,2.8vw,36px)}
+  /* Mierka nadpisov vnutri clanku, nie kopia paper.css: pas textu ma 660 px, do neho sa
+     sekcny nadpis v plnej velkosti z paper.css (42 px) nezmesti bez zalomenia. Mení sa
+     len velkost a odstupy, vsetko ostatne dedi z paper.css. */
+  .doc h2{font-size:clamp(21px,1.9vw,27px);line-height:1.22;margin:0 0 12px}
+  .doc h3{font-size:clamp(17.5px,1.3vw,20px);margin:18px 0 8px}
+  .doc p{margin:0 0 14px;max-width:none}
+  .doc .num,.doc .kicker{display:block;font-family:var(--ui);font-size:12px;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--accent);margin:0 0 7px}
+  .doc .lead,.doc .lede{font-size:clamp(18px,1.35vw,20.5px);line-height:1.55;max-width:none;margin:0 0 18px}
+  .doc ol,.doc ul{padding-left:22px;margin:0 0 16px}
+  .doc li{margin:0 0 7px}
+  .doc li:last-child{margin-bottom:0}
+  .doc a{overflow-wrap:anywhere}
+  .doc code{background:var(--paper-deep);border:1px solid var(--line);border-radius:4px;padding:1px 5px;
+    overflow-wrap:anywhere}
+  .doc pre{margin:0 0 16px;white-space:pre-wrap;overflow-wrap:break-word}
+  .doc pre code{background:none;border:none;padding:0;font-size:13.5px;line-height:1.55}
+  .doc blockquote{margin:0 0 16px;padding:8px 16px;border-left:2px solid var(--line);color:var(--muted)}
+
+  /* chybova hlaska, oprava, ukazka kodu s popisom */
+  .doc .err{background:color-mix(in srgb,var(--accent) 7%,var(--card));border:1px solid var(--line);
+    border-left:3px solid var(--accent);border-radius:8px;padding:12px 16px;margin:0 0 16px}
+  .doc .err code{background:none;border:none;padding:0;color:var(--ink)}
+  .doc .fix{margin:0 0 16px;padding-left:16px;border-left:2px solid var(--accent)}
+  .doc .fix p{margin:0 0 8px}
+  .doc .fix p:last-child{margin-bottom:0}
+  .doc .fix-label{font-family:var(--ui);font-size:12px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--muted);margin:0 0 6px}
+  .doc .snippet{background:var(--card);border:1px solid var(--line);border-radius:10px;margin:0 0 18px;
+    overflow:hidden}
+  .doc .snippet .cap{padding:8px 14px;border-bottom:1px solid var(--line);
+    font:500 11px/1.3 var(--ui);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  .doc .snippet.bad .cap{color:var(--accent)}
+  .doc .snippet pre{margin:0;border:none;border-radius:0;background:none;white-space:pre-wrap}
+
+  /* caste otazky */
+  .doc details{border-top:1px solid var(--line);padding:14px 0}
+  .doc details:last-of-type{border-bottom:1px solid var(--line);margin-bottom:16px}
+  .doc summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;gap:14px;
+    font:600 17px/1.35 var(--display);color:var(--ink)}
+  .doc summary::-webkit-details-marker{display:none}
+  .doc summary::after{content:"+";flex:none;color:var(--accent);font-family:var(--ui);font-weight:400}
+  .doc details[open] summary::after{content:"\2013"}
+  .doc details p{margin:10px 0 0}
+
+  /* zdroje */
+  .doc ul.sources{list-style:none;padding-left:0}
+  .doc ul.sources li{padding-left:14px;border-left:2px solid var(--line)}
+  .doc .sources li{margin:0 0 10px;font-size:.95em}
+  .doc .sources cite{font-style:italic}
+  .doc ul.plain{list-style:none;padding-left:0}
+  .doc ul.plain li{margin:0;padding:10px 0;border-top:1px solid var(--line)}
+  .doc ul.plain li:first-child{border-top:none}
+
+  /* panel s nastrojom: jedina tmava plocha v texte, tam sa klika */
+  .doc .tool-box,.doc .toolbox,.doc .check,.doc .try,.doc .cta{display:block;background:var(--ink);
+    color:#cfcabd;border:none;border-radius:var(--radius);padding:clamp(20px,2.2vw,28px);margin:0 0 18px}
+  .doc .tool-box p,.doc .check p,.doc .try p,.doc .cta p{max-width:none;margin:0 0 12px;color:#cfcabd}
+  .doc .toolbox{max-width:none;color:#cfcabd}
+  .doc .tool-box p:last-of-type,.doc .check p:last-child,.doc .try p:last-child,
+  .doc .cta p:last-child{margin-bottom:0}
+  .doc .tool-box a,.doc .toolbox a,.doc .check a,.doc .try a,.doc .cta a{color:#fffdf8}
+  .doc .tool-box a:hover,.doc .toolbox a:hover,.doc .check a:hover,.doc .try a:hover,
+  .doc .cta a:hover{color:var(--accent-light)}
+  .doc .tool-box code,.doc .toolbox code,.doc .check code,.doc .try code,.doc .cta code{
+    background:rgba(255,253,248,.10);border-color:rgba(255,253,248,.22);color:#fffdf8}
+  .doc .tool-box .btn{margin:14px 10px 0 0;text-decoration:none;color:#fff}
+  /* dve tlacidla vedla seba sa nesmu dotykat, na uzkom mobile sa zalomia pod seba */
+  /* druhe tlacidlo v tmavom paneli je vedlajsie: linka namiesto plochy */
+  .doc .tool-box .btn+.btn{background:none;border:1px solid rgba(255,253,248,.45);color:#fffdf8}
+  .doc .tool-box .btn+.btn:hover{background:#fffdf8;color:var(--ink)}
+  .doc .tool-cta{display:inline-flex;align-items:center;height:46px;padding:0 20px;border-radius:12px;
+    margin:2px 0 0;background:var(--accent);color:#fff;font:500 15px/1 var(--ui);text-decoration:none}
+  .doc .tool-cta:hover{background:var(--accent-dark);color:#fff}
+
+  /* bocny register drzi sa laveho okraja clanku */
+  /* Stlpec clanku je uzsi nez obsah hubu (880 px, nie 1340), tak sa register zmesti
+     uz od 1280 px: cely stoji v lavom okraji a od textu ho deli stalych 35 px.
+     Pod tou hranicou by uz do textu zasahoval, preto ho paper.css skryje. */
+  @media (min-width:1280px){}
+
+  /* paticka je tmavy pas na konci */
+  footer.band{border-top:none;color:#a8a294}
+  footer.band a,footer.band b{color:#fffdf8}
+  footer.band .wrap{max-width:880px}
+  footer.band .cols{width:min(880px,92vw);margin:0 auto;gap:16px 32px}
+
+</style>
+</head>
+<body class="noc">
+<div class="wash" aria-hidden="true"><i></i><i></i></div>
+<noscript><style>.r,.w{opacity:1;transform:none;filter:none}</style></noscript>
+<header>
+  <div class="wrap bar">
+    <a class="brand" href="https://arling.sk/">
+      <svg viewBox="0 0 488 215" width="38" height="15" aria-hidden="true" focusable="false"><path fill="#f4f4f7" fill-rule="evenodd" d="M0.00,213.00L74.00,214.00L181.00,85.00L285.00,214.00L360.00,214.00L206.00,21.00L185.00,4.00L164.00,10.00Z M221.00,0.00L263.00,50.00L395.00,50.00L409.00,55.00L419.00,76.00L401.00,96.00L313.00,98.00L411.00,214.00L487.00,214.00L422.00,139.00L457.00,123.00L482.00,88.00L482.00,48.00L463.00,19.00L417.00,0.00Z"/><path fill="#f2643c" d="M269.00,66.00L269.00,67.00L268.00,68.00L268.00,70.00L267.00,71.00L267.00,76.00L268.00,77.00L268.00,79.00L270.00,81.00L270.00,82.00L271.00,82.00L273.00,84.00L274.00,84.00L277.00,86.00L279.00,86.00L280.00,87.00L287.00,87.00L288.00,86.00L290.00,86.00L291.00,85.00L294.00,84.00L298.00,80.00L298.00,79.00L299.00,78.00L299.00,75.00L300.00,74.00L300.00,72.00L299.00,71.00L299.00,69.00L298.00,68.00L297.00,65.00L295.00,63.00L294.00,63.00L289.00,60.00L278.00,60.00L277.00,61.00L276.00,61.00L275.00,62.00L272.00,63.00Z"/></svg>
+      <b>ARLing</b><span>Notes</span>
+    </a>
+    <nav aria-label="Site"><a href="https://arling.sk/#tools">Nástroje</a><a href="https://arling.sk/notes/">Notes</a><a href="https://arling.sk/how-we-work/">Ako pracujeme</a><a href="mailto:andrej@arling.sk">Kontakt</a></nav>
+  </div>
+</header>
+<main>
+  <div class="wrap">
+    <div class="note">
+      <div class="hero-note" id="hero">
+        <h1 id="h1" class="r d1"><span class="l">Štruktúrovaná adresa v SEPA:</span><span class="l">ktoré polia, aké limity, aké kódy krajín</span></h1>
+        <p class="byline r d2">ARLing s. r. o., ARLing. 6. septembra 2026.</p>
+        <p class="toolgo r d3"><a data-umami-event="open-sepa-pain001-doctor-hero" class="go" href="https://arling.sk/sepa-pain001-doctor/">SEPA pain.001 Doctor <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2.5 8h11M9 3.5 13.5 8 9 12.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a></p>
+      </div>
+      <div class="doc">
+        <section class="sec" id="s1">
+<p class="lead r">Účtovný softvér posiela adresu platiteľa alebo príjemcu často ako jeden riadok voľného textu v poli <code>AdrLine</code>, napríklad „Ivanská cesta 32E, 821 04 Bratislava, Slovensko". Od 15. novembra 2026 to v SEPA úhrade aj v inkase neprejde, pokiaľ je adresa v súbore vôbec uvedená: musí mať aspoň mesto a kód krajiny vo vlastných poliach. Adresa samotná zostáva nepovinná, mení sa len tvar, v akom je zapísaná, ak sa v súbore nachádza.</p>
+        </section>
+        <section class="sec" id="s2">
+<h2 class="r">1. Polia adresy a ich maximálne dĺžky</h2>
+<p class="r d1">Poštová adresa v pain.001 sa zapisuje do elementu <code>PstlAdr</code>. Podľa ISO 20022 (schéma pain.001.001.03 aj novšia .09) má päť polí, ktoré sa v slovenskej a českej praxi reálne používajú:</p>
+<ul class="plain r d2">
+  <li><code>StrtNm</code>: názov ulice, maximálne 70 znakov (typ Max70Text).</li>
+  <li><code>BldgNb</code>: popisné alebo orientačné číslo, maximálne 16 znakov (Max16Text).</li>
+  <li><code>PstCd</code>: PSČ, maximálne 16 znakov (Max16Text). Slovenský aj český tvar „821 04" má 6 znakov vrátane medzery, do limitu sa zmestí bez problémov.</li>
+  <li><code>TwnNm</code>: mesto alebo obec, maximálne 35 znakov (Max35Text). Toto pole je od 15. 11. 2026 povinné, ak je adresa v súbore vôbec uvedená.</li>
+  <li><code>Ctry</code>: kód krajiny, presne dve písmená podľa medzinárodnej normy ISO 3166-1 alpha-2, napríklad SK, CZ, AT alebo DE. Rovnako ako TwnNm je od 15. 11. 2026 povinné, ak je adresa uvedená.</li>
+</ul>
+<p class="r d3">Poradie týchto piatich prvkov je v XML rovnaké ako v zozname vyššie a je zhodné v staršej aj novšej verzii schémy. Rozšírený omyl: staršia verzia pain.001.001.03 vraj štruktúrovanú adresu neunesie. Elementy StrtNm až Ctry v nej existujú rovnako ako v novšej .09, rozdiel medzi verziami nie je v tom, čo unesú, ale v tom, ktorú verziu banka k danému termínu ešte prijíma. To si over priamo vo svojom internet bankingu.</p>
+        </section>
+        <section class="sec" id="s3">
+<h2 class="r">2. Tri príklady: čo prejde a čo nie</h2>
+<p class="r d1">Rovnaká adresa sa dá zapísať tromi spôsobmi. Po 15. 11. 2026 prejdú len druhý a tretí, ak je adresa v súbore vôbec prítomná.</p>
+<div class="snippet bad r d2">
+  <div class="cap">Neštruktúrovaná adresa, po termíne neprejde</div>
+  <pre><code>&lt;PstlAdr&gt;
+  &lt;AdrLine&gt;Ivanská cesta 32E, 821 04 Bratislava, Slovensko&lt;/AdrLine&gt;
+&lt;/PstlAdr&gt;</code></pre>
+</div>
+<div class="snippet r d3">
+  <div class="cap">Hybridná adresa, prejde</div>
+  <pre><code>&lt;PstlAdr&gt;
+  &lt;AdrLine&gt;Ivanská cesta 32E&lt;/AdrLine&gt;
+  &lt;TwnNm&gt;Bratislava&lt;/TwnNm&gt;
+  &lt;Ctry&gt;SK&lt;/Ctry&gt;
+&lt;/PstlAdr&gt;</code></pre>
+</div>
+<div class="snippet r d3">
+  <div class="cap">Plne štruktúrovaná adresa, prejde</div>
+  <pre><code>&lt;PstlAdr&gt;
+  &lt;StrtNm&gt;Ivanská cesta&lt;/StrtNm&gt;
+  &lt;BldgNb&gt;32E&lt;/BldgNb&gt;
+  &lt;PstCd&gt;821 04&lt;/PstCd&gt;
+  &lt;TwnNm&gt;Bratislava&lt;/TwnNm&gt;
+  &lt;Ctry&gt;SK&lt;/Ctry&gt;
+&lt;/PstlAdr&gt;</code></pre>
+</div>
+<p class="r d4">Hybridná adresa smie mať najviac dva riadky <code>AdrLine</code> popri štruktúrovaných poliach. Tretí riadok voľného textu vedľa TwnNm a Ctry banka odmietne rovnako, ako keby chýbalo mesto alebo krajina. Ulicu a číslo je vtedy potrebné presunúť do vlastných polí <code>StrtNm</code> a <code>BldgNb</code>.</p>
+        </section>
+        <section class="sec" id="s4">
+<h2 class="r">3. Adresa zostáva nepovinná</h2>
+<p class="r d1">Pravidlo platné od 15. 11. 2026 sa netýka toho, či adresu uviesť treba, ale toho, v akom tvare smie byť zapísaná, ak sa v súbore nachádza. Súbor, ktorý element <code>PstlAdr</code> vôbec neobsahuje, prejde aj po termíne bez zmeny. Ak účtovný softvér adresu doteraz neposielal, nie je dôvod ju kvôli tomuto termínu dopĺňať. Povinnosť nastáva až vtedy, keď je adresa v súbore prítomná: vtedy musí obsahovať aspoň mesto a kód krajiny.</p>
+        </section>
+        <section class="sec" id="s5">
+<h2 class="r">Checklist</h2>
+<ol class="r d1">
+  <li>Zisti, či tvoj účtovný softvér do pain.001 vôbec posiela <code>PstlAdr</code>. Ak nie, tento termín sa ťa netýka.</li>
+  <li>Ak áno, over, že adresa má aspoň <code>TwnNm</code> a <code>Ctry</code>, nielen voľný text v <code>AdrLine</code>.</li>
+  <li>Skontroluj počet riadkov <code>AdrLine</code>: pri hybridnej adrese smú byť najviac dva.</li>
+  <li>Skontroluj dĺžky: StrtNm do 70 znakov, BldgNb a PstCd do 16 znakov, TwnNm do 35 znakov.</li>
+  <li>Over, že <code>Ctry</code> je presne dvojpísmenový kód podľa ISO 3166-1 (SK, CZ, AT, DE a podobne), nie celý názov krajiny.</li>
+  <li>Ak tvoja banka k termínu prechádza z pain.001.001.03 na .09, over si to priamo v internet bankingu, nie je to súčasť tohto pravidla o adrese.</li>
+</ol>
+        </section>
+        <section class="sec" id="s6">
+<h2 class="r">Časté otázky</h2>
+<details>
+  <summary>Musím adresu v SEPA platbe vždy vyplniť?</summary>
+  <p>Nie. Adresa je v pain.001 nepovinné pole aj po 15. novembri 2026. Ak ju účtovný softvér vôbec neposiela, súbor prejde bez nej. Ak ju posiela, musí mať aspoň mesto (TwnNm) a kód krajiny (Ctry).</p>
+</details>
+<details>
+  <summary>Čo ak je PSČ dlhšie ako 16 znakov?</summary>
+  <p>Pole PstCd má podľa ISO 20022 maximum 16 znakov (Max16Text). Slovenské aj české PSČ v tvare 821 04 majú 6 znakov vrátane medzery a do limitu sa bez problémov zmestia.</p>
+</details>
+<details>
+  <summary>Zakazuje termín 15. novembra 2026 aj starší formát pain.001.001.03?</summary>
+  <p>Nie priamo. Zmena sa v schéme týka adresy, nie čísla verzie správy. Elementy StrtNm, BldgNb, PstCd, TwnNm a Ctry existujú aj v pain.001.001.03. Niektoré banky však k vlastnému dátumu prestávajú verziu .03 prijímať z vlastného rozhodnutia, to treba overiť priamo v banke.</p>
+</details>
+        </section>
+        <section class="sec" id="s7">
+<h2 class="r">Skontrolujte to na vlastnom súbore</h2>
+<p class="toolbox r d1">Kto si chce overiť, či jeho pain.001 súbor spĺňa pravidlá o štruktúrovanej adrese, môže ho vložiť do <a data-umami-event="open-sepa-pain001-doctor-cta" href="https://arling.sk/sepa-pain001-doctor/">SEPA pain.001 Doctor</a>: nástroj vypíše každú adresu, ktorej chýba mesto alebo krajina, aj adresu s príliš veľa riadkami AdrLine.</p>
+        </section>
+      </div>
+    </div>
+  </div>
+  <section class="deep" id="s8">
+    <div class="wrap">
+      <div class="note">
+        <div class="doc">
+<h2 class="r">Zdroje</h2>
+<ol class="sources r d1">
+  <li>European Payments Council: zosúladenie schém SCT, SCT Inst a SDD, termín štruktúrovanej adresy 15. november 2026. <a href="https://www.europeanpaymentscouncil.eu/">europeanpaymentscouncil.eu</a>. Overené 6. 9. 2026.</li>
+  <li>ECB / Payments Market Practice Group: vzorový list korporátnym klientom o prechode na hybridnú adresu, vrátane pravidla najviac dva riadky AdrLine (22. 10. 2025). <a href="https://www.ecb.europa.eu/paym/groups/shared/docs/daba2-industry-template-hybrid-address-communication-to-corporates-pmpg-2025-10-22-.pdf">ecb.europa.eu/.../daba2-industry-template-hybrid-address...</a>. Overené 6. 9. 2026.</li>
+  <li>ISO 20022: definícia elementu PstlAdr (PostalAddress6 v pain.001.001.03, PostalAddress24 v pain.001.001.09) a dátových typov Max70Text, Max16Text, Max35Text pre polia StrtNm, BldgNb, PstCd a TwnNm; typ CountryCode pre Ctry ako dvojpísmenový kód podľa ISO 3166-1. <a href="https://www.iso20022.org/">iso20022.org</a>. Overené 6. 9. 2026.</li>
+</ol>
+<p class="r d2" style="font-size:.9em;color:var(--muted)">Presné znenie webu Komerční banky k tejto téme uvádza pre svoj vlastný systém MultiCash iný dátum účinnosti než 15. 11. 2026: ide o rozhodnutie tejto konkrétnej banky, nie o dátum SEPA schémy, preto ho tu nepoužívame ako zdroj k termínu.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+<footer>
+  <div class="wrap foot">
+    <div><b>ARLing s. r. o.</b><br>Ivanská cesta 32E<br>821 04 Bratislava, Slovensko</div>
+    <div>IČO 56583486<br>IČ DPH SK2122352100<br><a href="mailto:andrej@arling.sk">andrej@arling.sk</a></div>
+    <div><a href="https://arling.sk/privacy/">ochrana údajov</a> · <a href="https://arling.sk/podmienky/">podmienky</a> · <a href="https://arling.sk/gdpr/">GDPR</a> · <a href="https://arling.sk/impressum/">Impressum</a> · <a href="https://arling.sk/llms.txt">llms.txt</a> · <a href="https://arling.sk/sitemap-index.xml">mapa stránky</a><br>Nástroje sú poskytované tak, ako sú, bez záruky. Anonymné počty návštev cez vlastné Umami.</div>
+  </div>
+</footer>
+<script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="be534d51-4d01-4860-b267-9596d91606de"></script>
+<script>
+(function () {
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var hero = document.getElementById('hero');
+  if (reduce) {
+    document.querySelectorAll('.r, section').forEach(function (e) { e.classList.add('in'); });
+  }
+  if (!reduce && hero) {
+    requestAnimationFrame(function () {
+      hero.querySelectorAll('.r').forEach(function (e) { e.classList.add('in'); });
+    });
+  }
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (en) {
+      if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); }
+    });
+  }, { rootMargin: '0px 0px -12% 0px', threshold: 0.1 });
+  document.querySelectorAll('section').forEach(function (s) { io.observe(s); });
+
+  // nadpis clanku sa objavi po slovach, ako dobre vytlaceny titulok
+  var h1 = document.getElementById('h1');
+  if (h1) {
+    var i = 0;
+    Array.prototype.forEach.call(h1.querySelectorAll('.l'), function (line) {
+      var words = line.textContent.split(' ');
+      line.textContent = '';
+      words.forEach(function (w, k) {
+        var s = document.createElement('span');
+        s.className = 'w';
+        s.style.transitionDelay = (i++ * 0.06).toFixed(2) + 's';
+        s.textContent = w;
+        line.appendChild(s);
+        if (k < words.length - 1) line.appendChild(document.createTextNode(' '));
+      });
+    });
+    requestAnimationFrame(function () { h1.classList.add('in'); });
+  }
+})();
+</script>
+</body>
+</html>
