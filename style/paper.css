@@ -669,3 +669,42 @@ body.noc .hero-noc{padding-top:clamp(48px,9vh,120px);padding-bottom:clamp(48px,9
   mask-image:linear-gradient(180deg,#000 0%,#000 58%,transparent 100%)}
 body.noc .zar-plocha{opacity:1}
 @media (prefers-reduced-motion:reduce){ .zar-plocha{transition:none} }
+
+/* Plátno v hero blokoch, ktoré nie sú .hero-noc (produktové stránky majú
+   vlastný úvod). Rovnaké pravidlá: pod obsahom, cez celú šírku, bez hrán. */
+.hero,.hero-alt{position:relative;isolation:isolate}
+.hero>*:not(.zar-plocha),.hero-alt>*:not(.zar-plocha){position:relative;z-index:1}
+
+
+/* Hlavička: značka vľavo, všetko ostatné vpravo v jednej skupine.
+   Predtým bola navigácia na strede a prepínač jazyka úplne vpravo, takže
+   medzi nimi zívala diera a nič nebolo zarovnané. */
+.bar{gap:clamp(16px,3vw,40px)}
+.bar nav{margin-left:auto;display:flex;align-items:center;gap:clamp(14px,1.6vw,26px)}
+.bar .langsel{margin-left:clamp(10px,1.4vw,20px)}
+@media (max-width:720px){
+  .bar{flex-wrap:wrap;row-gap:8px}
+  .bar nav{margin-left:0;order:3;width:100%;overflow-x:auto;gap:18px;padding-bottom:2px}
+  .bar .langsel{margin-left:auto}
+}
+
+/* Váha písma ako nástroj, nie ako náhoda.
+   Náš rez má 400 až 700, tak nech je vidieť, na čo ktorá váha je. Keď je
+   všetko tučné, nič nie je dôležité; keď je všetko tenké, stránka nemá kostru.
+     700  hlavný nadpis a nadpisy sekcií, jediné miesto, kde kričíme
+     600  podnadpisy, hlavné tlačidlo, menovky sekcií
+     500  navigácia, vedľajšie tlačidlo, odznaky
+     400  bežný text a metadáta
+   Nič medzi tým, aby sa stupnica nerozmazala. */
+body.noc h1,body.noc h2{font-weight:700}
+body.noc h3{font-weight:600;letter-spacing:-.01em}
+body.noc .kicker{font-weight:600}
+body.noc .bar nav a{font-weight:500;color:var(--body)}
+body.noc .bar nav a:hover{color:var(--ink)}
+body.noc .btn-solid{font-weight:600}
+body.noc .btn-line{font-weight:500}
+body.noc .odznak,body.noc .tag,body.noc .lbl{font-weight:500}
+body.noc .lead{font-weight:400}
+body.noc b,body.noc strong{font-weight:600;color:var(--ink)}
+/* Metadáta a poznámky pod čiarou nesmú konkurovať textu. */
+body.noc .fakty,body.noc .mini,body.noc .zdroje,body.noc .byline{font-weight:400}
