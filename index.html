@@ -180,9 +180,26 @@
 
   /* plávajúce karty */
   .hero-karty { position:relative; min-height:clamp(300px,44vw,470px); }
-  .hk { position:absolute; border:1px solid rgba(255,255,255,.13); border-radius:14px;
-        background:rgba(12,11,12,.52); backdrop-filter:blur(9px); -webkit-backdrop-filter:blur(9px);
-        padding:14px 16px; box-shadow:0 18px 44px rgba(0,0,0,.45); }
+  /* Karty maju vyzerat, ze su v scene, nie nalepene na nej. Preto: teply lem
+     namiesto sedeho, silnejsie rozostrenie pozadia, jemne natocenie v perspektive
+     a dvojity tien, jeden tvrdy pri okraji a jeden mekky dalej. */
+  .hero-karty { perspective:1400px; }
+  .hk { position:absolute; border:1px solid rgba(255,146,90,.20); border-radius:16px;
+        background:linear-gradient(160deg, rgba(24,17,15,.90), rgba(9,8,9,.86));
+        backdrop-filter:blur(16px) saturate(1.15); -webkit-backdrop-filter:blur(16px) saturate(1.15);
+        padding:15px 17px; transform-style:preserve-3d;
+        box-shadow:0 1px 0 rgba(255,255,255,.06) inset,
+                   0 0 0 1px rgba(0,0,0,.30),
+                   0 26px 60px rgba(0,0,0,.60),
+                   0 6px 18px rgba(0,0,0,.45);
+        transition:transform .5s var(--ease,cubic-bezier(.22,.61,.36,1)), border-color .5s; }
+  /* horny lem, ktory chyta svetlo rieky */
+  .hk::before { content:""; position:absolute; inset:0 0 auto; height:1px; border-radius:16px 16px 0 0;
+                background:linear-gradient(90deg, transparent, rgba(255,159,61,.55), transparent); }
+  .hk-zoznam { transform:rotateY(6deg) rotateX(2deg) translateZ(20px); }
+  .hk-cislo  { transform:rotateY(-5deg) rotateX(2deg) translateZ(46px); }
+  .hk-panel  { transform:rotateY(-7deg) rotateX(3deg) translateZ(8px); }
+  .hero-karty:hover .hk { border-color:rgba(255,146,90,.30); }
   .hk-hlava { margin:0 0 10px; font:500 10.5px/1 var(--ui); letter-spacing:.18em;
               text-transform:uppercase; color:var(--muted); }
   .hk-zoznam { top:2%; left:0; width:min(240px,62%); }
@@ -632,7 +649,7 @@
     <div><a href="https://arling.sk/privacy/">ochrana údajov</a> · <a href="https://arling.sk/podmienky/">podmienky</a> · <a href="https://arling.sk/gdpr/">GDPR</a> · <a href="https://arling.sk/impressum/">Impressum</a> · <a href="https://arling.sk/llms.txt">llms.txt</a> · <a href="https://arling.sk/sitemap-index.xml">mapa stránky</a><br>Nástroje sú poskytované tak, ako sú, bez záruky. Anonymné počty návštev cez vlastné Umami.</div>
   </div>
 </footer>
-<script src="/style/zar.js?v=56956f8e" defer></script>
+<script src="/style/zar.js?v=ac150ec0" defer></script>
 <script src="dopyt.js" defer></script>
 <script src="subscribe.js" defer></script>
 <script>
