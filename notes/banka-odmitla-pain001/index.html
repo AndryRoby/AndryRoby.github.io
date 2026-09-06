@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<script src="/style/vzhlad.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0a0908">
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../../favicon.ico" sizes="48x48">
+<link rel="apple-touch-icon" href="../../icon-180.png">
+<title>Banka odmítla hromadný příkaz pain.001: co zkontrolovat | ARLing</title>
+<meta name="description" content="Osm nejčastějších důvodů, proč banka odmítne SEPA XML pain.001, a jak si každý z nich ověřit sami v textovém editoru bez programování.">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Banka odmítla hromadný příkaz pain.001: co zkontrolovat">
+<meta property="og:description" content="Osm nejčastějších důvodů, proč banka odmítne SEPA XML pain.001, a jak si každý z nich ověřit sami v textovém editoru.">
+<meta property="og:url" content="https://arling.sk/notes/banka-odmitla-pain001/">
+<meta property="og:locale" content="cs_CZ">
+<link rel="canonical" href="https://arling.sk/notes/banka-odmitla-pain001/">
+<link rel="stylesheet" href="/style/paper.css">
+<script src="/style/prepinac.js" defer></script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Banka odmítla hromadný příkaz pain.001: co zkontrolovat",
+  "description": "Osm nejčastějších důvodů, proč banka odmítne SEPA XML pain.001, a jak si každý z nich ověřit sami v textovém editoru bez programování.",
+  "datePublished": "2026-09-06",
+  "dateModified": "2026-09-06",
+  "inLanguage": "cs",
+  "author": { "@type": "Organization", "name": "ARLing s. r. o.", "url": "https://arling.sk/" },
+  "publisher": { "@type": "Organization", "name": "ARLing s. r. o.", "url": "https://arling.sk/" },
+  "mainEntityOfPage": "https://arling.sk/notes/banka-odmitla-pain001/"
+}
+</script>
+
+<style>
+  article { max-width:72ch; }
+  article h2 { margin:clamp(34px,4vh,52px) 0 12px; }
+  article h3 { margin:26px 0 8px; }
+  article p, article li { font-size:16.5px; line-height:1.7; }
+  article ol, article ul { padding-left:22px; }
+  article li { margin:0 0 8px; }
+  code { font:13.5px/1.4 var(--mono); background:var(--card); border:1px solid var(--line);
+    border-radius:3px; padding:1px 5px; overflow-wrap:anywhere; }
+  pre { background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    padding:16px 18px; overflow-x:auto; font:13px/1.6 var(--mono); color:var(--body); }
+  .byline { font-family:var(--ui); font-size:14px; color:var(--muted); margin:0 0 clamp(26px,3vh,40px); }
+  .zhrn { border-left:3px solid var(--accent); background:var(--card); border-radius:0 var(--radius) var(--radius) 0;
+    padding:18px 22px; margin:0 0 clamp(26px,3vh,40px); }
+  .zhrn p { margin:0; font-size:16px; }
+  .zdroje { font-family:var(--ui); font-size:13.5px; color:var(--muted); line-height:1.7;
+    border-top:1px solid var(--line); padding-top:18px; margin-top:clamp(34px,4vh,52px); }
+  .zdroje a { color:var(--body); }
+</style>
+</head>
+<body class="noc">
+<div class="wash" aria-hidden="true"><i></i><i></i></div>
+
+<header>
+  <div class="wrap bar">
+    <a class="brand" href="https://arling.sk/">
+      <svg viewBox="0 0 488 215" width="38" height="15" aria-hidden="true" focusable="false"><path fill="#f4f4f7" fill-rule="evenodd" d="M0.00,213.00L74.00,214.00L181.00,85.00L285.00,214.00L360.00,214.00L206.00,21.00L185.00,4.00L164.00,10.00Z M221.00,0.00L263.00,50.00L395.00,50.00L409.00,55.00L419.00,76.00L401.00,96.00L313.00,98.00L411.00,214.00L487.00,214.00L422.00,139.00L457.00,123.00L482.00,88.00L482.00,48.00L463.00,19.00L417.00,0.00Z"/><path fill="#f2643c" d="M269.00,66.00L269.00,67.00L268.00,68.00L268.00,70.00L267.00,71.00L267.00,76.00L268.00,77.00L268.00,79.00L270.00,81.00L270.00,82.00L271.00,82.00L273.00,84.00L274.00,84.00L277.00,86.00L279.00,86.00L280.00,87.00L287.00,87.00L288.00,86.00L290.00,86.00L291.00,85.00L294.00,84.00L298.00,80.00L298.00,79.00L299.00,78.00L299.00,75.00L300.00,74.00L300.00,72.00L299.00,71.00L299.00,69.00L298.00,68.00L297.00,65.00L295.00,63.00L294.00,63.00L289.00,60.00L278.00,60.00L277.00,61.00L276.00,61.00L275.00,62.00L272.00,63.00Z"/></svg>
+      <b>ARLing</b>
+    </a>
+    <nav aria-label="Site"><a href="https://arling.sk/#tools">Nástroje</a><a href="https://arling.sk/notes/">Notes</a><a href="https://arling.sk/how-we-work/">Jak pracujeme</a><a href="mailto:andrej@arling.sk">Kontakt</a></nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <article>
+      <h1>Banka odmítla hromadný příkaz pain.001: co zkontrolovat</h1>
+      <p class="byline">ARLing s. r. o. · 6. září 2026</p>
+
+      <div class="zhrn">
+        <p>Banka většinou napíše jen „soubor se nepodařilo zpracovat“, bez
+        detailu proč. Osm věcí níže pokrývá naprostou většinu odmítnutí a
+        každou z nich zvládnete zkontrolovat sami, v obyčejném textovém
+        editoru, bez znalosti programování. Jde o pravidla schématu SEPA a
+        normy ISO 20022, která platí bez ohledu na to, u které banky máte
+        účet.</p>
+      </div>
+
+      <p>Soubor pain.001 je XML, které váš účetní software (Pohoda, Money S3,
+      vlastní export z ERP) vygeneruje z hromadného příkazu k úhradě. Banka
+      ho před zpracováním validuje podle normy ISO 20022 a pravidel schématu
+      SEPA, které vydává European Payments Council (EPC). Když soubor těmto
+      pravidlům neodpovídá, banka ho odmítne, obvykle bez řádku, na kterém
+      je chyba.</p>
+
+      <p>Body níže jsou seřazené podle toho, jak často se s nimi setkáváme.
+      Otevřete soubor v obyčejném textovém editoru (Poznámkový blok, VS
+      Code, Notepad++) a projděte je popořadě. Excel ani Word na to
+      nepoužívejte, oba dokážou XML při uložení tiše pozměnit.</p>
+
+      <h2>Osm nejčastějších příčin</h2>
+
+      <h3>1. Počet a součet plateb v hlavičce nesedí s obsahem</h3>
+      <p>Hlavička souboru (element <code>GrpHdr</code>) obsahuje
+      <code>NbOfTxs</code>, tedy kolik plateb soubor obsahuje, a
+      <code>CtrlSum</code>, tedy součet všech částek. Obě hodnoty musí přesně
+      odpovídat skutečnému obsahu souboru. Nesoulad vznikne nejčastěji tak,
+      že někdo v XML ručně smaže nebo přidá jednu platbu a zapomene
+      přepočítat hlavičku.</p>
+      <p><b>Jak ověřit:</b> v editoru přes Ctrl+F vyhledejte
+      <code>NbOfTxs</code> a přes „najít vše“ spočítejte, kolikrát se v
+      souboru vyskytuje <code>&lt;CdtTrfTxInf&gt;</code> (to je jedna
+      platba). Čísla se musí rovnat. Součet částek v <code>InstdAmt</code>
+      si přepište do tabulky a sečtěte, výsledek porovnejte s
+      <code>CtrlSum</code>.</p>
+
+      <h3>2. Datum splatnosti je v minulosti nebo příliš daleko dopředu</h3>
+      <p>Pole <code>ReqdExctnDt</code> je povinné a musí mít formát
+      RRRR-MM-DD. Zpětné datum banky obecně neakceptují. Jak daleko dopředu
+      lze zadat, schéma SEPA jednotně nestanovuje, každá banka si horní
+      hranici určuje sama ve svých obchodních podmínkách. Jako ilustraci, ne
+      jako pravidlo platné v Česku: slovenská Tatra banka má ve své vlastní
+      dokumentaci uvedeno maximálně 31 dní dopředu.</p>
+      <p><b>Jak ověřit:</b> najděte <code>ReqdExctnDt</code>, zkontrolujte
+      formát a porovnejte s dnešním datem. Pokud je v mezích a banka přesto
+      odmítá, ověřte si horní limit přímo u své banky, protože tady se
+      banky mezi sebou liší.</p>
+
+      <h3>3. Metoda platby není TRF</h3>
+      <p>Element <code>PmtInf/PmtMtd</code> musí mít pro SEPA úhradu vždy
+      hodnotu <code>TRF</code>. Je to pevná hodnota daná schématem, ne
+      volitelný parametr.</p>
+      <p><b>Jak ověřit:</b> najděte všechny výskyty <code>&lt;PmtMtd&gt;</code>
+      a zkontrolujte, že mezi značkami je přesně „TRF“, velkými písmeny, bez
+      mezery navíc.</p>
+
+      <h3>4. Úroveň služby (SvcLvl) není SEPA</h3>
+      <p>Element <code>PmtTpInf/SvcLvl/Cd</code> musí obsahovat hodnotu
+      <code>SEPA</code>. Bez ní banka neví, že jde o platbu v rámci schématu
+      SEPA, a může ji zpracovat jinak nebo ji odmítnout.</p>
+      <p><b>Jak ověřit:</b> vyhledejte <code>&lt;SvcLvl&gt;</code> a uvnitř
+      <code>&lt;Cd&gt;SEPA&lt;/Cd&gt;</code>. Pokud tam chybí celý blok
+      <code>SvcLvl</code>, je to stejná chyba jako špatná hodnota.</p>
+
+      <h3>5. Nese poplatky (ChrgBr) není SLEV</h3>
+      <p>Element <code>ChrgBr</code> musí být <code>SLEV</code>, což
+      znamená, že každá strana platí poplatky své bance. Je to jediná
+      hodnota, kterou schéma SEPA pro úhrady připouští, jiné volby (třeba
+      „poplatky platí odesílatel“) do SEPA XML nepatří.</p>
+      <p><b>Jak ověřit:</b> najděte <code>&lt;ChrgBr&gt;</code> a hodnotu
+      uvnitř. Pokud element chybí úplně, některé banky si SLEV doplní samy,
+      spoléhat se na to ale není bezpečné, doplňte ho radši rovnou v
+      účetním softwaru.</p>
+
+      <h3>6. IBAN neprojde kontrolním součtem MOD-97</h3>
+      <p>Poslední dvě číslice na začátku každého IBAN jsou kontrolní
+      číslice. Spočítají se algoritmem MOD-97 ze zbytku čísla účtu. Když se
+      IBAN přepisuje ručně z papíru nebo z jiného formátu, snadno se v něm
+      překlepne jedna číslice, a takový IBAN kontrolní součet nesplní. Toto
+      je přesně ta kontrola, kterou dělá i náš vlastní nástroj SEPA pain.001
+      Doctor, viz zdroje níže.</p>
+      <p><b>Jak ověřit:</b> ručně počítat MOD-97 v textovém editoru nemá
+      smysl, použijte libovolnou volně dostupnou IBAN kalkulačku nebo
+      validátor. Rychlejší je ale prostě znovu zkontrolovat přepis čísla
+      účtu proti originálnímu dokladu, číslice po číslici.</p>
+
+      <h3>7. Jmenný prostor (xmlns) neodpovídá</h3>
+      <p>Kořenový element <code>&lt;Document&gt;</code> musí mít nastavený
+      atribut <code>xmlns</code> s přesnou hodnotou verze pain.001, kterou
+      vaše banka pro import hromadných příkazů podporuje, nejběžněji
+      <code>urn:iso:std:iso:20022:tech:xsd:pain.001.001.03</code>. Norma
+      ISO 20022 existuje ve více verzích a ne každá banka je zatím
+      připravená přijímat všechny, proto se jmenný prostor musí shodovat s
+      tím, co banka očekává.</p>
+      <p><b>Jak ověřit:</b> hned na začátku souboru najděte
+      <code>&lt;Document xmlns=</code> a přepište si hodnotu. Pokud si
+      nejste jistí, kterou verzi vaše banka přijímá, zeptejte se přímo
+      technické podpory banky, veřejně dostupný seznam napříč všemi bankami
+      neexistuje.</p>
+
+      <h3>8. Znaky mimo znakovou sadu SEPA</h3>
+      <p>Pravidla EPC pro SEPA úhrady povolují jen omezenou znakovou sadu:
+      písmena a-z, A-Z bez diakritiky, číslice 0-9 a znaky
+      <code>/ - ? : ( ) . , ' +</code> a mezeru. Čeština běžně používá
+      diakritiku (á, č, ď, é, ě, í, ň, ó, ř, š, ť, ú, ů, ý, ž), která do
+      této sady nepatří. Co se s diakritikou stane, se banku od banky liší:
+      některé ji při importu tiše nahradí, jiné soubor s ní rovnou odmítnou.
+      To druhé jsme si prakticky ověřili u slovenské ČSOB, tady jde ale jen
+      o příklad chování jedné konkrétní banky, ne o obecné pravidlo pro
+      Česko.</p>
+      <p><b>Jak ověřit:</b> v editoru projděte jména plátce, příjemců a
+      poznámky k platbě (<code>Ustrd</code>) a hledejte diakritiku. Pokud ji
+      tam najdete a banka soubor odmítá, zkuste export bez diakritiky přímo
+      z účetního softwaru, většina z nich to jako volbu nabízí.</p>
+
+      <h2>Když chyba pořád není jasná</h2>
+      <p>Pokud jste prošli všech osm bodů a banka soubor stále odmítá,
+      pravidla se dál liší podle konkrétní banky: limit počtu transakcí v
+      jednom bloku, povinnost uvádět BIC banky příjemce, přesný formát
+      variabilního symbolu. Tahle vrstva není jednotná napříč Evropou a bez
+      znalosti konkrétní banky ji neověříte. Nejrychlejší cesta je poslat
+      bance přesné znění chybové hlášky a zeptat se, které pole jí vadí.</p>
+
+      <p>Tento text pokrývá jen formátovou stránku souboru. Neřeší účetní
+      ani daňové otázky spojené s hromadnou platbou a není to právní ani
+      účetní poradenství. Čistý formát navíc nezaručuje, že banka platbu
+      přijme, protože si může nastavit vlastní dodatečné podmínky a ty
+      kdykoliv změnit.</p>
+
+      <h2>Co si z toho odnést</h2>
+      <p>Většina odmítnutí pain.001 padá na pár stejných místech: hlavička
+      nesedí s obsahem, datum je špatně, nebo je v souboru diakritika.
+      Všechny se dají zkontrolovat pouhým okem v textovém editoru dřív, než
+      soubor pošlete bance podruhé.</p>
+
+      <p>Bezplatná automatická kontrola podle těchto i dalších pravidel je
+      na <a href="https://arling.sk/sepa-pain001-doctor/">SEPA pain.001
+      Doctor</a>. Základní kontrolu (přesně body výše) provede na jakémkoli
+      pain.001 souboru bez ohledu na banku. Dodatečné, přísnější kontroly v
+      nástroji jsou navázané na čtyři konkrétní slovenské banky a pro
+      českou banku se nepoužijí.</p>
+
+      <div class="zdroje">
+        <p><b>Zdroje a ověření, 6. září 2026.</b>
+        Obecná pravidla schématu SEPA (PmtMtd=TRF, SvcLvl/Cd=SEPA,
+        ChrgBr=SLEV, povolená znaková sada, EUR jako jediná měna) vycházejí
+        z pravidel
+        <a href="https://www.europeanpaymentscouncil.eu/document-library/rulebooks/2025-sepa-credit-transfer-rulebook-version-11" rel="noopener" target="_blank">European Payments Council, SEPA Credit Transfer Rulebook</a>
+        a struktury zprávy
+        <a href="https://www.iso20022.org/" rel="noopener" target="_blank">ISO 20022 pain.001.001.03</a>.
+        Kontrola kontrolního součtu IBAN metodou MOD-97 a příklad limitu 31
+        dní dopředu u ReqdExctnDt pocházejí z technické dokumentace
+        <a href="https://www.tatrabanka.sk/files/sk/personal/ucet-platby/elektronicke-bankovnictvo/internet-banking/davkove-platby/prenosovy_formatpain001.pdf" rel="noopener" target="_blank">Tatra banky</a>,
+        slovenské banky, uvedené výslovně jen jako ilustrační příklad, ne
+        jako pravidlo platné v Česku. Chování ČSOB Slovensko k diakritice
+        vychází z dokumentace
+        <a href="https://www.csob.sk/documents/11005/123723/BB_SEPA_01022016.pdf" rel="noopener" target="_blank">ČSOB BusinessBanking Lite a SEPA</a>,
+        rovněž slovenský zdroj uvedený jen jako příklad. Limity pro
+        konkrétní české banky (počet transakcí v dávce, povinnost BIC,
+        maximální datum dopředu) jsme neověřovali a v textu je proto
+        neuvádíme jako obecné pravidlo. Pokud se některý zdroj mezitím
+        změnil, napište nám a opravíme to.</p>
+      </div>
+    </article>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <div><b>ARLing s. r. o.</b><br>Ivanská cesta 32E<br>821 04 Bratislava, Slovensko</div>
+    <div>IČO 56583486<br>IČ DPH SK2122352100<br><a href="mailto:andrej@arling.sk">andrej@arling.sk</a></div>
+    <div><a href="https://arling.sk/privacy/">ochrana údajov</a> · <a href="https://arling.sk/podmienky/">podmienky</a> · <a href="https://arling.sk/gdpr/">GDPR</a> · <a href="https://arling.sk/impressum/">Impressum</a> · <a href="https://arling.sk/llms.txt">llms.txt</a> · <a href="https://arling.sk/sitemap-index.xml">mapa stránky</a><br>Nástroje sú poskytované tak, ako sú, bez záruky. Anonymné počty návštev cez vlastné Umami.</div>
+  </div>
+</footer>
+
+<script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="338f035d-41c5-411e-8391-9a41db6accfd"></script>
+</body>
+</html>

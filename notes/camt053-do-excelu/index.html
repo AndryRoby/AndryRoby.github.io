@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<script src="/style/vzhlad.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0a0908">
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../../favicon.ico" sizes="48x48">
+<link rel="apple-touch-icon" href="../../icon-180.png">
+<title>Jak dostat výpis camt.053 do Excelu | ARLing</title>
+<meta name="description" content="camt.053 je XML výpis z banky, Excel z něj bez úprav udělá text plný značek. Tři bezpečné cesty k tabulce a jak je výpis uvnitř uspořádaný podle ISO 20022.">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Jak dostat výpis camt.053 do Excelu">
+<meta property="og:description" content="camt.053 je XML výpis z banky, Excel z něj bez úprav udělá text plný značek. Tři bezpečné cesty k tabulce a struktura výpisu podle ISO 20022.">
+<meta property="og:url" content="https://arling.sk/notes/camt053-do-excelu/">
+<meta property="og:locale" content="cs_CZ">
+<link rel="canonical" href="https://arling.sk/notes/camt053-do-excelu/">
+<link rel="stylesheet" href="/style/paper.css">
+<script src="/style/prepinac.js" defer></script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Jak dostat výpis camt.053 do Excelu",
+  "description": "camt.053 je XML výpis z banky, Excel z něj bez úprav udělá text plný značek. Tři bezpečné cesty k tabulce a struktura výpisu podle ISO 20022.",
+  "datePublished": "2026-09-06",
+  "dateModified": "2026-09-06",
+  "inLanguage": "cs",
+  "author": { "@type": "Organization", "name": "ARLing s. r. o.", "url": "https://arling.sk/" },
+  "publisher": { "@type": "Organization", "name": "ARLing s. r. o.", "url": "https://arling.sk/" },
+  "mainEntityOfPage": "https://arling.sk/notes/camt053-do-excelu/"
+}
+</script>
+
+<style>
+  article { max-width:72ch; }
+  article h2 { margin:clamp(34px,4vh,52px) 0 12px; }
+  article h3 { margin:26px 0 8px; }
+  article p, article li { font-size:16.5px; line-height:1.7; }
+  article ol, article ul { padding-left:22px; }
+  article li { margin:0 0 8px; }
+  code { font:13.5px/1.4 var(--mono); background:var(--card); border:1px solid var(--line);
+    border-radius:3px; padding:1px 5px; overflow-wrap:anywhere; }
+  pre { background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    padding:16px 18px; overflow-x:auto; font:13px/1.6 var(--mono); color:var(--body); }
+  .byline { font-family:var(--ui); font-size:14px; color:var(--muted); margin:0 0 clamp(26px,3vh,40px); }
+  .zhrn { border-left:3px solid var(--accent); background:var(--card); border-radius:0 var(--radius) var(--radius) 0;
+    padding:18px 22px; margin:0 0 clamp(26px,3vh,40px); }
+  .zhrn p { margin:0; font-size:16px; }
+  .zdroje { font-family:var(--ui); font-size:13.5px; color:var(--muted); line-height:1.7;
+    border-top:1px solid var(--line); padding-top:18px; margin-top:clamp(34px,4vh,52px); }
+  .zdroje a { color:var(--body); }
+</style>
+</head>
+<body class="noc">
+<div class="wash" aria-hidden="true"><i></i><i></i></div>
+
+<header>
+  <div class="wrap bar">
+    <a class="brand" href="https://arling.sk/">
+      <svg viewBox="0 0 488 215" width="38" height="15" aria-hidden="true" focusable="false"><path fill="#f4f4f7" fill-rule="evenodd" d="M0.00,213.00L74.00,214.00L181.00,85.00L285.00,214.00L360.00,214.00L206.00,21.00L185.00,4.00L164.00,10.00Z M221.00,0.00L263.00,50.00L395.00,50.00L409.00,55.00L419.00,76.00L401.00,96.00L313.00,98.00L411.00,214.00L487.00,214.00L422.00,139.00L457.00,123.00L482.00,88.00L482.00,48.00L463.00,19.00L417.00,0.00Z"/><path fill="#f2643c" d="M269.00,66.00L269.00,67.00L268.00,68.00L268.00,70.00L267.00,71.00L267.00,76.00L268.00,77.00L268.00,79.00L270.00,81.00L270.00,82.00L271.00,82.00L273.00,84.00L274.00,84.00L277.00,86.00L279.00,86.00L280.00,87.00L287.00,87.00L288.00,86.00L290.00,86.00L291.00,85.00L294.00,84.00L298.00,80.00L298.00,79.00L299.00,78.00L299.00,75.00L300.00,74.00L300.00,72.00L299.00,71.00L299.00,69.00L298.00,68.00L297.00,65.00L295.00,63.00L294.00,63.00L289.00,60.00L278.00,60.00L277.00,61.00L276.00,61.00L275.00,62.00L272.00,63.00Z"/></svg>
+      <b>ARLing</b>
+    </a>
+    <nav aria-label="Site"><a href="https://arling.sk/#tools">Nástroje</a><a href="https://arling.sk/notes/">Notes</a><a href="https://arling.sk/how-we-work/">Jak pracujeme</a><a href="mailto:andrej@arling.sk">Kontakt</a></nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <article>
+      <h1>Jak dostat výpis camt.053 do Excelu</h1>
+      <p class="byline">ARLing s. r. o. · 6. září 2026</p>
+
+      <div class="zhrn">
+        <p>Krátká odpověď: existují tři cesty. Stáhnout výpis znovu jako CSV
+        z internetového bankovnictví, převést XML nástrojem, který počítá
+        přímo ve vašem počítači, nebo soubor poslat na cizí server. Poslední
+        cesta u výpisu s čísly účtů a jmény protistran není dobrý nápad.
+        Níže je vysvětlené, jak je camt.053 uvnitř postavený a které značky
+        odpovídají sloupcům datum, částka, protistrana, zpráva a reference.</p>
+      </div>
+
+      <h2>Proč Excel ukáže značky, ne tabulku</h2>
+
+      <p>camt.053 je zpráva mezinárodního standardu ISO 20022 s názvem Bank
+      to Customer Statement, tedy výpis z účtu, který banka vystaví po
+      uzavření účetního dne [1]. Fyzicky je to textový soubor ve formátu
+      XML: hodnoty jsou uzavřené mezi značky jako <code>&lt;Amt&gt;</code>
+      nebo <code>&lt;BookgDt&gt;</code>, vnořené jedna do druhé podle
+      pevně dané struktury. Žádné řádky a sloupce v souboru fyzicky nejsou,
+      jsou to jen data, ze kterých se dá tabulka poskládat.</p>
+
+      <p>Když takový soubor otevřete v Excelu dvojklikem, Excel ho neumí
+      sám rozpoznat jako výpis z konkrétní banky. Buď ho otevře jako prostý
+      text se všemi špičatými závorkami, nebo se ho pokusí načíst jako
+      obecné XML, což bez předem připraveného mapování sloupců obvykle
+      skončí jedním sloupcem s celým obsahem řádku nebo chybovou hláškou.
+      Soubor tím není poškozený, jen ještě není v podobě, kterou účetnictví
+      potřebuje.</p>
+
+      <h2>Tři cesty, jak z XML dostat tabulku</h2>
+
+      <h3>1. Stáhnout výpis znovu jako CSV</h3>
+      <p>Většina internetových bankovnictví nabízí u výpisu víc formátů
+      exportu, camt.053 i CSV. Pokud potřebujete jen rychlou tabulku a
+      nevadí vám případně o něco kratší poznámka k platbě nebo jiné pořadí
+      sloupců, je tohle nejjednodušší cesta. Nevýhoda je, že formát CSV
+      exportu si určuje každá banka sama, takže se sloupce, oddělovač a
+      i to, co všechno se do exportu vejde, liší banku od banky. Na rozdíl
+      od toho je struktura camt.053 stejná bez ohledu na to, která banka
+      soubor vystavila, protože ji určuje standard ISO 20022, ne banka.</p>
+
+      <h3>2. Převést nástrojem, který běží ve vašem počítači</h3>
+      <p>Existují nástroje, které XML soubor přečtou a sestaví z něj tabulku
+      přímo v prohlížeči, bez toho, aby obsah souboru kamkoliv posílaly.
+      Poznáte je podle toho, že fungují i s vypnutým internetem: jakmile se
+      stránka jednou načte, spracování už žádné připojení nepotřebuje. To
+      se dá ověřit i sami, stačí po načtení stránky vypnout wifi a teprve
+      pak vložit soubor.</p>
+
+      <h3>3. Poslat soubor na cizí server</h3>
+      <p>Řada online nástrojů na převod XML funguje tak, že soubor nahrajete
+      a zpracování proběhne na jejich serveru. U obecného souboru to nevadí,
+      u bankovního výpisu ano: camt.053 obsahuje číslo vašeho účtu, čísla
+      účtů protistran, jejich jména a texty plateb. U účetní firmy jde
+      navíc o data klientů, která jí nepatří. Než takový soubor někam
+      nahrajete, má smysl si ověřit, co se s ním na cizím serveru vlastně
+      stane, a řídit se raději podmínkami použití dané služby než
+      předpokladem, že je to v pořádku.</p>
+
+      <h2>Struktura camt.053: značky Stmt, Ntry, NtryDtls a TxDtls</h2>
+
+      <p>Kořenový element souboru je <code>&lt;Document&gt;</code>, v něm
+      je <code>&lt;BkToCstmrStmt&gt;</code> a v něm jeden nebo víc bloků
+      <code>&lt;Stmt&gt;</code>, což je samotný výpis za dané období pro
+      jeden účet. Ten obsahuje účet v <code>&lt;Acct&gt;</code>, počáteční
+      a konečný zůstatek v <code>&lt;Bal&gt;</code> (rozlišené kódem
+      <code>OPBD</code> pro počáteční a <code>CLBD</code> pro konečný
+      zůstatek) a seznam pohybů <code>&lt;Ntry&gt;</code> [1][2].</p>
+
+      <p>Jeden <code>&lt;Ntry&gt;</code> je jedna položka na výpisu, ve
+      zjednodušeném pohledu jeden řádek tabulky. Nese částku
+      <code>&lt;Amt&gt;</code> spolu s měnou v atributu <code>Ccy</code>,
+      směr pohybu <code>&lt;CdtDbtInd&gt;</code> (<code>CRDT</code> je
+      příjem, <code>DBIT</code> je platba z účtu) a datum zaúčtování
+      <code>&lt;BookgDt&gt;</code>. Detail k položce je v
+      <code>&lt;NtryDtls&gt;</code>, a protože jedna položka výpisu může
+      v sobě skrývat víc jednotlivých plateb, například u hromadné inkasní
+      dávky, obsahuje jeden nebo víc bloků <code>&lt;TxDtls&gt;</code>,
+      jeden pro každou skutečnou transakci [1][2].</p>
+
+      <p>Uvnitř <code>&lt;TxDtls&gt;</code> jsou pole, která zajímají
+      účetní nejvíc:</p>
+
+      <ul>
+        <li><b>Protistrana.</b> Jméno je v
+        <code>&lt;RltdPties&gt;&lt;Cdtr&gt;&lt;Nm&gt;</code> nebo
+        <code>&lt;Dbtr&gt;&lt;Nm&gt;</code>, číslo účtu protistrany
+        v <code>&lt;CdtrAcct&gt;&lt;Id&gt;&lt;IBAN&gt;</code> nebo
+        <code>&lt;DbtrAcct&gt;&lt;Id&gt;&lt;IBAN&gt;</code>, podle toho,
+        jde-li o příjem nebo platbu.</li>
+        <li><b>Zpráva pro příjemce.</b> Volný text k platbě je v
+        <code>&lt;RmtInf&gt;&lt;Ustrd&gt;</code>. Sem banky obvykle vloží
+        i variabilní symbol nebo jinou referenci, pokud ji plátce při
+        zadávání platby vyplnil jako text.</li>
+        <li><b>Reference.</b> Koncová k koncové reference z původního
+        platebního příkazu je v <code>&lt;Refs&gt;&lt;EndToEndId&gt;</code>,
+        referenci přidělenou bankou najdete v
+        <code>&lt;Refs&gt;&lt;AcctSvcrRef&gt;</code>.</li>
+      </ul>
+
+      <p>Tahle jména a struktura jsou stejná v obou dnes běžných verzích
+      formátu, camt.053.001.02 i novější camt.053.001.08, protože jde
+      o jádro standardu, které se mezi verzemi nemění [1][2].</p>
+
+      <h2>K čemu je dobrý zůstatek v hlavičce</h2>
+
+      <p>Protože <code>&lt;Stmt&gt;</code> nese počáteční i konečný
+      zůstatek, dá se u převedené tabulky ověřit, jestli počáteční
+      zůstatek plus součet všech položek dá dohromady konečný zůstatek.
+      Pokud ne, něco chybí, například položka, kterou nástroj nebo export
+      nezachytil. Tuhle kontrolu obyčejný CSV export bez zůstatků v
+      hlavičce sám o sobě neumožní, protože porovnávat nemá s čím.</p>
+
+      <h2>Shrnutí</h2>
+
+      <p>Pro rychlou jednorázovou tabulku stačí CSV export z internetového
+      bankovnictví. Pro pravidelnou práci s výpisy nebo když chcete mít
+      jistotu, že žádná položka nevypadla, dává smysl pracovat přímo s
+      camt.053 a nástrojem, který počítá u vás v počítači, ne na cizím
+      serveru. Struktura souboru je popsaná výše přesně proto, aby bylo
+      jasné, co se v tabulce po převodu objeví a odkud to pochází.</p>
+
+      <p>Bezplatný převod XML výpisu do tabulky, který počítá v prohlížeči
+      a soubor nikam neposílá, je na
+      <a href="https://arling.sk/camt053-to-excel/">camt.053 to Excel</a>.</p>
+
+      <div class="zdroje">
+        <p><b>Zdroje a overenie, 6. září 2026.</b>
+        [1] ISO 20022: <cite>ISO 20022 message definitions</cite>, popis
+        zprávy camt.053 Bank-to-Customer Statement.
+        <a href="https://www.iso20022.org/iso-20022-message-definitions" rel="noopener" target="_blank">iso20022.org</a>.
+        [2] Vlastní open-source engine
+        <a href="https://github.com/AndryRoby/camt053-to-excel/blob/main/camt053.js" rel="noopener" target="_blank">camt053.js</a>,
+        veřejný repozitář nástroje camt.053 to Excel: názvy a vnoření
+        elementů (Stmt, Acct, Bal/OPBD/CLBD, Ntry, NtryDtls, TxDtls, Refs,
+        RltdPties, RmtInf/Ustrd) jsou v hlavičce souboru ověřené vůči
+        reálnému výpisu camt.053.001.02 slovenské Tatra banky, který je
+        v tomto ohledu jen jedním konkrétním příkladem souboru podle obecné
+        ISO 20022 struktury, ne slovenským specifikem. Pravidla konkrétních
+        bank v Česku, Německu nebo Rakousku pro camt.053 export ani
+        strukturu ISO 20022 zprávy neurčují a v článku nejsou uváděna.
+        Pokud se některý zdroj mezitím změnil, napište nám a opravíme to.</p>
+      </div>
+    </article>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <div><b>ARLing s. r. o.</b><br>Ivanská cesta 32E<br>821 04 Bratislava, Slovensko</div>
+    <div>IČO 56583486<br>IČ DPH SK2122352100<br><a href="mailto:andrej@arling.sk">andrej@arling.sk</a></div>
+    <div><a href="https://arling.sk/privacy/">ochrana údajov</a> · <a href="https://arling.sk/podmienky/">podmienky</a> · <a href="https://arling.sk/gdpr/">GDPR</a> · <a href="https://arling.sk/impressum/">Impressum</a> · <a href="https://arling.sk/llms.txt">llms.txt</a> · <a href="https://arling.sk/sitemap-index.xml">mapa stránky</a><br>Nástroje sú poskytované tak, ako sú, bez záruky. Anonymné počty návštev cez vlastné Umami.</div>
+  </div>
+</footer>
+
+<script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="338f035d-41c5-411e-8391-9a41db6accfd"></script>
+</body>
+</html>

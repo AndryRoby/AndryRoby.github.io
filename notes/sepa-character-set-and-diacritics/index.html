@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script src="/style/vzhlad.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0a0908">
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../../favicon.ico" sizes="48x48">
+<link rel="apple-touch-icon" href="../../icon-180.png">
+<title>The SEPA character set: which characters are safe in a payment | ARLing</title>
+<meta name="description" content="SEPA payment files accept a narrow character set. Accented letters sit outside it: the safe list, what banks do with it, and how to transliterate.">
+<meta property="og:type" content="article">
+<meta property="og:title" content="The SEPA character set: which characters are safe in a payment">
+<meta property="og:description" content="SEPA payment files accept a narrow character set. Accented letters sit outside it. What passes, what banks do with the rest, and how to transliterate safely.">
+<meta property="og:url" content="https://arling.sk/notes/sepa-character-set-and-diacritics/">
+<meta property="og:locale" content="en_US">
+<link rel="canonical" href="https://arling.sk/notes/sepa-character-set-and-diacritics/">
+<link rel="stylesheet" href="/style/paper.css">
+<script src="/style/prepinac.js" defer></script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "The SEPA character set: which characters are safe in a payment",
+  "description": "SEPA payment files accept a narrow character set. Accented letters sit outside it. What the safe list is, what banks do with the rest, and a transliteration table.",
+  "datePublished": "2026-09-06",
+  "dateModified": "2026-09-06",
+  "inLanguage": "en",
+  "author": { "@type": "Organization", "name": "ARLing s. r. o.", "url": "https://arling.sk/" },
+  "publisher": { "@type": "Organization", "name": "ARLing s. r. o.", "url": "https://arling.sk/" },
+  "mainEntityOfPage": "https://arling.sk/notes/sepa-character-set-and-diacritics/"
+}
+</script>
+
+<style>
+  article { max-width:72ch; }
+  article h2 { margin:clamp(34px,4vh,52px) 0 12px; }
+  article h3 { margin:26px 0 8px; }
+  article p, article li { font-size:16.5px; line-height:1.7; }
+  article ol, article ul { padding-left:22px; }
+  article li { margin:0 0 8px; }
+  code { font:13.5px/1.4 var(--mono); background:var(--card); border:1px solid var(--line);
+    border-radius:3px; padding:1px 5px; overflow-wrap:anywhere; }
+  pre { background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    padding:16px 18px; overflow-x:auto; font:13px/1.6 var(--mono); color:var(--body); }
+  .byline { font-family:var(--ui); font-size:14px; color:var(--muted); margin:0 0 clamp(26px,3vh,40px); }
+  .zhrn { border-left:3px solid var(--accent); background:var(--card); border-radius:0 var(--radius) var(--radius) 0;
+    padding:18px 22px; margin:0 0 clamp(26px,3vh,40px); }
+  .zhrn p { margin:0; font-size:16px; }
+  .zdroje { font-family:var(--ui); font-size:13.5px; color:var(--muted); line-height:1.7;
+    border-top:1px solid var(--line); padding-top:18px; margin-top:clamp(34px,4vh,52px); }
+  .zdroje a { color:var(--body); }
+  .tablewrap { margin:0 0 20px; }
+  article table { font-size:14.5px; }
+  article td, article th { font-size:inherit; }
+  article code { white-space:nowrap; }
+</style>
+</head>
+<body class="noc">
+<div class="wash" aria-hidden="true"><i></i><i></i></div>
+
+<header>
+  <div class="wrap bar">
+    <a class="brand" href="https://arling.sk/">
+      <svg viewBox="0 0 488 215" width="38" height="15" aria-hidden="true" focusable="false"><path fill="#f4f4f7" fill-rule="evenodd" d="M0.00,213.00L74.00,214.00L181.00,85.00L285.00,214.00L360.00,214.00L206.00,21.00L185.00,4.00L164.00,10.00Z M221.00,0.00L263.00,50.00L395.00,50.00L409.00,55.00L419.00,76.00L401.00,96.00L313.00,98.00L411.00,214.00L487.00,214.00L422.00,139.00L457.00,123.00L482.00,88.00L482.00,48.00L463.00,19.00L417.00,0.00Z"/><path fill="#f2643c" d="M269.00,66.00L269.00,67.00L268.00,68.00L268.00,70.00L267.00,71.00L267.00,76.00L268.00,77.00L268.00,79.00L270.00,81.00L270.00,82.00L271.00,82.00L273.00,84.00L274.00,84.00L277.00,86.00L279.00,86.00L280.00,87.00L287.00,87.00L288.00,86.00L290.00,86.00L291.00,85.00L294.00,84.00L298.00,80.00L298.00,79.00L299.00,78.00L299.00,75.00L300.00,74.00L300.00,72.00L299.00,71.00L299.00,69.00L298.00,68.00L297.00,65.00L295.00,63.00L294.00,63.00L289.00,60.00L278.00,60.00L277.00,61.00L276.00,61.00L275.00,62.00L272.00,63.00Z"/></svg>
+      <b>ARLing</b>
+    </a>
+    <nav aria-label="Site"><a href="https://arling.sk/en/#tools">Tools</a><a href="https://arling.sk/notes/">Notes</a><a href="https://arling.sk/how-we-work/">How we work</a><a href="mailto:andrej@arling.sk">Contact</a></nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <article>
+      <h1>The SEPA character set: which characters are safe in a payment</h1>
+      <p class="byline">ARLing s. r. o. · 6 September 2026</p>
+
+      <div class="zhrn">
+        <p>The character set that shows up over and over in SEPA payment
+        documentation is narrow: the plain letters a-z and A-Z, the digits
+        0-9, a space, and ten punctuation marks, <code>/ - ? : ( ) . , ' +</code>,
+        and nothing else. Accented letters such as ä, é, ñ or ø sit outside
+        it. Banks do not all react to an out-of-set character the same way:
+        some replace it quietly, some reject the whole file. Transliterating
+        those characters before you export the file is the one fix that
+        works no matter which of the two your bank does.</p>
+      </div>
+
+      <p>This matters most in the fields a person actually typed: the name
+      on the account, the free-text payment reference, and any address
+      written into the file. IBANs, BICs and amounts are not affected,
+      because they are already restricted to letters, digits and a decimal
+      point by their own field rules.</p>
+
+      <h2>Why a text-based format has a character problem at all</h2>
+
+      <p>pain.001, the ISO 20022 message used for a SEPA batch payment, is
+      an XML file, and XML text is Unicode: technically, nothing stops a
+      field from holding any script in the world. The restriction is not
+      in the XML schema itself. It sits one level down, in what individual
+      banks and national banking associations agree to accept, and it
+      traces back to older interbank messaging conventions built around a
+      small Latin character set.</p>
+
+      <p>We can document this from two unrelated countries, enough to call
+      it a pattern rather than a local quirk, though we have not checked
+      every bank in every SEPA country and do not claim the list below is
+      enforced identically everywhere. In Slovakia, ČSOB's own SEPA
+      documentation states plainly that a SEPA XML file with diacritics
+      cannot be imported into its BusinessBanking Lite portal at all, and
+      gives the exact allowed set. In Germany, the interbank data exchange
+      agreement of the national banking associations (the DFÜ-Abkommen,
+      Anlage 3) defines the same set of letters, digits and punctuation
+      marks, and states that a bank may replace an out-of-set character
+      with a space or a similar-looking one, or reject the file outright.</p>
+
+      <h2>The safe list</h2>
+
+      <pre>a-z   A-Z   0-9   (space)
+/   -   ?   :   (   )   .   ,   '   +</pre>
+
+      <p>That is 62 letters and digits, one space, and ten punctuation
+      marks: 73 characters in total. Both sources above give this same
+      list, character for character.</p>
+
+      <h2>What falls outside it, and it is a longer list than people expect</h2>
+
+      <ul>
+        <li><b>Every accented Latin letter.</b> á, à, â, ã, å, ä, é, è, ê,
+        ë, í, ì, î, ï, ó, ò, ô, õ, ö, ø, ú, ù, û, ü, ñ, ç, ý, ß, ł, and
+        their uppercase forms.</li>
+        <li><b>Any non-Latin script</b>, Cyrillic and Greek included.</li>
+        <li><b>Ordinary punctuation many people assume is fine.</b> The
+        semicolon, ampersand, quotation marks (straight or curly), the
+        asterisk, hash, at sign, percent sign, square and curly brackets,
+        the backslash, and the equals sign are all outside the list above.</li>
+        <li><b>The en dash and em dash.</b> Only the plain hyphen-minus,
+        the third character on the list, is safe. A dash pasted in from a
+        word processor is often the wrong one and looks identical on
+        screen.</li>
+      </ul>
+
+      <h2>What a bank actually does with a character outside the list</h2>
+
+      <p>We can only report what we have found documented, and it is not
+      the same answer everywhere. ČSOB's documentation is explicit that its
+      BusinessBanking Lite portal will not import a file with diacritics at
+      all: the whole batch is rejected, not just the one payment with the
+      accented name. The German DFÜ-Abkommen, by contrast, authorizes the
+      receiving bank to replace an out-of-set character with a space or a
+      similar-looking one instead of rejecting the file, while leaving it
+      free to reject anyway. For any bank not named here, we have not
+      verified which of the two it does, and we are not going to guess:
+      treat outright rejection as the safe assumption until you have
+      tested your own bank's import.</p>
+
+      <p>Silent replacement is its own quiet problem: a name reduced to a
+      space or an approximate letter still imports without an error, and
+      the mismatch only surfaces later, when a bank statement no longer
+      matches the invoice.</p>
+
+      <h2>The practical fix: transliterate before you export</h2>
+
+      <p>Replacing each accented letter with its closest plain-ASCII
+      equivalent before the file is generated produces text that is, by
+      construction, inside the safe list above. It passes at a bank that
+      rejects the whole file, and it passes at a bank that would otherwise
+      replace the character with something else, because there is nothing
+      left for either bank to react to. This is worth doing to the
+      creditor and debtor name fields and to the free-text payment
+      reference in particular, since those are the fields a person is most
+      likely to have typed with an accent in them.</p>
+
+      <p>There is no single official conversion table that every bank
+      applies the same way. The European Payments Council has published a
+      best-practice document for the opposite direction, extending what a
+      system accepts rather than reducing what you send it (reference
+      EPC217-08, below); we could not confirm its mappings directly, so we
+      do not repeat them here. The table below is the substitution logic
+      used in ARLing's own SEPA tools, for applying by hand if your
+      software does not do this for you.</p>
+
+      <h2>A transliteration table</h2>
+
+      <div class="tablewrap"><table>
+        <thead><tr><th>Character</th><th>Replace with</th><th>Convention</th></tr></thead>
+        <tbody>
+          <tr><td data-th="Character"><code>ä Ä</code></td><td data-th="Replace with"><code>ae Ae</code></td><td data-th="Convention">German umlaut, expanded</td></tr>
+          <tr><td data-th="Character"><code>ö Ö</code></td><td data-th="Replace with"><code>oe Oe</code></td><td data-th="Convention">German umlaut, expanded</td></tr>
+          <tr><td data-th="Character"><code>ü Ü</code></td><td data-th="Replace with"><code>ue Ue</code></td><td data-th="Convention">German umlaut, expanded</td></tr>
+          <tr><td data-th="Character"><code>ß</code></td><td data-th="Replace with"><code>ss</code></td><td data-th="Convention">German, expanded</td></tr>
+          <tr><td data-th="Character"><code>á à â ã å</code></td><td data-th="Replace with"><code>a</code></td><td data-th="Convention">accent dropped</td></tr>
+          <tr><td data-th="Character"><code>é è ê ë</code></td><td data-th="Replace with"><code>e</code></td><td data-th="Convention">accent dropped</td></tr>
+          <tr><td data-th="Character"><code>í ì î ï</code></td><td data-th="Replace with"><code>i</code></td><td data-th="Convention">accent dropped</td></tr>
+          <tr><td data-th="Character"><code>ó ò ô õ ø</code></td><td data-th="Replace with"><code>o</code></td><td data-th="Convention">accent dropped</td></tr>
+          <tr><td data-th="Character"><code>ú ù û</code></td><td data-th="Replace with"><code>u</code></td><td data-th="Convention">accent dropped</td></tr>
+          <tr><td data-th="Character"><code>ý</code></td><td data-th="Replace with"><code>y</code></td><td data-th="Convention">accent dropped</td></tr>
+          <tr><td data-th="Character"><code>ñ</code></td><td data-th="Replace with"><code>n</code></td><td data-th="Convention">accent dropped</td></tr>
+          <tr><td data-th="Character"><code>ç</code></td><td data-th="Replace with"><code>c</code></td><td data-th="Convention">accent dropped</td></tr>
+          <tr><td data-th="Character"><code>ł</code></td><td data-th="Replace with"><code>l</code></td><td data-th="Convention">accent dropped</td></tr>
+          <tr><td data-th="Character"><code>č š ž</code></td><td data-th="Replace with"><code>c s z</code></td><td data-th="Convention">accent dropped</td></tr>
+          <tr><td data-th="Character"><code>ě ř ů</code></td><td data-th="Replace with"><code>e r u</code></td><td data-th="Convention">accent dropped</td></tr>
+        </tbody>
+      </table></div>
+
+      <p>The German group uses expansion rather than a simple dropped
+      accent because that is the documented DFÜ-Abkommen convention and
+      keeps a name recognizable: "Müller" becomes "Mueller", not "Muller".
+      Everywhere else, dropping the accent and keeping the base letter is
+      the convention most accounting and payment software applies, and it
+      is the one we could confirm in our own tools' source code. Either
+      approach lands inside the safe list; which one you pick mostly
+      affects how easily a human reader recognizes the name afterward.</p>
+
+      <h2>A short checklist before you export</h2>
+
+      <ul>
+        <li>Check name fields first: accented personal and company names
+        are where this breaks most often, not amounts or account numbers.</li>
+        <li>Check the payment reference text, especially if typed or
+        pasted by hand rather than pulled from a fixed template.</li>
+        <li>Watch for a long dash or curly quotation marks pasted from a
+        word processor: they look ordinary but sit outside the safe list.</li>
+        <li>If your accounting software already transliterates on export,
+        there is likely nothing to do; if not, ask the vendor whether it
+        is planned.</li>
+      </ul>
+
+      <p>ARLing is not a bank, and nothing here is legal or accounting
+      advice. A file built only from the safe characters above is not a
+      guarantee that a bank will accept the payment for other reasons, and
+      banks can change what they accept at any time. If you want to check
+      whether a pain.001 file you already built contains characters
+      outside this set, our free
+      <a href="https://arling.sk/sepa-pain001-doctor/">SEPA pain.001 Doctor</a>
+      flags every field with an out-of-set character, runs entirely in
+      your browser, and does not upload the file anywhere.</p>
+
+      <div class="zdroje">
+        <p><b>Sources, checked 6 September 2026.</b>
+        ČSOB (Slovak bank, cited here only as one documented example, not a
+        general SEPA rule), "BusinessBanking Lite a SEPA" (20 August 2015),
+        <a href="https://www.csob.sk/documents/11005/123723/BB_SEPA_01022016.pdf" rel="noopener" target="_blank">PDF</a>,
+        for the statement that a SEPA XML file with diacritics cannot be
+        imported into BusinessBanking Lite, and for the exact character
+        list. Deutsche Kreditwirtschaft (German national banking
+        associations, cited here as a second, unrelated country's example,
+        also not a general SEPA rule), DFÜ-Abkommen Anlage 3 "Spezifikation
+        der Datenformate", summarized with the same character list and the
+        replace-or-reject rule by
+        <a href="https://www.hettwer-beratung.de/sepa-spezialwissen/sepa-technische-anforderungen/sepa-verwendungszweck/" rel="noopener" target="_blank">Hettwer Unternehmensberatung</a>;
+        we were not able to retrieve the original PDF's text directly and
+        are relying on this secondary summary for the DFÜ-Abkommen wording.
+        European Payments Council, "SEPA Requirements for an Extended
+        Character Set (Unicode Subset), Best Practices", reference
+        <a href="https://www.europeanpaymentscouncil.eu/document-library/guidance-documents/sepa-requirements-extended-character-set-unicode-subset-best" rel="noopener" target="_blank">EPC217-08</a>,
+        for the existence of an official conversion table for extending
+        acceptance beyond the basic Latin set; we could not fetch this
+        document's own text and do not repeat its specific mappings here.
+        The substitution table above beyond the German group reflects the
+        transliteration logic in ARLing's own open SEPA generator tool,
+        not a single external standard. If any of these sources has since
+        changed its wording, write to us and we will correct this page.</p>
+      </div>
+    </article>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <div><b>ARLing s. r. o.</b><br>Ivanská cesta 32E<br>821 04 Bratislava, Slovakia</div>
+    <div>Company ID 56583486<br>VAT ID SK2122352100<br><a href="mailto:andrej@arling.sk">andrej@arling.sk</a></div>
+    <div><a href="https://arling.sk/privacy/">privacy</a> · <a href="https://arling.sk/podmienky/">terms</a> · <a href="https://arling.sk/gdpr/">GDPR</a> · <a href="https://arling.sk/impressum/">Impressum</a> · <a href="https://arling.sk/llms.txt">llms.txt</a> · <a href="https://arling.sk/sitemap-index.xml">sitemap</a><br>Tools are provided as is, without warranty. Anonymous visit counts via self-hosted Umami.</div>
+  </div>
+</footer>
+
+<script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="338f035d-41c5-411e-8391-9a41db6accfd"></script>
+</body>
+</html>

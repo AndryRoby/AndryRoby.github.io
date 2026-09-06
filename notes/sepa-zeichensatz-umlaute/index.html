@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="de">
+<head>
+<script src="/style/vzhlad.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0a0908">
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../../favicon.ico" sizes="48x48">
+<link rel="apple-touch-icon" href="../../icon-180.png">
+<title>Umlaute und ß in SEPA-Zahlungen: was erlaubt ist | ARLing</title>
+<meta name="description" content="Der SEPA-Zeichensatz kennt weder Umlaute noch ß. Was das für Ihre Datei bedeutet, wie Banken damit umgehen und wie Sie es beim Export sicher vermeiden.">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Umlaute und ß in SEPA-Zahlungen: was erlaubt ist">
+<meta property="og:description" content="Der SEPA-Zeichensatz kennt weder Umlaute noch ß. Was das für Ihre Datei bedeutet und wie Sie beim Export sicher vorgehen.">
+<meta property="og:url" content="https://arling.sk/notes/sepa-zeichensatz-umlaute/">
+<meta property="og:locale" content="de_DE">
+<link rel="canonical" href="https://arling.sk/notes/sepa-zeichensatz-umlaute/">
+<link rel="stylesheet" href="/style/paper.css">
+<script src="/style/prepinac.js" defer></script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Umlaute und ß in SEPA-Zahlungen: was erlaubt ist",
+  "description": "Der SEPA-Zeichensatz kennt weder Umlaute noch ß. Was das für Ihre Datei bedeutet, wie Banken unterschiedlich damit umgehen, und wie Sie beim Export sicher vorgehen.",
+  "datePublished": "2026-09-06",
+  "dateModified": "2026-09-06",
+  "inLanguage": "de",
+  "author": { "@type": "Organization", "name": "ARLing s. r. o.", "url": "https://arling.sk/" },
+  "publisher": { "@type": "Organization", "name": "ARLing s. r. o.", "url": "https://arling.sk/" },
+  "mainEntityOfPage": "https://arling.sk/notes/sepa-zeichensatz-umlaute/"
+}
+</script>
+
+<style>
+  article { max-width:72ch; }
+  article h2 { margin:clamp(34px,4vh,52px) 0 12px; }
+  article h3 { margin:26px 0 8px; }
+  article p, article li { font-size:16.5px; line-height:1.7; }
+  article ol, article ul { padding-left:22px; }
+  article li { margin:0 0 8px; }
+  code { font:13.5px/1.4 var(--mono); background:var(--card); border:1px solid var(--line);
+    border-radius:3px; padding:1px 5px; overflow-wrap:anywhere; }
+  pre { background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    padding:16px 18px; overflow-x:auto; font:13px/1.6 var(--mono); color:var(--body); }
+  .byline { font-family:var(--ui); font-size:14px; color:var(--muted); margin:0 0 clamp(26px,3vh,40px); }
+  .zhrn { border-left:3px solid var(--accent); background:var(--card); border-radius:0 var(--radius) var(--radius) 0;
+    padding:18px 22px; margin:0 0 clamp(26px,3vh,40px); }
+  .zhrn p { margin:0; font-size:16px; }
+  .zdroje { font-family:var(--ui); font-size:13.5px; color:var(--muted); line-height:1.7;
+    border-top:1px solid var(--line); padding-top:18px; margin-top:clamp(34px,4vh,52px); }
+  .zdroje a { color:var(--body); }
+  table.translit { width:100%; border-collapse:collapse; margin:0 0 20px; font-family:var(--mono); font-size:15px; }
+  table.translit th, table.translit td { border:1px solid var(--line); padding:8px 12px; text-align:left; }
+  table.translit th { font-family:var(--ui); font-size:12.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); }
+</style>
+</head>
+<body class="noc">
+<div class="wash" aria-hidden="true"><i></i><i></i></div>
+
+<header>
+  <div class="wrap bar">
+    <a class="brand" href="https://arling.sk/">
+      <svg viewBox="0 0 488 215" width="38" height="15" aria-hidden="true" focusable="false"><path fill="#f4f4f7" fill-rule="evenodd" d="M0.00,213.00L74.00,214.00L181.00,85.00L285.00,214.00L360.00,214.00L206.00,21.00L185.00,4.00L164.00,10.00Z M221.00,0.00L263.00,50.00L395.00,50.00L409.00,55.00L419.00,76.00L401.00,96.00L313.00,98.00L411.00,214.00L487.00,214.00L422.00,139.00L457.00,123.00L482.00,88.00L482.00,48.00L463.00,19.00L417.00,0.00Z"/><path fill="#f2643c" d="M269.00,66.00L269.00,67.00L268.00,68.00L268.00,70.00L267.00,71.00L267.00,76.00L268.00,77.00L268.00,79.00L270.00,81.00L270.00,82.00L271.00,82.00L273.00,84.00L274.00,84.00L277.00,86.00L279.00,86.00L280.00,87.00L287.00,87.00L288.00,86.00L290.00,86.00L291.00,85.00L294.00,84.00L298.00,80.00L298.00,79.00L299.00,78.00L299.00,75.00L300.00,74.00L300.00,72.00L299.00,71.00L299.00,69.00L298.00,68.00L297.00,65.00L295.00,63.00L294.00,63.00L289.00,60.00L278.00,60.00L277.00,61.00L276.00,61.00L275.00,62.00L272.00,63.00Z"/></svg>
+      <b>ARLing</b>
+    </a>
+    <nav aria-label="Site"><a href="https://arling.sk/de/#tools">Werkzeuge</a><a href="https://arling.sk/notes/">Notes</a><a href="https://arling.sk/how-we-work/">Wie wir arbeiten</a><a href="mailto:andrej@arling.sk">Kontakt</a></nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <article>
+      <h1>Umlaute und ß in SEPA-Zahlungen: was erlaubt ist</h1>
+      <p class="byline">ARLing s. r. o. · 6. September 2026</p>
+
+      <div class="zhrn">
+        <p>Kurzfassung: Der übliche SEPA-Zeichensatz umfasst a-z, A-Z, 0-9, ein
+        Leerzeichen und die Zeichen <code>/ - ? : ( ) . , ' +</code>. Umlaute
+        und ß gehören nicht dazu. Was eine Bank mit einer Datei macht, die sie
+        trotzdem enthält, ist unterschiedlich: manche wandeln sie beim Import
+        still um, manche weisen die Datei zurück. Am sichersten ist es, schon
+        beim Export selbst umzuwandeln, siehe die Tabelle unten.</p>
+      </div>
+
+      <p>Wer eine Sammelüberweisung als pain.001-XML-Datei aus der
+      Buchhaltungssoftware exportiert und Namen mit Müller, Schäfer oder Groß
+      darin hat, stößt früher oder später auf dieselbe Frage: Was macht die
+      Bank mit ä, ö, ü und ß in dieser Datei? Die Antwort hat zwei Teile, und
+      beide lassen sich mit veröffentlichten Dokumenten belegen.</p>
+
+      <h2>Der SEPA-Zeichensatz genau genommen</h2>
+
+      <p>SEPA-Zahlungen laufen über das Nachrichtenformat pain.001 nach ISO
+      20022. Für den Inhalt der Textfelder, etwa Name oder Verwendungszweck,
+      gilt praxisweit ein eingeschränkter lateinischer Zeichensatz: Buchstaben
+      a bis z und A bis Z ohne Sonderzeichen, Ziffern 0 bis 9, ein Leerzeichen
+      und die Satzzeichen <code>/ - ? : ( ) . , ' +</code>. Sonst nichts.</p>
+
+      <p>Diese Liste ist keine Erfindung einer einzelnen Bank. Sie stammt aus
+      den technischen Vorgaben, die dem SEPA Credit Transfer Scheme des
+      European Payments Council zugrunde liegen, und taucht in genau dieser
+      Form in mehreren unabhängig veröffentlichten Bankspezifikationen auf.
+      Als Beispiel für eine Bank, die diesen Zeichensatz wörtlich auflistet,
+      zitieren wir hier die slowakische ČSOB: Ihre Dokumentation
+      „BusinessBanking Lite a SEPA" nennt exakt diese Zeichen und stellt
+      ausdrücklich fest, dass eine SEPA-XML-Datei mit Diakritika sich in ihr
+      System gar nicht erst importieren lässt. Das ist ein Beispiel aus einer
+      slowakischen Bank, keine deutsche oder tschechische Regel: die
+      zugrunde liegende Zeichensatzliste selbst ist aber, wie eine
+      unabhängige Fachquelle zur EPC-Spezifikation bestätigt, die allgemeine,
+      bankübergreifende Basis von SEPA-Zahlungen, nicht slowakisches
+      Sonderrecht.</p>
+
+      <h2>Was mit Umlauten und ß passiert</h2>
+
+      <p>ä, ö, ü und ß gehören nicht zu diesem Zeichensatz. Das ist unstrittig.
+      Strittig, beziehungsweise uneinheitlich, ist nur, was ein einzelnes
+      Kreditinstitut tut, wenn eine solche Datei trotzdem bei ihm ankommt.
+      Eine Fachquelle, die sich auf das deutsche DFÜ-Abkommen (die
+      Schnittstellenspezifikation der Deutschen Kreditwirtschaft) bezieht,
+      beschreibt es so: Das Kreditinstitut ist berechtigt, unzulässige
+      Zeichen durch Leerzeichen oder durch bedeutungsähnliche Zeichen zu
+      ersetzen, oder gegebenenfalls auch die gesamte Datei zurückzuweisen.</p>
+
+      <p>Mit anderen Worten: beide Verhaltensweisen sind dokumentiert
+      möglich, welche davon eine konkrete Bank tatsächlich wählt, ist damit
+      noch nicht gesagt. Wir können hier nur belegen, was in den von uns
+      gelesenen Dokumentationen steht, nicht das Verhalten jeder einzelnen
+      Bank im Einzelfall. Wenn Sie sich nicht sicher sind, was Ihre Bank
+      konkret tut, ist die einzige zuverlässige Quelle die eigene Bank oder
+      ihre technische Dokumentation zum Zahlungsimport.</p>
+
+      <p>Praktisch heißt das: Eine Datei mit „Müller" kann bei einer Bank
+      klaglos als „Mueller" ankommen, bei einer anderen kommt die ganze Datei
+      mit einer Fehlermeldung zurück, ohne dass am Zahlungsinhalt selbst
+      etwas falsch wäre. Für eine Sammelüberweisung mit vielen Zeilen ist das
+      besonders unangenehm, weil dann unter Umständen die komplette Datei
+      erneut hochgeladen werden muss, nicht nur die eine betroffene Zeile.</p>
+
+      <h2>Praktisch: im Export transliterieren lassen</h2>
+
+      <p>Der zuverlässigste Weg, dieser Uneinheitlichkeit auszuweichen, ist,
+      Umlaute und ß gar nicht erst in die Datei gelangen zu lassen. Die
+      gängige Umschrift dafür ist seit Langem bekannt, sie stammt aus
+      derselben deutschen Schnittstellenspezifikation und wird auch außerhalb
+      von SEPA verwendet, etwa in Namen ohne Tastatur-Umlaute:</p>
+
+      <table class="translit">
+        <thead><tr><th>Zeichen</th><th>Umschrift</th></tr></thead>
+        <tbody>
+          <tr><td>ä, Ä</td><td>ae, Ae (bzw. AE)</td></tr>
+          <tr><td>ö, Ö</td><td>oe, Oe (bzw. OE)</td></tr>
+          <tr><td>ü, Ü</td><td>ue, Ue (bzw. UE)</td></tr>
+          <tr><td>ß</td><td>ss</td></tr>
+        </tbody>
+      </table>
+
+      <p>Diese Umwandlung übernimmt am besten die Buchhaltungs- oder
+      Lohnsoftware direkt beim Export, oder sie wird einmalig in der
+      Empfänger- beziehungsweise Mitarbeiterstammdaten hinterlegt, statt sie
+      bei jeder Datei von Hand nachzuziehen. Eine Datei, die von vornherein
+      nur den erlaubten Zeichensatz verwendet, geht bei jeder Bank durch,
+      unabhängig davon, ob diese Bank Umlaute ersetzt oder zurückweist: die
+      Frage stellt sich dann gar nicht mehr.</p>
+
+      <h3>Wo Umlaute in der Datei am ehesten auftauchen</h3>
+
+      <p>Am häufigsten betrifft das den Namen des Zahlungsempfängers oder
+      Auftraggebers und den freien Verwendungszweck. Beide Felder werden
+      direkt aus Stammdaten oder Rechnungstexten übernommen, in denen
+      deutsche Namen und Adressen naturgemäß Umlaute enthalten. Seltener,
+      aber ebenso betroffen, sind Straßen- und Ortsnamen, sobald eine Adresse
+      strukturiert in die Zahlung übernommen wird.</p>
+
+      <h2>Was, wenn die Datei schon exportiert ist</h2>
+
+      <p>Wenn eine fertige pain.001-Datei bereits vorliegt und Sie vor dem
+      Hochladen prüfen wollen, ob sie Zeichen außerhalb des erlaubten Satzes
+      enthält, lässt sich das an der Datei selbst nachsehen, ohne Umwege über
+      Vermutungen. Unser kostenloses, im Browser laufendes Prüfwerkzeug
+      <a href="https://arling.sk/sepa-pain001-doctor/">SEPA pain.001
+      Doctor</a> markiert genau solche Zeichen in Namen und Verwendungszweck,
+      damit Sie vor dem Hochladen wissen, woran Sie sind, statt es erst bei
+      der Bank herauszufinden. Die Datei verlässt dabei Ihren Browser nicht.</p>
+
+      <p>Das ändert nichts an der eigentlichen Empfehlung: besser gar nicht
+      erst mit Umlauten exportieren, als hinterher zu hoffen, dass die
+      jeweilige Bank sie schon richtig umwandelt.</p>
+
+      <div class="zdroje">
+        <p><b>Quellen und Prüfdatum: 6. September 2026.</b> Der genaue
+        Wortlaut des erlaubten Zeichensatzes und das ausdrückliche Verbot von
+        Diakritika beim Import stammen aus der Dokumentation
+        <a href="https://www.csob.sk/documents/11005/123723/BB_SEPA_01022016.pdf" rel="noopener" target="_blank">„BusinessBanking Lite a SEPA" der slowakischen ČSOB</a>
+        (ein Beispiel aus einer slowakischen Bank, ausdrücklich so
+        gekennzeichnet). Dass es sich dabei um den allgemeinen, von der
+        Bank unabhängigen SEPA-Zeichensatz nach den Vorgaben des European
+        Payments Council handelt, bestätigt die Zusammenfassung der
+        <a href="https://knowledge.xmldation.com/support/epc/latin_character_set" rel="noopener" target="_blank">EPC-Zeichensatzvorgaben bei XMLdation</a>.
+        Die Aussage, dass ein Kreditinstitut unzulässige Zeichen durch
+        Leerzeichen oder bedeutungsähnliche Zeichen ersetzen oder die Datei
+        zurückweisen darf, stammt aus der Zusammenfassung des deutschen
+        DFÜ-Abkommens (Deutsche Kreditwirtschaft) bei
+        <a href="https://www.hettwer-beratung.de/sepa-spezialwissen/sepa-technische-anforderungen/sepa-verwendungszweck/" rel="noopener" target="_blank">Hettwer Unternehmensberatung</a>.
+        Der allgemeine Rahmen von SEPA-Überweisungen ist im
+        <a href="https://www.europeanpaymentscouncil.eu/document-library/rulebooks/2025-sepa-credit-transfer-rulebook-version-11" rel="noopener" target="_blank">SEPA Credit Transfer Scheme Rulebook des European Payments Council</a>
+        festgelegt. Die Umschrift ä→ae, ö→oe, ü→ue, ß→ss ist die in
+        deutschsprachigen Fachquellen gängige Konvention aus derselben
+        DFÜ-Abkommens-Anlage; das Originaldokument (EPC217-08) war beim
+        Abruf über die Website des European Payments Council nicht
+        erreichbar (HTTP 403), weshalb wir hier ausdrücklich auf die
+        genannte Sekundärquelle verweisen, statt aus dem Originaldokument zu
+        zitieren. Falls ein Dokument seinen Inhalt inzwischen geändert hat,
+        schreiben Sie uns, wir korrigieren es.</p>
+      </div>
+    </article>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <div><b>ARLing s. r. o.</b><br>Ivanská cesta 32E<br>821 04 Bratislava, Slowakei</div>
+    <div>Handelsregister-Nr. 56583486<br>USt-IdNr. SK2122352100<br><a href="mailto:andrej@arling.sk">andrej@arling.sk</a></div>
+    <div><a href="https://arling.sk/privacy/">Datenschutz</a> · <a href="https://arling.sk/podmienky/">AGB</a> · <a href="https://arling.sk/gdpr/">DSGVO</a> · <a href="https://arling.sk/impressum/">Impressum</a> · <a href="https://arling.sk/llms.txt">llms.txt</a> · <a href="https://arling.sk/sitemap-index.xml">Sitemap</a><br>Die Werkzeuge werden ohne Gewähr bereitgestellt. Anonyme Besuchszählung über eigenes Umami.</div>
+  </div>
+</footer>
+
+<script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="338f035d-41c5-411e-8391-9a41db6accfd"></script>
+</body>
+</html>

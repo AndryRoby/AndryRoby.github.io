@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<script src="/style/vzhlad.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0a0908">
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../../favicon.ico" sizes="48x48">
+<link rel="apple-touch-icon" href="../../icon-180.png">
+<title>Kam se v SEPA XML píše variabilní symbol | ARLing</title>
+<meta name="description" content="Formát pain.001 nemá pole pro variabilní, specifický ani konstantní symbol. Kam se zapisují, v jakém pořadí a jaké mají limity na počet číslic.">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Kam se v SEPA XML píše variabilní symbol">
+<meta property="og:description" content="Formát pain.001 nemá pole pro VS, SS ani KS. Kam se zapisují, v jakém pořadí a jaké mají limity na počet číslic.">
+<meta property="og:url" content="https://arling.sk/notes/variabilni-symbol-v-sepa-xml/">
+<meta property="og:locale" content="cs_CZ">
+<link rel="canonical" href="https://arling.sk/notes/variabilni-symbol-v-sepa-xml/">
+<link rel="stylesheet" href="/style/paper.css">
+<script src="/style/prepinac.js" defer></script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Kam se v SEPA XML píše variabilní symbol",
+  "description": "Formát pain.001 nemá pole pro variabilní, specifický ani konstantní symbol. Kam se zapisují, v jakém pořadí a jaké mají limity na počet číslic.",
+  "datePublished": "2026-09-06",
+  "dateModified": "2026-09-06",
+  "inLanguage": "cs",
+  "author": { "@type": "Organization", "name": "ARLing s. r. o.", "url": "https://arling.sk/" },
+  "publisher": { "@type": "Organization", "name": "ARLing s. r. o.", "url": "https://arling.sk/" },
+  "mainEntityOfPage": "https://arling.sk/notes/variabilni-symbol-v-sepa-xml/"
+}
+</script>
+
+<style>
+  article { max-width:72ch; }
+  article h2 { margin:clamp(34px,4vh,52px) 0 12px; }
+  article h3 { margin:26px 0 8px; }
+  article p, article li { font-size:16.5px; line-height:1.7; }
+  article ol, article ul { padding-left:22px; }
+  article li { margin:0 0 8px; }
+  code { font:13.5px/1.4 var(--mono); background:var(--card); border:1px solid var(--line);
+    border-radius:3px; padding:1px 5px; overflow-wrap:anywhere; }
+  pre { background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    padding:16px 18px; overflow-x:auto; font:13px/1.6 var(--mono); color:var(--body); }
+  .byline { font-family:var(--ui); font-size:14px; color:var(--muted); margin:0 0 clamp(26px,3vh,40px); }
+  .zhrn { border-left:3px solid var(--accent); background:var(--card); border-radius:0 var(--radius) var(--radius) 0;
+    padding:18px 22px; margin:0 0 clamp(26px,3vh,40px); }
+  .zhrn p { margin:0; font-size:16px; }
+  .zdroje { font-family:var(--ui); font-size:13.5px; color:var(--muted); line-height:1.7;
+    border-top:1px solid var(--line); padding-top:18px; margin-top:clamp(34px,4vh,52px); }
+  .zdroje a { color:var(--body); }
+</style>
+</head>
+<body class="noc">
+<div class="wash" aria-hidden="true"><i></i><i></i></div>
+
+<header>
+  <div class="wrap bar">
+    <a class="brand" href="https://arling.sk/">
+      <svg viewBox="0 0 488 215" width="38" height="15" aria-hidden="true" focusable="false"><path fill="#f4f4f7" fill-rule="evenodd" d="M0.00,213.00L74.00,214.00L181.00,85.00L285.00,214.00L360.00,214.00L206.00,21.00L185.00,4.00L164.00,10.00Z M221.00,0.00L263.00,50.00L395.00,50.00L409.00,55.00L419.00,76.00L401.00,96.00L313.00,98.00L411.00,214.00L487.00,214.00L422.00,139.00L457.00,123.00L482.00,88.00L482.00,48.00L463.00,19.00L417.00,0.00Z"/><path fill="#f2643c" d="M269.00,66.00L269.00,67.00L268.00,68.00L268.00,70.00L267.00,71.00L267.00,76.00L268.00,77.00L268.00,79.00L270.00,81.00L270.00,82.00L271.00,82.00L273.00,84.00L274.00,84.00L277.00,86.00L279.00,86.00L280.00,87.00L287.00,87.00L288.00,86.00L290.00,86.00L291.00,85.00L294.00,84.00L298.00,80.00L298.00,79.00L299.00,78.00L299.00,75.00L300.00,74.00L300.00,72.00L299.00,71.00L299.00,69.00L298.00,68.00L297.00,65.00L295.00,63.00L294.00,63.00L289.00,60.00L278.00,60.00L277.00,61.00L276.00,61.00L275.00,62.00L272.00,63.00Z"/></svg>
+      <b>ARLing</b>
+    </a>
+    <nav aria-label="Site"><a href="https://arling.sk/#tools">Nástroje</a><a href="https://arling.sk/notes/">Notes</a><a href="https://arling.sk/how-we-work/">Jak pracujeme</a><a href="mailto:andrej@arling.sk">Kontakt</a></nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <article>
+      <h1>Kam se v SEPA XML píše variabilní symbol</h1>
+      <p class="byline">ARLing s. r. o. · 6. září 2026</p>
+
+      <div class="zhrn">
+        <p>Krátká odpověď: samostatné pole pro variabilní symbol v SEPA XML
+        neexistuje. Zapisuje se spolu se specifickým a konstantním symbolem
+        do jediného pole <code>EndToEndId</code>, a to v přesném pořadí
+        <code>/VS.../SS.../KS...</code>. Špatné pořadí platbu nezastaví, ale
+        druhá strana si ji nespáruje automaticky s fakturou.</p>
+      </div>
+
+      <p>Kdo připravuje hromadný příkaz k úhradě ve formátu pain.001 poprvé,
+      obvykle hledá v XML pole s názvem podobným <code>VariableSymbol</code>
+      nebo <code>VS</code>. Takové pole tam není a hledání je zbytečné.
+      Norma, na které je pain.001 postavená, tento pojem vůbec nezná.</p>
+
+      <h2>Proč v pain.001 není pole pro VS, SS ani KS</h2>
+
+      <p>Formát pain.001.001.03, ve kterém banky přijímají SEPA úhrady,
+      vychází z mezinárodní normy ISO 20022. Ta popisuje platební zprávy
+      obecně pro celou Evropu a definuje pole jako jméno a IBAN plátce,
+      jméno a IBAN příjemce, částku, měnu a datum splatnosti.</p>
+
+      <p>Variabilní, specifický a konstantní symbol jsou pojmy z domácího
+      bezhotovostního styku v Česku a na Slovensku. V ISO 20022 pro ně
+      žádná pole neexistují, protože norma je psaná tak, aby fungovala i
+      v zemích, které tyto symboly vůbec nepoužívají.</p>
+
+      <h2>Jediné volné pole: PmtId/EndToEndId</h2>
+
+      <p>ISO 20022 nabízí jedno volné textové pole, do kterého se dá podobný
+      údaj vložit: identifikátor plátce k platbě, technicky
+      <code>PmtId/EndToEndId</code>. Je to povinné pole, jeho obsah si banka
+      nijak nevykládá a beze změny ho posílá dál až k příjemci. Smí mít
+      nejvýše 35 znaků.</p>
+
+      <p>Protože je to jediné volné textové pole v celé platbě, zavedla se
+      mezi bankami konvence, jak do něj zapsat všechny tři symboly najednou:
+      každý symbol dostane svou značku a lomítko před sebou.</p>
+
+      <pre>/VS123456/SS789/KS0308</pre>
+
+      <p>Tuto konkrétní podobu zápisu doporučuje slovenská centrální banka
+      (Národná banka Slovenska, NBS) a se stejným zápisem počítá i
+      dokumentace slovenské banky ČSOB pro import SEPA plateb. Jde o
+      slovenskou bankovní konvenci, ne o část samotné normy ISO 20022 a ne
+      o pravidlo, které by muselo platit stejně i pro banky v Česku. Pro
+      české banky přesně tento zápis ověřený nemáme, takže pokud vám záleží
+      na tom, aby si příjemce platbu spároval automaticky, formát si vždy
+      ověřte v dokumentaci své banky.</p>
+
+      <h2>Na pořadí záleží</h2>
+
+      <p>Pořadí musí být vždy VS, potom SS, potom KS. Symbol, který
+      nepoužíváte, se do zápisu vůbec nepíše, segmenty se nepočítají
+      s nulou místo chybějící hodnoty.</p>
+
+      <p>Když je pořadí prohozené nebo obsahuje překlep ve značce, banka
+      platbu stále provede. Banka totiž obsah <code>EndToEndId</code>
+      nekontroluje proti žádnému seznamu značek, jen proti délce a
+      povoleným znakům. Problém nastane až na druhé straně: účetní
+      software příjemce, který platby spárovává automaticky podle
+      variabilního symbolu s vystavenými fakturami, očekává přesně tento
+      formát. Když ho nenajde, platba dorazí, ale zůstane nespárovaná a
+      někdo ji musí spárovat ručně.</p>
+
+      <h2>Limity na jednotlivé symboly</h2>
+
+      <p>Podle stejné slovenské konvence platí pro každý symbol vlastní
+      limit délky a všechny tři se píší výhradně číslicemi:</p>
+
+      <ul>
+        <li><b>Variabilní symbol (VS)</b>: nejvýše 10 číslic.</li>
+        <li><b>Specifický symbol (SS)</b>: nejvýše 10 číslic.</li>
+        <li><b>Konstantní symbol (KS)</b>: nejvýše 4 číslice.</li>
+        <li><b>Celé pole EndToEndId</b>: nejvýše 35 znaků včetně lomítek
+        a značek VS, SS, KS.</li>
+      </ul>
+
+      <p>Písmeno, mezera nebo pomlčka v kterémkoli z těchto tří symbolů
+      je chyba. Pokud je delší text potřeba, patří do jiného pole, do
+      poznámky pro příjemce (<code>RmtInf/Ustrd</code>), ne do
+      EndToEndId.</p>
+
+      <p>U delšího variabilního symbolu, který spolu se specifickým a
+      konstantním symbolem a značkami přesáhne 35 znaků, banka pole
+      odmítne nebo ho zkrátí. Kdo posílá více plateb najednou, v jednom
+      souboru pain.001, ať si tuto matematiku spočítá předem u té
+      platby, kde má nejdelší symboly zároveň.</p>
+
+      <h2>Jak si to ověřit před odesláním</h2>
+
+      <p>Kdo hromadný příkaz sestavuje ručně nebo z exportu, kde si není
+      jistý, jestli je pole poskládané správně, si to může zkontrolovat i
+      bez odesílání do banky. Bezplatný nástroj
+      <a href="https://arling.sk/sepa-pain001-doctor/">SEPA pain.001 Doctor</a>
+      projde celý soubor a na pole EndToEndId se podívá zvlášť: upozorní na
+      špatné pořadí VS, SS a KS, na příliš dlouhý symbol i na písmeno tam,
+      kde má být jen číslice.</p>
+
+      <div class="zdroje">
+        <p><b>Zdroje a ověření, 6. září 2026.</b>
+        Definice pole PmtId/EndToEndId, jeho povaha nekontrolovaného
+        identifikátoru a limit 35 znaků (Max35Text) vycházejí ze základní
+        struktury zprávy pain.001.001.03 podle normy
+        <a href="https://www.iso20022.org/" rel="noopener" target="_blank">ISO 20022</a>
+        a z pravidel
+        <a href="https://www.europeanpaymentscouncil.eu/document-library/rulebooks/2025-sepa-credit-transfer-rulebook-version-11" rel="noopener" target="_blank">European Payments Council</a>
+        pro SEPA úhrady. Konkrétní zápis <code>/VS.../SS.../KS...</code> a
+        limity 10, 10 a 4 číslice cituje dokumentace slovenské banky
+        <a href="https://www.csob.sk/documents/11005/123723/BB_SEPA_01022016.pdf" rel="noopener" target="_blank">ČSOB (Slovensko)</a>
+        „BusinessBanking Lite a SEPA": jde o zvyklost bankovního trhu v
+        Česku a na Slovensku, ne o pravidlo, které by pro váš konkrétní
+        bankovní software muselo platit beze změny, proto ho doporučujeme
+        ověřit i v dokumentaci vaší banky. Pokud se některý ze zdrojů
+        mezitím změnil, napište nám a opravíme to.</p>
+      </div>
+    </article>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <div><b>ARLing s. r. o.</b><br>Ivanská cesta 32E<br>821 04 Bratislava, Slovensko</div>
+    <div>IČO 56583486<br>IČ DPH SK2122352100<br><a href="mailto:andrej@arling.sk">andrej@arling.sk</a></div>
+    <div><a href="https://arling.sk/privacy/">ochrana údajů</a> · <a href="https://arling.sk/podmienky/">podmínky</a> · <a href="https://arling.sk/gdpr/">GDPR</a> · <a href="https://arling.sk/impressum/">Impressum</a> · <a href="https://arling.sk/llms.txt">llms.txt</a> · <a href="https://arling.sk/sitemap-index.xml">mapa stránky</a><br>Nástroje jsou poskytovány tak, jak jsou, bez záruky. Anonymní počty návštěv přes vlastní Umami.</div>
+  </div>
+</footer>
+
+<script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="338f035d-41c5-411e-8391-9a41db6accfd"></script>
+</body>
+</html>
