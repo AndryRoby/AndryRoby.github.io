@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="sk">
+<head>
+<script src="/style/vzhlad.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,follow">
+<meta name="theme-color" content="#0a0908">
+<title>Pozadia ARLing: osem scén, jeden shader, žiadna knižnica</title>
+<meta name="description" content="Osem živých pozadí pre stránky ARLing. Vlastný WebGL shader, jeden súbor, bez knižnice a bez cudzej domény. Vnútorná ukážka na výber scény pre jednotlivé stránky.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preload" href="/fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/style/paper.css">
+<style>
+  /* Prehliadka je jediná stránka, kde smie bežať viac plátien naraz: tu sú
+     pozadia samotným obsahom. Aj tak kreslí vždy len to, ktoré je v obraze. */
+  .ukazky{display:grid;gap:clamp(18px,2.4vw,30px);grid-template-columns:repeat(auto-fit,minmax(min(420px,100%),1fr))}
+  .ukazka{position:relative;isolation:isolate;border:1px solid var(--line);border-radius:18px;
+          overflow:hidden;aspect-ratio:16/10;background:var(--paper-deep)}
+  .ukazka canvas{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none;z-index:0;
+                 -webkit-mask-image:none;mask-image:none;transform:none;left:0;max-width:none}
+  .ukazka .popis{position:relative;z-index:1;padding:clamp(16px,2vw,24px);display:flex;
+                 flex-direction:column;justify-content:flex-end;height:100%}
+  .ukazka h2{font-size:clamp(20px,2vw,26px);margin:0 0 6px}
+  .ukazka p{margin:0;font-size:14.5px;max-width:44ch}
+  .ukazka .kde{margin-top:10px;font-family:var(--ui);font-size:12px;letter-spacing:.08em;
+               text-transform:uppercase;color:var(--muted)}
+  .ukazka code{font-size:12px}
+</style>
+</head>
+<body class="noc">
+<div class="wash" aria-hidden="true"><i></i><i></i></div>
+
+<header>
+  <div class="wrap bar">
+    <a class="brand" href="https://arling.sk/">
+      <svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true"><defs><path id="m" fill-rule="evenodd" d="M16 2.5 L29 29.5 H3 Z M16 12.4 L22.4 25.6 H9.6 Z"/><clipPath id="mr"><rect x="16" width="16" height="32"/></clipPath></defs><use href="#m" fill="#f4f4f7"/><use href="#m" fill="#f2643c" clip-path="url(#mr)"/></svg>
+      <b>ARLing</b><span>Pozadia</span>
+    </a>
+    <nav aria-label="Site">
+      <a href="https://arling.sk/">Domov</a>
+      <a href="https://arling.sk/#tools">Nástroje</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="wrap">
+    <p class="kicker r">Vnútorná ukážka</p>
+    <h1 class="r d1">Osem scén, jeden súbor, <span class="zar">žiadna knižnica</span>.</h1>
+    <div class="rule"></div>
+    <p class="lead r d2">Každé pozadie je fragment shader v <code>/style/zar.js</code>. Spolu majú 12 kB, nenačítavajú nič z cudzej domény a kreslia najviac 30-krát za sekundu. Scéna sa zastaví, keď odscrolluje z obrazu alebo keď prepnete kartu. Pri nastavení „obmedziť pohyb" sa vykreslí jeden snímok a slučka sa nespustí.</p>
+    <p class="r d3 mini">Na bežnej stránke patrí jedna scéna, a to do úvodu. Táto stránka je výnimka, lebo pozadia sú tu obsahom.</p>
+  </section>
+
+  <section class="wrap">
+    <div class="ukazky">
+
+      <article class="ukazka r">
+        <canvas class="zar-plocha" data-zar="stuhy" aria-hidden="true"></canvas>
+        <div class="popis">
+          <h2>Stuhy</h2>
+          <p>Tri pásy svetla rozvlnené šumom, každý inou rýchlosťou. Ostré jadro, mäkký rozptyl.</p>
+          <p class="kde">Domovská stránka · <code>data-zar="stuhy"</code></p>
+        </div>
+      </article>
+
+      <article class="ukazka r">
+        <canvas class="zar-plocha" data-zar="vlny" aria-hidden="true"></canvas>
+        <div class="popis">
+          <h2>Vlny</h2>
+          <p>Hladký prelievaný prechod. Nemá kresbu, takže nesúťaží s textom.</p>
+          <p class="kde">Bankové nástroje · <code>data-zar="vlny"</code></p>
+        </div>
+      </article>
+
+      <article class="ukazka r">
+        <canvas class="zar-plocha" data-zar="prach" aria-hidden="true"></canvas>
+        <div class="popis">
+          <h2>Prach</h2>
+          <p>Tri vrstvy svietiacich bodov v rôznych hĺbkach. Dáva priestor bez kresby.</p>
+          <p class="kde">Asistent · <code>data-zar="prach"</code></p>
+        </div>
+      </article>
+
+      <article class="ukazka r">
+        <canvas class="zar-plocha" data-zar="zoraz" aria-hidden="true"></canvas>
+        <div class="popis">
+          <h2>Zoraz</h2>
+          <p>Zvislé závoje ako polárna žiara, len teplé. Najslávnostnejšia zo všetkých.</p>
+          <p class="kde">Úvodné stránky produktov · <code>data-zar="zoraz"</code></p>
+        </div>
+      </article>
+
+      <article class="ukazka r">
+        <canvas class="zar-plocha" data-zar="siet" aria-hidden="true"></canvas>
+        <div class="popis">
+          <h2>Sieť</h2>
+          <p>Mriežka, ktorá sa vlní ako plachta a v uzloch svieti. Technická, ale nie chladná.</p>
+          <p class="kde">Nástroje a dokumentácia · <code>data-zar="siet"</code></p>
+        </div>
+      </article>
+
+      <article class="ukazka r">
+        <canvas class="zar-plocha" data-zar="kruhy" aria-hidden="true"></canvas>
+        <div class="popis">
+          <h2>Kruhy</h2>
+          <p>Sústredné vlnky z jedného bodu. Pokojná a hypnotická.</p>
+          <p class="kde">Stránky s jedným odkazom · <code>data-zar="kruhy"</code></p>
+        </div>
+      </article>
+
+      <article class="ukazka r">
+        <canvas class="zar-plocha" data-zar="dym" aria-hidden="true"></canvas>
+        <div class="popis">
+          <h2>Dym</h2>
+          <p>Hustý pomalý dym, ktorý stúpa. Najtemnejšia, svetla je málo a je hlboko.</p>
+          <p class="kde">Právne texty · <code>data-zar="dym"</code></p>
+        </div>
+      </article>
+
+      <article class="ukazka r">
+        <canvas class="zar-plocha" data-zar="iskry" aria-hidden="true"></canvas>
+        <div class="popis">
+          <h2>Iskry</h2>
+          <p>Drobné iskry stúpajúce nahor nad tlejúcou pecou. Jediná živšia scéna.</p>
+          <p class="kde">Používať striedmo · <code>data-zar="iskry"</code></p>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <section class="wrap deep">
+    <h2 class="r">Ako sa scéna priradí stránke</h2>
+    <div class="rule"></div>
+    <p class="r d1">Do úvodu stránky sa vloží jedno plátno a načíta sa skript. Nič iné netreba, scéna sa vyberie názvom.</p>
+    <pre class="r d2"><code>&lt;canvas class="zar-plocha" data-zar="vlny" aria-hidden="true"&gt;&lt;/canvas&gt;
+&lt;script src="/style/zar.js" defer&gt;&lt;/script&gt;</code></pre>
+    <p class="r d3">Neznámy názov spadne na <code>stuhy</code>, takže preklep nikdy nerozbije stránku. Keď WebGL nie je k dispozícii, plátno sa odstráni a ostane pod ním CSS prechod, ktorý vyzerá dobre sám.</p>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <div><b>ARLing s. r. o.</b><br>Vnútorná ukážka, neindexuje sa.</div>
+    <div><a href="https://arling.sk/">arling.sk</a><br><a href="mailto:andrej@arling.sk">andrej@arling.sk</a></div>
+  </div>
+</footer>
+
+<script src="/style/prepinac.js" defer></script>
+<script src="/style/zar.js" defer></script>
+</body>
+</html>
