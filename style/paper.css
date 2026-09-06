@@ -649,3 +649,20 @@ body.noc .hero-noc{padding-top:clamp(48px,9vh,120px);padding-bottom:clamp(48px,9
 .termin b{color:var(--ink)}
 .zdroje{font-family:var(--ui);font-size:13px;line-height:1.6;color:var(--muted);margin-top:26px;max-width:88ch}
 .mini{font-family:var(--ui);font-size:13px;color:var(--muted);margin:18px 0 6px}
+
+/* Plátno so živým svetlom v úvode. Leží pod obsahom, nedá sa naň kliknúť
+   a keď sa skript nespustí, ostane pod ním CSS prechod, ktorý vyzerá dobre sám.
+   Skript: /style/zar.js (jeden shader, bez knižnice, bez cudzej domény). */
+.hero-noc{isolation:isolate}
+/* Všetko okrem plátna je bežný prvok v rade. Plátno musí byť vyňaté, inak by
+   sa zaradilo medzi nadpis a text a odtlačilo obsah dole. */
+.hero-noc>*:not(.zar-plocha){position:relative;z-index:1}
+/* Plátno ide cez celú šírku okna, nie len cez obsahový stĺpec, aby svetlo
+   nekončilo zvislou hranou tam, kde sa končí text. */
+.zar-plocha{position:absolute;top:0;bottom:0;left:50%;transform:translateX(-50%);
+  width:100vw;max-width:none;height:100%;display:block;
+  pointer-events:none;z-index:0;opacity:0;transition:opacity 1.1s var(--ease);
+  -webkit-mask-image:linear-gradient(180deg,#000 0%,#000 58%,transparent 100%);
+  mask-image:linear-gradient(180deg,#000 0%,#000 58%,transparent 100%)}
+body.noc .zar-plocha{opacity:1}
+@media (prefers-reduced-motion:reduce){ .zar-plocha{transition:none} }
