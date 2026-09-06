@@ -31,7 +31,7 @@
      Písma ARLing sú hostené u nás, žiadne externé CDN. -->
 <link rel="preload" href="/fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/style/paper.css?v=d1ba2c04">
+<link rel="stylesheet" href="/style/paper.css?v=e68fba59">
 <script src="/style/prepinac.js?v=2988c181" defer></script>
 <script src="/style/zar.js?v=b88e6bc6" defer></script>
 <script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="c866f49f-54e4-4339-84c0-8bf720b64b09"></script>
@@ -166,14 +166,18 @@
     border-left:1px solid var(--line); padding-left:11px; white-space:nowrap; }
   .brand-sec:hover { color:var(--accent); }
   .headnav { display:flex; align-items:center; flex-wrap:wrap; gap:8px 20px; }
-  .lang-switch { display:flex; }
-  .lang-switch button { font:600 12px/1 var(--ui); padding:8px 9px; border:1px solid var(--line);
-    background:var(--card); color:var(--muted); cursor:pointer; appearance:none; -webkit-appearance:none; }
-  .lang-switch button:first-child { border-radius:9px 0 0 9px; }
-  .lang-switch button:last-child { border-radius:0 9px 9px 0; }
-  .lang-switch button + button { margin-left:-1px; }
-  .lang-switch button:hover { border-color:var(--accent); color:var(--accent); position:relative; z-index:1; }
-  .lang-switch button.lang-active { background:var(--ink); border-color:var(--ink); color:var(--paper);
+  .lang-switch { display:flex; align-items:center; }
+  /* Boli to <button>: klik menil len ?lang= v URL, nikdy skutočne nenavigoval
+     na /en/ alebo /de/. Teraz sú to <a href>, preto selektory berú ľubovoľné
+     dieťa (:first-child/:last-child/* + *), nielen button, presne ako v už
+     funkčnom camt053-to-excel. */
+  .lang-switch a { display:inline-block; font:600 12px/1 var(--ui); padding:8px 9px; border:1px solid var(--line);
+    background:var(--card); color:var(--muted); text-decoration:none; }
+  .lang-switch > :first-child { border-radius:9px 0 0 9px; }
+  .lang-switch > :last-child { border-radius:0 9px 9px 0; }
+  .lang-switch > * + * { margin-left:-1px; }
+  .lang-switch a:hover { border-color:var(--accent); color:var(--accent); position:relative; z-index:1; }
+  .lang-switch .lang-active { background:var(--ink); border-color:var(--ink); color:var(--paper);
     position:relative; z-index:1; }
 
   /* Úvod stránky */
@@ -360,9 +364,9 @@
     </a>
     <nav aria-label="Site"><a href="#pro" data-i18n="nav.pro">Cena</a><a href="#licence" data-i18n="nav.licence">Licencia</a><a href="#faq" data-i18n="nav.faq">Otázky</a><a href="https://arling.sk/#tools">Nástroje</a><a href="https://arling.sk/notes/">Notes</a><a href="https://arling.sk/how-we-work/">Ako pracujeme</a><a href="mailto:andrej@arling.sk">Kontakt</a></nav>
     <div class="lang-switch" role="group" aria-label="Jazyk stránky" data-i18n-aria-label="lang.switch.aria">
-        <button type="button" data-set-lang="sk" aria-pressed="true" aria-label="Slovenčina" data-i18n-aria-label="lang.sk.aria">SK</button>
-        <button type="button" data-set-lang="en" aria-pressed="false" aria-label="English" data-i18n-aria-label="lang.en.aria">EN</button>
-        <button type="button" data-set-lang="de" aria-pressed="false" aria-label="Deutsch" data-i18n-aria-label="lang.de.aria">DE</button>
+        <a href="./" class="lang-active" aria-current="true" data-set-lang="sk" hreflang="sk" aria-label="Slovenčina" data-i18n-aria-label="lang.sk.aria">SK</a>
+        <a href="en/" data-set-lang="en" hreflang="en" aria-label="English" data-i18n-aria-label="lang.en.aria">EN</a>
+        <a href="de/" data-set-lang="de" hreflang="de" aria-label="Deutsch" data-i18n-aria-label="lang.de.aria">DE</a>
       </div>
   </div>
 </header>

@@ -4,7 +4,7 @@
 <script src="/style/vzhlad.js?v=93c2659f"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://homelab.tailbf8f27.ts.net 'sha256-0YenIFHinKpvp3FcqM3HJrNO5S/Lr/RYBKl5OJtN6pY=' 'sha256-nxa5EZ8GkE8yppNl6TDNVxE66gmPAScho7eNGcNSz4c=' 'sha256-6pjfV9WEE1KGVje8PeLfE0wFTBe2EPfR4Y626by4jdA=' 'sha256-O+J5s/8PoNtJcsf6nYE+9WAtldgieNHQ8GOv/RrzRDE='; connect-src 'self' https:; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://homelab.tailbf8f27.ts.net 'sha256-0YenIFHinKpvp3FcqM3HJrNO5S/Lr/RYBKl5OJtN6pY=' 'sha256-nxa5EZ8GkE8yppNl6TDNVxE66gmPAScho7eNGcNSz4c=' 'sha256-RuDh/iFBYz8P+1FKuRZk8Fya4UX/4DF2IGmUFlSE+eU=' 'sha256-O+J5s/8PoNtJcsf6nYE+9WAtldgieNHQ8GOv/RrzRDE='; connect-src 'self' https:; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#0a0908">
 <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
@@ -35,7 +35,7 @@
 
 <link rel="preload" href="../fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="../fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="../style/paper.css?v=d1ba2c04">
+<link rel="stylesheet" href="../style/paper.css?v=e68fba59">
 
 <style>
   /* Only what is specific to this page. Every colour, font, heading, button,
@@ -564,7 +564,7 @@
 
 <!-- Scripts -->
 <script type="module">
-  import { analyze, RULES, SAMPLE_FEED, issuesToCsv, reportToJson, asistentHandoffUrl, isValidEmailSyntax, monitorPrefillUrl } from '../feed-doctor.js';
+  import { analyze, checkProducts, SAMPLE_FEED, issuesToCsv, reportToJson, asistentHandoffUrl, isValidEmailSyntax, monitorPrefillUrl } from '../feed-doctor.js';
 
   // Feed Doctor Monitor worker base URL. Only place this needs to change.
   const MONITOR_API_BASE = 'https://feed-monitor.arling.workers.dev';
@@ -579,14 +579,192 @@
     try { if (window.umami) window.umami.track(name, data); } catch (e) {}
   }
 
-  // ── 01: render the full rule table from RULES itself ───────────────────
+  /* i18n-slovnik */
+  // Andrej to 6. 9. 2026 videl na slovenskej stránke: klik na ukážkový feed
+  // vypísal panel výsledkov celý po anglicky ("6 errors", "Duplicate id"...),
+  // hoci stránka je <html lang="sk">. Nálezy pravidiel (title/detail) si
+  // prekladá samotný engine (feed-doctor.js, pozri SPRAVY tam); tento slovník
+  // je len pre texty, ktoré patria tejto stránke: popisky panelu, hlášky
+  // formulárov, tlačidlá exportu, texty monitora.
+  const UIJAZYK = (function () {
+    const l = (document.documentElement.lang || 'sk').slice(0, 2).toLowerCase();
+    return ['sk', 'en', 'de'].indexOf(l) >= 0 ? l : 'sk';
+  }());
+  const SLOVNIK = {
+    sk: {
+      formaty: {
+        google_rss: 'Google Shopping / Merchant Center RSS',
+        facebook_csv: 'Facebook/Meta katalógové CSV',
+        generic_csv: 'Všeobecné CSV',
+        shopify_json: 'Shopify /products.json',
+        woocommerce_json: 'WooCommerce Store API JSON',
+        generic_xml: 'Všeobecný XML feed',
+        unknown: 'Nerozpoznaný formát',
+      },
+      labelZavaznost: 'Závažnosť',
+      labelIdPravidla: 'ID pravidla',
+      labelPole: 'Pole',
+      labelCoKontroluje: 'Čo kontroluje',
+      zavaznost: { error: 'chyba', warning: 'varovanie', info: 'info' },
+      pocetChyb: (n) => n + ' ' + (n === 1 ? 'chyba' : n < 5 ? 'chyby' : 'chýb'),
+      pocetVarovani: (n) => n + ' ' + (n === 1 ? 'varovanie' : n < 5 ? 'varovania' : 'varovaní'),
+      pocetInfo: (n) => n + ' info',
+      polozokVFeede: (n) => n + ' ' + (n === 1 ? 'položka' : n < 5 ? 'položky' : 'položiek'),
+      pravidielSpustenych: (n) => n + ' ' + (n === 1 ? 'pravidlo sa spustilo' : n < 5 ? 'pravidlá sa spustili' : 'pravidiel sa spustilo'),
+      pocetRiadkov: (n) => n + ' ' + (n === 1 ? 'riadok' : n < 5 ? 'riadky' : 'riadkov'),
+      esteRiadkovNavyse: (n) => '+ ešte ' + n + ' ' + (n === 1 ? 'riadok' : n < 5 ? 'riadky' : 'riadkov') + ' s rovnakým problémom.',
+      neznamyFormat: 'V tomto vstupe sa nepodarilo rozpoznať podporovaný formát feedu. Vložte Google Shopping/Merchant Center RSS, CSV z Facebooku/Mety, export zo Shopify alebo WooCommerce vo formáte JSON, všeobecný XML feed alebo obyčajné CSV s hlavičkovým riadkom.',
+      najdenychNula: (formatLabel) => `Rozpoznaný formát: ${formatLabel}, ale nenašla sa v ňom ani jedna položka. Skontrolujte, či je obsah feedu úplný.`,
+      formatHint: (formatLabel, n) => `${formatLabel} · ${SLOVNIK.sk.polozokVFeede(n)}`,
+      resultMeta: (formatLabel, n, ruleCount) => `${formatLabel} · ${SLOVNIK.sk.polozokVFeede(n)} · ${SLOVNIK.sk.pravidielSpustenych(ruleCount)}`,
+      issuesFoundTitle: 'Nájdené problémy, pri každom pravidle najprv 200 riadkov, z toho maximálne 5 príkladov',
+      noRuleTriggered: 'Žiadne pravidlo sa nespustilo. Tento feed prešiel všetkými kontrolami.',
+      truncatedNote: 'Zoznam nálezov je orezaný na 200 položiek; presné počty pre každé pravidlo nájdete v exportovanom prehľade.',
+      exportCsvBtn: 'Exportovať nálezy ako CSV',
+      exportJsonBtn: 'Exportovať prehľad ako JSON',
+      handoffText: 'Tento feed dokáže poháňať aj nákupného asistenta: ',
+      handoffLinkText: 'vyskúšajte ho s ARLing Asistentom',
+      monitorNadpis: 'Sledujte tento feed',
+      monitorSubmit: 'Spustiť týždennú kontrolu zadarmo',
+      monitorProLine: 'Pro: denná kontrola a história, 9 EUR mesačne, prejdite naň zo stránky monitora.',
+      monitorNote: 'Na našom serveri sťahujeme len túto URL, kontrola v prehliadači ostáva lokálna, odhlásiť sa dá jedným kliknutím.',
+      monitorStarting: 'Spúšťam...',
+      monitorSuccess: 'Skontrolujte si e-mail, príde vám potvrdzovací odkaz.',
+      monitorErrUrl: 'Zadajte URL feedu, ktorý sa má kontrolovať (začínajúcu na http:// alebo https://).',
+      monitorErrEmail: 'Zadajte platnú e-mailovú adresu.',
+      monitorErrConflict: 'Na tento e-mail už beží bezplatný monitor. Skontrolujte si e-mail s odkazom, alebo prejdite na Pro kvôli ďalším feedom.',
+      monitorErrRate: 'Príliš veľa pokusov odtiaľto. Počkajte pár minút a skúste znova.',
+      monitorErrGeneric: 'Monitor sa teraz nepodarilo spustiť. Skúste to o chvíľu znova, alebo napíšte na andrej@arling.sk.',
+      monitorErrNetwork: 'Nepodarilo sa spojiť so službou monitora. Skúste to o chvíľu znova.',
+      fetchZadajteUrl: 'Najprv zadajte alebo vložte URL feedu.',
+      fetchNeplatnaUrl: 'Toto nie je platná URL. Vložte radšej obsah feedu nižšie.',
+      fetchBezi: 'Sťahujem...',
+      fetchTlacidlo: 'Stiahnuť a analyzovať',
+      fetchChyba: 'Túto URL sa nepodarilo priamo stiahnuť, najskôr preto, že server neposiela hlavičku, ktorá by prehliadaču dovolila prečítať odpoveď z inej stránky (bežné správanie CORS pri súboroch feedu, nie chyba tohto nástroja). Vložte obsah feedu nižšie, alebo stiahnutý súbor nahrajte.',
+      fetchSuborChyba: 'Tento súbor sa v prehliadači nepodarilo prečítať. Skúste jeho obsah radšej vložiť.',
+      prazdnyVstup: 'Vložte URL, vložte obsah feedu, nahrajte súbor alebo načítajte ukážkový feed a potom stlačte <span class="kbd">Analyzovať</span>.',
+      analyzujChyba: (msg) => `Tento vstup sa nepodarilo analyzovať: ${msg}`,
+    },
+    en: {
+      formaty: {
+        google_rss: 'Google Shopping / Merchant Center RSS',
+        facebook_csv: 'Facebook / Meta catalog CSV',
+        generic_csv: 'Generic CSV',
+        shopify_json: 'Shopify /products.json',
+        woocommerce_json: 'WooCommerce Store API JSON',
+        generic_xml: 'Generic XML',
+        unknown: 'Unrecognized format',
+      },
+      labelZavaznost: 'Severity',
+      labelIdPravidla: 'Rule id',
+      labelPole: 'Field',
+      labelCoKontroluje: 'What it checks',
+      zavaznost: { error: 'error', warning: 'warning', info: 'info' },
+      pocetChyb: (n) => n + ' error' + (n === 1 ? '' : 's'),
+      pocetVarovani: (n) => n + ' warning' + (n === 1 ? '' : 's'),
+      pocetInfo: (n) => n + ' info',
+      polozokVFeede: (n) => n + ' item' + (n === 1 ? '' : 's'),
+      pravidielSpustenych: (n) => n + ' rule' + (n === 1 ? '' : 's') + ' triggered',
+      pocetRiadkov: (n) => n + ' row' + (n === 1 ? '' : 's'),
+      esteRiadkovNavyse: (n) => '+ ' + n + ' more row' + (n === 1 ? '' : 's') + ' with this issue.',
+      neznamyFormat: 'Could not detect a supported feed format in that input. Paste a Google Shopping/Merchant Center RSS, a Facebook/Meta CSV, a Shopify or WooCommerce JSON export, a generic XML feed, or a plain CSV with a header row.',
+      najdenychNula: (formatLabel) => `Detected ${formatLabel}, but found 0 items. Check that the feed content is complete.`,
+      formatHint: (formatLabel, n) => `${formatLabel} · ${SLOVNIK.en.polozokVFeede(n)}`,
+      resultMeta: (formatLabel, n, ruleCount) => `${formatLabel} · ${SLOVNIK.en.polozokVFeede(n)} · ${SLOVNIK.en.pravidielSpustenych(ruleCount)}`,
+      issuesFoundTitle: 'Issues found, first 200 rows shown per rule up to 5 examples each',
+      noRuleTriggered: 'No rule was triggered. This feed passed every check.',
+      truncatedNote: 'The drill-down list is capped at 200 individual issues; export the full report for exact per-rule counts.',
+      exportCsvBtn: 'Export issues as CSV',
+      exportJsonBtn: 'Export report as JSON',
+      handoffText: 'This feed can also power a shopping assistant: ',
+      handoffLinkText: 'try ARLing Asistent with it',
+      monitorNadpis: 'Monitor this feed',
+      monitorSubmit: 'Start weekly checks, free',
+      monitorProLine: 'Pro: daily checks and history, 9 EUR per month, upgrade from your monitor page.',
+      monitorNote: 'We fetch only this URL on our server, the browser checker stays local, unsubscribe with one click.',
+      monitorStarting: 'Starting...',
+      monitorSuccess: 'Check your inbox for the confirmation link.',
+      monitorErrUrl: 'Enter the feed URL you want checked (starting with http:// or https://).',
+      monitorErrEmail: 'Enter a valid e-mail address.',
+      monitorErrConflict: 'That e-mail already has a free monitor running. Check your inbox for the link, or upgrade to Pro for more feeds.',
+      monitorErrRate: 'Too many attempts from here. Wait a few minutes and try again.',
+      monitorErrGeneric: 'Could not start the monitor right now. Try again in a minute, or write to andrej@arling.sk.',
+      monitorErrNetwork: 'Could not reach the monitor service. Try again in a minute.',
+      fetchZadajteUrl: 'Type or paste a feed URL first.',
+      fetchNeplatnaUrl: 'That is not a valid URL. Paste the feed content below instead.',
+      fetchBezi: 'Fetching...',
+      fetchTlacidlo: 'Fetch & analyze',
+      fetchChyba: 'Could not fetch that URL directly, most likely because the server does not send the header that lets a browser on a different site read it (this is normal CORS behavior for feed files, not a bug). Paste the feed content below, or download the file and upload it instead.',
+      fetchSuborChyba: 'Could not read that file in the browser. Try pasting its content instead.',
+      prazdnyVstup: 'Paste a URL, paste feed content, upload a file, or load the sample feed, then press <span class="kbd">Analyze</span>.',
+      analyzujChyba: (msg) => `Could not analyze that input: ${msg}`,
+    },
+    de: {
+      formaty: {
+        google_rss: 'Google Shopping / Merchant Center RSS',
+        facebook_csv: 'Facebook/Meta-Katalog-CSV',
+        generic_csv: 'Allgemeines CSV',
+        shopify_json: 'Shopify /products.json',
+        woocommerce_json: 'WooCommerce Store API JSON',
+        generic_xml: 'Allgemeiner XML-Feed',
+        unknown: 'Nicht erkanntes Format',
+      },
+      labelZavaznost: 'Schweregrad',
+      labelIdPravidla: 'Regel-ID',
+      labelPole: 'Feld',
+      labelCoKontroluje: 'Was geprüft wird',
+      zavaznost: { error: 'Fehler', warning: 'Warnung', info: 'Info' },
+      pocetChyb: (n) => n + ' Fehler',
+      pocetVarovani: (n) => n + ' Warnung' + (n === 1 ? '' : 'en'),
+      pocetInfo: (n) => n + ' Info' + (n === 1 ? '' : 's'),
+      polozokVFeede: (n) => n + ' Artikel',
+      pravidielSpustenych: (n) => n + ' ausgelöste Regel' + (n === 1 ? '' : 'n'),
+      pocetRiadkov: (n) => n + ' Zeile' + (n === 1 ? '' : 'n'),
+      esteRiadkovNavyse: (n) => '+ noch ' + n + ' weitere Zeile' + (n === 1 ? '' : 'n') + ' mit diesem Problem.',
+      neznamyFormat: 'In dieser Eingabe wurde kein unterstütztes Feed-Format erkannt. Fügen Sie ein Google Shopping/Merchant Center RSS, ein Facebook/Meta-CSV, einen Shopify- oder WooCommerce-JSON-Export, einen allgemeinen XML-Feed oder ein einfaches CSV mit Kopfzeile ein.',
+      najdenychNula: (formatLabel) => `Erkanntes Format: ${formatLabel}, aber es wurden 0 Artikel gefunden. Prüfen Sie, ob der Feed-Inhalt vollständig ist.`,
+      formatHint: (formatLabel, n) => `${formatLabel} · ${SLOVNIK.de.polozokVFeede(n)}`,
+      resultMeta: (formatLabel, n, ruleCount) => `${formatLabel} · ${SLOVNIK.de.polozokVFeede(n)} · ${SLOVNIK.de.pravidielSpustenych(ruleCount)}`,
+      issuesFoundTitle: 'Gefundene Probleme, pro Regel zuerst 200 Zeilen, davon höchstens 5 Beispiele',
+      noRuleTriggered: 'Keine Regel wurde ausgelöst. Dieser Feed hat jede Prüfung bestanden.',
+      truncatedNote: 'Die Detailliste ist auf 200 einzelne Probleme begrenzt; exportieren Sie den vollständigen Bericht für genaue Zahlen pro Regel.',
+      exportCsvBtn: 'Probleme als CSV exportieren',
+      exportJsonBtn: 'Bericht als JSON exportieren',
+      handoffText: 'Dieser Feed kann auch einen Einkaufsassistenten antreiben: ',
+      handoffLinkText: 'probieren Sie ihn mit ARLing Asistent aus',
+      monitorNadpis: 'Diesen Feed überwachen',
+      monitorSubmit: 'Wöchentliche Prüfung starten, kostenlos',
+      monitorProLine: 'Pro: tägliche Prüfung und Verlauf, 9 EUR pro Monat, Upgrade über Ihre Monitor-Seite.',
+      monitorNote: 'Wir rufen auf unserem Server nur diese URL ab, der Checker im Browser bleibt lokal, Abmeldung mit einem Klick.',
+      monitorStarting: 'Wird gestartet...',
+      monitorSuccess: 'Prüfen Sie Ihr Postfach auf den Bestätigungslink.',
+      monitorErrUrl: 'Geben Sie die zu prüfende Feed-URL ein (beginnend mit http:// oder https://).',
+      monitorErrEmail: 'Geben Sie eine gültige E-Mail-Adresse ein.',
+      monitorErrConflict: 'Für diese E-Mail läuft bereits ein kostenloser Monitor. Prüfen Sie Ihr Postfach auf den Link, oder wechseln Sie zu Pro für weitere Feeds.',
+      monitorErrRate: 'Zu viele Versuche von hier aus. Warten Sie ein paar Minuten und versuchen Sie es erneut.',
+      monitorErrGeneric: 'Der Monitor konnte gerade nicht gestartet werden. Versuchen Sie es in einer Minute erneut, oder schreiben Sie an andrej@arling.sk.',
+      monitorErrNetwork: 'Der Monitor-Dienst konnte nicht erreicht werden. Versuchen Sie es in einer Minute erneut.',
+      fetchZadajteUrl: 'Geben Sie zuerst eine Feed-URL ein.',
+      fetchNeplatnaUrl: 'Das ist keine gültige URL. Fügen Sie stattdessen den Feed-Inhalt unten ein.',
+      fetchBezi: 'Wird abgerufen...',
+      fetchTlacidlo: 'Abrufen & analysieren',
+      fetchChyba: 'Diese URL konnte nicht direkt abgerufen werden, meist weil der Server nicht den Header sendet, der einem Browser auf einer anderen Website das Lesen erlaubt (normales CORS-Verhalten bei Feed-Dateien, kein Fehler dieses Tools). Fügen Sie den Feed-Inhalt unten ein, oder laden Sie die Datei herunter und hoch.',
+      fetchSuborChyba: 'Diese Datei konnte im Browser nicht gelesen werden. Versuchen Sie stattdessen, ihren Inhalt einzufügen.',
+      prazdnyVstup: 'Fügen Sie eine URL oder Feed-Inhalt ein, laden Sie eine Datei hoch oder laden Sie den Beispiel-Feed, dann drücken Sie <span class="kbd">Analysieren</span>.',
+      analyzujChyba: (msg) => `Diese Eingabe konnte nicht analysiert werden: ${msg}`,
+    },
+  };
+  const UI = SLOVNIK[UIJAZYK];
+  /* /i18n-slovnik */
+
+  // ── 01: render the full rule table (all rules, count 0 included) ───────
   const ruleTableBody = $('rule-table-body');
-  ruleTableBody.innerHTML = RULES.map((r) => `
+  ruleTableBody.innerHTML = checkProducts([], UIJAZYK).table.map((r) => `
     <tr>
-      <td data-th="Severity"><span class="sev-pill ${esc(r.severity)}">${esc(r.severity)}</span></td>
-      <td class="rid" data-th="Rule id">${esc(r.id)}</td>
-      <td class="rfield" data-th="Field">${r.spec ? esc(r.spec) : '-'}</td>
-      <td class="rdesc" data-th="What it checks">${esc(r.title)}</td>
+      <td data-th="${esc(UI.labelZavaznost)}"><span class="sev-pill ${esc(r.severity)}">${esc(UI.zavaznost[r.severity] || r.severity)}</span></td>
+      <td class="rid" data-th="${esc(UI.labelIdPravidla)}">${esc(r.id)}</td>
+      <td class="rfield" data-th="${esc(UI.labelPole)}">${r.spec ? esc(r.spec) : '-'}</td>
+      <td class="rdesc" data-th="${esc(UI.labelCoKontroluje)}">${esc(r.title)}</td>
     </tr>`).join('');
 
   // ── tool wiring ──────────────────────────────────────────────────────
@@ -611,18 +789,18 @@
   fetchBtn.addEventListener('click', async () => {
     const url = urlInput.value.trim();
     if (!url) {
-      showFetchStatus('Type or paste a feed URL first.');
+      showFetchStatus(UI.fetchZadajteUrl);
       return;
     }
     let parsed;
     try {
       parsed = new URL(url);
     } catch (e) {
-      showFetchStatus('That is not a valid URL. Paste the feed content below instead.');
+      showFetchStatus(UI.fetchNeplatnaUrl);
       return;
     }
     fetchBtn.disabled = true;
-    fetchBtn.textContent = 'Fetching...';
+    fetchBtn.textContent = UI.fetchBezi;
     track('fetch_attempt');
     try {
       const res = await fetch(parsed.href, { mode: 'cors', credentials: 'omit' });
@@ -635,12 +813,10 @@
       track('fetch_ok');
     } catch (e) {
       track('fetch_blocked');
-      showFetchStatus(
-        'Could not fetch that URL directly, most likely because the server does not send the header that lets a browser on a different site read it (this is normal CORS behavior for feed files, not a bug). Paste the feed content below, or download the file and upload it instead.'
-      );
+      showFetchStatus(UI.fetchChyba);
     } finally {
       fetchBtn.disabled = false;
-      fetchBtn.textContent = 'Fetch & analyze';
+      fetchBtn.textContent = UI.fetchTlacidlo;
     }
   });
 
@@ -656,7 +832,7 @@
       track('file_uploaded');
     };
     reader.onerror = () => {
-      showFetchStatus('Could not read that file in the browser. Try pasting its content instead.');
+      showFetchStatus(UI.fetchSuborChyba);
     };
     reader.readAsText(file);
   });
@@ -675,15 +851,7 @@
     runAnalysis(text, fetched && fetched.text === text ? fetched.url : null);
   });
 
-  const FORMAT_LABELS = {
-    google_rss: 'Google Shopping / Merchant Center RSS',
-    facebook_csv: 'Facebook / Meta catalog CSV',
-    generic_csv: 'Generic CSV',
-    shopify_json: 'Shopify /products.json',
-    woocommerce_json: 'WooCommerce Store API JSON',
-    generic_xml: 'Generic XML',
-    unknown: 'Unrecognized format',
-  };
+  const FORMAT_LABELS = UI.formaty;
 
   function scoreClass(score) {
     if (score >= 90) return 'good';
@@ -711,29 +879,29 @@
   function renderReport(report, sourceUrl) {
     lastReport = report;
     if (!report.productCount && report.format === 'unknown') {
-      results.innerHTML = '<div class="placeholder" style="color:var(--accent)">Could not detect a supported feed format in that input. Paste a Google Shopping/Merchant Center RSS, a Facebook/Meta CSV, a Shopify or WooCommerce JSON export, a generic XML feed, or a plain CSV with a header row.</div>';
+      results.innerHTML = `<div class="placeholder" style="color:var(--accent)">${esc(UI.neznamyFormat)}</div>`;
       formatHint.textContent = '';
       return;
     }
     if (!report.productCount) {
-      results.innerHTML = `<div class="placeholder" style="color:var(--accent)">Detected ${esc(FORMAT_LABELS[report.format] || report.format)}, but found 0 items. Check that the feed content is complete.</div>`;
+      results.innerHTML = `<div class="placeholder" style="color:var(--accent)">${esc(UI.najdenychNula(FORMAT_LABELS[report.format] || report.format))}</div>`;
       formatHint.textContent = '';
       return;
     }
-    formatHint.textContent = (FORMAT_LABELS[report.format] || report.format) + ' · ' + report.productCount + ' items';
+    formatHint.textContent = UI.formatHint(FORMAT_LABELS[report.format] || report.format, report.productCount);
 
     const rulesHtml = report.problems
       .map((p) => {
         const examplesHtml = p.examples
           .map((ex) => `<li class="issue-item"><span class="iid">#${ex.index + 1}${ex.id ? ' · ' + esc(ex.id) : ''}${ex.title ? ' · ' + esc(ex.title) : ''}</span><br>${esc(ex.detail)}</li>`)
           .join('');
-        const more = p.count > p.examples.length ? `<p class="issue-more">+ ${p.count - p.examples.length} more row${p.count - p.examples.length === 1 ? '' : 's'} with this issue.</p>` : '';
+        const more = p.count > p.examples.length ? `<p class="issue-more">${esc(UI.esteRiadkovNavyse(p.count - p.examples.length))}</p>` : '';
         return `<details class="found-rule ${esc(p.severity)}">
           <summary>
-            <span class="sev-pill ${esc(p.severity)}">${esc(p.severity)}</span>
+            <span class="sev-pill ${esc(p.severity)}">${esc(UI.zavaznost[p.severity] || p.severity)}</span>
             <span class="rtitle">${esc(p.title)}</span>
             <span class="rid">${esc(p.id)}</span>
-            <span class="rcount">${p.count} row${p.count === 1 ? '' : 's'}</span>
+            <span class="rcount">${esc(UI.pocetRiadkov(p.count))}</span>
           </summary>
           <ul class="issue-list">${examplesHtml}</ul>
           ${more}
@@ -745,19 +913,19 @@
       <div class="result-top">
         <div class="score-badge ${scoreClass(report.score)}"><span class="num">${report.score}</span><span class="of100">/ 100</span></div>
         <div class="counts-row">
-          <span class="count-pill error">${report.counts.error} error${report.counts.error === 1 ? '' : 's'}</span>
-          <span class="count-pill warning">${report.counts.warning} warning${report.counts.warning === 1 ? '' : 's'}</span>
-          <span class="count-pill info">${report.counts.info} info</span>
+          <span class="count-pill error">${esc(UI.pocetChyb(report.counts.error))}</span>
+          <span class="count-pill warning">${esc(UI.pocetVarovani(report.counts.warning))}</span>
+          <span class="count-pill info">${esc(UI.pocetInfo(report.counts.info))}</span>
         </div>
-        <div class="result-meta">${esc(FORMAT_LABELS[report.format] || report.format)} · ${report.productCount} items · ${report.problems.length} rule${report.problems.length === 1 ? '' : 's'} triggered</div>
+        <div class="result-meta">${esc(UI.resultMeta(FORMAT_LABELS[report.format] || report.format, report.productCount, report.problems.length))}</div>
       </div>
-      ${report.problems.length ? `<div class="result-section-title">Issues found, first 200 rows shown per rule up to 5 examples each</div>${rulesHtml}` : '<p class="sub">No rule was triggered. This feed passed every check.</p>'}
-      ${report.truncated ? '<p class="issue-more">The drill-down list is capped at 200 individual issues; export the full report for exact per-rule counts.</p>' : ''}
+      ${report.problems.length ? `<div class="result-section-title">${esc(UI.issuesFoundTitle)}</div>${rulesHtml}` : `<p class="sub">${esc(UI.noRuleTriggered)}</p>`}
+      ${report.truncated ? `<p class="issue-more">${esc(UI.truncatedNote)}</p>` : ''}
       <div class="export-row">
-        <button class="icon-btn" id="export-csv-btn" type="button">Export issues as CSV</button>
-        <button class="icon-btn" id="export-json-btn" type="button">Export report as JSON</button>
+        <button class="icon-btn" id="export-csv-btn" type="button">${esc(UI.exportCsvBtn)}</button>
+        <button class="icon-btn" id="export-json-btn" type="button">${esc(UI.exportJsonBtn)}</button>
       </div>
-      <p class="handoff" id="asistent-handoff">This feed can also power a shopping assistant: <a href="../${esc(asistentHandoffUrl(sourceUrl))}" data-umami-event="asistent_click" data-umami-event-place="results" data-umami-event-source="${sourceUrl ? 'url' : 'text'}">try ARLing Asistent with it</a>.</p>
+      <p class="handoff" id="asistent-handoff">${esc(UI.handoffText)}<a href="${esc(asistentHandoffUrl(sourceUrl))}" data-umami-event="asistent_click" data-umami-event-place="results" data-umami-event-source="${sourceUrl ? 'url' : 'text'}">${esc(UI.handoffLinkText)}</a>.</p>
       ${renderMonitorBox(monitorPrefillUrl(sourceUrl, urlInput.value))}
     `;
 
@@ -777,17 +945,17 @@
   function renderMonitorBox(prefillUrl) {
     return `
       <div class="monitor-box" id="monitor-box">
-        <h3>Monitor this feed</h3>
+        <h3>${esc(UI.monitorNadpis)}</h3>
         <form id="monitor-form" class="monitor-form" novalidate>
           <div class="monitor-row">
             <input type="text" id="monitor-url" name="feed_url" value="${esc(prefillUrl)}" placeholder="https://yourshop.com/feed.xml" spellcheck="false" autocomplete="off" inputmode="url">
           </div>
           <div class="monitor-row">
             <input type="email" id="monitor-email" name="email" placeholder="you@example.com" autocomplete="email" inputmode="email">
-            <button class="icon-btn btn-solid" id="monitor-submit" type="submit">Start weekly checks, free</button>
+            <button class="icon-btn btn-solid" id="monitor-submit" type="submit">${esc(UI.monitorSubmit)}</button>
           </div>
-          <p class="monitor-pro-line">Pro: daily checks and history, 9 EUR per month, upgrade from your monitor page.</p>
-          <p class="monitor-note">We fetch only this URL on our server, the browser checker stays local, unsubscribe with one click.</p>
+          <p class="monitor-pro-line">${esc(UI.monitorProLine)}</p>
+          <p class="monitor-note">${esc(UI.monitorNote)}</p>
           <p class="monitor-status" id="monitor-status" hidden></p>
         </form>
       </div>`;
@@ -819,16 +987,16 @@
         parsedUrl = null;
       }
       if (!parsedUrl || (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:')) {
-        showStatus('Enter the feed URL you want checked (starting with http:// or https://).', 'err');
+        showStatus(UI.monitorErrUrl, 'err');
         return;
       }
       if (!isValidEmailSyntax(emailRaw)) {
-        showStatus('Enter a valid e-mail address.', 'err');
+        showStatus(UI.monitorErrEmail, 'err');
         return;
       }
 
       submitBtn.disabled = true;
-      submitBtn.textContent = 'Starting...';
+      submitBtn.textContent = UI.monitorStarting;
       try {
         const res = await fetch(MONITOR_API_BASE + '/v1/monitors', {
           method: 'POST',
@@ -836,17 +1004,17 @@
           body: JSON.stringify({ feed_url: parsedUrl.href, email: emailRaw }),
         });
         if (res.status === 201) {
-          box.innerHTML = '<h3>Monitor this feed</h3><div class="monitor-success"><p>Check your inbox for the confirmation link.</p></div>';
+          box.innerHTML = `<h3>${esc(UI.monitorNadpis)}</h3><div class="monitor-success"><p>${esc(UI.monitorSuccess)}</p></div>`;
           track('monitor_signup', { plan: 'free' });
         } else if (res.status === 409) {
-          showStatus('That e-mail already has a free monitor running. Check your inbox for the link, or upgrade to Pro for more feeds.', 'err');
+          showStatus(UI.monitorErrConflict, 'err');
         } else if (res.status === 429) {
-          showStatus('Too many attempts from here. Wait a few minutes and try again.', 'err');
+          showStatus(UI.monitorErrRate, 'err');
         } else {
-          showStatus('Could not start the monitor right now. Try again in a minute, or write to andrej@arling.sk.', 'err');
+          showStatus(UI.monitorErrGeneric, 'err');
         }
       } catch (e) {
-        showStatus('Could not reach the monitor service. Try again in a minute.', 'err');
+        showStatus(UI.monitorErrNetwork, 'err');
       } finally {
         if (document.body.contains(submitBtn)) {
           submitBtn.disabled = false;
@@ -859,15 +1027,15 @@
   function runAnalysis(text, sourceUrl) {
     const trimmed = (text || '').trim();
     if (!trimmed) {
-      results.innerHTML = '<div class="placeholder">Paste a URL, paste feed content, upload a file, or load the sample feed, then press <span class="kbd">Analyze</span>.</div>';
+      results.innerHTML = `<div class="placeholder">${UI.prazdnyVstup}</div>`;
       formatHint.textContent = '';
       return;
     }
     let report;
     try {
-      report = analyze(text);
+      report = analyze(text, { lang: UIJAZYK });
     } catch (e) {
-      results.innerHTML = '<div class="placeholder" style="color:var(--accent)">Could not analyze that input: ' + esc(e.message) + '</div>';
+      results.innerHTML = '<div class="placeholder" style="color:var(--accent)">' + esc(UI.analyzujChyba(e.message)) + '</div>';
       return;
     }
     renderReport(report, sourceUrl || null);

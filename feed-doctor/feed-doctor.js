@@ -565,10 +565,223 @@ export function parseFeed(text, opts) {
 }
 
 // ───────────────────────── rules ─────────────────────────
-// Each rule is { id, severity, spec, title, check(products) }.
+// Each rule is { id, severity, spec, check(products, T) }.
 // check() returns an array of { index, id, title, detail } for every product
-// (or, for feed-wide rules, every affected row) that violates the rule.
-// severity is one of 'error' | 'warning' | 'info'.
+// (or, for feed-wide rules, every affected row) that violates the rule; here
+// "title" is the *product's own* title field (from the feed), not the rule's
+// display title. severity is one of 'error' | 'warning' | 'info'.
+// The rule's own display title lives in SPRAVY.<jazyk>.titulky[rule.id], see
+// below: RULES is built once at module load, before the page's language is
+// known, so the title cannot be baked into the rule object itself.
+
+// ───────────────────────── jazyk hlášok ─────────────────────────
+// Engine donedávna vracal nálezy len po anglicky. Andrej to 6. 9. 2026 videl
+// na slovenskej stránke Feed Doctora: po kliknutí na ukážkový feed sa v
+// paneli výsledkov objavilo "6 errors", "1 warning", "Duplicate id" a
+// podobne, čomu bežný slovenský e-shopár nerozumie.
+//
+// Rovnaký vzor ako v doctor-pain001.js: hlášky sú funkcie, nie hotové
+// reťazce, aby si každý jazyk vedel poskladať vetu vo svojom slovoslede.
+// Kľúč v "titulky" je vždy id pravidla z RULES nižšie, aby sa dvojica dala
+// nájsť očami. Pole/hodnoty spec (id, price, gtin...) sa neprekladajú: sú to
+// skutočné názvy atribútov feedu, e-shopár ich potrebuje vidieť presne tak,
+// ako sú v jeho exporte.
+//
+// Predvolený jazyk je slovenčina, aby sa nič nerozbilo, ak niekto zavolá
+// analyze()/checkProducts() bez jazyka (napr. staršie volanie alebo test).
+
+const SPRAVY = {
+  sk: {
+    titulky: {
+      missing_id: 'Chýba id',
+      missing_title: 'Chýba názov',
+      missing_description: 'Chýba popis',
+      missing_link: 'Chýba odkaz',
+      missing_image_link: 'Chýba obrázok',
+      missing_price: 'Chýba cena',
+      missing_availability: 'Chýba dostupnosť',
+      missing_condition_used: 'Chýba stav pri zjavne použitom tovare',
+      invalid_condition: 'Stav nie je new, refurbished ani used',
+      duplicate_id: 'Rovnaké id má viac položiek',
+      title_too_long: 'Názov je dlhší ako 150 znakov',
+      title_all_caps: 'Názov je celý veľkými písmenami',
+      description_too_short: 'Popis má menej ako 50 znakov',
+      description_has_html: 'Popis obsahuje HTML',
+      price_not_numeric: 'Cena nie je platné číslo',
+      price_missing_currency: 'Cena nemá menu',
+      price_negative: 'Cena je záporná',
+      sale_price_gte_price: 'Akciová cena nie je nižšia ako bežná cena',
+      link_invalid: 'Odkaz nie je platná URL',
+      link_not_https: 'Odkaz nepoužíva https',
+      image_link_invalid: 'Odkaz na obrázok nie je platná URL',
+      image_link_not_https: 'Odkaz na obrázok nepoužíva https',
+      image_link_missing_extension: 'Odkaz na obrázok nemá príponu súboru',
+      availability_invalid: 'Dostupnosť nie je rozpoznaná hodnota',
+      gtin_checksum_invalid: 'GTIN neprejde kontrolným súčtom',
+      missing_brand: 'Chýba značka',
+      item_group_variant_missing_attrs: 'Varianty bez veľkosti alebo farby',
+      shipping_missing: 'Chýba údaj o doprave',
+      non_utf8_chars: 'Nájdené neplatné UTF-8 alebo riadiace znaky',
+      whitespace_only_value: 'Pole je vyplnené, ale len medzerami',
+      // 3 je DUPLICATE_TITLE_THRESHOLD nižšie: titulok sa skladá raz pri
+      // načítaní modulu (pozri komentár vyššie), preto je číslo napevno tu
+      // aj tam. Ak sa niekedy zmení, treba upraviť oba výskyty.
+      duplicate_titles: 'Rovnaký názov má viac ako 3 položky',
+    },
+    chybaPovinnehoPola: (spec) => `Pole ${spec} chýba alebo je prázdne.`,
+    chybaStavPriPouzitom: 'Názov alebo popis naznačuje použitý či repasovaný tovar, ale pole condition (stav) nie je vyplnené.',
+    stavNeplatny: (val, zoznam) => `Pole condition má hodnotu "${val}", povolené sú len: ${zoznam}.`,
+    duplicitneId: (key, n) => `Id "${key}" má nastavených ${n} položiek naraz; id musí byť pri každej položke jedinečné.`,
+    nazovDlhy: (n) => `Názov (title) má ${n} znakov; Merchant Center ho nad 150 znakov skráti.`,
+    nazovVelkymi: 'Názov (title) je napísaný celý veľkými písmenami; použite bežné veľké a malé písmená.',
+    popisKratky: (n) => `Popis (description) má len ${n} znakov; doplňte viac podrobností.`,
+    popisHtml: 'Popis (description) obsahuje HTML značky; description má byť čistý text.',
+    cenaNieJeCislo: (raw) => `Cenu "${raw}" sa nepodarilo prečítať ako číslo (pole price).`,
+    cenaBezMeny: (raw, amount) => `Cena "${raw}" nemá kód meny; price musí obsahovať menu, napríklad "${amount} EUR".`,
+    cenaZaporna: (price) => `Cena je ${price}, čo je záporné číslo.`,
+    akciovaNieJeNizsia: (sale, price) => `Akciová cena sale_price (${sale}) nie je nižšia ako price (${price}).`,
+    odkazNeplatny: (link) => `Odkaz "${link}" nie je platná, úplná URL adresa.`,
+    odkazBezHttps: (protocol) => `Odkaz používa "${protocol}", očakáva sa https:.`,
+    obrazokNeplatny: (link) => `Odkaz na obrázok "${link}" nie je platná, úplná URL adresa.`,
+    obrazokBezHttps: (protocol) => `Odkaz na obrázok používa "${protocol}", očakáva sa https:.`,
+    obrazokBezPripony: (path) => `Cesta odkazu na obrázok "${path}" nemá bežnú príponu obrázkového súboru.`,
+    dostupnostNeplatna: (val, zoznam) => `Pole availability má hodnotu "${val}", povolené sú len: ${zoznam}.`,
+    gtinZly: (gtin) => `GTIN "${gtin}" nie je platný GTIN-8/12/13/14 (zlá dĺžka alebo zlá kontrolná číslica).`,
+    chybaZnacka: 'Pole brand (značka) chýba, ale gtin alebo mpn je vyplnené, takže ide zrejme o značkový, neobyčajný produkt.',
+    variantBezRozliseni: (groupId) => `Skupina variantov item_group_id "${groupId}" nemá pri jednotlivých položkách vyplnené ani size, ani color, takže sa nedajú od seba rozlíšiť.`,
+    chybaDoprava: 'Pole shipping (cena alebo hmotnosť dopravy) nie je vyplnené.',
+    zlyZnakVPoli: (field) => `Pole ${field} obsahuje riadiaci znak alebo náhradný znak Unicode (U+FFFD), čo znamená, že pôvodné dáta neboli v čistom UTF-8.`,
+    lenMedzery: (field) => `Pole ${field} je vo feede prítomné, ale obsahuje len medzery.`,
+    rovnakyNazov: (title, n) => `Názov "${title}" má nastavených ${n} položiek; každá položka by mala popisovať jeden konkrétny produkt.`,
+  },
+
+  en: {
+    titulky: {
+      missing_id: 'Missing id',
+      missing_title: 'Missing title',
+      missing_description: 'Missing description',
+      missing_link: 'Missing link',
+      missing_image_link: 'Missing image_link',
+      missing_price: 'Missing price',
+      missing_availability: 'Missing availability',
+      missing_condition_used: 'condition missing on an apparently used item',
+      invalid_condition: 'condition is not new, refurbished or used',
+      duplicate_id: 'Duplicate id',
+      title_too_long: 'Title over 150 characters',
+      title_all_caps: 'Title is all caps',
+      description_too_short: 'Description shorter than 50 characters',
+      description_has_html: 'Description contains HTML',
+      price_not_numeric: 'price is not a valid number',
+      price_missing_currency: 'price has no currency',
+      price_negative: 'price is negative',
+      sale_price_gte_price: 'sale_price is not lower than price',
+      link_invalid: 'link is not a valid absolute URL',
+      link_not_https: 'link is not https',
+      image_link_invalid: 'image_link is not a valid absolute URL',
+      image_link_not_https: 'image_link is not https',
+      image_link_missing_extension: 'image_link has no recognizable image extension',
+      availability_invalid: 'availability is not a recognized value',
+      gtin_checksum_invalid: 'gtin fails the checksum',
+      missing_brand: 'Missing brand',
+      item_group_variant_missing_attrs: 'item_group_id used without size or color',
+      shipping_missing: 'No shipping information',
+      non_utf8_chars: 'Non-UTF-8 / control characters found',
+      whitespace_only_value: 'Field present but only whitespace',
+      duplicate_titles: 'More than 3 items share the same title',
+    },
+    chybaPovinnehoPola: (spec) => `${spec} is missing or empty.`,
+    chybaStavPriPouzitom: 'The title or description suggests a used/refurbished item, but condition is not set.',
+    stavNeplatny: (val, zoznam) => `condition is "${val}", expected one of: ${zoznam}.`,
+    duplicitneId: (key, n) => `id "${key}" is used by ${n} items; id must be unique per item.`,
+    nazovDlhy: (n) => `title is ${n} characters; Merchant Center truncates title beyond 150.`,
+    nazovVelkymi: 'title is written in all caps; use normal capitalization.',
+    popisKratky: (n) => `description is only ${n} characters; add more detail.`,
+    popisHtml: 'description contains HTML markup; description should be plain text.',
+    cenaNieJeCislo: (raw) => `price "${raw}" could not be read as a number.`,
+    cenaBezMeny: (raw, amount) => `price "${raw}" has no currency code; price must include a currency, e.g. "${amount} USD".`,
+    cenaZaporna: (price) => `price is ${price}, which is negative.`,
+    akciovaNieJeNizsia: (sale, price) => `sale_price (${sale}) is not lower than price (${price}).`,
+    odkazNeplatny: (link) => `link "${link}" is not a valid, fully-qualified URL.`,
+    odkazBezHttps: (protocol) => `link uses "${protocol}", expected https:.`,
+    obrazokNeplatny: (link) => `image_link "${link}" is not a valid, fully-qualified URL.`,
+    obrazokBezHttps: (protocol) => `image_link uses "${protocol}", expected https:.`,
+    obrazokBezPripony: (path) => `image_link path "${path}" has no common image file extension.`,
+    dostupnostNeplatna: (val, zoznam) => `availability is "${val}", expected one of: ${zoznam}.`,
+    gtinZly: (gtin) => `gtin "${gtin}" is not a valid GTIN-8/12/13/14 (wrong length or failed check digit).`,
+    chybaZnacka: 'brand is missing, but gtin/mpn is set, so this looks like a branded, non-custom product.',
+    variantBezRozliseni: (groupId) => `item_group_id "${groupId}" groups variants, but neither size nor color is set to tell them apart.`,
+    chybaDoprava: 'shipping (cost/weight) is not set.',
+    zlyZnakVPoli: (field) => `${field} contains a control character or the Unicode replacement character (U+FFFD), a sign the source bytes were not clean UTF-8.`,
+    lenMedzery: (field) => `${field} is present in the feed but contains only whitespace.`,
+    rovnakyNazov: (title, n) => `title "${title}" is shared by ${n} items; each item should describe one distinct product.`,
+  },
+
+  de: {
+    titulky: {
+      missing_id: 'ID fehlt',
+      missing_title: 'Titel fehlt',
+      missing_description: 'Beschreibung fehlt',
+      missing_link: 'Link fehlt',
+      missing_image_link: 'Bildlink fehlt',
+      missing_price: 'Preis fehlt',
+      missing_availability: 'Verfügbarkeit fehlt',
+      missing_condition_used: 'Zustand fehlt bei einem offenbar gebrauchten Artikel',
+      invalid_condition: 'Zustand ist weder new noch refurbished noch used',
+      duplicate_id: 'ID ist bei mehreren Artikeln gleich',
+      title_too_long: 'Titel ist länger als 150 Zeichen',
+      title_all_caps: 'Titel ist komplett in Großbuchstaben',
+      description_too_short: 'Beschreibung ist kürzer als 50 Zeichen',
+      description_has_html: 'Beschreibung enthält HTML',
+      price_not_numeric: 'Preis ist keine gültige Zahl',
+      price_missing_currency: 'Preis hat keine Währung',
+      price_negative: 'Preis ist negativ',
+      sale_price_gte_price: 'Aktionspreis ist nicht niedriger als der Preis',
+      link_invalid: 'Link ist keine gültige URL',
+      link_not_https: 'Link verwendet kein https',
+      image_link_invalid: 'Bildlink ist keine gültige URL',
+      image_link_not_https: 'Bildlink verwendet kein https',
+      image_link_missing_extension: 'Bildlink hat keine Dateiendung',
+      availability_invalid: 'Verfügbarkeit ist kein erkannter Wert',
+      gtin_checksum_invalid: 'GTIN besteht die Prüfsumme nicht',
+      missing_brand: 'Marke fehlt',
+      item_group_variant_missing_attrs: 'Varianten ohne Größe oder Farbe',
+      shipping_missing: 'Keine Versandangabe',
+      non_utf8_chars: 'Ungültiges UTF-8 oder Steuerzeichen gefunden',
+      whitespace_only_value: 'Feld vorhanden, enthält aber nur Leerzeichen',
+      duplicate_titles: 'Mehr als 3 Artikel haben denselben Titel',
+    },
+    chybaPovinnehoPola: (spec) => `Das Feld ${spec} fehlt oder ist leer.`,
+    chybaStavPriPouzitom: 'Titel oder Beschreibung deuten auf einen gebrauchten oder generalüberholten Artikel hin, aber das Feld condition ist nicht gesetzt.',
+    stavNeplatny: (val, zoznam) => `Das Feld condition hat den Wert "${val}", erlaubt sind nur: ${zoznam}.`,
+    duplicitneId: (key, n) => `Die ID "${key}" wird von ${n} Artikeln verwendet; id muss pro Artikel eindeutig sein.`,
+    nazovDlhy: (n) => `Der Titel (title) hat ${n} Zeichen; Merchant Center kürzt ihn ab 150 Zeichen.`,
+    nazovVelkymi: 'Der Titel (title) ist komplett in Großbuchstaben geschrieben; verwenden Sie normale Groß- und Kleinschreibung.',
+    popisKratky: (n) => `Die Beschreibung (description) hat nur ${n} Zeichen; fügen Sie mehr Details hinzu.`,
+    popisHtml: 'Die Beschreibung (description) enthält HTML-Markup; description sollte reiner Text sein.',
+    cenaNieJeCislo: (raw) => `Der Preis "${raw}" (Feld price) konnte nicht als Zahl gelesen werden.`,
+    cenaBezMeny: (raw, amount) => `Der Preis "${raw}" hat keinen Währungscode; price muss eine Währung enthalten, zum Beispiel "${amount} EUR".`,
+    cenaZaporna: (price) => `Der Preis ist ${price}, also negativ.`,
+    akciovaNieJeNizsia: (sale, price) => `sale_price (${sale}) ist nicht niedriger als price (${price}).`,
+    odkazNeplatny: (link) => `Der Link "${link}" ist keine gültige, vollständige URL.`,
+    odkazBezHttps: (protocol) => `Der Link verwendet "${protocol}", erwartet wird https:.`,
+    obrazokNeplatny: (link) => `Der Bildlink "${link}" ist keine gültige, vollständige URL.`,
+    obrazokBezHttps: (protocol) => `Der Bildlink verwendet "${protocol}", erwartet wird https:.`,
+    obrazokBezPripony: (path) => `Der Pfad des Bildlinks "${path}" hat keine gängige Bilddateiendung.`,
+    dostupnostNeplatna: (val, zoznam) => `Das Feld availability hat den Wert "${val}", erlaubt sind nur: ${zoznam}.`,
+    gtinZly: (gtin) => `GTIN "${gtin}" ist keine gültige GTIN-8/12/13/14 (falsche Länge oder falsche Prüfziffer).`,
+    chybaZnacka: 'Das Feld brand (Marke) fehlt, aber gtin oder mpn ist gesetzt, das sieht nach einem Markenprodukt aus, nicht nach einer Einzelanfertigung.',
+    variantBezRozliseni: (groupId) => `Die Variantengruppe item_group_id "${groupId}" hat weder size noch color gesetzt, die Varianten lassen sich also nicht unterscheiden.`,
+    chybaDoprava: 'Das Feld shipping (Versandkosten/-gewicht) ist nicht gesetzt.',
+    zlyZnakVPoli: (field) => `Das Feld ${field} enthält ein Steuerzeichen oder das Unicode-Ersatzzeichen (U+FFFD), ein Zeichen dafür, dass die Quelldaten nicht sauber UTF-8-kodiert waren.`,
+    lenMedzery: (field) => `Das Feld ${field} ist im Feed vorhanden, enthält aber nur Leerzeichen.`,
+    rovnakyNazov: (title, n) => `Der Titel "${title}" wird von ${n} Artikeln verwendet; jeder Artikel sollte ein eigenes Produkt beschreiben.`,
+  },
+};
+
+function slovnikPre(lang) {
+  const l = typeof lang === 'string' ? lang.slice(0, 2).toLowerCase() : 'sk';
+  return SPRAVY[l] || SPRAVY.sk;
+}
 
 const USED_KEYWORDS = ['used', 'refurbished', 'renewed', 'open box', 'pre-owned', 'preowned', 'second hand', 'secondhand'];
 const VALID_CONDITIONS = ['new', 'refurbished', 'used'];
@@ -586,9 +799,8 @@ function requiredFieldRule(id, field, spec) {
     id,
     severity: 'error',
     spec,
-    title: `Missing ${spec}`,
-    check(products) {
-      return products.filter((p) => isBlank(p[field])).map((p) => ref(p, `${spec} is missing or empty.`));
+    check(products, T) {
+      return products.filter((p) => isBlank(p[field])).map((p) => ref(p, T.chybaPovinnehoPola(spec)));
     },
   };
 }
@@ -607,9 +819,8 @@ export const RULES = [
     id: 'missing_price',
     severity: 'error',
     spec: 'price',
-    title: 'Missing price',
-    check(products) {
-      return products.filter((p) => !p._raw.price.present || isBlank(p._raw.price.raw)).map((p) => ref(p, 'price is missing or empty.'));
+    check(products, T) {
+      return products.filter((p) => !p._raw.price.present || isBlank(p._raw.price.raw)).map((p) => ref(p, T.chybaPovinnehoPola('price')));
     },
   },
   requiredFieldRule('missing_availability', 'availability', 'availability'),
@@ -617,34 +828,31 @@ export const RULES = [
     id: 'missing_condition_used',
     severity: 'error',
     spec: 'condition',
-    title: 'condition missing on an apparently used item',
-    check(products) {
+    check(products, T) {
       return products
         .filter((p) => isBlank(p.condition))
         .filter((p) => {
           const text = `${s(p.title)} ${s(p.description)}`.toLowerCase();
           return USED_KEYWORDS.some((kw) => text.includes(kw));
         })
-        .map((p) => ref(p, 'The title or description suggests a used/refurbished item, but condition is not set.'));
+        .map((p) => ref(p, T.chybaStavPriPouzitom));
     },
   },
   {
     id: 'invalid_condition',
     severity: 'warning',
     spec: 'condition',
-    title: 'condition is not new, refurbished or used',
-    check(products) {
+    check(products, T) {
       return products
         .filter((p) => !isBlank(p.condition) && !VALID_CONDITIONS.includes(s(p.condition).trim().toLowerCase()))
-        .map((p) => ref(p, `condition is "${p.condition}", expected one of: ${VALID_CONDITIONS.join(', ')}.`));
+        .map((p) => ref(p, T.stavNeplatny(p.condition, VALID_CONDITIONS.join(', '))));
     },
   },
   {
     id: 'duplicate_id',
     severity: 'error',
     spec: 'id',
-    title: 'Duplicate id',
-    check(products) {
+    check(products, T) {
       const byId = new Map();
       for (const p of products) {
         if (isBlank(p.id)) continue;
@@ -655,7 +863,7 @@ export const RULES = [
       const out = [];
       for (const [key, group] of byId) {
         if (group.length > 1) {
-          for (const p of group) out.push(ref(p, `id "${key}" is used by ${group.length} items; id must be unique per item.`));
+          for (const p of group) out.push(ref(p, T.duplicitneId(key, group.length)));
         }
       }
       return out;
@@ -665,140 +873,127 @@ export const RULES = [
     id: 'title_too_long',
     severity: 'warning',
     spec: 'title',
-    title: 'Title over 150 characters',
-    check(products) {
+    check(products, T) {
       return products
         .filter((p) => !isBlank(p.title) && p.title.length > 150)
-        .map((p) => ref(p, `title is ${p.title.length} characters; Merchant Center truncates title beyond 150.`));
+        .map((p) => ref(p, T.nazovDlhy(p.title.length)));
     },
   },
   {
     id: 'title_all_caps',
     severity: 'warning',
     spec: 'title',
-    title: 'Title is all caps',
-    check(products) {
+    check(products, T) {
       return products
         .filter((p) => {
           if (isBlank(p.title)) return false;
           const hasLetters = /[a-zA-Z]/.test(p.title);
           return hasLetters && p.title === p.title.toUpperCase();
         })
-        .map((p) => ref(p, 'title is written in all caps; use normal capitalization.'));
+        .map((p) => ref(p, T.nazovVelkymi));
     },
   },
   {
     id: 'description_too_short',
     severity: 'warning',
     spec: 'description',
-    title: 'Description shorter than 50 characters',
-    check(products) {
+    check(products, T) {
       return products
         .filter((p) => !isBlank(p.description) && p.description.length < 50)
-        .map((p) => ref(p, `description is only ${p.description.length} characters; add more detail.`));
+        .map((p) => ref(p, T.popisKratky(p.description.length)));
     },
   },
   {
     id: 'description_has_html',
     severity: 'warning',
     spec: 'description',
-    title: 'Description contains HTML',
-    check(products) {
+    check(products, T) {
       return products
         .filter((p) => !isBlank(p.description) && hasHtmlTag(p.description))
-        .map((p) => ref(p, 'description contains HTML markup; description should be plain text.'));
+        .map((p) => ref(p, T.popisHtml));
     },
   },
   {
     id: 'price_not_numeric',
     severity: 'error',
     spec: 'price',
-    title: 'price is not a valid number',
-    check(products) {
+    check(products, T) {
       return products
         .filter((p) => p._raw.price.present && !isBlank(p._raw.price.raw) && p.price === null)
-        .map((p) => ref(p, `price "${p._raw.price.raw}" could not be read as a number.`));
+        .map((p) => ref(p, T.cenaNieJeCislo(p._raw.price.raw)));
     },
   },
   {
     id: 'price_missing_currency',
     severity: 'error',
     spec: 'price',
-    title: 'price has no currency',
-    check(products) {
+    check(products, T) {
       return products
         .filter((p) => p._currencyKnown && p.price != null && !p.currency)
-        .map((p) => ref(p, `price "${p._raw.price.raw}" has no currency code; price must include a currency, e.g. "${p.price} USD".`));
+        .map((p) => ref(p, T.cenaBezMeny(p._raw.price.raw, p.price)));
     },
   },
   {
     id: 'price_negative',
     severity: 'error',
     spec: 'price',
-    title: 'price is negative',
-    check(products) {
-      return products.filter((p) => p.price != null && p.price < 0).map((p) => ref(p, `price is ${p.price}, which is negative.`));
+    check(products, T) {
+      return products.filter((p) => p.price != null && p.price < 0).map((p) => ref(p, T.cenaZaporna(p.price)));
     },
   },
   {
     id: 'sale_price_gte_price',
     severity: 'error',
     spec: 'sale_price',
-    title: 'sale_price is not lower than price',
-    check(products) {
+    check(products, T) {
       return products
         .filter((p) => p.sale_price != null && p.price != null && p.sale_price >= p.price)
-        .map((p) => ref(p, `sale_price (${p.sale_price}) is not lower than price (${p.price}).`));
+        .map((p) => ref(p, T.akciovaNieJeNizsia(p.sale_price, p.price)));
     },
   },
   {
     id: 'link_invalid',
     severity: 'error',
     spec: 'link',
-    title: 'link is not a valid absolute URL',
-    check(products) {
-      return products.filter((p) => !isBlank(p.link) && !parseUrl(p.link)).map((p) => ref(p, `link "${p.link}" is not a valid, fully-qualified URL.`));
+    check(products, T) {
+      return products.filter((p) => !isBlank(p.link) && !parseUrl(p.link)).map((p) => ref(p, T.odkazNeplatny(p.link)));
     },
   },
   {
     id: 'link_not_https',
     severity: 'warning',
     spec: 'link',
-    title: 'link is not https',
-    check(products) {
+    check(products, T) {
       return products
         .filter((p) => !isBlank(p.link) && parseUrl(p.link) && parseUrl(p.link).protocol !== 'https:')
-        .map((p) => ref(p, `link uses "${parseUrl(p.link).protocol}", expected https:.`));
+        .map((p) => ref(p, T.odkazBezHttps(parseUrl(p.link).protocol)));
     },
   },
   {
     id: 'image_link_invalid',
     severity: 'error',
     spec: 'image_link',
-    title: 'image_link is not a valid absolute URL',
-    check(products) {
+    check(products, T) {
       return products
         .filter((p) => !isBlank(p.image_link) && !parseUrl(p.image_link))
-        .map((p) => ref(p, `image_link "${p.image_link}" is not a valid, fully-qualified URL.`));
+        .map((p) => ref(p, T.obrazokNeplatny(p.image_link)));
     },
   },
   {
     id: 'image_link_not_https',
     severity: 'warning',
     spec: 'image_link',
-    title: 'image_link is not https',
-    check(products) {
+    check(products, T) {
       return products
         .filter((p) => !isBlank(p.image_link) && parseUrl(p.image_link) && parseUrl(p.image_link).protocol !== 'https:')
-        .map((p) => ref(p, `image_link uses "${parseUrl(p.image_link).protocol}", expected https:.`));
+        .map((p) => ref(p, T.obrazokBezHttps(parseUrl(p.image_link).protocol)));
     },
   },
   {
     id: 'image_link_missing_extension',
     severity: 'info',
     spec: 'image_link',
-    title: 'image_link has no recognizable image extension',
-    check(products) {
+    check(products, T) {
       return products
         .filter((p) => {
           if (isBlank(p.image_link)) return false;
@@ -807,81 +1002,75 @@ export const RULES = [
           const path = u.pathname.toLowerCase();
           return !IMAGE_EXTENSIONS.some((ext) => path.endsWith(ext));
         })
-        .map((p) => ref(p, `image_link path "${parseUrl(p.image_link).pathname}" has no common image file extension.`));
+        .map((p) => ref(p, T.obrazokBezPripony(parseUrl(p.image_link).pathname)));
     },
   },
   {
     id: 'availability_invalid',
     severity: 'error',
     spec: 'availability',
-    title: 'availability is not a recognized value',
-    check(products) {
+    check(products, T) {
       return products
         .filter((p) => {
           if (isBlank(p.availability)) return false;
           const norm = p.availability.trim().toLowerCase().replace(/_/g, ' ');
           return !VALID_AVAILABILITY.includes(norm);
         })
-        .map((p) => ref(p, `availability is "${p.availability}", expected one of: ${VALID_AVAILABILITY.join(', ')}.`));
+        .map((p) => ref(p, T.dostupnostNeplatna(p.availability, VALID_AVAILABILITY.join(', '))));
     },
   },
   {
     id: 'gtin_checksum_invalid',
     severity: 'error',
     spec: 'gtin',
-    title: 'gtin fails the checksum',
-    check(products) {
+    check(products, T) {
       return products
         .filter((p) => !isBlank(p.gtin) && !gtinChecksumValid(p.gtin))
-        .map((p) => ref(p, `gtin "${p.gtin}" is not a valid GTIN-8/12/13/14 (wrong length or failed check digit).`));
+        .map((p) => ref(p, T.gtinZly(p.gtin)));
     },
   },
   {
     id: 'missing_brand',
     severity: 'warning',
     spec: 'brand',
-    title: 'Missing brand',
-    check(products) {
+    check(products, T) {
       // Google ties brand to gtin/mpn for identifying (non-custom) products;
       // an item with neither identifier is typically a custom-made product,
       // where brand is commonly left out on purpose.
       return products
         .filter((p) => isBlank(p.brand) && (!isBlank(p.gtin) || !isBlank(p.mpn)))
-        .map((p) => ref(p, 'brand is missing, but gtin/mpn is set, so this looks like a branded, non-custom product.'));
+        .map((p) => ref(p, T.chybaZnacka));
     },
   },
   {
     id: 'item_group_variant_missing_attrs',
     severity: 'warning',
     spec: 'item_group_id',
-    title: 'item_group_id used without size or color',
-    check(products) {
+    check(products, T) {
       return products
         .filter((p) => !isBlank(p.item_group_id) && isBlank(p.size) && isBlank(p.color))
-        .map((p) => ref(p, `item_group_id "${p.item_group_id}" groups variants, but neither size nor color is set to tell them apart.`));
+        .map((p) => ref(p, T.variantBezRozliseni(p.item_group_id)));
     },
   },
   {
     id: 'shipping_missing',
     severity: 'info',
     spec: 'shipping',
-    title: 'No shipping information',
-    check(products) {
-      return products.filter((p) => isBlank(p.shipping)).map((p) => ref(p, 'shipping (cost/weight) is not set.'));
+    check(products, T) {
+      return products.filter((p) => isBlank(p.shipping)).map((p) => ref(p, T.chybaDoprava));
     },
   },
   {
     id: 'non_utf8_chars',
     severity: 'warning',
     spec: null,
-    title: 'Non-UTF-8 / control characters found',
-    check(products) {
+    check(products, T) {
       const out = [];
       for (const p of products) {
         for (const field of TEXT_FIELDS_FOR_ENCODING_CHECK) {
           const v = p[field];
           if (typeof v === 'string' && BAD_CHAR_RE.test(v)) {
-            out.push(ref(p, `${field} contains a control character or the Unicode replacement character (U+FFFD), a sign the source bytes were not clean UTF-8.`));
+            out.push(ref(p, T.zlyZnakVPoli(field)));
             break;
           }
         }
@@ -893,14 +1082,13 @@ export const RULES = [
     id: 'whitespace_only_value',
     severity: 'warning',
     spec: null,
-    title: 'Field present but only whitespace',
-    check(products) {
+    check(products, T) {
       const out = [];
       for (const p of products) {
         for (const field of WHITESPACE_CHECK_FIELDS) {
           const entry = p._raw[field];
           if (entry && isWhitespaceOnly(entry.raw)) {
-            out.push(ref(p, `${field} is present in the feed but contains only whitespace.`));
+            out.push(ref(p, T.lenMedzery(field)));
             break;
           }
         }
@@ -912,8 +1100,7 @@ export const RULES = [
     id: 'duplicate_titles',
     severity: 'warning',
     spec: 'title',
-    title: `More than ${DUPLICATE_TITLE_THRESHOLD} items share the same title`,
-    check(products) {
+    check(products, T) {
       const byTitle = new Map();
       for (const p of products) {
         if (isBlank(p.title)) continue;
@@ -924,7 +1111,7 @@ export const RULES = [
       const out = [];
       for (const [key, group] of byTitle) {
         if (group.length > DUPLICATE_TITLE_THRESHOLD) {
-          for (const p of group) out.push(ref(p, `title "${p.title}" is shared by ${group.length} items; each item should describe one distinct product.`));
+          for (const p of group) out.push(ref(p, T.rovnakyNazov(p.title, group.length)));
         }
       }
       return out;
@@ -940,16 +1127,21 @@ const RULES_BY_ID = new Map(RULES.map((r) => [r.id, r]));
  * Runs every rule in RULES against `products`. Returns the full rule table
  * (every rule, with count 0 when nothing was found) plus the flattened list
  * of triggered rules (`problems`) ordered error -> warning -> info.
+ * @param {object[]} products
+ * @param {string} [lang] 'sk' | 'en' | 'de', see slovnikPre() above. Defaults
+ *   to 'sk'. The page's rule table (all rules, count 0 or not) is exactly
+ *   this function's `table`, called once with `products: []`.
  */
-export function checkProducts(products) {
+export function checkProducts(products, lang) {
+  const T = slovnikPre(lang);
   const SEVERITY_ORDER = { error: 0, warning: 1, info: 2 };
   const table = RULES.map((rule) => {
-    const items = rule.check(products);
+    const items = rule.check(products, T);
     return {
       id: rule.id,
       severity: rule.severity,
       spec: rule.spec,
-      title: rule.title,
+      title: T.titulky[rule.id],
       count: items.length,
       examples: items.slice(0, 5),
       items,
@@ -983,11 +1175,12 @@ const MAX_DRILLDOWN_ISSUES = 200;
  * rule, score the result, and flatten the first MAX_DRILLDOWN_ISSUES
  * individual issues (across all rules) for a per-product drill-down.
  * @param {string} text
- * @param {{ format?: string }} [opts]
+ * @param {{ format?: string, lang?: string }} [opts] lang: 'sk' | 'en' | 'de',
+ *   see slovnikPre() above; defaults to 'sk'.
  */
 export function analyze(text, opts) {
   const { format, products } = parseFeed(text, opts);
-  const { table, problems } = checkProducts(products);
+  const { table, problems } = checkProducts(products, opts && opts.lang);
   const counts = { error: 0, warning: 0, info: 0 };
   for (const p of problems) counts[p.severity] += p.count;
   const score = computeScore(problems);
