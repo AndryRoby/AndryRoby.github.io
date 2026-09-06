@@ -37,19 +37,22 @@ import { DICT, LANGS, STORAGE_KEY, ogLocaleForLang } from './i18n.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const SITE = 'https://arling.sk';
-// Bankové nástroje nie sú samostatný repozitár, ale priečinok v arling-sk,
-// takže tu nie je package.json, z ktorého camt053 berie svoje meno.
-// Pozor: v products/ existuje aj samostatný repozitár bankove-nastroje,
-// ale naživo beží táto kópia. Overené porovnaním veľkosti so živou stránkou.
-export const TOOL = 'bankove-nastroje';
+// Asistent nie je samostatný repozitár, ale priečinok v arling-sk, takže
+// tu nie je package.json, z ktorého camt053 berie svoje meno.
+export const TOOL = 'asistent';
 export const ROOT_URL = `${SITE}/${TOOL}/`;
-export const STATIC_LANGS = ['en', 'de'];
+// Len angličtina. Nemecká stránka /asistent/de/ je písaná ručne a tento
+// skript ju nesmie prepísať; slovník i18n.js nemecké preklady ani nemá
+// (LANGS = ['sk', 'en']).
+export const STATIC_LANGS = ['en'];
 
 /** JSON-LD Offer names of the Slovak source, translated for the static pages. */
+// Názvy balíkov sú v JSON-LD už po anglicky a tak aj zostávajú: Free,
+// Starter a Pro sa neprekladajú, sú to názvy, nie opisy.
 const OFFER_NAMES = {
-  'Zadarmo (každý zo štyroch nástrojov)': { en: 'Free (each of the four tools)', de: 'Kostenlos (jedes der vier Tools)' },
-  'Pro mesačne': { en: 'Pro monthly', de: 'Pro monatlich' },
-  'Pro ročne': { en: 'Pro yearly', de: 'Pro jährlich' },
+  'Free': { en: 'Free', de: 'Free' },
+  'Starter': { en: 'Starter', de: 'Starter' },
+  'Pro': { en: 'Pro', de: 'Pro' },
 };
 
 const I18N_ATTRS = {
@@ -67,9 +70,16 @@ export function langUrl(lang) {
   return lang === 'sk' ? ROOT_URL : `${ROOT_URL}${lang}/`;
 }
 
+// Asistent má tri jazykové adresy, ale slovník pozná len sk a en: nemecká
+// /asistent/de/ je písaná ručne. Do zväzku musí patriť aj tak, inak Google
+// vidí tri stránky, ktoré sa naň neodkazujú navzájom, a zväzok zahodí.
+// x-default mieri na angličtinu: Asistent je nástroj pre e-shopy a
+// návštevníkovi, ktorého jazyk nepokrývame, je bližšia než slovenčina.
+const VSETKY_JAZYKY = ['sk', 'en', 'de'];
+
 export function hreflangBlock() {
-  return LANGS.map((l) => `<link rel="alternate" hreflang="${l}" href="${langUrl(l)}" />`).join('\n')
-    + `\n<link rel="alternate" hreflang="x-default" href="${ROOT_URL}" />`;
+  return VSETKY_JAZYKY.map((l) => `<link rel="alternate" hreflang="${l}" href="${langUrl(l)}" />`).join('\n')
+    + `\n<link rel="alternate" hreflang="x-default" href="${langUrl('en')}" />`;
 }
 
 function tr(key, lang, problems) {
@@ -354,7 +364,12 @@ export function verify(html, lang) {
         const close = matchingClose(html, tag.end, tag.name);
         const got = html.slice(tag.end, close.start);
         const want = attr === 'data-i18n' ? escText(value) : value;
-        if (got !== want) problems.push(`${key}: content is ${JSON.stringify(got.slice(0, 80))}`);
+        // V data-i18n-html môžu byť odkazy relatívne voči zdrojovej stránke
+        // (href="woocommerce/"). Build ich pri prenose do /en/ prepíše o
+        // priečinok vyššie, čo je správne, ale porovnanie so slovníkom by to
+        // hlásilo ako nezhodu. Porovnávame preto bez toho prefixu.
+        const bezPrefixu = (x) => x.replace(/(href|src)="\.\.\//g, '$1="');
+        if (bezPrefixu(got) !== bezPrefixu(want)) problems.push(`${key}: content is ${JSON.stringify(got.slice(0, 80))}`);
       }
     }
     return null;
