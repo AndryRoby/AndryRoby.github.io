@@ -34,7 +34,15 @@
      ho každé plátno počítalo samo, pri troch scénach by sme tri razy počúvali
      tú istú udalosť. Hodnoty sa iba zapisujú, dotahujú sa až v kresli().
      Pri dotykovom zariadení myš nie je, tam ostane 0.5 a scéna sa hýbe sama. */
-  var MYS = { x: 0.5, y: 0.5, p: 0, cx: 0.5, cy: 0.5, cp: 0 };
+  var MYS = { x: 0.5, y: 0.5, p: 0, z: 0, cx: 0.5, cy: 0.5, cp: 0, cz: 0 };
+  /* Hover na prvku s data-zar-zrychli zrychli tok. Jediny bod, kde UI
+     hovori scene, co sa deje, a je zamerne maly. */
+  document.querySelectorAll('[data-zar-zrychli]').forEach(function (el) {
+    el.addEventListener('pointerenter', function () { MYS.cz = 1; });
+    el.addEventListener('pointerleave', function () { MYS.cz = 0; });
+    el.addEventListener('focus', function () { MYS.cz = 1; });
+    el.addEventListener('blur', function () { MYS.cz = 0; });
+  });
   var jemny = window.matchMedia && window.matchMedia('(pointer: fine)').matches;
   if (jemny) {
     window.addEventListener('pointermove', function (e) {
@@ -66,6 +74,7 @@
     // dotahuju postupne v kresli() a nie priamo z udalosti.
     'uniform vec2 mys;',
     'uniform float posun;',
+    'uniform float zrych;',
     'float sum(vec2 v){ return fract(sin(dot(v, vec2(127.1, 311.7))) * 43758.5453123); }',
     'float hladky(vec2 v){',
     '  vec2 i = floor(v), f = fract(v);',
@@ -429,6 +438,96 @@
     '}',
   ].join('\n');
 
+  /* hora: cierny digitalny masiv a oranzovy tok, ktory cezen preteka.
+     Nie je to fotografia hory ani lava. Je to vyskove pole vykreslene
+     raymarchingom, takmer cierny kamen, a jedna svetelna krivka, ktora masiv
+     obchadza a rozsvecuje ho tam, kadial ide.
+
+     Preco raymarching a nie 3D kniznica: stranka ma CSP, ktora zakazuje
+     cudzie skripty, a tvrdime o sebe, ze nenacitavame nic zvonku. Par
+     desiatok riadkov GLSL to spravi bez kniznice a bez porusenia toho slubu.
+
+     Vstupy: mys hybe kamerou o par stupnov, posun ju pri scrollovani
+     priblizuje, zrych zrychli tok pri hoveri na hlavne tlacidlo. */
+  V.hora = [
+    'float vyskaTerenu(vec2 p){',
+    '  float h = fbm(p * 0.42) * 1.05;',
+    '  h += fbm(p * 1.30) * 0.26;',
+    '  vec2 a = (p - vec2(1.55, 2.35)) * 0.46;',
+    '  h += 1.85 * exp(-dot(a, a));',
+    '  vec2 b2 = (p - vec2(-1.60, 3.60)) * 0.30;',
+    '  h += 0.85 * exp(-dot(b2, b2));',
+    '  vec2 c2 = (p - vec2(3.60, 5.20)) * 0.30;',
+    '  h += 0.34 * exp(-dot(c2, c2));',
+    '  return h - 0.75;',
+    '}',
+    'vec2 drahaToku(float z, float ohyb){',
+    '  float x = -0.35 + z * 0.62 + sin(z * 0.55) * 0.75 + ohyb;',
+    '  float y = 0.22 + sin(z * 0.40 + 1.2) * 0.34 + z * 0.050;',
+    '  return vec2(x, y);',
+    '}',
+    'void main(){',
+    '  vec2 uv = gl_FragCoord.xy / rozmer.xy;',
+    '  vec2 sr = (gl_FragCoord.xy - 0.5 * rozmer.xy) / rozmer.y;',
+    '  float otocX = (mys.x - 0.5) * 0.075;',
+    '  float otocY = (mys.y - 0.5) * 0.045;',
+    '  vec3 oko = vec3(0.15 + otocX * 2.2, 1.62 - otocY * 1.1, -3.4 + posun * 2.6);',
+    '  vec3 smer = normalize(vec3(sr.x + otocX * 0.30, sr.y - 0.135 + otocY * 0.30, 1.0));',
+    '  float ohyb = (mys.x - 0.5) * 1.10;',
+    '  float t = 0.6;',
+    '  float trafil = 0.0;',
+    '  vec3 bod = oko;',
+    '  for (int i = 0; i < 64; i++) {',
+    '    bod = oko + smer * t;',
+    '    float d = bod.y - vyskaTerenu(bod.xz);',
+    '    if (d < 0.012) { trafil = 1.0; break; }',
+    '    if (t > 24.0) break;',
+    '    t += max(d * 0.55, 0.055);',
+    '  }',
+    '  vec2 dr = drahaToku(bod.z, ohyb);',
+    '  float dTok = length(vec2(bod.x - dr.x, (bod.y - dr.y) * 1.35));',
+    '  float rychlost = 0.34 + zrych * 0.95;',
+    '  float pozdlz = 0.42 + 0.58 * fbm(vec2(bod.z * 0.75 - cas * rychlost, bod.x * 0.5));',
+    '  float jadro = exp(-dTok * 7.0) * pozdlz;',
+    '  float halo = exp(-dTok * 1.85) * 0.55 * pozdlz;',
+    '  float castice = 0.0;',
+    '  vec2 mr = vec2(bod.z * 3.2 - cas * rychlost * 2.2, (bod.x - dr.x) * 3.6);',
+    '  vec2 bb = floor(mr);',
+    '  for (int dy = -1; dy <= 1; dy++) {',
+    '    for (int dx = -1; dx <= 1; dx++) {',
+    '      vec2 cc = bb + vec2(float(dx), float(dy));',
+    '      float h1 = sum(cc);',
+    '      float h2 = sum(cc + 5.1);',
+    '      float dd = length(mr - (cc + vec2(h1, h2)));',
+    '      castice += (0.0016 / (dd * dd + 0.0007)) * step(0.45, h2);',
+    '    }',
+    '  }',
+    '  castice *= exp(-dTok * 2.4) * (0.5 + 0.5 * sin(cas * 1.3 + bod.z));',
+    '  vec3 farba = vec3(0.012, 0.011, 0.014);',
+    '  if (trafil > 0.5) {',
+    '    vec2 e = vec2(0.06, 0.0);',
+    '    float hx = vyskaTerenu(bod.xz - e.xy) - vyskaTerenu(bod.xz + e.xy);',
+    '    float hz = vyskaTerenu(bod.xz - e.yx) - vyskaTerenu(bod.xz + e.yx);',
+    '    vec3 n = normalize(vec3(hx, 2.0 * e.x, hz));',
+    '    vec3 kSvetlu = normalize(vec3(dr.x, dr.y + 0.35, bod.z) - bod);',
+    '    float lem = pow(max(dot(n, kSvetlu), 0.0), 1.6) * exp(-dTok * 0.85);',
+    '    float obloha = 0.38 + 0.62 * max(n.y, 0.0);',
+    '    farba = vec3(0.055, 0.050, 0.062) * obloha;',
+    '    farba += mix(UHLIK, OHEN, clamp(lem * 1.4, 0.0, 1.0)) * lem * 1.25;',
+    '  }',
+    '  float sila = jadro * 1.25 + halo + castice * 0.9;',
+    '  vec3 svetlo = mix(ZERAZ, OHEN, clamp(jadro * 1.2, 0.0, 1.0));',
+    '  svetlo = mix(svetlo, JANTAR, clamp(jadro * 1.05 - 0.35, 0.0, 1.0));',
+    '  svetlo = mix(svetlo, BIELA, clamp(jadro * 0.9 - 0.72, 0.0, 1.0));',
+    '  farba += svetlo * sila;',
+    '  float hmla = 1.0 - exp(-t * t * 0.0026);',
+    '  farba = mix(farba, vec3(0.020, 0.023, 0.031), hmla * 0.92);',
+    '  float miestoNaText = 0.06 + 0.94 * smoothstep(0.20, 0.64, uv.x);',
+    '  float kryje = clamp((sila * 1.5 + step(0.5, trafil) * 0.55) * (1.0 - hmla * 0.55), 0.0, 1.5);',
+    '  gl_FragColor = zloz(farba, kryje * miestoNaText * utlm(uv), 0.78);',
+    '}',
+  ].join('\n');
+
   /* siet: jemná mriežka, ktorá sa vlní ako plachta a v uzloch svieti.
      Technická, ale nie chladná. Pre nástroje a dokumentáciu. */
   V.siet = [
@@ -496,6 +595,7 @@
     var uCas = gl.getUniformLocation(program, 'cas');
     var uMys = gl.getUniformLocation(program, 'mys');
     var uPosun = gl.getUniformLocation(program, 'posun');
+    var uZrych = gl.getUniformLocation(program, 'zrych');
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
@@ -535,6 +635,8 @@
         MYS.p += (MYS.cp - MYS.p) * 0.08;
         gl.uniform2f(uMys, MYS.x, MYS.y);
         gl.uniform1f(uPosun, MYS.p);
+        MYS.z += (MYS.cz - MYS.z) * 0.10;
+        gl.uniform1f(uZrych, MYS.z);
         gl.drawArrays(gl.TRIANGLES, 0, 3);
       },
     };
