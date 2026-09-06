@@ -249,13 +249,15 @@
         </section>
 
         <section class="sec" id="s4">
-<h2 class="r">3. Prestane stačiť aj pain.001.001.03</h2>
-<p class="r d1">Toto je časť, ktorá sa najľahšie prehľ­dne. Väčšina slovenských účtovných programov dnes exportíruje verziu <code>pain.001.001.03</code>, lebo práve tú štyri hlavné slovenské banky pri importe hromadného príkazu prijímajú. Tá verzia však štruktúrované adresné polia v plnéj miere neunesie.</p>
-<p class="r d2">Komerční banka to vo svojej dokumentácii píše priamo: formát <code>pain.001.001.03</code> nebude na spracovanie štruktúrovanej adresy dostačujúci a od 15. novembra 2026 sa prestane používať. Nasledovník je <code>pain.001.001.09</code>, ktorý pozná všetky tri spôsoby zápisu adresy.</p>
+<h2 class="r">3. Verzia správy: čo na .03 naozaj platí</h2>
+<p class="r d1">Toto je časť, ktorá sa najľahšie prehliadne. Väčšina slovenských účtovných programov dnes exportuje verziu <code>pain.001.001.03</code>, lebo práve tú štyri hlavné slovenské banky pri importe hromadného príkazu prijímajú. Tu treba byť presný, lebo sa to na internete píše často nesprávne: <b>štruktúrovanú adresu <code>pain.001.001.03</code> unesie.</b> Jej <code>PostalAddress6</code> pozná <code>StrtNm</code>, <code>BldgNb</code>, <code>PstCd</code>, <code>TwnNm</code> aj <code>Ctry</code>, takže požiadavku „aspoň mesto a kód krajiny“ v nej splníte. Novšia <code>PostalAddress24</code> z <code>pain.001.001.09</code> pridáva len jemnejšie polia (<code>BldgNm</code>, <code>Flr</code>, <code>PstBx</code>, <code>Room</code>, <code>TwnLctnNm</code>, <code>DstrctNm</code>) a obmedzuje <code>AdrLine</code> na dva riadky.</p>
+<p class="r d2">Dôvod prejsť na <code>pain.001.001.09</code> teda nie je ten, že by <code>.03</code> adresu neuniesla. Dôvod je, že časť bánk k tomu istému termínu prestáva staršiu verziu prijímať. Komerční banka to vo svojej dokumentácii píše priamo: <code>pain.001.001.03</code> sa od 15. novembra 2026 prestane používať. Pre všetky štyri slovenské banky to zverejnené nemáme, preto to je otázka na vašu banku, nie hotová odpoveď.</p>
+<p class="r d2">Pozor ešte na jednu vec, na ktorej padne väčšina prvých pokusov o <code>.09</code>: dátum splatnosti v nej nie je priamo v <code>&lt;ReqdExctnDt&gt;</code>, ale zabalený v <code>&lt;Dt&gt;</code>, a kód banky sa nevolá <code>&lt;BIC&gt;</code>, ale <code>&lt;BICFI&gt;</code>. Sú to tie isté údaje, len inak pomenované.</p>
 <p class="r d3"><b>Čo s tým máte robiť vy:</b> nezmeníte to sami v XML. Toto je otázka na dodávateľa vášho účtovného softvéru a na vašu banku. Konkrétne dve otázky, ktoré sa oplatí poslať mailom už teraz:</p>
 <ol class="r d3">
-  <li>Bude váš program do 15. 11. 2026 exportírovať <code>pain.001.001.09</code> so štruktúrovanou adresou, a v ktorej verzii?</li>
+  <li>Bude váš program do 15. 11. 2026 exportovať <code>pain.001.001.09</code> so štruktúrovanou adresou, a od ktorej verzie programu?</li>
   <li>Kde v programe mám adresu rozdeliť na ulicu, číslo, PSČ, mesto a krajinu, aby sa do XML dostala správne?</li>
+  <li>Ktorú verziu, <code>.03</code> alebo <code>.09</code>, bude banka po 15. 11. 2026 pri importe hromadného príkazu prijímať?</li>
 </ol>
         </section>
 
@@ -279,7 +281,8 @@
         <section class="sec" id="s7">
 <h2 class="r">Skontrolujte to za 30 sekúnd</h2>
 <p class="r d1">Nemusíte čítať XML ručne. Vložte súbor do <a data-umami-event="open-sepa-pain001-doctor" href="https://arling.sk/sepa-pain001-doctor/#termin-2026">SEPA pain.001 Doctora</a> a dostanete zoznam adries, ktoré po 15. novembri 2026 neprejdú, s presnou cestou k prvku a s hotovou opravou na vloženie. Kontrola je zadarmo, bez účtu, beží vo vašom prehliadači a súbor sa nikam neodosiela; nemáme kam, na stránke nie je žiadny server.</p>
-<p class="r d2">Ten istý nástroj zároveň kontroluje požiadavky Tatra banky, Slovenskej sporiťteľne, VÚB a ČSOB, teda diakritiku, BIC, IBAN, dátumy a symboly. 150 automatických testov, zdrojový kód na GitHube.</p>
+<p class="r d2">Ten istý nástroj zároveň kontroluje požiadavky Tatra banky, Slovenskej sporiteľne, VÚB a ČSOB, teda diakritiku, BIC, IBAN, dátumy a symboly. 164 automatických testov, zdrojový kód na GitHube.</p>
+<p class="r d3">Ak sa ukáže, že váš program štruktúrovanú adresu neexportuje a odpoveď od dodávateľa nepríde včas, dá sa to obísť aj bez neho. Náš <a data-umami-event="open-sepa-pain001-generator-clanok" href="https://arling.sk/sepa-pain001-generator/">SEPA generátor</a> poskladá <code>pain.001</code> priamo z Excelu, aj s adresou rozdelenou na ulicu, číslo, PSČ, mesto a krajinu, a vie zapísať <code>.03</code> aj <code>.09</code>. Beží rovnako vo vašom prehliadači a rovnako nič neodosiela.</p>
         </section>
 
         <section class="sec" id="s8">
