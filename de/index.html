@@ -143,84 +143,17 @@
     .subscribe-form input[type="email"], .subscribe-form .btn { width:100%; }
   }
 
-  /* ─────────── úvod domovskej stránky ───────────
-     Kompozícia podľa predlohy zo 6. 9. 2026: text vľavo, scéna vpravo a cez
-     ňu, plávajúce karty nad scénou. Karty sú aria-hidden, lebo to isté, čo
-     hovoria, stojí v texte pod nimi; pre čítačku obrazovky by boli šum. */
-  .hero-scena { position:relative; isolation:isolate; overflow:hidden;
-                padding-block:clamp(56px,9vh,120px) clamp(64px,10vh,140px); }
-  /* paper.css centruje platno cez left:50% a transform:translateX(-50%).
-     Ked sa prepise len inset, transform ostane a platno sa posunie o pol
-     sirky dolava, takze polovica sceny je mimo obrazovky. Preto sa tu ruší
-     aj transform. */
-  .hero-scena > canvas.zar-plocha { position:absolute; inset:0; left:0; right:0;
-    transform:none; width:100%; max-width:none; height:100%; z-index:0;
-    -webkit-mask-image:linear-gradient(180deg,#000 0%,#000 88%,transparent 100%);
-    mask-image:linear-gradient(180deg,#000 0%,#000 88%,transparent 100%); }
-  .hero-mriezka { position:relative; z-index:1; display:grid; gap:clamp(28px,4vw,64px);
-                  grid-template-columns:minmax(0,1.02fr) minmax(0,1fr); align-items:center; }
-  .hero-text { max-width:36rem; text-align:left; }
-  /* .hero-noc centruje obsah; tu je kompozicia dvojstlpcova a text patri vlavo. */
-  .hero-scena, .hero-scena .hk, .hero-scena .akcie, .hero-scena .rule { text-align:left; }
-  .hero-scena .akcie { justify-content:flex-start; }
-  .hero-scena .hk ul { text-align:left; }
-
+  /* Úvod domovskej stránky. Jednoduchá zostava: kicker, nadpis, veta, dve
+     tlačidlá a fakty. Plávajúce karty a dvojstĺpcová mriežka sú preč,
+     Andrej ich 6. 9. 2026 zamietol ako ploché a rušivé. */
   .hero-kicker { display:flex; align-items:center; gap:12px; margin:0 0 clamp(14px,2vw,22px);
                  font:500 12px/1 var(--ui); letter-spacing:.20em; text-transform:uppercase; color:var(--muted); }
+  .hero-noc .hero-kicker { justify-content:center; }
   .hero-kicker i { display:block; width:34px; height:2px; background:var(--accent); border-radius:2px; flex:none; }
-  .hero-kicker em { font-style:normal; color:var(--line-silna,rgba(255,255,255,.28)); margin:0 2px; }
-
-  .hero-text h1 { font-size:clamp(40px,6.4vw,82px); line-height:1.02; letter-spacing:-.022em; margin:0 0 clamp(16px,2.2vw,26px); }
-  .hero-text h1 .zvyraz { color:var(--accent); }
-  .hero-text .lead { max-width:34rem; margin:0 0 clamp(22px,3vw,34px); }
-  .hero-podpis { margin:clamp(18px,2.4vw,26px) 0 0; font:400 12.5px/1.6 var(--ui); color:var(--muted); }
-
+  .hero-kicker em { font-style:normal; color:rgba(255,255,255,.28); margin:0 2px; }
+  .hero-noc h1 .zvyraz { color:var(--accent); }
   .btn-sip::after { content:"→"; margin-left:.55em; font-size:1.05em; line-height:1; }
   .btn-hra::before { content:"▶"; margin-right:.6em; font-size:.72em; line-height:1; opacity:.9; }
-
-  /* plávajúce karty */
-  .hero-karty { position:relative; min-height:clamp(300px,44vw,470px); }
-  .hk { position:absolute; border:1px solid rgba(255,255,255,.13); border-radius:14px;
-        background:rgba(12,11,12,.52); backdrop-filter:blur(9px); -webkit-backdrop-filter:blur(9px);
-        padding:14px 16px; box-shadow:0 18px 44px rgba(0,0,0,.45); }
-  .hk-hlava { margin:0 0 10px; font:500 10.5px/1 var(--ui); letter-spacing:.18em;
-              text-transform:uppercase; color:var(--muted); }
-  .hk-zoznam { top:2%; left:0; width:min(240px,62%); }
-  .hk-zoznam ul { margin:0; padding:0; list-style:none; display:grid; gap:7px; }
-  .hk-zoznam li { font:400 12.5px/1.35 var(--ui); color:var(--body); }
-  .hk-cislo { top:26%; right:0; width:min(190px,48%); }
-  .hk-hodnota { margin:0; font:700 30px/1 var(--display,var(--ui)); color:var(--ink); letter-spacing:-.02em; }
-  .hk-popis { margin:4px 0 0; font:400 12px/1.4 var(--ui); color:var(--muted); }
-
-  .hk-panel { bottom:0; right:2%; width:min(320px,88%); padding:14px 16px 16px; }
-  .hk-panel-hlava { display:flex; align-items:center; justify-content:space-between; gap:10px;
-                    padding-bottom:10px; margin-bottom:12px; border-bottom:1px solid rgba(255,255,255,.10); }
-  .hk-znacka { font:600 13px/1 var(--ui); color:var(--ink); letter-spacing:-.01em; }
-  .hk-stav { display:inline-flex; align-items:center; gap:6px; font:400 11.5px/1 var(--ui); color:var(--muted); }
-  .hk-stav i { width:6px; height:6px; border-radius:50%; background:#4ade80; box-shadow:0 0 0 3px rgba(74,222,128,.16); }
-  .hk-metriky { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
-  .hk-metriky div { display:grid; gap:3px; }
-  .hk-m { font:700 19px/1 var(--display,var(--ui)); color:var(--ink); letter-spacing:-.02em; }
-  .hk-p { font:400 10.5px/1.3 var(--ui); color:var(--muted); }
-  .hk-graf { margin-top:12px; display:grid; gap:6px; }
-  .hk-graf svg { width:100%; height:44px; display:block; }
-
-  /* Na užšej obrazovke sa karty prestanú prekrývať a text ide nad scénu.
-     Prekrývanie na 400 px širokom telefóne nefunguje: karty by zakryli
-     nadpis a scéna by sa stratila. */
-  @media (max-width: 1080px) {
-    .hero-mriezka { grid-template-columns:minmax(0,1fr); }
-    .hero-text { max-width:none; }
-    .hero-karty { min-height:0; display:grid; gap:12px;
-                  grid-template-columns:repeat(auto-fit,minmax(min(210px,100%),1fr)); }
-    .hk { position:static; width:auto; }
-    .hk-panel { grid-column:1 / -1; }
-  }
-  @media (max-width: 560px) {
-    .hero-karty { grid-template-columns:minmax(0,1fr); }
-    .hk-metriky { grid-template-columns:repeat(3,minmax(0,1fr)); }
-  }
-  @media (prefers-reduced-motion: reduce) { .hk { backdrop-filter:none; -webkit-backdrop-filter:none; background:rgba(12,11,12,.86); } }
 </style>
 <noscript><style>
   /* bez JavaScriptu sa nic neskryva: prichody su ozdoba, nie podmienka citatelnosti */
@@ -273,62 +206,20 @@
 
 <main>
 
-  <section class="hero-noc hero-scena">
-    <canvas class="zar-plocha" data-zar="hora" aria-hidden="true"></canvas>
-
-    <div class="wrap hero-mriezka">
-      <div class="hero-text">
-        <p class="hero-kicker r"><i></i>SKONTROLUJ <em>/</em> OPRAV <em>/</em> POŠLI</p>
-        <h1 class="r d1">Komplexe Dateien.<br><span class="zvyraz">Gelöst.</span></h1>
-        <p class="lead r d2">Kontoauszüge, Zahlungsdateien und Produktfeeds werden in Ihrem Browser verarbeitet. Kein Byte davon erreicht unseren Server.</p>
-        <div class="akcie r d3">
-          <a class="btn btn-solid btn-sip" data-zar-zrychli href="#tools" data-umami-event="hero-tools">Tools ansehen</a>
-          <a class="btn btn-line btn-hra" href="https://arling.sk/how-we-work/" data-umami-event="hero-how">So prüfen Sie das</a>
-        </div>
-        <p class="hero-podpis r d3">Bratislava · Europäische Union · Quellcode offen auf GitHub</p>
-      </div>
-
-      <!-- Plávajúce karty nad scénou. Čísla v nich sú skutočné a dajú sa overiť:
-           nula odoslaných bajtov je vlastnosť nástrojov, počet testov sedí
-           s tým, čo prejde v repozitároch. -->
-      <div class="hero-karty" aria-hidden="true">
-        <div class="hk hk-zoznam r d2">
-          <p class="hk-hlava">LÄUFT IM BROWSER</p>
-          <ul>
-            <li>camt.053 nach Excel</li>
-            <li>Excel nach SEPA-XML</li>
-            <li>pain.001-Prüfung</li>
-            <li>Zahlungsabgleich</li>
-            <li>Feed-Prüfung</li>
-          </ul>
-        </div>
-        <div class="hk hk-cislo r d3">
-          <p class="hk-hlava">AUF UNSEREN SERVERN</p>
-          <p class="hk-hodnota">0 B</p>
-          <p class="hk-popis">Ihrer Daten</p>
-        </div>
-        <div class="hk hk-panel r d3">
-          <div class="hk-panel-hlava">
-            <span class="hk-znacka">ARLing</span>
-            <span class="hk-stav"><i></i>alles läuft</span>
-          </div>
-          <div class="hk-metriky">
-            <div><span class="hk-m">18</span><span class="hk-p">Tools live</span></div>
-            <div><span class="hk-m">2978</span><span class="hk-p">automatisierte Tests</span></div>
-            <div><span class="hk-m">3</span><span class="hk-p">Sprachen</span></div>
-          </div>
-          <div class="hk-graf">
-            <svg viewBox="0 0 240 56" preserveAspectRatio="none" aria-hidden="true">
-              <path d="M0 48 L24 44 L48 45 L72 38 L96 34 L120 30 L144 24 L168 22 L192 14 L216 10 L240 4"
-                    fill="none" stroke="url(#hkg)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              <defs><linearGradient id="hkg" x1="0" y1="0" x2="240" y2="0" gradientUnits="userSpaceOnUse">
-                <stop offset="0" stop-color="#ff3b1f" stop-opacity=".35"/><stop offset="1" stop-color="#ff9f3d"/>
-              </linearGradient></defs>
-            </svg>
-            <span class="hk-p">Tools kommen seit dem 4. September dazu</span>
-          </div>
-        </div>
-      </div>
+  <section class="hero-noc wrap">
+    <canvas class="zar-plocha" data-zar="tok" aria-hidden="true"></canvas>
+    <p class="hero-kicker r"><i></i>SKONTROLUJ <em>/</em> OPRAV <em>/</em> POŠLI</p>
+    <h1 class="r d1">Komplexe Dateien. <span class="zvyraz">Gelöst.</span></h1>
+    <p class="lead r d2">Kontoauszüge, Zahlungsdateien und Produktfeeds werden in Ihrem Browser verarbeitet. Kein Byte davon erreicht unseren Server.</p>
+    <div class="akcie r d3">
+      <a class="btn btn-solid btn-sip" data-zar-zrychli href="#tools" data-umami-event="hero-tools">Tools ansehen</a>
+      <a class="btn btn-line btn-hra" href="https://arling.sk/how-we-work/" data-umami-event="hero-how">So prüfen Sie das</a>
+    </div>
+    <div class="fakty r d3">
+      <span>0 Byte hochgeladen</span>
+      <span>2978 automatisierte Tests</span>
+      <span>ohne Konto, ohne Cookies</span>
+      <span>Bratislava, Europäische Union</span>
     </div>
   </section>
 
@@ -632,7 +523,7 @@
     <div><a href="https://arling.sk/privacy/">Datenschutz</a> · <a href="https://arling.sk/podmienky/">AGB</a> · <a href="https://arling.sk/gdpr/">DSGVO</a> · <a href="https://arling.sk/impressum/">Impressum</a> · <a href="https://arling.sk/llms.txt">llms.txt</a> · <a href="https://arling.sk/sitemap-index.xml">Sitemap</a><br>Die Werkzeuge werden ohne Gewähr bereitgestellt. Anonyme Besuchszählung über eigenes Umami.</div>
   </div>
 </footer>
-<script src="/style/zar.js?v=ac150ec0" defer></script>
+<script src="/style/zar.js?v=6ecec6e9" defer></script>
 <script src="../dopyt.js" defer></script>
 <script src="../subscribe.js" defer></script>
 <script>
