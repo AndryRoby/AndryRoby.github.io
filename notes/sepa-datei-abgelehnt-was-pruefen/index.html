@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="de">
+<head>
+<script src="/style/vzhlad.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0a0908">
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../../favicon.ico" sizes="48x48">
+<link rel="apple-touch-icon" href="../../icon-180.png">
+<title>Bank lehnt die SEPA-Datei ab: was zuerst zu prüfen ist</title>
+<meta name="description" content="NbOfTxs, CtrlSum, ReqdExctnDt, PmtMtd, ChrgBr, IBAN, Namensraum, Zeichensatz: acht Gründe für eine abgelehnte pain.001-Datei, im Editor selbst prüfbar.">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Bank lehnt die SEPA-Datei ab: was zuerst zu prüfen ist">
+<meta property="og:description" content="Acht Gründe, warum eine pain.001-Datei von der Bank abgelehnt wird, und wie Sie jeden davon selbst im Editor nachprüfen, bevor Sie den Support anrufen.">
+<meta property="og:url" content="https://arling.sk/notes/sepa-datei-abgelehnt-was-pruefen/">
+<meta property="og:locale" content="de_DE">
+<link rel="canonical" href="https://arling.sk/notes/sepa-datei-abgelehnt-was-pruefen/">
+<link rel="stylesheet" href="/style/paper.css">
+<script src="/style/prepinac.js" defer></script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Bank lehnt die SEPA-Datei ab: was zuerst zu prüfen ist",
+  "description": "Acht Gründe, warum eine pain.001-Datei von der Bank abgelehnt wird, und wie Sie jeden davon selbst im Editor nachprüfen, bevor Sie den Support anrufen.",
+  "datePublished": "2026-09-06",
+  "dateModified": "2026-09-06",
+  "inLanguage": "de",
+  "author": { "@type": "Organization", "name": "ARLing s. r. o.", "url": "https://arling.sk/" },
+  "publisher": { "@type": "Organization", "name": "ARLing s. r. o.", "url": "https://arling.sk/" },
+  "mainEntityOfPage": "https://arling.sk/notes/sepa-datei-abgelehnt-was-pruefen/"
+}
+</script>
+
+<style>
+  article { max-width:72ch; }
+  article h2 { margin:clamp(34px,4vh,52px) 0 12px; }
+  article h3 { margin:26px 0 8px; }
+  article p, article li { font-size:16.5px; line-height:1.7; }
+  article ol, article ul { padding-left:22px; }
+  article li { margin:0 0 8px; }
+  code { font:13.5px/1.4 var(--mono); background:var(--card); border:1px solid var(--line);
+    border-radius:3px; padding:1px 5px; overflow-wrap:anywhere; }
+  pre { background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    padding:16px 18px; overflow-x:auto; font:13px/1.6 var(--mono); color:var(--body); }
+  .byline { font-family:var(--ui); font-size:14px; color:var(--muted); margin:0 0 clamp(26px,3vh,40px); }
+  .zhrn { border-left:3px solid var(--accent); background:var(--card); border-radius:0 var(--radius) var(--radius) 0;
+    padding:18px 22px; margin:0 0 clamp(26px,3vh,40px); }
+  .zhrn p { margin:0; font-size:16px; }
+  .zdroje { font-family:var(--ui); font-size:13.5px; color:var(--muted); line-height:1.7;
+    border-top:1px solid var(--line); padding-top:18px; margin-top:clamp(34px,4vh,52px); }
+  .zdroje a { color:var(--body); }
+</style>
+</head>
+<body class="noc">
+<div class="wash" aria-hidden="true"><i></i><i></i></div>
+
+<header>
+  <div class="wrap bar">
+    <a class="brand" href="https://arling.sk/">
+      <svg viewBox="0 0 488 215" width="38" height="15" aria-hidden="true" focusable="false"><path fill="#f4f4f7" fill-rule="evenodd" d="M0.00,213.00L74.00,214.00L181.00,85.00L285.00,214.00L360.00,214.00L206.00,21.00L185.00,4.00L164.00,10.00Z M221.00,0.00L263.00,50.00L395.00,50.00L409.00,55.00L419.00,76.00L401.00,96.00L313.00,98.00L411.00,214.00L487.00,214.00L422.00,139.00L457.00,123.00L482.00,88.00L482.00,48.00L463.00,19.00L417.00,0.00Z"/><path fill="#f2643c" d="M269.00,66.00L269.00,67.00L268.00,68.00L268.00,70.00L267.00,71.00L267.00,76.00L268.00,77.00L268.00,79.00L270.00,81.00L270.00,82.00L271.00,82.00L273.00,84.00L274.00,84.00L277.00,86.00L279.00,86.00L280.00,87.00L287.00,87.00L288.00,86.00L290.00,86.00L291.00,85.00L294.00,84.00L298.00,80.00L298.00,79.00L299.00,78.00L299.00,75.00L300.00,74.00L300.00,72.00L299.00,71.00L299.00,69.00L298.00,68.00L297.00,65.00L295.00,63.00L294.00,63.00L289.00,60.00L278.00,60.00L277.00,61.00L276.00,61.00L275.00,62.00L272.00,63.00Z"/></svg>
+      <b>ARLing</b>
+    </a>
+    <nav aria-label="Site"><a href="https://arling.sk/de/#tools">Werkzeuge</a><a href="https://arling.sk/notes/">Notes</a><a href="https://arling.sk/how-we-work/">Wie wir arbeiten</a><a href="mailto:andrej@arling.sk">Kontakt</a></nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <article>
+      <h1>Bank lehnt die SEPA-Datei ab: was zuerst zu prüfen ist</h1>
+      <p class="byline">ARLing s. r. o. · 6. September 2026</p>
+
+      <div class="zhrn">
+        <p>Die meisten Ablehnungen einer pain.001-Datei haben nicht mit Ihrer
+        Bank persönlich zu tun, sondern mit einer kurzen Liste struktureller
+        Probleme in der XML-Datei selbst. Die folgenden acht Punkte lassen
+        sich in einem gewöhnlichen Texteditor prüfen, ohne Programmierkenntnisse
+        und ohne dass Sie zuerst den Support anrufen müssen.</p>
+      </div>
+
+      <p>Eine SEPA-Sammelüberweisung wird als XML-Datei im Format pain.001
+      aus der Buchhaltungssoftware exportiert und im Onlinebanking
+      hochgeladen. Weist die Bank die Datei zurück, ist die Fehlermeldung oft
+      unspezifisch: „Datei konnte nicht verarbeitet werden" oder ein interner
+      Fehlercode ohne Erklärung. Was dahintersteckt, lässt sich meist selbst
+      herausfinden, weil pain.001 eine genormte XML-Struktur ist und die
+      Regeln dafür öffentlich dokumentiert sind.</p>
+
+      <p>Wichtig vorab: Die folgenden Regeln stammen aus dem
+      ISO-20022-Nachrichtenstandard und dem Rulebook für die
+      SEPA-Überweisung des European Payments Council (EPC), sie gelten für
+      jede Bank im SEPA-Raum. Einzelne Banken legen zusätzlich eigene,
+      engere Grenzen fest, etwa wie viele Tage im Voraus ein
+      Ausführungsdatum liegen darf. Solche Grenzen sind hier klar als
+      Beispiel gekennzeichnet, nicht als allgemeine Regel.</p>
+
+      <h2>Die häufigsten Gründe, der Reihe nach</h2>
+
+      <h3>1. NbOfTxs und CtrlSum stimmen nicht mit dem Inhalt überein</h3>
+      <p>Der Kopfbereich der Datei (<code>GrpHdr</code>) trägt zwei Zahlen,
+      die den Inhalt zusammenfassen: <code>NbOfTxs</code> ist die Anzahl der
+      Zahlungen, <code>CtrlSum</code> die Summe aller Beträge. Beide Werte
+      müssen exakt zum tatsächlichen Inhalt passen. Eine Abweichung ist einer
+      der häufigsten Gründe für eine gescheiterte Verarbeitung, besonders
+      wenn die Datei nach dem Export noch von Hand angepasst wurde.</p>
+      <p><b>So prüfen Sie es selbst:</b> Öffnen Sie die Datei in einem
+      Texteditor mit einer Funktion „Alle suchen" (zum Beispiel Notepad++,
+      Strg+F, Reiter „Suchen"). Suchen Sie nach
+      <code>&lt;CdtTrfTxInf&gt;</code> und lesen Sie die Trefferzahl ab: das
+      ist die tatsächliche Anzahl der Zahlungen. Vergleichen Sie sie mit
+      <code>&lt;NbOfTxs&gt;</code>. Für die Summe suchen Sie alle Vorkommen
+      von <code>&lt;InstdAmt</code> und addieren die Beträge von Hand oder
+      in einer Tabelle, auf zwei Nachkommastellen genau, und vergleichen mit
+      <code>&lt;CtrlSum&gt;</code>.</p>
+
+      <h3>2. ReqdExctnDt: rückdatiert oder zu weit in der Zukunft</h3>
+      <p><code>ReqdExctnDt</code> ist das gewünschte Ausführungsdatum, im
+      Format JJJJ-MM-TT. Ein Datum in der Vergangenheit akzeptiert keine
+      Bank. Manche Banken lehnen zusätzlich ein zu weit in der Zukunft
+      liegendes Datum ab, wie weit genau legt jede Bank selbst fest. Eine
+      slowakische Bank nennt in ihrer Importbeschreibung als Beispiel ein
+      Zeitfenster von 31 Tagen: das ist eine Grenze dieser einen Bank, keine
+      SEPA-Regel, und gilt nicht automatisch in Deutschland, Österreich oder
+      Tschechien.</p>
+      <p><b>So prüfen Sie es selbst:</b> Suchen Sie nach
+      <code>&lt;ReqdExctnDt&gt;</code> und vergleichen Sie das Datum mit dem
+      heutigen. Liegt es davor, ist das der Fehler. Liegt es viele Wochen
+      voraus, prüfen Sie im Onlinebanking Ihrer Bank, welches Zeitfenster
+      dort gilt.</p>
+
+      <h3>3. PmtMtd ist nicht TRF</h3>
+      <p>Für eine SEPA-Überweisung muss das Feld <code>PmtMtd</code> exakt
+      den Wert <code>TRF</code> tragen. Das ist ein fester Wert aus dem
+      SEPA-Regelwerk, kein Feld zum freien Ausfüllen. Ein anderer Wert oder
+      eine Kleinschreibung führt zur Ablehnung.</p>
+      <p><b>So prüfen Sie es selbst:</b> Suchen Sie nach
+      <code>&lt;PmtMtd&gt;</code> und prüfen Sie, dass genau
+      <code>TRF</code> in Großbuchstaben zwischen den Tags steht.</p>
+
+      <h3>4. SvcLvl/Cd ist nicht SEPA</h3>
+      <p>Das Feld <code>SvcLvl</code> mit dem Code <code>Cd</code> darunter
+      markiert eine Zahlung nach dem SEPA-Standard und muss exakt
+      <code>SEPA</code> lauten. Es kann sowohl auf Ebene des Zahlungsblocks
+      (<code>PmtInf</code>) als auch je Transaktion vorkommen, je nachdem wie
+      die Buchhaltungssoftware die Datei aufbaut.</p>
+      <p><b>So prüfen Sie es selbst:</b> Suchen Sie nach
+      <code>&lt;SvcLvl&gt;</code>, dahinter folgt ein <code>&lt;Cd&gt;</code>
+      mit dem Wert. Prüfen Sie bei jedem Vorkommen, dass dort
+      <code>SEPA</code> steht.</p>
+
+      <h3>5. ChrgBr ist nicht SLEV</h3>
+      <p><code>ChrgBr</code> regelt, wer die Bankgebühren trägt. Für eine
+      SEPA-Überweisung gilt ausschließlich <code>SLEV</code>: jede Seite
+      trägt ihre eigenen Gebühren. Werte wie <code>SHAR</code>,
+      <code>DEBT</code> oder <code>CRED</code> gehören zu anderen
+      Zahlungsarten und werden bei einer SEPA-Überweisung zurückgewiesen oder
+      als Fehler markiert.</p>
+      <p><b>So prüfen Sie es selbst:</b> Suchen Sie nach
+      <code>&lt;ChrgBr&gt;</code> und prüfen Sie den Wert dazwischen.</p>
+
+      <h3>6. Ungültige IBAN (MOD-97)</h3>
+      <p>Jede IBAN trägt eine eingebaute Prüfziffer, die sich mit dem
+      Verfahren Modulo 97 (ISO 7064) nachrechnen lässt: Die ersten vier
+      Zeichen wandern ans Ende, Buchstaben werden in Zahlen umgewandelt
+      (A=10 bis Z=35), und die entstandene Zahl muss bei Division durch 97
+      den Rest 1 ergeben. Ein Zahlendreher beim Abtippen einer IBAN aus einer
+      E-Mail oder einem Papierbeleg fällt genau hier auf.</p>
+      <p><b>So prüfen Sie es selbst:</b> Die Rechnung von Hand ist mühsam,
+      zwei Dinge sehen Sie aber auch so im Editor. Erstens: Die IBAN darf
+      keine Leerzeichen enthalten, sie steht als eine Zeichenkette in
+      <code>&lt;IBAN&gt;</code>. Zweitens: Die Länge muss zur Länderkennung
+      passen, etwa 22 Zeichen für DE, 20 für AT, 21 für CH, 24 für CZ und SK.
+      Für die Prüfziffer selbst ist eine automatische Prüfung praktischer als
+      das Nachrechnen von Hand.</p>
+
+      <h3>7. Falscher Namensraum</h3>
+      <p>Ganz oben in der Datei steht das Wurzelelement
+      <code>&lt;Document&gt;</code> mit einem Namensraum-Attribut
+      (<code>xmlns</code>), das der Bank sagt, welche Formatversion sie vor
+      sich hat. Für die verbreitete Version lautet er
+      <code>urn:iso:std:iso:20022:tech:xsd:pain.001.001.03</code>. Ein
+      fehlender Namensraum oder eine andere Version, etwa
+      <code>pain.001.001.09</code>, wird von manchen Bank-Importfunktionen
+      gar nicht oder mit unklarer Fehlermeldung angenommen, weil sie nur auf
+      eine Version eingestellt sind. Welche Version eine Bank gerade
+      erwartet, ändert sich mit der Zeit und ist beim Institut zu erfragen.</p>
+      <p><b>So prüfen Sie es selbst:</b> Lesen Sie die erste Zeile mit dem
+      <code>&lt;Document&gt;</code>-Tag. Der Wert hinter <code>xmlns=</code>
+      muss vorhanden sein und exakt der Version entsprechen, die Ihre Bank
+      laut eigenen Unterlagen oder Onlinebanking-Hinweisen erwartet.</p>
+
+      <h3>8. Zeichen außerhalb des SEPA-Zeichensatzes</h3>
+      <p>Für Namen, Verwendungszweck und andere Textfelder erlaubt der
+      SEPA-Zeichensatz nur eine begrenzte Auswahl: die Buchstaben a bis z und
+      A bis Z ohne Akzente, die Ziffern 0 bis 9, das Leerzeichen und die
+      Zeichen <code>/ - ? : ( ) . , ' +</code>. Für deutschsprachige Nutzer
+      ist das praxisrelevant: Umlaute wie ä, ö, ü und das ß gehören nicht zu
+      diesem ursprünglichen Zeichensatz. Viele Banken haben ihre Systeme um
+      einen erweiterten Zeichensatz ergänzt, der Umlaute zulässt, das ist
+      jedoch nicht überall und nicht in jedem Feld garantiert. Ein Name wie
+      „Müller & Söhne GmbH" oder ein Verwendungszweck mit ß kann je nach Bank
+      zur Ablehnung oder zu einer unerwünschten Umschreibung führen.</p>
+      <p><b>So prüfen Sie es selbst:</b> Gehen Sie mit der Suchfunktion
+      gezielt die Felder <code>&lt;Nm&gt;</code> und
+      <code>&lt;Ustrd&gt;</code> durch, und achten Sie auf Umlaute, das ß
+      sowie andere Anführungszeichen als den einfachen Apostroph. Ersetzen
+      Sie im Zweifel ä durch ae, ö durch oe, ü durch ue und ß durch ss.</p>
+
+      <h2>Wenn all das stimmt und die Bank trotzdem ablehnt</h2>
+      <p>Diese acht Punkte decken die formalen SEPA- und
+      ISO-20022-Anforderungen ab. Eine Bank kann zusätzlich eigene Regeln
+      haben: eine maximale Zahlungsanzahl pro Datei, ein zusätzliches
+      Pflichtfeld oder eine eigene Vorgabe zum BIC des Zahlungsempfängers.
+      Solche Regeln stehen in der Importdokumentation der jeweiligen Bank und
+      unterscheiden sich von Land zu Land: Was für eine slowakische Bank
+      gilt, muss für eine deutsche nicht gelten. Bleibt die Ablehnung danach
+      unklar, ist die Importdokumentation der eigenen Bank oder deren Support
+      die richtige Anlaufstelle.</p>
+
+      <h2>Kurz zusammengefasst</h2>
+      <p>Die meisten Ablehnungen einer pain.001-Datei lassen sich auf einen
+      dieser acht Punkte zurückführen, alle acht sind mit einem gewöhnlichen
+      Texteditor nachprüfbar. Das kostet wenige Minuten und erspart oft
+      einen Anruf beim Support. Wer die Prüfung nicht von Hand machen
+      möchte: <a href="https://arling.sk/sepa-pain001-doctor/de/">SEPA
+      pain.001 Doctor</a> prüft eine Datei kostenlos dagegen, direkt im
+      Browser, ohne sie irgendwohin hochzuladen.</p>
+
+      <div class="zdroje">
+        <p><b>Quellen und Prüfdatum: 6. September 2026.</b> Die
+        feldbezogenen SEPA-Regeln (<code>PmtMtd</code>=TRF,
+        <code>SvcLvl/Cd</code>=SEPA, <code>ChrgBr</code>=SLEV, nur EUR als
+        Währung, Feldlängen wie Max35Text) stammen aus dem
+        Nachrichtenstandard
+        <a href="https://www.iso20022.org/" rel="noopener" target="_blank">ISO 20022</a>
+        (pain.001.001.03) und dem
+        <a href="https://www.europeanpaymentscouncil.eu/document-library/rulebooks/2025-sepa-credit-transfer-rulebook-version-11" rel="noopener" target="_blank">SEPA Credit Transfer Rulebook des European Payments Council</a>.
+        Der SEPA-Zeichensatz selbst ist Teil des allgemeinen SEPA-Regelwerks
+        und gilt im gesamten SEPA-Raum; er wurde hier zusätzlich anhand der
+        öffentlichen Importdokumentation einer slowakischen Bank
+        (<a href="https://www.csob.sk/documents/11005/123723/BB_SEPA_01022016.pdf" rel="noopener" target="_blank">ČSOB</a>)
+        gegengeprüft. Die Beispielgrenze von 31 Tagen für das
+        Ausführungsdatum stammt dagegen ausschließlich aus der
+        Importdokumentation einer einzelnen slowakischen Bank
+        (<a href="https://www.tatrabanka.sk/files/sk/personal/ucet-platby/elektronicke-bankovnictvo/internet-banking/davkove-platby/prenosovy_formatpain001.pdf" rel="noopener" target="_blank">Tatra banka</a>)
+        und ist ausdrücklich als Beispiel dieser einen Bank gekennzeichnet,
+        keine allgemeine SEPA-Regel. Die IBAN-Prüfziffer folgt dem Verfahren ISO 7064
+        (Modulo 97-10) des internationalen IBAN-Standards. Wenn sich eine
+        Quelle inzwischen geändert hat, schreiben Sie uns, wir korrigieren
+        es.</p>
+      </div>
+    </article>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <div><b>ARLing s. r. o.</b><br>Ivanská cesta 32E<br>821 04 Bratislava, Slowakei</div>
+    <div>Handelsregister-Nr. 56583486<br>USt-IdNr. SK2122352100<br><a href="mailto:andrej@arling.sk">andrej@arling.sk</a></div>
+    <div><a href="https://arling.sk/privacy/">Datenschutz</a> · <a href="https://arling.sk/podmienky/">AGB</a> · <a href="https://arling.sk/gdpr/">DSGVO</a> · <a href="https://arling.sk/impressum/">Impressum</a> · <a href="https://arling.sk/llms.txt">llms.txt</a> · <a href="https://arling.sk/sitemap-index.xml">Sitemap</a><br>Die Werkzeuge werden ohne Gewähr bereitgestellt. Anonyme Besuchszählung über eigenes Umami.</div>
+  </div>
+</footer>
+
+<script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="be534d51-4d01-4860-b267-9596d91606de"></script>
+</body>
+</html>
