@@ -64,7 +64,7 @@ export const DICT = {
   // snímke je: ukážkový obchod Dobrá domácnosť s otvoreným chatom.
   'hero.shot.alt': {
     sk: 'Snímka: v ukážkovom obchode Dobrá domácnosť je otvorený chat ARLing Asistenta. Zákazník sa pýta, ktorý hrniec je vhodný na indukciu, a asistent odpovedá dvoma hrncami z feedu, s kartami výrobkov a cenami 34.90 EUR a 44.90 EUR. Za oknom chatu je zoznam tých istých výrobkov v obchode.',
-    en: 'Screenshot: the ARLing Asistent chat is open on the Slovak demo shop Dobrá domácnosť. A shopper asks which pot suits an induction hob and the assistant answers with two pots from the feed, with product cards and the prices 34.90 EUR and 44.90 EUR. The same products are listed on the shop page behind the chat window.',
+    en: 'Screenshot: the ARLing Shopping Assistant chat is open on the Slovak demo shop Dobrá domácnosť. A shopper asks which pot suits an induction hob and the assistant answers with two pots from the feed, with product cards and the prices 34.90 EUR and 44.90 EUR. The same products are listed on the shop page behind the chat window.',
   },
   'hero.shot.caption': {
     sk: 'Otázka zákazníka a odpoveď z vášho feedu, s odkazmi na produkty.',
@@ -241,7 +241,7 @@ export const DICT = {
   'subscribe.ask': { sk: 'Chcete vedieť, keď WooCommerce plugin prejde schválením na wordpress.org alebo pribudne Shopify aplikácia?', en: 'Want to know when the WooCommerce plugin is approved on wordpress.org, or when the Shopify app goes live?' },
   'subscribe.email.placeholder': { sk: 'vas@email.sk', en: 'you@email.com' },
   'subscribe.btn': { sk: 'Dajte mi vedieť', en: 'Notify me' },
-  'subscribe.privacy': { sk: 'Len e-mail o novinkách k ARLing Asistentovi. Odhlásenie kedykoľvek jedným klikom.', en: 'Only email about ARLing Asistent news. Unsubscribe any time with one click.' },
+  'subscribe.privacy': { sk: 'Len e-mail o novinkách k ARLing Asistentovi. Odhlásenie kedykoľvek jedným klikom.', en: 'Only email about ARLing Shopping Assistant news. Unsubscribe any time with one click.' },
   'subscribe.thanks': { sk: 'Ďakujeme, ozveme sa.', en: 'Thanks, we’ll be in touch.' },
   'subscribe.error': {
     sk: 'Niečo sa pokazilo, skúste to prosím znova alebo napíšte na andrej@arling.sk.',
@@ -268,7 +268,7 @@ export const DICT = {
   'sticky.close.aria': { sk: 'Zavrieť lištu', en: 'Close bar' },
 
   // ── meta / SEO ───────────────────────────────────────────────────────
-  'meta.title': { sk: 'ARLing Asistent: AI predajný asistent pre e-shopy', en: 'ARLing Asistent: AI shopping assistant for e-shops' },
+  'meta.title': { sk: 'ARLing Asistent: AI predajný asistent pre e-shopy', en: 'ARLing Shopping Assistant: AI shopping assistant for e-shops' },
   'meta.description': {
     sk: 'Predajný asistent pre váš e-shop, nastavený za 10 minút z produktového feedu. Beží na Cloudflare Workers, neukladá rozhovory zákazníkov. Zadarmo do 100 rozhovorov mesačne, potom od 19 EUR mesačne.',
     en: 'A shopping assistant for your e-shop, set up from your product feed in 10 minutes. Runs on Cloudflare Workers, stores no customer conversations. Free up to 100 conversations a month, then from 19 EUR a month.',
