@@ -16,7 +16,7 @@ export const DICT = {
   // header / nav
   'skip': { sk: 'Skočiť na obsah', en: 'Skip to content' },
   'brand.sub': { sk: 'nástroj ARLing', en: 'an ARLing tool' },
-  'nav.back': { sk: 'ARLing Asistent', en: 'ARLing Asistent' },
+  'nav.back': { sk: 'ARLing Asistent', en: 'ARLing Shopping Assistant' },
   'nav.pricing': { sk: 'Cenník', en: 'Pricing' },
   'nav.faq': { sk: 'Otázky', en: 'FAQ' },
   'lang.switch.aria': { sk: 'Jazyk stránky', en: 'Page language' },
@@ -28,7 +28,7 @@ export const DICT = {
   'hero.h1': { sk: 'Používanie a predplatné', en: 'Usage and subscription' },
   'hero.lead': {
     sk: 'Prehľad účtu ARLing Asistenta pre váš e-shop: koľko rozhovorov ste tento mesiac použili, embed kód a prechod na platený plán. Stránka ukazuje len počítadlá, žiadne osobné údaje ani obsah rozhovorov.',
-    en: 'An overview of your ARLing Asistent account: conversations used this month, the embed code, and the upgrade to a paid plan. The page shows counters only, no personal data and no conversation content.',
+    en: 'An overview of your ARLing Shopping Assistant account: conversations used this month, the embed code, and the upgrade to a paid plan. The page shows counters only, no personal data and no conversation content.',
   },
   'hero.tip': {
     sk: 'Odkaz na túto stránku si uložte: obsahuje id vášho účtu a nikde inde ho nezobrazujeme.',
@@ -39,7 +39,7 @@ export const DICT = {
   // so the wording stays identical with ../i18n.js.
   'hero.shot.alt': {
     sk: 'Snímka: v ukážkovom obchode Dobrá domácnosť je otvorený chat ARLing Asistenta. Zákazník sa pýta, ktorý hrniec je vhodný na indukciu, a asistent odpovedá dvoma hrncami z feedu, s kartami výrobkov a cenami 34.90 EUR a 44.90 EUR. Za oknom chatu je zoznam tých istých výrobkov v obchode.',
-    en: 'Screenshot: the ARLing Asistent chat is open on the Slovak demo shop Dobrá domácnosť. A shopper asks which pot suits an induction hob and the assistant answers with two pots from the feed, with product cards and the prices 34.90 EUR and 44.90 EUR. The same products are listed on the shop page behind the chat window.',
+    en: 'Screenshot: the ARLing Shopping Assistant chat is open on the Slovak demo shop Dobrá domácnosť. A shopper asks which pot suits an induction hob and the assistant answers with two pots from the feed, with product cards and the prices 34.90 EUR and 44.90 EUR. The same products are listed on the shop page behind the chat window.',
   },
   'hero.shot.caption': {
     sk: 'Otázka zákazníka a odpoveď z vášho feedu, s odkazmi na produkty.',
@@ -139,10 +139,10 @@ export const DICT = {
   'footer.note': { sk: 'Návštevnosť meriame vlastným, cookie-free nástrojom Umami. Neukladá cookies ani odtlačok prehliadača.', en: 'We measure traffic with our own cookie-free tool, Umami. It stores no cookies and no browser fingerprint.' },
 
   // meta
-  'meta.title': { sk: 'Používanie a predplatné: ARLing Asistent', en: 'Usage and subscription: ARLing Asistent' },
+  'meta.title': { sk: 'Používanie a predplatné: ARLing Asistent', en: 'Usage and subscription: ARLing Shopping Assistant' },
   'meta.description': {
     sk: 'Stránka účtu ARLing Asistenta: rozhovory použité tento mesiac, embed kód a prechod na plán Starter alebo Pro cez Stripe.',
-    en: 'ARLing Asistent account page: conversations used this month, the embed code, and the upgrade to Starter or Pro through Stripe.',
+    en: 'ARLing Shopping Assistant account page: conversations used this month, the embed code, and the upgrade to Starter or Pro through Stripe.',
   },
 };
 

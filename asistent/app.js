@@ -1,7 +1,7 @@
 /*
  * app.js
  *
- * Wires the "try it now" form on the ARLing Asistent demo page: submits the
+ * Wires the "try it now" form on the ARLing Shopping Assistant demo page: submits the
  * visitor's own feed URL + e-mail to the worker's POST /v1/tenants, polls
  * GET /v1/tenants/:id/status until ingestion finishes, then injects the
  * real widget/widget.js <script> tag on this same page pointed at the new
