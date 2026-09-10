@@ -18,6 +18,13 @@
 // posli() nič neodošle. Zaškrtnutie ide do workera ako hlavička
 // consent=1 v adrese (nie hlavička: vlastná hlavička by potrebovala zmenu CORS na workeri), worker si ju uloží k súboru.
 //
+// Dodanie výsledku: keď /v1/kontrola/status vráti delivered: true, stránka
+// skryje formulár a v bloku #dodanie ukáže dva odkazy, opravený súbor a
+// písomnú správu. Odkazy vedú na /v1/kontrola/download na workeri, ktorý
+// si platbu overí u Stripu rovnako ako pri nahrávaní; session_id v adrese je
+// jediný kľúč, tak ako pri nahrávaní. Texty bloku sa skladajú tu, HTML má
+// len prázdny kontajner.
+//
 // Stránka nemá vložený skript zámerne: hub má prísne CSP, kde by sa každá
 // úprava vloženého skriptu musela znova prepočítať (ops/design/csp-hash.mjs).
 // Externý súbor z vlastnej domény tento krok nepotrebuje.
@@ -46,6 +53,12 @@
       hotovoMail: function (m) { return 'Súbor sme prijali. Výsledok pošleme do 24 hodín na ' + m + '.'; },
       chyba: 'Nahranie sa nepodarilo. Skúste to prosím znova, alebo nám súbor pošlite na andrej@arling.sk.',
       bezSuhlasu: 'Najprv prosím zaškrtnite súhlas so začatím služby. Bez neho súbor neodošleme.',
+      dodane: 'Kontrola je hotová. Opravený súbor a správu si stiahnete nižšie.',
+      dodanieNadpis: 'Váš opravený súbor je hotový',
+      dodanieText: 'Stiahnite si opravený súbor a písomnú správu. V správe je, čo sme kontrolovali, čo sme našli, čo sme opravili a čo ešte musí opraviť dodávateľ vášho účtovného softvéru. Odkazy platia 30 dní od dodania, potom sa súbory automaticky vymažú.',
+      dodanieXml: 'Opravený súbor (XML)',
+      dodanieSprava: 'Písomná správa',
+      dodaniePozn: 'O prijatí súboru rozhoduje vaša banka. Ak niečo nesedí, napíšte na andrej@arling.sk.',
     },
     de: {
       bezSession: 'Diese Seite ist nur über die Zahlung erreichbar. Öffnen Sie bitte den Link, den Ihnen Stripe nach der Zahlung gezeigt hat, oder schreiben Sie an andrej@arling.sk, dann senden wir ihn erneut.',
@@ -65,6 +78,12 @@
       hotovoMail: function (m) { return 'Wir haben die Datei erhalten. Das Ergebnis senden wir innerhalb von 24 Stunden an ' + m + '.'; },
       chyba: 'Der Upload hat nicht funktioniert. Versuchen Sie es bitte erneut oder senden Sie uns die Datei an andrej@arling.sk.',
       bezSuhlasu: 'Bitte setzen Sie zuerst das Häkchen zur Zustimmung, dass die Leistung beginnt. Ohne das Häkchen senden wir die Datei nicht.',
+      dodane: 'Die Prüfung ist abgeschlossen. Die korrigierte Datei und den Bericht laden Sie unten herunter.',
+      dodanieNadpis: 'Ihre korrigierte Datei ist fertig',
+      dodanieText: 'Laden Sie die korrigierte Datei und den schriftlichen Bericht herunter. Im Bericht steht, was wir geprüft, was wir gefunden, was wir korrigiert haben und was noch der Anbieter Ihrer Buchhaltungssoftware erledigen muss. Die Links gelten 30 Tage ab Lieferung, danach werden die Dateien automatisch gelöscht.',
+      dodanieXml: 'Korrigierte Datei (XML)',
+      dodanieSprava: 'Schriftlicher Bericht',
+      dodaniePozn: 'Ob die Datei angenommen wird, entscheidet Ihre Bank. Wenn etwas nicht passt, schreiben Sie an andrej@arling.sk.',
     },
     en: {
       bezSession: 'This page can only be reached from the payment. Please open the link Stripe showed you after paying, or write to andrej@arling.sk and we will send it again.',
@@ -84,6 +103,12 @@
       hotovoMail: function (m) { return 'We have received the file. We will send the result within 24 hours to ' + m + '.'; },
       chyba: 'The upload did not work. Please try again, or send us the file at andrej@arling.sk.',
       bezSuhlasu: 'Please tick the consent box first. Without it we do not send the file.',
+      dodane: 'The check is finished. Download the corrected file and the report below.',
+      dodanieNadpis: 'Your corrected file is ready',
+      dodanieText: 'Download the corrected file and the written report. The report says what we checked, what we found, what we fixed and what still needs the vendor of your accounting software. The links are valid for 30 days from delivery, after that the files are deleted automatically.',
+      dodanieXml: 'Corrected file (XML)',
+      dodanieSprava: 'Written report',
+      dodaniePozn: 'Whether the file is accepted is decided by your bank. If something does not add up, write to andrej@arling.sk.',
     },
   };
 
@@ -112,6 +137,7 @@
   var vybraneMeno = document.getElementById('vybrane');
   var hlaska = document.getElementById('hlaska');
   var suhlas = document.getElementById('suhlas');
+  var blokDodania = document.getElementById('dodanie');
 
   var sessionId = '';
   var mail = '';
@@ -190,6 +216,42 @@
     return API + cesta + '?session_id=' + encodeURIComponent(sessionId);
   }
 
+  // Worker posiela cesty na stiahnutie ako relatívne (/v1/kontrola/download?
+  // session_id=…&what=xml). Keď cesta chýba alebo nevyzerá ako naša, odkaz
+  // sa poskladá z urlSession, aby stránka nikdy neodkazovala mimo API.
+  function urlStiahnutia(cesta, co) {
+    if (typeof cesta === 'string' && cesta.indexOf('/v1/kontrola/download') === 0) return API + cesta;
+    return urlSession('/v1/kontrola/download') + '&what=' + co;
+  }
+
+  function prvok(znacka, trieda, text) {
+    var el = document.createElement(znacka);
+    if (trieda) el.className = trieda;
+    if (text) el.textContent = text;
+    return el;
+  }
+
+  // Blok s výsledkom. Texty sa skladajú tu (textContent, nie innerHTML),
+  // HTML má len prázdny <div id="dodanie" hidden>.
+  function ukazDodanie(d) {
+    if (!blokDodania) return;
+    while (blokDodania.firstChild) blokDodania.removeChild(blokDodania.firstChild);
+    blokDodania.appendChild(prvok('h2', 'dodanie-nadpis', t.dodanieNadpis));
+    blokDodania.appendChild(prvok('p', 'dodanie-text', t.dodanieText));
+    var odkazy = prvok('p', 'dodanie-odkazy');
+    var xml = prvok('a', 'btn btn-solid', t.dodanieXml);
+    xml.href = urlStiahnutia(d.download_xml, 'xml');
+    xml.setAttribute('data-umami-event', 'kontrola_stiahnutie_xml');
+    var sprava = prvok('a', 'btn btn-line', t.dodanieSprava);
+    sprava.href = urlStiahnutia(d.download_report, 'report');
+    sprava.setAttribute('data-umami-event', 'kontrola_stiahnutie_sprava');
+    odkazy.appendChild(xml);
+    odkazy.appendChild(sprava);
+    blokDodania.appendChild(odkazy);
+    blokDodania.appendChild(prvok('p', 'dodanie-pozn', t.dodaniePozn));
+    blokDodania.hidden = false;
+  }
+
   async function zistiStav() {
     ukazStav(t.overujem);
     var r;
@@ -207,6 +269,9 @@
 
     mail = d.email_masked || '';
     if (!d.paid) { ukazStav(t.nezaplatene, 'chyba'); return; }
+    // Hotový výsledok má prednosť pred všetkým ostatným: formulár ostáva
+    // skrytý a človek vidí odkazy na stiahnutie.
+    if (d.delivered) { ukazNahravanie(false); ukazStav(t.dodane, 'ok'); ukazDodanie(d); return; }
     if (d.uploaded) { ukazStav(mail ? t.uzNahrateMail(mail) : t.uzNahrate, 'ok'); return; }
     ukazStav(mail ? t.pripraveneMail(mail) : t.pripravene, 'ok');
     ukazNahravanie(true);
