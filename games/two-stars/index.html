@@ -26,18 +26,18 @@
 <link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/style/paper.css?v=e0e48650">
 <script src="/style/prepinac.js?v=2988c181" defer></script>
-<script type="module" src="game.js?v=1"></script>
+<script type="module" src="game.js?v=3"></script>
 <style>
   /* Only this page: the board, its cells, the control row and the rules block. */
   .hero{align-items:start}
-  .hra{max-width:calc(8 * 58px);margin:0 auto}
+  .hra{max-width:calc(9 * 56px);margin:0 auto}
   @media (max-width:860px){ .hra{margin:0} }
   .horna{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:0 0 10px;
          font-family:var(--ui);font-size:14px;color:var(--muted)}
   .horna b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
   .doska{display:grid;grid-template-columns:repeat(var(--n,8),minmax(0,1fr));
          border:2px solid var(--ink);border-radius:8px;overflow:hidden;
-         background:var(--card-plna);touch-action:manipulation;user-select:none;-webkit-user-select:none;
+         background:var(--card-plna);touch-action:none;user-select:none;-webkit-user-select:none;
          --tenka:rgba(255,255,255,.11);--hruba:var(--ink);
          --hviezda:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpolygon points='12,1.8 15.1,8.3 22.2,9.3 17,14.3 18.3,21.4 12,18 5.7,21.4 7,14.3 1.8,9.3 8.9,8.3'/%3E%3C/svg%3E")}
   .riadok{display:contents}
@@ -53,11 +53,23 @@
   .b.bl.bt{box-shadow:inset 2px 0 0 var(--hruba),inset 0 2px 0 var(--hruba)}
   .b.bl.r0{box-shadow:inset 2px 0 0 var(--hruba)}
   .b.bt.c0{box-shadow:inset 0 2px 0 var(--hruba)}
-  .b:hover{background:rgba(255,255,255,.04)}
+  /* Each region gets its own faint tint so the eye reads the shapes at a
+     glance; the borders still carry the exact boundary. */
+  .b[data-reg="0"]{background:rgba(242,100,60,.10)}
+  .b[data-reg="1"]{background:rgba(94,207,154,.10)}
+  .b[data-reg="2"]{background:rgba(96,165,250,.11)}
+  .b[data-reg="3"]{background:rgba(250,204,21,.09)}
+  .b[data-reg="4"]{background:rgba(192,132,252,.11)}
+  .b[data-reg="5"]{background:rgba(244,114,182,.10)}
+  .b[data-reg="6"]{background:rgba(45,212,191,.10)}
+  .b[data-reg="7"]{background:rgba(251,146,60,.10)}
+  .b[data-reg="8"]{background:rgba(163,230,53,.09)}
+  .b[data-reg="9"]{background:rgba(129,140,248,.11)}
+  .b:hover{filter:brightness(1.25)}
   .b:focus-visible{outline:2px solid var(--accent);outline-offset:-3px;z-index:1}
   .b::after{content:"";position:absolute;inset:0;margin:auto;width:0;height:0}
-  .b[data-v="1"]::after{width:17%;height:17%;border-radius:50%;background:var(--muted)}
-  .b[data-v="2"]::after{width:60%;height:60%;background:var(--accent);
+  .b[data-v="1"]::after{width:14%;height:14%;border-radius:50%;background:var(--muted);opacity:.75}
+  .b[data-v="2"]::after{width:62%;height:62%;background:var(--accent);filter:drop-shadow(0 0 6px rgba(242,100,60,.45));
      -webkit-mask:var(--hviezda) center/contain no-repeat;mask:var(--hviezda) center/contain no-repeat}
   .b.zle{background:rgba(255,92,92,.14)}
   .b.zle[data-v="2"]::after{background:#ff7b7b}
@@ -116,7 +128,7 @@
       <h1 id="h1"><span class="l">Two Stars.</span></h1>
       <p class="lead r d3">Two stars in every row, every column and every outlined region. No two stars may touch, not even at a corner.</p>
       <p class="proof r d5" id="dnes">A new puzzle every day at midnight. Every puzzle has exactly one solution.</p>
-      <p class="navod r d5">Tap a cell: dot, then star, then empty. Keyboard: arrows move, <kbd>Space</kbd> cycles, <kbd>X</kbd> dot, <kbd>S</kbd> star, <kbd>Delete</kbd> clears.</p>
+      <p class="navod r d5">Tap a cell: dot, then star, then empty. Hold and drag to sweep dots. Keyboard: arrows move, <kbd>Space</kbd> cycles, <kbd>X</kbd> dot, <kbd>S</kbd> star, <kbd>Delete</kbd> clears.</p>
     </div>
     <div class="r d2">
       <div class="hra">
@@ -127,6 +139,7 @@
         <div class="ovladanie">
           <button type="button" class="btn btn-line" id="spat">Undo</button>
           <button type="button" class="btn btn-line" id="vymaz">Clear</button>
+          <button type="button" class="btn btn-line" id="check">Check</button>
           <span class="small" id="seria"></span>
         </div>
         <p class="stav" id="stav" aria-live="polite"></p>
@@ -152,7 +165,7 @@
         <details>
           <summary>Controls</summary>
           <div class="telo">
-            <p>Tap or click a cell: once for a dot, twice for a star, three times to clear it. A star that breaks a rule turns red.</p>
+            <p>Tap or click a cell: once for a dot, twice for a star, three times to clear it. Hold the button or your finger and drag to sweep dots over many cells at once. A star that breaks a rule turns red. Check tells you how many of your stars are wrong, never which ones.</p>
             <p>Keyboard: arrows move, <kbd>Space</kbd> or <kbd>Enter</kbd> cycles the cell, <kbd>X</kbd> dot, <kbd>S</kbd> star, <kbd>Delete</kbd> or <kbd>Backspace</kbd> clears. Undo takes back the last move, Clear empties the whole grid.</p>
             <p>The clock runs from your first move to the last star. Your progress, time and day streak stay in this browser.</p>
           </div>
