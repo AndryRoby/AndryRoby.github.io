@@ -31,7 +31,8 @@ const T = {
     overujem: 'Overujem platbu…',
     zaplatene: '<b>Zaplatené, ďakujeme.</b> Dokumenty sú odomknuté v tomto prehliadači; doklad vám poslal Stripe e-mailom.',
     inaSuma: 'Platba prišla, ale na inú sumu. Napíšte na andrej@arling.sk, vyriešime to ručne.',
-    nepotvrdene: 'Platbu sa nepodarilo potvrdiť. Ak ste zaplatili, počkajte minútu a obnovte stránku, alebo napíšte na andrej@arling.sk.',
+    nepotvrdene: 'Platbu sa zatiaľ nepodarilo potvrdiť. Skúšame znova; ak ste zaplatili, dokumenty sa odomknú, len čo Stripe odpovie. Ak to trvá dlhšie než pár minút, napíšte na andrej@arling.sk s číslom objednávky z e-mailu od Stripe.',
+    overZnova: 'Overiť platbu znova',
     siet: 'Overenie platby zlyhalo (sieť). Obnovte stránku; ak to pretrvá, napíšte na andrej@arling.sk.',
     vymazat: 'Vymazať vyplnené údaje z tohto prehliadača?',
     testCudzi: 'Toto je testovacia platba zo Stripe test módu. Odomkne dokumenty len v prehliadači, ktorý test spustil cez ?test=1.',
@@ -50,7 +51,8 @@ const T = {
     overujem: 'Ověřuji platbu…',
     zaplatene: '<b>Zaplaceno, děkujeme.</b> Dokumenty jsou odemčené v tomto prohlížeči; doklad vám poslal Stripe e-mailem.',
     inaSuma: 'Platba přišla, ale na jinou částku. Napište na andrej@arling.sk, vyřešíme to ručně.',
-    nepotvrdene: 'Platbu se nepodařilo potvrdit. Pokud jste zaplatili, počkejte minutu a obnovte stránku, nebo napište na andrej@arling.sk.',
+    nepotvrdene: 'Platbu se zatím nepodařilo potvrdit. Zkoušíme znovu; pokud jste zaplatili, dokumenty se odemknou, jakmile Stripe odpoví. Pokud to trvá déle než pár minut, napište na andrej@arling.sk s číslem objednávky z e-mailu od Stripe.',
+    overZnova: 'Ověřit platbu znovu',
     siet: 'Ověření platby selhalo (síť). Obnovte stránku; pokud to přetrvává, napište na andrej@arling.sk.',
     vymazat: 'Smazat vyplněné údaje z tohoto prohlížeče?',
     testCudzi: 'Toto je testovací platba ze Stripe test módu. Odemkne dokumenty jen v prohlížeči, který test spustil přes ?test=1.',
@@ -226,29 +228,62 @@ kupaBtn.addEventListener('click', () => {
   if (!u) { stavPlatby.textContent = T.zapina; return; }
   location.href = u;
 });
+/* After Stripe sends the customer back with ?session_id=, the worker is
+ * asked whether that session is paid. The id is kept in localStorage
+ * (gdpr:cakajuca) until the answer is a clear yes or a clear no, so a
+ * dropped connection or a reload never loses a paid customer: the page
+ * retries by itself and offers a button to try again. */
+const CAKAJUCA = 'gdpr:cakajuca';
+let overovanie = null;
+async function overPlatbu(sid, test, pokus) {
+  stavPlatby.textContent = T.overujem + (pokus > 1 ? ' (' + pokus + ')' : '');
+  let st = null, siet = false;
+  try {
+    const r = await fetch(API + '/v1/kontrola/status?session_id=' + encodeURIComponent(sid));
+    if (r.ok) st = await r.json();
+    else if (r.status >= 500 || r.status === 429) siet = true;
+  } catch (e) { siet = true; }
+  if (st && st.paid && typeof st.amount_total === 'number' && st.amount_total >= CENA_CENTY) {
+    uloz('gdpr:zaplatene', { session: sid, t: Date.now(), test: st.livemode === false });
+    try { localStorage.removeItem(CAKAJUCA); } catch (e) { /* nič */ }
+    stavPlatby.innerHTML = T.zaplatene + (st.livemode === false ? ' ' + T.testPoznamka : '');
+    track('gdpr_zaplatene', { test: st.livemode === false });
+    prekresli();
+    $('stiahnut').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    return true;
+  }
+  if (st && st.paid) {
+    // paid, but not this product: keep nothing, say so
+    try { localStorage.removeItem(CAKAJUCA); } catch (e) { /* nič */ }
+    stavPlatby.textContent = T.inaSuma;
+    return false;
+  }
+  if (st && !st.paid && !siet) {
+    // Stripe answered: not paid (yet). Payment links only redirect after a
+    // successful payment, so this is almost always a delay; keep waiting.
+    siet = true;
+  }
+  // Unclear (network, worker down, Stripe delay): keep the id and retry.
+  uloz(CAKAJUCA, { session: sid, test: !!test, t: Date.now() });
+  const dalsi = Math.min(30000, 3000 * pokus);
+  stavPlatby.innerHTML = T.nepotvrdene + ' <button type="button" class="btn btn-line" id="over-znova">' + T.overZnova + '</button>';
+  const btn = $('over-znova');
+  if (btn) btn.addEventListener('click', () => { clearTimeout(overovanie); overPlatbu(sid, test, 1); });
+  if (pokus < 8) overovanie = setTimeout(() => overPlatbu(sid, test, pokus + 1), dalsi);
+  return false;
+}
 async function poNavrate() {
   let sid = '';
   try { sid = new URL(location.href).searchParams.get('session_id') || ''; } catch (e) { /* nič */ }
-  if (!sid) return;
   const test = testRezim(); // before the query is dropped: ?test=1 may sit next to session_id
-  history.replaceState(null, '', location.pathname);
-  if (sid.startsWith('cs_test_') && !test) { stavPlatby.textContent = T.testCudzi; return; }
-  stavPlatby.textContent = T.overujem;
-  try {
-    const r = await fetch(API + '/v1/kontrola/status?session_id=' + encodeURIComponent(sid));
-    const st = r.ok ? await r.json() : null;
-    if (st && st.paid && typeof st.amount_total === 'number' && st.amount_total >= CENA_CENTY) {
-      uloz('gdpr:zaplatene', { session: sid, t: Date.now(), test: st.livemode === false });
-      stavPlatby.innerHTML = T.zaplatene + (st.livemode === false ? ' ' + T.testPoznamka : '');
-      track('gdpr_zaplatene', {});
-      prekresli();
-      $('stiahnut').scrollIntoView({ behavior: 'smooth', block: 'start' });
-      return;
-    }
-    stavPlatby.textContent = st && st.paid ? T.inaSuma : T.nepotvrdene;
-  } catch (e) {
-    stavPlatby.textContent = T.siet;
+  if (sid) history.replaceState(null, '', location.pathname);
+  if (!sid) {
+    const c = nacitaj(CAKAJUCA);
+    if (c && c.session && !odomknute()) { sid = c.session; if (c.test) { try { sessionStorage.setItem('gdpr:test', '1'); } catch (e) { /* nič */ } } }
   }
+  if (!sid) return;
+  if (sid.startsWith('cs_test_') && !testRezim()) { stavPlatby.textContent = T.testCudzi; return; }
+  overPlatbu(sid, testRezim(), 1);
 }
 
 /* ── Štart ─────────────────────────────────────────────────────────────── */
