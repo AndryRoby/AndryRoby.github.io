@@ -68,7 +68,8 @@ function vsetkyKluce(prefix) {
 const NASTAVENIA_KLUC = 'hedgehogs:settings';
 // Auto dots are off by default: placing the eight dots around a hedgehog is
 // part of the puzzle. The setting is there for people who want speed.
-const NASTAVENIA_PREDVOLENE = { casovac: true, autoBodky: false, zvyraznit: true, potvrditReset: true, pauzaPriOdchode: true };
+// No live judging: nothing turns red while you play (Andrej, 10. 9.); Check is the only judge before the garden is full.
+const NASTAVENIA_PREDVOLENE = { casovac: true, autoBodky: false, potvrditReset: true, pauzaPriOdchode: true };
 let nastavenia = Object.assign({}, NASTAVENIA_PREDVOLENE, nacitaj(NASTAVENIA_KLUC) || {});
 function ulozNastavenia() { uloz(NASTAVENIA_KLUC, nastavenia); }
 
@@ -177,8 +178,8 @@ function ukazBunku(i) {
 }
 function ukazVsetko() { for (let i = 0; i < n * n; i++) ukazBunku(i); oznacKonflikty(); }
 function oznacKonflikty() {
+  // Counts only. Cells never get a 'zle' class while playing.
   const k = konflikty(v, zadanie.regions, STARS);
-  for (let i = 0; i < n * n; i++) bunky[i].classList.toggle('zle', nastavenia.zvyraznit && k.zle.has(i));
   return { stars: k.hedgehogs, zle: k.zle.size };
 }
 function zmazTip() {
@@ -261,9 +262,13 @@ function ukazHistoriu() {
   if (!h.length) { historiaEl.hidden = true; return; }
   const best = h.reduce((a, x) => (x.sec && (!a || x.sec < a.sec) ? x : a), null);
   const bezNapovedy = h.filter((x) => !x.hints).length;
+  const podlaUrovne = {};
+  for (const x of h) { const u = UROVNE[urovenDna(x.d)].label.toLowerCase(); podlaUrovne[u] = (podlaUrovne[u] || 0) + 1; }
+  const urovne = Object.keys(podlaUrovne).map((u) => podlaUrovne[u] + ' ' + u).join(', ');
+  const priemer = Math.round(h.reduce((a, x) => a + (x.sec || 0), 0) / h.length);
   historiaEl.hidden = false;
-  historiaEl.innerHTML = '<b>Your gardens:</b> ' + h.length + ' solved' + (bezNapovedy !== h.length ? ', ' + bezNapovedy + ' without hints' : ', all without hints')
-    + (best ? ', best time ' + formatCas(best.sec) + ' on ' + kratkyDatum(best.d) : '') + '. <a href="/games/hedgehogs/archive/">Archive and full history</a>.';
+  historiaEl.innerHTML = '<b>Your gardens:</b> ' + h.length + ' solved' + (urovne ? ' (' + urovne + ')' : '') + (bezNapovedy !== h.length ? ', ' + bezNapovedy + ' without hints' : ', all without hints')
+    + (best ? ', best ' + formatCas(best.sec) + ' on ' + kratkyDatum(best.d) : '') + (priemer ? ', average ' + formatCas(priemer) : '') + '. <a href="/games/hedgehogs/archive/">Archive and full history</a>.';
 }
 
 /* ── Saving and solving ───────────────────────────────────────────────── */
@@ -278,9 +283,8 @@ function ukazStav() {
     stavEl.innerHTML = '<b>Solved</b>' + s + hn + '. The hedgehogs are happy.' + (jeDnes ? ' A new garden arrives at midnight.' : '');
     return;
   }
-  if (k.zle) { stavEl.textContent = 'A red hedgehog breaks a rule.'; return; }
   if (k.stars === 0) { stavEl.textContent = 'Tap a cell for a dot, tap again for a hedgehog. Drag to sweep dots.'; return; }
-  if (k.stars === n * STARS) { stavEl.textContent = 'All hedgehogs are placed, but the solution is not right yet. Try Check.'; return; }
+  if (k.stars === n * STARS) { stavEl.textContent = 'All ' + (n * STARS) + ' hedgehogs are placed, but the garden is not right yet. Check shows where.'; return; }
   stavEl.textContent = '';
 }
 
@@ -420,17 +424,14 @@ function spat() {
   ukazStav();
   spatBtn.disabled = historia.length === 0;
 }
-/* Reset: an empty garden and a fresh clock. Undo cannot bring it back. */
+/* Clear: an empty garden, the clock keeps running (Andrej, 10. 9.: clearing
+ * is a move, not a restart). Undo cannot bring the marks back. */
 function reset() {
-  if (done) return;
-  if (v.every((x) => x === 0) && !sekundy) return;
-  if (nastavenia.potvrditReset && !window.confirm('Reset the garden and the clock? This cannot be undone.')) return;
+  if (done || pauza) return;
+  if (v.every((x) => x === 0)) return;
+  if (nastavenia.potvrditReset && !window.confirm('Clear the whole garden? The clock keeps running and Undo cannot bring the marks back.')) return;
   v = new Array(n * n).fill(0);
   historia.length = 0;
-  sekundy = 0; start = null; hints = 0; pauza = false;
-  zastavTikac();
-  if (pauzaBlok) pauzaBlok.hidden = true;
-  doska.classList.remove('pauza');
   zmazTip(); zmazOdhalenie();
   ukazVsetko();
   ulozStav();

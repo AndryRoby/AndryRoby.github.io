@@ -37,12 +37,14 @@
 <link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/style/paper.css?v=89016e6c">
 <script src="/style/prepinac.js?v=2988c181" defer></script>
-<script type="module" src="/games/hedgehogs/game.js?v=6"></script>
+<script type="module" src="/games/hedgehogs/game.js?v=7"></script>
 <style>
   /* Only this page: the board, its cells, the control row and the rules block. */
   .hero{align-items:start}
   .hra{max-width:calc(var(--n,9) * 56px);margin:0 auto}
-  @media (max-width:860px){ .hra{margin:0} }
+  /* Phones and folds: the garden sits in the middle and uses the whole width (cells up to 64 px). */
+  @media (max-width:860px){ .hra{margin:0 auto;max-width:min(100%,calc(var(--n,9) * 64px))} }
+  header{padding-top:env(safe-area-inset-top,0px)}
   .horna{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:0 0 10px;
          font-family:var(--ui);font-size:14px;color:var(--muted)}
   .horna b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
@@ -179,7 +181,7 @@
       <h1 id="h1"><span class="l">Hedgehogs.</span></h1>
       <p class="lead r d3">Two hedgehogs in every row, every column and every flowerbed. No two hedgehogs may touch, not even at a corner: they prickle.</p>
       <p class="proof r d5" id="dnes">The garden for Saturday 28 February 2026: hard, ten by ten. Exactly one solution.</p>
-      <p class="navod r d5">Tap a cell: dot, then hedgehog, then empty. Hold and drag to sweep dots. Keyboard: arrows move, <kbd>Space</kbd> cycles, <kbd>X</kbd> dot, <kbd>H</kbd> hedgehog, <kbd>Delete</kbd> clears, <kbd>P</kbd> pauses.</p>
+      <p class="navod r d5">Tap a cell: dot, then hedgehog, then empty. Hold and drag to sweep dots. Keyboard: arrows move, <kbd>Space</kbd> cycles, <kbd>X</kbd> dot, <kbd>H</kbd> hedgehog, <kbd>Delete</kbd> clears, <kbd>P</kbd> pauses. Nothing lights up while you play; Check judges only when you ask.</p>
     </div>
     <div class="r d2">
       <div class="hra">
@@ -192,7 +194,7 @@
         </div>
         <div class="ovladanie">
           <button type="button" class="btn btn-line" id="spat">Undo</button>
-          <button type="button" class="btn btn-line" id="reset">Reset</button>
+          <button type="button" class="btn btn-line" id="reset">Clear</button>
           <button type="button" class="btn btn-line" id="hint">Hint</button>
           <button type="button" class="btn btn-line" id="check">Check</button>
           <span class="small" id="seria"></span>
@@ -206,8 +208,7 @@
           <label><input type="checkbox" data-nastavenie="casovac"> Show the timer and the Pause button</label>
           <label><input type="checkbox" data-nastavenie="pauzaPriOdchode"> Pause the clock when you leave the tab</label>
           <label><input type="checkbox" data-nastavenie="autoBodky"> Auto dots: a hedgehog dots its neighbours and completed rows, columns and flowerbeds (off by default: placing the dots is part of the puzzle)</label>
-          <label><input type="checkbox" data-nastavenie="zvyraznit"> Highlight hedgehogs that break a rule</label>
-          <label><input type="checkbox" data-nastavenie="potvrditReset"> Ask before Reset</label>
+          <label><input type="checkbox" data-nastavenie="potvrditReset"> Ask before Clear</label>
           <p class="fineprint">Settings, progress, history and streak stay in this browser. Add this page to your home screen to open it like an app.</p>
         </details>
       </div>
@@ -232,10 +233,10 @@
         <details>
           <summary>Controls</summary>
           <div class="telo">
-            <p>Tap or click a cell: once for a dot, twice for a hedgehog, three times to clear it. Hold the button or your finger and drag to sweep dots over many cells at once. A hedgehog that breaks a rule turns red.</p>
-            <p><b>Check</b> first tells you only how many marks are wrong. Press it again and it shows which. <b>Hint</b> outlines the next step a patient friend would point at and explains it; press it again to fill it in. Hints are counted and shown when you finish. <b>Reset</b> empties the garden and the clock.</p>
+            <p>Tap or click a cell: once for a dot, twice for a hedgehog, three times to clear it. Hold the button or your finger and drag to sweep dots over many cells at once. Nothing lights up while you play: finding a mistake is part of the puzzle.</p>
+            <p><b>Check</b> first tells you only how many marks are wrong. Press it again and it shows which. <b>Hint</b> outlines the next step a patient friend would point at and explains it; press it again to fill it in. Hints are counted and shown when you finish. <b>Clear</b> empties the garden; the clock keeps running.</p>
             <p>Keyboard: arrows move, <kbd>Space</kbd> or <kbd>Enter</kbd> cycles the cell, <kbd>X</kbd> dot, <kbd>H</kbd> hedgehog, <kbd>Delete</kbd> or <kbd>Backspace</kbd> clears, <kbd>P</kbd> pauses. Undo takes back the last move.</p>
-            <p>The clock runs from your first move to the last hedgehog and pauses when you leave the tab. Your progress, time, history and day streak stay in this browser.</p>
+            <p>The clock runs from your first move to the last hedgehog and pauses when you leave the tab, which also hides the garden. Your progress, time, history and day streak stay in this browser, and in your <a href="/ucet/">account</a> when you are signed in, so you can continue on another device.</p>
           </div>
         </details>
         <details>
