@@ -88,14 +88,14 @@ const NASTAVENIA_KLUC = 'hares:nastavenia';
 // Auto notes and Live check are off by default: the notes are the player's own,
 // and nothing turns red while you play (Andrej, 10. 9.); Check is the only
 // judge before the last burrow is filled.
-// dosah = the shading of what a hare can reach from the picked burrow. The
-// specification asks for it as a help that can be switched off, so it is on by
-// default and it never says whether anything is right (ops/spec-hares.md).
+// dosah (shading of the burrows a hare can reach) was removed on 11. 9. 2026:
+// Andrej saw it live and did not want it ("nechcem tie ukazovania"). The key
+// stays in the defaults only so old saved settings still parse; it does nothing.
 // lenPad = "Onscreen input only": the pad under the meadow writes, the number
 // keys of a physical keyboard do not (ops/spec-hry-ux.md, part 7). Arrows,
 // Escape, Undo, Redo and Pause keep working, so the game stays reachable from
 // the keyboard even with it on.
-const NASTAVENIA_PREDVOLENE = { casovac: true, pauzaPriOdchode: true, zvyrazniRovnake: true, dosah: true, autoPoznamky: false, zivaKontrola: false, lenPad: false, potvrditReset: true };
+const NASTAVENIA_PREDVOLENE = { casovac: true, pauzaPriOdchode: true, zvyrazniRovnake: true, dosah: false, autoPoznamky: false, zivaKontrola: false, lenPad: false, potvrditReset: true };
 let nastavenia = Object.assign({}, NASTAVENIA_PREDVOLENE, nacitaj(NASTAVENIA_KLUC) || {});
 function ulozNastavenia() { uloz(NASTAVENIA_KLUC, nastavenia); }
 
@@ -303,10 +303,6 @@ function oznacVyber() {
   for (const b of bunky) b.classList.remove('vybrana', 'jednotka', 'rovnaka', 'dosah');
   if (vybrana < 0 || !bunky[vybrana]) return;
   for (const ui of J.unitOf[vybrana]) for (const i of J.units[ui].cells) bunky[i].classList.add('jednotka');
-  if (nastavenia.dosah) {
-    for (const i of J.skok[vybrana]) bunky[i].classList.add('dosah');
-    for (const i of J.kral[vybrana]) bunky[i].classList.add('dosah');
-  }
   if (nastavenia.zvyrazniRovnake && v[vybrana]) {
     for (let i = 0; i < n * n; i++) if (v[i] === v[vybrana]) bunky[i].classList.add('rovnaka');
   }
