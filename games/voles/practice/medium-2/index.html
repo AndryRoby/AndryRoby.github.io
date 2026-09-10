@@ -36,11 +36,15 @@
 <link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/style/paper.css?v=89016e6c">
 <script src="/style/prepinac.js?v=2988c181" defer></script>
-<script type="module" src="/games/voles/game.js?v=1"></script>
+<script type="module" src="/games/voles/game.js?v=2"></script>
 <style>
+  /* Atribut hidden musi skryvat aj prvky, ktorym vlastne CSS nastavi display.
+     paper.css toto pravidlo nema, preto stoji tu. */
+  [hidden]{display:none !important}
+
   /* Only this page: the meadow, the control row and the rules. */
   .hero{align-items:start}
-  /* Wide enough for the row of five buttons, whatever size the meadow is: the
+  /* Wide enough for the row of buttons, whatever size the meadow is: the
      meadow itself needs only n cells, the reserve on top is what keeps the
      controls in the same roomy rhythm as the other games (Magpies keeps the
      same reserve for its row and column headers). */
@@ -75,7 +79,8 @@
   .doska{display:grid;grid-template-columns:repeat(var(--n,8),minmax(0,1fr));
          border:2px solid var(--ink);border-radius:8px;overflow:hidden;background:var(--luka);
          touch-action:none;user-select:none;-webkit-user-select:none;
-         --cell:40px;--tenka:rgba(255,255,255,.14);--luka:#221d17;--suchy:#34291d;--hotova:#2a2319;--voda:#16456e}
+         --cell:40px;--tenka:rgba(255,255,255,.14);--luka:#221d17;--suchy:#34291d;--hotova:#2a2319;--voda:#16456e;
+         --stlmene:#9a978f}
   .doska[hidden]{display:none}
   @media (max-width:480px){ .doska{border-radius:0;border-left:0;border-right:0} }
   .doska.hotovo{border-color:var(--ok);box-shadow:0 0 0 4px rgba(94,207,154,.14)}
@@ -111,8 +116,14 @@
      It says nothing about whether the island is in the RIGHT place (Andrej,
      10. 9.: nothing turns red while playing, only Check judges). */
   .b.stlmena,.k.stlmena{background:var(--hotova)}
-  .k.stlmena{color:var(--muted)}
-  .b.stlmena::after{background:var(--muted);opacity:.6}
+  /* Quiet, but still readable. --muted on --hotova is only 3.2:1, which fails
+     WCAG AA for the digit on a twelve by twelve (about 14 px) and only just
+     passes the large text bar on a six by six. --stlmene is the same grey
+     lifted to 5.3:1 on a finished island and 4.55:1 on one the cursor
+     highlights. A finished island appears all through the game, not only at
+     the end (the generator gives a lot of ones), so this state is read often. */
+  .k.stlmena{color:var(--stlmene)}
+  .b.stlmena::after{background:var(--stlmene)}
   /* the island under the cursor, when the setting is on */
   .b.ostrov,.k.ostrov{background:#423626}
   .b.ostrov.stlmena,.k.ostrov.stlmena{background:#382e21}
@@ -125,6 +136,12 @@
   /* A mistake is a shape and a mark, not only a colour: a red frame and an
      exclamation mark in the corner of the cell. */
   .b.chyba{box-shadow:inset 0 0 0 2px #ff7b7b;z-index:2}
+  /* The fill takes a red wash as well. A thin frame on a cell that is already
+     deep blue water (the usual wrong move) is easy to miss when the eye scans
+     a board of forty flooded cells; the wash is what makes it findable. It is
+     a layer over the fill, so the water and the dot underneath stay visible,
+     and the :hover copy keeps it there when the mouse is on the cell. */
+  .b.chyba,.b.chyba:hover{background-image:linear-gradient(rgba(255,123,123,.26),rgba(255,123,123,.26))}
   .b.chyba .ikona::before{content:"!";position:absolute;top:1%;right:9%;font:700 calc(var(--cell) * .3)/1 var(--ui);color:#ff7b7b}
   /* Finished: the water joins into one sheet and the islands turn green. */
   .hotovo .b,.hotovo .k{box-shadow:none;cursor:default}
@@ -135,9 +152,9 @@
   .hotovo .b:hover{background:rgba(94,207,154,.18)}
   .hotovo .b[data-v="1"]:hover{background:var(--voda)}
   /* ── The controls ─────────────────────────────────────────────────────── */
-  /* The five buttons share the width of the meadow. They grow to fill the row
-     they are on, so a wrapped line ends flush instead of leaving a hole where
-     a sixth button would have gone. */
+  /* The buttons share the width of the meadow. They grow to fill the row they
+     are on, so a wrapped line ends flush instead of leaving a hole. Five while
+     the meadow is open; Copy result joins them only after it is solved. */
   .ovladanie{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:14px}
   .ovladanie .btn{height:40px;padding:0 16px;font-size:14px;flex:1 1 auto;justify-content:center}
   .ovladanie .btn[aria-pressed="true"]{border-color:var(--accent);color:var(--accent)}
@@ -150,8 +167,8 @@
      there is no streak to show. */
   .ovladanie #seria{flex:1 0 100%;margin:0}
   .ovladanie #seria:empty{display:none}
-  /* On a phone the five buttons make two tidy rows: three, then two that
-     stretch across the whole width between them. */
+  /* On a phone they make tidy rows of three: three and two while playing, two
+     full rows once Copy result is there. */
   @media (max-width:480px){
     .ovladanie{gap:6px}
     .ovladanie .btn{flex:1 1 28%;padding:0 6px}
@@ -248,6 +265,8 @@
           <button type="button" class="btn btn-line" id="reset">Clear</button>
           <button type="button" class="btn btn-line" id="hint">Hint</button>
           <button type="button" class="btn btn-line" id="check">Check</button>
+          <button type="button" class="btn btn-line" id="zdielaj" hidden>Copy result</button>
+          <span class="skryte" id="zdielaj-stav" aria-live="polite"></span>
           <span class="small" id="seria"></span>
         </div>
         <p class="stav" id="stav" aria-live="polite"></p>
@@ -287,9 +306,9 @@
           <summary>Controls</summary>
           <div class="telo">
             <p>Tap or click a cell to flood it, tap it again for a dot, which is your own note that the cell stays dry, and once more to clear it. Hold and drag to shade a run of cells at once; a drag that starts on a dot rubs marks out instead. Only the shading decides the puzzle, the dots are there to help you think. Nothing lights up while you play: finding a mistake is part of it.</p>
-            <p><b>Check</b> first tells you only how many marks are wrong and in which rows; press it again and it marks them. <b>Hint</b> names the rule and the place without saying what goes there, and the second press fills that one cell in and explains it. If something on the meadow is already wrong, the hint points there first. Hints and checks are free and counted, and shown when you finish. <b>Clear</b> empties the meadow; the clock keeps running and one Undo brings everything back.</p>
+            <p><b>Check</b> first tells you only how many marks are wrong and in which rows; press it again and it marks them. <b>Hint</b> names the rule and the place without saying what goes there, and the second press fills that one cell in and explains it. If something on the meadow is already wrong, the hint points there first. Hints and checks are free and counted, and shown when you finish. <b>Clear</b> empties the meadow; the clock keeps running and one Undo brings everything back. <b>Copy result</b> shows up once the meadow is solved and copies a short line about the day, your time and the help you used, with nothing in it that gives the solution away.</p>
             <p>Keyboard: arrows move from cell to cell, <kbd>Space</kbd> or <kbd>Enter</kbd> takes the cell through water, dot and empty, <kbd>W</kbd> floods it, <kbd>X</kbd> puts a dot, <kbd>Delete</kbd> or <kbd>Backspace</kbd> clears it, <kbd>Escape</kbd> lets it go, <kbd>U</kbd> or <kbd>Ctrl</kbd>+<kbd>Z</kbd> undo, <kbd>R</kbd> or <kbd>Ctrl</kbd>+<kbd>R</kbd> redo, <kbd>P</kbd> pauses.</p>
-            <p>The clock runs from your first mark to the last cell and pauses when you leave the tab or sit still for a minute, which also hides the meadow. Your progress, time, history and day streak stay in this browser, and in your <a href="/ucet/">account</a> when you are signed in, so you can continue on another device. The day turns over at midnight where you are.</p>
+            <p>The clock runs from your first mark to the last cell and pauses when you leave the tab or sit still for a minute, which also hides the meadow. Your progress, time, history and day streak stay in this browser, and in your <a href="/ucet/">account</a> when you are signed in, so you can continue on another device. The day turns over at midnight, Bratislava time, so everyone gets the same meadow on the same day.</p>
           </div>
         </details>
         <details>

@@ -36,8 +36,14 @@
 <link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/style/paper.css?v=89016e6c">
 <script src="/style/prepinac.js?v=2988c181" defer></script>
-<script type="module" src="/games/squirrels/game.js?v=2"></script>
+<script type="module" src="/games/squirrels/game.js?v=4"></script>
 <style>
+  /* paper.css carries no base rule for the hidden attribute, and this page
+     only covers it class by class (.pauza-blok[hidden], .doska[hidden],
+     .pad[hidden], .zdielanie[hidden]); this backstops every other element
+     that gets hidden set or removed by game.js, such as the pause button
+     and the result history line. */
+  [hidden]{display:none !important}
   /* Only this page: the wood, the number pad, the control row and the rules. */
   .hero{align-items:start}
   /* Wide enough for the ten keys of the pad and the row of buttons, whatever
@@ -107,8 +113,12 @@
           font:600 calc(var(--cell) * .52)/1 var(--ui);font-variant-numeric:tabular-nums;color:var(--ink)}
   .b .pozn{position:absolute;inset:9%;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr)}
   .b .pozn i{display:flex;align-items:center;justify-content:center;font:500 calc(var(--cell) * .23)/1 var(--ui);
-             font-style:normal;color:var(--muted);visibility:hidden}
+             font-style:normal;color:var(--body);visibility:hidden}
   .b .pozn i.on{visibility:visible}
+  /* var(--muted) on the hollow's own fill read 3.19:1, and less once the
+     picked hollow's tinted background lightens it further: var(--body) clears
+     4.5:1 at rest, and the picked hollow needs a lighter tone still. */
+  .b.vybrana .pozn i{color:#c9c5bf}
   .b[data-v="0"] .pozn{display:grid}
   .b:not([data-v="0"]) .pozn{display:none}
   /* The two runs of the picked hollow. A solid colour, not a translucent

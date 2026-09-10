@@ -105,6 +105,14 @@ if (body.dataset.sada) {
 const jeDnes = rezim === 'den' && datum === dnes;
 const jeBuduci = rezim === 'den' && datum > dnes;
 const KLUC = rezim === 'cvicenie' ? 'voles:p:' + sada + ':' + kSada : 'voles:' + datum;
+// The root address always opens today's meadow; once the date is settled,
+// rewrite it to today's built page so the address bar and a shared link
+// point at the day itself (Andrej, 10. 9.). Only the plain root qualifies:
+// a built archive day already names its date, a practice page its set, and
+// a page opened with ?d= keeps that query untouched.
+if (rezim === 'den' && !body.dataset.den && jeDnes && !location.search) {
+  try { history.replaceState(null, '', '/games/voles/' + datum + '/'); } catch (e) { /* the address stays generic; the game still works */ }
+}
 
 function formatCas(sek) {
   const h = Math.floor(sek / 3600), m = Math.floor((sek % 3600) / 60), s = sek % 60;
