@@ -609,17 +609,23 @@ function skontrolujStav() {
     track('game_check', { game: 'badgers', wrong: zle.length, revealed: true });
     return;
   }
-  // The rough area may be a row or a column (ops/spec-hry-ux.md, part 4); we
-  // name whichever side needs fewer of them, so mistakes stacked in one column
-  // are told as that one column instead of four separate rows.
-  const riadky = [], stlpce = [];
+  // The rough area may be a row, a column or a block (ops/spec-hry-ux.md,
+  // part 4); we name whichever of the three needs fewest of them, so mistakes
+  // stacked in one column are told as that one column instead of four rows,
+  // and mistakes sitting in one block as that one block instead of three rows
+  // and three columns. Rows win a tie, then columns, then blocks.
+  const riadky = [], stlpce = [], bloky = [];
   for (const i of zle) {
     const rr = ((i / n) | 0) + 1, cc = (i % n) + 1;
+    const kb = bunkaJedn[i].find((k) => jedn[k].druh === 'block');
+    const bb = kb === undefined ? 0 : jedn[kb].cislo + 1;
     if (!riadky.includes(rr)) riadky.push(rr);
     if (!stlpce.includes(cc)) stlpce.push(cc);
+    if (!bloky.includes(bb)) bloky.push(bb);
   }
-  const poRiadkoch = riadky.length <= stlpce.length;
-  const kde = (poRiadkoch ? riadky : stlpce).sort((a, b) => a - b).map((k) => (poRiadkoch ? 'row ' : 'column ') + k);
+  const skupiny = [{ zoz: riadky, slovo: 'row ' }, { zoz: stlpce, slovo: 'column ' }, { zoz: bloky, slovo: 'block ' }];
+  const naj = skupiny.reduce((a, b) => (b.zoz.length < a.zoz.length ? b : a));
+  const kde = naj.zoz.sort((a, b) => a - b).map((k) => naj.slovo + k);
   checkStav = { zle: zle.length };
   stavEl.textContent = 'There ' + (zle.length === 1 ? 'is 1 number that is wrong' : 'are ' + zle.length + ' numbers that are wrong') + r.kde
     + ', in ' + zoznamSlov(kde.slice(0, 4)) + (kde.length > 4 ? ' and elsewhere' : '') + '. Press Check again to show where.';
@@ -659,7 +665,7 @@ function ukazNapovedu() {
       }
       if (nastavenia.autoPoznamky) doplnPoznamky();
     });
-    const text = t.text;
+    const text = t.druh === 'chyba' ? t.text.replace('Clear it before going on.', 'It is cleared now.') : t.text;
     zmazTip(); zmazOdhalenie();
     track('game_hint', { game: 'badgers', rule: t.pravidlo, layer: t.vrstva, applied: true });
     if (!zmenilo) { ulozStav(); ukazStav(); }
@@ -675,8 +681,9 @@ function ukazNapovedu() {
   for (const x of h.bunky) if (bunky[x.i]) bunky[x.i].classList.add('tip');
   zameraj(i, false);
   const veta = VETY[h.pravidlo] || VETY.reveal;
-  stavEl.textContent = veta(suradnice(i)) + ' Press Hint again to write it in.';
-  hintBtn.textContent = 'Write it';
+  const chyba = h.druh === 'chyba';
+  stavEl.textContent = veta(suradnice(i)) + (chyba ? ' Press Hint again to clear it.' : ' Press Hint again to write it in.');
+  hintBtn.textContent = chyba ? 'Clear it' : 'Write it';
   track('game_hint', { game: 'badgers', rule: h.pravidlo, layer: h.vrstva, applied: false });
 }
 
@@ -934,24 +941,28 @@ padEl.addEventListener('pointermove', (e) => {
   if (padDrzane && e.target.closest('button[data-d]') !== padDrzane) ukonciDrzanie();
 });
 padEl.addEventListener('contextmenu', (e) => { if (e.target.closest('button[data-d]')) e.preventDefault(); });
+/* Každé tlačidlo mimo plochy vráti fókus na vybranú bunku: kto klikne myšou a
+ * potom píše z klávesnice, nemá o šípky ani o cifry prísť (tie počúva plocha). */
+function vratFokus() {
+  if (vybrana >= 0 && bunky[vybrana]) bunky[vybrana].focus({ preventScroll: true });
+}
 padEl.addEventListener('click', (e) => {
   const b = e.target.closest('button[data-d]');
   if (!b) return;
   if (padDlhe) { padDlhe = false; return; }   // podržanie už zapísalo
   if (vybrana < 0) { stavEl.textContent = 'Pick a cell first, then a number.'; return; }
   zapis(+b.dataset.d);
+  vratFokus();
 });
-/* Tlačidlo Notes vráti fókus na vybranú bunku: kto prepne režim myšou a potom
- * píše z klávesnice, nemá o cifry prísť (cifry počúva plocha). */
 if (poznamkyBtn) poznamkyBtn.addEventListener('click', () => {
   poznamkyRezim = !poznamkyRezim; ukazTlacidla();
-  if (vybrana >= 0 && bunky[vybrana]) bunky[vybrana].focus({ preventScroll: true });
+  vratFokus();
 });
-if (spatBtn) spatBtn.addEventListener('click', spat);
-if (znovaBtn) znovaBtn.addEventListener('click', znova);
-if (resetBtn) resetBtn.addEventListener('click', reset);
-if (checkBtn) checkBtn.addEventListener('click', skontrolujStav);
-if (hintBtn) hintBtn.addEventListener('click', ukazNapovedu);
+if (spatBtn) spatBtn.addEventListener('click', () => { spat(); vratFokus(); });
+if (znovaBtn) znovaBtn.addEventListener('click', () => { znova(); vratFokus(); });
+if (resetBtn) resetBtn.addEventListener('click', () => { reset(); vratFokus(); });
+if (checkBtn) checkBtn.addEventListener('click', () => { skontrolujStav(); vratFokus(); });
+if (hintBtn) hintBtn.addEventListener('click', () => { ukazNapovedu(); vratFokus(); });
 if (pauzaBtn) pauzaBtn.addEventListener('click', () => pozastav(false));
 if (pokracujBtn) pokracujBtn.addEventListener('click', pokracuj);
 /* Undo and Redo are the scheme every one of these games shares:

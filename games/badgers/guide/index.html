@@ -115,9 +115,12 @@
   .b:not([data-v="0"]) .pozn{display:none}
   /* The row, the column and the block of the picked cell. A solid colour, not
      a translucent white: .b.linia beats .b, so it replaces the cell's own fill
-     instead of sitting on top of it. */
-  .b.linia{background:#302925}
+     instead of sitting on top of it. Kept warm and light enough to be told
+     apart from a plain cell (--pole) on an ordinary monitor. */
+  .b.linia{background:#3a302a}
   .b.rovnaka .cif{color:var(--accent)}
+  /* The selected cell is also 'the same' as itself; its own digit stays plain. */
+  .b.vybrana.rovnaka:not(.chyba) .cif{color:var(--ink)}
   .b.vybrana{background:rgba(242,100,60,.16);z-index:3}
   .b.vybrana::before{content:"";position:absolute;inset:0;border:2px solid var(--accent);pointer-events:none}
   /* A cage that adds up and repeats nothing goes quiet. It says nothing about
@@ -138,6 +141,11 @@
   .b.chyba{background:rgba(255,92,92,.26)}
   .b.chyba::before{content:"";position:absolute;inset:0;border:2px solid #ff7b7b;pointer-events:none;z-index:3}
   .b.chyba::after{content:"!";position:absolute;top:2%;right:8%;z-index:3;font:700 calc(var(--cell) * .28)/1 var(--ui);color:#ff7b7b}
+  /* A wrong cell often holds the number that is highlighted everywhere else
+     (that is why it is wrong), and .b.rovnaka would leave the digit in the
+     accent orange. The mistake wins: written after .rovnaka, so the digit
+     reads red like the frame and the mark around it. */
+  .b.chyba .cif{color:#ff7b7b}
   /* Finished: every cage is satisfied, so the quiet cue above would dim the
      whole sett. The numbers go green instead, at full strength. */
   .hotovo .b .cif{color:var(--ok);opacity:1}
@@ -291,7 +299,7 @@
 <section class="deep"><div class="wrap">
   <h2 class="r">The rules.</h2><div class="rule"></div>
   <div class="dvojica r d1"><div class="text">
-    <p><b>1. Every row, column and block holds each number once.</b> Just like ordinary Sudoku: the grid size sets the numbers, six by six uses 1 to 6, nine by nine uses 1 to 9, and the blocks share out those same numbers too.</p>
+    <p><b>1. Every row, column and block holds each number once.</b> The grid size sets the numbers: six by six uses 1 to 6, nine by nine uses 1 to 9. A block is the small rectangle marked by the thicker line, and it holds those same numbers once each too.</p>
     <p><b>2. The dotted cages add up.</b> A cage is the group of cells inside one dotted outline, and the small number in its top left corner is what its cells add up to, with no number repeated inside the cage. Nothing is filled in at the start: the cages are the whole puzzle.</p>
     <p><b>3. Exactly one arrangement fits.</b> Every row, column, block and cage at once. When the last cell is right, the game notices by itself.</p>
   </div><figure class="gif"><img src="/games/badgers/tutorial/rule-01.gif" alt="Animation: every row of the grid fills with each number once, then the same happens by column and by block, and the grid turns green as solved." width="560" height="660" loading="lazy" decoding="async"></figure></div>
@@ -338,6 +346,6 @@
     <div><a href="https://arling.sk/privacy/">privacy</a> · <a href="https://arling.sk/podmienky/">terms</a> · <a href="https://arling.sk/gdpr/">GDPR</a> · <a href="https://arling.sk/impressum/">Impressum</a> · <a href="https://arling.sk/llms.txt">llms.txt</a> · <a href="https://arling.sk/sitemap-index.xml">sitemap</a><br>Tools are provided as is, without warranty. Anonymous visit counts via self-hosted Umami.</div>
   </div>
 </footer>
-<script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="be534d51-4d01-4860-b267-9596d91606de"></script>
+<script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="469b28b9-caa6-4ef2-807b-c219c30110fc"></script>
 </body>
 </html>

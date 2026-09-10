@@ -25,6 +25,7 @@
 <meta name="description" content="The Badgers sett for Saturday 11 September 2027: hard, nine by nine. Fill every row, column and block with each number once and match every cage total. Free, with hints and Check, in your browser.">
 <link rel="canonical" href="https://arling.sk/games/badgers/2027-09-11/">
 <link rel="prev" href="https://arling.sk/games/badgers/2027-09-10/">
+<link rel="next" href="https://arling.sk/games/badgers/2027-09-12/">
 <meta property="og:title" content="Badgers for Saturday 11 September 2027 · ARLing">
 <meta property="og:description" content="The Badgers sett for Saturday 11 September 2027: hard, nine by nine. Fill every row, column and block with each number once and match every cage total. Free, with hints and Check, in your browser.">
 <meta property="og:url" content="https://arling.sk/games/badgers/2027-09-11/">
@@ -36,7 +37,7 @@
 <link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/style/paper.css?v=89016e6c">
 <script src="/style/prepinac.js?v=2988c181" defer></script>
-<script type="module" src="/games/badgers/game.js?v=1"></script>
+<script type="module" src="/games/badgers/game.js?v=2"></script>
 <style>
   /* Only this page: the sett, the number pad, the control row and the rules. */
   .hero{align-items:start}
@@ -116,9 +117,12 @@
   .b:not([data-v="0"]) .pozn{display:none}
   /* The row, the column and the block of the picked cell. A solid colour, not
      a translucent white: .b.linia beats .b, so it replaces the cell's own fill
-     instead of sitting on top of it. */
-  .b.linia{background:#302925}
+     instead of sitting on top of it. Kept warm and light enough to be told
+     apart from a plain cell (--pole) on an ordinary monitor. */
+  .b.linia{background:#3a302a}
   .b.rovnaka .cif{color:var(--accent)}
+  /* The selected cell is also 'the same' as itself; its own digit stays plain. */
+  .b.vybrana.rovnaka:not(.chyba) .cif{color:var(--ink)}
   .b.vybrana{background:rgba(242,100,60,.16);z-index:3}
   .b.vybrana::before{content:"";position:absolute;inset:0;border:2px solid var(--accent);pointer-events:none}
   /* A cage that adds up and repeats nothing goes quiet. It says nothing about
@@ -139,6 +143,11 @@
   .b.chyba{background:rgba(255,92,92,.26)}
   .b.chyba::before{content:"";position:absolute;inset:0;border:2px solid #ff7b7b;pointer-events:none;z-index:3}
   .b.chyba::after{content:"!";position:absolute;top:2%;right:8%;z-index:3;font:700 calc(var(--cell) * .28)/1 var(--ui);color:#ff7b7b}
+  /* A wrong cell often holds the number that is highlighted everywhere else
+     (that is why it is wrong), and .b.rovnaka would leave the digit in the
+     accent orange. The mistake wins: written after .rovnaka, so the digit
+     reads red like the frame and the mark around it. */
+  .b.chyba .cif{color:#ff7b7b}
   /* Finished: every cage is satisfied, so the quiet cue above would dim the
      whole sett. The numbers go green instead, at full strength. */
   .hotovo .b .cif{color:var(--ok);opacity:1}
@@ -342,9 +351,9 @@
           <div class="telo">
             <p>Tap or click a cell to pick it, then a number from the pad under the sett. Tapping the same number again takes it back, so the way out is always one tap away. Hold and drag from a cell that already holds a number to write that same number into the empty cells you pass. Nothing lights up while you play: finding a mistake is part of the puzzle.</p>
             <p><b>Notes</b> switches the pad to the small numbers you keep while you think; a number written for real clears the notes it rules out. Holding a pad number for half a second writes it the other way round, so you can drop a real number in without leaving notes, or pencil one in without entering them.
-            <b>Check</b> first tells you only how many numbers are wrong and which rows or columns they sit in; press it again and it marks them. <b>Hint</b> names the rule and the place without giving the number away, and the second press writes that one number and explains it. If something on the board is already wrong, the hint points there first. Hints and checks are free and counted, and shown when you finish. <b>Clear</b> empties the sett; the clock keeps running and one Undo brings everything back.</p>
+            <b>Check</b> first tells you only how many numbers are wrong and which rows, columns or blocks they sit in; press it again and it marks them. <b>Hint</b> names the rule and the place without giving the number away, and the second press writes that one number and explains it. If something on the board is already wrong, the hint points there first. Hints and checks are free and counted, and shown when you finish. <b>Clear</b> empties the sett; the clock keeps running and one Undo brings everything back.</p>
             <p>Keyboard: arrows move from cell to cell, <kbd>1</kbd> to <kbd>9</kbd> write a number, <kbd>Shift</kbd> plus a number writes it the other way round, a note while notes are off and a real number while they are on, <kbd>N</kbd> or <kbd>Enter</kbd> switches notes on and off, <kbd>Delete</kbd> or <kbd>Backspace</kbd> empties the cell, <kbd>Escape</kbd> lets it go, <kbd>U</kbd> or <kbd>Ctrl</kbd>+<kbd>Z</kbd> undo, <kbd>R</kbd> or <kbd>Ctrl</kbd>+<kbd>R</kbd> redo, <kbd>P</kbd> pauses.</p>
-            <p>The clock runs from your first number to the last cell and pauses when you leave the tab or sit still for a minute, which also hides the sett. Your progress, time, history and day streak stay in this browser, and in your <a href="/ucet/">account</a> when you are signed in, so you can continue on another device. The day turns over at midnight where you are. Only the sett of the day counts towards the streak, the archive is for practice; once you are five days in, a single missed day is forgiven, at most twice a month.</p>
+            <p>The clock runs from your first number to the last cell and pauses when you leave the tab or sit still for a minute, which also hides the sett. Your progress, time, history and day streak stay in this browser, and in your <a href="/ucet/">account</a> when you are signed in, so you can continue on another device. The day turns over at midnight, Bratislava time, wherever you are. Only the sett of the day counts towards the streak, the archive is for practice; once you are five days in, a single missed day is forgiven, at most twice a month.</p>
           </div>
         </details>
         <details>
@@ -377,6 +386,6 @@
     <div><a href="https://arling.sk/privacy/">privacy</a> · <a href="https://arling.sk/podmienky/">terms</a> · <a href="https://arling.sk/gdpr/">GDPR</a> · <a href="https://arling.sk/impressum/">Impressum</a> · <a href="https://arling.sk/llms.txt">llms.txt</a> · <a href="https://arling.sk/sitemap-index.xml">sitemap</a><br>Tools are provided as is, without warranty. Anonymous visit counts via self-hosted Umami.</div>
   </div>
 </footer>
-<script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="be534d51-4d01-4860-b267-9596d91606de"></script>
+<script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="469b28b9-caa6-4ef2-807b-c219c30110fc"></script>
 </body>
 </html>
