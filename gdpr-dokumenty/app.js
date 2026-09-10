@@ -10,7 +10,9 @@
  * prehliadača.
  *
  * Udalosti do Umami (ak beží): gdpr_nahlad, gdpr_kupa_click,
- * gdpr_zaplatene, gdpr_stiahnute, gdpr_zadarmo.
+ * gdpr_zaplatene, gdpr_stiahnute, gdpr_zadarmo (každá s produkt:'gdpr' a
+ * jazyk), plus nastroj_pouzity a cena_videna podľa časti 4 plánu z 10. 9.
+ * 2026 (spoločné meno s Doctorom pre EUR-na-100-návštev report).
  * Slovenska, ceska aj nemecka stranka pouzivaju tento jeden skript; lisia sa
  * sablonami (dokumenty-sk.js, dokumenty-cs.js, dokumenty-de.js) a textami v T.
  */
@@ -27,6 +29,7 @@ const T = {
     pata: (d) => 'Vytvorené na arling.sk/gdpr-dokumenty/ dňa ' + d + '. Vzor vyplnený údajmi firmy, nie právne poradenstvo: pred použitím ho prečítajte a upravte podľa toho, čo firma skutočne robí.',
     zamok: '<b>Tento dokument je v platenom balíku.</b> Zadarmo sú len Zásady ochrany osobných údajov (prvá záložka). Po zaplatení 39 € sa všetkých ' + '{n}' + ' dokumentov odomkne v tomto prehliadači a stiahnu sa ako DOCX.',
     zamokTlacidlo: 'Kúpiť balík za 39 €',
+    kupaTlacidlo: (n) => 'Odomknúť všetkých ' + n + ' dokumentov za 39 €',
     poznamka: (n) => '<b>Zadarmo:</b> Zásady ochrany osobných údajov (prvá záložka, celé). <span class="cena-poznamka">V balíku za 39 €:</span> ďalších ' + (n - 1) + ' dokumentov, v náhľade vidíte len ich začiatok.',
     poznamkaOdomknute: (n) => '<b>Odomknuté:</b> všetkých ' + n + ' dokumentov, celé, na stiahnutie nižšie.',
     zapina: 'Platba sa práve zapína. Skúste to o chvíľu alebo napíšte na andrej@arling.sk.',
@@ -64,6 +67,7 @@ const T = {
     pata: (d) => 'Vytvořeno na arling.sk/gdpr-dokumenty/cs/ dne ' + d + '. Vzor vyplněný údaji firmy, ne právní poradenství: před použitím si ho přečtěte a upravte podle toho, co firma skutečně dělá.',
     zamok: '<b>Tento dokument je v placeném balíčku.</b> Zdarma jsou jen Zásady ochrany osobních údajů (první záložka). Po zaplacení 39 € se všech ' + '{n}' + ' dokumentů odemkne v tomto prohlížeči a stáhnou se jako DOCX.',
     zamokTlacidlo: 'Koupit balíček za 39 €',
+    kupaTlacidlo: (n) => 'Odemknout všech ' + n + ' dokumentů za 39 €',
     poznamka: (n) => '<b>Zdarma:</b> Zásady ochrany osobních údajů (první záložka, celé). <span class="cena-poznamka">V balíčku za 39 €:</span> dalších ' + (n - 1) + ' dokumentů, v náhledu vidíte jen jejich začátek.',
     poznamkaOdomknute: (n) => '<b>Odemčeno:</b> všech ' + n + ' dokumentů, celé, ke stažení níže.',
     zapina: 'Platba se právě zapíná. Zkuste to za chvíli nebo napište na andrej@arling.sk.',
@@ -101,6 +105,7 @@ const T = {
     pata: (d) => 'Erstellt auf arling.sk/gdpr-dokumenty/de/ am ' + d + '. Vorlage mit den Angaben des Unternehmens ausgefüllt, keine Rechtsberatung: bitte vor der Verwendung lesen und an das anpassen, was das Unternehmen tatsächlich tut.',
     zamok: '<b>Dieses Dokument gehört zum kostenpflichtigen Paket.</b> Kostenlos ist nur die Datenschutzerklärung (erster Tab). Nach Zahlung von 39 € werden alle ' + '{n}' + ' Dokumente in diesem Browser freigeschaltet und als DOCX heruntergeladen.',
     zamokTlacidlo: 'Paket für 39 € kaufen',
+    kupaTlacidlo: (n) => 'Alle ' + n + ' Dokumente für 39 € freischalten',
     poznamka: (n) => '<b>Kostenlos:</b> Datenschutzerklärung (erster Tab, vollständig). <span class="cena-poznamka">Im Paket für 39 €:</span> weitere ' + (n - 1) + ' Dokumente, in der Vorschau sehen Sie nur deren Anfang.',
     poznamkaOdomknute: (n) => '<b>Freigeschaltet:</b> alle ' + n + ' Dokumente, vollständig, unten zum Herunterladen.',
     zapina: 'Die Zahlung wird gerade aktiviert. Versuchen Sie es gleich noch einmal oder schreiben Sie an andrej@arling.sk.',
@@ -210,6 +215,30 @@ function naplnFormular(d) {
   }
 }
 
+/* ── Meranie z časti 4 plánu (10. 9. 2026) ────────────────────────────────
+ * klik_kupit, platba_hotova a dokument_stiahnuty už merajú vyššie uvedené
+ * gdpr_kupa_click, gdpr_zaplatene a gdpr_stiahnute (rovnaký údaj, staršie
+ * meno kvôli nadväznosti); chyba_najdena sa na tejto stránke netýka (nemá
+ * kontrolu chýb, tú robí len Doctor). Tu dopĺňame chýbajúce dva: */
+let dielnaPouzita = false;
+function oznamPouzitie(data) {
+  if (dielnaPouzita || !data || !data.firma || !data.firma.nazov) return;
+  dielnaPouzita = true;
+  track('nastroj_pouzity', { produkt: 'gdpr', jazyk: LANG });
+}
+function sledujCenuVidenu() {
+  try {
+    const box = document.querySelector('.cena');
+    if (!box || !('IntersectionObserver' in window)) return;
+    const io = new IntersectionObserver((entries) => {
+      for (const e of entries) {
+        if (e.isIntersecting) { track('cena_videna', { produkt: 'gdpr', jazyk: LANG }); io.disconnect(); }
+      }
+    }, { threshold: 0.5 });
+    io.observe(box);
+  } catch (e) { /* nič */ }
+}
+
 /* ── Náhľad ────────────────────────────────────────────────────────────── */
 let vybrany = 'd1';
 let d = null;
@@ -231,7 +260,7 @@ function prekresli() {
     b.className = 'zalozka' + (x.id === vybrany ? ' aktivna' : '') + (x.zadarmo ? ' zadarmo' : (odomknute() ? '' : ' zamknuta'));
     b.textContent = x.nazov;
     b.title = x.popis;
-    b.addEventListener('click', () => { vybrany = x.id; prekresli(); track('gdpr_nahlad', { dokument: x.id }); });
+    b.addEventListener('click', () => { vybrany = x.id; prekresli(); track('gdpr_nahlad', { dokument: x.id, produkt: 'gdpr', jazyk: LANG }); });
     zalozky.appendChild(b);
   }
   const dok = zoznam.find((x) => x.id === vybrany);
@@ -240,7 +269,7 @@ function prekresli() {
   const ukazane = odomk ? bloky : bloky.slice(0, Math.min(bloky.length, 7));
   nahlad.innerHTML = '<div class="papier' + (odomk ? '' : ' zamknuty') + '">' + html(ukazane) + (odomk ? '<p class="pata">' + PATA() + '</p>' : '<div class="zamok"><p>' + T.zamok.replace('{n}', String(zoznam.length)) + '</p><a class="btn btn-solid" href="#hero" id="zamok-kupa">' + T.zamokTlacidlo + '</a></div>') + '</div>';
   const zk = $('zamok-kupa');
-  if (zk) zk.addEventListener('click', (e) => { const u = odkazNaKupu(); if (u) { e.preventDefault(); track('gdpr_kupa_click', { cena: CENA_CENTY, odkial: 'zamok' }); location.href = u; } });
+  if (zk) zk.addEventListener('click', (e) => { const u = odkazNaKupu(); if (u) { e.preventDefault(); track('gdpr_kupa_click', { cena: CENA_CENTY, odkial: 'zamok', produkt: 'gdpr', jazyk: LANG }); location.href = u; } });
   // sťahovanie
   const zadarmoBtn = $('stiahnut-zadarmo');
   zadarmoBtn.hidden = !dok.zadarmo;
@@ -249,13 +278,17 @@ function prekresli() {
   $('pocet-dokumentov').textContent = zoznam.length;
   const pozn = $('nahlad-poznamka');
   if (pozn) pozn.innerHTML = odomknute() ? T.poznamkaOdomknute(zoznam.length) : T.poznamka(zoznam.length);
-  ukazCenu();
+  oznamPouzitie(d);
+  ukazCenu(zoznam.length);
 }
 /* The price box after a purchase: no more Buy button, a clear "paid" line
- * and a button that jumps to the downloads. Before a purchase: unchanged. */
-function ukazCenu() {
+ * and a button that jumps to the downloads. Before a purchase: unchanged.
+ * `pocet` je aktuálny počet dokumentov podľa zaškrtnutého (8 až 10), aby
+ * text tlačidla vždy sedel s cenovým boxom (oprava rozporu 8 vs. 10). */
+function ukazCenu(pocet) {
   const je = odomknute();
   kupaBtn.hidden = je;
+  if (!je && pocet) kupaBtn.textContent = T.kupaTlacidlo(pocet);
   const mam = document.querySelector('.cena .ucet-mam');
   if (mam) mam.hidden = je;
   let blok = $('cena-zaplatene');
@@ -290,7 +323,7 @@ function postavStiahnutie(zoznam) {
     const b = document.createElement('button');
     b.type = 'button'; b.className = 'btn btn-line';
     b.textContent = x.nazov + T.docxPripona;
-    b.addEventListener('click', () => { stiahni(subor(x), docx(x.fn(d), PATA())); track('gdpr_stiahnute', { dokument: x.id }); });
+    b.addEventListener('click', () => { stiahni(subor(x), docx(x.fn(d), PATA())); track('gdpr_stiahnute', { dokument: x.id, produkt: 'gdpr', jazyk: LANG }); });
     li.appendChild(b);
     ul.appendChild(li);
   }
@@ -298,13 +331,13 @@ function postavStiahnutie(zoznam) {
 $('stiahnut-zadarmo').addEventListener('click', () => {
   const x = DOKUMENTY[0];
   stiahni(subor(x), docx(x.fn(d), PATA()));
-  track('gdpr_zadarmo', {});
+  track('gdpr_zadarmo', { produkt: 'gdpr', jazyk: LANG });
 });
 $('stiahnut-vsetko').addEventListener('click', () => {
   const zoznam = zoznamDokumentov(d);
   const subory = zoznam.map((x) => [subor(x), docx(x.fn(d), PATA())]);
   stiahni('gdpr-dokumenty-' + bezDiakritiky((d.firma && d.firma.nazov) || 'firma') + '.zip', zip(subory), 'application/zip');
-  track('gdpr_stiahnute', { dokument: 'zip', pocet: subory.length });
+  track('gdpr_stiahnute', { dokument: 'zip', pocet: subory.length, produkt: 'gdpr', jazyk: LANG });
 });
 
 /* ── Platba ────────────────────────────────────────────────────────────── */
@@ -323,7 +356,7 @@ function odkazNaKupu() {
 }
 kupaBtn.addEventListener('click', () => {
   const u = odkazNaKupu();
-  track('gdpr_kupa_click', { cena: CENA_CENTY });
+  track('gdpr_kupa_click', { cena: CENA_CENTY, produkt: 'gdpr', jazyk: LANG });
   if (!u) { stavPlatby.textContent = T.zapina; return; }
   location.href = u;
 });
@@ -411,7 +444,7 @@ async function overPlatbu(sid, test, pokus) {
     uloz('gdpr:zaplatene', { session: sid, t: Date.now(), test: st.livemode === false });
     try { localStorage.removeItem(CAKAJUCA); } catch (e) { /* nič */ }
     stavPlatby.innerHTML = T.zaplatene + (st.livemode === false ? ' ' + T.testPoznamka : '');
-    track('gdpr_zaplatene', { test: st.livemode === false });
+    track('gdpr_zaplatene', { test: st.livemode === false, produkt: 'gdpr', jazyk: LANG });
     prekresli();
     $('stiahnut').scrollIntoView({ behavior: 'smooth', block: 'start' });
     return true;
@@ -471,3 +504,4 @@ $('zmazat').addEventListener('click', () => {
 });
 prekresli();
 poNavrate();
+sledujCenuVidenu();
