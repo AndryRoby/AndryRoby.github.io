@@ -674,13 +674,24 @@ export function generate(dateStr, opts = {}) {
   if (!isValidDate(dateStr)) throw new Error('Dátum musí byť v tvare YYYY-MM-DD: ' + dateStr);
   const n = opts.n ?? 8;
   const stars = opts.stars ?? 1;
+  return generateSeeded(dateStr, dateStr + '/' + n + 'x' + stars, opts);
+}
+
+/* The same as generate, but the random seed comes from `key` (any string)
+ * and `name` is only stored in the result as `date`. Practice gardens and
+ * the Sunday candidates use it; generate() itself is just a thin wrapper, so
+ * every date keeps the garden it always had. */
+export function generateSeeded(name, key, opts = {}) {
+  const dateStr = name;
+  const n = opts.n ?? 8;
+  const stars = opts.stars ?? 1;
   const minLevel = opts.minLevel ?? 2;
   const minPlacements = opts.minPlacements ?? 3 * n * stars;
   const minRegionSize = opts.minRegionSize ?? 2 * stars;
   const maxAttempts = opts.maxAttempts ?? 400;
   const requireDeduction = opts.requireDeduction ?? (stars === 1);
   const t0 = now();
-  const seed = seedFromString(dateStr + '/' + n + 'x' + stars);
+  const seed = seedFromString(key);
   const rng = mulberry32(seed);
   let best = null;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
