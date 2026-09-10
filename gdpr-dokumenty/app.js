@@ -34,6 +34,8 @@ const T = {
     nepotvrdene: 'Platbu sa nepodarilo potvrdiť. Ak ste zaplatili, počkajte minútu a obnovte stránku, alebo napíšte na andrej@arling.sk.',
     siet: 'Overenie platby zlyhalo (sieť). Obnovte stránku; ak to pretrvá, napíšte na andrej@arling.sk.',
     vymazat: 'Vymazať vyplnené údaje z tohto prehliadača?',
+    testCudzi: 'Toto je testovacia platba zo Stripe test módu. Odomkne dokumenty len v prehliadači, ktorý test spustil cez ?test=1.',
+    testPoznamka: '(Testovací režim: platba bola v Stripe test móde, žiadne peniaze neprišli.)',
     docxPripona: ' (DOCX)',
     locale: 'sk-SK',
   },
@@ -51,6 +53,8 @@ const T = {
     nepotvrdene: 'Platbu se nepodařilo potvrdit. Pokud jste zaplatili, počkejte minutu a obnovte stránku, nebo napište na andrej@arling.sk.',
     siet: 'Ověření platby selhalo (síť). Obnovte stránku; pokud to přetrvává, napište na andrej@arling.sk.',
     vymazat: 'Smazat vyplněné údaje z tohoto prohlížeče?',
+    testCudzi: 'Toto je testovací platba ze Stripe test módu. Odemkne dokumenty jen v prohlížeči, který test spustil přes ?test=1.',
+    testPoznamka: '(Testovací režim: platba byla ve Stripe test módu, žádné peníze nepřišly.)',
     docxPripona: ' (DOCX)',
     locale: 'cs-CZ',
   },
@@ -203,8 +207,17 @@ $('stiahnut-vsetko').addEventListener('click', () => {
 });
 
 /* ── Platba ────────────────────────────────────────────────────────────── */
+/* ?test=1 switches this browser to Stripe test mode (rehearsal, test card
+ * 4242…, no money): the button uses data-link-test and the return is
+ * accepted only in the same browser session that started the test. */
+function testRezim() {
+  try {
+    if (new URL(location.href).searchParams.get('test') === '1') sessionStorage.setItem('gdpr:test', '1');
+    return sessionStorage.getItem('gdpr:test') === '1';
+  } catch (e) { return false; }
+}
 function odkazNaKupu() {
-  const u = kupaBtn.dataset.link || '';
+  const u = (testRezim() ? kupaBtn.dataset.linkTest : kupaBtn.dataset.link) || '';
   return u && u.startsWith('https://') ? u : '';
 }
 kupaBtn.addEventListener('click', () => {
@@ -218,13 +231,14 @@ async function poNavrate() {
   try { sid = new URL(location.href).searchParams.get('session_id') || ''; } catch (e) { /* nič */ }
   if (!sid) return;
   history.replaceState(null, '', location.pathname);
+  if (sid.startsWith('cs_test_') && !testRezim()) { stavPlatby.textContent = T.testCudzi; return; }
   stavPlatby.textContent = T.overujem;
   try {
     const r = await fetch(API + '/v1/kontrola/status?session_id=' + encodeURIComponent(sid));
     const st = r.ok ? await r.json() : null;
     if (st && st.paid && typeof st.amount_total === 'number' && st.amount_total >= CENA_CENTY) {
-      uloz('gdpr:zaplatene', { session: sid, t: Date.now() });
-      stavPlatby.innerHTML = T.zaplatene;
+      uloz('gdpr:zaplatene', { session: sid, t: Date.now(), test: st.livemode === false });
+      stavPlatby.innerHTML = T.zaplatene + (st.livemode === false ? ' ' + T.testPoznamka : '');
       track('gdpr_zaplatene', {});
       prekresli();
       $('stiahnut').scrollIntoView({ behavior: 'smooth', block: 'start' });
