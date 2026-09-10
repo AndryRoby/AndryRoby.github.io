@@ -1,6 +1,7 @@
 /* Testy GDPR dokumentov: node tests.mjs */
 import * as SK from './dokumenty-sk.js';
 import * as CS from './dokumenty-cs.js';
+import * as DE from './dokumenty-de.js';
 const { DOKUMENTY, zoznamDokumentov, cinnosti, NASTROJE, LEHOTY_PREDVOLENE } = SK;
 import { docx, html, zip } from './docx.js';
 
@@ -100,6 +101,19 @@ test('česká verzia: 10 dokumentov, české právne odkazy, bez undefined', () 
   assert(t.includes('Pplk. Sochora 27') && t.includes('110/2019 Sb.') && t.includes('§ 89 odst. 3') && t.includes('§ 316'), 'české odkazy');
   assert(!t.includes('Hraničná') && !t.includes('18/2018'), 'slovenské odkazy v českej verzii');
   for (const x of CS.DOKUMENTY) assert(x.fn(PRAZDNE)[0].h === 1, x.id);
+});
+
+test('nemecká verzia: 10 dokumentov, nemecké právne odkazy, bez undefined, bez slovenských a českých odkazov', () => {
+  const d = { ...PLNE, nastroje: DE.NASTROJE.map((n) => n.id) };
+  const z = DE.zoznamDokumentov(d);
+  assert(z.length === 10, 'počet ' + z.length);
+  const t = text(z.flatMap((x) => x.fn(d)));
+  assert(!/undefined|NaN|\[object/.test(t), 'undefined');
+  assert(t.includes('§ 26 BDSG') && t.includes('Art. 30') && t.includes('§ 25 TDDDG') && t.includes('§ 38 BDSG') && t.includes('§ 4 BDSG'), 'nemecké odkazy');
+  assert(t.includes('Data Privacy Framework'), 'prenos do USA sa nespomína');
+  assert(!t.includes('Hraničná') && !t.includes('18/2018') && !t.includes('Pplk. Sochora') && !t.includes('110/2019 Sb.'), 'slovenské alebo české odkazy v nemeckej verzii');
+  assert(!/—/.test(t), 'em-dash v nemeckom texte');
+  for (const x of DE.DOKUMENTY) assert(x.fn(PRAZDNE)[0].h === 1, x.id);
 });
 
 console.log('\n' + passed + ' passed, ' + failed + ' failed');

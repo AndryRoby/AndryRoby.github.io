@@ -11,15 +11,16 @@
  *
  * Udalosti do Umami (ak beží): gdpr_nahlad, gdpr_kupa_click,
  * gdpr_zaplatene, gdpr_stiahnute, gdpr_zadarmo.
- * Slovenska aj ceska stranka pouzivaju tento jeden skript; lisia sa
- * sablonami (dokumenty-sk.js, dokumenty-cs.js) a textami v T.
+ * Slovenska, ceska aj nemecka stranka pouzivaju tento jeden skript; lisia sa
+ * sablonami (dokumenty-sk.js, dokumenty-cs.js, dokumenty-de.js) a textami v T.
  */
 import { docx, html, zip } from './docx.js';
 import * as ucet from '/style/ucet.js';
 
-/* Jazyk stránky určuje šablóny (sk alebo cs) a texty tejto obrazovky. */
-const LANG = document.documentElement.lang === 'cs' ? 'cs' : 'sk';
-const { DOKUMENTY, zoznamDokumentov, NASTROJE, CINNOSTI, LEHOTY_PREDVOLENE } = await import(LANG === 'cs' ? './dokumenty-cs.js' : './dokumenty-sk.js');
+/* Jazyk stránky určuje šablóny (sk, cs alebo de) a texty tejto obrazovky. */
+const LANG = document.documentElement.lang === 'cs' ? 'cs' : document.documentElement.lang === 'de' ? 'de' : 'sk';
+const DOKUMENTY_SUBOR = { sk: './dokumenty-sk.js', cs: './dokumenty-cs.js', de: './dokumenty-de.js' }[LANG];
+const { DOKUMENTY, zoznamDokumentov, NASTROJE, CINNOSTI, LEHOTY_PREDVOLENE } = await import(DOKUMENTY_SUBOR);
 const T = {
   sk: {
     lehoty: { objednavky: 'Objednávky a doklady', kontakt: 'Dopyty a kontaktný formulár', newsletter: 'Newsletter', ucty: 'Používateľské účty', uchadzaci: 'Uchádzači o zamestnanie', zamestnanci: 'Zamestnanci', kamery: 'Kamerový záznam' },
@@ -94,6 +95,43 @@ const T = {
     ucetPrihlaseny: 'Přihlášen, kontroluji vaše nákupy…',
     ucetOdomknute: '<b>Přihlášen, balíček je odemčený</b> podle vašeho nákupu.',
     ucetBezNakupu: 'Přihlášen, ale k tomuto e-mailu nevidíme nákup tohoto balíčku. Pokud jste platili, napište na andrej@arling.sk.',
+  },
+  de: {
+    lehoty: { objednavky: 'Bestellungen und Belege', kontakt: 'Anfragen und Kontaktformular', newsletter: 'Newsletter', ucty: 'Benutzerkonten', uchadzaci: 'Bewerberinnen und Bewerber', zamestnanci: 'Beschäftigte', kamery: 'Videoaufzeichnung' },
+    pata: (d) => 'Erstellt auf arling.sk/gdpr-dokumenty/de/ am ' + d + '. Vorlage mit den Angaben des Unternehmens ausgefüllt, keine Rechtsberatung: bitte vor der Verwendung lesen und an das anpassen, was das Unternehmen tatsächlich tut.',
+    zamok: '<b>Dieses Dokument gehört zum kostenpflichtigen Paket.</b> Kostenlos ist nur die Datenschutzerklärung (erster Tab). Nach Zahlung von 39 € werden alle ' + '{n}' + ' Dokumente in diesem Browser freigeschaltet und als DOCX heruntergeladen.',
+    zamokTlacidlo: 'Paket für 39 € kaufen',
+    poznamka: (n) => '<b>Kostenlos:</b> Datenschutzerklärung (erster Tab, vollständig). <span class="cena-poznamka">Im Paket für 39 €:</span> weitere ' + (n - 1) + ' Dokumente, in der Vorschau sehen Sie nur deren Anfang.',
+    poznamkaOdomknute: (n) => '<b>Freigeschaltet:</b> alle ' + n + ' Dokumente, vollständig, unten zum Herunterladen.',
+    zapina: 'Die Zahlung wird gerade aktiviert. Versuchen Sie es gleich noch einmal oder schreiben Sie an andrej@arling.sk.',
+    overujem: 'Zahlung wird geprüft…',
+    zaplatene: '<b>Bezahlt, vielen Dank.</b> Die Dokumente sind in diesem Browser freigeschaltet; den Beleg hat Ihnen Stripe per E-Mail gesendet.',
+    inaSuma: 'Die Zahlung ist eingegangen, aber über einen anderen Betrag. Schreiben Sie an andrej@arling.sk, wir klären das manuell.',
+    nepotvrdene: 'Die Zahlung konnte bisher nicht bestätigt werden. Wir versuchen es erneut; falls Sie bezahlt haben, werden die Dokumente freigeschaltet, sobald Stripe antwortet. Falls das länger als ein paar Minuten dauert, schreiben Sie an andrej@arling.sk mit der Bestellnummer aus der E-Mail von Stripe.',
+    overZnova: 'Zahlung erneut prüfen',
+    cenaZaplatene: 'Bezahlt.',
+    cenaZaplatenePopis: 'Das Paket ist in diesem Browser freigeschaltet. Sie können das Formular weiter bearbeiten, die Dokumente werden neu erstellt.',
+    cenaKDokumentom: 'Zu den Dokumenten',
+    siet: 'Die Prüfung der Zahlung ist fehlgeschlagen (Netzwerk). Laden Sie die Seite neu; falls das anhält, schreiben Sie an andrej@arling.sk.',
+    vymazat: 'Eingegebene Daten aus diesem Browser löschen?',
+    testCudzi: 'Dies ist eine Testzahlung aus dem Stripe-Testmodus. Sie schaltet Dokumente nur in dem Browser frei, der den Test über ?test=1 gestartet hat.',
+    testPoznamka: '(Testmodus: die Zahlung erfolgte im Stripe-Testmodus, es wurde kein Geld überwiesen.)',
+    docxPripona: ' (DOCX)',
+    locale: 'de-DE',
+    ucetOdosielam: 'Code wird gesendet…',
+    ucetKodOdoslany: 'Wir haben Ihnen einen Code per E-Mail gesendet, er ist 15 Minuten gültig.',
+    ucetZlyEmail: 'Geben Sie eine gültige E-Mail-Adresse ein.',
+    ucetLimit: 'Zu viele Versuche, versuchen Sie es in einer Stunde erneut.',
+    ucetNedostupne: 'Der Codeversand wird gerade aktiviert, schreiben Sie an andrej@arling.sk.',
+    ucetChybaOdoslanie: 'Der Code konnte nicht gesendet werden (Netzwerk). Versuchen Sie es erneut oder schreiben Sie an andrej@arling.sk.',
+    ucetBezKodu: 'Fordern Sie zuerst einen Code an.',
+    ucetOverujem: 'Anmeldung läuft…',
+    ucetZlyKod: (n) => 'Falscher Code, noch ' + n + (n === 1 ? ' Versuch.' : ' Versuche.'),
+    ucetVycerpane: 'Der Code ist abgelaufen oder wurde fünfmal falsch eingegeben, fordern Sie einen neuen an.',
+    ucetChybaPrihlasenie: 'Die Anmeldung ist fehlgeschlagen (Netzwerk). Versuchen Sie es erneut.',
+    ucetPrihlaseny: 'Angemeldet, wir prüfen Ihre Käufe…',
+    ucetOdomknute: '<b>Angemeldet, das Paket ist freigeschaltet</b> entsprechend Ihrem Kauf.',
+    ucetBezNakupu: 'Angemeldet, aber zu dieser E-Mail-Adresse sehen wir keinen Kauf dieses Pakets. Falls Sie bezahlt haben, schreiben Sie an andrej@arling.sk.',
   },
 }[LANG];
 const KLUC_FORM = 'gdpr:formular:' + LANG;
