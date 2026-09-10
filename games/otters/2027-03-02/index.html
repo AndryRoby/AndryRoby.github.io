@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script src="/style/vzhlad.js?v=93c2659f"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://homelab.tailbf8f27.ts.net; connect-src 'self' https://homelab.tailbf8f27.ts.net; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<meta name="color-scheme" content="dark">
+<meta name="robots" content="noindex, follow">
+<link rel="manifest" href="/games/otters/manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Otters">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta property="og:image" content="https://arling.sk/games/otters/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://homelab.tailbf8f27.ts.net" crossorigin>
+<meta name="theme-color" content="#0a0908">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="48x48">
+<link rel="apple-touch-icon" href="/icon-180.png">
+<title>Otters for Tuesday 2 March 2027 · ARLing</title>
+<meta name="description" content="The Otters river for Tuesday 2 March 2027: easy, five by five. Draw one closed loop along the grid lines so every number in the marsh matches. Free, with hints and Check, in your browser.">
+<link rel="canonical" href="https://arling.sk/games/otters/2027-03-02/">
+<link rel="prev" href="https://arling.sk/games/otters/2027-03-01/">
+<link rel="next" href="https://arling.sk/games/otters/2027-03-03/">
+<meta property="og:title" content="Otters for Tuesday 2 March 2027 · ARLing">
+<meta property="og:description" content="The Otters river for Tuesday 2 March 2027: easy, five by five. Draw one closed loop along the grid lines so every number in the marsh matches. Free, with hints and Check, in your browser.">
+<meta property="og:url" content="https://arling.sk/games/otters/2027-03-02/">
+<meta property="og:type" content="website">
+
+
+<link rel="alternate" type="text/plain" href="https://arling.sk/llms.txt" title="llms.txt">
+<link rel="preload" href="/fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/style/paper.css?v=89016e6c">
+<script src="/style/prepinac.js?v=2988c181" defer></script>
+<script type="module" src="/games/otters/game.js?v=1"></script>
+<style>
+  /* Only this page: the marsh, the control row and the rules block. */
+  .hero{align-items:start}
+  .hra{max-width:calc(var(--n,6) * 56px + 60px);margin:0 auto}
+  /* Phones and folds: the marsh sits in the middle and uses the whole width. */
+  @media (max-width:860px){ .hra{margin:0 auto;max-width:min(100%,calc(var(--n,6) * 60px + 60px))} }
+  /* Narrow phones: the board takes the whole screen width, exactly, so the
+     page never scrolls sideways (the wrap gutter is a percentage, so a fixed
+     negative margin would overshoot it by a pixel). */
+  @media (max-width:480px){ .doska-obal{margin-inline:calc((100% - 100vw) / 2)} }
+  header{padding-top:env(safe-area-inset-top,0px)}
+  .horna{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:0 0 10px;
+         font-family:var(--ui);font-size:14px;color:var(--muted)}
+  .horna b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+  .horna .uroven{color:var(--muted);font-size:12px;letter-spacing:.06em;text-transform:uppercase;margin-left:8px;white-space:nowrap}
+  .horna #cas-blok,.horna #datum{white-space:nowrap}
+  @media (max-width:480px){ .horna .uroven{display:block;margin:2px 0 0} }
+  .pauza-btn{font:500 12px/1 var(--ui);color:var(--muted);background:transparent;border:1px solid var(--line);border-radius:999px;padding:4px 10px;cursor:pointer;margin-left:8px;vertical-align:1px}
+  .pauza-btn:hover{color:var(--ink);border-color:var(--ink)}
+  .doska-obal{position:relative;touch-action:pan-y}
+  .pauza-blok{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+     background:rgba(10,9,8,.9);border:2px solid var(--line);border-radius:8px;text-align:center;font-family:var(--ui);padding:20px;z-index:2}
+  .pauza-blok[hidden]{display:none}
+  .pauza-blok p{margin:0;color:var(--body);font-size:15px;line-height:1.5}
+  .pauza-blok b{color:var(--ink)}
+  /* ── The marsh ──────────────────────────────────────────────────────────
+     One SVG, drawn by game.js: the water inside a finished river, the faint
+     grid of possible sides, the numbers, the dots, one group per side (a
+     line or a cross) and, on top of everything, a diamond hit area around
+     every side. The diamonds tile the board exactly, so the side you press
+     is always the nearest one. */
+  .doska{display:block;width:100%;height:auto;background:var(--card-plna);border:2px solid var(--ink);border-radius:8px;
+         touch-action:none;user-select:none;-webkit-user-select:none;outline:none}
+  /* An SVG is not an HTML element, so the browser's own rule for [hidden]
+     does not reach it: a future day hides the marsh with this one. */
+  .doska[hidden]{display:none}
+  /* After the rule above, so that it wins: on a narrow phone the marsh runs
+     from edge to edge and has no side border to cut it off. */
+  @media (max-width:480px){ .doska{border-radius:0;border-left:0;border-right:0} }
+  .doska.hotovo{border-color:var(--ok);box-shadow:0 0 0 4px rgba(94,207,154,.14)}
+  .doska.pauza .plocha{visibility:hidden}
+  .slaba{stroke:rgba(255,255,255,.10);stroke-width:1.5;stroke-linecap:round}
+  .bodka{fill:var(--muted);outline:none}
+  .cislo{fill:var(--body);font-family:var(--ui);font-weight:600;font-size:17px;text-anchor:middle;dominant-baseline:central}
+  /* A satisfied number goes quiet, but it still has to be readable: half the
+     contrast of a live number, and about 4.6:1 on the dark card, 5:1 on the
+     light one. The old fill was muted at .4, which measured 1.6:1. */
+  .cislo.splnene{fill:var(--body);opacity:.75}
+  .h .ciara{display:none;stroke:var(--accent);stroke-width:7;stroke-linecap:round}
+  /* The cross carries the same weight as a numeral, not more (Magpies draws
+     its cross as a 700 glyph, which comes out at about the same stroke). */
+  .h .krizik{display:none;stroke:var(--muted);stroke-width:2.4;stroke-linecap:round;opacity:.9}
+  .h .znak{display:none;fill:none;stroke-width:2.5;transform-box:fill-box;transform-origin:center}
+  .h[data-v="1"] .ciara{display:inline}
+  .h[data-v="2"] .krizik{display:inline}
+  .h.tip .znak{display:inline;stroke:#facc15;animation:tip-pulz .9s ease-in-out infinite alternate}
+  /* A mistake is a shape and an icon, not only a colour: a ring around the
+     side, and the side itself drawn broken. */
+  .h.chyba .znak{display:inline;stroke:#ff7b7b}
+  .h.chyba .ciara{stroke:#ff7b7b;stroke-dasharray:6 5}
+  .h.chyba .krizik{stroke:#ff7b7b;opacity:1}
+  .hotovo .h[data-v="1"] .ciara{stroke:var(--ok)}
+  .hotovo .h[data-v="2"] .krizik{display:none}
+  .voda rect{fill:var(--accent);opacity:.10}
+  .hotovo .voda rect{fill:var(--ok);opacity:.14}
+  /* pointer-events:all, because a shape with no paint is not hit by default */
+  .hit{fill:#fff;fill-opacity:0;cursor:pointer;pointer-events:all}
+  /* White, not the accent: the hit shape lies over the player's own mark, so
+     a coloured hover would tint the cross or the line standing under it. */
+  .hit:hover{fill-opacity:.05}
+  .hotovo .hit,.pauza .hit{cursor:default}
+  .hotovo .hit:hover{fill-opacity:0}
+  .kurzor{fill:none;stroke:var(--accent);stroke-width:2.5;opacity:0}
+  .doska:focus-within .kurzor{opacity:1}
+  @keyframes tip-pulz{from{transform:scale(.8);opacity:.5}to{transform:scale(1.05);opacity:1}}
+  @media (prefers-reduced-motion:reduce){ .h.tip .znak{animation:none} }
+  .skryte{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
+  .ovladanie{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:14px}
+  .ovladanie .btn{height:40px;padding:0 13px;font-size:14px}
+  /* Five buttons, and a phone is 390px wide: at the full padding the fifth one
+     drops to a line of its own. Tighter sides keep the row in one piece and
+     leave every button well over the 44px touch target. */
+  @media (max-width:420px){ .ovladanie{gap:6px} .ovladanie .btn{padding:0 9px} }
+  /* The narrowest phones still in use (320px) need one more notch. */
+  @media (max-width:345px){ .ovladanie{gap:4px} .ovladanie .btn{padding:0 6px;font-size:13px} }
+  .stav{font-family:var(--ui);font-size:15px;line-height:1.5;color:var(--body);margin:12px 0 0;min-height:1.5em}
+  .stav b{color:var(--ink)}
+  .stav.ok{color:var(--ok)}
+  .stav.ok b{color:var(--ok)}
+  .pasik{display:flex;gap:6px;margin-top:14px}
+  .den{flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;padding:6px 0 5px;border:1px solid var(--line);border-radius:10px;
+       text-decoration:none;color:var(--muted);font-family:var(--ui);min-width:0;background:var(--card)}
+  .den small{font-size:10px;letter-spacing:.08em}
+  .den b{font-size:15px;color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+  .den.dnes{border-color:var(--accent);color:var(--accent)}
+  .den.rozohrane{border-style:dashed}
+  .den.hotove{background:rgba(94,207,154,.12);border-color:var(--ok)}
+  .den.hotove b{color:var(--ok)}
+  .den.buduci{opacity:.38}
+  a.den:hover{border-color:var(--ink);color:var(--ink)}
+  .odkazy{font-family:var(--ui);font-size:13px;color:var(--muted);margin:12px 0 0}
+  .odkazy a{color:var(--body)}
+  .historia{font-family:var(--ui);font-size:13px;color:var(--body);line-height:1.5;margin:10px 0 0}
+  .historia b{color:var(--ink)}
+  .nastavenia{margin-top:14px;border:1px solid var(--line);border-radius:12px;background:var(--card);padding:0 14px}
+  .nastavenia summary{cursor:pointer;font:600 13px/1.4 var(--ui);color:var(--muted);padding:10px 0;list-style:none}
+  .nastavenia summary::-webkit-details-marker{display:none}
+  .nastavenia[open] summary{color:var(--ink)}
+  .nastavenia label{display:flex;gap:10px;align-items:flex-start;font-family:var(--ui);font-size:13px;color:var(--body);line-height:1.5;padding:6px 0}
+  .nastavenia input{margin-top:3px;flex:none}
+  .nastavenia .fineprint{padding:6px 0 12px;margin:0}
+  .navod{font-family:var(--ui);font-size:13px;color:var(--muted);margin:10px 0 0;max-width:none}
+  .navod kbd{font-size:12px}
+  /* On the phone the marsh goes under the text; the keyboard note there would
+     just push the game further down. It is in the Rules section too. */
+  @media (max-width:860px){ .navod{display:none} }
+  .pravidla details{border:1px solid var(--line);border-radius:12px;background:var(--card);padding:0 18px;max-width:68ch}
+  .pravidla details+details{margin-top:10px}
+  .pravidla summary{cursor:pointer;font:600 15px/1.4 var(--ui);color:var(--ink);padding:14px 0;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:12px}
+  .pravidla summary::-webkit-details-marker{display:none}
+  .pravidla summary::after{content:"";width:.5em;height:.5em;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(45deg);flex:none;margin-right:4px;transition:transform .2s var(--ease)}
+  .pravidla details[open] summary::after{transform:rotate(225deg)}
+  .pravidla .telo{padding:0 0 16px}
+  .pravidla .telo p{margin:0 0 10px}
+  .pravidla .telo p:last-child{margin:0}
+  .jazyk{font:500 13px/1 var(--ui);color:var(--muted);background:transparent;border:1px solid var(--line);border-radius:999px;padding:6px 12px;cursor:pointer;margin-top:14px}
+  .jazyk:hover{color:var(--ink);border-color:var(--ink)}
+  .prose p{margin:0 0 14px}
+  .prose p:last-child{margin-bottom:0}
+  .sub{margin:0 0 6px}
+  noscript p{font-family:var(--ui);color:var(--accent-light)}
+</style>
+<noscript><style>
+  .r, .w { opacity:1 !important; transform:none !important; filter:none !important; }
+  .rule { transform:scaleX(1) !important; }
+</style></noscript>
+</head>
+<body class="noc" data-den="2027-03-02">
+<div class="wash" aria-hidden="true"><i></i><i></i></div>
+<a class="skip" href="#doska">Skip to the game</a>
+
+<header>
+  <div class="wrap bar">
+    <a class="brand" href="https://arling.sk/">
+      <svg viewBox="0 0 488 215" width="38" height="15" aria-hidden="true" focusable="false"><path fill="#f4f4f7" fill-rule="evenodd" d="M0.00,213.00L74.00,214.00L181.00,85.00L285.00,214.00L360.00,214.00L206.00,21.00L185.00,4.00L164.00,10.00Z M221.00,0.00L263.00,50.00L395.00,50.00L409.00,55.00L419.00,76.00L401.00,96.00L313.00,98.00L411.00,214.00L487.00,214.00L422.00,139.00L457.00,123.00L482.00,88.00L482.00,48.00L463.00,19.00L417.00,0.00Z"/><path fill="#f2643c" d="M269.00,66.00L269.00,67.00L268.00,68.00L268.00,70.00L267.00,71.00L267.00,76.00L268.00,77.00L268.00,79.00L270.00,81.00L270.00,82.00L271.00,82.00L273.00,84.00L274.00,84.00L277.00,86.00L279.00,86.00L280.00,87.00L287.00,87.00L288.00,86.00L290.00,86.00L291.00,85.00L294.00,84.00L298.00,80.00L298.00,79.00L299.00,78.00L299.00,75.00L300.00,74.00L300.00,72.00L299.00,71.00L299.00,69.00L298.00,68.00L297.00,65.00L295.00,63.00L294.00,63.00L289.00,60.00L278.00,60.00L277.00,61.00L276.00,61.00L275.00,62.00L272.00,63.00Z"/></svg>
+      <b>ARLing</b><span>Games</span>
+    </a>
+    <nav aria-label="Site"><a href="https://arling.sk/en/#tools">Tools</a><a href="https://arling.sk/games/">Games</a><a href="https://arling.sk/notes/">Notes</a><a href="https://arling.sk/how-we-work/">How we work</a><a href="mailto:andrej@arling.sk">Contact</a></nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap hero" id="hero">
+    <div>
+      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 8.5h6.5v7H19"/><circle cx="5" cy="8.5" r="1.6"/><circle cx="19" cy="15.5" r="1.6"/><path d="M3.5 3.5h17v17h-17z" opacity=".45"/></svg>Daily loop logic</p>
+      <h1 id="h1"><span class="l">Otters.</span></h1>
+      <p class="lead r d3">Otters need one river. Draw a single closed loop along the grid lines, and let every number tell you how many of that patch's four sides the water runs along.</p>
+      <p class="proof r d5" id="dnes">This river opens on Tuesday 2 March 2027 at midnight, Bratislava time.</p>
+      <p class="navod r d5">Tap a side: river, then a cross, then empty. Hold and drag to draw several sides at once. Keyboard: arrows move the cursor, <kbd>Ctrl</kbd> plus arrow draws, <kbd>Shift</kbd> plus arrow crosses, <kbd>U</kbd> undo, <kbd>R</kbd> redo, <kbd>P</kbd> pauses. Nothing lights up while you play; Check judges only when you ask.</p>
+    </div>
+    <div class="r d2">
+      <div class="hra">
+        <div class="horna"><span><span id="datum">Tuesday 2 March 2027</span><span class="uroven" id="uroven">Easy · 5×5</span></span><span id="cas-blok">Time <b id="cas">0:00</b><button type="button" class="pauza-btn" id="pauza" hidden>Pause</button></span></div>
+        <div class="doska-obal">
+          <svg class="doska" id="doska" viewBox="0 0 244 244" role="grid" aria-label="River grid 5 by 5" aria-describedby="cisla-text"></svg>
+          <noscript><p>This game needs JavaScript: the puzzle is generated right in your browser.</p></noscript>
+          <div class="pauza-blok" id="pauza-blok" hidden><p><b>Paused.</b> <span id="pauza-cas"></span></p><button type="button" class="btn btn-solid" id="pokracuj">Resume</button></div>
+        </div>
+        <p class="skryte" id="cisla-text"></p>
+        <div class="ovladanie">
+          <button type="button" class="btn btn-line" id="spat">Undo</button>
+          <button type="button" class="btn btn-line" id="znova">Redo</button>
+          <button type="button" class="btn btn-line" id="reset">Clear</button>
+          <button type="button" class="btn btn-line" id="hint">Hint</button>
+          <button type="button" class="btn btn-line" id="check">Check</button>
+          <span class="small" id="seria"></span>
+        </div>
+        <p class="stav" id="stav" aria-live="polite"></p>
+        <nav class="pasik" id="pasik" aria-label="This week"></nav>
+        <p class="odkazy"><a href="/games/otters/guide/">How to play</a> · <a href="/games/otters/practice/">Practice sets</a> · <a href="/games/otters/archive/">Archive</a></p>
+        <p class="historia" id="historia" hidden></p>
+        <details class="nastavenia">
+          <summary>Settings</summary>
+          <label><input type="checkbox" data-nastavenie="casovac"> Show the timer and the Pause button</label>
+          <label><input type="checkbox" data-nastavenie="pauzaPriOdchode"> Pause the clock when you leave the tab or sit still for a minute</label>
+          <label><input type="checkbox" data-nastavenie="autoKrizky"> Auto crosses: when a number has all its lines, or a dot has two, cross the sides that are left (off by default: the crosses are your own notes)</label>
+          <label><input type="checkbox" data-nastavenie="zivaKontrola"> Live check: mark a wrong line or cross as soon as it appears (off by default: finding a mistake is part of the puzzle)</label>
+          <label><input type="checkbox" data-nastavenie="potvrditReset"> Ask before Clear</label>
+          <p class="fineprint">Settings, progress, history and streak stay in this browser. Add this page to your home screen to open it like an app.</p>
+        </details>
+      </div>
+    </div>
+  </div>
+
+  <section id="rules" class="deep pravidla">
+    <div class="wrap">
+      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>01</p>
+      <h2 class="r">Rules.</h2>
+      <p class="sub r d1">Three sentences. The rest is practice.</p>
+      <div class="rule"></div>
+      <div class="r d2">
+        <details open>
+          <summary>How to play</summary>
+          <div class="telo">
+            <p>Draw the otters' river: one closed loop along the grid lines. A number in a patch of marsh says how many of its sides the river runs along. No branches, no crossings, one loop only.</p>
+            <p>A patch with no number says nothing at all: the river may run along none of its sides, or one, or two, or three. Every dot the river reaches has exactly two lines, one in and one out, and when the loop closes it has to pass every number correctly at the same time.</p>
+            <p>A cross on a side is your own note that the river does not run there. Crosses are never checked and never required; when the river is finished, the game notices by itself.</p>
+          </div>
+        </details>
+        <details>
+          <summary>Controls</summary>
+          <div class="telo">
+            <p>Tap or click a side: once draws the river, twice puts a cross, three times clears it. Hold the button or your finger and drag to draw a whole run of sides in one go, and drag back over your own crosses to wipe them. Nothing lights up while you play: finding a mistake is part of the puzzle.</p>
+            <p><b>Check</b> first tells you only how many marks are wrong and roughly where. Press it again and it shows which. <b>Hint</b> names the rule and the place in words only, and the second press rings those sides and draws that one step for you. If something on the board is already wrong, the hint points there first. Hints and checks are free and counted, and shown when you finish. <b>Clear</b> empties the marsh; the clock keeps running and one Undo brings everything back.</p>
+            <p>Keyboard: arrows move the cursor from dot to dot, <kbd>Ctrl</kbd> plus arrow draws or removes the river in that direction, <kbd>Shift</kbd> plus arrow puts a cross there, <kbd>Enter</kbd> starts and ends a run you steer with the arrows, <kbd>Escape</kbd> cancels it, <kbd>X</kbd> crosses the last direction, <kbd>Delete</kbd> clears it, <kbd>U</kbd> or <kbd>Ctrl</kbd>+<kbd>Z</kbd> undo, <kbd>R</kbd> or <kbd>Ctrl</kbd>+<kbd>R</kbd> redo, <kbd>P</kbd> pauses.</p>
+            <p>The clock runs from your first move to the closing of the loop and pauses when you leave the tab or sit still for a minute, which also hides the marsh. Your progress, time, history and day streak stay in this browser, and in your <a href="/ucet/">account</a> when you are signed in, so you can continue on another device.</p>
+          </div>
+        </details>
+        <details>
+          <summary>The week</summary>
+          <div class="telo">
+            <p>Monday and Tuesday are easy (five by five), Wednesday and Thursday medium (six by six), Friday hard (seven by seven), Saturday tough (eight by eight) and Sunday is the challenge: nine by nine. The week strip under the marsh takes you to the other days; the <a href="/games/otters/archive/">archive</a> goes back a year, and the <a href="/games/otters/practice/">practice sets</a> have eight rivers of each level with no date attached.</p>
+            <p>Difficulty is measured, not guessed. Every river is solved by a program that only knows named rules, in three layers: the local ones (a 0, a 3 in a corner, a dot that already has two lines), the patterns between numbers (two 3s side by side, a 3 next to a 0, a 1 in a corner), and the hard ones (a side that would close the river too early, and trying a side out for one step). Easy and Medium never need that third layer; Sunday leans on it the most.</p>
+          </div>
+        </details>
+        <details>
+          <summary>A few ways in</summary>
+          <div class="telo">
+            <p>A 0 is the best friend you have: the river runs along none of its four sides, and those crosses often decide the patches around it.</p>
+            <p>A 3 in the corner of the marsh cannot send the river back on itself, so both of its outer sides are river. Two 3s side by side always use the side between them, and their outer sides too.</p>
+            <p>Every dot carries either no line or exactly two. As soon as two lines meet at a dot, the rest of its sides are crossed; as soon as three sides are crossed, the fourth is crossed too.</p>
+            <p>Near the end, watch for a side that would close a small loop before every number is satisfied. It cannot be river, so it is crossed.</p>
+          </div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+</main>
+<script type="application/json" id="zadanie">{"d":"2027-03-02","n":5,"c":"...1.21.3.3132......3..10","h":"010000011010110101101011011000","v":"011000010010101000010010101000","u":"easy","l":"43,1,0","s":44}</script>
+
+<footer>
+  <div class="wrap foot">
+    <div><b>ARLing s. r. o.</b><br>Ivanská cesta 32E<br>821 04 Bratislava, Slovakia</div>
+    <div>Company ID 56583486<br>VAT ID SK2122352100<br><a href="mailto:andrej@arling.sk">andrej@arling.sk</a></div>
+    <div><a href="https://arling.sk/privacy/">privacy</a> · <a href="https://arling.sk/podmienky/">terms</a> · <a href="https://arling.sk/gdpr/">GDPR</a> · <a href="https://arling.sk/impressum/">Impressum</a> · <a href="https://arling.sk/llms.txt">llms.txt</a> · <a href="https://arling.sk/sitemap-index.xml">sitemap</a><br>Tools are provided as is, without warranty. Anonymous visit counts via self-hosted Umami.</div>
+  </div>
+</footer>
+<script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="be534d51-4d01-4860-b267-9596d91606de"></script>
+</body>
+</html>
