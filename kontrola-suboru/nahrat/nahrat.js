@@ -16,7 +16,7 @@
 // právo na odstúpenie stráca (zákon 102/2014 Z. z., § 7 ods. 6 písm. a).
 // Kým políčko nie je zaškrtnuté, vstup na súbor aj tlačidlo sú vypnuté a
 // posli() nič neodošle. Zaškrtnutie ide do workera ako hlavička
-// X-Arling-Consent: 1, worker si ju uloží k súboru.
+// consent=1 v adrese (nie hlavička: vlastná hlavička by potrebovala zmenu CORS na workeri), worker si ju uloží k súboru.
 //
 // Stránka nemá vložený skript zámerne: hub má prísne CSP, kde by sa každá
 // úprava vloženého skriptu musela znova prepočítať (ops/design/csp-hash.mjs).
@@ -225,12 +225,12 @@
 
     var r;
     try {
-      r = await fetch(urlSession('/v1/kontrola/upload'), {
+      r = await fetch(urlSession('/v1/kontrola/upload') + '&consent=1', {
         method: 'POST',
-        // X-Arling-Consent: 1 je zaškrtnuté políčko. Worker si ho uloží
+        // consent=1 v adrese je zaškrtnuté políčko. Worker si ho uloží
         // k súboru (upload.js, CONSENT_HEADER); sem sa dostaneme len so
         // zaškrtnutým políčkom.
-        headers: { 'Content-Type': 'application/xml', 'X-Arling-Consent': '1' },
+        headers: { 'Content-Type': 'application/xml' },
         body: subor,
       });
     } catch (e) {
