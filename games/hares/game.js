@@ -572,15 +572,16 @@ if (zdielajBtn) zdielajBtn.addEventListener('click', async () => {
  * The first press says how many numbers are wrong and in which rows; only the
  * second press marks them. The puzzle stays a puzzle unless you ask twice.
  * When a burrow is picked, only its row, its column and its block are checked,
- * which is how a crossword checks one word (ops/spec-hry-ux.md, part 4). */
+ * which is how a crossword checks one word; with no burrow picked, the whole
+ * meadow (ops/spec-hry-ux.md, part 4). The narrowing holds even when the
+ * player has written nothing in that row, column or block yet: Check then says
+ * so and names the scope, instead of quietly judging the whole meadow the
+ * player did not ask about. */
 function rozsahCheck() {
-  if (vybrana >= 0) {
-    const set = new Set();
-    for (const ui of J.unitOf[vybrana]) for (const i of J.units[ui].cells) set.add(i);
-    const cells = [...set];
-    if (cells.some((i) => v[i] && !jeDane(i))) return { cells, kde: ' in the row, the column and the block of the burrow you picked' };
-  }
-  return { cells: null, kde: '' };
+  if (vybrana < 0) return { cells: null, kde: '' };
+  const set = new Set();
+  for (const ui of J.unitOf[vybrana]) for (const i of J.units[ui].cells) set.add(i);
+  return { cells: [...set], kde: ' in the row, the column and the block of the burrow you picked' };
 }
 function skontrolujStav() {
   if (done || pauza) return;
@@ -588,7 +589,12 @@ function skontrolujStav() {
   const p = porovnaj(v, zadanie.solution);
   const zle = r.cells ? p.zle.filter((i) => r.cells.includes(i)) : p.zle;
   const napisane = r.cells ? r.cells.filter((i) => v[i] && !jeDane(i)).length : napisaneHracom();
-  if (!napisane) { stavEl.textContent = 'Nothing written down yet.'; return; }
+  if (!napisane) {
+    stavEl.textContent = r.cells
+      ? 'Nothing written down yet' + r.kde + '. Press Escape to let the burrow go, then Check reads the whole meadow.'
+      : 'Nothing written down yet.';
+    return;
+  }
   checks++;
   ulozStav();
   if (!zle.length) {
@@ -764,11 +770,15 @@ function zapis(d) {
 }
 /* Ten istý zápis s otočeným režimom. Shift plus cifra a dlhé podržanie cifry
  * na pade robia to isté: v Notes mode zapíšu skutočnú hodnotu, mimo neho
- * poznámku, a režim pritom neprepnú (ops/spec-hry-ux.md, časti 1 a 2). */
+ * poznámku, a režim pritom neprepnú (ops/spec-hry-ux.md, časti 1 a 2).
+ * Dané políčko vysvetlí, prečo sa nedá prepísať, presne ako zapis(), a vráti
+ * false, aby volajúci nehlásil úspech, ktorý sa nestal. */
 function zapisOpacne(d) {
-  if (vybrana < 0 || jeDane(vybrana) || !d) return;
+  if (vybrana < 0 || !d) return false;
+  if (jeDane(vybrana)) { stavEl.textContent = 'That number came with the meadow, it stays where it is.'; return false; }
   if (poznamkyRezim) nastav(vybrana, v[vybrana] === d ? 0 : d);
   else prepniPoznamku(vybrana, d);
+  return true;
 }
 
 function spat() {
@@ -919,7 +929,9 @@ padEl.addEventListener('pointerdown', (e) => {
     ukonciDrzanie();
     if (done || pauza) return;
     if (vybrana < 0) { stavEl.textContent = 'Pick a burrow first, then hold a number.'; return; }
-    zapisOpacne(d);
+    // Hlásenie až po skutočnom zápise: na danom políčku zapisOpacne nič
+    // nenapíše a samo povie prečo.
+    if (!zapisOpacne(d)) return;
     stavEl.textContent = poznamkyRezim
       ? 'Held: written as a number, not a note.'
       : 'Held: written as a note, not a number.';
