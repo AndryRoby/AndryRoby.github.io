@@ -655,7 +655,7 @@ function ukazNapovedu() {
       }
       if (nastavenia.autoPoznamky) doplnPoznamky();
     });
-    const text = t.text;
+    const text = t.druh === 'chyba' ? t.text.replace('Clear it before going on.', 'It is cleared now.') : t.text;
     zmazTip(); zmazOdhalenie();
     track('game_hint', { game: 'squirrels', rule: t.pravidlo, layer: t.vrstva, applied: true });
     if (!zmenilo) { ulozStav(); ukazStav(); }
@@ -675,8 +675,9 @@ function ukazNapovedu() {
   for (const x of h.bunky) if (bunky[x.i]) bunky[x.i].classList.add('tip');
   zameraj(i, false);
   const veta = VETY[h.pravidlo] || VETY.reveal;
-  stavEl.textContent = veta(suradnice(i)) + ' Press Hint again to write it in.';
-  hintBtn.textContent = 'Write it';
+  const chyba = h.druh === 'chyba';
+  stavEl.textContent = veta(suradnice(i)) + (chyba ? ' Press Hint again to clear it.' : ' Press Hint again to write it in.');
+  hintBtn.textContent = chyba ? 'Clear it' : 'Write it';
   track('game_hint', { game: 'squirrels', rule: h.pravidlo, layer: h.vrstva, applied: false });
 }
 

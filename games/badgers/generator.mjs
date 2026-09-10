@@ -952,7 +952,7 @@ function textKroku(k, n) {
 /* ── Denná nora ──────────────────────────────────────────────────────── *
  * generate(dateStr, opts) picks n (default 9) and calls generateSeeded with
  * the date as both name and key, so every date keeps the puzzle it always
- * had. opts: n, maxAttempts (default 200). */
+ * had. opts: n, maxAttempts (default 400). */
 export function generate(dateStr, opts = {}) {
   if (!isValidDate(dateStr)) throw new Error('Date must be in YYYY-MM-DD form: ' + dateStr);
   const n = opts.n ?? 9;
