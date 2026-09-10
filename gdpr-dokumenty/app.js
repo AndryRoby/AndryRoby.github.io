@@ -230,8 +230,9 @@ async function poNavrate() {
   let sid = '';
   try { sid = new URL(location.href).searchParams.get('session_id') || ''; } catch (e) { /* nič */ }
   if (!sid) return;
+  const test = testRezim(); // before the query is dropped: ?test=1 may sit next to session_id
   history.replaceState(null, '', location.pathname);
-  if (sid.startsWith('cs_test_') && !testRezim()) { stavPlatby.textContent = T.testCudzi; return; }
+  if (sid.startsWith('cs_test_') && !test) { stavPlatby.textContent = T.testCudzi; return; }
   stavPlatby.textContent = T.overujem;
   try {
     const r = await fetch(API + '/v1/kontrola/status?session_id=' + encodeURIComponent(sid));
