@@ -11,9 +11,45 @@
  *
  * Udalosti do Umami (ak beží): gdpr_nahlad, gdpr_kupa_click,
  * gdpr_zaplatene, gdpr_stiahnute, gdpr_zadarmo.
+ * Slovenska aj ceska stranka pouzivaju tento jeden skript; lisia sa
+ * sablonami (dokumenty-sk.js, dokumenty-cs.js) a textami v T.
  */
-import { DOKUMENTY, zoznamDokumentov, NASTROJE, CINNOSTI, LEHOTY_PREDVOLENE } from './dokumenty-sk.js';
 import { docx, html, zip } from './docx.js';
+
+/* Jazyk stránky určuje šablóny (sk alebo cs) a texty tejto obrazovky. */
+const LANG = document.documentElement.lang === 'cs' ? 'cs' : 'sk';
+const { DOKUMENTY, zoznamDokumentov, NASTROJE, CINNOSTI, LEHOTY_PREDVOLENE } = await import(LANG === 'cs' ? './dokumenty-cs.js' : './dokumenty-sk.js');
+const T = {
+  sk: {
+    lehoty: { objednavky: 'Objednávky a doklady', kontakt: 'Dopyty a kontaktný formulár', newsletter: 'Newsletter', ucty: 'Používateľské účty', uchadzaci: 'Uchádzači o zamestnanie', zamestnanci: 'Zamestnanci', kamery: 'Kamerový záznam' },
+    pata: (d) => 'Vytvorené na arling.sk/gdpr-dokumenty/ dňa ' + d + '. Vzor vyplnený údajmi firmy, nie právne poradenstvo: pred použitím ho prečítajte a upravte podľa toho, čo firma skutočne robí.',
+    zamok: '<b>Zvyšok dokumentu je v balíku.</b> Po zaplatení sa všetky dokumenty odomknú v tomto prehliadači a stiahnu sa ako DOCX.',
+    zapina: 'Platba sa práve zapína. Skúste to o chvíľu alebo napíšte na andrej@arling.sk.',
+    overujem: 'Overujem platbu…',
+    zaplatene: '<b>Zaplatené, ďakujeme.</b> Dokumenty sú odomknuté v tomto prehliadači; doklad vám poslal Stripe e-mailom.',
+    inaSuma: 'Platba prišla, ale na inú sumu. Napíšte na andrej@arling.sk, vyriešime to ručne.',
+    nepotvrdene: 'Platbu sa nepodarilo potvrdiť. Ak ste zaplatili, počkajte minútu a obnovte stránku, alebo napíšte na andrej@arling.sk.',
+    siet: 'Overenie platby zlyhalo (sieť). Obnovte stránku; ak to pretrvá, napíšte na andrej@arling.sk.',
+    vymazat: 'Vymazať vyplnené údaje z tohto prehliadača?',
+    docxPripona: ' (DOCX)',
+    locale: 'sk-SK',
+  },
+  cs: {
+    lehoty: { objednavky: 'Objednávky a doklady', kontakt: 'Dotazy a kontaktní formulář', newsletter: 'Newsletter', ucty: 'Uživatelské účty', uchadzaci: 'Uchazeči o zaměstnání', zamestnanci: 'Zaměstnanci', kamery: 'Kamerový záznam' },
+    pata: (d) => 'Vytvořeno na arling.sk/gdpr-dokumenty/cs/ dne ' + d + '. Vzor vyplněný údaji firmy, ne právní poradenství: před použitím si ho přečtěte a upravte podle toho, co firma skutečně dělá.',
+    zamok: '<b>Zbytek dokumentu je v balíčku.</b> Po zaplacení se všechny dokumenty odemknou v tomto prohlížeči a stáhnou jako DOCX.',
+    zapina: 'Platba se právě zapíná. Zkuste to za chvíli nebo napište na andrej@arling.sk.',
+    overujem: 'Ověřuji platbu…',
+    zaplatene: '<b>Zaplaceno, děkujeme.</b> Dokumenty jsou odemčené v tomto prohlížeči; doklad vám poslal Stripe e-mailem.',
+    inaSuma: 'Platba přišla, ale na jinou částku. Napište na andrej@arling.sk, vyřešíme to ručně.',
+    nepotvrdene: 'Platbu se nepodařilo potvrdit. Pokud jste zaplatili, počkejte minutu a obnovte stránku, nebo napište na andrej@arling.sk.',
+    siet: 'Ověření platby selhalo (síť). Obnovte stránku; pokud to přetrvává, napište na andrej@arling.sk.',
+    vymazat: 'Smazat vyplněné údaje z tohoto prohlížeče?',
+    docxPripona: ' (DOCX)',
+    locale: 'cs-CZ',
+  },
+}[LANG];
+const KLUC_FORM = 'gdpr:formular:' + LANG;
 
 const API = 'https://arling-asistent.arling.workers.dev';
 const CENA_CENTY = 3900;
@@ -49,7 +85,7 @@ function postavZoznamy() {
     }
   }
   const le = $('lehoty');
-  const popisy = { objednavky: 'Objednávky a doklady', kontakt: 'Dopyty a kontaktný formulár', newsletter: 'Newsletter', ucty: 'Používateľské účty', uchadzaci: 'Uchádzači o zamestnanie', zamestnanci: 'Zamestnanci', kamery: 'Kamerový záznam' };
+  const popisy = T.lehoty;
   for (const k of Object.keys(LEHOTY_PREDVOLENE)) {
     const l = document.createElement('label'); l.className = 'pole';
     l.innerHTML = '<span>' + popisy[k] + '</span><input type="text" name="lehoty.' + k + '" placeholder="' + LEHOTY_PREDVOLENE[k].replace(/"/g, '') + '">';
@@ -87,7 +123,7 @@ function naplnFormular(d) {
 /* ── Náhľad ────────────────────────────────────────────────────────────── */
 let vybrany = 'd1';
 let d = null;
-const PATA = () => 'Vytvorené na arling.sk/gdpr-dokumenty/ dňa ' + new Date().toLocaleDateString('sk-SK') + '. Vzor vyplnený údajmi firmy, nie právne poradenstvo: pred použitím ho prečítajte a upravte podľa toho, čo firma skutočne robí.';
+const PATA = () => T.pata(new Date().toLocaleDateString(T.locale));
 
 function odomknute() {
   const z = nacitaj('gdpr:zaplatene');
@@ -95,7 +131,7 @@ function odomknute() {
 }
 function prekresli() {
   d = precitajFormular();
-  uloz('gdpr:formular', d);
+  uloz(KLUC_FORM, d);
   const zoznam = zoznamDokumentov(d);
   if (!zoznam.some((x) => x.id === vybrany)) vybrany = 'd1';
   zalozky.textContent = '';
@@ -112,7 +148,7 @@ function prekresli() {
   const bloky = dok.fn(d);
   const odomk = odomknute() || dok.zadarmo;
   const ukazane = odomk ? bloky : bloky.slice(0, Math.min(bloky.length, 7));
-  nahlad.innerHTML = '<div class="papier' + (odomk ? '' : ' zamknuty') + '">' + html(ukazane) + (odomk ? '<p class="pata">' + PATA() + '</p>' : '<div class="zamok"><p><b>Zvyšok dokumentu je v balíku.</b> Po zaplatení sa všetky dokumenty odomknú v tomto prehliadači a stiahnu sa ako DOCX.</p></div>') + '</div>';
+  nahlad.innerHTML = '<div class="papier' + (odomk ? '' : ' zamknuty') + '">' + html(ukazane) + (odomk ? '<p class="pata">' + PATA() + '</p>' : '<div class="zamok"><p>' + T.zamok + '</p></div>') + '</div>';
   // sťahovanie
   const zadarmoBtn = $('stiahnut-zadarmo');
   zadarmoBtn.hidden = !dok.zadarmo;
@@ -138,7 +174,7 @@ function postavStiahnutie(zoznam) {
     const li = document.createElement('li');
     const b = document.createElement('button');
     b.type = 'button'; b.className = 'btn btn-line';
-    b.textContent = x.nazov + ' (DOCX)';
+    b.textContent = x.nazov + T.docxPripona;
     b.addEventListener('click', () => { stiahni(subor(x), docx(x.fn(d), PATA())); track('gdpr_stiahnute', { dokument: x.id }); });
     li.appendChild(b);
     ul.appendChild(li);
@@ -164,7 +200,7 @@ function odkazNaKupu() {
 kupaBtn.addEventListener('click', () => {
   const u = odkazNaKupu();
   track('gdpr_kupa_click', { cena: CENA_CENTY });
-  if (!u) { stavPlatby.textContent = 'Platba sa práve zapína. Skúste to o chvíľu alebo napíšte na andrej@arling.sk.'; return; }
+  if (!u) { stavPlatby.textContent = T.zapina; return; }
   location.href = u;
 });
 async function poNavrate() {
@@ -172,34 +208,34 @@ async function poNavrate() {
   try { sid = new URL(location.href).searchParams.get('session_id') || ''; } catch (e) { /* nič */ }
   if (!sid) return;
   history.replaceState(null, '', location.pathname);
-  stavPlatby.textContent = 'Overujem platbu…';
+  stavPlatby.textContent = T.overujem;
   try {
     const r = await fetch(API + '/v1/kontrola/status?session_id=' + encodeURIComponent(sid));
     const st = r.ok ? await r.json() : null;
     if (st && st.paid && typeof st.amount_total === 'number' && st.amount_total >= CENA_CENTY) {
       uloz('gdpr:zaplatene', { session: sid, t: Date.now() });
-      stavPlatby.innerHTML = '<b>Zaplatené, ďakujeme.</b> Dokumenty sú odomknuté v tomto prehliadači; doklad vám poslal Stripe e-mailom.';
+      stavPlatby.innerHTML = T.zaplatene;
       track('gdpr_zaplatene', {});
       prekresli();
       $('stiahnut').scrollIntoView({ behavior: 'smooth', block: 'start' });
       return;
     }
-    stavPlatby.textContent = st && st.paid ? 'Platba prišla, ale na inú sumu. Napíšte na andrej@arling.sk, vyriešime to ručne.' : 'Platbu sa nepodarilo potvrdiť. Ak ste zaplatili, počkajte minútu a obnovte stránku, alebo napíšte na andrej@arling.sk.';
+    stavPlatby.textContent = st && st.paid ? T.inaSuma : T.nepotvrdene;
   } catch (e) {
-    stavPlatby.textContent = 'Overenie platby zlyhalo (sieť). Obnovte stránku; ak to pretrvá, napíšte na andrej@arling.sk.';
+    stavPlatby.textContent = T.siet;
   }
 }
 
 /* ── Štart ─────────────────────────────────────────────────────────────── */
 postavZoznamy();
-naplnFormular(nacitaj('gdpr:formular'));
+naplnFormular(nacitaj(KLUC_FORM));
 if (!form.elements.datum.value) form.elements.datum.value = new Date().toISOString().slice(0, 10);
 form.addEventListener('input', prekresli);
 form.addEventListener('change', prekresli);
 form.addEventListener('submit', (e) => e.preventDefault());
 $('zmazat').addEventListener('click', () => {
-  if (!window.confirm('Vymazať vyplnené údaje z tohto prehliadača?')) return;
-  try { localStorage.removeItem('gdpr:formular'); } catch (e) { /* nič */ }
+  if (!window.confirm(T.vymazat)) return;
+  try { localStorage.removeItem(KLUC_FORM); } catch (e) { /* nič */ }
   form.reset();
   form.elements.datum.value = new Date().toISOString().slice(0, 10);
   prekresli();
