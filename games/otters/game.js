@@ -98,6 +98,11 @@ if (body.dataset.sada) {
 }
 const jeDnes = rezim === 'den' && datum === dnes;
 const jeBuduci = rezim === 'den' && datum > dnes;
+// Koreňová stránka /games/otters/ prepíše adresu na dnešný deň (bez presmerovania),
+// aby zdieľaný odkaz viedol na konkrétny deň; stránky dní, cvičenia a ?d= ostávajú.
+if (rezim === 'den' && !body.dataset.den && jeDnes && !location.search) {
+  try { history.replaceState(null, '', '/games/otters/' + datum + '/'); } catch (e) { /* adresa ostane všeobecná, hra beží ďalej */ }
+}
 const KLUC = rezim === 'cvicenie' ? 'otters:p:' + sada + ':' + kSada : 'otters:' + datum;
 
 function formatCas(sek) {
@@ -418,7 +423,7 @@ function ukazStav() {
     return;
   }
   const oznacenych = v.some((x) => x !== 0);
-  if (!oznacenych) { stavEl.textContent = 'Tap a side to draw the river, tap again for a cross. Drag to draw several.'; return; }
+  if (!oznacenych) { stavEl.textContent = 'Tap a line between two dots to draw it. Tap again for a cross (no line here), tap once more to clear.'; return; }
   let splnene = 0, spolu = 0;
   for (let i = 0; i < g.C; i++) {
     if (zadanie.clues[i] == null) continue;
@@ -613,43 +618,35 @@ function reset() {
 }
 
 /* ── Pointer ──────────────────────────────────────────────────────────── *
- * A tap on a side moves it on: river, cross, empty. A drag paints with
- * whatever a single tap on the FIRST side would have set it to, and only
- * touches sides that are still empty, so it never wipes out the other kind
- * of mark. A drag that begins on a cross (so the tap would clear it) wipes
- * the crosses it runs over instead. */
+ * Clicking only, no drag and drop (Andrej, 10. 9.): a tap moves a side on,
+ * empty, river, cross, empty. Only a pointerup on the very side the pointer
+ * went down on counts as a tap; a finger or mouse that moves off that side
+ * before release cancels it, so pointer move never draws anything. */
 function hranaPod(e) {
   const el = document.elementFromPoint(e.clientX, e.clientY);
   const h = el && el.closest ? el.closest('.hit') : null;
   return h && doska.contains(h) ? +h.dataset.e : -1;
 }
-let tah = null; // { start, maloval, hodnota, id }
+let tah = null; // { edge, id } where a tap began; leaving that side cancels it
 doska.addEventListener('pointerdown', (e) => {
   if (done || pauza || (e.pointerType === 'mouse' && e.button !== 0)) return;
   const i = hranaPod(e);
   if (i < 0) return;
-  tah = { start: i, maloval: false, hodnota: (v[i] + 1) % 3, id: e.pointerId };
+  tah = { edge: i, id: e.pointerId };
   try { doska.setPointerCapture(e.pointerId); } catch (err) { /* works without capture too, less smoothly */ }
   kurzorNaHranu(i);
   e.preventDefault();
 });
 doska.addEventListener('pointermove', (e) => {
-  if (!tah || tah.id !== e.pointerId || done || pauza) return;
-  const i = hranaPod(e);
-  if (i < 0 || (i === tah.start && !tah.maloval)) return;
-  if (!tah.maloval) {
-    tah.maloval = true;
-    nastav(tah.start, tah.hodnota);
-  }
-  if (tah.hodnota !== 0 && v[i] === 0) nastav(i, tah.hodnota);
-  else if (tah.hodnota === 0 && v[i] === 2) nastav(i, 0);
+  if (!tah || tah.id !== e.pointerId) return;
+  if (hranaPod(e) !== tah.edge) tah = null;   // left the side: no tap, nothing drawn
 });
 function koniecTahu(e) {
   if (!tah || tah.id !== e.pointerId) return;
   const t = tah;
   tah = null;
   try { doska.releasePointerCapture(e.pointerId); } catch (err) { /* nothing */ }
-  if (!t.maloval && !done && !pauza) prepni(t.start);
+  if (!done && !pauza) prepni(t.edge);
 }
 doska.addEventListener('pointerup', koniecTahu);
 doska.addEventListener('pointercancel', (e) => { if (tah && tah.id === e.pointerId) tah = null; });

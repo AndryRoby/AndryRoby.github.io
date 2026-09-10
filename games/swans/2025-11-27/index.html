@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script src="/style/vzhlad.js?v=93c2659f"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://homelab.tailbf8f27.ts.net; connect-src 'self' https://homelab.tailbf8f27.ts.net; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<meta name="color-scheme" content="dark">
+<meta name="robots" content="index, follow">
+<link rel="manifest" href="/games/swans/manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Swans">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta property="og:image" content="https://arling.sk/games/swans/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://homelab.tailbf8f27.ts.net" crossorigin>
+<meta name="theme-color" content="#0a0908">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="48x48">
+<link rel="apple-touch-icon" href="/icon-180.png">
+<title>Swans for Thursday 27 November 2025 · ARLing</title>
+<meta name="description" content="The Swans lake for Thursday 27 November 2025: medium, seven by seven. Draw one closed loop through every swan so each one has the shape it asks for. Free, with hints and Check, in your browser.">
+<link rel="canonical" href="https://arling.sk/games/swans/2025-11-27/">
+<link rel="prev" href="https://arling.sk/games/swans/2025-11-26/">
+<link rel="next" href="https://arling.sk/games/swans/2025-11-28/">
+<meta property="og:title" content="Swans for Thursday 27 November 2025 · ARLing">
+<meta property="og:description" content="The Swans lake for Thursday 27 November 2025: medium, seven by seven. Draw one closed loop through every swan so each one has the shape it asks for. Free, with hints and Check, in your browser.">
+<meta property="og:url" content="https://arling.sk/games/swans/2025-11-27/">
+<meta property="og:type" content="website">
+
+
+<link rel="alternate" type="text/plain" href="https://arling.sk/llms.txt" title="llms.txt">
+<link rel="preload" href="/fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/style/paper.css?v=89016e6c">
+<script src="/style/prepinac.js?v=2988c181" defer></script>
+<script type="module" src="/games/swans/game.js?v=1"></script>
+<style>
+  /* Only this page: the lake, the control row and the rules block. */
+  .hero{align-items:start}
+  .hra{max-width:calc(var(--n,7) * 46px + 60px);margin:0 auto}
+  /* Phones and folds: the lake sits in the middle and uses the whole width. */
+  @media (max-width:860px){ .hra{margin:0 auto;max-width:min(100%,calc(var(--n,7) * 50px + 60px))} }
+  /* Narrow phones: the board takes the whole screen width, exactly, so the
+     page never scrolls sideways (the wrap gutter is a percentage, so a fixed
+     negative margin would overshoot it by a pixel). */
+  @media (max-width:480px){ .doska-obal{margin-inline:calc((100% - 100vw) / 2)} }
+  header{padding-top:env(safe-area-inset-top,0px)}
+  .horna{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:0 0 10px;
+         font-family:var(--ui);font-size:14px;color:var(--muted)}
+  .horna b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+  .horna .uroven{color:var(--muted);font-size:12px;letter-spacing:.06em;text-transform:uppercase;margin-left:8px;white-space:nowrap}
+  .horna #cas-blok,.horna #datum{white-space:nowrap}
+  @media (max-width:480px){ .horna .uroven{display:block;margin:2px 0 0} }
+  .pauza-btn{font:500 12px/1 var(--ui);color:var(--muted);background:transparent;border:1px solid var(--line);border-radius:999px;padding:4px 10px;cursor:pointer;margin-left:8px;vertical-align:1px}
+  .pauza-btn:hover{color:var(--ink);border-color:var(--ink)}
+  .doska-obal{position:relative;touch-action:pan-y}
+  .pauza-blok{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+     background:rgba(10,9,8,.9);border:2px solid var(--line);border-radius:8px;text-align:center;font-family:var(--ui);padding:20px;z-index:2}
+  .pauza-blok[hidden]{display:none}
+  .pauza-blok p{margin:0;color:var(--body);font-size:15px;line-height:1.5}
+  .pauza-blok b{color:var(--ink)}
+  /* ── The lake ───────────────────────────────────────────────────────────
+     One SVG, drawn by game.js: a faint grid of cells, the water the finished
+     loop fills, the swans, and on top of them one group per step between two
+     neighbouring cells (the line of the loop, the player's cross, and a ring
+     for a hint or a mistake). Which step a tap means is worked out from the
+     distance to the middle of that step, not from the shapes, so a tap always
+     lands on the nearest one. */
+  .doska{display:block;width:100%;height:auto;background:var(--card-plna);border:2px solid var(--ink);border-radius:8px;
+         touch-action:none;user-select:none;-webkit-user-select:none;outline:none;cursor:pointer}
+  /* An SVG is not an HTML element, so the browser's own rule for [hidden]
+     does not reach it: a future day hides the lake with this one. */
+  .doska[hidden]{display:none}
+  /* After the rule above, so that it wins: on a narrow phone the lake runs
+     from edge to edge and has no side border to cut it off. */
+  @media (max-width:480px){ .doska{border-radius:0;border-left:0;border-right:0} }
+  .doska.hotovo{border-color:var(--ok);box-shadow:0 0 0 4px rgba(94,207,154,.14)}
+  .doska.hotovo,.doska.pauza{cursor:default}
+  .doska.pauza .plocha{visibility:hidden}
+  .mriezka line{stroke:rgba(255,255,255,.10);stroke-width:1}
+  /* The water inside the finished loop. */
+  .voda{fill:none;stroke:none}
+  .hotovo .voda{fill:rgba(94,207,154,.11)}
+  .h line{display:none;stroke-width:5;stroke-linecap:round}
+  .h .l0{stroke:var(--accent)}
+  .h[data-v="1"] .l0{display:inline}
+  /* The faint line under the pointer: what one tap would draw. */
+  .h.pod[data-v="0"] .nahlad{display:inline;stroke:var(--accent);opacity:.22}
+  /* The player's own note that the loop does not run here. It is never checked
+     and never required, and it disappears the moment a line is drawn there. */
+  .h .krizik{display:none;stroke:var(--muted);stroke-width:2.5;stroke-linecap:round;opacity:.85}
+  .h[data-v="2"] .krizik{display:inline}
+  .h .znak{display:none;fill:none;stroke-width:2.5;transform-box:fill-box;transform-origin:center}
+  .h.tip .znak{display:inline;stroke:#facc15;animation:tip-pulz .9s ease-in-out infinite alternate}
+  /* A mistake is a shape and an icon, not only a colour: a ring across the
+     step, and the line itself drawn broken. */
+  .h.chyba .znak{display:inline;stroke:#ff7b7b}
+  .h.chyba .l0{stroke:#ff7b7b;stroke-dasharray:6 4}
+  .h.chyba .krizik{stroke:#ff7b7b;opacity:1}
+  .hotovo .h .l0{stroke:var(--ok)}
+  /* The finished loop is the picture, so the crosses step out of it. */
+  .hotovo .h .krizik{display:none}
+  /* The page is dark, so the swans keep their own names rather than the
+     printed convention: the white swan is the pale disc, the black swan the
+     dark one inside a pale ring. The two differ in shape as well as in
+     lightness, which is what the standard asks for (WCAG 1.4.1). */
+  .labut{stroke-width:2.5}
+  .labut.biela{fill:var(--ink);stroke:var(--ink)}
+  .labut.cierna{fill:var(--card-plna);stroke:var(--ink);stroke-width:3.5}
+  /* A swan that already has the shape it asks for goes quiet. It says nothing
+     about whether the rest of the loop is right: only Check judges that. */
+  .policko.splnene .labut{opacity:.4}
+  /* Napoveda ukazuje jeden krok medzi dvomi polickami. Krok je krúžok na hrane,
+     policka su pod nim len tiche svetlo: ked boli aj policka krúžky, tri kruhy
+     v jednom mieste sa zliali do skvrny. Svetlo pulzuje priehladnostou, nie
+     velkostou, takze nic nepretecie do susedneho policka. */
+  .policko .prstenec{display:none;fill:none;stroke:none;transform-box:fill-box;transform-origin:center}
+  .policko.tip .prstenec{display:inline;fill:rgba(250,204,21,.20);animation:tip-svetlo .9s ease-in-out infinite alternate}
+  .policko.chyba .prstenec{display:inline;fill:rgba(255,123,123,.20)}
+  .hotovo .labut.biela{fill:var(--ok);stroke:var(--ok)}
+  .hotovo .labut.cierna{fill:var(--card-plna);stroke:var(--ok)}
+  .hotovo .policko.splnene .labut{opacity:1}
+  .pole{fill:transparent;pointer-events:none;outline:none}
+  .kurzor{fill:none;stroke:var(--accent);stroke-width:2.5;opacity:0}
+  .doska:focus-within .kurzor{opacity:1}
+  /* The tap by tap way of drawing, for anyone who cannot drag: the cell the
+     next tap will draw from. */
+  .kotva{fill:none;stroke:var(--accent);stroke-width:2.5;stroke-dasharray:4 4;opacity:0}
+  .doska.kotvi .kotva{opacity:.9}
+  @keyframes tip-pulz{from{transform:scale(.86);opacity:.5}to{transform:scale(1.04);opacity:1}}
+  @keyframes tip-svetlo{from{opacity:.45}to{opacity:1}}
+  @media (prefers-reduced-motion:reduce){ .h.tip .znak,.policko.tip .prstenec{animation:none} }
+  .skryte{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
+  .ovladanie{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:14px}
+  .ovladanie .btn{height:40px;padding:0 13px;font-size:14px}
+  /* paper.css dava .btn{display:inline-flex} a autorske pravidlo vzdy prebije
+     prehliadacov vlastny [hidden]{display:none}: Share by svietil este pred
+     dohranim. Rovnaka oprava ako pri .pauza-blok[hidden]. */
+  .ovladanie .btn[hidden]{display:none}
+  /* Na uzkom telefone sa vsetkych pat tlacidiel musi zmestit do jedneho
+     riadku, inak Check spadne sam pod ostatne a stranka vyzera nedorobene. */
+  @media (max-width:480px){ .ovladanie{gap:6px} .ovladanie .btn{padding:0 9px} }
+  /* Pri 320 px, spodnej hranici standardu, tych pat tlacidiel potrebuje este
+     asi 25 px navyse: uzsi gap a padding ich usetri dost s rezervou a
+     sirsieho telefonu sa to netyka. */
+  @media (max-width:359px){ .ovladanie{gap:4px} .ovladanie .btn{padding:0 6px;font-size:13px} }
+  .stav{font-family:var(--ui);font-size:15px;line-height:1.5;color:var(--body);margin:12px 0 0;min-height:1.5em}
+  .stav b{color:var(--ink)}
+  .stav.ok{color:var(--ok)}
+  .stav.ok b{color:var(--ok)}
+  .pasik{display:flex;gap:6px;margin-top:14px}
+  .den{flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;padding:6px 0 5px;border:1px solid var(--line);border-radius:10px;
+       text-decoration:none;color:var(--muted);font-family:var(--ui);min-width:0;background:var(--card)}
+  .den small{font-size:10px;letter-spacing:.08em}
+  .den b{font-size:15px;color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+  .den.dnes{border-color:var(--accent);color:var(--accent)}
+  .den.rozohrane{border-style:dashed}
+  .den.hotove{background:rgba(94,207,154,.12);border-color:var(--ok)}
+  .den.hotove b{color:var(--ok)}
+  .den.buduci{opacity:.38}
+  a.den:hover{border-color:var(--ink);color:var(--ink)}
+  .odkazy{font-family:var(--ui);font-size:13px;color:var(--muted);margin:12px 0 0}
+  .odkazy a{color:var(--body)}
+  .historia{font-family:var(--ui);font-size:13px;color:var(--body);line-height:1.5;margin:10px 0 0}
+  .historia b{color:var(--ink)}
+  .nastavenia{margin-top:14px;border:1px solid var(--line);border-radius:12px;background:var(--card);padding:0 14px}
+  .nastavenia summary{cursor:pointer;font:600 13px/1.4 var(--ui);color:var(--muted);padding:10px 0;list-style:none}
+  .nastavenia summary::-webkit-details-marker{display:none}
+  .nastavenia[open] summary{color:var(--ink)}
+  .nastavenia label{display:flex;gap:10px;align-items:flex-start;font-family:var(--ui);font-size:13px;color:var(--body);line-height:1.5;padding:6px 0}
+  .nastavenia input{margin-top:3px;flex:none}
+  .nastavenia .fineprint{padding:6px 0 12px;margin:0}
+  .navod{font-family:var(--ui);font-size:13px;color:var(--muted);margin:10px 0 0;max-width:none}
+  .navod kbd{font-size:12px}
+  /* On the phone the lake goes under the text; the keyboard note there would
+     just push the game further down. It is in the Rules section too. */
+  @media (max-width:860px){ .navod{display:none} }
+  .pravidla details{border:1px solid var(--line);border-radius:12px;background:var(--card);padding:0 18px;max-width:68ch}
+  .pravidla details+details{margin-top:10px}
+  .pravidla summary{cursor:pointer;font:600 15px/1.4 var(--ui);color:var(--ink);padding:14px 0;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:12px}
+  .pravidla summary::-webkit-details-marker{display:none}
+  .pravidla summary::after{content:"";width:.5em;height:.5em;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(45deg);flex:none;margin-right:4px;transition:transform .2s var(--ease)}
+  .pravidla details[open] summary::after{transform:rotate(225deg)}
+  .pravidla .telo{padding:0 0 16px}
+  .pravidla .telo p{margin:0 0 10px}
+  .pravidla .telo p:last-child{margin:0}
+  .jazyk{font:500 13px/1 var(--ui);color:var(--muted);background:transparent;border:1px solid var(--line);border-radius:999px;padding:6px 12px;cursor:pointer;margin-top:14px}
+  .jazyk:hover{color:var(--ink);border-color:var(--ink)}
+  .prose p{margin:0 0 14px}
+  .prose p:last-child{margin-bottom:0}
+  .sub{margin:0 0 6px}
+  noscript p{font-family:var(--ui);color:var(--accent-light)}
+</style>
+<noscript><style>
+  .r, .w { opacity:1 !important; transform:none !important; filter:none !important; }
+  .rule { transform:scaleX(1) !important; }
+</style></noscript>
+</head>
+<body class="noc" data-den="2025-11-27">
+<div class="wash" aria-hidden="true"><i></i><i></i></div>
+<a class="skip" href="#doska">Skip to the game</a>
+
+<header>
+  <div class="wrap bar">
+    <a class="brand" href="https://arling.sk/">
+      <svg viewBox="0 0 488 215" width="38" height="15" aria-hidden="true" focusable="false"><path fill="#f4f4f7" fill-rule="evenodd" d="M0.00,213.00L74.00,214.00L181.00,85.00L285.00,214.00L360.00,214.00L206.00,21.00L185.00,4.00L164.00,10.00Z M221.00,0.00L263.00,50.00L395.00,50.00L409.00,55.00L419.00,76.00L401.00,96.00L313.00,98.00L411.00,214.00L487.00,214.00L422.00,139.00L457.00,123.00L482.00,88.00L482.00,48.00L463.00,19.00L417.00,0.00Z"/><path fill="#f2643c" d="M269.00,66.00L269.00,67.00L268.00,68.00L268.00,70.00L267.00,71.00L267.00,76.00L268.00,77.00L268.00,79.00L270.00,81.00L270.00,82.00L271.00,82.00L273.00,84.00L274.00,84.00L277.00,86.00L279.00,86.00L280.00,87.00L287.00,87.00L288.00,86.00L290.00,86.00L291.00,85.00L294.00,84.00L298.00,80.00L298.00,79.00L299.00,78.00L299.00,75.00L300.00,74.00L300.00,72.00L299.00,71.00L299.00,69.00L298.00,68.00L297.00,65.00L295.00,63.00L294.00,63.00L289.00,60.00L278.00,60.00L277.00,61.00L276.00,61.00L275.00,62.00L272.00,63.00Z"/></svg>
+      <b>ARLing</b><span>Games</span>
+    </a>
+    <nav aria-label="Site"><a href="https://arling.sk/en/#tools">Tools</a><a href="https://arling.sk/games/">Games</a><a href="https://arling.sk/notes/">Notes</a><a href="https://arling.sk/how-we-work/">How we work</a><a href="mailto:andrej@arling.sk">Contact</a></nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap hero" id="hero">
+    <div>
+      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 9v-2a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v10a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-8"/><circle cx="5" cy="12" r="2.4"/><circle cx="19" cy="6" r="2.4" fill="currentColor"/></svg>Daily loop logic</p>
+      <h1 id="h1"><span class="l">Swans.</span></h1>
+      <p class="lead r d3">Draw one loop through every swan. At a white swan the loop goes straight and turns in the cell just before or just after. At a black swan the loop turns and goes straight through both neighbouring cells.</p>
+      <p class="proof r d5" id="dnes">The lake for Thursday 27 November 2025: medium, seven by seven. Exactly one solution.</p>
+      <p class="navod r d5">Drag from cell to cell to draw the loop, and drag back along it to rub it out. Tap the gap between two cells for a line, then a cross, then nothing. Keyboard: arrows move the cursor, <kbd>Enter</kbd> starts and ends drawing, <kbd>Space</kbd> works on the last direction, <kbd>X</kbd> crosses it, <kbd>U</kbd> undo, <kbd>R</kbd> redo, <kbd>P</kbd> pauses. Nothing lights up while you play; Check judges only when you ask.</p>
+    </div>
+    <div class="r d2">
+      <div class="hra">
+        <div class="horna"><span><span id="datum">Thursday 27 November 2025</span><span class="uroven" id="uroven">Medium · 7×7</span></span><span id="cas-blok">Time <b id="cas">0:00</b><button type="button" class="pauza-btn" id="pauza" hidden>Pause</button></span></div>
+        <div class="doska-obal">
+          <svg class="doska" id="doska" viewBox="0 0 280 280" role="grid" aria-label="Lake grid 7 by 7" aria-describedby="labute-text"><g class="plocha" role="presentation"><path class="voda" id="voda" d="" aria-hidden="true"/><g class="mriezka" aria-hidden="true"><line class="" x1="40" y1="0" x2="40" y2="280"/><line class="" x1="0" y1="40" x2="280" y2="40"/><line class="" x1="80" y1="0" x2="80" y2="280"/><line class="" x1="0" y1="80" x2="280" y2="80"/><line class="" x1="120" y1="0" x2="120" y2="280"/><line class="" x1="0" y1="120" x2="280" y2="120"/><line class="" x1="160" y1="0" x2="160" y2="280"/><line class="" x1="0" y1="160" x2="280" y2="160"/><line class="" x1="200" y1="0" x2="200" y2="280"/><line class="" x1="0" y1="200" x2="280" y2="200"/><line class="" x1="240" y1="0" x2="240" y2="280"/><line class="" x1="0" y1="240" x2="280" y2="240"/></g><g class="policka" role="presentation"><g role="row" aria-rowindex="1"><g class="policko" data-i="0"><rect class="pole" role="gridcell" aria-colindex="1" data-i="0" tabindex="0" x="0" y="0" width="40" height="40"></rect><circle class="prstenec" cx="20" cy="20" r="16"/></g><g class="policko" data-i="1"><rect class="pole" role="gridcell" aria-colindex="2" data-i="1" tabindex="-1" x="40" y="0" width="40" height="40"></rect><circle class="prstenec" cx="60" cy="20" r="16"/></g><g class="policko" data-i="2"><rect class="pole" role="gridcell" aria-colindex="3" data-i="2" tabindex="-1" x="80" y="0" width="40" height="40"></rect><circle class="prstenec" cx="100" cy="20" r="16"/></g><g class="policko" data-i="3"><rect class="pole" role="gridcell" aria-colindex="4" data-i="3" tabindex="-1" x="120" y="0" width="40" height="40"></rect><circle class="prstenec" cx="140" cy="20" r="16"/></g><g class="policko" data-i="4"><rect class="pole" role="gridcell" aria-colindex="5" data-i="4" tabindex="-1" x="160" y="0" width="40" height="40"></rect><circle class="prstenec" cx="180" cy="20" r="16"/></g><g class="policko" data-i="5"><rect class="pole" role="gridcell" aria-colindex="6" data-i="5" tabindex="-1" x="200" y="0" width="40" height="40"></rect><circle class="prstenec" cx="220" cy="20" r="16"/></g><g class="policko" data-i="6"><rect class="pole" role="gridcell" aria-colindex="7" data-i="6" tabindex="-1" x="240" y="0" width="40" height="40"></rect><circle class="prstenec" cx="260" cy="20" r="16"/></g></g><g role="row" aria-rowindex="2"><g class="policko" data-i="7"><rect class="pole" role="gridcell" aria-colindex="1" data-i="7" tabindex="-1" x="0" y="40" width="40" height="40"></rect><circle class="prstenec" cx="20" cy="60" r="16"/></g><g class="policko" data-i="8"><rect class="pole" role="gridcell" aria-colindex="2" data-i="8" tabindex="-1" x="40" y="40" width="40" height="40"></rect><circle class="prstenec" cx="60" cy="60" r="16"/></g><g class="policko" data-i="9"><rect class="pole" role="gridcell" aria-colindex="3" data-i="9" tabindex="-1" x="80" y="40" width="40" height="40"></rect><circle class="prstenec" cx="100" cy="60" r="16"/></g><g class="policko" data-i="10"><rect class="pole" role="gridcell" aria-colindex="4" data-i="10" tabindex="-1" x="120" y="40" width="40" height="40"></rect><circle class="prstenec" cx="140" cy="60" r="16"/></g><g class="policko" data-i="11"><rect class="pole" role="gridcell" aria-colindex="5" data-i="11" tabindex="-1" x="160" y="40" width="40" height="40"></rect><circle class="prstenec" cx="180" cy="60" r="16"/></g><g class="policko" data-i="12"><rect class="pole" role="gridcell" aria-colindex="6" data-i="12" tabindex="-1" x="200" y="40" width="40" height="40"></rect><circle class="prstenec" cx="220" cy="60" r="16"/></g><g class="policko" data-i="13"><rect class="pole" role="gridcell" aria-colindex="7" data-i="13" tabindex="-1" x="240" y="40" width="40" height="40"></rect><circle class="prstenec" cx="260" cy="60" r="16"/></g></g><g role="row" aria-rowindex="3"><g class="policko" data-i="14"><rect class="pole" role="gridcell" aria-colindex="1" data-i="14" tabindex="-1" x="0" y="80" width="40" height="40"></rect><circle class="prstenec" cx="20" cy="100" r="16"/></g><g class="policko" data-i="15"><rect class="pole" role="gridcell" aria-colindex="2" data-i="15" tabindex="-1" x="40" y="80" width="40" height="40"></rect><circle class="prstenec" cx="60" cy="100" r="16"/></g><g class="policko" data-i="16"><rect class="pole" role="gridcell" aria-colindex="3" data-i="16" tabindex="-1" x="80" y="80" width="40" height="40"></rect><circle class="prstenec" cx="100" cy="100" r="16"/></g><g class="policko" data-i="17"><rect class="pole" role="gridcell" aria-colindex="4" data-i="17" tabindex="-1" x="120" y="80" width="40" height="40"></rect><circle class="prstenec" cx="140" cy="100" r="16"/><circle class="labut biela" cx="140" cy="100" r="11"/></g><g class="policko" data-i="18"><rect class="pole" role="gridcell" aria-colindex="5" data-i="18" tabindex="-1" x="160" y="80" width="40" height="40"></rect><circle class="prstenec" cx="180" cy="100" r="16"/></g><g class="policko" data-i="19"><rect class="pole" role="gridcell" aria-colindex="6" data-i="19" tabindex="-1" x="200" y="80" width="40" height="40"></rect><circle class="prstenec" cx="220" cy="100" r="16"/></g><g class="policko" data-i="20"><rect class="pole" role="gridcell" aria-colindex="7" data-i="20" tabindex="-1" x="240" y="80" width="40" height="40"></rect><circle class="prstenec" cx="260" cy="100" r="16"/><circle class="labut cierna" cx="260" cy="100" r="11"/></g></g><g role="row" aria-rowindex="4"><g class="policko" data-i="21"><rect class="pole" role="gridcell" aria-colindex="1" data-i="21" tabindex="-1" x="0" y="120" width="40" height="40"></rect><circle class="prstenec" cx="20" cy="140" r="16"/></g><g class="policko" data-i="22"><rect class="pole" role="gridcell" aria-colindex="2" data-i="22" tabindex="-1" x="40" y="120" width="40" height="40"></rect><circle class="prstenec" cx="60" cy="140" r="16"/></g><g class="policko" data-i="23"><rect class="pole" role="gridcell" aria-colindex="3" data-i="23" tabindex="-1" x="80" y="120" width="40" height="40"></rect><circle class="prstenec" cx="100" cy="140" r="16"/></g><g class="policko" data-i="24"><rect class="pole" role="gridcell" aria-colindex="4" data-i="24" tabindex="-1" x="120" y="120" width="40" height="40"></rect><circle class="prstenec" cx="140" cy="140" r="16"/></g><g class="policko" data-i="25"><rect class="pole" role="gridcell" aria-colindex="5" data-i="25" tabindex="-1" x="160" y="120" width="40" height="40"></rect><circle class="prstenec" cx="180" cy="140" r="16"/></g><g class="policko" data-i="26"><rect class="pole" role="gridcell" aria-colindex="6" data-i="26" tabindex="-1" x="200" y="120" width="40" height="40"></rect><circle class="prstenec" cx="220" cy="140" r="16"/></g><g class="policko" data-i="27"><rect class="pole" role="gridcell" aria-colindex="7" data-i="27" tabindex="-1" x="240" y="120" width="40" height="40"></rect><circle class="prstenec" cx="260" cy="140" r="16"/><circle class="labut biela" cx="260" cy="140" r="11"/></g></g><g role="row" aria-rowindex="5"><g class="policko" data-i="28"><rect class="pole" role="gridcell" aria-colindex="1" data-i="28" tabindex="-1" x="0" y="160" width="40" height="40"></rect><circle class="prstenec" cx="20" cy="180" r="16"/></g><g class="policko" data-i="29"><rect class="pole" role="gridcell" aria-colindex="2" data-i="29" tabindex="-1" x="40" y="160" width="40" height="40"></rect><circle class="prstenec" cx="60" cy="180" r="16"/></g><g class="policko" data-i="30"><rect class="pole" role="gridcell" aria-colindex="3" data-i="30" tabindex="-1" x="80" y="160" width="40" height="40"></rect><circle class="prstenec" cx="100" cy="180" r="16"/><circle class="labut cierna" cx="100" cy="180" r="11"/></g><g class="policko" data-i="31"><rect class="pole" role="gridcell" aria-colindex="4" data-i="31" tabindex="-1" x="120" y="160" width="40" height="40"></rect><circle class="prstenec" cx="140" cy="180" r="16"/><circle class="labut biela" cx="140" cy="180" r="11"/></g><g class="policko" data-i="32"><rect class="pole" role="gridcell" aria-colindex="5" data-i="32" tabindex="-1" x="160" y="160" width="40" height="40"></rect><circle class="prstenec" cx="180" cy="180" r="16"/></g><g class="policko" data-i="33"><rect class="pole" role="gridcell" aria-colindex="6" data-i="33" tabindex="-1" x="200" y="160" width="40" height="40"></rect><circle class="prstenec" cx="220" cy="180" r="16"/></g><g class="policko" data-i="34"><rect class="pole" role="gridcell" aria-colindex="7" data-i="34" tabindex="-1" x="240" y="160" width="40" height="40"></rect><circle class="prstenec" cx="260" cy="180" r="16"/></g></g><g role="row" aria-rowindex="6"><g class="policko" data-i="35"><rect class="pole" role="gridcell" aria-colindex="1" data-i="35" tabindex="-1" x="0" y="200" width="40" height="40"></rect><circle class="prstenec" cx="20" cy="220" r="16"/></g><g class="policko" data-i="36"><rect class="pole" role="gridcell" aria-colindex="2" data-i="36" tabindex="-1" x="40" y="200" width="40" height="40"></rect><circle class="prstenec" cx="60" cy="220" r="16"/></g><g class="policko" data-i="37"><rect class="pole" role="gridcell" aria-colindex="3" data-i="37" tabindex="-1" x="80" y="200" width="40" height="40"></rect><circle class="prstenec" cx="100" cy="220" r="16"/></g><g class="policko" data-i="38"><rect class="pole" role="gridcell" aria-colindex="4" data-i="38" tabindex="-1" x="120" y="200" width="40" height="40"></rect><circle class="prstenec" cx="140" cy="220" r="16"/><circle class="labut biela" cx="140" cy="220" r="11"/></g><g class="policko" data-i="39"><rect class="pole" role="gridcell" aria-colindex="5" data-i="39" tabindex="-1" x="160" y="200" width="40" height="40"></rect><circle class="prstenec" cx="180" cy="220" r="16"/></g><g class="policko" data-i="40"><rect class="pole" role="gridcell" aria-colindex="6" data-i="40" tabindex="-1" x="200" y="200" width="40" height="40"></rect><circle class="prstenec" cx="220" cy="220" r="16"/><circle class="labut cierna" cx="220" cy="220" r="11"/></g><g class="policko" data-i="41"><rect class="pole" role="gridcell" aria-colindex="7" data-i="41" tabindex="-1" x="240" y="200" width="40" height="40"></rect><circle class="prstenec" cx="260" cy="220" r="16"/></g></g><g role="row" aria-rowindex="7"><g class="policko" data-i="42"><rect class="pole" role="gridcell" aria-colindex="1" data-i="42" tabindex="-1" x="0" y="240" width="40" height="40"></rect><circle class="prstenec" cx="20" cy="260" r="16"/></g><g class="policko" data-i="43"><rect class="pole" role="gridcell" aria-colindex="2" data-i="43" tabindex="-1" x="40" y="240" width="40" height="40"></rect><circle class="prstenec" cx="60" cy="260" r="16"/></g><g class="policko" data-i="44"><rect class="pole" role="gridcell" aria-colindex="3" data-i="44" tabindex="-1" x="80" y="240" width="40" height="40"></rect><circle class="prstenec" cx="100" cy="260" r="16"/></g><g class="policko" data-i="45"><rect class="pole" role="gridcell" aria-colindex="4" data-i="45" tabindex="-1" x="120" y="240" width="40" height="40"></rect><circle class="prstenec" cx="140" cy="260" r="16"/><circle class="labut biela" cx="140" cy="260" r="11"/></g><g class="policko" data-i="46"><rect class="pole" role="gridcell" aria-colindex="5" data-i="46" tabindex="-1" x="160" y="240" width="40" height="40"></rect><circle class="prstenec" cx="180" cy="260" r="16"/></g><g class="policko" data-i="47"><rect class="pole" role="gridcell" aria-colindex="6" data-i="47" tabindex="-1" x="200" y="240" width="40" height="40"></rect><circle class="prstenec" cx="220" cy="260" r="16"/></g><g class="policko" data-i="48"><rect class="pole" role="gridcell" aria-colindex="7" data-i="48" tabindex="-1" x="240" y="240" width="40" height="40"></rect><circle class="prstenec" cx="260" cy="260" r="16"/></g></g></g><g class="ciary" aria-hidden="true"><g class="h" data-e="0" data-v="0" data-cx="40" data-cy="20"><line class="nahlad" x1="20" y1="20" x2="60" y2="20"/><line class="l0" x1="20" y1="20" x2="60" y2="20"/><path class="krizik" d="M34 14L46 26M34 26L46 14"/><circle class="znak" cx="40" cy="20" r="12"/></g><g class="h" data-e="1" data-v="0" data-cx="80" data-cy="20"><line class="nahlad" x1="60" y1="20" x2="100" y2="20"/><line class="l0" x1="60" y1="20" x2="100" y2="20"/><path class="krizik" d="M74 14L86 26M74 26L86 14"/><circle class="znak" cx="80" cy="20" r="12"/></g><g class="h" data-e="2" data-v="0" data-cx="120" data-cy="20"><line class="nahlad" x1="100" y1="20" x2="140" y2="20"/><line class="l0" x1="100" y1="20" x2="140" y2="20"/><path class="krizik" d="M114 14L126 26M114 26L126 14"/><circle class="znak" cx="120" cy="20" r="12"/></g><g class="h" data-e="3" data-v="0" data-cx="160" data-cy="20"><line class="nahlad" x1="140" y1="20" x2="180" y2="20"/><line class="l0" x1="140" y1="20" x2="180" y2="20"/><path class="krizik" d="M154 14L166 26M154 26L166 14"/><circle class="znak" cx="160" cy="20" r="12"/></g><g class="h" data-e="4" data-v="0" data-cx="200" data-cy="20"><line class="nahlad" x1="180" y1="20" x2="220" y2="20"/><line class="l0" x1="180" y1="20" x2="220" y2="20"/><path class="krizik" d="M194 14L206 26M194 26L206 14"/><circle class="znak" cx="200" cy="20" r="12"/></g><g class="h" data-e="5" data-v="0" data-cx="240" data-cy="20"><line class="nahlad" x1="220" y1="20" x2="260" y2="20"/><line class="l0" x1="220" y1="20" x2="260" y2="20"/><path class="krizik" d="M234 14L246 26M234 26L246 14"/><circle class="znak" cx="240" cy="20" r="12"/></g><g class="h" data-e="6" data-v="0" data-cx="40" data-cy="60"><line class="nahlad" x1="20" y1="60" x2="60" y2="60"/><line class="l0" x1="20" y1="60" x2="60" y2="60"/><path class="krizik" d="M34 54L46 66M34 66L46 54"/><circle class="znak" cx="40" cy="60" r="12"/></g><g class="h" data-e="7" data-v="0" data-cx="80" data-cy="60"><line class="nahlad" x1="60" y1="60" x2="100" y2="60"/><line class="l0" x1="60" y1="60" x2="100" y2="60"/><path class="krizik" d="M74 54L86 66M74 66L86 54"/><circle class="znak" cx="80" cy="60" r="12"/></g><g class="h" data-e="8" data-v="0" data-cx="120" data-cy="60"><line class="nahlad" x1="100" y1="60" x2="140" y2="60"/><line class="l0" x1="100" y1="60" x2="140" y2="60"/><path class="krizik" d="M114 54L126 66M114 66L126 54"/><circle class="znak" cx="120" cy="60" r="12"/></g><g class="h" data-e="9" data-v="0" data-cx="160" data-cy="60"><line class="nahlad" x1="140" y1="60" x2="180" y2="60"/><line class="l0" x1="140" y1="60" x2="180" y2="60"/><path class="krizik" d="M154 54L166 66M154 66L166 54"/><circle class="znak" cx="160" cy="60" r="12"/></g><g class="h" data-e="10" data-v="0" data-cx="200" data-cy="60"><line class="nahlad" x1="180" y1="60" x2="220" y2="60"/><line class="l0" x1="180" y1="60" x2="220" y2="60"/><path class="krizik" d="M194 54L206 66M194 66L206 54"/><circle class="znak" cx="200" cy="60" r="12"/></g><g class="h" data-e="11" data-v="0" data-cx="240" data-cy="60"><line class="nahlad" x1="220" y1="60" x2="260" y2="60"/><line class="l0" x1="220" y1="60" x2="260" y2="60"/><path class="krizik" d="M234 54L246 66M234 66L246 54"/><circle class="znak" cx="240" cy="60" r="12"/></g><g class="h" data-e="12" data-v="0" data-cx="40" data-cy="100"><line class="nahlad" x1="20" y1="100" x2="60" y2="100"/><line class="l0" x1="20" y1="100" x2="60" y2="100"/><path class="krizik" d="M34 94L46 106M34 106L46 94"/><circle class="znak" cx="40" cy="100" r="12"/></g><g class="h" data-e="13" data-v="0" data-cx="80" data-cy="100"><line class="nahlad" x1="60" y1="100" x2="100" y2="100"/><line class="l0" x1="60" y1="100" x2="100" y2="100"/><path class="krizik" d="M74 94L86 106M74 106L86 94"/><circle class="znak" cx="80" cy="100" r="12"/></g><g class="h" data-e="14" data-v="0" data-cx="120" data-cy="100"><line class="nahlad" x1="100" y1="100" x2="140" y2="100"/><line class="l0" x1="100" y1="100" x2="140" y2="100"/><path class="krizik" d="M114 94L126 106M114 106L126 94"/><circle class="znak" cx="120" cy="100" r="12"/></g><g class="h" data-e="15" data-v="0" data-cx="160" data-cy="100"><line class="nahlad" x1="140" y1="100" x2="180" y2="100"/><line class="l0" x1="140" y1="100" x2="180" y2="100"/><path class="krizik" d="M154 94L166 106M154 106L166 94"/><circle class="znak" cx="160" cy="100" r="12"/></g><g class="h" data-e="16" data-v="0" data-cx="200" data-cy="100"><line class="nahlad" x1="180" y1="100" x2="220" y2="100"/><line class="l0" x1="180" y1="100" x2="220" y2="100"/><path class="krizik" d="M194 94L206 106M194 106L206 94"/><circle class="znak" cx="200" cy="100" r="12"/></g><g class="h" data-e="17" data-v="0" data-cx="240" data-cy="100"><line class="nahlad" x1="220" y1="100" x2="260" y2="100"/><line class="l0" x1="220" y1="100" x2="260" y2="100"/><path class="krizik" d="M234 94L246 106M234 106L246 94"/><circle class="znak" cx="240" cy="100" r="12"/></g><g class="h" data-e="18" data-v="0" data-cx="40" data-cy="140"><line class="nahlad" x1="20" y1="140" x2="60" y2="140"/><line class="l0" x1="20" y1="140" x2="60" y2="140"/><path class="krizik" d="M34 134L46 146M34 146L46 134"/><circle class="znak" cx="40" cy="140" r="12"/></g><g class="h" data-e="19" data-v="0" data-cx="80" data-cy="140"><line class="nahlad" x1="60" y1="140" x2="100" y2="140"/><line class="l0" x1="60" y1="140" x2="100" y2="140"/><path class="krizik" d="M74 134L86 146M74 146L86 134"/><circle class="znak" cx="80" cy="140" r="12"/></g><g class="h" data-e="20" data-v="0" data-cx="120" data-cy="140"><line class="nahlad" x1="100" y1="140" x2="140" y2="140"/><line class="l0" x1="100" y1="140" x2="140" y2="140"/><path class="krizik" d="M114 134L126 146M114 146L126 134"/><circle class="znak" cx="120" cy="140" r="12"/></g><g class="h" data-e="21" data-v="0" data-cx="160" data-cy="140"><line class="nahlad" x1="140" y1="140" x2="180" y2="140"/><line class="l0" x1="140" y1="140" x2="180" y2="140"/><path class="krizik" d="M154 134L166 146M154 146L166 134"/><circle class="znak" cx="160" cy="140" r="12"/></g><g class="h" data-e="22" data-v="0" data-cx="200" data-cy="140"><line class="nahlad" x1="180" y1="140" x2="220" y2="140"/><line class="l0" x1="180" y1="140" x2="220" y2="140"/><path class="krizik" d="M194 134L206 146M194 146L206 134"/><circle class="znak" cx="200" cy="140" r="12"/></g><g class="h" data-e="23" data-v="0" data-cx="240" data-cy="140"><line class="nahlad" x1="220" y1="140" x2="260" y2="140"/><line class="l0" x1="220" y1="140" x2="260" y2="140"/><path class="krizik" d="M234 134L246 146M234 146L246 134"/><circle class="znak" cx="240" cy="140" r="12"/></g><g class="h" data-e="24" data-v="0" data-cx="40" data-cy="180"><line class="nahlad" x1="20" y1="180" x2="60" y2="180"/><line class="l0" x1="20" y1="180" x2="60" y2="180"/><path class="krizik" d="M34 174L46 186M34 186L46 174"/><circle class="znak" cx="40" cy="180" r="12"/></g><g class="h" data-e="25" data-v="0" data-cx="80" data-cy="180"><line class="nahlad" x1="60" y1="180" x2="100" y2="180"/><line class="l0" x1="60" y1="180" x2="100" y2="180"/><path class="krizik" d="M74 174L86 186M74 186L86 174"/><circle class="znak" cx="80" cy="180" r="12"/></g><g class="h" data-e="26" data-v="0" data-cx="120" data-cy="180"><line class="nahlad" x1="100" y1="180" x2="140" y2="180"/><line class="l0" x1="100" y1="180" x2="140" y2="180"/><path class="krizik" d="M114 174L126 186M114 186L126 174"/><circle class="znak" cx="120" cy="180" r="12"/></g><g class="h" data-e="27" data-v="0" data-cx="160" data-cy="180"><line class="nahlad" x1="140" y1="180" x2="180" y2="180"/><line class="l0" x1="140" y1="180" x2="180" y2="180"/><path class="krizik" d="M154 174L166 186M154 186L166 174"/><circle class="znak" cx="160" cy="180" r="12"/></g><g class="h" data-e="28" data-v="0" data-cx="200" data-cy="180"><line class="nahlad" x1="180" y1="180" x2="220" y2="180"/><line class="l0" x1="180" y1="180" x2="220" y2="180"/><path class="krizik" d="M194 174L206 186M194 186L206 174"/><circle class="znak" cx="200" cy="180" r="12"/></g><g class="h" data-e="29" data-v="0" data-cx="240" data-cy="180"><line class="nahlad" x1="220" y1="180" x2="260" y2="180"/><line class="l0" x1="220" y1="180" x2="260" y2="180"/><path class="krizik" d="M234 174L246 186M234 186L246 174"/><circle class="znak" cx="240" cy="180" r="12"/></g><g class="h" data-e="30" data-v="0" data-cx="40" data-cy="220"><line class="nahlad" x1="20" y1="220" x2="60" y2="220"/><line class="l0" x1="20" y1="220" x2="60" y2="220"/><path class="krizik" d="M34 214L46 226M34 226L46 214"/><circle class="znak" cx="40" cy="220" r="12"/></g><g class="h" data-e="31" data-v="0" data-cx="80" data-cy="220"><line class="nahlad" x1="60" y1="220" x2="100" y2="220"/><line class="l0" x1="60" y1="220" x2="100" y2="220"/><path class="krizik" d="M74 214L86 226M74 226L86 214"/><circle class="znak" cx="80" cy="220" r="12"/></g><g class="h" data-e="32" data-v="0" data-cx="120" data-cy="220"><line class="nahlad" x1="100" y1="220" x2="140" y2="220"/><line class="l0" x1="100" y1="220" x2="140" y2="220"/><path class="krizik" d="M114 214L126 226M114 226L126 214"/><circle class="znak" cx="120" cy="220" r="12"/></g><g class="h" data-e="33" data-v="0" data-cx="160" data-cy="220"><line class="nahlad" x1="140" y1="220" x2="180" y2="220"/><line class="l0" x1="140" y1="220" x2="180" y2="220"/><path class="krizik" d="M154 214L166 226M154 226L166 214"/><circle class="znak" cx="160" cy="220" r="12"/></g><g class="h" data-e="34" data-v="0" data-cx="200" data-cy="220"><line class="nahlad" x1="180" y1="220" x2="220" y2="220"/><line class="l0" x1="180" y1="220" x2="220" y2="220"/><path class="krizik" d="M194 214L206 226M194 226L206 214"/><circle class="znak" cx="200" cy="220" r="12"/></g><g class="h" data-e="35" data-v="0" data-cx="240" data-cy="220"><line class="nahlad" x1="220" y1="220" x2="260" y2="220"/><line class="l0" x1="220" y1="220" x2="260" y2="220"/><path class="krizik" d="M234 214L246 226M234 226L246 214"/><circle class="znak" cx="240" cy="220" r="12"/></g><g class="h" data-e="36" data-v="0" data-cx="40" data-cy="260"><line class="nahlad" x1="20" y1="260" x2="60" y2="260"/><line class="l0" x1="20" y1="260" x2="60" y2="260"/><path class="krizik" d="M34 254L46 266M34 266L46 254"/><circle class="znak" cx="40" cy="260" r="12"/></g><g class="h" data-e="37" data-v="0" data-cx="80" data-cy="260"><line class="nahlad" x1="60" y1="260" x2="100" y2="260"/><line class="l0" x1="60" y1="260" x2="100" y2="260"/><path class="krizik" d="M74 254L86 266M74 266L86 254"/><circle class="znak" cx="80" cy="260" r="12"/></g><g class="h" data-e="38" data-v="0" data-cx="120" data-cy="260"><line class="nahlad" x1="100" y1="260" x2="140" y2="260"/><line class="l0" x1="100" y1="260" x2="140" y2="260"/><path class="krizik" d="M114 254L126 266M114 266L126 254"/><circle class="znak" cx="120" cy="260" r="12"/></g><g class="h" data-e="39" data-v="0" data-cx="160" data-cy="260"><line class="nahlad" x1="140" y1="260" x2="180" y2="260"/><line class="l0" x1="140" y1="260" x2="180" y2="260"/><path class="krizik" d="M154 254L166 266M154 266L166 254"/><circle class="znak" cx="160" cy="260" r="12"/></g><g class="h" data-e="40" data-v="0" data-cx="200" data-cy="260"><line class="nahlad" x1="180" y1="260" x2="220" y2="260"/><line class="l0" x1="180" y1="260" x2="220" y2="260"/><path class="krizik" d="M194 254L206 266M194 266L206 254"/><circle class="znak" cx="200" cy="260" r="12"/></g><g class="h" data-e="41" data-v="0" data-cx="240" data-cy="260"><line class="nahlad" x1="220" y1="260" x2="260" y2="260"/><line class="l0" x1="220" y1="260" x2="260" y2="260"/><path class="krizik" d="M234 254L246 266M234 266L246 254"/><circle class="znak" cx="240" cy="260" r="12"/></g><g class="h" data-e="42" data-v="0" data-cx="20" data-cy="40"><line class="nahlad" x1="20" y1="20" x2="20" y2="60"/><line class="l0" x1="20" y1="20" x2="20" y2="60"/><path class="krizik" d="M14 34L26 46M14 46L26 34"/><circle class="znak" cx="20" cy="40" r="12"/></g><g class="h" data-e="43" data-v="0" data-cx="60" data-cy="40"><line class="nahlad" x1="60" y1="20" x2="60" y2="60"/><line class="l0" x1="60" y1="20" x2="60" y2="60"/><path class="krizik" d="M54 34L66 46M54 46L66 34"/><circle class="znak" cx="60" cy="40" r="12"/></g><g class="h" data-e="44" data-v="0" data-cx="100" data-cy="40"><line class="nahlad" x1="100" y1="20" x2="100" y2="60"/><line class="l0" x1="100" y1="20" x2="100" y2="60"/><path class="krizik" d="M94 34L106 46M94 46L106 34"/><circle class="znak" cx="100" cy="40" r="12"/></g><g class="h" data-e="45" data-v="0" data-cx="140" data-cy="40"><line class="nahlad" x1="140" y1="20" x2="140" y2="60"/><line class="l0" x1="140" y1="20" x2="140" y2="60"/><path class="krizik" d="M134 34L146 46M134 46L146 34"/><circle class="znak" cx="140" cy="40" r="12"/></g><g class="h" data-e="46" data-v="0" data-cx="180" data-cy="40"><line class="nahlad" x1="180" y1="20" x2="180" y2="60"/><line class="l0" x1="180" y1="20" x2="180" y2="60"/><path class="krizik" d="M174 34L186 46M174 46L186 34"/><circle class="znak" cx="180" cy="40" r="12"/></g><g class="h" data-e="47" data-v="0" data-cx="220" data-cy="40"><line class="nahlad" x1="220" y1="20" x2="220" y2="60"/><line class="l0" x1="220" y1="20" x2="220" y2="60"/><path class="krizik" d="M214 34L226 46M214 46L226 34"/><circle class="znak" cx="220" cy="40" r="12"/></g><g class="h" data-e="48" data-v="0" data-cx="260" data-cy="40"><line class="nahlad" x1="260" y1="20" x2="260" y2="60"/><line class="l0" x1="260" y1="20" x2="260" y2="60"/><path class="krizik" d="M254 34L266 46M254 46L266 34"/><circle class="znak" cx="260" cy="40" r="12"/></g><g class="h" data-e="49" data-v="0" data-cx="20" data-cy="80"><line class="nahlad" x1="20" y1="60" x2="20" y2="100"/><line class="l0" x1="20" y1="60" x2="20" y2="100"/><path class="krizik" d="M14 74L26 86M14 86L26 74"/><circle class="znak" cx="20" cy="80" r="12"/></g><g class="h" data-e="50" data-v="0" data-cx="60" data-cy="80"><line class="nahlad" x1="60" y1="60" x2="60" y2="100"/><line class="l0" x1="60" y1="60" x2="60" y2="100"/><path class="krizik" d="M54 74L66 86M54 86L66 74"/><circle class="znak" cx="60" cy="80" r="12"/></g><g class="h" data-e="51" data-v="0" data-cx="100" data-cy="80"><line class="nahlad" x1="100" y1="60" x2="100" y2="100"/><line class="l0" x1="100" y1="60" x2="100" y2="100"/><path class="krizik" d="M94 74L106 86M94 86L106 74"/><circle class="znak" cx="100" cy="80" r="12"/></g><g class="h" data-e="52" data-v="0" data-cx="140" data-cy="80"><line class="nahlad" x1="140" y1="60" x2="140" y2="100"/><line class="l0" x1="140" y1="60" x2="140" y2="100"/><path class="krizik" d="M134 74L146 86M134 86L146 74"/><circle class="znak" cx="140" cy="80" r="12"/></g><g class="h" data-e="53" data-v="0" data-cx="180" data-cy="80"><line class="nahlad" x1="180" y1="60" x2="180" y2="100"/><line class="l0" x1="180" y1="60" x2="180" y2="100"/><path class="krizik" d="M174 74L186 86M174 86L186 74"/><circle class="znak" cx="180" cy="80" r="12"/></g><g class="h" data-e="54" data-v="0" data-cx="220" data-cy="80"><line class="nahlad" x1="220" y1="60" x2="220" y2="100"/><line class="l0" x1="220" y1="60" x2="220" y2="100"/><path class="krizik" d="M214 74L226 86M214 86L226 74"/><circle class="znak" cx="220" cy="80" r="12"/></g><g class="h" data-e="55" data-v="0" data-cx="260" data-cy="80"><line class="nahlad" x1="260" y1="60" x2="260" y2="100"/><line class="l0" x1="260" y1="60" x2="260" y2="100"/><path class="krizik" d="M254 74L266 86M254 86L266 74"/><circle class="znak" cx="260" cy="80" r="12"/></g><g class="h" data-e="56" data-v="0" data-cx="20" data-cy="120"><line class="nahlad" x1="20" y1="100" x2="20" y2="140"/><line class="l0" x1="20" y1="100" x2="20" y2="140"/><path class="krizik" d="M14 114L26 126M14 126L26 114"/><circle class="znak" cx="20" cy="120" r="12"/></g><g class="h" data-e="57" data-v="0" data-cx="60" data-cy="120"><line class="nahlad" x1="60" y1="100" x2="60" y2="140"/><line class="l0" x1="60" y1="100" x2="60" y2="140"/><path class="krizik" d="M54 114L66 126M54 126L66 114"/><circle class="znak" cx="60" cy="120" r="12"/></g><g class="h" data-e="58" data-v="0" data-cx="100" data-cy="120"><line class="nahlad" x1="100" y1="100" x2="100" y2="140"/><line class="l0" x1="100" y1="100" x2="100" y2="140"/><path class="krizik" d="M94 114L106 126M94 126L106 114"/><circle class="znak" cx="100" cy="120" r="12"/></g><g class="h" data-e="59" data-v="0" data-cx="140" data-cy="120"><line class="nahlad" x1="140" y1="100" x2="140" y2="140"/><line class="l0" x1="140" y1="100" x2="140" y2="140"/><path class="krizik" d="M134 114L146 126M134 126L146 114"/><circle class="znak" cx="140" cy="120" r="12"/></g><g class="h" data-e="60" data-v="0" data-cx="180" data-cy="120"><line class="nahlad" x1="180" y1="100" x2="180" y2="140"/><line class="l0" x1="180" y1="100" x2="180" y2="140"/><path class="krizik" d="M174 114L186 126M174 126L186 114"/><circle class="znak" cx="180" cy="120" r="12"/></g><g class="h" data-e="61" data-v="0" data-cx="220" data-cy="120"><line class="nahlad" x1="220" y1="100" x2="220" y2="140"/><line class="l0" x1="220" y1="100" x2="220" y2="140"/><path class="krizik" d="M214 114L226 126M214 126L226 114"/><circle class="znak" cx="220" cy="120" r="12"/></g><g class="h" data-e="62" data-v="0" data-cx="260" data-cy="120"><line class="nahlad" x1="260" y1="100" x2="260" y2="140"/><line class="l0" x1="260" y1="100" x2="260" y2="140"/><path class="krizik" d="M254 114L266 126M254 126L266 114"/><circle class="znak" cx="260" cy="120" r="12"/></g><g class="h" data-e="63" data-v="0" data-cx="20" data-cy="160"><line class="nahlad" x1="20" y1="140" x2="20" y2="180"/><line class="l0" x1="20" y1="140" x2="20" y2="180"/><path class="krizik" d="M14 154L26 166M14 166L26 154"/><circle class="znak" cx="20" cy="160" r="12"/></g><g class="h" data-e="64" data-v="0" data-cx="60" data-cy="160"><line class="nahlad" x1="60" y1="140" x2="60" y2="180"/><line class="l0" x1="60" y1="140" x2="60" y2="180"/><path class="krizik" d="M54 154L66 166M54 166L66 154"/><circle class="znak" cx="60" cy="160" r="12"/></g><g class="h" data-e="65" data-v="0" data-cx="100" data-cy="160"><line class="nahlad" x1="100" y1="140" x2="100" y2="180"/><line class="l0" x1="100" y1="140" x2="100" y2="180"/><path class="krizik" d="M94 154L106 166M94 166L106 154"/><circle class="znak" cx="100" cy="160" r="12"/></g><g class="h" data-e="66" data-v="0" data-cx="140" data-cy="160"><line class="nahlad" x1="140" y1="140" x2="140" y2="180"/><line class="l0" x1="140" y1="140" x2="140" y2="180"/><path class="krizik" d="M134 154L146 166M134 166L146 154"/><circle class="znak" cx="140" cy="160" r="12"/></g><g class="h" data-e="67" data-v="0" data-cx="180" data-cy="160"><line class="nahlad" x1="180" y1="140" x2="180" y2="180"/><line class="l0" x1="180" y1="140" x2="180" y2="180"/><path class="krizik" d="M174 154L186 166M174 166L186 154"/><circle class="znak" cx="180" cy="160" r="12"/></g><g class="h" data-e="68" data-v="0" data-cx="220" data-cy="160"><line class="nahlad" x1="220" y1="140" x2="220" y2="180"/><line class="l0" x1="220" y1="140" x2="220" y2="180"/><path class="krizik" d="M214 154L226 166M214 166L226 154"/><circle class="znak" cx="220" cy="160" r="12"/></g><g class="h" data-e="69" data-v="0" data-cx="260" data-cy="160"><line class="nahlad" x1="260" y1="140" x2="260" y2="180"/><line class="l0" x1="260" y1="140" x2="260" y2="180"/><path class="krizik" d="M254 154L266 166M254 166L266 154"/><circle class="znak" cx="260" cy="160" r="12"/></g><g class="h" data-e="70" data-v="0" data-cx="20" data-cy="200"><line class="nahlad" x1="20" y1="180" x2="20" y2="220"/><line class="l0" x1="20" y1="180" x2="20" y2="220"/><path class="krizik" d="M14 194L26 206M14 206L26 194"/><circle class="znak" cx="20" cy="200" r="12"/></g><g class="h" data-e="71" data-v="0" data-cx="60" data-cy="200"><line class="nahlad" x1="60" y1="180" x2="60" y2="220"/><line class="l0" x1="60" y1="180" x2="60" y2="220"/><path class="krizik" d="M54 194L66 206M54 206L66 194"/><circle class="znak" cx="60" cy="200" r="12"/></g><g class="h" data-e="72" data-v="0" data-cx="100" data-cy="200"><line class="nahlad" x1="100" y1="180" x2="100" y2="220"/><line class="l0" x1="100" y1="180" x2="100" y2="220"/><path class="krizik" d="M94 194L106 206M94 206L106 194"/><circle class="znak" cx="100" cy="200" r="12"/></g><g class="h" data-e="73" data-v="0" data-cx="140" data-cy="200"><line class="nahlad" x1="140" y1="180" x2="140" y2="220"/><line class="l0" x1="140" y1="180" x2="140" y2="220"/><path class="krizik" d="M134 194L146 206M134 206L146 194"/><circle class="znak" cx="140" cy="200" r="12"/></g><g class="h" data-e="74" data-v="0" data-cx="180" data-cy="200"><line class="nahlad" x1="180" y1="180" x2="180" y2="220"/><line class="l0" x1="180" y1="180" x2="180" y2="220"/><path class="krizik" d="M174 194L186 206M174 206L186 194"/><circle class="znak" cx="180" cy="200" r="12"/></g><g class="h" data-e="75" data-v="0" data-cx="220" data-cy="200"><line class="nahlad" x1="220" y1="180" x2="220" y2="220"/><line class="l0" x1="220" y1="180" x2="220" y2="220"/><path class="krizik" d="M214 194L226 206M214 206L226 194"/><circle class="znak" cx="220" cy="200" r="12"/></g><g class="h" data-e="76" data-v="0" data-cx="260" data-cy="200"><line class="nahlad" x1="260" y1="180" x2="260" y2="220"/><line class="l0" x1="260" y1="180" x2="260" y2="220"/><path class="krizik" d="M254 194L266 206M254 206L266 194"/><circle class="znak" cx="260" cy="200" r="12"/></g><g class="h" data-e="77" data-v="0" data-cx="20" data-cy="240"><line class="nahlad" x1="20" y1="220" x2="20" y2="260"/><line class="l0" x1="20" y1="220" x2="20" y2="260"/><path class="krizik" d="M14 234L26 246M14 246L26 234"/><circle class="znak" cx="20" cy="240" r="12"/></g><g class="h" data-e="78" data-v="0" data-cx="60" data-cy="240"><line class="nahlad" x1="60" y1="220" x2="60" y2="260"/><line class="l0" x1="60" y1="220" x2="60" y2="260"/><path class="krizik" d="M54 234L66 246M54 246L66 234"/><circle class="znak" cx="60" cy="240" r="12"/></g><g class="h" data-e="79" data-v="0" data-cx="100" data-cy="240"><line class="nahlad" x1="100" y1="220" x2="100" y2="260"/><line class="l0" x1="100" y1="220" x2="100" y2="260"/><path class="krizik" d="M94 234L106 246M94 246L106 234"/><circle class="znak" cx="100" cy="240" r="12"/></g><g class="h" data-e="80" data-v="0" data-cx="140" data-cy="240"><line class="nahlad" x1="140" y1="220" x2="140" y2="260"/><line class="l0" x1="140" y1="220" x2="140" y2="260"/><path class="krizik" d="M134 234L146 246M134 246L146 234"/><circle class="znak" cx="140" cy="240" r="12"/></g><g class="h" data-e="81" data-v="0" data-cx="180" data-cy="240"><line class="nahlad" x1="180" y1="220" x2="180" y2="260"/><line class="l0" x1="180" y1="220" x2="180" y2="260"/><path class="krizik" d="M174 234L186 246M174 246L186 234"/><circle class="znak" cx="180" cy="240" r="12"/></g><g class="h" data-e="82" data-v="0" data-cx="220" data-cy="240"><line class="nahlad" x1="220" y1="220" x2="220" y2="260"/><line class="l0" x1="220" y1="220" x2="220" y2="260"/><path class="krizik" d="M214 234L226 246M214 246L226 234"/><circle class="znak" cx="220" cy="240" r="12"/></g><g class="h" data-e="83" data-v="0" data-cx="260" data-cy="240"><line class="nahlad" x1="260" y1="220" x2="260" y2="260"/><line class="l0" x1="260" y1="220" x2="260" y2="260"/><path class="krizik" d="M254 234L266 246M254 246L266 234"/><circle class="znak" cx="260" cy="240" r="12"/></g></g><rect class="kotva" id="kotva" x="3" y="3" width="34" height="34" rx="7"/><rect class="kurzor" id="kurzor" x="3" y="3" width="34" height="34" rx="7"/></g></svg>
+          <noscript><p>This game needs JavaScript: the puzzle is generated right in your browser.</p></noscript>
+          <div class="pauza-blok" id="pauza-blok" hidden><p><b>Paused.</b> <span id="pauza-cas"></span></p><button type="button" class="btn btn-solid" id="pokracuj">Resume</button></div>
+        </div>
+        <p class="skryte" id="labute-text"></p>
+        <div class="ovladanie">
+          <button type="button" class="btn btn-line" id="spat">Undo</button>
+          <button type="button" class="btn btn-line" id="znova">Redo</button>
+          <button type="button" class="btn btn-line" id="reset">Clear</button>
+          <button type="button" class="btn btn-line" id="hint">Hint</button>
+          <button type="button" class="btn btn-line" id="check">Check</button>
+          <button type="button" class="btn btn-line" id="zdielaj" hidden>Share</button>
+          <span class="small" id="seria"></span>
+          <span class="small" id="zdielane" aria-live="polite"></span>
+        </div>
+        <p class="stav" id="stav" aria-live="polite"></p>
+        <nav class="pasik" id="pasik" aria-label="This week"></nav>
+        <p class="odkazy"><a href="/games/swans/guide/">How to play</a> · <a href="/games/swans/practice/">Practice sets</a> · <a href="/games/swans/archive/">Archive</a></p>
+        <p class="historia" id="historia" hidden></p>
+        <details class="nastavenia">
+          <summary>Settings</summary>
+          <label><input type="checkbox" data-nastavenie="casovac"> Show the timer and the Pause button</label>
+          <label><input type="checkbox" data-nastavenie="pauzaPriOdchode"> Pause the clock when you leave the tab or sit still for a minute</label>
+          <label><input type="checkbox" data-nastavenie="autoKrizky"> Auto exclude: when a cell already has its two lines, cross its other sides (off by default: the crosses are your own)</label>
+          <label><input type="checkbox" data-nastavenie="zivaKontrola"> Live check: mark a line that does not belong as soon as it appears (off by default: finding a mistake is part of the puzzle)</label>
+          <label><input type="checkbox" data-nastavenie="potvrditReset"> Ask before Clear</label>
+          <p class="fineprint">Settings, progress, history and streak stay in this browser. Add this page to your home screen to open it like an app.</p>
+        </details>
+      </div>
+    </div>
+  </div>
+
+  <section id="rules" class="deep pravidla">
+    <div class="wrap">
+      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>01</p>
+      <h2 class="r">Rules.</h2>
+      <p class="sub r d1">Three sentences. The rest is practice.</p>
+      <div class="rule"></div>
+      <div class="r d2">
+        <details open>
+          <summary>How to play</summary>
+          <div class="telo">
+            <p>Draw one loop through every swan. At a white swan the loop goes straight and turns in the cell just before or just after. At a black swan the loop turns and goes straight through both neighbouring cells.</p>
+            <p>The loop runs from the middle of one cell to the middle of the next, up and down or left and right, never diagonally. It is a single closed ring: it never crosses itself, never branches, and never passes through the same cell twice. Cells with no swan on them may be left out of the loop altogether.</p>
+            <p>When every swan has the shape it asks for and the ring is closed, the lake is finished and the game notices by itself.</p>
+          </div>
+        </details>
+        <details>
+          <summary>Controls</summary>
+          <div class="telo">
+            <p>Drag from cell to cell and the loop follows your finger; drag back along what you have drawn and it rubs out again. If you would rather not drag, tap one cell and then a neighbouring one, and the step between them is drawn; tap the same cell twice to stop. Tapping the gap between two cells goes through the three states on its own: a line, then a cross, then nothing. The cross is only your own note that the loop does not run there; it is never checked and never required.</p>
+            <p>Nothing lights up while you play: finding a mistake is part of the puzzle. <b>Check</b> first tells you only how many marks are wrong and roughly where. Press it again and it shows which. <b>Hint</b> names the rule and the place, and the second press draws that one step for you. If something on the board is already wrong, the hint points there first. Hints and checks are free and counted, and shown when you finish. <b>Clear</b> empties the lake; the clock keeps running and one Undo brings everything back.</p>
+            <p>Keyboard: arrows move the cursor from cell to cell, <kbd>Enter</kbd> starts drawing and the arrows then extend the loop, <kbd>Enter</kbd> again or <kbd>Escape</kbd> stops. <kbd>Space</kbd> goes through line, cross and nothing on the direction you used last, <kbd>X</kbd> crosses it, <kbd>Delete</kbd> clears it, <kbd>U</kbd> or <kbd>Ctrl</kbd>+<kbd>Z</kbd> undo, <kbd>R</kbd> or <kbd>Ctrl</kbd>+<kbd>R</kbd> redo, <kbd>P</kbd> pauses.</p>
+            <p>The clock runs from your first line to the last one and pauses when you leave the tab or sit still for a minute, which also hides the lake. Your progress, time, history and day streak stay in this browser, and in your <a href="/ucet/">account</a> when you are signed in, so you can continue on another device.</p>
+            <p>A lake finished with no hint and no check counts as clean and the week strip gives it a second ring. Only the lake of the day builds the streak, and after five days in a row one missed day is forgiven, at most twice in a month. When you finish, <b>Share</b> copies one line with the date, your time and how much help you took. It never copies the lake or your loop, so nothing is spoiled for anyone.</p>
+          </div>
+        </details>
+        <details>
+          <summary>The week</summary>
+          <div class="telo">
+            <p>Monday and Tuesday are easy (six by six), Wednesday and Thursday medium (seven by seven), Friday and Saturday hard (eight by eight) and Sunday is the challenge: ten by ten. The week strip under the lake takes you to the other days; the <a href="/games/swans/archive/">archive</a> goes back a year, and the <a href="/games/swans/practice/">practice sets</a> have eight lakes of each level with no date attached.</p>
+            <p>Difficulty is measured, not guessed. Every lake is solved by a program that only knows named rules, in three layers: what one cell or one swan settles on its own, the patterns between neighbouring swans, and the hard ones, where a step is tried out and ruled out because it would close the loop too early or end in a contradiction. Easy and Medium never need that third layer; Sunday leans on it the most.</p>
+          </div>
+        </details>
+        <details>
+          <summary>A few ways in</summary>
+          <div class="telo">
+            <p>Start with the black swans at the edge. A black swan turns, so it can never send an arm off the board, and a black swan in a corner has only one turn left to make.</p>
+            <p>A white swan against the edge has to run along that edge, because the loop goes straight through it and the other way is off the board.</p>
+            <p>Every arm of a black swan runs straight on through the next cell, so a single black swan usually settles five steps at once. That is the cheapest opening on any lake.</p>
+            <p>Three white swans in a row cannot all be crossed lengthways: the middle one would have no turn beside it, so the loop cuts across the row instead.</p>
+          </div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+</main>
+<script type="application/json" id="zadanie">{"d":"2025-11-27","n":7,"p":"0000000000000000010020000001002100000010200001000","h":"000000000000001111000010001100001110001111","v":"000000000000000010001001011100000110010001","u":"medium","l":"33,2,0","s":35}</script>
+
+<footer>
+  <div class="wrap foot">
+    <div><b>ARLing s. r. o.</b><br>Ivanská cesta 32E<br>821 04 Bratislava, Slovakia</div>
+    <div>Company ID 56583486<br>VAT ID SK2122352100<br><a href="mailto:andrej@arling.sk">andrej@arling.sk</a></div>
+    <div><a href="https://arling.sk/privacy/">privacy</a> · <a href="https://arling.sk/podmienky/">terms</a> · <a href="https://arling.sk/gdpr/">GDPR</a> · <a href="https://arling.sk/impressum/">Impressum</a> · <a href="https://arling.sk/llms.txt">llms.txt</a> · <a href="https://arling.sk/sitemap-index.xml">sitemap</a><br>Tools are provided as is, without warranty. Anonymous visit counts via self-hosted Umami.</div>
+  </div>
+</footer>
+<script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="be534d51-4d01-4860-b267-9596d91606de"></script>
+</body>
+</html>

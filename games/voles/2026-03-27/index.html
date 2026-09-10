@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script src="/style/vzhlad.js?v=93c2659f"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://homelab.tailbf8f27.ts.net; connect-src 'self' https://homelab.tailbf8f27.ts.net; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<meta name="color-scheme" content="dark">
+<meta name="robots" content="index, follow">
+<link rel="manifest" href="/games/voles/manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Voles">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta property="og:image" content="https://arling.sk/games/voles/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://homelab.tailbf8f27.ts.net" crossorigin>
+<meta name="theme-color" content="#0a0908">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="48x48">
+<link rel="apple-touch-icon" href="/icon-180.png">
+<title>Voles for Friday 27 March 2026 · ARLing</title>
+<meta name="description" content="The Voles meadow for Friday 27 March 2026: hard, ten by ten. Shade the water so each island has exactly one number and that many cells. Free, with hints and Check, in your browser.">
+<link rel="canonical" href="https://arling.sk/games/voles/2026-03-27/">
+<link rel="prev" href="https://arling.sk/games/voles/2026-03-26/">
+<link rel="next" href="https://arling.sk/games/voles/2026-03-28/">
+<meta property="og:title" content="Voles for Friday 27 March 2026 · ARLing">
+<meta property="og:description" content="The Voles meadow for Friday 27 March 2026: hard, ten by ten. Shade the water so each island has exactly one number and that many cells. Free, with hints and Check, in your browser.">
+<meta property="og:url" content="https://arling.sk/games/voles/2026-03-27/">
+<meta property="og:type" content="website">
+
+
+<link rel="alternate" type="text/plain" href="https://arling.sk/llms.txt" title="llms.txt">
+<link rel="preload" href="/fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/style/paper.css?v=89016e6c">
+<script src="/style/prepinac.js?v=2988c181" defer></script>
+<script type="module" src="/games/voles/game.js?v=1"></script>
+<style>
+  /* Only this page: the meadow, the control row and the rules. */
+  .hero{align-items:start}
+  /* Wide enough for the row of five buttons, whatever size the meadow is: the
+     meadow itself needs only n cells, the reserve on top is what keeps the
+     controls in the same roomy rhythm as the other games (Magpies keeps the
+     same reserve for its row and column headers). */
+  .hra{max-width:min(100%, max(420px, calc(var(--n,8) * 42px + 40px)));margin:0 auto}
+  @media (max-width:860px){ .hra{margin:0 auto;max-width:min(100%, max(360px, calc(var(--n,8) * 52px + 8px)))} }
+  /* Narrow phones: the meadow takes the whole screen width, exactly, so the
+     page never scrolls sideways (the wrap gutter is a percentage, so a fixed
+     negative margin would overshoot it by a pixel). */
+  @media (max-width:480px){ .doska-obal{margin-inline:calc((100% - 100vw) / 2)} }
+  header{padding-top:env(safe-area-inset-top,0px)}
+  .horna{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:0 0 10px;
+         font-family:var(--ui);font-size:14px;color:var(--muted)}
+  .horna b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+  .horna .uroven{color:var(--muted);font-size:12px;letter-spacing:.06em;text-transform:uppercase;margin-left:8px;white-space:nowrap}
+  .horna #cas-blok,.horna #datum{white-space:nowrap}
+  @media (max-width:480px){ .horna .uroven{display:block;margin:2px 0 0} }
+  .pauza-btn{font:500 12px/1 var(--ui);color:var(--muted);background:transparent;border:1px solid var(--line);border-radius:999px;padding:4px 10px;cursor:pointer;margin-left:8px;vertical-align:1px}
+  .pauza-btn:hover{color:var(--ink);border-color:var(--ink)}
+  .doska-obal{position:relative;touch-action:pan-y}
+  .pauza-blok{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+     background:rgba(10,9,8,.9);border:2px solid var(--line);border-radius:8px;text-align:center;font-family:var(--ui);padding:20px;z-index:3}
+  .pauza-blok[hidden]{display:none}
+  .pauza-blok p{margin:0;color:var(--body);font-size:15px;line-height:1.5}
+  .pauza-blok b{color:var(--ink)}
+  /* ── The meadow ─────────────────────────────────────────────────────────
+     A square grid of cells built by game.js. A cell with a number (.k) is dry
+     land by definition and cannot be changed; every other cell (.b) is a
+     button that carries the player's mark: nothing, water (a shaded cell) or
+     a dot, the note that says this cell belongs to an island. Everything is
+     drawn from --cell, the measured width of one cell, so a twelve by twelve
+     on a phone reads the same way as a six by six on a desktop. */
+  .doska{display:grid;grid-template-columns:repeat(var(--n,8),minmax(0,1fr));
+         border:2px solid var(--ink);border-radius:8px;overflow:hidden;background:var(--luka);
+         touch-action:none;user-select:none;-webkit-user-select:none;
+         --cell:40px;--tenka:rgba(255,255,255,.14);--luka:#221d17;--suchy:#34291d;--hotova:#2a2319;--voda:#16456e}
+  .doska[hidden]{display:none}
+  @media (max-width:480px){ .doska{border-radius:0;border-left:0;border-right:0} }
+  .doska.hotovo{border-color:var(--ok);box-shadow:0 0 0 4px rgba(94,207,154,.14)}
+  .doska.pauza .b,.doska.pauza .k{visibility:hidden}
+  .riadok{display:contents}
+  .k,.b{aspect-ratio:1;min-width:0;position:relative;display:block;padding:0;margin:0;
+        box-shadow:inset 1px 0 0 var(--tenka),inset 0 1px 0 var(--tenka)}
+  .k.c0,.b.c0{box-shadow:inset 0 1px 0 var(--tenka)}
+  .k.r0,.b.r0{box-shadow:inset 1px 0 0 var(--tenka)}
+  .k.r0.c0,.b.r0.c0{box-shadow:none}
+  /* a family: dry land with the size of its island written on it */
+  .k{background:var(--suchy);font-family:var(--ui);font-variant-numeric:tabular-nums;
+     display:flex;align-items:center;justify-content:center;
+     font-size:calc(var(--cell) * .44);font-weight:600;line-height:1;color:var(--ink)}
+  /* a cell the player marks */
+  .b{appearance:none;-webkit-appearance:none;border:0;background:transparent;cursor:pointer;color:var(--ink);font:inherit}
+  .b:hover{background:rgba(255,255,255,.05)}
+  /* The keyboard cursor. Full accent, never the pale one: the roving tabindex
+     focuses a cell after a plain mouse click too, so this frame sits on the
+     board the whole game and must not be mistaken for the red of a mistake.
+     Named from .doska so it outweighs paper.css, which paints every focus ring
+     on a dark page with the pale accent. */
+  .doska .b:focus-visible{outline:2px solid var(--accent);outline-offset:-3px;z-index:2}
+  /* water: the whole cell goes under, so neighbouring water reads as one
+     sheet even before the meadow is finished */
+  .b[data-v="1"]{background:var(--voda)}
+  .b[data-v="1"]:hover{background:#1a4f7d}
+  /* a dot: the player's own note that the cell is dry. A shape, not a colour. */
+  .b[data-v="2"]::after{content:"";position:absolute;left:50%;top:50%;width:26%;aspect-ratio:1;
+     transform:translate(-50%,-50%);border-radius:50%;background:var(--body)}
+  /* A soft visual cue only, not a judgement: an island that already holds its
+     number, has exactly that many cells and is shut in by water goes quiet.
+     It says nothing about whether the island is in the RIGHT place (Andrej,
+     10. 9.: nothing turns red while playing, only Check judges). */
+  .b.stlmena,.k.stlmena{background:var(--hotova)}
+  .k.stlmena{color:var(--muted)}
+  .b.stlmena::after{background:var(--muted);opacity:.6}
+  /* the island under the cursor, when the setting is on */
+  .b.ostrov,.k.ostrov{background:#423626}
+  .b.ostrov.stlmena,.k.ostrov.stlmena{background:#382e21}
+  /* A hint: the cells around it are lit, the cell it means pulses. Neither
+     says what goes there until the second press. */
+  .b.tip-okolie,.k.tip-okolie{background-color:rgba(250,204,21,.12)}
+  .b.tip{box-shadow:inset 0 0 0 3px #facc15;z-index:2;animation:tip-pulz .9s ease-in-out infinite alternate}
+  @keyframes tip-pulz{from{box-shadow:inset 0 0 0 1px #facc15}to{box-shadow:inset 0 0 0 3px #facc15}}
+  @media (prefers-reduced-motion:reduce){ .b.tip{animation:none} }
+  /* A mistake is a shape and a mark, not only a colour: a red frame and an
+     exclamation mark in the corner of the cell. */
+  .b.chyba{box-shadow:inset 0 0 0 2px #ff7b7b;z-index:2}
+  .b.chyba .ikona::before{content:"!";position:absolute;top:1%;right:9%;font:700 calc(var(--cell) * .3)/1 var(--ui);color:#ff7b7b}
+  /* Finished: the water joins into one sheet and the islands turn green. */
+  .hotovo .b,.hotovo .k{box-shadow:none;cursor:default}
+  .hotovo .b[data-v="1"]{background:var(--voda)}
+  .hotovo .b:not([data-v="1"]),.hotovo .k{background:rgba(94,207,154,.18)}
+  .hotovo .k{color:var(--ok)}
+  .hotovo .b[data-v="2"]::after{background:var(--ok);opacity:1}
+  .hotovo .b:hover{background:rgba(94,207,154,.18)}
+  .hotovo .b[data-v="1"]:hover{background:var(--voda)}
+  /* ── The controls ─────────────────────────────────────────────────────── */
+  /* The five buttons share the width of the meadow. They grow to fill the row
+     they are on, so a wrapped line ends flush instead of leaving a hole where
+     a sixth button would have gone. */
+  .ovladanie{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:14px}
+  .ovladanie .btn{height:40px;padding:0 16px;font-size:14px;flex:1 1 auto;justify-content:center}
+  .ovladanie .btn[aria-pressed="true"]{border-color:var(--accent);color:var(--accent)}
+  /* A button with nothing to do says so: Undo and Redo with an empty stack, and
+     every button on a meadow that has not opened yet. */
+  .ovladanie .btn:disabled{opacity:.42;cursor:not-allowed}
+  .ovladanie .btn-line:disabled:hover{background:transparent;color:var(--ink);border-color:var(--ink)}
+  body.noc .ovladanie .btn-line:disabled:hover{background:rgba(255,255,255,.03);border-color:rgba(255,255,255,.16)}
+  /* The streak takes its own line under the buttons, and no line at all while
+     there is no streak to show. */
+  .ovladanie #seria{flex:1 0 100%;margin:0}
+  .ovladanie #seria:empty{display:none}
+  /* On a phone the five buttons make two tidy rows: three, then two that
+     stretch across the whole width between them. */
+  @media (max-width:480px){
+    .ovladanie{gap:6px}
+    .ovladanie .btn{flex:1 1 28%;padding:0 6px}
+  }
+  .stav{font-family:var(--ui);font-size:15px;line-height:1.5;color:var(--body);margin:12px 0 0;min-height:1.5em}
+  .stav b{color:var(--ink)}
+  .stav.ok{color:var(--ok)}
+  .stav.ok b{color:var(--ok)}
+  .pasik{display:flex;gap:6px;margin-top:14px}
+  .den{flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;padding:6px 0 5px;border:1px solid var(--line);border-radius:10px;
+       text-decoration:none;color:var(--muted);font-family:var(--ui);min-width:0;background:var(--card)}
+  .den small{font-size:10px;letter-spacing:.08em}
+  .den b{font-size:15px;color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+  .den.dnes{border-color:var(--accent);color:var(--accent)}
+  .den.rozohrane{border-style:dashed}
+  .den.hotove{background:rgba(94,207,154,.12);border-color:var(--ok)}
+  .den.hotove b{color:var(--ok)}
+  .den.buduci{opacity:.38}
+  a.den:hover{border-color:var(--ink);color:var(--ink)}
+  .odkazy{font-family:var(--ui);font-size:13px;color:var(--muted);margin:12px 0 0}
+  .odkazy a{color:var(--body)}
+  .historia{font-family:var(--ui);font-size:13px;color:var(--body);line-height:1.5;margin:10px 0 0}
+  .historia b{color:var(--ink)}
+  .nastavenia{margin-top:14px;border:1px solid var(--line);border-radius:12px;background:var(--card);padding:0 14px}
+  .nastavenia summary{cursor:pointer;font:600 13px/1.4 var(--ui);color:var(--muted);padding:10px 0;list-style:none}
+  .nastavenia summary::-webkit-details-marker{display:none}
+  .nastavenia[open] summary{color:var(--ink)}
+  .nastavenia label{display:flex;gap:10px;align-items:flex-start;font-family:var(--ui);font-size:13px;color:var(--body);line-height:1.5;padding:6px 0}
+  .nastavenia input{margin-top:3px;flex:none}
+  .nastavenia .fineprint{padding:6px 0 12px;margin:0}
+  .skryte{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
+  .navod{font-family:var(--ui);font-size:13px;color:var(--muted);margin:10px 0 0;max-width:none}
+  .navod kbd{font-size:12px}
+  /* On the phone the meadow goes under the text; the keyboard note there
+     would just push the game further down. It is in the Rules section too. */
+  @media (max-width:860px){ .navod{display:none} }
+  .pravidla details{border:1px solid var(--line);border-radius:12px;background:var(--card);padding:0 18px;max-width:68ch}
+  .pravidla details+details{margin-top:10px}
+  .pravidla summary{cursor:pointer;font:600 15px/1.4 var(--ui);color:var(--ink);padding:14px 0;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:12px}
+  .pravidla summary::-webkit-details-marker{display:none}
+  .pravidla summary::after{content:"";width:.5em;height:.5em;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(45deg);flex:none;margin-right:4px;transition:transform .2s var(--ease)}
+  .pravidla details[open] summary::after{transform:rotate(225deg)}
+  .pravidla .telo{padding:0 0 16px}
+  .pravidla .telo p{margin:0 0 10px}
+  .pravidla .telo p:last-child{margin:0}
+  .jazyk{font:500 13px/1 var(--ui);color:var(--muted);background:transparent;border:1px solid var(--line);border-radius:999px;padding:6px 12px;cursor:pointer;margin-top:14px}
+  .jazyk:hover{color:var(--ink);border-color:var(--ink)}
+  .prose p{margin:0 0 14px}
+  .prose p:last-child{margin-bottom:0}
+  .sub{margin:0 0 6px}
+  noscript p{font-family:var(--ui);color:var(--accent-light)}
+</style>
+<noscript><style>
+  .r, .w { opacity:1 !important; transform:none !important; filter:none !important; }
+  .rule { transform:scaleX(1) !important; }
+</style></noscript>
+</head>
+<body class="noc" data-den="2026-03-27">
+<div class="wash" aria-hidden="true"><i></i><i></i></div>
+<a class="skip" href="#doska">Skip to the game</a>
+
+<header>
+  <div class="wrap bar">
+    <a class="brand" href="https://arling.sk/">
+      <svg viewBox="0 0 488 215" width="38" height="15" aria-hidden="true" focusable="false"><path fill="#f4f4f7" fill-rule="evenodd" d="M0.00,213.00L74.00,214.00L181.00,85.00L285.00,214.00L360.00,214.00L206.00,21.00L185.00,4.00L164.00,10.00Z M221.00,0.00L263.00,50.00L395.00,50.00L409.00,55.00L419.00,76.00L401.00,96.00L313.00,98.00L411.00,214.00L487.00,214.00L422.00,139.00L457.00,123.00L482.00,88.00L482.00,48.00L463.00,19.00L417.00,0.00Z"/><path fill="#f2643c" d="M269.00,66.00L269.00,67.00L268.00,68.00L268.00,70.00L267.00,71.00L267.00,76.00L268.00,77.00L268.00,79.00L270.00,81.00L270.00,82.00L271.00,82.00L273.00,84.00L274.00,84.00L277.00,86.00L279.00,86.00L280.00,87.00L287.00,87.00L288.00,86.00L290.00,86.00L291.00,85.00L294.00,84.00L298.00,80.00L298.00,79.00L299.00,78.00L299.00,75.00L300.00,74.00L300.00,72.00L299.00,71.00L299.00,69.00L298.00,68.00L297.00,65.00L295.00,63.00L294.00,63.00L289.00,60.00L278.00,60.00L277.00,61.00L276.00,61.00L275.00,62.00L272.00,63.00Z"/></svg>
+      <b>ARLing</b><span>Games</span>
+    </a>
+    <nav aria-label="Site"><a href="https://arling.sk/en/#tools">Tools</a><a href="https://arling.sk/games/">Games</a><a href="https://arling.sk/notes/">Notes</a><a href="https://arling.sk/how-we-work/">How we work</a><a href="mailto:andrej@arling.sk">Contact</a></nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap hero" id="hero">
+    <div>
+      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="2"/><path d="M3.5 10c2 0 2 2 4 2s2-2 4-2 2 2 4 2 2-2 4-2M3.5 15c2 0 2 2 4 2s2-2 4-2 2 2 4 2 2-2 4-2"/></svg>Daily shading logic</p>
+      <h1 id="h1"><span class="l">Voles.</span></h1>
+      <p class="lead r d3">The meadow is flooding. Each number is a vole family and says how big their island is. Shade the water so that every island has exactly one number and that many cells, islands never touch by a side, all the water connects, and no 2 by 2 block is all water.</p>
+      <p class="proof r d5" id="dnes">The meadow for Friday 27 March 2026: hard, ten by ten. Exactly one solution.</p>
+      <p class="navod r d5">Tap a cell to flood it, tap again for a dot that says dry land, again to clear it. Drag to shade a run of cells. Keyboard: arrows move, <kbd>Space</kbd> cycles, <kbd>W</kbd> water, <kbd>X</kbd> dot, <kbd>Delete</kbd> clears, <kbd>U</kbd> undo, <kbd>R</kbd> redo, <kbd>P</kbd> pauses. Nothing lights up while you play; Check judges only when you ask.</p>
+    </div>
+    <div class="r d2">
+      <div class="hra" id="hra">
+        <div class="horna"><span><span id="datum">Friday 27 March 2026</span><span class="uroven" id="uroven">Hard · 10×10</span></span><span id="cas-blok">Time <b id="cas">0:00</b><button type="button" class="pauza-btn" id="pauza" hidden>Pause</button></span></div>
+        <div class="doska-obal">
+          <div class="doska" id="doska" role="grid" aria-label="Meadow 10 by 10" aria-describedby="cisla-text">
+            <div class="riadok" role="row"><button type="button" class="b r0 c0" data-i="0" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><button type="button" class="b r0" data-i="1" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><button type="button" class="b r0" data-i="2" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><button type="button" class="b r0" data-i="3" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><button type="button" class="b r0" data-i="4" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><button type="button" class="b r0" data-i="5" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><button type="button" class="b r0" data-i="6" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><button type="button" class="b r0" data-i="7" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><button type="button" class="b r0" data-i="8" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><button type="button" class="b r0" data-i="9" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button></div><div class="riadok" role="row"><button type="button" class="b c0" data-i="10" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><button type="button" class="b" data-i="11" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><button type="button" class="b" data-i="12" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><button type="button" class="b" data-i="13" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><div class="k" data-i="14" role="gridcell">2</div><button type="button" class="b" data-i="15" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><div class="k" data-i="16" role="gridcell">1</div><button type="button" class="b" data-i="17" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><div class="k" data-i="18" role="gridcell">1</div><button type="button" class="b" data-i="19" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button></div><div class="riadok" role="row"><button type="button" class="b c0" data-i="20" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><div class="k" data-i="21" role="gridcell">2</div><button type="button" class="b" data-i="22" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><button type="button" class="b" data-i="23" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><button type="button" class="b" data-i="24" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><button type="button" class="b" data-i="25" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><button type="button" class="b" data-i="26" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><button type="button" class="b" data-i="27" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><button type="button" class="b" data-i="28" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><button type="button" class="b" data-i="29" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button></div><div class="riadok" role="row"><button type="button" class="b c0" data-i="30" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><button type="button" class="b" data-i="31" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><div class="k" data-i="32" role="gridcell">1</div><button type="button" class="b" data-i="33" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><div class="k" data-i="34" role="gridcell">1</div><button type="button" class="b" data-i="35" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><div class="k" data-i="36" role="gridcell">1</div><button type="button" class="b" data-i="37" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><button type="button" class="b" data-i="38" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><button type="button" class="b" data-i="39" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button></div><div class="riadok" role="row"><button type="button" class="b c0" data-i="40" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><div class="k" data-i="41" role="gridcell">3</div><button type="button" class="b" data-i="42" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><button type="button" class="b" data-i="43" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><button type="button" class="b" data-i="44" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><button type="button" class="b" data-i="45" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><button type="button" class="b" data-i="46" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><button type="button" class="b" data-i="47" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><div class="k" data-i="48" role="gridcell">2</div><button type="button" class="b" data-i="49" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button></div><div class="riadok" role="row"><button type="button" class="b c0" data-i="50" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><button type="button" class="b" data-i="51" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><button type="button" class="b" data-i="52" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><button type="button" class="b" data-i="53" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><div class="k" data-i="54" role="gridcell">1</div><button type="button" class="b" data-i="55" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><div class="k" data-i="56" role="gridcell">1</div><button type="button" class="b" data-i="57" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><button type="button" class="b" data-i="58" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><button type="button" class="b" data-i="59" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button></div><div class="riadok" role="row"><button type="button" class="b c0" data-i="60" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><button type="button" class="b" data-i="61" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><button type="button" class="b" data-i="62" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><button type="button" class="b" data-i="63" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><button type="button" class="b" data-i="64" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><button type="button" class="b" data-i="65" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><button type="button" class="b" data-i="66" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><button type="button" class="b" data-i="67" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><button type="button" class="b" data-i="68" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><button type="button" class="b" data-i="69" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button></div><div class="riadok" role="row"><button type="button" class="b c0" data-i="70" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><div class="k" data-i="71" role="gridcell">2</div><button type="button" class="b" data-i="72" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><button type="button" class="b" data-i="73" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><div class="k" data-i="74" role="gridcell">1</div><button type="button" class="b" data-i="75" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><button type="button" class="b" data-i="76" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><button type="button" class="b" data-i="77" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><div class="k" data-i="78" role="gridcell">2</div><button type="button" class="b" data-i="79" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button></div><div class="riadok" role="row"><button type="button" class="b c0" data-i="80" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><button type="button" class="b" data-i="81" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><button type="button" class="b" data-i="82" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><button type="button" class="b" data-i="83" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><button type="button" class="b" data-i="84" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><button type="button" class="b" data-i="85" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><button type="button" class="b" data-i="86" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><div class="k" data-i="87" role="gridcell">8</div><button type="button" class="b" data-i="88" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><button type="button" class="b" data-i="89" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button></div><div class="riadok" role="row"><button type="button" class="b c0" data-i="90" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><div class="k" data-i="91" role="gridcell">2</div><button type="button" class="b" data-i="92" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><button type="button" class="b" data-i="93" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><button type="button" class="b" data-i="94" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><button type="button" class="b" data-i="95" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><button type="button" class="b" data-i="96" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><button type="button" class="b" data-i="97" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><button type="button" class="b" data-i="98" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button><button type="button" class="b" data-i="99" data-v="0" role="gridcell" tabindex="-1"><i class="ikona"></i></button></div><noscript><p>This game needs JavaScript to play; the grid above shows today's clues.</p></noscript>
+          </div>
+          <div class="pauza-blok" id="pauza-blok" hidden><p><b>Paused.</b> <span id="pauza-cas"></span></p><button type="button" class="btn btn-solid" id="pokracuj">Resume</button></div>
+        </div>
+        <p class="skryte" id="cisla-text"></p>
+        <div class="ovladanie">
+          <button type="button" class="btn btn-line" id="spat">Undo</button>
+          <button type="button" class="btn btn-line" id="znova">Redo</button>
+          <button type="button" class="btn btn-line" id="reset">Clear</button>
+          <button type="button" class="btn btn-line" id="hint">Hint</button>
+          <button type="button" class="btn btn-line" id="check">Check</button>
+          <span class="small" id="seria"></span>
+        </div>
+        <p class="stav" id="stav" aria-live="polite"></p>
+        <nav class="pasik" id="pasik" aria-label="This week"></nav>
+        <p class="odkazy"><a href="/games/voles/guide/">How to play</a> · <a href="/games/voles/practice/">Practice sets</a> · <a href="/games/voles/archive/">Archive</a></p>
+        <p class="historia" id="historia" hidden></p>
+        <details class="nastavenia">
+          <summary>Settings</summary>
+          <label><input type="checkbox" data-nastavenie="casovac"> Show the timer and the Pause button</label>
+          <label><input type="checkbox" data-nastavenie="pauzaPriOdchode"> Pause the clock when you leave the tab or sit still for a minute</label>
+          <label><input type="checkbox" data-nastavenie="zvyrazniOstrov"> Highlight the island the cursor is standing on</label>
+          <label><input type="checkbox" data-nastavenie="autoVoda"> Auto water: shade around an island as soon as it has all its cells (off by default: the shading is yours)</label>
+          <label><input type="checkbox" data-nastavenie="zivaKontrola"> Live check: mark a wrong cell as soon as it is marked (off by default: finding a mistake is part of the puzzle)</label>
+          <label><input type="checkbox" data-nastavenie="potvrditReset"> Ask before Clear</label>
+          <p class="fineprint">Settings, progress, history and streak stay in this browser. Add this page to your home screen to open it like an app.</p>
+        </details>
+      </div>
+    </div>
+  </div>
+
+  <section id="rules" class="deep pravidla">
+    <div class="wrap">
+      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>01</p>
+      <h2 class="r">Rules.</h2>
+      <p class="sub r d1">Four lines. The rest is practice.</p>
+      <div class="rule"></div>
+      <div class="r d2">
+        <details open>
+          <summary>How to play</summary>
+          <div class="telo">
+            <p>The meadow is flooding. Each number is a vole family and says how big their island is. Shade the water so that every island has exactly one number and that many cells, islands never touch by a side, all the water connects, and no 2 by 2 block is all water.</p>
+            <p>An island is a group of dry cells that hang together side by side. The number counts the cell it stands on as well, so a 1 is a family on its own and everything beside it is under water. Two islands may sit corner to corner, never side by side, otherwise they would be one island with two numbers.</p>
+            <p>Every meadow has exactly one way the water can lie. When the last cell is right, the game notices by itself.</p>
+          </div>
+        </details>
+        <details>
+          <summary>Controls</summary>
+          <div class="telo">
+            <p>Tap or click a cell to flood it, tap it again for a dot, which is your own note that the cell stays dry, and once more to clear it. Hold and drag to shade a run of cells at once; a drag that starts on a dot rubs marks out instead. Only the shading decides the puzzle, the dots are there to help you think. Nothing lights up while you play: finding a mistake is part of it.</p>
+            <p><b>Check</b> first tells you only how many marks are wrong and in which rows; press it again and it marks them. <b>Hint</b> names the rule and the place without saying what goes there, and the second press fills that one cell in and explains it. If something on the meadow is already wrong, the hint points there first. Hints and checks are free and counted, and shown when you finish. <b>Clear</b> empties the meadow; the clock keeps running and one Undo brings everything back.</p>
+            <p>Keyboard: arrows move from cell to cell, <kbd>Space</kbd> or <kbd>Enter</kbd> takes the cell through water, dot and empty, <kbd>W</kbd> floods it, <kbd>X</kbd> puts a dot, <kbd>Delete</kbd> or <kbd>Backspace</kbd> clears it, <kbd>Escape</kbd> lets it go, <kbd>U</kbd> or <kbd>Ctrl</kbd>+<kbd>Z</kbd> undo, <kbd>R</kbd> or <kbd>Ctrl</kbd>+<kbd>R</kbd> redo, <kbd>P</kbd> pauses.</p>
+            <p>The clock runs from your first mark to the last cell and pauses when you leave the tab or sit still for a minute, which also hides the meadow. Your progress, time, history and day streak stay in this browser, and in your <a href="/ucet/">account</a> when you are signed in, so you can continue on another device. The day turns over at midnight where you are.</p>
+          </div>
+        </details>
+        <details>
+          <summary>The week</summary>
+          <div class="telo">
+            <p>Monday and Tuesday are easy (six by six), Wednesday and Thursday medium (eight by eight), Friday and Saturday hard (ten by ten) and Sunday is the challenge: twelve by twelve. The week strip under the meadow takes you to the other days; the <a href="/games/voles/archive/">archive</a> goes back a year, and the <a href="/games/voles/practice/">practice sets</a> have eight meadows of each level with no date attached.</p>
+            <p>Difficulty is measured, not guessed. Every meadow is solved by a program that only knows named rules, in three layers: the plain ones (a 1 is a family on its own, a cell between two numbers, an island that already has all its cells, a cell no number is close enough to reach, three cells of a two by two block already flooded), the ones that look further (an island with a single way to grow, a piece of water with a single way out, a cell that would join two families or overgrow an island), and the hard one (trying a cell both ways and dropping the one that ends in nonsense). Easy and Medium never need that third layer; Sunday leans on it the most.</p>
+          </div>
+        </details>
+        <details>
+          <summary>A few ways in</summary>
+          <div class="telo">
+            <p>Start with the ones. A 1 has its whole island already, so all four cells beside it are water, and that is free ground everywhere on the meadow.</p>
+            <p>A cell that sits between two different numbers, side by side with both, is always water: one cell cannot belong to two families at once. The same holds for two numbers standing corner to corner, because the cell between them touches both.</p>
+            <p>Count how far a number can reach. A family of 3 can never lie more than two cells away from its number, so anything further off, with no other number near, is under water.</p>
+            <p>Water never fills a whole two by two block. Once three cells of such a block are shaded, the fourth is dry, and a piece of water with only one way out has to take it, because all the water hangs together.</p>
+          </div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+</main>
+<script type="application/json" id="zadanie">{"d":"2026-03-27","n":10,"c":"..............2.1.1..2..........1.1.1....3......2.....1.1..............2..1...2........8...2........","s":"1111111111101001010110111111111101010101101111110110010101111111111101100101010111111100111001000001","u":"hard","l":"28,6,6","p":40}</script>
+
+<footer>
+  <div class="wrap foot">
+    <div><b>ARLing s. r. o.</b><br>Ivanská cesta 32E<br>821 04 Bratislava, Slovakia</div>
+    <div>Company ID 56583486<br>VAT ID SK2122352100<br><a href="mailto:andrej@arling.sk">andrej@arling.sk</a></div>
+    <div><a href="https://arling.sk/privacy/">privacy</a> · <a href="https://arling.sk/podmienky/">terms</a> · <a href="https://arling.sk/gdpr/">GDPR</a> · <a href="https://arling.sk/impressum/">Impressum</a> · <a href="https://arling.sk/llms.txt">llms.txt</a> · <a href="https://arling.sk/sitemap-index.xml">sitemap</a><br>Tools are provided as is, without warranty. Anonymous visit counts via self-hosted Umami.</div>
+  </div>
+</footer>
+<script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="be534d51-4d01-4860-b267-9596d91606de"></script>
+</body>
+</html>

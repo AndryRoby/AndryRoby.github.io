@@ -37,7 +37,7 @@
 <link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/style/paper.css?v=89016e6c">
 <script src="/style/prepinac.js?v=2988c181" defer></script>
-<script type="module" src="/games/otters/game.js?v=1"></script>
+<script type="module" src="/games/otters/game.js?v=2"></script>
 <style>
   /* Only this page: the marsh, the control row and the rules block. */
   .hero{align-items:start}
@@ -70,7 +70,7 @@
      every side. The diamonds tile the board exactly, so the side you press
      is always the nearest one. */
   .doska{display:block;width:100%;height:auto;background:var(--card-plna);border:2px solid var(--ink);border-radius:8px;
-         touch-action:none;user-select:none;-webkit-user-select:none;outline:none}
+         touch-action:pan-y;user-select:none;-webkit-user-select:none;outline:none}
   /* An SVG is not an HTML element, so the browser's own rule for [hidden]
      does not reach it: a future day hides the marsh with this one. */
   .doska[hidden]{display:none}
@@ -194,9 +194,9 @@
     <div>
       <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 8.5h6.5v7H19"/><circle cx="5" cy="8.5" r="1.6"/><circle cx="19" cy="15.5" r="1.6"/><path d="M3.5 3.5h17v17h-17z" opacity=".45"/></svg>Daily loop logic</p>
       <h1 id="h1"><span class="l">Otters.</span></h1>
-      <p class="lead r d3">Otters need one river. Draw a single closed loop along the grid lines, and let every number tell you how many of that patch's four sides the water runs along.</p>
+      <p class="lead r d3">Draw one closed loop along the grid lines. A number says how many of that square's four sides are part of the loop. Empty squares can have any number of sides.</p>
       <p class="proof r d5" id="dnes">This river opens on Thursday 31 December 2026 at midnight, Bratislava time.</p>
-      <p class="navod r d5">Tap a side: river, then a cross, then empty. Hold and drag to draw several sides at once. Keyboard: arrows move the cursor, <kbd>Ctrl</kbd> plus arrow draws, <kbd>Shift</kbd> plus arrow crosses, <kbd>U</kbd> undo, <kbd>R</kbd> redo, <kbd>P</kbd> pauses. Nothing lights up while you play; Check judges only when you ask.</p>
+      <p class="navod r d5">Keyboard: arrows move the cursor, <kbd>Ctrl</kbd>+arrow draws, <kbd>Shift</kbd>+arrow crosses, <kbd>Enter</kbd> starts a run the arrows draw, <kbd>U</kbd> undo, <kbd>R</kbd> redo, <kbd>P</kbd> pauses.</p>
     </div>
     <div class="r d2">
       <div class="hra">
@@ -242,15 +242,15 @@
         <details open>
           <summary>How to play</summary>
           <div class="telo">
-            <p>Draw the otters' river: one closed loop along the grid lines. A number in a patch of marsh says how many of its sides the river runs along. No branches, no crossings, one loop only.</p>
-            <p>A patch with no number says nothing at all: the river may run along none of its sides, or one, or two, or three. Every dot the river reaches has exactly two lines, one in and one out, and when the loop closes it has to pass every number correctly at the same time.</p>
-            <p>A cross on a side is your own note that the river does not run there. Crosses are never checked and never required; when the river is finished, the game notices by itself.</p>
+            <p>Draw one closed loop along the grid lines. A number in a patch of marsh says how many of its sides the loop runs along. A cross is your own note that a side is not part of the loop.</p>
+            <p>The simplest examples: a 0 has none of its four sides in the loop, and a 3 in a corner of the marsh has both of its outer sides in the loop (a corner patch only touches two sides of the grid to begin with). A patch with no number can have any number of sides in the loop, from none to all four.</p>
+            <p>Every dot the loop reaches has exactly two lines meeting it, one in and one out. Crosses are never checked and never required; the game notices by itself once the loop closes and every number agrees.</p>
           </div>
         </details>
         <details>
           <summary>Controls</summary>
           <div class="telo">
-            <p>Tap or click a side: once draws the river, twice puts a cross, three times clears it. Hold the button or your finger and drag to draw a whole run of sides in one go, and drag back over your own crosses to wipe them. Nothing lights up while you play: finding a mistake is part of the puzzle.</p>
+            <p>Tap or click a side to draw it: the first tap draws the river, the second tap puts a cross, the third tap clears it. Nothing lights up while you play: finding a mistake is part of the puzzle.</p>
             <p><b>Check</b> first tells you only how many marks are wrong and roughly where. Press it again and it shows which. <b>Hint</b> names the rule and the place in words only, and the second press rings those sides and draws that one step for you. If something on the board is already wrong, the hint points there first. Hints and checks are free and counted, and shown when you finish. <b>Clear</b> empties the marsh; the clock keeps running and one Undo brings everything back.</p>
             <p>Keyboard: arrows move the cursor from dot to dot, <kbd>Ctrl</kbd> plus arrow draws or removes the river in that direction, <kbd>Shift</kbd> plus arrow puts a cross there, <kbd>Enter</kbd> starts and ends a run you steer with the arrows, <kbd>Escape</kbd> cancels it, <kbd>X</kbd> crosses the last direction, <kbd>Delete</kbd> clears it, <kbd>U</kbd> or <kbd>Ctrl</kbd>+<kbd>Z</kbd> undo, <kbd>R</kbd> or <kbd>Ctrl</kbd>+<kbd>R</kbd> redo, <kbd>P</kbd> pauses.</p>
             <p>The clock runs from your first move to the closing of the loop and pauses when you leave the tab or sit still for a minute, which also hides the marsh. Your progress, time, history and day streak stay in this browser, and in your <a href="/ucet/">account</a> when you are signed in, so you can continue on another device.</p>

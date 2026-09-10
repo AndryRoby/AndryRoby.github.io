@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script src="/style/vzhlad.js?v=93c2659f"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://homelab.tailbf8f27.ts.net; connect-src 'self' https://homelab.tailbf8f27.ts.net; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<meta name="color-scheme" content="dark">
+<meta name="robots" content="noindex, follow">
+<link rel="manifest" href="/games/swans/manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Swans">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta property="og:image" content="https://arling.sk/games/swans/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://homelab.tailbf8f27.ts.net" crossorigin>
+<meta name="theme-color" content="#0a0908">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="48x48">
+<link rel="apple-touch-icon" href="/icon-180.png">
+<title>Swans for Thursday 24 June 2027 · ARLing</title>
+<meta name="description" content="The Swans lake for Thursday 24 June 2027: medium, seven by seven. Draw one closed loop through every swan so each one has the shape it asks for. Free, with hints and Check, in your browser.">
+<link rel="canonical" href="https://arling.sk/games/swans/2027-06-24/">
+<link rel="prev" href="https://arling.sk/games/swans/2027-06-23/">
+<link rel="next" href="https://arling.sk/games/swans/2027-06-25/">
+<meta property="og:title" content="Swans for Thursday 24 June 2027 · ARLing">
+<meta property="og:description" content="The Swans lake for Thursday 24 June 2027: medium, seven by seven. Draw one closed loop through every swan so each one has the shape it asks for. Free, with hints and Check, in your browser.">
+<meta property="og:url" content="https://arling.sk/games/swans/2027-06-24/">
+<meta property="og:type" content="website">
+
+
+<link rel="alternate" type="text/plain" href="https://arling.sk/llms.txt" title="llms.txt">
+<link rel="preload" href="/fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/style/paper.css?v=89016e6c">
+<script src="/style/prepinac.js?v=2988c181" defer></script>
+<script type="module" src="/games/swans/game.js?v=1"></script>
+<style>
+  /* Only this page: the lake, the control row and the rules block. */
+  .hero{align-items:start}
+  .hra{max-width:calc(var(--n,7) * 46px + 60px);margin:0 auto}
+  /* Phones and folds: the lake sits in the middle and uses the whole width. */
+  @media (max-width:860px){ .hra{margin:0 auto;max-width:min(100%,calc(var(--n,7) * 50px + 60px))} }
+  /* Narrow phones: the board takes the whole screen width, exactly, so the
+     page never scrolls sideways (the wrap gutter is a percentage, so a fixed
+     negative margin would overshoot it by a pixel). */
+  @media (max-width:480px){ .doska-obal{margin-inline:calc((100% - 100vw) / 2)} }
+  header{padding-top:env(safe-area-inset-top,0px)}
+  .horna{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:0 0 10px;
+         font-family:var(--ui);font-size:14px;color:var(--muted)}
+  .horna b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+  .horna .uroven{color:var(--muted);font-size:12px;letter-spacing:.06em;text-transform:uppercase;margin-left:8px;white-space:nowrap}
+  .horna #cas-blok,.horna #datum{white-space:nowrap}
+  @media (max-width:480px){ .horna .uroven{display:block;margin:2px 0 0} }
+  .pauza-btn{font:500 12px/1 var(--ui);color:var(--muted);background:transparent;border:1px solid var(--line);border-radius:999px;padding:4px 10px;cursor:pointer;margin-left:8px;vertical-align:1px}
+  .pauza-btn:hover{color:var(--ink);border-color:var(--ink)}
+  .doska-obal{position:relative;touch-action:pan-y}
+  .pauza-blok{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+     background:rgba(10,9,8,.9);border:2px solid var(--line);border-radius:8px;text-align:center;font-family:var(--ui);padding:20px;z-index:2}
+  .pauza-blok[hidden]{display:none}
+  .pauza-blok p{margin:0;color:var(--body);font-size:15px;line-height:1.5}
+  .pauza-blok b{color:var(--ink)}
+  /* ── The lake ───────────────────────────────────────────────────────────
+     One SVG, drawn by game.js: a faint grid of cells, the water the finished
+     loop fills, the swans, and on top of them one group per step between two
+     neighbouring cells (the line of the loop, the player's cross, and a ring
+     for a hint or a mistake). Which step a tap means is worked out from the
+     distance to the middle of that step, not from the shapes, so a tap always
+     lands on the nearest one. */
+  .doska{display:block;width:100%;height:auto;background:var(--card-plna);border:2px solid var(--ink);border-radius:8px;
+         touch-action:none;user-select:none;-webkit-user-select:none;outline:none;cursor:pointer}
+  /* An SVG is not an HTML element, so the browser's own rule for [hidden]
+     does not reach it: a future day hides the lake with this one. */
+  .doska[hidden]{display:none}
+  /* After the rule above, so that it wins: on a narrow phone the lake runs
+     from edge to edge and has no side border to cut it off. */
+  @media (max-width:480px){ .doska{border-radius:0;border-left:0;border-right:0} }
+  .doska.hotovo{border-color:var(--ok);box-shadow:0 0 0 4px rgba(94,207,154,.14)}
+  .doska.hotovo,.doska.pauza{cursor:default}
+  .doska.pauza .plocha{visibility:hidden}
+  .mriezka line{stroke:rgba(255,255,255,.10);stroke-width:1}
+  /* The water inside the finished loop. */
+  .voda{fill:none;stroke:none}
+  .hotovo .voda{fill:rgba(94,207,154,.11)}
+  .h line{display:none;stroke-width:5;stroke-linecap:round}
+  .h .l0{stroke:var(--accent)}
+  .h[data-v="1"] .l0{display:inline}
+  /* The faint line under the pointer: what one tap would draw. */
+  .h.pod[data-v="0"] .nahlad{display:inline;stroke:var(--accent);opacity:.22}
+  /* The player's own note that the loop does not run here. It is never checked
+     and never required, and it disappears the moment a line is drawn there. */
+  .h .krizik{display:none;stroke:var(--muted);stroke-width:2.5;stroke-linecap:round;opacity:.85}
+  .h[data-v="2"] .krizik{display:inline}
+  .h .znak{display:none;fill:none;stroke-width:2.5;transform-box:fill-box;transform-origin:center}
+  .h.tip .znak{display:inline;stroke:#facc15;animation:tip-pulz .9s ease-in-out infinite alternate}
+  /* A mistake is a shape and an icon, not only a colour: a ring across the
+     step, and the line itself drawn broken. */
+  .h.chyba .znak{display:inline;stroke:#ff7b7b}
+  .h.chyba .l0{stroke:#ff7b7b;stroke-dasharray:6 4}
+  .h.chyba .krizik{stroke:#ff7b7b;opacity:1}
+  .hotovo .h .l0{stroke:var(--ok)}
+  /* The finished loop is the picture, so the crosses step out of it. */
+  .hotovo .h .krizik{display:none}
+  /* The page is dark, so the swans keep their own names rather than the
+     printed convention: the white swan is the pale disc, the black swan the
+     dark one inside a pale ring. The two differ in shape as well as in
+     lightness, which is what the standard asks for (WCAG 1.4.1). */
+  .labut{stroke-width:2.5}
+  .labut.biela{fill:var(--ink);stroke:var(--ink)}
+  .labut.cierna{fill:var(--card-plna);stroke:var(--ink);stroke-width:3.5}
+  /* A swan that already has the shape it asks for goes quiet. It says nothing
+     about whether the rest of the loop is right: only Check judges that. */
+  .policko.splnene .labut{opacity:.4}
+  /* Napoveda ukazuje jeden krok medzi dvomi polickami. Krok je krúžok na hrane,
+     policka su pod nim len tiche svetlo: ked boli aj policka krúžky, tri kruhy
+     v jednom mieste sa zliali do skvrny. Svetlo pulzuje priehladnostou, nie
+     velkostou, takze nic nepretecie do susedneho policka. */
+  .policko .prstenec{display:none;fill:none;stroke:none;transform-box:fill-box;transform-origin:center}
+  .policko.tip .prstenec{display:inline;fill:rgba(250,204,21,.20);animation:tip-svetlo .9s ease-in-out infinite alternate}
+  .policko.chyba .prstenec{display:inline;fill:rgba(255,123,123,.20)}
+  .hotovo .labut.biela{fill:var(--ok);stroke:var(--ok)}
+  .hotovo .labut.cierna{fill:var(--card-plna);stroke:var(--ok)}
+  .hotovo .policko.splnene .labut{opacity:1}
+  .pole{fill:transparent;pointer-events:none;outline:none}
+  .kurzor{fill:none;stroke:var(--accent);stroke-width:2.5;opacity:0}
+  .doska:focus-within .kurzor{opacity:1}
+  /* The tap by tap way of drawing, for anyone who cannot drag: the cell the
+     next tap will draw from. */
+  .kotva{fill:none;stroke:var(--accent);stroke-width:2.5;stroke-dasharray:4 4;opacity:0}
+  .doska.kotvi .kotva{opacity:.9}
+  @keyframes tip-pulz{from{transform:scale(.86);opacity:.5}to{transform:scale(1.04);opacity:1}}
+  @keyframes tip-svetlo{from{opacity:.45}to{opacity:1}}
+  @media (prefers-reduced-motion:reduce){ .h.tip .znak,.policko.tip .prstenec{animation:none} }
+  .skryte{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
+  .ovladanie{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:14px}
+  .ovladanie .btn{height:40px;padding:0 13px;font-size:14px}
+  /* paper.css dava .btn{display:inline-flex} a autorske pravidlo vzdy prebije
+     prehliadacov vlastny [hidden]{display:none}: Share by svietil este pred
+     dohranim. Rovnaka oprava ako pri .pauza-blok[hidden]. */
+  .ovladanie .btn[hidden]{display:none}
+  /* Na uzkom telefone sa vsetkych pat tlacidiel musi zmestit do jedneho
+     riadku, inak Check spadne sam pod ostatne a stranka vyzera nedorobene. */
+  @media (max-width:480px){ .ovladanie{gap:6px} .ovladanie .btn{padding:0 9px} }
+  /* Pri 320 px, spodnej hranici standardu, tych pat tlacidiel potrebuje este
+     asi 25 px navyse: uzsi gap a padding ich usetri dost s rezervou a
+     sirsieho telefonu sa to netyka. */
+  @media (max-width:359px){ .ovladanie{gap:4px} .ovladanie .btn{padding:0 6px;font-size:13px} }
+  .stav{font-family:var(--ui);font-size:15px;line-height:1.5;color:var(--body);margin:12px 0 0;min-height:1.5em}
+  .stav b{color:var(--ink)}
+  .stav.ok{color:var(--ok)}
+  .stav.ok b{color:var(--ok)}
+  .pasik{display:flex;gap:6px;margin-top:14px}
+  .den{flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;padding:6px 0 5px;border:1px solid var(--line);border-radius:10px;
+       text-decoration:none;color:var(--muted);font-family:var(--ui);min-width:0;background:var(--card)}
+  .den small{font-size:10px;letter-spacing:.08em}
+  .den b{font-size:15px;color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+  .den.dnes{border-color:var(--accent);color:var(--accent)}
+  .den.rozohrane{border-style:dashed}
+  .den.hotove{background:rgba(94,207,154,.12);border-color:var(--ok)}
+  .den.hotove b{color:var(--ok)}
+  .den.buduci{opacity:.38}
+  a.den:hover{border-color:var(--ink);color:var(--ink)}
+  .odkazy{font-family:var(--ui);font-size:13px;color:var(--muted);margin:12px 0 0}
+  .odkazy a{color:var(--body)}
+  .historia{font-family:var(--ui);font-size:13px;color:var(--body);line-height:1.5;margin:10px 0 0}
+  .historia b{color:var(--ink)}
+  .nastavenia{margin-top:14px;border:1px solid var(--line);border-radius:12px;background:var(--card);padding:0 14px}
+  .nastavenia summary{cursor:pointer;font:600 13px/1.4 var(--ui);color:var(--muted);padding:10px 0;list-style:none}
+  .nastavenia summary::-webkit-details-marker{display:none}
+  .nastavenia[open] summary{color:var(--ink)}
+  .nastavenia label{display:flex;gap:10px;align-items:flex-start;font-family:var(--ui);font-size:13px;color:var(--body);line-height:1.5;padding:6px 0}
+  .nastavenia input{margin-top:3px;flex:none}
+  .nastavenia .fineprint{padding:6px 0 12px;margin:0}
+  .navod{font-family:var(--ui);font-size:13px;color:var(--muted);margin:10px 0 0;max-width:none}
+  .navod kbd{font-size:12px}
+  /* On the phone the lake goes under the text; the keyboard note there would
+     just push the game further down. It is in the Rules section too. */
+  @media (max-width:860px){ .navod{display:none} }
+  .pravidla details{border:1px solid var(--line);border-radius:12px;background:var(--card);padding:0 18px;max-width:68ch}
+  .pravidla details+details{margin-top:10px}
+  .pravidla summary{cursor:pointer;font:600 15px/1.4 var(--ui);color:var(--ink);padding:14px 0;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:12px}
+  .pravidla summary::-webkit-details-marker{display:none}
+  .pravidla summary::after{content:"";width:.5em;height:.5em;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(45deg);flex:none;margin-right:4px;transition:transform .2s var(--ease)}
+  .pravidla details[open] summary::after{transform:rotate(225deg)}
+  .pravidla .telo{padding:0 0 16px}
+  .pravidla .telo p{margin:0 0 10px}
+  .pravidla .telo p:last-child{margin:0}
+  .jazyk{font:500 13px/1 var(--ui);color:var(--muted);background:transparent;border:1px solid var(--line);border-radius:999px;padding:6px 12px;cursor:pointer;margin-top:14px}
+  .jazyk:hover{color:var(--ink);border-color:var(--ink)}
+  .prose p{margin:0 0 14px}
+  .prose p:last-child{margin-bottom:0}
+  .sub{margin:0 0 6px}
+  noscript p{font-family:var(--ui);color:var(--accent-light)}
+</style>
+<noscript><style>
+  .r, .w { opacity:1 !important; transform:none !important; filter:none !important; }
+  .rule { transform:scaleX(1) !important; }
+</style></noscript>
+</head>
+<body class="noc" data-den="2027-06-24">
+<div class="wash" aria-hidden="true"><i></i><i></i></div>
+<a class="skip" href="#doska">Skip to the game</a>
+
+<header>
+  <div class="wrap bar">
+    <a class="brand" href="https://arling.sk/">
+      <svg viewBox="0 0 488 215" width="38" height="15" aria-hidden="true" focusable="false"><path fill="#f4f4f7" fill-rule="evenodd" d="M0.00,213.00L74.00,214.00L181.00,85.00L285.00,214.00L360.00,214.00L206.00,21.00L185.00,4.00L164.00,10.00Z M221.00,0.00L263.00,50.00L395.00,50.00L409.00,55.00L419.00,76.00L401.00,96.00L313.00,98.00L411.00,214.00L487.00,214.00L422.00,139.00L457.00,123.00L482.00,88.00L482.00,48.00L463.00,19.00L417.00,0.00Z"/><path fill="#f2643c" d="M269.00,66.00L269.00,67.00L268.00,68.00L268.00,70.00L267.00,71.00L267.00,76.00L268.00,77.00L268.00,79.00L270.00,81.00L270.00,82.00L271.00,82.00L273.00,84.00L274.00,84.00L277.00,86.00L279.00,86.00L280.00,87.00L287.00,87.00L288.00,86.00L290.00,86.00L291.00,85.00L294.00,84.00L298.00,80.00L298.00,79.00L299.00,78.00L299.00,75.00L300.00,74.00L300.00,72.00L299.00,71.00L299.00,69.00L298.00,68.00L297.00,65.00L295.00,63.00L294.00,63.00L289.00,60.00L278.00,60.00L277.00,61.00L276.00,61.00L275.00,62.00L272.00,63.00Z"/></svg>
+      <b>ARLing</b><span>Games</span>
+    </a>
+    <nav aria-label="Site"><a href="https://arling.sk/en/#tools">Tools</a><a href="https://arling.sk/games/">Games</a><a href="https://arling.sk/notes/">Notes</a><a href="https://arling.sk/how-we-work/">How we work</a><a href="mailto:andrej@arling.sk">Contact</a></nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap hero" id="hero">
+    <div>
+      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 9v-2a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v10a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-8"/><circle cx="5" cy="12" r="2.4"/><circle cx="19" cy="6" r="2.4" fill="currentColor"/></svg>Daily loop logic</p>
+      <h1 id="h1"><span class="l">Swans.</span></h1>
+      <p class="lead r d3">Draw one loop through every swan. At a white swan the loop goes straight and turns in the cell just before or just after. At a black swan the loop turns and goes straight through both neighbouring cells.</p>
+      <p class="proof r d5" id="dnes">This lake opens on Thursday 24 June 2027 at midnight, Bratislava time.</p>
+      <p class="navod r d5">Drag from cell to cell to draw the loop, and drag back along it to rub it out. Tap the gap between two cells for a line, then a cross, then nothing. Keyboard: arrows move the cursor, <kbd>Enter</kbd> starts and ends drawing, <kbd>Space</kbd> works on the last direction, <kbd>X</kbd> crosses it, <kbd>U</kbd> undo, <kbd>R</kbd> redo, <kbd>P</kbd> pauses. Nothing lights up while you play; Check judges only when you ask.</p>
+    </div>
+    <div class="r d2">
+      <div class="hra">
+        <div class="horna"><span><span id="datum">Thursday 24 June 2027</span><span class="uroven" id="uroven">Medium · 7×7</span></span><span id="cas-blok">Time <b id="cas">0:00</b><button type="button" class="pauza-btn" id="pauza" hidden>Pause</button></span></div>
+        <div class="doska-obal">
+          <svg class="doska" id="doska" viewBox="0 0 280 280" role="grid" aria-label="Lake grid 7 by 7" aria-describedby="labute-text"></svg>
+          <noscript><p>This game needs JavaScript: the puzzle is generated right in your browser.</p></noscript>
+          <div class="pauza-blok" id="pauza-blok" hidden><p><b>Paused.</b> <span id="pauza-cas"></span></p><button type="button" class="btn btn-solid" id="pokracuj">Resume</button></div>
+        </div>
+        <p class="skryte" id="labute-text"></p>
+        <div class="ovladanie">
+          <button type="button" class="btn btn-line" id="spat">Undo</button>
+          <button type="button" class="btn btn-line" id="znova">Redo</button>
+          <button type="button" class="btn btn-line" id="reset">Clear</button>
+          <button type="button" class="btn btn-line" id="hint">Hint</button>
+          <button type="button" class="btn btn-line" id="check">Check</button>
+          <button type="button" class="btn btn-line" id="zdielaj" hidden>Share</button>
+          <span class="small" id="seria"></span>
+          <span class="small" id="zdielane" aria-live="polite"></span>
+        </div>
+        <p class="stav" id="stav" aria-live="polite"></p>
+        <nav class="pasik" id="pasik" aria-label="This week"></nav>
+        <p class="odkazy"><a href="/games/swans/guide/">How to play</a> · <a href="/games/swans/practice/">Practice sets</a> · <a href="/games/swans/archive/">Archive</a></p>
+        <p class="historia" id="historia" hidden></p>
+        <details class="nastavenia">
+          <summary>Settings</summary>
+          <label><input type="checkbox" data-nastavenie="casovac"> Show the timer and the Pause button</label>
+          <label><input type="checkbox" data-nastavenie="pauzaPriOdchode"> Pause the clock when you leave the tab or sit still for a minute</label>
+          <label><input type="checkbox" data-nastavenie="autoKrizky"> Auto exclude: when a cell already has its two lines, cross its other sides (off by default: the crosses are your own)</label>
+          <label><input type="checkbox" data-nastavenie="zivaKontrola"> Live check: mark a line that does not belong as soon as it appears (off by default: finding a mistake is part of the puzzle)</label>
+          <label><input type="checkbox" data-nastavenie="potvrditReset"> Ask before Clear</label>
+          <p class="fineprint">Settings, progress, history and streak stay in this browser. Add this page to your home screen to open it like an app.</p>
+        </details>
+      </div>
+    </div>
+  </div>
+
+  <section id="rules" class="deep pravidla">
+    <div class="wrap">
+      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>01</p>
+      <h2 class="r">Rules.</h2>
+      <p class="sub r d1">Three sentences. The rest is practice.</p>
+      <div class="rule"></div>
+      <div class="r d2">
+        <details open>
+          <summary>How to play</summary>
+          <div class="telo">
+            <p>Draw one loop through every swan. At a white swan the loop goes straight and turns in the cell just before or just after. At a black swan the loop turns and goes straight through both neighbouring cells.</p>
+            <p>The loop runs from the middle of one cell to the middle of the next, up and down or left and right, never diagonally. It is a single closed ring: it never crosses itself, never branches, and never passes through the same cell twice. Cells with no swan on them may be left out of the loop altogether.</p>
+            <p>When every swan has the shape it asks for and the ring is closed, the lake is finished and the game notices by itself.</p>
+          </div>
+        </details>
+        <details>
+          <summary>Controls</summary>
+          <div class="telo">
+            <p>Drag from cell to cell and the loop follows your finger; drag back along what you have drawn and it rubs out again. If you would rather not drag, tap one cell and then a neighbouring one, and the step between them is drawn; tap the same cell twice to stop. Tapping the gap between two cells goes through the three states on its own: a line, then a cross, then nothing. The cross is only your own note that the loop does not run there; it is never checked and never required.</p>
+            <p>Nothing lights up while you play: finding a mistake is part of the puzzle. <b>Check</b> first tells you only how many marks are wrong and roughly where. Press it again and it shows which. <b>Hint</b> names the rule and the place, and the second press draws that one step for you. If something on the board is already wrong, the hint points there first. Hints and checks are free and counted, and shown when you finish. <b>Clear</b> empties the lake; the clock keeps running and one Undo brings everything back.</p>
+            <p>Keyboard: arrows move the cursor from cell to cell, <kbd>Enter</kbd> starts drawing and the arrows then extend the loop, <kbd>Enter</kbd> again or <kbd>Escape</kbd> stops. <kbd>Space</kbd> goes through line, cross and nothing on the direction you used last, <kbd>X</kbd> crosses it, <kbd>Delete</kbd> clears it, <kbd>U</kbd> or <kbd>Ctrl</kbd>+<kbd>Z</kbd> undo, <kbd>R</kbd> or <kbd>Ctrl</kbd>+<kbd>R</kbd> redo, <kbd>P</kbd> pauses.</p>
+            <p>The clock runs from your first line to the last one and pauses when you leave the tab or sit still for a minute, which also hides the lake. Your progress, time, history and day streak stay in this browser, and in your <a href="/ucet/">account</a> when you are signed in, so you can continue on another device.</p>
+            <p>A lake finished with no hint and no check counts as clean and the week strip gives it a second ring. Only the lake of the day builds the streak, and after five days in a row one missed day is forgiven, at most twice in a month. When you finish, <b>Share</b> copies one line with the date, your time and how much help you took. It never copies the lake or your loop, so nothing is spoiled for anyone.</p>
+          </div>
+        </details>
+        <details>
+          <summary>The week</summary>
+          <div class="telo">
+            <p>Monday and Tuesday are easy (six by six), Wednesday and Thursday medium (seven by seven), Friday and Saturday hard (eight by eight) and Sunday is the challenge: ten by ten. The week strip under the lake takes you to the other days; the <a href="/games/swans/archive/">archive</a> goes back a year, and the <a href="/games/swans/practice/">practice sets</a> have eight lakes of each level with no date attached.</p>
+            <p>Difficulty is measured, not guessed. Every lake is solved by a program that only knows named rules, in three layers: what one cell or one swan settles on its own, the patterns between neighbouring swans, and the hard ones, where a step is tried out and ruled out because it would close the loop too early or end in a contradiction. Easy and Medium never need that third layer; Sunday leans on it the most.</p>
+          </div>
+        </details>
+        <details>
+          <summary>A few ways in</summary>
+          <div class="telo">
+            <p>Start with the black swans at the edge. A black swan turns, so it can never send an arm off the board, and a black swan in a corner has only one turn left to make.</p>
+            <p>A white swan against the edge has to run along that edge, because the loop goes straight through it and the other way is off the board.</p>
+            <p>Every arm of a black swan runs straight on through the next cell, so a single black swan usually settles five steps at once. That is the cheapest opening on any lake.</p>
+            <p>Three white swans in a row cannot all be crossed lengthways: the middle one would have no turn beside it, so the loop cuts across the row instead.</p>
+          </div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+</main>
+<script type="application/json" id="zadanie">{"d":"2027-06-24","n":7,"p":"0000002000010000000010201200010021000000000200010","h":"000011000000000000011101001100001001011011","v":"000010100001010000101010001001101100101101","u":"medium","l":"50,2,0","s":52}</script>
+
+<footer>
+  <div class="wrap foot">
+    <div><b>ARLing s. r. o.</b><br>Ivanská cesta 32E<br>821 04 Bratislava, Slovakia</div>
+    <div>Company ID 56583486<br>VAT ID SK2122352100<br><a href="mailto:andrej@arling.sk">andrej@arling.sk</a></div>
+    <div><a href="https://arling.sk/privacy/">privacy</a> · <a href="https://arling.sk/podmienky/">terms</a> · <a href="https://arling.sk/gdpr/">GDPR</a> · <a href="https://arling.sk/impressum/">Impressum</a> · <a href="https://arling.sk/llms.txt">llms.txt</a> · <a href="https://arling.sk/sitemap-index.xml">sitemap</a><br>Tools are provided as is, without warranty. Anonymous visit counts via self-hosted Umami.</div>
+  </div>
+</footer>
+<script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="be534d51-4d01-4860-b267-9596d91606de"></script>
+</body>
+</html>
