@@ -4,7 +4,7 @@
 <script src="/style/vzhlad.js?v=93c2659f"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://homelab.tailbf8f27.ts.net 'sha256-Ra6Uywy+wsJf4KPNx0SzRl80g7NgcrRvVypX9OfV/+M=' 'sha256-ruhYCiJet+LgPebFsrrOIBj62esZsHBv2xwSIkVNzeg='; connect-src https://homelab.tailbf8f27.ts.net; img-src 'self' data:; style-src 'self' 'unsafe-inline'; font-src 'self'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://homelab.tailbf8f27.ts.net 'sha256-Ra6Uywy+wsJf4KPNx0SzRl80g7NgcrRvVypX9OfV/+M=' 'sha256-ruhYCiJet+LgPebFsrrOIBj62esZsHBv2xwSIkVNzeg=' 'sha256-Ku6U2teyXOcMYV7SN+O0uT8uU6ldYLojDnYnZ5JBPmc='; connect-src https://homelab.tailbf8f27.ts.net; img-src 'self' data:; style-src 'self' 'unsafe-inline'; font-src 'self'; base-uri 'self'; form-action 'none'; object-src 'none'">
 <script>try{localStorage.setItem("arling_lang","en")}catch(e){}</script>
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#0a0908">
@@ -75,6 +75,8 @@
   .cena li::before { content:""; width:6px; height:6px; border-radius:50%; background:var(--accent);
     flex:none; margin-top:8px; }
   .cena .small { margin:14px 0 0; }
+  .cena .zistene { font:600 14px/1.5 var(--ui); color:var(--accent); margin:0 0 14px; }
+  .cena .fineprint { font-family:var(--ui); font-size:12px; color:var(--muted); line-height:1.6; margin:10px 0 0; }
 
   .kroky { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(260px,100%),1fr));
     gap:26px var(--gap); margin:0; padding:0; list-style:none; counter-reset:k; }
@@ -122,9 +124,13 @@
     </div>
 
     <aside class="cena r d4">
+      <p class="zistene" id="zistene-veta" hidden></p>
       <span class="suma">149 €</span>
       <p class="zaco">one-off, for one check. Stripe issues the receipt.</p>
-      <a class="btn btn-solid" href="https://buy.stripe.com/28E5kxf6q7y3aoW4pT4ko07" data-umami-event="kontrola_kupa">Order the check</a>
+      <p class="zaco">Stripe issues the payment receipt. If you need a document with your company details, email andrej@arling.sk after the payment and we will send it within one business day.</p>
+      <a class="btn btn-solid" href="https://buy.stripe.com/28E5kxf6q7y3aoW4pT4ko07?locale=en" data-umami-event="klik_kupit" data-umami-event-produkt="sepa" data-umami-event-jazyk="en">Order the check</a>
+      <p class="fineprint">If we do not deliver the corrected file and the report within 24 hours of upload, or if the file cannot be repaired, we refund the full 149 €.</p>
+      <p class="fineprint">Seller: ARLing s. r. o., Company ID 56583486, Bratislava. Payment is processed by Stripe. The tool's code is public at github.com/AndryRoby.</p>
       <ul>
         <li>A written report in English, not a program printout.</li>
         <li>The corrected file back, with a note of what was changed.</li>
@@ -219,5 +225,38 @@
 </footer>
 
 <script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="338f035d-41c5-411e-8391-9a41db6accfd"></script>
+<script>
+(function () {
+  // Carries the finding over from the free Doctor tool (?zistene=N blocking
+  // errors), 10 Sept 2026. Writes the sentence above the price, only when
+  // the parameter is actually present.
+  try {
+    var box = document.getElementById('zistene-veta');
+    var n = parseInt(new URL(location.href).searchParams.get('zistene'), 10);
+    if (box && n > 0) {
+      var err = n === 1 ? '1 blocking error' : n + ' blocking errors';
+      box.textContent = 'According to the free check you have ' + err + '. Here you can have them fixed with a written report.';
+      box.hidden = false;
+    }
+  } catch (e) {}
+  // Measurement (plan part 4): cena_videna once per visit.
+  try {
+    var cena = document.querySelector('.cena');
+    if (cena && window.IntersectionObserver) {
+      var videna = false;
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting && !videna) {
+            videna = true;
+            if (window.umami) window.umami.track('cena_videna', { produkt: 'sepa', jazyk: 'en' });
+            io.disconnect();
+          }
+        });
+      }, { threshold: 0.5 });
+      io.observe(cena);
+    }
+  } catch (e) {}
+})();
+</script>
 </body>
 </html>
