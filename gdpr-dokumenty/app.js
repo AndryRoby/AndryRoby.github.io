@@ -23,7 +23,10 @@ const T = {
   sk: {
     lehoty: { objednavky: 'Objednávky a doklady', kontakt: 'Dopyty a kontaktný formulár', newsletter: 'Newsletter', ucty: 'Používateľské účty', uchadzaci: 'Uchádzači o zamestnanie', zamestnanci: 'Zamestnanci', kamery: 'Kamerový záznam' },
     pata: (d) => 'Vytvorené na arling.sk/gdpr-dokumenty/ dňa ' + d + '. Vzor vyplnený údajmi firmy, nie právne poradenstvo: pred použitím ho prečítajte a upravte podľa toho, čo firma skutočne robí.',
-    zamok: '<b>Zvyšok dokumentu je v balíku.</b> Po zaplatení sa všetky dokumenty odomknú v tomto prehliadači a stiahnu sa ako DOCX.',
+    zamok: '<b>Tento dokument je v platenom balíku.</b> Zadarmo sú len Zásady ochrany osobných údajov (prvá záložka). Po zaplatení 39 € sa všetkých ' + '{n}' + ' dokumentov odomkne v tomto prehliadači a stiahnu sa ako DOCX.',
+    zamokTlacidlo: 'Kúpiť balík za 39 €',
+    poznamka: (n) => '<b>Zadarmo:</b> Zásady ochrany osobných údajov (prvá záložka, celé). <span class="cena-poznamka">V balíku za 39 €:</span> ďalších ' + (n - 1) + ' dokumentov, v náhľade vidíte len ich začiatok.',
+    poznamkaOdomknute: (n) => '<b>Odomknuté:</b> všetkých ' + n + ' dokumentov, celé, na stiahnutie nižšie.',
     zapina: 'Platba sa práve zapína. Skúste to o chvíľu alebo napíšte na andrej@arling.sk.',
     overujem: 'Overujem platbu…',
     zaplatene: '<b>Zaplatené, ďakujeme.</b> Dokumenty sú odomknuté v tomto prehliadači; doklad vám poslal Stripe e-mailom.',
@@ -37,7 +40,10 @@ const T = {
   cs: {
     lehoty: { objednavky: 'Objednávky a doklady', kontakt: 'Dotazy a kontaktní formulář', newsletter: 'Newsletter', ucty: 'Uživatelské účty', uchadzaci: 'Uchazeči o zaměstnání', zamestnanci: 'Zaměstnanci', kamery: 'Kamerový záznam' },
     pata: (d) => 'Vytvořeno na arling.sk/gdpr-dokumenty/cs/ dne ' + d + '. Vzor vyplněný údaji firmy, ne právní poradenství: před použitím si ho přečtěte a upravte podle toho, co firma skutečně dělá.',
-    zamok: '<b>Zbytek dokumentu je v balíčku.</b> Po zaplacení se všechny dokumenty odemknou v tomto prohlížeči a stáhnou jako DOCX.',
+    zamok: '<b>Tento dokument je v placeném balíčku.</b> Zdarma jsou jen Zásady ochrany osobních údajů (první záložka). Po zaplacení 39 € se všech ' + '{n}' + ' dokumentů odemkne v tomto prohlížeči a stáhnou se jako DOCX.',
+    zamokTlacidlo: 'Koupit balíček za 39 €',
+    poznamka: (n) => '<b>Zdarma:</b> Zásady ochrany osobních údajů (první záložka, celé). <span class="cena-poznamka">V balíčku za 39 €:</span> dalších ' + (n - 1) + ' dokumentů, v náhledu vidíte jen jejich začátek.',
+    poznamkaOdomknute: (n) => '<b>Odemčeno:</b> všech ' + n + ' dokumentů, celé, ke stažení níže.',
     zapina: 'Platba se právě zapíná. Zkuste to za chvíli nebo napište na andrej@arling.sk.',
     overujem: 'Ověřuji platbu…',
     zaplatene: '<b>Zaplaceno, děkujeme.</b> Dokumenty jsou odemčené v tomto prohlížeči; doklad vám poslal Stripe e-mailem.',
@@ -138,7 +144,7 @@ function prekresli() {
   for (const x of zoznam) {
     const b = document.createElement('button');
     b.type = 'button';
-    b.className = 'zalozka' + (x.id === vybrany ? ' aktivna' : '') + (x.zadarmo ? ' zadarmo' : '');
+    b.className = 'zalozka' + (x.id === vybrany ? ' aktivna' : '') + (x.zadarmo ? ' zadarmo' : (odomknute() ? '' : ' zamknuta'));
     b.textContent = x.nazov;
     b.title = x.popis;
     b.addEventListener('click', () => { vybrany = x.id; prekresli(); track('gdpr_nahlad', { dokument: x.id }); });
@@ -148,13 +154,17 @@ function prekresli() {
   const bloky = dok.fn(d);
   const odomk = odomknute() || dok.zadarmo;
   const ukazane = odomk ? bloky : bloky.slice(0, Math.min(bloky.length, 7));
-  nahlad.innerHTML = '<div class="papier' + (odomk ? '' : ' zamknuty') + '">' + html(ukazane) + (odomk ? '<p class="pata">' + PATA() + '</p>' : '<div class="zamok"><p>' + T.zamok + '</p></div>') + '</div>';
+  nahlad.innerHTML = '<div class="papier' + (odomk ? '' : ' zamknuty') + '">' + html(ukazane) + (odomk ? '<p class="pata">' + PATA() + '</p>' : '<div class="zamok"><p>' + T.zamok.replace('{n}', String(zoznam.length)) + '</p><a class="btn btn-solid" href="#hero" id="zamok-kupa">' + T.zamokTlacidlo + '</a></div>') + '</div>';
+  const zk = $('zamok-kupa');
+  if (zk) zk.addEventListener('click', (e) => { const u = odkazNaKupu(); if (u) { e.preventDefault(); track('gdpr_kupa_click', { cena: CENA_CENTY, odkial: 'zamok' }); location.href = u; } });
   // sťahovanie
   const zadarmoBtn = $('stiahnut-zadarmo');
   zadarmoBtn.hidden = !dok.zadarmo;
   stiahnutBlok.hidden = !odomknute();
   if (odomknute()) postavStiahnutie(zoznam);
   $('pocet-dokumentov').textContent = zoznam.length;
+  const pozn = $('nahlad-poznamka');
+  if (pozn) pozn.innerHTML = odomknute() ? T.poznamkaOdomknute(zoznam.length) : T.poznamka(zoznam.length);
 }
 function stiahni(nazov, bytes, typ) {
   const blob = new Blob([bytes], { type: typ || 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
