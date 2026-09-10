@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script src="/style/vzhlad.js?v=93c2659f"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://homelab.tailbf8f27.ts.net; connect-src 'self' https://homelab.tailbf8f27.ts.net; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<meta name="color-scheme" content="dark">
+<meta name="robots" content="index, follow">
+<link rel="manifest" href="/games/badgers/manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Badgers">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta property="og:image" content="https://arling.sk/games/badgers/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://homelab.tailbf8f27.ts.net" crossorigin>
+<meta name="theme-color" content="#0a0908">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="48x48">
+<link rel="apple-touch-icon" href="/icon-180.png">
+<title>Badgers for Tuesday 23 December 2025 · ARLing</title>
+<meta name="description" content="The Badgers sett for Tuesday 23 December 2025: easy, six by six. Fill every row, column and block with each number once and match every cage total. Free, with hints and Check, in your browser.">
+<link rel="canonical" href="https://arling.sk/games/badgers/2025-12-23/">
+<link rel="prev" href="https://arling.sk/games/badgers/2025-12-22/">
+<link rel="next" href="https://arling.sk/games/badgers/2025-12-24/">
+<meta property="og:title" content="Badgers for Tuesday 23 December 2025 · ARLing">
+<meta property="og:description" content="The Badgers sett for Tuesday 23 December 2025: easy, six by six. Fill every row, column and block with each number once and match every cage total. Free, with hints and Check, in your browser.">
+<meta property="og:url" content="https://arling.sk/games/badgers/2025-12-23/">
+<meta property="og:type" content="website">
+
+
+<link rel="alternate" type="text/plain" href="https://arling.sk/llms.txt" title="llms.txt">
+<link rel="preload" href="/fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/style/paper.css?v=89016e6c">
+<script src="/style/prepinac.js?v=2988c181" defer></script>
+<script type="module" src="/games/badgers/game.js?v=1"></script>
+<style>
+  /* Only this page: the sett, the number pad, the control row and the rules. */
+  .hero{align-items:start}
+  /* Wide enough for the ten keys of the pad and the row of buttons, whatever
+     size the sett is; from a phone up it is simply the width it is given. */
+  .hra{max-width:min(100%, max(392px, calc(var(--n,9) * 46px + 12px)));margin:0 auto}
+  @media (max-width:860px){ .hra{margin:0 auto;max-width:min(100%, max(320px, calc(var(--n,9) * 50px + 12px)))} }
+  /* Narrow phones: the sett takes the whole screen width, exactly, so the page
+     never scrolls sideways (the wrap gutter is a percentage, so a fixed
+     negative margin would overshoot it by a pixel). */
+  @media (max-width:480px){ .doska-obal{margin-inline:calc((100% - 100vw) / 2)} }
+  header{padding-top:env(safe-area-inset-top,0px)}
+  .horna{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:0 0 10px;
+         font-family:var(--ui);font-size:14px;color:var(--muted)}
+  .horna b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+  .horna .uroven{color:var(--muted);font-size:12px;letter-spacing:.06em;text-transform:uppercase;margin-left:8px;white-space:nowrap}
+  .horna #cas-blok,.horna #datum{white-space:nowrap}
+  @media (max-width:480px){ .horna .uroven{display:block;margin:2px 0 0} }
+  .pauza-btn{font:500 12px/1 var(--ui);color:var(--muted);background:transparent;border:1px solid var(--line);border-radius:999px;padding:4px 10px;cursor:pointer;margin-left:8px;vertical-align:1px}
+  .pauza-btn:hover{color:var(--ink);border-color:var(--ink)}
+  .doska-obal{position:relative;touch-action:pan-y}
+  .pauza-blok{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+     background:rgba(10,9,8,.9);border:2px solid var(--line);border-radius:8px;text-align:center;font-family:var(--ui);padding:20px;z-index:4}
+  .pauza-blok[hidden]{display:none}
+  .pauza-blok p{margin:0;color:var(--body);font-size:15px;line-height:1.5}
+  .pauza-blok b{color:var(--ink)}
+  /* ── The sett ───────────────────────────────────────────────────────────
+     A square grid of cells built by game.js. Thin lines separate the cells,
+     thicker ones the blocks, and a dotted outline runs around every cage with
+     its total in the top left corner of its first cell. Every number on the
+     board is drawn from one --cell variable, the measured width of a single
+     cell, so a nine by nine on a phone reads like a six by six on a desktop. */
+  .doska{display:grid;grid-template-columns:repeat(var(--n,9),minmax(0,1fr));
+         border:2px solid var(--ink);border-radius:8px;overflow:hidden;background:var(--card-plna);
+         touch-action:none;user-select:none;-webkit-user-select:none;
+         --cell:40px;--tenka:rgba(255,255,255,.19);--hruba:rgba(255,255,255,.60);
+         --obrys:rgba(255,255,255,.52);--pole:#1f1a17}
+  .doska[hidden]{display:none}
+  @media (max-width:480px){ .doska{border-radius:0;border-left:0;border-right:0} }
+  .doska.hotovo{border-color:var(--ok);box-shadow:0 0 0 4px rgba(94,207,154,.14)}
+  /* Paused: the whole cell goes, children included. The notes set their own
+     visibility to show themselves, which would otherwise let them through the
+     overlay, and a paused board that still shows the notes is not paused. The
+     third selector is there to outweigh that rule, not to repeat it. */
+  .doska.pauza .b,.doska.pauza .b *,.doska.pauza .b .pozn i.on{visibility:hidden}
+  .riadok{display:contents}
+  /* One shadow rule for every cell: a top line and a left line, thin between
+     cells and thick between blocks, none at all on the outer edge, where the
+     border of the board itself already draws one. */
+  .b{aspect-ratio:1;min-width:0;position:relative;display:block;padding:0;margin:0;
+     appearance:none;-webkit-appearance:none;border:0;background:var(--pole);cursor:pointer;color:var(--ink);font:inherit;
+     box-shadow:inset 0 var(--ht,1px) 0 var(--ct,var(--tenka)), inset var(--hl,1px) 0 0 var(--cl,var(--tenka))}
+  .b.r0{--ht:0px}
+  .b.c0{--hl:0px}
+  .b.bt{--ht:2px;--ct:var(--hruba)}
+  .b.bl{--hl:2px;--cl:var(--hruba)}
+  .b:hover{background:#2a2420}
+  .b:focus-visible{outline:2px solid var(--accent-light);outline-offset:-3px;z-index:3}
+  /* the dotted outline of a cage, one side at a time */
+  .b .ohr{position:absolute;inset:2px;pointer-events:none;border-style:dashed;border-color:var(--obrys);border-width:0;z-index:2}
+  .b .ohr.ot{border-top-width:1.6px}
+  .b .ohr.or{border-right-width:1.6px}
+  .b .ohr.ob{border-bottom-width:1.6px}
+  .b .ohr.ol{border-left-width:1.6px}
+  /* the total, in the corner of the first cell of the cage */
+  .b .sucet{position:absolute;top:calc(var(--cell) * .05);left:calc(var(--cell) * .12);z-index:2;pointer-events:none;
+            font:600 calc(var(--cell) * .25)/1 var(--ui);font-variant-numeric:tabular-nums;color:var(--body)}
+  .b .cif{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+          font:600 calc(var(--cell) * .50)/1 var(--ui);font-variant-numeric:tabular-nums;color:var(--ink)}
+  /* The notes start below the corner where the total is, so the two never meet. */
+  .b .pozn{position:absolute;inset:30% 7% 7% 7%;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr)}
+  .b .pozn i{display:flex;align-items:center;justify-content:center;font:500 calc(var(--cell) * .20)/1 var(--ui);
+             font-style:normal;color:var(--body);visibility:hidden}
+  .b .pozn i.on{visibility:visible}
+  .b.vybrana .pozn i{color:#c9c5bf}
+  .b[data-v="0"] .pozn{display:grid}
+  .b:not([data-v="0"]) .pozn{display:none}
+  /* The row, the column and the block of the picked cell. A solid colour, not
+     a translucent white: .b.linia beats .b, so it replaces the cell's own fill
+     instead of sitting on top of it. */
+  .b.linia{background:#302925}
+  .b.rovnaka .cif{color:var(--accent)}
+  .b.vybrana{background:rgba(242,100,60,.16);z-index:3}
+  .b.vybrana::before{content:"";position:absolute;inset:0;border:2px solid var(--accent);pointer-events:none}
+  /* A cage that adds up and repeats nothing goes quiet. It says nothing about
+     whether the numbers are RIGHT (Andrej, 10. 9.: nothing turns red while
+     playing; only Check judges). */
+  .b.stlmena .cif{opacity:.55}
+  .b.stlmena .sucet{color:var(--muted);opacity:.45}
+  /* A hint: the cage it reads is outlined, the cell it means pulses. */
+  .b.tip-ohrada{background-color:rgba(250,204,21,.14)}
+  .b.tip{background:rgba(250,204,21,.26)}
+  .b.tip::after{content:"";position:absolute;inset:14%;border-radius:50%;border:2px solid #facc15;
+                animation:tip-pulz .9s ease-in-out infinite alternate;pointer-events:none}
+  @keyframes tip-pulz{from{transform:scale(.85);opacity:.5}to{transform:scale(1);opacity:1}}
+  @media (prefers-reduced-motion:reduce){ .b.tip::after{animation:none} }
+  /* A mistake is a shape and a mark, not only a colour: a red frame and an
+     exclamation mark in the corner of the cell. Written after the picked cell
+     so that a cell which is both comes out red. */
+  .b.chyba{background:rgba(255,92,92,.26)}
+  .b.chyba::before{content:"";position:absolute;inset:0;border:2px solid #ff7b7b;pointer-events:none;z-index:3}
+  .b.chyba::after{content:"!";position:absolute;top:2%;right:8%;z-index:3;font:700 calc(var(--cell) * .28)/1 var(--ui);color:#ff7b7b}
+  /* Finished: every cage is satisfied, so the quiet cue above would dim the
+     whole sett. The numbers go green instead, at full strength. */
+  .hotovo .b .cif{color:var(--ok);opacity:1}
+  .hotovo .b{cursor:default}
+  .hotovo .b:hover{background:var(--pole)}
+  /* ── The number pad ───────────────────────────────────────────────────── */
+  .pad{display:grid;grid-template-columns:repeat(var(--pad,10),minmax(0,1fr));gap:4px;margin-top:10px}
+  .pad[hidden]{display:none}
+  /* 48px, the height paper.css gives every button on a night page, so the pad
+     and the control row right under it are one rhythm and not two. */
+  .pad button{height:48px;min-width:0;padding:0;border:1px solid var(--line);border-radius:10px;background:var(--card);
+              color:var(--ink);font:600 18px/1 var(--ui);font-variant-numeric:tabular-nums;cursor:pointer;
+              touch-action:manipulation;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+  .pad button[hidden]{display:none}
+  .pad button:hover{border-color:var(--ink)}
+  .pad button:disabled{opacity:.35;cursor:default}
+  .pad .zmaz{font-size:12px;letter-spacing:.04em;color:var(--body)}
+  .hra.poznamky .pad button{border-style:dashed;font-size:14px;color:var(--body)}
+  .hra.poznamky .pad .zmaz{font-size:12px}
+  /* Holding a pad number writes it the other way round: on touch there is no
+     Shift key, so a long press is what Shift plus a number does on a keyboard
+     (ops/spec-hry-ux.md, part 2). While the finger is down the button fills
+     in, so the hold is visible before it fires. It is never the only way: the
+     Notes button next to the pad is one tap (part 9). */
+  .pad button.drzane{border-color:var(--accent);background:rgba(242,100,60,.16)}
+  .ovladanie{display:flex;gap:5px;align-items:center;flex-wrap:wrap;margin-top:10px}
+  /* Height and type come from paper.css (body.noc .btn: 48px), which outranks
+     a plain .ovladanie .btn rule, so setting them here would only look like it
+     worked. The pad above is set to the same 48px instead. Padding is ours. */
+  .ovladanie .btn{padding:0 10px}
+  .ovladanie .btn[aria-pressed="true"]{border-color:var(--accent);color:var(--accent)}
+  /* On a phone the six buttons make two tidy rows of three instead of leaving
+     one of them alone at the end of a wrapped line. */
+  @media (max-width:480px){
+    .ovladanie{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+    .ovladanie .btn{width:100%;padding:0 6px;justify-content:center}
+    .ovladanie #seria{grid-column:1 / -1}
+  }
+  .stav{font-family:var(--ui);font-size:15px;line-height:1.5;color:var(--body);margin:12px 0 0;min-height:1.5em}
+  .stav b{color:var(--ink)}
+  .stav.ok{color:var(--ok)}
+  .stav.ok b{color:var(--ok)}
+  /* Share, only after the sett is finished (ops/spec-hry-ux.md, part 8).
+     The textarea is the way out when the browser refuses the clipboard. */
+  .zdielanie{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px;
+             font-family:var(--ui);font-size:13px;line-height:1.45;color:var(--muted)}
+  .zdielanie[hidden]{display:none}
+  .zdielanie .btn{height:38px;padding:0 14px;font-size:13.5px;flex:none}
+  .zdielanie span{flex:1;min-width:180px}
+  .zdielanie textarea{width:100%;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--body);
+                      font:12px/1.5 var(--ui);padding:8px 10px;resize:vertical}
+  .pasik{display:flex;gap:6px;margin-top:14px}
+  .den{position:relative;flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;padding:6px 0 5px;border:1px solid var(--line);border-radius:10px;
+       text-decoration:none;color:var(--muted);font-family:var(--ui);min-width:0;background:var(--card)}
+  .den small{font-size:10px;letter-spacing:.08em}
+  .den b{font-size:15px;color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+  .den.dnes{border-color:var(--accent);color:var(--accent)}
+  .den.rozohrane{border-style:dashed}
+  .den.hotove{background:rgba(94,207,154,.12);border-color:var(--ok)}
+  .den.hotove b{color:var(--ok)}
+  /* Two marks for a finished sett (ops/spec-hry-ux.md, part 8): solved, and
+     solved clean with no hint and no check, which gets the dot as well. The
+     screen reader gets the same difference in the aria-label, not only the
+     colour. */
+  .den.ciste::after{content:"";position:absolute;top:3px;right:4px;width:5px;height:5px;border-radius:50%;background:var(--ok)}
+  .den.buduci{opacity:.38}
+  a.den:hover{border-color:var(--ink);color:var(--ink)}
+  .odkazy{font-family:var(--ui);font-size:13px;color:var(--muted);margin:12px 0 0}
+  .odkazy a{color:var(--body)}
+  .historia{font-family:var(--ui);font-size:13px;color:var(--body);line-height:1.5;margin:10px 0 0}
+  .historia b{color:var(--ink)}
+  .nastavenia{margin-top:14px;border:1px solid var(--line);border-radius:12px;background:var(--card);padding:0 14px}
+  .nastavenia summary{cursor:pointer;font:600 13px/1.4 var(--ui);color:var(--muted);padding:10px 0;list-style:none}
+  .nastavenia summary::-webkit-details-marker{display:none}
+  .nastavenia[open] summary{color:var(--ink)}
+  .nastavenia label{display:flex;gap:10px;align-items:flex-start;font-family:var(--ui);font-size:13px;color:var(--body);line-height:1.5;padding:6px 0}
+  .nastavenia input{margin-top:3px;flex:none}
+  .nastavenia .fineprint{padding:6px 0 12px;margin:0}
+  .skryte{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
+  .navod{font-family:var(--ui);font-size:13px;color:var(--muted);margin:10px 0 0;max-width:none}
+  .navod kbd{font-size:12px}
+  /* On the phone the sett goes under the text; the keyboard note there would
+     just push the game further down. It is in the Rules section too. */
+  @media (max-width:860px){ .navod{display:none} }
+  .pravidla details{border:1px solid var(--line);border-radius:12px;background:var(--card);padding:0 18px;max-width:68ch}
+  .pravidla details+details{margin-top:10px}
+  .pravidla summary{cursor:pointer;font:600 15px/1.4 var(--ui);color:var(--ink);padding:14px 0;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:12px}
+  .pravidla summary::-webkit-details-marker{display:none}
+  .pravidla summary::after{content:"";width:.5em;height:.5em;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(45deg);flex:none;margin-right:4px;transition:transform .2s var(--ease)}
+  .pravidla details[open] summary::after{transform:rotate(225deg)}
+  .pravidla .telo{padding:0 0 16px}
+  .pravidla .telo p{margin:0 0 10px}
+  .pravidla .telo p:last-child{margin:0}
+  .jazyk{font:500 13px/1 var(--ui);color:var(--muted);background:transparent;border:1px solid var(--line);border-radius:999px;padding:6px 12px;cursor:pointer;margin-top:14px}
+  .jazyk:hover{color:var(--ink);border-color:var(--ink)}
+  .prose p{margin:0 0 14px}
+  .prose p:last-child{margin-bottom:0}
+  .sub{margin:0 0 6px}
+  noscript p{font-family:var(--ui);color:var(--accent-light)}
+</style>
+<noscript><style>
+  .r, .w { opacity:1 !important; transform:none !important; filter:none !important; }
+  .rule { transform:scaleX(1) !important; }
+</style></noscript>
+</head>
+<body class="noc" data-den="2025-12-23">
+<div class="wash" aria-hidden="true"><i></i><i></i></div>
+<a class="skip" href="#doska">Skip to the game</a>
+
+<header>
+  <div class="wrap bar">
+    <a class="brand" href="https://arling.sk/">
+      <svg viewBox="0 0 488 215" width="38" height="15" aria-hidden="true" focusable="false"><path fill="#f4f4f7" fill-rule="evenodd" d="M0.00,213.00L74.00,214.00L181.00,85.00L285.00,214.00L360.00,214.00L206.00,21.00L185.00,4.00L164.00,10.00Z M221.00,0.00L263.00,50.00L395.00,50.00L409.00,55.00L419.00,76.00L401.00,96.00L313.00,98.00L411.00,214.00L487.00,214.00L422.00,139.00L457.00,123.00L482.00,88.00L482.00,48.00L463.00,19.00L417.00,0.00Z"/><path fill="#f2643c" d="M269.00,66.00L269.00,67.00L268.00,68.00L268.00,70.00L267.00,71.00L267.00,76.00L268.00,77.00L268.00,79.00L270.00,81.00L270.00,82.00L271.00,82.00L273.00,84.00L274.00,84.00L277.00,86.00L279.00,86.00L280.00,87.00L287.00,87.00L288.00,86.00L290.00,86.00L291.00,85.00L294.00,84.00L298.00,80.00L298.00,79.00L299.00,78.00L299.00,75.00L300.00,74.00L300.00,72.00L299.00,71.00L299.00,69.00L298.00,68.00L297.00,65.00L295.00,63.00L294.00,63.00L289.00,60.00L278.00,60.00L277.00,61.00L276.00,61.00L275.00,62.00L272.00,63.00Z"/></svg>
+      <b>ARLing</b><span>Games</span>
+    </a>
+    <nav aria-label="Site"><a href="https://arling.sk/en/#tools">Tools</a><a href="https://arling.sk/games/">Games</a><a href="https://arling.sk/notes/">Notes</a><a href="https://arling.sk/how-we-work/">How we work</a><a href="mailto:andrej@arling.sk">Contact</a></nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap hero" id="hero">
+    <div>
+      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="2"/><path d="M3.5 9.5h17M3.5 15.5h17M9.5 3.5v17M15.5 3.5v17"/></svg>Daily number logic</p>
+      <h1 id="h1"><span class="l">Badgers.</span></h1>
+      <p class="lead r d3">Badgers share the sett. Fill the grid so that every row, column and block has each number once. The dotted cages show how many badgers live there in total, and no number repeats inside a cage.</p>
+      <p class="proof r d5" id="dnes">The sett for Tuesday 23 December 2025: easy, six by six. Exactly one solution.</p>
+      <p class="navod r d5">Tap a cell, then a number from the pad. Tap the same number again to take it back. Keyboard: arrows move, <kbd>1</kbd> to <kbd>9</kbd> write, <kbd>Delete</kbd> clears, <kbd>N</kbd> switches notes, <kbd>U</kbd> undo, <kbd>R</kbd> redo, <kbd>P</kbd> pauses. Nothing lights up while you play; Check judges only when you ask.</p>
+    </div>
+    <div class="r d2">
+      <div class="hra" id="hra">
+        <div class="horna"><span><span id="datum">Tuesday 23 December 2025</span><span class="uroven" id="uroven">Easy · 6×6</span></span><span id="cas-blok">Time <b id="cas">0:00</b><button type="button" class="pauza-btn" id="pauza" hidden>Pause</button></span></div>
+        <div class="doska-obal">
+          <div class="doska" id="doska" role="grid" aria-label="Badger grid 6 by 6" aria-describedby="ohrady-text">
+            <div class="riadok" role="row"><button class="b r0 c0" data-i="0" data-v="0"><i class="ohr ot ol"></i><span class="sucet">15</span><span class="cif"></span><span class="pozn"><i>1</i><i>2</i><i>3</i><i>4</i><i>5</i><i>6</i></span></button><button class="b r0" data-i="1" data-v="0"><i class="ohr ot"></i><span class="cif"></span><span class="pozn"><i>1</i><i>2</i><i>3</i><i>4</i><i>5</i><i>6</i></span></button><button class="b r0" data-i="2" data-v="0"><i class="ohr ot ob or"></i><span class="cif"></span><span class="pozn"><i>1</i><i>2</i><i>3</i><i>4</i><i>5</i><i>6</i></span></button><button class="b r0 bl" data-i="3" data-v="0"><i class="ohr ot ob ol"></i><span class="sucet">15</span><span class="cif"></span><span class="pozn"><i>1</i><i>2</i><i>3</i><i>4</i><i>5</i><i>6</i></span></button><button class="b r0" data-i="4" data-v="0"><i class="ohr ot ob"></i><span class="cif"></span><span class="pozn"><i>1</i><i>2</i><i>3</i><i>4</i><i>5</i><i>6</i></span></button><button class="b r0" data-i="5" data-v="0"><i class="ohr ot ob or"></i><span class="cif"></span><span class="pozn"><i>1</i><i>2</i><i>3</i><i>4</i><i>5</i><i>6</i></span></button></div><div class="riadok" role="row"><button class="b c0" data-i="6" data-v="0"><i class="ohr ob ol"></i><span class="cif"></span><span class="pozn"><i>1</i><i>2</i><i>3</i><i>4</i><i>5</i><i>6</i></span></button><button class="b" data-i="7" data-v="0"><i class="ohr ob or"></i><span class="cif"></span><span class="pozn"><i>1</i><i>2</i><i>3</i><i>4</i><i>5</i><i>6</i></span></button><button class="b" data-i="8" data-v="0"><i class="ohr ot ol or"></i><span class="sucet">10</span><span class="cif"></span><span class="pozn"><i>1</i><i>2</i><i>3</i><i>4</i><i>5</i><i>6</i></span></button><button class="b bl" data-i="9" data-v="0"><i class="ohr ot ol"></i><span class="sucet">11</span><span class="cif"></span><span class="pozn"><i>1</i><i>2</i><i>3</i><i>4</i><i>5</i><i>6</i></span></button><button class="b" data-i="10" data-v="0"><i class="ohr ot ob or"></i><span class="cif"></span><span class="pozn"><i>1</i><i>2</i><i>3</i><i>4</i><i>5</i><i>6</i></span></button><button class="b" data-i="11" data-v="0"><i class="ohr ot ol or"></i><span class="sucet">17</span><span class="cif"></span><span class="pozn"><i>1</i><i>2</i><i>3</i><i>4</i><i>5</i><i>6</i></span></button></div><div class="riadok" role="row"><button class="b c0 bt" data-i="12" data-v="0"><i class="ohr ot ol"></i><span class="sucet">15</span><span class="cif"></span><span class="pozn"><i>1</i><i>2</i><i>3</i><i>4</i><i>5</i><i>6</i></span></button><button class="b bt" data-i="13" data-v="0"><i class="ohr ot ob or"></i><span class="cif"></span><span class="pozn"><i>1</i><i>2</i><i>3</i><i>4</i><i>5</i><i>6</i></span></button><button class="b bt" data-i="14" data-v="0"><i class="ohr ob ol or"></i><span class="cif"></span><span class="pozn"><i>1</i><i>2</i><i>3</i><i>4</i><i>5</i><i>6</i></span></button><button class="b bt bl" data-i="15" data-v="0"><i class="ohr ob ol or"></i><span class="cif"></span><span class="pozn"><i>1</i><i>2</i><i>3</i><i>4</i><i>5</i><i>6</i></span></button><button class="b bt" data-i="16" data-v="0"><i class="ohr ot ol or"></i><span class="sucet">12</span><span class="cif"></span><span class="pozn"><i>1</i><i>2</i><i>3</i><i>4</i><i>5</i><i>6</i></span></button><button class="b bt" data-i="17" data-v="0"><i class="ohr ol or"></i><span class="cif"></span><span class="pozn"><i>1</i><i>2</i><i>3</i><i>4</i><i>5</i><i>6</i></span></button></div><div class="riadok" role="row"><button class="b c0" data-i="18" data-v="0"><i class="ohr ol or"></i><span class="cif"></span><span class="pozn"><i>1</i><i>2</i><i>3</i><i>4</i><i>5</i><i>6</i></span></button><button class="b" data-i="19" data-v="0"><i class="ohr ot ol or"></i><span class="sucet">8</span><span class="cif"></span><span class="pozn"><i>1</i><i>2</i><i>3</i><i>4</i><i>5</i><i>6</i></span></button><button class="b" data-i="20" data-v="0"><i class="ohr ot ol or"></i><span class="sucet">6</span><span class="cif"></span><span class="pozn"><i>1</i><i>2</i><i>3</i><i>4</i><i>5</i><i>6</i></span></button><button class="b bl" data-i="21" data-v="0"><i class="ohr ot ol or"></i><span class="sucet">4</span><span class="cif"></span><span class="pozn"><i>1</i><i>2</i><i>3</i><i>4</i><i>5</i><i>6</i></span></button><button class="b" data-i="22" data-v="0"><i class="ohr ol or"></i><span class="cif"></span><span class="pozn"><i>1</i><i>2</i><i>3</i><i>4</i><i>5</i><i>6</i></span></button><button class="b" data-i="23" data-v="0"><i class="ohr ol or"></i><span class="cif"></span><span class="pozn"><i>1</i><i>2</i><i>3</i><i>4</i><i>5</i><i>6</i></span></button></div><div class="riadok" role="row"><button class="b c0 bt" data-i="24" data-v="0"><i class="ohr ob ol or"></i><span class="cif"></span><span class="pozn"><i>1</i><i>2</i><i>3</i><i>4</i><i>5</i><i>6</i></span></button><button class="b bt" data-i="25" data-v="0"><i class="ohr ob ol or"></i><span class="cif"></span><span class="pozn"><i>1</i><i>2</i><i>3</i><i>4</i><i>5</i><i>6</i></span></button><button class="b bt" data-i="26" data-v="0"><i class="ohr ob ol or"></i><span class="cif"></span><span class="pozn"><i>1</i><i>2</i><i>3</i><i>4</i><i>5</i><i>6</i></span></button><button class="b bt bl" data-i="27" data-v="0"><i class="ohr ob ol or"></i><span class="cif"></span><span class="pozn"><i>1</i><i>2</i><i>3</i><i>4</i><i>5</i><i>6</i></span></button><button class="b bt" data-i="28" data-v="0"><i class="ohr ol or"></i><span class="cif"></span><span class="pozn"><i>1</i><i>2</i><i>3</i><i>4</i><i>5</i><i>6</i></span></button><button class="b bt" data-i="29" data-v="0"><i class="ohr ol or"></i><span class="cif"></span><span class="pozn"><i>1</i><i>2</i><i>3</i><i>4</i><i>5</i><i>6</i></span></button></div><div class="riadok" role="row"><button class="b c0" data-i="30" data-v="0"><i class="ohr ot ob ol"></i><span class="sucet">13</span><span class="cif"></span><span class="pozn"><i>1</i><i>2</i><i>3</i><i>4</i><i>5</i><i>6</i></span></button><button class="b" data-i="31" data-v="0"><i class="ohr ot ob"></i><span class="cif"></span><span class="pozn"><i>1</i><i>2</i><i>3</i><i>4</i><i>5</i><i>6</i></span></button><button class="b" data-i="32" data-v="0"><i class="ohr ot ob"></i><span class="cif"></span><span class="pozn"><i>1</i><i>2</i><i>3</i><i>4</i><i>5</i><i>6</i></span></button><button class="b bl" data-i="33" data-v="0"><i class="ohr ot ob or"></i><span class="cif"></span><span class="pozn"><i>1</i><i>2</i><i>3</i><i>4</i><i>5</i><i>6</i></span></button><button class="b" data-i="34" data-v="0"><i class="ohr ob ol or"></i><span class="cif"></span><span class="pozn"><i>1</i><i>2</i><i>3</i><i>4</i><i>5</i><i>6</i></span></button><button class="b" data-i="35" data-v="0"><i class="ohr ob ol or"></i><span class="cif"></span><span class="pozn"><i>1</i><i>2</i><i>3</i><i>4</i><i>5</i><i>6</i></span></button></div><noscript><p>This game needs JavaScript to play; the grid above is today's sett.</p></noscript>
+          </div>
+          <div class="pauza-blok" id="pauza-blok" hidden><p><b>Paused.</b> <span id="pauza-cas"></span></p><button type="button" class="btn btn-solid" id="pokracuj">Resume</button></div>
+        </div>
+        <p class="skryte" id="ohrady-text"></p>
+        <div class="pad" id="pad">
+          <button type="button" data-d="1">1</button>
+          <button type="button" data-d="2">2</button>
+          <button type="button" data-d="3">3</button>
+          <button type="button" data-d="4">4</button>
+          <button type="button" data-d="5">5</button>
+          <button type="button" data-d="6">6</button>
+          <button type="button" data-d="7">7</button>
+          <button type="button" data-d="8">8</button>
+          <button type="button" data-d="9">9</button>
+          <button type="button" class="zmaz" data-d="0" aria-label="Empty the cell">Del</button>
+        </div>
+        <div class="ovladanie">
+          <button type="button" class="btn btn-line" id="poznamky" aria-pressed="false">Notes</button>
+          <button type="button" class="btn btn-line" id="spat">Undo</button>
+          <button type="button" class="btn btn-line" id="znova">Redo</button>
+          <button type="button" class="btn btn-line" id="reset">Clear</button>
+          <button type="button" class="btn btn-line" id="hint">Hint</button>
+          <button type="button" class="btn btn-line" id="check">Check</button>
+          <span class="small" id="seria"></span>
+        </div>
+        <p class="stav" id="stav" aria-live="polite"></p>
+        <div class="zdielanie" id="zdielanie" hidden>
+          <button type="button" class="btn btn-line" id="zdielaj">Share</button>
+          <span id="zdielanie-stav" aria-live="polite">Copies a short text: the sett, your time, the help you used. No numbers, so it spoils nothing.</span>
+          <textarea id="zdielanie-text" rows="8" readonly hidden aria-label="The text to copy"></textarea>
+        </div>
+        <nav class="pasik" id="pasik" aria-label="This week"></nav>
+        <p class="odkazy"><a href="/games/badgers/guide/">How to play</a> · <a href="/games/badgers/practice/">Practice sets</a> · <a href="/games/badgers/archive/">Archive</a></p>
+        <p class="historia" id="historia" hidden></p>
+        <details class="nastavenia">
+          <summary>Settings</summary>
+          <label><input type="checkbox" data-nastavenie="casovac"> Show the timer and the Pause button</label>
+          <label><input type="checkbox" data-nastavenie="pauzaPriOdchode"> Pause the clock when you leave the tab or sit still for a minute</label>
+          <label><input type="checkbox" data-nastavenie="zvyrazniRovnake"> Highlight the same number everywhere on the board</label>
+          <label><input type="checkbox" data-nastavenie="autoPoznamky"> Auto notes: keep every empty cell marked with the numbers that still fit (off by default: the notes are your own)</label>
+          <label><input type="checkbox" data-nastavenie="zivaKontrola"> Live check: mark a wrong number as soon as it is written (off by default: finding a mistake is part of the puzzle)</label>
+          <label><input type="checkbox" data-nastavenie="lenPad"> Onscreen input only: numbers come from the pad, the number keys of a keyboard are ignored (arrows, Undo, Redo and Pause keep working)</label>
+          <label><input type="checkbox" data-nastavenie="potvrditReset"> Ask before Clear</label>
+          <p class="fineprint">Settings, progress, history and streak stay in this browser. Add this page to your home screen to open it like an app.</p>
+        </details>
+      </div>
+    </div>
+  </div>
+
+  <section id="rules" class="deep pravidla">
+    <div class="wrap">
+      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>01</p>
+      <h2 class="r">Rules.</h2>
+      <p class="sub r d1">Three sentences. The rest is practice.</p>
+      <div class="rule"></div>
+      <div class="r d2">
+        <details open>
+          <summary>How to play</summary>
+          <div class="telo">
+            <p>Badgers share the sett. Fill the grid so that every row, column and block has each number once. The dotted cages show how many badgers live there in total, and no number repeats inside a cage.</p>
+            <p>A cage is the group of cells inside one dotted outline, and the small number in its top left corner is what its cells add up to. Cages hold one to five cells and pay no attention to the block lines, so a cage of three can sit in two blocks at once. Nothing is filled in at the start: the cages are the whole puzzle.</p>
+            <p>Every sett has exactly one arrangement of numbers that fits every row, column, block and cage. When the last cell is right, the game notices by itself.</p>
+          </div>
+        </details>
+        <details>
+          <summary>Controls</summary>
+          <div class="telo">
+            <p>Tap or click a cell to pick it, then a number from the pad under the sett. Tapping the same number again takes it back, so the way out is always one tap away. Hold and drag from a cell that already holds a number to write that same number into the empty cells you pass. Nothing lights up while you play: finding a mistake is part of the puzzle.</p>
+            <p><b>Notes</b> switches the pad to the small numbers you keep while you think; a number written for real clears the notes it rules out. Holding a pad number for half a second writes it the other way round, so you can drop a real number in without leaving notes, or pencil one in without entering them.
+            <b>Check</b> first tells you only how many numbers are wrong and which rows or columns they sit in; press it again and it marks them. <b>Hint</b> names the rule and the place without giving the number away, and the second press writes that one number and explains it. If something on the board is already wrong, the hint points there first. Hints and checks are free and counted, and shown when you finish. <b>Clear</b> empties the sett; the clock keeps running and one Undo brings everything back.</p>
+            <p>Keyboard: arrows move from cell to cell, <kbd>1</kbd> to <kbd>9</kbd> write a number, <kbd>Shift</kbd> plus a number writes it the other way round, a note while notes are off and a real number while they are on, <kbd>N</kbd> or <kbd>Enter</kbd> switches notes on and off, <kbd>Delete</kbd> or <kbd>Backspace</kbd> empties the cell, <kbd>Escape</kbd> lets it go, <kbd>U</kbd> or <kbd>Ctrl</kbd>+<kbd>Z</kbd> undo, <kbd>R</kbd> or <kbd>Ctrl</kbd>+<kbd>R</kbd> redo, <kbd>P</kbd> pauses.</p>
+            <p>The clock runs from your first number to the last cell and pauses when you leave the tab or sit still for a minute, which also hides the sett. Your progress, time, history and day streak stay in this browser, and in your <a href="/ucet/">account</a> when you are signed in, so you can continue on another device. The day turns over at midnight where you are. Only the sett of the day counts towards the streak, the archive is for practice; once you are five days in, a single missed day is forgiven, at most twice a month.</p>
+          </div>
+        </details>
+        <details>
+          <summary>The week</summary>
+          <div class="telo">
+            <p>Monday and Tuesday are easy: six by six, numbers 1 to 6, blocks of two rows by three columns. From Wednesday on the sett is nine by nine with numbers 1 to 9 and blocks of three by three, medium on Wednesday and Thursday, hard on Friday and Saturday, and the challenge on Sunday. The week strip under the sett takes you to the other days; the <a href="/games/badgers/archive/">archive</a> goes back a year, and the <a href="/games/badgers/practice/">practice sets</a> have eight setts of each level with no date attached.</p>
+            <p>Difficulty is measured, not guessed. Every sett is solved by a program that only knows named rules, in three layers: the plain ones (a cage of one cell, a total that can be made in only one way, the single number a cell has left, and a number with only one place left in its row, column or block), the patterns across a whole line or cage (every row, column and block adds up to the same total, so cages lying inside one leave a cell over and cages reaching into one stick a cell out; a pair of cells holding two numbers between them; a total narrowed by what the crossing lines allow; a cage that lies inside one line keeping its numbers for itself), and the hard one (writing a number in and dropping it because it runs into a contradiction). Easy and Medium never need that third layer; Sunday leans on it the most.</p>
+          </div>
+        </details>
+        <details>
+          <summary>A few ways in</summary>
+          <div class="telo">
+            <p>Short cages with extreme totals are the way in. Two cells adding to 3 can only be 1 and 2; to 4, only 1 and 3; to 16, only 7 and 9; to 17, only 8 and 9. Three cells adding to 6 are 1, 2 and 3; to 24, they are 7, 8 and 9.</p>
+            <p>Every row, every column and every block adds up to 45 on a nine by nine, and to 21 on a six by six. Add up the cages that lie wholly inside one block: whatever is missing belongs to the cells the cages left over, and a cage that pokes one cell out of the block tells you what that one cell holds.</p>
+            <p>A cage that lies inside a single row, column or block keeps its numbers to itself, so nothing else in that line can hold them, even before you know which cell of the cage takes which.</p>
+            <p>When a cage has one empty cell left, its number is simply the total minus what is already there. That one number then narrows the line crossing it, which is how a sett unravels.</p>
+          </div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+</main>
+<script type="application/json" id="zadanie">{"d":"2025-12-23","n":6,"c":"15:0,1,2,6,7;15:3,4,5;10:8,14;11:9,10,15;17:11,17,23,29,35;15:12,13,18,24;12:16,22,28,34;8:19,25;6:20,26;4:21,27;13:30,31,32,33","s":"213564546231324615651342435126162453","u":"easy","l":"36,0,0","t":36}</script>
+
+<footer>
+  <div class="wrap foot">
+    <div><b>ARLing s. r. o.</b><br>Ivanská cesta 32E<br>821 04 Bratislava, Slovakia</div>
+    <div>Company ID 56583486<br>VAT ID SK2122352100<br><a href="mailto:andrej@arling.sk">andrej@arling.sk</a></div>
+    <div><a href="https://arling.sk/privacy/">privacy</a> · <a href="https://arling.sk/podmienky/">terms</a> · <a href="https://arling.sk/gdpr/">GDPR</a> · <a href="https://arling.sk/impressum/">Impressum</a> · <a href="https://arling.sk/llms.txt">llms.txt</a> · <a href="https://arling.sk/sitemap-index.xml">sitemap</a><br>Tools are provided as is, without warranty. Anonymous visit counts via self-hosted Umami.</div>
+  </div>
+</footer>
+<script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="be534d51-4d01-4860-b267-9596d91606de"></script>
+</body>
+</html>

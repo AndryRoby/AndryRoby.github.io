@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script src="/style/vzhlad.js?v=93c2659f"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://homelab.tailbf8f27.ts.net; connect-src 'self' https://homelab.tailbf8f27.ts.net; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<meta name="color-scheme" content="dark">
+<meta name="robots" content="index, follow">
+<link rel="manifest" href="/games/badgers/manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Badgers">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta property="og:image" content="https://arling.sk/games/badgers/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://homelab.tailbf8f27.ts.net" crossorigin>
+<meta name="theme-color" content="#0a0908">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="48x48">
+<link rel="apple-touch-icon" href="/icon-180.png">
+<title>How to play Badgers · ARLing</title>
+<meta name="description" content="The rules of Badgers in three sentences, animated; the four steps that open every sett; how Hint and Check work; the weekly difficulty plan; practice sets and the free archive.">
+<link rel="canonical" href="https://arling.sk/games/badgers/guide/">
+<meta property="og:title" content="How to play Badgers · ARLing">
+<meta property="og:description" content="The rules of Badgers in three sentences, animated; the four steps that open every sett; how Hint and Check work; the weekly difficulty plan; practice sets and the free archive.">
+<meta property="og:url" content="https://arling.sk/games/badgers/guide/">
+<meta property="og:type" content="website">
+
+
+<link rel="alternate" type="text/plain" href="https://arling.sk/llms.txt" title="llms.txt">
+<link rel="preload" href="/fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/style/paper.css?v=89016e6c">
+<script src="/style/prepinac.js?v=2988c181" defer></script>
+<script type="module" src="/games/badgers/zoznamy.js?v=1"></script>
+<style>
+  /* Only this page: the sett, the number pad, the control row and the rules. */
+  .hero{align-items:start}
+  /* Wide enough for the ten keys of the pad and the row of buttons, whatever
+     size the sett is; from a phone up it is simply the width it is given. */
+  .hra{max-width:min(100%, max(392px, calc(var(--n,9) * 46px + 12px)));margin:0 auto}
+  @media (max-width:860px){ .hra{margin:0 auto;max-width:min(100%, max(320px, calc(var(--n,9) * 50px + 12px)))} }
+  /* Narrow phones: the sett takes the whole screen width, exactly, so the page
+     never scrolls sideways (the wrap gutter is a percentage, so a fixed
+     negative margin would overshoot it by a pixel). */
+  @media (max-width:480px){ .doska-obal{margin-inline:calc((100% - 100vw) / 2)} }
+  header{padding-top:env(safe-area-inset-top,0px)}
+  .horna{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:0 0 10px;
+         font-family:var(--ui);font-size:14px;color:var(--muted)}
+  .horna b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+  .horna .uroven{color:var(--muted);font-size:12px;letter-spacing:.06em;text-transform:uppercase;margin-left:8px;white-space:nowrap}
+  .horna #cas-blok,.horna #datum{white-space:nowrap}
+  @media (max-width:480px){ .horna .uroven{display:block;margin:2px 0 0} }
+  .pauza-btn{font:500 12px/1 var(--ui);color:var(--muted);background:transparent;border:1px solid var(--line);border-radius:999px;padding:4px 10px;cursor:pointer;margin-left:8px;vertical-align:1px}
+  .pauza-btn:hover{color:var(--ink);border-color:var(--ink)}
+  .doska-obal{position:relative;touch-action:pan-y}
+  .pauza-blok{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+     background:rgba(10,9,8,.9);border:2px solid var(--line);border-radius:8px;text-align:center;font-family:var(--ui);padding:20px;z-index:4}
+  .pauza-blok[hidden]{display:none}
+  .pauza-blok p{margin:0;color:var(--body);font-size:15px;line-height:1.5}
+  .pauza-blok b{color:var(--ink)}
+  /* ── The sett ───────────────────────────────────────────────────────────
+     A square grid of cells built by game.js. Thin lines separate the cells,
+     thicker ones the blocks, and a dotted outline runs around every cage with
+     its total in the top left corner of its first cell. Every number on the
+     board is drawn from one --cell variable, the measured width of a single
+     cell, so a nine by nine on a phone reads like a six by six on a desktop. */
+  .doska{display:grid;grid-template-columns:repeat(var(--n,9),minmax(0,1fr));
+         border:2px solid var(--ink);border-radius:8px;overflow:hidden;background:var(--card-plna);
+         touch-action:none;user-select:none;-webkit-user-select:none;
+         --cell:40px;--tenka:rgba(255,255,255,.19);--hruba:rgba(255,255,255,.60);
+         --obrys:rgba(255,255,255,.52);--pole:#1f1a17}
+  .doska[hidden]{display:none}
+  @media (max-width:480px){ .doska{border-radius:0;border-left:0;border-right:0} }
+  .doska.hotovo{border-color:var(--ok);box-shadow:0 0 0 4px rgba(94,207,154,.14)}
+  /* Paused: the whole cell goes, children included. The notes set their own
+     visibility to show themselves, which would otherwise let them through the
+     overlay, and a paused board that still shows the notes is not paused. The
+     third selector is there to outweigh that rule, not to repeat it. */
+  .doska.pauza .b,.doska.pauza .b *,.doska.pauza .b .pozn i.on{visibility:hidden}
+  .riadok{display:contents}
+  /* One shadow rule for every cell: a top line and a left line, thin between
+     cells and thick between blocks, none at all on the outer edge, where the
+     border of the board itself already draws one. */
+  .b{aspect-ratio:1;min-width:0;position:relative;display:block;padding:0;margin:0;
+     appearance:none;-webkit-appearance:none;border:0;background:var(--pole);cursor:pointer;color:var(--ink);font:inherit;
+     box-shadow:inset 0 var(--ht,1px) 0 var(--ct,var(--tenka)), inset var(--hl,1px) 0 0 var(--cl,var(--tenka))}
+  .b.r0{--ht:0px}
+  .b.c0{--hl:0px}
+  .b.bt{--ht:2px;--ct:var(--hruba)}
+  .b.bl{--hl:2px;--cl:var(--hruba)}
+  .b:hover{background:#2a2420}
+  .b:focus-visible{outline:2px solid var(--accent-light);outline-offset:-3px;z-index:3}
+  /* the dotted outline of a cage, one side at a time */
+  .b .ohr{position:absolute;inset:2px;pointer-events:none;border-style:dashed;border-color:var(--obrys);border-width:0;z-index:2}
+  .b .ohr.ot{border-top-width:1.6px}
+  .b .ohr.or{border-right-width:1.6px}
+  .b .ohr.ob{border-bottom-width:1.6px}
+  .b .ohr.ol{border-left-width:1.6px}
+  /* the total, in the corner of the first cell of the cage */
+  .b .sucet{position:absolute;top:calc(var(--cell) * .05);left:calc(var(--cell) * .12);z-index:2;pointer-events:none;
+            font:600 calc(var(--cell) * .25)/1 var(--ui);font-variant-numeric:tabular-nums;color:var(--body)}
+  .b .cif{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+          font:600 calc(var(--cell) * .50)/1 var(--ui);font-variant-numeric:tabular-nums;color:var(--ink)}
+  /* The notes start below the corner where the total is, so the two never meet. */
+  .b .pozn{position:absolute;inset:30% 7% 7% 7%;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr)}
+  .b .pozn i{display:flex;align-items:center;justify-content:center;font:500 calc(var(--cell) * .20)/1 var(--ui);
+             font-style:normal;color:var(--body);visibility:hidden}
+  .b .pozn i.on{visibility:visible}
+  .b.vybrana .pozn i{color:#c9c5bf}
+  .b[data-v="0"] .pozn{display:grid}
+  .b:not([data-v="0"]) .pozn{display:none}
+  /* The row, the column and the block of the picked cell. A solid colour, not
+     a translucent white: .b.linia beats .b, so it replaces the cell's own fill
+     instead of sitting on top of it. */
+  .b.linia{background:#302925}
+  .b.rovnaka .cif{color:var(--accent)}
+  .b.vybrana{background:rgba(242,100,60,.16);z-index:3}
+  .b.vybrana::before{content:"";position:absolute;inset:0;border:2px solid var(--accent);pointer-events:none}
+  /* A cage that adds up and repeats nothing goes quiet. It says nothing about
+     whether the numbers are RIGHT (Andrej, 10. 9.: nothing turns red while
+     playing; only Check judges). */
+  .b.stlmena .cif{opacity:.55}
+  .b.stlmena .sucet{color:var(--muted);opacity:.45}
+  /* A hint: the cage it reads is outlined, the cell it means pulses. */
+  .b.tip-ohrada{background-color:rgba(250,204,21,.14)}
+  .b.tip{background:rgba(250,204,21,.26)}
+  .b.tip::after{content:"";position:absolute;inset:14%;border-radius:50%;border:2px solid #facc15;
+                animation:tip-pulz .9s ease-in-out infinite alternate;pointer-events:none}
+  @keyframes tip-pulz{from{transform:scale(.85);opacity:.5}to{transform:scale(1);opacity:1}}
+  @media (prefers-reduced-motion:reduce){ .b.tip::after{animation:none} }
+  /* A mistake is a shape and a mark, not only a colour: a red frame and an
+     exclamation mark in the corner of the cell. Written after the picked cell
+     so that a cell which is both comes out red. */
+  .b.chyba{background:rgba(255,92,92,.26)}
+  .b.chyba::before{content:"";position:absolute;inset:0;border:2px solid #ff7b7b;pointer-events:none;z-index:3}
+  .b.chyba::after{content:"!";position:absolute;top:2%;right:8%;z-index:3;font:700 calc(var(--cell) * .28)/1 var(--ui);color:#ff7b7b}
+  /* Finished: every cage is satisfied, so the quiet cue above would dim the
+     whole sett. The numbers go green instead, at full strength. */
+  .hotovo .b .cif{color:var(--ok);opacity:1}
+  .hotovo .b{cursor:default}
+  .hotovo .b:hover{background:var(--pole)}
+  /* ── The number pad ───────────────────────────────────────────────────── */
+  .pad{display:grid;grid-template-columns:repeat(var(--pad,10),minmax(0,1fr));gap:4px;margin-top:10px}
+  .pad[hidden]{display:none}
+  /* 48px, the height paper.css gives every button on a night page, so the pad
+     and the control row right under it are one rhythm and not two. */
+  .pad button{height:48px;min-width:0;padding:0;border:1px solid var(--line);border-radius:10px;background:var(--card);
+              color:var(--ink);font:600 18px/1 var(--ui);font-variant-numeric:tabular-nums;cursor:pointer;
+              touch-action:manipulation;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+  .pad button[hidden]{display:none}
+  .pad button:hover{border-color:var(--ink)}
+  .pad button:disabled{opacity:.35;cursor:default}
+  .pad .zmaz{font-size:12px;letter-spacing:.04em;color:var(--body)}
+  .hra.poznamky .pad button{border-style:dashed;font-size:14px;color:var(--body)}
+  .hra.poznamky .pad .zmaz{font-size:12px}
+  /* Holding a pad number writes it the other way round: on touch there is no
+     Shift key, so a long press is what Shift plus a number does on a keyboard
+     (ops/spec-hry-ux.md, part 2). While the finger is down the button fills
+     in, so the hold is visible before it fires. It is never the only way: the
+     Notes button next to the pad is one tap (part 9). */
+  .pad button.drzane{border-color:var(--accent);background:rgba(242,100,60,.16)}
+  .ovladanie{display:flex;gap:5px;align-items:center;flex-wrap:wrap;margin-top:10px}
+  /* Height and type come from paper.css (body.noc .btn: 48px), which outranks
+     a plain .ovladanie .btn rule, so setting them here would only look like it
+     worked. The pad above is set to the same 48px instead. Padding is ours. */
+  .ovladanie .btn{padding:0 10px}
+  .ovladanie .btn[aria-pressed="true"]{border-color:var(--accent);color:var(--accent)}
+  /* On a phone the six buttons make two tidy rows of three instead of leaving
+     one of them alone at the end of a wrapped line. */
+  @media (max-width:480px){
+    .ovladanie{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+    .ovladanie .btn{width:100%;padding:0 6px;justify-content:center}
+    .ovladanie #seria{grid-column:1 / -1}
+  }
+  .stav{font-family:var(--ui);font-size:15px;line-height:1.5;color:var(--body);margin:12px 0 0;min-height:1.5em}
+  .stav b{color:var(--ink)}
+  .stav.ok{color:var(--ok)}
+  .stav.ok b{color:var(--ok)}
+  /* Share, only after the sett is finished (ops/spec-hry-ux.md, part 8).
+     The textarea is the way out when the browser refuses the clipboard. */
+  .zdielanie{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px;
+             font-family:var(--ui);font-size:13px;line-height:1.45;color:var(--muted)}
+  .zdielanie[hidden]{display:none}
+  .zdielanie .btn{height:38px;padding:0 14px;font-size:13.5px;flex:none}
+  .zdielanie span{flex:1;min-width:180px}
+  .zdielanie textarea{width:100%;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--body);
+                      font:12px/1.5 var(--ui);padding:8px 10px;resize:vertical}
+  .pasik{display:flex;gap:6px;margin-top:14px}
+  .den{position:relative;flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;padding:6px 0 5px;border:1px solid var(--line);border-radius:10px;
+       text-decoration:none;color:var(--muted);font-family:var(--ui);min-width:0;background:var(--card)}
+  .den small{font-size:10px;letter-spacing:.08em}
+  .den b{font-size:15px;color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+  .den.dnes{border-color:var(--accent);color:var(--accent)}
+  .den.rozohrane{border-style:dashed}
+  .den.hotove{background:rgba(94,207,154,.12);border-color:var(--ok)}
+  .den.hotove b{color:var(--ok)}
+  /* Two marks for a finished sett (ops/spec-hry-ux.md, part 8): solved, and
+     solved clean with no hint and no check, which gets the dot as well. The
+     screen reader gets the same difference in the aria-label, not only the
+     colour. */
+  .den.ciste::after{content:"";position:absolute;top:3px;right:4px;width:5px;height:5px;border-radius:50%;background:var(--ok)}
+  .den.buduci{opacity:.38}
+  a.den:hover{border-color:var(--ink);color:var(--ink)}
+  .odkazy{font-family:var(--ui);font-size:13px;color:var(--muted);margin:12px 0 0}
+  .odkazy a{color:var(--body)}
+  .historia{font-family:var(--ui);font-size:13px;color:var(--body);line-height:1.5;margin:10px 0 0}
+  .historia b{color:var(--ink)}
+  .nastavenia{margin-top:14px;border:1px solid var(--line);border-radius:12px;background:var(--card);padding:0 14px}
+  .nastavenia summary{cursor:pointer;font:600 13px/1.4 var(--ui);color:var(--muted);padding:10px 0;list-style:none}
+  .nastavenia summary::-webkit-details-marker{display:none}
+  .nastavenia[open] summary{color:var(--ink)}
+  .nastavenia label{display:flex;gap:10px;align-items:flex-start;font-family:var(--ui);font-size:13px;color:var(--body);line-height:1.5;padding:6px 0}
+  .nastavenia input{margin-top:3px;flex:none}
+  .nastavenia .fineprint{padding:6px 0 12px;margin:0}
+  .skryte{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
+  .navod{font-family:var(--ui);font-size:13px;color:var(--muted);margin:10px 0 0;max-width:none}
+  .navod kbd{font-size:12px}
+  /* On the phone the sett goes under the text; the keyboard note there would
+     just push the game further down. It is in the Rules section too. */
+  @media (max-width:860px){ .navod{display:none} }
+  .pravidla details{border:1px solid var(--line);border-radius:12px;background:var(--card);padding:0 18px;max-width:68ch}
+  .pravidla details+details{margin-top:10px}
+  .pravidla summary{cursor:pointer;font:600 15px/1.4 var(--ui);color:var(--ink);padding:14px 0;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:12px}
+  .pravidla summary::-webkit-details-marker{display:none}
+  .pravidla summary::after{content:"";width:.5em;height:.5em;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(45deg);flex:none;margin-right:4px;transition:transform .2s var(--ease)}
+  .pravidla details[open] summary::after{transform:rotate(225deg)}
+  .pravidla .telo{padding:0 0 16px}
+  .pravidla .telo p{margin:0 0 10px}
+  .pravidla .telo p:last-child{margin:0}
+  .jazyk{font:500 13px/1 var(--ui);color:var(--muted);background:transparent;border:1px solid var(--line);border-radius:999px;padding:6px 12px;cursor:pointer;margin-top:14px}
+  .jazyk:hover{color:var(--ink);border-color:var(--ink)}
+  .prose p{margin:0 0 14px}
+  .prose p:last-child{margin-bottom:0}
+  .sub{margin:0 0 6px}
+  noscript p{font-family:var(--ui);color:var(--accent-light)}
+</style>
+<noscript><style>
+  .r, .w { opacity:1 !important; transform:none !important; filter:none !important; }
+  .rule { transform:scaleX(1) !important; }
+</style></noscript>
+</head>
+<body class="noc">
+<div class="wash" aria-hidden="true"><i></i><i></i></div>
+<a class="skip" href="#obsah">Skip to content</a>
+
+<header>
+  <div class="wrap bar">
+    <a class="brand" href="https://arling.sk/">
+      <svg viewBox="0 0 488 215" width="38" height="15" aria-hidden="true" focusable="false"><path fill="#f4f4f7" fill-rule="evenodd" d="M0.00,213.00L74.00,214.00L181.00,85.00L285.00,214.00L360.00,214.00L206.00,21.00L185.00,4.00L164.00,10.00Z M221.00,0.00L263.00,50.00L395.00,50.00L409.00,55.00L419.00,76.00L401.00,96.00L313.00,98.00L411.00,214.00L487.00,214.00L422.00,139.00L457.00,123.00L482.00,88.00L482.00,48.00L463.00,19.00L417.00,0.00Z"/><path fill="#f2643c" d="M269.00,66.00L269.00,67.00L268.00,68.00L268.00,70.00L267.00,71.00L267.00,76.00L268.00,77.00L268.00,79.00L270.00,81.00L270.00,82.00L271.00,82.00L273.00,84.00L274.00,84.00L277.00,86.00L279.00,86.00L280.00,87.00L287.00,87.00L288.00,86.00L290.00,86.00L291.00,85.00L294.00,84.00L298.00,80.00L298.00,79.00L299.00,78.00L299.00,75.00L300.00,74.00L300.00,72.00L299.00,71.00L299.00,69.00L298.00,68.00L297.00,65.00L295.00,63.00L294.00,63.00L289.00,60.00L278.00,60.00L277.00,61.00L276.00,61.00L275.00,62.00L272.00,63.00Z"/></svg>
+      <b>ARLing</b><span>Games</span>
+    </a>
+    <nav aria-label="Site"><a href="https://arling.sk/en/#tools">Tools</a><a href="https://arling.sk/games/">Games</a><a href="https://arling.sk/notes/">Notes</a><a href="https://arling.sk/how-we-work/">How we work</a><a href="mailto:andrej@arling.sk">Contact</a></nav>
+  </div>
+</header>
+
+<main id="obsah">
+<style>
+  .gif{margin:0;max-width:420px}
+  .gif img{width:100%;height:auto;border:1px solid var(--line);border-radius:12px;background:#0a0908}
+  .dvojica{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,420px);gap:28px;align-items:start;margin-top:18px}
+  @media (max-width:860px){ .dvojica{grid-template-columns:1fr} }
+  .dvojica .text p{margin:0 0 12px}
+  .tyzden-tab{width:100%;border-collapse:collapse;font-family:var(--ui);font-size:14px;max-width:520px}
+  .tyzden-tab td{padding:8px 10px;border-bottom:1px solid var(--line)}
+  .tyzden-tab td:first-child{color:var(--ink);font-weight:600;white-space:nowrap}
+  .pasik{display:flex;gap:6px;margin-top:14px;max-width:520px}
+  .den{flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;padding:6px 0 5px;border:1px solid var(--line);border-radius:10px;text-decoration:none;color:var(--muted);font-family:var(--ui);min-width:0;background:var(--card)}
+  .den small{font-size:10px;letter-spacing:.08em}
+  .den b{font-size:15px;color:var(--ink);font-weight:600}
+  .den.dnes{border-color:var(--accent);color:var(--accent)}
+  .den.hotove{background:rgba(94,207,154,.12);border-color:var(--ok)}
+  .den.hotove b{color:var(--ok)}
+  .den.rozohrane{border-style:dashed}
+  .den.buduci{opacity:.38}
+  a.den:hover{border-color:var(--ink);color:var(--ink)}
+  .kroky{list-style:none;padding:0;margin:0}
+  .kroky li{padding:10px 0;border-bottom:1px solid var(--line);font-family:var(--ui);font-size:15px;line-height:1.5;color:var(--body)}
+  .kroky li b{color:var(--ink)}
+</style>
+<div class="wrap prose" style="padding-top:40px">
+  <p class="kicker">Guide</p>
+  <h1 class="r">How to play Badgers.</h1>
+  <div class="rule"></div>
+  <p class="lead r d1">Three rules, one sett a day, exactly one solution. The setts are made to be reasoned out, not guessed: the cages and the rows, columns and blocks are always enough, no guessing required.</p>
+  <p class="r d2"><a class="btn btn-solid" href="/games/badgers/">Play today's sett</a> <a class="btn btn-line" href="/games/badgers/practice/easy-1/">Start with an easy one</a></p>
+</div>
+<section class="deep"><div class="wrap">
+  <h2 class="r">The rules.</h2><div class="rule"></div>
+  <div class="dvojica r d1"><div class="text">
+    <p><b>1. Every row, column and block holds each number once.</b> Just like ordinary Sudoku: the grid size sets the numbers, six by six uses 1 to 6, nine by nine uses 1 to 9, and the blocks share out those same numbers too.</p>
+    <p><b>2. The dotted cages add up.</b> A cage is the group of cells inside one dotted outline, and the small number in its top left corner is what its cells add up to, with no number repeated inside the cage. Nothing is filled in at the start: the cages are the whole puzzle.</p>
+    <p><b>3. Exactly one arrangement fits.</b> Every row, column, block and cage at once. When the last cell is right, the game notices by itself.</p>
+  </div><figure class="gif"><img src="/games/badgers/tutorial/rule-01.gif" alt="Animation: every row of the grid fills with each number once, then the same happens by column and by block, and the grid turns green as solved." width="560" height="660" loading="lazy" decoding="async"></figure></div>
+  <div class="dvojica r d2"><div class="text">
+    <p><b>Cages carry the other half of the puzzle.</b> A short cage with a low or a high total often has only one possible set of numbers: two cells adding to a small total, or close to the largest one, leave little room to choose from. Once a cage is filled, correct and free of repeats, it goes quiet on the board, a soft cue only, never a judgement while you play.</p>
+  </div><figure class="gif"><img src="/games/badgers/tutorial/rule-02.gif" alt="Animation: a short cage is outlined, its numbers are worked out from its total and highlighted, then the cage dims once it is filled and correct." width="560" height="660" loading="lazy" decoding="async"></figure></div>
+</div></section>
+<section class="deep"><div class="wrap">
+  <h2 class="r">A way in.</h2><div class="rule"></div>
+  <div class="dvojica r d1"><div class="text">
+    <p>Every sett opens with steps like these. <b>Hint</b> finds the next one for you, names the rule and the place, and outlines the cage it is reading; press it again to write the number in and explain why. Hints are counted and shown when you finish, never hidden.</p>
+    <ul class="kroky">
+      <li><b>A cage of one cell.</b> Its number is simply its total.</li>
+      <li><b>Only one way to make the total.</b> A short cage with an extreme total, low or high, often allows only one set of numbers.</li>
+      <li><b>The single number left.</b> A cell whose row, column, block and cage between them rule out every number but one.</li>
+      <li><b>Marks already placed.</b> Numbers you have written narrow what still fits; Hint reasons from them the same way it reasons from the cages alone.</li>
+    </ul>
+  </div><figure class="gif"><img src="/games/badgers/tutorial/rule-03.gif" alt="Animation: the Hint outlines the cage it is reading, marks the cell it means with a pulsing ring and explains why, then the number is written in; this repeats for the next steps." width="560" height="660" loading="lazy" decoding="async"></figure></div>
+</div></section>
+<section class="deep"><div class="wrap">
+  <h2 class="r">The week.</h2><div class="rule"></div>
+  <p class="sub r d1">Difficulty is measured, not guessed. Every sett is solved by a program that only knows named rules, in three layers; the candidates for a date are ranked by how much the hard rules were needed.</p>
+  <table class="tyzden-tab r d2"><tbody>
+    <tr><td>Monday, Tuesday</td><td>Easy, six by six, numbers 1 to 6.</td></tr>
+    <tr><td>Wednesday, Thursday</td><td>Medium, nine by nine.</td></tr>
+    <tr><td>Friday, Saturday</td><td>Hard, nine by nine. More patterns before it opens up.</td></tr>
+    <tr><td>Sunday</td><td>Challenge, nine by nine, leaning on the hard rules the most.</td></tr>
+  </tbody></table>
+  <p class="r d3" style="margin-top:20px"><b>This week</b></p>
+  <nav class="pasik r d3" id="pasik-tyzden" aria-label="This week's setts"></nav>
+</div></section>
+<section class="deep"><div class="wrap prose">
+  <h2 class="r">Practice, archive, history.</h2><div class="rule"></div>
+  <p class="r d1"><a href="/games/badgers/practice/">Practice sets</a>: twenty-four setts with no date attached, three sets of eight for each level. They never change and do not touch your streak.</p>
+  <p class="r d1"><a href="/games/badgers/archive/">Archive</a>: every daily sett since Wednesday 10 September 2025, free. The same page shows your own history: every sett you solved in this browser, with time and the hints and checks you used. Nothing is sent anywhere; it lives in your browser only.</p>
+  <p class="r d2">Stuck or found something wrong? Write to <a href="mailto:andrej@arling.sk">andrej@arling.sk</a>.</p>
+</div></section>
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <div><b>ARLing s. r. o.</b><br>Ivanská cesta 32E<br>821 04 Bratislava, Slovakia</div>
+    <div>Company ID 56583486<br>VAT ID SK2122352100<br><a href="mailto:andrej@arling.sk">andrej@arling.sk</a></div>
+    <div><a href="https://arling.sk/privacy/">privacy</a> · <a href="https://arling.sk/podmienky/">terms</a> · <a href="https://arling.sk/gdpr/">GDPR</a> · <a href="https://arling.sk/impressum/">Impressum</a> · <a href="https://arling.sk/llms.txt">llms.txt</a> · <a href="https://arling.sk/sitemap-index.xml">sitemap</a><br>Tools are provided as is, without warranty. Anonymous visit counts via self-hosted Umami.</div>
+  </div>
+</footer>
+<script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="be534d51-4d01-4860-b267-9596d91606de"></script>
+</body>
+</html>
