@@ -36,7 +36,7 @@
 <link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/style/paper.css?v=89016e6c">
 <script src="/style/prepinac.js?v=2988c181" defer></script>
-<script type="module" src="/games/hares/game.js?v=1"></script>
+<script type="module" src="/games/hares/game.js?v=2"></script>
 <style>
   /* Only this page: the meadow, the number pad, the control row and the rules. */
   .hero{align-items:start}
@@ -54,7 +54,7 @@
   .horna b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
   .horna .uroven{color:var(--muted);font-size:12px;letter-spacing:.06em;text-transform:uppercase;margin-left:8px;white-space:nowrap}
   .horna #cas-blok,.horna #datum{white-space:nowrap}
-  @media (max-width:480px){ .horna .uroven{display:block;margin:2px 0 0} }
+  @media (max-width:480px){ .horna .uroven{display:block;margin:2px 0 0;white-space:normal} .hra{min-width:0} }
   .pauza-btn{font:500 12px/1 var(--ui);color:var(--muted);background:transparent;border:1px solid var(--line);border-radius:999px;padding:4px 10px;cursor:pointer;margin-left:8px;vertical-align:1px}
   .pauza-btn:hover{color:var(--ink);border-color:var(--ink)}
   .doska-obal{position:relative;touch-action:pan-y}
@@ -74,7 +74,7 @@
          border:2px solid var(--ink);border-radius:8px;overflow:hidden;background:var(--card-plna);
          touch-action:none;user-select:none;-webkit-user-select:none;
          --cell:40px;--tenka:rgba(255,255,255,.10);--hruba:rgba(255,255,255,.44);
-         --pole:#231d19;--pole-dane:#171310}
+         --pole:#262019;--pole-dane:#120f0c}
   .doska[hidden]{display:none}
   @media (max-width:480px){ .doska{border-radius:0;border-left:0;border-right:0} }
   .doska.hotovo{border-color:var(--ok);box-shadow:0 0 0 4px rgba(94,207,154,.14)}
@@ -90,7 +90,7 @@
   .b.l2{--sl:2px;--cl:var(--hruba)}
   .b.t0{--st:0px}
   .b.t2{--st:2px;--ct:var(--hruba)}
-  .b:hover{background-color:#2c2521}
+  .b:hover{background-color:#302823}
   .b:focus-visible{outline:2px solid var(--accent-light);outline-offset:-3px;z-index:2}
   .b .cif{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
           font:500 calc(var(--cell) * .54)/1 var(--ui);font-variant-numeric:tabular-nums;color:var(--accent-light)}
@@ -101,25 +101,41 @@
   .b.dane .cif{font-weight:700;color:var(--ink)}
   .b .pozn{position:absolute;inset:9%;display:grid;grid-template-columns:repeat(3,1fr);grid-auto-rows:1fr}
   .b .pozn i{display:flex;align-items:center;justify-content:center;font:500 calc(var(--cell) * .24)/1 var(--ui);
-             font-style:normal;color:var(--muted);visibility:hidden}
+             font-style:normal;color:var(--body);visibility:hidden}
   .b .pozn i.on{visibility:visible}
+  .b.vybrana .pozn i{color:#c9c5bf}
   .b:not([data-v="0"]) .pozn{display:none}
   /* The row, the column and the block of the picked burrow. A solid colour,
      not a translucent white: .b.jednotka beats .b, so it replaces the burrow's
      own background instead of sitting on top of it. */
-  .b.jednotka{background-color:#332b26}
-  .b.jednotka.dane{background-color:#221c18}
+  .b.jednotka{background-color:#38302a}
+  .b.jednotka.dane{background-color:#1d1815}
   /* Where a hare can reach from the picked burrow: a knight's leap, and on the
      king days a touch as well. A help while you look, never a judgement, and
      it can be switched off in Settings. */
   /* Two layers, both in background-image: a dot in the corner and a wash over
      the whole burrow. Nothing else on a burrow sets background-image, and every
      other state sets background-color only, so the reach shows through the row,
-     column and block shading instead of being wiped out by it. */
-  .b.dosah{background-image:radial-gradient(circle at 15% 15%, rgba(242,100,60,.8) 0 10%, transparent 11%),
-                            linear-gradient(rgba(242,100,60,.12), rgba(242,100,60,.12))}
+     column and block shading instead of being wiped out by it.
+     The three warm helps on one burrow (row/column/block, reach, hint band) are
+     told apart by brightness, not by hue alone: the unit shading is the dimmest,
+     the orange reach sits above it, the yellow hint band is the brightest. */
+  .b.dosah{background-image:radial-gradient(circle at 15% 15%, rgba(242,100,60,.85) 0 10%, transparent 11%),
+                            linear-gradient(rgba(242,100,60,.20), rgba(242,100,60,.20))}
+  /* Rovnaka priehladnost na dvoch roznych podkladoch nedava rovnako silny
+     signal: prazdne policko (--pole #262019) je svetlejsie ako dane
+     (--pole-dane #120f0c), takze rovnaky wash nad nim posunie jas menej.
+     Zmerane v CIE L*: dane s .20 dvihne policko o 11.7 L*, prazdne s .20 len
+     o 9.9 L* (o 16 % menej). Alfa .24 dava 11.9 L*, teda ten isty skok, a
+     kontrastny pomer drzi blizko (1.42 oproti 1.30). Silnejsia hodnota by
+     prevazila na druhu stranu: .30 by robilo 14.8 L*, o 26 % viac ako dane. */
+  .b.dosah:not(.dane){background-image:radial-gradient(circle at 15% 15%, rgba(242,100,60,.85) 0 10%, transparent 11%),
+                            linear-gradient(rgba(242,100,60,.24), rgba(242,100,60,.24))}
   .b.rovnaka .cif{color:var(--accent);font-weight:700}
-  .b.dane.rovnaka .cif{color:var(--accent)}
+  /* A given number stays a given number while it is highlighted: a warm light
+     tone, never the same orange the player's own numbers take, so "the meadow
+     gave me this" and "I wrote this" never look alike. */
+  .b.dane.rovnaka .cif{color:var(--accent-light);font-weight:700}
   .b.vybrana{background-color:rgba(242,100,60,.16);z-index:2}
   .b.vybrana.dane{background-color:rgba(242,100,60,.10)}
   .b.vybrana::before{content:"";position:absolute;inset:0;border:2px solid var(--accent);pointer-events:none}
@@ -127,11 +143,19 @@
      It says nothing about whether the numbers are right. */
   .b.stlmena .cif{opacity:.5}
   /* A hint: the row, column and block it reads are outlined, the burrow it
-     means pulses. */
-  .b.tip-jednotka{background-color:rgba(250,204,21,.13)}
-  .b.tip{background-color:rgba(250,204,21,.26)}
+     means pulses. Yellow is the brightest of the three warm helps, so the hint
+     band reads above the reach wash even where the two lie on one burrow. */
+  .b.tip-jednotka{background-color:rgba(250,204,21,.20)}
+  .b.tip{background-color:rgba(250,204,21,.34)}
   .b.tip::after{content:"";position:absolute;inset:12%;border-radius:50%;border:2px solid #facc15;
                 animation:tip-pulz .9s ease-in-out infinite alternate;pointer-events:none}
+  /* Hint picks the burrow it means, so without this the square orange frame of
+     the pick and the round yellow ring of the hint would sit on one burrow as
+     two different "look here" signs. While a hint stands, only the ring shows;
+     the frame comes back the moment the player picks another burrow. A burrow
+     Check has marked keeps its red frame: that one is not a hint, it is a
+     mistake, and it outranks both. */
+  .b.vybrana.tip:not(.chyba)::before{display:none}
   @keyframes tip-pulz{from{transform:scale(.85);opacity:.5}to{transform:scale(1);opacity:1}}
   @media (prefers-reduced-motion:reduce){ .b.tip::after{animation:none} }
   /* A mistake is a shape and a mark, not only a colour: a red frame and an
@@ -172,7 +196,19 @@
      a plain .ovladanie .btn rule, so setting them here would only look like it
      worked. The pad above is set to the same 48px instead. Padding is ours. */
   .ovladanie .btn{padding:0 10px}
-  .ovladanie .btn[aria-pressed="true"]{border-color:var(--accent);color:var(--accent)}
+  /* Zapnute Notes musi byt oranzove aj vtedy, ked na tlacidle stoji kurzor,
+     teda presne v okamihu po kliknuti. paper.css ma
+     'body.noc .btn-line:hover' so specificitou (0,3,1), preto tu ide aj
+     variant s :hover, ktory ma (0,4,0) a vyhra. */
+  .ovladanie .btn[aria-pressed="true"],
+  .ovladanie .btn[aria-pressed="true"]:hover{border-color:var(--accent);color:var(--accent)}
+  /* Vypnute tlacidlo musi byt vidno. .btn ani .btn-line nemaju v paper.css
+     nic pre :disabled, a hover z paper.css by inak stale svietil, preto sa tu
+     prebija aj hover stav (rovnaka specificita (0,4,0), toto pravidlo je
+     nizsie, takze na vypnutom tlacidle vyhrava). */
+  .ovladanie .btn:disabled,
+  .ovladanie .btn:disabled:hover{opacity:.35;cursor:default;
+     background:rgba(255,255,255,.03);border-color:rgba(255,255,255,.16);color:var(--ink);transform:none}
   /* On a phone the six buttons make two tidy rows of three instead of leaving
      one of them alone at the end of a wrapped line. */
   @media (max-width:480px){
@@ -381,6 +417,6 @@
     <div><a href="https://arling.sk/privacy/">privacy</a> · <a href="https://arling.sk/podmienky/">terms</a> · <a href="https://arling.sk/gdpr/">GDPR</a> · <a href="https://arling.sk/impressum/">Impressum</a> · <a href="https://arling.sk/llms.txt">llms.txt</a> · <a href="https://arling.sk/sitemap-index.xml">sitemap</a><br>Tools are provided as is, without warranty. Anonymous visit counts via self-hosted Umami.</div>
   </div>
 </footer>
-<script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="be534d51-4d01-4860-b267-9596d91606de"></script>
+<script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="469b28b9-caa6-4ef2-807b-c219c30110fc"></script>
 </body>
 </html>
