@@ -6,18 +6,27 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://homelab.tailbf8f27.ts.net; connect-src https://homelab.tailbf8f27.ts.net; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
 <meta name="color-scheme" content="dark">
-<meta name="robots" content="noindex">
+<meta name="robots" content="index, follow">
+<link rel="manifest" href="manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Hedgehogs">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta property="og:image" content="https://arling.sk/games/hedgehogs/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://homelab.tailbf8f27.ts.net" crossorigin>
 <meta name="theme-color" content="#0a0908">
 <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
 <link rel="icon" href="../../favicon.ico" sizes="48x48">
 <link rel="apple-touch-icon" href="../../icon-180.png">
-<title>Two Stars · ARLing</title>
-<meta name="description" content="A daily logic puzzle: two stars in every row, column and region, and no two stars may touch. A new puzzle every day, always with exactly one solution.">
-<link rel="canonical" href="https://arling.sk/games/two-stars/">
-<meta property="og:title" content="Two Stars · ARLing">
-<meta property="og:description" content="A daily logic puzzle: two stars in every row, column and region, and no two stars may touch. A new puzzle every day, always with exactly one solution.">
-<meta property="og:url" content="https://arling.sk/games/two-stars/">
+<title>Hedgehogs · ARLing</title>
+<meta name="description" content="A daily logic puzzle: two hedgehogs in every row, column and flowerbed, and no two hedgehogs may touch. A new puzzle every day, always with exactly one solution.">
+<link rel="canonical" href="https://arling.sk/games/hedgehogs/">
+<meta property="og:title" content="Hedgehogs · ARLing">
+<meta property="og:description" content="A daily logic puzzle: two hedgehogs in every row, column and flowerbed, and no two hedgehogs may touch. A new puzzle every day, always with exactly one solution.">
+<meta property="og:url" content="https://arling.sk/games/hedgehogs/">
 <meta property="og:type" content="website">
 
 
@@ -26,7 +35,7 @@
 <link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/style/paper.css?v=e0e48650">
 <script src="/style/prepinac.js?v=2988c181" defer></script>
-<script type="module" src="game.js?v=3"></script>
+<script type="module" src="game.js?v=5"></script>
 <style>
   /* Only this page: the board, its cells, the control row and the rules block. */
   .hero{align-items:start}
@@ -39,7 +48,7 @@
          border:2px solid var(--ink);border-radius:8px;overflow:hidden;
          background:var(--card-plna);touch-action:none;user-select:none;-webkit-user-select:none;
          --tenka:rgba(255,255,255,.11);--hruba:var(--ink);
-         --hviezda:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpolygon points='12,1.8 15.1,8.3 22.2,9.3 17,14.3 18.3,21.4 12,18 5.7,21.4 7,14.3 1.8,9.3 8.9,8.3'/%3E%3C/svg%3E")}
+         --hviezda:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpolygon points='3.4,14.0 1.2,12.3 3.9,11.4 2.3,9.0 5.2,9.1 4.6,6.3 7.2,7.4 7.6,4.6 9.7,6.5 11.0,4.0 12.3,6.5 14.4,4.6 14.8,7.4 17.4,6.3 16.8,9.1 19.7,9.0 18.1,11.4 20.8,12.3 18.6,14.0 20.8,13.4 23.2,15.2 21.6,17.6 19.4,19.5 3.2,19.5 1.4,17.4'/%3E%3Ccircle cx='18.6' cy='15.9' r='1.15' fill='%230a0908'/%3E%3Ccircle cx='22.6' cy='15.6' r='0.9'/%3E%3C/svg%3E")}
   .riadok{display:contents}
   .doska.hotovo{border-color:var(--ok);box-shadow:0 0 0 4px rgba(94,207,154,.14)}
   .b{appearance:none;-webkit-appearance:none;border:0;margin:0;padding:0;background:transparent;
@@ -81,6 +90,13 @@
   .stav b{color:var(--ink)}
   .stav.ok{color:var(--ok)}
   .stav.ok b{color:var(--ok)}
+  .nastavenia{margin-top:14px;border:1px solid var(--line);border-radius:12px;background:var(--card);padding:0 14px}
+  .nastavenia summary{cursor:pointer;font:600 13px/1.4 var(--ui);color:var(--muted);padding:10px 0;list-style:none}
+  .nastavenia summary::-webkit-details-marker{display:none}
+  .nastavenia[open] summary{color:var(--ink)}
+  .nastavenia label{display:flex;gap:10px;align-items:flex-start;font-family:var(--ui);font-size:13px;color:var(--body);line-height:1.5;padding:6px 0}
+  .nastavenia input{margin-top:3px;flex:none}
+  .nastavenia .fineprint{padding:6px 0 12px;margin:0}
   .navod{font-family:var(--ui);font-size:13px;color:var(--muted);margin:10px 0 0;max-width:none}
   .navod kbd{font-size:12px}
   /* Na telefóne ide mriežka pod text; návod na klávesnicu tam nemá zmysel
@@ -124,16 +140,16 @@
 <main>
   <div class="wrap hero" id="hero">
     <div>
-      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12,3 14.8,8.9 21.2,9.6 16.5,14 17.8,20.4 12,17.2 6.2,20.4 7.5,14 2.8,9.6 9.2,8.9"/></svg>Daily logic puzzle</p>
-      <h1 id="h1"><span class="l">Two Stars.</span></h1>
-      <p class="lead r d3">Two stars in every row, every column and every outlined region. No two stars may touch, not even at a corner.</p>
+      <p class="kicker"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="3.4,14.0 1.2,12.3 3.9,11.4 2.3,9.0 5.2,9.1 4.6,6.3 7.2,7.4 7.6,4.6 9.7,6.5 11.0,4.0 12.3,6.5 14.4,4.6 14.8,7.4 17.4,6.3 16.8,9.1 19.7,9.0 18.1,11.4 20.8,12.3 18.6,14.0 20.8,13.4 23.2,15.2 21.6,17.6 19.4,19.5 3.2,19.5 1.4,17.4"/></svg>Daily logic puzzle</p>
+      <h1 id="h1"><span class="l">Hedgehogs.</span></h1>
+      <p class="lead r d3">Two hedgehogs in every row, every column and every flowerbed. No two hedgehogs may touch, not even at a corner: they prickle.</p>
       <p class="proof r d5" id="dnes">A new puzzle every day at midnight. Every puzzle has exactly one solution.</p>
-      <p class="navod r d5">Tap a cell: dot, then star, then empty. Hold and drag to sweep dots. Keyboard: arrows move, <kbd>Space</kbd> cycles, <kbd>X</kbd> dot, <kbd>S</kbd> star, <kbd>Delete</kbd> clears.</p>
+      <p class="navod r d5">Tap a cell: dot, then hedgehog, then empty. Hold and drag to sweep dots. Keyboard: arrows move, <kbd>Space</kbd> cycles, <kbd>X</kbd> dot, <kbd>H</kbd> hedgehog, <kbd>Delete</kbd> clears.</p>
     </div>
     <div class="r d2">
       <div class="hra">
-        <div class="horna"><span id="datum">Today's puzzle</span><span>Time <b id="cas">0:00</b></span></div>
-        <div class="doska" id="doska" role="grid" aria-label="Puzzle grid 9 by 9">
+        <div class="horna"><span id="datum">Today's puzzle</span><span id="cas-blok">Time <b id="cas">0:00</b></span></div>
+        <div class="doska" id="doska" role="grid" aria-label="Garden grid 9 by 9">
           <noscript><p>This game needs JavaScript: the puzzle is generated right in your browser.</p></noscript>
         </div>
         <div class="ovladanie">
@@ -143,6 +159,14 @@
           <span class="small" id="seria"></span>
         </div>
         <p class="stav" id="stav" aria-live="polite"></p>
+        <details class="nastavenia">
+          <summary>Settings</summary>
+          <label><input type="checkbox" data-nastavenie="casovac"> Show the timer</label>
+          <label><input type="checkbox" data-nastavenie="autoBodky"> Auto dots: a hedgehog dots its neighbours and completed rows, columns and flowerbeds</label>
+          <label><input type="checkbox" data-nastavenie="zvyraznit"> Highlight hedgehogs that break a rule</label>
+          <label><input type="checkbox" data-nastavenie="potvrditVymazanie"> Ask before Clear</label>
+          <p class="fineprint">Settings, progress and streak stay in this browser. Add this page to your home screen to open it like an app.</p>
+        </details>
       </div>
     </div>
   </div>
@@ -157,25 +181,25 @@
         <details open>
           <summary>How to play</summary>
           <div class="telo">
-            <p>Place exactly two stars in every row, every column and every outlined region. The grid has nine rows, nine columns and nine regions, so there are eighteen stars in total.</p>
-            <p>No two stars may touch: not side by side, not diagonally.</p>
-            <p>A dot is your own note that a cell stays empty. The game does not check dots. When you place the last star, the game checks the solution by itself.</p>
+            <p>Place exactly two hedgehogs in every row, every column and every flowerbed (the outlined regions). The garden has nine rows, nine columns and nine flowerbeds, so there are eighteen hedgehogs in total.</p>
+            <p>No two hedgehogs may touch: not side by side, not diagonally. They prickle.</p>
+            <p>A dot is your own note that a cell stays empty. The game does not check dots. When you place the last hedgehog, the game checks the solution by itself.</p>
           </div>
         </details>
         <details>
           <summary>Controls</summary>
           <div class="telo">
-            <p>Tap or click a cell: once for a dot, twice for a star, three times to clear it. Hold the button or your finger and drag to sweep dots over many cells at once. A star that breaks a rule turns red. Check tells you how many of your stars are wrong, never which ones.</p>
-            <p>Keyboard: arrows move, <kbd>Space</kbd> or <kbd>Enter</kbd> cycles the cell, <kbd>X</kbd> dot, <kbd>S</kbd> star, <kbd>Delete</kbd> or <kbd>Backspace</kbd> clears. Undo takes back the last move, Clear empties the whole grid.</p>
-            <p>The clock runs from your first move to the last star. Your progress, time and day streak stay in this browser.</p>
+            <p>Tap or click a cell: once for a dot, twice for a hedgehog, three times to clear it. Hold the button or your finger and drag to sweep dots over many cells at once. A hedgehog that breaks a rule turns red. Check tells you how many of your hedgehogs are wrong, never which ones.</p>
+            <p>Keyboard: arrows move, <kbd>Space</kbd> or <kbd>Enter</kbd> cycles the cell, <kbd>X</kbd> dot, <kbd>H</kbd> hedgehog, <kbd>Delete</kbd> or <kbd>Backspace</kbd> clears. Undo takes back the last move, Clear empties the whole garden.</p>
+            <p>The clock runs from your first move to the last hedgehog. Your progress, time and day streak stay in this browser.</p>
           </div>
         </details>
         <details>
           <summary>A few ways in</summary>
           <div class="telo">
-            <p>A region that fits inside one row or one column holds both stars of that row or column, so every other cell in that line is empty.</p>
-            <p>Two regions that together cover exactly two rows use up all four stars of those rows. Any cell of a third region inside those rows is empty.</p>
-            <p>A star empties all eight cells around it. When a region has only a few cells left, count how many stars still fit without touching.</p>
+            <p>A flowerbed that fits inside one row or one column holds both hedgehogs of that row or column, so every other cell in that line is empty.</p>
+            <p>Two flowerbeds that together cover exactly two rows use up all four hedgehogs of those rows. Any cell of a third flowerbed inside those rows is empty.</p>
+            <p>A hedgehog empties all eight cells around it. When a flowerbed has only a few cells left, count how many hedgehogs still fit without touching.</p>
           </div>
         </details>
       </div>
