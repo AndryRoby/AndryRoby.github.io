@@ -405,7 +405,9 @@ async function overPlatbu(sid, test, pokus) {
     if (r.ok) st = await r.json();
     else if (r.status >= 500 || r.status === 429) siet = true;
   } catch (e) { siet = true; }
-  if (st && st.paid && typeof st.amount_total === 'number' && st.amount_total >= CENA_CENTY) {
+  // Suma pred zľavovým kódom (amount_subtotal); starší worker ju neposiela, vtedy platí amount_total.
+  const zaklad = st && typeof st.amount_subtotal === 'number' ? st.amount_subtotal : st && st.amount_total;
+  if (st && st.paid && typeof zaklad === 'number' && zaklad >= CENA_CENTY) {
     uloz('gdpr:zaplatene', { session: sid, t: Date.now(), test: st.livemode === false });
     try { localStorage.removeItem(CAKAJUCA); } catch (e) { /* nič */ }
     stavPlatby.innerHTML = T.zaplatene + (st.livemode === false ? ' ' + T.testPoznamka : '');
