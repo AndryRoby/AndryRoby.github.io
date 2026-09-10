@@ -100,7 +100,7 @@ const STYLES = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:style w:type="paragraph" w:styleId="Heading2"><w:name w:val="heading 2"/><w:basedOn w:val="Normal"/><w:pPr><w:keepNext/><w:spacing w:before="240" w:after="100"/><w:outlineLvl w:val="1"/></w:pPr><w:rPr><w:b/><w:sz w:val="26"/></w:rPr></w:style>
 <w:style w:type="paragraph" w:styleId="Heading3"><w:name w:val="heading 3"/><w:basedOn w:val="Normal"/><w:pPr><w:keepNext/><w:spacing w:before="160" w:after="60"/><w:outlineLvl w:val="2"/></w:pPr><w:rPr><w:b/><w:sz w:val="23"/></w:rPr></w:style>
 <w:style w:type="paragraph" w:styleId="ListBullet"><w:name w:val="List Bullet"/><w:basedOn w:val="Normal"/><w:pPr><w:ind w:left="480" w:hanging="240"/><w:spacing w:after="60"/></w:pPr></w:style>
-<w:style w:type="paragraph" w:styleId="Poznamka"><w:name w:val="Poznamka"/><w:basedOn w:val="Normal"/><w:rPr><w:i/><w:color w:val="666666"/><w:sz w:val="18"/></w:rPr></w:style>
+<w:style w:type="paragraph" w:styleId="Poznamka"><w:name w:val="Poznamka"/><w:basedOn w:val="Normal"/><w:rPr><w:i/><w:color w:val="666666"/><w:sz w:val="18"/></w:rPr></w:style><w:style w:type="character" w:styleId="Hyperlink"><w:name w:val="Hyperlink"/><w:rPr><w:color w:val="0563C1"/><w:u w:val="single"/></w:rPr></w:style>
 </w:styles>`;
 
 /* Bloky dokumentu na XML tela. */
@@ -112,21 +112,38 @@ export function teloXML(bloky, pata) {
     else if (b.ul) body += b.ul.map((t) => odsek('• ' + t, 'ListBullet')).join('');
     else if (b.tbl) body += tabulka(b.tbl);
   }
-  if (pata) body += odsek(pata, 'Poznamka');
+  if (pata) body += pataOdsek(pata);
   return body;
+}
+
+/* Päta s klikateľným odkazom na arling.sk/gdpr-dokumenty/…: keď firma zásady
+ * zverejní na webe, odkaz vedie späť k nástroju (rovnako to robia iné
+ * generátory zásad). Vzťah rId2 je v document.xml.rels. */
+const PATA_ODKAZ = /arling\.sk\/gdpr-dokumenty\/(?:cs\/|de\/)?/;
+function pataOdsek(pata) {
+  const m = String(pata).match(PATA_ODKAZ);
+  if (!m) return odsek(pata, 'Poznamka');
+  const pred = pata.slice(0, m.index), po = pata.slice(m.index + m[0].length);
+  return '<w:p><w:pPr><w:pStyle w:val="Poznamka"/></w:pPr>' + behy(pred)
+    + '<w:hyperlink r:id="rId2"><w:r><w:rPr><w:rStyle w:val="Hyperlink"/></w:rPr><w:t xml:space="preserve">' + x(m[0]) + '</w:t></w:r></w:hyperlink>'
+    + behy(po) + '</w:p>';
+}
+export function pataUrl(pata) {
+  const m = String(pata).match(PATA_ODKAZ);
+  return m ? 'https://' + m[0] : '';
 }
 
 /* Celý DOCX ako Uint8Array. */
 export function docx(bloky, pata) {
   const document = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${teloXML(bloky, pata)}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1300" w:right="1300" w:bottom="1300" w:left="1300" w:header="700" w:footer="700" w:gutter="0"/></w:sectPr></w:body></w:document>`;
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><w:body>${teloXML(bloky, pata)}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1300" w:right="1300" w:bottom="1300" w:left="1300" w:header="700" w:footer="700" w:gutter="0"/></w:sectPr></w:body></w:document>`;
   return zip([
     ['[Content_Types].xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>`],
     ['_rels/.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>`],
     ['word/_rels/document.xml.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`],
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>${pataUrl(pata) ? '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink" Target="' + pataUrl(pata) + '" TargetMode="External"/>' : ''}</Relationships>`],
     ['word/styles.xml', STYLES],
     ['word/document.xml', document],
   ]);
