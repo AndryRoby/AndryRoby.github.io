@@ -9,9 +9,14 @@
  * Podpora odkazu z e-mailu: ?email=...&kod=... na stránke automaticky
  * overí kód, bez toho, aby ho človek musel opisovať.
  *
- * Hry (Hedgehogs): tento skript číta localStorage rovnako ako
- * games/hedgehogs/game.js (kľúče hedgehogs:YYYY-MM-DD a hedgehogs:streak),
- * len na zobrazenie súčtu; samotnú hru ani jej ukladanie nemení.
+ * Hry: zoznam hier sa berie z /games/zoznam.json (kľúč, názov, url, jednotka
+ * v troch jazykoch, hotove). Pre každú hru s hotove:true sa počíta rovnako
+ * ako v games/<kluc>/game.js: localStorage kľúče <kluc>:YYYY-MM-DD ({ done })
+ * a <kluc>:streak dajú lokálny stav; keď je človek prihlásený, k tomu sa
+ * pripočíta aj ucet.hra.nacitaj(kluc) (rovnaké zlúčenie dňa ako v hre, „vyššie
+ * t vyhráva, done sa nikdy nestratí"), aby séria a počet sedeli aj na
+ * zariadení, na ktorom sa tá hra ešte nehrala. Nič sa pritom nezapisuje späť
+ * do localStorage ani na server, tento skript len číta a zobrazuje súčet.
  */
 import * as ucet from '/style/ucet.js';
 
@@ -40,7 +45,8 @@ const T = {
     dokladyText: 'Faktúry, zmenu karty aj zrušenie predplatného (Bankové nástroje, Feed Doctor Monitor, Asistent) nájdete v zákazníckom portáli Stripe.',
     hryPrihlasenie: 'Prihláste sa vyššie, aby ste videli postup vo svojich hrách na všetkých zariadeniach.',
     hrySeria: 'dní v sérii',
-    hryVyriesene: 'vyriešených záhrad',
+    hryVyriesene: (jednotka) => 'vyriešených ' + jednotka,
+    hryHrat: (nazov) => 'Hrať ' + nazov,
     stlpecProdukt: 'Produkt', stlpecDatum: 'Dátum', stlpecSuma: 'Suma', stlpecAkcia: 'Čo urobiť',
     produktNeznamy: 'Nákup',
     produktGdpr: 'Balík GDPR dokumentov',
@@ -76,7 +82,8 @@ const T = {
     dokladyText: 'Invoices, changing your card and cancelling a subscription (Bankové nástroje, Feed Doctor Monitor, Asistent) are all in the Stripe customer portal.',
     hryPrihlasenie: 'Sign in above to see your progress across every device.',
     hrySeria: 'days in a row',
-    hryVyriesene: 'gardens solved',
+    hryVyriesene: (jednotka) => jednotka + ' solved',
+    hryHrat: (nazov) => 'Play ' + nazov,
     stlpecProdukt: 'Product', stlpecDatum: 'Date', stlpecSuma: 'Amount', stlpecAkcia: 'What to do',
     produktNeznamy: 'Purchase',
     produktGdpr: 'GDPR document bundle',
@@ -112,7 +119,8 @@ const T = {
     dokladyText: 'Rechnungen, Kartenwechsel und Kündigung eines Abos (Bankové nástroje, Feed Doctor Monitor, Asistent) finden Sie im Stripe-Kundenportal.',
     hryPrihlasenie: 'Melden Sie sich oben an, um Ihren Fortschritt auf jedem Gerät zu sehen.',
     hrySeria: 'Tage in Folge',
-    hryVyriesene: 'gelöste Gärten',
+    hryVyriesene: (jednotka) => 'gelöste ' + jednotka,
+    hryHrat: (nazov) => 'Spielen ' + nazov,
     stlpecProdukt: 'Produkt', stlpecDatum: 'Datum', stlpecSuma: 'Betrag', stlpecAkcia: 'Was zu tun ist',
     produktNeznamy: 'Kauf',
     produktGdpr: 'GDPR-Dokumentenpaket',
@@ -152,7 +160,7 @@ const dokladyText = $('doklady-text');
 const portalOdkaz = $('portal-odkaz');
 const hryText = $('hry-text');
 const hryObsah = $('hry-obsah');
-const hryFakty = $('hry-fakty');
+const hryZoznam = $('hry-zoznam');
 const spravaUctu = $('sprava-uctu');
 const odhlasitBtn = $('odhlasit-btn');
 const zabudniBtn = $('zabudni-btn');
@@ -288,7 +296,21 @@ function naplnDoklady(portalUrl) {
   else portalOdkaz.hidden = true;
 }
 
-/* ── Hry: rovnaké kľúče localStorage ako games/hedgehogs/game.js ────────── */
+/* ── Hry: zoznam z /games/zoznam.json, kľúče localStorage ako v games/<kluc>/game.js ── */
+const HEDGEHOGS_FALLBACK = [{ kluc: 'hedgehogs', nazov: 'Hedgehogs', url: '/games/hedgehogs/', hotove: true,
+  jednotka: { sk: 'záhrad', en: 'gardens', de: 'Gärten' } }];
+let zoznamHierSlub = null;
+async function zoznamHier() {
+  if (!zoznamHierSlub) {
+    zoznamHierSlub = fetch('/games/zoznam.json').then((r) => {
+      if (!r.ok) throw new Error('http ' + r.status);
+      return r.json();
+    }).then((zoznam) => (Array.isArray(zoznam) ? zoznam : HEDGEHOGS_FALLBACK))
+      .catch(() => HEDGEHOGS_FALLBACK);
+  }
+  return zoznamHierSlub;
+}
+
 function dnesLokalne() {
   const d = new Date();
   const p = (n) => String(n).padStart(2, '0');
@@ -300,27 +322,53 @@ function vceraZ(iso) {
   const p = (n) => String(n).padStart(2, '0');
   return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
 }
-function hedgehogsFakty() {
-  let vyriesene = 0;
+/* Lokálne dni pre danú hru: rovnaké kľúče, aké si ukladá games/<kluc>/game.js
+ * (<kluc>:YYYY-MM-DD, preskočí :streak, :settings, :p:<sada>:<k>). */
+function lokalneDniHry(kluc) {
+  const out = {};
+  const predpona = kluc + ':';
   try {
     for (let i = 0; i < localStorage.length; i++) {
       const k = localStorage.key(i);
-      if (!k || k.indexOf('hedgehogs:') !== 0) continue;
-      const zvysok = k.slice('hedgehogs:'.length);
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(zvysok)) continue; // preskočí :streak, :settings, :p:<sada>:<k>
+      if (!k || k.indexOf(predpona) !== 0) continue;
+      const zvysok = k.slice(predpona.length);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(zvysok)) continue;
       let s = null;
       try { s = JSON.parse(localStorage.getItem(k)); } catch (e) { continue; }
-      if (s && s.done) vyriesene++;
+      if (s) out[zvysok] = s;
     }
   } catch (e) { /* localStorage nedostupné (súkromné okno) */ }
+  return out;
+}
+/* Rovnaké zlúčenie jedného dňa ako games/<kluc>/game.js: vyšší t vyhráva,
+ * done sa nikdy nestratí. */
+function zlucStavDna(lokalny, vzdialeny) {
+  if (!vzdialeny) return lokalny;
+  if (!lokalny) return vzdialeny;
+  const v = (vzdialeny.t || 0) >= (lokalny.t || 0) ? vzdialeny : lokalny;
+  const done = lokalny.done || vzdialeny.done || null;
+  return done && !v.done ? Object.assign({}, v, { done }) : v;
+}
+/* Séria a počet vyriešených pre jednu hru, z lokálneho úložiska a (keď je
+ * človek prihlásený) z ucet.hra.nacitaj, zlúčené rovnako ako v samotnej hre. */
+async function faktyHry(kluc) {
+  const dni = lokalneDniHry(kluc);
+  if (ucet.prihlaseny()) {
+    try {
+      const vzdialene = await ucet.hra.nacitaj(kluc);
+      const diaDni = vzdialene && vzdialene.dni && typeof vzdialene.dni === 'object' ? vzdialene.dni : {};
+      for (const [d, r] of Object.entries(diaDni)) {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(d) || !r || typeof r !== 'object') continue;
+        dni[d] = zlucStavDna(dni[d], r);
+      }
+    } catch (e) { /* sieťová chyba: ostáva len lokálny stav */ }
+  }
+  let vyriesene = 0;
+  for (const d in dni) if (dni[d] && dni[d].done) vyriesene++;
+  const dnes = dnesLokalne();
+  let den = dni[dnes] && dni[dnes].done ? dnes : vceraZ(dnes);
   let seria = 0;
-  try {
-    const s = JSON.parse(localStorage.getItem('hedgehogs:streak'));
-    if (s && s.pocet) {
-      const dnes = dnesLokalne();
-      if (s.posledny === dnes || s.posledny === vceraZ(dnes)) seria = s.pocet;
-    }
-  } catch (e) { /* nič */ }
+  while (dni[den] && dni[den].done) { seria++; den = vceraZ(den); }
   return { vyriesene, seria };
 }
 function polozkaFaktu(cislo, popis) {
@@ -329,17 +377,36 @@ function polozkaFaktu(cislo, popis) {
   const span = document.createElement('span'); span.textContent = popis; div.appendChild(span);
   return div;
 }
-function naplnHry() {
-  const { vyriesene, seria } = hedgehogsFakty();
+function blokHry(hra, fakty) {
+  const obal = document.createElement('div');
+  obal.className = 'hra-blok r';
+  const h3 = document.createElement('h3');
+  h3.textContent = hra.nazov;
+  obal.appendChild(h3);
+  const fak = document.createElement('div');
+  fak.className = 'hry-fakty';
+  fak.appendChild(polozkaFaktu(fakty.seria, T.hrySeria));
+  fak.appendChild(polozkaFaktu(fakty.vyriesene, T.hryVyriesene(hra.jednotka[LANG] || hra.jednotka.sk || '')));
+  obal.appendChild(fak);
+  const a = document.createElement('a');
+  a.className = 'btn btn-line';
+  a.href = hra.url;
+  a.textContent = T.hryHrat(hra.nazov);
+  obal.appendChild(a);
+  return obal;
+}
+async function naplnHry() {
+  const zoznam = await zoznamHier();
+  const hotove = zoznam.filter((h) => h && h.hotove && h.kluc && h.url && h.jednotka);
+  const vsetkyFakty = await Promise.all(hotove.map((h) => faktyHry(h.kluc)));
   hryText.hidden = true;
   hryObsah.hidden = false;
-  hryFakty.textContent = '';
-  hryFakty.appendChild(polozkaFaktu(seria, T.hrySeria));
-  hryFakty.appendChild(polozkaFaktu(vyriesene, T.hryVyriesene));
+  hryZoznam.textContent = '';
+  hotove.forEach((hra, i) => hryZoznam.appendChild(blokHry(hra, vsetkyFakty[i])));
 }
 
 /* ── Prepínanie medzi prihláseným a neprihláseným zobrazením ─────────────── */
-function zobrazPrihlaseny(data) {
+async function zobrazPrihlaseny(data) {
   prihlasovanieBlok.hidden = true;
   stavPrihlaseny.hidden = false;
   stavPrihlaseny.textContent = '';
@@ -349,7 +416,7 @@ function zobrazPrihlaseny(data) {
   stavPrihlaseny.appendChild(document.createTextNode(T.prihlasenyPo));
   naplnNakupy(Array.isArray(data.nakupy) ? data.nakupy : []);
   naplnDoklady(data.portal_url);
-  naplnHry();
+  await naplnHry();
   spravaUctu.hidden = false;
 }
 function zobrazNeprihlaseny() {
@@ -362,11 +429,12 @@ function zobrazNeprihlaseny() {
   portalOdkaz.hidden = true;
   hryText.hidden = false; hryText.textContent = T.hryPrihlasenie;
   hryObsah.hidden = true;
+  hryZoznam.textContent = '';
 }
 async function nacitajAZobraz() {
   try {
     const data = await ucet.ja();
-    zobrazPrihlaseny(data);
+    await zobrazPrihlaseny(data);
   } catch (e) {
     // token je neplatný alebo vypršal, alebo je výpadok siete: v oboch
     // prípadoch sa stránka správa, akoby nebol nikto prihlásený, bez
