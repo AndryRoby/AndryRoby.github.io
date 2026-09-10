@@ -1,5 +1,7 @@
 /* Testy GDPR dokumentov: node tests.mjs */
-import { DOKUMENTY, zoznamDokumentov, cinnosti, NASTROJE, LEHOTY_PREDVOLENE } from './dokumenty-sk.js';
+import * as SK from './dokumenty-sk.js';
+import * as CS from './dokumenty-cs.js';
+const { DOKUMENTY, zoznamDokumentov, cinnosti, NASTROJE, LEHOTY_PREDVOLENE } = SK;
 import { docx, html, zip } from './docx.js';
 
 let passed = 0, failed = 0;
@@ -87,6 +89,17 @@ test('zip: obsah sa dá prečítať späť z uloženého (nekomprimovaného) zá
   const z = zip([['a.txt', 'ahoj & svet'], ['b/c.xml', '<x/>']]);
   const s = new TextDecoder().decode(z);
   assert(s.includes('a.txtahoj & svet') && s.includes('b/c.xml<x/>'));
+});
+
+test('česká verzia: 10 dokumentov, české právne odkazy, bez undefined', () => {
+  const d = { ...PLNE, nastroje: CS.NASTROJE.map((n) => n.id) };
+  const z = CS.zoznamDokumentov(d);
+  assert(z.length === 10, 'počet ' + z.length);
+  const t = text(z.flatMap((x) => x.fn(d)));
+  assert(!/undefined|NaN|\[object/.test(t), 'undefined');
+  assert(t.includes('Pplk. Sochora 27') && t.includes('110/2019 Sb.') && t.includes('§ 89 odst. 3') && t.includes('§ 316'), 'české odkazy');
+  assert(!t.includes('Hraničná') && !t.includes('18/2018'), 'slovenské odkazy v českej verzii');
+  for (const x of CS.DOKUMENTY) assert(x.fn(PRAZDNE)[0].h === 1, x.id);
 });
 
 console.log('\n' + passed + ' passed, ' + failed + ' failed');
