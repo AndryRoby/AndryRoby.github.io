@@ -134,8 +134,8 @@ export const DICT = {
   },
   'obj3.q': { sk: 'Ako zrušiť, keď mi to nesadne?', en: 'How do I cancel if it does not work out?' },
   'obj3.a': {
-    sk: 'Voľný plán do 100 rozhovorov mesačne nemá žiadny záväzok ani kartu, jednoducho ho prestanete používať. Platené predplatné nad týmto limitom ide cez Stripe a dá sa zrušiť kedykoľvek, rovnako ako pri ostatných nástrojoch ARLing.',
-    en: 'The free plan up to 100 conversations a month has no commitment and no card, you simply stop using it. A paid plan above that limit runs through Stripe and can be cancelled any time, same as every other ARLing tool.',
+    sk: 'Voľný plán do 100 rozhovorov mesačne nemá žiadny záväzok ani kartu, jednoducho ho prestanete používať. Platený plán nad týmto limitom je predplatné cez Stripe. Predplatné zrušíte alebo zmeníte kedykoľvek na <a href="https://billing.stripe.com/p/login/3cIaER9M63hNeFcg8B4ko00">portáli Stripe</a> (prihlásenie e-mailom, ktorým ste platili); platí do konca zaplateného obdobia.',
+    en: 'The free plan up to 100 conversations a month has no commitment and no card, you simply stop using it. A paid plan above that limit is a Stripe subscription. You can cancel or change the subscription at any time in the <a href="https://billing.stripe.com/p/login/3cIaER9M63hNeFcg8B4ko00">Stripe customer portal</a> (log in with the e-mail you paid with); it stays active until the end of the paid period.',
   },
   'obj4.q': { sk: 'Čo ak môj feed nie je v žiadnom z podporovaných formátov?', en: 'What if my feed is not in any of the supported formats?' },
   'obj4.a': {
