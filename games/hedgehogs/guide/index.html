@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script src="/style/vzhlad.js?v=93c2659f"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://homelab.tailbf8f27.ts.net; connect-src 'self' https://homelab.tailbf8f27.ts.net; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<meta name="color-scheme" content="dark">
+<meta name="robots" content="index, follow">
+<link rel="manifest" href="/games/hedgehogs/manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Hedgehogs">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta property="og:image" content="https://arling.sk/games/hedgehogs/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://homelab.tailbf8f27.ts.net" crossorigin>
+<meta name="theme-color" content="#0a0908">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="48x48">
+<link rel="apple-touch-icon" href="/icon-180.png">
+<title>How to play Hedgehogs · ARLing</title>
+<meta name="description" content="The rules of Hedgehogs in three sentences, animated; the four steps that open every garden; how Hint and Check work; the weekly difficulty plan; practice sets and the free archive.">
+<link rel="canonical" href="https://arling.sk/games/hedgehogs/guide/">
+<meta property="og:title" content="How to play Hedgehogs · ARLing">
+<meta property="og:description" content="The rules of Hedgehogs in three sentences, animated; the four steps that open every garden; how Hint and Check work; the weekly difficulty plan; practice sets and the free archive.">
+<meta property="og:url" content="https://arling.sk/games/hedgehogs/guide/">
+<meta property="og:type" content="website">
+
+
+<link rel="alternate" type="text/plain" href="https://arling.sk/llms.txt" title="llms.txt">
+<link rel="preload" href="/fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/style/paper.css?v=e0e48650">
+<script src="/style/prepinac.js?v=2988c181" defer></script>
+<script type="module" src="/games/hedgehogs/zoznamy.js?v=1"></script>
+<style>
+  /* Only this page: the board, its cells, the control row and the rules block. */
+  .hero{align-items:start}
+  .hra{max-width:calc(var(--n,9) * 56px);margin:0 auto}
+  @media (max-width:860px){ .hra{margin:0} }
+  .horna{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:0 0 10px;
+         font-family:var(--ui);font-size:14px;color:var(--muted)}
+  .horna b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+  .horna .uroven{color:var(--muted);font-size:12px;letter-spacing:.06em;text-transform:uppercase;margin-left:8px;white-space:nowrap}
+  .horna #cas-blok{white-space:nowrap}
+  @media (max-width:480px){ .horna .uroven{display:block;margin:2px 0 0} }
+  .pauza-btn{font:500 12px/1 var(--ui);color:var(--muted);background:transparent;border:1px solid var(--line);border-radius:999px;padding:4px 10px;cursor:pointer;margin-left:8px;vertical-align:1px}
+  .pauza-btn:hover{color:var(--ink);border-color:var(--ink)}
+  .doska-obal{position:relative}
+  .pauza-blok{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+     background:rgba(10,9,8,.9);border:2px solid var(--line);border-radius:8px;text-align:center;font-family:var(--ui);padding:20px;z-index:2}
+  .pauza-blok[hidden]{display:none}
+  .pauza-blok p{margin:0;color:var(--body);font-size:15px;line-height:1.5}
+  .pauza-blok b{color:var(--ink)}
+  .doska.pauza .b{visibility:hidden}
+  .doska{display:grid;grid-template-columns:repeat(var(--n,8),minmax(0,1fr));
+         border:2px solid var(--ink);border-radius:8px;overflow:hidden;
+         background:var(--card-plna);touch-action:none;user-select:none;-webkit-user-select:none;
+         --tenka:rgba(255,255,255,.11);--hruba:var(--ink);
+         --hviezda:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpolygon points='3.4,14.0 1.2,12.3 3.9,11.4 2.3,9.0 5.2,9.1 4.6,6.3 7.2,7.4 7.6,4.6 9.7,6.5 11.0,4.0 12.3,6.5 14.4,4.6 14.8,7.4 17.4,6.3 16.8,9.1 19.7,9.0 18.1,11.4 20.8,12.3 18.6,14.0 20.8,13.4 23.2,15.2 21.6,17.6 19.4,19.5 3.2,19.5 1.4,17.4'/%3E%3Ccircle cx='18.6' cy='15.9' r='1.15' fill='%230a0908'/%3E%3Ccircle cx='22.6' cy='15.6' r='0.9'/%3E%3C/svg%3E")}
+  .riadok{display:contents}
+  .doska.hotovo{border-color:var(--ok);box-shadow:0 0 0 4px rgba(94,207,154,.14)}
+  .b{appearance:none;-webkit-appearance:none;border:0;margin:0;padding:0;background:transparent;
+     aspect-ratio:1;width:100%;display:block;position:relative;cursor:pointer;color:var(--ink);
+     box-shadow:inset 1px 0 0 var(--tenka),inset 0 1px 0 var(--tenka);border-radius:0}
+  .b.c0{box-shadow:inset 0 1px 0 var(--tenka)}
+  .b.r0{box-shadow:inset 1px 0 0 var(--tenka)}
+  .b.r0.c0{box-shadow:none}
+  .b.bl{box-shadow:inset 2px 0 0 var(--hruba),inset 0 1px 0 var(--tenka)}
+  .b.bt{box-shadow:inset 1px 0 0 var(--tenka),inset 0 2px 0 var(--hruba)}
+  .b.bl.bt{box-shadow:inset 2px 0 0 var(--hruba),inset 0 2px 0 var(--hruba)}
+  .b.bl.r0{box-shadow:inset 2px 0 0 var(--hruba)}
+  .b.bt.c0{box-shadow:inset 0 2px 0 var(--hruba)}
+  /* Each region gets its own faint tint so the eye reads the shapes at a
+     glance; the borders still carry the exact boundary. */
+  .b[data-reg="0"]{background:rgba(242,100,60,.10)}
+  .b[data-reg="1"]{background:rgba(94,207,154,.10)}
+  .b[data-reg="2"]{background:rgba(96,165,250,.11)}
+  .b[data-reg="3"]{background:rgba(250,204,21,.09)}
+  .b[data-reg="4"]{background:rgba(192,132,252,.11)}
+  .b[data-reg="5"]{background:rgba(244,114,182,.10)}
+  .b[data-reg="6"]{background:rgba(45,212,191,.10)}
+  .b[data-reg="7"]{background:rgba(251,146,60,.10)}
+  .b[data-reg="8"]{background:rgba(163,230,53,.09)}
+  .b[data-reg="9"]{background:rgba(129,140,248,.11)}
+  .b:hover{filter:brightness(1.25)}
+  .b:focus-visible{outline:2px solid var(--accent);outline-offset:-3px;z-index:1}
+  .b::after{content:"";position:absolute;inset:0;margin:auto;width:0;height:0}
+  .b[data-v="1"]::after{width:14%;height:14%;border-radius:50%;background:var(--muted);opacity:.75}
+  .b[data-v="2"]::after{width:62%;height:62%;background:var(--accent);filter:drop-shadow(0 0 6px rgba(242,100,60,.45));
+     -webkit-mask:var(--hviezda) center/contain no-repeat;mask:var(--hviezda) center/contain no-repeat}
+  .b.tip-jednotka{outline:2px dashed rgba(250,204,21,.75);outline-offset:-3px;z-index:1}
+  .b.tip{background:rgba(250,204,21,.26) !important;z-index:1}
+  .b.tip::before{content:"";position:absolute;inset:16%;border-radius:50%;border:2px solid #facc15;animation:tip-pulz .9s ease-in-out infinite alternate}
+  @keyframes tip-pulz{from{transform:scale(.85);opacity:.5}to{transform:scale(1);opacity:1}}
+  .b.chyba{background:rgba(255,92,92,.30) !important}
+  .b.chyba::before{content:"";position:absolute;inset:0;border:2px solid #ff7b7b}
+  .b.zle{background:rgba(255,92,92,.14)}
+  .b.zle[data-v="2"]::after{background:#ff7b7b}
+  .hotovo .b[data-v="2"]::after{background:var(--ok)}
+  .hotovo .b{cursor:default}
+  .ovladanie{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:14px}
+  .ovladanie .btn{height:40px;padding:0 16px;font-size:14px}
+  .stav{font-family:var(--ui);font-size:15px;line-height:1.5;color:var(--body);margin:12px 0 0;min-height:1.5em}
+  .stav b{color:var(--ink)}
+  .stav.ok{color:var(--ok)}
+  .stav.ok b{color:var(--ok)}
+  .pasik{display:flex;gap:6px;margin-top:14px}
+  .den{flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;padding:6px 0 5px;border:1px solid var(--line);border-radius:10px;
+       text-decoration:none;color:var(--muted);font-family:var(--ui);min-width:0;background:var(--card)}
+  .den small{font-size:10px;letter-spacing:.08em}
+  .den b{font-size:15px;color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+  .den.dnes{border-color:var(--accent);color:var(--accent)}
+  .den.rozohrane{border-style:dashed}
+  .den.hotove{background:rgba(94,207,154,.12);border-color:var(--ok)}
+  .den.hotove b{color:var(--ok)}
+  .den.buduci{opacity:.38}
+  a.den:hover{border-color:var(--ink);color:var(--ink)}
+  .odkazy{font-family:var(--ui);font-size:13px;color:var(--muted);margin:12px 0 0}
+  .odkazy a{color:var(--body)}
+  .historia{font-family:var(--ui);font-size:13px;color:var(--body);line-height:1.5;margin:10px 0 0}
+  .historia b{color:var(--ink)}
+  .nastavenia{margin-top:14px;border:1px solid var(--line);border-radius:12px;background:var(--card);padding:0 14px}
+  .nastavenia summary{cursor:pointer;font:600 13px/1.4 var(--ui);color:var(--muted);padding:10px 0;list-style:none}
+  .nastavenia summary::-webkit-details-marker{display:none}
+  .nastavenia[open] summary{color:var(--ink)}
+  .nastavenia label{display:flex;gap:10px;align-items:flex-start;font-family:var(--ui);font-size:13px;color:var(--body);line-height:1.5;padding:6px 0}
+  .nastavenia input{margin-top:3px;flex:none}
+  .nastavenia .fineprint{padding:6px 0 12px;margin:0}
+  .navod{font-family:var(--ui);font-size:13px;color:var(--muted);margin:10px 0 0;max-width:none}
+  .navod kbd{font-size:12px}
+  /* Na telefóne ide mriežka pod text; návod na klávesnicu tam nemá zmysel
+     a len odsúva hru nižšie. Celý je aj v sekcii Pravidlá. */
+  @media (max-width:860px){ .navod{display:none} }
+  .pravidla details{border:1px solid var(--line);border-radius:12px;background:var(--card);padding:0 18px;max-width:68ch}
+  .pravidla details+details{margin-top:10px}
+  .pravidla summary{cursor:pointer;font:600 15px/1.4 var(--ui);color:var(--ink);padding:14px 0;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:12px}
+  .pravidla summary::-webkit-details-marker{display:none}
+  .pravidla summary::after{content:"";width:.5em;height:.5em;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(45deg);flex:none;margin-right:4px;transition:transform .2s var(--ease)}
+  .pravidla details[open] summary::after{transform:rotate(225deg)}
+  .pravidla .telo{padding:0 0 16px}
+  .pravidla .telo p{margin:0 0 10px}
+  .pravidla .telo p:last-child{margin:0}
+  .jazyk{font:500 13px/1 var(--ui);color:var(--muted);background:transparent;border:1px solid var(--line);border-radius:999px;padding:6px 12px;cursor:pointer;margin-top:14px}
+  .jazyk:hover{color:var(--ink);border-color:var(--ink)}
+  .prose p{margin:0 0 14px}
+  .prose p:last-child{margin-bottom:0}
+  .sub{margin:0 0 6px}
+  noscript p{font-family:var(--ui);color:var(--accent-light)}
+</style>
+<noscript><style>
+  .r, .w { opacity:1 !important; transform:none !important; filter:none !important; }
+  .rule { transform:scaleX(1) !important; }
+</style></noscript>
+</head>
+<body class="noc">
+<div class="wash" aria-hidden="true"><i></i><i></i></div>
+<a class="skip" href="#obsah">Skip to content</a>
+
+<header>
+  <div class="wrap bar">
+    <a class="brand" href="https://arling.sk/">
+      <svg viewBox="0 0 488 215" width="38" height="15" aria-hidden="true" focusable="false"><path fill="#f4f4f7" fill-rule="evenodd" d="M0.00,213.00L74.00,214.00L181.00,85.00L285.00,214.00L360.00,214.00L206.00,21.00L185.00,4.00L164.00,10.00Z M221.00,0.00L263.00,50.00L395.00,50.00L409.00,55.00L419.00,76.00L401.00,96.00L313.00,98.00L411.00,214.00L487.00,214.00L422.00,139.00L457.00,123.00L482.00,88.00L482.00,48.00L463.00,19.00L417.00,0.00Z"/><path fill="#f2643c" d="M269.00,66.00L269.00,67.00L268.00,68.00L268.00,70.00L267.00,71.00L267.00,76.00L268.00,77.00L268.00,79.00L270.00,81.00L270.00,82.00L271.00,82.00L273.00,84.00L274.00,84.00L277.00,86.00L279.00,86.00L280.00,87.00L287.00,87.00L288.00,86.00L290.00,86.00L291.00,85.00L294.00,84.00L298.00,80.00L298.00,79.00L299.00,78.00L299.00,75.00L300.00,74.00L300.00,72.00L299.00,71.00L299.00,69.00L298.00,68.00L297.00,65.00L295.00,63.00L294.00,63.00L289.00,60.00L278.00,60.00L277.00,61.00L276.00,61.00L275.00,62.00L272.00,63.00Z"/></svg>
+      <b>ARLing</b><span>Games</span>
+    </a>
+    <nav aria-label="Site"><a href="https://arling.sk/en/#tools">Tools</a><a href="https://arling.sk/notes/">Notes</a><a href="https://arling.sk/how-we-work/">How we work</a><a href="mailto:andrej@arling.sk">Contact</a></nav>
+  </div>
+</header>
+
+<main id="obsah">
+<style>
+  .gif{margin:0;max-width:420px}
+  .gif img{width:100%;height:auto;border:1px solid var(--line);border-radius:12px;background:#0a0908}
+  .dvojica{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,420px);gap:28px;align-items:start;margin-top:18px}
+  @media (max-width:860px){ .dvojica{grid-template-columns:1fr} }
+  .dvojica .text p{margin:0 0 12px}
+  .tyzden-tab{width:100%;border-collapse:collapse;font-family:var(--ui);font-size:14px;max-width:520px}
+  .tyzden-tab td{padding:8px 10px;border-bottom:1px solid var(--line)}
+  .tyzden-tab td:first-child{color:var(--ink);font-weight:600;white-space:nowrap}
+  .pasik{display:flex;gap:6px;margin-top:14px;max-width:520px}
+  .den{flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;padding:6px 0 5px;border:1px solid var(--line);border-radius:10px;text-decoration:none;color:var(--muted);font-family:var(--ui);min-width:0;background:var(--card)}
+  .den small{font-size:10px;letter-spacing:.08em}
+  .den b{font-size:15px;color:var(--ink);font-weight:600}
+  .den.dnes{border-color:var(--accent);color:var(--accent)}
+  .den.hotove{background:rgba(94,207,154,.12);border-color:var(--ok)}
+  .den.hotove b{color:var(--ok)}
+  .den.rozohrane{border-style:dashed}
+  .den.buduci{opacity:.38}
+  a.den:hover{border-color:var(--ink);color:var(--ink)}
+  .kroky{list-style:none;padding:0;margin:0}
+  .kroky li{padding:10px 0;border-bottom:1px solid var(--line);font-family:var(--ui);font-size:15px;line-height:1.5;color:var(--body)}
+  .kroky li b{color:var(--ink)}
+</style>
+<div class="wrap prose" style="padding-top:40px">
+  <p class="kicker">Guide</p>
+  <h1 class="r">How to play Hedgehogs.</h1>
+  <div class="rule"></div>
+  <p class="lead r d1">Three rules, one garden a day, exactly one solution. The gardens are made to be reasoned out, not guessed: keeping track of where a hedgehog <em>cannot</em> be is most of the game.</p>
+  <p class="r d2"><a class="btn btn-solid" href="/games/hedgehogs/">Play today's garden</a> <a class="btn btn-line" href="/games/hedgehogs/practice/easy-1/">Start with an easy one</a></p>
+</div>
+<section class="deep"><div class="wrap">
+  <h2 class="r">The rules.</h2><div class="rule"></div>
+  <div class="dvojica r d1"><div class="text">
+    <p><b>1. Two hedgehogs in every row, every column and every flowerbed.</b> The flowerbeds are the outlined shapes. A garden with eight rows has eight columns and eight flowerbeds, so sixteen hedgehogs in all; nine by nine has eighteen, ten by ten has twenty.</p>
+    <p><b>2. No two hedgehogs may touch.</b> Not side by side, not diagonally. They prickle. So every hedgehog keeps the eight cells around it empty.</p>
+    <p><b>3. A dot is your note that a cell stays empty.</b> Dots are yours; the game does not judge them, except when you ask with Check. When the last hedgehog is placed, the game checks the whole garden by itself.</p>
+  </div><figure class="gif"><img src="/games/hedgehogs/tutorial/rule-01.gif" alt="Animation: hedgehogs are placed two per row, then every column and every flowerbed is highlighted with its two hedgehogs, then the garden turns green as solved." width="560" height="660" loading="lazy" decoding="async"></figure></div>
+  <div class="dvojica r d2"><div class="text">
+    <p><b>They prickle.</b> Place a hedgehog and the eight cells around it are settled: dots go there. If a second hedgehog lands next to it, even at a corner, the game turns both red. The second hedgehog of that row or column sits at least one cell away.</p>
+    <p>On the phone, hold your finger and drag to sweep dots over several cells. On a keyboard, arrows move, <kbd>X</kbd> is a dot, <kbd>H</kbd> a hedgehog, <kbd>Delete</kbd> clears, <kbd>P</kbd> pauses.</p>
+  </div><figure class="gif"><img src="/games/hedgehogs/tutorial/rule-02.gif" alt="Animation: a hedgehog is placed, the eight cells around it get dots one by one, a second hedgehog placed at a corner turns red and is removed, and the second hedgehog of the row is placed further away." width="560" height="660" loading="lazy" decoding="async"></figure></div>
+</div></section>
+<section class="deep"><div class="wrap">
+  <h2 class="r">A way in.</h2><div class="rule"></div>
+  <div class="dvojica r d1"><div class="text">
+    <p>Every garden opens with steps like these. <b>Hint</b> finds the next one for you, outlines the row, column or flowerbed it is looking at, marks the cells that follow and says why; press it again to fill them in. Hints are counted and shown when you finish, never hidden.</p>
+    <ul class="kroky">
+      <li><b>A full line.</b> Once a row, column or flowerbed holds its two hedgehogs, every other cell in it is a dot.</li>
+      <li><b>Exactly enough room.</b> A line that still needs two hedgehogs and has exactly two cells left where they fit: both are hedgehogs.</li>
+      <li><b>A flowerbed inside one row.</b> If all the free cells of a flowerbed lie in one row (or column), the flowerbed's hedgehogs use up that row, so the rest of the row is dots. Two flowerbeds inside two rows work the same way.</li>
+      <li><b>Common neighbours.</b> Look at every way the remaining hedgehogs of a line can be placed. A cell that touches a hedgehog in every one of those ways stays empty.</li>
+    </ul>
+  </div><figure class="gif"><img src="/games/hedgehogs/tutorial/rule-03.gif" alt="Animation: the Hint outlines a row with a dashed line, marks the cells that must stay empty with rings and explains why, then the dots are filled in; this repeats for the next steps." width="560" height="660" loading="lazy" decoding="async"></figure></div>
+</div></section>
+<section class="deep"><div class="wrap">
+  <h2 class="r">The week.</h2><div class="rule"></div>
+  <p class="sub r d1">Difficulty is measured, not guessed. The program plays every candidate garden with the same hints you can ask for and counts how often it gets stuck. Easy never gets stuck; Sunday gets stuck most.</p>
+  <table class="tyzden-tab r d2"><tbody>
+    <tr><td>Monday, Tuesday</td><td>Easy, eight by eight. Every step is one of the four above.</td></tr>
+    <tr><td>Wednesday, Thursday</td><td>Medium, nine by nine. Once or twice you have to look further ahead.</td></tr>
+    <tr><td>Friday, Saturday</td><td>Hard, ten by ten. Three to five places where only careful counting or a small what-if gets you through.</td></tr>
+    <tr><td>Sunday</td><td>Challenge, ten by ten, the hardest of the week's candidates.</td></tr>
+  </tbody></table>
+  <p class="r d3" style="margin-top:20px"><b>This week</b></p>
+  <nav class="pasik r d3" id="pasik-tyzden" aria-label="This week's gardens"></nav>
+</div></section>
+<section class="deep"><div class="wrap prose">
+  <h2 class="r">Practice, archive, history.</h2><div class="rule"></div>
+  <p class="r d1"><a href="/games/hedgehogs/practice/">Practice sets</a>: twenty-four gardens with no date attached, three sets of eight for each level. They never change and do not touch your streak.</p>
+  <p class="r d1"><a href="/games/hedgehogs/archive/">Archive</a>: every daily garden since Wednesday 10 September 2025, free. The same page shows your own history: every garden you solved in this browser, with time and hints. Nothing is sent anywhere; it lives in your browser only.</p>
+  <p class="r d2">Stuck or found something wrong? Write to <a href="mailto:andrej@arling.sk">andrej@arling.sk</a>.</p>
+</div></section>
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <div><b>ARLing s. r. o.</b><br>Ivanská cesta 32E<br>821 04 Bratislava, Slovakia</div>
+    <div>Company ID 56583486<br>VAT ID SK2122352100<br><a href="mailto:andrej@arling.sk">andrej@arling.sk</a></div>
+    <div><a href="https://arling.sk/privacy/">privacy</a> · <a href="https://arling.sk/podmienky/">terms</a> · <a href="https://arling.sk/gdpr/">GDPR</a> · <a href="https://arling.sk/impressum/">Impressum</a> · <a href="https://arling.sk/llms.txt">llms.txt</a> · <a href="https://arling.sk/sitemap-index.xml">sitemap</a><br>Tools are provided as is, without warranty. Anonymous visit counts via self-hosted Umami.</div>
+  </div>
+</footer>
+<script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="be534d51-4d01-4860-b267-9596d91606de"></script>
+</body>
+</html>

@@ -4,10 +4,10 @@
 <script src="/style/vzhlad.js?v=93c2659f"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://homelab.tailbf8f27.ts.net; connect-src https://homelab.tailbf8f27.ts.net; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://homelab.tailbf8f27.ts.net; connect-src 'self' https://homelab.tailbf8f27.ts.net; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
 <meta name="color-scheme" content="dark">
 <meta name="robots" content="index, follow">
-<link rel="manifest" href="manifest.json">
+<link rel="manifest" href="/games/hedgehogs/manifest.json">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Hedgehogs">
@@ -18,14 +18,14 @@
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://homelab.tailbf8f27.ts.net" crossorigin>
 <meta name="theme-color" content="#0a0908">
-<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
-<link rel="icon" href="../../favicon.ico" sizes="48x48">
-<link rel="apple-touch-icon" href="../../icon-180.png">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="48x48">
+<link rel="apple-touch-icon" href="/icon-180.png">
 <title>Hedgehogs · ARLing</title>
-<meta name="description" content="A daily logic puzzle: two hedgehogs in every row, column and flowerbed, and no two hedgehogs may touch. A new puzzle every day, always with exactly one solution.">
+<meta name="description" content="A daily logic puzzle: two hedgehogs in every row, column and flowerbed, and no two hedgehogs may touch. A new garden every day with exactly one solution, easy on Monday and hardest on Sunday, with hints, practice sets and a free archive.">
 <link rel="canonical" href="https://arling.sk/games/hedgehogs/">
 <meta property="og:title" content="Hedgehogs · ARLing">
-<meta property="og:description" content="A daily logic puzzle: two hedgehogs in every row, column and flowerbed, and no two hedgehogs may touch. A new puzzle every day, always with exactly one solution.">
+<meta property="og:description" content="A daily logic puzzle: two hedgehogs in every row, column and flowerbed, and no two hedgehogs may touch. A new garden every day with exactly one solution, easy on Monday and hardest on Sunday, with hints, practice sets and a free archive.">
 <meta property="og:url" content="https://arling.sk/games/hedgehogs/">
 <meta property="og:type" content="website">
 
@@ -35,15 +35,27 @@
 <link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/style/paper.css?v=e0e48650">
 <script src="/style/prepinac.js?v=2988c181" defer></script>
-<script type="module" src="game.js?v=5"></script>
+<script type="module" src="/games/hedgehogs/game.js?v=6"></script>
 <style>
   /* Only this page: the board, its cells, the control row and the rules block. */
   .hero{align-items:start}
-  .hra{max-width:calc(9 * 56px);margin:0 auto}
+  .hra{max-width:calc(var(--n,9) * 56px);margin:0 auto}
   @media (max-width:860px){ .hra{margin:0} }
   .horna{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:0 0 10px;
          font-family:var(--ui);font-size:14px;color:var(--muted)}
   .horna b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+  .horna .uroven{color:var(--muted);font-size:12px;letter-spacing:.06em;text-transform:uppercase;margin-left:8px;white-space:nowrap}
+  .horna #cas-blok{white-space:nowrap}
+  @media (max-width:480px){ .horna .uroven{display:block;margin:2px 0 0} }
+  .pauza-btn{font:500 12px/1 var(--ui);color:var(--muted);background:transparent;border:1px solid var(--line);border-radius:999px;padding:4px 10px;cursor:pointer;margin-left:8px;vertical-align:1px}
+  .pauza-btn:hover{color:var(--ink);border-color:var(--ink)}
+  .doska-obal{position:relative}
+  .pauza-blok{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+     background:rgba(10,9,8,.9);border:2px solid var(--line);border-radius:8px;text-align:center;font-family:var(--ui);padding:20px;z-index:2}
+  .pauza-blok[hidden]{display:none}
+  .pauza-blok p{margin:0;color:var(--body);font-size:15px;line-height:1.5}
+  .pauza-blok b{color:var(--ink)}
+  .doska.pauza .b{visibility:hidden}
   .doska{display:grid;grid-template-columns:repeat(var(--n,8),minmax(0,1fr));
          border:2px solid var(--ink);border-radius:8px;overflow:hidden;
          background:var(--card-plna);touch-action:none;user-select:none;-webkit-user-select:none;
@@ -80,6 +92,12 @@
   .b[data-v="1"]::after{width:14%;height:14%;border-radius:50%;background:var(--muted);opacity:.75}
   .b[data-v="2"]::after{width:62%;height:62%;background:var(--accent);filter:drop-shadow(0 0 6px rgba(242,100,60,.45));
      -webkit-mask:var(--hviezda) center/contain no-repeat;mask:var(--hviezda) center/contain no-repeat}
+  .b.tip-jednotka{outline:2px dashed rgba(250,204,21,.75);outline-offset:-3px;z-index:1}
+  .b.tip{background:rgba(250,204,21,.26) !important;z-index:1}
+  .b.tip::before{content:"";position:absolute;inset:16%;border-radius:50%;border:2px solid #facc15;animation:tip-pulz .9s ease-in-out infinite alternate}
+  @keyframes tip-pulz{from{transform:scale(.85);opacity:.5}to{transform:scale(1);opacity:1}}
+  .b.chyba{background:rgba(255,92,92,.30) !important}
+  .b.chyba::before{content:"";position:absolute;inset:0;border:2px solid #ff7b7b}
   .b.zle{background:rgba(255,92,92,.14)}
   .b.zle[data-v="2"]::after{background:#ff7b7b}
   .hotovo .b[data-v="2"]::after{background:var(--ok)}
@@ -90,6 +108,21 @@
   .stav b{color:var(--ink)}
   .stav.ok{color:var(--ok)}
   .stav.ok b{color:var(--ok)}
+  .pasik{display:flex;gap:6px;margin-top:14px}
+  .den{flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;padding:6px 0 5px;border:1px solid var(--line);border-radius:10px;
+       text-decoration:none;color:var(--muted);font-family:var(--ui);min-width:0;background:var(--card)}
+  .den small{font-size:10px;letter-spacing:.08em}
+  .den b{font-size:15px;color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+  .den.dnes{border-color:var(--accent);color:var(--accent)}
+  .den.rozohrane{border-style:dashed}
+  .den.hotove{background:rgba(94,207,154,.12);border-color:var(--ok)}
+  .den.hotove b{color:var(--ok)}
+  .den.buduci{opacity:.38}
+  a.den:hover{border-color:var(--ink);color:var(--ink)}
+  .odkazy{font-family:var(--ui);font-size:13px;color:var(--muted);margin:12px 0 0}
+  .odkazy a{color:var(--body)}
+  .historia{font-family:var(--ui);font-size:13px;color:var(--body);line-height:1.5;margin:10px 0 0}
+  .historia b{color:var(--ink)}
   .nastavenia{margin-top:14px;border:1px solid var(--line);border-radius:12px;background:var(--card);padding:0 14px}
   .nastavenia summary{cursor:pointer;font:600 13px/1.4 var(--ui);color:var(--muted);padding:10px 0;list-style:none}
   .nastavenia summary::-webkit-details-marker{display:none}
@@ -143,29 +176,37 @@
       <p class="kicker"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="3.4,14.0 1.2,12.3 3.9,11.4 2.3,9.0 5.2,9.1 4.6,6.3 7.2,7.4 7.6,4.6 9.7,6.5 11.0,4.0 12.3,6.5 14.4,4.6 14.8,7.4 17.4,6.3 16.8,9.1 19.7,9.0 18.1,11.4 20.8,12.3 18.6,14.0 20.8,13.4 23.2,15.2 21.6,17.6 19.4,19.5 3.2,19.5 1.4,17.4"/></svg>Daily logic puzzle</p>
       <h1 id="h1"><span class="l">Hedgehogs.</span></h1>
       <p class="lead r d3">Two hedgehogs in every row, every column and every flowerbed. No two hedgehogs may touch, not even at a corner: they prickle.</p>
-      <p class="proof r d5" id="dnes">A new puzzle every day at midnight. Every puzzle has exactly one solution.</p>
-      <p class="navod r d5">Tap a cell: dot, then hedgehog, then empty. Hold and drag to sweep dots. Keyboard: arrows move, <kbd>Space</kbd> cycles, <kbd>X</kbd> dot, <kbd>H</kbd> hedgehog, <kbd>Delete</kbd> clears.</p>
+      <p class="proof r d5" id="dnes">A new garden every day at midnight, always with exactly one solution. Easy on Monday, hardest on Sunday.</p>
+      <p class="navod r d5">Tap a cell: dot, then hedgehog, then empty. Hold and drag to sweep dots. Keyboard: arrows move, <kbd>Space</kbd> cycles, <kbd>X</kbd> dot, <kbd>H</kbd> hedgehog, <kbd>Delete</kbd> clears, <kbd>P</kbd> pauses.</p>
     </div>
     <div class="r d2">
       <div class="hra">
-        <div class="horna"><span id="datum">Today's puzzle</span><span id="cas-blok">Time <b id="cas">0:00</b></span></div>
-        <div class="doska" id="doska" role="grid" aria-label="Garden grid 9 by 9">
-          <noscript><p>This game needs JavaScript: the puzzle is generated right in your browser.</p></noscript>
+        <div class="horna"><span><span id="datum">Today's garden</span><span class="uroven" id="uroven"></span></span><span id="cas-blok">Time <b id="cas">0:00</b><button type="button" class="pauza-btn" id="pauza" hidden>Pause</button></span></div>
+        <div class="doska-obal">
+          <div class="doska" id="doska" role="grid" aria-label="Garden grid 9 by 9">
+            <noscript><p>This game needs JavaScript: the puzzle is generated right in your browser.</p></noscript>
+          </div>
+          <div class="pauza-blok" id="pauza-blok" hidden><p><b>Paused.</b> <span id="pauza-cas"></span></p><button type="button" class="btn btn-solid" id="pokracuj">Resume</button></div>
         </div>
         <div class="ovladanie">
           <button type="button" class="btn btn-line" id="spat">Undo</button>
-          <button type="button" class="btn btn-line" id="vymaz">Clear</button>
+          <button type="button" class="btn btn-line" id="reset">Reset</button>
+          <button type="button" class="btn btn-line" id="hint">Hint</button>
           <button type="button" class="btn btn-line" id="check">Check</button>
           <span class="small" id="seria"></span>
         </div>
         <p class="stav" id="stav" aria-live="polite"></p>
+        <nav class="pasik" id="pasik" aria-label="This week"></nav>
+        <p class="odkazy"><a href="/games/hedgehogs/guide/">How to play</a> · <a href="/games/hedgehogs/practice/">Practice sets</a> · <a href="/games/hedgehogs/archive/">Archive</a></p>
+        <p class="historia" id="historia" hidden></p>
         <details class="nastavenia">
           <summary>Settings</summary>
-          <label><input type="checkbox" data-nastavenie="casovac"> Show the timer</label>
-          <label><input type="checkbox" data-nastavenie="autoBodky"> Auto dots: a hedgehog dots its neighbours and completed rows, columns and flowerbeds</label>
+          <label><input type="checkbox" data-nastavenie="casovac"> Show the timer and the Pause button</label>
+          <label><input type="checkbox" data-nastavenie="pauzaPriOdchode"> Pause the clock when you leave the tab</label>
+          <label><input type="checkbox" data-nastavenie="autoBodky"> Auto dots: a hedgehog dots its neighbours and completed rows, columns and flowerbeds (off by default: placing the dots is part of the puzzle)</label>
           <label><input type="checkbox" data-nastavenie="zvyraznit"> Highlight hedgehogs that break a rule</label>
-          <label><input type="checkbox" data-nastavenie="potvrditVymazanie"> Ask before Clear</label>
-          <p class="fineprint">Settings, progress and streak stay in this browser. Add this page to your home screen to open it like an app.</p>
+          <label><input type="checkbox" data-nastavenie="potvrditReset"> Ask before Reset</label>
+          <p class="fineprint">Settings, progress, history and streak stay in this browser. Add this page to your home screen to open it like an app.</p>
         </details>
       </div>
     </div>
@@ -181,17 +222,25 @@
         <details open>
           <summary>How to play</summary>
           <div class="telo">
-            <p>Place exactly two hedgehogs in every row, every column and every flowerbed (the outlined regions). The garden has nine rows, nine columns and nine flowerbeds, so there are eighteen hedgehogs in total.</p>
+            <p>Place exactly two hedgehogs in every row, every column and every flowerbed (the outlined regions). A garden with nine rows has nine columns and nine flowerbeds, so eighteen hedgehogs in total; the size changes through the week, from eight by eight on Monday to ten by ten from Friday.</p>
             <p>No two hedgehogs may touch: not side by side, not diagonally. They prickle.</p>
-            <p>A dot is your own note that a cell stays empty. The game does not check dots. When you place the last hedgehog, the game checks the solution by itself.</p>
+            <p>A dot is your own note that a cell stays empty. When you place the last hedgehog, the game checks the solution by itself.</p>
           </div>
         </details>
         <details>
           <summary>Controls</summary>
           <div class="telo">
-            <p>Tap or click a cell: once for a dot, twice for a hedgehog, three times to clear it. Hold the button or your finger and drag to sweep dots over many cells at once. A hedgehog that breaks a rule turns red. Check tells you how many of your hedgehogs are wrong, never which ones.</p>
-            <p>Keyboard: arrows move, <kbd>Space</kbd> or <kbd>Enter</kbd> cycles the cell, <kbd>X</kbd> dot, <kbd>H</kbd> hedgehog, <kbd>Delete</kbd> or <kbd>Backspace</kbd> clears. Undo takes back the last move, Clear empties the whole garden.</p>
-            <p>The clock runs from your first move to the last hedgehog. Your progress, time and day streak stay in this browser.</p>
+            <p>Tap or click a cell: once for a dot, twice for a hedgehog, three times to clear it. Hold the button or your finger and drag to sweep dots over many cells at once. A hedgehog that breaks a rule turns red.</p>
+            <p><b>Check</b> first tells you only how many marks are wrong. Press it again and it shows which. <b>Hint</b> outlines the next step a patient friend would point at and explains it; press it again to fill it in. Hints are counted and shown when you finish. <b>Reset</b> empties the garden and the clock.</p>
+            <p>Keyboard: arrows move, <kbd>Space</kbd> or <kbd>Enter</kbd> cycles the cell, <kbd>X</kbd> dot, <kbd>H</kbd> hedgehog, <kbd>Delete</kbd> or <kbd>Backspace</kbd> clears, <kbd>P</kbd> pauses. Undo takes back the last move.</p>
+            <p>The clock runs from your first move to the last hedgehog and pauses when you leave the tab. Your progress, time, history and day streak stay in this browser.</p>
+          </div>
+        </details>
+        <details>
+          <summary>The week</summary>
+          <div class="telo">
+            <p>Monday and Tuesday are easy (eight by eight), Wednesday and Thursday medium (nine by nine), Friday and Saturday hard (ten by ten) and Sunday is the challenge: the hardest of the candidate gardens for that date. The week strip under the garden takes you to the other days; the <a href="/games/hedgehogs/archive/">archive</a> goes back a year, and the <a href="/games/hedgehogs/practice/">practice sets</a> have eight gardens of each level with no date attached.</p>
+            <p>Difficulty is measured, not guessed: the program plays every candidate garden with the same hints you can ask for and counts how often it gets stuck. Easy days never get stuck, Sunday gets stuck most.</p>
           </div>
         </details>
         <details>
@@ -211,8 +260,8 @@
       <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 8v.5M12 11v5"/></svg>02</p>
       <h2 class="r">About this game.</h2>
       <div class="rule"></div>
-      <p class="r d1">The puzzle is generated right in your browser from today's date: new every day and the same for everyone. The program first solves it itself and only accepts a puzzle with exactly one solution. No puzzle is taken from anywhere else. The mechanic itself is a classic pencil puzzle known under several names; this implementation, the grids and the words are ours.</p>
-      <p class="r d2">Your grid, time and day streak are stored only in this browser. Our anonymous statistics (self-hosted Umami) record the page visit, as on every page of ours, and one extra event: that someone solved the puzzle and in how many seconds. Nothing else.</p>
+      <p class="r d1">Every garden is generated by our own program from its date: new every day and the same for everyone. The program first solves it itself and only accepts a garden with exactly one solution, then measures how hard it is. No puzzle is taken from anywhere else. The mechanic itself is a classic pencil puzzle known under several names; this implementation, the gardens, the hints and the words are ours.</p>
+      <p class="r d2">Your grid, time, history and day streak are stored only in this browser. Our anonymous statistics (self-hosted Umami) record the page visit, as on every page of ours, and a few extra events: that someone solved a garden and in how many seconds, and that Check or Hint was used. Nothing else.</p>
       <p class="r d3">This is an early version. If something is missing or in the way, write to <a href="mailto:andrej@arling.sk">andrej@arling.sk</a>.</p>
     </div>
   </section>
