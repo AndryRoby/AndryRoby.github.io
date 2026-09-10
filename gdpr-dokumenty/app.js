@@ -15,6 +15,7 @@
  * sablonami (dokumenty-sk.js, dokumenty-cs.js) a textami v T.
  */
 import { docx, html, zip } from './docx.js';
+import * as ucet from '/style/ucet.js';
 
 /* Jazyk stránky určuje šablóny (sk alebo cs) a texty tejto obrazovky. */
 const LANG = document.documentElement.lang === 'cs' ? 'cs' : 'sk';
@@ -33,12 +34,29 @@ const T = {
     inaSuma: 'Platba prišla, ale na inú sumu. Napíšte na andrej@arling.sk, vyriešime to ručne.',
     nepotvrdene: 'Platbu sa zatiaľ nepodarilo potvrdiť. Skúšame znova; ak ste zaplatili, dokumenty sa odomknú, len čo Stripe odpovie. Ak to trvá dlhšie než pár minút, napíšte na andrej@arling.sk s číslom objednávky z e-mailu od Stripe.',
     overZnova: 'Overiť platbu znova',
+    cenaZaplatene: 'Zaplatené.',
+    cenaZaplatenePopis: 'Balík je odomknutý v tomto prehliadači. Formulár môžete ďalej upravovať, dokumenty sa prepíšu.',
+    cenaKDokumentom: 'Prejsť k dokumentom',
     siet: 'Overenie platby zlyhalo (sieť). Obnovte stránku; ak to pretrvá, napíšte na andrej@arling.sk.',
     vymazat: 'Vymazať vyplnené údaje z tohto prehliadača?',
     testCudzi: 'Toto je testovacia platba zo Stripe test módu. Odomkne dokumenty len v prehliadači, ktorý test spustil cez ?test=1.',
     testPoznamka: '(Testovací režim: platba bola v Stripe test móde, žiadne peniaze neprišli.)',
     docxPripona: ' (DOCX)',
     locale: 'sk-SK',
+    ucetOdosielam: 'Posielam kód…',
+    ucetKodOdoslany: 'Kód sme poslali na e-mail, platí 15 minút.',
+    ucetZlyEmail: 'Zadajte platný e-mail.',
+    ucetLimit: 'Priveľa pokusov, skúste o hodinu.',
+    ucetNedostupne: 'Odosielanie kódov sa ešte zapína, napíšte na andrej@arling.sk.',
+    ucetChybaOdoslanie: 'Kód sa nepodarilo odoslať (sieť). Skúste znova alebo napíšte na andrej@arling.sk.',
+    ucetBezKodu: 'Najprv si vyžiadajte kód.',
+    ucetOverujem: 'Prihlasujem…',
+    ucetZlyKod: (n) => 'Nesprávny kód, ešte ' + n + (n === 1 ? ' pokus.' : n < 5 ? ' pokusy.' : ' pokusov.'),
+    ucetVycerpane: 'Kód vypršal alebo bol zadaný zle päťkrát, vyžiadajte nový.',
+    ucetChybaPrihlasenie: 'Prihlásenie zlyhalo (sieť). Skúste znova.',
+    ucetPrihlaseny: 'Prihlásený, kontrolujem vaše nákupy…',
+    ucetOdomknute: '<b>Prihlásený, balík je odomknutý</b> podľa vášho nákupu.',
+    ucetBezNakupu: 'Prihlásený, ale k tomuto e-mailu nevidíme nákup tohto balíka. Ak ste platili, napíšte na andrej@arling.sk.',
   },
   cs: {
     lehoty: { objednavky: 'Objednávky a doklady', kontakt: 'Dotazy a kontaktní formulář', newsletter: 'Newsletter', ucty: 'Uživatelské účty', uchadzaci: 'Uchazeči o zaměstnání', zamestnanci: 'Zaměstnanci', kamery: 'Kamerový záznam' },
@@ -53,12 +71,29 @@ const T = {
     inaSuma: 'Platba přišla, ale na jinou částku. Napište na andrej@arling.sk, vyřešíme to ručně.',
     nepotvrdene: 'Platbu se zatím nepodařilo potvrdit. Zkoušíme znovu; pokud jste zaplatili, dokumenty se odemknou, jakmile Stripe odpoví. Pokud to trvá déle než pár minut, napište na andrej@arling.sk s číslem objednávky z e-mailu od Stripe.',
     overZnova: 'Ověřit platbu znovu',
+    cenaZaplatene: 'Zaplaceno.',
+    cenaZaplatenePopis: 'Balíček je odemčený v tomto prohlížeči. Formulář můžete dál upravovat, dokumenty se přepíší.',
+    cenaKDokumentom: 'Přejít k dokumentům',
     siet: 'Ověření platby selhalo (síť). Obnovte stránku; pokud to přetrvává, napište na andrej@arling.sk.',
     vymazat: 'Smazat vyplněné údaje z tohoto prohlížeče?',
     testCudzi: 'Toto je testovací platba ze Stripe test módu. Odemkne dokumenty jen v prohlížeči, který test spustil přes ?test=1.',
     testPoznamka: '(Testovací režim: platba byla ve Stripe test módu, žádné peníze nepřišly.)',
     docxPripona: ' (DOCX)',
     locale: 'cs-CZ',
+    ucetOdosielam: 'Posílám kód…',
+    ucetKodOdoslany: 'Kód jsme poslali na e-mail, platí 15 minut.',
+    ucetZlyEmail: 'Zadejte platný e-mail.',
+    ucetLimit: 'Příliš mnoho pokusů, zkuste to za hodinu.',
+    ucetNedostupne: 'Odesílání kódů se ještě zapíná, napište na andrej@arling.sk.',
+    ucetChybaOdoslanie: 'Kód se nepodařilo odeslat (síť). Zkuste to znovu nebo napište na andrej@arling.sk.',
+    ucetBezKodu: 'Nejprve si vyžádejte kód.',
+    ucetOverujem: 'Přihlašuji…',
+    ucetZlyKod: (n) => 'Nesprávný kód, ještě ' + n + (n === 1 ? ' pokus.' : n < 5 ? ' pokusy.' : ' pokusů.'),
+    ucetVycerpane: 'Kód vypršel nebo byl zadán špatně pětkrát, vyžádejte si nový.',
+    ucetChybaPrihlasenie: 'Přihlášení selhalo (síť). Zkuste to znovu.',
+    ucetPrihlaseny: 'Přihlášen, kontroluji vaše nákupy…',
+    ucetOdomknute: '<b>Přihlášen, balíček je odemčený</b> podle vašeho nákupu.',
+    ucetBezNakupu: 'Přihlášen, ale k tomuto e-mailu nevidíme nákup tohoto balíčku. Pokud jste platili, napište na andrej@arling.sk.',
   },
 }[LANG];
 const KLUC_FORM = 'gdpr:formular:' + LANG;
@@ -72,6 +107,11 @@ const zalozky = $('zalozky');
 const stavPlatby = $('stav-platby');
 const kupaBtn = $('kupa');
 const stiahnutBlok = $('stiahnut');
+const ucetEmail = $('ucet-email');
+const ucetKod = $('ucet-kod');
+const ucetPosliBtn = $('ucet-posli');
+const ucetOverBtn = $('ucet-over');
+const ucetStav = $('ucet-stav');
 function track(name, data) { try { if (window.umami && typeof window.umami.track === 'function') window.umami.track(name, data); } catch (e) { /* nič */ } }
 function nacitaj(k) { try { const s = localStorage.getItem(k); return s ? JSON.parse(s) : null; } catch (e) { return null; } }
 function uloz(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* bez úložiska to beží ďalej */ } }
@@ -171,6 +211,27 @@ function prekresli() {
   $('pocet-dokumentov').textContent = zoznam.length;
   const pozn = $('nahlad-poznamka');
   if (pozn) pozn.innerHTML = odomknute() ? T.poznamkaOdomknute(zoznam.length) : T.poznamka(zoznam.length);
+  ukazCenu();
+}
+/* The price box after a purchase: no more Buy button, a clear "paid" line
+ * and a button that jumps to the downloads. Before a purchase: unchanged. */
+function ukazCenu() {
+  const je = odomknute();
+  kupaBtn.hidden = je;
+  const mam = document.querySelector('.cena .ucet-mam');
+  if (mam) mam.hidden = je;
+  let blok = $('cena-zaplatene');
+  if (je && !blok) {
+    blok = document.createElement('div');
+    blok.id = 'cena-zaplatene';
+    blok.className = 'cena-zaplatene';
+    blok.innerHTML = '<p><b>' + T.cenaZaplatene + '</b> ' + T.cenaZaplatenePopis + '</p><a class="btn btn-solid" href="#stiahnut">' + T.cenaKDokumentom + '</a>';
+    kupaBtn.insertAdjacentElement('afterend', blok);
+    blok.querySelector('a').addEventListener('click', (e) => { e.preventDefault(); $('stiahnut').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+  }
+  if (blok) blok.hidden = !je;
+  const zaco = document.querySelector('.cena .zaco');
+  if (zaco) zaco.hidden = je;
 }
 function stiahni(nazov, bytes, typ) {
   const blob = new Blob([bytes], { type: typ || 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
@@ -228,6 +289,69 @@ kupaBtn.addEventListener('click', () => {
   if (!u) { stavPlatby.textContent = T.zapina; return; }
   location.href = u;
 });
+
+/* ── Účet: „Mám kúpené (na inom zariadení)" ───────────────────────────────
+ * Voliteľná cesta popri platbe v tomto prehliadači: zadá e-mail, dostane
+ * 6-miestny kód, prihlási sa. Worker pri prihlásení sám dohľadá zaplatené
+ * Stripe session na ten e-mail, takže tu stačí zavolať ja() a pozrieť sa,
+ * či je medzi nákupmi GDPR balík. Bez účtu funguje stránka úplne ako doteraz;
+ * chyby siete (worker ešte nie je nasadený) sa ukážu poctivo, nič nespadne. */
+function ucetChybaKod(chyba) {
+  const kod = chyba && chyba.data && chyba.data.error;
+  if (kod === 'bad_email') return T.ucetZlyEmail;
+  if (kod === 'rate_limited') return T.ucetLimit;
+  if (kod === 'mail_unavailable') return T.ucetNedostupne;
+  return T.ucetChybaOdoslanie;
+}
+function ucetChybaOver(chyba) {
+  const d = chyba && chyba.data;
+  const kod = d && d.error;
+  if (kod === 'no_code') return T.ucetBezKodu;
+  if (kod === 'rate_limited') return T.ucetLimit;
+  if (kod === 'bad_code') return d.remaining ? T.ucetZlyKod(d.remaining) : T.ucetVycerpane;
+  return T.ucetChybaPrihlasenie;
+}
+if (ucetPosliBtn) ucetPosliBtn.addEventListener('click', async () => {
+  const mail = (ucetEmail.value || '').trim();
+  if (!mail || !mail.includes('@')) { ucetStav.textContent = T.ucetZlyEmail; return; }
+  ucetStav.textContent = T.ucetOdosielam;
+  ucetPosliBtn.disabled = true;
+  try {
+    await ucet.posliKod(mail);
+    ucetStav.textContent = T.ucetKodOdoslany;
+  } catch (e) {
+    ucetStav.textContent = ucetChybaKod(e);
+  } finally {
+    ucetPosliBtn.disabled = false;
+  }
+});
+if (ucetOverBtn) ucetOverBtn.addEventListener('click', async () => {
+  const mail = (ucetEmail.value || '').trim();
+  const kod = (ucetKod.value || '').trim();
+  if (!kod) { ucetStav.textContent = T.ucetBezKodu; return; }
+  ucetStav.textContent = T.ucetOverujem;
+  ucetOverBtn.disabled = true;
+  try {
+    await ucet.over(mail, kod);
+    ucetStav.textContent = T.ucetPrihlaseny;
+    try {
+      const u = await ucet.ja();
+      const nakup = ((u && u.nakupy) || []).find((x) => x && x.livemode && typeof x.produkt === 'string' && /gdpr/i.test(x.produkt));
+      if (nakup) {
+        uloz('gdpr:zaplatene', { session: nakup.session_id, t: Date.now(), ucet: true });
+        prekresli();
+        ucetStav.innerHTML = T.ucetOdomknute;
+      } else {
+        ucetStav.textContent = T.ucetBezNakupu;
+      }
+    } catch (e2) { /* ja() zlyhalo (sieť): ostávame prihlásení, len bez zoznamu nákupov */ }
+  } catch (e) {
+    ucetStav.textContent = ucetChybaOver(e);
+  } finally {
+    ucetOverBtn.disabled = false;
+  }
+});
+
 /* After Stripe sends the customer back with ?session_id=, the worker is
  * asked whether that session is paid. The id is kept in localStorage
  * (gdpr:cakajuca) until the answer is a clear yes or a clear no, so a
@@ -275,6 +399,7 @@ async function overPlatbu(sid, test, pokus) {
 async function poNavrate() {
   let sid = '';
   try { sid = new URL(location.href).searchParams.get('session_id') || ''; } catch (e) { /* nič */ }
+  const zUrl = !!sid; // true len pri skutočnom návrate zo Stripe, nie pri obnovenom čakaní z localStorage
   const test = testRezim(); // before the query is dropped: ?test=1 may sit next to session_id
   if (sid) history.replaceState(null, '', location.pathname);
   if (!sid) {
@@ -282,6 +407,10 @@ async function poNavrate() {
     if (c && c.session && !odomknute()) { sid = c.session; if (c.test) { try { sessionStorage.setItem('gdpr:test', '1'); } catch (e) { /* nič */ } } }
   }
   if (!sid) return;
+  if (zUrl && ucet.prihlaseny()) {
+    // priradí session k účtu nezávisle od miestneho odomknutia; chyby sa ignorujú
+    try { ucet.priradSession(sid).catch(() => { /* nič */ }); } catch (e) { /* nič */ }
+  }
   if (sid.startsWith('cs_test_') && !testRezim()) { stavPlatby.textContent = T.testCudzi; return; }
   overPlatbu(sid, testRezim(), 1);
 }

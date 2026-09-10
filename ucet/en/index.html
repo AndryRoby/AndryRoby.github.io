@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script src="/style/vzhlad.js?v=93c2659f"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://homelab.tailbf8f27.ts.net 'sha256-xxeMDbtP47eyGufgBt3Y/7ocJ9NSGUfkO1X1FqbxpYg='; connect-src 'self' https://homelab.tailbf8f27.ts.net https://arling-asistent.arling.workers.dev; img-src 'self' data:; style-src 'self' 'unsafe-inline'; font-src 'self'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0a0908">
+<link rel="preconnect" href="https://homelab.tailbf8f27.ts.net" crossorigin>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="48x48">
+<link rel="apple-touch-icon" href="/icon-180.png">
+<title>Account by e-mail: purchases, receipts and games | ARLing</title>
+<meta name="description" content="Your e-mail is your account, no password. Sign in with a code from e-mail and see your purchases, invoices, subscriptions and game progress on any device.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Account by e-mail: purchases, receipts and games">
+<meta property="og:description" content="Your e-mail is your account, no password. Sign in with a code from e-mail and see your purchases, invoices, subscriptions and game progress on any device.">
+<meta property="og:url" content="https://arling.sk/ucet/en/">
+<meta property="og:locale" content="en_US">
+<link rel="canonical" href="https://arling.sk/ucet/en/">
+<link rel="alternate" hreflang="sk" href="https://arling.sk/ucet/">
+<link rel="alternate" hreflang="en" href="https://arling.sk/ucet/en/">
+<link rel="alternate" hreflang="de" href="https://arling.sk/ucet/de/">
+<link rel="alternate" hreflang="x-default" href="https://arling.sk/ucet/">
+<link rel="alternate" type="text/plain" href="https://arling.sk/llms.txt" title="llms.txt">
+<link rel="preload" href="/fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/style/paper.css?v=89016e6c">
+<script src="/style/prepinac.js?v=2988c181" defer></script>
+<script type="module" src="/ucet/ucet-stranka.js?v=1"></script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebPage",
+      "name": "Account by e-mail: purchases, receipts and games",
+      "url": "https://arling.sk/ucet/en/",
+      "description": "Your e-mail is your account, no password. Sign in with a code from e-mail and see your purchases, invoices, subscriptions and game progress on any device.",
+      "isPartOf": { "@type": "WebSite", "name": "ARLing", "url": "https://arling.sk/" },
+      "inLanguage": "en"
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        { "@type": "Question", "name": "Why a code and not just a link in the e-mail?", "acceptedAnswer": { "@type": "Answer", "text": "A link from mail often opens in a different browser on a phone than the one you started in, so the sign-in would not apply where you need it. A code can be typed anywhere. The link still works too, just as a shortcut on the same device." } },
+        { "@type": "Question", "name": "The code did not arrive, what now?", "acceptedAnswer": { "@type": "Answer", "text": "Check your Spam folder and that the e-mail address was typed correctly. The code is valid for 15 minutes; after that, ask for a new one with Send again. If that does not help, write to andrej@arling.sk." } },
+        { "@type": "Question", "name": "What data do you store about me?", "acceptedAnswer": { "@type": "Answer", "text": "Your e-mail address and the list of purchases, the legal basis is performance of a contract. Purchases must be kept for 10 years under Slovak accounting law, even after Forget me; the sign-in code itself is deleted after 15 minutes. Details are in the privacy policy at arling.sk/privacy/en/." } },
+        { "@type": "Question", "name": "What exactly does Forget me do?", "acceptedAnswer": { "@type": "Answer", "text": "It deletes the e-mail account and the progress in every game on our side. Purchases remain, accounting law does not let us delete them sooner. Games played only in your browser without signing in are not deleted, those you clear in the browser settings." } },
+        { "@type": "Question", "name": "Does this work without JavaScript or in private browsing?", "acceptedAnswer": { "@type": "Answer", "text": "Signing in needs JavaScript. It works in private browsing, it just signs you out again once you close the window, because private browsing clears the browser's local storage." } }
+      ]
+    }
+  ]
+}
+</script>
+<style>
+  [hidden] { display:none !important; }
+  section[id] { scroll-margin-top:14px; }
+  .uvod { padding-block:clamp(28px,4.5vh,54px); }
+  .uvod h1 { max-width:22ch; }
+  .uvod .lead { max-width:58ch; }
+  .sub { color:var(--body); max-width:66ch; margin:0 0 24px; }
+
+  /* Signing in: e-mail and code are two small forms, the second appears
+     only once the first has been sent. Enter in either field then submits
+     the right one. */
+  .prihlasenie-form { display:flex; flex-wrap:wrap; gap:12px 14px; align-items:end; max-width:460px; margin:0 0 4px; }
+  .prihlasenie-form .pole { flex:1 1 220px; display:flex; flex-direction:column; gap:6px; min-width:0; }
+  .prihlasenie-form label { font-family:var(--ui); font-size:13px; color:var(--muted); }
+  .prihlasenie-form input { width:100%; box-sizing:border-box; font:16px/1.4 var(--ui); color:var(--ink);
+    background:var(--card); border:1px solid var(--line); border-radius:10px; padding:11px 13px; }
+  .prihlasenie-form input:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(178,58,29,.14); }
+  .prihlasenie-form .btn { flex:none; height:44px; }
+
+  body.noc .stav { border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:var(--radius);
+    background:var(--card); padding:clamp(14px,1.5vw,20px) clamp(16px,1.8vw,24px); font-family:var(--ui); font-size:15px;
+    line-height:1.6; color:var(--body); margin:0 0 20px; max-width:60ch; }
+  body.noc .stav-ok { border-left-color:var(--ok); }
+  body.noc .stav b { color:var(--ink); }
+
+  body.noc .hlaska { font-family:var(--ui); font-size:14px; line-height:1.6; margin:10px 0 0; color:var(--body);
+    max-width:60ch; min-height:1.4em; }
+  .hlaska-chyba { color:var(--accent); font-weight:600; }
+  .hlaska-ok { color:var(--ok); font-weight:600; }
+  .pomoc { font-family:var(--ui); font-size:13.5px; color:var(--muted); margin:10px 0 0; line-height:1.55; max-width:60ch; }
+  .odkaz-btn { background:none; border:0; padding:0; margin:0; font:inherit; color:var(--body); text-decoration:underline;
+    text-decoration-thickness:1px; text-underline-offset:3px; cursor:pointer; }
+  .odkaz-btn:hover { color:var(--ink); }
+
+  /* Purchases: the action sits in the last column, a button and a possible
+     secondary link stacked. */
+  .nakupy-akcia { display:flex; flex-direction:column; gap:6px; align-items:flex-start; }
+  .nakupy-akcia .btn { height:34px; padding:0 13px; font-size:13px; }
+  .nakupy-akcia .vedlajsi { font-family:var(--ui); font-size:12.5px; color:var(--muted); }
+  .nakupy-akcia .vedlajsi a { color:var(--body); }
+  .nakupy-poznamka { font-family:var(--ui); font-size:13px; color:var(--muted); line-height:1.5; max-width:34ch; margin:0; }
+
+  .hry-fakty { display:flex; gap:10px 26px; flex-wrap:wrap; margin:0 0 20px; }
+  .hry-fakty div { min-width:100px; }
+  .hry-fakty b { display:block; font:700 28px/1 var(--display); color:var(--ink); }
+  .hry-fakty span { display:block; font-family:var(--ui); font-size:12.5px; color:var(--muted); margin-top:3px; }
+
+  .prose p { margin:0 0 14px; max-width:70ch; }
+  .prose p:last-child { margin-bottom:0; }
+
+  details { border-top:1px solid var(--line); padding:16px 0; }
+  details:last-of-type { border-bottom:1px solid var(--line); }
+  summary { cursor:pointer; font:600 clamp(16px,1.2vw,18px)/1.35 var(--display); color:var(--ink); list-style:none;
+    display:block; position:relative; padding-right:26px; }
+  summary::-webkit-details-marker { display:none; }
+  summary::after { content:"+"; color:var(--accent); font-family:var(--ui); position:absolute; right:0; top:0; }
+  details[open] summary::after { content:"\2013"; }
+  details p { margin:10px 0 0; max-width:70ch; }
+</style>
+</head>
+<body class="noc">
+<div class="wash" aria-hidden="true"><i></i><i></i></div>
+<a class="skip" href="#ucet">Skip to content</a>
+
+<header>
+  <div class="wrap bar">
+    <a class="brand" href="https://arling.sk/">
+      <svg viewBox="0 0 488 215" width="38" height="15" aria-hidden="true" focusable="false"><path fill="#f4f4f7" fill-rule="evenodd" d="M0.00,213.00L74.00,214.00L181.00,85.00L285.00,214.00L360.00,214.00L206.00,21.00L185.00,4.00L164.00,10.00Z M221.00,0.00L263.00,50.00L395.00,50.00L409.00,55.00L419.00,76.00L401.00,96.00L313.00,98.00L411.00,214.00L487.00,214.00L422.00,139.00L457.00,123.00L482.00,88.00L482.00,48.00L463.00,19.00L417.00,0.00Z"/><path fill="#f2643c" d="M269.00,66.00L269.00,67.00L268.00,68.00L268.00,70.00L267.00,71.00L267.00,76.00L268.00,77.00L268.00,79.00L270.00,81.00L270.00,82.00L271.00,82.00L273.00,84.00L274.00,84.00L277.00,86.00L279.00,86.00L280.00,87.00L287.00,87.00L288.00,86.00L290.00,86.00L291.00,85.00L294.00,84.00L298.00,80.00L298.00,79.00L299.00,78.00L299.00,75.00L300.00,74.00L300.00,72.00L299.00,71.00L299.00,69.00L298.00,68.00L297.00,65.00L295.00,63.00L294.00,63.00L289.00,60.00L278.00,60.00L277.00,61.00L276.00,61.00L275.00,62.00L272.00,63.00Z"/></svg>
+      <b>ARLing</b><span>Account</span>
+    </a>
+    <nav aria-label="Site"><a href="https://arling.sk/en/#tools">Tools</a><a href="https://arling.sk/games/">Games</a><a href="https://arling.sk/notes/">Notes</a><a href="https://arling.sk/how-we-work/">How we work</a><a href="mailto:andrej@arling.sk">Contact</a></nav>
+  </div>
+</header>
+
+<main>
+  <section class="wrap uvod" id="ucet">
+    <p class="kicker">Your account</p>
+    <h1 class="r"><span class="l">E-mail is your account.</span><span class="l">Nothing else needed.</span></h1>
+    <p class="lead r d1">No password, no registration. Enter your e-mail, get a 6-digit code, and see your purchases, receipts and game progress on any device.</p>
+    <div class="rule"></div>
+
+    <p class="stav stav-ok r d2" id="stav-prihlaseny" role="status" aria-live="polite" hidden></p>
+
+    <div id="prihlasovanie" class="r d2">
+      <noscript><p class="pomoc">Signing in needs JavaScript.</p></noscript>
+      <form id="email-formular" class="prihlasenie-form" novalidate autocomplete="on">
+        <div class="pole">
+          <label for="email">E-mail address</label>
+          <input type="email" id="email" name="email" autocomplete="email" required placeholder="you@email.com">
+        </div>
+        <button type="submit" class="btn btn-solid" id="posli-kod">Send code</button>
+      </form>
+      <form id="kod-formular" class="prihlasenie-form" novalidate hidden>
+        <div class="pole">
+          <label for="kod">6-digit code from the e-mail</label>
+          <input type="text" id="kod" name="kod" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" maxlength="6" placeholder="123456">
+        </div>
+        <button type="submit" class="btn btn-solid" id="prihlasit">Sign in</button>
+      </form>
+      <p class="hlaska" id="hlaska-prihlasenie" role="status" aria-live="polite"></p>
+      <p class="pomoc" id="poslat-znova-blok" hidden>Code did not arrive? Check Spam, or <button type="button" class="odkaz-btn" id="poslat-znova">send it again</button>.</p>
+    </div>
+  </section>
+
+  <section id="nakupy" class="deep">
+    <div class="wrap">
+      <p class="kicker">Purchases</p>
+      <h2 class="r">What you bought from us.</h2>
+      <p class="sub r d1" id="nakupy-prazdne">Sign in above to see your purchases.</p>
+      <div class="rule"></div>
+      <div class="tablewrap r d2" id="nakupy-tabulka-blok" hidden>
+        <table>
+          <thead><tr><th>Product</th><th>Date</th><th>Amount</th><th>What to do</th></tr></thead>
+          <tbody id="nakupy-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section id="doklady" class="deep">
+    <div class="wrap">
+      <p class="kicker">Receipts and subscriptions</p>
+      <h2 class="r">Invoices, card, cancellation.</h2>
+      <p class="sub r d1" id="doklady-text">Sign in above to see receipts and subscriptions.</p>
+      <div class="rule"></div>
+      <a class="btn btn-line r d2" id="portal-odkaz" href="#" hidden target="_blank" rel="noopener">Open Stripe portal</a>
+    </div>
+  </section>
+
+  <section id="hry" class="deep">
+    <div class="wrap">
+      <p class="kicker">Games</p>
+      <h2 class="r">Your gardens, on this device and any other.</h2>
+      <p class="sub r d1" id="hry-text">Sign in above to see your progress across every device.</p>
+      <div class="rule"></div>
+      <div id="hry-obsah" hidden>
+        <div class="hry-fakty r d2" id="hry-fakty"></div>
+        <a class="btn btn-solid r d2" href="/games/hedgehogs/">Play Hedgehogs</a>
+      </div>
+    </div>
+  </section>
+
+  <section id="sprava-uctu" class="deep" hidden>
+    <div class="wrap">
+      <p class="kicker">Account</p>
+      <h2 class="r">Sign out or delete your account.</h2>
+      <div class="rule"></div>
+      <div class="cta r d1">
+        <button type="button" class="btn btn-line" id="odhlasit-btn">Sign out</button>
+        <button type="button" class="btn btn-line" id="zabudni-btn">Forget me</button>
+      </div>
+      <p class="hlaska" id="sprava-hlaska" role="status" aria-live="polite"></p>
+      <p class="pomoc">Forget me deletes your e-mail account and game progress on our side. Purchases remain, accounting law does not let us delete them sooner than after 10 years.</p>
+    </div>
+  </section>
+
+  <section id="ako-funguje" class="deep">
+    <div class="wrap">
+      <p class="kicker">How it works</p>
+      <h2 class="r">No password, no registration.</h2>
+      <div class="rule"></div>
+      <div class="prose r d1">
+        <p>You enter your e-mail, get a 6-digit code, type it in here or click the link right in the e-mail. Signing in lasts 90 days on this device; sign out or ask to be forgotten and it stops working everywhere at once.</p>
+        <p>The code is valid for 15 minutes and five attempts, after that you need a new one. We store no password anywhere, because you have none: there is nothing to leak.</p>
+        <p>Purchases get attached to your e-mail even when you paid on a different device: when you sign in, we ask Stripe what you bought from us with that e-mail, and add it.</p>
+      </div>
+      <details>
+        <summary>Why a code and not just a link in the e-mail?</summary>
+        <p>A link from mail often opens in a different browser on a phone than the one you started in, so the sign-in would not apply where you need it. A code can be typed anywhere. The link still works too, just as a shortcut on the same device.</p>
+      </details>
+      <details>
+        <summary>The code did not arrive, what now?</summary>
+        <p>Check your Spam folder and that the e-mail address was typed correctly. The code is valid for 15 minutes; after that, ask for a new one with Send again. If that does not help, write to andrej@arling.sk.</p>
+      </details>
+      <details>
+        <summary>What data do you store about me?</summary>
+        <p>Your e-mail address and the list of purchases, the legal basis is performance of a contract. Purchases must be kept for 10 years under Slovak accounting law, even after Forget me; the sign-in code itself is deleted after 15 minutes. Details are in the <a href="https://arling.sk/privacy/en/">privacy policy</a>.</p>
+      </details>
+      <details>
+        <summary>What exactly does Forget me do?</summary>
+        <p>It deletes the e-mail account and the progress in every game on our side. Purchases remain, accounting law does not let us delete them sooner. Games played only in your browser without signing in are not deleted, those you clear in the browser settings.</p>
+      </details>
+      <details>
+        <summary>Does this work without JavaScript or in private browsing?</summary>
+        <p>Signing in needs JavaScript. It works in private browsing, it just signs you out again once you close the window, because private browsing clears the browser's local storage.</p>
+      </details>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <div><b>ARLing s. r. o.</b><br>Ivanská cesta 32E<br>821 04 Bratislava, Slovakia</div>
+    <div>Company ID 56583486<br>VAT ID SK2122352100<br><a href="mailto:andrej@arling.sk">andrej@arling.sk</a></div>
+    <div><a href="https://arling.sk/privacy/">privacy</a> · <a href="https://arling.sk/podmienky/">terms</a> · <a href="https://arling.sk/gdpr/">GDPR</a> · <a href="https://arling.sk/impressum/">Impressum</a> · <a href="https://arling.sk/llms.txt">llms.txt</a> · <a href="https://arling.sk/sitemap-index.xml">sitemap</a><br>Tools are provided as is, without warranty. Anonymous visit counts via self-hosted Umami.</div>
+  </div>
+</footer>
+<script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="be534d51-4d01-4860-b267-9596d91606de"></script>
+</body>
+</html>

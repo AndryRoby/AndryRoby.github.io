@@ -27,7 +27,7 @@
 <link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/style/paper.css?v=89016e6c">
 <script src="/style/prepinac.js?v=2988c181" defer></script>
-<script type="module" src="/gdpr-dokumenty/app.js?v=6"></script>
+<script type="module" src="/gdpr-dokumenty/app.js?v=8"></script>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -52,7 +52,23 @@
   .cena li { display:flex; gap:10px; }
   .cena li::before { content:""; width:6px; height:6px; border-radius:50%; background:var(--accent); flex:none; margin-top:8px; }
   .cena .suhlas { font-family:var(--ui); font-size:12.5px; color:var(--muted); line-height:1.5; margin:12px 0 0; }
+  .cena .cena-zaplatene { border:1px solid var(--ok); border-radius:12px; background:rgba(94,207,154,.10); padding:14px 16px; margin:0 0 4px; }
+  .cena .cena-zaplatene p { margin:0 0 12px; font-family:var(--ui); font-size:14px; color:var(--body); line-height:1.5; }
+  .cena .cena-zaplatene b { color:var(--ok); }
+  .cena .cena-zaplatene .btn { width:100%; justify-content:center; }
   .cena .suhlas a { color:var(--body); }
+  .cena details.ucet-mam { border-top:1px solid var(--line); padding:14px 0 0; margin:14px 0 0; }
+  .cena details.ucet-mam[open] { padding-bottom:2px; }
+  .cena details.ucet-mam summary { font:600 13px/1.3 var(--ui); letter-spacing:0; text-transform:none; color:var(--body); padding-right:20px; }
+  .cena details.ucet-mam summary::after { font-size:13px; }
+  .cena details.ucet-mam summary:hover { color:var(--ink); }
+  .cena .ucet-pole { margin:12px 0 0; display:flex; flex-direction:column; gap:8px; }
+  .cena .ucet-pole label { display:flex; flex-direction:column; gap:4px; font-family:var(--ui); font-size:12px; color:var(--muted); }
+  .cena .ucet-pole input { width:100%; box-sizing:border-box; font:14px/1.4 var(--ui); color:var(--ink); background:var(--card-plna, #141311); border:1px solid var(--line); border-radius:8px; padding:8px 10px; }
+  .cena .ucet-pole input:focus { outline:2px solid var(--accent); outline-offset:-1px; }
+  .cena .ucet-pole .btn { height:36px; padding:0 14px; font-size:13px; }
+  .cena .ucet-stav { font-family:var(--ui); font-size:12.5px; color:var(--body); margin:2px 0 0; min-height:1.3em; line-height:1.4; }
+  .cena .ucet-stav b { color:var(--ok); }
 
   /* Dielňa: vľavo formulár, vpravo náhľad, na telefóne pod sebou. */
   .dielna { display:grid; grid-template-columns:minmax(0,5fr) minmax(0,7fr); gap:32px var(--gap); align-items:start; }
@@ -171,6 +187,16 @@
       <span class="suma">39 €</span>
       <p class="zaco">jednorazovo, s DPH, za balík <b id="pocet-dokumentov">8</b> dokumentov pre jednu firmu (podľa toho, čo zaškrtnete)</p>
       <button type="button" class="btn btn-solid" id="kupa" data-link="https://buy.stripe.com/3cIfZbcYi2dJaoW6y14ko0b" data-link-test="https://buy.stripe.com/test_5kQ4gt2jE7y354Cg8B4ko01">Kúpiť balík dokumentov</button>
+      <details class="ucet-mam">
+        <summary>Mám kúpené (na inom zariadení)</summary>
+        <div class="ucet-pole">
+          <label>E-mail<input type="email" id="ucet-email" autocomplete="email" placeholder="vas@email.sk"></label>
+          <button type="button" class="btn btn-line" id="ucet-posli">Poslať kód</button>
+          <label>Kód z e-mailu<input type="text" id="ucet-kod" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456"></label>
+          <button type="button" class="btn btn-line" id="ucet-over">Prihlásiť</button>
+          <p class="ucet-stav" id="ucet-stav" aria-live="polite"></p>
+        </div>
+      </details>
       <ul>
         <li>záznamy o spracovateľských činnostiach (čl. 30)</li>
         <li>sprostredkovateľská zmluva (čl. 28) s prílohami</li>

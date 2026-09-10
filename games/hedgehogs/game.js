@@ -19,11 +19,17 @@
  * run began (null while paused or before the first move), done = ms of the
  * solve, hints = hints used, t = ms of the last save.
  * Outgoing events via window.umami, if it runs: game_solved, game_check,
- * game_hint, game_setting. Nothing else leaves the browser.
+ * game_hint, game_setting. Nothing else leaves the browser, unless the
+ * player is signed in (arling.sk account, /style/ucet.js): then every
+ * hedgehogs:YYYY-MM-DD save is also pushed to the account (throttled, 2s)
+ * and pulled back on load, so the streak and history follow across
+ * devices. Signed out, nothing changes; a signed-in sync that fails over
+ * the network fails silently, this browser's copy stays the truth.
  */
 import { zadaniePreDen, zadanieCvicenie, rozbal, tyzden, denVTyzdni, urovenDna, posunDen, pekneDatum, kratkyDatum, UROVNE, SADY, PRVY_DEN, STARS, DNI } from './plan.mjs';
 import { todayBratislava, isValidDate } from './generator.mjs';
 import { konflikty, jeVyriesene, porovnaj, napoveda } from './logika.mjs';
+import * as ucet from '/style/ucet.js';
 
 const $ = (id) => document.getElementById(id);
 const doska = $('doska');
@@ -261,7 +267,7 @@ function ukazHistoriu() {
 }
 
 /* ── Saving and solving ───────────────────────────────────────────────── */
-function ulozStav() { uloz(KLUC, { v, sec: sekundy, start, done, hints, t: Date.now() }); }
+function ulozStav() { uloz(KLUC, { v, sec: sekundy, start, done, hints, t: Date.now() }); naplanujOdoslanie(); }
 
 function ukazStav() {
   const k = oznacKonflikty();
@@ -563,6 +569,86 @@ document.querySelectorAll('[data-nastavenie]').forEach((el) => {
   });
 });
 
+/* ── Account sync (only when signed in, silent otherwise) ────────────────
+ * The account stores one object per game: { dni: { 'YYYY-MM-DD': stav }, t }.
+ * On merge, for each day the record with the higher `t` wins, but a `done`
+ * on either side is never dropped (a slightly older save should not un-solve
+ * a day). The streak is then rebuilt from the merged solved days instead of
+ * trusted as a stored number, so a merge can never leave it wrong. */
+function stavVsetkychDni() {
+  const out = {};
+  for (const k of vsetkyKluce('hedgehogs:')) {
+    const d = k.slice('hedgehogs:'.length);
+    if (!isValidDate(d)) continue;
+    const s = nacitaj(k);
+    if (s) out[d] = s;
+  }
+  return out;
+}
+function zlucStavDna(lokalny, vzdialeny) {
+  if (!vzdialeny) return lokalny;
+  if (!lokalny) return vzdialeny;
+  const v = (vzdialeny.t || 0) >= (lokalny.t || 0) ? vzdialeny : lokalny;
+  const done = lokalny.done || vzdialeny.done || null;
+  return done && !v.done ? Object.assign({}, v, { done }) : v;
+}
+function prepocitajSeriu() {
+  const dni = stavVsetkychDni();
+  let d = dni[dnes] && dni[dnes].done ? dnes : posunDen(dnes, -1);
+  let pocet = 0;
+  while (dni[d] && dni[d].done) { pocet++; d = posunDen(d, -1); }
+  if (!pocet) { try { localStorage.removeItem('hedgehogs:streak'); } catch (e) { /* nič */ } return; }
+  uloz('hedgehogs:streak', { posledny: dni[dnes] && dni[dnes].done ? dnes : posunDen(dnes, -1), pocet });
+}
+function odosliStav() {
+  if (!ucet.prihlaseny()) return;
+  ucet.hra.uloz('hedgehogs', { dni: stavVsetkychDni(), t: Date.now() }).catch(() => { /* sieťová chyba: lokálne ostáva pravdou */ });
+}
+let syncCakanie = null, syncPosledny = 0;
+function naplanujOdoslanie() {
+  if (!ucet.prihlaseny()) return;
+  const zvysok = 2000 - (Date.now() - syncPosledny);
+  if (zvysok <= 0) { syncPosledny = Date.now(); odosliStav(); return; }
+  if (syncCakanie) return;
+  syncCakanie = setTimeout(() => { syncCakanie = null; syncPosledny = Date.now(); odosliStav(); }, zvysok);
+}
+async function synchronizujUcet() {
+  if (!ucet.prihlaseny()) return;
+  let vzdialene;
+  try { vzdialene = await ucet.hra.nacitaj('hedgehogs'); } catch (e) { return; /* sieťová chyba: lokálne ostáva pravdou */ }
+  const diaDni = vzdialene && vzdialene.dni && typeof vzdialene.dni === 'object' ? vzdialene.dni : {};
+  let zmenene = false;
+  for (const [d, r] of Object.entries(diaDni)) {
+    if (!isValidDate(d) || !r || typeof r !== 'object') continue;
+    const kluc = 'hedgehogs:' + d;
+    const l = nacitaj(kluc);
+    const scelene = zlucStavDna(l, r);
+    if (!l || JSON.stringify(l) !== JSON.stringify(scelene)) { uloz(kluc, scelene); zmenene = true; }
+  }
+  if (zmenene) {
+    prepocitajSeriu();
+    ukazSeriu();
+    ukazHistoriu();
+    ukazPasik();
+    if (rezim === 'den' && !done) {
+      const cerstve = nacitaj(KLUC);
+      if (cerstve && Array.isArray(cerstve.v) && n && cerstve.v.length === n * n && (cerstve.t || 0) > ((ulozene && ulozene.t) || 0)) {
+        ulozene = cerstve;
+        v = cerstve.v.slice();
+        done = cerstve.done || null;
+        hints = cerstve.hints || 0;
+        sekundy = cerstve.sec || 0;
+        ukazVsetko();
+        if (done) { doska.classList.add('hotovo'); zastavTikac(); }
+        ukazStav();
+        ukazCas();
+      }
+    }
+  }
+  // push back too: a day solved only in this browser (or a done just merged in) reaches the account right away
+  odosliStav();
+}
+
 /* ── Start ────────────────────────────────────────────────────────────── */
 async function spusti() {
   if (jeBuduci) {
@@ -606,4 +692,4 @@ async function spusti() {
   ukazStav();
   spatBtn.disabled = true;
 }
-spusti();
+spusti().then(synchronizujUcet);
