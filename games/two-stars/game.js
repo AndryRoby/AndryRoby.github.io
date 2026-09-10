@@ -21,6 +21,9 @@ const datumEl = document.getElementById('datum');
 const seriaEl = document.getElementById('seria');
 const spatBtn = document.getElementById('spat');
 const vymazBtn = document.getElementById('vymaz');
+const checkBtn = document.getElementById('check');
+/* Umami is optional: statistics are not part of the game. */
+function track(name, data) { try { if (window.umami && typeof window.umami.track === 'function') window.umami.track(name, data); } catch (e) { /* nič */ } }
 
 /* ── Úložisko ─────────────────────────────────────────────────────────── */
 function nacitaj(kluc) {
@@ -100,6 +103,7 @@ function postavMriezku() {
       b.dataset.i = i;
       b.setAttribute('role', 'gridcell');
       b.tabIndex = i === 0 ? 0 : -1;
+      b.dataset.reg = zadanie.regions[r][c];
       if (r === 0) b.classList.add('r0');
       if (c === 0) b.classList.add('c0');
       if (r > 0 && zadanie.regions[r - 1][c] !== zadanie.regions[r][c]) b.classList.add('bt');
@@ -179,10 +183,24 @@ function ukazStav() {
     return;
   }
   if (k.zle) { stavEl.textContent = 'A red star breaks a rule.'; return; }
-  const zvysok = n * STARS - k.stars;
-  if (zvysok === n * STARS) { stavEl.textContent = 'Place ' + (n * STARS) + ' stars: two in every row, column and region.'; return; }
-  if (zvysok > 0) stavEl.textContent = (zvysok === 1 ? '1 star' : zvysok + ' stars') + ' to go.';
-  else stavEl.textContent = 'All ' + (n * STARS) + ' stars are placed, but the solution is not right yet.';
+  // No running count of stars: the count is part of the puzzle. The board
+  // only speaks when a rule is broken, when the player asks (Check) or
+  // when the puzzle is solved.
+  if (k.stars === 0) { stavEl.textContent = 'Tap a cell for a dot, tap again for a star. Drag to sweep dots.'; return; }
+  if (k.stars === n * STARS) { stavEl.textContent = 'All stars are placed, but the solution is not right yet. Try Check.'; return; }
+  stavEl.textContent = '';
+}
+
+/* Check compares the stars on the board with the one solution and reports
+ * only a number, never a position: the puzzle stays a puzzle. */
+function skontrolujStav() {
+  if (done) return;
+  let hviezd = 0, zle = 0;
+  for (let i = 0; i < n * n; i++) if (v[i] === 2) { hviezd++; if (zadanie.solution[i] !== 1) zle++; }
+  if (!hviezd) { stavEl.textContent = 'No stars on the board yet.'; return; }
+  if (!zle) stavEl.textContent = hviezd === 1 ? 'Your star is right so far.' : 'All ' + hviezd + ' stars are right so far.';
+  else stavEl.textContent = (zle === 1 ? 'One star' : zle + ' stars') + ' of ' + hviezd + ' will not be in the solution.';
+  track('game_check', { game: 'two-stars', stars: hviezd, wrong: zle });
 }
 
 function skontroluj() {
@@ -248,13 +266,45 @@ function zameraj(i) {
   bunky[i].tabIndex = 0;
   bunky[i].focus();
 }
-doska.addEventListener('click', (e) => {
-  const b = e.target.closest('.b');
-  if (!b) return;
-  const i = +b.dataset.i;
-  if (fokus !== i) { bunky[fokus].tabIndex = -1; fokus = i; b.tabIndex = 0; }
-  prepni(i);
+/* Pointer: a tap cycles the cell (empty, dot, star). Holding the button and
+ * dragging sweeps dots over empty cells, the way pencil players cross out
+ * cells in one stroke. Stars are never placed by dragging. */
+let tah = null; // { start: index, maloval: bool, id: pointerId }
+function bunkaPod(e) {
+  const el = document.elementFromPoint(e.clientX, e.clientY);
+  const b = el && el.closest ? el.closest('.b') : null;
+  return b && doska.contains(b) ? +b.dataset.i : -1;
+}
+doska.addEventListener('pointerdown', (e) => {
+  if (done || (e.pointerType === 'mouse' && e.button !== 0)) return;
+  const i = bunkaPod(e);
+  if (i < 0) return;
+  tah = { start: i, maloval: false, id: e.pointerId };
+  try { doska.setPointerCapture(e.pointerId); } catch (err) { /* bez zachytenia ťah funguje horšie, ale funguje */ }
+  if (fokus !== i) { bunky[fokus].tabIndex = -1; fokus = i; bunky[i].tabIndex = 0; }
+  e.preventDefault();
 });
+doska.addEventListener('pointermove', (e) => {
+  if (!tah || tah.id !== e.pointerId || done) return;
+  const i = bunkaPod(e);
+  if (i < 0 || i === tah.start && !tah.maloval) return;
+  if (!tah.maloval) {
+    // The stroke left the first cell: this is a sweep, not a tap. Start by
+    // dotting the first cell too, if it was empty.
+    tah.maloval = true;
+    if (v[tah.start] === 0) nastav(tah.start, 1);
+  }
+  if (v[i] === 0) nastav(i, 1);
+});
+function koniecTahu(e) {
+  if (!tah || tah.id !== e.pointerId) return;
+  const t = tah;
+  tah = null;
+  try { doska.releasePointerCapture(e.pointerId); } catch (err) { /* nič */ }
+  if (!t.maloval && !done) prepni(t.start);
+}
+doska.addEventListener('pointerup', koniecTahu);
+doska.addEventListener('pointercancel', (e) => { if (tah && tah.id === e.pointerId) tah = null; });
 doska.addEventListener('keydown', (e) => {
   const b = e.target.closest('.b');
   if (!b) return;
@@ -279,6 +329,7 @@ doska.addEventListener('keydown', (e) => {
 });
 spatBtn.addEventListener('click', spat);
 vymazBtn.addEventListener('click', vymaz);
+if (checkBtn) checkBtn.addEventListener('click', skontrolujStav);
 
 
 /* ── Štart ────────────────────────────────────────────────────────────── */
