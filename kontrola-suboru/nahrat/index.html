@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="sk">
 <head>
-<script src="/style/vzhlad.js"></script>
+<script src="/style/vzhlad.js?v=93c2659f"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://homelab.tailbf8f27.ts.net; connect-src 'self' https://homelab.tailbf8f27.ts.net https://arling-asistent.arling.workers.dev; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
@@ -13,9 +13,13 @@
 <title>Nahranie súboru na kontrolu | ARLing</title>
 <meta name="description" content="Stránka na nahranie pain.001 súboru po zaplatenej kontrole. Dostupná len z platby.">
 <meta name="robots" content="noindex">
+<link rel="alternate" hreflang="sk" href="https://arling.sk/kontrola-suboru/nahrat/">
+<link rel="alternate" hreflang="de" href="https://arling.sk/kontrola-suboru/de/nahrat/">
+<link rel="alternate" hreflang="en" href="https://arling.sk/kontrola-suboru/en/nahrat/">
+<link rel="alternate" hreflang="x-default" href="https://arling.sk/kontrola-suboru/en/nahrat/">
 <link rel="manifest" href="../manifest.json">
-<link rel="stylesheet" href="/style/paper.css">
-<script src="/style/prepinac.js" defer></script>
+<link rel="stylesheet" href="/style/paper.css?v=e0e48650">
+<script src="/style/prepinac.js?v=2988c181" defer></script>
 
 <style>
   [hidden] { display:none !important; }
@@ -56,6 +60,16 @@
     min-height:1.2em; }
   .poslat { margin-top:20px; display:flex; flex-wrap:wrap; align-items:center; gap:14px; }
   .poslat .btn:disabled { opacity:.45; pointer-events:none; }
+
+  /* Súhlas so začatím služby stojí pred poľom na súbor, lebo bez neho sa
+     súbor nedá ani vybrať. Políčko je systémové, farbu mu dáva paper.css. */
+  body.noc .suhlas { display:flex; gap:12px; align-items:flex-start; cursor:pointer; max-width:70ch;
+    margin:0 0 20px; font-family:var(--ui); font-size:14.5px; line-height:1.6; color:var(--body); }
+  .suhlas input { flex:none; width:18px; height:18px; margin:4px 0 0; cursor:pointer; }
+  body.noc .suhlas-pozn { font-family:var(--ui); font-size:13.5px; color:var(--muted); margin:-10px 0 20px; }
+  .suhlas-pozn a { color:var(--body); }
+  .zona-vypnuta { opacity:.55; }
+  .zona-vypnuta .vybrat { pointer-events:none; }
   body.noc .hlaska { font-family:var(--ui); font-size:14.5px; line-height:1.6; margin:0; color:var(--body); max-width:60ch; }
   .hlaska-chyba { color:var(--accent); font-weight:600; }
 
@@ -94,10 +108,15 @@
     <p class="stav" id="stav" role="status" aria-live="polite">Overujeme platbu.</p>
 
     <div id="nahravanie" hidden>
-      <div class="zona" id="zona">
+      <label class="suhlas" for="suhlas">
+        <input type="checkbox" id="suhlas" required>
+        <span>Súhlasím so začatím poskytovania služby pred uplynutím lehoty na odstúpenie od zmluvy a beriem na vedomie, že po dodaní opraveného súboru a správy strácam právo na odstúpenie od zmluvy.</span>
+      </label>
+      <p class="suhlas-pozn">Bez zaškrtnutia sa súbor nedá vybrať ani odoslať. Podrobnosti o odstúpení a vrátení peňazí sú v <a href="https://arling.sk/podmienky/">podmienkach</a>.</p>
+      <div class="zona zona-vypnuta" id="zona">
         <b>Pretiahnite sem súbor .xml</b>
         <p>Alebo ho vyberte z počítača. Jeden súbor, najviac 5 MB. Ak máte viac exportov, nahrajte ich jeden po druhom.</p>
-        <input type="file" id="subor" class="skryty" accept=".xml,application/xml,text/xml">
+        <input type="file" id="subor" class="skryty" accept=".xml,application/xml,text/xml" disabled>
         <label class="btn btn-line vybrat" for="subor">Vybrať súbor</label>
         <p class="vybrane" id="vybrane"></p>
       </div>
@@ -120,7 +139,7 @@
         <li>Nepoužíva sa na trénovanie žiadneho modelu.</li>
         <li>Obsahuje IBAN-y a sumy, preto ho neposielame nikam ďalej.</li>
       </ul>
-      <p class="inak">Niečo nevychádza? Napíšte na <a href="mailto:andrej@arling.sk">andrej@arling.sk</a> a ozveme sa. <a href="../de/nahrat/">Deutsch</a></p>
+      <p class="inak">Niečo nevychádza? Napíšte na <a href="mailto:andrej@arling.sk">andrej@arling.sk</a> a ozveme sa. <a href="../de/nahrat/">Deutsch</a> · <a href="../en/nahrat/">English</a></p>
     </div>
   </section>
 </main>

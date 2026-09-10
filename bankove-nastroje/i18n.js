@@ -143,9 +143,9 @@ export const DICT = {
   },
   's2.year.btn': { sk: 'Kúpiť Pro, 79 €/rok', en: 'Buy Pro, €79/year', de: 'Pro kaufen, 79 €/Jahr' },
   's2.fineprint': {
-    sk: 'Platba cez Stripe. Zrušiť môžete kedykoľvek, ďalšie obdobie sa už nestrhne.',
-    en: 'Payment via Stripe. Cancel anytime, the next period will not be charged.',
-    de: 'Zahlung über Stripe. Jederzeit kündbar, der nächste Zeitraum wird dann nicht mehr abgebucht.',
+    sk: 'Platba cez Stripe. Zrušenie alebo zmena kedykoľvek na <a href="https://billing.stripe.com/p/login/3cIaER9M63hNeFcg8B4ko00">portáli Stripe</a>, platí do konca zaplateného obdobia.',
+    en: 'Payment via Stripe. Cancel or change at any time in the <a href="https://billing.stripe.com/p/login/3cIaER9M63hNeFcg8B4ko00">Stripe customer portal</a>, active until the end of the paid period.',
+    de: 'Zahlung über Stripe. Jederzeit im <a href="https://billing.stripe.com/p/login/3cIaER9M63hNeFcg8B4ko00">Stripe-Kundenportal</a> kündigen oder ändern, aktiv bis zum Ende des bezahlten Zeitraums.',
   },
   's2.month.unit': { sk: '/ mesiac', en: '/ month', de: '/ Monat' },
   's2.month.btn': { sk: 'Kúpiť Pro, 9 €/mesiac', en: 'Buy Pro, €9/month', de: 'Pro kaufen, 9 €/Monat' },
@@ -169,9 +169,9 @@ export const DICT = {
   },
   'obj3.q': { sk: 'Ako predplatné zrušiť?', en: 'How do I cancel the subscription?', de: 'Wie kündige ich das Abo?' },
   'obj3.a': {
-    sk: 'Mesačné aj ročné predplatné môžete kedykoľvek zrušiť cez odkaz na správu platby, ktorý dostanete v e-maile od Stripe po zaplatení. Ďalšie obdobie sa už nestrhne, nič netreba nám hlásiť.',
-    en: 'Both the monthly and yearly subscription can be cancelled anytime via the payment management link you get in the email from Stripe after paying. The next period will not be charged; you do not need to tell us anything.',
-    de: 'Sowohl das monatliche als auch das jährliche Abo können Sie jederzeit über den Link zur Zahlungsverwaltung kündigen, den Sie nach der Zahlung per E-Mail von Stripe erhalten. Der nächste Zeitraum wird dann nicht mehr abgebucht, Sie müssen uns nichts melden.',
+    sk: 'Predplatné zrušíte alebo zmeníte kedykoľvek na <a href="https://billing.stripe.com/p/login/3cIaER9M63hNeFcg8B4ko00">portáli Stripe</a> (prihlásenie e-mailom, ktorým ste platili); platí do konca zaplateného obdobia. Nič nám netreba hlásiť.',
+    en: 'You can cancel or change the subscription at any time in the <a href="https://billing.stripe.com/p/login/3cIaER9M63hNeFcg8B4ko00">Stripe customer portal</a> (log in with the e-mail you paid with); it stays active until the end of the paid period. You do not need to tell us anything.',
+    de: 'Sie können das Abo jederzeit im <a href="https://billing.stripe.com/p/login/3cIaER9M63hNeFcg8B4ko00">Stripe-Kundenportal</a> kündigen oder ändern (Anmeldung mit der E-Mail-Adresse der Zahlung); es bleibt bis zum Ende des bezahlten Zeitraums aktiv. Sie müssen uns nichts melden.',
   },
   'obj4.q': { sk: 'Čo presne je zadarmo?', en: 'What exactly is free?', de: 'Was genau ist kostenlos?' },
   'obj4.a': {
@@ -331,9 +331,9 @@ export const DICT = {
   },
   'faq.q6': { sk: 'Môžem licenciu zrušiť alebo dostať peniaze naspäť?', en: 'Can I cancel the licence or get a refund?', de: 'Kann ich die Lizenz kündigen oder eine Rückerstattung bekommen?' },
   'faq.a6': {
-    sk: 'Mesačné aj ročné predplatné môžete kedykoľvek zrušiť cez odkaz na správu platby, ktorý dostanete v e-maile od Stripe po zaplatení; ďalšie obdobie sa už nestrhne. Ak vám Pro nesadne, napíšte do 14 dní od kúpy na <a href="mailto:andrej@arling.sk?subject=Vr%C3%A1tenie%20Pro%20licencie">andrej@arling.sk</a> a peniaze vrátime bez zbytočných otázok.',
-    en: 'Both the monthly and yearly subscription can be cancelled anytime via the payment management link you get in the email from Stripe after paying; the next period will not be charged. If Pro is not for you, write within 14 days of purchase to <a href="mailto:andrej@arling.sk?subject=Vr%C3%A1tenie%20Pro%20licencie">andrej@arling.sk</a> and we will refund the payment, no questions asked.',
-    de: 'Sowohl das monatliche als auch das jährliche Abo können Sie jederzeit über den Link zur Zahlungsverwaltung kündigen, den Sie nach der Zahlung per E-Mail von Stripe erhalten; der nächste Zeitraum wird dann nicht mehr abgebucht. Wenn Pro nicht passt, schreiben Sie innerhalb von 14 Tagen nach dem Kauf an <a href="mailto:andrej@arling.sk?subject=Vr%C3%A1tenie%20Pro%20licencie">andrej@arling.sk</a>, und wir erstatten die Zahlung ohne weitere Fragen.',
+    sk: 'Predplatné zrušíte alebo zmeníte kedykoľvek na <a href="https://billing.stripe.com/p/login/3cIaER9M63hNeFcg8B4ko00">portáli Stripe</a> (prihlásenie e-mailom, ktorým ste platili); platí do konca zaplateného obdobia. Ak vám Pro nesadne, napíšte do 14 dní od kúpy na <a href="mailto:andrej@arling.sk?subject=Vr%C3%A1tenie%20Pro%20licencie">andrej@arling.sk</a> a peniaze vrátime bez zbytočných otázok.',
+    en: 'You can cancel or change the subscription at any time in the <a href="https://billing.stripe.com/p/login/3cIaER9M63hNeFcg8B4ko00">Stripe customer portal</a> (log in with the e-mail you paid with); it stays active until the end of the paid period. If Pro is not for you, write within 14 days of purchase to <a href="mailto:andrej@arling.sk?subject=Vr%C3%A1tenie%20Pro%20licencie">andrej@arling.sk</a> and we will refund the payment, no questions asked.',
+    de: 'Sie können das Abo jederzeit im <a href="https://billing.stripe.com/p/login/3cIaER9M63hNeFcg8B4ko00">Stripe-Kundenportal</a> kündigen oder ändern (Anmeldung mit der E-Mail-Adresse der Zahlung); es bleibt bis zum Ende des bezahlten Zeitraums aktiv. Wenn Pro nicht passt, schreiben Sie innerhalb von 14 Tagen nach dem Kauf an <a href="mailto:andrej@arling.sk?subject=Vr%C3%A1tenie%20Pro%20licencie">andrej@arling.sk</a>, und wir erstatten die Zahlung ohne weitere Fragen.',
   },
 
   // ── closing CTA ──────────────────────────────────────────────────────

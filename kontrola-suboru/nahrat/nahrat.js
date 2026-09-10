@@ -6,9 +6,17 @@
 // spájať s platbou. Odteraz Stripe presmeruje sem, stránka si u Stripu
 // overí, že sedí platba, a súbor príde priamo do nášho koša.
 //
-// Jeden súbor obsluhuje slovenskú aj nemeckú stránku. Jazyk textov sa berie
-// z <html lang>, nie z URL, takže pridať ďalší jazyk znamená pridať stránku
-// a jeden blok textov, nič iné.
+// Jeden súbor obsluhuje slovenskú, nemeckú aj anglickú stránku. Jazyk textov
+// sa berie z <html lang>, nie z URL, takže pridať ďalší jazyk znamená pridať
+// stránku a jeden blok textov, nič iné.
+//
+// Súhlas so začatím služby: pred výberom súboru musí človek zaškrtnúť políčko
+// (#suhlas), že súhlasí so začatím poskytovania služby pred uplynutím lehoty
+// na odstúpenie a berie na vedomie, že po dodaní opraveného súboru a správy
+// právo na odstúpenie stráca (zákon 102/2014 Z. z., § 7 ods. 6 písm. a).
+// Kým políčko nie je zaškrtnuté, vstup na súbor aj tlačidlo sú vypnuté a
+// posli() nič neodošle. Zaškrtnutie ide do workera ako hlavička
+// X-Arling-Consent: 1, worker si ju uloží k súboru.
 //
 // Stránka nemá vložený skript zámerne: hub má prísne CSP, kde by sa každá
 // úprava vloženého skriptu musela znova prepočítať (ops/design/csp-hash.mjs).
@@ -37,6 +45,7 @@
       hotovo: 'Súbor sme prijali. Výsledok pošleme do 24 hodín na e-mail z objednávky.',
       hotovoMail: function (m) { return 'Súbor sme prijali. Výsledok pošleme do 24 hodín na ' + m + '.'; },
       chyba: 'Nahranie sa nepodarilo. Skúste to prosím znova, alebo nám súbor pošlite na andrej@arling.sk.',
+      bezSuhlasu: 'Najprv prosím zaškrtnite súhlas so začatím služby. Bez neho súbor neodošleme.',
     },
     de: {
       bezSession: 'Diese Seite ist nur über die Zahlung erreichbar. Öffnen Sie bitte den Link, den Ihnen Stripe nach der Zahlung gezeigt hat, oder schreiben Sie an andrej@arling.sk, dann senden wir ihn erneut.',
@@ -55,6 +64,26 @@
       hotovo: 'Wir haben die Datei erhalten. Das Ergebnis senden wir innerhalb von 24 Stunden an die E-Mail-Adresse aus der Bestellung.',
       hotovoMail: function (m) { return 'Wir haben die Datei erhalten. Das Ergebnis senden wir innerhalb von 24 Stunden an ' + m + '.'; },
       chyba: 'Der Upload hat nicht funktioniert. Versuchen Sie es bitte erneut oder senden Sie uns die Datei an andrej@arling.sk.',
+      bezSuhlasu: 'Bitte setzen Sie zuerst das Häkchen zur Zustimmung, dass die Leistung beginnt. Ohne das Häkchen senden wir die Datei nicht.',
+    },
+    en: {
+      bezSession: 'This page can only be reached from the payment. Please open the link Stripe showed you after paying, or write to andrej@arling.sk and we will send it again.',
+      overujem: 'Checking the payment.',
+      nedostupne: 'Payment verification is not available right now. Please try again in a minute, nothing has been lost.',
+      neznama: 'We do not know this order. Please check that you opened the whole link from Stripe, or write to andrej@arling.sk.',
+      nezaplatene: 'The payment is not confirmed yet. If you have just paid, reload the page in a minute. If the payment did not go through, we charge nothing.',
+      uzNahrate: 'We already have the file. We will send the result within 24 hours to the e-mail address from the order.',
+      uzNahrateMail: function (m) { return 'We already have the file. We will send the result within 24 hours to ' + m + ', the e-mail address from the order.'; },
+      pripravene: 'The payment is confirmed. Upload the file you last sent to the bank.',
+      pripraveneMail: function (m) { return 'The payment is confirmed. Upload the file you last sent to the bank. We will send the result to ' + m + '.'; },
+      vybrane: function (n, kb) { return n + ', ' + kb + ' kB'; },
+      velky: 'This file is larger than 5 MB. Please write to andrej@arling.sk and we will find another way.',
+      nieXml: 'This file does not look like XML. We need the export of the bulk payment order, a file with the .xml extension, not a PDF or an Excel sheet.',
+      nahravam: 'Uploading the file.',
+      hotovo: 'We have received the file. We will send the result within 24 hours to the e-mail address from the order.',
+      hotovoMail: function (m) { return 'We have received the file. We will send the result within 24 hours to ' + m + '.'; },
+      chyba: 'The upload did not work. Please try again, or send us the file at andrej@arling.sk.',
+      bezSuhlasu: 'Please tick the consent box first. Without it we do not send the file.',
     },
   };
 
@@ -62,12 +91,16 @@
   var t = TEXTY[lang] || TEXTY.sk;
 
   // Stripe vie presmerovať len na jednu adresu a tá je slovenská. Nemecký
-  // zákazník by tak po zaplatení 149 € pristál na stránke, ktorej nerozumie.
-  // Preto sa slovenská stránka sama prepne na nemeckú, keď prehliadač hovorí
-  // po nemecky, a session_id vezme so sebou. Naopak to nerobíme: kto je na
-  // nemeckej stránke, prišiel tam vedome.
-  if (lang === 'sk' && /^de/i.test(navigator.language || '') && !/\/de\/nahrat\//.test(location.pathname)) {
-    location.replace('/kontrola-suboru/de/nahrat/' + location.search);
+  // alebo anglicky hovoriaci zákazník by tak po zaplatení 149 € pristál na
+  // stránke, ktorej nerozumie. Preto sa slovenská stránka sama prepne podľa
+  // jazyka prehliadača: nemčina na nemeckú, všetko ostatné okrem slovenčiny
+  // a češtiny na anglickú, a session_id vezme so sebou. Naopak to nerobíme:
+  // kto je na nemeckej alebo anglickej stránke, prišiel tam vedome. Bez
+  // údaja o jazyku (prázdny navigator.language) ostávame na slovenskej.
+  var jazykPrehliadaca = (navigator.language || '').slice(0, 2).toLowerCase();
+  if (lang === 'sk' && jazykPrehliadaca && jazykPrehliadaca !== 'sk' && jazykPrehliadaca !== 'cs'
+      && !/\/(de|en)\/nahrat\//.test(location.pathname)) {
+    location.replace((jazykPrehliadaca === 'de' ? '/kontrola-suboru/de/nahrat/' : '/kontrola-suboru/en/nahrat/') + location.search);
     return;
   }
 
@@ -78,6 +111,7 @@
   var tlacidlo = document.getElementById('poslat');
   var vybraneMeno = document.getElementById('vybrane');
   var hlaska = document.getElementById('hlaska');
+  var suhlas = document.getElementById('suhlas');
 
   var sessionId = '';
   var mail = '';
@@ -101,6 +135,23 @@
     if (blokNahravania) blokNahravania.hidden = !zapnute;
   }
 
+  // Chýbajúce políčko v HTML sa neberie ako súhlas, ale ako chyba stránky:
+  // vstup ostane vypnutý a človek vidí hlášku, prečo.
+  function suhlasDany() {
+    return !!(suhlas && suhlas.checked);
+  }
+
+  // Vstup na súbor a tlačidlo sa riadia políčkom: kým nie je zaškrtnuté,
+  // súbor sa nedá vybrať ani odoslať. Odškrtnutie po výbere súboru výber
+  // nezahodí, len zamkne tlačidlo, kým človek políčko znova nezaškrtne.
+  function podlaSuhlasu() {
+    var dany = suhlasDany();
+    if (vstup) vstup.disabled = !dany;
+    if (zona) zona.classList.toggle('zona-vypnuta', !dany);
+    if (tlacidlo) tlacidlo.disabled = !(dany && subor && !posielam);
+    if (dany && hlaska && hlaska.textContent === t.bezSuhlasu) ukazHlasku('');
+  }
+
   // Koncovku nekontrolujeme kvôli bezpečnosti, to robí worker. Kontrolujeme
   // ju preto, aby človek nečakal na odoslanie 4 MB PDF a až potom sa dozvedel,
   // že to nie je ten súbor.
@@ -110,6 +161,11 @@
 
   function nastavSubor(file) {
     if (!file) return;
+    if (!suhlasDany()) {
+      ukazHlasku(t.bezSuhlasu, 'chyba');
+      if (tlacidlo) tlacidlo.disabled = true;
+      return;
+    }
     if (file.size > MAX_BAJTOV) {
       subor = null;
       if (vybraneMeno) vybraneMeno.textContent = '';
@@ -158,6 +214,11 @@
 
   async function posli() {
     if (!subor || posielam) return;
+    if (!suhlasDany()) {
+      ukazHlasku(t.bezSuhlasu, 'chyba');
+      if (tlacidlo) tlacidlo.disabled = true;
+      return;
+    }
     posielam = true;
     if (tlacidlo) tlacidlo.disabled = true;
     ukazHlasku(t.nahravam);
@@ -166,7 +227,10 @@
     try {
       r = await fetch(urlSession('/v1/kontrola/upload'), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/xml' },
+        // X-Arling-Consent: 1 je zaškrtnuté políčko. Worker si ho uloží
+        // k súboru (upload.js, CONSENT_HEADER); sem sa dostaneme len so
+        // zaškrtnutým políčkom.
+        headers: { 'Content-Type': 'application/xml', 'X-Arling-Consent': '1' },
         body: subor,
       });
     } catch (e) {
@@ -213,8 +277,29 @@
   if (tlacidlo) {
     tlacidlo.addEventListener('click', posli);
   }
+  if (suhlas) {
+    suhlas.addEventListener('change', podlaSuhlasu);
+  }
+  // Prehliadač si po obnovení stránky môže políčko pamätať, preto sa stav
+  // nastaví hneď pri načítaní, nie až pri prvom kliknutí.
+  podlaSuhlasu();
 
   sessionId = new URLSearchParams(window.location.search).get('session_id') || '';
+
+  // Odkazy na inú jazykovú verziu (riadok „Deutsch · English" pod formulárom
+  // a prepínač v hlavičke, ktorý si /style/prepinac.js postaví z hreflang
+  // odkazov) sú bez otázky. Kto po zaplatení klikne na iný jazyk, by tak
+  // prišiel o session_id a videl „táto stránka sa dá otvoriť len z platby".
+  // Preto sa session_id dopíše do každého odkazu na stránku na nahratie.
+  // prepinac.js je odložený a v HTML stojí pred týmto súborom, takže jeho
+  // odkazy už existujú.
+  if (sessionId) {
+    Array.prototype.forEach.call(document.querySelectorAll('a[href*="/nahrat/"], a[hreflang]'), function (a) {
+      var h = (a.getAttribute('href') || '').split('?')[0];
+      if (/\/nahrat\/?$/.test(h)) a.setAttribute('href', h + '?session_id=' + encodeURIComponent(sessionId));
+    });
+  }
+
   if (!sessionId) {
     ukazStav(t.bezSession, 'chyba');
   } else {
