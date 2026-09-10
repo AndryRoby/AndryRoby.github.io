@@ -4,10 +4,10 @@
  * tests.
  *
  * The week (Bratislava time):
- *   Monday, Tuesday      Easy       7 x 7    8 to 10 sandbanks
- *   Wednesday, Thursday  Medium     9 x 9   12 to 15 sandbanks
- *   Friday, Saturday     Hard      11 x 11  18 to 22 sandbanks
- *   Sunday               Challenge 13 x 13  26 to 30 sandbanks
+ *   Monday, Tuesday      Easy       7 x 7   10 to 12 sandbanks
+ *   Wednesday, Thursday  Medium     9 x 9   16 to 20 sandbanks
+ *   Friday, Saturday     Hard      11 x 11  24 to 28 sandbanks
+ *   Sunday               Challenge 13 x 13  32 to 38 sandbanks
  * Practice sets use the three smaller sizes (no Challenge practice set, the
  * same idea as Magpies).
  *
@@ -32,8 +32,12 @@
  * (UROVNE[...].maxVrstva = 2), so those days never need a trial. Hard and
  * Challenge do allow layer 3, and out of KANDIDATOV candidates (seeded
  * date#0, date#1, ...) sorted by obtiaznost() ascending, each level takes a
- * fixed rank: Easy the quietest, Medium a middle one, Hard high, Challenge
- * the one that leans on the harder layers most. The record of what was picked
+ * fixed rank: Easy the fewest layer 2 steps, Medium a middle one, Hard high,
+ * Challenge the one that leans on layers 2 and 3 most. Every candidate in
+ * that pool has already passed the hardness conditions in generator.mjs, so
+ * even the quietest Easy is a puzzle where one tap per pair gets you nowhere:
+ * the ranking only decides how much thinking is on top of that. The record of
+ * what was picked
  * is dni/YYYY-MM.json, built by postav.mjs; the browser only recomputes when
  * that file is missing.
  */
@@ -45,13 +49,19 @@ export const DNI = ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'];
 export const DNI_DLHE = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 export const MESIACE = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 /* n is the grid of points, ostrovy the range of sandbanks on it, maxVrstva
- * the highest layer of rules the puzzle is allowed to need. 2 means a person
- * can finish it without ever trying a count out. */
+ * the highest layer of rules the puzzle is allowed to need (2 means a person
+ * can finish it without ever trying a count out), krizenie whether the puzzle
+ * has to contain a crossing the player must steer around: two pairs that
+ * stand in line and cross each other, only one of which carries a walkway.
+ * Every level, this one included, already has to fail both naive strategies
+ * and keep at least MIN_FALOSNE false neighbours and MIN_DVOJITE double
+ * walkways (generator.mjs); the crossing is the one extra turn of the screw
+ * that only the two big boards have room for. */
 export const UROVNE = {
-  easy: { n: 7, ostrovy: [8, 10], label: 'Easy', maxVrstva: 2 },
-  medium: { n: 9, ostrovy: [12, 15], label: 'Medium', maxVrstva: 2 },
-  hard: { n: 11, ostrovy: [18, 22], label: 'Hard', maxVrstva: 3 },
-  challenge: { n: 13, ostrovy: [26, 30], label: 'Challenge', maxVrstva: 3 },
+  easy: { n: 7, ostrovy: [10, 12], label: 'Easy', maxVrstva: 2, krizenie: false },
+  medium: { n: 9, ostrovy: [16, 20], label: 'Medium', maxVrstva: 2, krizenie: false },
+  hard: { n: 11, ostrovy: [24, 28], label: 'Hard', maxVrstva: 3, krizenie: true },
+  challenge: { n: 13, ostrovy: [32, 38], label: 'Challenge', maxVrstva: 3, krizenie: true },
 };
 /* Rank (0-based, out of KANDIDATOV candidates sorted by obtiaznost,
  * ascending) that each level picks. Ranks are only comparable inside one
@@ -125,17 +135,17 @@ export function vyber(uroven, kandidat, pocet = KANDIDATOV) {
 export function zadaniePreDen(iso) {
   if (!isValidDate(iso)) throw new Error('Bad date: ' + iso);
   const u = urovenDna(iso);
-  const { n, ostrovy, maxVrstva } = UROVNE[u];
-  return vyber(u, (k) => generateSeeded(iso, iso + '/' + n + (k ? '#' + k : ''), { n, ostrovy, maxVrstva }));
+  const { n, ostrovy, maxVrstva, krizenie } = UROVNE[u];
+  return vyber(u, (k) => generateSeeded(iso, iso + '/' + n + (k ? '#' + k : ''), { n, ostrovy, maxVrstva, krizenie }));
 }
 
 /* A practice puzzle: set id and 1-based number. Not tied to any date. */
 export function zadanieCvicenie(sada, k) {
   const s = SADY.find((x) => x.id === sada);
   if (!s || !(k >= 1 && k <= s.pocet)) throw new Error('Bad practice puzzle: ' + sada + ' ' + k);
-  const { n, ostrovy, maxVrstva } = UROVNE[s.uroven];
+  const { n, ostrovy, maxVrstva, krizenie } = UROVNE[s.uroven];
   const name = 'practice-' + sada + '-' + k;
-  return vyber(s.uroven, (j) => generateSeeded(name, 'practice/' + sada + '/' + k + '/' + n + (j ? '#' + j : ''), { n, ostrovy, maxVrstva }));
+  return vyber(s.uroven, (j) => generateSeeded(name, 'practice/' + sada + '/' + k + '/' + n + (j ? '#' + j : ''), { n, ostrovy, maxVrstva, krizenie }));
 }
 
 /* ── Compact format for dni.json and for embedding in pages ───────────── *

@@ -24,25 +24,38 @@
  * which pairs meet at each sandbank, and which pairs would cross.
  *
  * Generation (generateSeeded):
- *   1. grow a layout: the first sandbank at random, then repeatedly pick an
- *      existing one and a direction and drop a new one 2 to 5 squares away,
- *      joined by one walkway or (about 30 percent of the time) two,
- *   2. add a few more walkways between sandbanks that already stand in line,
- *      so the layout is not a bare tree,
+ *   1. lay out a coarse lattice: pick R rows and S columns of the grid, no
+ *      two of them closer than two squares, and put the sandbanks on the
+ *      crossings. Start from the full lattice and cut holes out of it, one
+ *      cell at a time, while the rest still hangs together and no row or
+ *      column empties, until only `ostrovy` sandbanks are left,
+ *   2. join them: a random spanning tree over pairs that are neighbours in
+ *      the lattice (those can never cross, so the tree always exists), then
+ *      a few more walkways between other sandbanks that stand in line, then
+ *      doubling: most single walkways are drawn twice,
  *   3. read every number off the layout (a number is the count of walkways),
- *   4. take single walkways away one at a time, for good, while the puzzle
- *      still has exactly one solution (solve), a person can still finish it
- *      without guessing (solveHuman), and no step of layer 2 or 3 is lost:
- *      fewer walkways means smaller numbers and a puzzle that gives less
- *      away, and the last condition keeps it from shrinking to a bare tree,
- *   5. if a layout fails, try another one, up to `maxAttempts`.
+ *   4. take walkways away one at a time, for good, while the puzzle still
+ *      has exactly one solution (solve), a person can still finish it
+ *      without guessing (solveHuman) and the two hardness conditions below
+ *      still hold,
+ *   5. check the hardness conditions on the finished puzzle; if a layout
+ *      fails any of them, try another one, up to `maxAttempts`, and if none
+ *      of them works, throw rather than hand back an easy puzzle.
+ *
+ * Why the lattice. Two sandbanks that stand in line with nothing between
+ * them are a pair a player can see, and the count of those pairs is exactly
+ * 2 x sandbanks - (rows used) - (columns used). Scattered sandbanks use many
+ * rows and columns and so leave barely more pairs than a tree needs, and
+ * then almost every pair a player sees really does carry a walkway: one tap
+ * on each and the puzzle falls. Herding the sandbanks into few rows and
+ * columns is what buys the false neighbours (see MIN_FALOSNE).
  *
  * Step 4 is where Cranes differs from Magpies and Otters. There every clue is
  * optional, so taking clues away can only make the puzzle harder. Here every
  * sandbank has to show its number, so the only thing that can be taken away
  * is a walkway, and a walkway is both a constraint and a gift: strip enough
  * of them and the layout falls apart into a tree of 1s that a person solves
- * from the leaves without thinking. Hence the extra condition.
+ * from the leaves without thinking. Hence the extra conditions.
  *
  * Difficulty, returned as `difficulty`:
  *   layers  how many steps the human solver needed from each layer of rules
@@ -696,9 +709,12 @@ function textKroku(s, g, islands, edges) {
 
 /* ── Denné zadanie ───────────────────────────────────────────────────── */
 
-/* Koľko ostrovov patrí na ktorú mriežku (spec: 7x7 8 az 10, 9x9 12 az 15,
-   11x11 18 az 22, 13x13 26 az 30). */
-export const ROZSAH_OSTROVOV = { 7: [8, 10], 9: [12, 15], 11: [18, 22], 13: [26, 30] };
+/* Koľko ostrovov patrí na ktorú mriežku (spec: 7x7 10 az 12, 9x9 16 az 20,
+   11x11 24 az 28, 13x13 32 az 38). Viac ostrovov než predtým: na hrubej
+   mrieze z nich vzniká viac viditeľných dvojíc, a bez toho sa 30 percent
+   falošných susedstiev nedá dosiahnuť. Ostrovy pritom nie sú natlačené,
+   riadky aj stĺpce mriežky sú od seba aspoň dva kroky. */
+export const ROZSAH_OSTROVOV = { 7: [10, 12], 9: [16, 20], 11: [24, 28], 13: [32, 38] };
 function rozsahPre(n) {
   if (ROZSAH_OSTROVOV[n]) return ROZSAH_OSTROVOV[n];
   const s = Math.max(3, Math.round(n * n * 0.16));
@@ -721,93 +737,77 @@ function zamiesaj(rng, m) {
   return a;
 }
 
-/* Úsek medzi dvoma bodmi mriežky (ako čísla r * n + c). */
-function usek(p, q, n) {
-  const r1 = (p / n) | 0, c1 = p % n, r2 = (q / n) | 0, c2 = q % n;
-  return {
-    vodorovna: r1 === r2,
-    r: Math.min(r1, r2), rr: Math.max(r1, r2),
-    c: Math.min(c1, c2), cc: Math.max(c1, c2),
-  };
-}
-function krizuju(s, t) {
-  if (s.vodorovna === t.vodorovna) return false;
-  const h = s.vodorovna ? s : t, v = s.vodorovna ? t : s;
-  return h.c < v.c && v.c < h.cc && v.r < h.r && h.r < v.rr;
-}
-function leziNa(s, pos, n) {
-  const r = (pos / n) | 0, c = pos % n;
-  if (s.vodorovna) return r === s.r && c > s.c && c < s.cc;
-  return c === s.c && r > s.r && r < s.rr;
+/* ── Hrubá mriežka, na ktorej ostrovy stoja ──────────────────────────── *
+ * Ostrovy nestoja kde padne, ale na krížení vybraných riadkov a vybraných
+ * stĺpcov. Riadky (aj stĺpce) sú od seba aspoň dva kroky, takže dva ostrovy
+ * nikdy nesedia na susedných políčkach a medzera medzi nimi je aspoň jedno
+ * pole. Odmenou je počet viditeľných dvojíc: v riadku s k ostrovmi je k - 1
+ * dvojíc, čiže dvojíc je presne 2 x ostrovy - riadky - stĺpce. Menej
+ * riadkov a stĺpcov teda znamená viac dvojíc, a práve tie navyše sú
+ * falošné susedstvá, ktoré naivné klikanie potopia. */
+
+/* Vyber `kolko` čiar (riadkov alebo stĺpcov) z n s rozostupom aspoň 2.
+   Voľné miesto sa rozdelí náhodne, aby mriežka nebola vždy tá istá. */
+function linie(rng, n, kolko) {
+  if (kolko < 1 || kolko * 2 - 1 > n) return null;
+  const volno = n - (kolko * 2 - 1);
+  const medzery = new Array(kolko + 1).fill(0);
+  for (let i = 0; i < volno; i++) medzery[Math.floor(rng() * (kolko + 1))]++;
+  const out = [];
+  let p = medzery[0];
+  for (let i = 0; i < kolko; i++) { out.push(p); p += 2 + medzery[i + 1]; }
+  return out;
 }
 
-/* Rozloženie ostrovov a lávok. Prvý ostrov náhodne, potom sa opakovane
- * vyberie existujúci ostrov a smer a vo vzdialenosti 2 az 5 sa položí nový:
- * nesmie prekryť ostrov, dotknúť sa iného ostrova zboku, ležať na lávke ani
- * krížiť lávku. Spojí sa jednou lávkou, asi v 30 percentách dvoma. Vráti
- * { ostrovy: [{ r, c }], mosty: [{ p, q, k }] } alebo null, keď sa
- * rozloženie nedorástlo na cieľ. */
-function postavRozlozenie(rng, n, ciel, opts = {}) {
-  const obsadene = new Set();
-  const poz = [];
-  const mosty = [];
-  const useky = [];
-  const stupen = [];
-  const start = Math.floor(rng() * n) * n + Math.floor(rng() * n);
-  obsadene.add(start); poz.push(start); stupen.push(0);
-  let pokusy = 0;
-  const maxPokusov = 200 * ciel;
-  while (poz.length < ciel && pokusy < maxPokusov) {
-    pokusy++;
-    const a = Math.floor(rng() * poz.length);
-    const d = Math.floor(rng() * 4);
-    const dist = 2 + Math.floor(rng() * (opts.dosah ?? 4)); // 2 az 5 políčok
-    const pocet = rng() < 0.3 ? 2 : 1;
-    const ar = (poz[a] / n) | 0, ac = poz[a] % n;
-    const nr = ar + SMERY[d][0] * dist, nc = ac + SMERY[d][1] * dist;
-    if (nr < 0 || nc < 0 || nr >= n || nc >= n) continue;
-    if (stupen[a] + pocet > 8) continue;
-    const p = nr * n + nc;
-    if (obsadene.has(p)) continue;
-    // medzi nimi nesmie stáť iný ostrov
-    let volne = true;
-    for (let s = 1; s < dist && volne; s++) {
-      if (obsadene.has((ar + SMERY[d][0] * s) * n + (ac + SMERY[d][1] * s))) volne = false;
-    }
-    if (!volne) continue;
-    // nový ostrov sa nesmie dotýkať iného zboku
-    for (let m = 0; m < 4 && volne; m++) {
-      const qr = nr + SMERY[m][0], qc = nc + SMERY[m][1];
-      if (qr < 0 || qc < 0 || qr >= n || qc >= n) continue;
-      if (obsadene.has(qr * n + qc)) volne = false;
-    }
-    if (!volne) continue;
-    // nesmie ležať na existujúcej lávke
-    for (let x = 0; x < useky.length && volne; x++) if (leziNa(useky[x], p, n)) volne = false;
-    if (!volne) continue;
-    const u = usek(poz[a], p, n);
-    for (let x = 0; x < useky.length && volne; x++) if (krizuju(u, useky[x])) volne = false;
-    if (!volne) continue;
-    obsadene.add(p); poz.push(p); stupen.push(pocet);
-    stupen[a] += pocet;
-    mosty.push({ p: poz[a], q: p, k: pocet });
-    useky.push(u);
+/* Držia obsadené bunky hrubej mriežky pokope a nie je ani jeden riadok či
+   stĺpec prázdny? Prázdny riadok by ubral viditeľné dvojice. */
+function drziPokope(obs, R, S, mam) {
+  const riadky = new Uint8Array(R), stlpce = new Uint8Array(S);
+  let start = -1;
+  for (let x = 0; x < R * S; x++) {
+    if (!obs[x]) continue;
+    riadky[(x / S) | 0] = 1; stlpce[x % S] = 1;
+    if (start < 0) start = x;
   }
-  if (poz.length < ciel) return null;
-  return { poz, mosty, useky, stupen };
+  if (start < 0) return false;
+  for (let i = 0; i < R; i++) if (!riadky[i]) return false;
+  for (let j = 0; j < S; j++) if (!stlpce[j]) return false;
+  const videne = new Uint8Array(R * S), front = [start];
+  videne[start] = 1;
+  let dos = 1;
+  while (front.length) {
+    const x = front.pop(), r = (x / S) | 0, c = x % S;
+    if (r > 0 && obs[x - S] && !videne[x - S]) { videne[x - S] = 1; dos++; front.push(x - S); }
+    if (r < R - 1 && obs[x + S] && !videne[x + S]) { videne[x + S] = 1; dos++; front.push(x + S); }
+    if (c > 0 && obs[x - 1] && !videne[x - 1]) { videne[x - 1] = 1; dos++; front.push(x - 1); }
+    if (c < S - 1 && obs[x + 1] && !videne[x + 1]) { videne[x + 1] = 1; dos++; front.push(x + 1); }
+  }
+  return dos === mam;
 }
 
-/* Zoradí ostrovy v poradí čítania a prepíše lávky na indexy. */
-function usporiadaj(poz, mosty, n) {
-  const zoradene = poz.slice().sort((a, b) => a - b);
-  const index = new Map();
-  zoradene.forEach((p, i) => index.set(p, i));
-  const ostrovy = zoradene.map((p) => ({ r: (p / n) | 0, c: p % n, n: 0 }));
-  const lavky = mosty.map((m) => {
-    const a = index.get(m.p), b = index.get(m.q);
-    return { a: Math.min(a, b), b: Math.max(a, b), k: m.k };
-  });
-  return { ostrovy, lavky };
+/* Plná mriežka R x S, z ktorej sa vyrezávajú diery, kým neostane `ciel`
+ * buniek. Diera vnútri je to, čo robí kríženia: cez ňu sa dvaja ostrovy
+ * uvidia a ich lávka by pretla kolmú. Vráti masku obsadených buniek alebo
+ * null, keď sa toľko dier vyrezať nedá. */
+function vyrezDiery(rng, R, S, ciel) {
+  const obs = new Uint8Array(R * S).fill(1);
+  let mam = R * S;
+  while (mam > ciel) {
+    let odobral = false;
+    for (const x of zamiesaj(rng, R * S)) {
+      if (!obs[x]) continue;
+      obs[x] = 0;
+      if (drziPokope(obs, R, S, mam - 1)) { mam--; odobral = true; break; }
+      obs[x] = 1;
+    }
+    if (!odobral) return null;
+  }
+  return obs;
+}
+
+function najdiKoren(uf, x) {
+  while (uf[x] !== x) { uf[x] = uf[uf[x]]; x = uf[x]; }
+  return x;
 }
 
 /* Čísla ostrovov = počet lávok, ktoré z nich vedú. */
@@ -826,20 +826,96 @@ function rieseniePodlaPoctov(g, pocty) {
   return out;
 }
 
+/* ── Tvrdosť zadania ─────────────────────────────────────────────────── *
+ * Andrej to povedal presne: „stačí medzi každým bodom raz kliknúť a človek
+ * to má". Presne túto stratégiu volajú tieto podmienky N1 a N2 a presne ju
+ * musí každé zadanie odmietnuť.
+ *   MIN_FALOSNE  aspoň toľko viditeľných dvojíc je v riešení bez lávky.
+ *                Falošné susedstvo je dvojica, ktorú hráč vidí a musí sám
+ *                prísť na to, že ju nespojí.
+ *   MIN_DVOJITE  aspoň toľko dvojíc s lávkou má lávky dve, takže jedno
+ *                kliknutie na dvojicu nikdy nestačí.
+ * Kríženie, ktorému sa treba vyhnúť, si pýtajú len hard a challenge
+ * (opts.krizenie), lebo na malej mriežke sa diera na kríženie nemusí nájsť. */
+export const MIN_FALOSNE = 0.30;
+export const MIN_DVOJITE = 0.25;
+
+/* naivneRiesi(islands, n, g) skúsi dve najhlúpejšie stratégie:
+ *   n1  jedna lávka na každú viditeľnú dvojicu susedov v rade,
+ *   n2  dve lávky na každú takú dvojicu.
+ * Vráti { n1, n2 }, kde true znamená, že tá stratégia je hotové riešenie:
+ * všetky čísla sedia, nič sa nekríži a doska drží pokope. Keď je v grafe
+ * hoci len jedno kríženie, obe stratégie padnú hneď na ňom, lebo obe kladú
+ * lávku na každú dvojicu. Zadanie, kde vyjde n1 alebo n2, je presne to
+ * zadanie, ktoré sa nedá pokaziť, a generátor ho neprijme. */
+export function naivneRiesi(islands, n, g = graf(islands, n)) {
+  let hociKrizenie = false;
+  for (let e = 0; e < g.E && !hociKrizenie; e++) if (g.krizenia[e].length) hociKrizenie = true;
+  // súvislosť: naivná stratégia použije každú dvojicu, takže spojí všetko,
+  // čo je v grafe viditeľnosti spojené
+  const videne = new Uint8Array(g.C), front = [0];
+  let dosiahnute = 0;
+  if (g.C > 0) { videne[0] = 1; dosiahnute = 1; }
+  while (front.length) {
+    const i = front.pop();
+    for (const e of g.hraneOstrova[i]) {
+      const j = g.pary[e].a === i ? g.pary[e].b : g.pary[e].a;
+      if (!videne[j]) { videne[j] = 1; dosiahnute++; front.push(j); }
+    }
+  }
+  const zaklad = !hociKrizenie && dosiahnute === g.C;
+  const sedia = (k) => {
+    for (let i = 0; i < g.C; i++) if (g.hraneOstrova[i].length * k !== islands[i].n) return false;
+    return true;
+  };
+  return { n1: zaklad && sedia(1), n2: zaklad && sedia(2) };
+}
+
+/* Ako je zadanie postavené: koľko viditeľných dvojíc ostane bez lávky,
+ * koľko lávok je dvojitých a či je na doske kríženie, ktorému sa treba
+ * vyhnúť (dve možné lávky sa krížia a len jedna z nich je v riešení).
+ * Vráti { dvojic, bezLavky, sLavkou, dvojite, falosne, podielDvojitych,
+ * krizenie }; falosne a podielDvojitych sú podiely od 0 po 1. */
+function statistikaPoctov(g, pocty) {
+  let bezLavky = 0, jedna = 0, dvojite = 0, krizenie = false;
+  for (let e = 0; e < g.E; e++) {
+    const k = pocty[e] | 0;
+    if (k === 0) bezLavky++; else if (k === 1) jedna++; else dvojite++;
+  }
+  for (let e = 0; e < g.E && !krizenie; e++) {
+    for (const f of g.krizenia[e]) {
+      if (((pocty[e] | 0) >= 1) !== ((pocty[f] | 0) >= 1)) { krizenie = true; break; }
+    }
+  }
+  const sLavkou = jedna + dvojite;
+  return {
+    dvojic: g.E, bezLavky, sLavkou, dvojite, krizenie,
+    falosne: g.E ? bezLavky / g.E : 0,
+    podielDvojitych: sLavkou ? dvojite / sLavkou : 0,
+  };
+}
+/* To isté zvonku, z hotového zadania. Testy a ops skripty používajú toto. */
+export function statistikaZadania(islands, n, bridges, g = graf(islands, n)) {
+  return statistikaPoctov(g, poleLaviek(bridges, g));
+}
+
 /* The same as generate, but the random seed comes from `key` (any string)
  * and `name` is only stored in the result as `date`. Practice puzzles and the
  * daily candidates use it. Deterministic: the same key gives the same puzzle.
  * opts: n (the grid of points, default 9), ostrovy ([least, most] sandbanks,
  * default from ROZSAH_OSTROVOV), maxVrstva (the highest layer of rules the
- * puzzle may need, default 3), maxAttempts (default 200), maxNodes (the
- * branching budget of the uniqueness check, default 20000), dosah (how many
- * different lengths a new sandbank may be dropped at, default 4, so 2 to 5
- * squares), navyse (how many walkways beyond the tree to try, as a share of
- * the sandbank count, default 0.12 plus up to 0.18 at random), prechody (how
+ * puzzle may need, default 3), krizenie (demand a crossing the player has to
+ * steer around, default false, on for Hard and Challenge), maxAttempts
+ * (default 200), maxNodes (the branching budget of the uniqueness check,
+ * default 20000), navyse (how many walkways beyond the tree to try, as a
+ * share of the sandbank count, default 0.25), dvojite (how often a walkway is
+ * drawn twice before the puzzle is thinned out, default 0.85), prechody (how
  * many times the walkways are walked over and taken away, default 2).
  * Returns { date, n, islands ([{ r, c, n }] in reading order), bridges
  * ([{ a, b, k }]), seed, attempts, difficulty:{ layers:{1,2,3}, ostrovy,
- * lavky, steps }, ms }.
+ * lavky, steps }, tvrdost, ms }.
+ * Throws if `maxAttempts` layouts in a row fail the hardness conditions,
+ * rather than quietly handing back a puzzle one tap per pair would solve.
  * Pole s lávkami zadania sa volá bridges podľa ops/spec-cranes.md; solution
  * ostáva menom pre to, čo vráti solve alebo solveHuman, teda pre nájdené
  * riešenie, nie pre uložené zadanie. */
@@ -851,28 +927,80 @@ export function generateSeeded(name, key, opts = {}) {
   // veľmi riedkom zadaní zamotá na dlhé sekundy; s ním sa také odobratie
   // lávky proste neprijme a lávka na doske ostane.
   const maxNodes = opts.maxNodes ?? 20000;
+  const chceKrizenie = !!opts.krizenie;
   const [minO, maxO] = opts.ostrovy || rozsahPre(n);
   const t0 = nowMs();
   const seed = seedFromString(key);
   const rng = mulberry32(seed);
+  // Najviac čiar, ktoré sa na mriežku zmestia s rozostupom 2.
+  const maxLinii = Math.ceil(n / 2);
+  // Prečo ktorý pokus padol; ide to do textu výnimky, aby nebolo treba hádať.
+  const dovody = {};
+  const zapis = (x) => { dovody[x] = (dovody[x] || 0) + 1; };
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     const ciel = minO + Math.floor(rng() * (maxO - minO + 1));
-    const surove = postavRozlozenie(rng, n, ciel, { dosah: opts.dosah });
-    if (!surove) continue;
-    const { ostrovy, lavky } = usporiadaj(surove.poz, surove.mosty, n);
-    const g = graf(ostrovy, n);
-    const pocty = new Uint8Array(g.E);
-    let zle = false;
-    for (const m of lavky) {
-      const e = g.indexPary(m.a, m.b);
-      if (e < 0) { zle = true; break; }
-      pocty[e] += m.k;
-      if (pocty[e] > 2) { zle = true; break; }
+    // Tvar hrubej mriežky: musí ostrovy pojať a 2 x ciel - R - S musí dať
+    // dosť falošných susedstiev aj vtedy, keď je riešenie holý strom.
+    const tvary = [];
+    for (let R = 1; R <= maxLinii; R++) {
+      for (let S = 1; S <= maxLinii; S++) {
+        if (R * S < ciel) continue;
+        if (chceKrizenie && R * S < ciel + 2) continue; // bez dier niet krížení
+        const dvojic = 2 * ciel - R - S;
+        if (dvojic <= 0 || 1 - (ciel - 1) / dvojic < MIN_FALOSNE) continue;
+        tvary.push([R, S]);
+      }
     }
-    if (zle) continue;
-    // niekoľko lávok navyše medzi ostrovmi, ktoré už stoja v rade, aby graf
-    // nebol len strom
-    const navyse = Math.round(ostrovy.length * ((opts.navyse ?? 0.12) + rng() * 0.18));
+    if (!tvary.length) { zapis('tvar'); continue; }
+    const [R, S] = tvary[Math.floor(rng() * tvary.length)];
+    const riadky = linie(rng, n, R), stlpce = linie(rng, n, S);
+    if (!riadky || !stlpce) { zapis('linie'); continue; }
+    const obs = vyrezDiery(rng, R, S, ciel);
+    if (!obs) { zapis('diery'); continue; }
+
+    const ostrovy = [];
+    for (let x = 0; x < R * S; x++) {
+      if (obs[x]) ostrovy.push({ r: riadky[(x / S) | 0], c: stlpce[x % S], n: 0 });
+    }
+    ostrovy.sort((a, b) => (a.r - b.r) || (a.c - b.c));
+    const kdeJe = new Map();
+    ostrovy.forEach((o, i) => kdeJe.set(o.r * n + o.c, i));
+    const g = graf(ostrovy, n);
+    // Aj holý strom má C - 1 dvojíc s lávkou; keď ani tak nie je falošných
+    // susedstiev dosť, toto rozloženie nemá zmysel ďalej skúšať.
+    if (1 - (g.C - 1) / g.E < MIN_FALOSNE) { zapis('malo-dvojic'); continue; }
+
+    // Kostra len z dvojíc, ktoré sú susedné v hrubej mrieze. Také dvojice sa
+    // navzájom nikdy nekrížia, takže kostra vždy existuje.
+    const susedne = [];
+    for (let x = 0; x < R * S; x++) {
+      if (!obs[x]) continue;
+      const r = (x / S) | 0, c = x % S;
+      if (c < S - 1 && obs[x + 1]) {
+        susedne.push([kdeJe.get(riadky[r] * n + stlpce[c]), kdeJe.get(riadky[r] * n + stlpce[c + 1])]);
+      }
+      if (r < R - 1 && obs[x + S]) {
+        susedne.push([kdeJe.get(riadky[r] * n + stlpce[c]), kdeJe.get(riadky[r + 1] * n + stlpce[c])]);
+      }
+    }
+    const pocty = new Uint8Array(g.E);
+    const stupen = new Int32Array(g.C);
+    const uf = new Int32Array(g.C);
+    for (let i = 0; i < g.C; i++) uf[i] = i;
+    let komponentov = g.C;
+    for (const t of zamiesaj(rng, susedne.length)) {
+      if (komponentov === 1) break;
+      const a = susedne[t][0], b = susedne[t][1];
+      if (najdiKoren(uf, a) === najdiKoren(uf, b)) continue;
+      const e = g.indexPary(a, b);
+      if (e < 0) continue;
+      pocty[e] = 1; stupen[a]++; stupen[b]++;
+      uf[najdiKoren(uf, a)] = najdiKoren(uf, b); komponentov--;
+    }
+    if (komponentov !== 1) { zapis('kostra'); continue; }
+
+    // Niekoľko lávok navyše, aj cez diery, nech riešenie nie je holý strom.
+    const navyse = Math.round(g.C * (opts.navyse ?? 0.25));
     let pridane = 0;
     for (const e of zamiesaj(rng, g.E)) {
       if (pridane >= navyse) break;
@@ -881,52 +1009,79 @@ export function generateSeeded(name, key, opts = {}) {
       for (const f of g.krizenia[e]) if (pocty[f] >= 1) { volne = false; break; }
       if (!volne) continue;
       const a = g.pary[e].a, b = g.pary[e].b;
-      let sa = 0, sb = 0;
-      for (const f of g.hraneOstrova[a]) sa += pocty[f];
-      for (const f of g.hraneOstrova[b]) sb += pocty[f];
-      if (sa + 1 > 8 || sb + 1 > 8) continue;
-      pocty[e] = 1;
-      pridane++;
+      if (stupen[a] + 1 > 8 || stupen[b] + 1 > 8) continue;
+      pocty[e] = 1; stupen[a]++; stupen[b]++; pridane++;
     }
+    // Zdvojenie. Štedré naschvál: minimalizácia nižšie ich zase odoberá a
+    // musí mať z čoho brať, aby dvojitých ostalo aspoň MIN_DVOJITE.
+    const pDvojite = opts.dvojite ?? 0.85;
+    for (const e of zamiesaj(rng, g.E)) {
+      if (pocty[e] !== 1 || rng() >= pDvojite) continue;
+      const a = g.pary[e].a, b = g.pary[e].b;
+      if (stupen[a] + 1 > 8 || stupen[b] + 1 > 8) continue;
+      pocty[e] = 2; stupen[a]++; stupen[b]++;
+    }
+
     prepisCisla(ostrovy, g, pocty);
-    let nula = false;
-    for (const o of ostrovy) if (o.n < 1) nula = true;
-    if (nula) continue;
+    let zleCislo = false;
+    for (const o of ostrovy) if (o.n < 1 || o.n > 8) zleCislo = true;
+    if (zleCislo) { zapis('cisla'); continue; }
+    if (statistikaPoctov(g, pocty).podielDvojitych < MIN_DVOJITE) { zapis('dvojite'); continue; }
     const nase = rieseniePodlaPoctov(g, pocty);
     const r = solve(ostrovy, n, { limit: 2, maxNodes, graf: g });
-    if (r.vycerpane || r.count !== 1 || !rovnakeLavky(r.solution, nase)) continue;
+    if (r.vycerpane || r.count !== 1 || !rovnakeLavky(r.solution, nase)) { zapis('jednoznacnost'); continue; }
     const uvod = solveHuman(ostrovy, n, { maxVrstva, graf: g });
-    if (!uvod.solved || !rovnakeLavky(uvod.solution, nase)) continue;
+    if (!uvod.solved || !rovnakeLavky(uvod.solution, nase)) { zapis('ludske'); continue; }
 
     // Minimalizácia: lávky sa odoberajú po jednej a nadobro, kým zadanie
-    // ostáva jednoznačné aj ľudsky riešiteľné. Menej lávok znamená menšie
-    // čísla, teda menej darovaného.
+    // ostáva jednoznačné aj ľudsky riešiteľné a kým platia obe podmienky
+    // tvrdosti. Menej lávok znamená menšie čísla, teda menej darovaného, a
+    // zároveň viac falošných susedstiev.
     // Cranes je v tomto iné než Magpies alebo Otters: každý ostrov musí svoje
     // číslo ukázať, takže sa odoberajú lávky, a lávka je aj tvrdá podmienka,
     // aj indícia. Bez stráže by sa zadanie zmenšilo na holý strom samých
     // jednotiek, ktorý sa rieši od listov a nemá čo ponúknuť. Preto sa
     // odobratie prijme len vtedy, keď sa nestratí ani jeden krok vrstvy 2
-    // alebo 3.
+    // alebo 3. Kým je falošných susedstiev málo, táto stráž ustúpi:
+    // odobratie lávky je jediný spôsob, ako ich pribudne.
     let vrstvy = uvod.layersUsed;
     for (let pass = 0; pass < (opts.prechody ?? 2); pass++) {
       for (const e of zamiesaj(rng, g.E)) {
         if (pocty[e] < 1) continue;
         const a = g.pary[e].a, b = g.pary[e].b;
         if (ostrovy[a].n < 2 || ostrovy[b].n < 2) continue;
+        const predtym = statistikaPoctov(g, pocty);
         pocty[e]--; ostrovy[a].n--; ostrovy[b].n--;
+        const potom = statistikaPoctov(g, pocty);
+        let ok = potom.podielDvojitych >= MIN_DVOJITE && (!chceKrizenie || potom.krizenie);
+        if (ok) { const nv = naivneRiesi(ostrovy, n, g); ok = !nv.n1 && !nv.n2; }
         const skusane = rieseniePodlaPoctov(g, pocty);
-        const rr = solve(ostrovy, n, { limit: 2, maxNodes, graf: g });
-        let ok = !rr.vycerpane && rr.count === 1 && rovnakeLavky(rr.solution, skusane);
+        if (ok) {
+          const rr = solve(ostrovy, n, { limit: 2, maxNodes, graf: g });
+          ok = !rr.vycerpane && rr.count === 1 && rovnakeLavky(rr.solution, skusane);
+        }
         let hu = null;
         if (ok) {
           hu = solveHuman(ostrovy, n, { maxVrstva, graf: g });
           ok = hu.solved && rovnakeLavky(hu.solution, skusane);
         }
-        if (ok) ok = hu.layersUsed[2] >= vrstvy[2] && hu.layersUsed[3] >= vrstvy[3];
+        if (ok && predtym.falosne >= MIN_FALOSNE) {
+          ok = hu.layersUsed[2] >= vrstvy[2] && hu.layersUsed[3] >= vrstvy[3];
+        }
         if (ok) vrstvy = hu.layersUsed;
         else { pocty[e]++; ostrovy[a].n++; ostrovy[b].n++; }
       }
     }
+
+    // Až tu sa zadanie meria na podmienky tvrdosti: minimalizácia je jediné
+    // miesto, kde falošných susedstiev pribúda, takže pred ňou by meranie
+    // nič nepovedalo.
+    const tvrdost = statistikaPoctov(g, pocty);
+    if (tvrdost.falosne < MIN_FALOSNE) { zapis('falosne'); continue; }
+    if (tvrdost.podielDvojitych < MIN_DVOJITE) { zapis('dvojite-po'); continue; }
+    if (chceKrizenie && !tvrdost.krizenie) { zapis('krizenie'); continue; }
+    const naivne = naivneRiesi(ostrovy, n, g);
+    if (naivne.n1 || naivne.n2) { zapis('naivne'); continue; }
 
     const finalne = rieseniePodlaPoctov(g, pocty);
     const fin = solveHuman(ostrovy, n, { maxVrstva, graf: g });
@@ -940,8 +1095,10 @@ export function generateSeeded(name, key, opts = {}) {
       difficulty: {
         layers: fin.layersUsed, ostrovy: ostrovy.length, lavky: lavkySpolu, steps: fin.steps.length,
       },
+      tvrdost,
       ms: Math.round((nowMs() - t0) * 10) / 10,
     };
   }
-  throw new Error('No unique, guess-free layout for ' + name + ' in ' + maxAttempts + ' attempts');
+  throw new Error('No unique, guess-free, properly hard layout for ' + name + ' in '
+    + maxAttempts + ' attempts; what went wrong: ' + JSON.stringify(dovody));
 }

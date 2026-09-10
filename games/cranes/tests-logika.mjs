@@ -3,7 +3,9 @@
  * size, and hints alone carry an empty board all the way to the finished
  * one. */
 import { porovnaj, jeVyriesene, napoveda } from './logika.mjs';
-import { graf, poleLaviek } from './generator.mjs';
+import {
+  graf, poleLaviek, naivneRiesi, statistikaZadania, MIN_FALOSNE, MIN_DVOJITE,
+} from './generator.mjs';
 import {
   zadaniePreDen, zadanieCvicenie, zbal, rozbal, tyzden, denVTyzdni, urovenDna,
   posunDen, pekneDatum, kratkyDatum, obtiaznost, SADY, PRVY_DEN, UROVNE, KANDIDATOV,
@@ -200,6 +202,47 @@ test('Easy and Medium never ask for a trial: no layer 3 step anywhere in their w
     const p = zadaniePreDen(d);
     eq(p.difficulty.layers[3], 0, d + ' (' + u + ') needs a layer 3 step');
   }
+});
+/* The complaint that started this: "one tap between every pair and you have
+   it, you cannot spoil it". This is the test that keeps it from coming back,
+   on the puzzles people actually get: the day's pick out of its six
+   candidates, and every practice puzzle of every set. */
+test('30 days of every level and every practice puzzle: one tap per pair never solves it, nor does two', () => {
+  const zaciatky = { easy: '2026-09-14', medium: '2026-09-16', hard: '2026-09-18', challenge: '2026-09-20' };
+  const riadky = [];
+  const skusaj = (kde, p, chceKrizenie) => {
+    const g = graf(p.islands, p.n);
+    const nv = naivneRiesi(p.islands, p.n, g);
+    assert(!nv.n1, kde + ': one walkway on every pair in line is a solution, so the puzzle cannot be spoiled');
+    assert(!nv.n2, kde + ': two walkways on every pair in line are a solution');
+    const st = statistikaZadania(p.islands, p.n, p.bridges, g);
+    assert(st.falosne >= MIN_FALOSNE, kde + ': only ' + (100 * st.falosne).toFixed(0)
+      + ' percent false neighbours, the floor is ' + (100 * MIN_FALOSNE).toFixed(0));
+    assert(st.podielDvojitych >= MIN_DVOJITE, kde + ': only ' + (100 * st.podielDvojitych).toFixed(0)
+      + ' percent double walkways, the floor is ' + (100 * MIN_DVOJITE).toFixed(0));
+    if (chceKrizenie) assert(st.krizenie, kde + ': no crossing to steer around');
+    return st;
+  };
+  for (const [u, start] of Object.entries(zaciatky)) {
+    let fal = 0, dvo = 0, kriz = 0;
+    for (let k = 0; k < 30; k++) {
+      const d = posunDen(start, 7 * k);
+      eq(urovenDna(d), u, 'the sample day should be ' + u);
+      const st = skusaj(u + ' ' + d, zadaniePreDen(d), UROVNE[u].krizenie);
+      fal += st.falosne; dvo += st.podielDvojitych; if (st.krizenie) kriz++;
+    }
+    riadky.push('  ' + u.padEnd(10) + ' 30 days: false neighbours ' + (100 * fal / 30).toFixed(0)
+      + '%  doubles ' + (100 * dvo / 30).toFixed(0) + '%  crossings ' + kriz + '/30');
+  }
+  let cvicnych = 0;
+  for (const s of SADY) {
+    for (let k = 1; k <= s.pocet; k++) {
+      skusaj('practice ' + s.id + ' ' + k, zadanieCvicenie(s.id, k), UROVNE[s.uroven].krizenie);
+      cvicnych++;
+    }
+  }
+  riadky.push('  practice: ' + cvicnych + ' puzzles, all of them out of reach of a naive tap');
+  for (const r of riadky) console.log(r);
 });
 test('Challenge leans on the harder layers more than Easy does', () => {
   const pre = (u) => {

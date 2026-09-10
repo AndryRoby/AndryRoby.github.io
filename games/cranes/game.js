@@ -1101,4 +1101,21 @@ async function spusti() {
   ukazStav();
   ukazTlacidla();
 }
+/* Test hook: end-to-end checks need to set an exact walkway count on a
+ * chosen pair. A real click resolves the pair by distance from the pointer
+ * to every line on the board (paraPod above), and near a crossing two hit
+ * areas can sit close enough that a script-dispatched click lands on the
+ * wrong one; nastav() itself has no such ambiguity, since it already takes
+ * the pair's index. Exposed on window so a browser-automated test can drive
+ * the game the same way a click would (same nastav()/zmenaStavu() path, so
+ * Undo, the clock and localStorage all still behave like a real move),
+ * without depending on pixel geometry at all. Harmless in normal play: a
+ * player never reaches window.__cranesTest by clicking anything. */
+window.__cranesTest = {
+  graf: () => g,
+  zadanie: () => zadanie,
+  stav: () => ({ v: v.slice(), x: x.slice() }),
+  nastav: (e, hodnota) => nastav(e, hodnota),
+};
+
 spusti().then(synchronizujUcet);

@@ -4,7 +4,19 @@ import {
   mulberry32, seedFromString, isValidDate, todayBratislava,
   graf, poleLaviek, rovnakeLavky, solve, solveHuman,
   generate, generateSeeded, ROZSAH_OSTROVOV,
+  naivneRiesi, statistikaZadania, MIN_FALOSNE, MIN_DVOJITE,
 } from './generator.mjs';
+
+/* The four levels exactly as plan.mjs sets them up. Kept here as a copy on
+   purpose: tests.mjs tests the generator on its own and must not depend on
+   the weekly plan. tests-logika.mjs checks the real days against the real
+   UROVNE, so a drift between the two would be caught there. */
+const UROVNE_TEST = [
+  { uroven: 'easy', n: 7, maxVrstva: 2, krizenie: false },
+  { uroven: 'medium', n: 9, maxVrstva: 2, krizenie: false },
+  { uroven: 'hard', n: 11, maxVrstva: 3, krizenie: true },
+  { uroven: 'challenge', n: 13, maxVrstva: 3, krizenie: true },
+];
 
 let passed = 0, failed = 0;
 function test(name, fn) {
@@ -357,7 +369,13 @@ test('generate rejects a bad date', () => {
 test('generate respects the grid and the sandbank band (13 x 13)', () => {
   const p = generate('2026-01-02', { n: 13, ostrovy: ROZSAH_OSTROVOV[13] });
   eq(p.n, 13);
-  assert(p.islands.length >= 26 && p.islands.length <= 30, 'sandbanks: ' + p.islands.length);
+  assert(p.islands.length >= 32 && p.islands.length <= 38, 'sandbanks: ' + p.islands.length);
+});
+test('the sandbank bands are the ones the plan asks for', () => {
+  eq(ROZSAH_OSTROVOV[7], [10, 12]);
+  eq(ROZSAH_OSTROVOV[9], [16, 20]);
+  eq(ROZSAH_OSTROVOV[11], [24, 28]);
+  eq(ROZSAH_OSTROVOV[13], [32, 38]);
 });
 test('the numbers on the board are exactly the walkways of the solution', () => {
   for (const n of [7, 9, 11, 13]) {
@@ -432,24 +450,83 @@ test('every puzzle of 30 consecutive days, at every size, has exactly one answer
   }
 });
 
+// ── The puzzle has to resist naive clicking ─────────────────────────────
+/* Cranes used to be beatable without thinking: one tap on every stretch of
+   water between two sandbanks in line and the board was done. naivneRiesi
+   names that strategy (N1) and its twin (N2, two walkways everywhere), and
+   no accepted puzzle may fall to either. */
+test('naivneRiesi spots the two naive strategies on hand made boards', () => {
+  // Dva ostrovy s číslom 1: jediná dvojica, jedna lávka. To je presne N1.
+  const parJednotiek = [{ r: 0, c: 0, n: 1 }, { r: 0, c: 2, n: 1 }];
+  eq(naivneRiesi(parJednotiek, 3), { n1: true, n2: false });
+  // Tie isté dva ostrovy s číslom 2: dve lávky na dvojicu, to je N2.
+  const parDvojok = [{ r: 0, c: 0, n: 2 }, { r: 0, c: 2, n: 2 }];
+  eq(naivneRiesi(parDvojok, 3), { n1: false, n2: true });
+  // Štvorec s číslom 2: prstenec jednotlivých lávok, čiže aj N1.
+  eq(naivneRiesi(STVOREC(2), 3).n1, true);
+  // Kríž: obe naivné stratégie by nechali lávky prekrížiť sa.
+  eq(naivneRiesi(KRIZ, 3), { n1: false, n2: false });
+  // Rad 1, 2, 1: obe dvojice po jednej lávke, to je zase N1.
+  eq(naivneRiesi(RAD121, 5).n1, true);
+});
+test('30 days of every level: neither naive strategy is a solution, and every puzzle keeps its false neighbours and double walkways', () => {
+  const riadky = [];
+  for (const u of UROVNE_TEST) {
+    const s = { fal: 0, dvo: 0, kriz: 0, minFal: 1, minDvo: 1, C: 0, E: 0, l2: 0, l3: 0 };
+    for (let i = 0; i < 30; i++) {
+      const d = new Date(Date.UTC(2026, 8, 10 + i)).toISOString().slice(0, 10);
+      const key = d + '/' + u.n;
+      const p = generateSeeded(d, key, {
+        n: u.n, ostrovy: ROZSAH_OSTROVOV[u.n], maxVrstva: u.maxVrstva, krizenie: u.krizenie,
+      });
+      const g = graf(p.islands, u.n);
+      const nv = naivneRiesi(p.islands, u.n, g);
+      assert(!nv.n1, u.uroven + ' ' + d + ': one walkway on every pair solves it, so the puzzle cannot be spoiled');
+      assert(!nv.n2, u.uroven + ' ' + d + ': two walkways on every pair solve it');
+      const st = statistikaZadania(p.islands, u.n, p.bridges, g);
+      assert(st.falosne >= MIN_FALOSNE, u.uroven + ' ' + d + ': only ' + (100 * st.falosne).toFixed(0)
+        + ' percent of the pairs a player sees are left without a walkway, the floor is ' + (100 * MIN_FALOSNE).toFixed(0));
+      assert(st.podielDvojitych >= MIN_DVOJITE, u.uroven + ' ' + d + ': only ' + (100 * st.podielDvojitych).toFixed(0)
+        + ' percent of the walkways are doubles, the floor is ' + (100 * MIN_DVOJITE).toFixed(0));
+      if (u.krizenie) {
+        assert(st.krizenie, u.uroven + ' ' + d + ': no crossing to steer around, and Hard and Challenge must have one');
+      }
+      const [lo, hi] = ROZSAH_OSTROVOV[u.n];
+      assert(p.islands.length >= lo && p.islands.length <= hi, u.uroven + ' ' + d + ' has ' + p.islands.length + ' sandbanks');
+      s.fal += st.falosne; s.dvo += st.podielDvojitych; if (st.krizenie) s.kriz++;
+      s.minFal = Math.min(s.minFal, st.falosne); s.minDvo = Math.min(s.minDvo, st.podielDvojitych);
+      s.C += p.islands.length; s.E += st.dvojic;
+      s.l2 += p.difficulty.layers[2]; s.l3 += p.difficulty.layers[3];
+    }
+    riadky.push('     ' + u.uroven.padEnd(10) + ' sandbanks ' + (s.C / 30).toFixed(1)
+      + '  pairs seen ' + (s.E / 30).toFixed(1)
+      + '  false neighbours ' + (100 * s.fal / 30).toFixed(0) + '% (worst ' + (100 * s.minFal).toFixed(0) + '%)'
+      + '  doubles ' + (100 * s.dvo / 30).toFixed(0) + '% (worst ' + (100 * s.minDvo).toFixed(0) + '%)'
+      + '  crossings ' + s.kriz + '/30  layer 2 ' + (s.l2 / 30).toFixed(1) + '  layer 3 ' + (s.l3 / 30).toFixed(1));
+  }
+  for (const r of riadky) console.log(r);
+});
+
 test('a whole day (six candidates) takes well under 4 seconds at every size, 13 x 13 included', () => {
   const KANDIDATOV = 6; // the same number plan.mjs makes for a date
   const dates = ['2026-09-10', '2026-11-15', '2027-02-07', '2027-06-20'];
   const casy = [];
   let najhorsi = 0;
-  for (const n of [7, 9, 11, 13]) {
+  for (const u of UROVNE_TEST) {
+    const n = u.n;
     let max = 0, sucet = 0;
     for (const d of dates) {
       const t0 = performance.now();
-      // The slowest setting a level ever uses: layer 3 allowed. Easy and
-      // Medium run with maxVrstva 2, which is faster still.
+      // Presne to, čo robí plan.mjs pre ten deň, aj s podmienkou kríženia.
       for (let k = 0; k < KANDIDATOV; k++) {
-        generateSeeded(d, d + '/' + n + (k ? '#' + k : ''), { n, ostrovy: ROZSAH_OSTROVOV[n], maxVrstva: 3 });
+        generateSeeded(d, d + '/' + n + (k ? '#' + k : ''), {
+          n, ostrovy: ROZSAH_OSTROVOV[n], maxVrstva: u.maxVrstva, krizenie: u.krizenie,
+        });
       }
       const ms = performance.now() - t0;
       sucet += ms; max = Math.max(max, ms);
     }
-    casy.push('     ' + n + 'x' + n + ': avg ' + (sucet / dates.length).toFixed(0) + ' ms, slowest day ' + max.toFixed(0) + ' ms');
+    casy.push('     ' + n + 'x' + n + ' ' + u.uroven.padEnd(10) + ': avg ' + (sucet / dates.length).toFixed(0) + ' ms, slowest day ' + max.toFixed(0) + ' ms');
     najhorsi = Math.max(najhorsi, max);
     assert(max < 4000, n + 'x' + n + ' took ' + max.toFixed(0) + ' ms for one day, the limit is 4000 ms');
   }
