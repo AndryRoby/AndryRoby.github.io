@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script src="/style/vzhlad.js?v=93c2659f"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://homelab.tailbf8f27.ts.net; connect-src 'self' https://homelab.tailbf8f27.ts.net; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<meta name="color-scheme" content="dark">
+<meta name="robots" content="index, follow">
+<link rel="manifest" href="/games/herons/manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Herons">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta property="og:image" content="https://arling.sk/games/herons/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://homelab.tailbf8f27.ts.net" crossorigin>
+<meta name="theme-color" content="#0a0908">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="48x48">
+<link rel="apple-touch-icon" href="/icon-180.png">
+<title>How to play Herons · ARLing</title>
+<meta name="description" content="The rules of Herons in three sentences, animated; the four steps that open every marsh; how Hint and Check work; the weekly difficulty plan; practice sets and the free archive.">
+<link rel="canonical" href="https://arling.sk/games/herons/guide/">
+<meta property="og:title" content="How to play Herons · ARLing">
+<meta property="og:description" content="The rules of Herons in three sentences, animated; the four steps that open every marsh; how Hint and Check work; the weekly difficulty plan; practice sets and the free archive.">
+<meta property="og:url" content="https://arling.sk/games/herons/guide/">
+<meta property="og:type" content="website">
+
+
+<link rel="alternate" type="text/plain" href="https://arling.sk/llms.txt" title="llms.txt">
+<link rel="preload" href="/fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/style/paper.css?v=89016e6c">
+<script src="/style/prepinac.js?v=2988c181" defer></script>
+<script type="module" src="/games/herons/zoznamy.js?v=1"></script>
+<style>
+  /* Only this page: the marsh, the control row and the rules block. */
+  .hero{align-items:start}
+  /* The marsh keeps its own width (a cell is a cell, whatever the size of the
+     grid), the block around it never goes under the width the row of buttons
+     needs, so Check never drops to a line of its own on a small marsh. */
+  .hra{max-width:max(380px,calc(var(--n,6) * 56px));margin:0 auto}
+  /* Narrow phones: the marsh grows to the whole screen width, but no further
+     than 68 px a cell, so a five by five does not swallow the screen while a
+     Sunday eight by eight still gets 48 px a cell, over the 40 px the
+     specification asks for. The width is set through the side margins, so the
+     box is exactly as wide as it should be and the page never scrolls
+     sideways (the wrap gutter is a percentage, so a fixed negative margin
+     would overshoot it by a pixel). */
+  @media (max-width:480px){
+    .hra{max-width:100%}
+    .doska-obal{--sirka:min(100vw,calc(var(--n,6) * 68px));margin-inline:calc((100% - var(--sirka)) / 2)}
+  }
+  header{padding-top:env(safe-area-inset-top,0px)}
+  .horna{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:0 0 10px;
+         font-family:var(--ui);font-size:14px;color:var(--muted)}
+  .horna b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+  .horna .uroven{color:var(--muted);font-size:12px;letter-spacing:.06em;text-transform:uppercase;margin-left:8px;white-space:nowrap}
+  .horna #cas-blok,.horna #datum{white-space:nowrap}
+  @media (max-width:480px){ .horna .uroven{display:block;margin:2px 0 0} }
+  .pauza-btn{font:500 12px/1 var(--ui);color:var(--muted);background:transparent;border:1px solid var(--line);border-radius:999px;padding:4px 10px;cursor:pointer;margin-left:8px;vertical-align:1px}
+  .pauza-btn:hover{color:var(--ink);border-color:var(--ink)}
+  .doska-obal{position:relative;touch-action:pan-y}
+  /* the width itself is set above, with the marsh */
+  .pauza-blok{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+     background:rgba(10,9,8,.9);border:2px solid var(--line);border-radius:8px;text-align:center;font-family:var(--ui);padding:20px;z-index:2}
+  .pauza-blok[hidden]{display:none}
+  .pauza-blok p{margin:0;color:var(--body);font-size:15px;line-height:1.5}
+  .pauza-blok b{color:var(--ink)}
+  /* ── The marsh ──────────────────────────────────────────────────────────
+     One SVG, drawn by game.js: a faint grid of cells, one group per cell with
+     the flight path that runs through it, and the nests on top. The path is a
+     single stroked line from the middle of the cell towards every neighbour
+     the same path also uses, so a cell nothing reaches yet is simply empty and
+     a cell at a corner bends by itself. */
+  .doska{display:block;width:100%;height:auto;background:var(--card-plna);border:2px solid var(--ink);border-radius:8px;
+         touch-action:none;user-select:none;-webkit-user-select:none;outline:none;cursor:pointer}
+  /* An SVG is not an HTML element, so the browser's own rule for [hidden]
+     does not reach it: a future day hides the marsh with this one. */
+  .doska[hidden]{display:none}
+  .doska.hotovo{border-color:var(--ok);box-shadow:0 0 0 4px rgba(94,207,154,.14)}
+  .doska.hotovo,.doska.pauza{cursor:default}
+  .doska.pauza .plocha{visibility:hidden}
+  .mriezka line{stroke:rgba(255,255,255,.10);stroke-width:1}
+  /* Eight paths, eight hues that hold apart on a dark ground. Colour is never
+     the only carrier: every nest also shows the number of its pair, and the
+     path drawn out of it carries that colour from nest to nest (WCAG 1.4.1). */
+  .plocha{--p1:#f2643c;--p2:#5ecf9a;--p3:#6ba8ff;--p4:#facc15;--p5:#c084fc;--p6:#f472b6;--p7:#22d3ee;--p8:#a3e635}
+  .ruz{fill:none;stroke:none;stroke-width:13;stroke-linecap:round;stroke-linejoin:round}
+  .policko[data-p="1"] .ruz{stroke:var(--p1)}
+  .policko[data-p="2"] .ruz{stroke:var(--p2)}
+  .policko[data-p="3"] .ruz{stroke:var(--p3)}
+  .policko[data-p="4"] .ruz{stroke:var(--p4)}
+  .policko[data-p="5"] .ruz{stroke:var(--p5)}
+  .policko[data-p="6"] .ruz{stroke:var(--p6)}
+  .policko[data-p="7"] .ruz{stroke:var(--p7)}
+  .policko[data-p="8"] .ruz{stroke:var(--p8)}
+  /* A pair whose two nests are joined goes quiet. It is a soft cue, not a
+     judgement: it says nothing about the rest of the marsh. */
+  .policko.hotova .ruz{opacity:.5}
+  .doska.hotovo .policko.hotova .ruz{opacity:1}
+  /* The pair the hand or the cursor is on keeps its full strength while the
+     rest steps back a little (Highlight, on by default). */
+  .doska.zvyraznit .policko:not(.aktivny) .ruz{opacity:.34}
+  .doska.zvyraznit .policko.aktivny .ruz{opacity:1}
+  .hniezdo{stroke-width:2.5}
+  .hniezdo.p1{fill:var(--p1);stroke:var(--p1)}
+  .hniezdo.p2{fill:var(--p2);stroke:var(--p2)}
+  .hniezdo.p3{fill:var(--p3);stroke:var(--p3)}
+  .hniezdo.p4{fill:var(--p4);stroke:var(--p4)}
+  .hniezdo.p5{fill:var(--p5);stroke:var(--p5)}
+  .hniezdo.p6{fill:var(--p6);stroke:var(--p6)}
+  .hniezdo.p7{fill:var(--p7);stroke:var(--p7)}
+  .hniezdo.p8{fill:var(--p8);stroke:var(--p8)}
+  .cislo{fill:#0a0908;font:700 15px/1 var(--ui);text-anchor:middle;dominant-baseline:central;pointer-events:none}
+  /* A hint rings the cell it is about; a mistake gets a ring of its own plus a
+     cross drawn across it, so it reads without colour too. */
+  .znak{display:none;fill:none;stroke-width:2.5}
+  .policko.tip .znak{display:inline;stroke:#facc15;animation:tip-pulz .9s ease-in-out infinite alternate;transform-box:fill-box;transform-origin:center}
+  .policko.chyba .znak{display:inline;stroke:#ff7b7b}
+  /* the small cross sits on a dark disc, so it reads on top of any path colour */
+  .podklad{display:none;fill:var(--card-plna);opacity:.94}
+  .krizik{display:none;stroke:#ff7b7b;stroke-width:2.5;stroke-linecap:round}
+  .policko.chyba .krizik,.policko.chyba .podklad{display:inline}
+  .policko.chyba .ruz{stroke-dasharray:5 5}
+  .pole{fill:transparent;pointer-events:none;outline:none}
+  .kurzor{fill:none;stroke:var(--accent);stroke-width:2.5;opacity:0}
+  .doska:focus-within .kurzor{opacity:1}
+  /* The tap by tap way of drawing, for anyone who cannot drag: the cell the
+     next tap will draw from. */
+  .kotva{fill:none;stroke:var(--ink);stroke-width:2.5;stroke-dasharray:5 4;opacity:0}
+  .doska.kotvi .kotva{opacity:.9}
+  @keyframes tip-pulz{from{transform:scale(.88);opacity:.5}to{transform:scale(1.04);opacity:1}}
+  @media (prefers-reduced-motion:reduce){ .policko.tip .znak{animation:none} }
+  .skryte{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
+  .ovladanie{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:14px}
+  .ovladanie .btn{height:40px;padding:0 13px;font-size:14px}
+  /* paper.css dava .btn{display:inline-flex} a autorske pravidlo vzdy prebije
+     prehliadacov vlastny [hidden]{display:none}: Share by svietil este pred
+     dohranim. Rovnaka oprava ako pri .pauza-blok[hidden]. */
+  .ovladanie .btn[hidden]{display:none}
+  /* Na uzkom telefone sa vsetkych pat tlacidiel musi zmestit do jedneho
+     riadku, inak Check spadne sam pod ostatne a stranka vyzera nedorobene. */
+  @media (max-width:480px){ .ovladanie{gap:6px} .ovladanie .btn{padding:0 9px} }
+  /* Pri 320 px, spodnej hranici standardu, tych pat tlacidiel potrebuje este
+     asi 25 px navyse: uzsi gap a padding ich usetri dost s rezervou a
+     sirsieho telefonu sa to netyka. */
+  @media (max-width:359px){ .ovladanie{gap:4px} .ovladanie .btn{padding:0 6px;font-size:13px} }
+  .stav{font-family:var(--ui);font-size:15px;line-height:1.5;color:var(--body);margin:12px 0 0;min-height:1.5em}
+  .stav b{color:var(--ink)}
+  .stav.ok{color:var(--ok)}
+  .stav.ok b{color:var(--ok)}
+  .pasik{display:flex;gap:6px;margin-top:14px}
+  .den{flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;padding:6px 0 5px;border:1px solid var(--line);border-radius:10px;
+       text-decoration:none;color:var(--muted);font-family:var(--ui);min-width:0;background:var(--card)}
+  .den small{font-size:10px;letter-spacing:.08em}
+  .den b{font-size:15px;color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+  .den.dnes{border-color:var(--accent);color:var(--accent)}
+  .den.rozohrane{border-style:dashed}
+  .den.hotove{background:rgba(94,207,154,.12);border-color:var(--ok)}
+  .den.hotove b{color:var(--ok)}
+  .den.buduci{opacity:.38}
+  a.den:hover{border-color:var(--ink);color:var(--ink)}
+  .odkazy{font-family:var(--ui);font-size:13px;color:var(--muted);margin:12px 0 0}
+  .odkazy a{color:var(--body)}
+  .historia{font-family:var(--ui);font-size:13px;color:var(--body);line-height:1.5;margin:10px 0 0}
+  .historia b{color:var(--ink)}
+  .nastavenia{margin-top:14px;border:1px solid var(--line);border-radius:12px;background:var(--card);padding:0 14px}
+  .nastavenia summary{cursor:pointer;font:600 13px/1.4 var(--ui);color:var(--muted);padding:10px 0;list-style:none}
+  .nastavenia summary::-webkit-details-marker{display:none}
+  .nastavenia[open] summary{color:var(--ink)}
+  .nastavenia label{display:flex;gap:10px;align-items:flex-start;font-family:var(--ui);font-size:13px;color:var(--body);line-height:1.5;padding:6px 0}
+  .nastavenia input{margin-top:3px;flex:none}
+  .nastavenia .fineprint{padding:6px 0 12px;margin:0}
+  .navod{font-family:var(--ui);font-size:13px;color:var(--muted);margin:10px 0 0;max-width:none}
+  .navod kbd{font-size:12px}
+  /* On the phone the marsh goes under the text; the keyboard note there would
+     just push the game further down. It is in the Rules section too. */
+  @media (max-width:860px){ .navod{display:none} }
+  .pravidla details{border:1px solid var(--line);border-radius:12px;background:var(--card);padding:0 18px;max-width:68ch}
+  .pravidla details+details{margin-top:10px}
+  .pravidla summary{cursor:pointer;font:600 15px/1.4 var(--ui);color:var(--ink);padding:14px 0;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:12px}
+  .pravidla summary::-webkit-details-marker{display:none}
+  .pravidla summary::after{content:"";width:.5em;height:.5em;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(45deg);flex:none;margin-right:4px;transition:transform .2s var(--ease)}
+  .pravidla details[open] summary::after{transform:rotate(225deg)}
+  .pravidla .telo{padding:0 0 16px}
+  .pravidla .telo p{margin:0 0 10px}
+  .pravidla .telo p:last-child{margin:0}
+  .jazyk{font:500 13px/1 var(--ui);color:var(--muted);background:transparent;border:1px solid var(--line);border-radius:999px;padding:6px 12px;cursor:pointer;margin-top:14px}
+  .jazyk:hover{color:var(--ink);border-color:var(--ink)}
+  .prose p{margin:0 0 14px}
+  .prose p:last-child{margin-bottom:0}
+  .sub{margin:0 0 6px}
+  noscript p{font-family:var(--ui);color:var(--accent-light)}
+</style>
+<noscript><style>
+  .r, .w { opacity:1 !important; transform:none !important; filter:none !important; }
+  .rule { transform:scaleX(1) !important; }
+</style></noscript>
+</head>
+<body class="noc">
+<div class="wash" aria-hidden="true"><i></i><i></i></div>
+<a class="skip" href="#obsah">Skip to content</a>
+
+<header>
+  <div class="wrap bar">
+    <a class="brand" href="https://arling.sk/">
+      <svg viewBox="0 0 488 215" width="38" height="15" aria-hidden="true" focusable="false"><path fill="#f4f4f7" fill-rule="evenodd" d="M0.00,213.00L74.00,214.00L181.00,85.00L285.00,214.00L360.00,214.00L206.00,21.00L185.00,4.00L164.00,10.00Z M221.00,0.00L263.00,50.00L395.00,50.00L409.00,55.00L419.00,76.00L401.00,96.00L313.00,98.00L411.00,214.00L487.00,214.00L422.00,139.00L457.00,123.00L482.00,88.00L482.00,48.00L463.00,19.00L417.00,0.00Z"/><path fill="#f2643c" d="M269.00,66.00L269.00,67.00L268.00,68.00L268.00,70.00L267.00,71.00L267.00,76.00L268.00,77.00L268.00,79.00L270.00,81.00L270.00,82.00L271.00,82.00L273.00,84.00L274.00,84.00L277.00,86.00L279.00,86.00L280.00,87.00L287.00,87.00L288.00,86.00L290.00,86.00L291.00,85.00L294.00,84.00L298.00,80.00L298.00,79.00L299.00,78.00L299.00,75.00L300.00,74.00L300.00,72.00L299.00,71.00L299.00,69.00L298.00,68.00L297.00,65.00L295.00,63.00L294.00,63.00L289.00,60.00L278.00,60.00L277.00,61.00L276.00,61.00L275.00,62.00L272.00,63.00Z"/></svg>
+      <b>ARLing</b><span>Games</span>
+    </a>
+    <nav aria-label="Site"><a href="https://arling.sk/en/#tools">Tools</a><a href="https://arling.sk/games/">Games</a><a href="https://arling.sk/notes/">Notes</a><a href="https://arling.sk/how-we-work/">How we work</a><a href="mailto:andrej@arling.sk">Contact</a></nav>
+  </div>
+</header>
+
+<main id="obsah">
+<style>
+  .gif{margin:0;max-width:420px}
+  .gif img{width:100%;height:auto;border:1px solid var(--line);border-radius:12px;background:#0a0908}
+  .dvojica{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,420px);gap:28px;align-items:start;margin-top:18px}
+  @media (max-width:860px){ .dvojica{grid-template-columns:1fr} }
+  .dvojica .text p{margin:0 0 12px}
+  .tyzden-tab{width:100%;border-collapse:collapse;font-family:var(--ui);font-size:14px;max-width:520px}
+  .tyzden-tab td{padding:8px 10px;border-bottom:1px solid var(--line)}
+  .tyzden-tab td:first-child{color:var(--ink);font-weight:600;white-space:nowrap}
+  .pasik{display:flex;gap:6px;margin-top:14px;max-width:520px}
+  .den{flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;padding:6px 0 5px;border:1px solid var(--line);border-radius:10px;text-decoration:none;color:var(--muted);font-family:var(--ui);min-width:0;background:var(--card)}
+  .den small{font-size:10px;letter-spacing:.08em}
+  .den b{font-size:15px;color:var(--ink);font-weight:600}
+  .den.dnes{border-color:var(--accent);color:var(--accent)}
+  .den.hotove{background:rgba(94,207,154,.12);border-color:var(--ok)}
+  .den.hotove b{color:var(--ok)}
+  .den.rozohrane{border-style:dashed}
+  .den.buduci{opacity:.38}
+  a.den:hover{border-color:var(--ink);color:var(--ink)}
+  .kroky{list-style:none;padding:0;margin:0}
+  .kroky li{padding:10px 0;border-bottom:1px solid var(--line);font-family:var(--ui);font-size:15px;line-height:1.5;color:var(--body)}
+  .kroky li b{color:var(--ink)}
+</style>
+<div class="wrap prose" style="padding-top:40px">
+  <p class="kicker">Guide</p>
+  <h1 class="r">How to play Herons.</h1>
+  <div class="rule"></div>
+  <p class="lead r d1">Three rules, one marsh a day, exactly one solution. The marshes are made to be reasoned out, not guessed: the nests alone are always enough, no guessing required.</p>
+  <p class="r d2"><a class="btn btn-solid" href="/games/herons/">Play today's marsh</a> <a class="btn btn-line" href="/games/herons/practice/easy-1/">Start with an easy one</a></p>
+</div>
+<section class="deep"><div class="wrap">
+  <h2 class="r">The rules.</h2><div class="rule"></div>
+  <div class="dvojica r d1"><div class="text">
+    <p><b>1. Every pair of nests belongs to one pair of herons.</b> Draw a flight path between the two nests of every pair. A path steps from one cell to the next, up and down or left and right, never diagonally, and it never runs beside itself: no cell of a path may touch another cell of the same path except the one before it and the one after it.</p>
+    <p><b>2. Paths never cross.</b> Two different pairs never share a cell, so once a cell belongs to one path it is closed to every other.</p>
+    <p><b>3. Every cell of the marsh is used.</b> No cell is left over when the marsh is finished; when every pair is joined and every cell is used, the game notices by itself.</p>
+  </div><figure class="gif"><img src="/games/herons/tutorial/rule-01.gif" alt="Animation: a flight path is drawn between two nests of the same number, cell by cell, and every pair fills in until the marsh turns green as solved." width="560" height="660" loading="lazy" decoding="async"></figure></div>
+  <div class="dvojica r d2"><div class="text">
+    <p><b>Nothing lights up while you play.</b> A cell given to the wrong path is not flagged, even a plain mistake; only Check judges, and only when you ask. Press it once and it says how many cells are wrong; press it again and it shows which, with a ring and a small cross, not colour alone.</p>
+    <p>On the phone, drag out of a nest and the path follows your finger; drag back along it and it rubs out. On a keyboard, arrows move, <kbd>Enter</kbd> starts and ends drawing, <kbd>Delete</kbd> clears, <kbd>P</kbd> pauses.</p>
+  </div><figure class="gif"><img src="/games/herons/tutorial/rule-02.gif" alt="Animation: a short correct stretch of path is drawn, then a cell is given to the wrong path without any warning, and only pressing Check twice reveals it with a ring and a cross." width="560" height="660" loading="lazy" decoding="async"></figure></div>
+</div></section>
+<section class="deep"><div class="wrap">
+  <h2 class="r">A way in.</h2><div class="rule"></div>
+  <div class="dvojica r d1"><div class="text">
+    <p>Every marsh opens with steps like these. <b>Hint</b> finds the next one for you, rings the cells it settles and says why; press it again to draw them in. Hints are counted and shown when you finish, never hidden.</p>
+    <ul class="kroky">
+      <li><b>A nest with one way out.</b> A nest in a corner, or with only one free side, must send its path that way.</li>
+      <li><b>Only one way through.</b> A cell with only one free side left has its path decided for it, because every cell of the marsh is used.</li>
+      <li><b>No touching itself.</b> A cell next to a path that is already there is closed to that same path, even when it looks free.</li>
+      <li><b>Only one pair can reach it.</b> When a corner of the marsh can only be reached by one pair, every cell of that corner belongs to it.</li>
+    </ul>
+  </div><figure class="gif"><img src="/games/herons/tutorial/rule-03.gif" alt="Animation: the Hint rings the cells it is looking at and explains why, then the marks are drawn in; this repeats for the next steps." width="560" height="660" loading="lazy" decoding="async"></figure></div>
+</div></section>
+<section class="deep"><div class="wrap">
+  <h2 class="r">The week.</h2><div class="rule"></div>
+  <p class="sub r d1">Difficulty is measured, not guessed. Every marsh is checked to be solvable by these rules alone; the candidates for a date are ranked by how many trickier passes that logic needs.</p>
+  <table class="tyzden-tab r d2"><tbody>
+    <tr><td>Monday, Tuesday</td><td>Easy, five by five. The nests open the marsh up fast.</td></tr>
+    <tr><td>Wednesday, Thursday</td><td>Medium, six by six.</td></tr>
+    <tr><td>Friday, Saturday</td><td>Hard, seven by seven. More passes before it opens up.</td></tr>
+    <tr><td>Sunday</td><td>Challenge, eight by eight, the most passes of the week's candidates.</td></tr>
+  </tbody></table>
+  <p class="r d3" style="margin-top:20px"><b>This week</b></p>
+  <nav class="pasik r d3" id="pasik-tyzden" aria-label="This week's marshes"></nav>
+</div></section>
+<section class="deep"><div class="wrap prose">
+  <h2 class="r">Practice, archive, history.</h2><div class="rule"></div>
+  <p class="r d1"><a href="/games/herons/practice/">Practice sets</a>: twenty-four marshes with no date attached, three sets of eight for each level. They never change and do not touch your streak.</p>
+  <p class="r d1"><a href="/games/herons/archive/">Archive</a>: every daily marsh since Wednesday 10 September 2025, free. The same page shows your own history: every marsh you finished in this browser, with time and hints. Nothing is sent anywhere; it lives in your browser only.</p>
+  <p class="r d2">Stuck or found something wrong? Write to <a href="mailto:andrej@arling.sk">andrej@arling.sk</a>.</p>
+</div></section>
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <div><b>ARLing s. r. o.</b><br>Ivanská cesta 32E<br>821 04 Bratislava, Slovakia</div>
+    <div>Company ID 56583486<br>VAT ID SK2122352100<br><a href="mailto:andrej@arling.sk">andrej@arling.sk</a></div>
+    <div><a href="https://arling.sk/privacy/">privacy</a> · <a href="https://arling.sk/podmienky/">terms</a> · <a href="https://arling.sk/gdpr/">GDPR</a> · <a href="https://arling.sk/impressum/">Impressum</a> · <a href="https://arling.sk/llms.txt">llms.txt</a> · <a href="https://arling.sk/sitemap-index.xml">sitemap</a><br>Tools are provided as is, without warranty. Anonymous visit counts via self-hosted Umami.</div>
+  </div>
+</footer>
+<script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="469b28b9-caa6-4ef2-807b-c219c30110fc"></script>
+</body>
+</html>
