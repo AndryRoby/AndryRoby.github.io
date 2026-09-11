@@ -435,4 +435,26 @@ export function vykresliNahlad(vstup, ciel, jazyk = 'sk', dokument) {
   return D;
 }
 
+// ---------------------------------------------------------------- odkaz "Zobrazit nahlad" (mobil)
+// Odkaz je normalny <a href="#nahlad-zivy">, ale klik na neho by zmenil URL hash
+// na "nahlad-zivy". App.js pocuva "hashchange" a bere kazdy hash ako meno
+// zalozky (kontrola/nahlad/vytvorit); nezname meno spadne na "kontrola", takze
+// by sa cely panel Vytvorit aj s nahladom hned skryl namiesto toho, aby sa naň
+// odscrolovalo. Preto tu vlastny scroll a zabranenie skutocnej zmene hashu.
+if (typeof document !== 'undefined') {
+  const odkazNahlad = document.querySelector('.zobrazit-nahlad');
+  if (odkazNahlad) {
+    odkazNahlad.addEventListener('click', (e) => {
+      const id = (odkazNahlad.getAttribute('href') || '').replace('#', '');
+      const ciel = id && document.getElementById(id);
+      if (!ciel) return;
+      e.preventDefault();
+      // "instant", nie "smooth": html ma globalne scroll-behavior:smooth a
+      // formular vie byt na mobile aj niekolko tisic px dlhy, take skrolovanie
+      // by trvalo sekundy. Tlacidlo ma preniest hned, nie postupne odrolovat.
+      ciel.scrollIntoView({ behavior: 'instant', block: 'start' });
+    });
+  }
+}
+
 export { T as TEXTY_NAHLADU };

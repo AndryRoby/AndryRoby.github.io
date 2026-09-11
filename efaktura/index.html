@@ -171,7 +171,11 @@
      header, footer a section sa nan nesmu vztahovat. */
   body.noc .efa-doklad section, .efa-doklad section { padding:0; border-top:none; position:static; }
   body.noc .efa-doklad h3 + p, body.noc .efa-doklad h3 + div { margin-top:6px; }
-  .efa-doklad .efa-hlavicka { position:static; z-index:auto; background:transparent; backdrop-filter:none; border-bottom:1px solid #ddd8cc; padding:0 0 14px; margin:0 0 6px; }
+  /* Bez "body.noc" pred selektorom prehráva scrollovacia hlavička stránky
+     (body.noc.posunute header) svoje tmavé priesvitné pozadie aj sem: rovnaký
+     "header" tag, vyššia špecifickosť. Vtedy je hlavička dokladu tmavá so
+     sivastým pozadím a text splýva. S "body.noc" tu vyhráva táto trieda. */
+  body.noc .efa-doklad .efa-hlavicka { position:static; z-index:auto; background:transparent; backdrop-filter:none; border-bottom:1px solid #ddd8cc; padding:0 0 14px; margin:0 0 6px; }
   .efa-doklad .efa-pata { position:static; background:transparent; border-top:1px solid #ddd8cc; padding:12px 0 0; margin:22px 0 0; color:#666; font-family:var(--ui); font-size:12px; }
   .efa-doklad .efa-polozky, .efa-doklad .efa-rozpis, .efa-doklad .efa-sucty,
   .efa-doklad .efa-platba, .efa-doklad .efa-poznamky, .efa-doklad .efa-prilohy,
@@ -183,7 +187,17 @@
 
   /* Dielňa generátora */
   .dielna { display:grid; grid-template-columns:minmax(0,5fr) minmax(0,7fr); gap:32px var(--gap); align-items:start; }
-  @media (max-width:1100px) { .dielna { grid-template-columns:minmax(0,1fr); } }
+  @media (max-width:899px) { .dielna { grid-template-columns:minmax(0,1fr); } }
+  /* Pri scrollovaní dlhého formulára náhľad zmizne z obrazovky. Od 900 px ho
+     preto pribíjame vedľa formulára cez position:sticky, s vlastným scrollom,
+     keby bol vyšší než okno. Pod 900 px ostáva pod formulárom ako predtým;
+     tam pomáha odkaz "Zobraziť náhľad", ktorý naň hneď skroluje. */
+  #nahlad-zivy { scroll-margin-top:calc(var(--hlavicka) + 12px); }
+  @media (min-width:900px) {
+    #nahlad-zivy { position:sticky; top:calc(var(--hlavicka) + 12px); max-height:calc(100vh - var(--hlavicka) - 24px); overflow:auto; }
+  }
+  .zobrazit-nahlad { display:none; margin:0 0 16px; }
+  @media (max-width:899px) { .zobrazit-nahlad { display:inline-flex; } }
   fieldset { border:1px solid var(--line); border-radius:var(--radius); padding:14px 16px 10px; margin:0 0 14px; min-width:0; }
   legend { font:600 12px/1 var(--ui); letter-spacing:.09em; text-transform:uppercase; color:var(--accent); padding:0 6px; }
   .pole { display:grid; grid-template-columns:minmax(0,160px) minmax(0,1fr); gap:6px 12px; align-items:center; margin:0 0 8px; font-family:var(--ui); font-size:13.5px; color:var(--body); }
@@ -320,6 +334,7 @@
       <section class="panel" id="panel-vytvorit" hidden>
         <h2 class="r">Vytvoriť e-faktúru bez účtovného programu</h2>
         <p class="sub r d1">Vyplňte dodávateľa, odberateľa, čísla a položky. Vpravo sa priebežne skladá doklad a z neho vzniká XML v UBL 2.1. Dodávateľa aj odberateľov si uložíte do adresára, ktorý ostáva len vo vašom prehliadači. Pred stiahnutím prejde vygenerované XML tou istou kontrolou ako v prvej záložke; ak má chybu, nestiahneme ho.</p>
+        <a class="btn btn-line zobrazit-nahlad" href="#nahlad-zivy">Zobraziť náhľad</a>
         <div class="dielna">
           <form id="formular" autocomplete="on" novalidate></form>
           <div>

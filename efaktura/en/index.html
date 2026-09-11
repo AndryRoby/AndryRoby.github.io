@@ -167,7 +167,7 @@
      header, footer a section sa nan nesmu vztahovat. */
   body.noc .efa-doklad section, .efa-doklad section { padding:0; border-top:none; position:static; }
   body.noc .efa-doklad h3 + p, body.noc .efa-doklad h3 + div { margin-top:6px; }
-  .efa-doklad .efa-hlavicka { position:static; z-index:auto; background:transparent; backdrop-filter:none; border-bottom:1px solid #ddd8cc; padding:0 0 14px; margin:0 0 6px; }
+  body.noc .efa-doklad .efa-hlavicka { position:static; z-index:auto; background:transparent; backdrop-filter:none; border-bottom:1px solid #ddd8cc; padding:0 0 14px; margin:0 0 6px; }
   .efa-doklad .efa-pata { position:static; background:transparent; border-top:1px solid #ddd8cc; padding:12px 0 0; margin:22px 0 0; color:#666; font-family:var(--ui); font-size:12px; }
   .efa-doklad .efa-polozky, .efa-doklad .efa-rozpis, .efa-doklad .efa-sucty,
   .efa-doklad .efa-platba, .efa-doklad .efa-poznamky, .efa-doklad .efa-prilohy,
@@ -178,7 +178,13 @@
   .nahlad-hlava .btn { height:38px; padding:0 15px; font-size:13.5px; }
 
   .dielna { display:grid; grid-template-columns:minmax(0,5fr) minmax(0,7fr); gap:32px var(--gap); align-items:start; }
-  @media (max-width:1100px) { .dielna { grid-template-columns:minmax(0,1fr); } }
+  @media (max-width:899px) { .dielna { grid-template-columns:minmax(0,1fr); } }
+  #nahlad-zivy { scroll-margin-top:calc(var(--hlavicka) + 12px); }
+  @media (min-width:900px) {
+    #nahlad-zivy { position:sticky; top:calc(var(--hlavicka) + 12px); max-height:calc(100vh - var(--hlavicka) - 24px); overflow:auto; }
+  }
+  .zobrazit-nahlad { display:none; margin:0 0 16px; }
+  @media (max-width:899px) { .zobrazit-nahlad { display:inline-flex; } }
   fieldset { border:1px solid var(--line); border-radius:var(--radius); padding:14px 16px 10px; margin:0 0 14px; min-width:0; }
   legend { font:600 12px/1 var(--ui); letter-spacing:.09em; text-transform:uppercase; color:var(--accent); padding:0 6px; }
   .pole { display:grid; grid-template-columns:minmax(0,170px) minmax(0,1fr); gap:6px 12px; align-items:center; margin:0 0 8px; font-family:var(--ui); font-size:13.5px; color:var(--body); }
@@ -314,6 +320,7 @@
       <section class="panel" id="panel-vytvorit" hidden>
         <h2 class="r">Create an e-invoice without accounting software</h2>
         <p class="sub r d1">Fill in the seller, the buyer, the numbers and the lines. On the right the document builds itself, and the UBL 2.1 XML with it. Seller and buyer can be kept in an address book that never leaves your browser. Before the download we run the same check over the generated XML as in the first tab; if it has an error, we do not hand it to you.</p>
+        <a class="btn btn-line zobrazit-nahlad" href="#nahlad-zivy">Show preview</a>
         <div class="dielna">
           <form id="formular" autocomplete="on" novalidate></form>
           <div>
