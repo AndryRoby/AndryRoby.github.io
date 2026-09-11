@@ -1,0 +1,572 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script src="/style/vzhlad.js?v=93c2659f"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://homelab.tailbf8f27.ts.net 'sha256-JGgNhgtTjzRAALn2PpRXmcK8RyjnQ6DTMLre9YVbq/4='; connect-src 'self' https://homelab.tailbf8f27.ts.net https://arling-asistent.arling.workers.dev; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0a0908">
+<link rel="preconnect" href="https://homelab.tailbf8f27.ts.net" crossorigin>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="48x48">
+<link rel="apple-touch-icon" href="/icon-180.png">
+<link rel="manifest" href="/efaktura/manifest.json">
+<title>E-invoice error codes: EN 16931, Peppol BIS 3.0 and XRechnung | ARLing</title>
+<meta name="description" content="The list of rule codes from EN 16931, Peppol BIS Billing 3.0 and XRechnung that our e-invoice checker reports, each with an explanation and the fix.">
+<meta property="og:type" content="article">
+<meta property="og:title" content="E-invoice rule codes">
+<meta property="og:description" content="The list of rule codes from EN 16931, Peppol BIS Billing 3.0 and XRechnung that our e-invoice checker reports, each with an explanation and the fix.">
+<meta property="og:url" content="https://arling.sk/efaktura/en/rules/">
+<meta property="og:image" content="https://arling.sk/efaktura/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="E-invoice rule codes">
+<meta name="twitter:description" content="The list of rule codes from EN 16931, Peppol BIS Billing 3.0 and XRechnung that our e-invoice checker reports, each with an explanation and the fix.">
+<meta name="twitter:image" content="https://arling.sk/efaktura/og.png">
+<link rel="canonical" href="https://arling.sk/efaktura/en/rules/">
+<link rel="alternate" hreflang="en" href="https://arling.sk/efaktura/en/rules/">
+<link rel="alternate" hreflang="de" href="https://arling.sk/efaktura/de/regeln/">
+<link rel="alternate" hreflang="sk" href="https://arling.sk/efaktura/pravidla/">
+<link rel="alternate" hreflang="cs" href="https://arling.sk/efaktura/cs/pravidla/">
+<link rel="alternate" hreflang="x-default" href="https://arling.sk/efaktura/en/rules/">
+<link rel="alternate" type="text/plain" href="https://arling.sk/llms.txt" title="llms.txt">
+<link rel="preload" href="/fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/style/paper.css?v=89016e6c">
+<script src="/style/prepinac.js?v=2988c181" defer></script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  "name": "E-invoice rule codes",
+  "description": "The list of rule codes from EN 16931, Peppol BIS Billing 3.0 and XRechnung that our e-invoice checker reports, each with an explanation and the fix.",
+  "url": "https://arling.sk/efaktura/en/rules/",
+  "inLanguage": "en",
+  "isPartOf": {
+    "@type": "WebSite",
+    "name": "ARLing",
+    "url": "https://arling.sk/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "ARLing s. r. o.",
+    "url": "https://arling.sk/"
+  }
+}
+</script>
+<style>
+  main { padding-bottom:clamp(48px,7vw,96px); }
+  .drobky { font-family:var(--ui); font-size:13px; color:var(--muted); margin:0 0 14px; display:flex; flex-wrap:wrap; gap:8px; }
+  .drobky a { color:var(--muted); text-decoration:none; border-bottom:1px solid transparent; }
+  .drobky a:hover { color:var(--ink); border-bottom-color:var(--accent); }
+  .obsah { padding-top:clamp(28px,4vw,56px); }
+  .obsah h1 { font-size:clamp(30px,3.2vw,48px); max-width:30ch; }
+  .obsah h1 .kodh { display:block; }
+  .obsah h1 .nazovh { display:block; margin-top:clamp(10px,1vw,16px); color:var(--body);
+    font:600 clamp(18px,1.7vw,25px)/1.32 var(--display); letter-spacing:-.01em; }
+  .obsah h2 { margin-top:clamp(30px,3.4vw,44px); }
+  .obsah p, .obsah li { max-width:68ch; }
+  .obsah .lead { max-width:66ch; }
+  .obsah ol, .obsah ul { font-family:var(--ui); font-size:15px; color:var(--body); line-height:1.6; padding-left:20px; margin:0 0 18px; }
+  .obsah ol li, .obsah ul li { margin:0 0 8px; }
+  .akcie { display:flex; gap:10px; flex-wrap:wrap; margin:22px 0 4px; }
+  .akcie .btn { height:44px; padding:0 18px; font-size:14.5px; }
+  .rule { transform:scaleX(1); }
+  .citacia { border-left:3px solid var(--accent); margin:0 0 10px; padding:2px 0 2px 16px; }
+  .citacia p { font-family:var(--serif,var(--display)); font-style:italic; font-size:16.5px; line-height:1.55; color:var(--ink); margin:0; }
+  .fakt { font-family:var(--ui); font-size:14.5px; color:var(--body); margin:0 0 8px; }
+  .fakt b { color:var(--ink); font-weight:600; }
+  .pomoc { font-family:var(--ui); font-size:12.5px; color:var(--muted); margin:6px 0 0; line-height:1.55; max-width:68ch; }
+  /* cesty k prvkom a identifikatory nemaju medzery, na telefone by inak roztiahli
+     celu stranku; zalomia sa len vtedy, ked sa inak nezmestia */
+  .obsah h1, .obsah h2, .obsah h3, .obsah p, .obsah li, .obsah code, .obsah blockquote { overflow-wrap:anywhere; }
+  /* uryvok XML radsej zalamujeme, nez aby sa polovica schovala za vodorovny posun */
+  .obsah pre { max-width:100%; white-space:pre-wrap; overflow-wrap:anywhere; }
+  .zoznam { list-style:none; padding:0; margin:0 0 26px; }
+  .zoznam li { margin:0; border-top:1px solid var(--line); padding:11px 0; display:flex; gap:14px; align-items:baseline; flex-wrap:wrap; }
+  .zoznam li:last-child { border-bottom:1px solid var(--line); }
+  .zoznam a { font-family:var(--mono); font-size:13.5px; color:var(--ink); text-decoration:none; flex:none; min-width:11ch; }
+  .zoznam a:hover { color:var(--accent-light,var(--accent)); }
+  .zoznam span { font-family:var(--ui); font-size:14px; color:var(--body); min-width:0; }
+  .zoznam a, .zoznam span { overflow-wrap:anywhere; }
+  .skupina { margin:0 0 6px; }
+  .skupina + p { margin-top:0; }
+  @media (max-width:560px) { .zoznam a { min-width:0; width:100%; } }
+</style>
+</head>
+<body class="noc">
+<div class="wash" aria-hidden="true"><i></i><i></i></div>
+<a class="skip" href="#obsah">Skip to the content</a>
+
+<header>
+  <div class="wrap bar">
+    <a class="brand" href="https://arling.sk/">
+      <svg viewBox="0 0 488 215" width="38" height="15" aria-hidden="true" focusable="false"><path fill="#f4f4f7" fill-rule="evenodd" d="M0.00,213.00L74.00,214.00L181.00,85.00L285.00,214.00L360.00,214.00L206.00,21.00L185.00,4.00L164.00,10.00Z M221.00,0.00L263.00,50.00L395.00,50.00L409.00,55.00L419.00,76.00L401.00,96.00L313.00,98.00L411.00,214.00L487.00,214.00L422.00,139.00L457.00,123.00L482.00,88.00L482.00,48.00L463.00,19.00L417.00,0.00Z"/><path fill="#f2643c" d="M269.00,66.00L269.00,67.00L268.00,68.00L268.00,70.00L267.00,71.00L267.00,76.00L268.00,77.00L268.00,79.00L270.00,81.00L270.00,82.00L271.00,82.00L273.00,84.00L274.00,84.00L277.00,86.00L279.00,86.00L280.00,87.00L287.00,87.00L288.00,86.00L290.00,86.00L291.00,85.00L294.00,84.00L298.00,80.00L298.00,79.00L299.00,78.00L299.00,75.00L300.00,74.00L300.00,72.00L299.00,71.00L299.00,69.00L298.00,68.00L297.00,65.00L295.00,63.00L294.00,63.00L289.00,60.00L278.00,60.00L277.00,61.00L276.00,61.00L275.00,62.00L272.00,63.00Z"/></svg>
+      <b>ARLing</b>
+    </a>
+    <nav aria-label="Site"><a href="https://arling.sk/en/#tools">Tools</a><a href="https://arling.sk/games/">Games</a><a href="https://arling.sk/notes/">Notes</a><a href="https://arling.sk/how-we-work/">How we work</a><a href="mailto:andrej@arling.sk">Contact</a></nav>
+  </div>
+</header>
+
+<main id="obsah">
+  <section class="wrap obsah">
+    <p class="drobky"><a href="/efaktura/en/">E-invoice</a> <span>/</span> <span>Rules</span></p>
+    <p class="kicker">Rules <span>332 codes</span></p>
+    <h1>E-invoice rule codes</h1>
+    <p class="lead r">Every code our checker reports has a page here: what the rule checks, the original wording and what to do about it. You can check your own file for free in your browser.</p>
+    <div class="akcie r d1">
+      <a class="btn btn-solid" href="/efaktura/en/#kontrola" data-umami-event="pravidla-validator">Check your own file (free)</a>
+      <a class="btn btn-line" href="/efaktura/en/#vytvorit" data-umami-event="pravidla-generator">Create an e-invoice</a>
+    </div>
+    <div class="rule"></div>
+    <h2 class="skupina">BR</h2>
+    <p class="pomoc">EN 16931 schematron (ConnectingEurope/eInvoicing-EN16931, licence EUPL 1.2), 58 codes</p>
+    <ul class="zoznam r">
+      <li><a href="/efaktura/en/rules/br-01/">BR-01</a> <span>The specification identifier (BT-24, element cbc:CustomizationID) is missing</span></li>
+      <li><a href="/efaktura/en/rules/br-02/">BR-02</a> <span>The invoice number (BT-1, element cbc:ID) is missing</span></li>
+      <li><a href="/efaktura/en/rules/br-03/">BR-03</a> <span>The issue date (BT-2, element cbc:IssueDate) is missing</span></li>
+      <li><a href="/efaktura/en/rules/br-04/">BR-04</a> <span>The invoice type code (BT-3) is missing</span></li>
+      <li><a href="/efaktura/en/rules/br-05/">BR-05</a> <span>The invoice currency code (BT-5, element cbc:DocumentCurrencyCode)</span></li>
+      <li><a href="/efaktura/en/rules/br-06/">BR-06</a> <span>The seller name (BT-27) is missing</span></li>
+      <li><a href="/efaktura/en/rules/br-07/">BR-07</a> <span>The buyer name (BT-44) is missing</span></li>
+      <li><a href="/efaktura/en/rules/br-08/">BR-08</a> <span>The seller postal address (BG-5, element cac:PostalAddress) is missing</span></li>
+      <li><a href="/efaktura/en/rules/br-09/">BR-09</a> <span>The seller address is missing the country code (BT-40)</span></li>
+      <li><a href="/efaktura/en/rules/br-10/">BR-10</a> <span>The buyer postal address (BG-8, element cac:PostalAddress) is missing</span></li>
+      <li><a href="/efaktura/en/rules/br-11/">BR-11</a> <span>The buyer address is missing the country code (BT-55)</span></li>
+      <li><a href="/efaktura/en/rules/br-12/">BR-12</a> <span>Missing: the sum of invoice line net amounts (BT-106)</span></li>
+      <li><a href="/efaktura/en/rules/br-13/">BR-13</a> <span>Missing: the invoice total amount without VAT (BT-109)</span></li>
+      <li><a href="/efaktura/en/rules/br-14/">BR-14</a> <span>Missing: the invoice total amount with VAT (BT-112)</span></li>
+      <li><a href="/efaktura/en/rules/br-15/">BR-15</a> <span>Missing: the amount due for payment (BT-115)</span></li>
+      <li><a href="/efaktura/en/rules/br-16/">BR-16</a> <span>The invoice has no lines at all (BG-25)</span></li>
+      <li><a href="/efaktura/en/rules/br-17/">BR-17</a> <span>The payee (BG-10) needs its own name in cac:PartyName/cbc:Name and it</span></li>
+      <li><a href="/efaktura/en/rules/br-18/">BR-18</a> <span>The seller tax representative (BG-11) needs a name (BT-62)</span></li>
+      <li><a href="/efaktura/en/rules/br-19/">BR-19</a> <span>The seller tax representative (BG-11) needs a postal address</span></li>
+      <li><a href="/efaktura/en/rules/br-20/">BR-20</a> <span>The tax representative address is missing the country code (BT-69)</span></li>
+      <li><a href="/efaktura/en/rules/br-21/">BR-21</a> <span>Line 1 has no identifier (BT-126)</span></li>
+      <li><a href="/efaktura/en/rules/br-22/">BR-22</a> <span>Line 1 has no quantity (BT-129)</span></li>
+      <li><a href="/efaktura/en/rules/br-23/">BR-23</a> <span>Line 1: the quantity needs a unit of measure code (BT-130) in the unitCode</span></li>
+      <li><a href="/efaktura/en/rules/br-24/">BR-24</a> <span>Line 1 has no net amount (BT-131)</span></li>
+      <li><a href="/efaktura/en/rules/br-25/">BR-25</a> <span>Line 1 has no item name (BT-153) in cac:Item/cbc:Name</span></li>
+      <li><a href="/efaktura/en/rules/br-26/">BR-26</a> <span>Line 1 has no item net price (BT-146) in cac:Price/cbc:PriceAmount</span></li>
+      <li><a href="/efaktura/en/rules/br-27/">BR-27</a> <span>Line 1: the item net price (BT-146) must not be negative</span></li>
+      <li><a href="/efaktura/en/rules/br-28/">BR-28</a> <span>Line 1: the item gross price (BT-148) must not be negative</span></li>
+      <li><a href="/efaktura/en/rules/br-29/">BR-29</a> <span>The end of the period (2026-08-31) is earlier than its start (2026-09-30)</span></li>
+      <li><a href="/efaktura/en/rules/br-30/">BR-30</a> <span>The end of the period (2026-08-31) is earlier than its start (2026-09-30)</span></li>
+      <li><a href="/efaktura/en/rules/br-31/">BR-31</a> <span>The allowance on document level has no amount</span></li>
+      <li><a href="/efaktura/en/rules/br-32/">BR-32</a> <span>The allowance on document level has no VAT category code</span></li>
+      <li><a href="/efaktura/en/rules/br-33/">BR-33</a> <span>The allowance on document level needs a reason</span></li>
+      <li><a href="/efaktura/en/rules/br-36/">BR-36</a> <span>The charge on document level has no amount</span></li>
+      <li><a href="/efaktura/en/rules/br-37/">BR-37</a> <span>The charge on document level has no VAT category code</span></li>
+      <li><a href="/efaktura/en/rules/br-38/">BR-38</a> <span>The charge on document level needs a reason</span></li>
+      <li><a href="/efaktura/en/rules/br-41/">BR-41</a> <span>The allowance on line level has no amount</span></li>
+      <li><a href="/efaktura/en/rules/br-42/">BR-42</a> <span>The allowance on line level needs a reason</span></li>
+      <li><a href="/efaktura/en/rules/br-43/">BR-43</a> <span>The charge on line level has no amount</span></li>
+      <li><a href="/efaktura/en/rules/br-44/">BR-44</a> <span>The charge on line level needs a reason</span></li>
+      <li><a href="/efaktura/en/rules/br-45/">BR-45</a> <span>The VAT breakdown is missing the taxable amount (BT-116, cbc:TaxableAmount)</span></li>
+      <li><a href="/efaktura/en/rules/br-46/">BR-46</a> <span>The VAT breakdown is missing the VAT category tax amount</span></li>
+      <li><a href="/efaktura/en/rules/br-47/">BR-47</a> <span>The VAT breakdown is missing the VAT category code (BT-118)</span></li>
+      <li><a href="/efaktura/en/rules/br-48/">BR-48</a> <span>The VAT breakdown is missing the VAT category rate (BT-119, cbc:Percent)</span></li>
+      <li><a href="/efaktura/en/rules/br-49/">BR-49</a> <span>Payment instructions (BG-16) need a payment means code (BT-81)</span></li>
+      <li><a href="/efaktura/en/rules/br-50/">BR-50</a> <span>The payment account identifier (BT-84) is empty</span></li>
+      <li><a href="/efaktura/en/rules/br-51/">BR-51</a> <span>The payment card number (BT-87) is longer than</span></li>
+      <li><a href="/efaktura/en/rules/br-52/">BR-52</a> <span>Every supporting document (BG-24) needs a reference (BT-122) in cbc:ID</span></li>
+      <li><a href="/efaktura/en/rules/br-53/">BR-53</a> <span>If the VAT accounting currency code is present</span></li>
+      <li><a href="/efaktura/en/rules/br-54/">BR-54</a> <span>An item attribute (BG-32) needs both a name (BT-160, cbc:Name) and a value</span></li>
+      <li><a href="/efaktura/en/rules/br-55/">BR-55</a> <span>A reference to a preceding invoice (BG-3) needs that invoice number (BT-25)</span></li>
+      <li><a href="/efaktura/en/rules/br-56/">BR-56</a> <span>The seller tax representative (BG-11) needs a VAT identifier (BT-63)</span></li>
+      <li><a href="/efaktura/en/rules/br-57/">BR-57</a> <span>The deliver to address (BG-15) is missing the country code (BT-80)</span></li>
+      <li><a href="/efaktura/en/rules/br-61/">BR-61</a> <span>With payment means 58 (credit transfer) the payment account identifier</span></li>
+      <li><a href="/efaktura/en/rules/br-62/">BR-62</a> <span>The seller electronic address (BT-34) needs a schemeID attribute, for example</span></li>
+      <li><a href="/efaktura/en/rules/br-63/">BR-63</a> <span>The buyer electronic address (BT-49) needs a schemeID attribute</span></li>
+      <li><a href="/efaktura/en/rules/br-64/">BR-64</a> <span>The item standard identifier (BT-157) needs a schemeID attribute, for example</span></li>
+      <li><a href="/efaktura/en/rules/br-65/">BR-65</a> <span>The item classification identifier (BT-158) needs a listID attribute</span></li>
+    </ul>
+    <h2 class="skupina">BR-AE</h2>
+    <p class="pomoc">EN 16931 schematron (ConnectingEurope/eInvoicing-EN16931, licence EUPL 1.2), 10 codes</p>
+    <ul class="zoznam r">
+      <li><a href="/efaktura/en/rules/br-ae-01/">BR-AE-01</a> <span>The document uses VAT category AE (VAT reverse charge), so the VAT</span></li>
+      <li><a href="/efaktura/en/rules/br-ae-02/">BR-AE-02</a> <span>With VAT category AE (VAT reverse charge) the invoice has to carry</span></li>
+      <li><a href="/efaktura/en/rules/br-ae-03/">BR-AE-03</a> <span>With VAT category AE (VAT reverse charge) the invoice has to carry</span></li>
+      <li><a href="/efaktura/en/rules/br-ae-04/">BR-AE-04</a> <span>With VAT category AE (VAT reverse charge) the invoice has to carry</span></li>
+      <li><a href="/efaktura/en/rules/br-ae-05/">BR-AE-05</a> <span>Line 1 has VAT category AE (VAT reverse charge), so the VAT rate</span></li>
+      <li><a href="/efaktura/en/rules/br-ae-06/">BR-AE-06</a> <span>The allowance on document level has VAT category AE (VAT reverse charge)</span></li>
+      <li><a href="/efaktura/en/rules/br-ae-07/">BR-AE-07</a> <span>The charge on document level has VAT category AE (VAT reverse charge)</span></li>
+      <li><a href="/efaktura/en/rules/br-ae-08/">BR-AE-08</a> <span>The taxable amount for VAT category AE (VAT reverse charge)</span></li>
+      <li><a href="/efaktura/en/rules/br-ae-09/">BR-AE-09</a> <span>With VAT category AE (VAT reverse charge) the VAT amount in the breakdown</span></li>
+      <li><a href="/efaktura/en/rules/br-ae-10/">BR-AE-10</a> <span>With VAT category AE (VAT reverse charge) the VAT breakdown has to carry</span></li>
+    </ul>
+    <h2 class="skupina">BR-AF</h2>
+    <p class="pomoc">EN 16931 schematron (ConnectingEurope/eInvoicing-EN16931, licence EUPL 1.2), 10 codes</p>
+    <ul class="zoznam r">
+      <li><a href="/efaktura/en/rules/br-af-01/">BR-AF-01</a> <span>The document uses VAT category L (IGIC, Canary Islands), so the VAT</span></li>
+      <li><a href="/efaktura/en/rules/br-af-02/">BR-AF-02</a> <span>With VAT category L (IGIC, Canary Islands) the invoice has to carry</span></li>
+      <li><a href="/efaktura/en/rules/br-af-03/">BR-AF-03</a> <span>With VAT category L (IGIC, Canary Islands) the invoice has to carry</span></li>
+      <li><a href="/efaktura/en/rules/br-af-04/">BR-AF-04</a> <span>With VAT category L (IGIC, Canary Islands) the invoice has to carry</span></li>
+      <li><a href="/efaktura/en/rules/br-af-05/">BR-AF-05</a> <span>Line 1 has VAT category L (IGIC, Canary Islands), so the VAT rate</span></li>
+      <li><a href="/efaktura/en/rules/br-af-06/">BR-AF-06</a> <span>The allowance on document level has VAT category L (IGIC, Canary Islands)</span></li>
+      <li><a href="/efaktura/en/rules/br-af-07/">BR-AF-07</a> <span>The charge on document level has VAT category L (IGIC, Canary Islands)</span></li>
+      <li><a href="/efaktura/en/rules/br-af-08/">BR-AF-08</a> <span>The taxable amount for VAT category L (IGIC, Canary Islands) at the rate</span></li>
+      <li><a href="/efaktura/en/rules/br-af-09/">BR-AF-09</a> <span>With VAT category L (IGIC, Canary Islands) the VAT amount</span></li>
+      <li><a href="/efaktura/en/rules/br-af-10/">BR-AF-10</a> <span>With VAT category L (IGIC, Canary Islands) the VAT breakdown must not carry</span></li>
+    </ul>
+    <h2 class="skupina">BR-AG</h2>
+    <p class="pomoc">EN 16931 schematron (ConnectingEurope/eInvoicing-EN16931, licence EUPL 1.2), 10 codes</p>
+    <ul class="zoznam r">
+      <li><a href="/efaktura/en/rules/br-ag-01/">BR-AG-01</a> <span>The document uses VAT category M (IPSI, Ceuta and Melilla), so the VAT</span></li>
+      <li><a href="/efaktura/en/rules/br-ag-02/">BR-AG-02</a> <span>With VAT category M (IPSI, Ceuta and Melilla) the invoice has to carry</span></li>
+      <li><a href="/efaktura/en/rules/br-ag-03/">BR-AG-03</a> <span>With VAT category M (IPSI, Ceuta and Melilla) the invoice has to carry</span></li>
+      <li><a href="/efaktura/en/rules/br-ag-04/">BR-AG-04</a> <span>With VAT category M (IPSI, Ceuta and Melilla) the invoice has to carry</span></li>
+      <li><a href="/efaktura/en/rules/br-ag-05/">BR-AG-05</a> <span>Line 1 has VAT category M (IPSI, Ceuta and Melilla), so the VAT rate</span></li>
+      <li><a href="/efaktura/en/rules/br-ag-06/">BR-AG-06</a> <span>The allowance on document level has VAT category M</span></li>
+      <li><a href="/efaktura/en/rules/br-ag-07/">BR-AG-07</a> <span>The charge on document level has VAT category M (IPSI, Ceuta and Melilla)</span></li>
+      <li><a href="/efaktura/en/rules/br-ag-08/">BR-AG-08</a> <span>The taxable amount for VAT category M (IPSI, Ceuta and Melilla) at the rate</span></li>
+      <li><a href="/efaktura/en/rules/br-ag-09/">BR-AG-09</a> <span>With VAT category M (IPSI, Ceuta and Melilla) the VAT amount</span></li>
+      <li><a href="/efaktura/en/rules/br-ag-10/">BR-AG-10</a> <span>With VAT category M (IPSI, Ceuta and Melilla) the VAT breakdown</span></li>
+    </ul>
+    <h2 class="skupina">BR-B</h2>
+    <p class="pomoc">EN 16931 schematron (ConnectingEurope/eInvoicing-EN16931, licence EUPL 1.2), 2 codes</p>
+    <ul class="zoznam r">
+      <li><a href="/efaktura/en/rules/br-b-01/">BR-B-01</a> <span>VAT category B (split payment) may only be used on a domestic Italian</span></li>
+      <li><a href="/efaktura/en/rules/br-b-02/">BR-B-02</a> <span>The document uses VAT category B (split payment) and category</span></li>
+    </ul>
+    <h2 class="skupina">BR-CL</h2>
+    <p class="pomoc">EN 16931 schematron (ConnectingEurope/eInvoicing-EN16931, licence EUPL 1.2), 23 codes</p>
+    <ul class="zoznam r">
+      <li><a href="/efaktura/en/rules/br-cl-01/">BR-CL-01</a> <span>Use a code from the UNTDID 1001 for invoices</span></li>
+      <li><a href="/efaktura/en/rules/br-cl-03/">BR-CL-03</a> <span>Use a code from the ISO 4217 alpha</span></li>
+      <li><a href="/efaktura/en/rules/br-cl-04/">BR-CL-04</a> <span>Use a code from the ISO 4217 alpha</span></li>
+      <li><a href="/efaktura/en/rules/br-cl-05/">BR-CL-05</a> <span>Use a code from the ISO 4217 alpha</span></li>
+      <li><a href="/efaktura/en/rules/br-cl-06/">BR-CL-06</a> <span>Use a code from the UNTDID 2005 limited</span></li>
+      <li><a href="/efaktura/en/rules/br-cl-07/">BR-CL-07</a> <span>Use a code from the UNTDID 1153 code list</span></li>
+      <li><a href="/efaktura/en/rules/br-cl-08/">BR-CL-08</a> <span>Use a code from the UNTDID 4451 code list</span></li>
+      <li><a href="/efaktura/en/rules/br-cl-10/">BR-CL-10</a> <span>Use a code from the ISO 6523 ICD code list</span></li>
+      <li><a href="/efaktura/en/rules/br-cl-11/">BR-CL-11</a> <span>Use a code from the ISO 6523 ICD code list</span></li>
+      <li><a href="/efaktura/en/rules/br-cl-13/">BR-CL-13</a> <span>Use a code from the UNTDID 7143 code list</span></li>
+      <li><a href="/efaktura/en/rules/br-cl-14/">BR-CL-14</a> <span>Use a code from the ISO 3166-1 alpha-2 (for example IE, NL, DE) code list</span></li>
+      <li><a href="/efaktura/en/rules/br-cl-15/">BR-CL-15</a> <span>Use a code from the ISO 3166-1 alpha-2 code list</span></li>
+      <li><a href="/efaktura/en/rules/br-cl-16/">BR-CL-16</a> <span>Use a code from the UNTDID 4461 (for example 58 for a SEPA credit transfer)</span></li>
+      <li><a href="/efaktura/en/rules/br-cl-17/">BR-CL-17</a> <span>Use a code from the UNTDID 5305 (S, Z, E, AE, K, G, O, L, M, B) code list</span></li>
+      <li><a href="/efaktura/en/rules/br-cl-18/">BR-CL-18</a> <span>Use a code from the UNTDID 5305 (S, Z, E, AE, K, G, O, L, M, B) code list</span></li>
+      <li><a href="/efaktura/en/rules/br-cl-19/">BR-CL-19</a> <span>Use a code from the UNCL 5189 code list</span></li>
+      <li><a href="/efaktura/en/rules/br-cl-20/">BR-CL-20</a> <span>Use a code from the UNCL 7161 code list</span></li>
+      <li><a href="/efaktura/en/rules/br-cl-21/">BR-CL-21</a> <span>Use a code from the ISO 6523 ICD code list</span></li>
+      <li><a href="/efaktura/en/rules/br-cl-22/">BR-CL-22</a> <span>Use a code from the CEF VATEX (for example VATEX-EU-AE) code list</span></li>
+      <li><a href="/efaktura/en/rules/br-cl-23/">BR-CL-23</a> <span>Use a code from the UN/ECE Rec</span></li>
+      <li><a href="/efaktura/en/rules/br-cl-24/">BR-CL-24</a> <span>Use a code from the MIMEMediaType</span></li>
+      <li><a href="/efaktura/en/rules/br-cl-25/">BR-CL-25</a> <span>Use a code from the CEF EAS code list</span></li>
+      <li><a href="/efaktura/en/rules/br-cl-26/">BR-CL-26</a> <span>Use a code from the ISO 6523 ICD code list</span></li>
+    </ul>
+    <h2 class="skupina">BR-CO</h2>
+    <p class="pomoc">EN 16931 schematron (ConnectingEurope/eInvoicing-EN16931, licence EUPL 1.2), 20 codes</p>
+    <ul class="zoznam r">
+      <li><a href="/efaktura/en/rules/br-co-03/">BR-CO-03</a> <span>The value added tax point date (BT-7, cbc:TaxPointDate) and its code</span></li>
+      <li><a href="/efaktura/en/rules/br-co-04/">BR-CO-04</a> <span>Line 1 has no VAT category code (BT-151)</span></li>
+      <li><a href="/efaktura/en/rules/br-co-09/">BR-CO-09</a> <span>A VAT identifier has to start with a country code from ISO 3166</span></li>
+      <li><a href="/efaktura/en/rules/br-co-10/">BR-CO-10</a> <span>Correct the total or the line amounts</span></li>
+      <li><a href="/efaktura/en/rules/br-co-11/">BR-CO-11</a> <span>The allowance total does not add up: cbc:AllowanceTotalAmount (BT-107)</span></li>
+      <li><a href="/efaktura/en/rules/br-co-12/">BR-CO-12</a> <span>The charge total does not add up: cbc:ChargeTotalAmount (BT-108)</span></li>
+      <li><a href="/efaktura/en/rules/br-co-13/">BR-CO-13</a> <span>The invoice total without VAT (BT-109) should be the line total minus</span></li>
+      <li><a href="/efaktura/en/rules/br-co-14/">BR-CO-14</a> <span>The invoice total VAT amount (BT-110, cac:TaxTotal/cbc:TaxAmount)</span></li>
+      <li><a href="/efaktura/en/rules/br-co-15/">BR-CO-15</a> <span>The invoice total with VAT (BT-112) should be the total without VAT</span></li>
+      <li><a href="/efaktura/en/rules/br-co-16/">BR-CO-16</a> <span>The amount due for payment (BT-115) should be the total with VAT</span></li>
+      <li><a href="/efaktura/en/rules/br-co-17/">BR-CO-17</a> <span>The VAT in the breakdown does not match: taxable amount</span></li>
+      <li><a href="/efaktura/en/rules/br-co-18/">BR-CO-18</a> <span>The VAT breakdown (BG-23) is missing</span></li>
+      <li><a href="/efaktura/en/rules/br-co-19/">BR-CO-19</a> <span>The invoicing period is present but empty</span></li>
+      <li><a href="/efaktura/en/rules/br-co-20/">BR-CO-20</a> <span>The invoicing period is present but empty</span></li>
+      <li><a href="/efaktura/en/rules/br-co-21/">BR-CO-21</a> <span>The allowance on document level needs a reason</span></li>
+      <li><a href="/efaktura/en/rules/br-co-22/">BR-CO-22</a> <span>The charge on document level needs a reason</span></li>
+      <li><a href="/efaktura/en/rules/br-co-23/">BR-CO-23</a> <span>The allowance on line level needs a reason</span></li>
+      <li><a href="/efaktura/en/rules/br-co-24/">BR-CO-24</a> <span>The charge on line level needs a reason</span></li>
+      <li><a href="/efaktura/en/rules/br-co-25/">BR-CO-25</a> <span>The amount due for payment is positive, so the invoice needs either</span></li>
+      <li><a href="/efaktura/en/rules/br-co-26/">BR-CO-26</a> <span>The seller carries no identifier</span></li>
+    </ul>
+    <h2 class="skupina">BR-E</h2>
+    <p class="pomoc">EN 16931 schematron (ConnectingEurope/eInvoicing-EN16931, licence EUPL 1.2), 10 codes</p>
+    <ul class="zoznam r">
+      <li><a href="/efaktura/en/rules/br-e-01/">BR-E-01</a> <span>The document uses VAT category E (exempt from VAT), so the VAT breakdown</span></li>
+      <li><a href="/efaktura/en/rules/br-e-02/">BR-E-02</a> <span>With VAT category E (exempt from VAT) the invoice has to carry the seller</span></li>
+      <li><a href="/efaktura/en/rules/br-e-03/">BR-E-03</a> <span>With VAT category E (exempt from VAT) the invoice has to carry the seller</span></li>
+      <li><a href="/efaktura/en/rules/br-e-04/">BR-E-04</a> <span>With VAT category E (exempt from VAT) the invoice has to carry the seller</span></li>
+      <li><a href="/efaktura/en/rules/br-e-05/">BR-E-05</a> <span>Line 3 has VAT category E (exempt from VAT), so the VAT rate has to be 0</span></li>
+      <li><a href="/efaktura/en/rules/br-e-06/">BR-E-06</a> <span>The allowance on document level has VAT category E (exempt from VAT)</span></li>
+      <li><a href="/efaktura/en/rules/br-e-07/">BR-E-07</a> <span>The charge on document level has VAT category E (exempt from VAT), so the VAT</span></li>
+      <li><a href="/efaktura/en/rules/br-e-08/">BR-E-08</a> <span>The taxable amount for VAT category E (exempt from VAT)</span></li>
+      <li><a href="/efaktura/en/rules/br-e-09/">BR-E-09</a> <span>With VAT category E (exempt from VAT) the VAT amount in the breakdown</span></li>
+      <li><a href="/efaktura/en/rules/br-e-10/">BR-E-10</a> <span>With VAT category E (exempt from VAT) the VAT breakdown has to carry</span></li>
+    </ul>
+    <h2 class="skupina">BR-G</h2>
+    <p class="pomoc">EN 16931 schematron (ConnectingEurope/eInvoicing-EN16931, licence EUPL 1.2), 10 codes</p>
+    <ul class="zoznam r">
+      <li><a href="/efaktura/en/rules/br-g-01/">BR-G-01</a> <span>The document uses VAT category G (export outside the EU), so the VAT</span></li>
+      <li><a href="/efaktura/en/rules/br-g-02/">BR-G-02</a> <span>With VAT category G (export outside the EU) the invoice has to carry</span></li>
+      <li><a href="/efaktura/en/rules/br-g-03/">BR-G-03</a> <span>With VAT category G (export outside the EU) the invoice has to carry</span></li>
+      <li><a href="/efaktura/en/rules/br-g-04/">BR-G-04</a> <span>With VAT category G (export outside the EU) the invoice has to carry</span></li>
+      <li><a href="/efaktura/en/rules/br-g-05/">BR-G-05</a> <span>Line 1 has VAT category G (export outside the EU), so the VAT rate</span></li>
+      <li><a href="/efaktura/en/rules/br-g-06/">BR-G-06</a> <span>The allowance on document level has VAT category G (export outside the EU)</span></li>
+      <li><a href="/efaktura/en/rules/br-g-07/">BR-G-07</a> <span>The charge on document level has VAT category G (export outside the EU)</span></li>
+      <li><a href="/efaktura/en/rules/br-g-08/">BR-G-08</a> <span>The taxable amount for VAT category G (export outside the EU)</span></li>
+      <li><a href="/efaktura/en/rules/br-g-09/">BR-G-09</a> <span>With VAT category G (export outside the EU) the VAT amount in the breakdown</span></li>
+      <li><a href="/efaktura/en/rules/br-g-10/">BR-G-10</a> <span>With VAT category G (export outside the EU) the VAT breakdown has to carry</span></li>
+    </ul>
+    <h2 class="skupina">BR-IC</h2>
+    <p class="pomoc">EN 16931 schematron (ConnectingEurope/eInvoicing-EN16931, licence EUPL 1.2), 12 codes</p>
+    <ul class="zoznam r">
+      <li><a href="/efaktura/en/rules/br-ic-01/">BR-IC-01</a> <span>The document uses VAT category K (intra-community supply), so the VAT</span></li>
+      <li><a href="/efaktura/en/rules/br-ic-02/">BR-IC-02</a> <span>With VAT category K (intra-community supply) the invoice has to carry</span></li>
+      <li><a href="/efaktura/en/rules/br-ic-03/">BR-IC-03</a> <span>With VAT category K (intra-community supply) the invoice has to carry</span></li>
+      <li><a href="/efaktura/en/rules/br-ic-04/">BR-IC-04</a> <span>With VAT category K (intra-community supply) the invoice has to carry</span></li>
+      <li><a href="/efaktura/en/rules/br-ic-05/">BR-IC-05</a> <span>Line 1 has VAT category K (intra-community supply), so the VAT rate</span></li>
+      <li><a href="/efaktura/en/rules/br-ic-06/">BR-IC-06</a> <span>The allowance on document level has VAT category K (intra-community supply)</span></li>
+      <li><a href="/efaktura/en/rules/br-ic-07/">BR-IC-07</a> <span>The charge on document level has VAT category K (intra-community supply)</span></li>
+      <li><a href="/efaktura/en/rules/br-ic-08/">BR-IC-08</a> <span>The taxable amount for VAT category K (intra-community supply)</span></li>
+      <li><a href="/efaktura/en/rules/br-ic-09/">BR-IC-09</a> <span>With VAT category K (intra-community supply) the VAT amount in the breakdown</span></li>
+      <li><a href="/efaktura/en/rules/br-ic-10/">BR-IC-10</a> <span>With VAT category K (intra-community supply) the VAT breakdown has to carry</span></li>
+      <li><a href="/efaktura/en/rules/br-ic-11/">BR-IC-11</a> <span>With an intra-community supply (category K) the invoice needs either</span></li>
+      <li><a href="/efaktura/en/rules/br-ic-12/">BR-IC-12</a> <span>With an intra-community supply (category K) the deliver to country code</span></li>
+    </ul>
+    <h2 class="skupina">BR-O</h2>
+    <p class="pomoc">EN 16931 schematron (ConnectingEurope/eInvoicing-EN16931, licence EUPL 1.2), 14 codes</p>
+    <ul class="zoznam r">
+      <li><a href="/efaktura/en/rules/br-o-01/">BR-O-01</a> <span>The document uses VAT category O (not subject to VAT), so the VAT breakdown</span></li>
+      <li><a href="/efaktura/en/rules/br-o-02/">BR-O-02</a> <span>With VAT category O (not subject to VAT) the document must not carry</span></li>
+      <li><a href="/efaktura/en/rules/br-o-03/">BR-O-03</a> <span>With VAT category O (not subject to VAT) the document must not carry</span></li>
+      <li><a href="/efaktura/en/rules/br-o-04/">BR-O-04</a> <span>With VAT category O (not subject to VAT) the document must not carry</span></li>
+      <li><a href="/efaktura/en/rules/br-o-05/">BR-O-05</a> <span>Line 1 has VAT category O (not subject to VAT), so no VAT rate</span></li>
+      <li><a href="/efaktura/en/rules/br-o-06/">BR-O-06</a> <span>The allowance on document level has VAT category O (not subject to VAT)</span></li>
+      <li><a href="/efaktura/en/rules/br-o-07/">BR-O-07</a> <span>The charge on document level has VAT category O (not subject to VAT), so no</span></li>
+      <li><a href="/efaktura/en/rules/br-o-08/">BR-O-08</a> <span>The taxable amount for VAT category O (not subject to VAT)</span></li>
+      <li><a href="/efaktura/en/rules/br-o-09/">BR-O-09</a> <span>With VAT category O (not subject to VAT) the VAT amount in the breakdown</span></li>
+      <li><a href="/efaktura/en/rules/br-o-10/">BR-O-10</a> <span>With VAT category O (not subject to VAT) the VAT breakdown has to carry</span></li>
+      <li><a href="/efaktura/en/rules/br-o-11/">BR-O-11</a> <span>The document has a VAT breakdown with category O (not subject to VAT)</span></li>
+      <li><a href="/efaktura/en/rules/br-o-12/">BR-O-12</a> <span>The document has a VAT breakdown with category O, so every invoice line</span></li>
+      <li><a href="/efaktura/en/rules/br-o-13/">BR-O-13</a> <span>The document has a VAT breakdown with category O, so every document level</span></li>
+      <li><a href="/efaktura/en/rules/br-o-14/">BR-O-14</a> <span>The document has a VAT breakdown with category O, so every document level</span></li>
+    </ul>
+    <h2 class="skupina">BR-S</h2>
+    <p class="pomoc">EN 16931 schematron (ConnectingEurope/eInvoicing-EN16931, licence EUPL 1.2), 10 codes</p>
+    <ul class="zoznam r">
+      <li><a href="/efaktura/en/rules/br-s-01/">BR-S-01</a> <span>The document uses VAT category S (standard rated), so the VAT breakdown</span></li>
+      <li><a href="/efaktura/en/rules/br-s-02/">BR-S-02</a> <span>With VAT category S (standard rated) the invoice has to carry the seller</span></li>
+      <li><a href="/efaktura/en/rules/br-s-03/">BR-S-03</a> <span>With VAT category S (standard rated) the invoice has to carry the seller</span></li>
+      <li><a href="/efaktura/en/rules/br-s-04/">BR-S-04</a> <span>With VAT category S (standard rated) the invoice has to carry the seller</span></li>
+      <li><a href="/efaktura/en/rules/br-s-05/">BR-S-05</a> <span>Line 1 has VAT category S (standard rated), so the VAT rate</span></li>
+      <li><a href="/efaktura/en/rules/br-s-06/">BR-S-06</a> <span>The allowance on document level has VAT category S (standard rated)</span></li>
+      <li><a href="/efaktura/en/rules/br-s-07/">BR-S-07</a> <span>The charge on document level has VAT category S (standard rated)</span></li>
+      <li><a href="/efaktura/en/rules/br-s-08/">BR-S-08</a> <span>The taxable amount for VAT category S (standard rated) at the rate %</span></li>
+      <li><a href="/efaktura/en/rules/br-s-09/">BR-S-09</a> <span>With VAT category S (standard rated) the VAT amount should be the taxable</span></li>
+      <li><a href="/efaktura/en/rules/br-s-10/">BR-S-10</a> <span>With VAT category S (standard rated) the VAT breakdown must not carry</span></li>
+    </ul>
+    <h2 class="skupina">BR-Z</h2>
+    <p class="pomoc">EN 16931 schematron (ConnectingEurope/eInvoicing-EN16931, licence EUPL 1.2), 10 codes</p>
+    <ul class="zoznam r">
+      <li><a href="/efaktura/en/rules/br-z-01/">BR-Z-01</a> <span>The document uses VAT category Z (zero rated), so the VAT breakdown (BG-23)</span></li>
+      <li><a href="/efaktura/en/rules/br-z-02/">BR-Z-02</a> <span>With VAT category Z (zero rated) the invoice has to carry the seller VAT</span></li>
+      <li><a href="/efaktura/en/rules/br-z-03/">BR-Z-03</a> <span>With VAT category Z (zero rated) the invoice has to carry the seller VAT</span></li>
+      <li><a href="/efaktura/en/rules/br-z-04/">BR-Z-04</a> <span>With VAT category Z (zero rated) the invoice has to carry the seller VAT</span></li>
+      <li><a href="/efaktura/en/rules/br-z-05/">BR-Z-05</a> <span>Line 1 has VAT category Z (zero rated), so the VAT rate has to be 0</span></li>
+      <li><a href="/efaktura/en/rules/br-z-06/">BR-Z-06</a> <span>The allowance on document level has VAT category Z (zero rated), so the VAT</span></li>
+      <li><a href="/efaktura/en/rules/br-z-07/">BR-Z-07</a> <span>The charge on document level has VAT category Z (zero rated), so the VAT rate</span></li>
+      <li><a href="/efaktura/en/rules/br-z-08/">BR-Z-08</a> <span>The taxable amount for VAT category Z (zero rated)</span></li>
+      <li><a href="/efaktura/en/rules/br-z-09/">BR-Z-09</a> <span>With VAT category Z (zero rated) the VAT amount in the breakdown</span></li>
+      <li><a href="/efaktura/en/rules/br-z-10/">BR-Z-10</a> <span>With VAT category Z (zero rated) the VAT breakdown must not carry</span></li>
+    </ul>
+    <h2 class="skupina">PEPPOL-COMMON-R</h2>
+    <p class="pomoc">Peppol BIS Billing 3.0 (OpenPEPPOL, peppol-bis-invoice-3), 13 codes</p>
+    <ul class="zoznam r">
+      <li><a href="/efaktura/en/rules/peppol-common-r040/">PEPPOL-COMMON-R040</a> <span>A GLN needs a valid check digit under the GS</span></li>
+      <li><a href="/efaktura/en/rules/peppol-common-r041/">PEPPOL-COMMON-R041</a> <span>A Norwegian organisation number needs 9 digits and a valid modulo 11 check</span></li>
+      <li><a href="/efaktura/en/rules/peppol-common-r042/">PEPPOL-COMMON-R042</a> <span>A Danish CVR number is 8 digits, or DK followed by 8 digits</span></li>
+      <li><a href="/efaktura/en/rules/peppol-common-r043/">PEPPOL-COMMON-R043</a> <span>A Belgian enterprise number needs 10 digits and a valid modulo 97 check</span></li>
+      <li><a href="/efaktura/en/rules/peppol-common-r044/">PEPPOL-COMMON-R044</a> <span>An Italian IPA code should have 6 alphanumeric characters</span></li>
+      <li><a href="/efaktura/en/rules/peppol-common-r045/">PEPPOL-COMMON-R045</a> <span>An Italian Codice Fiscale should have 16 characters, or 11 digits</span></li>
+      <li><a href="/efaktura/en/rules/peppol-common-r046/">PEPPOL-COMMON-R046</a> <span>An Italian Codice Fiscale should have 16 characters, or 11 digits</span></li>
+      <li><a href="/efaktura/en/rules/peppol-common-r047/">PEPPOL-COMMON-R047</a> <span>An Italian Partita IVA should have 11 digits with a valid check digit</span></li>
+      <li><a href="/efaktura/en/rules/peppol-common-r048/">PEPPOL-COMMON-R048</a> <span>An Italian Partita IVA should have 11 digits with a valid check digit</span></li>
+      <li><a href="/efaktura/en/rules/peppol-common-r049/">PEPPOL-COMMON-R049</a> <span>A Swedish organisation number needs 10 digits and a valid check digit</span></li>
+      <li><a href="/efaktura/en/rules/peppol-common-r050/">PEPPOL-COMMON-R050</a> <span>An Australian ABN needs 11 digits and a valid check</span></li>
+      <li><a href="/efaktura/en/rules/peppol-common-r052/">PEPPOL-COMMON-R052</a> <span>A Danish P number should have 10 digits</span></li>
+      <li><a href="/efaktura/en/rules/peppol-common-r053/">PEPPOL-COMMON-R053</a> <span>A Danish SE number should look like DK followed</span></li>
+    </ul>
+    <h2 class="skupina">PEPPOL-EN16931-CL</h2>
+    <p class="pomoc">Peppol BIS Billing 3.0 (OpenPEPPOL, peppol-bis-invoice-3), 6 codes</p>
+    <ul class="zoznam r">
+      <li><a href="/efaktura/en/rules/peppol-en16931-cl001/">PEPPOL-EN16931-CL001</a> <span>Peppol accepts application/pdf, image/png, image/jpeg, text/csv, xlsx</span></li>
+      <li><a href="/efaktura/en/rules/peppol-en16931-cl002/">PEPPOL-EN16931-CL002</a> <span>The reason code &quot;…&quot; is not in the UNCL 5189 code list</span></li>
+      <li><a href="/efaktura/en/rules/peppol-en16931-cl003/">PEPPOL-EN16931-CL003</a> <span>The reason code &quot;…&quot; is not in the UNCL 7161 code list</span></li>
+      <li><a href="/efaktura/en/rules/peppol-en16931-cl006/">PEPPOL-EN16931-CL006</a> <span>The value added tax point date code (BT-8)</span></li>
+      <li><a href="/efaktura/en/rules/peppol-en16931-cl007/">PEPPOL-EN16931-CL007</a> <span>The currencyID attribute of cbc:Amount has to be an ISO 4217 currency code</span></li>
+      <li><a href="/efaktura/en/rules/peppol-en16931-cl008/">PEPPOL-EN16931-CL008</a> <span>Look up the code for your identifier in the CEF EAS code list</span></li>
+    </ul>
+    <h2 class="skupina">PEPPOL-EN16931-F</h2>
+    <p class="pomoc">Peppol BIS Billing 3.0 (OpenPEPPOL, peppol-bis-invoice-3), 1 codes</p>
+    <ul class="zoznam r">
+      <li><a href="/efaktura/en/rules/peppol-en16931-f001/">PEPPOL-EN16931-F001</a> <span>The date in cbc:IssueDate has to be written as YYYY-MM-DD and has to exist</span></li>
+    </ul>
+    <h2 class="skupina">PEPPOL-EN16931-P</h2>
+    <p class="pomoc">Peppol BIS Billing 3.0 (OpenPEPPOL, peppol-bis-invoice-3), 11 codes</p>
+    <ul class="zoznam r">
+      <li><a href="/efaktura/en/rules/peppol-en16931-p0100/">PEPPOL-EN16931-P0100</a> <span>For an ordinary invoice use 380</span></li>
+      <li><a href="/efaktura/en/rules/peppol-en16931-p0101/">PEPPOL-EN16931-P0101</a> <span>For an ordinary credit note use 381</span></li>
+      <li><a href="/efaktura/en/rules/peppol-en16931-p0104/">PEPPOL-EN16931-P0104</a> <span>The exemption reason code VATEX-EU-G belongs to VAT category G, but</span></li>
+      <li><a href="/efaktura/en/rules/peppol-en16931-p0105/">PEPPOL-EN16931-P0105</a> <span>The exemption reason code VATEX-EU-O belongs to VAT category O, but</span></li>
+      <li><a href="/efaktura/en/rules/peppol-en16931-p0106/">PEPPOL-EN16931-P0106</a> <span>The exemption reason code VATEX-EU-IC belongs to VAT category K, but</span></li>
+      <li><a href="/efaktura/en/rules/peppol-en16931-p0107/">PEPPOL-EN16931-P0107</a> <span>The exemption reason code VATEX-EU-AE belongs to VAT category AE, but</span></li>
+      <li><a href="/efaktura/en/rules/peppol-en16931-p0108/">PEPPOL-EN16931-P0108</a> <span>The exemption reason code VATEX-EU-D belongs to VAT category E, but</span></li>
+      <li><a href="/efaktura/en/rules/peppol-en16931-p0109/">PEPPOL-EN16931-P0109</a> <span>The exemption reason code VATEX-EU-F belongs to VAT category E, but</span></li>
+      <li><a href="/efaktura/en/rules/peppol-en16931-p0110/">PEPPOL-EN16931-P0110</a> <span>The exemption reason code VATEX-EU-I belongs to VAT category E, but</span></li>
+      <li><a href="/efaktura/en/rules/peppol-en16931-p0111/">PEPPOL-EN16931-P0111</a> <span>The exemption reason code VATEX-EU-J belongs to VAT category E, but</span></li>
+      <li><a href="/efaktura/en/rules/peppol-en16931-p0112/">PEPPOL-EN16931-P0112</a> <span>In Peppol, invoice type code 326 may be used only when both the seller</span></li>
+    </ul>
+    <h2 class="skupina">PEPPOL-EN16931-R</h2>
+    <p class="pomoc">Peppol BIS Billing 3.0 (OpenPEPPOL, peppol-bis-invoice-3), 28 codes</p>
+    <ul class="zoznam r">
+      <li><a href="/efaktura/en/rules/peppol-en16931-r001/">PEPPOL-EN16931-R001</a> <span>The business process (BT-23, cbc:ProfileID) is missing</span></li>
+      <li><a href="/efaktura/en/rules/peppol-en16931-r002/">PEPPOL-EN16931-R002</a> <span>Only one invoice note (BT-22, cbc:Note) is allowed on document level</span></li>
+      <li><a href="/efaktura/en/rules/peppol-en16931-r003/">PEPPOL-EN16931-R003</a> <span>Add either the buyer reference (BT-10, cbc:BuyerReference) or the purchase</span></li>
+      <li><a href="/efaktura/en/rules/peppol-en16931-r004/">PEPPOL-EN16931-R004</a> <span>For Peppol, cbc:CustomizationID (BT-24) has to start with urn:cen.eu:en</span></li>
+      <li><a href="/efaktura/en/rules/peppol-en16931-r005/">PEPPOL-EN16931-R005</a> <span>The VAT accounting currency (BT-6) has to differ from the invoice currency</span></li>
+      <li><a href="/efaktura/en/rules/peppol-en16931-r007/">PEPPOL-EN16931-R007</a> <span>The business process (BT-23, cbc:ProfileID) has to look like</span></li>
+      <li><a href="/efaktura/en/rules/peppol-en16931-r008/">PEPPOL-EN16931-R008</a> <span>The element cbc:ProfileID is empty</span></li>
+      <li><a href="/efaktura/en/rules/peppol-en16931-r010/">PEPPOL-EN16931-R010</a> <span>The buyer electronic address (BT-49, cbc:EndpointID with a schemeID)</span></li>
+      <li><a href="/efaktura/en/rules/peppol-en16931-r020/">PEPPOL-EN16931-R020</a> <span>The seller electronic address (BT-34, cbc:EndpointID with a schemeID)</span></li>
+      <li><a href="/efaktura/en/rules/peppol-en16931-r040/">PEPPOL-EN16931-R040</a> <span>The allowance or charge amount should be the base amount times the percentage</span></li>
+      <li><a href="/efaktura/en/rules/peppol-en16931-r041/">PEPPOL-EN16931-R041</a> <span>If the allowance or charge percentage (cbc:MultiplierFactorNumeric)</span></li>
+      <li><a href="/efaktura/en/rules/peppol-en16931-r042/">PEPPOL-EN16931-R042</a> <span>If the allowance or charge base amount (cbc:BaseAmount) is given</span></li>
+      <li><a href="/efaktura/en/rules/peppol-en16931-r043/">PEPPOL-EN16931-R043</a> <span>cbc:ChargeIndicator has to be true (a charge) or false (an allowance)</span></li>
+      <li><a href="/efaktura/en/rules/peppol-en16931-r044/">PEPPOL-EN16931-R044</a> <span>A charge is not allowed on price level</span></li>
+      <li><a href="/efaktura/en/rules/peppol-en16931-r046/">PEPPOL-EN16931-R046</a> <span>The item net price (BT-146) should be the gross price minus the price</span></li>
+      <li><a href="/efaktura/en/rules/peppol-en16931-r051/">PEPPOL-EN16931-R051</a> <span>Every amount has to be in the invoice currency (EUR)</span></li>
+      <li><a href="/efaktura/en/rules/peppol-en16931-r053/">PEPPOL-EN16931-R053</a> <span>The document needs exactly one cac:TaxTotal group carrying the VAT</span></li>
+      <li><a href="/efaktura/en/rules/peppol-en16931-r054/">PEPPOL-EN16931-R054</a> <span>A cac:TaxTotal group without a VAT breakdown is allowed only when the VAT</span></li>
+      <li><a href="/efaktura/en/rules/peppol-en16931-r055/">PEPPOL-EN16931-R055</a> <span>The VAT amount in the invoice currency (BT-110) and in the VAT accounting</span></li>
+      <li><a href="/efaktura/en/rules/peppol-en16931-r061/">PEPPOL-EN16931-R061</a> <span>With a direct debit (payment means 59) the mandate reference identifier</span></li>
+      <li><a href="/efaktura/en/rules/peppol-en16931-r080/">PEPPOL-EN16931-R080</a> <span>Only one project reference (BT-11) is allowed on document level</span></li>
+      <li><a href="/efaktura/en/rules/peppol-en16931-r100/">PEPPOL-EN16931-R100</a> <span>Line 1: only one invoice line object reference (cac:DocumentReference)</span></li>
+      <li><a href="/efaktura/en/rules/peppol-en16931-r101/">PEPPOL-EN16931-R101</a> <span>Line 1: inside a line, cac:DocumentReference is only used for the invoiced</span></li>
+      <li><a href="/efaktura/en/rules/peppol-en16931-r110/">PEPPOL-EN16931-R110</a> <span>Line 1: the line period starts (…) before the invoicing period starts</span></li>
+      <li><a href="/efaktura/en/rules/peppol-en16931-r111/">PEPPOL-EN16931-R111</a> <span>Line 1: the line period ends (…) after the invoicing period ends</span></li>
+      <li><a href="/efaktura/en/rules/peppol-en16931-r120/">PEPPOL-EN16931-R120</a> <span>Line 1: the line net amount should be quantity 6 times price 45 divided</span></li>
+      <li><a href="/efaktura/en/rules/peppol-en16931-r121/">PEPPOL-EN16931-R121</a> <span>Line 1: the item price base quantity (BT-149, cac:Price/cbc:BaseQuantity)</span></li>
+      <li><a href="/efaktura/en/rules/peppol-en16931-r130/">PEPPOL-EN16931-R130</a> <span>Line 1: the unit of the price base quantity (…) has to be the same</span></li>
+    </ul>
+    <h2 class="skupina">BR-DE</h2>
+    <p class="pomoc">XRechnung 3.x (itplr-kosit/xrechnung-schematron, Apache 2.0 licence), 31 codes</p>
+    <ul class="zoznam r">
+      <li><a href="/efaktura/en/rules/br-de-1/">BR-DE-1</a> <span>XRechnung requires payment instructions (BG-16)</span></li>
+      <li><a href="/efaktura/en/rules/br-de-2/">BR-DE-2</a> <span>XRechnung requires seller contact details (BG-6)</span></li>
+      <li><a href="/efaktura/en/rules/br-de-3/">BR-DE-3</a> <span>The seller address is missing the city (BT-37, cbc:CityName)</span></li>
+      <li><a href="/efaktura/en/rules/br-de-4/">BR-DE-4</a> <span>The seller address is missing the post code (BT-38, cbc:PostalZone)</span></li>
+      <li><a href="/efaktura/en/rules/br-de-5/">BR-DE-5</a> <span>The seller contact details are missing the contact point name</span></li>
+      <li><a href="/efaktura/en/rules/br-de-6/">BR-DE-6</a> <span>The seller contact details are missing the telephone number</span></li>
+      <li><a href="/efaktura/en/rules/br-de-7/">BR-DE-7</a> <span>The seller contact details are missing the e-mail address</span></li>
+      <li><a href="/efaktura/en/rules/br-de-8/">BR-DE-8</a> <span>The buyer address is missing the city (BT-52, cbc:CityName)</span></li>
+      <li><a href="/efaktura/en/rules/br-de-9/">BR-DE-9</a> <span>The buyer address is missing the post code (BT-53, cbc:PostalZone)</span></li>
+      <li><a href="/efaktura/en/rules/br-de-10/">BR-DE-10</a> <span>The deliver to address is missing the city (BT-77, cbc:CityName)</span></li>
+      <li><a href="/efaktura/en/rules/br-de-11/">BR-DE-11</a> <span>The deliver to address is missing the post code (BT-78, cbc:PostalZone)</span></li>
+      <li><a href="/efaktura/en/rules/br-de-14/">BR-DE-14</a> <span>XRechnung requires the VAT rate (BT-119) in every VAT breakdown</span></li>
+      <li><a href="/efaktura/en/rules/br-de-15/">BR-DE-15</a> <span>XRechnung requires a buyer reference (BT-10, cbc:BuyerReference)</span></li>
+      <li><a href="/efaktura/en/rules/br-de-16/">BR-DE-16</a> <span>The document uses VAT categories S, E, so it has to carry the seller VAT</span></li>
+      <li><a href="/efaktura/en/rules/br-de-17/">BR-DE-17</a> <span>XRechnung expects an invoice type code (BT-3) from a narrower list</span></li>
+      <li><a href="/efaktura/en/rules/br-de-18/">BR-DE-18</a> <span>An early payment discount in the payment terms (BT-20) should be written</span></li>
+      <li><a href="/efaktura/en/rules/br-de-19/">BR-DE-19</a> <span>With a SEPA credit transfer (code 58) cac:PayeeFinancialAccount/cbc:ID</span></li>
+      <li><a href="/efaktura/en/rules/br-de-20/">BR-DE-20</a> <span>With a SEPA direct debit (code 59)</span></li>
+      <li><a href="/efaktura/en/rules/br-de-21/">BR-DE-21</a> <span>For XRechnung, cbc:CustomizationID (BT-24) should start with urn:cen.eu:en</span></li>
+      <li><a href="/efaktura/en/rules/br-de-22/">BR-DE-22</a> <span>Every attachment needs its own filename attribute</span></li>
+      <li><a href="/efaktura/en/rules/br-de-23-a/">BR-DE-23-a</a> <span>With a credit transfer (code 58) the group cac:PayeeFinancialAccount</span></li>
+      <li><a href="/efaktura/en/rules/br-de-23-b/">BR-DE-23-b</a> <span>With a credit transfer (code 58) neither the card group (BG-18) nor</span></li>
+      <li><a href="/efaktura/en/rules/br-de-24-a/">BR-DE-24-a</a> <span>With a card payment (code 48) the group cac:CardAccount (BG-18)</span></li>
+      <li><a href="/efaktura/en/rules/br-de-24-b/">BR-DE-24-b</a> <span>With a card payment (code 48) neither the bank account group (BG-17) nor</span></li>
+      <li><a href="/efaktura/en/rules/br-de-25-a/">BR-DE-25-a</a> <span>With a direct debit (code 59) the group cac:PaymentMandate (BG-19)</span></li>
+      <li><a href="/efaktura/en/rules/br-de-25-b/">BR-DE-25-b</a> <span>With a direct debit (code 59) neither the payee account group (BG-17) nor</span></li>
+      <li><a href="/efaktura/en/rules/br-de-26/">BR-DE-26</a> <span>A corrected invoice (type code 384) should reference the preceding invoice</span></li>
+      <li><a href="/efaktura/en/rules/br-de-27/">BR-DE-27</a> <span>The seller telephone number (BT-42) should contain at least three digits</span></li>
+      <li><a href="/efaktura/en/rules/br-de-28/">BR-DE-28</a> <span>The seller e-mail address (BT-43) should contain exactly one @, at least</span></li>
+      <li><a href="/efaktura/en/rules/br-de-30/">BR-DE-30</a> <span>With a direct debit (BG-19) the bank assigned creditor identifier (BT-90)</span></li>
+      <li><a href="/efaktura/en/rules/br-de-31/">BR-DE-31</a> <span>With a direct debit (BG-19) the debited account identifier (BT-91)</span></li>
+    </ul>
+    <h2 class="skupina">BR-DE-TMP</h2>
+    <p class="pomoc">XRechnung 3.x (itplr-kosit/xrechnung-schematron, Apache 2.0 licence), 1 codes</p>
+    <ul class="zoznam r">
+      <li><a href="/efaktura/en/rules/br-de-tmp-32/">BR-DE-TMP-32</a> <span>The document should state when the supply took place: either BT-72</span></li>
+    </ul>
+    <h2 class="skupina">BR-DEC</h2>
+    <p class="pomoc">XRechnung 3.x (itplr-kosit/xrechnung-schematron, Apache 2.0 licence), 21 codes</p>
+    <ul class="zoznam r">
+      <li><a href="/efaktura/en/rules/br-dec-01/">BR-DEC-01</a> <span>The amount for the document level allowance amount (BT-92, cbc:Amount)</span></li>
+      <li><a href="/efaktura/en/rules/br-dec-02/">BR-DEC-02</a> <span>The amount for the document level allowance base amount</span></li>
+      <li><a href="/efaktura/en/rules/br-dec-05/">BR-DEC-05</a> <span>The amount for the document level charge amount (BT-99, cbc:Amount) has more</span></li>
+      <li><a href="/efaktura/en/rules/br-dec-06/">BR-DEC-06</a> <span>The amount for the document level charge base amount (BT-100, cbc:BaseAmount)</span></li>
+      <li><a href="/efaktura/en/rules/br-dec-09/">BR-DEC-09</a> <span>The amount for the sum of invoice line net amounts</span></li>
+      <li><a href="/efaktura/en/rules/br-dec-10/">BR-DEC-10</a> <span>The amount for the sum of allowances on document level</span></li>
+      <li><a href="/efaktura/en/rules/br-dec-11/">BR-DEC-11</a> <span>The amount for the sum of charges on document level</span></li>
+      <li><a href="/efaktura/en/rules/br-dec-12/">BR-DEC-12</a> <span>The amount for the invoice total amount without VAT</span></li>
+      <li><a href="/efaktura/en/rules/br-dec-13/">BR-DEC-13</a> <span>The invoice total VAT amount (cac:TaxTotal/cbc:TaxAmount) has more than</span></li>
+      <li><a href="/efaktura/en/rules/br-dec-14/">BR-DEC-14</a> <span>The amount for the invoice total amount with VAT</span></li>
+      <li><a href="/efaktura/en/rules/br-dec-15/">BR-DEC-15</a> <span>The invoice total VAT amount (cac:TaxTotal/cbc:TaxAmount) has more than</span></li>
+      <li><a href="/efaktura/en/rules/br-dec-16/">BR-DEC-16</a> <span>The amount for the paid amount (BT-113, cbc:PrepaidAmount) has more than</span></li>
+      <li><a href="/efaktura/en/rules/br-dec-17/">BR-DEC-17</a> <span>The amount for the rounding amount (BT-114, cbc:PayableRoundingAmount)</span></li>
+      <li><a href="/efaktura/en/rules/br-dec-18/">BR-DEC-18</a> <span>The amount for the amount due for payment (BT-115, cbc:PayableAmount)</span></li>
+      <li><a href="/efaktura/en/rules/br-dec-19/">BR-DEC-19</a> <span>The amount for the VAT category taxable amount (BT-116, cbc:TaxableAmount)</span></li>
+      <li><a href="/efaktura/en/rules/br-dec-20/">BR-DEC-20</a> <span>The amount for the VAT category tax amount (BT-117, cbc:TaxAmount) has more</span></li>
+      <li><a href="/efaktura/en/rules/br-dec-23/">BR-DEC-23</a> <span>The amount for the invoice line net amount (BT-131, cbc:LineExtensionAmount)</span></li>
+      <li><a href="/efaktura/en/rules/br-dec-24/">BR-DEC-24</a> <span>The amount for the invoice line allowance amount (BT-136, cbc:Amount)</span></li>
+      <li><a href="/efaktura/en/rules/br-dec-25/">BR-DEC-25</a> <span>The amount for the invoice line allowance base amount</span></li>
+      <li><a href="/efaktura/en/rules/br-dec-27/">BR-DEC-27</a> <span>The amount for the invoice line charge amount (BT-141, cbc:Amount) has more</span></li>
+      <li><a href="/efaktura/en/rules/br-dec-28/">BR-DEC-28</a> <span>The amount for the invoice line charge base amount (BT-142, cbc:BaseAmount)</span></li>
+    </ul>
+    <h2 class="skupina">BR-DEX</h2>
+    <p class="pomoc">XRechnung 3.x (itplr-kosit/xrechnung-schematron, Apache 2.0 licence), 6 codes</p>
+    <ul class="zoznam r">
+      <li><a href="/efaktura/en/rules/br-dex-01/">BR-DEX-01</a> <span>The XRechnung extension allows only application/xml on top of the usual</span></li>
+      <li><a href="/efaktura/en/rules/br-dex-04/">BR-DEX-04</a> <span>In the XRechnung extension, schemeID=</span></li>
+      <li><a href="/efaktura/en/rules/br-dex-05/">BR-DEX-05</a> <span>In the XRechnung extension, schemeID=</span></li>
+      <li><a href="/efaktura/en/rules/br-dex-06/">BR-DEX-06</a> <span>In the XRechnung extension, schemeID=</span></li>
+      <li><a href="/efaktura/en/rules/br-dex-07/">BR-DEX-07</a> <span>In the XRechnung extension, the schemeID of the electronic address</span></li>
+      <li><a href="/efaktura/en/rules/br-dex-08/">BR-DEX-08</a> <span>In the XRechnung extension, schemeID=</span></li>
+    </ul>
+    <h2 class="skupina">BR-TMP</h2>
+    <p class="pomoc">XRechnung 3.x (itplr-kosit/xrechnung-schematron, Apache 2.0 licence), 2 codes</p>
+    <ul class="zoznam r">
+      <li><a href="/efaktura/en/rules/br-tmp-2/">BR-TMP-2</a> <span>The external document location (BT-124, cbc:URI) has to be a full address</span></li>
+      <li><a href="/efaktura/en/rules/br-tmp-6/">BR-TMP-6</a> <span>The date in cbc:IssueDate has to be written as YYYY-MM-DD, with no time</span></li>
+    </ul>
+    <h2 class="skupina">ARL</h2>
+    <p class="pomoc">our own check at ARLing, not from a schematron, 9 codes</p>
+    <ul class="zoznam r">
+      <li><a href="/efaktura/en/rules/arl-datum/">ARL-DATUM</a> <span>The date &quot;…&quot; in cbc:IssueDate is not a valid calendar day written</span></li>
+      <li><a href="/efaktura/en/rules/arl-datum-poradie/">ARL-DATUM-PORADIE</a> <span>The payment due date (…) is earlier than the issue date (2026-09-11)</span></li>
+      <li><a href="/efaktura/en/rules/arl-iban/">ARL-IBAN</a> <span>Check the account number for a typo</span></li>
+      <li><a href="/efaktura/en/rules/arl-icdph/">ARL-ICDPH</a> <span>We expect SK followed by 10 digits, for example SK2020000000</span></li>
+      <li><a href="/efaktura/en/rules/arl-leitweg/">ARL-LEITWEG</a> <span>The buyer reference &quot;…&quot; looks like a German Leitweg-ID but does not match</span></li>
+      <li><a href="/efaktura/en/rules/arl-mena/">ARL-MENA</a> <span>The element cbc:Amount carries the currency USD while the invoice is in EUR</span></li>
+      <li><a href="/efaktura/en/rules/arl-profil/">ARL-PROFIL</a> <span>We ran the EN 16931 core rules only, without the Peppol and XRechnung rules</span></li>
+      <li><a href="/efaktura/en/rules/arl-sk-dic-tvar/">ARL-SK-DIC-TVAR</a> <span>With schemeID=&quot;0245&quot; the electronic address has to hold the Slovak tax</span></li>
+      <li><a href="/efaktura/en/rules/arl-sk-schemeid/">ARL-SK-SCHEMEID</a> <span>The seller is in Slovakia</span></li>
+    </ul>
+    <h2 class="skupina">CII</h2>
+    <p class="pomoc">our own check at ARLing, not from a schematron, 1 codes</p>
+    <ul class="zoznam r">
+      <li><a href="/efaktura/en/rules/cii-01/">CII-01</a> <span>This is an e-invoice in the CII syntax (UN/CEFACT Cross Industry Invoice)</span></li>
+    </ul>
+    <h2 class="skupina">XML</h2>
+    <p class="pomoc">our own check at ARLing, not from a schematron, 3 codes</p>
+    <ul class="zoznam r">
+      <li><a href="/efaktura/en/rules/xml-01/">XML-01</a> <span>The file contains a DOCTYPE with its own definitions</span></li>
+      <li><a href="/efaktura/en/rules/xml-02/">XML-02</a> <span>The root element of the file is Nieco</span></li>
+      <li><a href="/efaktura/en/rules/xml-03/">XML-03</a> <span>The root element Invoice belongs in the namespace</span></li>
+    </ul>
+    <p class="pomoc">Our check is not complete: we do not check the XSD schema and we do not implement every rule, and a file that passes says nothing about whether the buyer or the Peppol network will accept it. Licences for the quoted wordings are listed in our sources.</p>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <div><b>ARLing s. r. o.</b><br>Ivanská cesta 32E<br>821 04 Bratislava, Slovakia</div>
+    <div>Company ID 56583486<br>VAT ID SK2122352100<br><a href="mailto:andrej@arling.sk">andrej@arling.sk</a></div>
+    <div><a href="https://arling.sk/privacy/">privacy</a> · <a href="https://arling.sk/podmienky/">terms</a> · <a href="https://arling.sk/gdpr/">GDPR</a> · <a href="https://arling.sk/impressum/">Impressum</a> · <a href="https://arling.sk/llms.txt">llms.txt</a> · <a href="https://arling.sk/sitemap-index.xml">sitemap</a><br>Tools are provided as is, without warranty. Anonymous visit counts via self-hosted Umami.</div>
+  </div>
+</footer>
+
+<script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="1de7b607-7a25-4214-a8f6-b80957f520a7"></script>
+</body>
+</html>
