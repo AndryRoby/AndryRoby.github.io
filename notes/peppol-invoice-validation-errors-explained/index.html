@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script src="/style/vzhlad.js?v=93c2659f"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0a0908">
+<link rel="preconnect" href="https://homelab.tailbf8f27.ts.net" crossorigin>
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../../favicon.ico" sizes="48x48">
+<link rel="apple-touch-icon" href="../../icon-180.png">
+<title>Peppol Invoice Validation Errors Explained | ARLing</title>
+<meta name="description" content="When a business sends an electronic invoice over the Peppol network, the file has to pass a set of automated business rules before the recipient's system">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Peppol Invoice Validation Errors Explained">
+<meta property="og:description" content="When a business sends an electronic invoice over the Peppol network, the file has to pass a set of automated business rules before the recipient's system">
+<meta property="og:url" content="https://arling.sk/notes/peppol-invoice-validation-errors-explained/">
+<meta property="og:locale" content="en_US">
+<link rel="canonical" href="https://arling.sk/notes/peppol-invoice-validation-errors-explained/">
+<link rel="stylesheet" href="/style/paper.css?v=89016e6c">
+<script src="/style/prepinac.js?v=2988c181" defer></script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Peppol Invoice Validation Errors Explained",
+  "description": "When a business sends an electronic invoice over the Peppol network, the file has to pass a set of automated business rules before the recipient's system",
+  "datePublished": "2026-09-11",
+  "dateModified": "2026-09-11",
+  "inLanguage": "en",
+  "author": {
+    "@type": "Organization",
+    "name": "ARLing s. r. o.",
+    "url": "https://arling.sk/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "ARLing s. r. o.",
+    "url": "https://arling.sk/"
+  },
+  "mainEntityOfPage": "https://arling.sk/notes/peppol-invoice-validation-errors-explained/"
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Why does my invoice fail even though every field looks filled in?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "A filled field is not the same as a correct one: most rejections at this stage come from arithmetic checks across related fields rather than from a field being left empty, with BR-CO-15 the most frequently reported example."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is EUR the only currency code Peppol invoices accept?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "BR-CL-04 does not name a single currency: it requires whichever currency is used to be written as its ISO 4217 alpha-3 code, so EUR is correct for the euro while any other currency needs its own three-letter code from the same list."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Why does the validator report BR-IC instead of BR-K for an intra-EU supply?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Category K, the intra community supply code, is checked under the BR-IC group of twelve rules rather than under a code named after the letter itself; codes such as BR-K, BR-IG or BR-IP do not exist in the official rule set, so searching for them by that name will not turn up any documentation."
+      }
+    }
+  ]
+}
+</script>
+
+<style>
+  article { max-width:72ch; }
+  article h2 { margin:clamp(34px,4vh,52px) 0 12px; }
+  article h3 { margin:26px 0 8px; }
+  article p, article li { font-size:16.5px; line-height:1.7; }
+  article ol, article ul { padding-left:22px; }
+  article li { margin:0 0 8px; }
+  code { font:13.5px/1.4 var(--mono); background:var(--card); border:1px solid var(--line);
+    border-radius:3px; padding:1px 5px; overflow-wrap:anywhere; }
+  pre { background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    padding:16px 18px; overflow-x:auto; font:13px/1.6 var(--mono); color:var(--body); }
+  .byline { font-family:var(--ui); font-size:14px; color:var(--muted); margin:0 0 clamp(26px,3vh,40px); }
+  .zhrn { border-left:3px solid var(--accent); background:var(--card); border-radius:0 var(--radius) var(--radius) 0;
+    padding:18px 22px; margin:0 0 clamp(26px,3vh,40px); }
+  .zhrn p { margin:0; font-size:16px; }
+  .zdroje { font-family:var(--ui); font-size:13.5px; color:var(--muted); line-height:1.7;
+    border-top:1px solid var(--line); padding-top:18px; margin-top:clamp(34px,4vh,52px); }
+  .zdroje a { color:var(--body); }
+</style>
+</head>
+<body class="noc">
+<div class="wash" aria-hidden="true"><i></i><i></i></div>
+
+<header>
+  <div class="wrap bar">
+    <a class="brand" href="https://arling.sk/">
+      <svg viewBox="0 0 488 215" width="38" height="15" aria-hidden="true" focusable="false"><path fill="#f4f4f7" fill-rule="evenodd" d="M0.00,213.00L74.00,214.00L181.00,85.00L285.00,214.00L360.00,214.00L206.00,21.00L185.00,4.00L164.00,10.00Z M221.00,0.00L263.00,50.00L395.00,50.00L409.00,55.00L419.00,76.00L401.00,96.00L313.00,98.00L411.00,214.00L487.00,214.00L422.00,139.00L457.00,123.00L482.00,88.00L482.00,48.00L463.00,19.00L417.00,0.00Z"/><path fill="#f2643c" d="M269.00,66.00L269.00,67.00L268.00,68.00L268.00,70.00L267.00,71.00L267.00,76.00L268.00,77.00L268.00,79.00L270.00,81.00L270.00,82.00L271.00,82.00L273.00,84.00L274.00,84.00L277.00,86.00L279.00,86.00L280.00,87.00L287.00,87.00L288.00,86.00L290.00,86.00L291.00,85.00L294.00,84.00L298.00,80.00L298.00,79.00L299.00,78.00L299.00,75.00L300.00,74.00L300.00,72.00L299.00,71.00L299.00,69.00L298.00,68.00L297.00,65.00L295.00,63.00L294.00,63.00L289.00,60.00L278.00,60.00L277.00,61.00L276.00,61.00L275.00,62.00L272.00,63.00Z"/></svg>
+      <b>ARLing</b>
+    </a>
+    <nav aria-label="Site"><a href="https://arling.sk/en/#tools">Tools</a><a href="https://arling.sk/games/">Games</a><a href="https://arling.sk/notes/">Notes</a><a href="https://arling.sk/how-we-work/">How we work</a><a href="mailto:andrej@arling.sk">Contact</a></nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <article>
+      <h1>Peppol Invoice Validation Errors Explained</h1>
+      <p class="byline">ARLing s. r. o. · 11 September 2026</p>
+
+      <div class="zhrn">
+        <p>When a business sends an electronic invoice over the Peppol network, the file has to pass a set of automated business rules before the recipient's system will accept it, and a peppol invoice rejected at this stage almost always comes back as a short code rather than a plain sentence explaining the problem. That short code is what shows up in the accounting software as a peppol validation error, and two rule books apply to the same file at once. The European standard EN 16931 defines the semantic data model of the core invoice and splits its checks into core rules labelled BR and the calculation and consistency rules labelled BR-CO. Peppol BIS Billing 3.0, the specification used directly in Slovakia and across the Peppol network, is built on top of EN 16931 and adds its own PEPPOL-EN16931-R and PEPPOL-COMMON-R rules for messages sent through the network itself. Every EN 16931 validation error therefore carries a BR code, and that code is the starting point for fixing the file before resending it.</p>
+      </div>
+
+      <h2>Two layers of rules behind every BR code</h2>
+      <p>EN 16931 alone lists 58 core BR rules plus 24 calculation and consistency rules under the BR-CO prefix. Peppol BIS Billing 3.0 does not replace these rules, it sits on top of them: the November 2025 release adds 41 further checks under the PEPPOL-EN16931-R and PEPPOL-COMMON-R codes, and part of that set applies only to specific countries rather than to every Peppol invoice.</p>
+
+      <h2>Errors on the invoice number and the totals</h2>
+      <p>The plainest example is BR-02: an invoice must carry an invoice number, referenced as BT-1 in the data model, and a file with that field empty is rejected outright rather than flagged as a warning.</p>
+      <p>Most totals errors are less about a missing field and more about arithmetic. BR-CO-10 requires the sum of the individual invoice line net amounts, BT-131 on each line, to equal the header line net total, BT-106. BR-CO-15 is reported even more often: the invoice total with VAT, BT-112, must equal the invoice total without VAT, BT-109, plus the total VAT amount, BT-110.</p>
+
+      <h2>VAT category and currency code errors</h2>
+      <p>Every invoice line and VAT breakdown carries a category code from the UNTDID 5305 list: S for standard rate, Z for zero rate, E for exempt, AE for reverse charge, K for an intra community supply, G for export outside the European Union, O for not subject to VAT, L for the Canary Islands and M for Ceuta and Melilla.</p>
+      <p>Each of these letters triggers its own group of checks: S, Z, E, AE and G each carry ten rules, O carries fourteen, and K carries twelve rules under the BR-IC prefix; the codes BR-K, BR-IG and BR-IP do not exist in the official rule set.</p>
+      <p>Currency causes a similar class of mistakes. BR-CL-04 requires the invoice currency code to follow the ISO 4217 alpha-3 list, so the field must read EUR rather than the word euro or a currency symbol, and a symbol in that field fails validation even when every amount on the invoice is correct.</p>
+
+      <h2>Allowance and charge amounts</h2>
+      <p>Discounts and surcharges on a line are checked for internal consistency rather than just for a value being present. PEPPOL-EN16931-R040 requires that, whenever both a base amount and a percentage are given for an allowance or a charge, the amount itself must equal the base amount multiplied by the percentage and divided by 100, so a discount figure that does not match the percentage typed next to it fails this rule even though both numbers look reasonable on their own.</p>
+
+      <h2>Frequently asked questions</h2>
+      <details>
+        <summary>Why does my invoice fail even though every field looks filled in?</summary>
+        <p>A filled field is not the same as a correct one: most rejections at this stage come from arithmetic checks across related fields rather than from a field being left empty, with BR-CO-15 the most frequently reported example.</p>
+      </details>
+      <details>
+        <summary>Is EUR the only currency code Peppol invoices accept?</summary>
+        <p>BR-CL-04 does not name a single currency: it requires whichever currency is used to be written as its ISO 4217 alpha-3 code, so EUR is correct for the euro while any other currency needs its own three-letter code from the same list.</p>
+      </details>
+      <details>
+        <summary>Why does the validator report BR-IC instead of BR-K for an intra-EU supply?</summary>
+        <p>Category K, the intra community supply code, is checked under the BR-IC group of twelve rules rather than under a code named after the letter itself; codes such as BR-K, BR-IG or BR-IP do not exist in the official rule set, so searching for them by that name will not turn up any documentation.</p>
+      </details>
+
+      <h2>Conclusion</h2>
+      <p>Reading the BR code correctly saves more time than rerunning the export and hoping the second attempt passes: a BR-CO code points to a calculation or consistency mismatch, most often a totals check, a PEPPOL-EN16931-R code points to a network-specific rule, and both name the exact business term you need to check in the accounting software before resending the file. Slovakia has no separate CIUS or schema of its own; it uses Peppol BIS Billing 3.0 directly, extended by the national PASR requirements that mainly set the mandatory network identifier, so the same BR and PEPPOL codes described here apply there too, alongside that extra identifier requirement; the <a href="https://arling.sk/efaktura/en/">eFaktúra overview</a> covers the identifiers Slovak businesses need alongside these validation rules.</p>
+
+      <div class="zdroje">
+        <p><b>Sources.</b> The facts in this note are numbered after our internal fact list and were checked on the publication date. ARLing is not a bank; a clean check result is no guarantee that the bank accepts the payment. If a source has changed since, write to andrej@arling.sk and we will correct this page.</p>
+        <ul>
+          <li>F82: Finančná správa SR, 9/DPH/2025/IM Najčastejšie otázky a odpovede k eFaktúre, <a href="https://www.financnasprava.sk/_img/pfsedit/Dokumenty_PFS/Zverejnovanie_dok/Aktualne/DPH/2026/2026.08.26_009_DPH_2025_IM_FaQ_eFaktura.pdf.pdf" rel="noopener" target="_blank">https://www.financnasprava.sk/_img/pfsedit/Dokumenty_PFS/Zverejnovanie_dok/Aktualne/DPH/2026/2026.08.26_009_DPH_2025_IM_FaQ_eFaktura.pdf.pdf</a> (overené 11. 9. 2026)</li>
+          <li>F90: schematron CEN EN 16931, <a href="https://github.com/ConnectingEurope/eInvoicing-EN16931" rel="noopener" target="_blank">https://github.com/ConnectingEurope/eInvoicing-EN16931</a> (licencia EUPL 1.2, overené 11. 9. 2026)</li>
+          <li>F91: schematron Peppol BIS Billing 3.0, <a href="https://github.com/OpenPEPPOL/peppol-bis-invoice-3" rel="noopener" target="_blank">https://github.com/OpenPEPPOL/peppol-bis-invoice-3</a> (overené 11. 9. 2026)</li>
+          <li>F92: schematron CEN EN 16931, <a href="https://github.com/ConnectingEurope/eInvoicing-EN16931" rel="noopener" target="_blank">https://github.com/ConnectingEurope/eInvoicing-EN16931</a>; zoznam kódov Peppol, <a href="https://docs.peppol.eu/poacc/billing/3.0/codelist/vatex/" rel="noopener" target="_blank">https://docs.peppol.eu/poacc/billing/3.0/codelist/vatex/</a> (overené 11. 9. 2026)</li>
+          <li>F94, F95, F96, F97: schematron CEN EN 16931, súbor CEN-EN16931-UBL.sch, <a href="https://github.com/ConnectingEurope/eInvoicing-EN16931" rel="noopener" target="_blank">https://github.com/ConnectingEurope/eInvoicing-EN16931</a> (licencia EUPL 1.2, overené 11. 9. 2026)</li>
+          <li>F98: schematron Peppol BIS Billing 3.0, súbor PEPPOL-EN16931-UBL.sch, <a href="https://github.com/OpenPEPPOL/peppol-bis-invoice-3" rel="noopener" target="_blank">https://github.com/OpenPEPPOL/peppol-bis-invoice-3</a> (overené 11. 9. 2026)</li>
+        </ul>
+      </div>
+    </article>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <div><b>ARLing s. r. o.</b><br>Ivanská cesta 32E<br>821 04 Bratislava, Slovakia</div>
+    <div>Company ID 56583486<br>VAT ID SK2122352100<br><a href="mailto:andrej@arling.sk">andrej@arling.sk</a></div>
+    <div><a href="https://arling.sk/privacy/">privacy</a> · <a href="https://arling.sk/podmienky/">terms</a> · <a href="https://arling.sk/gdpr/">GDPR</a> · <a href="https://arling.sk/impressum/">Impressum</a> · <a href="https://arling.sk/llms.txt">llms.txt</a> · <a href="https://arling.sk/sitemap-index.xml">sitemap</a><br>Tools are provided as is, without warranty. Anonymous visit counts via self-hosted Umami.</div>
+  </div>
+</footer>
+
+<script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="338f035d-41c5-411e-8391-9a41db6accfd"></script>
+</body>
+</html>

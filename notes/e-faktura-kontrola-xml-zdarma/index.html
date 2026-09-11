@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<script src="/style/vzhlad.js?v=93c2659f"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0a0908">
+<link rel="preconnect" href="https://homelab.tailbf8f27.ts.net" crossorigin>
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../../favicon.ico" sizes="48x48">
+<link rel="apple-touch-icon" href="../../icon-180.png">
+<title>E-faktura: kontrola XML faktury zdarma podle EN 16931 a Peppol | ARLing</title>
+<meta name="description" content="Když firma připravuje e-fakturu ve formátu XML, soubor musí projít sadou strojově čitelných pravidel dřív, než ho příjemce nebo síť Peppol přijme.">
+<meta property="og:type" content="article">
+<meta property="og:title" content="E-faktura: kontrola XML faktury zdarma podle EN 16931 a Peppol">
+<meta property="og:description" content="Když firma připravuje e-fakturu ve formátu XML, soubor musí projít sadou strojově čitelných pravidel dřív, než ho příjemce nebo síť Peppol přijme.">
+<meta property="og:url" content="https://arling.sk/notes/e-faktura-kontrola-xml-zdarma/">
+<meta property="og:locale" content="cs_CZ">
+<link rel="canonical" href="https://arling.sk/notes/e-faktura-kontrola-xml-zdarma/">
+<link rel="stylesheet" href="/style/paper.css?v=89016e6c">
+<script src="/style/prepinac.js?v=2988c181" defer></script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "E-faktura: kontrola XML faktury zdarma podle EN 16931 a Peppol",
+  "description": "Když firma připravuje e-fakturu ve formátu XML, soubor musí projít sadou strojově čitelných pravidel dřív, než ho příjemce nebo síť Peppol přijme.",
+  "datePublished": "2026-09-11",
+  "dateModified": "2026-09-11",
+  "inLanguage": "cs",
+  "author": {
+    "@type": "Organization",
+    "name": "ARLing s. r. o.",
+    "url": "https://arling.sk/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "ARLing s. r. o.",
+    "url": "https://arling.sk/"
+  },
+  "mainEntityOfPage": "https://arling.sk/notes/e-faktura-kontrola-xml-zdarma/"
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Jak zjistím, že moje XML faktura odpovídá normě EN 16931?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Soubor musí projít oběma skupinami pravidel schematronu, základními pravidly BR i pravidly součtů BR-CO; obě skupiny dohromady popisují datový model jádra faktury."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Proč mi validace e-faktury hlásí chybu v součtu, i když se čísla zdají v pořádku?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Nejčastější chybou součtů je nesoulad mezi částkou s DPH a součtem částky bez DPH a částky DPH samotné, což hlídá pravidlo BR-CO-15."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Musí UBL faktura kromě EN 16931 splnit i pravidla Peppol?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Ano: i formálně bezchybná faktura podle EN 16931 může být sítí Peppol odmítnuta, protože specifikace Peppol BIS Billing 3.0 přidává vlastní pravidla PEPPOL-EN16931-R a PEPPOL-COMMON-R nad rámec normy."
+      }
+    }
+  ]
+}
+</script>
+
+<style>
+  article { max-width:72ch; }
+  article h2 { margin:clamp(34px,4vh,52px) 0 12px; }
+  article h3 { margin:26px 0 8px; }
+  article p, article li { font-size:16.5px; line-height:1.7; }
+  article ol, article ul { padding-left:22px; }
+  article li { margin:0 0 8px; }
+  code { font:13.5px/1.4 var(--mono); background:var(--card); border:1px solid var(--line);
+    border-radius:3px; padding:1px 5px; overflow-wrap:anywhere; }
+  pre { background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    padding:16px 18px; overflow-x:auto; font:13px/1.6 var(--mono); color:var(--body); }
+  .byline { font-family:var(--ui); font-size:14px; color:var(--muted); margin:0 0 clamp(26px,3vh,40px); }
+  .zhrn { border-left:3px solid var(--accent); background:var(--card); border-radius:0 var(--radius) var(--radius) 0;
+    padding:18px 22px; margin:0 0 clamp(26px,3vh,40px); }
+  .zhrn p { margin:0; font-size:16px; }
+  .zdroje { font-family:var(--ui); font-size:13.5px; color:var(--muted); line-height:1.7;
+    border-top:1px solid var(--line); padding-top:18px; margin-top:clamp(34px,4vh,52px); }
+  .zdroje a { color:var(--body); }
+</style>
+</head>
+<body class="noc">
+<div class="wash" aria-hidden="true"><i></i><i></i></div>
+
+<header>
+  <div class="wrap bar">
+    <a class="brand" href="https://arling.sk/">
+      <svg viewBox="0 0 488 215" width="38" height="15" aria-hidden="true" focusable="false"><path fill="#f4f4f7" fill-rule="evenodd" d="M0.00,213.00L74.00,214.00L181.00,85.00L285.00,214.00L360.00,214.00L206.00,21.00L185.00,4.00L164.00,10.00Z M221.00,0.00L263.00,50.00L395.00,50.00L409.00,55.00L419.00,76.00L401.00,96.00L313.00,98.00L411.00,214.00L487.00,214.00L422.00,139.00L457.00,123.00L482.00,88.00L482.00,48.00L463.00,19.00L417.00,0.00Z"/><path fill="#f2643c" d="M269.00,66.00L269.00,67.00L268.00,68.00L268.00,70.00L267.00,71.00L267.00,76.00L268.00,77.00L268.00,79.00L270.00,81.00L270.00,82.00L271.00,82.00L273.00,84.00L274.00,84.00L277.00,86.00L279.00,86.00L280.00,87.00L287.00,87.00L288.00,86.00L290.00,86.00L291.00,85.00L294.00,84.00L298.00,80.00L298.00,79.00L299.00,78.00L299.00,75.00L300.00,74.00L300.00,72.00L299.00,71.00L299.00,69.00L298.00,68.00L297.00,65.00L295.00,63.00L294.00,63.00L289.00,60.00L278.00,60.00L277.00,61.00L276.00,61.00L275.00,62.00L272.00,63.00Z"/></svg>
+      <b>ARLing</b>
+    </a>
+    <nav aria-label="Site"><a href="https://arling.sk/#tools">Nástroje</a><a href="https://arling.sk/games/">Hry</a><a href="https://arling.sk/notes/">Notes</a><a href="https://arling.sk/how-we-work/">Jak pracujeme</a><a href="mailto:andrej@arling.sk">Kontakt</a></nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <article>
+      <h1>E-faktura: kontrola XML faktury zdarma podle EN 16931 a Peppol</h1>
+      <p class="byline">ARLing s. r. o. · 11. září 2026</p>
+
+      <div class="zhrn">
+        <p>Když firma připravuje e-fakturu ve formátu XML, soubor musí projít sadou strojově čitelných pravidel dřív, než ho příjemce nebo síť Peppol přijme. Evropská norma EN 16931 určuje sémantický datový model jádra faktury, tedy jaké údaje musí faktura obsahovat a jak spolu souvisejí; její pravidla se ve schematronu dělí na základní pravidla s kódy BR a na pravidla součtů a vzájemných vazeb s kódy BR-CO. Nad touto normou stojí Peppol BIS Billing 3.0 v syntaxi OASIS UBL 2.1, která přidává vlastní pravidla s kódy PEPPOL-EN16931-R a PEPPOL-COMMON-R a část z nich se týká i jiných zemí než Slovenska. Kontrola XML faktury zdarma proto neznamená jen soubor otevřít, ale projít ho postupně proti oběma sadám pravidel, jádru EN 16931 i rozšíření Peppol. Tento text ukazuje, která konkrétní pravidla validace e-faktury nejčastěji hlídají a jak zní jejich přesné znění ve schematronu.</p>
+      </div>
+
+      <h2>Co je EN 16931 a proč e-faktura potřebuje strojová pravidla</h2>
+      <p>EN 16931 nevznikla proto, aby popsala vzhled faktury, ale její datový model: které položky musí obsahovat a jak se navzájem musí sedět. V oficiálním schematronu se pravidla dělí na dvě skupiny. První skupina, základní pravidla s kódy BR-01 až BR-65, ve skutečnosti obsahuje 58 pravidel, protože ne všechna čísla v řadě jsou obsazená. Druhá skupina, pravidla součtů a vzájemných vazeb s kódy BR-CO-01 až BR-CO-26, jich má 24.</p>
+      <p>Pro firmu to v praxi znamená, že validace e-faktury neprojde ani soubor, který má správně vyplněné jméno dodavatele i odběratele, pokud mu chybí vazba mezi částkami na řádcích a součtem v hlavičce, protože právě tuto vazbu kontrolují pravidla BR-CO.</p>
+
+      <h2>Pravidla BR: číslo faktury a součet řádků</h2>
+      <p>Nejzákladnější pravidlo se týká čísla faktury. Pravidlo BR-02 normy EN 16931 zní: &quot;[BR-02]-An Invoice shall have an Invoice number (BT-1).&quot; Faktura bez čísla je tedy hrubá chyba a validátor ji zamítne.</p>
+      <p>Další skupina pravidel hlídá součty. Pravidlo BR-CO-10 zní: &quot;[BR-CO-10]-Sum of Invoice line net amount (BT-106) = Σ Invoice line net amount (BT-131).&quot; Součet částek jednotlivých řádků faktury se tedy musí přesně rovnat hlavičkové sumě bez DPH.</p>
+      <p>Nejčastěji hlášenou chybou součtů je ale pravidlo BR-CO-15: &quot;[BR-CO-15]-Invoice total amount with VAT (BT-112) = Invoice total amount without VAT (BT-109) + Invoice total VAT amount (BT-110).&quot; Částka s DPH se musí přesně rovnat součtu částky bez DPH a částky DPH.</p>
+
+      <h2>Peppol BIS Billing 3.0: pravidla nad rámec EN 16931</h2>
+      <p>Samotná norma EN 16931 na kontrolu UBL faktury v síti Peppol nestačí. Peppol BIS Billing 3.0 je CIUS, tedy specifikace nad EN 16931 v syntaxi OASIS UBL 2.1, a nad pravidla normy přidává vlastní pravidla s kódy PEPPOL-EN16931-R a PEPPOL-COMMON-R; ve vydání 3.0.20 z listopadu 2025 jich je celkem 41 a část se týká jiných zemí, než je Slovensko.</p>
+      <p>Jedním z polí, které Peppol i EN 16931 kontrolují společně, je kód kategorie DPH podle kódovníku UNTDID 5305. Norma zná hodnoty S pro základní sazbu, Z pro nulovou sazbu, E pro osvobození od DPH, AE pro přenesení daňové povinnosti, K pro dodání v rámci Evropské unie, G pro vývoz mimo Evropskou unii, O pro plnění nepodléhající DPH, L pro Kanárské ostrovy a M pro Ceutu a Melillu, přičemž vlastní skupinu pravidel mají jen některé z nich: BR-S, BR-Z, BR-E, BR-AE, BR-G a BR-O, a pro kód K skupina BR-IC, zatímco pro L a M fakty žádnou vlastní skupinu neuvádí.</p>
+
+      <h2>Měna a slevy: BR-CL-04 a pravidlo R040</h2>
+      <p>Měna faktury nesmí být slovo ani znak, ale kód. Pravidlo BR-CL-04 zní: &quot;[BR-CL-04]-Invoice currency code MUST be coded using ISO code list 4217 alpha-3.&quot; Měna faktury tedy musí být třípísmenný kód podle normy ISO 4217, například EUR, a ne slovo euro ani znak měny.</p>
+      <p>Peppol navíc kontroluje matematiku slev a přirážek. Pravidlo PEPPOL-EN16931-R040 zní: &quot;Allowance/charge amount must equal base amount * percentage/100 if base amount and percentage exists.&quot; Pokud je u slevy nebo přirážky uvedený základ i procento, částka musí přesně sedět na jejich součin.</p>
+
+      <h2>Časté otázky</h2>
+      <details>
+        <summary>Jak zjistím, že moje XML faktura odpovídá normě EN 16931?</summary>
+        <p>Soubor musí projít oběma skupinami pravidel schematronu, základními pravidly BR i pravidly součtů BR-CO; obě skupiny dohromady popisují datový model jádra faktury.</p>
+      </details>
+      <details>
+        <summary>Proč mi validace e-faktury hlásí chybu v součtu, i když se čísla zdají v pořádku?</summary>
+        <p>Nejčastější chybou součtů je nesoulad mezi částkou s DPH a součtem částky bez DPH a částky DPH samotné, což hlídá pravidlo BR-CO-15.</p>
+      </details>
+      <details>
+        <summary>Musí UBL faktura kromě EN 16931 splnit i pravidla Peppol?</summary>
+        <p>Ano: i formálně bezchybná faktura podle EN 16931 může být sítí Peppol odmítnuta, protože specifikace Peppol BIS Billing 3.0 přidává vlastní pravidla PEPPOL-EN16931-R a PEPPOL-COMMON-R nad rámec normy.</p>
+      </details>
+
+      <h2>Závěr</h2>
+      <p>Přehled pravidel EN 16931 a Peppol BIS Billing 3.0, podle kterých se e-faktura ve formátu XML kontroluje, najdete na <a href="https://arling.sk/efaktura/cs/">stránce e-faktury</a>. Faktura, která projde pravidly BR i BR-CO, má formálně v pořádku číslo i součty podle definice normy; správnost kódů DPH pak hlídá samostatná skupina pravidel s kódy BR-S, BR-Z, BR-E, BR-AE, BR-G, BR-O a BR-IC.</p>
+
+      <div class="zdroje">
+        <p><b>Zdroje.</b> Fakta v článku jsou očíslována podle interního podkladu a ověřena k datu vydání. ARLing není banka; čistý výsledek kontroly nezaručuje, že banka platbu přijme. Pokud některý zdroj změnil znění, napište na andrej@arling.sk a článek opravíme.</p>
+        <ul>
+          <li>F90: schematron CEN EN 16931, <a href="https://github.com/ConnectingEurope/eInvoicing-EN16931" rel="noopener" target="_blank">https://github.com/ConnectingEurope/eInvoicing-EN16931</a> (licencia EUPL 1.2, overené 11. 9. 2026)</li>
+          <li>F91: schematron Peppol BIS Billing 3.0, <a href="https://github.com/OpenPEPPOL/peppol-bis-invoice-3" rel="noopener" target="_blank">https://github.com/OpenPEPPOL/peppol-bis-invoice-3</a> (overené 11. 9. 2026)</li>
+          <li>F92: schematron CEN EN 16931, <a href="https://github.com/ConnectingEurope/eInvoicing-EN16931" rel="noopener" target="_blank">https://github.com/ConnectingEurope/eInvoicing-EN16931</a>; zoznam kódov Peppol, <a href="https://docs.peppol.eu/poacc/billing/3.0/codelist/vatex/" rel="noopener" target="_blank">https://docs.peppol.eu/poacc/billing/3.0/codelist/vatex/</a> (overené 11. 9. 2026)</li>
+          <li>F94, F95, F96, F97: schematron CEN EN 16931, súbor CEN-EN16931-UBL.sch, <a href="https://github.com/ConnectingEurope/eInvoicing-EN16931" rel="noopener" target="_blank">https://github.com/ConnectingEurope/eInvoicing-EN16931</a> (licencia EUPL 1.2, overené 11. 9. 2026)</li>
+          <li>F98: schematron Peppol BIS Billing 3.0, súbor PEPPOL-EN16931-UBL.sch, <a href="https://github.com/OpenPEPPOL/peppol-bis-invoice-3" rel="noopener" target="_blank">https://github.com/OpenPEPPOL/peppol-bis-invoice-3</a> (overené 11. 9. 2026)</li>
+        </ul>
+      </div>
+    </article>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <div><b>ARLing s. r. o.</b><br>Ivanská cesta 32E<br>821 04 Bratislava, Slovensko</div>
+    <div>IČO 56583486<br>IČ DPH SK2122352100<br><a href="mailto:andrej@arling.sk">andrej@arling.sk</a></div>
+    <div><a href="https://arling.sk/privacy/">ochrana údajov</a> · <a href="https://arling.sk/podmienky/">podmienky</a> · <a href="https://arling.sk/gdpr/">GDPR</a> · <a href="https://arling.sk/impressum/">Impressum</a> · <a href="https://arling.sk/llms.txt">llms.txt</a> · <a href="https://arling.sk/sitemap-index.xml">mapa stránky</a><br>Nástroje sú poskytované tak, ako sú, bez záruky. Anonymné počty návštev cez vlastné Umami.</div>
+  </div>
+</footer>
+
+<script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="338f035d-41c5-411e-8391-9a41db6accfd"></script>
+</body>
+</html>

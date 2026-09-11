@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script src="/style/vzhlad.js?v=93c2659f"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0a0908">
+<link rel="preconnect" href="https://homelab.tailbf8f27.ts.net" crossorigin>
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../../favicon.ico" sizes="48x48">
+<link rel="apple-touch-icon" href="../../icon-180.png">
+<title>BR-CO-15 and the Other Reasons Invoice Totals Do Not Match | ARLing</title>
+<meta name="description" content="An invoice validator that rejects a file because BR-CO-15 fails is telling you something precise: the invoice total amount with VAT on the document does not">
+<meta property="og:type" content="article">
+<meta property="og:title" content="BR-CO-15 and the Other Reasons Invoice Totals Do Not Match">
+<meta property="og:description" content="An invoice validator that rejects a file because BR-CO-15 fails is telling you something precise: the invoice total amount with VAT on the document does not">
+<meta property="og:url" content="https://arling.sk/notes/br-co-15-and-totals-errors/">
+<meta property="og:locale" content="en_US">
+<link rel="canonical" href="https://arling.sk/notes/br-co-15-and-totals-errors/">
+<link rel="stylesheet" href="/style/paper.css?v=89016e6c">
+<script src="/style/prepinac.js?v=2988c181" defer></script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "BR-CO-15 and the Other Reasons Invoice Totals Do Not Match",
+  "description": "An invoice validator that rejects a file because BR-CO-15 fails is telling you something precise: the invoice total amount with VAT on the document does not",
+  "datePublished": "2026-09-11",
+  "dateModified": "2026-09-11",
+  "inLanguage": "en",
+  "author": {
+    "@type": "Organization",
+    "name": "ARLing s. r. o.",
+    "url": "https://arling.sk/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "ARLing s. r. o.",
+    "url": "https://arling.sk/"
+  },
+  "mainEntityOfPage": "https://arling.sk/notes/br-co-15-and-totals-errors/"
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "What exactly does BR-CO-15 compare?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "It compares three amounts on the same invoice: the total with VAT, the total without VAT, and the total VAT amount, and requires that the first equals the sum of the other two exactly."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can an invoice fail BR-CO-15 even if BR-CO-10 passes?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. BR-CO-10 checks the line amounts against the header net total, while BR-CO-15 separately checks the net total, VAT total and gross total, so the two checks can pass or fail independently of each other. Separate rule groups also apply to VAT category codes and to allowance or charge amounts, each with their own arithmetic on the same invoice."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is BR-CO-15 the only totals rule in EN 16931?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No. It is one of 24 calculation and consistency rules in the BR-CO group alone, on top of separate rule groups tied to each VAT category code."
+      }
+    }
+  ]
+}
+</script>
+
+<style>
+  article { max-width:72ch; }
+  article h2 { margin:clamp(34px,4vh,52px) 0 12px; }
+  article h3 { margin:26px 0 8px; }
+  article p, article li { font-size:16.5px; line-height:1.7; }
+  article ol, article ul { padding-left:22px; }
+  article li { margin:0 0 8px; }
+  code { font:13.5px/1.4 var(--mono); background:var(--card); border:1px solid var(--line);
+    border-radius:3px; padding:1px 5px; overflow-wrap:anywhere; }
+  pre { background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    padding:16px 18px; overflow-x:auto; font:13px/1.6 var(--mono); color:var(--body); }
+  .byline { font-family:var(--ui); font-size:14px; color:var(--muted); margin:0 0 clamp(26px,3vh,40px); }
+  .zhrn { border-left:3px solid var(--accent); background:var(--card); border-radius:0 var(--radius) var(--radius) 0;
+    padding:18px 22px; margin:0 0 clamp(26px,3vh,40px); }
+  .zhrn p { margin:0; font-size:16px; }
+  .zdroje { font-family:var(--ui); font-size:13.5px; color:var(--muted); line-height:1.7;
+    border-top:1px solid var(--line); padding-top:18px; margin-top:clamp(34px,4vh,52px); }
+  .zdroje a { color:var(--body); }
+</style>
+</head>
+<body class="noc">
+<div class="wash" aria-hidden="true"><i></i><i></i></div>
+
+<header>
+  <div class="wrap bar">
+    <a class="brand" href="https://arling.sk/">
+      <svg viewBox="0 0 488 215" width="38" height="15" aria-hidden="true" focusable="false"><path fill="#f4f4f7" fill-rule="evenodd" d="M0.00,213.00L74.00,214.00L181.00,85.00L285.00,214.00L360.00,214.00L206.00,21.00L185.00,4.00L164.00,10.00Z M221.00,0.00L263.00,50.00L395.00,50.00L409.00,55.00L419.00,76.00L401.00,96.00L313.00,98.00L411.00,214.00L487.00,214.00L422.00,139.00L457.00,123.00L482.00,88.00L482.00,48.00L463.00,19.00L417.00,0.00Z"/><path fill="#f2643c" d="M269.00,66.00L269.00,67.00L268.00,68.00L268.00,70.00L267.00,71.00L267.00,76.00L268.00,77.00L268.00,79.00L270.00,81.00L270.00,82.00L271.00,82.00L273.00,84.00L274.00,84.00L277.00,86.00L279.00,86.00L280.00,87.00L287.00,87.00L288.00,86.00L290.00,86.00L291.00,85.00L294.00,84.00L298.00,80.00L298.00,79.00L299.00,78.00L299.00,75.00L300.00,74.00L300.00,72.00L299.00,71.00L299.00,69.00L298.00,68.00L297.00,65.00L295.00,63.00L294.00,63.00L289.00,60.00L278.00,60.00L277.00,61.00L276.00,61.00L275.00,62.00L272.00,63.00Z"/></svg>
+      <b>ARLing</b>
+    </a>
+    <nav aria-label="Site"><a href="https://arling.sk/en/#tools">Tools</a><a href="https://arling.sk/games/">Games</a><a href="https://arling.sk/notes/">Notes</a><a href="https://arling.sk/how-we-work/">How we work</a><a href="mailto:andrej@arling.sk">Contact</a></nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <article>
+      <h1>BR-CO-15 and the Other Reasons Invoice Totals Do Not Match</h1>
+      <p class="byline">ARLing s. r. o. · 11 September 2026</p>
+
+      <div class="zhrn">
+        <p>An invoice validator that rejects a file because BR-CO-15 fails is telling you something precise: the invoice total amount with VAT on the document does not equal the total without VAT plus the total VAT amount. It is the single most common reason an electronic invoice comes back saying its totals do not match, and it forms the last step in the chain of sum checks on an invoice. The mismatch does not have to start at that final line. It can begin earlier, when the sum of the individual invoice lines fails to equal the net amount stated in the header, which is exactly what the related rule BR-CO-10 checks. Both rules belong to a wider family of calculation and consistency rules inside the EN 16931 standard. This note walks through what BR-CO-15 and BR-CO-10 actually require, why a file that looks correct at a glance can still fail them, and which other totals-shaped rules tend to break on the same invoice.</p>
+      </div>
+
+      <h2>Two Kinds of Rules Inside EN 16931</h2>
+      <p>EN 16931 does not treat invoice totals as a separate feature bolted onto the rest of the format. Its schematron splits the whole rule set into two different jobs. The plain BR rules are numbered BR-01 to BR-65, though only 58 of them actually exist, and they check that a required piece of data is present at all, in the right place and in the right format. BR-02 is a plain example of this first group: an invoice must have an invoice number, and a file that leaves it out is rejected outright, with no arithmetic involved.</p>
+      <p>The BR-CO rules are a separate, smaller family, numbered BR-CO-01 to BR-CO-26 though only 24 of them actually exist, and they check something different: that two or more amounts calculated from other figures on the same invoice actually agree with each other. BR-CO-15 and BR-CO-10 both live in this second group, which is why a missing invoice number and a wrong total feel like different kinds of mistakes even though the same schematron run reports both of them.</p>
+
+      <h2>What BR-CO-15 Actually Compares</h2>
+      <p>The normative text of the rule reads: Invoice total amount with VAT (BT-112) = Invoice total amount without VAT (BT-109) + Invoice total VAT amount (BT-110). In plain terms, whatever the invoice states as its grand total including tax has to equal the net total plus the tax total exactly, with nothing left over and nothing missing.</p>
+      <p>BT-112, BT-109 and BT-110 are three separate fields on the invoice, and the rule requires the first to equal the sum of the other two exactly, not approximately. That means all three have to be kept consistent with each other every time one of them changes.</p>
+
+      <h2>BR-CO-10: When the Mismatch Starts at the Line Level</h2>
+      <p>BR-CO-15 checks the very last step of the sum, where net plus tax has to equal gross. An invoice can already be broken before it gets that far, and BR-CO-10 is what catches the earlier failure. Its text reads: Sum of Invoice line net amount (BT-106) = Σ Invoice line net amount (BT-131). In other words, adding up the net amount of every individual line on the invoice has to produce the same net total that the header of the invoice states separately.</p>
+      <p>The two rules check related but distinct amounts on the invoice. BR-CO-10 checks whether the invoice lines add up to the line-sum field in the header, while BR-CO-15 checks a separate pair of totals further along the same calculation. Checking the line-level sum first is therefore a more direct way to find the source of a totals error than adjusting the final total on its own.</p>
+
+      <h2>VAT Categories and Allowances Add Their Own Arithmetic</h2>
+      <p>Totals problems are not only about BR-CO-15 and BR-CO-10. The VAT category code on each invoice line, taken from UNTDID 5305, decides which extra rule group applies to that line: S for the standard rate, Z for zero rated, E for exempt, AE for reverse charge, K for an intra community supply, G for export outside the European Union, O for not subject to VAT, and further codes for the Canary Islands and for Ceuta and Melilla. Categories S, Z, E, AE and G each carry ten rules of their own, O carries fourteen, and K carries twelve, so the wrong category code does not just mislabel a line, it switches on an entirely different block of arithmetic checks.</p>
+      <p>Discounts and surcharges bring a rule of their own on top of that. Under Peppol BIS Billing 3.0, rule PEPPOL-EN16931-R040 states that an allowance or charge amount must equal the base amount multiplied by the percentage and divided by 100, whenever both a base amount and a percentage are given on the invoice. A discount typed in as a rounded amount instead of the exact product of its own base and percentage will fail this rule even when every other total on the invoice is correct.</p>
+
+      <h2>Frequently asked questions</h2>
+      <details>
+        <summary>What exactly does BR-CO-15 compare?</summary>
+        <p>It compares three amounts on the same invoice: the total with VAT, the total without VAT, and the total VAT amount, and requires that the first equals the sum of the other two exactly.</p>
+      </details>
+      <details>
+        <summary>Can an invoice fail BR-CO-15 even if BR-CO-10 passes?</summary>
+        <p>Yes. BR-CO-10 checks the line amounts against the header net total, while BR-CO-15 separately checks the net total, VAT total and gross total, so the two checks can pass or fail independently of each other. Separate rule groups also apply to VAT category codes and to allowance or charge amounts, each with their own arithmetic on the same invoice.</p>
+      </details>
+      <details>
+        <summary>Is BR-CO-15 the only totals rule in EN 16931?</summary>
+        <p>No. It is one of 24 calculation and consistency rules in the BR-CO group alone, on top of separate rule groups tied to each VAT category code.</p>
+      </details>
+
+      <h2>Conclusion</h2>
+      <p>BR-CO-15 is one line inside a much larger rule set that also includes BR-CO-10, the VAT category rule groups, and the allowance and charge rule, so a rejection is worth checking against all of them rather than assuming BR-CO-15 alone is at fault. Working out which of these related rules actually triggered the rejection is a faster way to fix the file than adjusting the final total by trial and error. For more on preparing invoices that meet the EN 16931 standard, see <a href="https://arling.sk/efaktura/en/">ARLing's e-invoicing page</a>.</p>
+
+      <div class="zdroje">
+        <p><b>Sources.</b> The facts in this note are numbered after our internal fact list and were checked on the publication date. ARLing is not a bank; a clean check result is no guarantee that the bank accepts the payment. If a source has changed since, write to andrej@arling.sk and we will correct this page.</p>
+        <ul>
+          <li>F90: schematron CEN EN 16931, <a href="https://github.com/ConnectingEurope/eInvoicing-EN16931" rel="noopener" target="_blank">https://github.com/ConnectingEurope/eInvoicing-EN16931</a> (licencia EUPL 1.2, overené 11. 9. 2026)</li>
+          <li>F92: schematron CEN EN 16931, <a href="https://github.com/ConnectingEurope/eInvoicing-EN16931" rel="noopener" target="_blank">https://github.com/ConnectingEurope/eInvoicing-EN16931</a>; zoznam kódov Peppol, <a href="https://docs.peppol.eu/poacc/billing/3.0/codelist/vatex/" rel="noopener" target="_blank">https://docs.peppol.eu/poacc/billing/3.0/codelist/vatex/</a> (overené 11. 9. 2026)</li>
+          <li>F94, F95, F96: schematron CEN EN 16931, súbor CEN-EN16931-UBL.sch, <a href="https://github.com/ConnectingEurope/eInvoicing-EN16931" rel="noopener" target="_blank">https://github.com/ConnectingEurope/eInvoicing-EN16931</a> (licencia EUPL 1.2, overené 11. 9. 2026)</li>
+          <li>F98: schematron Peppol BIS Billing 3.0, súbor PEPPOL-EN16931-UBL.sch, <a href="https://github.com/OpenPEPPOL/peppol-bis-invoice-3" rel="noopener" target="_blank">https://github.com/OpenPEPPOL/peppol-bis-invoice-3</a> (overené 11. 9. 2026)</li>
+        </ul>
+      </div>
+    </article>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <div><b>ARLing s. r. o.</b><br>Ivanská cesta 32E<br>821 04 Bratislava, Slovakia</div>
+    <div>Company ID 56583486<br>VAT ID SK2122352100<br><a href="mailto:andrej@arling.sk">andrej@arling.sk</a></div>
+    <div><a href="https://arling.sk/privacy/">privacy</a> · <a href="https://arling.sk/podmienky/">terms</a> · <a href="https://arling.sk/gdpr/">GDPR</a> · <a href="https://arling.sk/impressum/">Impressum</a> · <a href="https://arling.sk/llms.txt">llms.txt</a> · <a href="https://arling.sk/sitemap-index.xml">sitemap</a><br>Tools are provided as is, without warranty. Anonymous visit counts via self-hosted Umami.</div>
+  </div>
+</footer>
+
+<script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="338f035d-41c5-411e-8391-9a41db6accfd"></script>
+</body>
+</html>

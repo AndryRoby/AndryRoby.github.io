@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script src="/style/vzhlad.js?v=93c2659f"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0a0908">
+<link rel="preconnect" href="https://homelab.tailbf8f27.ts.net" crossorigin>
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../../favicon.ico" sizes="48x48">
+<link rel="apple-touch-icon" href="../../icon-180.png">
+<title>How to Create a UBL Invoice Without an ERP System | ARLing</title>
+<meta name="description" content="If your accounting software cannot produce a proper electronic invoice yet, you can still create a UBL invoice by hand, field by field,">
+<meta property="og:type" content="article">
+<meta property="og:title" content="How to Create a UBL Invoice Without an ERP System">
+<meta property="og:description" content="If your accounting software cannot produce a proper electronic invoice yet, you can still create a UBL invoice by hand, field by field,">
+<meta property="og:url" content="https://arling.sk/notes/how-to-create-a-ubl-invoice-without-an-erp/">
+<meta property="og:locale" content="en_US">
+<link rel="canonical" href="https://arling.sk/notes/how-to-create-a-ubl-invoice-without-an-erp/">
+<link rel="stylesheet" href="/style/paper.css?v=89016e6c">
+<script src="/style/prepinac.js?v=2988c181" defer></script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "How to Create a UBL Invoice Without an ERP System",
+  "description": "If your accounting software cannot produce a proper electronic invoice yet, you can still create a UBL invoice by hand, field by field,",
+  "datePublished": "2026-09-11",
+  "dateModified": "2026-09-11",
+  "inLanguage": "en",
+  "author": {
+    "@type": "Organization",
+    "name": "ARLing s. r. o.",
+    "url": "https://arling.sk/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "ARLing s. r. o.",
+    "url": "https://arling.sk/"
+  },
+  "mainEntityOfPage": "https://arling.sk/notes/how-to-create-a-ubl-invoice-without-an-erp/"
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Can I just send a PDF invoice instead of a UBL file?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No, and you do not need a PDF at all: what has to reach the recipient is an XML document that follows the UBL 2.1 syntax, since neither an e-mailed PDF nor a scanned invoice lets a computer extract that data automatically."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Do I still need the Peppol rules if the file already passes EN 16931?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes, if the file is going to reach a trading partner over the delivery network, because Peppol BIS Billing 3.0 adds 41 of its own rules on top of EN 16931 in its current release, and a file that passes the core standard can still fail one of them, such as the rule on discount amounts matching their stated percentage."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What is the fastest way to check the VAT code on each line before sending the file?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Match every line to one of the UNTDID 5305 letters EN 16931 actually recognises, such as S for the standard rate or AE for reverse charge, and then check the rate itself against what currently applies in Slovakia, since categories like sweet and salty foods have moved between rates before."
+      }
+    }
+  ]
+}
+</script>
+
+<style>
+  article { max-width:72ch; }
+  article h2 { margin:clamp(34px,4vh,52px) 0 12px; }
+  article h3 { margin:26px 0 8px; }
+  article p, article li { font-size:16.5px; line-height:1.7; }
+  article ol, article ul { padding-left:22px; }
+  article li { margin:0 0 8px; }
+  code { font:13.5px/1.4 var(--mono); background:var(--card); border:1px solid var(--line);
+    border-radius:3px; padding:1px 5px; overflow-wrap:anywhere; }
+  pre { background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    padding:16px 18px; overflow-x:auto; font:13px/1.6 var(--mono); color:var(--body); }
+  .byline { font-family:var(--ui); font-size:14px; color:var(--muted); margin:0 0 clamp(26px,3vh,40px); }
+  .zhrn { border-left:3px solid var(--accent); background:var(--card); border-radius:0 var(--radius) var(--radius) 0;
+    padding:18px 22px; margin:0 0 clamp(26px,3vh,40px); }
+  .zhrn p { margin:0; font-size:16px; }
+  .zdroje { font-family:var(--ui); font-size:13.5px; color:var(--muted); line-height:1.7;
+    border-top:1px solid var(--line); padding-top:18px; margin-top:clamp(34px,4vh,52px); }
+  .zdroje a { color:var(--body); }
+</style>
+</head>
+<body class="noc">
+<div class="wash" aria-hidden="true"><i></i><i></i></div>
+
+<header>
+  <div class="wrap bar">
+    <a class="brand" href="https://arling.sk/">
+      <svg viewBox="0 0 488 215" width="38" height="15" aria-hidden="true" focusable="false"><path fill="#f4f4f7" fill-rule="evenodd" d="M0.00,213.00L74.00,214.00L181.00,85.00L285.00,214.00L360.00,214.00L206.00,21.00L185.00,4.00L164.00,10.00Z M221.00,0.00L263.00,50.00L395.00,50.00L409.00,55.00L419.00,76.00L401.00,96.00L313.00,98.00L411.00,214.00L487.00,214.00L422.00,139.00L457.00,123.00L482.00,88.00L482.00,48.00L463.00,19.00L417.00,0.00Z"/><path fill="#f2643c" d="M269.00,66.00L269.00,67.00L268.00,68.00L268.00,70.00L267.00,71.00L267.00,76.00L268.00,77.00L268.00,79.00L270.00,81.00L270.00,82.00L271.00,82.00L273.00,84.00L274.00,84.00L277.00,86.00L279.00,86.00L280.00,87.00L287.00,87.00L288.00,86.00L290.00,86.00L291.00,85.00L294.00,84.00L298.00,80.00L298.00,79.00L299.00,78.00L299.00,75.00L300.00,74.00L300.00,72.00L299.00,71.00L299.00,69.00L298.00,68.00L297.00,65.00L295.00,63.00L294.00,63.00L289.00,60.00L278.00,60.00L277.00,61.00L276.00,61.00L275.00,62.00L272.00,63.00Z"/></svg>
+      <b>ARLing</b>
+    </a>
+    <nav aria-label="Site"><a href="https://arling.sk/en/#tools">Tools</a><a href="https://arling.sk/games/">Games</a><a href="https://arling.sk/notes/">Notes</a><a href="https://arling.sk/how-we-work/">How we work</a><a href="mailto:andrej@arling.sk">Contact</a></nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <article>
+      <h1>How to Create a UBL Invoice Without an ERP System</h1>
+      <p class="byline">ARLing s. r. o. · 11 September 2026</p>
+
+      <div class="zhrn">
+        <p>If your accounting software cannot produce a proper electronic invoice yet, you can still create a UBL invoice by hand, field by field, once you understand what the format actually demands. An electronic invoice is not a PDF with a tidy layout: it is a document issued, sent and received in a structure built for automated processing, using the semantic data model of EN 16931 written in the UBL 2.1 syntax, and neither an e-mailed PDF nor a scanned paper invoice meets that definition. Many small businesses assume this needs a full accounting system or a paid invoicing platform, when the underlying rules are public, including the right identifier for your own company. This article walks through what actually has to go into the file: the invoice number and totals the core standard checks first, the extra layer of rules that Peppol BIS Billing 3.0 adds on top of it, the VAT category codes every line needs, and the identifier that lets a Slovak business be found on the delivery network at all.</p>
+      </div>
+
+      <h2>What Counts as a Real Electronic Invoice</h2>
+      <p>A file only counts as an electronic invoice when it is issued, sent and received in a format built for automated processing, not just for reading on a screen. The technical standard behind it is EN 16931, and it can be written in one of two syntaxes, UBL 2.1 or CII, while a PDF invoice attached to an e-mail, however professional it looks, and a scanned paper invoice both fail this definition because a computer cannot reliably pull structured data out of either one. That is the first thing to check before calling anything a UBL invoice: it has to be an XML file that follows the UBL 2.1 syntax, with every amount, date and identifier sitting in its own labelled field rather than inside a block of free text.</p>
+
+      <h2>Inside the EN 16931 Data Model</h2>
+      <p>EN 16931 does not just say an invoice needs a number and a total, it defines a full semantic data model: which pieces of information must appear on an invoice and how those pieces relate to each other. The schematron behind the standard splits this into two families of rules, the core business rules numbered BR-01 through BR-65, of which 58 actually exist in the current rule set, and the calculation and consistency rules numbered BR-CO-01 through BR-CO-26, of which 24 exist. The core rule BR-02 states plainly that an invoice shall have an invoice number, so a UBL file with an empty or missing invoice number field is treated as a fatal error and the file is rejected. The calculation rule BR-CO-15 checks that the invoice total with VAT equals the total without VAT plus the VAT amount exactly, which is the most commonly reported totals error.</p>
+
+      <h2>The Extra Rules From Peppol BIS Billing 3.0</h2>
+      <p>EN 16931 alone is not enough to send an invoice to another business over a delivery network. Peppol BIS Billing 3.0 is the country independent specification, a CIUS, that sits on top of it and narrows the same UBL 2.1 syntax into something every receiving system can process the same way. On top of the core EN 16931 rules it adds its own set, coded PEPPOL-EN16931-R and PEPPOL-COMMON-R, and the release from November 2025, numbered 3.0.20, contains 41 of them, some of which only matter for businesses outside Slovakia. One example shows how specific these rules get: PEPPOL-EN16931-R040 requires that whenever a discount or surcharge line states both a base amount and a percentage, the actual amount has to match their product exactly, so a UBL invoice built by hand needs that multiplication checked before it is sent, not after a partner's system rejects it.</p>
+
+      <h2>VAT Codes and Your Business Identifier</h2>
+      <p>Every invoice line needs a VAT category code from the UNTDID 5305 list, and EN 16931 only recognises a fixed set of them: S for the standard rate, Z for zero rated, E for exempt, AE for reverse charge, K for an intra community supply, G for export outside the European Union, O for not subject to VAT, and L and M for the Canary Islands and for Ceuta and Melilla. Each of the main categories carries its own group of calculation rules in the schematron, so picking the wrong code on a line does not just look wrong on paper, it fails a rule written specifically for that category.</p>
+      <p>On a Slovak invoice the S code usually points to the standard rate of 23 percent, with reduced rates of 19 percent and 5 percent applying to specific goods and services, and since 1 January 2026 some sweet and salty food items moved from the 19 percent rate up to the standard one, so a template copied from an older invoice can quietly carry the wrong figure. Once the invoice content itself is correct, the file still has to say who sent it: a Slovak business identifies itself on the Peppol network with the scheme code 0245 followed by its ten digit tax identification number, written as one string such as 0245:1234567890, which is neither the VAT number nor the company registration number and is easy to get wrong the first time nobody has filled it in before.</p>
+
+      <h2>Frequently asked questions</h2>
+      <details>
+        <summary>Can I just send a PDF invoice instead of a UBL file?</summary>
+        <p>No, and you do not need a PDF at all: what has to reach the recipient is an XML document that follows the UBL 2.1 syntax, since neither an e-mailed PDF nor a scanned invoice lets a computer extract that data automatically.</p>
+      </details>
+      <details>
+        <summary>Do I still need the Peppol rules if the file already passes EN 16931?</summary>
+        <p>Yes, if the file is going to reach a trading partner over the delivery network, because Peppol BIS Billing 3.0 adds 41 of its own rules on top of EN 16931 in its current release, and a file that passes the core standard can still fail one of them, such as the rule on discount amounts matching their stated percentage.</p>
+      </details>
+      <details>
+        <summary>What is the fastest way to check the VAT code on each line before sending the file?</summary>
+        <p>Match every line to one of the UNTDID 5305 letters EN 16931 actually recognises, such as S for the standard rate or AE for reverse charge, and then check the rate itself against what currently applies in Slovakia, since categories like sweet and salty foods have moved between rates before.</p>
+      </details>
+
+      <h2>Conclusion</h2>
+      <p>Building a UBL invoice by hand is doable, but every field above has to be right at the same time: the syntax, the EN 16931 numbering rules, the extra Peppol layer, the VAT category code and the network identifier, and a single wrong character in any of them is enough for a receiving system to reject the file. If checking all of this manually before every invoice sounds like too much to keep in your head, the <a href="https://arling.sk/efaktura/en/">ARLing e-invoicing overview</a> page summarizes the EN 16931 and Peppol BIS Billing 3.0 rules described here.</p>
+
+      <div class="zdroje">
+        <p><b>Sources.</b> The facts in this note are numbered after our internal fact list and were checked on the publication date. ARLing is not a bank; a clean check result is no guarantee that the bank accepts the payment. If a source has changed since, write to andrej@arling.sk and we will correct this page.</p>
+        <ul>
+          <li>F78: Finančná správa SR, 9/DPH/2025/IM Najčastejšie otázky a odpovede k eFaktúre, <a href="https://www.financnasprava.sk/_img/pfsedit/Dokumenty_PFS/Zverejnovanie_dok/Aktualne/DPH/2026/2026.08.26_009_DPH_2025_IM_FaQ_eFaktura.pdf.pdf" rel="noopener" target="_blank">https://www.financnasprava.sk/_img/pfsedit/Dokumenty_PFS/Zverejnovanie_dok/Aktualne/DPH/2026/2026.08.26_009_DPH_2025_IM_FaQ_eFaktura.pdf.pdf</a> (overené 11. 9. 2026)</li>
+          <li>F84: Finančná správa SR, 9/DPH/2025/IM Najčastejšie otázky a odpovede k eFaktúre, <a href="https://www.financnasprava.sk/_img/pfsedit/Dokumenty_PFS/Zverejnovanie_dok/Aktualne/DPH/2026/2026.08.26_009_DPH_2025_IM_FaQ_eFaktura.pdf.pdf" rel="noopener" target="_blank">https://www.financnasprava.sk/_img/pfsedit/Dokumenty_PFS/Zverejnovanie_dok/Aktualne/DPH/2026/2026.08.26_009_DPH_2025_IM_FaQ_eFaktura.pdf.pdf</a>; zoznam kódov Peppol, <a href="https://docs.peppol.eu/poacc/billing/3.0/codelist/ICD/" rel="noopener" target="_blank">https://docs.peppol.eu/poacc/billing/3.0/codelist/ICD/</a> (overené 11. 9. 2026)</li>
+          <li>F90: schematron CEN EN 16931, <a href="https://github.com/ConnectingEurope/eInvoicing-EN16931" rel="noopener" target="_blank">https://github.com/ConnectingEurope/eInvoicing-EN16931</a> (licencia EUPL 1.2, overené 11. 9. 2026)</li>
+          <li>F91: schematron Peppol BIS Billing 3.0, <a href="https://github.com/OpenPEPPOL/peppol-bis-invoice-3" rel="noopener" target="_blank">https://github.com/OpenPEPPOL/peppol-bis-invoice-3</a> (overené 11. 9. 2026)</li>
+          <li>F92: schematron CEN EN 16931, <a href="https://github.com/ConnectingEurope/eInvoicing-EN16931" rel="noopener" target="_blank">https://github.com/ConnectingEurope/eInvoicing-EN16931</a>; zoznam kódov Peppol, <a href="https://docs.peppol.eu/poacc/billing/3.0/codelist/vatex/" rel="noopener" target="_blank">https://docs.peppol.eu/poacc/billing/3.0/codelist/vatex/</a> (overené 11. 9. 2026)</li>
+          <li>F93: Finančná správa SR, Sadzby dane, <a href="https://www.financnasprava.sk/sk/podnikatelia/dane/dan-z-pridanej-hodnoty/sadzby-dane" rel="noopener" target="_blank">https://www.financnasprava.sk/sk/podnikatelia/dane/dan-z-pridanej-hodnoty/sadzby-dane</a> (overené 11. 9. 2026)</li>
+          <li>F94, F96: schematron CEN EN 16931, súbor CEN-EN16931-UBL.sch, <a href="https://github.com/ConnectingEurope/eInvoicing-EN16931" rel="noopener" target="_blank">https://github.com/ConnectingEurope/eInvoicing-EN16931</a> (licencia EUPL 1.2, overené 11. 9. 2026)</li>
+          <li>F98: schematron Peppol BIS Billing 3.0, súbor PEPPOL-EN16931-UBL.sch, <a href="https://github.com/OpenPEPPOL/peppol-bis-invoice-3" rel="noopener" target="_blank">https://github.com/OpenPEPPOL/peppol-bis-invoice-3</a> (overené 11. 9. 2026)</li>
+        </ul>
+      </div>
+    </article>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <div><b>ARLing s. r. o.</b><br>Ivanská cesta 32E<br>821 04 Bratislava, Slovakia</div>
+    <div>Company ID 56583486<br>VAT ID SK2122352100<br><a href="mailto:andrej@arling.sk">andrej@arling.sk</a></div>
+    <div><a href="https://arling.sk/privacy/">privacy</a> · <a href="https://arling.sk/podmienky/">terms</a> · <a href="https://arling.sk/gdpr/">GDPR</a> · <a href="https://arling.sk/impressum/">Impressum</a> · <a href="https://arling.sk/llms.txt">llms.txt</a> · <a href="https://arling.sk/sitemap-index.xml">sitemap</a><br>Tools are provided as is, without warranty. Anonymous visit counts via self-hosted Umami.</div>
+  </div>
+</footer>
+
+<script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="338f035d-41c5-411e-8391-9a41db6accfd"></script>
+</body>
+</html>
