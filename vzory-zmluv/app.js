@@ -1,40 +1,27 @@
-/* Vzory zmlúv: formulár, náhľad, platba a sťahovanie.
+/* Vzory zmlúv: formulár, náhľad a sťahovanie. Zadarmo, bez zámku, bez platby.
  *
  * Všetko sa deje v prehliadači. Formulár každého dokumentu má vlastný kľúč
  * v localStorage (vzory:formular:<id>), zmluva sa skladá tu (dokumenty-sk.js)
- * a DOCX sa zapisuje tu (docx.js). Na server neodchádza nič okrem overenia
- * platby: po návrate zo Stripe (?session_id=) sa worker spýta, či je session
- * zaplatená a na akú sumu (GET /v1/kontrola/status, vracia paid,
- * amount_subtotal a livemode, žiadne osobné údaje).
+ * a DOCX sa zapisuje tu (docx.js). Na server neodchádza nič, žiadne volanie.
  *
- * Odomknutie sa uloží ako vzory:zaplatene = { session, dokument }, kde
- * dokument je id jednej zmluvy alebo "balik" pre všetkých päť. Keď si niekto
- * kúpi druhú zmluvu samostatne, staré odomknutie neprepadne: každý nákup sa
- * pridá aj do zoznamu vzory:zaplatene:zoznam a stránka pozerá na oba kľúče.
+ * Vzory sú magnet, nie produkt: náhľad je celá zmluva a DOCX aj ZIP so
+ * všetkými piatimi sa sťahujú bez platby. Zarábame na GDPR balíku
+ * (arling.sk/gdpr-dokumenty/) a na kontrole e-faktúry (arling.sk/efaktura/),
+ * o čom je veta pri stiahnutí. Staré kľúče vzory:zaplatene a
+ * vzory:zaplatene:zoznam z čias, keď sa tu platilo, sa už nečítajú.
  *
- * Udalosti do Umami (ak beží): vzory_nahlad, vzory_kupa_click,
- * vzory_zaplatene, vzory_stiahnute, každá s vlastnosťou dokument. Popri nich
- * spoločné mená nastroj_pouzity a cena_videna, ktoré používajú aj ostatné
- * nástroje, aby sa dal počítať zárobok na sto návštev.
+ * Udalosti do Umami (ak beží): vzory_nahlad, vzory_stiahnute, každá s
+ * vlastnosťou dokument. Popri nich spoločné mená nastroj_pouzity a
+ * cena_videna, ktoré používajú aj ostatné nástroje, aby sa dal počítať
+ * zárobok na sto návštev.
  */
 import { docx, html, zip } from './docx.js';
 import { DOKUMENTY, dokumentPodlaId, prazdnyFormular, chybajucePovinne } from './dokumenty-sk.js';
-
-const API = 'https://arling-asistent.arling.workers.dev';
-const CENA_DOKUMENT = 690;   /* centy, 6,90 € za jednu zmluvu */
-const CENA_BALIK = 1490;     /* centy, 14,90 € za všetkých päť */
-const KLUC_ZAPLATENE = 'vzory:zaplatene';
-const KLUC_ZOZNAM = 'vzory:zaplatene:zoznam';
-const KLUC_KUPUJEM = 'vzory:kupujem';
-const KLUC_CAKAJUCA = 'vzory:cakajuca';
 
 const $ = (id) => document.getElementById(id);
 const zalozky = $('zalozky');
 const polia = $('polia');
 const nahlad = $('nahlad');
-const stavPlatby = $('stav-platby');
-const kupaBalik = $('kupa-balik');
-const kupaDokument = $('kupa-dokument');
 const stiahnutDocx = $('stiahnut-docx');
 const stiahnutVsetko = $('stiahnut-vsetko');
 const chyby = $('chyby');
@@ -49,8 +36,7 @@ function zabudni(k) { try { localStorage.removeItem(k); } catch (e) { /* nič */
 /* === Ktorý dokument je otvorený ======================================== */
 
 /* Adresa pri príchode. Drží sa bokom, lebo stránka si hneď po štarte prepíše
- * adresu na čistú podobu s ?vzor=<id> (zdieľateľný odkaz na jednu zmluvu) a
- * návrat zo Stripe (?session_id=) by sa tým inak stratil. */
+ * adresu na čistú podobu s ?vzor=<id> (zdieľateľný odkaz na jednu zmluvu). */
 const PRVOTNA_URL = location.href;
 function zUrl(kluc) {
   try { return new URL(PRVOTNA_URL).searchParams.get(kluc) || ''; } catch (e) { return ''; }
@@ -58,30 +44,6 @@ function zUrl(kluc) {
 let vybrany = DOKUMENTY.some((x) => x.id === zUrl('vzor')) ? zUrl('vzor') : DOKUMENTY[0].id;
 let dok = dokumentPodlaId(vybrany);
 let d = {};
-
-/* === Odomknutie ======================================================= */
-
-function nakupy() {
-  const zoznam = nacitaj(KLUC_ZOZNAM);
-  const out = Array.isArray(zoznam) ? zoznam.slice() : [];
-  const jeden = nacitaj(KLUC_ZAPLATENE);
-  if (jeden && jeden.session) out.push(jeden);
-  return out.filter((x) => x && x.session);
-}
-function odomknute(id) {
-  return nakupy().some((x) => x.dokument === 'balik' || x.dokument === id);
-}
-function maBalik() {
-  return nakupy().some((x) => x.dokument === 'balik');
-}
-function zapisNakup(sid, co, test) {
-  const zapis = { session: sid, dokument: co, t: Date.now(), test: !!test };
-  uloz(KLUC_ZAPLATENE, zapis);
-  const zoznam = nacitaj(KLUC_ZOZNAM);
-  const out = Array.isArray(zoznam) ? zoznam.filter((x) => x && x.session !== sid) : [];
-  out.push(zapis);
-  uloz(KLUC_ZOZNAM, out);
-}
 
 /* === Formulár ========================================================= */
 
@@ -194,30 +156,7 @@ function naplnFormular(ulozene) {
   }
 }
 
-/* === Náhľad a zámok =================================================== */
-
-/* Koľko textu ukázať zadarmo. Zhruba dve strany A4 v tom formáte, aký má
- * DOCX, a pri krátkych vzoroch najviac necelá polovica textu, aby náhľad
- * nikdy neukázal celú zmluvu. Posledné dva bloky (podpisy) sú vždy skryté. */
-const STRANA = 2200;
-function dlzkaBloku(b) {
-  if (b.t) return b.t.length;
-  if (b.p !== undefined) return b.p.length;
-  if (b.ul) return b.ul.join(' ').length;
-  if (b.tbl) return b.tbl.flat().join(' ').length;
-  return 0;
-}
-function pocetVolnych(bloky) {
-  const spolu = bloky.reduce((a, b) => a + dlzkaBloku(b), 0);
-  const limit = Math.min(2 * STRANA, Math.round(spolu * 0.45));
-  let n = 0, k = 0;
-  for (const b of bloky) {
-    const l = dlzkaBloku(b);
-    if (n > 0 && k + l > limit) break;
-    k += l; n++;
-  }
-  return Math.max(3, Math.min(n, bloky.length - 2));
-}
+/* === Náhľad =========================================================== */
 
 const PATA = () => 'Vytvorené na arling.sk/vzory-zmluv/ dňa ' + new Date().toLocaleDateString('sk-SK')
   + '. Vzor, nie právne poradenstvo: pred podpisom si ho prečítajte a upravte podľa svojej situácie.';
@@ -227,29 +166,13 @@ function prekresli() {
   uloz('vzory:formular:' + vybrany, d);
   postavZalozky();
   const bloky = dok.fn(d);
-  const odomk = odomknute(vybrany);
-  const ukazane = odomk ? bloky : bloky.slice(0, pocetVolnych(bloky));
-  const zamok = odomk ? '' : '<div class="zamok">'
-    + '<p><b>Zvyšok zmluvy je platený.</b> Vidíte prvé dve strany. Celý dokument vo Worde, s vašimi údajmi a na úpravu, stojí <b>6,90 €</b> za túto zmluvu alebo <b>14,90 €</b> za všetkých päť vzorov.</p>'
-    + '<p><a class="btn btn-solid" href="#hero" id="zamok-kupa">Odomknúť túto zmluvu za 6,90 €</a> <a class="btn btn-line" href="#hero" id="zamok-balik">Všetkých päť za 14,90 €</a></p>'
-    + '</div>';
-  nahlad.innerHTML = '<div class="papier' + (odomk ? '' : ' zamknuty') + '">' + html(ukazane)
-    + (odomk ? '<p class="pata">' + PATA() + '</p>' : '') + zamok + '</div>';
-  const zk = $('zamok-kupa');
-  if (zk) zk.addEventListener('click', (e) => { e.preventDefault(); kup(vybrany, 'zamok'); });
-  const zb = $('zamok-balik');
-  if (zb) zb.addEventListener('click', (e) => { e.preventDefault(); kup('balik', 'zamok'); });
+  nahlad.innerHTML = '<div class="papier">' + html(bloky) + '<p class="pata">' + PATA() + '</p></div>';
 
-  poznamka.innerHTML = odomk
-    ? '<b>Odomknuté:</b> celá zmluva, na stiahnutie vo Worde. Formulár môžete ďalej upravovať, dokument sa prepíše.'
-    : '<b>Náhľad zadarmo:</b> prvé dve strany celé, bez rozmazania. <span class="cena-poznamka">Celý dokument: 6,90 €</span>, všetkých päť vzorov 14,90 €.';
+  poznamka.innerHTML = '<b>Zadarmo:</b> celá zmluva, na stiahnutie vo Worde. Formulár môžete ďalej upravovať, dokument sa prepíše.'
+    + ' Ak vám vzor pomohol, pozrite si <a href="https://arling.sk/gdpr-dokumenty/">GDPR balík pre firmu za 39 €</a> alebo <a href="https://arling.sk/efaktura/">kontrolu e-faktúry</a>.';
 
-  stiahnutDocx.hidden = !odomk;
-  kupaDokument.hidden = odomk;
-  stiahnutVsetko.hidden = !maBalik();
   ukazChyby();
   ukazOpory();
-  ukazCenu();
   oznamPouzitie();
 }
 
@@ -258,7 +181,7 @@ function postavZalozky() {
   for (const x of DOKUMENTY) {
     const b = document.createElement('button');
     b.type = 'button';
-    b.className = 'zalozka' + (x.id === vybrany ? ' aktivna' : '') + (odomknute(x.id) ? ' odomknuta' : ' zamknuta');
+    b.className = 'zalozka' + (x.id === vybrany ? ' aktivna' : '');
     b.textContent = x.nazov;
     b.title = x.popis;
     b.setAttribute('role', 'tab');
@@ -268,8 +191,7 @@ function postavZalozky() {
   }
 }
 /* Adresa nesie vybraný vzor, aby sa dal poslať odkaz priamo na jednu zmluvu
- * (a aby si ho stránka pamätala pri obnovení). Dotaz zo Stripe sa tým zahodí,
- * to je zámer: session_id v adrese už nemá čo robiť. */
+ * (a aby si ho stránka pamätala pri obnovení). */
 function adresa() {
   try { history.replaceState(null, '', location.pathname + '?vzor=' + vybrany); } catch (e) { /* nič */ }
 }
@@ -317,27 +239,6 @@ function escapuj(s) {
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-/* Cenový box v úvode: po nákupe už žiadne tlačidlo Kúpiť, ale jasná veta
- * a odkaz späť k zmluve. */
-function ukazCenu() {
-  const vsetko = maBalik();
-  kupaBalik.hidden = vsetko;
-  const zaco = document.querySelector('.cena .zaco');
-  if (zaco) zaco.hidden = vsetko;
-  let blok = $('cena-zaplatene');
-  if (!blok) {
-    blok = document.createElement('div');
-    blok.id = 'cena-zaplatene';
-    blok.className = 'cena-zaplatene';
-    blok.hidden = true;
-    blok.innerHTML = '<p><b>Zaplatené.</b> Odomknuté v tomto prehliadači. Formulár môžete ďalej upravovať a zmluvu si stiahnuť znova, koľkokrát chcete.</p>'
-      + '<a class="btn btn-solid" href="#dielna">Prejsť k zmluve</a>';
-    kupaBalik.insertAdjacentElement('afterend', blok);
-  }
-  const nieco = nakupy().length > 0;
-  blok.hidden = !nieco;
-}
-
 /* === Meranie ========================================================== */
 
 let pouzite = false;
@@ -374,7 +275,6 @@ const bezDiakritiky = (s) => String(s).normalize('NFD').replace(/[\u0300-\u036f]
 function subor(x) { return bezDiakritiky(x.nazov).slice(0, 60) + '.docx'; }
 
 stiahnutDocx.addEventListener('click', () => {
-  if (!odomknute(vybrany)) return;
   const chyba = chybajucePovinne(dok.zdroj, d);
   if (chyba.length) {
     dotknute = true;
@@ -388,7 +288,6 @@ stiahnutDocx.addEventListener('click', () => {
   track('vzory_stiahnute', { dokument: vybrany, produkt: 'vzory' });
 });
 stiahnutVsetko.addEventListener('click', () => {
-  if (!maBalik()) return;
   const subory = DOKUMENTY.map((x) => {
     const udaje = x.id === vybrany ? d : (nacitaj('vzory:formular:' + x.id) || prazdnyFormular(x.zdroj));
     return [subor(x), docx(x.fn(udaje), PATA())];
@@ -396,94 +295,6 @@ stiahnutVsetko.addEventListener('click', () => {
   stiahni('vzory-zmluv-arling.zip', zip(subory), 'application/zip');
   track('vzory_stiahnute', { dokument: 'balik', pocet: subory.length, produkt: 'vzory' });
 });
-
-/* === Platba =========================================================== */
-
-/* ?test=1 prepne tento prehliadač do Stripe test módu (nácvik, testovacia
- * karta 4242…, žiadne peniaze): tlačidlo použije data-link-test a návrat sa
- * prijme len v tom prehliadači, ktorý test spustil. */
-function testRezim() {
-  try {
-    if (zUrl('test') === '1') sessionStorage.setItem('vzory:test', '1');
-    return sessionStorage.getItem('vzory:test') === '1';
-  } catch (e) { return false; }
-}
-function odkaz(co) {
-  const el = co === 'balik' ? kupaBalik : document.querySelector('#odkazy-dokumenty [data-dokument="' + co + '"]');
-  if (!el) return '';
-  const u = (testRezim() ? el.dataset.linkTest : el.dataset.link) || '';
-  return u.startsWith('https://') ? u : '';
-}
-function kup(co, odkial) {
-  track('vzory_kupa_click', { dokument: co, cena: co === 'balik' ? CENA_BALIK : CENA_DOKUMENT, odkial: odkial || 'cena', produkt: 'vzory' });
-  uloz(KLUC_KUPUJEM, co);
-  const u = odkaz(co);
-  if (!u) {
-    stavPlatby.textContent = 'Platba sa práve zapína. Skúste to o chvíľu alebo napíšte na andrej@arling.sk.';
-    stavPlatby.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    return;
-  }
-  location.href = u;
-}
-kupaBalik.addEventListener('click', () => kup('balik', 'cena'));
-kupaDokument.addEventListener('click', () => kup(vybrany, 'nahlad'));
-
-let overovanie = null;
-async function overPlatbu(sid, pokus) {
-  stavPlatby.textContent = 'Overujem platbu…' + (pokus > 1 ? ' (' + pokus + ')' : '');
-  let st = null, siet = false;
-  try {
-    const r = await fetch(API + '/v1/kontrola/status?session_id=' + encodeURIComponent(sid));
-    if (r.ok) st = await r.json();
-    else if (r.status >= 500 || r.status === 429) siet = true;
-  } catch (e) { siet = true; }
-  /* Suma pred zľavovým kódom; starší worker ju neposiela, vtedy platí amount_total. */
-  const zaklad = st && typeof st.amount_subtotal === 'number' ? st.amount_subtotal : st && st.amount_total;
-  if (st && st.paid && typeof zaklad === 'number' && zaklad >= CENA_DOKUMENT) {
-    const chcel = nacitaj(KLUC_KUPUJEM);
-    const co = zaklad >= CENA_BALIK ? 'balik' : (chcel && chcel !== 'balik' ? chcel : vybrany);
-    zapisNakup(sid, co, st.livemode === false);
-    zabudni(KLUC_CAKAJUCA);
-    stavPlatby.innerHTML = '<b>Zaplatené, ďakujeme.</b> ' + (co === 'balik' ? 'Všetkých päť vzorov je' : 'Zmluva je')
-      + ' odomknutých v tomto prehliadači; doklad vám poslal Stripe e-mailom.'
-      + (st.livemode === false ? ' (Testovací režim: platba bola v Stripe test móde, žiadne peniaze neprišli.)' : '');
-    track('vzory_zaplatene', { dokument: co, test: st.livemode === false, produkt: 'vzory' });
-    if (co !== 'balik' && co !== vybrany) prepni(co);
-    else prekresli();
-    $('dielna').scrollIntoView({ behavior: 'smooth', block: 'start' });
-    return true;
-  }
-  if (st && st.paid) {
-    zabudni(KLUC_CAKAJUCA);
-    stavPlatby.textContent = 'Platba prišla, ale na inú sumu. Napíšte na andrej@arling.sk, vyriešime to ručne.';
-    return false;
-  }
-  if (st && !st.paid && !siet) siet = true; /* Stripe odpovedal, že ešte nie je zaplatené: takmer vždy je to zdržanie */
-  uloz(KLUC_CAKAJUCA, { session: sid, test: testRezim(), t: Date.now() });
-  stavPlatby.innerHTML = 'Platbu sa zatiaľ nepodarilo potvrdiť. Skúšame znova; ak ste zaplatili, zmluva sa odomkne, len čo Stripe odpovie. Ak to trvá dlhšie než pár minút, napíšte na andrej@arling.sk s číslom objednávky z e-mailu od Stripe. '
-    + '<button type="button" class="btn btn-line" id="over-znova">Overiť platbu znova</button>';
-  const btn = $('over-znova');
-  if (btn) btn.addEventListener('click', () => { clearTimeout(overovanie); overPlatbu(sid, 1); });
-  if (pokus < 8) overovanie = setTimeout(() => overPlatbu(sid, pokus + 1), Math.min(30000, 3000 * pokus));
-  return false;
-}
-function poNavrate() {
-  let sid = zUrl('session_id');
-  const test = testRezim(); /* ?test=1 môže stáť vedľa session_id */
-  if (!sid) {
-    const c = nacitaj(KLUC_CAKAJUCA);
-    if (c && c.session && !odomknute(vybrany)) {
-      sid = c.session;
-      if (c.test) { try { sessionStorage.setItem('vzory:test', '1'); } catch (e) { /* nič */ } }
-    }
-  }
-  if (!sid) return;
-  if (sid.startsWith('cs_test_') && !testRezim() && !test) {
-    stavPlatby.textContent = 'Toto je testovacia platba zo Stripe test módu. Odomkne zmluvu len v prehliadači, ktorý test spustil cez ?test=1.';
-    return;
-  }
-  overPlatbu(sid, 1);
-}
 
 /* === Štart ============================================================ */
 
@@ -500,6 +311,5 @@ $('zmazat').addEventListener('click', () => {
 });
 prekresli();
 adresa();
-poNavrate();
 sledujCenuVidenu();
 track('vzory_nahlad', { dokument: vybrany, produkt: 'vzory' });

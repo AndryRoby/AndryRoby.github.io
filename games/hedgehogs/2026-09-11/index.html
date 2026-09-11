@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://homelab.tailbf8f27.ts.net; connect-src 'self' https://homelab.tailbf8f27.ts.net; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
 <meta name="color-scheme" content="dark">
-<meta name="robots" content="noindex, follow">
+<meta name="robots" content="index, follow">
 <link rel="manifest" href="/games/hedgehogs/manifest.json">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -37,7 +37,7 @@
 <link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/style/paper.css?v=89016e6c">
 <script src="/style/prepinac.js?v=2988c181" defer></script>
-<script type="module" src="/games/hedgehogs/game.js?v=8"></script>
+<script type="module" src="/games/hedgehogs/game.js?v=9"></script>
 <style>
   /* Only this page: the board, its cells, the control row and the rules block. */
   .hero{align-items:start}
@@ -113,7 +113,22 @@
   .stav{font-family:var(--ui);font-size:15px;line-height:1.5;color:var(--body);margin:12px 0 0;min-height:1.5em}
   .stav b{color:var(--ink)}
   .stav.ok{color:var(--ok)}
-  .stav.ok b{color:var(--ok)}
+  .stav.ok b{color:var(--ok);display:block;font:700 clamp(22px,3.2vw,30px)/1.15 var(--display);letter-spacing:-.01em;margin:0 0 6px}
+  .oslava-streak{display:block;margin-top:8px;font-family:var(--ui);font-size:13px;color:var(--body)}
+  .oslava-dalej{display:block;margin-top:6px;font-family:var(--ui);font-size:13px}
+  .oslava-dalej a{color:var(--accent-light)}
+  .oslava-pulz{animation:oslava-pulz .3s ease}
+  @keyframes oslava-pulz{0%{transform:scale(1)}50%{transform:scale(1.02)}100%{transform:scale(1)}}
+  @media (prefers-reduced-motion:reduce){ .oslava-pulz{animation:none} }
+  /* Share, only after the garden is finished (ops/spec-hry-ux.md, part 8).
+     The textarea is the way out when the browser refuses the clipboard. */
+  .zdielanie{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px;
+             font-family:var(--ui);font-size:13px;line-height:1.45;color:var(--muted)}
+  .zdielanie[hidden]{display:none}
+  .zdielanie .btn{height:38px;padding:0 14px;font-size:13.5px;flex:none}
+  .zdielanie span{flex:1;min-width:180px}
+  .zdielanie textarea{width:100%;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--body);
+                      font:12px/1.5 var(--ui);padding:8px 10px;resize:vertical}
   .pasik{display:flex;gap:6px;margin-top:14px}
   .den{flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;padding:6px 0 5px;border:1px solid var(--line);border-radius:10px;
        text-decoration:none;color:var(--muted);font-family:var(--ui);min-width:0;background:var(--card)}
@@ -182,7 +197,7 @@
       <p class="kicker"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="3.4,14.0 1.2,12.3 3.9,11.4 2.3,9.0 5.2,9.1 4.6,6.3 7.2,7.4 7.6,4.6 9.7,6.5 11.0,4.0 12.3,6.5 14.4,4.6 14.8,7.4 17.4,6.3 16.8,9.1 19.7,9.0 18.1,11.4 20.8,12.3 18.6,14.0 20.8,13.4 23.2,15.2 21.6,17.6 19.4,19.5 3.2,19.5 1.4,17.4"/></svg>Daily logic puzzle</p>
       <h1 id="h1"><span class="l">Hedgehogs.</span></h1>
       <p class="lead r d3">Two hedgehogs in every row, every column and every flowerbed. No two hedgehogs may touch, not even at a corner: they prickle.</p>
-      <p class="proof r d5" id="dnes">This garden opens on Friday 11 September 2026 at midnight, Bratislava time.</p>
+      <p class="proof r d5" id="dnes">The garden for Friday 11 September 2026: hard, ten by ten. Exactly one solution.</p>
       <p class="navod r d5">Tap a cell: dot, then hedgehog, then empty. Hold and drag to sweep dots. Keyboard: arrows move, <kbd>Space</kbd> cycles, <kbd>X</kbd> dot, <kbd>H</kbd> hedgehog, <kbd>Delete</kbd> clears, <kbd>P</kbd> pauses. Nothing lights up while you play; Check judges only when you ask.</p>
     </div>
     <div class="r d2">
@@ -190,7 +205,7 @@
         <div class="horna"><span><span id="datum">Friday 11 September 2026</span><span class="uroven" id="uroven">Hard · 10×10</span></span><span id="cas-blok">Time <b id="cas">0:00</b><button type="button" class="pauza-btn" id="pauza" hidden>Pause</button></span></div>
         <div class="doska-obal">
           <div class="doska" id="doska" role="grid" aria-label="Garden grid 10 by 10">
-            <noscript><p>This game needs JavaScript to play; the garden above is today's layout.</p></noscript>
+            <div class="riadok" role="row"><button class="b r0 c0" data-i="0" data-reg="1"></button><button class="b r0" data-i="1" data-reg="1"></button><button class="b r0" data-i="2" data-reg="1"></button><button class="b r0" data-i="3" data-reg="1"></button><button class="b r0" data-i="4" data-reg="1"></button><button class="b r0" data-i="5" data-reg="1"></button><button class="b r0" data-i="6" data-reg="1"></button><button class="b r0 bl" data-i="7" data-reg="2"></button><button class="b r0" data-i="8" data-reg="2"></button><button class="b r0 bl" data-i="9" data-reg="3"></button></div><div class="riadok" role="row"><button class="b c0 bt" data-i="10" data-reg="0"></button><button class="b bt" data-i="11" data-reg="0"></button><button class="b bl" data-i="12" data-reg="1"></button><button class="b bt bl" data-i="13" data-reg="4"></button><button class="b bl" data-i="14" data-reg="1"></button><button class="b" data-i="15" data-reg="1"></button><button class="b" data-i="16" data-reg="1"></button><button class="b bt" data-i="17" data-reg="1"></button><button class="b bl" data-i="18" data-reg="2"></button><button class="b bl" data-i="19" data-reg="3"></button></div><div class="riadok" role="row"><button class="b c0" data-i="20" data-reg="0"></button><button class="b bt bl" data-i="21" data-reg="4"></button><button class="b bt" data-i="22" data-reg="4"></button><button class="b" data-i="23" data-reg="4"></button><button class="b bl" data-i="24" data-reg="1"></button><button class="b bt bl" data-i="25" data-reg="5"></button><button class="b bl" data-i="26" data-reg="1"></button><button class="b" data-i="27" data-reg="1"></button><button class="b bl" data-i="28" data-reg="2"></button><button class="b bl" data-i="29" data-reg="3"></button></div><div class="riadok" role="row"><button class="b c0" data-i="30" data-reg="0"></button><button class="b bl" data-i="31" data-reg="4"></button><button class="b" data-i="32" data-reg="4"></button><button class="b" data-i="33" data-reg="4"></button><button class="b bt bl" data-i="34" data-reg="5"></button><button class="b" data-i="35" data-reg="5"></button><button class="b bl" data-i="36" data-reg="1"></button><button class="b bt bl" data-i="37" data-reg="5"></button><button class="b bt bl" data-i="38" data-reg="7"></button><button class="b bl" data-i="39" data-reg="3"></button></div><div class="riadok" role="row"><button class="b c0" data-i="40" data-reg="0"></button><button class="b bl" data-i="41" data-reg="4"></button><button class="b" data-i="42" data-reg="4"></button><button class="b" data-i="43" data-reg="4"></button><button class="b bt" data-i="44" data-reg="4"></button><button class="b bl" data-i="45" data-reg="5"></button><button class="b bt" data-i="46" data-reg="5"></button><button class="b" data-i="47" data-reg="5"></button><button class="b bl" data-i="48" data-reg="7"></button><button class="b bl" data-i="49" data-reg="3"></button></div><div class="riadok" role="row"><button class="b c0" data-i="50" data-reg="0"></button><button class="b bt" data-i="51" data-reg="0"></button><button class="b bl" data-i="52" data-reg="4"></button><button class="b bt bl" data-i="53" data-reg="6"></button><button class="b bt" data-i="54" data-reg="6"></button><button class="b bl" data-i="55" data-reg="5"></button><button class="b" data-i="56" data-reg="5"></button><button class="b" data-i="57" data-reg="5"></button><button class="b bl" data-i="58" data-reg="7"></button><button class="b bt" data-i="59" data-reg="7"></button></div><div class="riadok" role="row"><button class="b c0 bt" data-i="60" data-reg="8"></button><button class="b bl" data-i="61" data-reg="0"></button><button class="b bl" data-i="62" data-reg="4"></button><button class="b bt" data-i="63" data-reg="4"></button><button class="b bl" data-i="64" data-reg="6"></button><button class="b bt" data-i="65" data-reg="6"></button><button class="b bl" data-i="66" data-reg="5"></button><button class="b" data-i="67" data-reg="5"></button><button class="b bl" data-i="68" data-reg="7"></button><button class="b" data-i="69" data-reg="7"></button></div><div class="riadok" role="row"><button class="b c0" data-i="70" data-reg="8"></button><button class="b bl" data-i="71" data-reg="0"></button><button class="b bt" data-i="72" data-reg="0"></button><button class="b bl" data-i="73" data-reg="4"></button><button class="b bt" data-i="74" data-reg="4"></button><button class="b bl" data-i="75" data-reg="6"></button><button class="b bt" data-i="76" data-reg="6"></button><button class="b bt" data-i="77" data-reg="6"></button><button class="b bl" data-i="78" data-reg="7"></button><button class="b" data-i="79" data-reg="7"></button></div><div class="riadok" role="row"><button class="b c0" data-i="80" data-reg="8"></button><button class="b bt bl" data-i="81" data-reg="4"></button><button class="b bt" data-i="82" data-reg="4"></button><button class="b" data-i="83" data-reg="4"></button><button class="b" data-i="84" data-reg="4"></button><button class="b bt bl" data-i="85" data-reg="9"></button><button class="b bl" data-i="86" data-reg="6"></button><button class="b bt bl" data-i="87" data-reg="7"></button><button class="b" data-i="88" data-reg="7"></button><button class="b" data-i="89" data-reg="7"></button></div><div class="riadok" role="row"><button class="b c0" data-i="90" data-reg="8"></button><button class="b bt bl" data-i="91" data-reg="9"></button><button class="b bt" data-i="92" data-reg="9"></button><button class="b bt" data-i="93" data-reg="9"></button><button class="b bt" data-i="94" data-reg="9"></button><button class="b" data-i="95" data-reg="9"></button><button class="b bt" data-i="96" data-reg="9"></button><button class="b bl" data-i="97" data-reg="7"></button><button class="b" data-i="98" data-reg="7"></button><button class="b" data-i="99" data-reg="7"></button></div><noscript><p>This game needs JavaScript to play; the garden above is today's layout.</p></noscript>
           </div>
           <div class="pauza-blok" id="pauza-blok" hidden><p><b>Paused.</b> <span id="pauza-cas"></span></p><button type="button" class="btn btn-solid" id="pokracuj">Resume</button></div>
         </div>
@@ -202,6 +217,11 @@
           <span class="small" id="seria"></span>
         </div>
         <p class="stav" id="stav" aria-live="polite"></p>
+        <div class="zdielanie" id="zdielanie" hidden>
+          <button type="button" class="btn btn-line" id="zdielaj">Share</button>
+          <span id="zdielanie-stav" aria-live="polite">Copies a short text: the garden, your time, the help you used. No cells, so it spoils nothing.</span>
+          <textarea id="zdielanie-text" rows="6" readonly hidden aria-label="The text to copy"></textarea>
+        </div>
         <nav class="pasik" id="pasik" aria-label="This week"></nav>
         <p class="odkazy"><a href="/games/hedgehogs/guide/">How to play</a> · <a href="/games/hedgehogs/practice/">Practice sets</a> · <a href="/games/hedgehogs/archive/">Archive</a></p>
         <p class="historia" id="historia" hidden></p>
@@ -211,6 +231,7 @@
           <label><input type="checkbox" data-nastavenie="pauzaPriOdchode"> Pause the clock when you leave the tab</label>
           <label><input type="checkbox" data-nastavenie="autoBodky"> Auto dots: a hedgehog dots its neighbours and completed rows, columns and flowerbeds (off by default: placing the dots is part of the puzzle)</label>
           <label><input type="checkbox" data-nastavenie="potvrditReset"> Ask before Clear</label>
+          <label><input type="checkbox" data-nastavenie="oslava"> Celebration: confetti and a bigger result when you finish</label>
           <p class="fineprint">Settings, progress, history and streak stay in this browser. Add this page to your home screen to open it like an app.</p>
         </details>
       </div>

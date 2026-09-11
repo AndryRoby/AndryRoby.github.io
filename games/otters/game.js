@@ -38,6 +38,7 @@ import { zadaniePreDen, zadanieCvicenie, rozbal, tyzden, urovenDna, posunDen, pe
 import { todayBratislava, isValidDate, geometria } from './generator.mjs';
 import { jeVyriesene, porovnaj, napoveda } from './logika.mjs';
 import * as ucet from '/style/ucet.js';
+import { oslava } from '../oslava.js';
 
 const $ = (id) => document.getElementById(id);
 const doska = $('doska');
@@ -57,6 +58,10 @@ const pauzaCas = $('pauza-cas');
 const pasik = $('pasik');
 const urovenEl = $('uroven');
 const historiaEl = $('historia');
+const zdielanieEl = $('zdielanie');
+const zdielajBtn = $('zdielaj');
+const zdielanieStav = $('zdielanie-stav');
+const zdielanieText = $('zdielanie-text');
 const cislaText = $('cisla-text');
 
 function track(name, data) { try { if (window.umami && typeof window.umami.track === 'function') window.umami.track(name, data); } catch (e) { /* statistics are not part of the game */ } }
@@ -79,7 +84,7 @@ const NASTAVENIA_KLUC = 'otters:nastavenia';
 // Auto crosses and Live check are off by default: the crosses are the
 // player's own notes, and nothing turns red while you play (Andrej, 10. 9.);
 // Check is the only judge before the river closes.
-const NASTAVENIA_PREDVOLENE = { casovac: true, pauzaPriOdchode: true, autoKrizky: false, zivaKontrola: false, potvrditReset: true };
+const NASTAVENIA_PREDVOLENE = { casovac: true, pauzaPriOdchode: true, autoKrizky: false, zivaKontrola: false, potvrditReset: true, oslava: true };
 let nastavenia = Object.assign({}, NASTAVENIA_PREDVOLENE, nacitaj(NASTAVENIA_KLUC) || {});
 function ulozNastavenia() { uloz(NASTAVENIA_KLUC, nastavenia); }
 
@@ -412,14 +417,18 @@ function ulozStav() { uloz(KLUC, { v, sec: sekundy, start, done, hints, checks, 
 function ukazStav() {
   oznacSplnene();
   stavEl.classList.toggle('ok', !!done);
+  if (zdielanieEl) zdielanieEl.hidden = !done;   // Share only after the river is finished
   if (done) {
     const s = sekundy ? ' in ' + formatCas(sekundy) : '';
     const pomoc = [];
     if (hints) pomoc.push(hints + (hints === 1 ? ' hint' : ' hints'));
     if (checks) pomoc.push(checks + (checks === 1 ? ' check' : ' checks'));
     const hn = pomoc.length ? ' with ' + pomoc.join(' and ') : ' without a hint or a check';
+    const seria = jeDnes ? (nacitaj('otters:streak') || {}).pocet || 0 : 0;
     stavEl.innerHTML = '<b>Solved</b>' + s + hn + '. ' + (pomoc.length ? 'The otters have their river.' : 'A clean river: the otters are impressed.')
-      + (jeDnes ? ' A new river arrives at midnight, Bratislava time.' : '');
+      + (jeDnes ? ' A new river arrives at midnight, Bratislava time.' : '')
+      + (seria >= 1 ? '<span class="oslava-streak">Day ' + seria + ' of your streak.</span>' : '')
+      + '<span class="oslava-dalej"><a href="/games/otters/practice/">Practice sets</a></span>';
     return;
   }
   const oznacenych = v.some((x) => x !== 0);
@@ -516,6 +525,57 @@ function ukazNapovedu() {
   track('game_hint', { game: 'otters', kind: h.druh, rule: h.pravidlo, layer: h.vrstva, applied: false });
 }
 
+/* ── Share ────────────────────────────────────────────────────────────── *
+ * A voluntary step after the river is finished (ops/spec-hry-ux.md, part 8).
+ * The text names the river, the time and the hints and checks used, with no
+ * line of the solution in it, so it cannot spoil the puzzle for whoever
+ * reads it. Nothing is sent anywhere; the text only goes to the clipboard,
+ * and when the browser refuses that, into a box to copy by hand. */
+function odkazNaRieku() {
+  const b = 'https://arling.sk/games/otters/';
+  if (rezim === 'cvicenie') return b + 'practice/' + sada + '/' + (kSada === 1 ? '' : kSada + '/');
+  return jeDnes ? b : b + datum + '/';
+}
+function textNaZdielanie() {
+  const kto = rezim === 'cvicenie' ? 'Otters practice ' + sada + ', river ' + kSada : 'Otters ' + datum;
+  const pomoc = [];
+  if (hints) pomoc.push(hints + (hints === 1 ? ' hint' : ' hints'));
+  if (checks) pomoc.push(checks + (checks === 1 ? ' check' : ' checks'));
+  return kto + ' · ' + UROVNE[zadanie.uroven].label + '\n'
+    + 'Solved' + (sekundy ? ' in ' + formatCas(sekundy) : '') + (pomoc.length ? ' with ' + pomoc.join(' and ') : ', clean: no hint, no check') + '\n'
+    + odkazNaRieku();
+}
+async function skopiruj(text) {
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) { await navigator.clipboard.writeText(text); return true; }
+  } catch (e) { /* an old browser, or a page without permission: the box below */ }
+  try {
+    const t = document.createElement('textarea');
+    t.value = text;
+    t.setAttribute('readonly', '');
+    t.style.position = 'fixed'; t.style.top = '-1000px';
+    document.body.appendChild(t);
+    t.select();
+    const ok = document.execCommand('copy');
+    document.body.removeChild(t);
+    return ok;
+  } catch (e) { return false; }
+}
+if (zdielajBtn) zdielajBtn.addEventListener('click', async () => {
+  if (!done || !zadanie) return;
+  const text = textNaZdielanie();
+  const ok = await skopiruj(text);
+  if (zdielanieStav) zdielanieStav.textContent = ok
+    ? 'Copied. It says nothing about the lines, and nothing was sent anywhere.'
+    : 'This browser would not let the page copy for you. Here is the text, take it from the box.';
+  if (zdielanieText) {
+    zdielanieText.value = text;
+    zdielanieText.hidden = ok;
+    if (!ok) { zdielanieText.focus(); zdielanieText.select(); }
+  }
+  track('game_share', { game: 'otters', copied: ok, level: zadanie.uroven });
+});
+
 function skontroluj() {
   if (!jeVyriesene(v, zadanie.clues, n)) return false;
   sekundy = ubehnute();
@@ -533,6 +593,8 @@ function skontroluj() {
   ukazHistoriu();
   ukazPasik();
   track('game_solved', { game: 'otters', day: rezim === 'den' ? datum : sada + '/' + kSada, seconds: sekundy, hints, checks, level: zadanie.uroven });
+  const kontajner = document.querySelector('.hra');
+  if (kontajner) oslava(kontajner, { redukovany: !nastavenia.oslava || window.matchMedia('(prefers-reduced-motion: reduce)').matches });
   return true;
 }
 

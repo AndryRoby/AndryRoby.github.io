@@ -35,7 +35,7 @@
 <link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/style/paper.css?v=89016e6c">
 <script src="/style/prepinac.js?v=2988c181" defer></script>
-<script type="module" src="/games/otters/game.js?v=2"></script>
+<script type="module" src="/games/otters/game.js?v=3"></script>
 <style>
   /* Only this page: the marsh, the control row and the rules block. */
   .hero{align-items:start}
@@ -124,7 +124,22 @@
   .stav{font-family:var(--ui);font-size:15px;line-height:1.5;color:var(--body);margin:12px 0 0;min-height:1.5em}
   .stav b{color:var(--ink)}
   .stav.ok{color:var(--ok)}
-  .stav.ok b{color:var(--ok)}
+  .stav.ok b{color:var(--ok);display:block;font:700 clamp(22px,3.2vw,30px)/1.15 var(--display);letter-spacing:-.01em;margin:0 0 6px}
+  .oslava-streak{display:block;margin-top:8px;font-family:var(--ui);font-size:13px;color:var(--body)}
+  .oslava-dalej{display:block;margin-top:6px;font-family:var(--ui);font-size:13px}
+  .oslava-dalej a{color:var(--accent-light)}
+  .oslava-pulz{animation:oslava-pulz .3s ease}
+  @keyframes oslava-pulz{0%{transform:scale(1)}50%{transform:scale(1.02)}100%{transform:scale(1)}}
+  @media (prefers-reduced-motion:reduce){ .oslava-pulz{animation:none} }
+  /* Share, only after the river is finished (ops/spec-hry-ux.md, part 8).
+     The textarea is the way out when the browser refuses the clipboard. */
+  .zdielanie{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px;
+             font-family:var(--ui);font-size:13px;line-height:1.45;color:var(--muted)}
+  .zdielanie[hidden]{display:none}
+  .zdielanie .btn{height:38px;padding:0 14px;font-size:13.5px;flex:none}
+  .zdielanie span{flex:1;min-width:180px}
+  .zdielanie textarea{width:100%;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--body);
+                      font:12px/1.5 var(--ui);padding:8px 10px;resize:vertical}
   .pasik{display:flex;gap:6px;margin-top:14px}
   .den{flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;padding:6px 0 5px;border:1px solid var(--line);border-radius:10px;
        text-decoration:none;color:var(--muted);font-family:var(--ui);min-width:0;background:var(--card)}
@@ -214,6 +229,11 @@
           <span class="small" id="seria"></span>
         </div>
         <p class="stav" id="stav" aria-live="polite"></p>
+        <div class="zdielanie" id="zdielanie" hidden>
+          <button type="button" class="btn btn-line" id="zdielaj">Share</button>
+          <span id="zdielanie-stav" aria-live="polite">Copies a short text: the river, your time, the help you used. No lines, so it spoils nothing.</span>
+          <textarea id="zdielanie-text" rows="6" readonly hidden aria-label="The text to copy"></textarea>
+        </div>
         <nav class="pasik" id="pasik" aria-label="This week"></nav>
         <p class="odkazy"><a href="/games/otters/guide/">How to play</a> · <a href="/games/otters/practice/">Practice sets</a> · <a href="/games/otters/archive/">Archive</a></p>
         <p class="historia" id="historia" hidden></p>
@@ -224,6 +244,7 @@
           <label><input type="checkbox" data-nastavenie="autoKrizky"> Auto crosses: when a number has all its lines, or a dot has two, cross the sides that are left (off by default: the crosses are your own notes)</label>
           <label><input type="checkbox" data-nastavenie="zivaKontrola"> Live check: mark a wrong line or cross as soon as it appears (off by default: finding a mistake is part of the puzzle)</label>
           <label><input type="checkbox" data-nastavenie="potvrditReset"> Ask before Clear</label>
+          <label><input type="checkbox" data-nastavenie="oslava"> Celebration: confetti and a bigger result when you finish</label>
           <p class="fineprint">Settings, progress, history and streak stay in this browser. Add this page to your home screen to open it like an app.</p>
         </details>
       </div>

@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://homelab.tailbf8f27.ts.net; connect-src 'self' https://homelab.tailbf8f27.ts.net; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
 <meta name="color-scheme" content="dark">
-<meta name="robots" content="noindex, follow">
+<meta name="robots" content="index, follow">
 <link rel="manifest" href="/games/magpies/manifest.json">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -37,7 +37,7 @@
 <link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/style/paper.css?v=89016e6c">
 <script src="/style/prepinac.js?v=2988c181" defer></script>
-<script type="module" src="/games/magpies/game.js?v=2"></script>
+<script type="module" src="/games/magpies/game.js?v=3"></script>
 <style>
   /* Only this page: the board, its headers, the control row and the rules block. */
   .hero{align-items:start}
@@ -118,6 +118,22 @@
   .odkazy a{color:var(--body)}
   .historia{font-family:var(--ui);font-size:13px;color:var(--body);line-height:1.5;margin:10px 0 0}
   .historia b{color:var(--ink)}
+  .stav.ok b{display:block;font:700 clamp(22px,3.2vw,30px)/1.15 var(--display);letter-spacing:-.01em;margin:0 0 6px}
+  .oslava-streak{display:block;margin-top:8px;font-family:var(--ui);font-size:13px;color:var(--body)}
+  .oslava-dalej{display:block;margin-top:6px;font-family:var(--ui);font-size:13px}
+  .oslava-dalej a{color:var(--accent-light)}
+  .oslava-pulz{animation:oslava-pulz .3s ease}
+  @keyframes oslava-pulz{0%{transform:scale(1)}50%{transform:scale(1.02)}100%{transform:scale(1)}}
+  @media (prefers-reduced-motion:reduce){ .oslava-pulz{animation:none} }
+  /* Share, only after the picture is finished (ops/spec-hry-ux.md, part 8).
+     The textarea is the way out when the browser refuses the clipboard. */
+  .zdielanie{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px;
+             font-family:var(--ui);font-size:13px;line-height:1.45;color:var(--muted)}
+  .zdielanie[hidden]{display:none}
+  .zdielanie .btn{height:38px;padding:0 14px;font-size:13.5px;flex:none}
+  .zdielanie span{flex:1;min-width:180px}
+  .zdielanie textarea{width:100%;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--body);
+                      font:12px/1.5 var(--ui);padding:8px 10px;resize:vertical}
   .nastavenia{margin-top:14px;border:1px solid var(--line);border-radius:12px;background:var(--card);padding:0 14px}
   .nastavenia summary{cursor:pointer;font:600 13px/1.4 var(--ui);color:var(--muted);padding:10px 0;list-style:none}
   .nastavenia summary::-webkit-details-marker{display:none}
@@ -171,7 +187,7 @@
       <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="2"/><path d="M3.5 9.5h17M3.5 14.5h17M9.5 3.5v17M14.5 3.5v17"/></svg>Daily picture logic</p>
       <h1 id="h1"><span class="l">Magpies.</span></h1>
       <p class="lead r d3">Magpies collect shiny things. Follow the numbers by every row and column to work out which cells are filled, and a picture appears.</p>
-      <p class="proof r d5" id="dnes">This picture opens on Friday 11 September 2026 at midnight, Bratislava time.</p>
+      <p class="proof r d5" id="dnes">The picture for Friday 11 September 2026: hard, twelve by twelve. Exactly one solution.</p>
       <p class="navod r d5">Tap a cell: filled, then a cross, then empty. Hold and drag to sweep. Keyboard: arrows move, <kbd>Space</kbd> cycles, <kbd>F</kbd> fill, <kbd>X</kbd> cross, <kbd>Delete</kbd> clears, <kbd>P</kbd> pauses. Nothing lights up while you play; Check judges only when you ask.</p>
     </div>
     <div class="r d2">
@@ -179,7 +195,7 @@
         <div class="horna"><span><span id="datum">Friday 11 September 2026</span><span class="uroven" id="uroven">Hard · 12×12</span></span><span id="cas-blok">Time <b id="cas">0:00</b><button type="button" class="pauza-btn" id="pauza" hidden>Pause</button></span></div>
         <div class="doska-obal">
           <div class="doska" id="doska" role="grid" aria-label="Picture grid 12 by 12">
-            <noscript><p>This game needs JavaScript to play; the grid above is today's picture.</p></noscript>
+            <div class="riadok" role="row"><div class="h roh"></div><div class="h hc"><span>3</span><span>2</span><span>3</span></div><div class="h hc"><span>4</span><span>2</span></div><div class="h hc"><span>1</span><span>4</span><span>1</span></div><div class="h hc"><span>1</span><span>3</span></div><div class="h hc"><span>2</span><span>2</span><span>1</span><span>1</span></div><div class="h hc"><span>2</span><span>3</span><span>2</span></div><div class="h hc"><span>3</span><span>2</span><span>2</span><span>1</span></div><div class="h hc"><span>6</span></div><div class="h hc"><span>5</span><span>1</span></div><div class="h hc"><span>2</span><span>1</span><span>2</span><span>1</span></div><div class="h hc"><span>1</span><span>2</span><span>3</span></div><div class="h hc"><span>2</span><span>1</span><span>1</span><span>1</span></div></div><div class="riadok" role="row"><div class="h hr"><span>1</span><span>1</span><span>1</span><span>2</span></div><button class="b r0 c0" data-i="0"></button><button class="b r0" data-i="1"></button><button class="b r0" data-i="2"></button><button class="b r0" data-i="3"></button><button class="b r0" data-i="4"></button><button class="b r0" data-i="5"></button><button class="b r0" data-i="6"></button><button class="b r0" data-i="7"></button><button class="b r0" data-i="8"></button><button class="b r0" data-i="9"></button><button class="b r0" data-i="10"></button><button class="b r0" data-i="11"></button></div><div class="riadok" role="row"><div class="h hr"><span>1</span><span>1</span><span>1</span><span>1</span><span>1</span></div><button class="b c0" data-i="12"></button><button class="b" data-i="13"></button><button class="b" data-i="14"></button><button class="b" data-i="15"></button><button class="b" data-i="16"></button><button class="b" data-i="17"></button><button class="b" data-i="18"></button><button class="b" data-i="19"></button><button class="b" data-i="20"></button><button class="b" data-i="21"></button><button class="b" data-i="22"></button><button class="b" data-i="23"></button></div><div class="riadok" role="row"><div class="h hr"><span>1</span><span>5</span><span>3</span></div><button class="b c0" data-i="24"></button><button class="b" data-i="25"></button><button class="b" data-i="26"></button><button class="b" data-i="27"></button><button class="b" data-i="28"></button><button class="b" data-i="29"></button><button class="b" data-i="30"></button><button class="b" data-i="31"></button><button class="b" data-i="32"></button><button class="b" data-i="33"></button><button class="b" data-i="34"></button><button class="b" data-i="35"></button></div><div class="riadok" role="row"><div class="h hr"><span>3</span><span>1</span><span>3</span></div><button class="b c0" data-i="36"></button><button class="b" data-i="37"></button><button class="b" data-i="38"></button><button class="b" data-i="39"></button><button class="b" data-i="40"></button><button class="b" data-i="41"></button><button class="b" data-i="42"></button><button class="b" data-i="43"></button><button class="b" data-i="44"></button><button class="b" data-i="45"></button><button class="b" data-i="46"></button><button class="b" data-i="47"></button></div><div class="riadok" role="row"><div class="h hr"><span>2</span><span>1</span><span>1</span><span>1</span></div><button class="b c0" data-i="48"></button><button class="b" data-i="49"></button><button class="b" data-i="50"></button><button class="b" data-i="51"></button><button class="b" data-i="52"></button><button class="b" data-i="53"></button><button class="b" data-i="54"></button><button class="b" data-i="55"></button><button class="b" data-i="56"></button><button class="b" data-i="57"></button><button class="b" data-i="58"></button><button class="b" data-i="59"></button></div><div class="riadok" role="row"><div class="h hr"><span>3</span><span>1</span><span>1</span></div><button class="b c0" data-i="60"></button><button class="b" data-i="61"></button><button class="b" data-i="62"></button><button class="b" data-i="63"></button><button class="b" data-i="64"></button><button class="b" data-i="65"></button><button class="b" data-i="66"></button><button class="b" data-i="67"></button><button class="b" data-i="68"></button><button class="b" data-i="69"></button><button class="b" data-i="70"></button><button class="b" data-i="71"></button></div><div class="riadok" role="row"><div class="h hr"><span>2</span><span>3</span><span>1</span><span>1</span></div><button class="b c0" data-i="72"></button><button class="b" data-i="73"></button><button class="b" data-i="74"></button><button class="b" data-i="75"></button><button class="b" data-i="76"></button><button class="b" data-i="77"></button><button class="b" data-i="78"></button><button class="b" data-i="79"></button><button class="b" data-i="80"></button><button class="b" data-i="81"></button><button class="b" data-i="82"></button><button class="b" data-i="83"></button></div><div class="riadok" role="row"><div class="h hr"><span>3</span><span>1</span><span>1</span></div><button class="b c0" data-i="84"></button><button class="b" data-i="85"></button><button class="b" data-i="86"></button><button class="b" data-i="87"></button><button class="b" data-i="88"></button><button class="b" data-i="89"></button><button class="b" data-i="90"></button><button class="b" data-i="91"></button><button class="b" data-i="92"></button><button class="b" data-i="93"></button><button class="b" data-i="94"></button><button class="b" data-i="95"></button></div><div class="riadok" role="row"><div class="h hr"><span>1</span><span>1</span><span>3</span><span>1</span></div><button class="b c0" data-i="96"></button><button class="b" data-i="97"></button><button class="b" data-i="98"></button><button class="b" data-i="99"></button><button class="b" data-i="100"></button><button class="b" data-i="101"></button><button class="b" data-i="102"></button><button class="b" data-i="103"></button><button class="b" data-i="104"></button><button class="b" data-i="105"></button><button class="b" data-i="106"></button><button class="b" data-i="107"></button></div><div class="riadok" role="row"><div class="h hr"><span>1</span><span>1</span><span>3</span><span>2</span></div><button class="b c0" data-i="108"></button><button class="b" data-i="109"></button><button class="b" data-i="110"></button><button class="b" data-i="111"></button><button class="b" data-i="112"></button><button class="b" data-i="113"></button><button class="b" data-i="114"></button><button class="b" data-i="115"></button><button class="b" data-i="116"></button><button class="b" data-i="117"></button><button class="b" data-i="118"></button><button class="b" data-i="119"></button></div><div class="riadok" role="row"><div class="h hr"><span>2</span><span>1</span><span>1</span><span>2</span></div><button class="b c0" data-i="120"></button><button class="b" data-i="121"></button><button class="b" data-i="122"></button><button class="b" data-i="123"></button><button class="b" data-i="124"></button><button class="b" data-i="125"></button><button class="b" data-i="126"></button><button class="b" data-i="127"></button><button class="b" data-i="128"></button><button class="b" data-i="129"></button><button class="b" data-i="130"></button><button class="b" data-i="131"></button></div><div class="riadok" role="row"><div class="h hr"><span>2</span><span>4</span><span>1</span></div><button class="b c0" data-i="132"></button><button class="b" data-i="133"></button><button class="b" data-i="134"></button><button class="b" data-i="135"></button><button class="b" data-i="136"></button><button class="b" data-i="137"></button><button class="b" data-i="138"></button><button class="b" data-i="139"></button><button class="b" data-i="140"></button><button class="b" data-i="141"></button><button class="b" data-i="142"></button><button class="b" data-i="143"></button></div><noscript><p>This game needs JavaScript to play; the grid above is today's picture.</p></noscript>
           </div>
           <div class="pauza-blok" id="pauza-blok" hidden><p><b>Paused.</b> <span id="pauza-cas"></span></p><button type="button" class="btn btn-solid" id="pokracuj">Resume</button></div>
         </div>
@@ -191,6 +207,11 @@
           <span class="small" id="seria"></span>
         </div>
         <p class="stav" id="stav" aria-live="polite"></p>
+        <div class="zdielanie" id="zdielanie" hidden>
+          <button type="button" class="btn btn-line" id="zdielaj">Share</button>
+          <span id="zdielanie-stav" aria-live="polite">Copies a short text: the picture, your time, the help you used. No cells, so it spoils nothing.</span>
+          <textarea id="zdielanie-text" rows="6" readonly hidden aria-label="The text to copy"></textarea>
+        </div>
         <nav class="pasik" id="pasik" aria-label="This week"></nav>
         <p class="odkazy"><a href="/games/magpies/guide/">How to play</a> · <a href="/games/magpies/practice/">Practice sets</a> · <a href="/games/magpies/archive/">Archive</a></p>
         <p class="historia" id="historia" hidden></p>
@@ -199,6 +220,7 @@
           <label><input type="checkbox" data-nastavenie="casovac"> Show the timer and the Pause button</label>
           <label><input type="checkbox" data-nastavenie="pauzaPriOdchode"> Pause the clock when you leave the tab</label>
           <label><input type="checkbox" data-nastavenie="potvrditReset"> Ask before Clear</label>
+          <label><input type="checkbox" data-nastavenie="oslava"> Celebration: confetti and a bigger result when you finish</label>
           <p class="fineprint">Settings, progress, history and streak stay in this browser. Add this page to your home screen to open it like an app.</p>
         </details>
       </div>

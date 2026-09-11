@@ -51,6 +51,7 @@ import { zadaniePreDen, zadanieCvicenie, rozbal, tyzden, urovenDna, posunDen, pe
 import { todayBratislava, isValidDate, jadro } from './generator.mjs';
 import { jeVyriesene, porovnaj, napoveda } from './logika.mjs';
 import * as ucet from '/style/ucet.js';
+import { oslava } from '../oslava.js';
 
 const $ = (id) => document.getElementById(id);
 const hraEl = $('hra');
@@ -117,6 +118,7 @@ const NASTAVENIA_PREDVOLENE = {
   pauzaPriOdchode: true,     // Auto pause
   lenPad: false,             // Onscreen input only
   potvrditReset: true,       // Confirm before Restart
+  oslava: true,              // Celebration: confetti and a bigger result when you finish
 };
 let nastavenia = Object.assign({}, NASTAVENIA_PREDVOLENE, nacitaj(NASTAVENIA_KLUC) || {});
 function ulozNastavenia() { uloz(NASTAVENIA_KLUC, nastavenia); }
@@ -577,8 +579,11 @@ function ukazStav() {
     if (hints) pomoc.push(hints + (hints === 1 ? ' hint' : ' hints'));
     if (checks) pomoc.push(checks + (checks === 1 ? ' check' : ' checks'));
     const hn = pomoc.length ? ' with ' + pomoc.join(' and ') : ' without a hint or a check';
+    const seria = jeDnes ? (nacitaj('hares:streak') || {}).pocet || 0 : 0;
     stavEl.innerHTML = '<b>Solved</b>' + s + hn + '. ' + (pomoc.length ? 'The hares have their meadow.' : 'A clean meadow: the hares are impressed.')
-      + (jeDnes ? ' A new meadow arrives at midnight, Bratislava time.' : '');
+      + (jeDnes ? ' A new meadow arrives at midnight, Bratislava time.' : '')
+      + (seria >= 1 ? '<span class="oslava-streak">Day ' + seria + ' of your streak.</span>' : '')
+      + '<span class="oslava-dalej"><a href="/games/hares/practice/">Practice sets</a></span>';
     return;
   }
   if (!napisaneHracom()) { stavEl.textContent = 'Pick a burrow, then a number from the pad.'; return; }
@@ -782,6 +787,8 @@ function skontroluj() {
   ukazHistoriu();
   ukazPasik();
   track('game_solved', { game: 'hares', day: rezim === 'den' ? datum : sada + '/' + kSada, seconds: sekundy, hints, checks, level: zadanie.uroven });
+  const kontajner = document.querySelector('.hra');
+  if (kontajner) oslava(kontajner, { redukovany: !nastavenia.oslava || window.matchMedia('(prefers-reduced-motion: reduce)').matches });
   return true;
 }
 
