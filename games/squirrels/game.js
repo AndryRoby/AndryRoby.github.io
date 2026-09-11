@@ -47,6 +47,7 @@ import { zadaniePreDen, zadanieCvicenie, rozbal, tyzden, urovenDna, posunDen, pe
 import { todayBratislava, isValidDate, behy } from './generator.mjs';
 import { jeVyriesene, porovnaj, napoveda } from './logika.mjs';
 import * as ucet from '/style/ucet.js';
+import { oslava } from '../oslava.js';
 
 const $ = (id) => document.getElementById(id);
 const hraEl = $('hra');
@@ -116,7 +117,7 @@ const NASTAVENIA_VERZIA = 2;   // the controls changed on 11. 9. 2026; an older 
 const NASTAVENIA_PREDVOLENE = {
   ovladanie: 'selection', casovac: true, zvyrazniRovnake: false, tahVyber: 'multiple',
   zapisSoZnackami: 'fill', zivaKontrola: false, predvolenyStyl: 'corner', autoOdstranZnacky: false,
-  pauzaPriOdchode: true, lenPad: false, potvrditReset: true,
+  pauzaPriOdchode: true, lenPad: false, potvrditReset: true, oslava: true,
 };
 const ulozeneNastavenia = nacitaj(NASTAVENIA_KLUC);
 let nastavenia = Object.assign({}, NASTAVENIA_PREDVOLENE,
@@ -673,8 +674,11 @@ function ukazStav() {
     if (hints) pomoc.push(hints + (hints === 1 ? ' hint' : ' hints'));
     if (checks) pomoc.push(checks + (checks === 1 ? ' check' : ' checks'));
     const hn = pomoc.length ? ' with ' + pomoc.join(' and ') : ' without a hint or a check';
+    const seria = jeDnes ? (nacitaj('squirrels:streak') || {}).pocet || 0 : 0;
     stavEl.innerHTML = '<b>Solved</b>' + s + hn + '. ' + (pomoc.length ? 'The squirrels have their winter.' : 'A clean wood: the squirrels are impressed.')
-      + (jeDnes ? ' A new wood arrives at midnight, Bratislava time.' : '');
+      + (jeDnes ? ' A new wood arrives at midnight, Bratislava time.' : '')
+      + (seria >= 1 ? '<span class="oslava-streak">Day ' + seria + ' of your streak.</span>' : '')
+      + '<span class="oslava-dalej"><a href="/games/squirrels/practice/">Practice sets</a></span>';
     return;
   }
   const napisane = v.reduce((a, x) => a + (x ? 1 : 0), 0);
@@ -881,6 +885,8 @@ function skontroluj() {
   ukazHistoriu();
   ukazPasik();
   track('game_solved', { game: 'squirrels', day: rezim === 'den' ? datum : sada + '/' + kSada, seconds: sekundy, hints, checks, level: zadanie.uroven });
+  const kontajner = document.querySelector('.hra');
+  if (kontajner) oslava(kontajner, { redukovany: !nastavenia.oslava || window.matchMedia('(prefers-reduced-motion: reduce)').matches });
   return true;
 }
 

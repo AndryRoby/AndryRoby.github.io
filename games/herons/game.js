@@ -43,6 +43,7 @@ import { zadaniePreDen, zadanieCvicenie, rozbal, tyzden, urovenDna, posunDen, pe
 import { todayBratislava, isValidDate, geometria } from './generator.mjs';
 import { jeVyriesene, porovnaj, napoveda } from './logika.mjs';
 import * as ucet from '/style/ucet.js';
+import { oslava } from '../oslava.js';
 
 const $ = (id) => document.getElementById(id);
 const doska = $('doska');
@@ -85,7 +86,7 @@ function vsetkyKluce(prefix) {
 const NASTAVENIA_KLUC = 'herons:nastavenia';
 // Live check is off by default: nothing turns red while you play (Andrej,
 // 10. 9.); Check is the only judge before the marsh is finished.
-const NASTAVENIA_PREDVOLENE = { casovac: true, pauzaPriOdchode: true, zvyraznenie: true, zivaKontrola: false, potvrditReset: true };
+const NASTAVENIA_PREDVOLENE = { casovac: true, pauzaPriOdchode: true, zvyraznenie: true, zivaKontrola: false, potvrditReset: true, oslava: true };
 let nastavenia = Object.assign({}, NASTAVENIA_PREDVOLENE, nacitaj(NASTAVENIA_KLUC) || {});
 function ulozNastavenia() { uloz(NASTAVENIA_KLUC, nastavenia); }
 
@@ -457,8 +458,11 @@ function ukazStav() {
     if (hints) pomoc.push(hints + (hints === 1 ? ' hint' : ' hints'));
     if (checks) pomoc.push(checks + (checks === 1 ? ' check' : ' checks'));
     const hn = pomoc.length ? ' with ' + pomoc.join(' and ') : ' without a hint or a check';
+    const seria = jeDnes ? (nacitaj('herons:streak') || {}).pocet || 0 : 0;
     stavEl.innerHTML = '<b>Solved</b>' + s + hn + '. ' + (pomoc.length ? 'Every heron is home.' : 'A clean marsh: every heron is home.')
-      + (jeDnes ? ' A new marsh arrives at midnight, Bratislava time.' : '');
+      + (jeDnes ? ' A new marsh arrives at midnight, Bratislava time.' : '')
+      + (seria >= 1 ? '<span class="oslava-streak">Day ' + seria + ' of your streak.</span>' : '')
+      + '<span class="oslava-dalej"><a href="/games/herons/practice/">Practice sets</a></span>';
     return;
   }
   if (!v.some((y) => y)) { stavEl.textContent = 'Press on a nest and drag to draw its path, or tap the nest and then one cell after another.'; return; }
@@ -585,6 +589,8 @@ function skontroluj() {
   ukazHistoriu();
   ukazPasik();
   track('game_solved', { game: 'herons', day: rezim === 'den' ? datum : sada + '/' + kSada, seconds: sekundy, hints, checks, level: zadanie.uroven });
+  const kontajner = document.querySelector('.hra');
+  if (kontajner) oslava(kontajner, { redukovany: !nastavenia.oslava || window.matchMedia('(prefers-reduced-motion: reduce)').matches });
   return true;
 }
 

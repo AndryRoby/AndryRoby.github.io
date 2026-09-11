@@ -11,15 +11,15 @@
  * give the same garden for the same date (plan.mjs, generator.mjs).
  *
  * Stored in localStorage (all in try/catch, private windows throw):
- *   hedgehogs:YYYY-MM-DD       { v, sec, start, done, hints, t }
+ *   hedgehogs:YYYY-MM-DD       { v, sec, start, done, hints, checks, t }
  *   hedgehogs:p:<set>:<k>      the same for a practice garden
  *   hedgehogs:streak           { posledny: YYYY-MM-DD, pocet }
  *   hedgehogs:settings         the settings panel
  * sec = seconds spent before the current run, start = ms when the current
  * run began (null while paused or before the first move), done = ms of the
- * solve, hints = hints used, t = ms of the last save.
+ * solve, hints and checks = help used, t = ms of the last save.
  * Outgoing events via window.umami, if it runs: game_solved, game_check,
- * game_hint, game_setting. Nothing else leaves the browser, unless the
+ * game_hint, game_setting, game_share. Nothing else leaves the browser, unless the
  * player is signed in (arling.sk account, /style/ucet.js): then every
  * hedgehogs:YYYY-MM-DD save is also pushed to the account (throttled, 2s)
  * and pulled back on load, so the streak and history follow across
@@ -30,6 +30,7 @@ import { zadaniePreDen, zadanieCvicenie, rozbal, tyzden, denVTyzdni, urovenDna, 
 import { todayBratislava, isValidDate } from './generator.mjs';
 import { konflikty, jeVyriesene, porovnaj, napoveda } from './logika.mjs';
 import * as ucet from '/style/ucet.js';
+import { oslava } from '../oslava.js';
 
 const $ = (id) => document.getElementById(id);
 const doska = $('doska');
@@ -48,6 +49,10 @@ const pauzaCas = $('pauza-cas');
 const pasik = $('pasik');
 const urovenEl = $('uroven');
 const historiaEl = $('historia');
+const zdielanieEl = $('zdielanie');
+const zdielajBtn = $('zdielaj');
+const zdielanieStav = $('zdielanie-stav');
+const zdielanieText = $('zdielanie-text');
 
 function track(name, data) { try { if (window.umami && typeof window.umami.track === 'function') window.umami.track(name, data); } catch (e) { /* statistics are not part of the game */ } }
 
@@ -69,7 +74,7 @@ const NASTAVENIA_KLUC = 'hedgehogs:settings';
 // Auto dots are off by default: placing the eight dots around a hedgehog is
 // part of the puzzle. The setting is there for people who want speed.
 // No live judging: nothing turns red while you play (Andrej, 10. 9.); Check is the only judge before the garden is full.
-const NASTAVENIA_PREDVOLENE = { casovac: true, autoBodky: false, potvrditReset: true, pauzaPriOdchode: true };
+const NASTAVENIA_PREDVOLENE = { casovac: true, autoBodky: false, potvrditReset: true, pauzaPriOdchode: true, oslava: true };
 let nastavenia = Object.assign({}, NASTAVENIA_PREDVOLENE, nacitaj(NASTAVENIA_KLUC) || {});
 function ulozNastavenia() { uloz(NASTAVENIA_KLUC, nastavenia); }
 
@@ -132,7 +137,7 @@ async function nacitajZadanie() {
 }
 
 /* ── State ────────────────────────────────────────────────────────────── */
-let zadanie, n, v, start, done, sekundy, hints, ulozene;
+let zadanie, n, v, start, done, sekundy, hints, checks, ulozene;
 const historia = [];
 let fokus = 0;
 let tikac = null;
@@ -280,15 +285,22 @@ function ukazHistoriu() {
 }
 
 /* ── Saving and solving ───────────────────────────────────────────────── */
-function ulozStav() { uloz(KLUC, { v, sec: sekundy, start, done, hints, t: Date.now() }); naplanujOdoslanie(); }
+function ulozStav() { uloz(KLUC, { v, sec: sekundy, start, done, hints, checks, t: Date.now() }); naplanujOdoslanie(); }
 
 function ukazStav() {
   const k = oznacKonflikty();
   stavEl.classList.toggle('ok', !!done);
+  if (zdielanieEl) zdielanieEl.hidden = !done;   // Share only after the garden is finished
   if (done) {
     const s = sekundy ? ' in ' + formatCas(sekundy) : '';
-    const hn = hints ? ' with ' + hints + (hints === 1 ? ' hint' : ' hints') : ' without hints';
-    stavEl.innerHTML = '<b>Solved</b>' + s + hn + '. The hedgehogs are happy.' + (jeDnes ? ' A new garden arrives at midnight.' : '');
+    const pomoc = [];
+    if (hints) pomoc.push(hints + (hints === 1 ? ' hint' : ' hints'));
+    if (checks) pomoc.push(checks + (checks === 1 ? ' check' : ' checks'));
+    const hn = pomoc.length ? ' with ' + pomoc.join(' and ') : ' without a hint or a check';
+    const seria = jeDnes ? (nacitaj('hedgehogs:streak') || {}).pocet || 0 : 0;
+    stavEl.innerHTML = '<b>Solved</b>' + s + hn + '. The hedgehogs are happy.' + (jeDnes ? ' A new garden arrives at midnight.' : '')
+      + (seria >= 1 ? '<span class="oslava-streak">Day ' + seria + ' of your streak.</span>' : '')
+      + '<span class="oslava-dalej"><a href="/games/hedgehogs/practice/">Practice sets</a></span>';
     return;
   }
   if (k.stars === 0) { stavEl.textContent = 'Tap a cell for a dot, tap again for a hedgehog. Drag to sweep dots.'; return; }
@@ -304,6 +316,8 @@ function skontrolujStav() {
   const p = porovnaj(v, zadanie.solution);
   const zle = p.zleJezky.length + p.zleBodky.length;
   if (!p.hedgehogs && !p.dots) { stavEl.textContent = 'Nothing on the board yet.'; return; }
+  checks++;
+  ulozStav();
   if (!zle) {
     zmazOdhalenie();
     stavEl.textContent = 'Everything on the board is right so far: ' + p.hedgehogs + (p.hedgehogs === 1 ? ' hedgehog' : ' hedgehogs') + ' and ' + p.dots + (p.dots === 1 ? ' dot' : ' dots') + '.';
@@ -360,6 +374,57 @@ function ukazNapovedu() {
   track('game_hint', { game: 'hedgehogs', kind: h.druh, applied: false });
 }
 
+/* ── Share ────────────────────────────────────────────────────────────── *
+ * A voluntary step after the garden is finished (ops/spec-hry-ux.md, part
+ * 8). The text names the garden, the time and the hints and checks used,
+ * with no cell of the solution in it, so it cannot spoil the puzzle for
+ * whoever reads it. Nothing is sent anywhere; the text only goes to the
+ * clipboard, and when the browser refuses that, into a box to copy by hand. */
+function odkazNaZahradu() {
+  const b = 'https://arling.sk/games/hedgehogs/';
+  if (rezim === 'cvicenie') return b + 'practice/' + sada + '/' + (kSada === 1 ? '' : kSada + '/');
+  return jeDnes ? b : b + datum + '/';
+}
+function textNaZdielanie() {
+  const kto = rezim === 'cvicenie' ? 'Hedgehogs practice ' + sada + ', garden ' + kSada : 'Hedgehogs ' + datum;
+  const pomoc = [];
+  if (hints) pomoc.push(hints + (hints === 1 ? ' hint' : ' hints'));
+  if (checks) pomoc.push(checks + (checks === 1 ? ' check' : ' checks'));
+  return kto + ' · ' + UROVNE[zadanie.uroven].label + '\n'
+    + 'Solved' + (sekundy ? ' in ' + formatCas(sekundy) : '') + (pomoc.length ? ' with ' + pomoc.join(' and ') : ', clean: no hint, no check') + '\n'
+    + odkazNaZahradu();
+}
+async function skopiruj(text) {
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) { await navigator.clipboard.writeText(text); return true; }
+  } catch (e) { /* an old browser, or a page without permission: the box below */ }
+  try {
+    const t = document.createElement('textarea');
+    t.value = text;
+    t.setAttribute('readonly', '');
+    t.style.position = 'fixed'; t.style.top = '-1000px';
+    document.body.appendChild(t);
+    t.select();
+    const ok = document.execCommand('copy');
+    document.body.removeChild(t);
+    return ok;
+  } catch (e) { return false; }
+}
+if (zdielajBtn) zdielajBtn.addEventListener('click', async () => {
+  if (!done || !zadanie) return;
+  const text = textNaZdielanie();
+  const ok = await skopiruj(text);
+  if (zdielanieStav) zdielanieStav.textContent = ok
+    ? 'Copied. It says nothing about the cells, and nothing was sent anywhere.'
+    : 'This browser would not let the page copy for you. Here is the text, take it from the box.';
+  if (zdielanieText) {
+    zdielanieText.value = text;
+    zdielanieText.hidden = ok;
+    if (!ok) { zdielanieText.focus(); zdielanieText.select(); }
+  }
+  track('game_share', { game: 'hedgehogs', copied: ok, level: zadanie.uroven });
+});
+
 function skontroluj() {
   if (!jeVyriesene(v, zadanie.regions, STARS)) return false;
   sekundy = ubehnute();
@@ -374,7 +439,9 @@ function skontroluj() {
   ulozStav();
   ukazHistoriu();
   ukazPasik();
-  track('game_solved', { game: 'hedgehogs', day: rezim === 'den' ? datum : sada + '/' + kSada, seconds: sekundy, hints, level: zadanie.uroven });
+  track('game_solved', { game: 'hedgehogs', day: rezim === 'den' ? datum : sada + '/' + kSada, seconds: sekundy, hints, checks, level: zadanie.uroven });
+  const kontajner = document.querySelector('.hra');
+  if (kontajner) oslava(kontajner, { redukovany: !nastavenia.oslava || window.matchMedia('(prefers-reduced-motion: reduce)').matches });
   return true;
 }
 
@@ -646,6 +713,7 @@ async function synchronizujUcet() {
         v = cerstve.v.slice();
         done = cerstve.done || null;
         hints = cerstve.hints || 0;
+        checks = cerstve.checks || 0;
         sekundy = cerstve.sec || 0;
         ukazVsetko();
         if (done) { doska.classList.add('hotovo'); zastavTikac(); }
@@ -679,6 +747,7 @@ async function spusti() {
   v = (ulozene && Array.isArray(ulozene.v) && ulozene.v.length === n * n) ? ulozene.v.slice() : new Array(n * n).fill(0);
   done = ulozene && ulozene.done ? ulozene.done : null;
   hints = ulozene && ulozene.hints ? ulozene.hints : 0;
+  checks = ulozene && ulozene.checks ? ulozene.checks : 0;
   sekundy = ulozene && ulozene.sec ? ulozene.sec : 0;
   start = null;
   if (ulozene && ulozene.start && !done) {
