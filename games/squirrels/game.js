@@ -14,19 +14,27 @@
  * carry the packed puzzle for the browser and a line of text for readers
  * without JavaScript.
  *
- * The player's board is two flat n*n arrays:
+ * Ovladanie je od 11. 9. 2026 podla noveho standardu vzoru A
+ * (ops/spec-hry-spolocne.md, cast "Vzor A ... ako Cracking the Cryptic"):
+ * viacnasobny vyber a styri rezimy zadavania. Doska hraca je preto styri
+ * ploche pole dlzky n*n:
  *   v   0 for an empty hollow, 1 to 9 for a number written in it, 0 on trunks
- *   pz  the small notes as a bit mask (bit d means the note d is showing)
+ *   pc  corner marks as a bit mask (bit d means the mark d is showing)
+ *   pn  centre marks as a bit mask
+ *   fa  0 for no colour, 1 to 9 for one of the nine cell colours
  *
  * Stored in localStorage (all in try/catch, private windows throw):
- *   squirrels:YYYY-MM-DD     { v, p, sec, start, done, hints, checks, t }
+ *   squirrels:YYYY-MM-DD     { v, p, c, f, sec, start, done, hints, checks, t }
  *   squirrels:p:<set>:<k>    the same for a practice wood
  *   squirrels:streak         { posledny: YYYY-MM-DD, pocet }
  *   squirrels:nastavenia     the settings panel
- * sec = seconds spent before the current run, start = ms when the current run
- * began (null while paused or before the first move), done = ms of the solve,
- * hints and checks = help used, t = ms of the last save. The history line is
- * counted from the day records themselves, there is no separate one.
+ * `p` is the centre marks and `c` the corner marks: a save from before the new
+ * controls carries only `p`, one grid of notes, and it is read back as centre
+ * marks, which is what the standard asks for. sec = seconds spent before the
+ * current run, start = ms when the current run began (null while paused or
+ * before the first move), done = ms of the solve, hints and checks = help
+ * used, t = ms of the last save. The history line is counted from the day
+ * records themselves, there is no separate one.
  * Outgoing events via window.umami, if it runs: game_solved, game_check,
  * game_hint, game_share, game_setting. Nothing else leaves the browser, unless the player
  * is signed in (arling.sk account, /style/ucet.js): then every
@@ -44,11 +52,11 @@ const $ = (id) => document.getElementById(id);
 const hraEl = $('hra');
 const doska = $('doska');
 const padEl = $('pad');
+const rezimyEl = $('rezimy');
 const stavEl = $('stav');
 const casEl = $('cas');
 const datumEl = $('datum');
 const seriaEl = $('seria');
-const poznamkyBtn = $('poznamky');
 const spatBtn = $('spat');
 const znovaBtn = $('znova');
 const resetBtn = $('reset');
@@ -82,18 +90,38 @@ function vsetkyKluce(prefix) {
   return out;
 }
 
-/* ── Settings ─────────────────────────────────────────────────────────── */
+/* ── Settings ─────────────────────────────────────────────────────────── *
+ * The list and the defaults are the standard's, in the standard's order
+ * (ops/spec-hry-spolocne.md, "Vzor A ... ako Cracking the Cryptic"): they are
+ * the settings Andrej plays Chess Sudoku with. Nothing here judges the board
+ * while you play: Highlight errors (our Live check) is off, and so is Auto
+ * remove restricted notes, because taking a player's own marks away for them
+ * is exactly what he switches off.
+ *   ovladanie          'selection' (cell first, then a number) or 'digit'
+ *   casovac            Display timer
+ *   zvyrazniRovnake    Highlight matching numbers
+ *   tahVyber           'multiple' or 'single' cell selection when dragging
+ *   zapisSoZnackami    'fill' (a number fills a noted cell) or 'note'
+ *   zivaKontrola       Highlight errors
+ *   predvolenyStyl     Default note style, 'corner' or 'centre'
+ *   autoOdstranZnacky  Auto remove restricted notes
+ *   pauzaPriOdchode    Auto pause
+ *   lenPad             Onscreen input only
+ *   potvrditReset      Confirm before Restart
+ * lenPad = "Onscreen input only": the pad under the wood writes, the number
+ * keys of a physical keyboard do not. Arrows, Escape, Undo, Redo and Pause
+ * keep working, so the game stays reachable from the keyboard even with it on. */
 const NASTAVENIA_KLUC = 'squirrels:nastavenia';
-// Auto notes and Live check are off by default: the notes are the player's own,
-// and nothing turns red while you play (Andrej, 10. 9.); Check is the only
-// judge before the last hollow is filled.
-// lenPad = "Onscreen input only": the pad under the wood writes, the number
-// keys of a physical keyboard do not (ops/spec-hry-ux.md, part 7). Arrows,
-// Escape, Undo, Redo and Pause keep working, so the game stays reachable from
-// the keyboard even with it on.
-const NASTAVENIA_PREDVOLENE = { casovac: true, pauzaPriOdchode: true, zvyrazniRovnake: true, autoPoznamky: false, zivaKontrola: false, lenPad: false, potvrditReset: true };
-let nastavenia = Object.assign({}, NASTAVENIA_PREDVOLENE, nacitaj(NASTAVENIA_KLUC) || {});
-function ulozNastavenia() { uloz(NASTAVENIA_KLUC, nastavenia); }
+const NASTAVENIA_VERZIA = 2;   // the controls changed on 11. 9. 2026; an older stored set is not read
+const NASTAVENIA_PREDVOLENE = {
+  ovladanie: 'selection', casovac: true, zvyrazniRovnake: false, tahVyber: 'multiple',
+  zapisSoZnackami: 'fill', zivaKontrola: false, predvolenyStyl: 'corner', autoOdstranZnacky: false,
+  pauzaPriOdchode: true, lenPad: false, potvrditReset: true,
+};
+const ulozeneNastavenia = nacitaj(NASTAVENIA_KLUC);
+let nastavenia = Object.assign({}, NASTAVENIA_PREDVOLENE,
+  ulozeneNastavenia && ulozeneNastavenia.verzia === NASTAVENIA_VERZIA ? ulozeneNastavenia : {});
+function ulozNastavenia() { uloz(NASTAVENIA_KLUC, Object.assign({ verzia: NASTAVENIA_VERZIA }, nastavenia)); }
 
 /* ── Which wood ───────────────────────────────────────────────────────── */
 const dnes = todayBratislava();
@@ -111,6 +139,12 @@ if (body.dataset.sada) {
 const jeDnes = rezim === 'den' && datum === dnes;
 const jeBuduci = rezim === 'den' && datum > dnes;
 const KLUC = rezim === 'cvicenie' ? 'squirrels:p:' + sada + ':' + kSada : 'squirrels:' + datum;
+/* Undo history lives in its own key, never inside the day record. The account
+ * sync sends every day record to the server (odosliStav), and the history of
+ * one board would be by far the biggest thing in that payload; `squirrels:h:`
+ * also fails the isValidDate test in stavVsetkychDni, so it is left out of the
+ * sync by construction. */
+const HISTORIA_KLUC = KLUC.replace('squirrels:', 'squirrels:h:');
 // The root address always opens today's wood; once the date is settled,
 // rewrite it to today's built page so the address bar and a shared link
 // point at the day itself (Andrej, 10. 9.). Only the plain root qualifies:
@@ -135,6 +169,7 @@ function zoznamSlov(a) {
   if (a.length === 2) return a[0] + ' and ' + a[1];
   return a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1];
 }
+function cifryZMasky(m) { const out = []; for (let d = 1; d <= 9; d++) if (m & (1 << d)) out.push(d); return out; }
 
 /* ── Loading the wood ─────────────────────────────────────────────────── */
 function vlozene() {
@@ -159,11 +194,17 @@ async function nacitajZadanie() {
 }
 
 /* ── State ────────────────────────────────────────────────────────────── */
-let zadanie, n, beh, v, pz, start, done, sekundy, hints, checks, ulozene;
+let zadanie, n, beh, v, pc, pn, fa, start, done, sekundy, hints, checks, ulozene;
 let undoStack = [];
 let redoStack = [];
-let vybrana = -1;           // the hollow the pad and the keyboard write into
-let poznamkyRezim = false;  // Notes: the pad writes the small numbers
+const vyber = new Set();    // the picked hollows, by cell index; a set, never one number
+let kotva = -1;             // the hollow that carries the focus and the arrow keys
+/* Entry modes, exactly the four of the standard. Z, X, C, V pick one, the
+ * space bar cycles, a held Shift is Corner and a held Ctrl is Centre for as
+ * long as it is held. */
+const REZIMY = ['normal', 'corner', 'centre', 'colour'];
+let rezimZadania = 'normal';
+let cifraVRuke = -1;        // Digit first: the number waiting on the pad, -1 for none
 let tikac = null;
 let necinnost = null;
 let pauza = false;
@@ -211,14 +252,23 @@ function postavMriezku() {
         b.dataset.i = i;
         b.dataset.v = '0';
         b.setAttribute('role', 'gridcell');
+        b.setAttribute('aria-selected', 'false');
         b.tabIndex = -1;
         const cif = document.createElement('span');
         cif.className = 'cif';
         b.appendChild(cif);
-        const p = document.createElement('span');
-        p.className = 'pozn';
-        for (let d = 1; d <= 9; d++) { const t = document.createElement('i'); t.textContent = d; p.appendChild(t); }
-        b.appendChild(p);
+        // Corner marks: nine fixed places in the order sudokupad uses, left
+        // top, right top, left bottom, right bottom, top, bottom, left,
+        // right, middle. The marks themselves are sorted and dropped into
+        // those places in turn, so two marks always sit in the two top
+        // corners whatever the numbers are.
+        const rohy = document.createElement('span');
+        rohy.className = 'rohy';
+        for (let s = 0; s < 9; s++) rohy.appendChild(document.createElement('i'));
+        b.appendChild(rohy);
+        const stred = document.createElement('span');
+        stred.className = 'stred';
+        b.appendChild(stred);
         riadok.appendChild(b);
         bunky.push(b); kmene.push(null); znacky.push(null);
       }
@@ -258,11 +308,26 @@ function ukazBunku(i) {
   const val = v[i] || 0;
   b.dataset.v = String(val);
   b.firstChild.textContent = val ? String(val) : '';
-  const noty = b.querySelector('.pozn').children;
-  for (let d = 1; d <= 9; d++) noty[d - 1].classList.toggle('on', !val && !!(pz[i] & (1 << d)));
-  const zoznam = [];
-  if (!val) for (let d = 1; d <= 9; d++) if (pz[i] & (1 << d)) zoznam.push(d);
-  b.setAttribute('aria-label', suradnice(i) + ', ' + (val ? val + (val === 1 ? ' acorn' : ' acorns') : zoznam.length ? 'empty, noted ' + zoznam.join(' ') : 'empty'));
+  // Number entry with noted cells: Fill cell. The number covers the marks of
+  // its hollow, it does not take them away; Delete gives them back.
+  const rohy = cifryZMasky(pc[i]);
+  const rohyEl = b.querySelector('.rohy');
+  const iSlot = rohyEl.children;
+  for (let s = 0; s < 9; s++) iSlot[s].textContent = s < rohy.length ? String(rohy[s]) : '';
+  // how many corner marks there are decides how big they may be, the same way
+  // the centre marks already shrink as they grow
+  rohyEl.dataset.k = String(rohy.length);
+  const stred = cifryZMasky(pn[i]);
+  const stredEl = b.querySelector('.stred');
+  stredEl.textContent = stred.join('');
+  stredEl.dataset.k = String(stred.length);
+  if (fa[i]) b.dataset.f = String(fa[i]); else b.removeAttribute('data-f');
+  const casti = [];
+  if (val) casti.push(val + (val === 1 ? ' acorn' : ' acorns'));
+  if (rohy.length) casti.push('corner marks ' + rohy.join(' '));
+  if (stred.length) casti.push('centre marks ' + stred.join(' '));
+  if (fa[i]) casti.push('colour ' + fa[i]);
+  b.setAttribute('aria-label', suradnice(i) + ', ' + (casti.length ? casti.join(', ') : 'empty'));
 }
 /* A soft visual cue only, not a judgement: a run whose hollows are all filled,
  * add up to the total on its sign and use no number twice goes quiet. It says
@@ -296,19 +361,37 @@ function oznacSplnene() {
     b.classList.toggle('stlmena', !!v[i] && (a < 0 || !!hotovyBeh[a]) && (d < 0 || !!hotovyBeh[d]));
   }
 }
-/* The picked hollow, its two runs, and (when the setting is on) every hollow
- * that holds the same number. */
+/* The picked hollows. The two runs through a hollow are shaded only when a
+ * single hollow is picked: with several picked, that shading would cover half
+ * the wood and say nothing (the standard: units are shaded for one cell). */
 function oznacVyber() {
-  for (const b of bunky) if (b) b.classList.remove('vybrana', 'beh', 'rovnaka');
-  if (vybrana < 0 || !bunky[vybrana]) return;
-  for (const k of [beh.cellRuns[2 * vybrana], beh.cellRuns[2 * vybrana + 1]]) {
-    if (k < 0) continue;
-    for (const i of beh.runs[k].cells) if (bunky[i]) bunky[i].classList.add('beh');
+  for (const b of bunky) if (b) { b.classList.remove('vybrana', 'beh', 'rovnaka', 'vh', 'vp', 'vd', 'vl'); b.setAttribute('aria-selected', 'false'); }
+  if (!vyber.size) return;
+  if (vyber.size === 1) {
+    const i = [...vyber][0];
+    for (const k of [beh.cellRuns[2 * i], beh.cellRuns[2 * i + 1]]) {
+      if (k < 0) continue;
+      for (const j of beh.runs[k].cells) if (bunky[j]) bunky[j].classList.add('beh');
+    }
+    if (nastavenia.zvyrazniRovnake && v[i]) {
+      for (let j = 0; j < n * n; j++) if (bunky[j] && v[j] === v[i]) bunky[j].classList.add('rovnaka');
+    }
   }
-  if (nastavenia.zvyrazniRovnake && v[vybrana]) {
-    for (let i = 0; i < n * n; i++) if (bunky[i] && v[i] === v[vybrana]) bunky[i].classList.add('rovnaka');
+  /* One outline round the whole picked shape, the way sudokupad draws it: a
+   * side is drawn only where the hollow next to it is not picked too, so two
+   * picked neighbours share one hairline instead of standing back to back with
+   * two frames between them. */
+  for (const i of vyber) {
+    const b = bunky[i];
+    if (!b) continue;
+    b.classList.add('vybrana');
+    b.setAttribute('aria-selected', 'true');
+    const r = (i / n) | 0, c = i % n;
+    if (!(r > 0 && vyber.has(i - n))) b.classList.add('vh');
+    if (!(c < n - 1 && vyber.has(i + 1))) b.classList.add('vp');
+    if (!(r < n - 1 && vyber.has(i + n))) b.classList.add('vd');
+    if (!(c > 0 && vyber.has(i - 1))) b.classList.add('vl');
   }
-  bunky[vybrana].classList.add('vybrana');
 }
 function ukazVsetko() {
   for (let i = 0; i < n * n; i++) ukazBunku(i);
@@ -328,48 +411,88 @@ function zmazOdhalenie() {
   for (const b of bunky) if (b) b.classList.remove('chyba');
   if (checkBtn) checkBtn.textContent = 'Check';
 }
-/* Live check is off by default; when it is on, a wrong number is marked as
- * soon as it is written, with a frame and a mark, not by colour alone. */
+/* Highlight errors is off by default; when it is on, a wrong number is marked
+ * as soon as it is written, with a frame and a mark, not by colour alone. */
 function zivaKontrola() {
   if (!nastavenia.zivaKontrola || done || !zadanie) return;
   const p = porovnaj(v, zadanie.solution);
   for (const i of p.zle) if (bunky[i]) bunky[i].classList.add('chyba');
 }
 
-/* ── What still fits in a hollow ──────────────────────────────────────── *
- * Used by Auto notes: a number fits when no other hollow of the run across or
- * the run down already holds it, and when what is left of the total can still
- * be made out of numbers 1 to 9 that the run has not used. Honest but plain:
- * it is the same reading a person does, not the full solver. */
-function medzeSuctu(pocet, pouzite) {
-  let lo = 0, hi = 0, a = 0, b = 0;
-  for (let d = 1; d <= 9 && a < pocet; d++) if (!(pouzite & (1 << d))) { lo += d; a++; }
-  for (let d = 9; d >= 1 && b < pocet; d--) if (!(pouzite & (1 << d))) { hi += d; b++; }
-  return a < pocet || b < pocet ? null : { lo, hi };
+/* ── The selection ────────────────────────────────────────────────────── *
+ * A set of cell indexes, never a single number: a click picks one hollow, a
+ * drag picks the hollows it runs over, Ctrl (Cmd) plus a click adds or takes
+ * one away, Ctrl plus an arrow grows the selection, Escape lets it all go. */
+function vyberJednu(i) {
+  vyber.clear();
+  if (bunky[i]) vyber.add(i);
+  kotva = i;
+  oznacVyber();
 }
-function pasujeDoBehu(run, i, d) {
-  if (!run) return true;
-  let sucet = 0, prazdne = 0, pouzite = 1 << d;
-  for (const j of run.cells) {
-    if (j === i) continue;
-    if (v[j]) { if (v[j] === d) return false; if (pouzite & (1 << v[j])) return false; pouzite |= 1 << v[j]; sucet += v[j]; }
-    else prazdne++;
+function vyberPridaj(i) {
+  if (!bunky[i]) return;
+  vyber.add(i);
+  kotva = i;
+  oznacVyber();
+}
+function vyberPrepni(i) {
+  if (!bunky[i]) return;
+  if (vyber.has(i)) vyber.delete(i); else vyber.add(i);
+  kotva = i;
+  oznacVyber();
+}
+function vyberZrus() {
+  if (!vyber.size) return;
+  vyber.clear();
+  oznacVyber();
+}
+/* Roving tabindex: exactly one hollow is in the page's tab order (WAI-ARIA
+ * grid pattern), and it is the one the arrows last left. */
+function zameraj(i, fokus) {
+  if (i < 0 || !bunky[i]) return;
+  for (const b of bunky) if (b) b.tabIndex = -1;
+  kotva = i;
+  bunky[i].tabIndex = 0;
+  if (fokus) bunky[i].focus({ preventScroll: true });
+}
+/* The next hollow in a direction, wrapping round the edge of the wood: down
+ * on the last row comes back to the top, as the standard asks. Trunks are
+ * stepped over. */
+function dalsia(i, dr, dc) {
+  let r = (i / n) | 0, c = i % n;
+  for (let k = 0; k < n * n; k++) {
+    r = (r + dr + n) % n; c = (c + dc + n) % n;
+    const j = r * n + c;
+    if (bunky[j]) return j;
   }
-  if (run.sum == null) return true;
-  const zvysok = run.sum - sucet - d;
-  if (!prazdne) return zvysok === 0;
-  const m = medzeSuctu(prazdne, pouzite);
-  return !!m && zvysok >= m.lo && zvysok <= m.hi;
+  return -1;
 }
-function moznostiBunky(i) {
-  const a = beh.cellRuns[2 * i] >= 0 ? beh.runs[beh.cellRuns[2 * i]] : null;
-  const b = beh.cellRuns[2 * i + 1] >= 0 ? beh.runs[beh.cellRuns[2 * i + 1]] : null;
-  let m = 0;
-  for (let d = 1; d <= 9; d++) if (pasujeDoBehu(a, i, d) && pasujeDoBehu(b, i, d)) m |= 1 << d;
-  return m;
+
+/* ── What the modes do ────────────────────────────────────────────────── */
+function nastavRezim(r) {
+  if (!REZIMY.includes(r)) return;
+  rezimZadania = r;
+  if (hraEl) hraEl.dataset.rezim = r;
+  if (padEl) padEl.dataset.rezim = r;
+  if (rezimyEl) for (const b of rezimyEl.querySelectorAll('button[data-rezim]')) b.setAttribute('aria-pressed', b.dataset.rezim === r ? 'true' : 'false');
 }
-function doplnPoznamky() {
-  for (let i = 0; i < n * n; i++) if (bunky[i]) pz[i] = v[i] ? 0 : moznostiBunky(i);
+function cyklujRezim() { nastavRezim(REZIMY[(REZIMY.indexOf(rezimZadania) + 1) % REZIMY.length]); }
+/* N keeps its old job in the new world: it walks the two note styles and back
+ * to Normal, starting from the Default note style. */
+function cyklujZnacky() {
+  /* Poradie sa odvija od predvolby, nie od napevno zapisanych krokov. */
+  const prvy = nastavenia.predvolenyStyl === 'centre' ? 'centre' : 'corner';
+  const druhy = prvy === 'centre' ? 'corner' : 'centre';
+  if (rezimZadania === prvy) nastavRezim(druhy);
+  else if (rezimZadania === druhy) nastavRezim('normal');
+  else nastavRezim(prvy);
+}
+/* A held Shift is Corner and a held Ctrl is Centre, for that one keystroke. */
+function rezimPreUdalost(e) {
+  if (!e) return rezimZadania;
+  if (e.shiftKey) return 'corner';
+  if (e.ctrlKey || e.metaKey) return 'centre';
+  return rezimZadania;
 }
 
 /* ── Time ─────────────────────────────────────────────────────────────── */
@@ -483,7 +606,62 @@ function ukazHistoriu() {
 }
 
 /* ── Saving and solving ───────────────────────────────────────────────── */
-function ulozStav() { uloz(KLUC, { v, p: pz, sec: sekundy, start, done, hints, checks, t: Date.now() }); naplanujOdoslanie(); }
+function ulozStav() { uloz(KLUC, { v, p: pn, c: pc, f: fa, sec: sekundy, start, done, hints, checks, t: Date.now() }); ulozHistoriu(); naplanujOdoslanie(); }
+/* Undo and Redo survive a reload too, because the standard counts the Undo
+ * history as part of the saved state. A snapshot is written sparsely, only the
+ * hollows that hold something, as index.value in base 36, so a board in the
+ * middle of a game costs a few hundred characters instead of a few thousand.
+ * The stack in memory stays unlimited; only what is written out is cut, first
+ * by count and then by length, so a long session can never fill the browser's
+ * storage and push the board itself out of it. */
+const HISTORIA_MAX = 60;
+const HISTORIA_ZNAKOV = 120000;
+function zbalPole(a) {
+  let s = '';
+  for (let i = 0; i < a.length; i++) if (a[i]) s += (s ? ' ' : '') + i.toString(36) + '.' + a[i].toString(36);
+  return s;
+}
+function rozbalPole(s, dlzka) {
+  const a = new Array(dlzka).fill(0);
+  if (typeof s !== 'string' || !s) return a;
+  for (const c of s.split(' ')) {
+    const j = c.indexOf('.');
+    if (j < 1) continue;
+    const i = parseInt(c.slice(0, j), 36), x = parseInt(c.slice(j + 1), 36);
+    if (i >= 0 && i < dlzka && x > 0) a[i] = x;
+  }
+  return a;
+}
+function zbalStav(s) { return [zbalPole(s.v), zbalPole(s.c), zbalPole(s.p), zbalPole(s.f)]; }
+function rozbalStav(z, dlzka) {
+  if (!Array.isArray(z) || z.length !== 4) return null;
+  return { v: rozbalPole(z[0], dlzka), c: rozbalPole(z[1], dlzka), p: rozbalPole(z[2], dlzka), f: rozbalPole(z[3], dlzka) };
+}
+function zmazHistoriu() {
+  undoStack = []; redoStack = [];
+  try { localStorage.removeItem(HISTORIA_KLUC); } catch (e) { /* the game runs without storage */ }
+}
+function ulozHistoriu() {
+  if (!n || done || (!undoStack.length && !redoStack.length)) {
+    try { localStorage.removeItem(HISTORIA_KLUC); } catch (e) { /* the game runs without storage */ }
+    return;
+  }
+  const u = undoStack.slice(-HISTORIA_MAX).map(zbalStav);
+  const r = redoStack.slice(-HISTORIA_MAX).map(zbalStav);
+  let text = JSON.stringify({ n, u, r, t: Date.now() });
+  // the furthest step goes first: the Redo nobody will reach, then the oldest Undo
+  while (text.length > HISTORIA_ZNAKOV && u.length + r.length > 1) {
+    if (r.length > u.length) r.shift(); else u.shift();
+    text = JSON.stringify({ n, u, r, t: Date.now() });
+  }
+  try { localStorage.setItem(HISTORIA_KLUC, text); } catch (e) { /* the game runs without storage */ }
+}
+function nacitajHistoriu() {
+  const h = nacitaj(HISTORIA_KLUC);
+  if (!h || h.n !== n || !Array.isArray(h.u) || !Array.isArray(h.r)) { zmazHistoriu(); return; }
+  undoStack = h.u.map((z) => rozbalStav(z, n * n)).filter(Boolean);
+  redoStack = h.r.map((z) => rozbalStav(z, n * n)).filter(Boolean);
+}
 
 function ukazStav() {
   oznacSplnene();
@@ -500,7 +678,7 @@ function ukazStav() {
     return;
   }
   const napisane = v.reduce((a, x) => a + (x ? 1 : 0), 0);
-  if (!napisane) { stavEl.textContent = 'Pick a hollow, then a number from the pad.'; return; }
+  if (!napisane) { stavEl.textContent = 'Pick a hollow, or drag across several, then a number from the pad.'; return; }
   let prazdne = 0;
   for (let i = 0; i < n * n; i++) if (bunky[i] && !v[i]) prazdne++;
   if (!prazdne) { stavEl.textContent = 'Every hollow holds a number, but the wood is not right yet. Check shows where.'; return; }
@@ -571,17 +749,20 @@ if (zdielajBtn) zdielajBtn.addEventListener('click', async () => {
 /* ── Check, in two steps ──────────────────────────────────────────────── *
  * The first press says how many numbers are wrong and in which rows; only the
  * second press marks them. The puzzle stays a puzzle unless you ask twice.
- * When a hollow is picked, only the two runs through it are checked, which is
- * how a crossword checks one word (ops/spec-hry-ux.md, part 4). */
+ * When a single hollow is picked, only the two runs through it are checked,
+ * which is how a crossword checks one word (ops/spec-hry-ux.md, part 4). */
 function rozsahCheck() {
-  if (vybrana >= 0 && bunky[vybrana]) {
-    const set = new Set();
-    for (const k of [beh.cellRuns[2 * vybrana], beh.cellRuns[2 * vybrana + 1]]) {
-      if (k < 0) continue;
-      for (const i of beh.runs[k].cells) set.add(i);
+  if (vyber.size === 1) {
+    const jedna = [...vyber][0];
+    if (bunky[jedna]) {
+      const set = new Set();
+      for (const k of [beh.cellRuns[2 * jedna], beh.cellRuns[2 * jedna + 1]]) {
+        if (k < 0) continue;
+        for (const i of beh.runs[k].cells) set.add(i);
+      }
+      const cells = [...set];
+      if (cells.some((i) => v[i])) return { cells, kde: ' in the two runs through the hollow you picked' };
     }
-    const cells = [...set];
-    if (cells.some((i) => v[i])) return { cells, kde: ' in the two runs through the hollow you picked' };
   }
   return { cells: null, kde: '' };
 }
@@ -644,16 +825,17 @@ const VETY = {
 function ukazNapovedu() {
   if (done || pauza) return;
   if (tip && tipUkazany) {
-    // second press: write it
+    // second press: write it. A hint writes into one hollow only, and it
+    // writes a real number, so the marks of that hollow go with it.
     const t = tip;
     hints++;   // counted before the move, so the save inside it carries the new number
     const zmenilo = zmenaStavu(() => {
       for (const x of t.bunky) {
         v[x.i] = x.val;
-        pz[x.i] = 0;
-        if (x.val) vyskrtniPoznamky(x.i, x.val);
+        pc[x.i] = 0;
+        pn[x.i] = 0;
+        if (x.val && nastavenia.autoOdstranZnacky) vyskrtniZnacky(x.i, x.val);
       }
-      if (nastavenia.autoPoznamky) doplnPoznamky();
     });
     const text = t.druh === 'chyba' ? t.text.replace('Clear it before going on.', 'It is cleared now.') : t.text;
     zmazTip(); zmazOdhalenie();
@@ -673,6 +855,7 @@ function ukazNapovedu() {
     if (kmene[run.clue]) kmene[run.clue].classList.add('tip-beh');
   }
   for (const x of h.bunky) if (bunky[x.i]) bunky[x.i].classList.add('tip');
+  vyberJednu(i);
   zameraj(i, false);
   const veta = VETY[h.pravidlo] || VETY.reveal;
   const chyba = h.druh === 'chyba';
@@ -690,8 +873,7 @@ function skontroluj() {
   nastavNecinnost();
   doska.classList.add('hotovo');
   zmazTip(); zmazOdhalenie();
-  vybrana = -1;              // the finished wood is green all over, not one picked hollow
-  oznacVyber();
+  vyberZrus();               // the finished wood is green all over, not one picked hollow
   ukazCas();
   zapisSeriu();
   ukazSeriu();
@@ -705,23 +887,24 @@ function skontroluj() {
 /* ── Moves ────────────────────────────────────────────────────────────── *
  * Every change to the board goes through zmenaStavu: it keeps the whole board
  * before and after, so Undo and Redo are one shared stack with no limit and
- * Clear is undone by a single Undo (ops/spec-hry-ux.md, part 3). */
+ * Restart is undone by a single Undo (ops/spec-hry-ux.md, part 3). */
 function ukazTlacidla() {
   if (spatBtn) spatBtn.disabled = !undoStack.length || !!done;
   if (znovaBtn) znovaBtn.disabled = !redoStack.length || !!done;
-  if (poznamkyBtn) poznamkyBtn.setAttribute('aria-pressed', poznamkyRezim ? 'true' : 'false');
-  if (hraEl) hraEl.classList.toggle('poznamky', poznamkyRezim);
 }
+function odfotStav() { return { v: v.slice(), c: pc.slice(), p: pn.slice(), f: fa.slice() }; }
+function nastavStav(s) { v = s.v.slice(); pc = s.c.slice(); pn = s.p.slice(); fa = s.f.slice(); }
 function rovnake(a, b) {
   if (a.length !== b.length) return false;
   for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
   return true;
 }
+function rovnakeStavy(a, b) { return rovnake(a.v, b.v) && rovnake(a.c, b.c) && rovnake(a.p, b.p) && rovnake(a.f, b.f); }
 function zmenaStavu(fn) {
   if (done || pauza) return false;
-  const pred = { v: v.slice(), p: pz.slice() };
+  const pred = odfotStav();
   fn();
-  if (rovnake(v, pred.v) && rovnake(pz, pred.p)) return false;
+  if (rovnakeStavy(odfotStav(), pred)) return false;
   undoStack.push(pred);
   redoStack.length = 0;
   poTahu();
@@ -737,50 +920,67 @@ function poTahu() {
   ukazTlacidla();
   nastavNecinnost();
 }
-/* Writing a number takes it out of the notes of every other hollow of its two
- * runs: no number repeats inside a run (ops/spec-hry-ux.md, part 2). */
-function vyskrtniPoznamky(i, d) {
+/* Auto remove restricted notes, off by default (Andrej plays without it):
+ * with it on, a number written into a hollow takes the same mark out of every
+ * other hollow of its two runs, corner and centre alike. */
+function vyskrtniZnacky(i, d) {
   for (const k of [beh.cellRuns[2 * i], beh.cellRuns[2 * i + 1]]) {
     if (k < 0) continue;
-    for (const j of beh.runs[k].cells) if (j !== i) pz[j] &= ~(1 << d);
+    for (const j of beh.runs[k].cells) if (j !== i) { pc[j] &= ~(1 << d); pn[j] &= ~(1 << d); }
   }
 }
-function nastav(i, d) {
-  if (done || pauza || i < 0 || !bunky[i]) return;
-  if (v[i] === d && !pz[i]) return;
+function ciele() { return [...vyber].filter((i) => bunky[i]); }
+/* One number, every picked hollow, by mode. In Normal the same number again
+ * takes it back, in Corner and Centre the mark is switched on unless every
+ * picked hollow already has it, in Colour the same colour again takes it off:
+ * the way back is always the same key twice. */
+function zapisCifru(d, r) {
+  if (done || pauza || !d) return;
+  const c = ciele();
+  if (!c.length) { stavEl.textContent = 'Pick a hollow first, then a number.'; return; }
+  if (r === 'colour') {
+    const maju = c.every((i) => fa[i] === d);
+    zmenaStavu(() => { for (const i of c) fa[i] = maju ? 0 : d; });
+    return;
+  }
+  if (r === 'corner' || r === 'centre') {
+    const pole = r === 'corner' ? pc : pn;
+    const maju = c.every((i) => pole[i] & (1 << d));
+    zmenaStavu(() => { for (const i of c) { if (maju) pole[i] &= ~(1 << d); else pole[i] |= 1 << d; } });
+    return;
+  }
+  // Normal. With "Number entry with noted cells: Add note" a hollow that
+  // already carries marks takes another mark instead of the number; the
+  // default, Fill cell, writes the number and lets the marks hide under it.
+  if (nastavenia.zapisSoZnackami === 'note' && c.every((i) => !v[i] && (pc[i] || pn[i]))) {
+    zapisCifru(d, nastavenia.predvolenyStyl === 'centre' ? 'centre' : 'corner');
+    return;
+  }
+  const maju = c.every((i) => v[i] === d);
   zmenaStavu(() => {
-    v[i] = d;
-    pz[i] = 0;              // a number and its notes go together
-    if (d) vyskrtniPoznamky(i, d);
-    if (nastavenia.autoPoznamky) doplnPoznamky();
+    for (const i of c) {
+      v[i] = maju ? 0 : d;
+      if (!maju && nastavenia.autoOdstranZnacky) vyskrtniZnacky(i, d);
+    }
   });
 }
-function prepniPoznamku(i, d) {
-  if (done || pauza || i < 0 || !bunky[i] || !d) return;
-  zmenaStavu(() => { v[i] = 0; pz[i] ^= 1 << d; });
-}
-/* The pad and the keyboard write the same way: the same number again takes it
- * back, so the way to an empty hollow is always one tap (part 1). */
-function zapis(d) {
-  if (vybrana < 0 || !bunky[vybrana]) return;
-  if (!d) { nastav(vybrana, 0); return; }
-  if (poznamkyRezim) { prepniPoznamku(vybrana, d); return; }
-  nastav(vybrana, v[vybrana] === d ? 0 : d);
-}
-/* Ten istý zápis s otočeným režimom. Shift plus cifra a dlhé podržanie cifry
- * na pade robia to isté: v Notes mode zapíšu skutočnú hodnotu, mimo neho
- * poznámku, a režim pritom neprepnú (ops/spec-hry-ux.md, časti 1 a 2). */
-function zapisOpacne(d) {
-  if (vybrana < 0 || !bunky[vybrana] || !d) return;
-  if (poznamkyRezim) nastav(vybrana, v[vybrana] === d ? 0 : d);
-  else prepniPoznamku(vybrana, d);
+/* Delete and Backspace, in the order the standard sets: the numbers first,
+ * then the marks (corner and centre together), then the colour. Marks hidden
+ * under a number come back with the number's own Delete, because Fill cell
+ * only covers them. */
+function zmazVybrane() {
+  if (done || pauza) return;
+  const c = ciele();
+  if (!c.length) return;
+  if (c.some((i) => v[i])) { zmenaStavu(() => { for (const i of c) v[i] = 0; }); return; }
+  if (c.some((i) => pc[i] || pn[i])) { zmenaStavu(() => { for (const i of c) { pc[i] = 0; pn[i] = 0; } }); return; }
+  zmenaStavu(() => { for (const i of c) fa[i] = 0; });
 }
 
 function spat() {
   if (done || pauza || !undoStack.length) return;
-  redoStack.push({ v: v.slice(), p: pz.slice() });
-  const s = undoStack.pop();
-  v = s.v; pz = s.p;
+  redoStack.push(odfotStav());
+  nastavStav(undoStack.pop());
   zmazTip(); zmazOdhalenie();
   ukazVsetko();
   if (!skontroluj()) { ulozStav(); zivaKontrola(); }
@@ -789,49 +989,74 @@ function spat() {
 }
 function znova() {
   if (done || pauza || !redoStack.length) return;
-  undoStack.push({ v: v.slice(), p: pz.slice() });
-  const s = redoStack.pop();
-  v = s.v; pz = s.p;
+  undoStack.push(odfotStav());
+  nastavStav(redoStack.pop());
   zmazTip(); zmazOdhalenie();
   ukazVsetko();
   if (!skontroluj()) { ulozStav(); zivaKontrola(); }
   ukazStav();
   ukazTlacidla();
 }
-/* Clear: an empty wood, the clock keeps running (Andrej, 10. 9.: clearing is a
- * move, not a restart). One Undo brings every number back. */
-function reset() {
+/* Restart: the wood as it was given, with every number, mark and colour gone
+ * and the clock still running (Andrej, 10. 9.: clearing is a move, not a
+ * restart of the day). One Undo brings everything back. */
+function restart() {
   if (done || pauza) return;
-  if (v.every((x) => !x) && pz.every((x) => !x)) return;
-  if (nastavenia.potvrditReset && !window.confirm('Clear the whole wood? The clock keeps running and one Undo brings your numbers back.')) return;
-  zmenaStavu(() => { v = new Array(n * n).fill(0); pz = new Array(n * n).fill(0); });
+  if (v.every((x) => !x) && pc.every((x) => !x) && pn.every((x) => !x) && fa.every((x) => !x)) return;
+  if (nastavenia.potvrditReset && !window.confirm('Restart the wood? Every number, mark and colour goes; the clock keeps running and one Undo brings them back.')) return;
+  zmenaStavu(() => {
+    v = new Array(n * n).fill(0);
+    pc = new Array(n * n).fill(0);
+    pn = new Array(n * n).fill(0);
+    fa = new Array(n * n).fill(0);
+  });
 }
 
 /* ── Pointer ──────────────────────────────────────────────────────────── *
- * A tap picks a hollow. A drag that starts on a hollow which already holds a
- * number writes that same number into the empty hollows it runs over, and
- * touches nothing that is already written (ops/spec-hry-ux.md, pattern A). */
+ * A click or a tap picks one hollow, a drag picks every hollow it runs over
+ * ("Cell selection when dragging: select multiple cells"), Ctrl or Cmd plus a
+ * click adds one to the selection or takes it away. With Control method set
+ * to Digit first the pad holds a number and the taps write it. */
 function bunkaPod(e) {
   const el = document.elementFromPoint(e.clientX, e.clientY);
   const b = el && el.closest ? el.closest('.b') : null;
   return b && doska.contains(b) ? +b.dataset.i : -1;
 }
-let tah = null; // { start, maloval, hodnota, id }
+let tah = null; // { id, rezim: 'vyber' | 'pisanie' }
 doska.addEventListener('pointerdown', (e) => {
   if (done || pauza || (e.pointerType === 'mouse' && e.button !== 0)) return;
   const i = bunkaPod(e);
-  if (i < 0) return;
-  zameraj(i, true);
-  tah = { start: i, maloval: false, hodnota: v[i] || 0, id: e.pointerId };
+  if (i < 0) { if (!e.ctrlKey && !e.metaKey) vyberZrus(); return; }
+  if (nastavenia.ovladanie === 'digit' && cifraVRuke >= 0) {
+    vyberJednu(i);
+    zameraj(i, true);
+    if (cifraVRuke === 0) zmazVybrane(); else zapisCifru(cifraVRuke, rezimZadania);
+    tah = { id: e.pointerId, rezim: 'pisanie' };
+  } else {
+    // Ctrl (Cmd) adds a hollow or takes it out again, and only Ctrl: a held
+    // Shift writes a corner mark, so it must not quietly grow the selection
+    // as well. The standard and the other two games give this to Ctrl alone.
+    if (e.ctrlKey || e.metaKey) vyberPrepni(i);
+    else vyberJednu(i);
+    zameraj(i, true);
+    tah = { id: e.pointerId, rezim: 'vyber' };
+  }
   try { doska.setPointerCapture(e.pointerId); } catch (err) { /* works without capture too, less smoothly */ }
   e.preventDefault();
 });
 doska.addEventListener('pointermove', (e) => {
-  if (!tah || tah.id !== e.pointerId || done || pauza || !tah.hodnota) return;
+  if (!tah || tah.id !== e.pointerId || done || pauza) return;
   const i = bunkaPod(e);
-  if (i < 0 || i === tah.start) return;
-  tah.maloval = true;
-  if (!v[i]) nastav(i, tah.hodnota);
+  if (i < 0 || i === kotva) return;
+  if (tah.rezim === 'pisanie') {
+    vyberJednu(i);
+    zameraj(i, false);
+    if (cifraVRuke === 0) zmazVybrane(); else zapisCifru(cifraVRuke, rezimZadania);
+    return;
+  }
+  if (nastavenia.tahVyber === 'single') { vyberJednu(i); zameraj(i, false); return; }
+  vyberPridaj(i);
+  zameraj(i, false);
 });
 function koniecTahu(e) {
   if (!tah || tah.id !== e.pointerId) return;
@@ -845,132 +1070,107 @@ doska.addEventListener('focusin', (e) => {
   const b = e.target && e.target.closest ? e.target.closest('.b') : null;
   if (!b) return;
   const i = +b.dataset.i;
-  if (i !== vybrana) { vybrana = i; oznacVyber(); }
+  kotva = i;
+  if (!vyber.size) vyberJednu(i);
 });
 
-/* ── Keyboard ─────────────────────────────────────────────────────────── *
- * Arrows walk from hollow to hollow (trunks are stepped over), the digits
- * write, Shift plus a digit writes a note without leaving the pad, N or Enter
- * switches notes, Delete empties the hollow, Escape lets it go (pattern A). */
-function zameraj(i, fokus) {
-  if (i < 0 || !bunky[i]) return;
-  for (const b of bunky) if (b) b.tabIndex = -1;
-  vybrana = i;
-  bunky[i].tabIndex = 0;
-  if (fokus) bunky[i].focus({ preventScroll: true });
-  oznacVyber();
+/* ── The number pad and the four mode buttons ─────────────────────────── */
+function ukazCifruVRuke() {
+  if (!padEl) return;
+  for (const b of padEl.querySelectorAll('button[data-d]')) b.setAttribute('aria-pressed', nastavenia.ovladanie === 'digit' && +b.dataset.d === cifraVRuke ? 'true' : 'false');
 }
-function dalsia(i, dr, dc) {
-  let r = (i / n) | 0, c = i % n;
-  for (let k = 0; k < n; k++) {
-    r = (r + dr + n) % n; c = (c + dc + n) % n;
-    const j = r * n + c;
-    if (bunky[j]) return j;
-  }
-  return -1;
-}
-doska.addEventListener('keydown', (e) => {
-  if (done || pauza) return;
-  const i = vybrana;
-  let ciel = -1;
-  switch (e.key) {
-    case 'ArrowUp': ciel = dalsia(i, -1, 0); break;
-    case 'ArrowDown': ciel = dalsia(i, 1, 0); break;
-    case 'ArrowLeft': ciel = dalsia(i, 0, -1); break;
-    case 'ArrowRight': ciel = dalsia(i, 0, 1); break;
-    case 'Enter': case 'n': case 'N':
-      poznamkyRezim = !poznamkyRezim; ukazTlacidla(); e.preventDefault(); return;
-    case 'Escape':
-      if (vybrana >= 0) { const b = bunky[vybrana]; vybrana = -1; oznacVyber(); if (b) b.blur(); e.preventDefault(); }
-      return;
-    case 'Delete': case 'Backspace': case '0':
-      if (nastavenia.lenPad) return;   // Onscreen input only: the pad writes, the keyboard does not
-      zapis(0); e.preventDefault(); return;
-    case ' ':
-      e.preventDefault(); return;
-    default:
-      if (e.key >= '1' && e.key <= '9') {
-        if (nastavenia.lenPad) return;
-        const d = +e.key;
-        if (e.shiftKey) zapisOpacne(d); else zapis(d);
-        e.preventDefault();
-      }
-      return;
-  }
-  e.preventDefault();
-  if (ciel >= 0) zameraj(ciel, true);
-});
-/* Dlhé podržanie cifry na pade. Na dotyku niet klávesy Shift, takže podržanie
- * je jediný ekvivalent Shift plus cifra: v Notes mode zapíše skutočnú hodnotu,
- * mimo neho poznámku (ops/spec-hry-ux.md, časť 2). Nie je to jediná cesta
- * k ničomu, režim prepne tlačidlo Notes jedným tapom (časť 9). */
-const DRZANIE_MS = 500;
-let padCasovac = 0;
-let padDrzane = null;   // tlačidlo, ktoré práve drží prst alebo myš
-let padDlhe = false;    // podržanie už zapísalo, nasledujúci click sa zahodí
-function ukonciDrzanie() {
-  if (padCasovac) { clearTimeout(padCasovac); padCasovac = 0; }
-  if (padDrzane) { padDrzane.classList.remove('drzane'); padDrzane = null; }
-}
-padEl.addEventListener('pointerdown', (e) => {
-  const b = e.target.closest('button[data-d]');
-  ukonciDrzanie();
-  padDlhe = false;
-  if (!b || done || pauza) return;
-  const d = +b.dataset.d;
-  if (!d) return;                 // Del nemá čo otáčať
-  padDrzane = b;
-  b.classList.add('drzane');
-  padCasovac = setTimeout(() => {
-    padCasovac = 0;
-    padDlhe = true;
-    ukonciDrzanie();
-    if (done || pauza) return;
-    if (vybrana < 0) { stavEl.textContent = 'Pick a hollow first, then hold a number.'; return; }
-    zapisOpacne(d);
-    stavEl.textContent = poznamkyRezim
-      ? 'Held: written as a number, not a note.'
-      : 'Held: written as a note, not a number.';
-  }, DRZANIE_MS);
-});
-for (const ev of ['pointerup', 'pointercancel', 'pointerleave']) padEl.addEventListener(ev, ukonciDrzanie);
-// Prst zišiel z tlačidla, na ktorom začal: podržanie sa ruší, nezapíše cudziu cifru
-padEl.addEventListener('pointermove', (e) => {
-  if (padDrzane && e.target.closest('button[data-d]') !== padDrzane) ukonciDrzanie();
-});
-padEl.addEventListener('contextmenu', (e) => { if (e.target.closest('button[data-d]')) e.preventDefault(); });
 padEl.addEventListener('click', (e) => {
   const b = e.target.closest('button[data-d]');
-  if (!b) return;
-  if (padDlhe) { padDlhe = false; return; }   // podržanie už zapísalo
-  if (vybrana < 0) { stavEl.textContent = 'Pick a hollow first, then a number.'; return; }
-  zapis(+b.dataset.d);
+  if (!b || done || pauza) return;
+  const d = +b.dataset.d;
+  if (nastavenia.ovladanie === 'digit') {
+    cifraVRuke = cifraVRuke === d ? -1 : d;
+    ukazCifruVRuke();
+    stavEl.textContent = cifraVRuke < 0 ? 'No number in hand. Tap a number, then the hollows.'
+      : (cifraVRuke === 0 ? 'Erase in hand. Tap the hollows to clear them.' : cifraVRuke + ' in hand. Tap the hollows to write it.');
+    return;
+  }
+  if (!vyber.size) { stavEl.textContent = 'Pick a hollow first, then a number.'; return; }
+  if (!d) zmazVybrane(); else zapisCifru(d, rezimZadania);
 });
-/* Tlačidlo Notes vráti fókus na vybranú dutinu: kto prepne režim myšou a
- * potom píše z klávesnice, nemá o cifry prísť (cifry počúva plocha). */
-if (poznamkyBtn) poznamkyBtn.addEventListener('click', () => {
-  poznamkyRezim = !poznamkyRezim; ukazTlacidla();
-  if (vybrana >= 0 && bunky[vybrana]) bunky[vybrana].focus({ preventScroll: true });
+if (rezimyEl) rezimyEl.addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-rezim]');
+  if (!b) return;
+  nastavRezim(b.dataset.rezim);
 });
 if (spatBtn) spatBtn.addEventListener('click', spat);
 if (znovaBtn) znovaBtn.addEventListener('click', znova);
-if (resetBtn) resetBtn.addEventListener('click', reset);
+if (resetBtn) resetBtn.addEventListener('click', restart);
 if (checkBtn) checkBtn.addEventListener('click', skontrolujStav);
 if (hintBtn) hintBtn.addEventListener('click', ukazNapovedu);
 if (pauzaBtn) pauzaBtn.addEventListener('click', () => pozastav(false));
 if (pokracujBtn) pokracujBtn.addEventListener('click', pokracuj);
-/* Undo and Redo are the scheme every one of these games shares:
- * U and Ctrl+Z back, R, Ctrl+R and Ctrl+Shift+Z forward. */
+
+/* ── Keyboard ─────────────────────────────────────────────────────────── *
+ * One listener for the whole page, because the selection is the board's and
+ * not one focused button's. Arrows and WASD move the selection and wrap round
+ * the edge, Ctrl plus an arrow grows it, Escape lets it go; 1 to 9 (the row
+ * and the numeric keypad) write in the current mode, Z X C V pick a mode, the
+ * space bar cycles them, N walks the two note styles and back; Delete and
+ * Backspace clear in the standard's order; U and Ctrl+Z undo, R, Ctrl+Y and
+ * Ctrl+Shift+Z redo. Ctrl+R is never taken: that is the browser's reload. */
+function jeVstup(el) { return !!el && /^(input|textarea|select)$/i.test(el.tagName || ''); }
+function jeTlacidlo(el) { return !!el && (/^(button|a|summary)$/i.test(el.tagName || '')) && !el.closest('#doska'); }
+function posunVyber(dr, dc, rozsiruj) {
+  const z = kotva >= 0 && bunky[kotva] ? kotva : bunky.findIndex((x) => x);
+  if (z < 0) return;
+  const ciel = vyber.size || kotva >= 0 ? dalsia(z, dr, dc) : z;
+  if (ciel < 0) return;
+  if (rozsiruj) vyberPridaj(ciel); else vyberJednu(ciel);
+  zameraj(ciel, true);
+}
 document.addEventListener('keydown', (e) => {
-  if (e.target && /input|textarea|select/i.test(e.target.tagName || '')) return;
+  if (jeVstup(e.target)) return;
   const ctrl = e.ctrlKey || e.metaKey;
+  // Undo and Redo first: they work even while the board is finished being read.
   if (ctrl && (e.key === 'z' || e.key === 'Z')) { if (e.shiftKey) znova(); else spat(); e.preventDefault(); return; }
-  if (ctrl && (e.key === 'r' || e.key === 'R')) { znova(); e.preventDefault(); return; }
+  if (ctrl && (e.key === 'y' || e.key === 'Y')) { znova(); e.preventDefault(); return; }
+  if (e.key === 'Escape') {
+    if (pauza) { pokracuj(); return; }
+    if (cifraVRuke >= 0) { cifraVRuke = -1; ukazCifruVRuke(); }
+    vyberZrus();
+    return;
+  }
+  // Pause both ways, and above the guard below: P is also the way back out of
+  // a pause, and a wood that is asleep answers no other key.
+  if (!ctrl && (e.key === 'p' || e.key === 'P')) {
+    if (pauza) pokracuj(); else if (!done) pozastav(false);
+    e.preventDefault();
+    return;
+  }
+  if (done || pauza) return;
+  const smer = { ArrowUp: [-1, 0], ArrowDown: [1, 0], ArrowLeft: [0, -1], ArrowRight: [0, 1] }[e.key]
+    || (!ctrl && !e.altKey ? { w: [-1, 0], W: [-1, 0], s: [1, 0], S: [1, 0], a: [0, -1], A: [0, -1], d: [0, 1], D: [0, 1] }[e.key] : null);
+  // Ctrl (Cmd) plus an arrow grows the selection, and only Ctrl: a held Shift
+  // is how a corner mark is borrowed, the same as in Hares and Badgers.
+  if (smer) { posunVyber(smer[0], smer[1], ctrl); e.preventDefault(); return; }
+  if (ctrl && !/^[1-9]$/.test(e.key)) return;   // Ctrl+R, Ctrl+C and the rest stay the browser's
+  if (e.key === 'Delete' || e.key === 'Backspace' || e.key === '0') {
+    if (nastavenia.lenPad) return;   // Onscreen input only: the pad writes, the keyboard does not
+    zmazVybrane(); e.preventDefault(); return;
+  }
+  if (/^[1-9]$/.test(e.key)) {
+    if (nastavenia.lenPad) return;
+    zapisCifru(+e.key, rezimPreUdalost(e));
+    e.preventDefault(); return;
+  }
   if (ctrl) return;
-  if (e.key === 'u' || e.key === 'U') { spat(); e.preventDefault(); return; }
-  if (e.key === 'r' || e.key === 'R') { znova(); e.preventDefault(); return; }
-  if (e.key === 'Escape' && pauza) { pokracuj(); return; }
-  if (e.key === 'p' || e.key === 'P') { if (pauza) pokracuj(); else pozastav(false); }
+  if (e.key === ' ') { if (jeTlacidlo(e.target)) return; cyklujRezim(); e.preventDefault(); return; }
+  switch (e.key) {
+    case 'z': case 'Z': nastavRezim('normal'); e.preventDefault(); return;
+    case 'x': case 'X': nastavRezim('corner'); e.preventDefault(); return;
+    case 'c': case 'C': nastavRezim('centre'); e.preventDefault(); return;
+    case 'v': case 'V': nastavRezim('colour'); e.preventDefault(); return;
+    case 'n': case 'N': cyklujZnacky(); e.preventDefault(); return;
+    case 'u': case 'U': spat(); e.preventDefault(); return;
+    case 'r': case 'R': znova(); e.preventDefault(); return;
+    default: return;
+  }
 });
 document.addEventListener('keydown', nastavNecinnost, true);
 document.addEventListener('pointerdown', nastavNecinnost, true);
@@ -1031,21 +1231,22 @@ function pouziNastavenia() {
   if (casBlok) casBlok.hidden = !nastavenia.casovac;
   if (!nastavenia.zivaKontrola && !odhalene) { for (const b of bunky) if (b) b.classList.remove('chyba'); }
   zivaKontrola();
+  if (nastavenia.ovladanie !== 'digit') cifraVRuke = -1;
+  ukazCifruVRuke();
+  if (hraEl) hraEl.dataset.ovladanie = nastavenia.ovladanie;
   oznacVyber();
   nastavNecinnost();
   ukazCas();
 }
 document.querySelectorAll('[data-nastavenie]').forEach((el) => {
   const kluc = el.getAttribute('data-nastavenie');
-  el.checked = !!nastavenia[kluc];
+  const jeVyber = el.tagName.toLowerCase() === 'select';
+  if (jeVyber) el.value = String(nastavenia[kluc]); else el.checked = !!nastavenia[kluc];
   el.addEventListener('change', () => {
-    nastavenia[kluc] = el.checked;
+    nastavenia[kluc] = jeVyber ? el.value : el.checked;
     ulozNastavenia();
-    // Auto notes, switched on, fills the whole board at once: one move in the
-    // history, exactly like any other (ops/spec-hry-ux.md, part 2).
-    if (kluc === 'autoPoznamky' && el.checked && zadanie && !done && !pauza) zmenaStavu(doplnPoznamky);
     pouziNastavenia();
-    track('game_setting', { game: 'squirrels', setting: kluc, on: el.checked });
+    track('game_setting', { game: 'squirrels', setting: kluc, value: String(nastavenia[kluc]) });
   });
 });
 
@@ -1097,6 +1298,12 @@ function naplanujOdoslanie() {
   if (syncCakanie) return;
   syncCakanie = setTimeout(() => { syncCakanie = null; syncPosledny = Date.now(); odosliStav(); }, zvysok);
 }
+/* One saved day into the four arrays of the board. `p` is the centre marks:
+ * a save from before the new controls has only that one grid of notes, and
+ * the standard says it comes back as centre marks. */
+function poleZoStavu(s, kluc, dlzka) {
+  return s && Array.isArray(s[kluc]) && s[kluc].length === dlzka ? s[kluc].slice() : new Array(dlzka).fill(0);
+}
 async function synchronizujUcet() {
   if (!ucet.prihlaseny()) return;
   let vzdialene;
@@ -1120,12 +1327,16 @@ async function synchronizujUcet() {
       if (cerstve && Array.isArray(cerstve.v) && n && cerstve.v.length === n * n && (cerstve.t || 0) > ((ulozene && ulozene.t) || 0)) {
         ulozene = cerstve;
         v = cerstve.v.slice();
-        pz = Array.isArray(cerstve.p) && cerstve.p.length === n * n ? cerstve.p.slice() : new Array(n * n).fill(0);
+        pn = poleZoStavu(cerstve, 'p', n * n);
+        pc = poleZoStavu(cerstve, 'c', n * n);
+        fa = poleZoStavu(cerstve, 'f', n * n);
         done = cerstve.done || null;
         hints = cerstve.hints || 0;
         checks = cerstve.checks || 0;
         sekundy = cerstve.sec || 0;
-        undoStack = []; redoStack = [];
+        // a board that came in from another browser: its own history is the
+        // only one that matches it, and that history was never synced
+        zmazHistoriu();
         ukazVsetko();
         if (done) { doska.classList.add('hotovo'); zastavTikac(); }
         ukazStav();
@@ -1145,7 +1356,8 @@ async function spusti() {
     stavEl.textContent = 'This wood opens on ' + pekneDatum(datum) + ' (Bratislava time). Come back then, or play today’s wood.';
     doska.hidden = true;
     if (padEl) padEl.hidden = true;
-    for (const b of [poznamkyBtn, spatBtn, znovaBtn, resetBtn, checkBtn, hintBtn]) if (b) b.disabled = true;
+    if (rezimyEl) rezimyEl.hidden = true;
+    for (const b of [spatBtn, znovaBtn, resetBtn, checkBtn, hintBtn]) if (b) b.disabled = true;
     ukazPasik();
     return;
   }
@@ -1159,11 +1371,16 @@ async function spusti() {
   beh = behy(zadanie.cells, n);
   ulozene = nacitaj(KLUC);
   v = (ulozene && Array.isArray(ulozene.v) && ulozene.v.length === n * n) ? ulozene.v.slice() : new Array(n * n).fill(0);
-  pz = (ulozene && Array.isArray(ulozene.p) && ulozene.p.length === n * n) ? ulozene.p.slice() : new Array(n * n).fill(0);
+  pn = poleZoStavu(ulozene, 'p', n * n);
+  pc = poleZoStavu(ulozene, 'c', n * n);
+  fa = poleZoStavu(ulozene, 'f', n * n);
   done = ulozene && ulozene.done ? ulozene.done : null;
   hints = ulozene && ulozene.hints ? ulozene.hints : 0;
   checks = ulozene && ulozene.checks ? ulozene.checks : 0;
   sekundy = ulozene && ulozene.sec ? ulozene.sec : 0;
+  // The Undo history belongs to the board that was saved: with no saved board
+  // there is nothing for it to undo, so it goes.
+  if (ulozene && !done) nacitajHistoriu(); else zmazHistoriu();
   start = null;
   if (ulozene && ulozene.start && !done) {
     // The page was closed while the clock ran: count up to the last save, then
@@ -1173,11 +1390,12 @@ async function spusti() {
   }
   postavMriezku();
   ukazVsetko();
+  nastavRezim('normal');
   pouziNastavenia();
   if (datumEl) datumEl.textContent = rezim === 'cvicenie' ? UROVNE[zadanie.uroven].label + ' practice ' + sada.split('-')[1] + ', wood ' + kSada : pekneDatum(datum);
   if (urovenEl) urovenEl.textContent = UROVNE[zadanie.uroven].label + ' · ' + n + '×' + n;
   if (done) doska.classList.add('hotovo');
-  else if (v.some((x) => x) || pz.some((x) => x)) pozastav(true);
+  else if (v.some((x) => x) || pc.some((x) => x) || pn.some((x) => x) || fa.some((x) => x)) pozastav(true);
   ukazCas();
   ukazSeriu();
   ukazHistoriu();

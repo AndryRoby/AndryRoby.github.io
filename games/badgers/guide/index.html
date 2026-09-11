@@ -41,6 +41,20 @@
   .hero{align-items:start}
   /* Wide enough for the ten keys of the pad and the row of buttons, whatever
      size the sett is; from a phone up it is simply the width it is given. */
+  /* The nine cell colours, on .hra so that the sett and the pad under it read
+     the same nine. Chosen for a night page: dark enough that the white number
+     stays the loudest thing in the cell, spread round the hue circle and
+     stepped in lightness as well, so a player who cannot tell red from green
+     still has two channels to read them by. The pad shows them under the
+     numbers 1 to 9, so a colour can always be named by its key.
+     Colour 1 is the one with no hue to be told apart by, and the row shading
+     (.b.linia, #3a302a) is a warm neutral too, so the old #4a4640 sat 1.37:1
+     from it and a painted cell looked like a cell the cursor merely passed
+     through. It is now the light one: 3.32:1 against the shading and 4.46:1
+     against an empty cell. The eight others carry a hue the shading has not,
+     so they read apart on that channel instead. */
+  .hra{--farba-1:#8a8078;--farba-2:#2b5a7d;--farba-3:#1d514c;--farba-4:#33582f;--farba-5:#6a6222;
+       --farba-6:#7a4a1c;--farba-7:#7d2b40;--farba-8:#4d2049;--farba-9:#3a3480}
   .hra{max-width:min(100%, max(392px, calc(var(--n,9) * 46px + 12px)));margin:0 auto}
   @media (max-width:860px){ .hra{margin:0 auto;max-width:min(100%, max(320px, calc(var(--n,9) * 50px + 12px)))} }
   /* Narrow phones: the sett takes the whole screen width, exactly, so the page
@@ -76,11 +90,8 @@
   .doska[hidden]{display:none}
   @media (max-width:480px){ .doska{border-radius:0;border-left:0;border-right:0} }
   .doska.hotovo{border-color:var(--ok);box-shadow:0 0 0 4px rgba(94,207,154,.14)}
-  /* Paused: the whole cell goes, children included. The notes set their own
-     visibility to show themselves, which would otherwise let them through the
-     overlay, and a paused board that still shows the notes is not paused. The
-     third selector is there to outweigh that rule, not to repeat it. */
-  .doska.pauza .b,.doska.pauza .b *,.doska.pauza .b .pozn i.on{visibility:hidden}
+  /* Paused: the whole cell goes, children included. */
+  .doska.pauza .b,.doska.pauza .b *{visibility:hidden}
   .riadok{display:contents}
   /* One shadow rule for every cell: a top line and a left line, thin between
      cells and thick between blocks, none at all on the outer edge, where the
@@ -92,7 +103,7 @@
   .b.c0{--hl:0px}
   .b.bt{--ht:2px;--ct:var(--hruba)}
   .b.bl{--hl:2px;--cl:var(--hruba)}
-  .b:hover{background:#2a2420}
+  .b:not([data-c]):hover{background:#2a2420}
   .b:focus-visible{outline:2px solid var(--accent-light);outline-offset:-3px;z-index:3}
   /* the dotted outline of a cage, one side at a time */
   .b .ohr{position:absolute;inset:2px;pointer-events:none;border-style:dashed;border-color:var(--obrys);border-width:0;z-index:2}
@@ -105,24 +116,79 @@
             font:600 calc(var(--cell) * .25)/1 var(--ui);font-variant-numeric:tabular-nums;color:var(--body)}
   .b .cif{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
           font:600 calc(var(--cell) * .50)/1 var(--ui);font-variant-numeric:tabular-nums;color:var(--ink)}
-  /* The notes start below the corner where the total is, so the two never meet. */
-  .b .pozn{position:absolute;inset:30% 7% 7% 7%;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr)}
-  .b .pozn i{display:flex;align-items:center;justify-content:center;font:500 calc(var(--cell) * .20)/1 var(--ui);
-             font-style:normal;color:var(--body);visibility:hidden}
-  .b .pozn i.on{visibility:visible}
-  .b.vybrana .pozn i{color:#c9c5bf}
-  .b[data-v="0"] .pozn{display:grid}
-  .b:not([data-v="0"]) .pozn{display:none}
-  /* The row, the column and the block of the picked cell. A solid colour, not
-     a translucent white: .b.linia beats .b, so it replaces the cell's own fill
-     instead of sitting on top of it. Kept warm and light enough to be told
-     apart from a plain cell (--pole) on an ordinary monitor. */
+  /* Corner marks: nine fixed slots in the sudokupad order (top left, top right,
+     bottom left, bottom right, top, bottom, left, right, middle). In a cell
+     that carries a cage total the whole set drops below it, so the total and
+     the first mark never sit on the same spot. */
+  .b .rohy{position:absolute;inset:6% 8%;pointer-events:none}
+  .b.s .rohy{top:30%}
+  .b .rohy i{position:absolute;font:500 calc(var(--cell) * .21)/1 var(--ui);font-style:normal;
+             font-variant-numeric:tabular-nums;color:var(--body);white-space:nowrap}
+  .b .rohy i:nth-child(1){top:0;left:0}
+  .b .rohy i:nth-child(2){top:0;right:0}
+  .b .rohy i:nth-child(3){bottom:0;left:0}
+  .b .rohy i:nth-child(4){bottom:0;right:0}
+  .b .rohy i:nth-child(5){top:0;left:50%;transform:translateX(-50%)}
+  .b .rohy i:nth-child(6){bottom:0;left:50%;transform:translateX(-50%)}
+  .b .rohy i:nth-child(7){top:50%;left:0;transform:translateY(-50%)}
+  .b .rohy i:nth-child(8){top:50%;right:0;transform:translateY(-50%)}
+  .b .rohy i:nth-child(9){top:50%;left:50%;transform:translate(-50%,-50%)}
+  /* Centre marks: one line in the middle of the cell, in order, shrinking as
+     they get more numerous so nine of them still fit inside the cell. */
+  /* Centre marks stand apart from each other, or 2 4 6 8 reads as the number
+     two thousand four hundred and sixty-eight. The gap loosens as there is
+     room for it and tightens as the line fills up; text-indent matches the
+     letter-spacing, so the trailing gap after the last mark does not push the
+     whole line half a gap off centre. The same ladder in all three games. */
+  .b .stred{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;
+            font:500 calc(var(--cell) * .24)/1 var(--ui);font-variant-numeric:tabular-nums;color:var(--body);
+            letter-spacing:.18em;text-indent:.18em}
+  .b .stred[data-p="5"]{font-size:calc(var(--cell) * .215);letter-spacing:.14em;text-indent:.14em}
+  .b .stred[data-p="6"]{font-size:calc(var(--cell) * .19);letter-spacing:.12em;text-indent:.12em}
+  .b .stred[data-p="7"]{font-size:calc(var(--cell) * .168);letter-spacing:.10em;text-indent:.10em}
+  .b .stred[data-p="8"]{font-size:calc(var(--cell) * .15);letter-spacing:.08em;text-indent:.08em}
+  .b .stred[data-p="9"]{font-size:calc(var(--cell) * .135);letter-spacing:.06em;text-indent:.06em}
+  /* "Number entry with noted cells: Fill cell": a big number covers the marks
+     of its cell, and Delete brings them back, because they were never thrown
+     away, only hidden. */
+  .b:not([data-v="0"]) .rohy,.b:not([data-v="0"]) .stred{display:none}
+  .b.vybrana .rohy i,.b.vybrana .stred{color:#d5d1cb}
+  /* On a painted cell the small type has to climb over the colour, so the marks
+     and the cage total go a shade brighter there. */
+  .b[data-c] .rohy i,.b[data-c] .stred,.b[data-c] .sucet{color:#efeae2}
+  /* The row, the column and the block of the picked cell, shaded only while a
+     single cell is picked. The cage is never shaded, on the standard's word.
+     A solid colour, not a translucent white:
+     .b.linia beats .b, so it replaces the cell's own fill instead of sitting on
+     top of it. Kept warm and light enough to be told apart from a plain cell
+     (--pole) on an ordinary monitor. */
   .b.linia{background:#3a302a}
+  /* A cell colour outranks the shading: it is the player's own mark, written
+     after .linia so that it wins on equal specificity. */
+  .b[data-c="1"]{background:var(--farba-1)}
+  .b[data-c="2"]{background:var(--farba-2)}
+  .b[data-c="3"]{background:var(--farba-3)}
+  .b[data-c="4"]{background:var(--farba-4)}
+  .b[data-c="5"]{background:var(--farba-5)}
+  .b[data-c="6"]{background:var(--farba-6)}
+  .b[data-c="7"]{background:var(--farba-7)}
+  .b[data-c="8"]{background:var(--farba-8)}
+  .b[data-c="9"]{background:var(--farba-9)}
+  /* Colour 1 is the light one, so on it the ink turns dark: a white number or a
+     white mark on it would sit at 3.2:1, a dark one sits at 4.81:1. The eight
+     dark colours keep the white ink. The big number, the marks and the cage
+     total share one rule and one value, so a later fix to the number cannot
+     leave the small type behind at a lower contrast. */
+  .b[data-c="1"] .cif,
+  .b[data-c="1"] .rohy i,.b[data-c="1"] .stred,.b[data-c="1"] .sucet{color:#17120f}
   .b.rovnaka .cif{color:var(--accent)}
   /* The selected cell is also 'the same' as itself; its own digit stays plain. */
   .b.vybrana.rovnaka:not(.chyba) .cif{color:var(--ink)}
-  .b.vybrana{background:rgba(242,100,60,.16);z-index:3}
-  .b.vybrana::before{content:"";position:absolute;inset:0;border:2px solid var(--accent);pointer-events:none}
+  /* The picked cells. The frame and the tint sit in an overlay rather than in
+     the background, so a coloured cell keeps its colour while it is picked. */
+  .b.vybrana{z-index:3}
+  .b.vybrana::before{content:"";position:absolute;inset:0;border:2px solid var(--accent);
+                     background:rgba(242,100,60,.18);pointer-events:none;z-index:1}
   /* A cage that adds up and repeats nothing goes quiet. It says nothing about
      whether the numbers are RIGHT (Andrej, 10. 9.: nothing turns red while
      playing; only Check judges). */
@@ -163,14 +229,37 @@
   .pad button:hover{border-color:var(--ink)}
   .pad button:disabled{opacity:.35;cursor:default}
   .pad .zmaz{font-size:12px;letter-spacing:.04em;color:var(--body)}
-  .hra.poznamky .pad button{border-style:dashed;font-size:14px;color:var(--body)}
-  .hra.poznamky .pad .zmaz{font-size:12px}
-  /* Holding a pad number writes it the other way round: on touch there is no
-     Shift key, so a long press is what Shift plus a number does on a keyboard
-     (ops/spec-hry-ux.md, part 2). While the finger is down the button fills
-     in, so the hold is visible before it fires. It is never the only way: the
-     Notes button next to the pad is one tap (part 9). */
-  .pad button.drzane{border-color:var(--accent);background:rgba(242,100,60,.16)}
+  /* Corner and Centre: the pad writes the small marks, so it wears them. */
+  .hra[data-rezim="corner"] .pad button,.hra[data-rezim="centre"] .pad button{border-style:dashed;font-size:14px;color:var(--body)}
+  .hra[data-rezim="corner"] .pad .zmaz,.hra[data-rezim="centre"] .pad .zmaz{font-size:12px}
+  /* Colour: the ten keys become the nine colours, still numbered, so a colour
+     always has a name you can type. */
+  .hra[data-rezim="colour"] .pad button[data-d="1"]{background:var(--farba-1);color:#17120f}
+  .hra[data-rezim="colour"] .pad button[data-d="2"]{background:var(--farba-2)}
+  .hra[data-rezim="colour"] .pad button[data-d="3"]{background:var(--farba-3)}
+  .hra[data-rezim="colour"] .pad button[data-d="4"]{background:var(--farba-4)}
+  .hra[data-rezim="colour"] .pad button[data-d="5"]{background:var(--farba-5)}
+  .hra[data-rezim="colour"] .pad button[data-d="6"]{background:var(--farba-6)}
+  .hra[data-rezim="colour"] .pad button[data-d="7"]{background:var(--farba-7)}
+  .hra[data-rezim="colour"] .pad button[data-d="8"]{background:var(--farba-8)}
+  .hra[data-rezim="colour"] .pad button[data-d="9"]{background:var(--farba-9)}
+  /* Digit first: the number that is picked up and waiting for the cells. */
+  .pad button[aria-pressed="true"]{border-color:var(--accent);color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+  /* ── The four entry modes ─────────────────────────────────────────────
+     Normal, Corner, Centre, Colour, under the pad on every screen from 320 px
+     up. The key hint goes on a narrow phone, where there is no keyboard to
+     hint at. */
+  .rezimy{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;margin-top:6px}
+  .rezimy[hidden]{display:none}
+  .rezimy button{height:42px;min-width:0;padding:0 2px;border:1px solid var(--line);border-radius:10px;background:var(--card);
+                 color:var(--body);font:600 13px/1 var(--ui);cursor:pointer;display:flex;flex-direction:column;
+                 align-items:center;justify-content:center;gap:3px;touch-action:manipulation;
+                 user-select:none;-webkit-user-select:none}
+  .rezimy button small{font:500 10px/1 var(--ui);letter-spacing:.1em;color:var(--muted)}
+  .rezimy button:hover{border-color:var(--ink)}
+  .rezimy button[aria-pressed="true"]{border-color:var(--accent);color:var(--accent);background:rgba(242,100,60,.12)}
+  .rezimy button[aria-pressed="true"] small{color:var(--accent)}
+  @media (max-width:430px){ .rezimy button{font-size:12px} .rezimy button small{display:none} }
   .ovladanie{display:flex;gap:5px;align-items:center;flex-wrap:wrap;margin-top:10px}
   /* Height and type come from paper.css (body.noc .btn: 48px), which outranks
      a plain .ovladanie .btn rule, so setting them here would only look like it
@@ -223,6 +312,10 @@
   .nastavenia[open] summary{color:var(--ink)}
   .nastavenia label{display:flex;gap:10px;align-items:flex-start;font-family:var(--ui);font-size:13px;color:var(--body);line-height:1.5;padding:6px 0}
   .nastavenia input{margin-top:3px;flex:none}
+  .nastavenia label.volba{flex-direction:column;gap:5px}
+  .nastavenia label.volba select{width:100%;border:1px solid var(--line);border-radius:8px;background:var(--card);
+                                 color:var(--ink);font:13px/1.4 var(--ui);padding:7px 9px}
+  .nastavenia label.volba select:focus-visible{outline:2px solid var(--accent-light);outline-offset:1px}
   .nastavenia .fineprint{padding:6px 0 12px;margin:0}
   .skryte{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
   .navod{font-family:var(--ui);font-size:13px;color:var(--muted);margin:10px 0 0;max-width:none}
@@ -275,6 +368,11 @@
   .tyzden-tab{width:100%;border-collapse:collapse;font-family:var(--ui);font-size:14px;max-width:520px}
   .tyzden-tab td{padding:8px 10px;border-bottom:1px solid var(--line)}
   .tyzden-tab td:first-child{color:var(--ink);font-weight:600;white-space:nowrap}
+  .ovl-tab{width:100%;border-collapse:collapse;font-family:var(--ui);font-size:14px;line-height:1.55;max-width:78ch}
+  .ovl-tab td{padding:11px 0;border-bottom:1px solid var(--line);color:var(--body);vertical-align:top}
+  .ovl-tab td:first-child{color:var(--ink);font-weight:600;white-space:nowrap;padding-right:18px;width:1%}
+  .ovl-tab b{color:var(--ink);font-weight:600}
+  @media (max-width:600px){ .ovl-tab td,.ovl-tab td:first-child{display:block;width:auto;border:0;padding:0} .ovl-tab td:first-child{padding-top:12px} .ovl-tab td:last-child{padding-bottom:12px;border-bottom:1px solid var(--line)} }
   .pasik{display:flex;gap:6px;margin-top:14px;max-width:520px}
   .den{flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;padding:6px 0 5px;border:1px solid var(--line);border-radius:10px;text-decoration:none;color:var(--muted);font-family:var(--ui);min-width:0;background:var(--card)}
   .den small{font-size:10px;letter-spacing:.08em}
@@ -318,6 +416,19 @@
       <li><b>Marks already placed.</b> Numbers you have written narrow what still fits; Hint reasons from them the same way it reasons from the cages alone.</li>
     </ul>
   </div><figure class="gif"><img src="/games/badgers/tutorial/rule-03.gif" alt="Animation: the Hint outlines the cage it is reading, marks the cell it means with a pulsing ring and explains why, then the number is written in; this repeats for the next steps." width="560" height="660" loading="lazy" decoding="async"></figure></div>
+</div></section>
+<section class="deep"><div class="wrap">
+  <h2 class="r">Controls.</h2><div class="rule"></div>
+  <p class="sub r d1">The same six things on a keyboard and under a finger, in the order you meet them.</p>
+  <table class="ovl-tab r d2"><tbody>
+    <tr><td>Moving</td><td>Tap or click a cell to pick it. Drag across the sett with the mouse or a finger and every cell you run over joins the selection. <b>Ctrl</b> (<b>Cmd</b> on a Mac) plus a click adds one cell or takes it away. Arrows or <b>WASD</b> move the selection and wrap round the edge, so down on the last row comes out at the top; <b>Ctrl</b> plus an arrow widens it, <b>Escape</b> lets it all go. The row, the column and the block are shaded only while a single cell is picked.</td></tr>
+    <tr><td>Writing</td><td><b>1</b> to <b>9</b> from the keyboard or the numeric keypad, or the pad under the sett; a six by six takes 1 to 6. With several cells picked, the number goes into all of them, and the same number again takes it back. <b>Delete</b> or <b>Backspace</b> works in one order: the big numbers first, then the marks, then the colour.</td></tr>
+    <tr><td>Modes</td><td>Four buttons under the pad. <b>Normal</b> writes the big number (<b>Z</b>). <b>Corner</b> puts small numbers in the corners of the cell (<b>X</b>), <b>Centre</b> puts them in the middle (<b>C</b>); with several cells picked a mark goes on everywhere, or comes off everywhere if they all have it. <b>Colour</b> paints the cell in one of nine colours (<b>V</b>). Space walks round all four, and holding <b>Shift</b> means Corner and holding <b>Ctrl</b> means Centre while the key is down. A big number covers the marks of its cell without throwing them away, so Delete brings them back.</td></tr>
+    <tr><td>Undo and Redo</td><td>Unlimited, one shared history for numbers, marks and colours. <b>U</b> or <b>Ctrl</b>+<b>Z</b> back, <b>R</b>, <b>Ctrl</b>+<b>Y</b> or <b>Ctrl</b>+<b>Shift</b>+<b>Z</b> forward. <b>Ctrl</b>+<b>R</b> is left alone; it reloads the page.</td></tr>
+    <tr><td>Restart</td><td>Takes the numbers, the marks and the colours off and leaves the sett as it started. The clock keeps running, and one Undo brings everything back. Settings can ask first, and do by default.</td></tr>
+    <tr><td>Check</td><td>First press says only how many numbers are wrong and which rows, columns or blocks they sit in; press it again and it marks them. With cells picked, only their rows, columns and blocks are checked. Nothing lights up on its own while you play.</td></tr>
+  </tbody></table>
+  <p class="r d3">Settings under the sett hold the rest: control method, timer, matching numbers, what a drag selects, what a number does in a cell that already has marks, error highlighting, the default note style, auto removal of restricted notes, auto pause, onscreen input only and the Restart question.</p>
 </div></section>
 <section class="deep"><div class="wrap">
   <h2 class="r">The week.</h2><div class="rule"></div>
