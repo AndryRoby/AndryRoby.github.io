@@ -4,7 +4,7 @@
 <script src="/style/vzhlad.js?v=93c2659f"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://homelab.tailbf8f27.ts.net 'sha256-8PzDvkBD3Kafz/cRIhc+RiLhOO0lYDEEF9o2QCCGMoE=' 'sha256-r1zMEhP14koaNKa8FhjM7w7EEm6a/zBbMFzM7+sjI7o=' 'sha256-ss0D2XF3DdvR7yn/S0H9UJKfUxrcmXgK6vXtX0tIook=' 'sha256-ksyoPq268ZAzFxyuc5qas1oB+l+O/INn+VZuu712zY8='; connect-src https://homelab.tailbf8f27.ts.net; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://homelab.tailbf8f27.ts.net 'sha256-8PzDvkBD3Kafz/cRIhc+RiLhOO0lYDEEF9o2QCCGMoE=' 'sha256-r1zMEhP14koaNKa8FhjM7w7EEm6a/zBbMFzM7+sjI7o=' 'sha256-Tad/458q3nk+F/5kuBdruzMqdtWvJMr9F47pkB4eMIM=' 'sha256-ksyoPq268ZAzFxyuc5qas1oB+l+O/INn+VZuu712zY8='; connect-src https://homelab.tailbf8f27.ts.net; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#0a0908">
 <link rel="preconnect" href="https://homelab.tailbf8f27.ts.net" crossorigin>
@@ -35,62 +35,63 @@
 <link rel="stylesheet" href="/style/paper.css?v=89016e6c">
 <script src="/style/prepinac.js?v=2988c181" defer></script>
 <style>
-  /* Only what is genuinely this page: the news list, the flagship rows with a screenshot,
-     the "Máte / Dostanete" entry rows and the subscribe form. Everything else is paper.css. */
-  .facts { list-style:none; margin:22px 0 0; padding:0; display:flex; flex-wrap:wrap; gap:2px 0;
-           font-family:var(--ui); font-size:14px; color:var(--muted); }
-  .facts li:not(:last-child)::after { content:"·"; margin:0 10px; color:var(--line); }
-  .facts b { color:var(--ink); font-weight:600; }
+  /* Len to, co je naozaj tato stranka: riadky ponuky s cenou, index hier, kompaktny
+     zoznam nastrojov, zoznam poznamok a dva formulare. Zvysok je paper.css. */
 
-  .news-list { list-style:none; margin:16px 0 0; padding:0; max-width:1020px; }
-  .news-list li { display:flex; gap:14px; padding:11px 0; border-top:1px solid var(--line); font-size:15.5px; }
-  .news-list li:first-child { border-top:none; }
-  .news-list time { flex:none; width:52px; color:var(--muted); font-family:var(--ui); font-size:13px; padding-top:3px; }
-
-  /* one row per flagship product: the screenshot we already have, framed */
-  .flagship-list { list-style:none; margin:18px 0 0; padding:0; }
-  .flagship-list > li { border-top:1px solid var(--line); padding:26px 0; }
-  .flagship-list > li:first-child { border-top:none; }
-  .flag { display:flex; gap:24px; align-items:flex-start; text-decoration:none; color:inherit; }
-  .flag:hover .name { color:var(--accent); }
-  .flag .shot { display:block; width:236px; flex:none; }
-  .flag .shot img { display:block; width:100%; height:auto; }
-  .flag .body { flex:1; min-width:0; }
-  .flag .name { display:block; font:600 clamp(19px,1.7vw,23px)/1.25 var(--display); color:var(--ink);
-                letter-spacing:-.01em; margin:0 0 5px; }
-  .who { display:block; color:var(--muted); font-size:14.5px; }
-  .seegrid { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:8px 26px; margin-top:13px; }
+  /* Ponuka: jeden riadok na jeden plateny problem, cena a tlacidlo vpravo. */
+  .ponuky { list-style:none; margin:26px 0 0; padding:0; }
+  .ponuky > li { border-top:1px solid var(--line); padding:26px 0; display:grid;
+                 grid-template-columns:minmax(0,1fr) minmax(0,250px); gap:16px 40px; align-items:start; }
+  .ponuky > li:first-child { border-top:none; }
+  .ponuky h3 { margin:0 0 7px; font:600 clamp(19px,1.7vw,23px)/1.25 var(--display);
+               color:var(--ink); letter-spacing:-.01em; }
+  .ponuky .bolest { margin:0 0 11px; font-size:16px; color:var(--body); }
+  .ponuky .dostanete { margin:0; font-size:15px; color:var(--muted); }
+  .ponuky .cena { display:block; font:600 26px/1.05 var(--display); color:var(--ink); letter-spacing:-.01em; }
+  .ponuky .cena small { display:block; margin-top:8px; font:400 13.5px/1.55 var(--ui); color:var(--muted); }
+  .ponuky .btn { margin-top:15px; }
   .lbl { display:block; font-family:var(--ui); font-size:11px; letter-spacing:.09em; text-transform:uppercase;
          color:var(--accent); margin-bottom:3px; }
-  .see, .get { font-size:15px; color:var(--body); }
-  .see code { font-family:var(--mono); font-size:13px; background:var(--card); border:1px solid var(--line);
-              border-radius:4px; padding:1px 5px; overflow-wrap:anywhere; }
-  .subline { margin:13px 0 0; padding-left:260px; font-size:14.5px; color:var(--muted); max-width:1020px; }
-  .subline.subline-index { padding-left:0; }
-  .demo-note { margin:22px 0 0; padding:13px 17px; font-size:15px; color:var(--body); max-width:none;
+  .demo-note { margin:26px 0 0; padding:13px 17px; font-size:15px; color:var(--body); max-width:none;
                border-left:2px solid var(--accent); background:color-mix(in srgb,var(--accent) 7%,var(--paper));
                border-radius:0 6px 6px 0; }
 
-  /* the numbered entry rows: an index of tools that carries "Máte / Dostanete", not a grid of cards */
-  .entries { list-style:none; margin:26px 0 0; padding:0; }
+  /* Index nastrojov: cislo, nazov, pre koho. Ziadne karty, ziadna mriezka. */
+  .entries { list-style:none; margin:20px 0 0; padding:0; }
   .entries > li { border-top:1px solid var(--line); }
-  .entries > li > a { display:grid; grid-template-columns:46px minmax(0,1.15fr) minmax(0,1fr) minmax(0,1fr);
-                      gap:20px; padding:20px 0; text-decoration:none; color:inherit; align-items:start; }
+  .entries > li > a { display:grid; grid-template-columns:38px minmax(0,1fr);
+                      gap:24px; padding:13px 0; text-decoration:none; color:inherit; align-items:baseline; }
+  .entries > li > a > span:not(.num) { display:grid; grid-template-columns:minmax(0,1.05fr) minmax(0,1.3fr);
+                      gap:4px 24px; align-items:baseline; }
   .entries > li > a:hover .name { color:var(--accent); }
   .entries .num { font-family:var(--ui); font-variant-numeric:tabular-nums; font-size:13px; letter-spacing:.06em;
-                  color:var(--accent); padding-top:5px; margin:0; }
-  .entries .name { display:block; font:600 18px/1.3 var(--display); color:var(--ink); letter-spacing:-.005em; margin:0 0 4px; }
-  .entries.compact > li > a { padding:15px 0; }
-  .entries.compact .name { font-size:17px; }
-  .entries.compact .who, .entries.compact .see, .entries.compact .get { font-size:14px; }
+                  color:var(--accent); margin:0; }
+  .entries .name { display:block; font:600 16.5px/1.35 var(--display); color:var(--ink); letter-spacing:-.005em; }
+  .entries .who { display:block; color:var(--muted); font-size:14px; line-height:1.5; }
 
-  .mini-list { list-style:none; margin:18px 0 0; padding:0; }
-  .mini-list li { border-top:1px solid var(--line); }
-  .mini-list a { display:block; padding:17px 0; text-decoration:none; color:inherit; }
-  .mini-list a:hover .name { color:var(--accent); }
-  .mini-list .name { display:block; font:600 19px/1.3 var(--display); color:var(--ink); margin-bottom:4px; }
-  .one-line { margin:16px 0 0; font-size:15px; }
-  .one-line b { color:var(--ink); }
+  /* Hry: mala snimka, nazov, jedna veta, akcia. Cely riadok je odkaz. */
+  .hry-index { list-style:none; margin:20px 0 0; padding:0; }
+  .hry-index > li { border-top:1px solid var(--line); }
+  .hry-index > li:first-child { border-top:none; }
+  .hry-index a { display:grid; grid-template-columns:128px minmax(0,1fr); gap:22px; align-items:center;
+                 padding:14px 0; text-decoration:none; color:inherit; }
+  .hry-index img { display:block; width:100%; height:auto; border-radius:8px; border:1px solid var(--line); }
+  .hry-index .name { display:block; font:600 17px/1.3 var(--display); color:var(--ink); margin-bottom:3px; }
+  .hry-index .co { display:block; font-size:14.5px; color:var(--body); }
+  .hry-index .hraj { display:inline-block; margin-top:7px; font-family:var(--ui); font-size:13.5px; color:var(--accent); }
+  .hry-index a:hover .name, .hry-index a:hover .hraj { color:var(--accent-light); }
+
+  /* Poznamky: index z paper.css, len bez odraziek a s vlasovou linkou. */
+  ol.index { list-style:none; margin:20px 0 0; padding:0; }
+  ol.index li { border-top:1px solid var(--line); }
+  ol.index li:first-child { border-top:none; }
+  ol.index a { padding:12px 0; }
+
+  /* Podnadpis vnutri sekcie: mensia otazka nad kompaktnym zoznamom.
+     Selektor je h3.podnadpis, lebo paper.css ma body.noc h3 s rovnakou vahou. */
+  body.noc h3.podnadpis { margin:54px 0 0; font:600 clamp(17px,1.4vw,20px)/1.35 var(--display); color:var(--ink); }
+  h3.podnadpis + .sub { margin-top:7px; }
+  .viac { margin:22px 0 0; }
 
   /* small badges that ride inside a product name */
   .lang { display:inline-block; font-family:var(--mono); font-size:11.5px; line-height:1; color:var(--muted);
@@ -123,49 +124,24 @@
   #subscribe-thanks { color:var(--ok); font-weight:600; }
   #subscribe-error { color:var(--accent); font-weight:600; }
   .privacy-link { font-family:var(--ui); font-size:13.5px; margin:0 0 18px; color:var(--muted); }
-  /* uvod: skutocna snimka nastroja camt.053 do Excelu. Cela snimka je 1270 px siroka a v pasme
-     uvodu by mala text velky 5 px, tak ram ukazuje len pravu polovicu okna: suhrn vypisu,
-     kontrolu zostatku a tabulku pohybov. Nic sa neprekresluje, len sa oreze. */
-  .heroshot { margin:0; }
-  .heroshot .win { position:relative; overflow:hidden; aspect-ratio:550/617; }
-  .heroshot .win img { position:absolute; top:-1.3%; left:-106.4%; width:230.9%; max-width:none; height:auto; }
 
-  @media (max-width: 900px) {
-    .flag { flex-direction:column; gap:14px; }
-    /* nahlad ma 240 px, nad tuto sirku by sa len rozmazal */
-    .flag .shot { width:100%; max-width:240px; }
-    .subline { padding-left:0; }
-    .seegrid { grid-template-columns:1fr; gap:10px; }
-    .entries > li > a { grid-template-columns:34px minmax(0,1fr); gap:12px; }
-    .entries .see, .entries .get { grid-column:2; }
-    .two { grid-template-columns:1fr; }
-  }
-  @media (max-width: 480px) {
-    .news-list li { flex-direction:column; gap:2px; }
-    .news-list time { width:auto; }
-    .subscribe-form input[type="email"], .subscribe-form .btn { width:100%; }
-  }
-
-  /* Úvod domovskej stránky. Jednoduchá zostava: kicker, nadpis, veta, dve
-     tlačidlá a fakty. Plávajúce karty a dvojstĺpcová mriežka sú preč,
-     Andrej ich 6. 9. 2026 zamietol ako ploché a rušivé. */
-  .hero-kicker { display:flex; align-items:center; gap:12px; margin:0 0 clamp(14px,2vw,22px);
-                 font:500 12px/1 var(--ui); letter-spacing:.20em; text-transform:uppercase; color:var(--muted); }
-  .hero-noc .hero-kicker { justify-content:center; }
-  .hero-kicker i { display:block; width:34px; height:2px; background:var(--accent); border-radius:2px; flex:none; }
-  .hero-kicker em { font-style:normal; color:rgba(255,255,255,.28); margin:0 2px; }
+  /* Uvod domovskej stranky: nadpis, jedna veta, tri tlacidla, riadok dokazov. */
   .hero-noc h1 .zvyraz { color:var(--accent); }
   .btn-sip::after { content:"→"; margin-left:.55em; font-size:1.05em; line-height:1; }
-  .btn-hra::before { content:"▶"; margin-right:.6em; font-size:.72em; line-height:1; opacity:.9; }
-  .hero-produkty { font-family:var(--ui); font-size:14px; color:var(--muted); line-height:1.7; margin:18px 0 0; max-width:72ch; }
-  .hero-noc .hero-produkty { margin-left:auto; margin-right:auto; text-align:center; }
-  .hero-produkty a { color:var(--body); }
-  .hero-produkty b { color:var(--muted); font-weight:600; }
-  .hry-blok { display:grid; grid-template-columns:minmax(0,5fr) minmax(0,6fr); gap:28px var(--gap); align-items:center; }
-  @media (max-width:860px){ .hry-blok { grid-template-columns:minmax(0,1fr); } }
-  .hry-blok img { width:100%; height:auto; border-radius:14px; border:1px solid var(--line); }
-  .hry-blok p { margin:0 0 12px; }
-  .hry-blok .akcie2 { display:flex; gap:10px; flex-wrap:wrap; margin-top:16px; }
+
+  @media (max-width: 900px) {
+    .ponuky > li { grid-template-columns:minmax(0,1fr); gap:14px; }
+    .entries > li > a { grid-template-columns:30px minmax(0,1fr); gap:12px; }
+    .entries > li > a > span:not(.num) { grid-template-columns:minmax(0,1fr); }
+    .two { grid-template-columns:1fr; }
+  }
+  @media (max-width: 560px) {
+    .hry-index a { grid-template-columns:84px minmax(0,1fr); gap:14px; }
+  }
+  @media (max-width: 480px) {
+    .subscribe-form input[type="email"], .subscribe-form .btn { width:100%; }
+    .ponuky .btn { width:100%; text-align:center; }
+  }
 </style>
 <noscript><style>
   /* bez JavaScriptu sa nic neskryva: prichody su ozdoba, nie podmienka citatelnosti */
@@ -174,7 +150,7 @@
 </style></noscript>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"Organization","name":"ARLing s. r. o.","url":"https://arling.sk/","email":"andrej@arling.sk","identifier":"56583486","vatID":"SK2122352100","alternateName":["ARLing","ARLing s.r.o.","ARLing sro"],"legalName":"ARLing s. r. o.","foundingDate":"2024-10","sameAs":["https://www.finstat.sk/56583486","https://www.registeruz.sk/cruz-public/domain/accountingentity/show/2000000000056583486","https://github.com/AndryRoby"],"founder":{"@type":"Person","name":"Andrej Róbert Lauko"},"address":{"@type":"PostalAddress","streetAddress":"Ivanská cesta 32E","postalCode":"821 04","addressLocality":"Bratislava","addressCountry":"SK"},"description":"Kontoauszüge, Produktfeeds und Fehlermeldungen im Browser geprüft, nichts wird hochgeladen. camt.053, MT940, DATEV Buchungsstapel, SEPA pain.001. Bratislava, EU."}</script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"ARLing","alternateName":["ARLing s. r. o.","arling.sk"],"url":"https://arling.sk/","inLanguage":["sk","en","de"],"publisher":{"@type":"Organization","name":"ARLing s. r. o.","url":"https://arling.sk/"}}</script>
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"ItemList","name":"ARLing tools","itemListOrder":"https://schema.org/ItemListOrderAscending","itemListElement":[{"@type":"ListItem","position":1,"url":"https://arling.sk/asistent/","name":"ARLing Asistent"},{"@type":"ListItem","position":2,"url":"https://arling.sk/feed-doctor/","name":"Product Feed Doctor"},{"@type":"ListItem","position":3,"url":"https://arling.sk/bankove-nastroje/","name":"Bank-Tools für Buchhalter"},{"@type":"ListItem","position":4,"url":"https://arling.sk/camt053-to-excel/","name":"camt.053 bank statement to Excel"},{"@type":"ListItem","position":5,"url":"https://arling.sk/sepa-pain001-generator/","name":"SEPA pain.001 Generator for Slovak banks"},{"@type":"ListItem","position":6,"url":"https://arling.sk/parovac-platieb/","name":"Zahlungsabgleich"},{"@type":"ListItem","position":7,"url":"https://arling.sk/sepa-pain001-doctor/","name":"SEPA pain.001 Doctor for Slovak banks"},{"@type":"ListItem","position":8,"url":"https://arling.sk/google-oauth-redirect-doctor/","name":"Google OAuth redirect_uri_mismatch Doctor"},{"@type":"ListItem","position":9,"url":"https://arling.sk/jwt-doctor/","name":"JWT Doctor"},{"@type":"ListItem","position":10,"url":"https://arling.sk/cors-doctor/","name":"CORS Doctor"},{"@type":"ListItem","position":11,"url":"https://arling.sk/stripe-webhook-doctor/","name":"Stripe Webhook Signature Doctor"},{"@type":"ListItem","position":12,"url":"https://arling.sk/firebase-auth-domain-doctor/","name":"Firebase Auth Domain Doctor"},{"@type":"ListItem","position":13,"url":"https://arling.sk/expo-universal-links-doctor/","name":"Expo Universal Links und App Links Doctor"},{"@type":"ListItem","position":14,"url":"https://arling.sk/redirect-loop-doctor/","name":"Redirect Loop Doctor (ERR_TOO_MANY_REDIRECTS)"},{"@type":"ListItem","position":15,"url":"https://arling.sk/cookie-samesite-doctor/","name":"Cookie Doctor (SameSite, Secure, Domain)"},{"@type":"ListItem","position":16,"url":"https://arling.sk/supabase-redirect-doctor/","name":"Supabase Auth Redirect Doctor für Web-Apps"},{"@type":"ListItem","position":17,"url":"https://arling.sk/flutter-supabase-doctor/","name":"Supabase Deep Link Doctor für Flutter"},{"@type":"ListItem","position":18,"url":"https://arling.sk/expo-supabase-auth-doctor/","name":"Redirect Doctor für Expo und Supabase"},{"@type":"ListItem","position":19,"url":"https://arling.sk/janii/","name":"Janii"},{"@type":"ListItem","position":20,"url":"https://arling.sk/bookapp/","name":"bookapp"},{"@type":"ListItem","position":21,"url":"https://arling.sk/efaktura/de/","name":"E-Rechnung: Prüfung, Vorschau und Erstellung"}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"ItemList","name":"ARLing tools","itemListOrder":"https://schema.org/ItemListOrderAscending","itemListElement":[{"@type":"ListItem","position":1,"url":"https://arling.sk/efaktura/de/","name":"E-Rechnung: Prüfung, Vorschau und Erstellung"},{"@type":"ListItem","position":2,"url":"https://arling.sk/kontrola-suboru/de/","name":"SEPA-Datei prüfen lassen"},{"@type":"ListItem","position":3,"url":"https://arling.sk/gdpr-dokumenty/de/","name":"DSGVO-Dokumente für Firma und Onlineshop"},{"@type":"ListItem","position":4,"url":"https://arling.sk/puzzle-books/","name":"Rätselbücher"},{"@type":"ListItem","position":5,"url":"https://arling.sk/bankove-nastroje/de/","name":"Bank-Tools für Buchhalter"},{"@type":"ListItem","position":6,"url":"https://arling.sk/camt053-to-excel/de/","name":"camt.053-Kontoauszug in Excel"},{"@type":"ListItem","position":7,"url":"https://arling.sk/sepa-pain001-generator/de/","name":"SEPA pain.001 Generator"},{"@type":"ListItem","position":8,"url":"https://arling.sk/parovac-platieb/","name":"Zahlungsabgleich"},{"@type":"ListItem","position":9,"url":"https://arling.sk/sepa-pain001-doctor/de/","name":"SEPA pain.001 Doctor"},{"@type":"ListItem","position":10,"url":"https://arling.sk/asistent/de/","name":"ARLing Asistent"},{"@type":"ListItem","position":11,"url":"https://arling.sk/feed-doctor/de/","name":"Product Feed Doctor"},{"@type":"ListItem","position":12,"url":"https://arling.sk/zivotopis/de/","name":"Lebenslauf-Generator"},{"@type":"ListItem","position":13,"url":"https://arling.sk/bookapp/","name":"bookapp"},{"@type":"ListItem","position":14,"url":"https://arling.sk/janii/","name":"Janii"},{"@type":"ListItem","position":15,"url":"https://arling.sk/google-oauth-redirect-doctor/","name":"Google OAuth redirect_uri_mismatch Doctor"},{"@type":"ListItem","position":16,"url":"https://arling.sk/jwt-doctor/","name":"JWT Doctor"},{"@type":"ListItem","position":17,"url":"https://arling.sk/cors-doctor/","name":"CORS Doctor"},{"@type":"ListItem","position":18,"url":"https://arling.sk/stripe-webhook-doctor/","name":"Stripe Webhook Signature Doctor"},{"@type":"ListItem","position":19,"url":"https://arling.sk/firebase-auth-domain-doctor/","name":"Firebase Auth Domain Doctor"},{"@type":"ListItem","position":20,"url":"https://arling.sk/expo-universal-links-doctor/","name":"Expo Universal Links und App Links Doctor"},{"@type":"ListItem","position":21,"url":"https://arling.sk/redirect-loop-doctor/","name":"Redirect Loop Doctor (ERR_TOO_MANY_REDIRECTS)"},{"@type":"ListItem","position":22,"url":"https://arling.sk/cookie-samesite-doctor/","name":"Cookie Doctor (SameSite, Secure, Domain)"},{"@type":"ListItem","position":23,"url":"https://arling.sk/supabase-redirect-doctor/","name":"Supabase Auth Redirect Doctor für Web-Apps"},{"@type":"ListItem","position":24,"url":"https://arling.sk/flutter-supabase-doctor/","name":"Supabase Deep Link Doctor für Flutter"},{"@type":"ListItem","position":25,"url":"https://arling.sk/expo-supabase-auth-doctor/","name":"Redirect Doctor für Expo und Supabase"}]}</script>
 </head>
 <body class="noc">
 <div class="wash" aria-hidden="true"><i></i><i></i></div>
@@ -194,364 +170,295 @@
 
   <section class="hero-noc wrap">
     <canvas class="zar-plocha" data-zar="tok" aria-hidden="true"></canvas>
-    <h1 class="r d1">Werkzeuge, die die Arbeit für Sie erledigen. <span class="zvyraz">In Ihrem Browser.</span></h1>
-    <p class="lead r d2">Für E-Shops ein Assistent, der aus Ihrem Produktfeed verkauft. Für Buchhalter Bankdateien ohne Abtippen. Für Menschen ein Lebenslauf in zehn Minuten. Alles läuft bei Ihnen, nichts wird gesendet, kein Konto nötig.</p>
+    <h1 class="r d1">Werkzeuge, die im Browser laufen und <span class="zvyraz">nichts an einen Server senden.</span></h1>
+    <p class="lead r d2">Wählen Sie Ihr Problem. Vier Dinge auf dieser Seite kosten Geld, alles andere ist kostenlos und ohne Konto.</p>
     <div class="akcie r d3">
-      <a class="btn btn-solid btn-sip" data-zar-zrychli href="#tools" data-umami-event="hero-tools">Werkzeuge ansehen</a>
-      <a class="btn btn-line" href="https://arling.sk/gdpr-dokumenty/de/" data-umami-event="hero-gdpr">DSGVO-Dokumente in 10 Minuten</a>
+      <a class="btn btn-solid btn-sip" data-zar-zrychli href="https://arling.sk/efaktura/de/" data-umami-event="open-tool" data-umami-event-tool="hero-efaktura">E-Rechnung</a>
+      <a class="btn btn-line" href="https://arling.sk/puzzle-books/" data-umami-event="open-tool" data-umami-event-tool="hero-knihy">Rätselbücher</a>
+      <a class="btn btn-line" href="https://arling.sk/games/" data-umami-event="open-game" data-umami-event-game="hero-hry">Spiele</a>
     </div>
-    <p class="hero-produkty r d3"><a href="https://arling.sk/sepa-pain001-doctor/de/" data-umami-event="hero-doctor">Stichtag 15. 11.: SEPA-Datei prüfen</a> · <a href="https://arling.sk/games/hedgehogs/" data-umami-event="hero-hry">Hedgehogs, das tägliche Logikrätsel</a></p>
     <div class="fakty r d3">
-      <span>0 Byte hochgeladen</span>
-      <span>2773 automatisierte Tests</span>
-      <span>ohne Konto, ohne Cookies</span>
-      <span>Bratislava, Europäische Union</span>
+      <span>3631 automatisierte Tests</span>
+      <span>nichts wird an einen Server gesendet</span>
+      <span>jedes Rätsel mit genau einer Lösung</span>
     </div>
   </section>
 
-  <section id="tools">
+  <section id="tools" class="deep">
     <div class="wrap">
-      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h16l-1 12H5z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>Für Onlineshops</p>
-      <h2 class="r">Tools, die verkaufen.</h2>
-      <p class="sub r d1">ARLing Asistent spricht mit Kunden anhand Ihres Feeds, Feed Doctor findet den Fehler im Feed früher als Google oder Meta.</p>
+      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h16l-1 12H5z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>Was Geld kostet</p>
+      <h2 class="r">Haben Sie dieses Problem?</h2>
+      <p class="sub r d1">Vier Probleme, für die es eine fertige Sache gibt. Die Preise sind die von der Produktseite, Sie zahlen einmal und die Datei bleibt in Ihrem Browser.</p>
       <div class="rule"></div>
-      <ul class="flagship-list">
+      <ul class="ponuky">
         <li class="r d1">
-          <a class="flag" href="https://arling.sk/asistent/" data-umami-event="open-tool" data-umami-event-tool="asistent">
-            <span class="shot"><img src="../press/asistent-hub-thumb.png" width="240" height="144" loading="lazy" alt="Geschenkefinder von ARLing Asistent, geöffnet im Testshop Dobrá domácnosť: drei Fragen und fünf Produkte mit Preisen direkt aus dem Feed."></span>
-            <span class="body">
-              <span class="name">ARLing Asistent<span class="lang">SK</span><span class="lang">EN</span><span class="lang">DE</span><span class="lang">Beta</span></span>
-              <span class="who">Verkaufsassistent für WooCommerce und Shopify, in 10 Minuten aus Ihrem Feed eingerichtet, ohne Chats zu speichern. <span class="tag">kostenlos bis 100 Chats</span></span>
-              <span class="seegrid">
-                <span class="see"><span class="lbl">Sie haben</span>Einen Onlineshop und Kunden, die nachts und am Wochenende dasselbe fragen.</span>
-                <span class="get"><span class="lbl">Sie bekommen</span>Einen Chat, der aus Ihrem Feed antwortet und auf konkrete Produkte verlinkt.</span>
-              </span>
-            </span>
-          </a>
-          <p class="subline">Aj <a href="https://arling.sk/asistent/darceky/" data-umami-event="open-tool" data-umami-event-tool="asistent-gift-finder">Geschenkefinder</a>: drei Fragen, fünf Tipps direkt aus Ihrem Feed (neu).</p>
+          <div>
+            <h3>E-Rechnung<span class="lang">DE</span><span class="lang">EN</span><span class="lang">SK</span><span class="lang">CS</span></h3>
+            <p class="bolest">Ein Kunde oder eine Behörde will die Rechnung als XML und Sie haben keine Software, die eine XRechnung erzeugt.</p>
+            <p class="dostanete"><span class="lbl">Sie bekommen</span>Eine Prüfung nach EN 16931, Peppol BIS Billing 3.0 und XRechnung, die jeden Fehler erklärt, eine lesbare Belegvorschau und das fertige XML zum Herunterladen.</p>
+          </div>
+          <div>
+            <span class="cena">2,90 €<small>für eine Rechnung, oder 9,90 € für 30 Tage ohne Begrenzung der Anzahl. Prüfung und Vorschau sind kostenlos.</small></span>
+            <a class="btn btn-solid" href="https://arling.sk/efaktura/de/" data-umami-event="open-tool" data-umami-event-tool="efaktura">Rechnung prüfen</a>
+          </div>
         </li>
         <li class="r d2">
-          <a class="flag" href="https://arling.sk/feed-doctor/" data-umami-event="open-tool" data-umami-event-tool="feed-doctor">
-            <span class="shot"><img src="../press/feed-doctor-hub-thumb.png" width="240" height="144" loading="lazy" alt="Screenshot der Startseite von Product Feed Doctor."></span>
-            <span class="body">
-              <span class="name">Product Feed Doctor</span>
-              <span class="who">Feeds für Google Shopping, Meta-Katalog, Shopify und WooCommerce im Browser geprüft, 31 Regeln. <span class="tag">kostenlos</span></span>
-              <span class="seegrid">
-                <span class="see"><span class="lbl">Sie haben</span>Einen Feed, den Google oder Meta ständig ablehnt. Oder einen Assistenten, der wegen eines schlechten Feeds falsch antwortet.</span>
-                <span class="get"><span class="lbl">Sie bekommen</span>Eine Liste aller fehlenden Felder, falschen Preise, ungültigen GTIN und doppelten IDs, mit Korrektur zu jedem Punkt. Nichts wird hochgeladen.</span>
-              </span>
-            </span>
-          </a>
-          <p class="subline">Aj <a href="https://arling.sk/feed-doctor/" data-umami-event="open-tool" data-umami-event-tool="feed-doctor-monitor">Feed Doctor Monitor</a>: regelmäßige Prüfung, die Ihnen eine E-Mail schickt, wenn der Feed schlechter wird, ab 9 € monatlich (neu).</p>
+          <div>
+            <h3>SEPA-Datei prüfen lassen<span class="lang">DE</span><span class="lang">EN</span><span class="lang">SK</span></h3>
+            <p class="bolest">Ab dem 15. November 2026 muss die Adresse in der Sammelüberweisung in Felder aufgeteilt sein. Eine falsche Adresse und die Bank lehnt die ganze Datei ab.</p>
+            <p class="dostanete"><span class="lbl">Sie bekommen</span>Sie senden die Datei, innerhalb von 24 Stunden haben Sie einen schriftlichen Bericht, welche Zahlungen nach dem Stichtag nicht durchgehen, und die korrigierte Datei. Der Bericht ist so geschrieben, dass Sie ihn an Ihren Softwareanbieter weiterleiten können.</p>
+          </div>
+          <div>
+            <span class="cena">149 €<small>einmalig, kein Abo, keine weiteren Gebühren. Über die Annahme entscheidet Ihre Bank.</small></span>
+            <a class="btn btn-solid" href="https://arling.sk/kontrola-suboru/de/" data-umami-event="open-tool" data-umami-event-tool="kontrola-suboru">Datei prüfen lassen</a>
+          </div>
+        </li>
+        <li class="r d3">
+          <div>
+            <h3>DSGVO-Paket<span class="lang">DE</span><span class="lang">SK</span><span class="lang">CS</span></h3>
+            <p class="bolest">Firma oder Onlineshop ohne Verzeichnis von Verarbeitungstätigkeiten, ohne Auftragsverarbeitungsvertrag und ohne Ablauf bei einer Datenpanne.</p>
+            <p class="dostanete"><span class="lbl">Sie bekommen</span>Zehn Word-Dokumente mit den Daten Ihrer Firma, im Browser in zehn Minuten zusammengestellt. Jede Regel verweist auf den Artikel der DSGVO oder auf ein deutsches Gesetz.</p>
+          </div>
+          <div>
+            <span class="cena">39 €<small>die Datenschutzerklärung ist immer kostenlos. DOCX, sofort, ohne Konto.</small></span>
+            <a class="btn btn-solid" href="https://arling.sk/gdpr-dokumenty/de/" data-umami-event="open-tool" data-umami-event-tool="gdpr-dokumenty">Dokumente erstellen</a>
+          </div>
+        </li>
+        <li class="r d4">
+          <div>
+            <h3>Rätselbücher<span class="lang">EN</span></h3>
+            <p class="bolest">Sie lösen lieber auf Papier als am Telefon, oder Sie suchen ein Geschenk, das länger hält als einen Abend.</p>
+            <p class="dostanete"><span class="lbl">Sie bekommen</span>Zehn Bücher zum Drucken in A4 und US Letter, je 100 Rätsel, jedes mit genau einer Lösung. Von jedem Buch gibt es eine kostenlose Leseprobe mit fünf Rätseln.</p>
+          </div>
+          <div>
+            <span class="cena">4,90 €<small>pro Buch, alle zehn für 19,90 €. Die Seite der Bücher ist auf Englisch.</small></span>
+            <a class="btn btn-solid" href="https://arling.sk/puzzle-books/" data-umami-event="open-tool" data-umami-event-tool="puzzle-books">Bücher ansehen</a>
+          </div>
         </li>
       </ul>
-      <p class="demo-note r d3">Slowakische Live-Demo: <a href="https://arling.sk/asistent/ukazka/" data-umami-event="open-tool" data-umami-event-tool="asistent-ukazka">arling.sk/asistent/ukazka/</a>, der fiktive Shop Dobrá domácnosť mit 64 Produkten aus einem Heureka-Feed, Chat und Geschenkefinder live.</p>
+      <p class="demo-note r d4">Sie können die Datei auch selbst durchgehen: <a href="https://arling.sk/sepa-pain001-doctor/de/" data-umami-event="open-tool" data-umami-event-tool="sepa-doctor">SEPA pain.001 Doctor</a> macht 20 Prüfungen kostenlos, die korrigierte Datei laden Sie dort für 29 € herunter.</p>
+
+      <h3 class="podnadpis r d5">Tippen Sie jeden Monat Auszüge und Zahlungen von Hand ab?</h3>
+      <p class="sub r d5">Für Buchhalter. Vier Werkzeuge funktionieren auch einzeln kostenlos, eine Pro-Lizenz schaltet alle auf einmal frei.</p>
+      <ol class="entries r d5">
+        <li>
+          <a href="https://arling.sk/bankove-nastroje/de/" data-umami-event="open-tool" data-umami-event-tool="bankove-nastroje">
+            <span class="num">01</span>
+            <span><span class="name">Bank-Werkzeuge Pro<span class="lang">DE</span><span class="lang">EN</span><span class="lang">SK</span></span><span class="who">Doctor, Generator, camt.053 nach Excel und Zahlungsabgleich ohne Limits, eine Lizenz <span class="tag">9 € monatlich oder 79 € jährlich</span></span></span>
+          </a>
+        </li>
+        <li>
+          <a href="https://arling.sk/camt053-to-excel/de/" data-umami-event="open-tool" data-umami-event-tool="camt053-to-excel">
+            <span class="num">02</span>
+            <span><span class="name">camt.053-Kontoauszug in Excel<span class="lang">DE</span><span class="lang">EN</span><span class="lang">SK</span></span><span class="who">Sparkasse, Volksbank, UBS, Tatra banka, SLSP, VÚB, ČSOB, jede Bank mit camt.053 <span class="tag">kostenlos</span></span></span>
+          </a>
+        </li>
+        <li>
+          <a href="https://arling.sk/sepa-pain001-generator/de/" data-umami-event="open-tool" data-umami-event-tool="sepa-pain001-generator">
+            <span class="num">03</span>
+            <span><span class="name">SEPA pain.001 Generator<span class="lang">DE</span><span class="lang">EN</span><span class="lang">SK</span></span><span class="who">Excel oder CSV in XML, DE-Profil der Deutschen Kreditwirtschaft, dazu slowakische Bankprofile <span class="tag">kostenlos</span></span></span>
+          </a>
+        </li>
+        <li>
+          <a href="https://arling.sk/parovac-platieb/" data-umami-event="open-tool" data-umami-event-tool="parovac-platieb">
+            <span class="num">04</span>
+            <span><span class="name">Zahlungsabgleich<span class="lang">SK</span></span><span class="who">camt.053-Auszug gegen Rechnungen aus Pohoda, Omega, Money S3, SuperFaktúra <span class="tag">kostenlos</span></span></span>
+          </a>
+        </li>
+        <li>
+          <a href="https://arling.sk/sepa-pain001-doctor/de/" data-umami-event="open-tool" data-umami-event-tool="sepa-pain001-doctor">
+            <span class="num">05</span>
+            <span><span class="name">SEPA pain.001 Doctor<span class="lang">DE</span><span class="lang">EN</span><span class="lang">SK</span></span><span class="who">Die Bank hat das XML ohne klaren Grund abgelehnt: 20 Prüfungen nennen Element, Wert und Korrektur <span class="tag">kostenlos</span></span></span>
+          </a>
+        </li>
+      </ol>
+
+      <h3 class="podnadpis r d6">Verkaufen Sie über einen Onlineshop?</h3>
+      <p class="sub r d6">Kunden fragen nachts dasselbe und der Feed verschlechtert sich leise. Beides lässt sich kostenlos ausprobieren.</p>
+      <ol class="entries r d6">
+        <li>
+          <a href="https://arling.sk/asistent/de/" data-umami-event="open-tool" data-umami-event-tool="asistent">
+            <span class="num">01</span>
+            <span><span class="name">ARLing Asistent<span class="lang">DE</span><span class="lang">EN</span><span class="lang">SK</span><span class="lang">Beta</span></span><span class="who">Verkaufsassistent für WooCommerce und Shopify aus Ihrem Feed, ohne Chats zu speichern <span class="tag">kostenlos bis 100 Chats</span></span></span>
+          </a>
+        </li>
+        <li>
+          <a href="https://arling.sk/feed-doctor/de/" data-umami-event="open-tool" data-umami-event-tool="feed-doctor">
+            <span class="num">02</span>
+            <span><span class="name">Product Feed Doctor<span class="lang">DE</span><span class="lang">EN</span><span class="lang">SK</span></span><span class="who">Feeds für Google Shopping, Meta-Katalog, Shopify und WooCommerce, 31 Regeln; Monitor ab 9 € monatlich <span class="tag">kostenlos</span></span></span>
+          </a>
+        </li>
+      </ol>
+      <p class="viac r d6"><a class="go" href="https://arling.sk/asistent/ukazka/" data-umami-event="open-tool" data-umami-event-tool="asistent-ukazka">Live-Demo des Assistenten in einem fiktiven Shop <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2.5 8h11M9 3.5 13.5 8 9 12.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a></p>
     </div>
   </section>
 
   <section id="hry">
     <div class="wrap">
-      <p class="kicker"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="3.4,14.0 1.2,12.3 3.9,11.4 2.3,9.0 5.2,9.1 4.6,6.3 7.2,7.4 7.6,4.6 9.7,6.5 11.0,4.0 12.3,6.5 14.4,4.6 14.8,7.4 17.4,6.3 16.8,9.1 19.7,9.0 18.1,11.4 20.8,12.3 18.6,14.0 20.8,13.4 23.2,15.2 21.6,17.6 19.4,19.5 3.2,19.5 1.4,17.4"/></svg>Spiele</p>
-      <h2 class="r">Ein Rätsel pro Tag, genau eine Lösung.</h2>
+      <p class="kicker"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="3.4,14.0 1.2,12.3 3.9,11.4 2.3,9.0 5.2,9.1 4.6,6.3 7.2,7.4 7.6,4.6 9.7,6.5 11.0,4.0 12.3,6.5 14.4,4.6 14.8,7.4 17.4,6.3 16.8,9.1 19.7,9.0 18.1,11.4 20.8,12.3 18.6,14.0 20.8,13.4 23.2,15.2 21.6,17.6 19.4,19.5 3.2,19.5 1.4,17.4"/></svg>Kostenlos für Menschen</p>
+      <h2 class="r">Wollen Sie einfach spielen oder brauchen Sie ein Dokument?</h2>
+      <p class="sub r d1">Zehn Spiele, ein Rätsel pro Tag, jedes mit bewiesen eindeutiger Lösung. Archiv ein Jahr zurück und ein Jahr voraus, Übungssets und eine animierte Anleitung. Ohne Werbung, ein Konto nur dann, wenn die Serie den Handywechsel überstehen soll.</p>
       <div class="rule"></div>
-      <div class="hry-blok r d1">
-        <div>
-          <p>Hedgehogs: zwei Igel in jeder Zeile, Spalte und jedem Beet, keine zwei berühren sich. Montags leicht, sonntags am schwersten, jeder Garten mit bewiesen eindeutiger Lösung. Hinweise erklären das Warum; Check zeigt Fehler nur auf Wunsch.</p>
-          <p>Das Archiv ein Jahr zurück und ein Jahr voraus ist kostenlos, dazu Übungssets, eine animierte Anleitung und ein Konto per E-Mail, damit die Serie den Handywechsel übersteht. Ohne Werbung, ohne Konto, wenn Sie keines wollen.</p>
-          <div class="akcie2"><a class="btn btn-solid" href="https://arling.sk/games/hedgehogs/" data-umami-event="open-game" data-umami-event-game="hedgehogs">Den heutigen Garten spielen</a><a class="btn btn-line" href="https://arling.sk/games/">Alle Spiele</a></div>
-        </div>
-        <a href="https://arling.sk/games/hedgehogs/" aria-hidden="true" tabindex="-1"><img src="/games/hedgehogs/og.png" alt="Hedgehogs: ein neun mal neun Garten mit farbigen Beeten und orangen Igeln" width="1200" height="630" loading="lazy" decoding="async"></a>
-      </div>
-      <div class="rule"></div>
-      <div class="hry-blok r d2">
-        <div>
-          <p>Magpies: ein Bilderlogikrätsel (Nonogramm), füllen Sie das Raster nach den Zahlen in jeder Zeile und Spalte, um das Bild aufzudecken. Montags leicht, sonntags am schwersten (fünfzehn mal fünfzehn), jedes Bild mit bewiesen eindeutiger Lösung. Hinweise erklären das Warum; Check zeigt Fehler nur auf Wunsch.</p>
-          <p>Das Archiv ein Jahr zurück und ein Jahr voraus ist kostenlos, dazu Übungssets, eine animierte Anleitung und ein Konto per E-Mail, damit die Serie den Handywechsel übersteht. Ohne Werbung, ohne Konto, wenn Sie keines wollen.</p>
-          <div class="akcie2"><a class="btn btn-solid" href="https://arling.sk/games/magpies/" data-umami-event="open-game" data-umami-event-game="magpies">Das heutige Bild spielen</a><a class="btn btn-line" href="https://arling.sk/games/">Alle Spiele</a></div>
-        </div>
-        <a href="https://arling.sk/games/magpies/" aria-hidden="true" tabindex="-1"><img src="/games/magpies/og.png" alt="Magpies: ein zehn mal zehn Raster aus gefüllten orangen Feldern, die ein Bild ergeben, mit Zeilen- und Spaltenzahlen" width="1200" height="630" loading="lazy" decoding="async"></a>
-      </div>
-      <div class="rule"></div>
-      <div class="hry-blok r d3">
-        <div>
-          <p>Otters: zeichnen Sie den Fluss der Otter als eine geschlossene Schleife entlang der Gitterlinien, eine Zahl in einem Feld sagt, an wie vielen seiner Seiten der Fluss verläuft. Montags leicht, sonntags am schwersten (neun mal neun), jeder Fluss mit bewiesen eindeutiger Lösung. Hinweise erklären das Warum; Check zeigt Fehler nur auf Wunsch.</p>
-          <p>Das Archiv ein Jahr zurück und ein Jahr voraus ist kostenlos, dazu Übungssets, eine animierte Anleitung und ein Konto per E-Mail, damit die Serie den Handywechsel übersteht. Ohne Werbung, ohne Konto, wenn Sie keines wollen.</p>
-          <div class="akcie2"><a class="btn btn-solid" href="https://arling.sk/games/otters/" data-umami-event="open-game" data-umami-event-game="otters">Den heutigen Fluss spielen</a><a class="btn btn-line" href="https://arling.sk/games/">Alle Spiele</a></div>
-        </div>
-        <a href="https://arling.sk/games/otters/" aria-hidden="true" tabindex="-1"><img src="/games/otters/og.png" alt="Otters: ein Sumpfraster mit einer orangen Flussschleife entlang der Gitterlinien und Zahlen, die die Seiten zählen" width="1200" height="630" loading="lazy" decoding="async"></a>
-      </div>
-      <div class="rule"></div>
-      <div class="hry-blok r d4">
-        <div>
-          <p>Cranes: Kraniche sitzen auf Sandbänken. Verbinden Sie sie mit geraden Stegen, sodass jede Sandbank so viele Stege hat wie ihre Zahl, höchstens zwei zwischen demselben Paar, keine Kreuzungen, und jede Sandbank von jeder anderen aus erreichbar ist. Montags leicht, sonntags am schwersten (dreizehn mal dreizehn), jedes Gewässer mit bewiesen eindeutiger Lösung. Hinweise erklären das Warum; Check zeigt Fehler nur auf Wunsch.</p>
-          <p>Das Archiv ein Jahr zurück und ein Jahr voraus ist kostenlos, dazu Übungssets, eine animierte Anleitung und ein Konto per E-Mail, damit die Serie den Handywechsel übersteht. Ohne Werbung, ohne Konto, wenn Sie keines wollen.</p>
-          <div class="akcie2"><a class="btn btn-solid" href="https://arling.sk/games/cranes/" data-umami-event="open-game" data-umami-event-game="cranes">Das heutige Gewässer spielen</a><a class="btn btn-line" href="https://arling.sk/games/">Alle Spiele</a></div>
-        </div>
-        <a href="https://arling.sk/games/cranes/" aria-hidden="true" tabindex="-1"><img src="/games/cranes/og.png" alt="Cranes: Sandbänke mit geraden Stegen nach den Zahlen verbinden" width="1200" height="630" loading="lazy" decoding="async"></a>
-      </div>
-      <div class="rule"></div>
-      <div class="hry-blok r d5">
-        <div>
-          <p>Swans: eine Schleife durch weiße und schwarze Schwäne auf dem See. Bei einem weißen Schwan verläuft die Schleife gerade und biegt kurz davor oder danach ab; bei einem schwarzen biegt sie ab und verläuft auf beiden Seiten gerade. Montags leicht, sonntags am schwersten (zehn mal zehn), jeder See mit bewiesen eindeutiger Lösung. Hinweise erklären das Warum; Check zeigt Fehler nur auf Wunsch.</p>
-          <p>Das Archiv ein Jahr zurück und ein Jahr voraus ist kostenlos, dazu Übungssets, eine animierte Anleitung und ein Konto per E-Mail, damit die Serie den Handywechsel übersteht. Ohne Werbung, ohne Konto, wenn Sie keines wollen.</p>
-          <div class="akcie2"><a class="btn btn-solid" href="https://arling.sk/games/swans/" data-umami-event="open-game" data-umami-event-game="swans">Den heutigen See spielen</a><a class="btn btn-line" href="https://arling.sk/games/">Alle Spiele</a></div>
-        </div>
-        <a href="https://arling.sk/games/swans/" aria-hidden="true" tabindex="-1"><img src="/games/swans/og.png" alt="Swans: Schleife durch weiße und schwarze Schwäne auf einem Seeraster" width="1200" height="630" loading="lazy" decoding="async"></a>
-      </div>
-      <div class="rule"></div>
-      <div class="hry-blok r d6">
-        <div>
-          <p>Voles: die Wiese steht unter Wasser. Färben Sie das Wasser so, dass jede Insel genau eine Wühlmausfamilie hat, so groß wie ihre Zahl sagt. Inseln berühren sich nie an einer Seite, das ganze Wasser hängt zusammen und kein zwei mal zwei Block ist ganz Wasser. Montags leicht, sonntags am schwersten (zwölf mal zwölf), jede Wiese mit bewiesen eindeutiger Lösung. Hinweise erklären das Warum; Check zeigt Fehler nur auf Wunsch.</p>
-          <p>Das Archiv ein Jahr zurück und ein Jahr voraus ist kostenlos, dazu Übungssets, eine animierte Anleitung und ein Konto per E-Mail, damit die Serie den Handywechsel übersteht. Ohne Werbung, ohne Konto, wenn Sie keines wollen.</p>
-          <div class="akcie2"><a class="btn btn-solid" href="https://arling.sk/games/voles/" data-umami-event="open-game" data-umami-event-game="voles">Die heutige Wiese spielen</a><a class="btn btn-line" href="https://arling.sk/games/">Alle Spiele</a></div>
-        </div>
-        <a href="https://arling.sk/games/voles/" aria-hidden="true" tabindex="-1"><img src="/games/voles/og.png" alt="Voles: Wasser so färben, dass jede Insel genau eine Wühlmausfamilie hat" width="1200" height="630" loading="lazy" decoding="async"></a>
-      </div>
-      <div class="rule"></div>
-      <div class="hry-blok r d6">
-        <div>
-          <p>Squirrels: Eichhörnchen verstecken Eicheln in den Höhlen eines Baums. Eine Zahl am Stamm sagt, wie viele Eicheln in der Höhlenreihe rechts oder darunter liegen. Jede Höhle trägt eine Ziffer von 1 bis 9, innerhalb einer Reihe wiederholt sich keine Zahl. Montags leicht, sonntags am schwersten (zwölf mal zwölf), jeder Baum mit bewiesen eindeutiger Lösung. Hinweise erklären das Warum; Check zeigt Fehler nur auf Wunsch.</p>
-          <p>Das Archiv ein Jahr zurück und ein Jahr voraus ist kostenlos, dazu Übungssets, eine animierte Anleitung und ein Konto per E-Mail, damit die Serie den Handywechsel übersteht. Ohne Werbung, ohne Konto, wenn Sie keines wollen.</p>
-          <div class="akcie2"><a class="btn btn-solid" href="https://arling.sk/games/squirrels/" data-umami-event="open-game" data-umami-event-game="squirrels">Den heutigen Baum spielen</a><a class="btn btn-line" href="https://arling.sk/games/">Alle Spiele</a></div>
-        </div>
-        <a href="https://arling.sk/games/squirrels/" aria-hidden="true" tabindex="-1"><img src="/games/squirrels/og.png" alt="Squirrels: Kreuzsummen, 1 bis 9 in die Höhlen, damit die Summen stimmen" width="1200" height="630" loading="lazy" decoding="async"></a>
-      </div>
-      <div class="rule"></div>
-      <div class="hry-blok r d6">
-        <div>
-          <p>Herons: jedes Nestpaar mit derselben Zahl gehört zu einem Reiherpaar. Zeichnen Sie dazwischen einen Flugweg, der nur über benachbarte Felder verläuft, sich nie mit einem anderen kreuzt und jedes Feld des Sumpfs genau einmal nutzt. Montags leicht, sonntags am schwersten (acht mal acht), jeder Sumpf mit bewiesen eindeutiger Lösung. Hinweise erklären das Warum; Check zeigt Fehler nur auf Wunsch.</p>
-          <p>Das Archiv ein Jahr zurück und ein Jahr voraus ist kostenlos, dazu Übungssets, eine animierte Anleitung und ein Konto per E-Mail, damit die Serie den Handywechsel übersteht. Ohne Werbung, ohne Konto, wenn Sie keines wollen.</p>
-          <div class="akcie2"><a class="btn btn-solid" href="https://arling.sk/games/herons/" data-umami-event="open-game" data-umami-event-game="herons">Den heutigen Sumpf spielen</a><a class="btn btn-line" href="https://arling.sk/games/">Alle Spiele</a></div>
-        </div>
-        <a href="https://arling.sk/games/herons/" aria-hidden="true" tabindex="-1"><img src="/games/herons/og.png" alt="Herons: Nestpaare mit Flugwegen verbinden, die sich nicht kreuzen" width="1200" height="630" loading="lazy" decoding="async"></a>
-      </div>
-      <div class="rule"></div>
-      <div class="hry-blok r d6">
-        <div>
-          <p>Badgers: Dachse teilen sich den Bau. Füllen Sie das Gitter so, dass jede Zeile, jede Spalte und jeder Block jede Zahl genau einmal enthält. Die gepunkteten Gehege zeigen, wie viele Dachse dort zusammen wohnen, und in einem Gehege wiederholt sich keine Zahl. Am Anfang ist nichts vorgegeben. Montags und dienstags sechs mal sechs, ab Mittwoch neun mal neun, sonntags am schwersten, jeder Bau mit bewiesen eindeutiger Lösung und ohne Raten lösbar. Hinweise erklären das Warum; Check zeigt Fehler nur auf Wunsch.</p>
-          <p>Das Archiv ein Jahr zurück und ein Jahr voraus ist kostenlos, dazu Übungssets, eine animierte Anleitung und ein Konto per E-Mail, damit die Serie den Handywechsel übersteht. Ohne Werbung, ohne Konto, wenn Sie keines wollen.</p>
-          <div class="akcie2"><a class="btn btn-solid" href="https://arling.sk/games/badgers/" data-umami-event="open-game" data-umami-event-game="badgers">Den heutigen Bau spielen</a><a class="btn btn-line" href="https://arling.sk/games/">Alle Spiele</a></div>
-        </div>
-        <a href="https://arling.sk/games/badgers/" aria-hidden="true" tabindex="-1"><img src="/games/badgers/og.png" alt="Badgers: Summengehege, Zahlen 1 bis 9 so, dass die Summen stimmen" width="1200" height="630" loading="lazy" decoding="async"></a>
-      </div>
-      <div class="rule"></div>
-      <div class="hry-blok r d6">
-        <div>
-          <p>Hares: klassisches Sudoku mit einer Regel mehr. Hasen springen wie ein Springer im Schach, also tragen zwei Felder im Springerabstand nie dieselbe Zahl; ab Freitag sitzen sie auch nicht neben derselben Zahl, Ecken eingeschlossen. Montags und dienstags sechs mal sechs, ab Mittwoch neun mal neun, sonntags am schwersten, jede Wiese mit bewiesen eindeutiger Lösung und ohne Raten lösbar. Hinweise erklären das Warum; Check zeigt Fehler nur auf Wunsch.</p>
-          <p>Das Archiv ein Jahr zurück und ein Jahr voraus ist kostenlos, dazu Übungssets, eine animierte Anleitung und ein Konto per E-Mail, damit die Serie den Handywechsel übersteht. Ohne Werbung, ohne Konto, wenn Sie keines wollen.</p>
-          <div class="akcie2"><a class="btn btn-solid" href="https://arling.sk/games/hares/" data-umami-event="open-game" data-umami-event-game="hares">Die heutige Wiese spielen</a><a class="btn btn-line" href="https://arling.sk/games/">Alle Spiele</a></div>
-        </div>
-        <a href="https://arling.sk/games/hares/" aria-hidden="true" tabindex="-1"><img src="/games/hares/og.png" alt="Hares: Sudoku mit Springerregel, zwei Felder im Springerabstand tragen nie dieselbe Zahl" width="1200" height="630" loading="lazy" decoding="async"></a>
-      </div>
-    </div>
-  </section>
-
-  <section id="pre-ludi">
-    <div class="wrap">
-      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20v-1.5A3.5 3.5 0 0 1 7.5 15h4A3.5 3.5 0 0 1 15 18.5V20"/><circle cx="9.5" cy="8.5" r="3.5"/><path d="M17 8h4M17 12h4"/></svg>Für Privatpersonen</p>
-      <h2 class="r">Lebenslauf in zehn Minuten, ohne Registrierung.</h2>
-      <div class="rule"></div>
-      <div class="two r d1">
-        <div>
-          <p>Vier Schritte, drei Vorlagen und ein fertiges PDF in A4. Die Ausgabe gibt es auf Slowakisch, Tschechisch, Deutsch und Englisch. So schicken Sie denselben Lebenslauf nach Bratislava und nach Wien, ohne ihn neu zu schreiben.</p>
-          <p>Läuft vollständig in Ihrem Browser. Foto und Text werden nirgendwohin übertragen, ein Konto ist nicht nötig, das PDF hat kein Wasserzeichen. Den angefangenen Lebenslauf speichern Sie als Datei und arbeiten später weiter.</p>
-          <p><a class="btn btn-solid" href="https://arling.sk/zivotopis/" data-umami-event="open-tool" data-umami-event-tool="zivotopis">Kostenlos testen</a></p>
-        </div>
-        <div>
-          <p class="mini">Was Sie bekommen</p>
-          <ul>
-            <li>PDF in A4 mit 14 mm Rand, bereit zum Drucken und Versenden</li>
-            <li>Drei Vorlagen und vier Ausgabesprachen</li>
-            <li>Export des Entwurfs als Datei, damit nichts verloren geht</li>
-            <li>Ohne Konto, ohne E-Mail, ohne Wasserzeichen</li>
-          </ul>
-        </div>
-      </div>
-
-<div class="rule"></div>
-      <h3 class="r d2">Und zwei Apps, die aus eigenem Bedarf entstanden sind.</h3>
-      <div class="two r d2">
-        <div>
-          <p><b>bookapp</b> ist eine Hausbibliothek in Millimetern. Sie fotografieren den Buchrücken, die App merkt sich, wie viel Regal er braucht, und sagt Ihnen, ob das nächste Buch noch passt. Sie läuft auf dem Telefon, die Daten bleiben dort.</p>
-          <p><a class="go" href="https://arling.sk/bookapp/" data-umami-event="open-tool" data-umami-event-tool="bookapp">bookapp ansehen <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2.5 8h11M9 3.5 13.5 8 9 12.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a></p>
-        </div>
-        <div>
-          <p><b>Janii</b> sortiert Hochzeitsfotos auf Ihrem eigenen Rechner. Es geht Tausende Aufnahmen durch, legt Unscharfes und geschlossene Augen beiseite und ordnet den Rest, damit Sie nicht jedes einzelne Bild anklicken müssen. Die Fotos verlassen den Rechner nicht, die Arbeit macht Ihre eigene Maschine.</p>
-          <p><a class="go" href="https://arling.sk/janii/" data-umami-event="open-tool" data-umami-event-tool="janii">Janii ansehen <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2.5 8h11M9 3.5 13.5 8 9 12.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a></p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section id="ucty" class="deep">
-    <div class="wrap">
-      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>Für Buchhaltung und Unternehmen</p>
-      <h2 class="r">Bankdateien ohne Handarbeit.</h2>
-      <p class="sub r d1">Auszüge umwandeln, Sammelzahlungen anlegen und Rechnungen abgleichen. Vier Tools funktionieren auch einzeln kostenlos, eine Lizenz schaltet sie alle frei. Die fünfte Zeile ist ein bezahlter Service: wir prüfen die Datei für Sie.</p>
-      <div class="rule"></div>
-      <ul class="flagship-list">
+      <ul class="hry-index">
         <li class="r d1">
-          <a class="flag" href="https://arling.sk/bankove-nastroje/" data-umami-event="open-tool" data-umami-event-tool="bankove-nastroje">
-            <span class="shot"><img src="../press/bankove-nastroje-hub-thumb.png" width="240" height="144" loading="lazy" alt="Screenshot der Startseite von Bank-Tools für Buchhalter."></span>
-            <span class="body">
-              <span class="name">Bank-Tools für Buchhalter<span class="lang">SK</span></span>
-              <span class="who">Doctor, Generator, camt.053 → Excel, Zahlungsabgleich: eine Pro-Lizenz. <span class="tag">ab 9 €</span></span>
-              <span class="seegrid">
-                <span class="see"><span class="lbl">Sie haben</span>Zahlungen, Auszüge und Rechnungen jeden Monat.</span>
-                <span class="get"><span class="lbl">Sie bekommen</span>Vier Tools ohne Limits und eine Lizenz für 9 € monatlich oder 79 € jährlich.</span>
-              </span>
-            </span>
+          <a href="https://arling.sk/games/hedgehogs/" data-umami-event="open-game" data-umami-event-game="hedgehogs">
+            <img src="/games/hedgehogs/og.png" alt="Hedgehogs: ein neun mal neun Garten mit farbigen Beeten und orangen Igeln" width="1200" height="630" loading="lazy" decoding="async">
+            <span><span class="name">Hedgehogs</span><span class="co">Zwei Igel in jeder Zeile, Spalte und jedem Beet, keine zwei berühren sich.</span><span class="hraj">Den heutigen Garten spielen →</span></span>
+          </a>
+        </li>
+        <li class="r d1">
+          <a href="https://arling.sk/games/magpies/" data-umami-event="open-game" data-umami-event-game="magpies">
+            <img src="/games/magpies/og.png" alt="Magpies: ein zehn mal zehn Raster aus gefüllten orangen Feldern, die ein Bild ergeben, mit Zeilen- und Spaltenzahlen" width="1200" height="630" loading="lazy" decoding="async">
+            <span><span class="name">Magpies</span><span class="co">Nonogramm: das Raster nach den Zahlen füllen und das Bild aufdecken.</span><span class="hraj">Das heutige Bild spielen →</span></span>
+          </a>
+        </li>
+        <li class="r d2">
+          <a href="https://arling.sk/games/otters/" data-umami-event="open-game" data-umami-event-game="otters">
+            <img src="/games/otters/og.png" alt="Otters: ein Sumpfraster mit einer orangen Flussschleife entlang der Gitterlinien und Zahlen, die die Seiten zählen" width="1200" height="630" loading="lazy" decoding="async">
+            <span><span class="name">Otters</span><span class="co">Eine geschlossene Flussschleife entlang der Gitterlinien, die Zahl nennt die Seiten.</span><span class="hraj">Den heutigen Fluss spielen →</span></span>
+          </a>
+        </li>
+        <li class="r d2">
+          <a href="https://arling.sk/games/cranes/" data-umami-event="open-game" data-umami-event-game="cranes">
+            <img src="/games/cranes/og.png" alt="Cranes: Sandbänke mit geraden Stegen nach den Zahlen verbinden" width="1200" height="630" loading="lazy" decoding="async">
+            <span><span class="name">Cranes</span><span class="co">Sandbänke mit Stegen verbinden, jede bekommt so viele, wie ihre Zahl sagt.</span><span class="hraj">Das heutige Gewässer spielen →</span></span>
+          </a>
+        </li>
+        <li class="r d3">
+          <a href="https://arling.sk/games/swans/" data-umami-event="open-game" data-umami-event-game="swans">
+            <img src="/games/swans/og.png" alt="Swans: Schleife durch weiße und schwarze Schwäne auf einem Seeraster" width="1200" height="630" loading="lazy" decoding="async">
+            <span><span class="name">Swans</span><span class="co">Eine Schleife durch weiße und schwarze Schwäne, jede Farbe hat ihre eigene Regel.</span><span class="hraj">Den heutigen See spielen →</span></span>
+          </a>
+        </li>
+        <li class="r d3">
+          <a href="https://arling.sk/games/voles/" data-umami-event="open-game" data-umami-event-game="voles">
+            <img src="/games/voles/og.png" alt="Voles: Wasser so färben, dass jede Insel genau eine Wühlmausfamilie hat" width="1200" height="630" loading="lazy" decoding="async">
+            <span><span class="name">Voles</span><span class="co">Das Wasser so färben, dass jede Insel genau eine Wühlmausfamilie hat.</span><span class="hraj">Die heutige Wiese spielen →</span></span>
+          </a>
+        </li>
+        <li class="r d4">
+          <a href="https://arling.sk/games/squirrels/" data-umami-event="open-game" data-umami-event-game="squirrels">
+            <img src="/games/squirrels/og.png" alt="Squirrels: Kreuzsummen, 1 bis 9 in die Höhlen, damit die Summen stimmen" width="1200" height="630" loading="lazy" decoding="async">
+            <span><span class="name">Squirrels</span><span class="co">Kreuzsummen: Ziffern 1 bis 9 in die Höhlen, damit die Summen am Stamm stimmen.</span><span class="hraj">Den heutigen Baum spielen →</span></span>
+          </a>
+        </li>
+        <li class="r d4">
+          <a href="https://arling.sk/games/herons/" data-umami-event="open-game" data-umami-event-game="herons">
+            <img src="/games/herons/og.png" alt="Herons: Nestpaare mit Flugwegen verbinden, die sich nicht kreuzen" width="1200" height="630" loading="lazy" decoding="async">
+            <span><span class="name">Herons</span><span class="co">Nestpaare mit Wegen verbinden, die sich nie kreuzen und jedes Feld einmal nutzen.</span><span class="hraj">Den heutigen Sumpf spielen →</span></span>
+          </a>
+        </li>
+        <li class="r d5">
+          <a href="https://arling.sk/games/badgers/" data-umami-event="open-game" data-umami-event-game="badgers">
+            <img src="/games/badgers/og.png" alt="Badgers: Summengehege, Zahlen 1 bis 9 so, dass die Summen stimmen" width="1200" height="630" loading="lazy" decoding="async">
+            <span><span class="name">Badgers</span><span class="co">Summen-Sudoku, das mit einem völlig leeren Gitter beginnt.</span><span class="hraj">Den heutigen Bau spielen →</span></span>
+          </a>
+        </li>
+        <li class="r d5">
+          <a href="https://arling.sk/games/hares/" data-umami-event="open-game" data-umami-event-game="hares">
+            <img src="/games/hares/og.png" alt="Hares: Sudoku mit Springerregel, zwei Felder im Springerabstand tragen nie dieselbe Zahl" width="1200" height="630" loading="lazy" decoding="async">
+            <span><span class="name">Hares</span><span class="co">Sudoku mit Springerregel: zwei Felder im Springerabstand tragen nie dieselbe Zahl.</span><span class="hraj">Die heutige Wiese spielen →</span></span>
           </a>
         </li>
       </ul>
-      <p class="demo-note r d3">Der Stichtag <b>15. November 2026</b> rückt näher und die Adresse in einer Zahlung muss in eigene Felder aufgeteilt sein. Prüfen Sie Ihre Datei kostenlos im <a href="https://arling.sk/sepa-pain001-doctor/" data-umami-event="open-tool" data-umami-event-tool="sepa-doctor">SEPA pain.001 Doctor</a>, oder lassen Sie <a href="https://arling.sk/kontrola-suboru/de/" data-umami-event="open-tool" data-umami-event-tool="kontrola-suboru">die Prüfung für sich erledigen</a> mit einer schriftlichen Zusammenfassung für Ihren Softwareanbieter.</p>
-      <ol class="entries r d2">
+      <p class="viac r d6"><a class="btn btn-line" href="https://arling.sk/games/" data-umami-event="open-game" data-umami-event-game="vsetky-hry">Alle Spiele und das Archiv</a></p>
+
+      <h3 class="podnadpis r d6">Brauchen Sie ein Dokument und keinen Buchhalter?</h3>
+      <p class="sub r d6">Sie füllen es im Browser aus und laden es als PDF herunter. Nichts wird an einen Server gesendet.</p>
+      <ol class="entries r d6">
         <li>
-          <a href="https://arling.sk/camt053-to-excel/" data-umami-event="open-tool" data-umami-event-tool="camt053-to-excel">
+          <a href="https://arling.sk/zivotopis/de/" data-umami-event="open-tool" data-umami-event-tool="zivotopis">
             <span class="num">01</span>
-            <span><span class="name">camt.053-Kontoauszug in Excel<span class="lang">SK</span><span class="lang">EN</span><span class="lang">DE</span></span><span class="who">Tatra banka, SLSP, VÚB, ČSOB, Sparkasse, Volksbank, UBS, jede Bank mit camt.053 <span class="tag">kostenlos</span></span></span>
-            <span class="see"><span class="lbl">Sie haben</span>Auszug aus dem Online-Banking als XML (camt.053), die Buchhaltungssoftware will eine Tabelle.</span>
-            <span class="get"><span class="lbl">Sie bekommen</span>CSV oder Excel mit Datum, Betrag, Gegenpartei und Verwendungszweck, samt Summe und Saldoprüfung.</span>
+            <span><span class="name">Lebenslauf-Generator<span class="lang">DE</span><span class="lang">EN</span><span class="lang">SK</span><span class="lang">CS</span></span><span class="who">Vier Schritte, drei Vorlagen, ein A4-PDF ohne Wasserzeichen und ohne Registrierung <span class="tag">kostenlos</span></span></span>
           </a>
-          <p class="subline subline-index">Außerdem Export nach <a href="https://arling.sk/camt053-to-excel/?export=mt940#pro" data-umami-event="open-tool" data-umami-event-tool="camt053-mt940">MT940 und DATEV Buchungsstapel</a> für die deutsche Buchhaltung, Pro (neu).</p>
         </li>
         <li>
-          <a href="https://arling.sk/sepa-pain001-generator/" data-umami-event="open-tool" data-umami-event-tool="sepa-pain001-generator">
+          <a href="https://arling.sk/bookapp/" data-umami-event="open-tool" data-umami-event-tool="bookapp">
             <span class="num">02</span>
-            <span><span class="name">SEPA pain.001 Generator<span class="lang">SK</span><span class="lang">EN</span><span class="lang">DE</span></span><span class="who">Excel oder CSV → XML für Tatra banka, SLSP, VÚB, ČSOB, DE-Profil der Deutschen Kreditwirtschaft <span class="tag">kostenlos</span></span></span>
-            <span class="see"><span class="lbl">Sie haben</span>Zahlungsliste in Excel, die Bank will einen Sammelauftrag als XML.</span>
-            <span class="get"><span class="lbl">Sie bekommen</span>Fertige pain.001-Datei, vom Doctor geprüft, in einer Minute zum Download.</span>
+            <span><span class="name">bookapp<span class="lang">SK</span></span><span class="who">Die Hausbibliothek in Millimetern: Buchrücken fotografieren und wissen, ob das nächste Buch noch passt <span class="tag">kostenlos</span></span></span>
           </a>
         </li>
         <li>
-          <a href="https://arling.sk/parovac-platieb/" data-umami-event="open-tool" data-umami-event-tool="parovac-platieb">
+          <a href="https://arling.sk/janii/" data-umami-event="open-tool" data-umami-event-tool="janii">
             <span class="num">03</span>
-            <span><span class="name">Zahlungsabgleich<span class="lang">SK</span></span><span class="who">camt.053-Auszug gegen Rechnungen aus Pohoda, Omega, Money S3, SuperFaktúra <span class="tag">kostenlos</span></span></span>
-            <span class="see"><span class="lbl">Sie haben</span>Kontoauszug und Liste der ausgestellten Rechnungen, Sie gleichen sie von Hand in Excel ab.</span>
-            <span class="get"><span class="lbl">Sie bekommen</span>Zugeordnete, teilweise zugeordnete, überfällige und nicht zugeordnete Zahlungen, mit CSV-Export.</span>
-          </a>
-        </li>
-        <li>
-          <a href="https://arling.sk/sepa-pain001-doctor/" data-umami-event="open-tool" data-umami-event-tool="sepa-pain001-doctor">
-            <span class="num">04</span>
-            <span><span class="name">SEPA pain.001 Doctor<span class="lang">SK</span></span><span class="who">Tatra banka, SLSP, VÚB, ČSOB <span class="tag">kostenlos</span></span></span>
-            <span class="see"><span class="lbl">Sie sehen</span>Die Bank hat den XML-Sammelauftrag ohne klaren Grund abgelehnt.</span>
-            <span class="get"><span class="lbl">Sie bekommen</span>Das genaue Element, den Wert und die Korrektur: IBAN, BIC, Beträge, Anzahl, Referenzen, Zeichensatz.</span>
-          </a>
-        </li>
-        <li>
-          <a href="https://arling.sk/kontrola-suboru/de/" data-umami-event="open-tool" data-umami-event-tool="kontrola-suboru">
-            <span class="num">05</span>
-            <span><span class="name">SEPA-Datei prüfen lassen<span class="lang">SK</span><span class="lang">DE</span></span><span class="who">Sie senden die Datei, innerhalb von 24 Stunden bekommen Sie einen schriftlichen Bericht und die korrigierte Datei. <span class="tag">149 €</span></span></span>
-            <span class="see"><span class="lbl">Sie haben</span>Sie wollen das nicht selbst machen und brauchen ein schriftliches Ergebnis für Ihren Softwareanbieter.</span>
-            <span class="get"><span class="lbl">Sie bekommen</span>Einen schriftlichen Bericht, welche Zahlungen nach dem 15. November 2026 abgelehnt werden, und die korrigierte Datei innerhalb von 24 Stunden.</span>
-          </a>
-        </li>
-        <li>
-          <a href="https://arling.sk/efaktura/de/" data-umami-event="open-tool" data-umami-event-tool="efaktura">
-            <span class="num">06</span>
-            <span><span class="name">E-Rechnung<span class="lang">SK</span><span class="lang">CS</span><span class="lang">DE</span></span><span class="who">Prüfung und Vorschau kostenlos, XML für 2,90 € oder 9,90 € für 30 Tage <span class="tag">2,90 €</span></span></span>
-            <span class="see"><span class="lbl">Sie haben</span>Eine XML-Rechnung, bei der Sie nicht wissen, ob sie nach EN 16931 und Peppol durchgeht, oder Sie brauchen eine E-Rechnung ohne Buchhaltungssoftware.</span>
-            <span class="get"><span class="lbl">Sie bekommen</span>Eine Prüfung, die jeden Fehler erklärt, eine Vorschau der Datei als Beleg und das fertige XML; in der Slowakei ist die E-Rechnung ab 1. Januar 2027 für Umsatzsteuerpflichtige verpflichtend.</span>
+            <span><span class="name">Janii<span class="lang">SK</span></span><span class="who">Sortiert Hochzeitsfotos auf Ihrem eigenen Rechner, Unschärfe und geschlossene Augen kommen beiseite <span class="tag">kostenlos</span></span></span>
           </a>
         </li>
       </ol>
     </div>
   </section>
 
-  <section id="vyvojari">
+  <section id="vyvojari" class="deep">
     <div class="wrap">
       <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="8" width="16" height="12" rx="2"/><path d="M9 8V5.5M15 8V5.5M4 13h2M18 13h2"/></svg>Für Entwickler</p>
-      <h2 class="r">Genauer Fehler, genaue Korrektur.</h2>
-      <p class="sub r d1">Fügen Sie ein, was Sie haben. Jedes Tool sagt Ihnen, was nicht stimmt, und welchen Wert Sie ändern müssen. Alles im Browser, kostenlos, ohne Konto.</p>
+      <h2 class="r">Zeigt die Konsole einen Fehler, den Sie nicht benennen können?</h2>
+      <p class="sub r d1">Elf Werkzeuge, eines pro Fehlermeldung. Fügen Sie ein, was Sie haben, das Werkzeug sagt Ihnen, was nicht stimmt, und welchen Wert Sie ändern müssen. Alles im Browser, kostenlos, ohne Konto.</p>
       <div class="rule"></div>
-      <ol class="entries compact r d2">
+      <ol class="entries r d2">
         <li>
           <a href="https://arling.sk/google-oauth-redirect-doctor/" data-umami-event="open-tool" data-umami-event-tool="google-oauth-redirect-doctor">
             <span class="num">01</span>
             <span><span class="name">Google OAuth redirect_uri_mismatch Doctor</span><span class="who">Jeder Stack: NextAuth, Supabase, Firebase, Passport, Django, Laravel, Python, Expo, Flutter, Postman, gcloud <span class="tag">kostenlos</span></span></span>
-            <span class="see"><span class="lbl">Sie sehen</span><code>Error 400: redirect_uri_mismatch</code></span>
-            <span class="get"><span class="lbl">Sie bekommen</span>Das abweichende Zeichen, Byte für Byte, und die genaue Zeichenfolge zum Eintragen in der Google Cloud Console.</span>
           </a>
         </li>
         <li>
           <a href="https://arling.sk/jwt-doctor/" data-umami-event="open-tool" data-umami-event-tool="jwt-doctor">
             <span class="num">02</span>
             <span><span class="name">JWT Doctor</span><span class="who">Auth0, Supabase, Firebase, Cognito, Keycloak, Clerk, NextAuth, jsonwebtoken, jose <span class="tag">kostenlos</span></span></span>
-            <span class="see"><span class="lbl">Sie sehen</span><code>jwt malformed</code>, <code>invalid signature</code>, <code>jwt expired</code></span>
-            <span class="get"><span class="lbl">Sie bekommen</span>Dekodiert ihn und zeigt genau, warum.</span>
           </a>
         </li>
         <li>
           <a href="https://arling.sk/cors-doctor/" data-umami-event="open-tool" data-umami-event-tool="cors-doctor">
             <span class="num">03</span>
             <span><span class="name">CORS Doctor</span><span class="who">Express, FastAPI, Django, Rails, Laravel, Go, .NET, Supabase, Firebase Functions, S3, Cloudflare Workers <span class="tag">kostenlos</span></span></span>
-            <span class="see"><span class="lbl">Sie sehen</span><code>has been blocked by CORS policy</code></span>
-            <span class="get"><span class="lbl">Sie bekommen</span>Findet, welcher Header fehlt und wo.</span>
           </a>
         </li>
         <li>
           <a href="https://arling.sk/stripe-webhook-doctor/" data-umami-event="open-tool" data-umami-event-tool="stripe-webhook-doctor">
             <span class="num">04</span>
             <span><span class="name">Stripe Webhook Signature Doctor</span><span class="who">Next.js, Express, Fastify, NestJS, Django, Flask, FastAPI, Rails, Laravel, Go, .NET, serverless <span class="tag">kostenlos</span></span></span>
-            <span class="see"><span class="lbl">Sie sehen</span><code>No signatures found matching the expected signature for payload</code></span>
-            <span class="get"><span class="lbl">Sie bekommen</span>Die Ursache (geparster Body, falsches Secret, Modus, Toleranz, Proxy) und ein Code-Snippet für Ihr Framework.</span>
           </a>
         </li>
         <li>
           <a href="https://arling.sk/firebase-auth-domain-doctor/" data-umami-event="open-tool" data-umami-event-tool="firebase-auth-domain-doctor">
             <span class="num">05</span>
             <span><span class="name">Firebase Auth Domain Doctor</span><span class="who">Firebase Hosting, Vercel, Netlify, eigene Domains, localhost, Capacitor/Webview <span class="tag">kostenlos</span></span></span>
-            <span class="see"><span class="lbl">Sie sehen</span><code>auth/unauthorized-domain</code></span>
-            <span class="get"><span class="lbl">Sie bekommen</span>Prüft authDomain, autorisierte Domains und den Ablauf der Weiterleitung.</span>
           </a>
         </li>
         <li>
           <a href="https://arling.sk/expo-universal-links-doctor/" data-umami-event="open-tool" data-umami-event-tool="expo-universal-links-doctor">
             <span class="num">06</span>
             <span><span class="name">Expo Universal Links und App Links Doctor</span><span class="who">apple-app-site-association, assetlinks.json, app.json <span class="tag">kostenlos</span></span></span>
-            <span class="see"><span class="lbl">Sie sehen</span>Der https-Link öffnet Safari oder Chrome statt der App.</span>
-            <span class="get"><span class="lbl">Sie bekommen</span>Team-ID, Bundle-ID, Fingerprints, Intent-Filter und Pfade abgeglichen, samt korrigierten Dateien.</span>
           </a>
         </li>
         <li>
           <a href="https://arling.sk/redirect-loop-doctor/" data-umami-event="open-tool" data-umami-event-tool="redirect-loop-doctor">
             <span class="num">07</span>
             <span><span class="name">Redirect Loop Doctor (ERR_TOO_MANY_REDIRECTS)</span><span class="who">Seiten hinter Cloudflare, WordPress, nginx, Apache, Vercel, Netlify, Load Balancern <span class="tag">kostenlos</span></span></span>
-            <span class="see"><span class="lbl">Sie sehen</span><code>ERR_TOO_MANY_REDIRECTS</code></span>
-            <span class="get"><span class="lbl">Sie bekommen</span>Findet die Schleife zwischen Cloudflare, Ihrem Server und der App.</span>
           </a>
         </li>
         <li>
           <a href="https://arling.sk/cookie-samesite-doctor/" data-umami-event="open-tool" data-umami-event-tool="cookie-samesite-doctor">
             <span class="num">08</span>
             <span><span class="name">Cookie Doctor (SameSite, Secure, Domain)</span><span class="who">Frontend und API auf verschiedenen Domains, fremde iframes, Safari ITP <span class="tag">kostenlos</span></span></span>
-            <span class="see"><span class="lbl">Sie sehen</span><code>Set-Cookie</code> wird gesendet, aber das Cookie wird nie gespeichert oder kommt nie zurück.</span>
-            <span class="get"><span class="lbl">Sie bekommen</span>Findet das blockierende Attribut.</span>
           </a>
         </li>
         <li>
           <a href="https://arling.sk/supabase-redirect-doctor/" data-umami-event="open-tool" data-umami-event-tool="supabase-redirect-doctor">
             <span class="num">09</span>
             <span><span class="name">Supabase Auth Redirect Doctor für Web-Apps</span><span class="who">Next.js, Vite, SvelteKit, Previews auf Vercel und Netlify <span class="tag">kostenlos</span></span></span>
-            <span class="see"><span class="lbl">Sie sehen</span>OAuth leitet in der Produktion auf <code>http://localhost:3000</code> um.</span>
-            <span class="get"><span class="lbl">Sie bekommen</span>Abweichungen zwischen Site URL, Redirect-Allowlist, Callback-Pfad und Provider-Einstellung, samt Korrektur.</span>
           </a>
         </li>
         <li>
           <a href="https://arling.sk/flutter-supabase-doctor/" data-umami-event="open-tool" data-umami-event-tool="flutter-supabase-doctor">
             <span class="num">10</span>
             <span><span class="name">Supabase Deep Link Doctor für Flutter</span><span class="who">supabase_flutter, iOS und Android <span class="tag">kostenlos</span></span></span>
-            <span class="see"><span class="lbl">Sie sehen</span>Die Magic-Link- oder OAuth-Seite kehrt nie zur App zurück.</span>
-            <span class="get"><span class="lbl">Sie bekommen</span>Scheme und Host abgeglichen zwischen Info.plist, AndroidManifest, Supabase und Ihrem Code, samt Snippets zum Einfügen.</span>
           </a>
         </li>
         <li>
           <a href="https://arling.sk/expo-supabase-auth-doctor/" data-umami-event="open-tool" data-umami-event-tool="expo-supabase-auth-doctor">
             <span class="num">11</span>
             <span><span class="name">Redirect Doctor für Expo und Supabase</span><span class="who">Expo Go, Development Builds, Standalone Apps <span class="tag">kostenlos</span></span></span>
-            <span class="see"><span class="lbl">Sie sehen</span>Die Anmeldung endet auf der Site URL oder <code>localhost</code>, statt in die App zurückzukehren.</span>
-            <span class="get"><span class="lbl">Sie bekommen</span>Die erwartete Redirect-URL für jede Umgebung und das, was in der Allowlist oder in der Provider-Konsole fehlt.</span>
           </a>
         </li>
       </ol>
@@ -559,6 +466,58 @@
   </section>
 
   
+
+  <section id="notes">
+    <div class="wrap">
+      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>Notes</p>
+      <h2 class="r">Warum hat die Bank oder die Prüfung es abgelehnt?</h2>
+      <p class="sub r d1">Wir schreiben Notizen zu den Fragen, die Menschen wirklich stellen. Eine Notiz, eine Frage, jede Aussage mit Quelle.</p>
+      <div class="rule"></div>
+      <ol class="index r d2">
+        <li>
+          <a href="https://arling.sk/notes/br-de-15-leitweg-id-pflichtfeld/" data-umami-event="open-note" data-umami-event-note="br-de-15-leitweg-id-pflichtfeld">
+            <span class="n">01</span>
+            <span class="t">BR-DE-15: Leitweg-ID als Pflichtfeld in der XRechnung</span>
+            <span class="dots"></span>
+            <span class="c"><time datetime="2026-09-11">11. September 2026</time></span>
+          </a>
+        </li>
+        <li>
+          <a href="https://arling.sk/notes/xrechnung-erstellen-ohne-software/" data-umami-event="open-note" data-umami-event-note="xrechnung-erstellen-ohne-software">
+            <span class="n">02</span>
+            <span class="t">XRechnung erstellen ohne Software: Pflichtangaben und Prüfung</span>
+            <span class="dots"></span>
+            <span class="c"><time datetime="2026-09-11">11. September 2026</time></span>
+          </a>
+        </li>
+        <li>
+          <a href="https://arling.sk/notes/xrechnung-pruefen-die-haeufigsten-fehler/" data-umami-event="open-note" data-umami-event-note="xrechnung-pruefen-die-haeufigsten-fehler">
+            <span class="n">03</span>
+            <span class="t">XRechnung prüfen: die häufigsten Fehler und was sie bedeuten</span>
+            <span class="dots"></span>
+            <span class="c"><time datetime="2026-09-11">11. September 2026</time></span>
+          </a>
+        </li>
+        <li>
+          <a href="https://arling.sk/notes/sepa-datei-pruefen-lassen-vor-15-november/" data-umami-event="open-note" data-umami-event-note="sepa-datei-pruefen-lassen-vor-15-november">
+            <span class="n">04</span>
+            <span class="t">SEPA-Datei vor dem 15. November 2026 prüfen lassen: was die Bank ablehnt</span>
+            <span class="dots"></span>
+            <span class="c"><time datetime="2026-09-10">10. September 2026</time></span>
+          </a>
+        </li>
+        <li>
+          <a href="https://arling.sk/notes/av-vertrag-muster-auftragsverarbeitung/" data-umami-event="open-note" data-umami-event-note="av-vertrag-muster-auftragsverarbeitung">
+            <span class="n">05</span>
+            <span class="t">AV-Vertrag Muster nach Artikel 28 DSGVO: Pflichtinhalt und Vorlage</span>
+            <span class="dots"></span>
+            <span class="c"><time datetime="2026-09-10">10. September 2026</time></span>
+          </a>
+        </li>
+      </ol>
+      <p class="viac r d3"><a class="btn btn-line" href="https://arling.sk/notes/de/" data-umami-event="open-notes">Alle Notizen auf Deutsch</a></p>
+    </div>
+  </section>
 
   <section id="rules" class="band">
     <div class="wrap">
