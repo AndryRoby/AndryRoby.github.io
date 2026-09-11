@@ -14,41 +14,41 @@ const CH = 'chyba';
 // Popis jednej kategorie DPH a toho, co od nej norma ziada.
 const KATEGORIE = [
   {
-    pre: 'BR-S', kod: 'S', sk: 'základná alebo znížená sadzba', cs: 'základní nebo snížená sazba', de: 'Regel- oder ermäßigter Satz',
+    pre: 'BR-S', kod: 'S', sk: 'základná alebo znížená sadzba', cs: 'základní nebo snížená sazba', de: 'Regel- oder ermäßigter Satz', en: 'standard rated',
     jedina: false, predajca: 'akykolvek', kupujuci: null, sadzba: 'kladna', sucet: 'podlaSadzby', dan: 'sucin', dovod: 'zakazany'
   },
   {
-    pre: 'BR-Z', kod: 'Z', sk: 'nulová sadzba', cs: 'nulová sazba', de: 'Nullsatz',
+    pre: 'BR-Z', kod: 'Z', sk: 'nulová sadzba', cs: 'nulová sazba', de: 'Nullsatz', en: 'zero rated',
     jedina: true, predajca: 'akykolvek', kupujuci: null, sadzba: 'nula', sucet: 'presny', dan: 'nula', dovod: 'zakazany'
   },
   {
-    pre: 'BR-E', kod: 'E', sk: 'oslobodene od DPH', cs: 'osvobozeno od DPH', de: 'von der Umsatzsteuer befreit',
+    pre: 'BR-E', kod: 'E', sk: 'oslobodene od DPH', cs: 'osvobozeno od DPH', de: 'von der Umsatzsteuer befreit', en: 'exempt from VAT',
     jedina: true, predajca: 'akykolvek', kupujuci: null, sadzba: 'nula', sucet: 'presny', dan: 'nula', dovod: 'povinny'
   },
   {
-    pre: 'BR-AE', kod: 'AE', sk: 'prenesenie daňovej povinnosti', cs: 'přenesení daňové povinnosti', de: 'Umkehrung der Steuerschuldnerschaft',
+    pre: 'BR-AE', kod: 'AE', sk: 'prenesenie daňovej povinnosti', cs: 'přenesení daňové povinnosti', de: 'Umkehrung der Steuerschuldnerschaft', en: 'VAT reverse charge',
     jedina: true, predajca: 'akykolvek', kupujuci: 'vatAleboPravny', sadzba: 'nula', sucet: 'presny', dan: 'nula', dovod: 'povinny'
   },
   {
-    pre: 'BR-G', kod: 'G', sk: 'vývoz mimo EU', cs: 'vývoz mimo EU', de: 'Ausfuhr außerhalb der EU',
+    pre: 'BR-G', kod: 'G', sk: 'vývoz mimo EU', cs: 'vývoz mimo EU', de: 'Ausfuhr außerhalb der EU', en: 'export outside the EU',
     jedina: true, predajca: 'vat', kupujuci: null, sadzba: 'nula', sucet: 'presny', dan: 'nula', dovod: 'povinny'
   },
   {
-    pre: 'BR-IC', kod: 'K', sk: 'dodanie do iného štátu EU', cs: 'dodání do jiného státu EU', de: 'innergemeinschaftliche Lieferung',
+    pre: 'BR-IC', kod: 'K', sk: 'dodanie do iného štátu EU', cs: 'dodání do jiného státu EU', de: 'innergemeinschaftliche Lieferung', en: 'intra-community supply',
     jedina: true, predajca: 'vat', kupujuci: 'vat', sadzba: 'nula', sucet: 'presny', dan: 'nula', dovod: 'povinny'
   },
   {
-    pre: 'BR-O', kod: 'O', sk: 'nepodlieha DPH', cs: 'nepodléhá DPH', de: 'nicht umsatzsteuerbar',
+    pre: 'BR-O', kod: 'O', sk: 'nepodlieha DPH', cs: 'nepodléhá DPH', de: 'nicht umsatzsteuerbar', en: 'not subject to VAT',
     jedina: true, predajca: 'ziadny', kupujuci: 'ziadny', sadzba: 'ziadna', sucet: 'presny', dan: 'nula', dovod: 'povinny'
   },
   {
     // BR-AF-05/06/07 maju v schematrone test "(cbc:Percent) >= 0", teda 0 % je platna sadzba IGIC.
-    pre: 'BR-AF', kod: 'L', sk: 'IGIC, Kanárske ostrovy', cs: 'IGIC, Kanárské ostrovy', de: 'IGIC, Kanarische Inseln',
+    pre: 'BR-AF', kod: 'L', sk: 'IGIC, Kanárske ostrovy', cs: 'IGIC, Kanárské ostrovy', de: 'IGIC, Kanarische Inseln', en: 'IGIC, Canary Islands',
     jedina: false, predajca: 'akykolvek', kupujuci: null, sadzba: 'nezaporna', sucet: 'podlaSadzby', dan: 'sucin', dovod: 'zakazany'
   },
   {
     // BR-AG-05/06/07 maju v schematrone test "(cbc:Percent) >= 0", teda 0 % je platna sadzba IPSI.
-    pre: 'BR-AG', kod: 'M', sk: 'IPSI, Ceuta a Melilla', cs: 'IPSI, Ceuta a Melilla', de: 'IPSI, Ceuta und Melilla',
+    pre: 'BR-AG', kod: 'M', sk: 'IPSI, Ceuta a Melilla', cs: 'IPSI, Ceuta a Melilla', de: 'IPSI, Ceuta und Melilla', en: 'IPSI, Ceuta and Melilla',
     jedina: false, predajca: 'akykolvek', kupujuci: null, sadzba: 'nezaporna', sucet: 'podlaSadzby', dan: 'sucin', dovod: 'zakazany'
   }
 ];
@@ -132,6 +132,7 @@ export function pravidlaKategorii(ctx) {
     const nazovSkA = 'kategóriu DPH ' + K.kod + ' (' + K.sk + ')';
     const nazovCs = 'kategorii DPH ' + K.kod + ' (' + K.cs + ')';
     const nazovDe = 'Umsatzsteuerkategorie ' + K.kod + ' (' + K.de + ')';
+    const nazovEn = 'VAT category ' + K.kod + ' (' + K.en + ')';
 
     // ---- -01: rozpis DPH musi obsahovat prislusny riadok
     if (pouzita) {
@@ -147,6 +148,9 @@ export function pravidlaKategorii(ctx) {
           'Der Beleg verwendet die ' + nazovDe + ', deshalb muss die Steueraufschlüsselung (BG-23) ' +
             (K.jedina ? 'genau ein' : 'mindestens ein') + ' cac:TaxTotal/cac:TaxSubtotal mit cac:TaxCategory/cbc:ID = ' + K.kod +
             ' enthalten. Gefunden: ' + sk.length + '.',
+          'The document uses ' + nazovEn + ', so the VAT breakdown (BG-23) has to contain ' +
+            (K.jedina ? 'exactly one' : 'at least one') + ' cac:TaxTotal/cac:TaxSubtotal with cac:TaxCategory/cbc:ID = ' + K.kod +
+            '. We found ' + sk.length + '.',
           xpath(d));
       }
     }
@@ -170,36 +174,41 @@ export function pravidlaKategorii(ctx) {
         predajca: [
           'Pri ' + nazovSk + ' musí byť uvedené IČ DPH dodávateľa (BT-31), jeho daňové registračné číslo (BT-32) alebo IČ DPH daňového zástupcu (BT-63). V cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID nie je nič.',
           'Při ' + nazovCs + ' musí být uvedeno DIČ dodavatele (BT-31), jeho daňové registrační číslo (BT-32) nebo DIČ daňového zástupce (BT-63). V cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID není nic.',
-          'Bei der ' + nazovDe + ' muss die USt-IdNr. des Verkäufers (BT-31), seine Steuernummer (BT-32) oder die USt-IdNr. des Steuervertreters (BT-63) angegeben sein. In cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID steht nichts.'
+          'Bei der ' + nazovDe + ' muss die USt-IdNr. des Verkäufers (BT-31), seine Steuernummer (BT-32) oder die USt-IdNr. des Steuervertreters (BT-63) angegeben sein. In cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID steht nichts.',
+          'With ' + nazovEn + ' the invoice has to carry the seller VAT identifier (BT-31), the seller tax registration identifier (BT-32) or the tax representative VAT identifier (BT-63). There is nothing in cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID.'
         ],
         predajcaVat: [
           'Pri ' + nazovSk + ' musí byť uvedené IČ DPH dodávateľa (BT-31) alebo IČ DPH daňového zástupcu (BT-63), so schémou VAT.',
           'Při ' + nazovCs + ' musí být uvedeno DIČ dodavatele (BT-31) nebo DIČ daňového zástupce (BT-63), se schématem VAT.',
-          'Bei der ' + nazovDe + ' muss die USt-IdNr. des Verkäufers (BT-31) oder des Steuervertreters (BT-63) mit dem Schema VAT angegeben sein.'
+          'Bei der ' + nazovDe + ' muss die USt-IdNr. des Verkäufers (BT-31) oder des Steuervertreters (BT-63) mit dem Schema VAT angegeben sein.',
+          'With ' + nazovEn + ' the invoice has to carry the seller VAT identifier (BT-31) or the tax representative VAT identifier (BT-63), with the VAT tax scheme.'
         ],
         kupujuci: [
           'Pri ' + nazovSk + ' musí byť uvedené IČ DPH odberateľa (BT-48) alebo jeho registračné číslo (BT-47).',
           'Při ' + nazovCs + ' musí být uvedeno DIČ odběratele (BT-48) nebo jeho registrační číslo (BT-47).',
-          'Bei der ' + nazovDe + ' muss die USt-IdNr. des Käufers (BT-48) oder seine Registernummer (BT-47) angegeben sein.'
+          'Bei der ' + nazovDe + ' muss die USt-IdNr. des Käufers (BT-48) oder seine Registernummer (BT-47) angegeben sein.',
+          'With ' + nazovEn + ' the invoice has to carry the buyer VAT identifier (BT-48) or the buyer legal registration identifier (BT-47).'
         ],
         kupujuciVat: [
           'Pri ' + nazovSk + ' musí byť uvedené IČ DPH odberateľa (BT-48) v cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID so schémou VAT.',
           'Při ' + nazovCs + ' musí být uvedeno DIČ odběratele (BT-48) v cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID se schématem VAT.',
-          'Bei der ' + nazovDe + ' muss die USt-IdNr. des Käufers (BT-48) in cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID mit dem Schema VAT stehen.'
+          'Bei der ' + nazovDe + ' muss die USt-IdNr. des Käufers (BT-48) in cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID mit dem Schema VAT stehen.',
+          'With ' + nazovEn + ' the buyer VAT identifier (BT-48) has to be in cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID with the VAT tax scheme.'
         ],
         nesmieMat: [
           'Pri ' + nazovSk + ' nesmie doklad obsahovať IČ DPH dodávateľa (BT-31), daňového zástupcu (BT-63) ani odberateľa (BT-48). Odstráňte cac:PartyTaxScheme so schémou VAT.',
           'Při ' + nazovCs + ' nesmí doklad obsahovat DIČ dodavatele (BT-31), daňového zástupce (BT-63) ani odběratele (BT-48). Odstraňte cac:PartyTaxScheme se schématem VAT.',
-          'Bei der ' + nazovDe + ' darf der Beleg keine USt-IdNr. des Verkäufers (BT-31), des Steuervertreters (BT-63) oder des Käufers (BT-48) enthalten. Entfernen Sie cac:PartyTaxScheme mit dem Schema VAT.'
+          'Bei der ' + nazovDe + ' darf der Beleg keine USt-IdNr. des Verkäufers (BT-31), des Steuervertreters (BT-63) oder des Käufers (BT-48) enthalten. Entfernen Sie cac:PartyTaxScheme mit dem Schema VAT.',
+          'With ' + nazovEn + ' the document must not carry a seller VAT identifier (BT-31), a tax representative VAT identifier (BT-63) or a buyer VAT identifier (BT-48). Remove cac:PartyTaxScheme with the VAT tax scheme.'
         ]
       }[dovodId];
-      if (rk.length) pridaj(ctx, cislo(K.pre, 2), CH, rk[0].riadok, K.kod, texty[0], texty[1], texty[2]);
-      if (zk.length) pridaj(ctx, cislo(K.pre, 3), CH, zk[0].ac, K.kod, texty[0], texty[1], texty[2]);
-      if (pk.length) pridaj(ctx, cislo(K.pre, 4), CH, pk[0].ac, K.kod, texty[0], texty[1], texty[2]);
+      if (rk.length) pridaj(ctx, cislo(K.pre, 2), CH, rk[0].riadok, K.kod, texty[0], texty[1], texty[2], texty[3]);
+      if (zk.length) pridaj(ctx, cislo(K.pre, 3), CH, zk[0].ac, K.kod, texty[0], texty[1], texty[2], texty[3]);
+      if (pk.length) pridaj(ctx, cislo(K.pre, 4), CH, pk[0].ac, K.kod, texty[0], texty[1], texty[2], texty[3]);
     }
 
     // ---- -05 az -07: sadzba na riadku, na zlave a na priplatku
-    const skontrolujSadzbu = (uzolKat, uzolChyby, kodPravidla, kdeSk, kdeCs, kdeDe) => {
+    const skontrolujSadzbu = (uzolKat, uzolChyby, kodPravidla, kdeSk, kdeCs, kdeDe, kdeEn) => {
       if (!uzolKat) return;
       const maSadzbu = !!prve(uzolKat, 'cbc:Percent');
       const s = cis(hod(uzolKat, 'cbc:Percent'));
@@ -207,12 +216,14 @@ export function pravidlaKategorii(ctx) {
       const uvodSk = kdeSk + ' má ' + nazovSkA;
       const uvodCs = kdeCs + ' má ' + nazovCs;
       const uvodDe = kdeDe + ' hat die ' + nazovDe;
+      const uvodEn = kdeEn + ' has ' + nazovEn;
       if (K.sadzba === 'ziadna') {
         if (maSadzbu) {
           pridaj(ctx, kodPravidla, CH, prve(uzolKat, 'cbc:Percent'), hod(uzolKat, 'cbc:Percent'),
             uvodSk + ', preto tam nesmie byť sadzba DPH (cbc:Percent). Odstráňte ju.',
             uvodCs + ', proto tam nesmí být sazba DPH (cbc:Percent). Odstraňte ji.',
-            uvodDe + ', deshalb darf dort kein Steuersatz (cbc:Percent) stehen. Entfernen Sie ihn.');
+            uvodDe + ', deshalb darf dort kein Steuersatz (cbc:Percent) stehen. Entfernen Sie ihn.',
+            uvodEn + ', so no VAT rate (cbc:Percent) may be given there. Remove it.');
         }
         return;
       }
@@ -221,7 +232,8 @@ export function pravidlaKategorii(ctx) {
           pridaj(ctx, kodPravidla, CH, uzolKat, hod(uzolKat, 'cbc:Percent'),
             uvodSk + ', preto musí mať sadzbu DPH 0 (cbc:Percent = 0).',
             uvodCs + ', proto musí mít sazbu DPH 0 (cbc:Percent = 0).',
-            uvodDe + ', deshalb muss der Steuersatz 0 sein (cbc:Percent = 0).');
+            uvodDe + ', deshalb muss der Steuersatz 0 sein (cbc:Percent = 0).',
+            uvodEn + ', so the VAT rate has to be 0 (cbc:Percent = 0).');
         }
         return;
       }
@@ -231,7 +243,8 @@ export function pravidlaKategorii(ctx) {
           pridaj(ctx, kodPravidla, CH, uzolKat, hod(uzolKat, 'cbc:Percent'),
             uvodSk + ', preto musí mať sadzbu DPH nula alebo väčšiu ako nula (cbc:Percent).',
             uvodCs + ', proto musí mít sazbu DPH nula nebo větší než nula (cbc:Percent).',
-            uvodDe + ', deshalb muss der Steuersatz null oder größer als null sein (cbc:Percent).');
+            uvodDe + ', deshalb muss der Steuersatz null oder größer als null sein (cbc:Percent).',
+            uvodEn + ', so the VAT rate has to be zero or greater than zero (cbc:Percent).');
         }
         return;
       }
@@ -240,14 +253,15 @@ export function pravidlaKategorii(ctx) {
           pridaj(ctx, kodPravidla, CH, uzolKat, hod(uzolKat, 'cbc:Percent'),
             uvodSk + ', preto musí mať sadzbu DPH väčšiu ako nula (cbc:Percent).',
             uvodCs + ', proto musí mít sazbu DPH větší než nula (cbc:Percent).',
-            uvodDe + ', deshalb muss der Steuersatz größer als null sein (cbc:Percent).');
+            uvodDe + ', deshalb muss der Steuersatz größer als null sein (cbc:Percent).',
+            uvodEn + ', so the VAT rate has to be greater than zero (cbc:Percent).');
         }
       }
     };
     rk.forEach((x, i) => skontrolujSadzbu(x.kat, x.riadok, cislo(K.pre, 5),
-      'Riadok ' + (ctx.riadky.indexOf(x.riadok) + 1), 'Řádek ' + (ctx.riadky.indexOf(x.riadok) + 1), 'Position ' + (ctx.riadky.indexOf(x.riadok) + 1)));
-    zk.forEach((x) => skontrolujSadzbu(x.kat, x.ac, cislo(K.pre, 6), 'Zľava na úrovni dokladu', 'Sleva na úrovni dokladu', 'Der Abschlag auf Dokumentebene'));
-    pk.forEach((x) => skontrolujSadzbu(x.kat, x.ac, cislo(K.pre, 7), 'Príplatok na úrovni dokladu', 'Příplatek na úrovni dokladu', 'Der Zuschlag auf Dokumentebene'));
+      'Riadok ' + (ctx.riadky.indexOf(x.riadok) + 1), 'Řádek ' + (ctx.riadky.indexOf(x.riadok) + 1), 'Position ' + (ctx.riadky.indexOf(x.riadok) + 1), 'Line ' + (ctx.riadky.indexOf(x.riadok) + 1)));
+    zk.forEach((x) => skontrolujSadzbu(x.kat, x.ac, cislo(K.pre, 6), 'Zľava na úrovni dokladu', 'Sleva na úrovni dokladu', 'Der Abschlag auf Dokumentebene', 'The allowance on document level'));
+    pk.forEach((x) => skontrolujSadzbu(x.kat, x.ac, cislo(K.pre, 7), 'Príplatok na úrovni dokladu', 'Příplatek na úrovni dokladu', 'Der Zuschlag auf Dokumentebene', 'The charge on document level'));
 
     // ---- -08 az -10: rozpis DPH
     for (const { ts, kat } of sk) {
@@ -284,7 +298,9 @@ export function pravidlaKategorii(ctx) {
             'Základ daně pro ' + nazovCs + (K.sucet === 'podlaSadzby' ? ' při sazbě ' + hod(kat || ts, 'cbc:Percent') + ' %' : '') +
               ' má být ' + ocakZaklad.toFixed(2) + ' (součet částek řádku plus příplatky minus slevy s touto kategorií), v souboru je ' + hod(ts, 'cbc:TaxableAmount') + '.',
             'Die Bemessungsgrundlage für die ' + nazovDe + (K.sucet === 'podlaSadzby' ? ' beim Satz ' + hod(kat || ts, 'cbc:Percent') + ' %' : '') +
-              ' soll ' + ocakZaklad.toFixed(2) + ' betragen (Summe der Positionen plus Zuschläge minus Abschläge mit dieser Kategorie), in der Datei steht ' + hod(ts, 'cbc:TaxableAmount') + '.');
+              ' soll ' + ocakZaklad.toFixed(2) + ' betragen (Summe der Positionen plus Zuschläge minus Abschläge mit dieser Kategorie), in der Datei steht ' + hod(ts, 'cbc:TaxableAmount') + '.',
+            'The taxable amount for ' + nazovEn + (K.sucet === 'podlaSadzby' ? ' at the rate ' + hod(kat || ts, 'cbc:Percent') + ' %' : '') +
+              ' should be ' + ocakZaklad.toFixed(2) + ' (the line amounts plus charges minus allowances carrying this category); the file says ' + hod(ts, 'cbc:TaxableAmount') + '.');
         }
       }
 
@@ -295,7 +311,8 @@ export function pravidlaKategorii(ctx) {
             pridaj(ctx, cislo(K.pre, 9), CH, prve(ts, 'cbc:TaxAmount'), hod(ts, 'cbc:TaxAmount'),
               'Pri ' + nazovSk + ' musí byť suma DPH v rozpise nula (cbc:TaxAmount = 0), v súbore je ' + hod(ts, 'cbc:TaxAmount') + '.',
               'Při ' + nazovCs + ' musí být částka DPH v rozpisu nula (cbc:TaxAmount = 0), v souboru je ' + hod(ts, 'cbc:TaxAmount') + '.',
-              'Bei der ' + nazovDe + ' muss der Steuerbetrag null sein (cbc:TaxAmount = 0), in der Datei steht ' + hod(ts, 'cbc:TaxAmount') + '.');
+              'Bei der ' + nazovDe + ' muss der Steuerbetrag null sein (cbc:TaxAmount = 0), in der Datei steht ' + hod(ts, 'cbc:TaxAmount') + '.',
+              'With ' + nazovEn + ' the VAT amount in the breakdown has to be zero (cbc:TaxAmount = 0); the file says ' + hod(ts, 'cbc:TaxAmount') + '.');
           }
         } else if (Number.isFinite(zaklad) && Number.isFinite(sadzba)) {
           const ocak = r2(Math.abs(zaklad) * (sadzba / 100));
@@ -303,7 +320,8 @@ export function pravidlaKategorii(ctx) {
             pridaj(ctx, cislo(K.pre, 9), CH, prve(ts, 'cbc:TaxAmount'), hod(ts, 'cbc:TaxAmount'),
               'Pri ' + nazovSk + ' má byť suma DPH základ ' + zaklad.toFixed(2) + ' krát sadzba ' + sadzba + ' %, teda ' + ocak.toFixed(2) + '. V súbore je ' + hod(ts, 'cbc:TaxAmount') + '.',
               'Při ' + nazovCs + ' má být částka DPH základ ' + zaklad.toFixed(2) + ' krát sazba ' + sadzba + ' %, tedy ' + ocak.toFixed(2) + '. V souboru je ' + hod(ts, 'cbc:TaxAmount') + '.',
-              'Bei der ' + nazovDe + ' soll der Steuerbetrag ' + zaklad.toFixed(2) + ' mal ' + sadzba + ' % sein, also ' + ocak.toFixed(2) + '. In der Datei steht ' + hod(ts, 'cbc:TaxAmount') + '.');
+              'Bei der ' + nazovDe + ' soll der Steuerbetrag ' + zaklad.toFixed(2) + ' mal ' + sadzba + ' % sein, also ' + ocak.toFixed(2) + '. In der Datei steht ' + hod(ts, 'cbc:TaxAmount') + '.',
+              'With ' + nazovEn + ' the VAT amount should be the taxable amount ' + zaklad.toFixed(2) + ' times ' + sadzba + ' %, that is ' + ocak.toFixed(2) + '. The file says ' + hod(ts, 'cbc:TaxAmount') + '.');
           }
         }
       }
@@ -314,13 +332,15 @@ export function pravidlaKategorii(ctx) {
         pridaj(ctx, cislo(K.pre, 10), CH, kat || ts, K.kod,
           'Pri ' + nazovSk + ' musí rozpis DPH obsahovať dôvod oslobodenia: cbc:TaxExemptionReasonCode (BT-121, napríklad VATEX-EU-AE) alebo cbc:TaxExemptionReason (BT-120, text).',
           'Při ' + nazovCs + ' musí rozpis DPH obsahovat důvod osvobození: cbc:TaxExemptionReasonCode (BT-121, například VATEX-EU-AE) nebo cbc:TaxExemptionReason (BT-120, text).',
-          'Bei der ' + nazovDe + ' muss die Steueraufschlüsselung einen Befreiungsgrund enthalten: cbc:TaxExemptionReasonCode (BT-121, zum Beispiel VATEX-EU-AE) oder cbc:TaxExemptionReason (BT-120, Text).');
+          'Bei der ' + nazovDe + ' muss die Steueraufschlüsselung einen Befreiungsgrund enthalten: cbc:TaxExemptionReasonCode (BT-121, zum Beispiel VATEX-EU-AE) oder cbc:TaxExemptionReason (BT-120, Text).',
+          'With ' + nazovEn + ' the VAT breakdown has to carry an exemption reason: cbc:TaxExemptionReasonCode (BT-121, for example VATEX-EU-AE) or cbc:TaxExemptionReason (BT-120, free text).');
       }
       if (K.dovod === 'zakazany' && maDovod) {
         pridaj(ctx, cislo(K.pre, 10), CH, kat || ts, K.kod,
           'Pri ' + nazovSk + ' nesmie byť v rozpise DPH dôvod oslobodenia (BT-120 ani BT-121). Odstráňte cbc:TaxExemptionReason a cbc:TaxExemptionReasonCode.',
           'Při ' + nazovCs + ' nesmí být v rozpisu DPH důvod osvobození (BT-120 ani BT-121). Odstraňte cbc:TaxExemptionReason a cbc:TaxExemptionReasonCode.',
-          'Bei der ' + nazovDe + ' darf in der Steueraufschlüsselung kein Befreiungsgrund stehen (weder BT-120 noch BT-121). Entfernen Sie cbc:TaxExemptionReason und cbc:TaxExemptionReasonCode.');
+          'Bei der ' + nazovDe + ' darf in der Steueraufschlüsselung kein Befreiungsgrund stehen (weder BT-120 noch BT-121). Entfernen Sie cbc:TaxExemptionReason und cbc:TaxExemptionReasonCode.',
+          'With ' + nazovEn + ' the VAT breakdown must not carry an exemption reason (neither BT-120 nor BT-121). Remove cbc:TaxExemptionReason and cbc:TaxExemptionReasonCode.');
       }
     }
   }
@@ -335,6 +355,7 @@ export function pravidlaKategorii(ctx) {
         'Pri dodaní do iného štátu EU (kategória K) musí byť uvedený dátum dodania (BT-72, cac:Delivery/cbc:ActualDeliveryDate) alebo fakturačné obdobie (BG-14, cac:InvoicePeriod).',
         'Při dodání do jiného státu EU (kategorie K) musí být uvedeno datum dodání (BT-72, cac:Delivery/cbc:ActualDeliveryDate) nebo fakturační období (BG-14, cac:InvoicePeriod).',
         'Bei innergemeinschaftlicher Lieferung (Kategorie K) muss das Lieferdatum (BT-72, cac:Delivery/cbc:ActualDeliveryDate) oder der Abrechnungszeitraum (BG-14, cac:InvoicePeriod) angegeben sein.',
+        'With an intra-community supply (category K) the invoice needs either the actual delivery date (BT-72, cac:Delivery/cbc:ActualDeliveryDate) or the invoicing period (BG-14, cac:InvoicePeriod).',
         xpath(d));
     }
     const krajina = hod(d, 'cac:Delivery/cac:DeliveryLocation/cac:Address/cac:Country/cbc:IdentificationCode');
@@ -343,6 +364,7 @@ export function pravidlaKategorii(ctx) {
         'Pri dodaní do iného štátu EU (kategória K) musí byť uvedená krajina dodania (BT-80) v cac:Delivery/cac:DeliveryLocation/cac:Address/cac:Country/cbc:IdentificationCode.',
         'Při dodání do jiného státu EU (kategorie K) musí být uvedena země dodání (BT-80) v cac:Delivery/cac:DeliveryLocation/cac:Address/cac:Country/cbc:IdentificationCode.',
         'Bei innergemeinschaftlicher Lieferung (Kategorie K) muss das Lieferland (BT-80) in cac:Delivery/cac:DeliveryLocation/cac:Address/cac:Country/cbc:IdentificationCode stehen.',
+        'With an intra-community supply (category K) the deliver to country code (BT-80) has to be given in cac:Delivery/cac:DeliveryLocation/cac:Address/cac:Country/cbc:IdentificationCode.',
         xpath(d));
     }
   }
@@ -358,7 +380,8 @@ export function pravidlaKategorii(ctx) {
       pridaj(ctx, 'BR-O-11', CH, ineRozpisy[0], hod(katVat(ineRozpisy[0], 'cac:TaxCategory'), 'cbc:ID'),
         'Doklad má rozpis DPH s kategóriou O (nepodlieha DPH), preto nesmie mať žiadny iný rozpis DPH. Našli sme ich ' + ineRozpisy.length + '.',
         'Doklad má rozpis DPH s kategorií O (nepodléhá DPH), proto nesmí mít žádný jiný rozpis DPH. Našli jsme jich ' + ineRozpisy.length + '.',
-        'Der Beleg hat eine Steueraufschlüsselung mit Kategorie O, deshalb darf es keine weitere Steueraufschlüsselung geben. Gefunden: ' + ineRozpisy.length + '.');
+        'Der Beleg hat eine Steueraufschlüsselung mit Kategorie O, deshalb darf es keine weitere Steueraufschlüsselung geben. Gefunden: ' + ineRozpisy.length + '.',
+        'The document has a VAT breakdown with category O (not subject to VAT), so it must not have any other VAT breakdown. We found ' + ineRozpisy.length + '.');
     }
     const ineRiadky = ctx.riadky.filter((r) => {
       const k = katRiadkuUzol(r);
@@ -368,7 +391,8 @@ export function pravidlaKategorii(ctx) {
       pridaj(ctx, 'BR-O-12', CH, ineRiadky[0], '',
         'Doklad má rozpis DPH s kategóriou O, preto musia mať všetky riadky kategóriu O. Riadok s inou kategóriou: ' + hod(ineRiadky[0], 'cbc:ID') + '.',
         'Doklad má rozpis DPH s kategorií O, proto musí mít všechny řádky kategorii O. Řádek s jinou kategorií: ' + hod(ineRiadky[0], 'cbc:ID') + '.',
-        'Der Beleg hat eine Steueraufschlüsselung mit Kategorie O, deshalb müssen alle Positionen die Kategorie O haben. Abweichende Position: ' + hod(ineRiadky[0], 'cbc:ID') + '.');
+        'Der Beleg hat eine Steueraufschlüsselung mit Kategorie O, deshalb müssen alle Positionen die Kategorie O haben. Abweichende Position: ' + hod(ineRiadky[0], 'cbc:ID') + '.',
+        'The document has a VAT breakdown with category O, so every invoice line has to use category O. The line that differs: ' + hod(ineRiadky[0], 'cbc:ID') + '.');
     }
     const ineZlavy = ctx.zlavyDok.filter((ac) => {
       const k = katVat(ac, 'cac:TaxCategory');
@@ -378,7 +402,8 @@ export function pravidlaKategorii(ctx) {
       pridaj(ctx, 'BR-O-13', CH, ineZlavy[0], '',
         'Doklad má rozpis DPH s kategóriou O, preto musia mať všetky zľavy na úrovni dokladu kategóriu O.',
         'Doklad má rozpis DPH s kategorií O, proto musí mít všechny slevy na úrovni dokladu kategorii O.',
-        'Der Beleg hat eine Steueraufschlüsselung mit Kategorie O, deshalb müssen alle Abschläge auf Dokumentebene die Kategorie O haben.');
+        'Der Beleg hat eine Steueraufschlüsselung mit Kategorie O, deshalb müssen alle Abschläge auf Dokumentebene die Kategorie O haben.',
+        'The document has a VAT breakdown with category O, so every document level allowance has to use category O.');
     }
     const inePripl = ctx.priplatkyDok.filter((ac) => {
       const k = katVat(ac, 'cac:TaxCategory');
@@ -388,7 +413,8 @@ export function pravidlaKategorii(ctx) {
       pridaj(ctx, 'BR-O-14', CH, inePripl[0], '',
         'Doklad má rozpis DPH s kategóriou O, preto musia mať všetky príplatky na úrovni dokladu kategóriu O.',
         'Doklad má rozpis DPH s kategorií O, proto musí mít všechny příplatky na úrovni dokladu kategorii O.',
-        'Der Beleg hat eine Steueraufschlüsselung mit Kategorie O, deshalb müssen alle Zuschläge auf Dokumentebene die Kategorie O haben.');
+        'Der Beleg hat eine Steueraufschlüsselung mit Kategorie O, deshalb müssen alle Zuschläge auf Dokumentebene die Kategorie O haben.',
+        'The document has a VAT breakdown with category O, so every document level charge has to use category O.');
     }
   }
 }

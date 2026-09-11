@@ -9,7 +9,8 @@ import * as K from './kodovniky.mjs';
 export const TEXT_SPLATNOSTI = {
   sk: 'Splatnosť ',
   cs: 'Splatnost ',
-  de: 'Fällig am '
+  de: 'Fällig am ',
+  en: 'Due '
 };
 
 // ---------------------------------------------------------------- cisla a zaokruhlovanie
@@ -266,7 +267,7 @@ function zapisDanovuKategoriu(z, meno, kategoria, sadzba, dovodKod, dovodText) {
 /**
  * Vytvori UBL 2.1 XML z objektu faktury.
  * @param {object} faktura
- * @param {{profil?: 'peppol'|'xrechnung'|'en16931', jazyk?: 'sk'|'cs'|'de'}} [volby]
+ * @param {{profil?: 'peppol'|'xrechnung'|'en16931', jazyk?: 'sk'|'cs'|'de'|'en'}} [volby]
  * @returns {string} XML
  */
 export function vytvorUbl(faktura, volby = {}) {
@@ -443,6 +444,8 @@ export function prazdnaFaktura(krajina = 'SK') {
     odberatel: { nazov: '', ico: '', icDph: '', ulica: '', mesto: '', psc: '', krajina, email: '', endpoint: '', endpointSchema: '' },
     sposobPlatby: '58',
     zaplatene: 0,
-    polozky: [{ nazov: '', mnozstvo: 1, jednotka: 'C62', cena: 0, sadzba: (K.SADZBY_DPH[krajina] || [23])[0], kategoria: 'S' }]
+    // Sadzbu predvyplnime len pre krajiny, ktore mame overene v ops/efaktura/fakty.md.
+    // Inde nechavame 0 a stranka pod polozkami napise, ze sadzbu ma zapisat pouzivatel.
+    polozky: [{ nazov: '', mnozstvo: 1, jednotka: 'C62', cena: 0, sadzba: (K.SADZBY_DPH[krajina] || [0])[0], kategoria: 'S' }]
   };
 }

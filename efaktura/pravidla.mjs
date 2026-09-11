@@ -30,14 +30,22 @@ export const NAZVY_PROFILOV = {
   neznamy: 'neznamy profil'
 };
 
+// Nazvy profilov v anglickom protokole a na anglickej stranke.
+export const NAZVY_PROFILOV_EN = {
+  en16931: 'EN 16931',
+  peppol: 'Peppol BIS Billing 3.0',
+  xrechnung: 'XRechnung 3.x (Germany)',
+  neznamy: 'unknown profile'
+};
+
 // ---------------------------------------------------------------- vlastne kontroly navyse
 
 // SK IC DPH: SK a 10 cislic. DE USt-IdNr.: DE a 9 cislic.
 const IC_DPH_VZORY = {
-  SK: { vzor: /^SK\d{10}$/, sk: 'SK a 10 číslic, napríklad SK2020000000', cs: 'SK a 10 číslic, například SK2020000000', de: 'SK und 10 Ziffern, zum Beispiel SK2020000000' },
-  DE: { vzor: /^DE\d{9}$/, sk: 'DE a 9 číslic, napríklad DE123456789', cs: 'DE a 9 číslic, například DE123456789', de: 'DE und 9 Ziffern, zum Beispiel DE123456789' },
-  CZ: { vzor: /^CZ\d{8,10}$/, sk: 'CZ a 8 až 10 číslic, napríklad CZ12345678', cs: 'CZ a 8 až 10 číslic, například CZ12345678', de: 'CZ und 8 bis 10 Ziffern, zum Beispiel CZ12345678' },
-  AT: { vzor: /^ATU\d{8}$/, sk: 'ATU a 8 číslic, napríklad ATU12345678', cs: 'ATU a 8 číslic, například ATU12345678', de: 'ATU und 8 Ziffern, zum Beispiel ATU12345678' }
+  SK: { vzor: /^SK\d{10}$/, sk: 'SK a 10 číslic, napríklad SK2020000000', cs: 'SK a 10 číslic, například SK2020000000', de: 'SK und 10 Ziffern, zum Beispiel SK2020000000', en: 'SK followed by 10 digits, for example SK2020000000' },
+  DE: { vzor: /^DE\d{9}$/, sk: 'DE a 9 číslic, napríklad DE123456789', cs: 'DE a 9 číslic, například DE123456789', de: 'DE und 9 Ziffern, zum Beispiel DE123456789', en: 'DE followed by 9 digits, for example DE123456789' },
+  CZ: { vzor: /^CZ\d{8,10}$/, sk: 'CZ a 8 až 10 číslic, napríklad CZ12345678', cs: 'CZ a 8 až 10 číslic, například CZ12345678', de: 'CZ und 8 bis 10 Ziffern, zum Beispiel CZ12345678', en: 'CZ followed by 8 to 10 digits, for example CZ12345678' },
+  AT: { vzor: /^ATU\d{8}$/, sk: 'ATU a 8 číslic, napríklad ATU12345678', cs: 'ATU a 8 číslic, například ATU12345678', de: 'ATU und 8 Ziffern, zum Beispiel ATU12345678', en: 'ATU followed by 8 digits, for example ATU12345678' }
 };
 
 // Leitweg-ID: hruba adresa 2 az 12 cislic, volitelna jemna cast, na konci dvojciferna kontrola.
@@ -58,7 +66,8 @@ function kontrolyNavyse(ctx) {
         pridaj(ctx, 'ARL-IBAN', CH, n, txt(n),
           'IBAN "' + txt(n) + '" neprešiel kontrolou mod 97 podľa ISO 13616. Skontrolujte, či nie je preklep v čísle účtu.',
           'IBAN "' + txt(n) + '" neprošel kontrolou mod 97 podle ISO 13616. Zkontrolujte, zda není překlep v čísle účtu.',
-          'Die IBAN "' + txt(n) + '" besteht die Modulo-97-Prüfung nach ISO 13616 nicht. Prüfen Sie die Kontonummer auf Tippfehler.');
+          'Die IBAN "' + txt(n) + '" besteht die Modulo-97-Prüfung nach ISO 13616 nicht. Prüfen Sie die Kontonummer auf Tippfehler.',
+          'The IBAN "' + txt(n) + '" fails the mod 97 check under ISO 13616. Check the account number for a typo.');
       }
     }
   }
@@ -75,7 +84,8 @@ function kontrolyNavyse(ctx) {
         pridaj(ctx, 'ARL-ICDPH', CH, n, txt(n),
           'IČ DPH "' + txt(n) + '" nemá správny tvar pre krajinu ' + krajina + '. Očakávame ' + pravidlo.sk + '.',
           'DIČ "' + txt(n) + '" nemá správný tvar pro zemi ' + krajina + '. Očekáváme ' + pravidlo.cs + '.',
-          'Die USt-IdNr. "' + txt(n) + '" hat für das Land ' + krajina + ' nicht das richtige Format. Erwartet wird: ' + pravidlo.de + '.');
+          'Die USt-IdNr. "' + txt(n) + '" hat für das Land ' + krajina + ' nicht das richtige Format. Erwartet wird: ' + pravidlo.de + '.',
+          'The VAT identifier "' + txt(n) + '" does not have the right shape for country ' + krajina + '. We expect ' + pravidlo.en + '.');
       }
     }
   }
@@ -88,7 +98,8 @@ function kontrolyNavyse(ctx) {
       pridaj(ctx, 'ARL-LEITWEG', VAR, ref, v,
         'Referencia odberateľa "' + v + '" vyzerá ako nemecké Leitweg-ID, ale nemá očakávaný tvar: 2 až 12 číslic, voliteľná jemná časť a na konci pomlčka s dvojcifernou kontrolou, napríklad 04011000-12345-34.',
         'Reference odběratele "' + v + '" vypadá jako německé Leitweg-ID, ale nemá očekávaný tvar: 2 až 12 číslic, volitelná jemná část a na konci pomlčka s dvojcifernou kontrolou, například 04011000-12345-34.',
-        'Die Käuferreferenz "' + v + '" sieht wie eine Leitweg-ID aus, hat aber nicht die erwartete Form: 2 bis 12 Ziffern, optionale Feinadressierung und am Ende ein Bindestrich mit zweistelliger Prüfziffer, zum Beispiel 04011000-12345-34.');
+        'Die Käuferreferenz "' + v + '" sieht wie eine Leitweg-ID aus, hat aber nicht die erwartete Form: 2 bis 12 Ziffern, optionale Feinadressierung und am Ende ein Bindestrich mit zweistelliger Prüfziffer, zum Beispiel 04011000-12345-34.',
+        'The buyer reference "' + v + '" looks like a German Leitweg-ID but does not match the expected shape: 2 to 12 digits, an optional fine-grained part, and a hyphen with a two digit check at the end, for example 04011000-12345-34.');
     }
   }
   // datumy: musia existovat v kalendari
@@ -100,7 +111,8 @@ function kontrolyNavyse(ctx) {
       pridaj(ctx, 'ARL-DATUM', CH, n, v,
         'Dátum "' + v + '" v prvku ' + n.meno + ' nie je platný deň v tvare RRRR-MM-DD.',
         'Datum "' + v + '" v prvku ' + n.meno + ' není platný den ve tvaru RRRR-MM-DD.',
-        'Das Datum "' + v + '" in ' + n.meno + ' ist kein gültiger Tag im Format JJJJ-MM-TT.');
+        'Das Datum "' + v + '" in ' + n.meno + ' ist kein gültiger Tag im Format JJJJ-MM-TT.',
+        'The date "' + v + '" in ' + n.meno + ' is not a valid calendar day written as YYYY-MM-DD.');
     }
   }
   const vystavenie = hod(d, 'cbc:IssueDate');
@@ -109,7 +121,8 @@ function kontrolyNavyse(ctx) {
     pridaj(ctx, 'ARL-DATUM-PORADIE', VAR, prve(d, 'cbc:DueDate'), splatnost,
       'Dátum splatnosti (' + splatnost + ') je skôr ako dátum vystavenia (' + vystavenie + ').',
       'Datum splatnosti (' + splatnost + ') je dřív než datum vystavení (' + vystavenie + ').',
-      'Das Fälligkeitsdatum (' + splatnost + ') liegt vor dem Rechnungsdatum (' + vystavenie + ').');
+      'Das Fälligkeitsdatum (' + splatnost + ') liegt vor dem Rechnungsdatum (' + vystavenie + ').',
+      'The payment due date (' + splatnost + ') is earlier than the issue date (' + vystavenie + ').');
   }
   // mena: v profile bez Peppol pravidiel skontrolujeme zhodu sami
   if (ctx.profil === 'en16931' && ctx.mena !== '') {
@@ -119,7 +132,8 @@ function kontrolyNavyse(ctx) {
           pridaj(ctx, 'ARL-MENA', VAR, n, n.atr.currencyID,
             'Prvok ' + n.meno + ' má menu ' + n.atr.currencyID + ', faktúra je v mene ' + ctx.mena + '. Skontrolujte, či je to zámer.',
             'Prvek ' + n.meno + ' má měnu ' + n.atr.currencyID + ', faktura je v měně ' + ctx.mena + '. Zkontrolujte, zda je to záměr.',
-            'Das Element ' + n.meno + ' hat die Währung ' + n.atr.currencyID + ', die Rechnung lautet auf ' + ctx.mena + '. Prüfen Sie, ob das gewollt ist.');
+            'Das Element ' + n.meno + ' hat die Währung ' + n.atr.currencyID + ', die Rechnung lautet auf ' + ctx.mena + '. Prüfen Sie, ob das gewollt ist.',
+            'The element ' + n.meno + ' carries the currency ' + n.atr.currencyID + ' while the invoice is in ' + ctx.mena + '. Check whether that is intended.');
         }
       }
       for (const x of n.deti) chod(x);
@@ -132,7 +146,8 @@ function kontrolyNavyse(ctx) {
     pridaj(ctx, 'ARL-SK-SCHEMEID', VAR, ep, String(atr(ep, 'schemeID')),
       'Dodávateľ je zo Slovenska. Podľa oficiálnych odpovedí Finančnej správy k eFaktúre je identifikátorom v sieti Peppol DIČ so schemeID="0245". V súbore je schemeID="' + atr(ep, 'schemeID') + '". Toto je naše odporúčanie, nie pravidlo zo schematronu.',
       'Dodavatel je ze Slovenska. Podle oficiálních odpovědí Finanční správy k eFaktuře je identifikátorem v síti Peppol DIČ se schemeID="0245". V souboru je schemeID="' + atr(ep, 'schemeID') + '". Toto je naše doporučení, ne pravidlo ze schematronu.',
-      'Der Verkäufer sitzt in der Slowakei. Nach den offiziellen FAQ der slowakischen Finanzverwaltung ist die Peppol-Kennung die Steuernummer DIČ mit schemeID="0245". In der Datei steht schemeID="' + atr(ep, 'schemeID') + '". Das ist unsere Empfehlung, keine Schematron-Regel.');
+      'Der Verkäufer sitzt in der Slowakei. Nach den offiziellen FAQ der slowakischen Finanzverwaltung ist die Peppol-Kennung die Steuernummer DIČ mit schemeID="0245". In der Datei steht schemeID="' + atr(ep, 'schemeID') + '". Das ist unsere Empfehlung, keine Schematron-Regel.',
+      'The seller is in Slovakia. According to the official FAQ of the Slovak Financial Administration, the Peppol identifier there is the tax number DIC with schemeID="0245". The file says schemeID="' + atr(ep, 'schemeID') + '". This is our recommendation, not a schematron rule.');
   }
   // pri schemeID 0245 ma byt v hodnote DIC: presne 10 cislic, bez predpony SK
   for (const n of vsetky(d, 'cbc:EndpointID')) {
@@ -142,7 +157,8 @@ function kontrolyNavyse(ctx) {
     pridaj(ctx, 'ARL-SK-DIC-TVAR', CH, n, v,
       'Pri schemeID="0245" má byť v elektronickej adrese slovenské DIČ: presne 10 číslic, bez predpony SK a bez medzier. V súbore je "' + v + '". IČ DPH (SK a 10 číslic) sem nepatrí. Toto je naša kontrola podľa oficiálnych odpovedí Finančnej správy, nie pravidlo zo schematronu.',
       'Při schemeID="0245" má být v elektronické adrese slovenské DIČ: přesně 10 číslic, bez předpony SK a bez mezer. V souboru je "' + v + '". DIČ s předponou SK (tedy IČ DPH) sem nepatří. Toto je naše kontrola podle oficiálních odpovědí slovenské Finanční správy, ne pravidlo ze schematronu.',
-      'Bei schemeID="0245" gehört in die elektronische Adresse die slowakische Steuernummer DIČ: genau 10 Ziffern, ohne das Präfix SK und ohne Leerzeichen. In der Datei steht "' + v + '". Das ist unsere Prüfung nach den offiziellen FAQ der slowakischen Finanzverwaltung, keine Schematron-Regel.');
+      'Bei schemeID="0245" gehört in die elektronische Adresse die slowakische Steuernummer DIČ: genau 10 Ziffern, ohne das Präfix SK und ohne Leerzeichen. In der Datei steht "' + v + '". Das ist unsere Prüfung nach den offiziellen FAQ der slowakischen Finanzverwaltung, keine Schematron-Regel.',
+      'With schemeID="0245" the electronic address has to hold the Slovak tax number DIC: exactly 10 digits, no SK prefix and no spaces. The file says "' + v + '". A VAT identifier (SK plus 10 digits) does not belong here. This is our own check based on the official FAQ of the Slovak Financial Administration, not a schematron rule.');
   }
 }
 
@@ -177,6 +193,7 @@ export function skontroluj(xmlText, volby = {}) {
     return {
       profil,
       profilNazov: NAZVY_PROFILOV[profil] || profil,
+      profilNazovEn: NAZVY_PROFILOV_EN[profil] || profil,
       typ,
       nalezy: konecne,
       sumar: {
@@ -202,7 +219,8 @@ export function skontroluj(xmlText, volby = {}) {
       sprava: {
         sk: vysledok.chyba.sk,
         cs: vysledok.chyba.cs,
-        de: vysledok.chyba.de
+        de: vysledok.chyba.de,
+        en: vysledok.chyba.en
       },
       original: ''
     });
@@ -221,7 +239,8 @@ export function skontroluj(xmlText, volby = {}) {
       sprava: {
         sk: 'Toto je e-faktúra v syntaxi CII (UN/CEFACT Cross Industry Invoice). Náš validátor zatiaľ kontroluje len syntax UBL 2.1 (Invoice a CreditNote). Súbor je čitateľný, ale pravidlá EN 16931 na ňom nespúšťame.',
         cs: 'Toto je e-faktura v syntaxi CII (UN/CEFACT Cross Industry Invoice). Náš validátor zatím kontroluje jen syntax UBL 2.1 (Invoice a CreditNote). Soubor je čitelný, ale pravidla EN 16931 na něm nespouštíme.',
-        de: 'Dies ist eine E-Rechnung in der CII-Syntax (UN/CEFACT Cross Industry Invoice). Unser Prüfer unterstützt bisher nur die UBL-2.1-Syntax (Invoice und CreditNote). Die Datei ist lesbar, aber die EN-16931-Regeln werden darauf nicht angewendet.'
+        de: 'Dies ist eine E-Rechnung in der CII-Syntax (UN/CEFACT Cross Industry Invoice). Unser Prüfer unterstützt bisher nur die UBL-2.1-Syntax (Invoice und CreditNote). Die Datei ist lesbar, aber die EN-16931-Regeln werden darauf nicht angewendet.',
+        en: 'This is an e-invoice in the CII syntax (UN/CEFACT Cross Industry Invoice). Our checker so far covers only the UBL 2.1 syntax (Invoice and CreditNote). The file is readable, but we do not run the EN 16931 rules on it.'
       },
       original: ''
     });
@@ -237,7 +256,8 @@ export function skontroluj(xmlText, volby = {}) {
       sprava: {
         sk: 'Hlavný prvok súboru je ' + koren.meno + '. E-faktúra v UBL 2.1 má mať hlavný prvok Invoice (faktúra) alebo CreditNote (dobropis) v mennom priestore ' + K.MP.faktura + '.',
         cs: 'Hlavní prvek souboru je ' + koren.meno + '. E-faktura v UBL 2.1 má mít hlavní prvek Invoice (faktura) nebo CreditNote (dobropis) ve jmenném prostoru ' + K.MP.faktura + '.',
-        de: 'Das Wurzelelement der Datei ist ' + koren.meno + '. Eine UBL-2.1-E-Rechnung braucht als Wurzelelement Invoice oder CreditNote im Namensraum ' + K.MP.faktura + '.'
+        de: 'Das Wurzelelement der Datei ist ' + koren.meno + '. Eine UBL-2.1-E-Rechnung braucht als Wurzelelement Invoice oder CreditNote im Namensraum ' + K.MP.faktura + '.',
+        en: 'The root element of the file is ' + koren.meno + '. A UBL 2.1 e-invoice needs Invoice or CreditNote as its root element, in the namespace ' + K.MP.faktura + '.'
       },
       original: ''
     });
@@ -253,7 +273,8 @@ export function skontroluj(xmlText, volby = {}) {
     pridaj(ctx, 'XML-03', CH, koren, koren.ns,
       'Hlavný prvok ' + koren.local + ' má byť v mennom priestore ' + ocakavanyMp + '. V súbore je "' + (koren.ns || 'žiadny') + '".',
       'Hlavní prvek ' + koren.local + ' má být ve jmenném prostoru ' + ocakavanyMp + '. V souboru je "' + (koren.ns || 'žádný') + '".',
-      'Das Wurzelelement ' + koren.local + ' gehört in den Namensraum ' + ocakavanyMp + '. In der Datei steht "' + (koren.ns || 'keiner') + '".');
+      'Das Wurzelelement ' + koren.local + ' gehört in den Namensraum ' + ocakavanyMp + '. In der Datei steht "' + (koren.ns || 'keiner') + '".',
+      'The root element ' + koren.local + ' belongs in the namespace ' + ocakavanyMp + '. The file says "' + (koren.ns || 'none') + '".');
   }
 
   if (ctx.profil === 'neznamy') {
@@ -261,6 +282,7 @@ export function skontroluj(xmlText, volby = {}) {
       'Identifikátor špecifikácie (BT-24) "' + hod(koren, 'cbc:CustomizationID') + '" nepoznám. Kontrolu sme spustili len v základnom rozsahu EN 16931, bez pravidiel Peppol a XRechnung.',
       'Identifikátor specifikace (BT-24) "' + hod(koren, 'cbc:CustomizationID') + '" neznám. Kontrolu jsme spustili jen v základním rozsahu EN 16931, bez pravidel Peppol a XRechnung.',
       'Die Spezifikationskennung (BT-24) "' + hod(koren, 'cbc:CustomizationID') + '" ist unbekannt. Geprüft wurde nur der EN-16931-Kern, ohne Peppol- und XRechnung-Regeln.',
+      'We do not recognise the specification identifier (BT-24) "' + hod(koren, 'cbc:CustomizationID') + '". We ran the EN 16931 core rules only, without the Peppol and XRechnung rules.',
       xpath(koren));
     ctx.profil = 'en16931';
   }
@@ -287,20 +309,22 @@ export function skontroluj(xmlText, volby = {}) {
 const HLAVICKY = {
   sk: { nadpis: 'Protokol kontroly e-faktúry', profil: 'Profil', typ: 'Typ dokladu', chyby: 'Chyby', varovania: 'Varovania', informacie: 'Informácie', ziadne: 'Nenašli sme žiadnu chybu ani varovanie.', poznamka: 'Toto nie je úplná kontrola. Nekontrolujeme XSD schému UBL ani všetky pravidlá. Prechod touto kontrolou nezaručuje prijatie faktúry odberateľom ani sieťou Peppol.' },
   cs: { nadpis: 'Protokol kontroly e-faktury', profil: 'Profil', typ: 'Typ dokladu', chyby: 'Chyby', varovania: 'Varování', informacie: 'Informace', ziadne: 'Nenašli jsme žádnou chybu ani varování.', poznamka: 'Toto není úplná kontrola. Nekontrolujeme XSD schéma UBL ani všechna pravidla. Průchod touto kontrolou nezaručuje přijetí faktury odběratelem ani síti Peppol.' },
-  de: { nadpis: 'Prüfprotokoll E-Rechnung', profil: 'Profil', typ: 'Belegart', chyby: 'Fehler', varovania: 'Warnungen', informacie: 'Hinweise', ziadne: 'Wir haben weder Fehler noch Warnungen gefunden.', poznamka: 'Dies ist keine vollständige Prüfung. Wir prüfen weder das UBL-XSD-Schema noch alle Regeln. Ein Bestehen dieser Prüfung garantiert nicht die Annahme durch den Empfänger oder das Peppol-Netz.' }
+  de: { nadpis: 'Prüfprotokoll E-Rechnung', profil: 'Profil', typ: 'Belegart', chyby: 'Fehler', varovania: 'Warnungen', informacie: 'Hinweise', ziadne: 'Wir haben weder Fehler noch Warnungen gefunden.', poznamka: 'Dies ist keine vollständige Prüfung. Wir prüfen weder das UBL-XSD-Schema noch alle Regeln. Ein Bestehen dieser Prüfung garantiert nicht die Annahme durch den Empfänger oder das Peppol-Netz.' },
+  en: { nadpis: 'E-invoice check report', profil: 'Profile', typ: 'Document type', chyby: 'Errors', varovania: 'Warnings', informacie: 'Notes', ziadne: 'We found no errors and no warnings.', poznamka: 'This is not a complete validation. We do not check the UBL XSD schema and we do not implement every rule. Passing this check does not guarantee that the buyer, the buyer invoicing system or the Peppol network will accept the invoice.' }
 };
 
 /**
  * Textovy protokol na stiahnutie.
  * @param {object} vysledok vystup funkcie skontroluj
- * @param {'sk'|'cs'|'de'} jazyk
+ * @param {'sk'|'cs'|'de'|'en'} jazyk
  * @param {string} [nazovSuboru]
  */
 // Nazov zavaznosti v jazyku protokolu (vnutorne kody su slovenske).
 const ZAVAZNOST_SLOVOM = {
   sk: { chyba: 'CHYBA', varovanie: 'VAROVANIE', informacia: 'INFORMÁCIA' },
   cs: { chyba: 'CHYBA', varovanie: 'VAROVÁNÍ', informacia: 'INFORMACE' },
-  de: { chyba: 'FEHLER', varovanie: 'WARNUNG', informacia: 'HINWEIS' }
+  de: { chyba: 'FEHLER', varovanie: 'WARNUNG', informacia: 'HINWEIS' },
+  en: { chyba: 'ERROR', varovanie: 'WARNING', informacia: 'NOTE' }
 };
 
 export function protokol(vysledok, jazyk = 'sk', nazovSuboru = '') {
@@ -310,7 +334,7 @@ export function protokol(vysledok, jazyk = 'sk', nazovSuboru = '') {
   if (nazovSuboru) r.push(nazovSuboru);
   r.push(new Date().toISOString().slice(0, 19).replace('T', ' '));
   r.push('');
-  r.push(H.profil + ': ' + vysledok.profilNazov);
+  r.push(H.profil + ': ' + (jazyk === 'en' ? (vysledok.profilNazovEn || vysledok.profilNazov) : vysledok.profilNazov));
   r.push(H.typ + ': ' + vysledok.typ);
   r.push(H.chyby + ': ' + vysledok.sumar.chyby + ', ' + H.varovania + ': ' + vysledok.sumar.varovania + ', ' + H.informacie + ': ' + vysledok.sumar.informacie);
   r.push('');
