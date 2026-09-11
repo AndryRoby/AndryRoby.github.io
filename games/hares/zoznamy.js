@@ -16,7 +16,8 @@ const jeCiste = (st) => !!(st && st.done && !st.hints && !st.checks);
 /* `z` counts the numbers the player wrote themselves; the saved board holds
  * the given numbers too, so it is the only honest sign that a meadow has been
  * started (game.js, ulozStav). */
-const zacate = (st) => !!(st && (st.z || (Array.isArray(st.p) && st.p.some((x) => x))));
+const nieco = (x) => Array.isArray(x) && x.some((y) => y);
+const zacate = (st) => !!(st && (st.z || nieco(st.p) || nieco(st.c) || nieco(st.f)));
 const stavTriedy = (st) => (st && st.done ? (jeCiste(st) ? 'hotove ciste' : 'hotove') : zacate(st) ? 'rozohrane' : '');
 
 /* Practice index: "3 of 8 solved" under every set. */

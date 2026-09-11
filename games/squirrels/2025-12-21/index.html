@@ -37,7 +37,7 @@
 <link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/style/paper.css?v=89016e6c">
 <script src="/style/prepinac.js?v=2988c181" defer></script>
-<script type="module" src="/games/squirrels/game.js?v=5"></script>
+<script type="module" src="/games/squirrels/game.js?v=9"></script>
 <style>
   /* paper.css carries no base rule for the hidden attribute, and this page
      only covers it class by class (.pauza-blok[hidden], .doska[hidden],
@@ -61,7 +61,15 @@
   .horna b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
   .horna .uroven{color:var(--muted);font-size:12px;letter-spacing:.06em;text-transform:uppercase;margin-left:8px;white-space:nowrap}
   .horna #cas-blok,.horna #datum{white-space:nowrap}
-  @media (max-width:480px){ .horna .uroven{display:block;margin:2px 0 0} }
+  .horna>span{min-width:0}
+  /* On a narrow phone the date and the clock cannot both stay on one
+     unbreakable line: with the Pause button showing they pushed the page past
+     320 px. The date is allowed to break, the clock is not. */
+  @media (max-width:480px){
+    .horna{flex-wrap:wrap}
+    .horna .uroven{display:block;margin:2px 0 0}
+    .horna #datum{white-space:normal}
+  }
   .pauza-btn{font:500 12px/1 var(--ui);color:var(--muted);background:transparent;border:1px solid var(--line);border-radius:999px;padding:4px 10px;cursor:pointer;margin-left:8px;vertical-align:1px}
   .pauza-btn:hover{color:var(--ink);border-color:var(--ink)}
   .doska-obal{position:relative;touch-action:pan-y}
@@ -70,14 +78,39 @@
   .pauza-blok[hidden]{display:none}
   .pauza-blok p{margin:0;color:var(--body);font-size:15px;line-height:1.5}
   .pauza-blok b{color:var(--ink)}
-  /* ── The wood ───────────────────────────────────────────────────────────
+  /* GIF-CSS-START */
+  /* ── The wood ─────────────────────────────────────────────────────────── *
+     Everything from the marker above to GIF-CSS-END is the board, and
+     ops/games/squirrels/gify.mjs copies exactly this range into the tutorial
+     GIFs, so the animation and the game can never drift apart.
+
      A square grid of cells built by game.js. A trunk (.k) is a dark cell with
      a diagonal: the number above the diagonal is the total of the run of
      hollows to its right, the number below it the total of the run going
-     down. A hollow (.b) is a button that holds one digit, or the small notes
-     you keep while you think. Every size is drawn from one --cell variable,
-     the measured width of a single cell, so the numbers stay in proportion
-     from a six by six on a desktop to a twelve by twelve on a phone. */
+     down. A hollow (.b) is a button that holds one digit, the corner and
+     centre marks you keep while you think, and one of nine colours. Every
+     size is drawn from one --cell variable, the measured width of a single
+     cell, so the numbers stay in proportion from a six by six on a desktop
+     to a twelve by twelve on a phone. */
+  /* The nine cell colours. They are a ladder: colour 1 is the darkest and
+     colour 9 the lightest, in even steps, so which colour a hollow carries can
+     be read from its brightness alone and the set still works without hue
+     vision. Warm and cool hues alternate along the ladder, so two colours that
+     a red green blindness would flatten into one are always far apart in
+     brightness. Every one of them keeps the white of a number above 4.5:1:
+     colour 9, the lightest, reads 4.75:1 against #fff, and the marks and the
+     number on a coloured hollow are drawn in exactly that white. */
+  :root{
+    --farba-1:#542621;  /* red */
+    --farba-2:#1e4143;  /* teal */
+    --farba-3:#593e22;  /* orange */
+    --farba-4:#304c75;  /* blue */
+    --farba-5:#5b5327;  /* yellow */
+    --farba-6:#724893;  /* violet */
+    --farba-7:#346e40;  /* green */
+    --farba-8:#9c5180;  /* magenta */
+    --farba-9:#7e715f;  /* sand */
+  }
   .doska{display:grid;grid-template-columns:repeat(var(--n,8),minmax(0,1fr));
          border:2px solid var(--ink);border-radius:8px;overflow:hidden;background:var(--card-plna);
          touch-action:none;user-select:none;-webkit-user-select:none;
@@ -112,26 +145,111 @@
   .b:focus-visible{outline:2px solid var(--accent-light);outline-offset:-3px;z-index:2}
   .b .cif{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
           font:600 calc(var(--cell) * .52)/1 var(--ui);font-variant-numeric:tabular-nums;color:var(--ink)}
-  .b .pozn{position:absolute;inset:9%;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr)}
-  .b .pozn i{display:flex;align-items:center;justify-content:center;font:500 calc(var(--cell) * .23)/1 var(--ui);
-             font-style:normal;color:var(--body);visibility:hidden}
-  .b .pozn i.on{visibility:visible}
+  /* Corner marks. Nine fixed places in the order sudokupad uses, so the marks
+     never jump about: left top, right top, left bottom, right bottom, top,
+     bottom, left, right, middle. game.js sorts the marks and drops them into
+     those places in turn, which is why the places are addressed by position in
+     the list and not by the number they hold. */
+  .b .rohy{position:absolute;inset:7%;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);pointer-events:none}
+  /* The marks shrink as they grow, the way the centre marks do, instead of
+     sitting at one small size whatever happens. Four of them use two rows of
+     the three, so they may be large; only seven and up need all three rows and
+     have to come down. It matters on the ten by ten and twelve by twelve
+     boards, where a phone gives a cell about 32 px: the old fixed .215 put two
+     corner marks on screen at seven pixels, and two corner marks is the
+     ordinary case while you are solving. */
+  .b .rohy i{font:500 calc(var(--cell) * .30)/1 var(--ui);font-style:normal;color:var(--body);
+             font-variant-numeric:tabular-nums}
+  .b .rohy[data-k="5"] i,.b .rohy[data-k="6"] i{font-size:calc(var(--cell) * .275)}
+  .b .rohy[data-k="7"] i,.b .rohy[data-k="8"] i,.b .rohy[data-k="9"] i{font-size:calc(var(--cell) * .25)}
+  .b .rohy i:nth-child(1){grid-area:1/1;place-self:start start}
+  .b .rohy i:nth-child(2){grid-area:1/3;place-self:start end}
+  .b .rohy i:nth-child(3){grid-area:3/1;place-self:end start}
+  .b .rohy i:nth-child(4){grid-area:3/3;place-self:end end}
+  .b .rohy i:nth-child(5){grid-area:1/2;place-self:start center}
+  .b .rohy i:nth-child(6){grid-area:3/2;place-self:end center}
+  .b .rohy i:nth-child(7){grid-area:2/1;place-self:center start}
+  .b .rohy i:nth-child(8){grid-area:2/3;place-self:center end}
+  .b .rohy i:nth-child(9){grid-area:2/2;place-self:center center}
+  /* Centre marks: one sorted line in the middle, shrinking as it grows so
+     nine of them still fit inside a twelve by twelve cell on a phone. They
+     stand apart from each other, or 2 4 6 8 reads as the number two thousand
+     four hundred and sixty-eight. The gap loosens as there is room for it and
+     tightens as the line fills up; text-indent matches the letter-spacing, so
+     the trailing gap after the last mark does not push the whole line half a
+     gap off centre. The same ladder in all three games. */
+  .b .stred{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:0 5%;
+            font:500 calc(var(--cell) * .27)/1 var(--ui);font-variant-numeric:tabular-nums;
+            color:var(--body);letter-spacing:.18em;text-indent:.18em;pointer-events:none}
+  .b .stred[data-k="4"]{font-size:calc(var(--cell) * .25)}
+  .b .stred[data-k="5"]{font-size:calc(var(--cell) * .225);letter-spacing:.08em;text-indent:.08em}
+  .b .stred[data-k="6"]{font-size:calc(var(--cell) * .195);letter-spacing:.08em;text-indent:.08em}
+  /* Seven marks and up go onto two lines instead of shrinking to nothing:
+     nine of them on a ten by ten phone board would be four pixels tall. Two
+     lines leave room to grow, so the step down here is small. Text-indent goes
+     as well here: it would only indent the first of the two lines. */
+  .b .stred[data-k="7"],.b .stred[data-k="8"],.b .stred[data-k="9"]{font-size:calc(var(--cell) * .205);
+     word-break:break-all;line-height:1.15;text-align:center;letter-spacing:.06em;text-indent:0}
   /* var(--muted) on the hollow's own fill read 3.19:1, and less once the
      picked hollow's tinted background lightens it further: var(--body) clears
      4.5:1 at rest, and the picked hollow needs a lighter tone still. */
-  .b.vybrana .pozn i{color:#c9c5bf}
-  .b[data-v="0"] .pozn{display:grid}
-  .b:not([data-v="0"]) .pozn{display:none}
-  /* The two runs of the picked hollow. A solid colour, not a translucent
-     white: .b.beh beats .b, so it replaces the hollow's own background
-     instead of sitting on top of it, and a low alpha then landed on the
-     darker grid background and came out one RGB step from a plain hollow. */
+  .b.vybrana .rohy i,.b.vybrana .stred{color:#c9c5bf}
+  /* Number entry with noted cells: Fill cell. The number hides the marks of
+     its hollow; the marks themselves are kept and come back on Delete. */
+  .b:not([data-v="0"]) .rohy,.b:not([data-v="0"]) .stred{display:none}
+  /* The two runs of the picked hollow, shown only when a single hollow is
+     picked. A solid colour, not a translucent white: .b.beh beats .b, so it
+     replaces the hollow's own background instead of sitting on top of it, and
+     a low alpha then landed on the darker grid background and came out one RGB
+     step from a plain hollow. */
   .b.beh{background:#3c3530}
   .b.rovnaka .cif{color:var(--accent)}
   /* The selected cell is also 'the same' as itself; its own digit stays plain. */
   .b.vybrana.rovnaka:not(.chyba) .cif{color:var(--ink)}
-  .b.vybrana{background:rgba(242,100,60,.16);z-index:2}
-  .b.vybrana::before{content:"";position:absolute;inset:0;border:2px solid var(--accent);pointer-events:none}
+  /* A coloured hollow. The colour is the hollow's own fill, so it survives the
+     run shading and shows through the tint of the selection; a faint diagonal
+     sheen says "this one is coloured" even where two colours sit close on the
+     brightness ladder. Numbers and marks go to full white on top of it. */
+  /* The sheen darkens, it does not lighten. A white sheen lifted the corner of
+     the lightest colour of the ladder, colour 9, and white on it fell to
+     4.08:1 there, under the 4.5:1 the palette is built to hold; a dark sheen
+     says the same "this one is coloured" and every reading of white on it can
+     only get better, never worse. */
+  .b[data-f]{background-image:linear-gradient(135deg,rgba(0,0,0,.10),rgba(0,0,0,0) 62%)}
+  .b[data-f="1"]{background-color:var(--farba-1)}
+  .b[data-f="2"]{background-color:var(--farba-2)}
+  .b[data-f="3"]{background-color:var(--farba-3)}
+  .b[data-f="4"]{background-color:var(--farba-4)}
+  .b[data-f="5"]{background-color:var(--farba-5)}
+  .b[data-f="6"]{background-color:var(--farba-6)}
+  .b[data-f="7"]{background-color:var(--farba-7)}
+  .b[data-f="8"]{background-color:var(--farba-8)}
+  .b[data-f="9"]{background-color:var(--farba-9)}
+  /* Plain white on a coloured hollow, not the page's off white: on colour 9,
+     the lightest rung, #fafafa reads 4.55:1 and #fff 4.75:1, and the extra
+     fifth of a step is what keeps the whole ladder clear of 4.5:1 with room to
+     spare. The matching number highlight, when it is switched on, still wins
+     over it. */
+  .b[data-f]:not(.rovnaka) .cif,.b[data-f] .rohy i,.b[data-f] .stred{color:#fff}
+  /* The picked hollows. The tint is drawn on ::before, over the hollow's
+     colour, so a coloured hollow keeps its colour while it is picked.
+     The frame is drawn side by side, not as one box on every cell: game.js
+     puts vh, vp, vd and vl on a hollow for the sides whose neighbour is not
+     picked, so several picked hollows carry one outline round the whole shape
+     and the seam between two of them stays a single hairline. */
+  .b.vybrana{z-index:2}
+  .b.vybrana::before{content:"";position:absolute;inset:0;border:0 solid var(--accent);
+                     background:rgba(242,100,60,.16);pointer-events:none}
+  .b.vybrana.vh::before{border-top-width:2px}
+  .b.vybrana.vp::before{border-right-width:2px}
+  .b.vybrana.vd::before{border-bottom-width:2px}
+  .b.vybrana.vl::before{border-left-width:2px}
+  /* A coloured hollow gets the frame and nothing else. The tint lightened the
+     colour under it, and on colour 9, the lightest rung of the ladder, that
+     took the white of a number from 4.55:1 down to 4.36:1, under the 4.5:1
+     the palette is built to hold. The colour stays exactly as it was and the
+     frame alone says which hollow is picked. */
+  .b.vybrana[data-f]::before{background:none}
   .b.stlmena .cif{opacity:.55}
   /* A hint: the two runs it reads are outlined, the hollow it means pulses. */
   .b.tip-beh,.k.tip-beh{background-color:rgba(250,204,21,.14)}
@@ -150,6 +268,7 @@
   .hotovo .b .cif{color:var(--ok);opacity:1}
   .hotovo .b{cursor:default}
   .hotovo .b:hover{background:var(--dutina)}
+  /* GIF-CSS-END */
   /* ── The number pad ───────────────────────────────────────────────────── */
   .pad{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:4px;margin-top:10px}
   .pad[hidden]{display:none}
@@ -161,25 +280,52 @@
   .pad button:hover{border-color:var(--ink)}
   .pad button:disabled{opacity:.35;cursor:default}
   .pad .zmaz{font-size:12px;letter-spacing:.04em;color:var(--body)}
-  .hra.poznamky .pad button{border-style:dashed;font-size:14px;color:var(--body)}
-  .hra.poznamky .pad .zmaz{font-size:12px}
-  /* Holding a pad number writes it the other way round: on touch there is no
-     Shift key, so a long press is what Shift plus a number does on a keyboard
-     (ops/spec-hry-ux.md, part 2). While the finger is down the button fills
-     in, so the hold is visible before it fires. It is never the only way: the
-     Notes button next to the pad is one tap (part 9). */
-  .pad button.drzane{border-color:var(--accent);background:rgba(242,100,60,.16)}
+  /* The pad says which mode it is writing in: dashed and quieter for the two
+     kinds of mark, and in Colour mode every key wears its own colour. */
+  .pad[data-rezim="corner"] button[data-d]:not(.zmaz),
+  .pad[data-rezim="centre"] button[data-d]:not(.zmaz){border-style:dashed;font-size:14px;color:var(--body)}
+  .pad[data-rezim="colour"] button[data-d="1"]{background:var(--farba-1)}
+  .pad[data-rezim="colour"] button[data-d="2"]{background:var(--farba-2)}
+  .pad[data-rezim="colour"] button[data-d="3"]{background:var(--farba-3)}
+  .pad[data-rezim="colour"] button[data-d="4"]{background:var(--farba-4)}
+  .pad[data-rezim="colour"] button[data-d="5"]{background:var(--farba-5)}
+  .pad[data-rezim="colour"] button[data-d="6"]{background:var(--farba-6)}
+  .pad[data-rezim="colour"] button[data-d="7"]{background:var(--farba-7)}
+  .pad[data-rezim="colour"] button[data-d="8"]{background:var(--farba-8)}
+  .pad[data-rezim="colour"] button[data-d="9"]{background:var(--farba-9)}
+  .pad[data-rezim="colour"] button[data-d]:not(.zmaz){border-color:rgba(255,255,255,.20)}
+  /* Digit first: the number waiting on the pad is the one the taps write. */
+  .pad button[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+  /* ── The four entry modes ─────────────────────────────────────────────── *
+     Normal, Corner, Centre, Colour, always visible, always four, right under
+     the pad and above the thumb on a phone. The letter under each name is its
+     keyboard shortcut; the space bar walks round all four. */
+  .rezimy{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;margin-top:6px}
+  .rezimy[hidden]{display:none}
+  .rezimy button{height:44px;min-width:0;padding:0 2px;border:1px solid var(--line);border-radius:10px;
+                 background:var(--card);color:var(--body);cursor:pointer;touch-action:manipulation;
+                 display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+                 font:600 12.5px/1.1 var(--ui);user-select:none;-webkit-user-select:none}
+  .rezimy button small{font:500 10px/1 var(--ui);color:var(--muted);letter-spacing:.08em}
+  .rezimy button:hover{border-color:var(--ink);color:var(--ink)}
+  .rezimy button[aria-pressed="true"]{border-color:var(--accent);color:var(--accent);background:rgba(242,100,60,.14)}
+  .rezimy button[aria-pressed="true"] small{color:var(--accent)}
+  @media (max-width:390px){
+    .rezimy button{height:42px;font-size:11.5px}
+    .rezimy button small{font-size:9px}
+  }
   .ovladanie{display:flex;gap:5px;align-items:center;flex-wrap:wrap;margin-top:10px}
   /* Height and type come from paper.css (body.noc .btn: 48px), which outranks
      a plain .ovladanie .btn rule, so setting them here would only look like it
      worked. The pad above is set to the same 48px instead. Padding is ours. */
   .ovladanie .btn{padding:0 10px}
   .ovladanie .btn[aria-pressed="true"]{border-color:var(--accent);color:var(--accent)}
-  /* On a phone the six buttons make two tidy rows of three instead of leaving
-     one of them alone at the end of a wrapped line. */
+  /* On a phone the five buttons make two tidy rows, three and two, instead of
+     leaving one of them alone at the end of a wrapped line. */
   @media (max-width:480px){
-    .ovladanie{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
-    .ovladanie .btn{width:100%;padding:0 6px;justify-content:center}
+    .ovladanie{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px}
+    .ovladanie .btn{width:100%;padding:0 6px;justify-content:center;grid-column:span 2}
+    .ovladanie #hint,.ovladanie #check{grid-column:span 3}
     .ovladanie #seria{grid-column:1 / -1}
   }
   .stav{font-family:var(--ui);font-size:15px;line-height:1.5;color:var(--body);margin:12px 0 0;min-height:1.5em}
@@ -221,6 +367,15 @@
   .nastavenia[open] summary{color:var(--ink)}
   .nastavenia label{display:flex;gap:10px;align-items:flex-start;font-family:var(--ui);font-size:13px;color:var(--body);line-height:1.5;padding:6px 0}
   .nastavenia input{margin-top:3px;flex:none}
+  /* The settings that are a choice of two, not a switch, keep the name on the
+     left and the choice on the right. */
+  .nastavenia label.vyber{align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+  .nastavenia label.vyber>span{flex:1 1 250px;min-width:0}
+  /* min-width:0 matters: without it a select is as wide as its longest option
+     and it pushed the whole page past 320 px. */
+  .nastavenia select{flex:0 1 180px;min-width:0;max-width:100%;background:var(--card-plna);color:var(--ink);
+                     border:1px solid var(--line);border-radius:8px;font:13px/1.3 var(--ui);padding:6px 8px;min-height:32px}
+  .nastavenia select:hover{border-color:var(--ink)}
   .nastavenia .fineprint{padding:6px 0 12px;margin:0}
   .skryte{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
   .navod{font-family:var(--ui);font-size:13px;color:var(--muted);margin:10px 0 0;max-width:none}
@@ -270,7 +425,7 @@
       <h1 id="h1"><span class="l">Squirrels.</span></h1>
       <p class="lead r d3">Squirrels hide acorns in the hollows. Each sign tells how many acorns are in the run of hollows to its right or below it. Every hollow holds 1 to 9 acorns, and no number repeats within a run.</p>
       <p class="proof r d5" id="dnes">The wood for Sunday 21 December 2025: the Sunday challenge, twelve by twelve. Exactly one solution.</p>
-      <p class="navod r d5">Tap a hollow, then a number from the pad. Tap the same number again to take it back. Keyboard: arrows move, <kbd>1</kbd> to <kbd>9</kbd> write, <kbd>Delete</kbd> clears, <kbd>N</kbd> switches notes, <kbd>U</kbd> undo, <kbd>R</kbd> redo, <kbd>P</kbd> pauses. Nothing lights up while you play; Check judges only when you ask.</p>
+      <p class="navod r d5">Click a hollow, or drag across several, then a number. Keyboard: arrows move, <kbd>1</kbd> to <kbd>9</kbd> write, <kbd>Delete</kbd> clears; <kbd>Z</kbd> <kbd>X</kbd> <kbd>C</kbd> <kbd>V</kbd> pick between a number, corner marks, centre marks and a colour, and the space bar walks round the four; <kbd>Ctrl</kbd>+<kbd>Z</kbd> undo, <kbd>Ctrl</kbd>+<kbd>Y</kbd> redo; Restart clears the wood, one Undo brings it back; <kbd>P</kbd> pauses. Nothing lights up while you play; Check judges only when you ask.</p>
     </div>
     <div class="r d2">
       <div class="hra" id="hra">
@@ -292,13 +447,18 @@
           <button type="button" data-d="7">7</button>
           <button type="button" data-d="8">8</button>
           <button type="button" data-d="9">9</button>
-          <button type="button" class="zmaz" data-d="0" aria-label="Erase the hollow">Del</button>
+          <button type="button" class="zmaz" data-d="0" aria-label="Erase the picked hollows">Del</button>
+        </div>
+        <div class="rezimy" id="rezimy" role="group" aria-label="What a number writes">
+          <button type="button" data-rezim="normal" aria-pressed="true">Normal<small>Z</small></button>
+          <button type="button" data-rezim="corner" aria-pressed="false">Corner<small>X</small></button>
+          <button type="button" data-rezim="centre" aria-pressed="false">Centre<small>C</small></button>
+          <button type="button" data-rezim="colour" aria-pressed="false">Colour<small>V</small></button>
         </div>
         <div class="ovladanie">
-          <button type="button" class="btn btn-line" id="poznamky" aria-pressed="false">Notes</button>
           <button type="button" class="btn btn-line" id="spat">Undo</button>
           <button type="button" class="btn btn-line" id="znova">Redo</button>
-          <button type="button" class="btn btn-line" id="reset">Clear</button>
+          <button type="button" class="btn btn-line" id="reset">Restart</button>
           <button type="button" class="btn btn-line" id="hint">Hint</button>
           <button type="button" class="btn btn-line" id="check">Check</button>
           <span class="small" id="seria"></span>
@@ -314,13 +474,33 @@
         <p class="historia" id="historia" hidden></p>
         <details class="nastavenia">
           <summary>Settings</summary>
-          <label><input type="checkbox" data-nastavenie="casovac"> Show the timer and the Pause button</label>
-          <label><input type="checkbox" data-nastavenie="pauzaPriOdchode"> Pause the clock when you leave the tab or sit still for a minute</label>
-          <label><input type="checkbox" data-nastavenie="zvyrazniRovnake"> Highlight the same number everywhere on the board</label>
-          <label><input type="checkbox" data-nastavenie="autoPoznamky"> Auto notes: keep every empty hollow marked with the numbers that still fit (off by default: the notes are your own)</label>
-          <label><input type="checkbox" data-nastavenie="zivaKontrola"> Live check: mark a wrong number as soon as it is written (off by default: finding a mistake is part of the puzzle)</label>
+          <label class="vyber"><span>Control method: Selection is a hollow first and then a number, Digit first is a number from the pad and then the hollows you tap; the number stays chosen, so one hollow after another takes it</span>
+            <select data-nastavenie="ovladanie" aria-label="Control method">
+              <option value="selection">Selection</option>
+              <option value="digit">Digit first</option>
+            </select></label>
+          <label><input type="checkbox" data-nastavenie="casovac"> Display timer, with the Pause button</label>
+          <label><input type="checkbox" data-nastavenie="zvyrazniRovnake"> Highlight matching numbers everywhere on the board</label>
+          <label class="vyber"><span>Cell selection when dragging: a drag picks every hollow it runs over, or moves a single one</span>
+            <select data-nastavenie="tahVyber" aria-label="Cell selection when dragging">
+              <option value="multiple">Multiple cells</option>
+              <option value="single">Single cell</option>
+            </select></label>
+          <label class="vyber"><span>Number entry with noted cells: Fill cell writes the number over the marks, Add note makes it another mark</span>
+            <select data-nastavenie="zapisSoZnackami" aria-label="Number entry with noted cells">
+              <option value="fill">Fill cell</option>
+              <option value="note">Add note</option>
+            </select></label>
+          <label><input type="checkbox" data-nastavenie="zivaKontrola"> Highlight errors: mark a wrong number as soon as it is written (off by default: finding a mistake is part of the puzzle)</label>
+          <label class="vyber"><span>Default note style: which of the two the <kbd>N</kbd> key reaches first</span>
+            <select data-nastavenie="predvolenyStyl" aria-label="Default note style">
+              <option value="corner">Corner</option>
+              <option value="centre">Centre</option>
+            </select></label>
+          <label><input type="checkbox" data-nastavenie="autoOdstranZnacky"> Auto remove restricted notes: a number written in takes the same mark out of the rest of its two runs (off by default: the marks are your own)</label>
+          <label><input type="checkbox" data-nastavenie="pauzaPriOdchode"> Auto pause: stop the clock when you leave the tab or sit still for a minute</label>
           <label><input type="checkbox" data-nastavenie="lenPad"> Onscreen input only: numbers come from the pad, the number keys of a keyboard are ignored (arrows, Undo, Redo and Pause keep working)</label>
-          <label><input type="checkbox" data-nastavenie="potvrditReset"> Ask before Clear</label>
+          <label><input type="checkbox" data-nastavenie="potvrditReset"> Confirm before Restart</label>
           <p class="fineprint">Settings, progress, history and streak stay in this browser. Add this page to your home screen to open it like an app.</p>
         </details>
       </div>
@@ -345,10 +525,11 @@
         <details>
           <summary>Controls</summary>
           <div class="telo">
-            <p>Tap or click a hollow to pick it, then a number from the pad under the wood. Tapping the same number again takes it back, so the way out is always one tap away. Hold and drag from a hollow that already holds a number to write that same number into the empty hollows you pass. Nothing lights up while you play: finding a mistake is part of the puzzle.</p>
-            <p><b>Notes</b> switches the pad to the small numbers you keep while you think; a number written for real clears the notes it rules out. Holding a pad number for half a second writes it the other way round, so you can drop a real number in without leaving notes, or pencil one in without entering them.
-            <b>Check</b> first tells you only how many numbers are wrong and which rows or columns they sit in; press it again and it marks them. <b>Hint</b> names the rule and the place without giving the number away, and the second press writes that one number and explains it. If something on the board is already wrong, the hint points there first. Hints and checks are free and counted, and shown when you finish. <b>Clear</b> empties the wood; the clock keeps running and one Undo brings everything back.</p>
-            <p>Keyboard: arrows move from hollow to hollow, <kbd>1</kbd> to <kbd>9</kbd> write a number, <kbd>Shift</kbd> plus a number writes it the other way round, a note while notes are off and a real number while they are on, <kbd>N</kbd> or <kbd>Enter</kbd> switches notes on and off, <kbd>Delete</kbd> or <kbd>Backspace</kbd> empties the hollow, <kbd>Escape</kbd> lets it go, <kbd>U</kbd> or <kbd>Ctrl</kbd>+<kbd>Z</kbd> undo, <kbd>R</kbd> or <kbd>Ctrl</kbd>+<kbd>R</kbd> redo, <kbd>P</kbd> pauses.</p>
+            <p><b>Moving about.</b> Click or tap a hollow to pick it. Drag with the mouse or the finger across the wood to pick several at once, <kbd>Ctrl</kbd> (on a Mac <kbd>Cmd</kbd>) plus a click adds one to the picked hollows or takes it away, and <kbd>Ctrl</kbd> plus an arrow grows the picked patch. The arrow keys move from hollow to hollow and step over the edge of the wood to the other side; <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> do the same. <kbd>Escape</kbd> lets the whole selection go.</p>
+            <p><b>Writing.</b> <kbd>1</kbd> to <kbd>9</kbd>, on the number row or the numeric keypad, or the pad under the wood, write into every picked hollow at once. The same number again takes it back. <kbd>Delete</kbd> or <kbd>Backspace</kbd> clears in one order: the numbers first, then the marks, then the colour, so one more press always takes away one more layer. A number written into a hollow with marks in it covers them; they come back when the number goes.</p>
+            <p><b>The four modes.</b> The buttons under the pad say what a number writes: <b>Normal</b> the big number, <b>Corner</b> a small mark in the corners of the hollow, <b>Centre</b> a small mark in the middle, <b>Colour</b> one of nine colours. <kbd>Z</kbd> <kbd>X</kbd> <kbd>C</kbd> <kbd>V</kbd> pick one, the space bar walks round all four, <kbd>N</kbd> steps through the two kinds of mark and back. Holding <kbd>Shift</kbd> writes a corner mark and holding <kbd>Ctrl</kbd> a centre mark for that one number, without leaving the mode you are in.</p>
+            <p><b>Undo and Redo.</b> <kbd>Ctrl</kbd>+<kbd>Z</kbd> or <kbd>U</kbd> goes back, <kbd>Ctrl</kbd>+<kbd>Y</kbd>, <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> or <kbd>R</kbd> goes forward, as far as you like in either direction. <kbd>Ctrl</kbd>+<kbd>R</kbd> is left alone: that is the browser reloading the page. <b>Restart</b> takes every number, mark and colour off the wood; the clock keeps running and one Undo brings it all back.</p>
+            <p><b>Check and Hint.</b> Nothing lights up while you play: finding a mistake is part of the puzzle. <b>Check</b> first tells you only how many numbers are wrong and which rows or columns they sit in; press it again and it marks them. <b>Hint</b> names the rule and the place without giving the number away, and the second press writes that one number and explains it. If something on the board is already wrong, the hint points there first. Hints and checks are free and counted, and shown when you finish. <kbd>P</kbd> pauses.</p>
             <p>The clock runs from your first number to the last hollow and pauses when you leave the tab or sit still for a minute, which also hides the wood. Your progress, time, history and day streak stay in this browser, and in your <a href="/ucet/">account</a> when you are signed in, so you can continue on another device. The day turns over at midnight where you are. Only the wood of the day counts towards the streak, the archive is for practice; once you are five days in, a single missed day is forgiven, at most twice a month.</p>
           </div>
         </details>
