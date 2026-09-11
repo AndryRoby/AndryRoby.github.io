@@ -19,11 +19,15 @@ import { parsujXml } from './parser.mjs';
 import { vytvorUbl, prepocitaj, prazdnaFaktura, zCentov } from './ubl.js';
 import { vykresliNahlad } from './nahlad.js';
 
-const LANG = document.documentElement.lang === 'cs' ? 'cs' : document.documentElement.lang === 'de' ? 'de' : 'sk';
+/* Jazyk berieme z cesty (/cs/, /de/, /en/), lebo tak je stranka rozdelena; atribut lang
+ * na <html> je zaloha, keby sa stranka otvorila z ineho miesta. */
+const CESTA_JAZYKA = (location.pathname.match(/\/efaktura\/(cs|de|en)\//) || [])[1] || '';
+const LANG = CESTA_JAZYKA
+  || (['cs', 'de', 'en'].indexOf(document.documentElement.lang) !== -1 ? document.documentElement.lang : 'sk');
 
 /* Skloňovanie počtov v súhrnnom riadku.
  * Slovenčina a čeština majú tri tvary: 1 kus, 2 až 4 kusy, ostatné (vrátane 0).
- * Nemčina má dva: 1 kus a ostatné. */
+ * Nemčina a angličtina majú dva: 1 kus a ostatné (error/errors, warning/warnings, note/notes). */
 const tvar3 = (n, jeden, malo, vela) => (n === 1 ? jeden : n >= 2 && n <= 4 ? malo : vela);
 const tvar2 = (n, jeden, viac) => (n === 1 ? jeden : viac);
 
@@ -201,6 +205,66 @@ const T = {
     mailtoPredmet: 'E-Rechnung: XML zum Herunterladen',
     mailtoTelo: 'Guten Tag,\n\ndie Zahlung für das XML von arling.sk/efaktura/ wird noch aktiviert. Die ausgefüllte Rechnung liegt in meinem Browser bereit. Bitte um Hinweise.\n\nVielen Dank',
   },
+  en: {
+    locale: 'en-IE',
+    legendaDodavatel: 'Seller', legendaOdberatel: 'Buyer', legendaFaktura: 'Invoice', legendaPolozky: 'Lines',
+    zavaznost: { chyba: 'Error', varovanie: 'Warning', informacia: 'Note' },
+    sumarProfil: 'Profile', sumarTyp: 'Document type',
+    sumarChyby: (n) => tvar2(n, 'error', 'errors'),
+    sumarVarovania: (n) => tvar2(n, 'warning', 'warnings'),
+    sumarInformacie: (n) => tvar2(n, 'note', 'notes'),
+    bezChyb: 'We found no errors and no warnings. The file passed the rules we check.',
+    maChyby: (n) => n === 1
+      ? 'We found 1 error. Fix it and check again.'
+      : 'We found ' + n + ' errors. Fix them and check again.',
+    povodneZnenie: 'Original wording of the rule',
+    xpathPopis: 'Path to the element',
+    hodnotaPopis: 'Value in the file',
+    nacitajteSubor: 'Load a file first, or paste the XML.',
+    citam: 'Reading the file…',
+    prilisVelky: (mb) => 'The file is larger than ' + mb + ' MB. E-invoices that big do not occur in practice; if you really have one, write to andrej@arling.sk.',
+    nacitane: (n, kb) => 'Loaded: ' + n + ' (' + kb + ' kB).',
+    vzorNacitany: 'We loaded a sample invoice. The data is made up, but it passes the check.',
+    skopirovane: 'Copied.',
+    kopirovanieZlyhalo: 'Copying failed, select the text with the mouse instead.',
+    prazdnyNahlad: 'Load a file and the document will be drawn here.',
+    typNieJeUbl: 'We can only draw the document from UBL 2.1 (Invoice or CreditNote). What is in the file we say in the Check tab.',
+    // generator
+    pridatRiadok: 'Add line',
+    zmazatRiadok: 'Delete',
+    pNazov: 'Item name', pMnozstvo: 'Quantity', pJednotka: 'Unit', pCena: 'Price without VAT', pSadzba: 'VAT rate', pKategoria: 'VAT category',
+    sadzbaNeznama: 'We do not offer VAT rates for this country of the seller, because we have not verified them at an official source. Enter the rate yourself, in percent.',
+    sadzbaNeistota: 'The rates offered for {k} come from expert sources, not from a government page we fetched ourselves. Check the rate yourself before you send the invoice. The Slovak rates we verified directly at financnasprava.sk.',
+    napovedaEndpoint: 'Your address in the Peppol network. With code 0088 it is a GS1 GLN, with 0245 the Slovak tax number DIC (exactly 10 digits, no SK prefix), with 9930 the German VAT number. For other countries look the code up in the CEF EAS code list.',
+    suctyZaklad: 'Net', suctyDph: 'VAT', suctySpolu: 'Total with VAT', suctyUhrada: 'Amount due',
+    ulozDodavatela: 'Save the seller in this browser',
+    ulozOdberatela: 'Save the buyer to the address book',
+    vybratOdberatela: 'Pick from the address book',
+    ulozene: 'Saved in this browser.',
+    adresarPrazdny: 'The address book is still empty.',
+    vymazatVsetko: 'Erase the data from this browser',
+    vymazatOtazka: 'Erase the filled in data and the address book from this browser?',
+    stiahnutXml: 'Download XML',
+    ulozitPdf: 'Save as PDF',
+    generatorChyby: 'We built the XML, but it did not pass our own check. We are not downloading it, so that you do not send a broken invoice. Fix this:',
+    generatorOk: 'The XML passed our check with no errors.',
+    // platba
+    kupaJedna: 'Buy one invoice for 2.90 €',
+    kupa30: 'Unlock for 30 days, 9.90 €',
+    zapina: 'Payment is still being switched on. Write to andrej@arling.sk and I will send you the XML by e-mail.',
+    overujem: 'Checking the payment…',
+    zaplateneJedna: '<b>Paid, thank you.</b> The XML download is unlocked in this browser for 24 hours, so you can correct the invoice and download it again.',
+    zaplatene30: '<b>Paid, thank you.</b> The XML download is unlocked in this browser for 30 days, with no limit on the number of invoices.',
+    inaSuma: 'The payment arrived, but for a different amount. Write to andrej@arling.sk and we will sort it out by hand.',
+    nepotvrdene: 'We could not confirm the payment yet. We keep trying; if you have paid, the download unlocks as soon as Stripe answers. If this takes longer than a few minutes, write to andrej@arling.sk with the order number from the Stripe e-mail.',
+    overZnova: 'Check the payment again',
+    siet: 'Checking the payment failed (network). Reload the page; if it keeps happening, write to andrej@arling.sk.',
+    testCudzi: 'This is a test payment from Stripe test mode. It unlocks the download only in the browser that started the test with ?test=1.',
+    testPoznamka: '(Test mode: the payment was in Stripe test mode, no money changed hands.)',
+    odomknuteDo: (d) => 'Unlocked until ' + d + '.',
+    mailtoPredmet: 'E-invoice: XML download',
+    mailtoTelo: 'Hello,\n\nthe payment for the XML from arling.sk/efaktura/ is still being switched on. The filled in invoice is ready in my browser. Please advise.\n\nThank you',
+  },
 }[LANG];
 
 /* Menovky poli formulara. Drzime ich pri T, aby sa preklad robil na jednom mieste. */
@@ -234,6 +298,16 @@ const MENOVKY = {
     referenciaOdberatela: 'Leitweg-ID / Käuferreferenz', poznamka: 'Hinweis', sposobPlatby: 'Zahlungsart',
     profil: 'Profil (CustomizationID)', zaplatene: 'Anzahlung',
     platobnePodmienky: 'Zahlungsbedingungen (Text auf dem Beleg)',
+  },
+  en: {
+    nazov: 'Name', ico: 'Registration number', icDph: 'VAT number', ulica: 'Street and number', mesto: 'City', psc: 'Post code',
+    krajina: 'Country', email: 'E-mail', telefon: 'Phone', kontakt: 'Contact person',
+    iban: 'IBAN', bic: 'BIC', endpoint: 'Electronic address', endpointSchema: 'Address code (schemeID)',
+    cislo: 'Invoice number', typ: 'Document type', datumVystavenia: 'Issue date', datumDodania: 'Delivery date',
+    datumSplatnosti: 'Due date', mena: 'Currency', variabilnySymbol: 'Payment reference',
+    referenciaOdberatela: 'Buyer reference', poznamka: 'Note', sposobPlatby: 'Payment means',
+    profil: 'Profile (CustomizationID)', zaplatene: 'Amount already paid',
+    platobnePodmienky: 'Payment terms (text on the document)',
   },
 }[LANG];
 
@@ -270,6 +344,9 @@ function stiahni(nazov, obsah, typ) {
 
 /* ── Vzorova faktura ─────────────────────────────────────────────────────
  * Vlastny vzor, nic prevzate. Vymyslena firma, dve polozky, sadzba 23 %.
+ * Anglicka stranka ma vlastny vzor nizsie (VZOR_XML_EN): cezhranicna sluzba
+ * z Irska do Holandska s prenesenim danovej povinnosti, aby sme nikde
+ * netvrdili narodnu sadzbu DPH, ktoru nemame overenu na oficialnom zdroji.
  * Musi prejst kontrolou bez chyb (kontroluje to test 12 v tests.mjs cez
  * rovnaky generator, tu je XML zapisane natvrdo, aby vzor nezavisel od formulara). */
 const VZOR_XML = `<?xml version="1.0" encoding="UTF-8"?>
@@ -407,6 +484,150 @@ const VZOR_XML = `<?xml version="1.0" encoding="UTF-8"?>
 </Invoice>
 `;
 
+/* Anglicky vzor: irsky dodavatel, holandsky odberatel, EUR, prenesenie danovej
+ * povinnosti (kategoria AE, sadzba 0 %) s kodom oslobodenia VATEX-EU-AE.
+ * Elektronicke adresy su GLN so schemeID 0088 (kod je v zozname CEF EAS aj v
+ * Peppol EAS, pozri kodovniky.mjs EAS_PEPPOL); kontrolne cislice GLN sedia,
+ * takze prejde aj pravidlo PEPPOL-COMMON-R040. Vsetky udaje su vymyslene. */
+const VZOR_XML_EN = `<?xml version="1.0" encoding="UTF-8"?>
+<Invoice xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2" xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2" xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2">
+  <cbc:CustomizationID>urn:cen.eu:en16931:2017#compliant#urn:fdc:peppol.eu:2017:poacc:billing:3.0</cbc:CustomizationID>
+  <cbc:ProfileID>urn:fdc:peppol.eu:2017:poacc:billing:01:1.0</cbc:ProfileID>
+  <cbc:ID>2026-0142</cbc:ID>
+  <cbc:IssueDate>2026-09-11</cbc:IssueDate>
+  <cbc:DueDate>2026-09-25</cbc:DueDate>
+  <cbc:InvoiceTypeCode>380</cbc:InvoiceTypeCode>
+  <cbc:Note>Sample invoice from arling.sk/efaktura/. All data is made up.</cbc:Note>
+  <cbc:DocumentCurrencyCode>EUR</cbc:DocumentCurrencyCode>
+  <cbc:BuyerReference>PO-2026-77</cbc:BuyerReference>
+  <cac:AccountingSupplierParty>
+    <cac:Party>
+      <cbc:EndpointID schemeID="0088">5390000000014</cbc:EndpointID>
+      <cac:PostalAddress>
+        <cbc:StreetName>12 Sample Quay</cbc:StreetName>
+        <cbc:CityName>Dublin</cbc:CityName>
+        <cbc:PostalZone>D02 XY45</cbc:PostalZone>
+        <cac:Country>
+          <cbc:IdentificationCode>IE</cbc:IdentificationCode>
+        </cac:Country>
+      </cac:PostalAddress>
+      <cac:PartyTaxScheme>
+        <cbc:CompanyID>IE1234567FA</cbc:CompanyID>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:PartyTaxScheme>
+      <cac:PartyLegalEntity>
+        <cbc:RegistrationName>Sample Workshop Limited</cbc:RegistrationName>
+        <cbc:CompanyID>512345</cbc:CompanyID>
+      </cac:PartyLegalEntity>
+      <cac:Contact>
+        <cbc:Name>Jane Sample</cbc:Name>
+        <cbc:Telephone>+353 1 000 0000</cbc:Telephone>
+        <cbc:ElectronicMail>billing@sampleworkshop.example</cbc:ElectronicMail>
+      </cac:Contact>
+    </cac:Party>
+  </cac:AccountingSupplierParty>
+  <cac:AccountingCustomerParty>
+    <cac:Party>
+      <cbc:EndpointID schemeID="0088">8710000000017</cbc:EndpointID>
+      <cac:PostalAddress>
+        <cbc:StreetName>Voorbeeldstraat 8</cbc:StreetName>
+        <cbc:CityName>Amsterdam</cbc:CityName>
+        <cbc:PostalZone>1011 AB</cbc:PostalZone>
+        <cac:Country>
+          <cbc:IdentificationCode>NL</cbc:IdentificationCode>
+        </cac:Country>
+      </cac:PostalAddress>
+      <cac:PartyTaxScheme>
+        <cbc:CompanyID>NL123456789B01</cbc:CompanyID>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:PartyTaxScheme>
+      <cac:PartyLegalEntity>
+        <cbc:RegistrationName>Sample Buyer B.V.</cbc:RegistrationName>
+        <cbc:CompanyID>34000002</cbc:CompanyID>
+      </cac:PartyLegalEntity>
+    </cac:Party>
+  </cac:AccountingCustomerParty>
+  <cac:Delivery>
+    <cbc:ActualDeliveryDate>2026-09-10</cbc:ActualDeliveryDate>
+  </cac:Delivery>
+  <cac:PaymentMeans>
+    <cbc:PaymentMeansCode>58</cbc:PaymentMeansCode>
+    <cbc:PaymentID>20260142</cbc:PaymentID>
+    <cac:PayeeFinancialAccount>
+      <cbc:ID>IE29AIBK93115212345678</cbc:ID>
+      <cbc:Name>Sample Workshop Limited</cbc:Name>
+    </cac:PayeeFinancialAccount>
+  </cac:PaymentMeans>
+  <cac:PaymentTerms>
+    <cbc:Note>Due within 14 days of the issue date.</cbc:Note>
+  </cac:PaymentTerms>
+  <cac:TaxTotal>
+    <cbc:TaxAmount currencyID="EUR">0.00</cbc:TaxAmount>
+    <cac:TaxSubtotal>
+      <cbc:TaxableAmount currencyID="EUR">1500.00</cbc:TaxableAmount>
+      <cbc:TaxAmount currencyID="EUR">0.00</cbc:TaxAmount>
+      <cac:TaxCategory>
+        <cbc:ID>AE</cbc:ID>
+        <cbc:Percent>0.00</cbc:Percent>
+        <cbc:TaxExemptionReasonCode>VATEX-EU-AE</cbc:TaxExemptionReasonCode>
+        <cbc:TaxExemptionReason>Reverse charge</cbc:TaxExemptionReason>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:TaxCategory>
+    </cac:TaxSubtotal>
+  </cac:TaxTotal>
+  <cac:LegalMonetaryTotal>
+    <cbc:LineExtensionAmount currencyID="EUR">1500.00</cbc:LineExtensionAmount>
+    <cbc:TaxExclusiveAmount currencyID="EUR">1500.00</cbc:TaxExclusiveAmount>
+    <cbc:TaxInclusiveAmount currencyID="EUR">1500.00</cbc:TaxInclusiveAmount>
+    <cbc:PayableAmount currencyID="EUR">1500.00</cbc:PayableAmount>
+  </cac:LegalMonetaryTotal>
+  <cac:InvoiceLine>
+    <cbc:ID>1</cbc:ID>
+    <cbc:InvoicedQuantity unitCode="HUR">12</cbc:InvoicedQuantity>
+    <cbc:LineExtensionAmount currencyID="EUR">1080.00</cbc:LineExtensionAmount>
+    <cac:Item>
+      <cbc:Name>Machine servicing, on site</cbc:Name>
+      <cac:ClassifiedTaxCategory>
+        <cbc:ID>AE</cbc:ID>
+        <cbc:Percent>0.00</cbc:Percent>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:ClassifiedTaxCategory>
+    </cac:Item>
+    <cac:Price>
+      <cbc:PriceAmount currencyID="EUR">90.00</cbc:PriceAmount>
+    </cac:Price>
+  </cac:InvoiceLine>
+  <cac:InvoiceLine>
+    <cbc:ID>2</cbc:ID>
+    <cbc:InvoicedQuantity unitCode="C62">1</cbc:InvoicedQuantity>
+    <cbc:LineExtensionAmount currencyID="EUR">420.00</cbc:LineExtensionAmount>
+    <cac:Item>
+      <cbc:Name>Spare bearings, set</cbc:Name>
+      <cac:ClassifiedTaxCategory>
+        <cbc:ID>AE</cbc:ID>
+        <cbc:Percent>0.00</cbc:Percent>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:ClassifiedTaxCategory>
+    </cac:Item>
+    <cac:Price>
+      <cbc:PriceAmount currencyID="EUR">420.00</cbc:PriceAmount>
+    </cac:Price>
+  </cac:InvoiceLine>
+</Invoice>
+`;
+
+const VZOR = LANG === 'en' ? VZOR_XML_EN : VZOR_XML;
+
 /* ── Zalozky ────────────────────────────────────────────────────────────── */
 const PANELY = ['kontrola', 'nahlad', 'vytvorit'];
 let aktivna = 'kontrola';
@@ -477,7 +698,7 @@ if (vstupBlok) {
   const vybrat = $('vybrat');
   if (vybrat) vybrat.addEventListener('click', () => subor && subor.click());
   const vzor = $('vzor');
-  if (vzor) vzor.addEventListener('click', () => { prijmiText(VZOR_XML, 'vzor-efaktura.xml'); stavVstupu(T.vzorNacitany); });
+  if (vzor) vzor.addEventListener('click', () => { prijmiText(VZOR, LANG === 'en' ? 'sample-e-invoice.xml' : 'vzor-efaktura.xml'); stavVstupu(T.vzorNacitany); });
   const spustit = $('spustit');
   if (spustit) spustit.addEventListener('click', () => {
     const ta = $('xml');
@@ -536,7 +757,7 @@ function spustiKontrolu() {
   const stav = el('p', 'sumar-stav ' + (s.chyby ? 'je-chyba' : 'je-ok'), s.chyby ? T.maChyby(s.chyby) : T.bezChyb);
   cielSumar.appendChild(stav);
   const meta = el('p', 'sumar-meta');
-  meta.appendChild(el('span', null, T.sumarProfil + ': ' + v.profilNazov));
+  meta.appendChild(el('span', null, T.sumarProfil + ': ' + (LANG === 'en' ? (v.profilNazovEn || v.profilNazov) : v.profilNazov)));
   meta.appendChild(el('span', null, T.sumarTyp + ': ' + v.typ));
   meta.appendChild(el('span', null, s.chyby + ' ' + T.sumarChyby(s.chyby)));
   meta.appendChild(el('span', null, s.varovania + ' ' + T.sumarVarovania(s.varovania)));
@@ -610,22 +831,33 @@ const KLUC_NAVRH = 'efaktura:navrh:' + LANG;
 const KLUC_DODAVATEL = 'efaktura:dodavatel';
 const KLUC_ODBERATELIA = 'efaktura:odberatelia';
 
-const KRAJINY = ['SK', 'CZ', 'DE', 'AT', 'PL', 'HU'];
+const KRAJINY = ['SK', 'CZ', 'DE', 'AT', 'PL', 'HU', 'IE', 'NL', 'BE', 'FR', 'IT', 'ES', 'SE', 'NO', 'DK', 'FI'];
 const MENY = ['EUR', 'CZK', 'PLN', 'HUF', 'USD', 'GBP'];
 const KATEGORIE = ['S', 'Z', 'E', 'AE', 'K', 'G', 'O'];
-const SCHEMEID = [
-  { kod: '0245', popis: 'SK: DIČ' },
-  { kod: '9930', popis: 'DE: USt-IdNr.' },
-  { kod: '0204', popis: 'DE: Leitweg-ID' },
-  { kod: '0088', popis: 'GLN (GS1)' },
-];
+// Uvadzame len kody, ktore mame dolozene v ops/efaktura/fakty.md (body 1.9, 2.5) a
+// v kodovniky.mjs (EAS_PEPPOL). Pre ine krajiny kod nehadame.
+const SCHEMEID = LANG === 'en'
+  ? [
+    { kod: '0088', popis: 'GLN (GS1), any country' },
+    { kod: '0245', popis: 'SK: tax number DIC' },
+    { kod: '9930', popis: 'DE: VAT number' },
+    { kod: '0204', popis: 'DE: Leitweg-ID' },
+  ]
+  : [
+    { kod: '0245', popis: 'SK: DIČ' },
+    { kod: '9930', popis: 'DE: USt-IdNr.' },
+    { kod: '0204', popis: 'DE: Leitweg-ID' },
+    { kod: '0088', popis: 'GLN (GS1)' },
+  ];
 
 const POLIA_DODAVATEL = ['nazov', 'ico', 'icDph', 'ulica', 'mesto', 'psc', 'krajina', 'email', 'telefon', 'kontakt', 'iban', 'bic', 'endpoint', 'endpointSchema'];
 const POLIA_ODBERATEL = ['nazov', 'ico', 'icDph', 'ulica', 'mesto', 'psc', 'krajina', 'email', 'endpoint', 'endpointSchema'];
 const POLIA_FAKTURA = ['cislo', 'typ', 'profil', 'datumVystavenia', 'datumDodania', 'datumSplatnosti', 'mena', 'variabilnySymbol', 'referenciaOdberatela', 'sposobPlatby', 'zaplatene', 'platobnePodmienky', 'poznamka'];
 
 // Predvolena krajina podla jazyka stranky: SK, CZ alebo DE (DE zaroven nastavi profil XRechnung).
-const KRAJINA_JAZYKA = LANG === 'de' ? 'DE' : LANG === 'cs' ? 'CZ' : 'SK';
+// Anglicka stranka je globalna, preto zacina na Irsku ako vo vzorovej fakture; sadzbu DPH
+// tam neponukame (nemame ju overenu), stranka to pod polozkami napise.
+const KRAJINA_JAZYKA = LANG === 'de' ? 'DE' : LANG === 'cs' ? 'CZ' : LANG === 'en' ? 'IE' : 'SK';
 function novaFaktura() {
   const f = prazdnaFaktura(KRAJINA_JAZYKA);
   // ceska firma fakturuje spravidla v korunach; pouzivatel to vie prepnut

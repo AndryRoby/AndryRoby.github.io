@@ -58,6 +58,23 @@ const T = {
     poznamky: 'Bemerkungen', prilohy: 'Anlagen', referencia: 'Leitweg- oder Käuferreferenz', objednavka: 'Bestellung',
     predchadzajuca: 'Vorausgegangener Beleg', miestoDodania: 'Lieferort',
     profil: 'Profil', bajtov: 'B', neuvedene: 'nicht angegeben'
+  },
+  en: {
+    faktura: 'Invoice', dobropis: 'Credit note', doklad: 'Document',
+    cislo: 'Number', vystavena: 'Issue date', dodanie: 'Delivery date', splatnost: 'Due date',
+    obdobie: 'Invoicing period', dodavatel: 'Seller', odberatel: 'Buyer',
+    ico: 'Registration number', dic: 'Tax number', icDph: 'VAT number', email: 'E-mail', telefon: 'Phone',
+    elektronickaAdresa: 'Electronic address', kontakt: 'Contact',
+    polozky: 'Lines', pPoradie: 'No.', pNazov: 'Description', pMnozstvo: 'Quantity', pJednotka: 'Unit',
+    pCena: 'Unit price', pSadzba: 'VAT', pSuma: 'Net amount',
+    rozpis: 'VAT breakdown', rKategoria: 'Category', rSadzba: 'Rate', rZaklad: 'Taxable amount', rDan: 'VAT', rDovod: 'Exemption reason',
+    sucty: 'Totals', sZaklad: 'Total without VAT', sDph: 'Total VAT', sSDph: 'Total with VAT',
+    sZaplatene: 'Already paid', sZaokruhlenie: 'Rounding', sUhrada: 'Amount due',
+    platba: 'Payment details', pSposob: 'Payment means', pIban: 'IBAN', pBic: 'BIC', pVs: 'Payment reference',
+    pPodmienky: 'Payment terms', pVeritel: 'Creditor identifier', pMandat: 'Mandate reference',
+    poznamky: 'Notes', prilohy: 'Attachments', referencia: 'Buyer reference', objednavka: 'Purchase order',
+    predchadzajuca: 'Preceding invoice', miestoDodania: 'Deliver to',
+    profil: 'Profile', bajtov: 'B', neuvedene: 'not given'
   }
 };
 
@@ -280,7 +297,7 @@ function suma(hodnota, mena) {
  * Vykresli citatelny doklad do ciela.
  * @param {object} vstup korenovy uzol UBL alebo uz precitany doklad z precitajDoklad
  * @param {HTMLElement} ciel prvok, do ktoreho sa vykresli (jeho obsah sa nahradi)
- * @param {'sk'|'cs'|'de'} jazyk
+ * @param {'sk'|'cs'|'de'|'en'} jazyk
  * @param {Document} [dokument] pouzije sa v testoch mimo prehliadaca
  * @returns {object} precitany doklad
  */

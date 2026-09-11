@@ -20,8 +20,8 @@ const KANON = new Map([
 
 const ENTITY = { lt: '<', gt: '>', amp: '&', quot: '"', apos: "'" };
 
-function chyba(sk, cs, de, riadok) {
-  return { sk, cs, de, riadok };
+function chyba(sk, cs, de, en, riadok) {
+  return { sk, cs, de, en, riadok };
 }
 
 // Rozbali entity. Nezname entity su chyba (nepodporujeme DTD).
@@ -38,6 +38,7 @@ function rozbal(s, riadok, stav) {
         'Znak & musi byt zapisany ako &amp;. Na riadku ' + riadok + ' je samostatny znak &.',
         'Znak & musi byt zapsan jako &amp;. Na radku ' + riadok + ' je samostatny znak &.',
         'Das Zeichen & muss als &amp; geschrieben werden. In Zeile ' + riadok + ' steht ein einzelnes &.',
+        'The character & has to be written as &amp;. Line ' + riadok + ' contains a bare &.',
         riadok
       );
       return out;
@@ -52,6 +53,7 @@ function rozbal(s, riadok, stav) {
           'Neplatna znakova referencia &' + meno + '; na riadku ' + riadok + '.',
           'Neplatna znakova reference &' + meno + '; na radku ' + riadok + '.',
           'Ungueltige Zeichenreferenz &' + meno + '; in Zeile ' + riadok + '.',
+          'Invalid character reference &' + meno + '; on line ' + riadok + '.',
           riadok
         );
         return out;
@@ -64,6 +66,7 @@ function rozbal(s, riadok, stav) {
         'Neznama entita &' + meno + '; na riadku ' + riadok + '. Povolene su len &lt; &gt; &amp; &quot; &apos;.',
         'Neznama entita &' + meno + '; na radku ' + riadok + '. Povolene jsou jen &lt; &gt; &amp; &quot; &apos;.',
         'Unbekannte Entitaet &' + meno + '; in Zeile ' + riadok + '. Erlaubt sind nur &lt; &gt; &amp; &quot; &apos;.',
+        'Unknown entity &' + meno + '; on line ' + riadok + '. Only &lt; &gt; &amp; &quot; &apos; are allowed.',
         riadok
       );
       return out;
@@ -91,7 +94,7 @@ function novyUzol(meno, ns, predpona, riadok) {
 
 /**
  * Rozparsuje XML retazec.
- * @returns {{ok:true, koren:object}|{ok:false, chyba:{sk:string,cs:string,de:string,riadok:number}}}
+ * @returns {{ok:true, koren:object}|{ok:false, chyba:{sk:string,cs:string,de:string,en:string,riadok:number}}}
  */
 export function parsujXml(vstup) {
   const stav = { chyba: null };
@@ -102,6 +105,7 @@ export function parsujXml(vstup) {
         'Subor je prazdny. Vlozte XML e-faktury (UBL 2.1 Invoice alebo CreditNote).',
         'Soubor je prazdny. Vlozte XML e-faktury (UBL 2.1 Invoice nebo CreditNote).',
         'Die Datei ist leer. Fuegen Sie die XML-E-Rechnung ein (UBL 2.1 Invoice oder CreditNote).',
+        'The file is empty. Paste the e-invoice XML (UBL 2.1 Invoice or CreditNote).',
         1
       )
     };
@@ -121,8 +125,8 @@ export function parsujXml(vstup) {
     i = do_;
   };
 
-  const zle = (sk, cs, de) => {
-    stav.chyba = chyba(sk, cs, de, riadok);
+  const zle = (sk, cs, de, en) => {
+    stav.chyba = chyba(sk, cs, de, en, riadok);
     return { ok: false, chyba: stav.chyba };
   };
 
@@ -134,7 +138,8 @@ export function parsujXml(vstup) {
         return zle(
           'Za koncom dokumentu je text, ktory tam nepatri. Subor nie je platne XML.',
           'Za koncem dokumentu je text, ktery tam nepatri. Soubor neni platne XML.',
-          'Nach dem Dokumentende steht Text, der dort nicht hingehoert. Die Datei ist kein gueltiges XML.'
+          'Nach dem Dokumentende steht Text, der dort nicht hingehoert. Die Datei ist kein gueltiges XML.',
+          'There is text after the end of the document. The file is not valid XML.'
         );
       }
       if (zasobnik.length > 0) {
@@ -142,7 +147,8 @@ export function parsujXml(vstup) {
         return zle(
           'Znacka <' + chyb.meno + '> nie je uzavreta. Chyba </' + chyb.meno + '>.',
           'Znacka <' + chyb.meno + '> neni uzavrena. Chybi </' + chyb.meno + '>.',
-          'Das Element <' + chyb.meno + '> ist nicht geschlossen. Es fehlt </' + chyb.meno + '>.'
+          'Das Element <' + chyb.meno + '> ist nicht geschlossen. Es fehlt </' + chyb.meno + '>.',
+          'The element <' + chyb.meno + '> is never closed. </' + chyb.meno + '> is missing.'
         );
       }
       break;
@@ -158,7 +164,8 @@ export function parsujXml(vstup) {
         return zle(
           'Mimo hlavneho prvku je text, ktory tam nepatri. Subor nie je platne XML.',
           'Mimo hlavniho prvku je text, ktery tam nepatri. Soubor neni platne XML.',
-          'Ausserhalb des Wurzelelements steht Text. Die Datei ist kein gueltiges XML.'
+          'Ausserhalb des Wurzelelements steht Text. Die Datei ist kein gueltiges XML.',
+          'There is text outside the root element. The file is not valid XML.'
         );
       }
       posun(otvor);
@@ -171,7 +178,8 @@ export function parsujXml(vstup) {
         return zle(
           'Komentar nie je uzavreny (chyba -->).',
           'Komentar neni uzavren (chybi -->).',
-          'Ein Kommentar ist nicht geschlossen (es fehlt -->).'
+          'Ein Kommentar ist nicht geschlossen (es fehlt -->).',
+          'A comment is not closed (--> is missing).'
         );
       }
       posun(kon + 3);
@@ -184,7 +192,8 @@ export function parsujXml(vstup) {
         return zle(
           'Sekcia CDATA nie je uzavreta (chyba ]]>).',
           'Sekce CDATA neni uzavrena (chybi ]]>).',
-          'Ein CDATA-Abschnitt ist nicht geschlossen (es fehlt ]]>).'
+          'Ein CDATA-Abschnitt ist nicht geschlossen (es fehlt ]]>).',
+          'A CDATA section is not closed (]]> is missing).'
         );
       }
       if (zasobnik.length > 0) zasobnik[zasobnik.length - 1]._text += s.slice(i + 9, kon);
@@ -198,7 +207,8 @@ export function parsujXml(vstup) {
         return zle(
           'XML deklaracia nie je uzavreta (chyba ?>).',
           'XML deklarace neni uzavrena (chybi ?>).',
-          'Die XML-Deklaration ist nicht geschlossen (es fehlt ?>).'
+          'Die XML-Deklaration ist nicht geschlossen (es fehlt ?>).',
+          'The XML declaration is not closed (?> is missing).'
         );
       }
       posun(kon + 2);
@@ -209,7 +219,8 @@ export function parsujXml(vstup) {
       return zle(
         'Subor obsahuje DOCTYPE s vlastnymi definiciami. Taky subor nespracuvavame. Odosielajte cistu e-fakturu bez DTD.',
         'Soubor obsahuje DOCTYPE s vlastnimi definicemi. Takovy soubor nezpracovavame. Posilejte cistou e-fakturu bez DTD.',
-        'Die Datei enthaelt eine DOCTYPE-Deklaration. Solche Dateien verarbeiten wir nicht. Senden Sie eine reine E-Rechnung ohne DTD.'
+        'Die Datei enthaelt eine DOCTYPE-Deklaration. Solche Dateien verarbeiten wir nicht. Senden Sie eine reine E-Rechnung ohne DTD.',
+        'The file contains a DOCTYPE with its own definitions. We do not process such files. Send a plain e-invoice without a DTD.'
       );
     }
     // koncova znacka
@@ -219,7 +230,8 @@ export function parsujXml(vstup) {
         return zle(
           'Koncova znacka nie je uzavreta (chyba >).',
           'Koncova znacka neni uzavrena (chybi >).',
-          'Ein schliessendes Tag ist nicht geschlossen (es fehlt >).'
+          'Ein schliessendes Tag ist nicht geschlossen (es fehlt >).',
+          'A closing tag is not finished (> is missing).'
         );
       }
       const meno = s.slice(i + 2, kon).trim();
@@ -228,14 +240,16 @@ export function parsujXml(vstup) {
         return zle(
           'Koncova znacka </' + meno + '> nema svoju zaciatocnu znacku.',
           'Koncova znacka </' + meno + '> nema svou pocatecni znacku.',
-          'Das schliessende Tag </' + meno + '> hat kein oeffnendes Tag.'
+          'Das schliessende Tag </' + meno + '> hat kein oeffnendes Tag.',
+          'The closing tag </' + meno + '> has no opening tag.'
         );
       }
       if (vrch.meno !== meno) {
         return zle(
           'Znacky sa neprekryvaju: otvorena je <' + vrch.meno + '>, ale zatvara sa </' + meno + '>.',
           'Znacky se neprekryvaji: otevrena je <' + vrch.meno + '>, ale zavira se </' + meno + '>.',
-          'Die Tags ueberlappen: geoeffnet ist <' + vrch.meno + '>, geschlossen wird </' + meno + '>.'
+          'Die Tags ueberlappen: geoeffnet ist <' + vrch.meno + '>, geschlossen wird </' + meno + '>.',
+          'The tags overlap: <' + vrch.meno + '> is open, but </' + meno + '> is being closed.'
         );
       }
       zasobnik.pop();
@@ -260,7 +274,8 @@ export function parsujXml(vstup) {
       return zle(
         'Zaciatocna znacka nie je uzavreta (chyba >).',
         'Pocatecni znacka neni uzavrena (chybi >).',
-        'Ein oeffnendes Tag ist nicht geschlossen (es fehlt >).'
+        'Ein oeffnendes Tag ist nicht geschlossen (es fehlt >).',
+        'An opening tag is not finished (> is missing).'
       );
     }
     let vnutro = s.slice(i + 1, j);
@@ -271,7 +286,8 @@ export function parsujXml(vstup) {
       return zle(
         'Neplatny nazov prvku na riadku ' + riadok + '.',
         'Neplatny nazev prvku na radku ' + riadok + '.',
-        'Ungueltiger Elementname in Zeile ' + riadok + '.'
+        'Ungueltiger Elementname in Zeile ' + riadok + '.',
+        'Invalid element name on line ' + riadok + '.'
       );
     }
     const meno = mMeno[1];
@@ -307,7 +323,8 @@ export function parsujXml(vstup) {
         return zle(
           'Subor ma viac ako jeden hlavny prvok. Platne XML ma prave jeden.',
           'Soubor ma vice nez jeden hlavni prvek. Platne XML ma prave jeden.',
-          'Die Datei hat mehr als ein Wurzelelement. Gueltiges XML hat genau eines.'
+          'Die Datei hat mehr als ein Wurzelelement. Gueltiges XML hat genau eines.',
+          'The file has more than one root element. Valid XML has exactly one.'
         );
       }
       koren = u;
@@ -329,6 +346,7 @@ export function parsujXml(vstup) {
         'Subor neobsahuje ziadny XML prvok. Nie je to XML.',
         'Soubor neobsahuje zadny XML prvek. Neni to XML.',
         'Die Datei enthaelt kein XML-Element. Es ist kein XML.',
+        'The file contains no XML element at all. This is not XML.',
         1
       )
     };

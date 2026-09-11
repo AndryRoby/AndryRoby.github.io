@@ -320,65 +320,65 @@ export const PROFILY = {
 
 // Nazvy typov dokladu (UNTDID 1001), len tie, ktore ponukame vo formulari
 export const TYPY_DOKLADU = [
-  { kod: '380', sk: 'Faktúra', cs: 'Faktura', de: 'Rechnung' },
-  { kod: '381', sk: 'Dobropis', cs: 'Dobropis', de: 'Gutschrift' },
-  { kod: '384', sk: 'Opravná faktúra', cs: 'Opravný daňový doklad', de: 'Rechnungskorrektur' },
-  { kod: '389', sk: 'Samofakturácia', cs: 'Samofakturace', de: 'Gutschriftsverfahren' },
-  { kod: '326', sk: 'Čiastková faktúra', cs: 'Dílčí faktura', de: 'Teilrechnung' }
+  { kod: '380', sk: 'Faktúra', cs: 'Faktura', de: 'Rechnung', en: 'Commercial invoice' },
+  { kod: '381', sk: 'Dobropis', cs: 'Dobropis', de: 'Gutschrift', en: 'Credit note' },
+  { kod: '384', sk: 'Opravná faktúra', cs: 'Opravný daňový doklad', de: 'Rechnungskorrektur', en: 'Corrected invoice' },
+  { kod: '389', sk: 'Samofakturácia', cs: 'Samofakturace', de: 'Gutschriftsverfahren', en: 'Self-billed invoice' },
+  { kod: '326', sk: 'Čiastková faktúra', cs: 'Dílčí faktura', de: 'Teilrechnung', en: 'Partial invoice' }
 ];
 
 // Nazvy kategorii DPH (UNTDID 5305)
 export const KATEGORIE_DPH = [
-  { kod: 'S', sk: 'Základná alebo znížená sadzba', cs: 'Základní nebo snížená sazba', de: 'Regel- oder ermäßigter Satz' },
-  { kod: 'Z', sk: 'Nulová sadzba', cs: 'Nulová sazba', de: 'Nullsatz' },
-  { kod: 'E', sk: 'Oslobodené od DPH', cs: 'Osvobozeno od DPH', de: 'Von der Umsatzsteuer befreit' },
-  { kod: 'AE', sk: 'Prenesenie daňovej povinnosti', cs: 'Přenesení daňové povinnosti', de: 'Umkehrung der Steuerschuldnerschaft' },
-  { kod: 'K', sk: 'Dodanie do iného štátu EÚ', cs: 'Dodání do jiného státu EU', de: 'Innergemeinschaftliche Lieferung' },
-  { kod: 'G', sk: 'Vývoz mimo EÚ', cs: 'Vývoz mimo EU', de: 'Ausfuhr außerhalb der EU' },
-  { kod: 'O', sk: 'Nepodlieha DPH', cs: 'Nepodléhá DPH', de: 'Nicht umsatzsteuerbar' },
-  { kod: 'L', sk: 'IGIC (Kanárske ostrovy)', cs: 'IGIC (Kanárské ostrovy)', de: 'IGIC (Kanarische Inseln)' },
-  { kod: 'M', sk: 'IPSI (Ceuta a Melilla)', cs: 'IPSI (Ceuta a Melilla)', de: 'IPSI (Ceuta und Melilla)' },
-  { kod: 'B', sk: 'Rozdelená platba (Taliansko)', cs: 'Rozdělená platba (Itálie)', de: 'Split payment (Italien)' }
+  { kod: 'S', sk: 'Základná alebo znížená sadzba', cs: 'Základní nebo snížená sazba', de: 'Regel- oder ermäßigter Satz', en: 'Standard rated' },
+  { kod: 'Z', sk: 'Nulová sadzba', cs: 'Nulová sazba', de: 'Nullsatz', en: 'Zero rated' },
+  { kod: 'E', sk: 'Oslobodené od DPH', cs: 'Osvobozeno od DPH', de: 'Von der Umsatzsteuer befreit', en: 'Exempt from VAT' },
+  { kod: 'AE', sk: 'Prenesenie daňovej povinnosti', cs: 'Přenesení daňové povinnosti', de: 'Umkehrung der Steuerschuldnerschaft', en: 'VAT reverse charge' },
+  { kod: 'K', sk: 'Dodanie do iného štátu EÚ', cs: 'Dodání do jiného státu EU', de: 'Innergemeinschaftliche Lieferung', en: 'Intra-community supply' },
+  { kod: 'G', sk: 'Vývoz mimo EÚ', cs: 'Vývoz mimo EU', de: 'Ausfuhr außerhalb der EU', en: 'Export outside the EU' },
+  { kod: 'O', sk: 'Nepodlieha DPH', cs: 'Nepodléhá DPH', de: 'Nicht umsatzsteuerbar', en: 'Not subject to VAT' },
+  { kod: 'L', sk: 'IGIC (Kanárske ostrovy)', cs: 'IGIC (Kanárské ostrovy)', de: 'IGIC (Kanarische Inseln)', en: 'IGIC (Canary Islands)' },
+  { kod: 'M', sk: 'IPSI (Ceuta a Melilla)', cs: 'IPSI (Ceuta a Melilla)', de: 'IPSI (Ceuta und Melilla)', en: 'IPSI (Ceuta and Melilla)' },
+  { kod: 'B', sk: 'Rozdelená platba (Taliansko)', cs: 'Rozdělená platba (Itálie)', de: 'Split payment (Italien)', en: 'Split payment (Italy)' }
 ];
 
 // Sposoby platby (UNTDID 4461), vyber pouzivany v praxi
 export const SPOSOBY_PLATBY = [
-  { kod: '30', sk: 'Bankový prevod', cs: 'Bankovní převod', de: 'Überweisung' },
-  { kod: '58', sk: 'SEPA prevod', cs: 'SEPA převod', de: 'SEPA-Überweisung' },
-  { kod: '59', sk: 'SEPA inkaso', cs: 'SEPA inkaso', de: 'SEPA-Lastschrift' },
-  { kod: '48', sk: 'Platobná karta', cs: 'Platební karta', de: 'Bankkarte' },
-  { kod: '10', sk: 'Hotovosť', cs: 'Hotovost', de: 'Bar' },
-  { kod: '97', sk: 'Započítanie', cs: 'Zápočet', de: 'Verrechnung' },
-  { kod: '1', sk: 'Neurčené', cs: 'Neurčeno', de: 'Nicht definiert' }
+  { kod: '30', sk: 'Bankový prevod', cs: 'Bankovní převod', de: 'Überweisung', en: 'Credit transfer' },
+  { kod: '58', sk: 'SEPA prevod', cs: 'SEPA převod', de: 'SEPA-Überweisung', en: 'SEPA credit transfer' },
+  { kod: '59', sk: 'SEPA inkaso', cs: 'SEPA inkaso', de: 'SEPA-Lastschrift', en: 'SEPA direct debit' },
+  { kod: '48', sk: 'Platobná karta', cs: 'Platební karta', de: 'Bankkarte', en: 'Bank card' },
+  { kod: '10', sk: 'Hotovosť', cs: 'Hotovost', de: 'Bar', en: 'In cash' },
+  { kod: '97', sk: 'Započítanie', cs: 'Zápočet', de: 'Verrechnung', en: 'Clearing between partners' },
+  { kod: '1', sk: 'Neurčené', cs: 'Neurčeno', de: 'Nicht definiert', en: 'Instrument not defined' }
 ];
 
 // Jednotky mnozstva (UN/ECE Rec. 20), vyber s nazvami. Uplny zoznam platnych kodov je v REC20.
 export const JEDNOTKY = [
-  { kod: 'C62', sk: 'kus', cs: 'kus', de: 'Stück' },
-  { kod: 'H87', sk: 'kus (balenie)', cs: 'kus (balení)', de: 'Stück (Verpackung)' },
-  { kod: 'HUR', sk: 'hodina', cs: 'hodina', de: 'Stunde' },
-  { kod: 'MIN', sk: 'minúta', cs: 'minuta', de: 'Minute' },
-  { kod: 'DAY', sk: 'deň', cs: 'den', de: 'Tag' },
-  { kod: 'WEE', sk: 'týždeň', cs: 'týden', de: 'Woche' },
-  { kod: 'MON', sk: 'mesiac', cs: 'měsíc', de: 'Monat' },
-  { kod: 'ANN', sk: 'rok', cs: 'rok', de: 'Jahr' },
-  { kod: 'KGM', sk: 'kilogram', cs: 'kilogram', de: 'Kilogramm' },
-  { kod: 'GRM', sk: 'gram', cs: 'gram', de: 'Gramm' },
-  { kod: 'TNE', sk: 'tona', cs: 'tuna', de: 'Tonne' },
-  { kod: 'MTR', sk: 'meter', cs: 'metr', de: 'Meter' },
-  { kod: 'CMT', sk: 'centimeter', cs: 'centimetr', de: 'Zentimeter' },
-  { kod: 'KTM', sk: 'kilometer', cs: 'kilometr', de: 'Kilometer' },
-  { kod: 'MTK', sk: 'meter štvorcový', cs: 'metr čtvereční', de: 'Quadratmeter' },
-  { kod: 'MTQ', sk: 'meter kubický', cs: 'metr krychlový', de: 'Kubikmeter' },
-  { kod: 'LTR', sk: 'liter', cs: 'litr', de: 'Liter' },
-  { kod: 'MLT', sk: 'mililiter', cs: 'mililitr', de: 'Milliliter' },
-  { kod: 'KWH', sk: 'kilowatthodina', cs: 'kilowatthodina', de: 'Kilowattstunde' },
-  { kod: 'NAR', sk: 'počet kusov', cs: 'počet kusů', de: 'Anzahl Teile' },
-  { kod: 'SET', sk: 'súprava', cs: 'sada', de: 'Satz' },
-  { kod: 'PR', sk: 'pár', cs: 'pár', de: 'Paar' },
-  { kod: 'XPK', sk: 'balenie', cs: 'balení', de: 'Packung' },
-  { kod: 'XBX', sk: 'krabica', cs: 'krabice', de: 'Karton' },
-  { kod: 'P1', sk: 'percento', cs: 'procento', de: 'Prozent' }
+  { kod: 'C62', sk: 'kus', cs: 'kus', de: 'Stück', en: 'one (piece)' },
+  { kod: 'H87', sk: 'kus (balenie)', cs: 'kus (balení)', de: 'Stück (Verpackung)', en: 'piece' },
+  { kod: 'HUR', sk: 'hodina', cs: 'hodina', de: 'Stunde', en: 'hour' },
+  { kod: 'MIN', sk: 'minúta', cs: 'minuta', de: 'Minute', en: 'minute' },
+  { kod: 'DAY', sk: 'deň', cs: 'den', de: 'Tag', en: 'day' },
+  { kod: 'WEE', sk: 'týždeň', cs: 'týden', de: 'Woche', en: 'week' },
+  { kod: 'MON', sk: 'mesiac', cs: 'měsíc', de: 'Monat', en: 'month' },
+  { kod: 'ANN', sk: 'rok', cs: 'rok', de: 'Jahr', en: 'year' },
+  { kod: 'KGM', sk: 'kilogram', cs: 'kilogram', de: 'Kilogramm', en: 'kilogram' },
+  { kod: 'GRM', sk: 'gram', cs: 'gram', de: 'Gramm', en: 'gram' },
+  { kod: 'TNE', sk: 'tona', cs: 'tuna', de: 'Tonne', en: 'tonne' },
+  { kod: 'MTR', sk: 'meter', cs: 'metr', de: 'Meter', en: 'metre' },
+  { kod: 'CMT', sk: 'centimeter', cs: 'centimetr', de: 'Zentimeter', en: 'centimetre' },
+  { kod: 'KTM', sk: 'kilometer', cs: 'kilometr', de: 'Kilometer', en: 'kilometre' },
+  { kod: 'MTK', sk: 'meter štvorcový', cs: 'metr čtvereční', de: 'Quadratmeter', en: 'square metre' },
+  { kod: 'MTQ', sk: 'meter kubický', cs: 'metr krychlový', de: 'Kubikmeter', en: 'cubic metre' },
+  { kod: 'LTR', sk: 'liter', cs: 'litr', de: 'Liter', en: 'litre' },
+  { kod: 'MLT', sk: 'mililiter', cs: 'mililitr', de: 'Milliliter', en: 'millilitre' },
+  { kod: 'KWH', sk: 'kilowatthodina', cs: 'kilowatthodina', de: 'Kilowattstunde', en: 'kilowatt hour' },
+  { kod: 'NAR', sk: 'počet kusov', cs: 'počet kusů', de: 'Anzahl Teile', en: 'number of articles' },
+  { kod: 'SET', sk: 'súprava', cs: 'sada', de: 'Satz', en: 'set' },
+  { kod: 'PR', sk: 'pár', cs: 'pár', de: 'Paar', en: 'pair' },
+  { kod: 'XPK', sk: 'balenie', cs: 'balení', de: 'Packung', en: 'package' },
+  { kod: 'XBX', sk: 'krabica', cs: 'krabice', de: 'Karton', en: 'box' },
+  { kod: 'P1', sk: 'percento', cs: 'procento', de: 'Prozent', en: 'percent' }
 ];
 
 // Sadzby DPH 2026. Zdroje a istota: ops/efaktura/fakty.md, bod 6.

@@ -7,6 +7,7 @@ import { parsujXml, txt, hod } from './parser.mjs';
 import { vytvorUbl, prepocitaj, prazdnaFaktura, naCenty, zCentov } from './ubl.js';
 import { vykresliNahlad, precitajDoklad } from './nahlad.js';
 import * as K from './kodovniky.mjs';
+import { readFileSync } from 'node:fs';
 
 let prebehlo = 0;
 let zlyhalo = 0;
@@ -761,7 +762,7 @@ for (const [meno, faktura] of [['SK', fakturaSk()], ['DE', fakturaDe()], ['CZ', 
   ok('21. IBAN: nezmysel neprejde', platnyIban('ABC') === false);
 }
 
-// --- kazdy nalez ma vsetky tri jazyky a nepouziva pomlcky
+// --- kazdy nalez ma vsetky styri jazyky a nepouziva pomlcky
 {
   const vzorky = [F1_SPRAVNA, F2_DOBROPIS, F3_CHYBAJUCE, fZlySucet(), fZlaMena(), fZlyIban(),
     fZlaKategoria(), F8_XRECHNUNG, F9_CII, F10_NIE_XML, F11_PRAZDNY];
@@ -772,13 +773,23 @@ for (const [meno, faktura] of [['SK', fakturaSk()], ['DE', fakturaDe()], ['CZ', 
   for (const x of vzorky) {
     for (const n of skontroluj(x).nalezy) {
       spolu += 1;
-      if (!n.sprava.sk || !n.sprava.cs || !n.sprava.de) bezJazyka += 1;
-      if (/[–—]/.test(n.sprava.sk + n.sprava.cs + n.sprava.de)) sPomlckou += 1;
+      if (!n.sprava.sk || !n.sprava.cs || !n.sprava.de || !n.sprava.en) bezJazyka += 1;
+      if (/[–—]/.test(n.sprava.sk + n.sprava.cs + n.sprava.de + n.sprava.en)) sPomlckou += 1;
       if (!n.xpath) bezXpath += 1;
       if (!n.kod || !n.zavaznost) bezJazyka += 1;
     }
   }
-  ok('22. vsetky nalezy maju sk, cs aj de', bezJazyka === 0, 'chybnych=' + bezJazyka + ' zo ' + spolu);
+  ok('22. vsetky nalezy maju sk, cs, de aj en', bezJazyka === 0, 'chybnych=' + bezJazyka + ' zo ' + spolu);
+  // anglicka sprava nema prepadnut do slovenciny alebo cestiny: hladame diakritiku, ktoru anglictina nepozna
+  const DIAKRITIKA = /[áäčďéěíľĺňóôřŕšťúůýžÁÄČĎÉĚÍĽĹŇÓÔŘŔŠŤÚŮÝŽ]/;
+  let slovenske = 0;
+  const ukazky = [];
+  for (const x of vzorky) {
+    for (const n of skontroluj(x).nalezy) {
+      if (DIAKRITIKA.test(n.sprava.en)) { slovenske += 1; if (ukazky.length < 3) ukazky.push(n.kod + ': ' + n.sprava.en.slice(0, 90)); }
+    }
+  }
+  ok('22. anglicka sprava neprepadne do slovenciny', slovenske === 0, ukazky.join(' | '));
   ok('22. ziadny text nema dlhu pomlcku', sPomlckou === 0, 'najdenych=' + sPomlckou);
   ok('22. vsetky nalezy maju XPath', bezXpath === 0, 'chybnych=' + bezXpath);
   console.log('   (skontrolovanych nalezov: ' + spolu + ')');
@@ -1025,6 +1036,137 @@ const PRIPADY = [
   try { vykresliNahlad(p.koren, ciel, 'cs', dok); } catch (e) { padlo = true; }
   ok('34. nahlad znesie neuplny doklad', padlo === false);
   ok('34. nahlad neuplneho dokladu nieco vypise', ciel.textContent.length > 10);
+}
+
+// --- kazde pravidlo nesie aj anglicku spravu (staticka kontrola zdrojov)
+//
+// Preco staticky: funkcia pridaj() dostava spravy ako poziciove argumenty, takze pravidlo,
+// ktore sa v beznych fixturach nespusti, by nam v behovom teste vypadlo. Prechadzame teda
+// vsetky volania pridaj() a pomocnych funkcii, ktore spravy dalej podavaju, a overujeme,
+// ze maju miesto pre anglictinu a ze v nom nie je omylom XPath.
+{
+  const SUBORY = ['pravidla.mjs', 'pravidla-en16931.mjs', 'pravidla-kategorie.mjs',
+    'pravidla-peppol.mjs', 'pravidla-xrechnung.mjs'];
+  // meno funkcie -> najmensi pocet argumentov, ked uz je anglictina na mieste
+  const ARITA = { pridaj: 9, P: 7, kodovnik: 9 };
+  // co v slote pre anglictinu nesmie byt: nahradna cesta k prvku
+  const CESTA = /^(kdeKoren|cesta_|nahradnaCesta|c|kde)$|^xpath\(/;
+
+  function volania(zdroj) {
+    const out = [];
+    const re = /(^|[^A-Za-z0-9_$.])(pridaj|P|kodovnik)\s*\(/g;
+    let m;
+    while ((m = re.exec(zdroj))) {
+      const meno = m[2];
+      let i = m.index + m[0].length;
+      let hlbka = 1;
+      let q = null;
+      let zac = i;
+      const args = [];
+      while (i < zdroj.length && hlbka > 0) {
+        const c = zdroj[i];
+        if (q) {
+          if (c === '\\') { i += 2; continue; }
+          if (c === q) q = null;
+        } else if (c === "'" || c === '"' || c === '`') q = c;
+        else if (c === '(' || c === '[' || c === '{') hlbka += 1;
+        else if (c === ')' || c === ']' || c === '}') {
+          hlbka -= 1;
+          if (hlbka === 0) { args.push(zdroj.slice(zac, i).trim()); break; }
+        } else if (c === ',' && hlbka === 1) { args.push(zdroj.slice(zac, i).trim()); zac = i + 1; }
+        i += 1;
+      }
+      out.push({ meno, riadok: zdroj.slice(0, m.index).split('\n').length, args });
+    }
+    return out;
+  }
+
+  // anglicka veta nesmie obsahovat slovensku ani ceskú diakritiku (okrem nazvov ako XRechnung)
+  const DIAKRITIKA_ZDROJ = /[áäčďéěíľĺňóôřŕšťúůýžÁÄČĎÉĚÍĽĹŇÓÔŘŔŠŤÚŮÝŽ]/;
+
+  let malo = 0;
+  let cesta = 0;
+  let slovensky = 0;
+  let spolu = 0;
+  const zle = [];
+  for (const f of SUBORY) {
+    const zdroj = readFileSync(new URL('./' + f, import.meta.url), 'utf8');
+    for (const v of volania(zdroj)) {
+      // preskoc definiciu pomocnej lambdy: const P = (kod, uzol, ...) => pridaj(...)
+      if (/^\s*const\s/.test(zdroj.split('\n')[v.riadok - 1] || '') && v.meno !== 'pridaj') continue;
+      spolu += 1;
+      const n = ARITA[v.meno];
+      if (v.args.length < n) { malo += 1; zle.push(f + ':' + v.riadok + ' ' + v.meno + ' ma ' + v.args.length + ' argumentov'); continue; }
+      const en = v.args.slice(n - 1).join(', ');
+      if (CESTA.test(v.args[n - 1] || '')) { cesta += 1; zle.push(f + ':' + v.riadok + ' ' + v.meno + ' ma v anglickom slote cestu'); continue; }
+      if (DIAKRITIKA_ZDROJ.test(en)) { slovensky += 1; zle.push(f + ':' + v.riadok + ' ' + v.meno + ' ma v anglickej vete diakritiku'); }
+    }
+  }
+  ok('35. kazde pravidlo ma miesto pre anglicku spravu', malo === 0, zle.slice(0, 5).join('; '));
+  ok('35. anglicky slot nikde nedrzi XPath', cesta === 0, zle.slice(0, 5).join('; '));
+  ok('35. anglicka veta nikde neprepadne do slovenciny', slovensky === 0, zle.slice(0, 5).join('; '));
+  console.log('   (skontrolovanych volani pravidiel: ' + spolu + ')');
+}
+
+// --- T.en a MENOVKY.en v app.js maju rovnake kluce ako slovencina
+{
+  const zdroj = readFileSync(new URL('./app.js', import.meta.url), 'utf8');
+  const vyber = (meno) => {
+    const zac = zdroj.indexOf('const ' + meno + ' = {');
+    const kon = zdroj.indexOf('}[LANG];', zac);
+    return zdroj.slice(zac + ('const ' + meno + ' = ').length, kon + 1);
+  };
+  // rovnake pomocky ako v app.js, aby sedelo aj sklonovanie
+  const tvar3 = (n, jeden, malo, vela) => (n === 1 ? jeden : n >= 2 && n <= 4 ? malo : vela);
+  const tvar2 = (n, jeden, viac) => (n === 1 ? jeden : viac);
+  const T_ALL = new Function('tvar2', 'tvar3', 'return ' + vyber('T'))(tvar2, tvar3);
+  const M_ALL = new Function('return ' + vyber('MENOVKY'))();
+
+  for (const [meno, obj] of [['T', T_ALL], ['MENOVKY', M_ALL]]) {
+    const sk = Object.keys(obj.sk).sort();
+    for (const jazyk of ['cs', 'de', 'en']) {
+      const iny = Object.keys(obj[jazyk] || {}).sort();
+      const chyba = sk.filter((k) => iny.indexOf(k) === -1);
+      const navyse = iny.filter((k) => sk.indexOf(k) === -1);
+      ok('35. ' + meno + '.' + jazyk + ' ma rovnake kluce ako ' + meno + '.sk',
+        chyba.length === 0 && navyse.length === 0,
+        'chyba: ' + chyba.join(', ') + ' | navyse: ' + navyse.join(', '));
+    }
+  }
+  // mnozne cisla v anglictine: error/errors, warning/warnings, note/notes
+  ok('35. T.en sklonuje chyby', T_ALL.en.sumarChyby(1) === 'error' && T_ALL.en.sumarChyby(2) === 'errors');
+  ok('35. T.en sklonuje varovania', T_ALL.en.sumarVarovania(1) === 'warning' && T_ALL.en.sumarVarovania(3) === 'warnings');
+  ok('35. T.en sklonuje informacie', T_ALL.en.sumarInformacie(1) === 'note' && T_ALL.en.sumarInformacie(0) === 'notes');
+  ok('35. T.en ma anglicku vetu bez pomlciek', !/[–—]/.test(JSON.stringify(T_ALL.en)));
+}
+
+// --- anglicky vzor faktury prejde kontrolou bez chyb
+{
+  const zdroj = readFileSync(new URL('./app.js', import.meta.url), 'utf8');
+  const zac = zdroj.indexOf('const VZOR_XML_EN = `');
+  const xml = zdroj.slice(zdroj.indexOf('<?xml', zac), zdroj.indexOf('\n`;', zac));
+  const v = skontroluj(xml);
+  ok('35. anglicky vzor je Peppol a nema chybu', v.profil === 'peppol' && v.sumar.chyby === 0, vypisChyby(v));
+  ok('35. anglicky vzor nema ani varovanie', v.sumar.varovania === 0, kody(v, 'varovanie').join(', '));
+  ok('35. anglicky vzor je v EUR', xml.includes('<cbc:DocumentCurrencyCode>EUR</cbc:DocumentCurrencyCode>'));
+  ok('35. anglicky vzor pouziva GLN so schemeID 0088', xml.includes('schemeID="0088"'));
+  const protokolEn = protokol(v, 'en', 'sample.xml');
+  ok('35. protokol po anglicky ma anglicku hlavicku', protokolEn.includes('E-invoice check report') && protokolEn.includes('Errors:'), protokolEn.slice(0, 120));
+
+  // pokazeny anglicky vzor: hlasenia z kodovnikov nesmu prepadnut do slovenciny
+  const pokazeny = xml
+    .replace('unitCode="HUR"', 'unitCode="XXX"')
+    .replace('<cbc:DocumentCurrencyCode>EUR', '<cbc:DocumentCurrencyCode>EURO')
+    .replace('<cbc:InvoiceTypeCode>380', '<cbc:InvoiceTypeCode>999')
+    .replace('<cbc:PaymentMeansCode>58', '<cbc:PaymentMeansCode>777')
+    .replace('<cbc:IdentificationCode>IE', '<cbc:IdentificationCode>XX')
+    .replace('VATEX-EU-AE', 'VATEX-ZZ-QQ')
+    .replace('schemeID="0088">5390000000014', 'schemeID="9999">5390000000014');
+  const vp = skontroluj(pokazeny);
+  const DIAK = /[áäčďéěíľĺňóôřŕšťúůýžÁÄČĎÉĚÍĽĹŇÓÔŘŔŠŤÚŮÝŽ]/;
+  const zleEn = vp.nalezy.filter((n) => DIAK.test(n.sprava.en)).map((n) => n.kod + ': ' + n.sprava.en.slice(0, 70));
+  ok('35. pokazeny anglicky vzor hlasi kodovniky po anglicky', zleEn.length === 0, zleEn.slice(0, 3).join(' | '));
+  ok('35. pokazeny anglicky vzor hlasi kodovnikove pravidla', kody(vp).some((k) => k.startsWith('BR-CL-')), kody(vp).join(', '));
 }
 
 // ---------------------------------------------------------------- vysledok

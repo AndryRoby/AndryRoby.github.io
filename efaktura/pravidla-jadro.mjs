@@ -141,15 +141,16 @@ export function vytvorKontext(koren) {
  * @param {string} sk sprava po slovensky
  * @param {string} cs sprava po cesky
  * @param {string} de sprava po nemecky
+ * @param {string} en sprava po anglicky
  * @param {string} [nahradnaCesta] XPath, ak uzol neexistuje
  */
-export function pridaj(ctx, kod, zavaznost, uzol, hodnota, sk, cs, de, nahradnaCesta) {
+export function pridaj(ctx, kod, zavaznost, uzol, hodnota, sk, cs, de, en, nahradnaCesta) {
   ctx.nalezy.push({
     kod,
     zavaznost,
     xpath: uzol ? xpath(uzol) : nahradnaCesta || (ctx.koren ? xpath(ctx.koren) : ''),
     hodnota: hodnota == null ? '' : String(hodnota),
-    sprava: { sk, cs, de },
+    sprava: { sk, cs, de, en },
     original: povodneZnenie(kod) || ''
   });
 }
