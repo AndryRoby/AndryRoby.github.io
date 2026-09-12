@@ -18,6 +18,8 @@ import * as K from './kodovniky.mjs';
 import { parsujXml } from './parser.mjs';
 import { vytvorUbl, prepocitaj, prazdnaFaktura, zCentov } from './ubl.js';
 import { vykresliNahlad } from './nahlad.js';
+import { zapojDavku } from './davka-ui.js';
+let davkaUI = null;
 
 /* Jazyk berieme z cesty (/cs/, /de/, /en/), lebo tak je stranka rozdelena; atribut lang
  * na <html> je zaloha, keby sa stranka otvorila z ineho miesta. */
@@ -1137,6 +1139,7 @@ const btnStiahnut = $('stiahnut-xml');
 const blokChyb = $('chyby-generatora');
 
 function ukazPlatbu() {
+  if (davkaUI) davkaUI.obnovPlatbu();
   const typ = odomknute();
   const brana = $('brana');
   if (brana) brana.hidden = !!typ;
@@ -1259,5 +1262,7 @@ prepni((location.hash || '').replace('#', '') || 'kontrola', false);
 spustiKontrolu();
 prekresliGenerator();
 ukazPlatbu();
+davkaUI = zapojDavku({ jazyk: LANG, zaklad: () => faktura, platba: () => nacitaj('efaktura:zaplatene'),
+  testRezim, cena: CENA_30DNI, track, kupit: () => klikNaKupu(btnTrid, '30dni', CENA_30DNI) });
 poNavrate();
 sledujCenuVidenu();
