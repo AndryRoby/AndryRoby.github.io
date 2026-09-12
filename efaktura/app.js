@@ -1119,7 +1119,9 @@ function testRezim() {
 /** Vrati 'jedna', '30dni' alebo null podla toho, co je zaplatene a este plati. */
 function odomknute() {
   const z = nacitaj('efaktura:zaplatene');
-  if (!z || !z.session || !z.typ) return null;
+  if (!z || !['jedna', '30dni'].includes(z.typ) || typeof z.session !== 'string' || !/^cs_(test|live)_[a-zA-Z0-9]+$/.test(z.session)) return null;
+  if (z.test !== testRezim() || !z.session.startsWith(testRezim() ? 'cs_test_' : 'cs_live_')) return null;
+  if (!Number.isFinite(z.t) || z.t > Date.now()) return null;
   const doKedy = (z.t || 0) + (PLATNOST[z.typ] || 0);
   if (Date.now() > doKedy) return null;
   return z.typ;
@@ -1202,7 +1204,7 @@ async function overPlatbu(sid, pokus) {
   } catch (e) { siet = true; }
   // Suma pred zlavovym kodom (amount_subtotal); starsi worker ju neposiela, vtedy plati amount_total.
   const zaklad = st && typeof st.amount_subtotal === 'number' ? st.amount_subtotal : st && st.amount_total;
-  if (st && st.paid && typeof zaklad === 'number' && zaklad >= CENA_JEDNA) {
+  if (st && st.paid && st.livemode === !testRezim() && st.currency === 'eur' && (zaklad === CENA_JEDNA || zaklad === CENA_30DNI)) {
     const typ = zaklad >= CENA_30DNI ? '30dni' : 'jedna';
     uloz('efaktura:zaplatene', { session: sid, t: Date.now(), typ, test: st.livemode === false });
     zmaz(CAKAJUCA);
@@ -1258,7 +1260,7 @@ for (const b of document.querySelectorAll('.zalozka')) {
 window.addEventListener('hashchange', () => prepni((location.hash || '').replace('#', ''), false));
 
 postavFormular();
-prepni((location.hash || '').replace('#', '') || 'kontrola', false);
+prepni((location.hash || '').replace('#', '') || document.body.dataset.efakturaStart || 'kontrola', false);
 spustiKontrolu();
 prekresliGenerator();
 ukazPlatbu();
