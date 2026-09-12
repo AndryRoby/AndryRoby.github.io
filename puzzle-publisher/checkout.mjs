@@ -1,4 +1,4 @@
-/* A-021: links remain empty until deployed server + actual sandbox purchase QA.
+/* A-021: live link enabled after deployed server + actual sandbox purchase QA.
  * sessionStorage is only a remembered session credential, never proof of payment.
  */
 const API='https://arling-asistent.arling.workers.dev';
@@ -39,6 +39,6 @@ try{
  if(config.enabled===true&&typeof link==='string'&&/^https:\/\/buy\.stripe\.com\//.test(link)){
   buy.disabled=false;buy.textContent=test?'Open sandbox checkout':'Buy pack · €19 incl. VAT';
   buy.addEventListener('click',()=>{track('publisher_buy_click');location.href=link;});
- }
-}catch{/* Closed checkout remains explicit in the HTML. */}
+ }else{buy.textContent=test?'Sandbox checkout is not public':'Checkout temporarily unavailable';}
+}catch{buy.textContent='Checkout temporarily unavailable';}
 verify();
