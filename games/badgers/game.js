@@ -1,3 +1,4 @@
+import '../kniha.mjs?v=1';
 /* Badgers: the game page. One script for the daily sett, the archive days and
  * the practice sets; the page says which one it is:
  *

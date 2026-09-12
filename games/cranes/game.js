@@ -1,3 +1,4 @@
+import '../kniha.mjs?v=1';
 /* Cranes: the game page. One script for the daily water, the archive days
  * and the practice sets; the page says which one it is:
  *

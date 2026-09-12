@@ -1,3 +1,4 @@
+import '../kniha.mjs?v=1';
 /* Swans: the game page. One script for the daily lake, the archive days and
  * the practice sets; the page says which one it is:
  *

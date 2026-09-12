@@ -1,3 +1,4 @@
+import '../kniha.mjs?v=1';
 /* Otters: the game page. One script for the daily river, the archive days
  * and the practice sets; the page says which one it is:
  *
