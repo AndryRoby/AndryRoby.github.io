@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script src="/style/vzhlad.js?v=93c2659f"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0a0908">
+<link rel="preconnect" href="https://homelab.tailbf8f27.ts.net" crossorigin>
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../../favicon.ico" sizes="48x48">
+<link rel="apple-touch-icon" href="../../icon-180.png">
+<title>XRechnung vs Peppol BIS Billing 3.0: A Guide for Foreign Suppliers | ARLing</title>
+<meta name="description" content="If your company sits outside Germany and has just won a contract with a German business customer,">
+<meta property="og:type" content="article">
+<meta property="og:title" content="XRechnung vs Peppol BIS Billing 3.0: A Guide for Foreign Suppliers">
+<meta property="og:description" content="If your company sits outside Germany and has just won a contract with a German business customer,">
+<meta property="og:url" content="https://arling.sk/notes/xrechnung-vs-peppol-bis-what-a-foreign-supplier-must-know/">
+<meta property="og:locale" content="en_US">
+<link rel="canonical" href="https://arling.sk/notes/xrechnung-vs-peppol-bis-what-a-foreign-supplier-must-know/">
+<link rel="stylesheet" href="/style/paper.css?v=89016e6c">
+<script src="/style/prepinac.js?v=2988c181" defer></script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "XRechnung vs Peppol BIS Billing 3.0: A Guide for Foreign Suppliers",
+  "description": "If your company sits outside Germany and has just won a contract with a German business customer,",
+  "datePublished": "2026-09-12",
+  "dateModified": "2026-09-12",
+  "inLanguage": "en",
+  "author": {
+    "@type": "Organization",
+    "name": "ARLing s. r. o.",
+    "url": "https://arling.sk/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "ARLing s. r. o.",
+    "url": "https://arling.sk/"
+  },
+  "mainEntityOfPage": "https://arling.sk/notes/xrechnung-vs-peppol-bis-what-a-foreign-supplier-must-know/"
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Do I have to use XRechnung, or is a Peppol BIS Billing 3.0 invoice enough?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "XRechnung already carries the Peppol BIS Billing 3.0 business rules inside it, so a file built correctly to XRechnung also satisfies Peppol BIS Billing 3.0. The direction does not run the other way: XRechnung adds extra rules of its own, such as the mandatory buyer reference field, so a plain Peppol BIS Billing 3.0 file can still be missing something XRechnung demands."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can I just keep sending a PDF invoice to my German customer?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "For now, yes: Germany still allows a plain PDF or paper invoice until the end of 2026, with an extended option until the end of 2027 for a customer whose turnover in the previous year was up to 800 000 euro. The step worth taking now, rather than waiting for that date, is to ask whoever maintains your invoicing software whether it can already produce a file in the ZUGFeRD or XRechnung structure, since ZUGFeRD only counts as a proper electronic invoice from version 2.0.1 onward and an older version will not be enough once the deadline arrives."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What happens if I leave the buyer reference field blank on an invoice to a German public authority?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "BR-DE-15 applies specifically to an invoice sent to a German public authority, where the buyer reference field is where the Leitweg-ID goes; it is not a general requirement stamped on every German invoice regardless of who the buyer is. The identifier in that field tells you which kind of buyer you are dealing with: a public authority is addressed under Peppol scheme 0204 for its Leitweg-ID, while an ordinary private company is addressed under scheme 9930 for its VAT number, so check which one applies to your customer before treating the field as optional."
+      }
+    }
+  ]
+}
+</script>
+
+<style>
+  article { max-width:72ch; }
+  article h2 { margin:clamp(34px,4vh,52px) 0 12px; }
+  article h3 { margin:26px 0 8px; }
+  article p, article li { font-size:16.5px; line-height:1.7; }
+  article ol, article ul { padding-left:22px; }
+  article li { margin:0 0 8px; }
+  code { font:13.5px/1.4 var(--mono); background:var(--card); border:1px solid var(--line);
+    border-radius:3px; padding:1px 5px; overflow-wrap:anywhere; }
+  pre { background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    padding:16px 18px; overflow-x:auto; font:13px/1.6 var(--mono); color:var(--body); }
+  .byline { font-family:var(--ui); font-size:14px; color:var(--muted); margin:0 0 clamp(26px,3vh,40px); }
+  .zhrn { border-left:3px solid var(--accent); background:var(--card); border-radius:0 var(--radius) var(--radius) 0;
+    padding:18px 22px; margin:0 0 clamp(26px,3vh,40px); }
+  .zhrn p { margin:0; font-size:16px; }
+  .zdroje { font-family:var(--ui); font-size:13.5px; color:var(--muted); line-height:1.7;
+    border-top:1px solid var(--line); padding-top:18px; margin-top:clamp(34px,4vh,52px); }
+  .zdroje a { color:var(--body); }
+</style>
+</head>
+<body class="noc">
+<div class="wash" aria-hidden="true"><i></i><i></i></div>
+
+<header>
+  <div class="wrap bar">
+    <a class="brand" href="https://arling.sk/">
+      <svg viewBox="0 0 488 215" width="38" height="15" aria-hidden="true" focusable="false"><path fill="#f4f4f7" fill-rule="evenodd" d="M0.00,213.00L74.00,214.00L181.00,85.00L285.00,214.00L360.00,214.00L206.00,21.00L185.00,4.00L164.00,10.00Z M221.00,0.00L263.00,50.00L395.00,50.00L409.00,55.00L419.00,76.00L401.00,96.00L313.00,98.00L411.00,214.00L487.00,214.00L422.00,139.00L457.00,123.00L482.00,88.00L482.00,48.00L463.00,19.00L417.00,0.00Z"/><path fill="#f2643c" d="M269.00,66.00L269.00,67.00L268.00,68.00L268.00,70.00L267.00,71.00L267.00,76.00L268.00,77.00L268.00,79.00L270.00,81.00L270.00,82.00L271.00,82.00L273.00,84.00L274.00,84.00L277.00,86.00L279.00,86.00L280.00,87.00L287.00,87.00L288.00,86.00L290.00,86.00L291.00,85.00L294.00,84.00L298.00,80.00L298.00,79.00L299.00,78.00L299.00,75.00L300.00,74.00L300.00,72.00L299.00,71.00L299.00,69.00L298.00,68.00L297.00,65.00L295.00,63.00L294.00,63.00L289.00,60.00L278.00,60.00L277.00,61.00L276.00,61.00L275.00,62.00L272.00,63.00Z"/></svg>
+      <b>ARLing</b>
+    </a>
+    <nav aria-label="Site"><a href="https://arling.sk/en/#tools">Tools</a><a href="https://arling.sk/games/">Games</a><a href="https://arling.sk/notes/">Notes</a><a href="https://arling.sk/how-we-work/">How we work</a><a href="mailto:andrej@arling.sk">Contact</a></nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <article>
+      <h1>XRechnung vs Peppol BIS Billing 3.0: A Guide for Foreign Suppliers</h1>
+      <p class="byline">ARLing s. r. o. · 12 September 2026</p>
+
+      <div class="zhrn">
+        <p>If your company sits outside Germany and has just won a contract with a German business customer, two names will come up almost immediately: XRechnung and Peppol BIS Billing 3.0. Both describe a properly structured electronic invoice, and the difference between them decides whether the file you send actually gets accepted. Germany already requires every business to be able to receive a B2B electronic invoice, and on the receiving side an ordinary e-mail inbox is enough. The obligation to send one is being phased in on a schedule tied to company turnover, ending in a full cut-off after which every business must send electronic invoices. XRechnung is the German rulebook built directly on the same European core standard that Peppol BIS Billing 3.0 also sits on, which is exactly why the two get confused. This note walks through what XRechnung actually is, how it relates to Peppol BIS Billing 3.0, which invoice formats a German customer will accept, and which technical details commonly need checking before a foreign supplier's first invoice into Germany goes through.</p>
+      </div>
+
+      <h2>What XRechnung Actually Is (and How Peppol BIS Billing 3.0 Fits Under It)</h2>
+      <p>EN 16931 is the European standard behind every compliant electronic invoice: it fixes which data an invoice must carry and how the amounts on it must relate to one another. Its schematron splits into 58 base rules, numbered BR-01 to BR-65, plus a further 24 calculation and consistency rules, numbered BR-CO-01 to BR-CO-26. Peppol BIS Billing 3.0 is built directly on top of that same European standard, in the OASIS UBL 2.1 syntax, and adds 41 of its own rules on top of what EN 16931 already requires, in the release dated November 2025. XRechnung is Germany's own rulebook on the identical European standard, developed by KoSIT, and it already carries the Peppol BIS Billing 3.0 business rules inside it, which is exactly why a file built only to Peppol BIS Billing 3.0 does not automatically satisfy XRechnung, even though a file built correctly to XRechnung does satisfy Peppol BIS Billing 3.0.</p>
+      <p>The current release is XRechnung 3.0.2, and its base version, XRechnung 3.0, has applied since the start of February 2024.</p>
+
+      <h2>Germany's Two Separate Deadlines: Receiving and Sending</h2>
+      <p>Since the start of 2025, every business in Germany must be able to receive a B2B electronic invoice, and receiving one needs nothing more than an ordinary e-mail inbox on the customer's side; there is no special software requirement for a business that only receives invoices.</p>
+      <p>Sending is staged by turnover, and this is your German customer's own deadline, not a rule that binds a supplier outside Germany directly. A German business may still issue a plain PDF or paper invoice until the end of 2026, a company with a turnover up to 800 000 euro in the previous year keeps that option until the end of 2027, older EDI procedures outside EN 16931 are tolerated on the same 2027 date, and from the start of 2028 every business sends electronic invoices in B2B. Knowing these dates tells you exactly when a German buyer that still accepts a PDF today will start asking for XRechnung instead, so a request that seems sudden is really the customer catching up with a deadline it has known about for years.</p>
+
+      <h2>Two Formats a German Customer Can Accept</h2>
+      <p>XRechnung is not the only format that counts as a proper electronic invoice under German rules. ZUGFeRD is a hybrid file, an ordinary PDF with a structured XML file embedded inside it, and from version 2.0.1 it meets the legal definition of an electronic invoice, with one exception: its MINIMUM and BASIC-WL profiles leave out part of the EN 16931 data model and do not qualify.</p>
+      <p>A supplier whose own accounting software can only export a PDF should ask exactly which ZUGFeRD profile that software writes, because a file in the MINIMUM or BASIC-WL profile will not carry the full data set a German buyer's system is built to expect.</p>
+
+      <h2>Identifiers and Rules That Trip Up a First Invoice Into Germany</h2>
+      <p>Sending an invoice over the Peppol network to a German party means addressing it correctly. A German public authority is identified on the network by its Leitweg-ID, carried under scheme 0204, while a German VAT number, the USt-IdNr., is carried under scheme 9930; using the wrong one means the network cannot correctly match the invoice to the recipient.</p>
+      <p>The VAT category code on every invoice line has to be right as well. EN 16931 fixes a closed set of values: S for the standard rate, Z for a zero rate, E for exempt, AE for reverse charge, K for a supply inside the European Union, G for an export outside it, and further codes for special cases, and each of these carries its own group of calculation rules the invoice line has to satisfy.</p>
+      <p>For an invoice addressed to a German public buyer specifically, XRechnung's own rule BR-DE-15 requires the buyer reference field to be filled in; in practice this is exactly where the Leitweg-ID goes, and an invoice that leaves it empty is rejected before anyone even looks at the amounts.</p>
+
+      <h2>Frequently asked questions</h2>
+      <details>
+        <summary>Do I have to use XRechnung, or is a Peppol BIS Billing 3.0 invoice enough?</summary>
+        <p>XRechnung already carries the Peppol BIS Billing 3.0 business rules inside it, so a file built correctly to XRechnung also satisfies Peppol BIS Billing 3.0. The direction does not run the other way: XRechnung adds extra rules of its own, such as the mandatory buyer reference field, so a plain Peppol BIS Billing 3.0 file can still be missing something XRechnung demands.</p>
+      </details>
+      <details>
+        <summary>Can I just keep sending a PDF invoice to my German customer?</summary>
+        <p>For now, yes: Germany still allows a plain PDF or paper invoice until the end of 2026, with an extended option until the end of 2027 for a customer whose turnover in the previous year was up to 800 000 euro. The step worth taking now, rather than waiting for that date, is to ask whoever maintains your invoicing software whether it can already produce a file in the ZUGFeRD or XRechnung structure, since ZUGFeRD only counts as a proper electronic invoice from version 2.0.1 onward and an older version will not be enough once the deadline arrives.</p>
+      </details>
+      <details>
+        <summary>What happens if I leave the buyer reference field blank on an invoice to a German public authority?</summary>
+        <p>BR-DE-15 applies specifically to an invoice sent to a German public authority, where the buyer reference field is where the Leitweg-ID goes; it is not a general requirement stamped on every German invoice regardless of who the buyer is. The identifier in that field tells you which kind of buyer you are dealing with: a public authority is addressed under Peppol scheme 0204 for its Leitweg-ID, while an ordinary private company is addressed under scheme 9930 for its VAT number, so check which one applies to your customer before treating the field as optional.</p>
+      </details>
+
+      <h2>Conclusion</h2>
+      <p>None of this is homework you can skip because your own country runs a different scheme: the moment a German business customer asks for an electronic invoice, the file has to satisfy XRechnung or an accepted equivalent such as ZUGFeRD, not a rulebook borrowed from your home market. Getting the network identifiers, the VAT category code and fields such as the buyer reference right on the first attempt saves a rejected file and a second wait before the invoice gets paid. If you would rather check a finished invoice against these rules before it goes out, see ARLing's <a href="https://arling.sk/efaktura/en/">e-invoicing overview</a>.</p>
+
+      <div class="zdroje">
+        <p><b>Sources.</b> The facts in this note are numbered after our internal fact list and were checked on the publication date. ARLing is not a bank; a clean check result is no guarantee that the bank accepts the payment. If a source has changed since, write to andrej@arling.sk and we will correct this page.</p>
+        <ul>
+          <li>F85, F86, F88: Bundesministerium der Finanzen, FAQ zur obligatorischen E-Rechnung, <a href="https://www.bundesfinanzministerium.de/Content/DE/FAQ/e-rechnung.html" rel="noopener" target="_blank">https://www.bundesfinanzministerium.de/Content/DE/FAQ/e-rechnung.html</a> (overené 11. 9. 2026)</li>
+          <li>F87: KoSIT, XRechnung FAQ, <a href="https://xeinkauf.de/xrechnung/faq/" rel="noopener" target="_blank">https://xeinkauf.de/xrechnung/faq/</a>; schematron XRechnung, <a href="https://github.com/itplr-kosit/xrechnung-schematron" rel="noopener" target="_blank">https://github.com/itplr-kosit/xrechnung-schematron</a> (overené 11. 9. 2026)</li>
+          <li>F89: zoznamy kódov Peppol, <a href="https://docs.peppol.eu/poacc/billing/3.0/codelist/ICD/" rel="noopener" target="_blank">https://docs.peppol.eu/poacc/billing/3.0/codelist/ICD/</a> a <a href="https://docs.peppol.eu/poacc/billing/3.0/codelist/eas/" rel="noopener" target="_blank">https://docs.peppol.eu/poacc/billing/3.0/codelist/eas/</a> (overené 11. 9. 2026)</li>
+          <li>F90: schematron CEN EN 16931, <a href="https://github.com/ConnectingEurope/eInvoicing-EN16931" rel="noopener" target="_blank">https://github.com/ConnectingEurope/eInvoicing-EN16931</a> (licencia EUPL 1.2, overené 11. 9. 2026)</li>
+          <li>F91: schematron Peppol BIS Billing 3.0, <a href="https://github.com/OpenPEPPOL/peppol-bis-invoice-3" rel="noopener" target="_blank">https://github.com/OpenPEPPOL/peppol-bis-invoice-3</a> (overené 11. 9. 2026)</li>
+          <li>F92: schematron CEN EN 16931, <a href="https://github.com/ConnectingEurope/eInvoicing-EN16931" rel="noopener" target="_blank">https://github.com/ConnectingEurope/eInvoicing-EN16931</a>; zoznam kódov Peppol, <a href="https://docs.peppol.eu/poacc/billing/3.0/codelist/vatex/" rel="noopener" target="_blank">https://docs.peppol.eu/poacc/billing/3.0/codelist/vatex/</a> (overené 11. 9. 2026)</li>
+          <li>F99: schematron XRechnung, súbor XRechnung-UBL-validation.sch, <a href="https://github.com/itplr-kosit/xrechnung-schematron" rel="noopener" target="_blank">https://github.com/itplr-kosit/xrechnung-schematron</a> (licencia Apache License 2.0, overené 11. 9. 2026)</li>
+        </ul>
+      </div>
+    </article>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <div><b>ARLing s. r. o.</b><br>Ivanská cesta 32E<br>821 04 Bratislava, Slovakia</div>
+    <div>Company ID 56583486<br>VAT ID SK2122352100<br><a href="mailto:andrej@arling.sk">andrej@arling.sk</a></div>
+    <div><a href="https://arling.sk/privacy/">privacy</a> · <a href="https://arling.sk/podmienky/">terms</a> · <a href="https://arling.sk/gdpr/">GDPR</a> · <a href="https://arling.sk/impressum/">Impressum</a> · <a href="https://arling.sk/llms.txt">llms.txt</a> · <a href="https://arling.sk/sitemap-index.xml">sitemap</a><br>Tools are provided as is, without warranty. Anonymous visit counts via self-hosted Umami.</div>
+  </div>
+</footer>
+
+<script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="338f035d-41c5-411e-8391-9a41db6accfd"></script>
+</body>
+</html>
