@@ -4,7 +4,7 @@
 <script src="/style/vzhlad.js?v=93c2659f"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://homelab.tailbf8f27.ts.net 'sha256-f0YQZwKlMeNyLXu1wwLFtgGQUqnCHvavzPNA4smWe00='; connect-src 'self' https://homelab.tailbf8f27.ts.net https://arling-asistent.arling.workers.dev; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://homelab.tailbf8f27.ts.net 'sha256-tyYBkBs9Y1AtFjFzpRIcMmkFzhIgbwWFy6qbmv2EuYY='; connect-src 'self' https://homelab.tailbf8f27.ts.net https://arling-asistent.arling.workers.dev; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#0a0908">
 <link rel="preconnect" href="https://homelab.tailbf8f27.ts.net" crossorigin>
@@ -12,7 +12,7 @@
 <link rel="icon" href="/favicon.ico" sizes="48x48">
 <link rel="apple-touch-icon" href="/icon-180.png">
 <title>Peppol invoice generator, no ERP needed | ARLing</title>
-<meta name="description" content="Peppol invoice generator in your browser: fill a form, watch the document build, download Peppol BIS 3.0 XML in UBL 2.1. Preview free, XML from 2.90 €.">
+<meta name="description" content="Peppol invoice generator in your browser: fill a form, watch the document build, download Peppol BIS 3.0 XML in UBL 2.1. Preview free, XML from 2.90 € excl. VAT.">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Peppol invoice generator, no ERP needed">
 <meta property="og:description" content="Fill a form, read the document, download Peppol BIS Billing 3.0 XML in UBL 2.1. All in your browser, no account.">
@@ -35,7 +35,7 @@
 <link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/style/paper.css?v=89016e6c">
 <script src="/style/prepinac.js?v=2988c181" defer></script>
-<script type="module" src="/efaktura/app.js?v=14079587"></script>
+<script type="module" src="/efaktura/app.js?v=eeab0ce2"></script>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -58,13 +58,25 @@
           "@type": "Offer",
           "price": "2.90",
           "priceCurrency": "EUR",
-          "name": "XML download for one invoice"
+          "name": "XML download for one invoice",
+          "priceSpecification": {
+            "@type": "UnitPriceSpecification",
+            "price": "2.90",
+            "priceCurrency": "EUR",
+            "valueAddedTaxIncluded": false
+          }
         },
         {
           "@type": "Offer",
           "price": "9.90",
           "priceCurrency": "EUR",
-          "name": "XML download for 30 days"
+          "name": "XML download for 30 days",
+          "priceSpecification": {
+            "@type": "UnitPriceSpecification",
+            "price": "9.90",
+            "priceCurrency": "EUR",
+            "valueAddedTaxIncluded": false
+          }
         }
       ],
       "publisher": {
@@ -112,7 +124,7 @@
           "name": "What does it cost?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "The form, the document preview and the check are free, with no account and no limit. You pay only to download the finished XML: 2.90 € for one invoice, unlocked in this browser for 24 hours so you can fix it and download again, or 9.90 € for 30 days with no limit on the number of invoices. Stripe handles the sale and sends the receipt."
+            "text": "The form, the document preview and the check are free, with no account and no limit. You pay only to download the finished XML: 2.90 € excl. VAT for one invoice, unlocked in this browser for 24 hours so you can fix it and download again, or 9.90 € excl. VAT for 30 days with no limit on the number of invoices. Stripe handles the sale and sends the receipt."
           }
         },
         {
@@ -325,13 +337,14 @@
       <ul class="facts proof r d5">
         <li>output is <b>UBL 2.1</b> under Peppol BIS Billing 3.0, the profile the network carries</li>
         <li>our supported checks run <b>before</b> download; receiver acceptance is not guaranteed</li>
-        <li>form and preview <b>free</b>, the XML of one invoice 2.90 €</li>
+        <li>form and preview <b>free</b>, the XML of one invoice 2.90 € excl. VAT</li>
       </ul>
     </div>
     <div class="cena r d2">
-      <span class="suma">2.90 €</span>
-      <p class="zaco">for the XML download of one invoice, or 9.90 € for 30 days with no limit on the number of invoices. Check and preview are free.</p>
+      <span class="suma">2.90 € excl. VAT</span>
+      <p class="zaco">for the XML download of one invoice, or 9.90 € excl. VAT for 30 days with no limit on the number of invoices. Check and preview are free.</p>
       <p class="pomoc rozsah-platby">You receive an XML file. Peppol delivery is not included: use your access point provider to send it, or e-mail it where the recipient accepts that.</p>
+      <p class="pomoc dan-platby">Prices exclude applicable tax. Stripe calculates tax from the customer details and shows the final total before payment.</p>
       <ul>
         <li>fill in the form and watch the document build itself</li>
         <li>the XML is made in your browser, nothing goes to a server</li>
@@ -390,10 +403,10 @@
             <div class="doklad-obal" id="nahlad-zivy"></div>
             <div class="brana" id="brana">
               <h3>XML download</h3>
-              <p class="pomoc">The form and the preview are free. The finished XML is paid: 2.90 € for one invoice (unlocked in this browser for 24 hours, so you can correct it and download again) or 9.90 € for 30 days with no limit on the number of invoices. The XML is made in your browser and is never sent to a server, so we never see it.</p>
+              <p class="pomoc">The form and the preview are free. The finished XML is paid: 2.90 € excl. VAT for one invoice (unlocked in this browser for 24 hours, so you can correct it and download again) or 9.90 € excl. VAT for 30 days with no limit on the number of invoices. The XML is made in your browser and is never sent to a server, so we never see it.</p>
               <div class="cta">
-                <button type="button" class="btn btn-solid" id="kupa-jedna" data-link="https://buy.stripe.com/eVq8wJbUecSndB84pT4ko0q" data-link-test="https://buy.stripe.com/test_28E5kxf6q7y3aoW4pT4ko07">Buy one invoice for 2.90 €</button>
-                <button type="button" class="btn btn-line" id="kupa-30dni" data-link="https://buy.stripe.com/14A14h3nI3hNcx45tX4ko0r" data-link-test="https://buy.stripe.com/test_3cIfZbcYi2dJaoW6y14ko0b">Unlock for 30 days, 9.90 €</button>
+                <button type="button" class="btn btn-solid" id="kupa-jedna" data-link="https://buy.stripe.com/eVq8wJbUecSndB84pT4ko0q" data-link-test="https://buy.stripe.com/test_dRmbIVe2m9Gb40yaOh4ko0f">Buy one invoice for 2.90 € excl. VAT</button>
+                <button type="button" class="btn btn-line" id="kupa-30dni" data-link="https://buy.stripe.com/14A14h3nI3hNcx45tX4ko0r" data-link-test="https://buy.stripe.com/test_cNi8wJ3nIf0v54C8G94ko0j">Unlock for 30 days, 9.90 € excl. VAT</button>
               </div>
               <p class="pomoc">Stripe handles the sale as merchant of record (Stripe Payments Europe, Ltd., Dublin): the purchase contract is with Stripe, which collects the payment, issues the receipt and settles the VAT; ARLing supplies the content. By clicking pay you agree to immediate delivery of digital content and acknowledge that you lose the right to withdraw (EU Consumer Rights Directive 2011/83/EU Article 16(m); under Slovak law, where ARLing is based, section 19(1)(m) of Act 108/2024 Coll.). <a href="https://arling.sk/podmienky/">Terms</a> · <a href="https://arling.sk/odstupenie/">Withdrawal</a></p>
             </div>
@@ -456,7 +469,7 @@
       <details class="otazka"><summary>Do I need a Peppol access point to use it?</summary><p>To build the file, no. Peppol is a delivery network: you hand your invoice to an access point provider, that provider passes it to the buyer provider, and the buyer provider delivers it. This page makes the document; sending it over the network is the job of your provider, or you can e-mail the file where that is accepted.</p></details>
       <details class="otazka"><summary>What is the Participant Identifier I keep being asked for?</summary><p>Every party in the network has an electronic address made of a scheme code and an identifier, for example a German VAT number with scheme 9930, a German Leitweg-ID with 0204, or a Slovak tax number DIC with 0245. Codes for other countries live in the official Peppol code lists on docs.peppol.eu; we do not guess them for you.</p></details>
       <details class="otazka"><summary>Is the invoice checked before I download it?</summary><p>Yes. Our checker applies the supported EN 16931, Peppol BIS Billing 3.0 and XRechnung rules before download and blocks the file if it finds an error. It does not check the UBL XSD schema or every Peppol rule. Passing our checks does not guarantee acceptance by the receiver or network.</p></details>
-      <details class="otazka"><summary>What does it cost?</summary><p>The form, the document preview and the check are free, with no account and no limit. You pay only to download the finished XML: 2.90 € for one invoice, unlocked in this browser for 24 hours so you can fix it and download again, or 9.90 € for 30 days with no limit on the number of invoices. Stripe handles the sale and sends the receipt.</p></details>
+      <details class="otazka"><summary>What does it cost?</summary><p>The form, the document preview and the check are free, with no account and no limit. You pay only to download the finished XML: 2.90 € excl. VAT for one invoice, unlocked in this browser for 24 hours so you can fix it and download again, or 9.90 € excl. VAT for 30 days with no limit on the number of invoices. Stripe handles the sale and sends the receipt.</p></details>
       <details class="otazka"><summary>Does my data leave the browser?</summary><p>No. The form, the preview and the XML all live in your browser, and the address book for sellers and buyers sits in localStorage with a button in the form to erase it. Exactly one thing goes to a server: after you come back from the payment, we ask whether that payment went through.</p></details>
     </div>
   </section>
