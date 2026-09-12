@@ -1,3 +1,4 @@
+import '../kniha.mjs?v=1';
 /* Hedgehogs: the game page. One script for the daily garden, the archive
  * days and the practice sets; the page says which one it is:
  *

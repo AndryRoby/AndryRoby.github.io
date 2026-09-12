@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script src="/style/vzhlad.js?v=93c2659f"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0a0908">
+<link rel="preconnect" href="https://homelab.tailbf8f27.ts.net" crossorigin>
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../../favicon.ico" sizes="48x48">
+<link rel="apple-touch-icon" href="../../icon-180.png">
+<title>CSV invoice batches: check the preview before downloading XML | ARLing</title>
+<meta name="description" content="Group CSV item rows into invoices, check the batch and inspect previews before downloading UBL XML.">
+<meta property="og:type" content="article">
+<meta property="og:title" content="CSV invoice batches: check the preview before downloading XML">
+<meta property="og:description" content="Group CSV item rows into invoices, check the batch and inspect previews before downloading UBL XML.">
+<meta property="og:url" content="https://arling.sk/notes/csv-invoice-batch-preview-before-download/">
+<meta property="og:locale" content="en_US">
+<link rel="canonical" href="https://arling.sk/notes/csv-invoice-batch-preview-before-download/">
+<link rel="stylesheet" href="/style/paper.css?v=89016e6c">
+<script src="/style/prepinac.js?v=2988c181" defer></script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "CSV invoice batches: check the preview before downloading XML",
+  "description": "Group CSV item rows into invoices, check the batch and inspect previews before downloading UBL XML.",
+  "datePublished": "2026-09-12",
+  "dateModified": "2026-09-12",
+  "inLanguage": "en",
+  "author": {
+    "@type": "Organization",
+    "name": "ARLing s. r. o.",
+    "url": "https://arling.sk/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "ARLing s. r. o.",
+    "url": "https://arling.sk/"
+  },
+  "mainEntityOfPage": "https://arling.sk/notes/csv-invoice-batch-preview-before-download/"
+}
+</script>
+
+<style>
+  article { max-width:72ch; }
+  article h2 { margin:clamp(34px,4vh,52px) 0 12px; }
+  article h3 { margin:26px 0 8px; }
+  article p, article li { font-size:16.5px; line-height:1.7; }
+  article ol, article ul { padding-left:22px; }
+  article li { margin:0 0 8px; }
+  code { font:13.5px/1.4 var(--mono); background:var(--card); border:1px solid var(--line);
+    border-radius:3px; padding:1px 5px; overflow-wrap:anywhere; }
+  pre { background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    padding:16px 18px; overflow-x:auto; font:13px/1.6 var(--mono); color:var(--body); }
+  .byline { font-family:var(--ui); font-size:14px; color:var(--muted); margin:0 0 clamp(26px,3vh,40px); }
+  .zhrn { border-left:3px solid var(--accent); background:var(--card); border-radius:0 var(--radius) var(--radius) 0;
+    padding:18px 22px; margin:0 0 clamp(26px,3vh,40px); }
+  .zhrn p { margin:0; font-size:16px; }
+  .zdroje { font-family:var(--ui); font-size:13.5px; color:var(--muted); line-height:1.7;
+    border-top:1px solid var(--line); padding-top:18px; margin-top:clamp(34px,4vh,52px); }
+  .zdroje a { color:var(--body); }
+</style>
+</head>
+<body class="noc">
+<div class="wash" aria-hidden="true"><i></i><i></i></div>
+
+<header>
+  <div class="wrap bar">
+    <a class="brand" href="https://arling.sk/">
+      <svg viewBox="0 0 488 215" width="38" height="15" aria-hidden="true" focusable="false"><path fill="#f4f4f7" fill-rule="evenodd" d="M0.00,213.00L74.00,214.00L181.00,85.00L285.00,214.00L360.00,214.00L206.00,21.00L185.00,4.00L164.00,10.00Z M221.00,0.00L263.00,50.00L395.00,50.00L409.00,55.00L419.00,76.00L401.00,96.00L313.00,98.00L411.00,214.00L487.00,214.00L422.00,139.00L457.00,123.00L482.00,88.00L482.00,48.00L463.00,19.00L417.00,0.00Z"/><path fill="#f2643c" d="M269.00,66.00L269.00,67.00L268.00,68.00L268.00,70.00L267.00,71.00L267.00,76.00L268.00,77.00L268.00,79.00L270.00,81.00L270.00,82.00L271.00,82.00L273.00,84.00L274.00,84.00L277.00,86.00L279.00,86.00L280.00,87.00L287.00,87.00L288.00,86.00L290.00,86.00L291.00,85.00L294.00,84.00L298.00,80.00L298.00,79.00L299.00,78.00L299.00,75.00L300.00,74.00L300.00,72.00L299.00,71.00L299.00,69.00L298.00,68.00L297.00,65.00L295.00,63.00L294.00,63.00L289.00,60.00L278.00,60.00L277.00,61.00L276.00,61.00L275.00,62.00L272.00,63.00Z"/></svg>
+      <b>ARLing</b>
+    </a>
+    <nav aria-label="Site"><a href="https://arling.sk/en/#tools">Tools</a><a href="https://arling.sk/games/">Games</a><a href="https://arling.sk/notes/">Notes</a><a href="https://arling.sk/how-we-work/">How we work</a><a href="mailto:andrej@arling.sk">Contact</a></nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <article>
+      <h1>CSV invoice batches: check the preview before downloading XML</h1>
+      <p class="byline">ARLing s. r. o. · 12 September 2026</p>
+
+      <div class="zhrn">
+        <p>The ARLing batch generator turns CSV item rows into UBL XML. A batch can contain up to 100 invoices and 500 item rows in total. Preview and supported checks are free before purchase, so you can inspect the result before deciding whether to download the files.</p>
+      </div>
+
+      <h2>Keep the invoice number consistent</h2>
+      <p>Use the CSV column <code>invoice_number</code> to group items. Rows with the same value belong to the same invoice. Several item rows therefore do not necessarily mean several invoices; the limits apply to both invoice count and the total number of item rows.</p>
+
+      <h2>Review before downloading</h2>
+      <p>Run the batch check and inspect the invoice previews before continuing. Use the supported checks to review the input and resulting XML, rather than treating a generated file as proof that every requirement has been met. Downloading the prepared XML files together as a ZIP requires valid 30-day access.</p>
+
+      <h2>Where the CSV is processed</h2>
+      <p>The CSV content and generated XML are processed in your browser and are not sent to a server. This statement concerns the document content, not payment processing.</p>
+
+      <h2>Try the batch preview</h2>
+      <p>Open the <a href="https://arling.sk/efaktura/en/csv-to-invoice/">CSV invoice batch page</a> to inspect the supported input format, then use the <a href="https://arling.sk/efaktura/en/">e-invoice tool</a> to preview and check a batch before downloading it.</p>
+
+      <div class="zdroje">
+        <p><b>Sources.</b> The facts in this note are numbered after our internal fact list and were checked on the publication date. If a source has changed since, write to andrej@arling.sk and we will correct this page.</p>
+        <ul>
+          <li>F118: ARLing CSV to invoice (<a href="https://arling.sk/efaktura/en/csv-to-invoice/" rel="noopener" target="_blank">https://arling.sk/efaktura/en/csv-to-invoice/</a>), overené 12. 9. 2026</li>
+        </ul>
+      </div>
+    </article>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <div><b>ARLing s. r. o.</b><br>Ivanská cesta 32E<br>821 04 Bratislava, Slovakia</div>
+    <div>Company ID 56583486<br>VAT ID SK2122352100<br><a href="mailto:andrej@arling.sk">andrej@arling.sk</a></div>
+    <div><a href="https://arling.sk/privacy/">privacy</a> · <a href="https://arling.sk/podmienky/">terms</a> · <a href="https://arling.sk/gdpr/">GDPR</a> · <a href="https://arling.sk/impressum/">Impressum</a> · <a href="https://arling.sk/llms.txt">llms.txt</a> · <a href="https://arling.sk/sitemap-index.xml">sitemap</a><br>Tools are provided as is, without warranty. Anonymous visit counts via self-hosted Umami.</div>
+  </div>
+</footer>
+
+<script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="338f035d-41c5-411e-8391-9a41db6accfd"></script>
+</body>
+</html>
