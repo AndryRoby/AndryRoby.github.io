@@ -86,7 +86,8 @@ function postavFormular() {
   if (ulozene.pocet) $('pocet').value = Math.min(MAX_DAVKA, Math.max(1, Number(ulozene.pocet) || 1));
   druh.addEventListener('change', () => { prekresliUroven(); prekresliVelkost(); ulozVolby(); });
   $('uroven').addEventListener('change', () => { prekresliVelkost(); ulozVolby(); });
-  for (const id of ['velkost', 'pocet', 'semeno']) $(id).addEventListener('change', ulozVolby);
+  $('velkost').addEventListener('change', () => { prekresliVelkost($('velkost').value); ulozVolby(); });
+  for (const id of ['pocet', 'semeno']) $(id).addEventListener('change', ulozVolby);
 }
 
 function prekresliUroven(chcene) {
@@ -111,14 +112,23 @@ function prekresliVelkost(chcene) {
       ? 'The difficulty sets the shape: Easy is five dormice and three categories, the rest are four and four.'
       : 'This kind has one size.';
     $('velkost-pevna').hidden = false;
+    $('velkost-poznamka').hidden = true;
     return;
   }
   riadok.hidden = false;
   $('velkost-pevna').hidden = true;
   const stary = chcene != null ? String(chcene) : v.value;
-  const zakl = PODLA_KLUCA.get(kluc).urovne[$('uroven').value].n;
-  v.innerHTML = zoznam.map((n) => '<option value="' + n + '">' + n + ' x ' + n + (n === zakl ? ' (standard)' : '') + '</option>').join('');
+  const uroven = $('uroven').value;
+  const zakl = PODLA_KLUCA.get(kluc).urovne[uroven].n;
+  /* The option text is only the size. Which one the difficulty was tuned for
+     goes on a line of its own underneath: "9 x 9 (standard)" does not fit a
+     select on a 390 px screen and came out as "9 x 9 (standa". */
+  v.innerHTML = zoznam.map((n) => '<option value="' + n + '">' + n + ' x ' + n + '</option>').join('');
   v.value = zoznam.indexOf(Number(stary)) >= 0 ? String(stary) : String(zakl);
+  const pozn = $('velkost-poznamka');
+  pozn.textContent = (UROVNE_NAZVY[uroven] || uroven) + ' is tuned for ' + zakl + ' x ' + zakl + '.'
+    + (Number(v.value) === zakl ? '' : ' Another size still gets the same proof, but the difficulty is a step off.');
+  pozn.hidden = false;
 }
 
 function prekresliPravidlo() {
@@ -260,21 +270,35 @@ async function generuj() {
   const naChybu = (i, sprava) => { chyb++; pridajChybu(i, sprava); ukaz(); };
   const sprava = { typ: 'davka', id: stav.davka, kluc, uroven, velkost, ulohy };
 
+  /* The worker is tried first and the main thread is the fallback. A browser
+     that cannot do module workers usually does not throw in the constructor:
+     it builds a Worker that then fails quietly, so waiting for a message that
+     never comes would leave the page saying "Generating 1 of 4" for ever.
+     Hence the deadline. The fallback only runs when the worker produced
+     nothing at all, so nothing is ever generated twice. */
   const w = spustiRobotnika();
+  let cezRobotnika = false;
   if (w) {
-    await new Promise((hotovo) => {
+    cezRobotnika = await new Promise((hotovo) => {
+      let ozval = false;
+      const uprac = () => { w.removeEventListener('message', posluchac); w.removeEventListener('error', zlyhal); clearTimeout(cas); };
       const posluchac = (e) => {
         const m = e.data || {};
         if (m.id !== stav.davka) return;
+        ozval = true;
         if (m.typ === 'hlavolam') naHlavolam(m.hlavolam);
         else if (m.typ === 'chyba' && m.i >= 0) naChybu(m.i, m.sprava);
         else if (m.typ === 'chyba') { chyb++; $('postup').textContent = m.sprava; }
-        else if (m.typ === 'koniec') { w.removeEventListener('message', posluchac); hotovo(); }
+        else if (m.typ === 'koniec') { uprac(); hotovo(true); }
       };
+      const zlyhal = () => { if (!ozval) { uprac(); robotnik = false; hotovo(false); } };
+      const cas = setTimeout(zlyhal, 8000);
       w.addEventListener('message', posluchac);
+      w.addEventListener('error', zlyhal);
       w.postMessage(sprava);
     });
-  } else {
+  }
+  if (!cezRobotnika && hotovych + chyb === 0) {
     await vyrobBezRobotnika(sprava, naHlavolam, naChybu);
   }
 
@@ -510,6 +534,10 @@ function postavTlac(hlavolamy) {
     + '</div></section>');
   t.innerHTML = hlava + strany.join('');
   t.hidden = false;
+  /* Only now may the print stylesheet hide the page. Before the first Print
+     sheet button is pressed, Ctrl+P has to print the page itself rather than
+     an empty container. */
+  document.body.classList.add('tlac-list');
   return t;
 }
 
@@ -518,6 +546,12 @@ function tlac(hlavolamy) {
   postavTlac(hlavolamy);
   track('studio_print', { druh: hlavolamy[0].druh, pocet: hlavolamy.length });
   window.print();
+}
+
+/* The sheet is only the truth for the print that was asked for. Once that
+   print is over, Ctrl+P goes back to printing the page. */
+if (typeof window !== 'undefined') {
+  window.addEventListener('afterprint', () => { document.body.classList.remove('tlac-list'); });
 }
 
 /* ── Licence on screen ─────────────────────────────────────────────────── */

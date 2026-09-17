@@ -1,0 +1,119 @@
+/* The embeddable puzzle. Its own small stylesheet on purpose: the widget runs
+   inside somebody else's page in an iframe, so it has to look right on a white
+   page and on a black one, and it must not drag the whole hub stylesheet and
+   the web fonts across the wire for one grid.
+
+   Light and dark come from prefers-color-scheme alone. There is no theme
+   switch and nothing is remembered: the widget stores nothing anywhere. */
+
+:root {
+  color-scheme: light dark;
+  --paper: #faf9f5;
+  --ink: #141413;
+  --body: #3d3d3a;
+  --muted: #5e5d59;
+  --line: #d8d6cc;
+  --accent: #b23a1d;
+  --ok: #4a6b3f;
+  --fill: #141413;
+  --hover: rgba(20, 20, 19, .06);
+  --sel: rgba(178, 58, 29, .16);
+  --ui: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #14140f;
+    --ink: #f4f4f0;
+    --body: #d8d7d0;
+    --muted: #a09e95;
+    --line: #47463e;
+    --accent: #e0714b;
+    --ok: #8fbc7d;
+    --fill: #e8e7e1;
+    --hover: rgba(244, 244, 240, .08);
+    --sel: rgba(224, 113, 75, .22);
+  }
+}
+
+* { box-sizing: border-box }
+html, body { margin: 0; padding: 0 }
+body {
+  background: var(--paper);
+  color: var(--body);
+  font: 15px/1.4 var(--ui);
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  padding: 12px;
+  gap: 10px;
+}
+.hlava { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap }
+.hlava h1 { margin: 0; font-size: 15px; font-weight: 600; color: var(--ink); letter-spacing: .01em }
+.hlava .kod { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums }
+
+#doska { flex: 1 1 auto; display: flex; align-items: center; justify-content: center; min-height: 0 }
+#doska svg { width: 100%; height: auto; max-height: min(74vh, 620px); display: block; touch-action: manipulation }
+
+/* ── the board ── */
+.mr { stroke: var(--line); stroke-width: 4; stroke-linecap: square }
+.mr2 { stroke: var(--ink); stroke-width: 11; stroke-linecap: square }
+.ram { fill: none; stroke: var(--ink); stroke-width: 11 }
+.hit { fill: transparent; cursor: pointer }
+.hit:hover { fill: var(--hover) }
+.hit.sel { fill: var(--sel) }
+.hitline { stroke: transparent; stroke-width: 34; cursor: pointer; stroke-linecap: round }
+.hitline:hover { stroke: var(--sel) }
+.val { fill: var(--accent); text-anchor: middle; dominant-baseline: central; font-family: var(--ui) }
+.giv { fill: var(--ink); text-anchor: middle; dominant-baseline: central; font-family: var(--ui); font-weight: 600 }
+.sucet { fill: var(--ink); text-anchor: middle; dominant-baseline: central; font-family: var(--ui); font-weight: 600 }
+.ind { fill: var(--body); text-anchor: middle; dominant-baseline: central; font-family: var(--ui) }
+.chyba { fill: #c8341c; stroke: #c8341c }
+text.chyba { stroke: none }
+
+.ohrada { fill: none; stroke: var(--muted); stroke-width: 5; stroke-dasharray: 13 11 }
+.zahon { fill: none; stroke: var(--ink); stroke-width: 11 }
+.kmen { fill: var(--line) }
+.plne { fill: var(--fill) }
+.krizik { stroke: var(--muted); stroke-width: 9; stroke-linecap: round; fill: none }
+.voda { fill: var(--fill); opacity: .82 }
+.bodka { fill: var(--muted) }
+.jezko { fill: var(--fill) }
+.tah { stroke: var(--accent); stroke-width: 14; stroke-linecap: round }
+.bod { fill: var(--ink) }
+.perla { stroke: var(--ink); stroke-width: 8 }
+.perla.biela { fill: var(--paper) }
+.perla.cierna { fill: var(--ink) }
+.ostrov { fill: var(--paper); stroke: var(--ink); stroke-width: 8 }
+.lavka { stroke: var(--accent); stroke-width: 10; stroke-linecap: butt }
+.hniezdo { fill: none; stroke: var(--ink); stroke-width: 7 }
+.cesta { opacity: .55 }
+.cesta.c0 { fill: #b23a1d } .cesta.c1 { fill: #2f6b8f } .cesta.c2 { fill: #4a6b3f } .cesta.c3 { fill: #8a6d1f }
+.cesta.c4 { fill: #7a3f7a } .cesta.c5 { fill: #2f7a6b } .cesta.c6 { fill: #9a4a2f } .cesta.c7 { fill: #47526e }
+
+/* ── controls ── */
+.ovladanie { display: flex; flex-wrap: wrap; gap: 8px; align-items: center }
+button {
+  font: inherit; font-size: 14px; padding: 7px 13px; border-radius: 8px;
+  border: 1px solid var(--line); background: transparent; color: var(--ink); cursor: pointer;
+}
+button:hover { background: var(--hover) }
+button[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink) }
+button:disabled { opacity: .45; cursor: default }
+button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
+#pad { display: flex; flex-wrap: wrap; gap: 6px }
+#pad button { min-width: 38px; padding: 7px 9px; font-variant-numeric: tabular-nums }
+#pad button.zmaz { min-width: auto }
+
+.stav { margin: 0; font-size: 13px; min-height: 1.2em; color: var(--muted) }
+.stav.ok { color: var(--ok) }
+.stav.zle { color: var(--accent) }
+
+.pata { font-size: 12px; color: var(--muted); display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap }
+.pata a { color: var(--accent); text-decoration: none }
+.pata a:hover { text-decoration: underline }
+
+@media (max-width: 430px) {
+  body { padding: 9px; gap: 8px }
+  .hlava h1 { font-size: 14px }
+  #pad button { min-width: 34px; padding: 6px 8px }
+}

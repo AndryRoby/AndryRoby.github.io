@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="/style/vzhlad.js?v=93c2659f"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-8J6TVHREEEjY/Saj0nEkiiLKWBBJ44mz9fWSqjwndTw=' 'sha256-x75nSx/kZKoRTVpkKI7n3IfBdipsUCyktH3Vqq3dzX8='; connect-src 'self'; img-src 'self' data:; style-src 'self'; frame-src 'self'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0a0908">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<title>Free puzzle API: 6000 logic puzzles as static JSON | ARLing</title>
+<meta name="description" content="Ten kinds of logic puzzle, 200 per difficulty, as plain JSON and SVG files. Every puzzle checked for exactly one solution. No key, no sign-up, no rate limit. Free for personal use with a credit line; commercial use comes with Bulletin Pro.">
+<link rel="canonical" href="https://arling.sk/api/">
+<meta property="og:title" content="A free puzzle API made of static files">
+<meta property="og:description" content="6000 logic puzzles as JSON and SVG, every one checked for exactly one solution. No key, no rate limit, and an embeddable widget.">
+<meta property="og:url" content="https://arling.sk/api/">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://arling.sk/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="manifest" href="/manifest.json">
+<link rel="preload" href="/fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/style/paper.css?v=89016e6c">
+<link rel="stylesheet" href="./api.css">
+<script src="/style/prepinac.js?v=2988c181" defer></script>
+<script src="./docs.js" defer></script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebAPI","name":"ARLing static puzzle API","url":"https://arling.sk/api/","documentation":"https://arling.sk/api/","description":"Ten kinds of logic puzzle, 200 per kind and difficulty, served as static JSON and SVG files. Every puzzle is checked by our own solver for exactly one solution. No API key and no rate limit.","termsOfService":"https://arling.sk/podmienky/","provider":{"@type":"Organization","name":"ARLing s. r. o.","url":"https://arling.sk/"},"isAccessibleForFree":true,"license":"https://arling.sk/api/#licence","potentialAction":{"@type":"ConsumeAction","target":"https://arling.sk/api/puzzles/v1/{kind}/{difficulty}/{index}.json"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Do I need an API key?","acceptedAnswer":{"@type":"Answer","text":"No. Every endpoint is a static file on our website. There is no key, no account and no rate limit."}},{"@type":"Question","name":"May I use the puzzles in something I sell?","acceptedAnswer":{"@type":"Answer","text":"Not under the free licence. The free licence covers personal and non-commercial use with the credit line Puzzle by ARLing, arling.sk. Commercial use comes with a Puzzle Post Bulletin Pro subscription."}},{"@type":"Question","name":"What does one solution mean here?","acceptedAnswer":{"@type":"Answer","text":"Our own solver found exactly one answer for the puzzle, and that answer matches every clue. It is a program check against our archive, not a claim of worldwide novelty."}},{"@type":"Question","name":"Does the embedded puzzle set cookies?","acceptedAnswer":{"@type":"Answer","text":"No. The widget stores nothing in the browser, sets no cookies and sends no analytics. It only fetches its own static files from arling.sk."}}]}</script>
+</head>
+<body class="noc">
+<div class="wash" aria-hidden="true"><i></i><i></i></div>
+<a class="skip" href="#main">Skip to content</a>
+<header>
+  <div class="wrap bar">
+    <a class="brand" href="https://arling.sk/">
+      <svg viewBox="0 0 488 215" width="38" height="15" aria-hidden="true" focusable="false"><path fill="#f4f4f7" fill-rule="evenodd" d="M0.00,213.00L74.00,214.00L181.00,85.00L285.00,214.00L360.00,214.00L206.00,21.00L185.00,4.00L164.00,10.00Z M221.00,0.00L263.00,50.00L395.00,50.00L409.00,55.00L419.00,76.00L401.00,96.00L313.00,98.00L411.00,214.00L487.00,214.00L422.00,139.00L457.00,123.00L482.00,88.00L482.00,48.00L463.00,19.00L417.00,0.00Z"/><path fill="#f2643c" d="M269.00,66.00L269.00,67.00L268.00,68.00L268.00,70.00L267.00,71.00L267.00,76.00L268.00,77.00L268.00,79.00L270.00,81.00L270.00,82.00L271.00,82.00L273.00,84.00L274.00,84.00L277.00,86.00L279.00,86.00L280.00,87.00L287.00,87.00L288.00,86.00L290.00,86.00L291.00,85.00L294.00,84.00L298.00,80.00L298.00,79.00L299.00,78.00L299.00,75.00L300.00,74.00L300.00,72.00L299.00,71.00L299.00,69.00L298.00,68.00L297.00,65.00L295.00,63.00L294.00,63.00L289.00,60.00L278.00,60.00L277.00,61.00L276.00,61.00L275.00,62.00L272.00,63.00Z"/></svg>
+      <b>ARLing</b><span>Puzzle API</span>
+    </a>
+    <nav id="hlavne-menu" aria-label="Site"><a href="https://arling.sk/shop/">Shop</a><a href="https://arling.sk/en/#tools">Tools</a><a href="https://arling.sk/games/">Games</a><a href="https://arling.sk/notes/">Notes</a><a href="https://arling.sk/how-we-work/">How we work</a><a href="mailto:andrej@arling.sk">Contact</a></nav>
+  </div>
+</header>
+<main id="main">
+
+<section class="intro"><div class="wrap api-hero">
+<div>
+<p class="kicker">Puzzle API / version 1</p>
+<h1>Six thousand logic puzzles, as files.</h1>
+<p class="lead">Ten kinds, three difficulties, two hundred puzzles each. Every one of them generated by the engine that runs our daily games, and checked by our own solver for exactly one solution before it was written to disk.</p>
+<p>There is no server behind this. Every endpoint is a file, and fetching one is the same as fetching an image. That is also why there is no key, no sign-up and no rate limit to talk about.</p>
+<div class="cta">
+<a class="btn btn-solid" href="./puzzles/v1/index.json">Open the index</a>
+<a class="btn btn-line" href="#embed">Embed a puzzle</a>
+</div>
+<ul class="fakty">
+<li><span>Kinds</span><b>10</b></li>
+<li><span>Puzzles per kind and difficulty</span><b>200</b></li>
+<li><span>Files in the tree</span><b>JSON + puzzle SVG + solution SVG</b></li>
+<li><span>Checked for exactly one solution</span><b>every one</b></li>
+<li><span>Cost to you</span><b>nothing</b></li>
+</ul>
+</div>
+<div class="ramcek">
+<iframe id="nahlad" src="/embed/puzzle/?kind=otters&amp;difficulty=easy&amp;id=otters-easy-001" title="An ARLing Slitherlink puzzle, live" loading="lazy"></iframe>
+<p class="popisok">This is not a picture. It is the embeddable widget, running the same rules as the daily game.</p>
+</div>
+</div></section>
+
+<section id="licence" class="deep"><div class="wrap uzke">
+<p class="kicker">01 / The licence</p>
+<h2>Free to use, with one line of credit.</h2>
+<p>Use any puzzle from this API on your own site, in your classroom, in your club newsletter or in your app, as long as it is not something you sell and as long as the credit line is next to the puzzle:</p>
+<pre class="kod">Puzzle by ARLing, arling.sk</pre>
+<p>A link on those words is welcome and not required. The embeddable widget carries the credit line itself, so if you use the widget there is nothing else to do.</p>
+<p><strong>Selling is the line.</strong> A book, a paid app, a paid newsletter, a printed magazine, an ad-funded puzzle site: those need the commercial licence, which comes with a <a href="/puzzle-post/bulletin/">Puzzle Post Bulletin Pro</a> subscription. Every JSON file repeats both licences in its own <code>licence</code> field, so the terms travel with the file.</p>
+<p class="small">What we do not allow under either licence: passing the puzzles off as your own, or republishing the tree itself as a competing download.</p>
+</div></section>
+
+<section><div class="wrap uzke">
+<p class="kicker">02 / The endpoints</p>
+<h2>Four addresses, and that is all of it.</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>Address</th><th>What is in it</th></tr></thead>
+<tbody>
+<tr><td><code>/api/puzzles/v1/index.json</code></td><td>The kinds, the difficulties, the counts, the full rules of each kind and the schema notes.</td></tr>
+<tr><td><code>/api/puzzles/v1/&lt;kind&gt;/&lt;difficulty&gt;/&lt;index&gt;.json</code></td><td>One puzzle. Index runs from <code>001</code> to <code>200</code>.</td></tr>
+<tr><td><code>/api/puzzles/v1/&lt;kind&gt;/&lt;difficulty&gt;/index.json</code></td><td>The list of ids in that difficulty, with a sha256 for every file.</td></tr>
+<tr><td><code>/api/puzzles/v1/today/&lt;kind&gt;.json</code></td><td>The puzzle the daily game shows today. Rewritten every night, with an extra <code>date</code> field.</td></tr>
+</tbody>
+</table></div>
+<p>Next to every <code>&lt;index&gt;.json</code> there are two drawings: <code>&lt;index&gt;.svg</code> is the puzzle and <code>&lt;index&gt;-solution.svg</code> is the answer. They have no width and no height, only a viewBox, so they take the size you give them and print sharply at any of them.</p>
+<p>The ten kinds are <code>badgers</code> (Killer Sudoku), <code>hares</code> (Anti-knight Sudoku), <code>squirrels</code> (Kakuro), <code>magpies</code> (Nonograms), <code>hedgehogs</code> (Star Battle), <code>otters</code> (Slitherlink), <code>cranes</code> (Hashi), <code>swans</code> (Masyu), <code>voles</code> (Nurikabe) and <code>herons</code> (Numberlink). The three difficulties are <code>easy</code>, <code>medium</code> and <code>hard</code>.</p>
+</div></section>
+
+<section class="deep"><div class="wrap uzke">
+<p class="kicker">03 / One real file</p>
+<h2>This is the whole of otters-easy-001.</h2>
+<p>Nothing is cut out of the example below except line breaks inside the arrays. Open <a href="./puzzles/v1/otters/easy/001.json">the file itself</a> and compare.</p>
+<pre class="kod">{
+  "v": 1,
+  "kind": "otters",
+  "difficulty": "easy",
+  "id": "otters-easy-001",
+  "seed": "api-v1:otters:easy:1:5",
+  "size": 5,
+  "rules": "Slitherlink. Full rules: https://arling.sk/games/otters/guide/",
+  "givens": [0,null,3,null,null,null,null,0,null,3,null,null,null,null,null,0,0,null,null,1,null,null,null,1,0],
+  "solution": {
+    "h": [0,0,1,0,0,0,1,0,1,1,0,1,0,0,1,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0],
+    "v": [0,0,1,1,0,0,0,1,0,0,0,1,0,0,1,0,1,0,0,0,0,1,1,0,0,0,0,0,0,0]
+  },
+  "verified": { "uniqueSolution": true, "solverMs": 2 },
+  "licence": {
+    "free": "personal and non-commercial use with the credit line Puzzle by ARLing, arling.sk",
+    "commercial": "Puzzle Post Bulletin Pro subscription",
+    "url": "https://arling.sk/puzzle-post/bulletin/"
+  },
+  "svg": { "puzzle": "001.svg", "solution": "001-solution.svg" }
+}</pre>
+<dl class="polia">
+<div><dt>v</dt><dd>The schema version. It is 1 and it will stay 1: a change that would break a reader gets a new folder, <code>v2</code>, and <code>v1</code> stays where it is.</dd></div>
+<div><dt>seed</dt><dd>The exact string the puzzle was generated from. It is there so that the file can be reproduced, not so that you have to use it.</dd></div>
+<div><dt>size</dt><dd><code>n</code>, the side of the grid. Sizes differ by kind and by difficulty; the index file lists which sizes occur where.</dd></div>
+<div><dt>givens</dt><dd>The clues as one flat array in reading order, for the kinds that have such a field: <code>hares</code>, <code>squirrels</code>, <code>hedgehogs</code>, <code>otters</code>, <code>swans</code>, <code>voles</code> and <code>herons</code>.</dd></div>
+<div><dt>grid</dt><dd>The clues that are not a flat array: <code>cages</code> for badgers, <code>clues</code> with row and column runs for magpies, <code>islands</code> for cranes, <code>stars</code> for hedgehogs, <code>rules</code> for hares, <code>pairs</code> for herons.</dd></div>
+<div><dt>solution</dt><dd><code>{ cells }</code> for the grid kinds, <code>{ h, v }</code> for the two loop kinds (otters and swans), <code>{ bridges }</code> for cranes.</dd></div>
+<div><dt>verified</dt><dd><code>uniqueSolution</code> is true in every file, because a puzzle that failed the check was never written. <code>solverMs</code> is how long that check took on the machine that built the file.</dd></div>
+<div><dt>svg</dt><dd>The names of the two drawings that sit next to the JSON.</dd></div>
+</dl>
+</div></section>
+
+<section><div class="wrap uzke">
+<p class="kicker">04 / Fetching one</p>
+<h2>curl, fetch, and a picture without any code at all.</h2>
+<pre class="kod">curl -s https://arling.sk/api/puzzles/v1/otters/easy/001.json | jq .size
+curl -s https://arling.sk/api/puzzles/v1/today/badgers.json | jq .date
+curl -sO https://arling.sk/api/puzzles/v1/otters/easy/001.svg</pre>
+<pre class="kod">const r = await fetch('https://arling.sk/api/puzzles/v1/badgers/medium/017.json');
+const puzzle = await r.json();
+
+console.log(puzzle.size);              // 9
+console.log(puzzle.grid.cages.length); // how many dotted cages
+console.log(puzzle.solution.cells);    // 81 digits, reading order
+
+// the drawing lives next to the JSON
+const svg = 'https://arling.sk/api/puzzles/v1/badgers/medium/' + puzzle.svg.puzzle;</pre>
+<p>If all you want is the picture, you do not need any code:</p>
+<pre class="kod">&lt;img src="https://arling.sk/api/puzzles/v1/swans/hard/042.svg" alt="A Masyu puzzle"&gt;</pre>
+<ol class="kroky">
+<li>Read <code>/api/puzzles/v1/index.json</code> once to learn the kinds, the sizes and the counts.</li>
+<li>Pick a kind, a difficulty and a number from 1 to 200, padded to three digits.</li>
+<li>Fetch the JSON for the answer and the clues, or the SVG if you only want to print it.</li>
+<li>Put the credit line next to the puzzle.</li>
+</ol>
+</div></section>
+
+<section id="embed" class="deep"><div class="wrap siroke">
+<p class="kicker">05 / The embeddable puzzle</p>
+<h2>Build the snippet, watch it run.</h2>
+<p class="lead">The widget draws the board, checks the marks and shows the answer. It sets no cookies, stores nothing in the browser and sends no analytics.</p>
+<div class="stavebnica">
+<div class="volby">
+<div>
+<label for="v-kind">Kind</label>
+<select id="v-kind">
+<option value="badgers">Badgers, Killer Sudoku</option>
+<option value="hares">Hares, Anti-knight Sudoku</option>
+<option value="squirrels">Squirrels, Kakuro</option>
+<option value="magpies">Magpies, Nonograms</option>
+<option value="hedgehogs">Hedgehogs, Star Battle</option>
+<option value="otters" selected>Otters, Slitherlink</option>
+<option value="cranes">Cranes, Hashi</option>
+<option value="swans">Swans, Masyu</option>
+<option value="voles">Voles, Nurikabe</option>
+<option value="herons">Herons, Numberlink</option>
+</select>
+</div>
+<div>
+<label for="v-difficulty">Difficulty</label>
+<select id="v-difficulty">
+<option value="easy" selected>Easy</option>
+<option value="medium">Medium</option>
+<option value="hard">Hard</option>
+</select>
+</div>
+<div>
+<label for="v-index">Number, 1 to 200</label>
+<input id="v-index" type="number" min="1" max="200" step="1" value="1" inputmode="numeric">
+</div>
+<p class="small">The JSON behind this puzzle: <a id="odkaz-json" href="./puzzles/v1/otters/easy/001.json">/api/puzzles/v1/otters/easy/001.json</a></p>
+</div>
+<div>
+<p class="num">An iframe</p>
+<pre class="kod" id="kod-iframe"></pre>
+<div class="kopiruj"><button type="button" data-kopiruj="kod-iframe">Copy</button><span></span></div>
+<p class="num">Or one line of script, which puts the same iframe in its own place</p>
+<pre class="kod" id="kod-script"></pre>
+<div class="kopiruj"><button type="button" data-kopiruj="kod-script">Copy</button><span></span></div>
+<p class="small">Both take the same parameters: <code>kind</code>, <code>difficulty</code> and <code>id</code>, or <code>date=today</code> for the daily puzzle, or <code>seed=</code> for one generated in the visitor's own browser.</p>
+</div>
+</div>
+<div class="rule"></div>
+<h2>What the widget tells your page.</h2>
+<p>When the puzzle appears, and again when somebody finishes it, the iframe posts a message to the page around it. Nothing else ever leaves the frame.</p>
+<pre class="kod">window.addEventListener('message', (e) =&gt; {
+  if (!e.data || e.data.type !== 'arling-puzzle') return;
+  // e.data.event is 'loaded' or 'solved'
+  console.log(e.data.event, e.data.id);
+});</pre>
+<p class="small">Last message from the frame above: <code id="sprava">nothing yet</code></p>
+</div></section>
+
+<section><div class="wrap uzke">
+<p class="kicker">06 / Fair use</p>
+<h2>No limits to quote, and one thing to be sensible about.</h2>
+<p>These are static files behind a CDN, so there is no quota to run out of and no header that counts your requests. We do not log who you are, because there is nothing here that could.</p>
+<p>The one sensible thing: if you need many puzzles, fetch the index once and cache what you take. Files never change once published, so a cache never goes stale. Hot-looping the same file a thousand times a second helps nobody, and it will not get you a different puzzle.</p>
+<p><strong>What is not here yet, and how it will arrive.</strong> Keyed access, per-key counts and a commercial tier are the next step, and they will come as a separate host so that these files stay exactly as they are. Nothing on this page will start asking for a key later; a key will unlock more, not gate this.</p>
+<p class="small">The API is built by <code>ops/puzzle-api/postav.mjs</code> in our repository and checked by the same script with <code>--kontrola</code>, which opens every file, compares it with the sha256 in the index and runs five puzzles per kind through the solver again.</p>
+</div></section>
+
+<section class="deep"><div class="wrap uzke">
+<p class="kicker">07 / Questions</p>
+<h2>What people ask first.</h2>
+<details><summary>Do I need an API key?</summary><p>No. Every endpoint is a static file on this website. There is no key, no account and no rate limit. Keyed access is planned for the commercial tier, and it will not change these addresses.</p></details>
+<details><summary>What does "exactly one solution" mean here?</summary><p>Our own solver, the one that runs the daily game, found exactly one answer for the puzzle, and that answer matches every clue. The build refuses to write a file that fails either half of that check. It is a program check, not a claim that the puzzle has never appeared anywhere in the world.</p></details>
+<details><summary>Could I get the same puzzle twice, or the same one as in a book?</summary><p>No puzzle in this API is the same as a puzzle in our daily archive, in one of our books, in a Puzzle Planner pack or in a Puzzle Post issue, and no two records here are the same puzzle. The check is on the puzzle, not on the answer: two different sets of clues can lead to the same finished grid, and for a solver those are two different puzzles.</p></details>
+<details><summary>May I use the puzzles in something I sell?</summary><p>Not under the free licence. Commercial use comes with a <a href="/puzzle-post/bulletin/">Puzzle Post Bulletin Pro</a> subscription, which also gets you fresh sets every month rather than a fixed two hundred.</p></details>
+<details><summary>Does the embedded puzzle set cookies or count visitors?</summary><p>No. The widget stores nothing in the browser, sets no cookies and loads no analytics. It fetches its own static files from arling.sk and posts two messages to your page. That is the whole of its behaviour.</p></details>
+<details><summary>Can I generate a puzzle instead of picking one?</summary><p>Yes, in the browser. <code>/embed/puzzle/?kind=voles&amp;difficulty=hard&amp;seed=anything</code> runs our generator on the visitor's own machine and gives everyone with that seed the same puzzle. It is not pre-checked the way the files are, so the files are the better source when you need the guarantee.</p></details>
+<details><summary>Will the files ever change?</summary><p>A published file keeps its content. The build is deterministic and idempotent: running it again writes the same bytes, and the index carries a sha256 for every file so you can prove it. Only <code>today/</code> changes, once a night.</p></details>
+<p class="small">Something missing or wrong? Write to <a href="mailto:andrej@arling.sk">andrej@arling.sk</a>.</p>
+</div></section>
+
+</main>
+<footer>
+  <div class="wrap foot">
+    <div><b>ARLing s. r. o.</b><br>Ivanská cesta 32E<br>821 04 Bratislava, Slovakia</div>
+    <div>Company ID 56583486<br>VAT ID SK2122352100<br><a href="mailto:andrej@arling.sk">andrej@arling.sk</a></div>
+    <div><a href="https://arling.sk/shop/">shop</a> · <a href="https://arling.sk/privacy/">privacy</a> · <a href="https://arling.sk/podmienky/">terms</a> · <a href="https://arling.sk/gdpr/">GDPR</a> · <a href="https://arling.sk/impressum/">Impressum</a> · <a href="https://arling.sk/llms.txt">llms.txt</a> · <a href="https://arling.sk/sitemap-index.xml">sitemap</a><br>Tools are provided as is, without warranty. Anonymous visit counts via self-hosted Umami.</div>
+  </div>
+</footer>
+</body></html>
