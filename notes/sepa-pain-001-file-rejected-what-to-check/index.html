@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script src="/style/vzhlad.js?v=93c2659f"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0a0908">
+<link rel="preconnect" href="https://homelab.tailbf8f27.ts.net" crossorigin>
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../../favicon.ico" sizes="48x48">
+<link rel="apple-touch-icon" href="../../icon-180.png">
+<title>SEPA File Rejected? What to Check in a Pain.001 File | ARLing</title>
+<meta name="description" content="A rejected bulk payment file rarely comes with a clear reason, so finding the one broken element inside a pain.001 XML file by hand can take longer than">
+<meta property="og:type" content="article">
+<meta property="og:title" content="SEPA File Rejected? What to Check in a Pain.001 File">
+<meta property="og:description" content="A rejected bulk payment file rarely comes with a clear reason, so finding the one broken element inside a pain.001 XML file by hand can take longer than">
+<meta property="og:url" content="https://arling.sk/notes/sepa-pain-001-file-rejected-what-to-check/">
+<meta property="og:locale" content="en_US">
+<link rel="canonical" href="https://arling.sk/notes/sepa-pain-001-file-rejected-what-to-check/">
+<link rel="preload" href="/fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/style/paper.css?v=89016e6c">
+<script src="/style/prepinac.js?v=2988c181" defer></script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "SEPA File Rejected? What to Check in a Pain.001 File",
+  "description": "A rejected bulk payment file rarely comes with a clear reason, so finding the one broken element inside a pain.001 XML file by hand can take longer than",
+  "datePublished": "2026-09-17",
+  "dateModified": "2026-09-17",
+  "inLanguage": "en",
+  "author": {
+    "@type": "Organization",
+    "name": "ARLing s. r. o.",
+    "url": "https://arling.sk/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "ARLing s. r. o.",
+    "url": "https://arling.sk/"
+  },
+  "mainEntityOfPage": "https://arling.sk/notes/sepa-pain-001-file-rejected-what-to-check/"
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Does the 15 November 2026 rule affect a file that has no address at all?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No, the rule only reaches files that already carry a postal address. If you are not sure whether yours does, open it as plain text and search for PstlAdr; when that string is missing, there is nothing in the file to change."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Should I use pain.001.001.03 or pain.001.001.09?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Either version can carry the fields the new rule needs, so the more useful question is what your bank accepts on import, and that is each bank's own decision; ask your accounting software vendor which version it exports and from which release, and ask your bank which version it will keep accepting."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can I check my file without installing anything or sending it to anyone?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes, everything happens locally in the browser tab, with no account and no upload needed. The page itself comes in Slovak, German and English; there is no separate Czech version, so a Czech-speaking user works from the Slovak one instead."
+      }
+    }
+  ]
+}
+</script>
+
+<style>
+  article { max-width:72ch; }
+  article h2 { margin:clamp(34px,4vh,52px) 0 12px; }
+  article h3 { margin:26px 0 8px; }
+  article p, article li { font-size:16.5px; line-height:1.7; }
+  article ol, article ul { padding-left:22px; }
+  article li { margin:0 0 8px; }
+  code { font:13.5px/1.4 var(--mono); background:var(--card); border:1px solid var(--line);
+    border-radius:3px; padding:1px 5px; overflow-wrap:anywhere; }
+  pre { background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    padding:16px 18px; overflow-x:auto; font:13px/1.6 var(--mono); color:var(--body); }
+  .byline { font-family:var(--ui); font-size:14px; color:var(--muted); margin:0 0 clamp(26px,3vh,40px); }
+  .zhrn { border-left:3px solid var(--accent); background:var(--card); border-radius:0 var(--radius) var(--radius) 0;
+    padding:18px 22px; margin:0 0 clamp(26px,3vh,40px); }
+  .zhrn p { margin:0; font-size:16px; }
+  .zdroje { font-family:var(--ui); font-size:13.5px; color:var(--muted); line-height:1.7;
+    border-top:1px solid var(--line); padding-top:18px; margin-top:clamp(34px,4vh,52px); }
+  .zdroje a { color:var(--body); }
+</style>
+</head>
+<body class="noc">
+<div class="wash" aria-hidden="true"><i></i><i></i></div>
+
+<header>
+  <div class="wrap bar">
+    <a class="brand" href="https://arling.sk/">
+      <svg viewBox="0 0 488 215" width="38" height="15" aria-hidden="true" focusable="false"><path fill="#f4f4f7" fill-rule="evenodd" d="M0.00,213.00L74.00,214.00L181.00,85.00L285.00,214.00L360.00,214.00L206.00,21.00L185.00,4.00L164.00,10.00Z M221.00,0.00L263.00,50.00L395.00,50.00L409.00,55.00L419.00,76.00L401.00,96.00L313.00,98.00L411.00,214.00L487.00,214.00L422.00,139.00L457.00,123.00L482.00,88.00L482.00,48.00L463.00,19.00L417.00,0.00Z"/><path fill="#f2643c" d="M269.00,66.00L269.00,67.00L268.00,68.00L268.00,70.00L267.00,71.00L267.00,76.00L268.00,77.00L268.00,79.00L270.00,81.00L270.00,82.00L271.00,82.00L273.00,84.00L274.00,84.00L277.00,86.00L279.00,86.00L280.00,87.00L287.00,87.00L288.00,86.00L290.00,86.00L291.00,85.00L294.00,84.00L298.00,80.00L298.00,79.00L299.00,78.00L299.00,75.00L300.00,74.00L300.00,72.00L299.00,71.00L299.00,69.00L298.00,68.00L297.00,65.00L295.00,63.00L294.00,63.00L289.00,60.00L278.00,60.00L277.00,61.00L276.00,61.00L275.00,62.00L272.00,63.00Z"/></svg>
+      <b>ARLing</b>
+    </a>
+    <nav aria-label="Site"><a href="https://arling.sk/en/#tools">Tools</a><a href="https://arling.sk/games/">Games</a><a href="https://arling.sk/notes/">Notes</a><a href="https://arling.sk/how-we-work/">How we work</a><a href="mailto:andrej@arling.sk">Contact</a></nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <article>
+      <h1>SEPA File Rejected? What to Check in a Pain.001 File</h1>
+      <p class="byline">ARLing s. r. o. · 17 September 2026</p>
+
+      <div class="zhrn">
+        <p>A rejected bulk payment file rarely comes with a clear reason, so finding the one broken element inside a pain.001 XML file by hand can take longer than fixing it once you know where to look. Most pain.001 validation errors come from a short, repeatable list: a transaction count or control sum that no longer matches the actual payments, an IBAN that fails its checksum, a BIC that does not exactly match the importing bank, or an execution date the bank will not accept. Since 15 November 2026 the SEPA schemes have added a new item to that list: when a payment carries a postal address, the address must be structured or hybrid, and a plain, unstructured address is no longer accepted. This note goes through what to check first when a bank rejects a bulk payment file, explains exactly what the new structured address rule requires, and shows how to run the whole check in your browser without sending the file to anyone.</p>
+      </div>
+
+      <h2>What usually gets a bulk payment file rejected</h2>
+      <p>Two numbers in the file header cause a large share of rejections: the transaction count has to equal the actual number of payment blocks in the file, and the control sum has to equal the exact total of all instructed amounts, to the cent. A mismatch usually shows up when someone adds or removes a payment without recalculating the header, and it is one of the most common reasons an import gets refused.</p>
+      <p>Both the debtor and creditor IBAN get checked for the right format, the length that country uses, and the checksum built into the IBAN itself; an IBAN written with spaces inside the file fails on that alone. The BIC of the debtor's own bank also has to match exactly the bank the file is imported into, not merely look like a valid BIC in general.</p>
+      <p>An execution date has to be a real calendar date that is not already in the past; Tatra banka and VÚB, for example, also refuse a date set too far ahead. The character set allowed in a SEPA file is limited to plain letters, digits and a short list of symbols; names and payment references that use accented letters need to be rewritten without them before export, since some banks cannot import the file at all otherwise.</p>
+
+      <h2>The structured address rule that starts on 15 November 2026</h2>
+      <p>From 15 November 2026 the SEPA schemes require that, when a payment does carry a postal address, that address is either structured or hybrid; a fully unstructured address, meaning free text only, is no longer accepted and the bank rejects the file. Version 1.0 of the same rulebook had listed 22 November 2026; version 1.1 corrected it to 15 November 2026, so a document that still says 22 November is quoting an outdated version.</p>
+      <p>The rule covers every SEPA scheme: a regular SEPA credit transfer, an instant SEPA credit transfer, and a SEPA direct debit, whether Core or B2B. More than one party inside a single file can carry an address at once, including the debtor, the creditor, the ultimate debtor and ultimate creditor, and the party that submits the file to the bank; one of them carrying the old address format is often enough for a bank to reject the whole batch, not only the one payment it belongs to, though whether a bank rejects one payment or the entire file is that bank's own choice.</p>
+
+      <h2>What a structured or hybrid address actually needs</h2>
+      <p>The minimum a structured or hybrid address needs is the town written in TwnNm and a two-letter country code in Ctry. That code has to follow the same two-letter list used worldwide, for example SK, CZ, DE or AT; the bank rejects a spelled-out country name just as it would any other invalid code. A hybrid address can keep at most two lines of free text in AdrLine alongside TwnNm and Ctry; three lines or more are refused even in a hybrid address.</p>
+      <p>None of this applies when a file carries no address at all: the address stays optional in a SEPA payment, and a file without any postal address passes after the deadline exactly the way it does today. The problem only sits in files that do carry an address, and carry it in the old, unstructured shape.</p>
+      <p>Checking your own file does not need special software: open it as plain text and search for the string PstlAdr. If that string is not there, the file has no address to fix. If it is there, it needs a town in TwnNm and a two-letter code in Ctry, and no more than two lines in AdrLine. The smallest edit that turns an old address into one that passes is adding TwnNm and Ctry to the existing PstlAdr block; a fully structured address goes further and splits the line into StrtNm, BldgNb, PstCd, TwnNm and Ctry, in the order the schema itself sets.</p>
+
+      <h2>Which pain.001 version you use, and fixing the file in the browser</h2>
+      <p>Both pain.001.001.03 and pain.001.001.09 can carry a structured address, so the November deadline is about the address, not about which version of the message you send; which version a bank accepts on import is that bank's own decision to make. The older, pain.001.001.03, address block covers StrtNm, BldgNb, PstCd, TwnNm and Ctry; the newer, pain.001.001.09, adds BldgNm, Flr, PstBx, Room, TwnLctnNm and DstrctNm, and narrows AdrLine itself to two lines.</p>
+      <p>The free SEPA pain.001 Doctor runs entirely in your browser, needs no account, and never sends the file anywhere, since there is no server behind the page at all. Pick your bank, and it walks through every element of the file, showing the exact path to the problem, the value it found, and a ready fix to paste back in. It is available in Slovak, German and English.</p>
+      <p>If the file keeps coming out of an older export in the unstructured shape, a separate browser tool builds a fresh pain.001 straight from a spreadsheet, with the address already split into street, building number, postal code, town and country, and it can write either version of the message.</p>
+
+      <h2>Frequently asked questions</h2>
+      <details>
+        <summary>Does the 15 November 2026 rule affect a file that has no address at all?</summary>
+        <p>No, the rule only reaches files that already carry a postal address. If you are not sure whether yours does, open it as plain text and search for PstlAdr; when that string is missing, there is nothing in the file to change.</p>
+      </details>
+      <details>
+        <summary>Should I use pain.001.001.03 or pain.001.001.09?</summary>
+        <p>Either version can carry the fields the new rule needs, so the more useful question is what your bank accepts on import, and that is each bank's own decision; ask your accounting software vendor which version it exports and from which release, and ask your bank which version it will keep accepting.</p>
+      </details>
+      <details>
+        <summary>Can I check my file without installing anything or sending it to anyone?</summary>
+        <p>Yes, everything happens locally in the browser tab, with no account and no upload needed. The page itself comes in Slovak, German and English; there is no separate Czech version, so a Czech-speaking user works from the Slovak one instead.</p>
+      </details>
+
+      <h2>Fixing it now</h2>
+      <p>Run your file through the free <a data-umami-event="open-sepa-pain001-doctor" href="https://arling.sk/sepa-pain001-doctor/en/">SEPA pain.001 Doctor</a> first: it works in your browser, checks every element against the bank you pick, and shows the exact fix for anything from a bad checksum to an address still stuck in the old, unstructured shape.</p>
+      <p>If you handle payments for more than one client and need a written report you can pass on, <a data-umami-event="open-kontrola-suboru" href="https://arling.sk/kontrola-suboru/en/">the paid file check</a> takes the file through an upload on the page and, within 24 hours, sends back a corrected pain.001 file together with a note on exactly which payments would fail after 15 November 2026 and the question to put to your accounting software vendor; it is a format check, not tax or legal advice, and ARLing is not a bank, so a clean result does not guarantee that the bank will accept the payment, since that decision stays with the bank.</p>
+
+      <div class="zdroje">
+        <p><b>Sources.</b> The facts in this note are numbered after our internal fact list and were checked on the publication date. ARLing is not a bank; a clean check result is no guarantee that the bank accepts the payment. If a source has changed since, write to andrej@arling.sk and we will correct this page.</p>
+        <ul>
+          <li>F1: European Payments Council, 2025 SEPA Credit Transfer Rulebook, verzia 1.1, <a href="https://www.europeanpaymentscouncil.eu/document-library/rulebooks/2025-sepa-credit-transfer-rulebook-version-11" rel="noopener" target="_blank">https://www.europeanpaymentscouncil.eu/document-library/rulebooks/2025-sepa-credit-transfer-rulebook-version-11</a> (overené 6. 9. 2026)</li>
+          <li>F2: EPC 2025 SCT Rulebook v1.0 a v1.1, <a href="https://www.europeanpaymentscouncil.eu/document-library/rulebooks/2025-sepa-credit-transfer-rulebook-version-11" rel="noopener" target="_blank">https://www.europeanpaymentscouncil.eu/document-library/rulebooks/2025-sepa-credit-transfer-rulebook-version-11</a> (overené 6. 9. 2026)</li>
+          <li>F3: EPC 2025 SCT Rulebook v1.1; SEPA pain.001 Doctor, kód adresa_bez_mesta_alebo_krajiny (<a href="https://github.com/AndryRoby/sepa-pain001-doctor/blob/main/doctor-pain001.js" rel="noopener" target="_blank">https://github.com/AndryRoby/sepa-pain001-doctor/blob/main/doctor-pain001.js</a>)</li>
+          <li>F4: ECB a Payments Market Practice Group, vzorový list korporátnym klientom o hybridnej adrese, 22. 10. 2025, <a href="https://www.ecb.europa.eu/paym/groups/shared/docs/daba2-industry-template-hybrid-address-communication-to-corporates-pmpg-2025-10-22-.pdf" rel="noopener" target="_blank">https://www.ecb.europa.eu/paym/groups/shared/docs/daba2-industry-template-hybrid-address-communication-to-corporates-pmpg-2025-10-22-.pdf</a>; SEPA pain.001 Doctor, kód adresa_prilis_vela_riadkov (<a href="https://github.com/AndryRoby/sepa-pain001-doctor/blob/main/doctor-pain001.js" rel="noopener" target="_blank">https://github.com/AndryRoby/sepa-pain001-doctor/blob/main/doctor-pain001.js</a>)</li>
+          <li>F5: EPC 2025 SCT Rulebook v1.1; poznámka <a href="https://arling.sk/notes/strukturovana-adresa-sepa-2026/" rel="noopener" target="_blank">https://arling.sk/notes/strukturovana-adresa-sepa-2026/</a> (overené 6. 9. 2026)</li>
+          <li>F6: European Payments Council, <a href="https://www.europeanpaymentscouncil.eu/" rel="noopener" target="_blank">https://www.europeanpaymentscouncil.eu/</a> (overené 6. 9. 2026)</li>
+          <li>F7: ISO 20022 pain.001 (<a href="https://www.iso20022.org/" rel="noopener" target="_blank">https://www.iso20022.org/</a>); poznámka <a href="https://arling.sk/notes/sepa-datei-pruefen-lassen-vor-15-november/" rel="noopener" target="_blank">https://arling.sk/notes/sepa-datei-pruefen-lassen-vor-15-november/</a> (overené 10. 9. 2026)</li>
+          <li>F8: ISO 20022, definície správ pain.001.001.03 a pain.001.001.09, <a href="https://www.iso20022.org/" rel="noopener" target="_blank">https://www.iso20022.org/</a> (overené 6. 9. 2026)</li>
+          <li>F9: Komerční banka, <a href="https://www.kb.cz/cs/podpora/ucty-a-platby/nova-pravidla-pro-vyplnovani-strukturovane-adresy-u-sepa-a-zahranicnich-plateb-multicash" rel="noopener" target="_blank">https://www.kb.cz/cs/podpora/ucty-a-platby/nova-pravidla-pro-vyplnovani-strukturovane-adresy-u-sepa-a-zahranicnich-plateb-multicash</a>; SEPA pain.001 Doctor, kód schema_namespace_03_po_termine (<a href="https://github.com/AndryRoby/sepa-pain001-doctor/blob/main/doctor-pain001.js" rel="noopener" target="_blank">https://github.com/AndryRoby/sepa-pain001-doctor/blob/main/doctor-pain001.js</a>)</li>
+          <li>F11: ISO 3166-1; SEPA pain.001 Doctor, kód adresa_zly_kod_krajiny (<a href="https://github.com/AndryRoby/sepa-pain001-doctor/blob/main/doctor-pain001.js" rel="noopener" target="_blank">https://github.com/AndryRoby/sepa-pain001-doctor/blob/main/doctor-pain001.js</a>)</li>
+          <li>F14: ISO 20022 pain.001; SEPA pain.001 Doctor, kód adresa_nestrukturovana (navrhovaná oprava) (<a href="https://github.com/AndryRoby/sepa-pain001-doctor/blob/main/doctor-pain001.js" rel="noopener" target="_blank">https://github.com/AndryRoby/sepa-pain001-doctor/blob/main/doctor-pain001.js</a>); poznámka <a href="https://arling.sk/notes/strukturovana-adresa-sepa-2026/" rel="noopener" target="_blank">https://arling.sk/notes/strukturovana-adresa-sepa-2026/</a> (overené 6. 9. 2026)</li>
+          <li>F15: poznámka <a href="https://arling.sk/notes/strukturovana-adresa-sepa-2026/" rel="noopener" target="_blank">https://arling.sk/notes/strukturovana-adresa-sepa-2026/</a> (overené 6. 9. 2026)</li>
+          <li>F16: poznámka <a href="https://arling.sk/notes/strukturovana-adresa-sepa-2026/" rel="noopener" target="_blank">https://arling.sk/notes/strukturovana-adresa-sepa-2026/</a> (overené 6. 9. 2026); SEPA pain.001 Doctor, kódy adresa_nestrukturovana, adresa_bez_mesta_alebo_krajiny, adresa_prilis_vela_riadkov, adresa_zly_kod_krajiny (<a href="https://github.com/AndryRoby/sepa-pain001-doctor/blob/main/doctor-pain001.js" rel="noopener" target="_blank">https://github.com/AndryRoby/sepa-pain001-doctor/blob/main/doctor-pain001.js</a>)</li>
+          <li>F17: SEPA pain.001 Doctor, kódy xml_empty, xml_not_well_formed, root_missing, schema_namespace_missing, schema_namespace_unexpected, schema_namespace_09_skoro, schema_namespace_03_po_termine, pmt_inf_missing, cdt_trf_tx_inf_missing (<a href="https://github.com/AndryRoby/sepa-pain001-doctor/blob/main/doctor-pain001.js" rel="noopener" target="_blank">https://github.com/AndryRoby/sepa-pain001-doctor/blob/main/doctor-pain001.js</a>)</li>
+          <li>F18: SEPA pain.001 Doctor, kódy nb_of_txs_mismatch, ctrl_sum_mismatch (<a href="https://github.com/AndryRoby/sepa-pain001-doctor/blob/main/doctor-pain001.js" rel="noopener" target="_blank">https://github.com/AndryRoby/sepa-pain001-doctor/blob/main/doctor-pain001.js</a>); Tatra banka, Prenosový formát pain.001.001.03, <a href="https://www.tatrabanka.sk/files/sk/personal/ucet-platby/elektronicke-bankovnictvo/internet-banking/davkove-platby/prenosovy_formatpain001.pdf" rel="noopener" target="_blank">https://www.tatrabanka.sk/files/sk/personal/ucet-platby/elektronicke-bankovnictvo/internet-banking/davkove-platby/prenosovy_formatpain001.pdf</a></li>
+          <li>F19: SEPA pain.001 Doctor, kódy dbtr_iban_invalid, cdtr_iban_invalid, dbtr_iban_has_spaces, cdtr_iban_sk_modulo11_failed, cdtr_iban_outside_sepa (<a href="https://github.com/AndryRoby/sepa-pain001-doctor/blob/main/doctor-pain001.js" rel="noopener" target="_blank">https://github.com/AndryRoby/sepa-pain001-doctor/blob/main/doctor-pain001.js</a>); Tatra banka, Prenosový formát pain.001.001.03 (PDF)</li>
+          <li>F20: SEPA pain.001 Doctor, kódy dbtr_bic_mismatch, dbtr_bic_missing, dbtr_bic_format_invalid, cdtr_bic_format_invalid (<a href="https://github.com/AndryRoby/sepa-pain001-doctor/blob/main/doctor-pain001.js" rel="noopener" target="_blank">https://github.com/AndryRoby/sepa-pain001-doctor/blob/main/doctor-pain001.js</a>); Tatra banka PDF (&quot;Musí byť iba TATRSKBX&quot;); VÚB, Popis formátu pre SEPA úhrady, <a href="https://app.vub.sk/source/files/vubweb/sekundarna-navigacia/informacny-servis/sepa-aplikacie/sct_klient_f.pdf" rel="noopener" target="_blank">https://app.vub.sk/source/files/vubweb/sekundarna-navigacia/informacny-servis/sepa-aplikacie/sct_klient_f.pdf</a></li>
+          <li>F22: SEPA pain.001 Doctor, kódy exec_date_missing, exec_date_invalid_format, exec_date_in_past, exec_date_too_far_future, exec_date_differs_across_pmtinf (<a href="https://github.com/AndryRoby/sepa-pain001-doctor/blob/main/doctor-pain001.js" rel="noopener" target="_blank">https://github.com/AndryRoby/sepa-pain001-doctor/blob/main/doctor-pain001.js</a>); Tatra banka PDF; VÚB SCT PDF</li>
+          <li>F23: SEPA pain.001 Doctor, kódy invalid_sepa_character, diacritics_in_field (<a href="https://github.com/AndryRoby/sepa-pain001-doctor/blob/main/doctor-pain001.js" rel="noopener" target="_blank">https://github.com/AndryRoby/sepa-pain001-doctor/blob/main/doctor-pain001.js</a>); ČSOB, BusinessBanking Lite a SEPA, <a href="https://www.csob.sk/documents/11005/123723/BB_SEPA_01022016.pdf" rel="noopener" target="_blank">https://www.csob.sk/documents/11005/123723/BB_SEPA_01022016.pdf</a></li>
+          <li>F32: <a href="https://arling.sk/sepa-pain001-doctor/" rel="noopener" target="_blank">https://arling.sk/sepa-pain001-doctor/</a></li>
+          <li>F33: <a href="https://arling.sk/sepa-pain001-doctor/" rel="noopener" target="_blank">https://arling.sk/sepa-pain001-doctor/</a>, <a href="https://arling.sk/sepa-pain001-doctor/de/" rel="noopener" target="_blank">https://arling.sk/sepa-pain001-doctor/de/</a>, <a href="https://arling.sk/sepa-pain001-doctor/en/" rel="noopener" target="_blank">https://arling.sk/sepa-pain001-doctor/en/</a> (overené 10. 9. 2026)</li>
+          <li>F34: <a href="https://arling.sk/kontrola-suboru/" rel="noopener" target="_blank">https://arling.sk/kontrola-suboru/</a> (overené 10. 9. 2026)</li>
+          <li>F36: <a href="https://arling.sk/kontrola-suboru/" rel="noopener" target="_blank">https://arling.sk/kontrola-suboru/</a> (FAQ); SEPA pain.001 Doctor, text pravnaPoznamka (<a href="https://github.com/AndryRoby/sepa-pain001-doctor/blob/main/doctor-pain001.js" rel="noopener" target="_blank">https://github.com/AndryRoby/sepa-pain001-doctor/blob/main/doctor-pain001.js</a>)</li>
+          <li>F39: poznámka <a href="https://arling.sk/notes/strukturovana-adresa-sepa-2026/" rel="noopener" target="_blank">https://arling.sk/notes/strukturovana-adresa-sepa-2026/</a>; poznámka <a href="https://arling.sk/notes/sepa-sammelueberweisung-aus-excel/" rel="noopener" target="_blank">https://arling.sk/notes/sepa-sammelueberweisung-aus-excel/</a> (overené 6. 9. 2026)</li>
+        </ul>
+      </div>
+    </article>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <div><b>ARLing s. r. o.</b><br>Ivanská cesta 32E<br>821 04 Bratislava, Slovakia</div>
+    <div>Company ID 56583486<br>VAT ID SK2122352100<br><a href="mailto:andrej@arling.sk">andrej@arling.sk</a></div>
+    <div><a href="https://arling.sk/privacy/">privacy</a> · <a href="https://arling.sk/podmienky/">terms</a> · <a href="https://arling.sk/gdpr/">GDPR</a> · <a href="https://arling.sk/impressum/">Impressum</a> · <a href="https://arling.sk/llms.txt">llms.txt</a> · <a href="https://arling.sk/sitemap-index.xml">sitemap</a><br>Tools are provided as is, without warranty. Anonymous visit counts via self-hosted Umami.</div>
+  </div>
+</footer>
+
+<script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="338f035d-41c5-411e-8391-9a41db6accfd"></script>
+</body>
+</html>
