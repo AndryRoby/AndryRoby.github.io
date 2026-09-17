@@ -22,7 +22,7 @@
  * produktmi kvoli reportu EUR na 100 navstev.
  */
 
-import { posudPlatbu, cestaSuboru, platnyOdkaz, jeOdomknuty, odomkni, vykresliSubory, T as TT } from '../titul.js';
+import { posudPlatbu, platnyOdkaz, jeOdomknuty, odomknute, odomkni, sessionTitulu, ukazPoPlatbe, T as TT } from '../titul.js';
 
 const API = 'https://arling-asistent.arling.workers.dev';
 
@@ -60,8 +60,8 @@ const T = {
   overZnova: 'Check again',
   zapina: 'The subscription is still being switched on. Write to andrej@arling.sk and we will send you the current issue.',
   testChyba: 'Test mode is on, but this plan has no test link yet. Run ops/stripe/puzzle-post.mjs --zapis in test mode, or open this page without ?test=1 to subscribe for real.',
-  testCudzi: 'This is a payment from Stripe test mode. Nothing was paid and no issue is sent.',
-  testPoznamka: '(Test mode: the payment was made in Stripe test mode, no money changed hands and no issue is sent.)',
+  testCudzi: 'This is a payment from Stripe test mode. No money was taken; the issue is sent by e-mail in test mode too.',
+  testPoznamka: '(Test mode: the payment was made in Stripe test mode, no money is taken; the issue is sent by e-mail in test mode too.)',
 };
 
 function $(id) { return document.getElementById(id); }
@@ -171,13 +171,23 @@ async function overPlatbu(sid, plan, pokus) {
 const stavCisla = $('stav-cisla');
 const blokCisla = $('cislo-hotovo');
 
+/* Panel po zaplateni je spolocny s ostatnymi jednorazovymi titulmi (titul.js,
+   funkcia ukazPoPlatbe): najprv sa opyta licencnej sluzby na odkazy a e-mail,
+   a ked nebezi, postavi odkazy z mapy CISLO vyssie. */
+let panelHotovy = false;
+function panelCisla(sid, jeTest) {
+  panelHotovy = true;
+  return ukazPoPlatbe({ blok: blokCisla, data: CISLO, titul: CISLO_ID, sid, test: jeTest });
+}
+
 function prekresliCislo() {
   const hotovo = jeOdomknuty(CISLO_ID);
-  if (blokCisla) {
-    blokCisla.hidden = !hotovo;
-    if (hotovo) vykresliSubory(blokCisla, CISLO);
+  if (!hotovo) {
+    if (blokCisla) blokCisla.hidden = true;
+    return;
   }
-  for (const b of document.querySelectorAll('[data-titul="' + CISLO_ID + '"]')) b.hidden = hotovo;
+  for (const b of document.querySelectorAll('[data-titul="' + CISLO_ID + '"]')) b.hidden = true;
+  if (!panelHotovy) panelCisla(sessionTitulu(CISLO_ID), odomknute().test);
 }
 
 for (const btn of document.querySelectorAll('[data-titul]')) {
@@ -202,10 +212,12 @@ async function overCislo(sid, pokus) {
   } catch (e) { /* siet, skusame dalej */ }
   const v = posudPlatbu(st, CENA_CISLA);
   if (v.stav === 'zaplatene') {
-    odomkni(CISLO_ID, v.test);
+    odomkni(CISLO_ID, v.test, sid);
     zabudni(CAKAJUCA);
-    if (stavCisla) stavCisla.innerHTML = TT.zaplatene + (v.test ? ' ' + TT.testPoznamka : '');
+    // Panel povie "Paid, thank you" sam a nahlas, riadok stavu uz nema co dodat.
+    if (stavCisla) { stavCisla.textContent = ''; stavCisla.innerHTML = ''; }
     track('zaplatene', { titul: CISLO_ID, test: !!v.test, produkt: 'puzzle-post' });
+    await panelCisla(sid, v.test);
     prekresliCislo();
     if (blokCisla) blokCisla.scrollIntoView({ behavior: 'smooth', block: 'center' });
     return true;

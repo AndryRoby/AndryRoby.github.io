@@ -7,9 +7,12 @@
  * ziadne osobne udaje). Rovnaky koncovy bod aj rovnake spravanie ako
  * products/arling-sk/puzzle-post/app.js.
  *
- * Tu sa nic neodomyka. Subory nie su na stranke, chodia e-mailom z dorucovania
- * (products/licence-service/puzzlepost_bulletin.py). Stranka po navrate povie
- * jedinu vec, ktora je pravdiva: platba presla, prva strana pride e-mailom.
+ * Tu sa nic neodomyka a ziadne subory na stranke nie su. Po overenej platbe sa
+ * stranka spyta licencnej sluzby na odkazy tohto tyzdna
+ * (GET /licence/api/purchase/links?session_id=cs_..., spolocny kod je v
+ * /titul.js) a ked odpovie, ukaze panel "Your first sheet" so styrmi odkazmi.
+ * Ked sluzba nebezi alebo este nie je nasadena, ostava povodna veta: platba
+ * presla, prva strana pride e-mailom. Nic sa netvrdi bez dokazu.
  *
  * subscribed=1 bez session_id nie je dokaz o platbe (kazdy si tu adresu vie
  * napisat sam), preto v tom pripade stranka nepovie "zaplatene", ale len to,
@@ -24,6 +27,8 @@
  * cena_videna a kupa_click maju spolocne meno s ostatnymi produktmi kvoli
  * reportu EUR na 100 navstev.
  */
+
+import { odkazyZoSluzby, vykresliPanel } from '../../titul.js';
 
 const API = 'https://arling-asistent.arling.workers.dev';
 
@@ -43,8 +48,10 @@ const T = {
   overZnova: 'Check again',
   zapina: 'The subscription is still being switched on. Write to andrej@arling.sk and we will send you this week’s sheet.',
   testChyba: 'Test mode is on, but this plan has no test link yet. Run ops/stripe/puzzle-post-bulletin.mjs --zapis in test mode, or open this page without ?test=1 to subscribe for real.',
-  testCudzi: 'This is a payment from Stripe test mode. Nothing was paid and no sheet is sent.',
-  testPoznamka: '(Test mode: the payment was made in Stripe test mode, no money changed hands and no sheet is sent.)',
+  testCudzi: 'This is a payment from Stripe test mode. No money was taken; the e-mail with this week’s sheet is sent in test mode too.',
+  testPoznamka: '(Test mode: the payment was made in Stripe test mode, no money is taken; the e-mail with the sheet is sent in test mode too.)',
+  prvaStrana: 'Your first sheet',
+  tyzden: (t) => 'The files of week ' + t + '. Every following Monday they arrive by e-mail.',
 };
 
 function $(id) { return document.getElementById(id); }
@@ -54,6 +61,7 @@ function uloz(k, v) { try { sessionStorage.setItem(k, JSON.stringify(v)); } catc
 function zabudni(k) { try { sessionStorage.removeItem(k); } catch (e) { /* nic */ } }
 
 const stavPlatby = $('stav-platby');
+const blokPrvej = $('prva-strana');
 
 /* Test mod: ?test=1 prepne tento prehliadac na Stripe test mod (nacvik,
    testovacia karta 4242..., ziadne peniaze). Tlacidla potom idu na
@@ -124,6 +132,7 @@ async function overPlatbu(sid, plan, pokus) {
       zabudni(CAKAJUCA);
       stavPlatby.innerHTML = T.zaplatene + (jeTest ? ' ' + T.testPoznamka : '') + ' ' + T.nedoslo;
       track('zaplatene', { plan: plan || '', test: jeTest, produkt: 'puzzle-post-bulletin' });
+      await ukazPrvuStranu(sid, jeTest);
       return true;
     }
     zabudni(CAKAJUCA);
@@ -142,6 +151,25 @@ async function overPlatbu(sid, plan, pokus) {
   if (btn) btn.addEventListener('click', () => { clearTimeout(overovanie); overPlatbu(sid, plan, 1); });
   if (pokus < 8) overovanie = setTimeout(() => overPlatbu(sid, plan, pokus + 1), dalsi);
   return false;
+}
+
+/* Prva strana hned na stranke, ked licencna sluzba odpovie. Panel je ten isty
+   ako pri jednorazovych tituloch, len s vlastnym nadpisom; ked sluzba nebezi,
+   nestane sa nic a ostane veta o e-maile. */
+async function ukazPrvuStranu(sid, jeTest) {
+  if (!blokPrvej) return null;
+  const zo = await odkazyZoSluzby(sid);
+  if (!zo || !zo.subory.length) return null;
+  vykresliPanel(blokPrvej, {
+    nadpis: T.prvaStrana,
+    poznamka: zo.tyzden ? T.tyzden(zo.tyzden) : '',
+    subory: zo.subory,
+    email: zo.email,
+    session: sid,
+    test: jeTest,
+  });
+  blokPrvej.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  return zo;
 }
 
 async function poNavrate() {

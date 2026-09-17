@@ -1,0 +1,168 @@
+/* Puzzle Studio: only what this page adds on top of the shared Paper sheets
+   (/style/paper.css and /style/hub.css). Nothing here redefines a colour, a
+   font or a button: every value below is either a layout rule or one of the
+   shared custom properties, so the page follows the light surface and the
+   dark surface without a switch of its own.
+
+   Two things need saying out loud.
+
+   1. A puzzle is black line work on white. On the dark surface it would be
+      black on black, so every drawing sits on its own white sheet with a
+      hairline round it. That is not a card grid: it is the paper the puzzle
+      is printed on, and it is the only white in the page.
+
+   2. The print sheet is part of this page, not a pop-up. @media print hides
+      everything except #tlaciva, so the browser's own Save as PDF gives a
+      clean sheet with the puzzles first and the solutions last. */
+
+/* ── The studio: form beside results, stacked on a phone ─────────────── */
+.studio { display:grid; gap:clamp(22px,3vw,40px); grid-template-columns:minmax(0,1fr); align-items:start; }
+@media (min-width:900px) { .studio { grid-template-columns:minmax(0,340px) minmax(0,1fr); } }
+
+.volby { border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:var(--radius);
+         background:var(--card); padding:clamp(18px,2vw,24px); min-width:0; }
+@media (min-width:900px) { .volby { position:sticky; top:calc(var(--hlavicka,64px) + 16px); } }
+.volby fieldset { border:0; margin:0; padding:0; min-width:0; }
+.volby legend { font:600 12px/1.2 var(--ui); letter-spacing:.14em; text-transform:uppercase;
+                color:var(--accent); padding:0; margin:0 0 14px; }
+.pole { display:block; margin:0 0 14px; min-width:0; }
+.pole > span { display:block; font-family:var(--ui); font-size:13px; color:var(--muted); margin:0 0 5px; }
+.pole select, .pole input { width:100%; height:44px; padding:0 12px; font-size:15px; min-width:0; }
+.pole input[type="number"] { padding-right:6px; }
+.pole .napoveda { display:block; font-family:var(--ui); font-size:12.5px; color:var(--muted); margin:5px 0 0; line-height:1.5; }
+.dvojica { display:grid; gap:14px; grid-template-columns:minmax(0,1fr) minmax(0,1fr); }
+.volby .btn { width:100%; justify-content:center; height:48px; margin-top:4px; }
+.volby .btn + .btn { margin-top:10px; }
+.velkost-pevna { font-family:var(--ui); font-size:12.5px; color:var(--muted); line-height:1.5; margin:0 0 14px; }
+
+.kvota { font-family:var(--ui); font-size:13.5px; line-height:1.55; color:var(--body);
+         border-top:1px solid var(--line); margin:16px 0 0; padding:14px 0 0; }
+.kvota b { color:var(--ink); display:block; margin-bottom:3px; }
+.tlacova-licencia { font-family:var(--ui); font-size:13px; color:var(--ok); margin:10px 0 0; line-height:1.5; }
+
+.pravidlo-blok { margin:16px 0 0; border-top:1px solid var(--line); padding:14px 0 0; }
+.pravidlo-blok p { font-family:var(--ui); font-size:13.5px; line-height:1.55; color:var(--body); margin:0 0 8px; }
+.pravidlo-blok p:last-child { margin-bottom:0; }
+
+/* ── The results column ──────────────────────────────────────────────── */
+.vysledky { min-width:0; }
+.lista { display:flex; flex-wrap:wrap; align-items:center; gap:10px 16px;
+         border-bottom:1px solid var(--line); padding:0 0 14px; margin:0 0 20px; }
+.lista .btn { height:38px; padding:0 14px; font-size:13.5px; }
+.postup { font-family:var(--ui); font-size:14px; color:var(--body); margin:0; flex:1 1 180px; min-width:0; }
+.prepinac { display:inline-flex; align-items:center; gap:8px; font-family:var(--ui); font-size:13.5px; color:var(--body); }
+.prepinac input { width:18px; height:18px; }
+
+.prazdno { font-family:var(--ui); font-size:14.5px; color:var(--muted); line-height:1.6; max-width:56ch; margin:0; }
+
+.hlavolam { border-top:1px solid var(--line); padding:22px 0 0; margin:0 0 26px; min-width:0; }
+.hlavolam:first-child { border-top:0; padding-top:0; }
+.hlavolam h3 { font:600 clamp(16px,1.3vw,19px)/1.35 var(--display); color:var(--ink); margin:0 0 12px; }
+.obrazok { background:#fff; border:1px solid var(--line); border-radius:6px; padding:12px;
+           max-width:460px; line-height:0; }
+.obrazok svg { display:block; width:100%; height:auto; }
+.obrazok.riesenie { margin-top:14px; }
+.overene { font-family:var(--ui); font-size:13.5px; color:var(--ok); margin:10px 0 0; font-weight:600; }
+.hlavolam .pravidlo { font-family:var(--ui); font-size:13.5px; color:var(--muted); line-height:1.55;
+                      margin:6px 0 0; max-width:62ch; }
+.hlavolam .akcie { display:flex; flex-wrap:wrap; gap:8px; margin:14px 0 0; }
+.hlavolam .akcie .btn { height:36px; padding:0 12px; font-size:13px; }
+.hlavolam.chyba .nevyslo { font-family:var(--ui); font-size:13.5px; color:var(--body); line-height:1.6; max-width:62ch; margin:0; }
+
+/* The eleven kinds as an index of rows, not a grid of cards with icons. */
+.druhy { list-style:none; margin:0; padding:0; border-top:1px solid var(--line); }
+.druhy li { display:grid; grid-template-columns:minmax(0,1fr); gap:4px 22px; padding:13px 0; border-bottom:1px solid var(--line); }
+@media (min-width:700px) { .druhy li { grid-template-columns:minmax(0,190px) minmax(0,1fr); align-items:baseline; } }
+.druhy b { font:600 17px/1.3 var(--display); color:var(--ink); }
+.druhy span { font-family:var(--ui); font-size:14.5px; color:var(--body); }
+
+/* The one standalone note under the form. */
+.volby .napoveda { display:block; font-family:var(--ui); font-size:12.5px; color:var(--muted); line-height:1.5; margin:0 0 14px; }
+
+/* ── Price, licence, questions ───────────────────────────────────────── */
+.plany { display:grid; gap:clamp(16px,2vw,26px); grid-template-columns:minmax(0,1fr); }
+@media (min-width:820px) { .plany { grid-template-columns:repeat(3,minmax(0,1fr)); } }
+.plan { border:1px solid var(--line); border-radius:var(--radius); background:var(--card);
+        padding:clamp(18px,2vw,26px); min-width:0; display:flex; flex-direction:column; }
+.plan.hlavny { border-left:3px solid var(--accent); }
+.plan h3 { font:600 19px/1.3 var(--display); color:var(--ink); margin:0 0 6px; }
+.plan .suma { font:700 clamp(30px,3.2vw,40px)/1 var(--display); color:var(--ink); letter-spacing:-.02em; display:block; margin:6px 0 4px; }
+.plan .suma i { font-style:normal; font-family:var(--ui); font-size:15px; font-weight:500; color:var(--muted); letter-spacing:0; margin-left:8px; }
+.plan .zaco { font-family:var(--ui); font-size:13.5px; color:var(--body); line-height:1.55; margin:6px 0 16px; }
+.plan ul { list-style:none; margin:0 0 18px; padding:0; display:flex; flex-direction:column; gap:8px;
+           font-family:var(--ui); font-size:13.5px; color:var(--body); }
+.plan li { display:flex; gap:9px; }
+.plan li::before { content:""; width:6px; height:6px; border-radius:50%; background:var(--accent); flex:none; margin-top:7px; }
+.plan .btn { width:100%; justify-content:center; margin-top:auto; }
+.plan .btn + .btn { margin-top:10px; }
+
+.test-odznak { display:block; border:1px solid var(--accent); border-radius:12px; padding:10px 12px; margin:0 0 18px;
+               font-family:var(--ui); font-size:13px; line-height:1.5; color:var(--body); }
+.test-odznak b { font:700 12px/1.2 var(--ui); letter-spacing:.14em; text-transform:uppercase; color:var(--accent); display:block; margin:0 0 4px; }
+.stav-platby { font-family:var(--ui); font-size:14px; color:var(--body); min-height:1.5em; margin:18px 0 0; line-height:1.55; max-width:70ch; }
+.stav-platby b { color:var(--ok); }
+.stav-platby .btn { height:36px; padding:0 12px; font-size:13px; margin-top:8px; }
+
+.licencia { border-top:1px solid var(--line); margin:26px 0 0; padding:20px 0 0; max-width:70ch; }
+.licencia .stav { font-family:var(--ui); font-size:14px; color:var(--body); line-height:1.6; margin:0 0 12px; }
+.licencia .stav b { color:var(--ok); }
+.licencia .riadok { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+.licencia input { flex:1 1 260px; height:44px; padding:0 12px; font-size:14px; min-width:0; }
+.licencia .btn { height:44px; }
+
+#otazky details { border-top:1px solid var(--line); padding:16px 0; }
+#otazky details:first-of-type { border-top:none; padding-top:0; }
+#otazky details:last-of-type { border-bottom:1px solid var(--line); }
+#otazky summary { cursor:pointer; font:600 clamp(16px,1.3vw,19px)/1.35 var(--display); color:var(--ink);
+                  list-style:none; display:block; position:relative; padding-right:26px; }
+#otazky summary::-webkit-details-marker { display:none; }
+#otazky summary::after { content:"+"; color:var(--accent); font-family:var(--ui); position:absolute; right:0; top:0; }
+#otazky details[open] summary::after { content:"\2013"; }
+#otazky details p { margin:10px 0 0; max-width:72ch; }
+#otazky details p + p { margin-top:10px; }
+
+.uzsie > * { max-width:1060px; }
+.sub { color:var(--body); max-width:66ch; margin:0 0 24px; }
+.prose p { max-width:72ch; }
+
+/* The hero artefact: a real puzzle this page made, on its own sheet. */
+.ukazka { margin:0; max-width:360px; justify-self:end; background:#fff;
+          border:1px solid var(--line); border-radius:6px; padding:16px; }
+@media (max-width:960px) { .ukazka { justify-self:start; max-width:300px; } }
+.ukazka svg { display:block; width:100%; height:auto; }
+.ukazka figcaption { font-family:var(--ui); font-size:12.5px; color:#5e5d59; line-height:1.5; margin:12px 0 0; }
+
+.hero { grid-template-columns:minmax(0,1fr); align-items:start; row-gap:26px; padding-block:clamp(30px,5vh,64px); }
+.hero .lead { max-width:56ch; }
+@media (min-width:961px) {
+  .hero { grid-template-columns:minmax(0,7fr) minmax(0,5fr); }
+  .hero > .text { grid-column:1; grid-row:1; }
+  .hero > .ukazka { grid-column:2; grid-row:1 / span 2; }
+  .hero > .facts { grid-column:1; grid-row:2; }
+}
+.facts { list-style:none; margin:0; padding:0; display:flex; flex-wrap:wrap; gap:6px 22px; }
+.facts li { font-family:var(--ui); font-size:14px; color:var(--muted); }
+.facts b { color:var(--ink); }
+
+/* ── The print sheet ─────────────────────────────────────────────────── */
+#tlaciva { display:none; }
+@media print {
+  body { background:#fff; color:#000; }
+  body > *:not(#tlaciva) { display:none !important; }
+  #tlaciva { display:block !important; color:#000; background:#fff; }
+  @page { size:A4 portrait; margin:16mm; }
+  .t-hlava { display:flex; justify-content:space-between; gap:12px; border-bottom:1px solid #000;
+             padding-bottom:6px; margin-bottom:10mm; font:600 11pt/1.3 Georgia, serif; }
+  .t-hlava span { font-weight:400; color:#444; }
+  .t-strana { break-after:page; page-break-after:always; }
+  .t-strana:last-child { break-after:auto; page-break-after:auto; }
+  .t-strana h2 { font:700 15pt/1.2 Georgia, serif; margin:0 0 4mm; color:#000; }
+  .t-pravidlo { font:10pt/1.45 Georgia, serif; color:#222; max-width:150mm; margin:0 0 6mm; }
+  .t-obrazok { max-width:150mm; margin:0 auto; }
+  .t-obrazok svg { display:block; width:100%; height:auto; }
+  .t-overene { font:9pt/1.4 Georgia, serif; color:#444; margin:4mm 0 0; }
+  .t-mriezka { display:grid; grid-template-columns:repeat(2,1fr); gap:8mm; }
+  .t-mriezka figure { margin:0; }
+  .t-mriezka figcaption { font:700 10pt/1.2 Georgia, serif; margin:0 0 2mm; }
+  .t-mriezka svg { display:block; width:100%; height:auto; }
+}

@@ -52,6 +52,8 @@ const T = {
     produktGdpr: 'Balík GDPR dokumentov',
     produktOprava: 'Oprava pain.001 súboru',
     akciaGdpr: 'Otvoriť GDPR dokumenty',
+    akciaStiahnut: 'Stiahnuť súbory',
+    akciaOtvorit: 'Otvoriť stránku',
     akciaGdprCesky: 'česká verzia',
     akciaKontrola: 'Zobraziť stav kontroly',
     akciaOprava: 'Opravený súbor sa nedá stiahnuť znova, u nás nie je uložený.',
@@ -89,6 +91,8 @@ const T = {
     produktGdpr: 'GDPR document bundle',
     produktOprava: 'pain.001 file fix',
     akciaGdpr: 'Open GDPR documents',
+    akciaStiahnut: 'Download',
+    akciaOtvorit: 'Open',
     akciaGdprCesky: 'Czech version',
     akciaKontrola: 'View check status',
     akciaOprava: 'The fixed file cannot be downloaded again, we do not keep it on our side.',
@@ -126,6 +130,8 @@ const T = {
     produktGdpr: 'GDPR-Dokumentenpaket',
     produktOprava: 'pain.001-Datei-Korrektur',
     akciaGdpr: 'GDPR-Dokumente öffnen',
+    akciaStiahnut: 'Herunterladen',
+    akciaOtvorit: 'Öffnen',
     akciaGdprCesky: 'tschechische Version',
     akciaKontrola: 'Prüfstatus ansehen',
     akciaOprava: 'Die korrigierte Datei kann nicht erneut heruntergeladen werden, wir speichern sie nicht bei uns.',
@@ -223,6 +229,42 @@ function nazovProduktu(produkt) {
   if (casti.length === 3) return casti[LANG === 'de' ? 1 : LANG === 'en' ? 2 : 0];
   return produkt;
 }
+/* Jednorazové tituly a predplatné, ktoré majú na hube vlastnú stránku.
+ * nakup.produkt nesie popis položky zo Stripe (record_purchase_in_account
+ * v products/licence-service/app.py: line_items[0].description, inak nickname
+ * ceny, inak metadata.produkt), čiže názov produktu z ops/stripe/tituly.mjs
+ * alebo puzzle-post*.mjs, v testovom režime s predponou „TEST: ". Preto sa
+ * hľadá kus názvu, nie presná zhoda, a prijme sa aj samotné id produktu.
+ * Na poradí záleží: „Puzzle Post Bulletin" aj „Puzzle Post, Issue 1"
+ * obsahujú „puzzle post". */
+const STRANKY_PRODUKTOV = [
+  { id: 'eink-bundle', jednorazovy: true, url: '/puzzle-books/eink-bundle/', kusy: ['e-ink puzzles', '3000 puzzles'] },
+  { id: 'puzzle-post-2026-10', jednorazovy: true, url: '/puzzle-post/', kusy: ['puzzle post, issue'] },
+  { id: 'morning-quiet', jednorazovy: true, url: '/morning-quiet/', kusy: ['morning quiet'] },
+  { id: 'ben-hur', jednorazovy: true, url: '/classics/ben-hur/', kusy: ['ben-hur'] },
+  { id: 'monte-cristo', jednorazovy: true, url: '/classics/monte-cristo/', kusy: ['monte cristo'] },
+  { id: 'puzzle-post-bulletin-pro', jednorazovy: false, url: '/puzzle-post/bulletin/', kusy: ['bulletin pro'] },
+  { id: 'puzzle-post-bulletin', jednorazovy: false, url: '/puzzle-post/bulletin/', kusy: ['bulletin'] },
+  { id: 'puzzle-post', jednorazovy: false, url: '/puzzle-post/', kusy: ['puzzle post'] },
+];
+
+function strankaProduktu(produkt) {
+  const p = String(produkt || '').toLowerCase();
+  if (!p) return null;
+  for (const t of STRANKY_PRODUKTOV) {
+    if (p === t.id) return t;
+    for (const k of t.kusy) if (p.indexOf(k) !== -1) return t;
+  }
+  return null;
+}
+
+/* Odkaz na stránku titulu aj so session, aby sa súbory po kliknutí odomkli aj
+ * na inom zariadení, než na ktorom sa platilo (titul.js si ju overí u workera). */
+function odkazTitulu(t, sessionId) {
+  if (!sessionId) return t.url;
+  return t.url + '?titul=' + encodeURIComponent(t.id) + '&session_id=' + encodeURIComponent(sessionId);
+}
+
 function druhProduktu(produkt) {
   const p = String(produkt || '').toLowerCase();
   if (p.indexOf('gdpr') !== -1) return 'gdpr';
@@ -235,8 +277,17 @@ function akciaBunka(nakup) {
   td.setAttribute('data-th', T.stlpecAkcia);
   const obal = document.createElement('div');
   obal.className = 'nakupy-akcia';
+  const stranka = strankaProduktu(nakup.produkt);
   const druh = druhProduktu(nakup.produkt);
-  if (druh === 'gdpr') {
+  if (stranka) {
+    // Jednorazový titul vedie na svoju stránku so session (tam sa ukáže panel
+    // so súbormi), predplatné len na stránku produktu: súbory chodia e-mailom.
+    const a = document.createElement('a');
+    a.className = 'btn btn-line';
+    a.href = stranka.jednorazovy ? odkazTitulu(stranka, nakup.session_id) : stranka.url;
+    a.textContent = stranka.jednorazovy ? T.akciaStiahnut : T.akciaOtvorit;
+    obal.appendChild(a);
+  } else if (druh === 'gdpr') {
     const a = document.createElement('a');
     a.className = 'btn btn-line'; a.href = '/gdpr-dokumenty/?ucet=1'; a.textContent = T.akciaGdpr;
     obal.appendChild(a);

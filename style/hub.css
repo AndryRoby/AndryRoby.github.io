@@ -230,3 +230,65 @@
   .dopyt-form label { margin-top:8px; }
   .btn { min-height:48px; }
 }
+
+/* ── 9. Kúpa a stav po zaplatení ─────────────────────────────────────────
+   17. 9. 2026 Andrej zaplatil trikrát v test móde a povedal to jasne: stránka
+   po platbe vyzerá takmer rovnako ako pred ňou, riadok „Paid, thank you" je
+   drobný, odkazy na súbory sú obyčajné odrážky a po tlačidle ostala diera.
+   Preto je tu jeden stav pred platbou a jeden po nej, spoločný pre päť
+   jednorazových stránok (Morning Quiet, Ben-Hur, Monte Cristo, balík e-ink
+   hlavolamov, jedno číslo Puzzle Post) aj pre prvú stranu bulletinu.
+   Obsah panela stavia products/arling-sk/titul.js, tu je len vzhľad.
+
+   Váha selektorov: vlastný <style> stránky stojí v dokumente až za týmto
+   súborom, takže každé pravidlo, ktoré má prebiť .cena .akcie .btn (0,3,0),
+   potrebuje o triedu viac. Preto .akcie.akcie-kupa a .subor.btn. */
+
+/* Pred platbou: jedno plné tlačidlo cez celú šírku, ukážka a Etsy ako tiché
+   odkazy. Dve orámované tlačidlá vedľa neho z neho robili jedno z troch. */
+.cena .akcie.akcie-kupa, .jedno .akcie.akcie-kupa { display:flex; flex-direction:row; flex-wrap:wrap;
+                                                     align-items:center; justify-content:flex-start;
+                                                     gap:8px 22px; margin:0; }
+.akcie.akcie-kupa .btn.btn-solid { flex:1 0 100%; width:100%; height:52px; min-height:52px;
+                                   justify-content:center; font-size:16px; }
+.akcie.akcie-kupa .tichy { display:inline-flex; align-items:center; min-height:44px;
+                           font:500 14.5px/1.5 var(--ui); color:var(--body);
+                           text-decoration:underline; text-decoration-thickness:1px;
+                           text-underline-offset:3px; text-decoration-color:var(--muted); }
+.akcie.akcie-kupa .tichy:hover { color:var(--accent-light); text-decoration-color:currentColor; }
+/* Prázdny riadok stavu po platbe nemá držať miesto: medzi cenou a panelom
+   ostávala diera vysoká ako riadok textu. */
+.cena .stav-platby:empty, .jedno .stav-platby:empty { min-height:0; margin:0; }
+
+/* Po platbe: panel na mieste tlačidla. Vlastná plocha v akcentovom nádychu,
+   aby bolo na prvý pohľad vidieť, že sa stav stránky zmenil. Bez display:
+   v tomto pravidle, inak by atribút hidden prestal platiť. */
+.hotovo.hotovo-panel { --panel-plocha:rgba(178,58,29,.055); --panel-linka:rgba(178,58,29,.30);
+                       margin:18px 0 0; padding:clamp(16px,1.6vw,20px); border:1px solid var(--panel-linka);
+                       border-radius:14px; background:var(--panel-plocha); max-width:680px; }
+body.noc .hotovo.hotovo-panel { --panel-plocha:rgba(242,100,60,.09); --panel-linka:rgba(242,100,60,.32); }
+.hotovo-panel .hotovo-znacka { margin:0; font:700 12px/1.2 var(--ui); letter-spacing:.14em;
+                               text-transform:uppercase; color:var(--accent); }
+.hotovo-panel .hotovo-nadpis { margin:8px 0 0; font:600 clamp(22px,2.2vw,27px)/1.2 var(--display);
+                               letter-spacing:-.015em; color:var(--ink); }
+.hotovo-panel .hotovo-riadok { margin:10px 0 0; font:400 13.5px/1.55 var(--ui); color:var(--body); max-width:52ch; }
+.hotovo-panel .hotovo-subory { list-style:none; margin:16px 0 0; padding:0;
+                               display:flex; flex-direction:column; gap:10px; }
+.hotovo-panel .hotovo-subory li { display:block; margin:0; padding:0; }
+.hotovo-panel .hotovo-subory li::before { content:none; }
+.hotovo-panel .subor.btn { display:flex; flex-direction:column; align-items:flex-start; justify-content:center;
+                           gap:2px; width:100%; height:auto; min-height:58px; padding:11px 18px;
+                           text-align:left; border-radius:12px; }
+.hotovo-panel .subor.btn .subor-nazov { font:600 15.5px/1.3 var(--ui); }
+.hotovo-panel .subor.btn .subor-meta { font:500 13px/1.35 var(--ui); opacity:.82; }
+@media (min-width:560px) {
+  .hotovo-panel .subor.btn { flex-direction:row; align-items:center; justify-content:space-between; gap:16px; }
+}
+.hotovo-panel .hotovo-ukazka { margin:14px 0 0; font:400 13.5px/1.5 var(--ui); }
+.hotovo-panel .hotovo-ukazka a { color:var(--muted); text-decoration:underline; text-underline-offset:3px; }
+.hotovo-panel .hotovo-ukazka a:hover { color:var(--accent-light); }
+.hotovo-panel .hotovo-mail { margin:16px 0 0; padding:12px 0 0; border-top:1px solid var(--panel-linka);
+                             font:400 13.5px/1.55 var(--ui); color:var(--body); max-width:56ch; }
+.hotovo-panel .hotovo-mail b { color:var(--ink); font-weight:600; overflow-wrap:anywhere; }
+.hotovo-panel .hotovo-cislo { margin:6px 0 0; font:400 12.5px/1.5 var(--ui); color:var(--muted); }
+.hotovo-panel .hotovo-cislo b { font-family:var(--mono); font-weight:500; color:var(--body); }

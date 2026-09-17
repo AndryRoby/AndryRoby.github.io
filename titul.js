@@ -1,5 +1,5 @@
 /* Jednorazovy predaj jedneho titulu na hube (Morning Quiet, Ben-Hur,
- * The Count of Monte Cristo, cislo Puzzle Post).
+ * The Count of Monte Cristo, cislo Puzzle Post, balik e-ink hlavolamov).
  *
  * Rovnaky vzor ako products/arling-sk/puzzle-books/app.js, len pre jeden titul
  * na stranku a bez mapy hier:
@@ -9,37 +9,69 @@
  *   3. stranka sa spyta workera GET /v1/kontrola/status, ci je session
  *      zaplatena a na aku sumu (vracia paid, amount_subtotal, livemode; ziadne
  *      osobne udaje),
- *   4. po kladnej odpovedi sa odomknutie ulozi do localStorage a na stranke sa
- *      ukazu odkazy na subory.
+ *   4. po kladnej odpovedi sa odomknutie ulozi do localStorage a na mieste
+ *      tlacidla sa vykresli panel so subormi (vykresliPanel nizsie).
+ *
+ * Odkial su subory (18. 9. 2026, A-078):
+ *   a) najprv licencna sluzba na homelabe,
+ *      GET /licence/api/purchase/links?session_id=cs_... -> { ok:true,
+ *      product, title, files:[{label, url, bytes}], email, week }. Ta pozna aj
+ *      e-mail, na ktory sa subory poslali, a pri predplatnom aj tyzden.
+ *   b) ked sluzba neodpovie, nie je nasadena alebo odpovie { ok:false }, plati
+ *      presne to, co doteraz: subory z bloku <script type="application/json"
+ *      id="titul-data"> na stranke.
+ * Stranka teda funguje aj bez sluzby, len bez e-mailu v texte.
  *
  * Vedome zjednodusenie bez servera: subory su staticke na GitHub Pages a chrani
  * ich len neuhadnutelny nazov priecinka (16 znakov nahody z
  * ops/design/tajne-cesty-tituly.json, do stranky ich dosadi
- * ops/design/tajne-cesty-titul.mjs do bloku <script type="application/json"
- * id="titul-data">). Odomknutie ten odkaz len ukaze, nevyrobi ho. Kto si odkaz
- * odlozi alebo si precita zdroj stranky, dostane sa k suborom aj bez platby.
- * Je to napisane aj v otazkach na stranke, aby to nikoho neprekvapilo.
+ * ops/design/tajne-cesty-titul.mjs do bloku titul-data). Odomknutie ten odkaz
+ * len ukaze, nevyrobi ho. Kto si odkaz odlozi alebo si precita zdroj stranky,
+ * dostane sa k suborom aj bez platby. Je to napisane aj v otazkach na stranke,
+ * aby to nikoho neprekvapilo.
+ *
+ * Preco panel a nie odrazky: 17. 9. 2026 Andrej zaplatil trikrat v test mode a
+ * stranka po platbe vyzerala takmer rovnako ako pred nou. Riadok "Paid, thank
+ * you" mal velkost drobneho textu, odkazy na subory boli odrazky a po tlacidle
+ * ostala diera. Odvtedy je po platbe na mieste tlacidla panel s nadpisom, s
+ * jednym velkym tlacidlom na kazdy subor a s drobnostami (ukazka, e-mail,
+ * cislo objednavky) pod nimi. Vzhlad panela je v products/arling-sk/style/hub.css,
+ * cast 9; tu vznika len jeho obsah.
  *
  * Tento subor sam od seba nic nerobi: stranka si zavola nastav(). Vdaka tomu sa
  * ciste funkcie daju testovat v Node (products/arling-sk/titul.test.mjs).
  */
 
 export const API = 'https://arling-asistent.arling.workers.dev';
+/* Licencna sluzba na homelabe. Ta ista adresa ako /style/ucet.js pre workera a
+   subscribe.js pre homelab; v CSP stranok uz stoji v connect-src. */
+export const LICENCIE = 'https://homelab.tailbf8f27.ts.net/licence/api';
 export const KLUC_ODOMKNUTE = 'titul:zaplatene';
 export const KLUC_CAKAJUCA = 'titul:cakajuca';
 export const KLUC_TEST = 'titul:test';
 
 export const T = {
   overujem: 'Checking the payment',
-  zaplatene: '<b>Paid, thank you.</b> The download links are below and stay in this browser.',
   inaSuma: 'The payment went through, but not for an amount we recognise. Write to andrej@arling.sk and we will sort it out by hand.',
   nepotvrdene: 'We have not been able to confirm the payment yet. We keep trying; if you paid, the files unlock as soon as Stripe answers. If it takes longer than a few minutes, write to andrej@arling.sk with the order number from the Stripe e-mail.',
   overZnova: 'Check again',
   zapina: 'Buying this title here is still being switched on. It is on sale on Etsy today, or write to andrej@arling.sk and we will send you the files.',
   testChyba: 'Test mode is on, but this title has no test link yet. Run ops/stripe/tituly.mjs --test --zapis, or open this page without ?test=1 to buy it for real.',
   testCudzi: 'This is a payment from Stripe test mode. It unlocks files only in the browser that started the test with ?test=1.',
-  testPoznamka: '(Test mode: the payment was made in Stripe test mode, no money changed hands.)',
-  bezCesty: 'The payment is confirmed, but the download is not switched on yet. Write to andrej@arling.sk with the order number from the Stripe e-mail and we will send you the files today.',
+};
+
+/* Texty panela po zaplateni. Jazyk trhu je anglictina, rovnako ako stranky. */
+export const PANEL = {
+  znacka: 'Paid, thank you',
+  nadpis: 'Your files',
+  stiahnut: 'Download ',
+  ukazka: 'Free sample',
+  mailPred: 'These links stay in this browser and were also sent to ',
+  mailBez: 'the e-mail address you paid with',
+  mailPo: '.',
+  objednavka: 'Order ',
+  test: 'Test mode: the payment was made in Stripe test mode, no money is taken; the files below are the real ones.',
+  bezCesty: 'The payment is confirmed, but the download is not switched on yet. Write to andrej@arling.sk with the order number below and we will send you the files today.',
 };
 
 /* ── Ciste funkcie (testovane v Node) ──────────────────────────────────── */
@@ -66,11 +98,15 @@ export function posudPlatbu(st, cena) {
 export function stavZoZaznamu(raw) {
   let s = raw;
   if (typeof s === 'string') { try { s = JSON.parse(s); } catch (e) { s = null; } }
-  if (!s || typeof s !== 'object') return { tituly: {}, test: false };
+  if (!s || typeof s !== 'object') return { tituly: {}, sessions: {}, test: false };
   const tituly = (s.tituly && typeof s.tituly === 'object') ? s.tituly : {};
-  const von = {};
+  const sessions = (s.sessions && typeof s.sessions === 'object') ? s.sessions : {};
+  const von = {}, relacie = {};
   for (const k of Object.keys(tituly)) if (tituly[k]) von[k] = true;
-  return { tituly: von, test: !!s.test };
+  // Session sa uklada az od 18. 9. 2026; starsi zaznam ju nema a panel potom
+  // ostane bez cisla objednavky, nic sa tym nerozbije.
+  for (const k of Object.keys(sessions)) if (von[k] && typeof sessions[k] === 'string' && sessions[k]) relacie[k] = sessions[k];
+  return { tituly: von, sessions: relacie, test: !!s.test };
 }
 
 /** Cesta k platenemu suboru. Prazdny retazec, kym tajna cesta nie je dosadena. */
@@ -92,12 +128,197 @@ export function titulZDotazu(hodnota, mojTitul) {
   return t && t === mojTitul ? t : '';
 }
 
+/** Cislo objednavky pre cloveka: poslednych osem znakov session id. */
+export function cisloObjednavky(sid) {
+  const s = String(sid || '');
+  return s.length > 8 ? s.slice(-8) : s;
+}
+
+/** Velkost suboru pre tlacidlo. Bez pouzitelneho cisla radsej nic. */
+export function velkostSuboru(bytes) {
+  const b = Number(bytes);
+  if (!Number.isFinite(b) || b <= 0) return '';
+  if (b < 1024 * 1024) return Math.round(b / 1024) + ' KB';
+  return (b / (1024 * 1024)).toFixed(2) + ' MB';
+}
+
+/**
+ * Adresa suboru z cudzej odpovede. Odkaz smie viest len k nam alebo byt
+ * relativny; cudzia schema (javascript:, data:) a cudzia domena su nic.
+ */
+export function platnaAdresaSuboru(url) {
+  const u = String(url || '').trim();
+  if (!u) return '';
+  if (/^https:\/\/(homelab\.tailbf8f27\.ts\.net|arling\.sk)\//.test(u)) return u;
+  if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(u)) return '';
+  if (u.startsWith('//')) return '';
+  return u;
+}
+
+/**
+ * Subory z odpovede licencnej sluzby. Prazdne pole znamena "odpoved sa neda
+ * pouzit" a volajuci vtedy spadne na blok titul-data na stranke.
+ * Produkt sa nekontroluje zamerne: odkazy viaze session id, nie meno produktu,
+ * a mena sa medzi sluzbou a strankou casom rozidu.
+ */
+export function suboryZoSluzby(odpoved) {
+  if (!odpoved || typeof odpoved !== 'object' || odpoved.ok !== true) return [];
+  const zoznam = Array.isArray(odpoved.files) ? odpoved.files : [];
+  const von = [];
+  for (const f of zoznam) {
+    if (!f || typeof f !== 'object') continue;
+    const href = platnaAdresaSuboru(f.url);
+    if (!href) continue;
+    von.push({ nazov: String(f.label || '').trim(), href, velkost: velkostSuboru(f.bytes), popis: '' });
+  }
+  return von;
+}
+
+/**
+ * Subory z bloku titul-data na stranke. Velkost stoji v popise ("953 pages,
+ * 5.35 MB"), takze sa z neho vytiahne, aby tlacidlo vyzeralo rovnako ako pri
+ * odpovedi sluzby.
+ */
+export function suboryZoStranky(data) {
+  const zoznam = (data && Array.isArray(data.subory)) ? data.subory : [];
+  const von = [];
+  for (const s of zoznam) {
+    if (!s) continue;
+    const popis = String(s.popis || '');
+    const m = popis.match(/(\d+(?:[.,]\d+)?\s?(?:KB|MB|GB))/i);
+    von.push({
+      nazov: String(s.nazov || s.file || ''),
+      href: cestaSuboru(data, s.file),
+      velkost: m ? m[1] : '',
+      popis: m ? popis.replace(m[0], '').replace(/[,;]\s*$/, '').trim() : popis,
+      format: s.format || '',
+    });
+  }
+  return von;
+}
+
+/* ── Sluzba, potom stranka ─────────────────────────────────────────────── */
+
+/**
+ * Odkazy z licencnej sluzby, alebo null. Nikdy nevyhodi vynimku: ked sluzba
+ * nebezi, nie je nasadena alebo odpovie ok:false, volajuci ma spadnut na blok
+ * titul-data. fetch sa da podstrcit (volby.fetch), aby sa to dalo testovat.
+ */
+export async function odkazyZoSluzby(sid, volby = {}) {
+  // Podstrceny fetch plati aj ked je null: test tym overi stav "prehliadac
+  // fetch nema" bez toho, aby sa cokolvek pytalo siete.
+  const vlastny = Object.prototype.hasOwnProperty.call(volby, 'fetch');
+  const posli = vlastny ? volby.fetch : (typeof fetch === 'function' ? fetch : null);
+  if (!posli || !sid) return null;
+  let odpoved = null;
+  try {
+    const r = await posli(LICENCIE + '/purchase/links?session_id=' + encodeURIComponent(sid));
+    if (!r || !r.ok) return null;
+    odpoved = await r.json();
+  } catch (e) { return null; }
+  const subory = suboryZoSluzby(odpoved);
+  if (!subory.length) return null;
+  return {
+    subory,
+    email: typeof odpoved.email === 'string' ? odpoved.email : '',
+    tyzden: typeof odpoved.week === 'string' ? odpoved.week : '',
+    nazov: typeof odpoved.title === 'string' ? odpoved.title : '',
+    produkt: typeof odpoved.product === 'string' ? odpoved.product : '',
+  };
+}
+
+/** Najprv sluzba, potom blok titul-data. Vracia vzdy pouzitelny tvar. */
+export async function zdrojSuborov(sid, data, volby = {}) {
+  const zo = await odkazyZoSluzby(sid, volby);
+  if (zo) return { zdroj: 'sluzba', subory: zo.subory, email: zo.email, tyzden: zo.tyzden, nazov: zo.nazov };
+  return { zdroj: 'stranka', subory: suboryZoStranky(data), email: '', tyzden: '', nazov: '' };
+}
+
+/* ── Panel po zaplateni ────────────────────────────────────────────────── */
+
+/**
+ * Vykresli panel so subormi do daneho prvku. Stav:
+ *   { subory, email, session, test, nadpis, znacka, ukazka:{href,text} }
+ * Nic nefarbi ani nepozicuje, vzhlad je v hub.css casti 9.
+ */
+export function vykresliPanel(koren, stav = {}) {
+  if (!koren) return null;
+  const d = typeof document !== 'undefined' ? document : null;
+  if (!d) return null;
+  const prvok = (tag, trieda, text) => {
+    const x = d.createElement(tag);
+    if (trieda) x.className = trieda;
+    if (text) x.textContent = text;
+    return x;
+  };
+
+  koren.textContent = '';
+  koren.className = 'hotovo hotovo-panel';
+  koren.appendChild(prvok('p', 'hotovo-znacka', stav.znacka || PANEL.znacka));
+  koren.appendChild(prvok('h3', 'hotovo-nadpis', stav.nadpis || PANEL.nadpis));
+  if (stav.test) koren.appendChild(prvok('p', 'hotovo-riadok', PANEL.test));
+  if (stav.poznamka) koren.appendChild(prvok('p', 'hotovo-riadok', stav.poznamka));
+
+  const subory = (Array.isArray(stav.subory) ? stav.subory : []).filter((s) => s && s.href);
+  if (subory.length) {
+    const ul = prvok('ul', 'hotovo-subory');
+    for (const s of subory) {
+      const li = d.createElement('li');
+      const a = prvok('a', 'btn btn-solid subor');
+      a.setAttribute('href', s.href);
+      a.setAttribute('download', '');
+      if (s.format) a.dataset.format = s.format;
+      a.appendChild(prvok('span', 'subor-nazov', PANEL.stiahnut + (s.nazov || '')));
+      const meta = [s.velkost, s.popis].filter(Boolean).join(' · ');
+      if (meta) a.appendChild(prvok('span', 'subor-meta', meta));
+      li.appendChild(a);
+      ul.appendChild(li);
+    }
+    koren.appendChild(ul);
+  } else {
+    // Zaplatene je, ale tajna cesta na stranke chyba (alebo sluzba nema subor).
+    // Nevyrabame mrtvy odkaz, povieme, co ma clovek urobit.
+    koren.appendChild(prvok('p', 'hotovo-riadok', PANEL.bezCesty));
+  }
+
+  if (stav.ukazka && stav.ukazka.href) {
+    const p = prvok('p', 'hotovo-ukazka');
+    const a = d.createElement('a');
+    a.setAttribute('href', stav.ukazka.href);
+    a.textContent = stav.ukazka.text || PANEL.ukazka;
+    p.appendChild(a);
+    koren.appendChild(p);
+  }
+
+  const mail = prvok('p', 'hotovo-mail');
+  mail.appendChild(d.createTextNode(PANEL.mailPred));
+  const kto = d.createElement('b');
+  kto.textContent = stav.email ? String(stav.email) : PANEL.mailBez;
+  mail.appendChild(kto);
+  mail.appendChild(d.createTextNode(PANEL.mailPo));
+  koren.appendChild(mail);
+
+  const cislo = cisloObjednavky(stav.session);
+  if (cislo) {
+    const p = prvok('p', 'hotovo-cislo');
+    p.appendChild(d.createTextNode(PANEL.objednavka));
+    const b = d.createElement('b');
+    b.textContent = cislo;
+    p.appendChild(b);
+    koren.appendChild(p);
+  }
+
+  koren.hidden = false;
+  return koren;
+}
+
 /* ── Stranka ───────────────────────────────────────────────────────────── */
 
 function bezpecneNacitaj(store, k) { try { return store ? store.getItem(k) : null; } catch (e) { return null; } }
 function bezpecneUloz(store, k, v) { try { if (store) store.setItem(k, v); } catch (e) { /* bez uloziska to bezi dalej */ } }
 function bezpecneZabudni(store, k) { try { if (store) store.removeItem(k); } catch (e) { /* nic */ } }
 function track(name, data) { try { if (window.umami && typeof window.umami.track === 'function') window.umami.track(name, data); } catch (e) { /* nic */ } }
+function doklad() { return typeof document !== 'undefined' ? document : null; }
 
 /** Udaje titulu z bloku <script type="application/json" id="titul-data">. */
 export function nacitajUdaje(doc) {
@@ -122,34 +343,64 @@ export function jeOdomknuty(id) {
   return !!odomknute().tituly[id];
 }
 
-export function odomkni(id, jeTest) {
+export function sessionTitulu(id) {
+  return odomknute().sessions[id] || '';
+}
+
+export function odomkni(id, jeTest, sid) {
   const s = odomknute();
   s.tituly[id] = true;
+  if (sid) s.sessions[id] = String(sid);
   if (jeTest) s.test = true;
   s.t = Date.now();
   bezpecneUloz(typeof localStorage === 'undefined' ? null : localStorage, KLUC_ODOMKNUTE, JSON.stringify(s));
 }
 
-/** Odkazy na subory sa stavaju az tu: kym titul nie je odomknuty, tajna cesta na stranke nikde nestoji. */
-export function vykresliSubory(koren, data) {
-  if (!koren) return;
-  const zoznam = (data && Array.isArray(data.subory)) ? data.subory : [];
-  const ul = koren.querySelector('ul');
-  if (!ul) return;
-  ul.textContent = '';
-  for (const s of zoznam) {
-    const href = cestaSuboru(data, s.file);
-    const li = document.createElement('li');
-    const a = document.createElement('a');
-    a.setAttribute('href', href || '#');
-    a.setAttribute('download', '');
-    a.dataset.format = s.format || '';
-    a.textContent = s.nazov || s.file;
-    if (!href) { a.removeAttribute('download'); a.setAttribute('aria-disabled', 'true'); }
-    li.appendChild(a);
-    if (s.popis) { const i = document.createElement('span'); i.textContent = ' ' + s.popis; li.appendChild(i); }
-    ul.appendChild(li);
+/** Ukazka pri tlacidle kupy, aby sa dala po platbe zopakovat ako tichy odkaz. */
+export function ukazkaZoStranky(titul, doc) {
+  const d = doc || doklad();
+  if (!d) return null;
+  const btn = d.querySelector('[data-titul="' + titul + '"]');
+  const obal = btn && typeof btn.closest === 'function' ? btn.closest('.akcie') : null;
+  const a = (obal || d).querySelector('a[data-ukazka]');
+  if (!a) return null;
+  const href = a.getAttribute('href') || '';
+  if (!href) return null;
+  return { href, text: (a.textContent || '').trim() || PANEL.ukazka };
+}
+
+/** Po platbe ide prec cely riadok s tlacidlom, nielen tlacidlo samo. */
+export function skryNakup(titul, doc) {
+  const d = doc || doklad();
+  if (!d || !titul) return;
+  for (const b of d.querySelectorAll('[data-titul="' + titul + '"]')) {
+    b.hidden = true;
+    const obal = typeof b.closest === 'function' ? b.closest('.akcie') : null;
+    if (obal) obal.hidden = true;
   }
+}
+
+/**
+ * Cely stav po zaplateni: subory zo sluzby alebo zo stranky, panel na mieste
+ * tlacidla a schovany riadok kupy. Pouzivaju to vsetky stranky s jednorazovym
+ * titulom aj cislo Puzzle Post.
+ * volby: { blok, data, titul, sid, test, nadpis, ukazka, fetch }
+ */
+export async function ukazPoPlatbe(volby = {}) {
+  const ukazka = volby.ukazka === null ? null : (volby.ukazka || ukazkaZoStranky(volby.titul));
+  const zdroj = await zdrojSuborov(volby.sid, volby.data, volby);
+  vykresliPanel(volby.blok, {
+    subory: zdroj.subory,
+    email: zdroj.email,
+    session: volby.sid,
+    test: !!volby.test,
+    nadpis: volby.nadpis,
+    znacka: volby.znacka,
+    poznamka: volby.poznamka,
+    ukazka,
+  });
+  skryNakup(volby.titul, volby.doc);
+  return zdroj;
 }
 
 /**
@@ -167,15 +418,24 @@ export function nastav(volby = {}) {
   const odznak = document.getElementById('test-odznak');
   if (odznak) odznak.hidden = !test;
 
+  let panelHotovy = false;
+  function panel(sid, jeTest) {
+    panelHotovy = true;
+    return ukazPoPlatbe({ blok, data, titul: data.titul, sid, test: jeTest });
+  }
+
   function prekresli() {
     const hotovo = jeOdomknuty(data.titul);
-    if (blok) {
-      blok.hidden = !hotovo;
-      if (hotovo) vykresliSubory(blok, data);
+    if (!hotovo) {
+      if (blok) blok.hidden = true;
+      return;
     }
-    for (const b of document.querySelectorAll('[data-titul="' + data.titul + '"]')) b.hidden = hotovo;
+    skryNakup(data.titul);
     const kupa = document.getElementById('kupa-hotova');
-    if (kupa) kupa.hidden = !hotovo;
+    if (kupa) kupa.hidden = false;
+    // Po obnoveni stranky sa panel postavi znova. Session si pamata zaznam o
+    // odomknuti, takze sa da znova spytat sluzby na e-mail a cerstve odkazy.
+    if (!panelHotovy) panel(sessionTitulu(data.titul), odomknute().test);
   }
 
   for (const btn of document.querySelectorAll('[data-titul]')) {
@@ -205,21 +465,21 @@ export function nastav(volby = {}) {
   let cakanie = null;
   async function over(sid, pokus) {
     if (stavEl) stavEl.textContent = T.overujem + (pokus > 1 ? ' (' + pokus + ')' : '');
-    let st = null, siet = false;
+    let st = null;
     try {
       const r = await fetch(API + '/v1/kontrola/status?session_id=' + encodeURIComponent(sid));
       if (r.ok) st = await r.json();
-      else if (r.status >= 500 || r.status === 429) siet = true;
-    } catch (e) { siet = true; }
+    } catch (e) { /* siet, skusame dalej */ }
     const v = posudPlatbu(st, cena);
     if (v.stav === 'zaplatene') {
-      odomkni(data.titul, v.test);
+      odomkni(data.titul, v.test, sid);
       bezpecneZabudni(typeof localStorage === 'undefined' ? null : localStorage, KLUC_CAKAJUCA);
-      const maCestu = !!cestaSuboru(data, (data.subory && data.subory[0] && data.subory[0].file) || '');
-      if (stavEl) stavEl.innerHTML = (maCestu ? T.zaplatene : T.bezCesty) + (v.test ? ' ' + T.testPoznamka : '');
+      // Panel povie "Paid, thank you" sam a nahlas, riadok stavu uz nema co dodat.
+      if (stavEl) { stavEl.textContent = ''; stavEl.innerHTML = ''; }
       track('zaplatene', { titul: data.titul, test: !!v.test, produkt: data.produkt || data.titul });
+      await panel(sid, v.test);
       prekresli();
-      if (blok && maCestu) blok.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      if (blok) blok.scrollIntoView({ behavior: 'smooth', block: 'center' });
       if (typeof volby.poPlatbe === 'function') volby.poPlatbe(v);
       return true;
     }
@@ -265,5 +525,5 @@ export function nastav(volby = {}) {
 
   prekresli();
   poNavrate();
-  return { prekresli, over };
+  return { prekresli, over, panel };
 }
