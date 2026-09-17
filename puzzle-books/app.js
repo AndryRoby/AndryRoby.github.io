@@ -51,6 +51,7 @@ const T = {
   nepotvrdene: 'We have not been able to confirm the payment yet. We keep trying; if you paid, the books unlock as soon as Stripe answers. If it takes longer than a few minutes, write to andrej@arling.sk with the order number from the Stripe e-mail.',
   overZnova: 'Check again',
   zapina: 'Payment is still being switched on for this book. Write to andrej@arling.sk and we will send you the file.',
+  testChyba: 'Test mode is on, but this book has no test link yet. Run ops/stripe/puzzle-books-test.mjs --zapis, or open this page without ?test=1 to buy it for real.',
   testCudzi: 'This is a payment from Stripe test mode. It unlocks books only in the browser that started the test with ?test=1.',
   testPoznamka: '(Test mode: the payment was made in Stripe test mode, no money changed hands.)',
 };
@@ -121,12 +122,20 @@ function odkazNaKupu(btn) {
   return u && u.startsWith('https://') ? u : '';
 }
 
+/* Odznak sa ukáže len v testovom režime, aby nikto nepovažoval testovú
+   platbu za skutočnú. V živom režime ostáva schovaný. */
+function ukazTestOdznak() {
+  const el = $('test-odznak');
+  if (el) el.hidden = !testRezim();
+}
+ukazTestOdznak();
+
 for (const btn of document.querySelectorAll('[data-link]')) {
   btn.addEventListener('click', () => {
     const kniha = btn.dataset.kniha || 'all';
     track('books_kupa_click', { kniha: kniha, cena: kniha === 'all' ? CENA_VSETKY : CENA_KNIHA, produkt: 'books' });
     const u = odkazNaKupu(btn);
-    if (!u) { stavPlatby.textContent = T.zapina; stavPlatby.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+    if (!u) { stavPlatby.textContent = testRezim() ? T.testChyba : T.zapina; stavPlatby.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
     location.href = u;
   });
 }
