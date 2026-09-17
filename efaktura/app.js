@@ -11,9 +11,9 @@
  *
  * Udalosti do Umami (ak bezi): efaktura_kontrola, efaktura_nahlad,
  * efaktura_vytvorit_nahlad, efaktura_kupa_click, efaktura_zaplatene,
- * efaktura_stiahnute, plus spolocne nastroj_pouzity a cena_videna.
+ * efaktura_stiahnute, kupa_click_vysledok, plus spolocne nastroj_pouzity a cena_videna.
  */
-import { skontroluj, protokol } from './pravidla.mjs';
+import { skontroluj, protokol, IMPLEMENTOVANE } from './pravidla.mjs';
 import * as K from './kodovniky.mjs';
 import { parsujXml } from './parser.mjs';
 import { vytvorUbl, prepocitaj, prazdnaFaktura, zCentov } from './ubl.js';
@@ -33,6 +33,25 @@ const LANG = CESTA_JAZYKA
 const tvar3 = (n, jeden, malo, vela) => (n === 1 ? jeden : n >= 2 && n <= 4 ? malo : vela);
 const tvar2 = (n, jeden, viac) => (n === 1 ? jeden : viac);
 
+/* Kolko pravidiel sa pre dany profil naozaj vyhodnoti.
+ * Cislo sa pocita zo zoznamu IMPLEMENTOVANE v pravidla.mjs podla toho, ktore sady
+ * funkcia skontroluj() pre profil spusti: jadro EN 16931 a vlastne kontroly vzdy,
+ * pravidla Peppol len pri profile peppol, pravidla XRechnung len pri profile xrechnung.
+ * Ked v pravidla.mjs pribudne alebo ubudne kod, cislo na stranke sa zmeni samo.
+ * Kody XML-01, XML-02 a CII-01 sa vyhodnocuju este pred vyberom profilu, preto sa nepocitaju.
+ * Pozor: 755 pravidiel UBL-CR/UBL-SR/UBL-DT nekontrolujeme, to cislo sa von nedava. */
+const PRED_PROFILOM = ['XML-01', 'XML-02', 'CII-01'];
+const jePeppolKod = (k) => k.indexOf('PEPPOL-') === 0;
+const jeNemeckyKod = (k) => /^BR-DE-|^BR-DEX-|^BR-TMP-/.test(k);
+const POCET_PRAVIDIEL = {
+  jadro: IMPLEMENTOVANE.filter((k) => !jePeppolKod(k) && !jeNemeckyKod(k) && PRED_PROFILOM.indexOf(k) === -1).length,
+  peppol: IMPLEMENTOVANE.filter(jePeppolKod).length,
+  xrechnung: IMPLEMENTOVANE.filter(jeNemeckyKod).length,
+};
+const pocetPravidiel = (profil) => POCET_PRAVIDIEL.jadro
+  + (profil === 'peppol' ? POCET_PRAVIDIEL.peppol : 0)
+  + (profil === 'xrechnung' ? POCET_PRAVIDIEL.xrechnung : 0);
+
 /* ── Texty obrazovky ────────────────────────────────────────────────────── */
 const T = {
   sk: {
@@ -43,6 +62,7 @@ const T = {
     sumarChyby: (n) => tvar3(n, 'chyba', 'chyby', 'chýb'),
     sumarVarovania: (n) => tvar3(n, 'varovanie', 'varovania', 'varovaní'),
     sumarInformacie: (n) => tvar3(n, 'informácia', 'informácie', 'informácií'),
+    sumarPravidla: (n) => 'Pre tento profil sme vyhodnotili ' + n + ' ' + tvar3(n, 'pravidlo', 'pravidlá', 'pravidiel') + '.',
     bezChyb: 'Nenašli sme žiadnu chybu ani varovanie. Súbor prešiel tými pravidlami, ktoré kontrolujeme.',
     maChyby: (n) => 'Našli sme ' + n + (n === 1 ? ' chybu.' : n < 5 ? ' chyby.' : ' chýb.') + ' Opravte ich a skúste znova.',
     povodneZnenie: 'Pôvodné znenie pravidla (anglicky)',
@@ -101,6 +121,7 @@ const T = {
     sumarChyby: (n) => tvar3(n, 'chyba', 'chyby', 'chyb'),
     sumarVarovania: () => 'varování',
     sumarInformacie: (n) => tvar3(n, 'informace', 'informace', 'informací'),
+    sumarPravidla: (n) => 'Pro tento profil jsme vyhodnotili ' + n + ' ' + tvar3(n, 'pravidlo', 'pravidla', 'pravidel') + '.',
     bezChyb: 'Nenašli jsme žádnou chybu ani varování. Soubor prošel těmi pravidly, která kontrolujeme.',
     maChyby: (n) => 'Našli jsme ' + n + (n === 1 ? ' chybu.' : n < 5 ? ' chyby.' : ' chyb.') + ' Opravte je a zkuste to znovu.',
     povodneZnenie: 'Původní znění pravidla (anglicky)',
@@ -157,6 +178,7 @@ const T = {
     sumarChyby: () => 'Fehler',
     sumarVarovania: (n) => tvar2(n, 'Warnung', 'Warnungen'),
     sumarInformacie: (n) => tvar2(n, 'Hinweis', 'Hinweise'),
+    sumarPravidla: (n) => 'Für dieses Profil haben wir ' + n + ' ' + tvar2(n, 'Regel', 'Regeln') + ' ausgewertet.',
     bezChyb: 'Wir haben weder Fehler noch Warnungen gefunden. Die Datei hat die Regeln bestanden, die wir prüfen.',
     maChyby: (n) => n === 1
       ? 'Wir haben 1 Fehler gefunden. Bitte beheben Sie ihn und prüfen Sie erneut.'
@@ -215,6 +237,7 @@ const T = {
     sumarChyby: (n) => tvar2(n, 'error', 'errors'),
     sumarVarovania: (n) => tvar2(n, 'warning', 'warnings'),
     sumarInformacie: (n) => tvar2(n, 'note', 'notes'),
+    sumarPravidla: (n) => 'For this profile we evaluated ' + n + ' ' + tvar2(n, 'rule', 'rules') + '.',
     bezChyb: 'We found no errors and no warnings. The file passed the rules we check.',
     maChyby: (n) => n === 1
       ? 'We found 1 error. Fix it and check again.'
@@ -710,6 +733,30 @@ if (vstupBlok) {
   });
 }
 
+/* Spustenie nastroja z prvej obrazovky. Nemecka stranka ma tieto tlacidla nad zahybom,
+ * lebo vstup nastroja bol na 390 px az na y=1824 pri okne vysokom 844 px. Ostatne
+ * jazyky tieto prvky zatial nemaju, preto sa vsetko kontroluje cez if. */
+function kNastroju() {
+  const c = $('nastroj');
+  if (c && c.scrollIntoView) { try { c.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (e) { c.scrollIntoView(); } }
+}
+const heroVzor = $('hero-vzor');
+if (heroVzor) heroVzor.addEventListener('click', () => {
+  prepni('kontrola', true);
+  prijmiText(VZOR, LANG === 'en' ? 'sample-e-invoice.xml' : 'vzor-efaktura.xml');
+  stavVstupu(T.vzorNacitany);
+  kNastroju();
+});
+const heroSubor = $('hero-subor');
+if (heroSubor) heroSubor.addEventListener('click', () => {
+  prepni('kontrola', true);
+  kNastroju();
+  const s = $('subor');
+  if (s) s.click();
+});
+const heroVytvorit = $('hero-vytvorit');
+if (heroVytvorit) heroVytvorit.addEventListener('click', () => { prepni('vytvorit', true); kNastroju(); });
+
 /* ── Zalozka 1: kontrola ────────────────────────────────────────────────── */
 let poslednyVysledok = null;
 
@@ -746,10 +793,12 @@ function spustiKontrolu() {
   const cielNalezy = $('nalezy');
   const akcie = $('akcie');
   if (!cielSumar || !cielNalezy) return;
+  const kupaBlok = $('kupa-vysledok-blok');
   if (!xmlText.trim()) {
     vycisti(cielSumar); vycisti(cielNalezy);
     cielSumar.appendChild(el('p', 'poznamka', T.nacitajteSubor));
     if (akcie) akcie.hidden = true;
+    if (kupaBlok) kupaBlok.hidden = true;
     return;
   }
   const v = skontroluj(xmlText);
@@ -765,9 +814,15 @@ function spustiKontrolu() {
   meta.appendChild(el('span', null, s.varovania + ' ' + T.sumarVarovania(s.varovania)));
   meta.appendChild(el('span', null, s.informacie + ' ' + T.sumarInformacie(s.informacie)));
   cielSumar.appendChild(meta);
+  // Pravidla bezia len nad UBL 2.1; pri CII alebo pri chybe XML by cislo klamalo.
+  const bezaliPravidla = v.typ === 'Invoice' || v.typ === 'CreditNote';
+  // Kolko pravidiel na tento subor naozaj beralo; cislo je z pravidla.mjs, nie natvrdo.
+  if (bezaliPravidla) cielSumar.appendChild(el('p', 'sumar-meta sumar-pravidla', T.sumarPravidla(pocetPravidiel(v.profil))));
   vycisti(cielNalezy);
   for (const n of v.nalezy) cielNalezy.appendChild(riadokNalezu(n));
   if (akcie) akcie.hidden = false;
+  // Platene tlacidlo hned pod uspesnym vysledkom bezplatnej kontroly (len tam, kde ho stranka ma).
+  if (kupaBlok) kupaBlok.hidden = !(bezaliPravidla && s.chyby === 0);
   track('efaktura_kontrola', { vysledok: s.chyby ? 'chyby' : 'ok', profil: v.profil, produkt: 'efaktura', jazyk: LANG });
 }
 
@@ -1157,8 +1212,14 @@ function ukazPlatbu() {
   }
 }
 
-function klikNaKupu(btn, typ, cena) {
-  track('efaktura_kupa_click', { cena, typ, produkt: 'efaktura', jazyk: LANG });
+/* miesto: 'dole' je tlacidlo v brane pod generatorom, 'vysledok' to iste tlacidlo
+ * hned pod uspesnou bezplatnou kontrolou. Obe posielaju efaktura_kupa_click, takze
+ * sucet klikov ostava jeden; tlacidlo pri vysledku navyse posle kupa_click_vysledok,
+ * aby bolo vidiet, ktore miesto ludia klikaju. */
+function klikNaKupu(btn, typ, cena, miesto) {
+  const kde = miesto || 'dole';
+  track('efaktura_kupa_click', { cena, typ, miesto: kde, produkt: 'efaktura', jazyk: LANG });
+  if (kde === 'vysledok') track('kupa_click_vysledok', { cena, typ, produkt: 'efaktura', jazyk: LANG });
   const u = odkazNaKupu(btn);
   if (!u) {
     if (stavPlatby) stavPlatby.textContent = T.zapina;
@@ -1167,8 +1228,10 @@ function klikNaKupu(btn, typ, cena) {
   }
   location.href = u;
 }
-if (btnJedna) btnJedna.addEventListener('click', () => klikNaKupu(btnJedna, 'jedna', CENA_JEDNA));
-if (btnTrid) btnTrid.addEventListener('click', () => klikNaKupu(btnTrid, '30dni', CENA_30DNI));
+if (btnJedna) btnJedna.addEventListener('click', () => klikNaKupu(btnJedna, 'jedna', CENA_JEDNA, 'dole'));
+if (btnTrid) btnTrid.addEventListener('click', () => klikNaKupu(btnTrid, '30dni', CENA_30DNI, 'dole'));
+const btnVysledok = $('kupa-vysledok');
+if (btnVysledok) btnVysledok.addEventListener('click', () => klikNaKupu(btnVysledok, 'jedna', CENA_JEDNA, 'vysledok'));
 
 /* Stiahnutie XML: vygenerovane XML najprv prezenieme vlastnym validatorom.
  * Ked ma chybu, nestahujeme ho a ukazeme nalezy. Radsej ziadny subor nez zly. */
@@ -1265,6 +1328,6 @@ spustiKontrolu();
 prekresliGenerator();
 ukazPlatbu();
 davkaUI = zapojDavku({ jazyk: LANG, zaklad: () => faktura, platba: () => nacitaj('efaktura:zaplatene'),
-  testRezim, cena: CENA_30DNI, track, kupit: () => klikNaKupu(btnTrid, '30dni', CENA_30DNI) });
+  testRezim, cena: CENA_30DNI, track, kupit: () => klikNaKupu(btnTrid, '30dni', CENA_30DNI, 'davka') });
 poNavrate();
 sledujCenuVidenu();
