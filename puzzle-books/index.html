@@ -77,6 +77,11 @@
   .cena li::before { content:""; width:6px; height:6px; border-radius:50%; background:var(--accent); flex:none; margin-top:8px; }
   .cena .hotovo { border:1px solid var(--ok); border-radius:12px; background:rgba(94,207,154,.10); padding:12px 14px; margin:0 0 4px; font-family:var(--ui); font-size:14px; line-height:1.5; }
   .cena .hotovo b { color:var(--ok); }
+  /* Viditeľné označenie testu: keď stránka beží s ?test=1, tlačidlá idú na
+     Stripe test mód a nikto nesmie čakať, že zaplatil. */
+  .test-odznak { display:block; border:1px solid var(--accent); border-radius:12px; padding:10px 12px; margin:0 0 14px;
+                 font-family:var(--ui); font-size:13px; line-height:1.5; color:var(--body); }
+  .test-odznak b { font:700 12px/1.2 var(--ui); letter-spacing:.14em; text-transform:uppercase; color:var(--accent); display:block; margin:0 0 4px; }
   .stav-platby { font-family:var(--ui); font-size:14px; color:var(--body); min-height:1.5em; margin:12px 0 0; line-height:1.5; }
   .stav-platby b { color:var(--ok); }
   .stav-platby .btn { height:34px; padding:0 12px; font-size:13px; margin-left:8px; vertical-align:middle; width:auto; }
@@ -145,10 +150,11 @@
       </ul>
     </div>
     <div class="cena r d2" id="cena">
+      <p class="test-odznak" id="test-odznak" hidden><b>Test mode</b>Every buy button leads to Stripe test mode. Use the card 4242 4242 4242 4242, any future date and any CVC. No money is taken and nothing is ordered.</p>
       <span class="suma">19.90 &euro;</span>
-      <p class="zaco">for all ten books, one payment, price before any tax added at checkout. A single book is <b>4.90 &euro;</b>, so the ten of them one by one would come to 49 &euro; and the bundle saves you 29.10 &euro; before any added tax. Every book has a buy button of its own below.</p>
+      <p class="zaco">for all ten books, one payment, VAT included, nothing added at checkout. A single book is <b>4.90 &euro;</b> with VAT included, so the ten of them one by one would come to 49 &euro; and the bundle saves you 29.10 &euro;. Every book has a buy button of its own below.</p>
       <p class="hotovo" id="cena-hotovo" hidden><b>All ten books are unlocked</b> in this browser. The download links are on each book below.</p>
-      <button type="button" class="btn btn-solid" id="kupit-vsetky" data-kniha="all" data-link="https://buy.stripe.com/3cI7sF2jEcSncx48G94ko0F" data-link-test="">All ten for 19.90 &euro;</button>
+      <button type="button" class="btn btn-solid" id="kupit-vsetky" data-kniha="all" data-link="https://buy.stripe.com/3cI7sF2jEcSncx48G94ko0F" data-link-test="https://buy.stripe.com/test_4gM9AN7DY8C7eFc3lP4ko0v">All ten for 19.90 &euro;</button>
       <ul>
         <li>ten kinds of logic puzzle, 1000 puzzles in all</li>
         <li>A4 and US Letter, both included in every book</li>
@@ -175,7 +181,7 @@
             <p>Draw one closed loop along the grid lines, where a number says how many of its four sides the loop runs along, and no number says nothing at all.</p>
             <p class="meta">100 puzzles &middot; 78 pages &middot; A4 and US Letter PDF</p>
             <p class="akcie">
-              <button type="button" class="btn btn-solid kupit" data-kniha="otters" data-link="https://buy.stripe.com/7sYfZb8I2f0v2Wu1dH4ko0x" data-link-test="">Buy for 4.90 &euro;</button>
+              <button type="button" class="btn btn-solid kupit" data-kniha="otters" data-link="https://buy.stripe.com/7sYfZb8I2f0v2Wu1dH4ko0x" data-link-test="https://buy.stripe.com/test_aFa3cpgau6tZ7cK7C54ko0n">Buy for 4.90 &euro;</button>
               <a class="btn btn-line" href="ukazka/otters.pdf" data-ukazka="otters">Free sample (5 puzzles)</a>
             </p>
             <p class="stiahnut" hidden><b>Unlocked.</b> Download <a href="#" data-format="a4">Otters, A4 PDF</a> or <a href="#" data-format="letter">Otters, US Letter PDF</a>.</p>
@@ -190,7 +196,7 @@
             <p>The numbers along the edges give the lengths of the runs of filled cells in order, and the picture falls out of the arithmetic without a single guess.</p>
             <p class="meta">100 puzzles &middot; 120 pages &middot; A4 and US Letter PDF</p>
             <p class="akcie">
-              <button type="button" class="btn btn-solid kupit" data-kniha="magpies" data-link="https://buy.stripe.com/5kQ5kx8I29GbeFc1dH4ko0w" data-link-test="">Buy for 4.90 &euro;</button>
+              <button type="button" class="btn btn-solid kupit" data-kniha="magpies" data-link="https://buy.stripe.com/5kQ5kx8I29GbeFc1dH4ko0w" data-link-test="https://buy.stripe.com/test_9B65kx1fA8C7aoW7C54ko0m">Buy for 4.90 &euro;</button>
               <a class="btn btn-line" href="ukazka/magpies.pdf" data-ukazka="magpies">Free sample (5 puzzles)</a>
             </p>
             <p class="stiahnut" hidden><b>Unlocked.</b> Download <a href="#" data-format="a4">Magpies, A4 PDF</a> or <a href="#" data-format="letter">Magpies, US Letter PDF</a>.</p>
@@ -205,7 +211,7 @@
             <p>A crossword made of sums: every run of cells adds up to the number in its clue, using 1 to 9, with no digit repeated inside a run.</p>
             <p class="meta">100 puzzles &middot; 108 pages &middot; A4 and US Letter PDF</p>
             <p class="akcie">
-              <button type="button" class="btn btn-solid kupit" data-kniha="squirrels" data-link="https://buy.stripe.com/14AeV7e2m3hN2Wu6y14ko0y" data-link-test="">Buy for 4.90 &euro;</button>
+              <button type="button" class="btn btn-solid kupit" data-kniha="squirrels" data-link="https://buy.stripe.com/14AeV7e2m3hN2Wu6y14ko0y" data-link-test="https://buy.stripe.com/test_dRmbIVf6q9GbfJg9Kd4ko0o">Buy for 4.90 &euro;</button>
               <a class="btn btn-line" href="ukazka/squirrels.pdf" data-ukazka="squirrels">Free sample (5 puzzles)</a>
             </p>
             <p class="stiahnut" hidden><b>Unlocked.</b> Download <a href="#" data-format="a4">Squirrels, A4 PDF</a> or <a href="#" data-format="letter">Squirrels, US Letter PDF</a>.</p>
@@ -220,7 +226,7 @@
             <p>Join the numbered sandbanks with straight walkways, as many as each number says, never crossing, until every sandbank can be reached from every other.</p>
             <p class="meta">100 puzzles &middot; 108 pages &middot; A4 and US Letter PDF</p>
             <p class="akcie">
-              <button type="button" class="btn btn-solid kupit" data-kniha="cranes" data-link="https://buy.stripe.com/28E3cpgau5pV8gO3lP4ko0z" data-link-test="">Buy for 4.90 &euro;</button>
+              <button type="button" class="btn btn-solid kupit" data-kniha="cranes" data-link="https://buy.stripe.com/28E3cpgau5pV8gO3lP4ko0z" data-link-test="https://buy.stripe.com/test_28E28l7DY19F40y4pT4ko0p">Buy for 4.90 &euro;</button>
               <a class="btn btn-line" href="ukazka/cranes.pdf" data-ukazka="cranes">Free sample (5 puzzles)</a>
             </p>
             <p class="stiahnut" hidden><b>Unlocked.</b> Download <a href="#" data-format="a4">Cranes, A4 PDF</a> or <a href="#" data-format="letter">Cranes, US Letter PDF</a>.</p>
@@ -235,7 +241,7 @@
             <p>Draw one loop through every swan: straight through the white ones, turning on the black ones, and never through the same cell twice.</p>
             <p class="meta">100 puzzles &middot; 93 pages &middot; A4 and US Letter PDF</p>
             <p class="akcie">
-              <button type="button" class="btn btn-solid kupit" data-kniha="swans" data-link="https://buy.stripe.com/4gM5kx3nIf0veFcbSl4ko0A" data-link-test="">Buy for 4.90 &euro;</button>
+              <button type="button" class="btn btn-solid kupit" data-kniha="swans" data-link="https://buy.stripe.com/4gM5kx3nIf0veFcbSl4ko0A" data-link-test="https://buy.stripe.com/test_eVq8wJbUecSndB84pT4ko0q">Buy for 4.90 &euro;</button>
               <a class="btn btn-line" href="ukazka/swans.pdf" data-ukazka="swans">Free sample (5 puzzles)</a>
             </p>
             <p class="stiahnut" hidden><b>Unlocked.</b> Download <a href="#" data-format="a4">Swans, A4 PDF</a> or <a href="#" data-format="letter">Swans, US Letter PDF</a>.</p>
@@ -250,7 +256,7 @@
             <p>Every number is an island of that many cells, and the rest of the meadow is one connected sheet of water that never fills a two by two block.</p>
             <p class="meta">100 puzzles &middot; 108 pages &middot; A4 and US Letter PDF</p>
             <p class="akcie">
-              <button type="button" class="btn btn-solid kupit" data-kniha="voles" data-link="https://buy.stripe.com/3cI8wJ9M62dJaoWg8B4ko0B" data-link-test="">Buy for 4.90 &euro;</button>
+              <button type="button" class="btn btn-solid kupit" data-kniha="voles" data-link="https://buy.stripe.com/3cI8wJ9M62dJaoWg8B4ko0B" data-link-test="https://buy.stripe.com/test_14A14h3nI3hNcx45tX4ko0r">Buy for 4.90 &euro;</button>
               <a class="btn btn-line" href="ukazka/voles.pdf" data-ukazka="voles">Free sample (5 puzzles)</a>
             </p>
             <p class="stiahnut" hidden><b>Unlocked.</b> Download <a href="#" data-format="a4">Voles, A4 PDF</a> or <a href="#" data-format="letter">Voles, US Letter PDF</a>.</p>
@@ -265,7 +271,7 @@
             <p>Sudoku with nothing filled in at the start: the dotted cages carry the sum of the cells inside them, and no number repeats within a cage.</p>
             <p class="meta">100 puzzles &middot; 108 pages &middot; A4 and US Letter PDF</p>
             <p class="akcie">
-              <button type="button" class="btn btn-solid kupit" data-kniha="badgers" data-link="https://buy.stripe.com/fZu3cp6zU8C768Gf4x4ko0C" data-link-test="">Buy for 4.90 &euro;</button>
+              <button type="button" class="btn btn-solid kupit" data-kniha="badgers" data-link="https://buy.stripe.com/fZu3cp6zU8C768Gf4x4ko0C" data-link-test="https://buy.stripe.com/test_dRm3cp9M6g4z2Wuf4x4ko0s">Buy for 4.90 &euro;</button>
               <a class="btn btn-line" href="ukazka/badgers.pdf" data-ukazka="badgers">Free sample (5 puzzles)</a>
             </p>
             <p class="stiahnut" hidden><b>Unlocked.</b> Download <a href="#" data-format="a4">Badgers, A4 PDF</a> or <a href="#" data-format="letter">Badgers, US Letter PDF</a>.</p>
@@ -280,7 +286,7 @@
             <p>Join each pair of matching nests with a path. Paths never cross, never run beside themselves, and every cell of the marsh ends up used.</p>
             <p class="meta">100 puzzles &middot; 78 pages &middot; A4 and US Letter PDF</p>
             <p class="akcie">
-              <button type="button" class="btn btn-solid kupit" data-kniha="herons" data-link="https://buy.stripe.com/3cI9ANf6qf0veFc8G94ko0D" data-link-test="">Buy for 4.90 &euro;</button>
+              <button type="button" class="btn btn-solid kupit" data-kniha="herons" data-link="https://buy.stripe.com/3cI9ANf6qf0veFc8G94ko0D" data-link-test="https://buy.stripe.com/test_5kQcMZ3nI3hNbt03lP4ko0t">Buy for 4.90 &euro;</button>
               <a class="btn btn-line" href="ukazka/herons.pdf" data-ukazka="herons">Free sample (5 puzzles)</a>
             </p>
             <p class="stiahnut" hidden><b>Unlocked.</b> Download <a href="#" data-format="a4">Herons, A4 PDF</a> or <a href="#" data-format="letter">Herons, US Letter PDF</a>.</p>
@@ -295,7 +301,7 @@
             <p>Ordinary Sudoku with one rule added: two cells a chess knight's leap apart never hold the same number, and in the harder ones neighbours never match either.</p>
             <p class="meta">100 puzzles &middot; 108 pages &middot; A4 and US Letter PDF</p>
             <p class="akcie">
-              <button type="button" class="btn btn-solid kupit" data-kniha="hares" data-link="https://buy.stripe.com/00weV75vQ6tZeFcaOh4ko0E" data-link-test="">Buy for 4.90 &euro;</button>
+              <button type="button" class="btn btn-solid kupit" data-kniha="hares" data-link="https://buy.stripe.com/00weV75vQ6tZeFcaOh4ko0E" data-link-test="https://buy.stripe.com/test_3cI4gtcYif0vcx46y14ko0u">Buy for 4.90 &euro;</button>
               <a class="btn btn-line" href="ukazka/hares.pdf" data-ukazka="hares">Free sample (5 puzzles)</a>
             </p>
             <p class="stiahnut" hidden><b>Unlocked.</b> Download <a href="#" data-format="a4">Hares, A4 PDF</a> or <a href="#" data-format="letter">Hares, US Letter PDF</a>.</p>
@@ -310,7 +316,7 @@
             <p>Two hedgehogs in every row, every column and every outlined flowerbed, and no two of them may touch, not even at a corner.</p>
             <p class="meta">100 puzzles &middot; 120 pages &middot; A4 and US Letter PDF</p>
             <p class="akcie">
-              <button type="button" class="btn btn-solid kupit" data-kniha="hedgehogs" data-link="https://buy.stripe.com/4gM9AN7DY8C7eFc3lP4ko0v" data-link-test="">Buy for 4.90 &euro;</button>
+              <button type="button" class="btn btn-solid kupit" data-kniha="hedgehogs" data-link="https://buy.stripe.com/4gM9AN7DY8C7eFc3lP4ko0v" data-link-test="https://buy.stripe.com/test_aFa5kx6zUcSncx43lP4ko0l">Buy for 4.90 &euro;</button>
               <a class="btn btn-line" href="ukazka/hedgehogs.pdf" data-ukazka="hedgehogs">Free sample (5 puzzles)</a>
             </p>
             <p class="stiahnut" hidden><b>Unlocked.</b> Download <a href="#" data-format="a4">Hedgehogs, A4 PDF</a> or <a href="#" data-format="letter">Hedgehogs, US Letter PDF</a>.</p>
