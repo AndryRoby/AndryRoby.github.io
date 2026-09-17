@@ -30,7 +30,7 @@
 <link rel="preload" href="/fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/style/paper.css?v=89016e6c">
-<link rel="stylesheet" href="/style/hub.css?v=067a124e">
+<link rel="stylesheet" href="/style/hub.css?v=ecc03b13">
 <script src="/style/prepinac.js?v=2988c181" defer></script>
 <script type="module" src="/puzzle-books/eink-bundle/app.js?v=1"></script>
 <script type="application/json" id="titul-data">
@@ -135,13 +135,7 @@
   .stav-platby { font-family:var(--ui); font-size:14px; color:var(--body); min-height:1.5em; margin:14px 0 0; line-height:1.55; }
   .stav-platby b { color:var(--ok); }
   .stav-platby .btn { height:38px; padding:0 12px; font-size:13px; margin-top:8px; width:auto; }
-  .hotovo { border-top:1px solid var(--line); margin:16px 0 0; padding:14px 0 0; }
-  .hotovo b { color:var(--ok); font-family:var(--ui); font-size:14px; }
-  .hotovo ul { list-style:none; margin:10px 0 0; padding:0; display:flex; flex-direction:column; gap:8px; font-family:var(--ui); font-size:14px; }
-  .hotovo ul li { display:flex; gap:10px; flex-wrap:wrap; }
-  .hotovo ul li::before { content:""; width:6px; height:6px; border-radius:50%; background:var(--ok); flex:none; margin-top:8px; }
-  .hotovo ul a { color:var(--ink); }
-  .hotovo ul span { color:var(--muted); }
+  /* Panel po zaplateni (.hotovo-panel) je v /style/hub.css, cast 9. */
 
   .dokazy { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:10px; }
   .dokazy li { display:flex; gap:10px; font-family:var(--ui); font-size:15px; color:var(--body); line-height:1.5; }
@@ -200,7 +194,8 @@
       <svg viewBox="0 0 488 215" width="38" height="15" aria-hidden="true" focusable="false"><path fill="#f4f4f7" fill-rule="evenodd" d="M0.00,213.00L74.00,214.00L181.00,85.00L285.00,214.00L360.00,214.00L206.00,21.00L185.00,4.00L164.00,10.00Z M221.00,0.00L263.00,50.00L395.00,50.00L409.00,55.00L419.00,76.00L401.00,96.00L313.00,98.00L411.00,214.00L487.00,214.00L422.00,139.00L457.00,123.00L482.00,88.00L482.00,48.00L463.00,19.00L417.00,0.00Z"/><path fill="#f2643c" d="M269.00,66.00L269.00,67.00L268.00,68.00L268.00,70.00L267.00,71.00L267.00,76.00L268.00,77.00L268.00,79.00L270.00,81.00L270.00,82.00L271.00,82.00L273.00,84.00L274.00,84.00L277.00,86.00L279.00,86.00L280.00,87.00L287.00,87.00L288.00,86.00L290.00,86.00L291.00,85.00L294.00,84.00L298.00,80.00L298.00,79.00L299.00,78.00L299.00,75.00L300.00,74.00L300.00,72.00L299.00,71.00L299.00,69.00L298.00,68.00L297.00,65.00L295.00,63.00L294.00,63.00L289.00,60.00L278.00,60.00L277.00,61.00L276.00,61.00L275.00,62.00L272.00,63.00Z"/></svg>
       <b>ARLing</b><span>E-ink puzzles</span>
     </a>
-    <nav aria-label="Site"><a href="https://arling.sk/en/#tools">Tools</a><a href="https://arling.sk/games/">Games</a><a href="https://arling.sk/notes/">Notes</a><a href="https://arling.sk/how-we-work/">How we work</a><a href="mailto:andrej@arling.sk">Contact</a></nav>
+    <nav id="hlavne-menu" aria-label="Site"><a href="https://arling.sk/shop/">Shop</a><a href="https://arling.sk/en/#tools">Tools</a><a href="https://arling.sk/games/">Games</a><a href="https://arling.sk/notes/">Notes</a><a href="https://arling.sk/how-we-work/">How we work</a><a href="mailto:andrej@arling.sk">Contact</a></nav>
+    <button class="menu-btn" type="button" aria-expanded="false" aria-controls="hlavne-menu"><svg viewBox="0 0 18 12" fill="none" aria-hidden="true"><path d="M1 1h16M1 6h16M1 11h16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>Menu</button>
   </div>
 </header>
 
@@ -222,19 +217,16 @@
     </figure>
 
     <div class="cena r d2" id="price">
-      <p class="test-odznak" id="test-odznak" hidden><b>Test mode</b>The buy button leads to Stripe test mode. Use the card 4242 4242 4242 4242, any future date and any CVC. No money is taken and nothing is ordered.</p>
+      <p class="test-odznak" id="test-odznak" hidden><b>Test mode</b>The buy button leads to Stripe test mode. Use the card 4242 4242 4242 4242, any future date and any CVC. No money is taken; the files below are the real ones.</p>
       <span class="suma">12.90 &euro;<i>one payment</i></span>
       <p class="zaco">VAT included, nothing added at checkout. You buy the ten books once and keep the files.</p>
-      <p class="akcie">
+      <p class="akcie akcie-kupa">
         <button type="button" class="btn btn-solid" data-titul="eink-bundle" data-link="https://buy.stripe.com/6oU6oB9M65pVfJg2hL4ko0R" data-link-test="https://buy.stripe.com/test_00waER8I2cSn8gO2hL4ko0G">Buy for 12.90 &euro;</button>
-        <a class="btn btn-line" href="ARLing-E-ink-Puzzles-Free-Sample.pdf" data-ukazka="eink-bundle">Free sample</a>
-        <a class="btn btn-line" href="#knihy">See the ten books</a>
+        <a class="tichy" href="ARLing-E-ink-Puzzles-Free-Sample.pdf" data-ukazka="eink-bundle">Free sample</a>
+        <a class="tichy" href="#knihy">See the ten books</a>
       </p>
       <p class="stav-platby" id="stav-platby" aria-live="polite"></p>
-      <div class="hotovo" id="subory-hotovo" hidden>
-        <b>Your files</b>
-        <ul></ul>
-      </div>
+      <div class="hotovo" id="subory-hotovo" hidden></div>
       <ul>
         <li>these are the same ten books that are sold one at a time at 4.90 &euro; each, so the ten of them separately come to 49 &euro;</li>
         <li>3000 puzzles, every one with exactly one solution, checked by the program that made it</li>
@@ -407,7 +399,7 @@
   <div class="wrap foot">
     <div><b>ARLing s. r. o.</b><br>Ivanská cesta 32E<br>821 04 Bratislava, Slovakia</div>
     <div>Company ID 56583486<br>VAT ID SK2122352100<br><a href="mailto:andrej@arling.sk">andrej@arling.sk</a></div>
-    <div><a href="https://arling.sk/privacy/">privacy</a> · <a href="https://arling.sk/podmienky/">terms</a> · <a href="https://arling.sk/gdpr/">GDPR</a> · <a href="https://arling.sk/impressum/">Impressum</a> · <a href="https://arling.sk/llms.txt">llms.txt</a> · <a href="https://arling.sk/sitemap-index.xml">sitemap</a><br>Tools are provided as is, without warranty. Anonymous visit counts via self-hosted Umami.</div>
+    <div><a href="https://arling.sk/shop/">shop</a> · <a href="https://arling.sk/privacy/">privacy</a> · <a href="https://arling.sk/podmienky/">terms</a> · <a href="https://arling.sk/gdpr/">GDPR</a> · <a href="https://arling.sk/impressum/">Impressum</a> · <a href="https://arling.sk/llms.txt">llms.txt</a> · <a href="https://arling.sk/sitemap-index.xml">sitemap</a><br>Tools are provided as is, without warranty. Anonymous visit counts via self-hosted Umami.</div>
   </div>
 </footer>
 <script>
