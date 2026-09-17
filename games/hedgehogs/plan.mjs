@@ -111,12 +111,21 @@ export function vyber(uroven, kandidat, pocet = KANDIDATOV) {
 
 /* The garden for a date. Deterministic: the same date gives the same garden
  * on every machine. Slow for Hard days (up to a few seconds), which is why
- * the built dni/*.json is used whenever it exists. */
-export function zadaniePreDen(iso) {
+ * the built dni/*.json is used whenever it exists.
+ *
+ * A variant above zero adds '/v<n>' to the seed name, so the same date gets
+ * a different candidate. ops/games/<game>/postav.mjs passes it when the day
+ * it just built repeats a puzzle that is already sold in a book or an
+ * edition (A-057, ops/games/vylucenia.mjs); it then keeps the result in
+ * dni/YYYY-MM.json, which is the only source of truth for a daily puzzle
+ * anyway. The browser never passes a variant, so variant 0 is byte for byte
+ * what this function gave before.
+ */
+export function zadaniePreDen(iso, variant = 0) {
   if (!isValidDate(iso)) throw new Error('Bad date: ' + iso);
   const u = urovenDna(iso);
   const { n } = UROVNE[u];
-  return vyber(u, (k) => generateSeeded(iso, iso + '/' + n + 'x' + STARS + (k ? '#' + k : ''), { n, stars: STARS }));
+  return vyber(u, (k) => generateSeeded(iso, iso + '/' + n + 'x' + STARS + (variant ? '/v' + variant : '') + (k ? '#' + k : ''), { n, stars: STARS }));
 }
 
 /* A practice garden: set id and 1-based number. Not tied to any date. */

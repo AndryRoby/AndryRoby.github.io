@@ -121,12 +121,21 @@ export function vyber(uroven, kandidat, pocet = KANDIDATOV) {
 
 /* The puzzle for a date. Deterministic: the same date gives the same marsh on
  * every machine, and fast enough (well under 4 s for all six candidates of
- * any day, see tests.mjs) that the built dni/*.json is only a convenience. */
-export function zadaniePreDen(iso) {
+ * any day, see tests.mjs) that the built dni/*.json is only a convenience.
+ *
+ * A variant above zero adds '/v<n>' to the seed name, so the same date gets
+ * a different candidate. ops/games/<game>/postav.mjs passes it when the day
+ * it just built repeats a puzzle that is already sold in a book or an
+ * edition (A-057, ops/games/vylucenia.mjs); it then keeps the result in
+ * dni/YYYY-MM.json, which is the only source of truth for a daily puzzle
+ * anyway. The browser never passes a variant, so variant 0 is byte for byte
+ * what this function gave before.
+ */
+export function zadaniePreDen(iso, variant = 0) {
   if (!isValidDate(iso)) throw new Error('Bad date: ' + iso);
   const u = urovenDna(iso);
   const { n, maxVrstva } = UROVNE[u];
-  return vyber(u, (k) => generateSeeded(iso, iso + '/' + n + (k ? '#' + k : ''), { n, maxVrstva }));
+  return vyber(u, (k) => generateSeeded(iso, iso + '/' + n + (variant ? '/v' + variant : '') + (k ? '#' + k : ''), { n, maxVrstva }));
 }
 
 /* A practice puzzle: set id and 1-based number. Not tied to any date. */
