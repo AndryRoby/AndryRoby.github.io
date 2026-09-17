@@ -35,7 +35,8 @@
 <link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/style/paper.css?v=89016e6c">
 <script src="/style/prepinac.js?v=2988c181" defer></script>
-<script type="module" src="/efaktura/app.js?v=eeab0ce2"></script>
+<script type="module" src="/efaktura/app.js?v=c7d77601"></script>
+<script type="module" src="/efaktura/de/leitweg-id/leitweg.js?v=b67045fa"></script>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -282,6 +283,19 @@
   .chyby-generatora .poznamka.je-ok { color:var(--ok); }
   .poznamka { font-family:var(--ui); font-size:14px; color:var(--muted); }
 
+  /* Leitweg-ID (A-040): cena a tri kroky nad formularom. Ziadna mriezka kariet,
+     zoznam krokov je rovnaky vzor ako .kroky v navodoch k hram. */
+  .leitweg-start { border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:var(--radius); background:var(--card); padding:clamp(16px,1.8vw,24px); margin:0 0 22px; max-width:82ch; }
+  .leitweg-cena { font-family:var(--ui); font-size:15px; line-height:1.5; color:var(--body); margin:0 0 14px; max-width:62ch; }
+  .leitweg-cena b { color:var(--ink); font-size:19px; }
+  .leitweg-start h3 { margin:0 0 4px; }
+  .kroky { list-style:none; padding:0; margin:0; }
+  .kroky li { padding:10px 0; border-bottom:1px solid var(--line); font-family:var(--ui); font-size:15px; line-height:1.55; color:var(--body); max-width:72ch; }
+  .kroky li:last-child { border-bottom:none; padding-bottom:0; }
+  .kroky li b { color:var(--ink); }
+  /* Skupinu s BT-10 stavia leitweg.js na zaciatku formulara. */
+  #skupina-leitweg { border-left:3px solid var(--accent); }
+
   details.otazka { border-top:1px solid var(--line); padding:16px 0; }
   details.otazka:last-of-type { border-bottom:1px solid var(--line); }
   details.otazka summary { cursor:pointer; font:600 clamp(16.5px,1.3vw,19px)/1.35 var(--display); color:var(--ink); list-style:none; display:block; position:relative; padding-right:26px; }
@@ -314,7 +328,7 @@
 </style></noscript>
 <link rel="stylesheet" href="/efaktura/davka.css?v=dad7031a">
 </head>
-<body class="noc">
+<body data-efaktura-start="vytvorit" class="noc">
 <div class="wash" aria-hidden="true"><i></i><i></i></div>
 <a class="skip" href="#nastroj">Zum Werkzeug springen</a>
 
@@ -390,6 +404,18 @@
       <section class="panel" id="panel-vytvorit" hidden>
         <h2 class="r">E-Rechnung ohne Buchhaltungssoftware erstellen</h2>
         <p class="sub r d1">Tragen Sie Verkäufer, Käufer, Nummern und Positionen ein. Rechts entsteht laufend der Beleg und daraus das XML in UBL 2.1. Verkäufer und Käufer können Sie in einem Adressbuch speichern, das nur in Ihrem Browser bleibt. Vor dem Download läuft über das erzeugte XML dieselbe Prüfung wie im ersten Tab; hat es einen Fehler, laden wir es nicht herunter.</p>
+        <!-- Leitweg-ID (A-040): Preis und die drei Schritte stehen direkt über dem Formular,
+             die Erklärung zu BT-10 bleibt unter dem Werkzeug. Das Werkzeug selbst ist
+             unverändert /efaktura/app.js mit dem Profil XRechnung für die deutsche Seite. -->
+        <div class="leitweg-start">
+          <p class="leitweg-cena"><b>2,90 € zzgl. MwSt.</b> für den XML-Download einer Rechnung, 9,90 € zzgl. MwSt. für 30 Tage. Formular, Vorschau und Prüfung sind kostenlos.</p>
+          <h3>Leitweg-ID eintragen, in drei Schritten</h3>
+          <ol class="kroky">
+            <li><b>1. Leitweg-ID beim Empfänger holen.</b> Vergeben wird sie von der Behörde, nicht von uns und nicht aus einem Generator. In der Praxis steht sie im Auftrag, in der Bestellung, im Vertrag oder auf der Seite der Behörde zur E-Rechnung.</li>
+            <li><b>2. In das Feld <a href="#pole-leitweg">Leitweg-ID / Käuferreferenz</a> eintragen.</b> Das ist BT-10, in UBL 2.1 das Element cbc:BuyerReference im Rechnungskopf. Das Feld steht ganz oben im Formular und ist beim Öffnen dieser Seite ausgewählt. Nicht in den Namen des Käufers, nicht in die Bestellnummer und nicht in die Anschrift.</li>
+            <li><b>3. Form prüfen lassen.</b> Erwartet werden 2 bis 12 Ziffern, eine optionale Feinadressierung und am Ende ein Bindestrich mit zweistelliger Prüfziffer, zum Beispiel 04011000-12345-34. Nach BR-DE-15 gehört BT-10 in jede XRechnung: fehlt es, meldet unsere Prüfung einen Fehler und das XML wird nicht heruntergeladen.</li>
+          </ol>
+        </div>
         <a class="btn btn-line zobrazit-nahlad" href="#nahlad-zivy">Vorschau anzeigen</a>
         <div class="dielna">
           <form id="formular" autocomplete="on" novalidate></form>
@@ -404,8 +430,8 @@
               <h3>XML-Download</h3>
               <p class="pomoc">Formular und Vorschau sind kostenlos. Für den Download des fertigen XML wird gezahlt: 2,90 € zzgl. MwSt. für eine Rechnung (in diesem Browser 24 Stunden freigeschaltet, damit Sie sie korrigieren und erneut herunterladen können) oder 9,90 € zzgl. MwSt. für 30 Tage ohne Begrenzung der Rechnungsanzahl. Das XML entsteht in Ihrem Browser und wird an keinen Server gesendet, wir sehen es nie.</p>
               <div class="cta">
-                <button type="button" class="btn btn-solid" id="kupa-jedna" data-link="https://buy.stripe.com/9B65kx1fA8C7aoW7C54ko0m" data-link-test="https://buy.stripe.com/test_fZueV75vQ8C740y8G94ko0e">Eine Rechnung für 2,90 € zzgl. MwSt. kaufen</button>
-                <button type="button" class="btn btn-line" id="kupa-30dni" data-link="https://buy.stripe.com/28E28l7DY19F40y4pT4ko0p" data-link-test="https://buy.stripe.com/test_00w8wJ9M6f0v8gO4pT4ko0i">Für 30 Tage freischalten, 9,90 € zzgl. MwSt.</button>
+                <button type="button" class="btn btn-solid" id="kupa-jedna" data-link="https://buy.stripe.com/9B65kx1fA8C7aoW7C54ko0m" data-link-test="https://buy.stripe.com/test_fZueV75vQ8C740y8G94ko0e" data-umami-event="kupa_click" data-umami-event-place="leitweg-id" data-umami-event-cena="290">Eine Rechnung für 2,90 € zzgl. MwSt. kaufen</button>
+                <button type="button" class="btn btn-line" id="kupa-30dni" data-link="https://buy.stripe.com/28E28l7DY19F40y4pT4ko0p" data-link-test="https://buy.stripe.com/test_00w8wJ9M6f0v8gO4pT4ko0i" data-umami-event="kupa_click" data-umami-event-place="leitweg-id" data-umami-event-cena="990">Für 30 Tage freischalten, 9,90 € zzgl. MwSt.</button>
               </div>
               <p class="pomoc">Den Verkauf wickelt Stripe als Merchant of Record ab (Stripe Payments Europe, Ltd., Dublin): den Kaufvertrag schließen Sie mit Stripe, das die Zahlung einzieht, den Beleg ausstellt und die Umsatzsteuer abführt; den Inhalt liefert ARLing. Mit dem Klick auf Bezahlen stimmen Sie der sofortigen Bereitstellung digitaler Inhalte zu und nehmen zur Kenntnis, dass Sie damit Ihr Widerrufsrecht verlieren (§ 356 Abs. 5 BGB; nach slowakischem Recht, dem Sitzstaat von ARLing, § 19 Abs. 1 Buchst. m) des Gesetzes Nr. 108/2024 Z. z.). <a href="https://arling.sk/podmienky/">AGB</a> · <a href="https://arling.sk/odstupenie/">Widerruf</a></p>
             </div>

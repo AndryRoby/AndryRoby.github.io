@@ -38,7 +38,7 @@
 <link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/style/paper.css?v=89016e6c">
 <script src="/style/prepinac.js?v=2988c181" defer></script>
-<script type="module" src="/efaktura/app.js?v=eeab0ce2"></script>
+<script type="module" src="/efaktura/app.js?v=c7d77601"></script>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -167,6 +167,12 @@
   .hero .lead { max-width:56ch; }
   /* Pri 1280 sa nadpis lamal v strede slova; mensi stupen ho zlomi medzi slovami. */
   body.noc .hero h1, .hero h1 { font-size:clamp(34px,3.6vw,50px); line-height:1.08; }
+  /* Cena a spustenie nastroja nad zahybom: na 390 px bol vstup nastroja az na
+     y=1824 pri okne 844 px, teda dve obrazovky pod cenou. Preto je tu kratky
+     riadok s cenou a tri tlacidla, ktore spustaju ten isty nastroj nizsie. */
+  .cena-hore { font-family:var(--ui); font-size:15px; color:var(--body); margin:14px 0 16px; max-width:52ch; }
+  .start-nastroj { display:flex; flex-wrap:wrap; gap:10px; margin:0 0 26px; }
+  .start-nastroj .btn { height:42px; }
   .cena { border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:var(--radius); background:var(--card); padding:clamp(20px,2vw,30px); min-width:0; }
   .cena .suma { font:700 clamp(34px,3.4vw,46px)/1 var(--display); color:var(--ink); letter-spacing:-.02em; display:block; }
   .cena .zaco { font-family:var(--ui); font-size:14px; color:var(--body); margin:8px 0 16px; }
@@ -290,6 +296,17 @@
   .sucty b { color:var(--muted); font-weight:500; }
   .brana { border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:var(--radius); background:var(--card); padding:clamp(18px,2vw,26px); margin:22px 0 0; }
   .brana h3 { margin-bottom:6px; }
+  /* Kupa hned pod vysledkom bezplatnej kontroly: to iste tlacidlo ako dole,
+     len s vlastnou udalostou kupa_click_vysledok, aby bolo vidiet, kde sa klika. */
+  .kupa-vysledok { border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:var(--radius); background:var(--card); padding:16px 18px; margin:0 0 18px; }
+  .kupa-vysledok .pomoc { margin:0 0 4px; }
+  .kupa-vysledok .cta { margin:12px 0 0; }
+  .odkazy-pravne { margin-top:14px; }
+  /* Dlhy odsek o predajcovi a odstupeni je pod tlacidlami zabaleny; odkazy AGB a Widerruf ostavaju nad nim. */
+  details.pravne { margin:2px 0 0; }
+  details.pravne summary { cursor:pointer; font:500 12.5px/1.5 var(--ui); color:var(--muted); }
+  details.pravne summary:hover { color:var(--ink); }
+  details.pravne .pomoc { margin:8px 0 0; }
   .brana .cta { margin:16px 0 0; }
   .brana .btn { height:42px; }
   .odomknute { border:1px solid var(--ok); border-radius:12px; background:rgba(94,207,154,.10); padding:12px 15px; margin:20px 0 0; font-family:var(--ui); font-size:13.5px; color:var(--body); }
@@ -350,8 +367,14 @@
 <main>
   <div class="wrap hero" id="hero">
     <div>
-      <p class="kicker">E-Rechnung nach EN 16931</p>
-      <h1><span class="l">E-Rechnung prüfen, ansehen und erstellen.</span><span class="l">Im Browser, sofort.</span></h1>
+      <p class="kicker">XRechnung nach EN 16931</p>
+      <h1><span class="l">XRechnung erstellen und prüfen.</span><span class="l">Im Browser, ohne Software.</span></h1>
+      <p class="cena-hore">2,90 € zzgl. MwSt. für das XML einer Rechnung, 9,90 € zzgl. MwSt. für 30 Tage ohne Begrenzung der Anzahl. Prüfung und Vorschau kostenlos, ohne Konto.</p>
+      <div class="start-nastroj">
+        <button type="button" class="btn btn-solid" id="hero-vzor">Beispiel laden und prüfen</button>
+        <button type="button" class="btn btn-line" id="hero-subor">Eigene Datei prüfen</button>
+        <a class="btn btn-line" id="hero-vytvorit" href="#vytvorit">XRechnung erstellen</a>
+      </div>
       <p class="lead r d3">Seit dem 1. Januar 2025 müssen Unternehmen in Deutschland E-Rechnungen im B2B empfangen können, ab 2028 müssen alle sie auch versenden. Hier prüfen Sie eine Datei nach EN 16931, Peppol BIS Billing 3.0 und XRechnung, sehen sie als gewöhnlichen Beleg und erstellen eine neue ohne Buchhaltungssoftware. Die Datei wird in Ihrem Browser gelesen und nirgendwo hochgeladen.</p>
       <ul class="facts proof r d5">
         <li>Prüfung und Vorschau <b>kostenlos</b>, ohne Konto, ohne Limit</li>
@@ -388,6 +411,12 @@
         <p class="sub r d1">Laden Sie eine UBL-2.1-Datei (Invoice oder CreditNote) und wir sagen Ihnen, was daran nicht stimmt. Zu jedem Befund sehen Sie den Regelcode, einen Satz auf Deutsch, den Pfad zum Element und unter einem Aufklapp-Link den englischen Originalwortlaut der Regel. Anhand des Feldes CustomizationID wählen wir selbst aus, ob die Regeln von EN 16931, Peppol BIS Billing 3.0 oder XRechnung gelten.</p>
         <div class="vstup-slot"></div>
         <div id="sumar"></div>
+        <div class="kupa-vysledok" id="kupa-vysledok-blok" hidden>
+          <p class="pomoc">Prüfung und Vorschau bleiben kostenlos. Bezahlt wird nur der XML-Download einer Rechnung, die Sie hier im Formular erstellen.</p>
+          <div class="cta">
+            <button type="button" class="btn btn-solid" id="kupa-vysledok" data-link="https://buy.stripe.com/9B65kx1fA8C7aoW7C54ko0m" data-link-test="https://buy.stripe.com/test_fZueV75vQ8C740y8G94ko0e">Eine Rechnung für 2,90 € zzgl. MwSt. kaufen</button>
+          </div>
+        </div>
         <div class="akcie" id="akcie" hidden>
           <button type="button" class="btn btn-line" id="protokol">Protokoll herunterladen</button>
           <button type="button" class="btn btn-line" id="kopirovat">Kopieren</button>
@@ -422,11 +451,16 @@
             <div class="brana" id="brana">
               <h3>XML-Download</h3>
               <p class="pomoc">Formular und Vorschau sind kostenlos. Für den Download des fertigen XML wird gezahlt: 2,90 € zzgl. MwSt. für eine Rechnung (in diesem Browser 24 Stunden freigeschaltet, damit Sie sie korrigieren und erneut herunterladen können) oder 9,90 € zzgl. MwSt. für 30 Tage ohne Begrenzung der Rechnungsanzahl. Das XML entsteht in Ihrem Browser und wird an keinen Server gesendet, wir sehen es nie.</p>
+              <p class="pomoc vratenie">Funktioniert unser Werkzeug nicht, lässt sich das gekaufte XML also nicht herunterladen oder ist es fehlerhaft, schreiben Sie an <a href="mailto:andrej@arling.sk">andrej@arling.sk</a>: wir korrigieren es oder veranlassen die Erstattung über Stripe.</p>
               <div class="cta">
                 <button type="button" class="btn btn-solid" id="kupa-jedna" data-link="https://buy.stripe.com/9B65kx1fA8C7aoW7C54ko0m" data-link-test="https://buy.stripe.com/test_fZueV75vQ8C740y8G94ko0e">Eine Rechnung für 2,90 € zzgl. MwSt. kaufen</button>
                 <button type="button" class="btn btn-line" id="kupa-30dni" data-link="https://buy.stripe.com/28E28l7DY19F40y4pT4ko0p" data-link-test="https://buy.stripe.com/test_00w8wJ9M6f0v8gO4pT4ko0i">Für 30 Tage freischalten, 9,90 € zzgl. MwSt.</button>
               </div>
-              <p class="pomoc">Den Verkauf wickelt Stripe als Merchant of Record ab (Stripe Payments Europe, Ltd., Dublin): den Kaufvertrag schließen Sie mit Stripe, das die Zahlung einzieht, den Beleg ausstellt und die Umsatzsteuer abführt; den Inhalt liefert ARLing. Mit dem Klick auf Bezahlen stimmen Sie der sofortigen Bereitstellung digitaler Inhalte zu und nehmen zur Kenntnis, dass Sie damit Ihr Widerrufsrecht verlieren (§ 356 Abs. 5 BGB; nach slowakischem Recht, dem Sitzstaat von ARLing, § 19 Abs. 1 Buchst. m) des Gesetzes Nr. 108/2024 Z. z.). <a href="https://arling.sk/podmienky/">AGB</a> · <a href="https://arling.sk/odstupenie/">Widerruf</a></p>
+              <p class="pomoc odkazy-pravne">Verkauf über Stripe als Merchant of Record. <a href="https://arling.sk/podmienky/de/">AGB</a> · <a href="https://arling.sk/odstupenie/de/">Widerruf</a></p>
+              <details class="pravne">
+                <summary>Wer verkauft und was mit dem Widerrufsrecht passiert</summary>
+                <p class="pomoc">Den Verkauf wickelt Stripe als Merchant of Record ab (Stripe Payments Europe, Ltd., Dublin): den Kaufvertrag schließen Sie mit Stripe, das die Zahlung einzieht, den Beleg ausstellt und die Umsatzsteuer abführt; den Inhalt liefert ARLing. Mit dem Klick auf Bezahlen stimmen Sie der sofortigen Bereitstellung digitaler Inhalte zu und nehmen zur Kenntnis, dass Sie damit Ihr Widerrufsrecht verlieren (§ 356 Abs. 5 BGB; nach slowakischem Recht, dem Sitzstaat von ARLing, § 19 Abs. 1 Buchst. m) des Gesetzes Nr. 108/2024 Z. z.).</p>
+              </details>
             </div>
             <div class="odomknute" id="odomknute" hidden></div>
             <p class="stav-platby" id="stav-platby" aria-live="polite"></p>
@@ -524,7 +558,7 @@
 <footer>
   <div class="wrap foot">
     <div><b>ARLing s. r. o.</b><br>Ivanská cesta 32E<br>821 04 Bratislava, Slowakei</div>
-    <div>Handelsregister-Nr. 56583486<br>USt-IdNr. SK2122352100<br><a href="mailto:andrej@arling.sk">andrej@arling.sk</a></div>
+    <div>Handelsregister-Nr. 56583486<br>USt-IdNr. SK2122352100<br><a href="mailto:andrej@arling.sk">andrej@arling.sk</a><br><a href="tel:+421940785225">+421 940 785 225</a><br>Wir beantworten E-Mails innerhalb eines Werktages.</div>
     <div><a href="https://arling.sk/privacy/">Datenschutz</a> · <a href="https://arling.sk/podmienky/">AGB</a> · <a href="https://arling.sk/gdpr/">DSGVO</a> · <a href="https://arling.sk/impressum/">Impressum</a> · <a href="https://arling.sk/llms.txt">llms.txt</a> · <a href="https://arling.sk/sitemap-index.xml">Sitemap</a><br>Die Werkzeuge werden ohne Gewähr bereitgestellt. Anonyme Besuchszählung über eigenes Umami.</div>
   </div>
 </footer>
