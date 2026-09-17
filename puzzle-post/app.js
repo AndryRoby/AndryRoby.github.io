@@ -70,6 +70,9 @@ function odkazNaKupu(btn) {
 (function ukazTestOdznak() {
   const el = $('test-odznak');
   if (el) el.hidden = !testRezim();
+  /* Test mod: tlacidla predplatneho su na zivej stranke skryte (hidden) do konca testu;
+     s ?test=1 sa ukazu, aby sa dal spravit skusobny nakup bez penazi. */
+  if (testRezim()) for (const b of document.querySelectorAll('#kupit-mesacne, #kupit-rocne')) b.hidden = false;
 })();
 
 for (const btn of document.querySelectorAll('[data-plan]')) {
