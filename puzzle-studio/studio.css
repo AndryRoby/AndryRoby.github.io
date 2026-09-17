@@ -11,9 +11,18 @@
       hairline round it. That is not a card grid: it is the paper the puzzle
       is printed on, and it is the only white in the page.
 
-   2. The print sheet is part of this page, not a pop-up. @media print hides
+   2. The print sheet is part of this page, not a pop-up. Once a Print sheet
+      button has built it, body gets .tlac-list and @media print hides
       everything except #tlaciva, so the browser's own Save as PDF gives a
-      clean sheet with the puzzles first and the solutions last. */
+      clean sheet with the puzzles first and the solutions last. Without that
+      class the page prints as a page: pressing Ctrl+P before making anything
+      must not produce a blank sheet. */
+
+/* hidden has to win. Several controls here are buttons and labels, and both
+   .btn and .prepinac set display, which beats the browser's own rule for the
+   hidden attribute. Without this the Stop button and the credit line switch
+   stay on screen after they have been turned off. */
+[hidden] { display:none !important; }
 
 /* ── The studio: form beside results, stacked on a phone ─────────────── */
 .studio { display:grid; gap:clamp(22px,3vw,40px); grid-template-columns:minmax(0,1fr); align-items:start; }
@@ -148,8 +157,8 @@
 #tlaciva { display:none; }
 @media print {
   body { background:#fff; color:#000; }
-  body > *:not(#tlaciva) { display:none !important; }
-  #tlaciva { display:block !important; color:#000; background:#fff; }
+  body.tlac-list > *:not(#tlaciva) { display:none !important; }
+  body.tlac-list #tlaciva { display:block !important; color:#000; background:#fff; }
   @page { size:A4 portrait; margin:16mm; }
   .t-hlava { display:flex; justify-content:space-between; gap:12px; border-bottom:1px solid #000;
              padding-bottom:6px; margin-bottom:10mm; font:600 11pt/1.3 Georgia, serif; }
