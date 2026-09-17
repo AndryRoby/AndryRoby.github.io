@@ -1320,7 +1320,7 @@ function sledujCenuVidenu() {
 for (const b of document.querySelectorAll('.zalozka')) {
   b.addEventListener('click', () => prepni(b.dataset.tab, true));
 }
-window.addEventListener('hashchange', () => prepni((location.hash || '').replace('#', ''), false));
+window.addEventListener('hashchange', () => { const m = (location.hash || '').replace('#', ''); prepni(m, false); if (PANELY.includes(m)) kNastroju(); });
 
 postavFormular();
 prepni((location.hash || '').replace('#', '') || document.body.dataset.efakturaStart || 'kontrola', false);
