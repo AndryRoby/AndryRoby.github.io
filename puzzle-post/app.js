@@ -22,7 +22,28 @@
  * produktmi kvoli reportu EUR na 100 navstev.
  */
 
+import { posudPlatbu, cestaSuboru, platnyOdkaz, jeOdomknuty, odomkni, vykresliSubory, T as TT } from '../titul.js';
+
 const API = 'https://arling-asistent.arling.workers.dev';
+
+/* Jedno cislo bez predplatneho (4,90 EUR). Kupuje sa tym istym vzorom ako
+   knihy hlavolamov: platobny odkaz Stripe, navrat s ?titul=...&session_id=...,
+   overenie cez workera a potom odkazy na PDF pod neuhadnutelnym nazvom.
+
+   Nazvy suborov su kopia ops/puzzlepost/tajne-cesty.json. Ked sa tam kluciky
+   pregeneruju alebo pribudne dalsie cislo, musia sa prepisat aj tu, inak odkazy
+   po zaplateni skoncia na 404. Kontroluje to test
+   products/arling-sk/puzzle-post/cislo.test.mjs. */
+const CISLO_ID = 'puzzle-post-2026-10';
+const CENA_CISLA = 490;
+const CISLO = {
+  cesta: 'issues/',
+  subory: [
+    { file: 'puzzle-post-2026-10-eink-tzezxnaxbisjlg3o.pdf', format: 'eink', nazov: 'e-ink PDF, 157 x 210 mm', popis: '145 pages, 4.05 MB' },
+    { file: 'puzzle-post-2026-10-a4-gijwli2vtjd4halo.pdf', format: 'a4', nazov: 'A4 PDF', popis: '145 pages, 4.19 MB' },
+    { file: 'puzzle-post-2026-10-letter-qmycwomoyvectuir.pdf', format: 'letter', nazov: 'US Letter PDF', popis: '145 pages, 4.13 MB' },
+  ],
+};
 
 /* Centy pred zlavovym kodom. Musia sediet s ops/stripe/puzzle-post.mjs. */
 const CENY = { mesacne: 390, rocne: 2900 };
@@ -143,23 +164,93 @@ async function overPlatbu(sid, plan, pokus) {
   return false;
 }
 
+/* ── Jedno cislo ──────────────────────────────────────────────────────────
+   Bezi vedla predplatneho na tej istej stranke, ale ma vlastny riadok stavu
+   (#stav-cisla) aj vlastny blok odkazov (#cislo-hotovo), aby sa hlaska o
+   predplatnom a hlaska o jednom cisle nikdy neprepisali navzajom. */
+const stavCisla = $('stav-cisla');
+const blokCisla = $('cislo-hotovo');
+
+function prekresliCislo() {
+  const hotovo = jeOdomknuty(CISLO_ID);
+  if (blokCisla) {
+    blokCisla.hidden = !hotovo;
+    if (hotovo) vykresliSubory(blokCisla, CISLO);
+  }
+  for (const b of document.querySelectorAll('[data-titul="' + CISLO_ID + '"]')) b.hidden = hotovo;
+}
+
+for (const btn of document.querySelectorAll('[data-titul]')) {
+  btn.addEventListener('click', () => {
+    track('kupa_click', { titul: btn.dataset.titul, cena: CENA_CISLA, produkt: 'puzzle-post' });
+    const u = platnyOdkaz(testRezim() ? btn.dataset.linkTest : btn.dataset.link);
+    if (!u) {
+      if (stavCisla) { stavCisla.textContent = testRezim() ? TT.testChyba : TT.zapina; stavCisla.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+      return;
+    }
+    location.href = u;
+  });
+}
+
+let overovanieCisla = null;
+async function overCislo(sid, pokus) {
+  if (stavCisla) stavCisla.textContent = TT.overujem + (pokus > 1 ? ' (' + pokus + ')' : '');
+  let st = null;
+  try {
+    const r = await fetch(API + '/v1/kontrola/status?session_id=' + encodeURIComponent(sid));
+    if (r.ok) st = await r.json();
+  } catch (e) { /* siet, skusame dalej */ }
+  const v = posudPlatbu(st, CENA_CISLA);
+  if (v.stav === 'zaplatene') {
+    odomkni(CISLO_ID, v.test);
+    zabudni(CAKAJUCA);
+    if (stavCisla) stavCisla.innerHTML = TT.zaplatene + (v.test ? ' ' + TT.testPoznamka : '');
+    track('zaplatene', { titul: CISLO_ID, test: !!v.test, produkt: 'puzzle-post' });
+    prekresliCislo();
+    if (blokCisla) blokCisla.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return true;
+  }
+  if (v.stav === 'inaSuma') {
+    zabudni(CAKAJUCA);
+    if (stavCisla) stavCisla.textContent = TT.inaSuma;
+    return false;
+  }
+  uloz(CAKAJUCA, { session: sid, titul: CISLO_ID, t: Date.now() });
+  if (stavCisla) {
+    stavCisla.innerHTML = TT.nepotvrdene + '<br><button type="button" class="btn btn-line" id="over-cislo-znova">' + TT.overZnova + '</button>';
+    const b = $('over-cislo-znova');
+    if (b) b.addEventListener('click', () => { clearTimeout(overovanieCisla); overCislo(sid, 1); });
+  }
+  if (pokus < 8) overovanieCisla = setTimeout(() => overCislo(sid, pokus + 1), Math.min(30000, 3000 * pokus));
+  return false;
+}
+
 async function poNavrate() {
-  let sid = '', plan = '';
+  let sid = '', plan = '', titul = '';
   try {
     const q = new URL(location.href).searchParams;
     sid = q.get('session_id') || '';
     plan = q.get('plan') || '';
+    titul = q.get('titul') || '';
   } catch (e) { /* nic */ }
   if (!CENY[plan]) plan = ''; // cudzi alebo chybajuci parameter plan
   testRezim(); // pred zahodenim dotazu: ?test=1 moze stat vedla session_id
   if (sid) history.replaceState(null, '', location.pathname);
   if (!sid) {
     const c = nacitaj(CAKAJUCA);
-    if (c && c.session) { sid = c.session; plan = c.plan || ''; }
+    if (c && c.session) { sid = c.session; plan = c.plan || ''; titul = c.titul || ''; }
   }
   if (!sid) return;
-  if (sid.startsWith('cs_test_') && !testRezim()) { stavPlatby.textContent = T.testCudzi; return; }
+  // Navrat z nakupu jedneho cisla nesie titul; predplatne nesie plan.
+  if (titul && titul !== CISLO_ID) return;
+  if (sid.startsWith('cs_test_') && !testRezim()) {
+    const el = titul ? stavCisla : stavPlatby;
+    if (el) el.textContent = T.testCudzi;
+    return;
+  }
+  if (titul === CISLO_ID) { overCislo(sid, 1); return; }
   overPlatbu(sid, plan, 1);
 }
 
+prekresliCislo();
 poNavrate();
