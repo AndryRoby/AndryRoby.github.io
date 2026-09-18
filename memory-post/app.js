@@ -131,13 +131,140 @@ function datumSlovom(iso) {
   return Number(m[3]) + ' ' + MESIACE[Number(m[2]) - 1] + ' ' + m[1];
 }
 
-function vyplnKartu({ meno, od, start }) {
+/* Texty darcekovej kartičky vo vsetkych jazykoch, prevzate z ops/spomienky/texty.<lang>.json
+   (kluce gift.* a dates.months). Karticka sa tlaci v jazyku, ktory kupujuci zvolil;
+   dovtedy bola natvrdo po anglicky aj pri slovenskom darceku (nahlasene 18. 9. 2026). */
+const KARTA_TEXTY = {
+ "en": {
+  "znacka": "Memory Post",
+  "komu": "For",
+  "od": "From",
+  "kedy": "The first question arrives on",
+  "text": "Every week one question about your life arrives by e-mail. Answer it in a few words or a few pages, whichever suits you. Every month the answers are typeset into a book with your name on the cover.",
+  "bez": "There is nothing to install and no password to remember. The e-mail has one button.",
+  "mesiace": [
+   "January",
+   "February",
+   "March",
+   "April",
+   "May",
+   "June",
+   "July",
+   "August",
+   "September",
+   "October",
+   "November",
+   "December"
+  ]
+ },
+ "sk": {
+  "znacka": "Memory Post",
+  "komu": "Pre",
+  "od": "Od",
+  "kedy": "Prvá otázka príde",
+  "text": "Každý týždeň príde e-mailom jedna otázka o vašom živote. Odpovedzte na pár slov alebo na pár strán, ako vám vyhovuje. Každý mesiac sa odpovede vysádžu do knihy s vaším menom na obálke.",
+  "bez": "Nič sa neinštaluje a žiadne heslo si nemusíte pamätať. E-mail má jedno tlačidlo.",
+  "mesiace": [
+   "januára",
+   "februára",
+   "marca",
+   "apríla",
+   "mája",
+   "júna",
+   "júla",
+   "augusta",
+   "septembra",
+   "októbra",
+   "novembra",
+   "decembra"
+  ]
+ },
+ "cs": {
+  "znacka": "Memory Post",
+  "komu": "Pro",
+  "od": "Od",
+  "kedy": "První otázka přijde",
+  "text": "Každý týden přijde e-mailem jedna otázka o vašem životě. Odpovězte pár slovy nebo na několik stránek, jak je vám libo. Každý měsíc se odpovědi vysázejí do knihy, která má na obálce vaše jméno.",
+  "bez": "Není co instalovat a není si co pamatovat za heslo. V e-mailu je jedno tlačítko.",
+  "mesiace": [
+   "ledna",
+   "února",
+   "března",
+   "dubna",
+   "května",
+   "června",
+   "července",
+   "srpna",
+   "září",
+   "října",
+   "listopadu",
+   "prosince"
+  ]
+ },
+ "de": {
+  "znacka": "Memory Post",
+  "komu": "Für",
+  "od": "Von",
+  "kedy": "Die erste Frage kommt am",
+  "text": "Jede Woche kommt eine Frage über Ihr Leben per E-Mail. Beantworten Sie sie in ein paar Worten oder auf ein paar Seiten, ganz wie es Ihnen passt. Jeden Monat werden die Antworten zu einem Buch gesetzt, mit Ihrem Namen auf dem Umschlag.",
+  "bez": "Es gibt nichts zu installieren und kein Passwort zu merken. Die E-Mail hat einen einzigen Knopf.",
+  "mesiace": [
+   "Januar",
+   "Februar",
+   "März",
+   "April",
+   "Mai",
+   "Juni",
+   "Juli",
+   "August",
+   "September",
+   "Oktober",
+   "November",
+   "Dezember"
+  ]
+ },
+ "pl": {
+  "znacka": "Memory Post",
+  "komu": "Dla kogo",
+  "od": "Od kogo",
+  "kedy": "Pierwsze pytanie przyjdzie",
+  "text": "Co tydzień e-mailem przychodzi jedno pytanie o własne życie. Odpowiedź może mieć kilka słów albo kilka stron, jak wygodniej. Co miesiąc odpowiedzi zostają złożone w książkę z imieniem na okładce.",
+  "bez": "Nie trzeba niczego instalować ani pamiętać żadnego hasła. W e-mailu jest jeden przycisk.",
+  "mesiace": [
+   "stycznia",
+   "lutego",
+   "marca",
+   "kwietnia",
+   "maja",
+   "czerwca",
+   "lipca",
+   "sierpnia",
+   "września",
+   "października",
+   "listopada",
+   "grudnia"
+  ]
+ }
+};
+
+function vyplnKartu({ meno, od, start, jazyk }) {
   const obal = $('karta-obal');
   if (!obal) return;
-  $('karta-meno').textContent = meno || '';
-  $('karta-od').textContent = od ? 'From ' + od : '';
+  const t = KARTA_TEXTY[jazyk] || KARTA_TEXTY.en;
+  const den = (iso) => {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || ''));
+    if (!m) return String(iso || '');
+    return Number(m[3]) + ' ' + t.mesiace[Number(m[2]) - 1] + ' ' + m[1];
+  };
+  const naplnit = (id, hodnota) => { const e = $(id); if (e) e.textContent = hodnota; };
+  naplnit('karta-meno', meno || '');
+  naplnit('karta-text', t.text);
+  naplnit('karta-bez', t.bez);
+  const znacka = obal.querySelector('.znacka'); if (znacka) znacka.textContent = t.znacka;
+  const komu = obal.querySelector('.komu'); if (komu) komu.textContent = t.komu;
+  $('karta-od').textContent = od ? t.od + ' ' + od : '';
   $('karta-od').hidden = !od;
-  $('karta-kedy').textContent = start ? 'The first question arrives on ' + datumSlovom(start) : '';
+  naplnit('karta-kedy', start ? t.kedy + ' ' + den(start) : '');
   obal.hidden = false;
 }
 
@@ -195,7 +322,7 @@ async function posliPrijemcu(sid, jeTest) {
   zabudni(CAKAJUCA);
   stavNastav.textContent = (r.paid ? T.hotovo : T.hotovoNezaplatene) + (jeTest ? ' ' + T.testPoznamka : '');
   track('darcek_nastaveny', { jazyk: lang, test: !!jeTest, produkt: 'memory-post' });
-  vyplnKartu({ meno: meno, od: od, start: start });
+  vyplnKartu({ meno: meno, od: od, start: start, jazyk: lang });
   $('karta-obal').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
