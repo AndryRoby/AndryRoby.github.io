@@ -165,6 +165,9 @@
     $('otazka').textContent = t.back || 'Memory Post';
     $('cislo').textContent = '';
     nastavStav(t.offline || 'We cannot reach our server right now. What you have written is kept on this device and nothing is lost. Try Save again in a minute, or send it to yourself with the button below.');
+    /* Text hovori "tlacidlom nizsie", takze tlacidlo sa presunie pod hlasku a
+       nie nad nu. Inak by veta klamala o tom, kam sa ma pozriet. */
+    elStav.after(elMailto);
     elMailto.hidden = false;
     pripravMailto();
     var koncept = nacitajKoncept();

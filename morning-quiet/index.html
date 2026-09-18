@@ -30,7 +30,7 @@
 <link rel="preload" href="/fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/style/paper.css?v=89016e6c">
-<link rel="stylesheet" href="/style/hub.css?v=ecc03b13">
+<link rel="stylesheet" href="/style/hub.css?v=0bfebd44">
 <script src="/style/prepinac.js?v=2988c181" defer></script>
 <script type="module" src="/morning-quiet/app.js?v=1"></script>
 <script type="application/json" id="titul-data">
@@ -98,15 +98,28 @@
   @media (min-width:961px) {
     .hero { grid-template-columns:minmax(0,7fr) minmax(0,5fr); }
     .hero > .text { grid-column:1; grid-row:1; }
-    .hero > .obalka { grid-column:2; grid-row:1 / span 3; }
+    .hero > .artefakty { grid-column:2; grid-row:1 / span 3; }
     .hero > .cena { grid-column:1; grid-row:2; }
     .hero > .dokazy { grid-column:1; grid-row:3; }
   }
+  /* Na telefóne rozpadneme obal artefaktov na samostatné položky mriežky
+     (display:contents) a poradie určíme tak, aby nad ohybom bola obálka,
+     cena a tlačidlo, a skutočná strana hneď za nimi. Obrázok vysoký 500
+     bodov pred cenou by tlačidlo Kúpiť posunul pod tisíc bodov. */
+  @media (max-width:960px) {
+    .hero > .artefakty { display:contents; }
+    .hero > .text { order:1; }
+    .hero .obalka { order:2; }
+    .hero > .cena { order:3; }
+    .hero .tabla { order:4; }
+    .hero > .dokazy { order:5; }
+    .hero .obalka { max-width:300px; }
+    .hero .tabla { max-width:360px; }
+  }
 
-  .obalka { margin:0; max-width:340px; justify-self:end; }
-  @media (max-width:960px) { .obalka { justify-self:start; max-width:280px; } }
+  .obalka { margin:0; min-width:0; }
   .obalka img { display:block; width:100%; height:auto; border:1px solid var(--line); border-radius:4px; box-shadow:0 10px 30px rgba(0,0,0,.28); }
-  .obalka figcaption { font-family:var(--ui); font-size:13px; color:var(--muted); line-height:1.5; margin:10px 0 0; }
+  .obalka figcaption { font-family:var(--ui); font-size:13px; color:var(--muted); line-height:1.5; margin:12px 0 0; max-width:44ch; }
 
   .cena { border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:var(--radius); background:var(--card); padding:clamp(20px,2vw,28px); min-width:0; }
   .cena .suma { font:700 clamp(36px,4vw,50px)/1 var(--display); color:var(--ink); letter-spacing:-.02em; display:block; }
@@ -126,13 +139,8 @@
   .stav-platby { font-family:var(--ui); font-size:14px; color:var(--body); min-height:1.5em; margin:14px 0 0; line-height:1.55; }
   .stav-platby b { color:var(--ok); }
   .stav-platby .btn { height:38px; padding:0 12px; font-size:13px; margin-top:8px; width:auto; }
-  /* Panel po zaplateni (.hotovo-panel) je v /style/hub.css, cast 9. */
+  /* Panel po zaplateni (.hotovo-panel) je v /style/hub.css?v=0bfebd44, cast 9. */
 
-  .ukazka { display:grid; gap:clamp(18px,2.4vw,34px); grid-template-columns:minmax(0,1fr); align-items:start; }
-  @media (min-width:760px) { .ukazka { grid-template-columns:minmax(0,300px) minmax(0,1fr); } }
-  .ukazka figure { margin:0; max-width:300px; }
-  .ukazka img { display:block; width:100%; height:auto; border:1px solid var(--line); border-radius:4px; background:#fff; box-shadow:0 10px 30px rgba(0,0,0,.28); }
-  .ukazka figcaption { font-family:var(--ui); font-size:13px; color:var(--muted); line-height:1.5; margin:10px 0 0; }
   body.noc .hero h1 { font-size:clamp(34px,4.3vw,60px); letter-spacing:-.024em; }
   .dokazy { list-style:none; margin:24px 0 0; padding:0; display:flex; flex-direction:column; gap:10px; }
   .dokazy li { display:flex; gap:10px; font-family:var(--ui); font-size:15px; color:var(--body); line-height:1.5; }
@@ -206,10 +214,16 @@
       </details>
     </div>
 
-    <figure class="obalka r d2">
-      <img src="obalka.jpg" alt="Cover of Morning Quiet, Book 1: a painted morning scene with an open book, a wooden cross and a candle on a table by an open window, the sun rising over misty hills outside" width="1086" height="1448" decoding="async">
-      <figcaption>Cover of Book 1.</figcaption>
-    </figure>
+    <div class="artefakty r d2">
+      <figure class="obalka">
+        <img src="obalka.jpg" alt="Cover of Morning Quiet, Book 1: a painted morning scene with an open book, a wooden cross and a candle on a table by an open window, the sun rising over misty hills outside" width="1086" height="1448" decoding="async">
+        <figcaption>Cover of Book 1. The cover is an AI-generated picture commissioned by the publisher.</figcaption>
+      </figure>
+      <figure class="tabla">
+        <img src="day-1-morning.png" alt="Day 1, morning page of Morning Quiet: the date line, Our Father, Psalm 1 (1) from the Douay-Rheims Bible with verse numbers, and a ruled margin on the right for notes with the pen" width="890" height="1190" decoding="async">
+        <figcaption><b>Day 1, morning: page 7 of the e-ink file</b>, exactly as it is in the PDF. Every other page is typeset by our own program.</figcaption>
+      </figure>
+    </div>
 
     <div class="cena r d2" id="price">
       <p class="test-odznak" id="test-odznak" hidden><b>Test mode</b>The buy button leads to Stripe test mode. Use the card 4242 4242 4242 4242, any future date and any CVC. No money is taken; the files below are the real ones.</p>
@@ -246,17 +260,15 @@
       <h2 class="r">Morning: the reading and four steps. Evening: three questions.</h2>
       <p class="sub r d1">The book is undated. Days are numbered 1 to 31, with a line for your own date, and days 7, 14, 21 and 28 are written for Sunday, the Lord's Day, each with a page for the week.</p>
       <div class="rule"></div>
-      <div class="ukazka r d2">
-        <figure>
-          <img src="day-1-morning.png" alt="Day 1, morning page of Morning Quiet: the date line, Our Father, Psalm 1 (1) from the Douay-Rheims Bible with verse numbers, and a ruled margin on the right for notes with the pen" width="890" height="1190" loading="lazy" decoding="async">
-          <figcaption>Day 1, morning: page 7 of the e-ink file, exactly as it is in the PDF. Text 13 pt, a 39 mm margin beside the reading for the pen.</figcaption>
-        </figure>
-        <div class="prose">
+      <figure class="tabla tabla-vyrez r d2">
+        <img src="nahlad/vyrez.png" alt="The top of the same page at full size: the running head Day 1 Morning, the heading Day 1, the date line, the Our Father line, Psalm 1 (1) and the first verses in serif type with the numbers in the margin" width="890" height="526" loading="lazy" decoding="async">
+        <figcaption><b>The top of page 7 at full size</b>, cut out of the same render, nothing enlarged. Text 13 pt, a 39 mm margin beside the reading for the pen, marked by the dotted rule on the right.</figcaption>
+      </figure>
+      <div class="prose r d3" style="margin-top:clamp(28px,3vw,44px)">
         <p>The morning page begins with the Our Father, then the Psalm and the Gospel passage, printed in full at 13 pt with verse numbers. Psalms carry both numbers, for example Psalm 23 (22): the Hebrew number first, the Douay-Rheims and Vulgate number in brackets. Beside the reading is a 39 mm margin for the pen.</p>
         <p>After the reading come the four steps of lectio divina, in the order Guigo II set down in the twelfth century: Lectio (read), Meditatio (reflect), with three ruled lines, Oratio (respond), with the rest of the page ruled 8 mm apart, and Contemplatio (rest).</p>
         <p>The evening page is an examen with three questions and ruled lines: what am I thankful for today, where did I meet God and where did I turn away, what do I want to do differently tomorrow. Its last link opens the next day.</p>
         <p>Book 1 covers Psalms 1 to 31 in the Hebrew numbering, with Psalm 18 over two days and Psalms 9 and 10 on one day because the Vulgate counts them as one, and Matthew 1 to 12.</p>
-        </div>
       </div>
     </div>
   </section>

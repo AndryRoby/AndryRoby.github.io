@@ -292,3 +292,40 @@ body.noc .hotovo.hotovo-panel { --panel-plocha:rgba(242,100,60,.09); --panel-lin
 .hotovo-panel .hotovo-mail b { color:var(--ink); font-weight:600; overflow-wrap:anywhere; }
 .hotovo-panel .hotovo-cislo { margin:6px 0 0; font:400 12.5px/1.5 var(--ui); color:var(--muted); }
 .hotovo-panel .hotovo-cislo b { font-family:var(--mono); font-weight:500; color:var(--body); }
+
+/* ── 10. Skutočná strana v plnej veľkosti ────────────────────────────────
+   18. 9. 2026: na piatich predajných stránkach bol jediný dôkaz o sadzbe
+   palec široký 220 až 300 bodov, hoci render má 890 x 1190 bodov. Z takého
+   obrázka sa sadzba posúdiť nedá, a práve tú tu predávame. Tabuľa je preto
+   figúra, ktorá dá strane celú šírku stĺpca, a výrez je rovnaký render
+   orezaný na hornú časť strany a ukázaný jeden k jednej, takže sa text
+   naozaj číta. Nič sa nezväčšuje nad zdrojové body:
+     strana  890 bodov zdroja, najviac 620 bodov na obrazovke (1,44x)
+     výrez   890 bodov zdroja, najviac 890 bodov na obrazovke (1,00x)
+   Popis pod obrázkom vždy hovorí, ktorá strana to je. */
+.tabla { margin:0; min-width:0; }
+.tabla > a { display:block; text-decoration:none; border-radius:4px; }
+.tabla > a:focus-visible { outline-offset:5px; }
+.tabla img { display:block; width:100%; height:auto; background:#fff;
+             border:1px solid var(--line); border-radius:4px;
+             box-shadow:0 10px 30px rgba(0,0,0,.28); }
+.tabla figcaption { font:400 13px/1.55 var(--ui); color:var(--muted); margin:12px 0 0; max-width:56ch; }
+.tabla figcaption b { color:var(--body); font-weight:600; }
+.tabla-vyrez { max-width:890px; }
+/* Výrez je vodorovný pás, takže drží vlastnú výšku aj pri úzkom okne. */
+.tabla-vyrez img { border-radius:4px; }
+
+/* Úvodný stĺpec s artefaktmi: obálka a pod ňou skutočná strana. Pravá
+   polovica úvodu bola na knižných stránkach prázdna od obálky nadol, čo je
+   na 1280 bodoch asi 550 bodov čierna. */
+.artefakty { display:flex; flex-direction:column; gap:clamp(20px,2.4vw,30px); min-width:0; }
+.artefakty .tabla img, .artefakty .obalka img { border-radius:4px; }
+@media (max-width:960px) { .artefakty { max-width:360px; } }
+
+/* Rad obálok ako výklad: jedna figúra, jeden popis, nie mriežka kariet. */
+.obalky-rad { margin:0; }
+.obalky-rad .rad { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:clamp(12px,1.4vw,20px); }
+@media (min-width:760px) { .obalky-rad .rad { grid-template-columns:repeat(4,minmax(0,1fr)); } }
+.obalky-rad img { display:block; width:100%; height:auto; border:1px solid var(--line); border-radius:4px;
+                  box-shadow:0 10px 30px rgba(0,0,0,.28); }
+.obalky-rad figcaption { font:400 13px/1.55 var(--ui); color:var(--muted); margin:14px 0 0; max-width:74ch; }
