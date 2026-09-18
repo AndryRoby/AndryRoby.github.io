@@ -6,7 +6,12 @@
 .uzke { width: min(760px, 100%); }
 .siroke { width: min(1040px, 100%); }
 
+/* min-width: 0 na stĺpcoch je nutnosť, nie kozmetika: bez neho berie stĺpec
+   mriežky najmenšiu šírku svojho obsahu, a jedna položka v <select> („Hares,
+   Anti-knight Sudoku") roztiahla celú stránku na 772 bodov pri šírke okna
+   390. Zmerané snímkou a kontrolou pretečenia. */
 .api-hero { display: grid; grid-template-columns: 7fr 5fr; gap: var(--gap); align-items: start; }
+.api-hero > *, .stavebnica > * { min-width: 0 }
 @media (max-width: 900px) { .api-hero { grid-template-columns: 1fr } }
 
 .fakty { font-family: var(--ui); font-size: 14px; color: var(--muted); margin: 22px 0 0; padding: 0; list-style: none; }
@@ -19,10 +24,14 @@
 .polia dd { margin: 0; font-size: 16px; }
 @media (max-width: 620px) { .polia div { grid-template-columns: 1fr; gap: 3px } }
 
-.kroky { font-size: 16px; padding-left: 1.2em; }
+/* 1.6em, nie 1.2: pri 390 bodoch orezáva užší odsadenie číslo položky. */
+.kroky { font-size: 16px; padding-left: 1.6em; }
 .kroky li { margin: 0 0 9px }
 
-pre.kod { margin: 14px 0; }
+/* Úryvky sa zalamujú, nescrollujú. Vodorovný posuvník v kóde, ktorý si má
+   niekto skopírovať, len skrýva jeho koniec; zalomenie do textu nič nepridá,
+   lebo sa kopíruje textContent, nie to, čo nakreslil prehliadač. */
+pre.kod { margin: 14px 0; min-width: 0; max-width: 100%; white-space: pre-wrap; overflow-wrap: anywhere }
 pre.kod b { color: var(--accent); font-weight: 400; }
 
 .stavebnica { display: grid; grid-template-columns: 5fr 7fr; gap: var(--gap); align-items: start; }
@@ -30,7 +39,7 @@ pre.kod b { color: var(--accent); font-weight: 400; }
 .volby { display: flex; flex-direction: column; gap: 14px; }
 .volby label { font-family: var(--ui); font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); display: block; margin-bottom: 5px; }
 .volby select, .volby input {
-  font: inherit; font-size: 16px; width: 100%; padding: 9px 11px; border-radius: 10px;
+  font: inherit; font-size: 16px; width: 100%; min-width: 0; max-width: 100%; padding: 9px 11px; border-radius: 10px;
   border: 1px solid var(--line); background: var(--card); color: var(--ink);
 }
 .volby select:focus-visible, .volby input:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px }
