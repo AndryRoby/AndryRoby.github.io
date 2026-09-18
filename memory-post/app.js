@@ -39,7 +39,9 @@ const T = {
   testCudzi: 'This is a payment from Stripe test mode. No money was taken and no gift was set up.',
   testPoznamka: '(Test mode: no money was taken.)',
   ukladam: 'Saving',
-  hotovo: 'Done. The first question is on its way for that day. Print the card below and put it in an envelope.',
+  /* Musi byt jednoznacne, kedy otazka pride. Povodne „on its way“ znelo ako „teraz“
+     a kupujuci cakal e-mail, ktory mal prist az vo zvoleny den (nahlasene 18. 9. 2026). */
+  hotovo: 'Saved. Nothing arrives yet: the first question goes to {email} on {datum}, and then one every week. Print the card below and put it in an envelope.',
   hotovoNezaplatene: 'Saved. We have not seen the payment from Stripe yet, so nothing is sent until it lands. If it does not within an hour, write to andrej@arling.sk with the order number.',
   chybaMeno: 'Please write their first name; it goes on the cover of the book.',
   chybaMail: 'Please write their e-mail address. It is the only place the question is sent.',
@@ -320,7 +322,8 @@ async function posliPrijemcu(sid, jeTest) {
   if (siet || !r) { stavNastav.textContent = T.chybaSiet; return; }
   if (!r.ok) { stavNastav.textContent = T.chybaSluzba; return; }
   zabudni(CAKAJUCA);
-  stavNastav.textContent = (r.paid ? T.hotovo : T.hotovoNezaplatene) + (jeTest ? ' ' + T.testPoznamka : '');
+  const hotovoText = T.hotovo.replace('{email}', email).replace('{datum}', datumSlovom(start));
+  stavNastav.textContent = (r.paid ? hotovoText : T.hotovoNezaplatene) + (jeTest ? ' ' + T.testPoznamka : '');
   track('darcek_nastaveny', { jazyk: lang, test: !!jeTest, produkt: 'memory-post' });
   vyplnKartu({ meno: meno, od: od, start: start, jazyk: lang });
   $('karta-obal').scrollIntoView({ behavior: 'smooth', block: 'start' });

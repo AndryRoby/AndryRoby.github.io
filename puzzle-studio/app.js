@@ -216,9 +216,17 @@ async function generuj() {
   const dnes = dnesISO();
   const dovolene = povolenyPocet(citajJson(ULOZ.kvota), dnes, stav.plan, chce);
   if (dovolene.pocet === 0) {
+    /* Pri vycerpanej kvote sa nikam neroluje. Hlasenie je pod tlacidlom, na ktore clovek prave
+       klikol; rolovanie na vysledkovy panel ho odhodilo na iny koniec stranky a vyzeralo to,
+       ze sa nestalo nic (nahlasene 18. 9. 2026). */
     prekresliKvotu();
+    const k = $('kvota');
+    if (k) {
+      k.classList.add('kvota-doslo');
+      k.setAttribute('role', 'status');
+      setTimeout(() => k.classList.remove('kvota-doslo'), 2200);
+    }
     $('postup').textContent = 'Today’s free puzzles are used up. The Personal plan is below, or come back tomorrow.';
-    $('postup').scrollIntoView({ behavior: 'smooth', block: 'center' });
     track('studio_quota', { druh: kluc });
     return;
   }
