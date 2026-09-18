@@ -30,7 +30,7 @@
 <link rel="preload" href="/fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/style/paper.css?v=89016e6c">
-<link rel="stylesheet" href="/style/hub.css?v=ecc03b13">
+<link rel="stylesheet" href="/style/hub.css?v=0bfebd44">
 <script src="/style/prepinac.js?v=2988c181" defer></script>
 <script type="application/ld+json">
 {
@@ -90,10 +90,16 @@
   body.noc .hero h1 { font-size:clamp(32px,4.1vw,56px); letter-spacing:-.022em; }
   .hero .lead { max-width:56ch; }
 
-  .obalky { margin:0; display:grid; grid-template-columns:1fr 1fr; gap:16px; max-width:360px; justify-self:end; }
-  @media (max-width:960px) { .obalky { justify-self:start; max-width:300px; } }
+  .obalky { margin:0; min-width:0; }
+  .obalky .rad { display:grid; grid-template-columns:1fr 1fr; gap:clamp(12px,1.4vw,18px); }
+  @media (max-width:960px) { .obalky { max-width:420px; } }
   .obalky img { display:block; width:100%; height:auto; border:1px solid var(--line); border-radius:4px; box-shadow:0 10px 30px rgba(0,0,0,.28); }
-  .obalky figcaption { grid-column:1 / -1; font-family:var(--ui); font-size:13px; color:var(--muted); line-height:1.5; margin:0; }
+  .obalky figcaption { font-family:var(--ui); font-size:13px; color:var(--muted); line-height:1.55; margin:14px 0 0; }
+
+  /* Dve skutočné strany vedľa seba, každá s popisom, ktorá to je. Stránka
+     dovtedy sľubovala sadzbu a neukázala z nej ani riadok. */
+  .strany { display:grid; gap:clamp(20px,2.6vw,36px); grid-template-columns:minmax(0,1fr); margin:0 0 clamp(28px,3vw,44px); }
+  @media (min-width:700px) { .strany { grid-template-columns:repeat(2,minmax(0,1fr)); } }
 
   .dokazy { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:10px; }
   .dokazy li { display:flex; gap:10px; font-family:var(--ui); font-size:15px; color:var(--body); line-height:1.5; }
@@ -108,8 +114,8 @@
   .regal { list-style:none; margin:0; padding:0; }
   .regal li { display:grid; grid-template-columns:minmax(0,1fr); gap:18px; padding:26px 0; border-top:1px solid var(--line); }
   .regal li:first-child { border-top:none; padding-top:6px; }
-  @media (min-width:760px) { .regal li { grid-template-columns:minmax(0,180px) minmax(0,1fr); gap:clamp(20px,2.6vw,36px); } }
-  .regal .obal { display:block; max-width:180px; }
+  @media (min-width:760px) { .regal li { grid-template-columns:minmax(0,220px) minmax(0,1fr); gap:clamp(24px,3vw,44px); } }
+  .regal .obal { display:block; max-width:220px; }
   .regal .obal img { display:block; width:100%; height:auto; border:1px solid var(--line); border-radius:4px; box-shadow:0 8px 24px rgba(0,0,0,.26); }
   .regal h3 { margin:0; font:600 clamp(21px,1.8vw,26px)/1.25 var(--display); color:var(--ink); }
   .regal .autor { font-family:var(--ui); font-size:13px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin:0 0 6px; }
@@ -156,9 +162,11 @@
       </ul>
     </div>
     <figure class="obalky r d2">
-      <img src="ben-hur-obalka.jpg" alt="Cover of the ARLing e-ink edition of Ben-Hur: a painted chariot race in a Roman circus" width="1086" height="1448" decoding="async">
-      <img src="monte-cristo-obalka.jpg" alt="Cover of the ARLing e-ink edition of The Count of Monte Cristo: a cloaked figure on a cliff above an evening sea" width="1086" height="1448" decoding="async">
-      <figcaption>The two covers of the series.</figcaption>
+      <div class="rad">
+        <img src="ben-hur-obalka.jpg" alt="Cover of the ARLing e-ink edition of Ben-Hur: a painted chariot race in a Roman circus" width="1086" height="1448" decoding="async">
+        <img src="monte-cristo-obalka.jpg" alt="Cover of the ARLing e-ink edition of The Count of Monte Cristo: a cloaked figure on a cliff above an evening sea" width="1086" height="1448" decoding="async">
+      </div>
+      <figcaption>The two covers of the series. Each cover is an AI-generated picture commissioned by the publisher; every other page is typeset by our own program.</figcaption>
     </figure>
   </div>
 
@@ -203,8 +211,19 @@
     <div class="wrap uzsie">
       <p class="kicker">How the page is set</p>
       <h2 class="r">The same setup in every title.</h2>
+      <p class="sub r d1">Both pictures are real pages out of the e-ink files, not mockups.</p>
       <div class="rule"></div>
-      <div class="prose r d1">
+      <div class="strany r d2">
+        <figure class="tabla">
+          <a class="strana" href="ben-hur/" aria-label="Ben-Hur, the page with the price and the free sample"><img src="ben-hur/nahlad/strana.png" alt="Page 11 of the Ben-Hur e-ink file: the running head Chapter I and Into the Desert, the chapter title, the opening paragraphs in serif type, and a ruled band at the foot of the page for notes" width="890" height="1190" loading="lazy" decoding="async"></a>
+          <figcaption><b>Ben-Hur, page 11 of the e-ink file.</b> The chapter opening, the running head and the notes band at the foot.</figcaption>
+        </figure>
+        <figure class="tabla">
+          <a class="strana" href="monte-cristo/" aria-label="The Count of Monte Cristo, the page with the price and the free sample"><img src="monte-cristo/nahlad/strana.png" alt="Page 7 of volume 1 of The Count of Monte Cristo in the e-ink file: the running head Chapter 1 and Marseilles, the Arrival, the text in serif type with the ship Pharaon in italics, and a ruled band at the foot of the page" width="890" height="1190" loading="lazy" decoding="async"></a>
+          <figcaption><b>The Count of Monte Cristo, page 7 of volume 1.</b> The same text block, the same band, the same page size.</figcaption>
+        </figure>
+      </div>
+      <div class="prose r d3">
         <p>The page is 157 x 210 mm, the 3:4 proportion of a large e-ink screen, with a text block of 139 x 194 mm. The text is 13 pt serif, 22 lines to a page, with no hyphenation, so a line break never falls inside a word. Nothing on the page is smaller than 10 pt.</p>
         <p>Page 1 of every file is the cover. The cover is an AI-generated picture commissioned by the publisher; every other page is typeset by our own program. Under the text there is a 33 mm band left empty on every page for a note with the pen, which is also a PDF form field: write in it with the pen on an e-ink tablet, or type into it on a computer in Adobe Acrobat Reader, Preview or Firefox. Under the band sit the Contents link and the page number. From any page you are two taps from any chapter. The A4 and US Letter files hold the same text block centred on the sheet, so the pages, the page order and the links are identical in all three.</p>
         <p>The text comes from a public domain transcription and is reproduced unchanged. Only the line breaks were reflowed for the page, placeholders left by old illustrations removed, and italics restored where the transcription marks them. Every chapter is compared with the source word for word by the check script before a title is published.</p>

@@ -134,10 +134,12 @@
 .sub { color:var(--body); max-width:66ch; margin:0 0 24px; }
 .prose p { max-width:72ch; }
 
-/* The hero artefact: a real puzzle this page made, on its own sheet. */
-.ukazka { margin:0; max-width:360px; justify-self:end; background:#fff;
-          border:1px solid var(--line); border-radius:6px; padding:16px; }
-@media (max-width:960px) { .ukazka { justify-self:start; max-width:300px; } }
+/* The hero artefact: a real puzzle this page made, on its own sheet. It gets
+   the whole right column: at 360 points the cage sums were smaller than the
+   body text beside them, and this drawing is the proof the page is selling. */
+.ukazka { margin:0; min-width:0; background:#fff;
+          border:1px solid var(--line); border-radius:6px; padding:clamp(16px,1.6vw,22px); }
+@media (max-width:960px) { .ukazka { max-width:400px; } }
 .ukazka svg { display:block; width:100%; height:auto; }
 .ukazka figcaption { font-family:var(--ui); font-size:12.5px; color:#5e5d59; line-height:1.5; margin:12px 0 0; }
 
@@ -152,6 +154,25 @@
 .facts { list-style:none; margin:0; padding:0; display:flex; flex-wrap:wrap; gap:6px 22px; }
 .facts li { font-family:var(--ui); font-size:14px; color:var(--muted); }
 .facts b { color:var(--ink); }
+
+/* ── The field of grids ──────────────────────────────────────────────────
+   One WebGL canvas, the only one on the shop side of arling.sk, and it is
+   on this page because this is the page about making grids. It sits between
+   the hero and the machine itself, full bleed, with a hairline over and
+   under it so it reads as a band of the page and not as a picture.
+
+   It carries no text and no number. The drawing is in /puzzle-studio/pole.js;
+   .pole-zaloha is a still PNG of the same canvas and appears only when WebGL
+   is missing or the context is lost. Both are 190 to 230 points tall, so
+   nothing moves when one replaces the other. */
+.pole-band { position:relative; width:100%; height:clamp(190px,21vw,230px); overflow:hidden;
+             border-top:1px solid var(--line); border-bottom:1px solid var(--line);
+             background:var(--paper-deep); }
+.pole-band canvas, .pole-band img { display:block; width:100%; height:100%; }
+.pole-band img { object-fit:cover; object-position:center; opacity:.5; }
+.pole-popis { font-family:var(--ui); font-size:12.5px; line-height:1.55; color:var(--muted);
+              margin:12px 0 0; max-width:64ch; }
+@media (prefers-reduced-motion:reduce) { .pole-band canvas { will-change:auto; } }
 
 /* ── The print sheet ─────────────────────────────────────────────────── */
 #tlaciva { display:none; }

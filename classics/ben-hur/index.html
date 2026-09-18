@@ -30,7 +30,7 @@
 <link rel="preload" href="/fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/style/paper.css?v=89016e6c">
-<link rel="stylesheet" href="/style/hub.css?v=ecc03b13">
+<link rel="stylesheet" href="/style/hub.css?v=0bfebd44">
 <script src="/style/prepinac.js?v=2988c181" defer></script>
 <script type="module" src="/classics/ben-hur/app.js?v=1"></script>
 <script type="application/json" id="titul-data">
@@ -100,15 +100,27 @@
   @media (min-width:961px) {
     .hero { grid-template-columns:minmax(0,7fr) minmax(0,5fr); }
     .hero > .text { grid-column:1; grid-row:1; }
-    .hero > .obalka { grid-column:2; grid-row:1 / span 3; }
+    .hero > .artefakty { grid-column:2; grid-row:1 / span 3; }
     .hero > .cena { grid-column:1; grid-row:2; }
     .hero > .dokazy { grid-column:1; grid-row:3; }
   }
 
-  .obalka { margin:0; max-width:340px; justify-self:end; }
-  @media (max-width:960px) { .obalka { justify-self:start; max-width:280px; } }
+  /* Na telefóne rozpadneme obal artefaktov na samostatné položky mriežky
+     (display:contents) a poradie určíme tak, aby nad ohybom bola obálka,
+     cena a tlačidlo, a skutočná strana hneď za nimi. */
+  @media (max-width:960px) {
+    .hero > .artefakty { display:contents; }
+    .hero > .text { order:1; }
+    .hero .obalka { order:2; }
+    .hero > .cena { order:3; }
+    .hero .tabla { order:4; }
+    .hero > .dokazy { order:5; }
+    .hero .obalka { max-width:300px; }
+    .hero .tabla { max-width:360px; }
+  }
+  .obalka { margin:0; min-width:0; }
   .obalka img { display:block; width:100%; height:auto; border:1px solid var(--line); border-radius:4px; box-shadow:0 10px 30px rgba(0,0,0,.28); }
-  .obalka figcaption { font-family:var(--ui); font-size:13px; color:var(--muted); line-height:1.5; margin:10px 0 0; }
+  .obalka figcaption { font-family:var(--ui); font-size:13px; color:var(--muted); line-height:1.5; margin:12px 0 0; max-width:44ch; }
 
   .cena { border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:var(--radius); background:var(--card); padding:clamp(20px,2vw,28px); min-width:0; }
   .cena .suma { font:700 clamp(36px,4vw,50px)/1 var(--display); color:var(--ink); letter-spacing:-.02em; display:block; }
@@ -128,7 +140,7 @@
   .stav-platby { font-family:var(--ui); font-size:14px; color:var(--body); min-height:1.5em; margin:14px 0 0; line-height:1.55; }
   .stav-platby b { color:var(--ok); }
   .stav-platby .btn { height:38px; padding:0 12px; font-size:13px; margin-top:8px; width:auto; }
-  /* Panel po zaplateni (.hotovo-panel) je v /style/hub.css, cast 9. */
+  /* Panel po zaplateni (.hotovo-panel) je v /style/hub.css?v=0bfebd44, cast 9. */
 
   .dokazy { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:10px; }
   .dokazy li { display:flex; gap:10px; font-family:var(--ui); font-size:15px; color:var(--body); line-height:1.5; }
@@ -139,11 +151,6 @@
   .uzsie > * { max-width:1060px; }
   .prose p { max-width:72ch; }
 
-  .ukazka { display:grid; gap:clamp(18px,2.4vw,34px); grid-template-columns:minmax(0,1fr); align-items:start; }
-  @media (min-width:760px) { .ukazka { grid-template-columns:minmax(0,300px) minmax(0,1fr); } }
-  .ukazka .strana { display:block; border:1px solid var(--line); border-radius:4px; background:#fff; overflow:hidden; box-shadow:0 10px 30px rgba(0,0,0,.28); max-width:300px; }
-  .ukazka .strana img { display:block; width:100%; height:auto; }
-  .ukazka figcaption { font-family:var(--ui); font-size:13px; color:var(--muted); line-height:1.5; margin:10px 0 0; }
 
   .tab { overflow-x:auto; max-width:100%; }
   table { border-collapse:collapse; width:100%; min-width:520px; font-family:var(--ui); font-size:14.5px; }
@@ -205,10 +212,16 @@
       </details>
     </div>
 
-    <figure class="obalka r d2">
-      <img src="/classics/ben-hur-obalka.jpg" alt="Cover of the ARLing e-ink edition of Ben-Hur: a painted chariot race in a Roman circus, four white horses at full gallop and a driver in a red cloak" width="1086" height="1448" decoding="async">
-      <figcaption>Cover of this edition.</figcaption>
-    </figure>
+    <div class="artefakty r d2">
+      <figure class="obalka">
+        <img src="/classics/ben-hur-obalka.jpg" alt="Cover of the ARLing e-ink edition of Ben-Hur: a painted chariot race in a Roman circus, four white horses at full gallop and a driver in a red cloak" width="1086" height="1448" decoding="async">
+        <figcaption>Cover of this edition. The cover is an AI-generated picture commissioned by the publisher.</figcaption>
+      </figure>
+      <figure class="tabla">
+        <a class="strana" href="Ben-Hur-Sample-eink.pdf" data-ukazka="strana" aria-label="Free sample of Ben-Hur, the first three chapters (PDF)"><img src="nahlad/strana.png" alt="Page 11 of the e-ink file: the running head Chapter I and Into the Desert, the chapter title, the opening paragraphs in serif type, and a ruled band at the foot of the page for notes" width="890" height="1190" decoding="async"></a>
+        <figcaption><b>Page 11 of the e-ink file</b>, exactly as it is in the PDF. Every other page is typeset by our own program.</figcaption>
+      </figure>
+    </div>
 
     <div class="cena r d2" id="price">
       <p class="test-odznak" id="test-odznak" hidden><b>Test mode</b>The buy button leads to Stripe test mode. Use the card 4242 4242 4242 4242, any future date and any CVC. No money is taken; the files below are the real ones.</p>
@@ -245,18 +258,14 @@
       <h2 class="r">A reading page, a running head and room for the pen.</h2>
       <p class="sub r d1">The picture is a real page of the e-ink file, not a mockup. The chapter opens with its number and title, the running head names the book you are in, and the bottom of the page carries the Contents link and the page number.</p>
       <div class="rule"></div>
-      <div class="ukazka r d2">
-        <figure>
-          <a class="strana" href="Ben-Hur-Sample-eink.pdf" data-ukazka="strana" aria-label="Free sample of Ben-Hur, the first three chapters (PDF)"><img src="nahlad/strana.png" alt="Page 11 of the e-ink file: the running head Chapter I and Into the Desert, the chapter title, the opening paragraphs in serif type, and a ruled band at the foot of the page for notes" width="890" height="1190" loading="lazy" decoding="async"></a>
-          <figcaption>Page 11 of the e-ink file, exactly as it is in the PDF.</figcaption>
-        </figure>
-        <div>
-          <div class="prose">
+      <figure class="tabla tabla-vyrez r d2">
+        <img src="nahlad/vyrez.png" alt="The top of the same page at full size: the running head Chapter I and Into the Desert, the chapter number and title Into the Desert, and the first two paragraphs justified in serif type" width="890" height="492" loading="lazy" decoding="async">
+        <figcaption><b>The top of page 11 at full size</b>, cut out of the same render, nothing enlarged. 13 pt serif, 22 lines to a page, no hyphenation.</figcaption>
+      </figure>
+      <div class="prose r d3" style="margin-top:clamp(28px,3vw,44px)">
             <p>The text block is 139 x 194 mm on a page of 157 x 210 mm, set in 13 pt serif with 22 lines to a page and no hyphenation, so a line break never falls inside a word. Italics are kept wherever the source transcription marks them.</p>
             <p>Under the text there is a 33 mm band left empty on every page. It is there for a pen: a note, a date, a name you want to remember. The band is also a PDF form field, so you can write in it with the pen on an e-ink tablet, or type into it on a computer in Adobe Acrobat Reader, Preview or Firefox. Under the band sit the Contents link and the page number, so from any page you are two taps from any chapter.</p>
             <p>The A4 and US Letter files hold the same text block in the middle of the sheet, so the pages, the page order and the links are the same in all three files.</p>
-          </div>
-        </div>
       </div>
     </div>
   </section>
