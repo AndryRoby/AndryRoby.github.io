@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script src="/style/vzhlad.js?v=93c2659f"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0a0908">
+<link rel="preconnect" href="https://homelab.tailbf8f27.ts.net" crossorigin>
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../../favicon.ico" sizes="48x48">
+<link rel="apple-touch-icon" href="../../icon-180.png">
+<title>How a logic puzzle is proved to have exactly one solution | ARLing</title>
+<meta name="description" content="What exactly one solution means, how a second independent search proves it, why a puzzle also has to be solvable without guessing, where the proof is written down in our files, and what the claim does not cover.">
+<meta property="og:type" content="article">
+<meta property="og:title" content="How a logic puzzle is proved to have exactly one solution">
+<meta property="og:description" content="What exactly one solution means, how a second independent search proves it, why a puzzle also has to be solvable without guessing, where the proof is written down in our files, and what the claim does not cover.">
+<meta property="og:url" content="https://arling.sk/notes/how-a-logic-puzzle-is-proved-to-have-exactly-one-solution/">
+<meta property="og:locale" content="en_US">
+<link rel="canonical" href="https://arling.sk/notes/how-a-logic-puzzle-is-proved-to-have-exactly-one-solution/">
+<link rel="preload" href="/fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/style/paper.css?v=89016e6c">
+<script src="/style/prepinac.js?v=2988c181" defer></script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "How a logic puzzle is proved to have exactly one solution",
+  "description": "What exactly one solution means, how a second independent search proves it, why a puzzle also has to be solvable without guessing, where the proof is written down in our files, and what the claim does not cover.",
+  "datePublished": "2026-09-18",
+  "dateModified": "2026-09-18",
+  "inLanguage": "en",
+  "author": {
+    "@type": "Organization",
+    "name": "ARLing s. r. o.",
+    "url": "https://arling.sk/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "ARLing s. r. o.",
+    "url": "https://arling.sk/"
+  },
+  "mainEntityOfPage": "https://arling.sk/notes/how-a-logic-puzzle-is-proved-to-have-exactly-one-solution/"
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Does one solution mean the puzzle is fair?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Not on its own, which is why there are two checks. A puzzle is kept only when a solver limited to human reasoning finishes it without guessing, as well as when the search shows there is no second answer."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can I check a puzzle myself?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "If it comes from the puzzle interface, yes: the file carries the solution and a verified block with the uniqueness flag and the measured solver time. In the browser generator the measured time of the same check is printed under each puzzle."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Are these puzzles unique in the world?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No, and we do not claim it. The exclusion covers our own archive and our own editions, not worldwide novelty."
+      }
+    }
+  ]
+}
+</script>
+
+<style>
+  article { max-width:72ch; }
+  article h2 { margin:clamp(34px,4vh,52px) 0 12px; }
+  article h3 { margin:26px 0 8px; }
+  article p, article li { font-size:16.5px; line-height:1.7; }
+  article ol, article ul { padding-left:22px; }
+  article li { margin:0 0 8px; }
+  code { font:13.5px/1.4 var(--mono); background:var(--card); border:1px solid var(--line);
+    border-radius:3px; padding:1px 5px; overflow-wrap:anywhere; }
+  pre { background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    padding:16px 18px; overflow-x:auto; font:13px/1.6 var(--mono); color:var(--body); }
+  .byline { font-family:var(--ui); font-size:14px; color:var(--muted); margin:0 0 clamp(26px,3vh,40px); }
+  .zhrn { border-left:3px solid var(--accent); background:var(--card); border-radius:0 var(--radius) var(--radius) 0;
+    padding:18px 22px; margin:0 0 clamp(26px,3vh,40px); }
+  .zhrn p { margin:0; font-size:16px; }
+  .zdroje { font-family:var(--ui); font-size:13.5px; color:var(--muted); line-height:1.7;
+    border-top:1px solid var(--line); padding-top:18px; margin-top:clamp(34px,4vh,52px); }
+  .zdroje a { color:var(--body); }
+</style>
+<meta property="og:image" content="https://arling.sk/og.png">
+</head>
+<body class="noc">
+<div class="wash" aria-hidden="true"><i></i><i></i></div>
+
+<header>
+  <div class="wrap bar">
+    <a class="brand" href="https://arling.sk/">
+      <svg viewBox="0 0 488 215" width="38" height="15" aria-hidden="true" focusable="false"><path fill="#f4f4f7" fill-rule="evenodd" d="M0.00,213.00L74.00,214.00L181.00,85.00L285.00,214.00L360.00,214.00L206.00,21.00L185.00,4.00L164.00,10.00Z M221.00,0.00L263.00,50.00L395.00,50.00L409.00,55.00L419.00,76.00L401.00,96.00L313.00,98.00L411.00,214.00L487.00,214.00L422.00,139.00L457.00,123.00L482.00,88.00L482.00,48.00L463.00,19.00L417.00,0.00Z"/><path fill="#f2643c" d="M269.00,66.00L269.00,67.00L268.00,68.00L268.00,70.00L267.00,71.00L267.00,76.00L268.00,77.00L268.00,79.00L270.00,81.00L270.00,82.00L271.00,82.00L273.00,84.00L274.00,84.00L277.00,86.00L279.00,86.00L280.00,87.00L287.00,87.00L288.00,86.00L290.00,86.00L291.00,85.00L294.00,84.00L298.00,80.00L298.00,79.00L299.00,78.00L299.00,75.00L300.00,74.00L300.00,72.00L299.00,71.00L299.00,69.00L298.00,68.00L297.00,65.00L295.00,63.00L294.00,63.00L289.00,60.00L278.00,60.00L277.00,61.00L276.00,61.00L275.00,62.00L272.00,63.00Z"/></svg>
+      <b>ARLing</b>
+    </a>
+    <nav id="hlavne-menu" aria-label="Site"><a href="https://arling.sk/shop/">Shop</a><a href="https://arling.sk/en/#tools">Tools</a><a href="https://arling.sk/games/">Games</a><a href="https://arling.sk/notes/">Notes</a><a href="https://arling.sk/how-we-work/">How we work</a><a href="mailto:andrej@arling.sk">Contact</a></nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <article>
+      <h1>How a logic puzzle is proved to have exactly one solution</h1>
+      <p class="byline">ARLing s. r. o. · 18 September 2026</p>
+
+      <div class="zhrn">
+        <p>Every puzzle book in the world says its puzzles have one solution. Almost none of them say how that was established, and the difference between the books is entirely in that missing sentence. There are two separate claims hiding in the promise, and a book can pass the first and fail the second. The first is that the grid has exactly one filling that satisfies the rules. The second is that a person can reach that filling by reasoning, without ever guessing and backtracking. This note explains how both are checked by machine, what our files actually record about each puzzle, and where the claim stops, because a claim with no stated edge is not a claim. None of it requires you to trust us: the checks are ordinary programs doing ordinary searches, and their results are written into the files themselves.</p>
+      </div>
+
+      <h2>The first claim: exactly one filling</h2>
+      <p>A puzzle is not designed and then trusted. It is generated, then handed to a solver that is asked to find solutions, and it survives only if the solver returns exactly one. Everything else is thrown away.</p>
+      <p>The important word is exactly. A solver that stops at the first solution it finds proves that at least one exists, which is a weaker statement and the one most generators settle for. Ours keeps searching to establish that there is no second solution, and a candidate is discarded when that search finds one. In the daily games this runs as a second, independent search after the generator is done, so the check is not the same code that made the puzzle believing its own work.</p>
+
+      <h2>The second claim: no guessing</h2>
+      <p>A grid can have a unique answer that no human can find without trial and error, and such a puzzle is technically correct and miserable to solve. So the generator also runs a solver that is restricted to the rules a person can actually use, and it accepts a puzzle only when that restricted solver finishes without guessing.</p>
+      <p>This is also how difficulty stops being a marketing word. The solver counts how many deduction steps of each kind a finished puzzle needs, and candidates for a date are ranked by that count, so easy and hard mean measured amounts of work rather than a label chosen by hand.</p>
+      <p>There is one deliberate exception, and it is written down: in the daily logic grid puzzle, the Sunday level has one square that only gives way when you test an assumption until a clue breaks. That is a choice about one day of the week, not a slip.</p>
+
+      <h2>Where the proof is written down</h2>
+      <p>In the public puzzle files, each puzzle carries its own record: the static puzzle interface holds 6000 puzzles, ten kinds in three levels with 200 per kind and level, and every one is a file with the puzzle, the solution and a verified block holding uniqueSolution and the measured solver time in milliseconds. The proof is not a promise in a listing, it is a field in the file.</p>
+      <p>The browser generator does the same thing in front of you: every puzzle it makes is handed back to the solver of its own kind and shown only when that solver finds exactly one solution without guessing, with the measured time of the check printed under the puzzle. In the books the rule is the same, and the solution printed at the back is the one the solver found. The printed bulletin sheet says it in one line on the page: exactly one solution, found by the program that made this puzzle.</p>
+
+      <h2>What the claim does not cover</h2>
+      <p>Uniqueness is a statement about one grid, not about the history of the world. Our puzzles are excluded from each other, so a puzzle that has already appeared in a book, in the daily archive, in the planner or in a monthly issue does not appear again, and the scope of that statement is our own archive and our own editions rather than worldwide novelty.</p>
+      <p>Nor is generation random in the sense of being unrepeatable: the seed is a fixed string with the kind, the level and the index, never a date, and an accepted attempt is stored, so a second build produces the same files. And while you are solving, nothing turns red; an error is only shown by Check, in two steps, and both Check and Hint are free and unlimited.</p>
+
+      <h2>Frequently asked questions</h2>
+      <details>
+        <summary>Does one solution mean the puzzle is fair?</summary>
+        <p>Not on its own, which is why there are two checks. A puzzle is kept only when a solver limited to human reasoning finishes it without guessing, as well as when the search shows there is no second answer.</p>
+      </details>
+      <details>
+        <summary>Can I check a puzzle myself?</summary>
+        <p>If it comes from the puzzle interface, yes: the file carries the solution and a verified block with the uniqueness flag and the measured solver time. In the browser generator the measured time of the same check is printed under each puzzle.</p>
+      </details>
+      <details>
+        <summary>Are these puzzles unique in the world?</summary>
+        <p>No, and we do not claim it. The exclusion covers our own archive and our own editions, not worldwide novelty.</p>
+      </details>
+
+      <h2>Where to look next</h2>
+      <p>The eleven <a href="https://arling.sk/games/">daily logic games</a> are free, run in the browser without an account, and every daily puzzle goes through the checks above. The same puzzles as files, 6000 of them with the proof recorded in each one, are at https://arling.sk/api/, free for personal and non-commercial use with the credit line, with commercial use part of the Bulletin Pro subscription. If you would rather make your own, https://arling.sk/puzzle-studio/ runs the generator and the solver in your browser, two puzzles a day free.</p>
+
+      <div class="zdroje">
+        <p><b>Sources.</b> The facts in this note are numbered after our internal fact list and were checked on the publication date. If a source has changed since, write to andrej@arling.sk and we will correct this page.</p>
+        <ul>
+          <li>F114: ARLing, spoločné pravidlá pre hry, časť Generátor a Súbory (overené 11. 9. 2026)</li>
+          <li>F115: ARLing, štandard ovládania hier (overené 11. 9. 2026)</li>
+          <li>F128, F129: ARLing, návod k hre Dormice, časť The week (overené 17. 9. 2026)</li>
+          <li>F130: ARLing, stránka hry Dormice, časť About this game (overené 17. 9. 2026)</li>
+          <li>F141: ARLing, schválené znenie ponuky e-ink kníh, blok o kontrole zadaní (overené 17. 9. 2026)</li>
+          <li>F151: `ops/planner/pilot-zadania.mjs` (volanie vylucenia), register `ops/planner/edicie/_pouzite-&lt;hra&gt;.json` a `ops/games/vylucenia.mjs` (funkcia knizneOdtlacky číta aj register plánovača), overené 17. 9. 2026; text o kontrole podľa `ponuka.json` (blok EVERY PUZZLE CHECKED).</li>
+          <li>F175: ARLing, statické API hlavolamov <a href="https://arling.sk/api/" rel="noopener" target="_blank">https://arling.sk/api/</a> (overené 18. 9. 2026)</li>
+          <li>F176: ARLing, licenčný blok statického API <a href="https://arling.sk/api/" rel="noopener" target="_blank">https://arling.sk/api/</a> (overené 18. 9. 2026)</li>
+          <li>F177: ARLing, pravidlo určitosti a vylúčení pri stavbe API (overené 18. 9. 2026)</li>
+          <li>F178: ARLing, stránka Puzzle Studio <a href="https://arling.sk/puzzle-studio/" rel="noopener" target="_blank">https://arling.sk/puzzle-studio/</a> (overené 18. 9. 2026)</li>
+          <li>F182: ARLing, pevné anglické reťazce vytlačené na každej strane bulletinu (overené 18. 9. 2026)</li>
+        </ul>
+      </div>
+    </article>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <div><b>ARLing s. r. o.</b><br>Ivanská cesta 32E<br>821 04 Bratislava, Slovakia</div>
+    <div>Company ID 56583486<br>VAT ID SK2122352100<br><a href="mailto:andrej@arling.sk">andrej@arling.sk</a></div>
+    <div><a href="https://arling.sk/shop/">shop</a> · <a href="https://arling.sk/privacy/">privacy</a> · <a href="https://arling.sk/podmienky/">terms</a> · <a href="https://arling.sk/gdpr/">GDPR</a> · <a href="https://arling.sk/impressum/">Impressum</a> · <a href="https://arling.sk/llms.txt">llms.txt</a> · <a href="https://arling.sk/sitemap-index.xml">sitemap</a><br>Tools are provided as is, without warranty. Anonymous visit counts via self-hosted Umami.</div>
+  </div>
+</footer>
+
+<script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="338f035d-41c5-411e-8391-9a41db6accfd"></script>
+</body>
+</html>

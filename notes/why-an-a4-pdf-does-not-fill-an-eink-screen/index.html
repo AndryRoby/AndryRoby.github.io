@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script src="/style/vzhlad.js?v=93c2659f"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0a0908">
+<link rel="preconnect" href="https://homelab.tailbf8f27.ts.net" crossorigin>
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../../favicon.ico" sizes="48x48">
+<link rel="apple-touch-icon" href="../../icon-180.png">
+<title>Why an A4 PDF does not fill an e-ink screen, with the arithmetic | ARLing</title>
+<meta name="description" content="The arithmetic behind a page made for an e-ink tablet: 1404 by 1872 dots at 226 dots per inch is 157.8 by 210.4 millimetres, an A4 page shown whole on that screen shrinks to 71 percent, and what else changes when a page is set for glass instead of paper.">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Why an A4 PDF does not fill an e-ink screen, with the arithmetic">
+<meta property="og:description" content="The arithmetic behind a page made for an e-ink tablet: 1404 by 1872 dots at 226 dots per inch is 157.8 by 210.4 millimetres, an A4 page shown whole on that screen shrinks to 71 percent, and what else changes when a page is set for glass instead of paper.">
+<meta property="og:url" content="https://arling.sk/notes/why-an-a4-pdf-does-not-fill-an-eink-screen/">
+<meta property="og:locale" content="en_US">
+<link rel="canonical" href="https://arling.sk/notes/why-an-a4-pdf-does-not-fill-an-eink-screen/">
+<link rel="preload" href="/fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/style/paper.css?v=89016e6c">
+<script src="/style/prepinac.js?v=2988c181" defer></script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Why an A4 PDF does not fill an e-ink screen, with the arithmetic",
+  "description": "The arithmetic behind a page made for an e-ink tablet: 1404 by 1872 dots at 226 dots per inch is 157.8 by 210.4 millimetres, an A4 page shown whole on that screen shrinks to 71 percent, and what else changes when a page is set for glass instead of paper.",
+  "datePublished": "2026-09-18",
+  "dateModified": "2026-09-18",
+  "inLanguage": "en",
+  "author": {
+    "@type": "Organization",
+    "name": "ARLing s. r. o.",
+    "url": "https://arling.sk/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "ARLing s. r. o.",
+    "url": "https://arling.sk/"
+  },
+  "mainEntityOfPage": "https://arling.sk/notes/why-an-a4-pdf-does-not-fill-an-eink-screen/"
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Is 157 by 210 millimetres a standard paper size?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No, it is a screen size. It is the 3:4 shape of a 10.3 inch e-ink display, which is why a page of that size fills the display without bars at the sides. For paper we use A4 and US Letter instead."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Will an e-ink file print properly?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "It will print, but it is the wrong file for the job: it has an 8 millimetre margin on every side with nothing for a binding, and no page numbers. That is why the print formats exist as separate files with their own margins."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Does a bigger screen change the answer?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "The ratio is what matters, not the diagonal. The reMarkable panels, the Kindle Scribe panel and Boox readers of that size all come out at 3:4, so one page shape covers them. A device with a different ratio needs a different layout, and we have not built one."
+      }
+    }
+  ]
+}
+</script>
+
+<style>
+  article { max-width:72ch; }
+  article h2 { margin:clamp(34px,4vh,52px) 0 12px; }
+  article h3 { margin:26px 0 8px; }
+  article p, article li { font-size:16.5px; line-height:1.7; }
+  article ol, article ul { padding-left:22px; }
+  article li { margin:0 0 8px; }
+  code { font:13.5px/1.4 var(--mono); background:var(--card); border:1px solid var(--line);
+    border-radius:3px; padding:1px 5px; overflow-wrap:anywhere; }
+  pre { background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    padding:16px 18px; overflow-x:auto; font:13px/1.6 var(--mono); color:var(--body); }
+  .byline { font-family:var(--ui); font-size:14px; color:var(--muted); margin:0 0 clamp(26px,3vh,40px); }
+  .zhrn { border-left:3px solid var(--accent); background:var(--card); border-radius:0 var(--radius) var(--radius) 0;
+    padding:18px 22px; margin:0 0 clamp(26px,3vh,40px); }
+  .zhrn p { margin:0; font-size:16px; }
+  .zdroje { font-family:var(--ui); font-size:13.5px; color:var(--muted); line-height:1.7;
+    border-top:1px solid var(--line); padding-top:18px; margin-top:clamp(34px,4vh,52px); }
+  .zdroje a { color:var(--body); }
+</style>
+<meta property="og:image" content="https://arling.sk/og.png">
+</head>
+<body class="noc">
+<div class="wash" aria-hidden="true"><i></i><i></i></div>
+
+<header>
+  <div class="wrap bar">
+    <a class="brand" href="https://arling.sk/">
+      <svg viewBox="0 0 488 215" width="38" height="15" aria-hidden="true" focusable="false"><path fill="#f4f4f7" fill-rule="evenodd" d="M0.00,213.00L74.00,214.00L181.00,85.00L285.00,214.00L360.00,214.00L206.00,21.00L185.00,4.00L164.00,10.00Z M221.00,0.00L263.00,50.00L395.00,50.00L409.00,55.00L419.00,76.00L401.00,96.00L313.00,98.00L411.00,214.00L487.00,214.00L422.00,139.00L457.00,123.00L482.00,88.00L482.00,48.00L463.00,19.00L417.00,0.00Z"/><path fill="#f2643c" d="M269.00,66.00L269.00,67.00L268.00,68.00L268.00,70.00L267.00,71.00L267.00,76.00L268.00,77.00L268.00,79.00L270.00,81.00L270.00,82.00L271.00,82.00L273.00,84.00L274.00,84.00L277.00,86.00L279.00,86.00L280.00,87.00L287.00,87.00L288.00,86.00L290.00,86.00L291.00,85.00L294.00,84.00L298.00,80.00L298.00,79.00L299.00,78.00L299.00,75.00L300.00,74.00L300.00,72.00L299.00,71.00L299.00,69.00L298.00,68.00L297.00,65.00L295.00,63.00L294.00,63.00L289.00,60.00L278.00,60.00L277.00,61.00L276.00,61.00L275.00,62.00L272.00,63.00Z"/></svg>
+      <b>ARLing</b>
+    </a>
+    <nav id="hlavne-menu" aria-label="Site"><a href="https://arling.sk/shop/">Shop</a><a href="https://arling.sk/en/#tools">Tools</a><a href="https://arling.sk/games/">Games</a><a href="https://arling.sk/notes/">Notes</a><a href="https://arling.sk/how-we-work/">How we work</a><a href="mailto:andrej@arling.sk">Contact</a></nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <article>
+      <h1>Why an A4 PDF does not fill an e-ink screen, with the arithmetic</h1>
+      <p class="byline">ARLing s. r. o. · 18 September 2026</p>
+
+      <div class="zhrn">
+        <p>Open a printable puzzle book or a printable planner on a reMarkable or a Kindle Scribe and it looks wrong in a way that is hard to name: there is a white band down each side, the type is smaller than it should be, and the page feels further away than a page of a real book. Nothing is broken. The file was set for a sheet of paper, the screen is not that shape, and the reader is doing the only sensible thing with a page that does not fit, which is to shrink it until it does. This note does the arithmetic, because once you have seen the numbers you can tell from a product listing whether a file was made for your device or for a printer. It also says what else changes in a page built for glass, and when the paper file is still the one you want.</p>
+      </div>
+
+      <h2>What the glass actually measures</h2>
+      <p>A reMarkable 2 and a reMarkable Paper Pro both have 1404 by 1872 dots, and at 226 dots per inch that is 157.8 by 210.4 millimetres. A Kindle Scribe has 1860 by 2480 dots, and at 300 dots per inch that is 157.5 by 210.0 millimetres. Both come out at a ratio of 1.333, which is 3:4.</p>
+      <p>That is the number to hold on to. Our e-ink page is 157 by 210 millimetres, a ratio of 1.338, so it fills the display instead of floating in the middle of it. Boox readers of that size share the same 3:4 shape, which is why one page size serves several devices.</p>
+
+      <h2>What happens to an A4 page on that screen</h2>
+      <p>A4 is 210 by 297 millimetres, a ratio of 1.414, and US Letter is 215.9 by 279.4 millimetres, a ratio of 1.294. Neither is 3:4, so neither fits.</p>
+      <p>Take the common case. A reader showing a whole A4 page on a screen of 1404 by 1872 dots fits it by height and scales it to 0.708 of its size. The drawing ends up 148.8 millimetres wide, 9.0 millimetres of width stay empty, that is 4.5 millimetres down each side, and everything on the page is drawn at 71 percent of its size, so text set at 13 points arrives as 9.2 points. The band at the side is the visible half of the problem, and the type size is the half you feel after a while.</p>
+
+      <h2>What else changes when a page is set for glass</h2>
+      <p>Page size is the start, not the end. An e-ink page has no binding and nothing is trimmed, so the margin is 8 millimetres on all four sides and does not alternate; there is one puzzle to a page even on a small grid; the cell ceiling goes up from 22 to 30 millimetres because you write into it with a stylus; there are four solutions to a page instead of six; there are no page numbers, because the reader does its own paging; and the contrast is stronger, because the display has sixteen shades of grey.</p>
+      <p>Numbers can be measured after the fact rather than promised. In our planner the smallest type is 8 points, the smallest link is 2.9 by 3.4 millimetres, a day cell on a month page is 18 by 11 millimetres, and no page overflows. In the novels the text is 13 points on an 18 point line, 22 lines to a page, with nothing below 10 points anywhere in the file.</p>
+
+      <h2>When the paper file is the one you want</h2>
+      <p>There is no argument against A4. There is only an argument against using an A4 file on a screen that is not A4 shaped. So the same content ships as both: A4 is 210 by 297 millimetres, US Letter 215.9 by 279.4 millimetres, which makes US Letter 5.9 millimetres wider and 17.6 millimetres shorter, and both sheets carry the same block, so nobody has to change the scale in a print dialogue.</p>
+      <p>In the reading books that block is 139 by 194 millimetres, centred on the sheet with a page number under it, so the pages, their order and the links are identical in all three files. Print at 100 percent rather than scaled to fit, and what comes out of the printer is what was measured.</p>
+
+      <h2>Frequently asked questions</h2>
+      <details>
+        <summary>Is 157 by 210 millimetres a standard paper size?</summary>
+        <p>No, it is a screen size. It is the 3:4 shape of a 10.3 inch e-ink display, which is why a page of that size fills the display without bars at the sides. For paper we use A4 and US Letter instead.</p>
+      </details>
+      <details>
+        <summary>Will an e-ink file print properly?</summary>
+        <p>It will print, but it is the wrong file for the job: it has an 8 millimetre margin on every side with nothing for a binding, and no page numbers. That is why the print formats exist as separate files with their own margins.</p>
+      </details>
+      <details>
+        <summary>Does a bigger screen change the answer?</summary>
+        <p>The ratio is what matters, not the diagonal. The reMarkable panels, the Kindle Scribe panel and Boox readers of that size all come out at 3:4, so one page shape covers them. A device with a different ratio needs a different layout, and we have not built one.</p>
+      </details>
+
+      <h2>Where to look next</h2>
+      <p>If you want to see a page built this way, the ten <a href="https://arling.sk/puzzle-books/">printable puzzle books</a> come with an A4 and a US Letter PDF of the same puzzles, at 4.90 € a book and 19.90 € for all ten. The e-ink files, set on the 157 by 210 millimetre page instead, are the ones described above, and a monthly issue in that format sits at https://arling.sk/puzzle-post/.</p>
+
+      <div class="zdroje">
+        <p><b>Sources.</b> The facts in this note are numbered after our internal fact list and were checked on the publication date. If a source has changed since, write to andrej@arling.sk and we will correct this page.</p>
+        <ul>
+          <li>F134, F135: ARLing, formát e-ink strany pre knihy hlavolamov (overené 17. 9. 2026)</li>
+          <li>F143: ARLing Puzzle books (<a href="https://arling.sk/puzzle-books/" rel="noopener" target="_blank">https://arling.sk/puzzle-books/</a>), overené 17. 9. 2026</li>
+          <li>F150: interný zdroj `ops/planner/edicie/planner372/qa-pdf.json` (polia stranSPretecenim, najmensiePismoPt, najmensiOdkazMm, bunkaDnaMm) a `ponuka.json` (blok E-INK PDF), meranie 17. 9. 2026.</li>
+          <li>F159: ARLing, `ops/citanie/formaty.mjs` a `ops/citanie/edicie/kniha1/manifest.json` polia blokMm a formaty, `ops/citanie/edicie/kniha1/qa-pdf.json` okrajeOdkazov.pas (minVlavoMm, minVpravoMm, minDoleMm, maxSirkaPasuMm), `ops/citanie/README.md` časť Sadzba (zóny gest podľa <a href="https://plannedpages.com/blog/planner-links-not-working/" rel="noopener" target="_blank">https://plannedpages.com/blog/planner-links-not-working/</a>), overené 17. 9. 2026.</li>
+          <li>F167: ARLing, `ops/klasika/README.md` časť Sadzba a Merania, `ops/klasika/edicie/&lt;id&gt;/manifest.json` pole sadzba (pismoPt 13, riadokPt 18, riadkovNaStranu 22, poznamkyMm 33), `ops/klasika/edicie/&lt;id&gt;/qa-pdf.json` polia pismaType3 a najmensiePismoPt, `ops/klasika/fonts/LICENSE.txt`, 17. 9. 2026.</li>
+          <li>F188: ARLing, prepočet rozmerov displejov a formátov strany (overené 18. 9. 2026); podiel a zmenšenie sú delenie tých istých čísel</li>
+          <li>F189: ARLing, tlačové formáty kníh a kníh na čítanie (overené 18. 9. 2026)</li>
+        </ul>
+      </div>
+    </article>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <div><b>ARLing s. r. o.</b><br>Ivanská cesta 32E<br>821 04 Bratislava, Slovakia</div>
+    <div>Company ID 56583486<br>VAT ID SK2122352100<br><a href="mailto:andrej@arling.sk">andrej@arling.sk</a></div>
+    <div><a href="https://arling.sk/shop/">shop</a> · <a href="https://arling.sk/privacy/">privacy</a> · <a href="https://arling.sk/podmienky/">terms</a> · <a href="https://arling.sk/gdpr/">GDPR</a> · <a href="https://arling.sk/impressum/">Impressum</a> · <a href="https://arling.sk/llms.txt">llms.txt</a> · <a href="https://arling.sk/sitemap-index.xml">sitemap</a><br>Tools are provided as is, without warranty. Anonymous visit counts via self-hosted Umami.</div>
+  </div>
+</footer>
+
+<script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="338f035d-41c5-411e-8391-9a41db6accfd"></script>
+</body>
+</html>
