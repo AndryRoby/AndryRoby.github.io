@@ -127,7 +127,9 @@ const badgers = {
     for (const cage of p.grid.cages) {
       out.push(obrys(cage.cells, n, 11, 'ohrada'));
       const i = Math.min.apply(null, cage.cells);
-      out.push(text(P + (i % n) * S + 16, P + ((i / n) | 0) * S + 20, cage.sum, 28, 'sucet'));
+      /* Súčet je zarovnaný doľava do vnútra políčka: pri dvojcifernom súčte
+         v prvom stĺpci by stred siahol na hrubý okraj dosky. */
+      out.push(text(P + (i % n) * S + 9, P + ((i / n) | 0) * S + 22, cage.sum, 27, 'sucet'));
     }
     if (!o.riesenie) for (let i = 0; i < n * n; i++) out.push(plocha(i, n, o.vyber === i ? 'hit sel' : 'hit'));
     for (let i = 0; i < n * n; i++) {
@@ -166,8 +168,8 @@ const squirrels = {
       if (bunka === null) { if (!o.riesenie) out.push(plocha(i, n, o.vyber === i ? 'hit sel' : 'hit')); continue; }
       out.push(obd(x, y, S, S, 'kmen'));
       out.push(ciara(x, y, x + S, y + S, 'mr'));
-      if (bunka.d) out.push(text(x + 26, y + 70, bunka.d, 34, 'sucet'));
-      if (bunka.r) out.push(text(x + 72, y + 30, bunka.r, 34, 'sucet'));
+      if (bunka.d) out.push(text(x + 26, y + 70, bunka.d, 34, 'sucet-kakuro'));
+      if (bunka.r) out.push(text(x + 72, y + 30, bunka.r, 34, 'sucet-kakuro'));
     }
     for (let i = 0; i < n * n; i++) {
       if (p.givens[i] !== null || !st[i]) continue;

@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script src="/style/vzhlad.js?v=93c2659f"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; connect-src 'self' https://homelab.tailbf8f27.ts.net; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0a0908">
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="48x48">
+<link rel="apple-touch-icon" href="/icon-180.png">
+<title>Memory Post</title>
+<meta name="description" content="The page where one question from Memory Post is answered. No account, no password, no analytics.">
+<link rel="preload" href="/fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/style/paper.css?v=89016e6c">
+<style>
+  /* Táto stránka je pre človeka, ktorý má osemdesiat a tablet na kolenách.
+     Veľké písmo, veľké tlačidlo, jeden stĺpec, nič, čo bliká. Bez analytiky,
+     bez cookies, bez skriptu tretej strany. */
+  body { background:var(--paper); }
+  .wash { display:none; }
+  [hidden] { display:none !important; }
+  .list { width:min(720px,92vw); margin:0 auto; padding:clamp(28px,6vh,64px) 0 clamp(48px,9vh,100px); }
+  .znacka { font-family:var(--ui); font-size:12px; letter-spacing:.26em; text-transform:uppercase;
+            color:var(--muted); margin:0 0 clamp(28px,6vh,52px); }
+  .znacka a { color:inherit; text-decoration:none; }
+  .cislo { font-family:var(--ui); font-size:14px; letter-spacing:.16em; text-transform:uppercase;
+           color:var(--muted); margin:0 0 14px; }
+  /* Otázka je pätková a nie bezpätková ako nadpisy hubu: je to tá istá veta,
+     ktorú človek o mesiac uvidí vytlačenú v knihe, a má tak aj vyzerať. */
+  .otazka { font:400 clamp(28px,4.4vw,44px)/1.28 var(--text); color:var(--ink); margin:0 0 20px;
+            overflow-wrap:break-word; letter-spacing:-.005em; }
+  .preskocit { font:400 clamp(16px,1.6vw,18px)/1.6 var(--text); font-style:italic; color:var(--muted);
+               margin:0 0 clamp(26px,4vh,40px); max-width:46ch; }
+  .pokyn { font-family:var(--ui); font-size:15px; color:var(--body); margin:0 0 10px; }
+
+  textarea { display:block; width:100%; min-height:clamp(240px,36vh,380px); resize:vertical;
+    font:400 clamp(18px,2vw,21px)/1.75 var(--text); color:var(--ink);
+    background:var(--card); border:1px solid var(--line); border-radius:10px;
+    padding:clamp(18px,2.4vw,26px); box-sizing:border-box; }
+  textarea:focus { outline:2px solid var(--accent); outline-offset:2px; border-color:var(--accent); }
+
+  .koncept { font-family:var(--ui); font-size:14px; color:var(--muted); margin:10px 0 0; min-height:1.4em; }
+  .akcie { display:flex; flex-direction:column; gap:14px; margin:clamp(22px,3.5vh,32px) 0 0; }
+  @media (min-width:640px) { .akcie { flex-direction:row; align-items:center; } }
+  .velke { display:inline-flex; align-items:center; justify-content:center; height:66px; padding:0 34px;
+    font:600 clamp(18px,2vw,21px)/1 var(--ui); border-radius:12px; border:1px solid transparent; cursor:pointer;
+    background:var(--accent); color:#fff; text-decoration:none; }
+  .velke:hover { background:var(--accent-dark); }
+  body.noc .velke { color:#1a0d07; }
+  .velke[disabled] { opacity:.55; cursor:default; }
+  .tichy { display:inline-flex; align-items:center; justify-content:center; height:66px; padding:0 26px;
+    font:500 clamp(16px,1.8vw,18px)/1 var(--ui); border-radius:12px; border:1px solid var(--line);
+    background:transparent; color:var(--body); cursor:pointer; text-decoration:none; }
+  .tichy:hover { border-color:var(--ink); color:var(--ink); }
+
+  .stav { font:400 clamp(16px,1.8vw,18px)/1.6 var(--ui); color:var(--body); margin:clamp(18px,3vh,26px) 0 0;
+          min-height:1.5em; max-width:52ch; }
+  .stav.ok { color:var(--ok); }
+  .stav b { color:var(--ink); }
+
+  /* Vlasovú linku nad sekciou kreslí paper.css (section{border-top}), preto
+     tu žiadna vlastná nie je: dve linky pod sebou vyzerali ako chyba. */
+  .sukromie { padding:clamp(30px,5vh,48px) 0 0; margin-top:clamp(30px,5vh,48px); }
+  .sukromie h2 { font:400 clamp(19px,2vw,23px)/1.3 var(--text); color:var(--ink); margin:0 0 12px; }
+  .sukromie p { font:400 16px/1.7 var(--text); color:var(--body); margin:0 0 12px; max-width:62ch; }
+  .sukromie .ziadna { font-family:var(--ui); font-size:14px; color:var(--muted); margin:0; max-width:62ch; }
+  .sukromie a { color:var(--body); }
+  .prazdne { min-height:40vh; }
+</style>
+</head>
+<body class="noc">
+<div class="wash" aria-hidden="true"><i></i><i></i></div>
+
+<main class="list">
+  <p class="znacka"><a href="/memory-post/" id="znacka">Memory Post</a></p>
+
+  <div id="obsah">
+    <p class="cislo" id="cislo"></p>
+    <h1 class="otazka" id="otazka">Loading your question</h1>
+    <p class="preskocit" id="preskocit"></p>
+
+    <p class="pokyn" id="pokyn">Write as much or as little as you like.</p>
+    <label for="text" class="skip">Your answer</label>
+    <textarea id="text" spellcheck="true" autocomplete="off" aria-labelledby="otazka"></textarea>
+    <p class="koncept" id="koncept"></p>
+
+    <div class="akcie">
+      <button type="button" class="velke" id="ulozit">Save my answer</button>
+      <a class="tichy" id="mailto" href="#" hidden>E-mail this to myself instead</a>
+    </div>
+    <p class="stav" id="stav" aria-live="polite"></p>
+  </div>
+
+  <noscript>
+    <p class="stav">This page needs JavaScript to fetch your question. If it does not work, write to <a href="mailto:andrej@arling.sk">andrej@arling.sk</a> and we will send you the question and take your answer by e-mail.</p>
+  </noscript>
+
+  <section class="sukromie">
+    <h2 id="sukromie-nadpis">Where your words go</h2>
+    <p id="sukromie-text">Your answer is sent to one server in Slovakia and copied straight back to your own inbox. It is read by you, by the person who gave you this subscription, and by the owner of ARLing if something breaks. It is never sold, never shared and never used to train anything. One line to <a href="mailto:andrej@arling.sk">andrej@arling.sk</a> and it is all exported or deleted.</p>
+    <p class="ziadna" id="ziadna">This page counts nothing and follows nobody. No analytics, no cookies, nothing but your answer.</p>
+  </section>
+</main>
+<script src="app.js?v=1" defer></script>
+<script src="/style/prepinac.js?v=2988c181" defer></script>
+</body>
+</html>
