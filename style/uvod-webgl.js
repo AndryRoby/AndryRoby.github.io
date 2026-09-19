@@ -1,8 +1,9 @@
-/* A-086: dekoratívne listy za skutočnými obálkami. Jeden draw call, max. 20 fps.
+/* A-105: vlastná pokojná geometria v úvode. Jeden draw call, max. 20 fps.
  * Obsah ani rozmery stránky na tomto plátne nezávisia. Bez knižníc a siete. */
 (function () {
   'use strict';
   var platno = document.querySelector('[data-uv-webgl]');
+  var hlavny = platno && platno.getAttribute && platno.getAttribute('data-uv-webgl') === 'hero';
   var pohyb = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)');
   var spojenie = navigator.connection;
   function uspora() { return (pohyb && pohyb.matches) || (spojenie && spojenie.saveData); }
@@ -110,8 +111,8 @@
         'gl_Position=vec4(p+aNormal*aOkraj*uPixel,0.,1.); vOkraj=aOkraj; vAkcent=aAkcent; }'
       ].join('\n'));
       shaderF = preloz(gl.FRAGMENT_SHADER, [
-        'precision mediump float; varying float vOkraj; varying float vAkcent;',
-        'void main(){float a=(1.-smoothstep(.2,1.,abs(vOkraj)))*mix(.20,.38,vAkcent);',
+        'precision mediump float; uniform float uJas; varying float vOkraj; varying float vAkcent;',
+        'void main(){float a=(1.-smoothstep(.2,1.,abs(vOkraj)))*mix(.20,.38,vAkcent)*uJas;',
         'vec3 farba=mix(vec3(.957,.933,.89),vec3(.949,.392,.235),vAkcent); gl_FragColor=vec4(farba*a,a);}'
       ].join('\n'));
       program = gl.createProgram();
@@ -125,6 +126,7 @@
         gl.enableVertexAttribArray(miesto); gl.vertexAttribPointer(miesto,a[1],gl.FLOAT,false,28,a[2]*4);
       });
       uCas = gl.getUniformLocation(program,'uCas'); uPixel = gl.getUniformLocation(program,'uPixel');
+      gl.uniform1f(gl.getUniformLocation(program,'uJas'),hlavny ? 2.0 : 1.0);
       gl.clearColor(0,0,0,0); gl.enable(gl.BLEND); gl.blendFunc(gl.ONE,gl.ONE_MINUS_SRC_ALPHA);
       pripravene = true;
       return true;
