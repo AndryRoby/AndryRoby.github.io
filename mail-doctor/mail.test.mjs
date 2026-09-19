@@ -9,11 +9,11 @@
 // Where a fixture is a real record it says so in a comment, with the date it
 // was read. The rest are written by hand to reproduce a specific mistake.
 //
-// index.html prints the number of tests in the hero ("74 automated tests").
-// When a test is added here, that number has to move with it.
+// Production text does not duplicate a changing count of tests.
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import {
   analyse,
   analyseSpf,
@@ -40,7 +40,167 @@ import {
   octetLength,
   runChecks,
   zoneGet,
+  resolveDoh,
+  normaliseDkimSelector,
+  shareCheckUrl,
+  readCheckUrl,
 } from './mail.mjs';
+
+// A-089 regression fixtures, independent of the public DNS and paid services.
+test('DNS errors remain unknown across all areas, never missing with a repair', () => {
+  for (const status of [-1, 1, 2, 4, 5, 16]) {
+    const failed = { status, records: [] };
+    const zone = makeZone(Object.fromEntries([
+      'error.example|TXT', 'error.example|MX', '_dmarc.error.example|TXT',
+      'google._domainkey.error.example|TXT', '_mta-sts.error.example|TXT',
+      '_smtp._tls.error.example|TXT', 'default._bimi.error.example|TXT',
+    ].map((key) => [key, failed])));
+    const r = analyse('error.example', zone, { selectors: ['google'] });
+    for (const [area, result] of Object.entries(r.areas)) assert.equal(result.state, 'unknown', `${status} ${area}`);
+    assert.equal(r.findings.length, 0, `status ${status}`);
+    assert.equal(r.verdict.level, 'unknown');
+  }
+});
+
+test('a failed SPF include is unknown, not a nonexistent record to remove', () => {
+  for (const status of [2, 5]) {
+    const zone = makeZone({ 'include.example|TXT': ['v=spf1 include:provider.example -all'], 'provider.example|TXT': { status, records: [] } });
+    const r = analyseSpf('include.example', zone);
+    assert.equal(r.state, 'unknown');
+    assert.equal(r.walk.pending.length, 1);
+    assert.equal(r.walk.voidCount, 0);
+    assert.ok(!has(r, 'spf_include_no_record'));
+    assert.ok(!has(r, 'spf_lookup_ok'));
+  }
+});
+
+test('SERVFAIL in external DMARC authorisation is unverified, not unauthorised', () => {
+  const zone = makeZone({
+    '_dmarc.sender.example|TXT': ['v=DMARC1; p=reject; rua=mailto:d@reports.other'],
+    'sender.example._report._dmarc.reports.other|TXT': { status: 2, records: [] },
+  });
+  const r = analyseDmarc('sender.example', zone);
+  assert.equal(r.present, true);
+  assert.equal(r.state, 'unknown');
+  assert.ok(!has(r, 'dmarc_external_unauthorised'));
+  assert.ok(!has(r, 'dmarc_external_ok'));
+});
+
+test('failed MX address lookups are not a missing host address', () => {
+  const r = analyseMx('mx-error.example', makeZone({
+    'mx-error.example|MX': [[10, 'mx.provider.example']],
+    'mx.provider.example|A': { status: 2 }, 'mx.provider.example|AAAA': { status: 5 }, 'mx.provider.example|CNAME': { status: 2 },
+  }));
+  assert.equal(r.state, 'unknown');
+  assert.ok(!has(r, 'mx_unresolvable'));
+  assert.ok(!has(r, 'mx_ok'));
+});
+
+test('shared SPF branches are counted for every use, without a false cycle', () => {
+  const zone = makeZone({
+    'diamond.example|TXT': ['v=spf1 include:a.example include:b.example -all'],
+    'a.example|TXT': ['v=spf1 include:c.example -all'],
+    'b.example|TXT': ['v=spf1 include:c.example -all'],
+    'c.example|TXT': ['v=spf1 include:d.example -all'],
+    'd.example|TXT': ['v=spf1 ip4:192.0.2.1 -all'],
+  });
+  const r = analyseSpf('diamond.example', zone);
+  assert.deepEqual(r.walk.loops, []);
+  assert.equal(r.walk.count, 6);
+  assert.equal(r.walk.nodes.filter((n) => n.name === 'd.example').length, 2);
+  assert.ok(!has(r, 'spf_loop'));
+});
+
+test('a true SPF cycle is still reported after branch-local traversal', () => {
+  const zone = makeZone({ 'a.example|TXT': ['v=spf1 include:b.example -all'], 'b.example|TXT': ['v=spf1 include:a.example -all'] });
+  const r = analyseSpf('a.example', zone);
+  assert.deepEqual(r.walk.loops, ['a.example']);
+  assert.ok(has(r, 'spf_loop'));
+});
+
+const dnsResponse = (Status, Answer = []) => ({ ok: true, status: 200, json: async () => ({ Status, Answer }) });
+test('DoH retries a DNS SERVFAIL at the other provider and strips referrers', async () => {
+  const calls = [];
+  const r = await resolveDoh('error.example', 'TXT', { fetch: async (url, options) => {
+    calls.push({ url, options });
+    return calls.length === 1 ? dnsResponse(2) : dnsResponse(0, [{ type: 16, data: '"v=spf1 -all"' }]);
+  } });
+  assert.equal(calls.length, 2);
+  assert.equal(r.records[0].text, 'v=spf1 -all');
+  for (const c of calls) { assert.equal(c.options.referrerPolicy, 'no-referrer'); assert.equal(c.options.credentials, 'omit'); }
+});
+
+test('two failed DNS providers reject rather than returning an absent record', async () => {
+  let calls = 0;
+  await assert.rejects(resolveDoh('error.example', 'TXT', { fetch: async () => dnsResponse(++calls === 1 ? 2 : 5) }), /DNS status 5/);
+  assert.equal(calls, 2);
+});
+
+test('a valid NXDOMAIN remains absent and needs no fallback', async () => {
+  let calls = 0;
+  const r = await resolveDoh('absent.example', 'TXT', { fetch: async () => { calls++; return dnsResponse(3); } });
+  assert.equal(calls, 1);
+  assert.equal(r.status, 3);
+});
+
+test('DoH timeouts are bounded and cancellation does not start a fallback', async () => {
+  let calls = 0;
+  await assert.rejects(resolveDoh('timeout.example', 'TXT', { timeoutMs: 5, fetch: async (_, { signal }) => {
+    calls++;
+    return new Promise((_, reject) => signal.addEventListener('abort', () => reject(signal.reason), { once: true }));
+  } }), /timed out/);
+  assert.equal(calls, 2);
+  const controller = new AbortController(); controller.abort(new Error('test cancelled'));
+  await assert.rejects(resolveDoh('cancel.example', 'TXT', { signal: controller.signal, fetch: async () => { throw new Error('must not run'); } }), /test cancelled/);
+});
+
+test('streamed DNS failures preserve the same uncertainty as pure analysis', async () => {
+  const events = [];
+  for await (const e of runChecks('failed.example', { selectors: ['customer2026'], resolve: async () => ({ status: 2, records: [] }) })) events.push(e);
+  const done = events.at(-1);
+  assert.equal(done.report.verdict.level, 'unknown');
+  assert.equal(done.report.findings.length, 0);
+  assert.ok(events.filter((e) => e.type === 'area').every((e) => e.result.state === 'unknown'));
+});
+
+test('a supplied DKIM selector is looked up directly and does not imply message verification', async () => {
+  const questions = [];
+  const events = [];
+  for await (const e of runChecks('custom.example', { selectors: ['customer2026'], resolve: async (name, type) => {
+    questions.push(name);
+    if (name === 'customer2026._domainkey.custom.example') return makeZone({ [`${name}|TXT`]: ['v=DKIM1; k=rsa; p='] })[`${name}|TXT`];
+    return { status: 3, records: [] };
+  } })) events.push(e);
+  assert.ok(questions.includes('customer2026._domainkey.custom.example'));
+  assert.ok(!questions.includes('google._domainkey.custom.example'));
+  assert.equal(events.at(-1).report.areas.dkim.found[0].selector, 'customer2026');
+});
+
+test('shared domains and custom selectors stay in fragments; old query links migrate', () => {
+  const old = 'https://arling.sk/mail-doctor/?domain=Private.Example&selector=sales2026&utm_source=test';
+  const parsed = readCheckUrl(old);
+  assert.deepEqual(parsed, { domain: 'private.example', selector: 'sales2026', legacy: true });
+  const share = new URL(shareCheckUrl(old, parsed.domain, parsed.selector));
+  assert.ok(!share.searchParams.has('domain'));
+  assert.ok(!share.searchParams.has('selector'));
+  assert.ok(!`${share.pathname}${share.search}`.includes('private.example'));
+  assert.equal(new URLSearchParams(share.hash.slice(1)).get('domain'), 'private.example');
+  assert.deepEqual(readCheckUrl(share.href), { domain: 'private.example', selector: 'sales2026', legacy: false });
+  assert.equal(share.searchParams.get('utm_source'), 'test');
+  assert.equal(normaliseDkimSelector('s= March2026.Region;'), 'march2026.region');
+  assert.equal(normaliseDkimSelector('x@example.com'), '');
+  assert.equal(normaliseDkimSelector('x..y'), '');
+});
+
+test('the page has a custom selector and no analytics script that could capture fragment URLs', () => {
+  const html = readFileSync(new URL('./index.html', import.meta.url), 'utf8');
+  assert.match(html, /id="selector"/);
+  assert.match(html, /<meta name="referrer" content="no-referrer">/);
+  assert.ok(!/data-website-id=|<script[^>]+src="https?:/i.test(html));
+  const app = readFileSync(new URL('./app.js', import.meta.url), 'utf8');
+  assert.ok(!/searchParams\.set\(['"]domain/.test(app));
+  assert.match(app, /shareCheckUrl\(window.location.href, domain, selector\)/);
+});
 
 // ───────────────────────── keys used by the fixtures ─────────────────────────
 // Generated once with node:crypto (RSA SubjectPublicKeyInfo, base64), so the
@@ -87,7 +247,8 @@ test('a clean domain reports nothing critical and nothing high', () => {
   assert.equal(r.counts.critical, 0, idsOf(r).join(', '));
   assert.equal(r.counts.high, 0, idsOf(r).join(', '));
   assert.equal(r.verdict.level, 'good');
-  assert.match(r.verdict.sentence, /publishes SPF, DKIM and an enforcing DMARC policy/);
+  assert.match(r.verdict.sentence, /publishes SPF, a DKIM key and an enforcing DMARC policy/);
+  assert.match(r.verdict.sentence, /real message is still needed/);
 });
 
 test('a clean domain names the passing checks with the record each came from', () => {
@@ -486,10 +647,11 @@ test('no key at any selector tried says which selectors were tried', () => {
   const f = pick(r, 'dkim_none_found');
   // Not "high": a selector cannot be discovered from DNS, so the absence of an
   // answer is not evidence that the domain does not sign.
-  assert.equal(f.severity, 'medium');
+  assert.equal(f.severity, 'info');
   assert.equal(f.data.probed, 2);
-  assert.match(f.detail, /Selectors tried: google, selector1\./);
-  assert.match(f.detail, /DKIM-Signature header contains s=/);
+  assert.match(f.detail, /Selectors requested: google, selector1\./);
+  assert.match(f.detail, /DKIM-Signature s= value/);
+  assert.equal(r.state, 'unknown');
 });
 
 test('selectors not yet looked up are reported as unknown, never as missing', () => {
@@ -604,7 +766,7 @@ test('a missing DMARC record is answered with the safe monitoring record', () =>
   assert.equal(f.suggest.value, 'v=DMARC1; p=none; rua=mailto:dmarc@bare.example');
 });
 
-test('p=reject with neither SPF nor DKIM is reported as self inflicted', () => {
+test('p=reject and guessed selectors do not establish absent DKIM or rejection', () => {
   const zone = makeZone({
     'harsh.example|TXT': NX,
     'harsh.example|MX': NX,
@@ -617,8 +779,10 @@ test('p=reject with neither SPF nor DKIM is reported as self inflicted', () => {
     'default._bimi.harsh.example|TXT': NX,
   });
   const r = analyse('harsh.example', zone, { selectors: GOOGLE_ONLY });
-  assert.ok(has(r, 'dmarc_reject_without_auth'), idsOf(r).join(', '));
-  assert.equal(pick(r, 'dmarc_reject_without_auth').severity, 'critical');
+  assert.ok(!has(r, 'dmarc_reject_without_auth'), idsOf(r).join(', '));
+  assert.equal(r.areas.dkim.state, 'unknown');
+  assert.equal(r.verdict.level, 'unknown');
+  assert.ok(!r.findings.some((f) => /being refused at every receiver|neither SPF nor DKIM/.test(f.title + f.detail)));
 });
 
 test('the tags a receiver ignores are still pointed out as probable typos', () => {
@@ -738,8 +902,8 @@ test('a domain with nothing at all reports each missing record once', () => {
   assert.ok(has(r, 'dmarc_missing'));
   assert.ok(has(r, 'mx_missing'));
   assert.ok(has(r, 'dkim_none_found'));
-  assert.equal(r.verdict.level, 'bad');
-  assert.match(r.verdict.sentence, /none of the three records/);
+  assert.equal(r.verdict.level, 'unknown');
+  assert.match(r.verdict.sentence, /DKIM may use a selector/);
   // Ordered by damage: the critical ones come first.
   assert.equal(r.findings[0].severity, 'critical');
 });
@@ -924,8 +1088,8 @@ test('an enforcing domain with no discoverable selector is told why, not accused
   });
   const r = analyse('signed.example', zone, { selectors: GOOGLE_ONLY });
   assert.equal(r.counts.high, 0, idsOf(r).join(', '));
-  assert.equal(r.verdict.level, 'good');
-  assert.match(r.verdict.sentence, /a selector nobody can guess rather than that it does not sign at all/);
+  assert.equal(r.verdict.level, 'unknown');
+  assert.match(r.verdict.sentence, /DKIM may use a selector that was not checked/);
 });
 
 test('a subdomain inherits the organizational domain policy rather than having none', () => {

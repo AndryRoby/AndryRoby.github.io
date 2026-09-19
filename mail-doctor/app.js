@@ -8,11 +8,12 @@
 // and the whole list is re-sorted by damage on every update, so what is on
 // screen is always in the right order even while the slow half is still running.
 
-import { runChecks, sortFindings, normaliseDomainInput, looksLikeDomain, AREAS, DKIM_SELECTORS } from './mail.mjs';
+import { runChecks, sortFindings, normaliseDomainInput, normaliseDkimSelector, looksLikeDomain, shareCheckUrl, readCheckUrl, AREAS, DKIM_SELECTORS } from './mail.mjs';
 
 const $ = (id) => document.getElementById(id);
 const form = $('ask');
 const input = $('domain');
+const selectorInput = $('selector');
 const runBtn = $('run');
 const checksEl = $('checks');
 const findingsEl = $('findings');
@@ -215,10 +216,19 @@ async function check(rawDomain, { push } = {}) {
     return;
   }
   if (input.value !== domain) input.value = domain;
+  const selector = normaliseDkimSelector(selectorInput.value);
+  if (selectorInput.value.trim() && !selector) {
+    showError('Enter only the s= selector value from a DKIM-Signature header, such as google or mail2026. Use the d= signing domain in the domain field.');
+    selectorInput.focus();
+    return;
+  }
+  const selectors = selector ? [selector] : DKIM_SELECTORS;
 
   if (current) current.abort();
   const controller = new AbortController();
   current = controller;
+  let timedOut = false;
+  const timer = window.setTimeout(() => { timedOut = true; controller.abort(new Error('The check timed out')); }, 60000);
 
   setBusy(true);
   placeholder.hidden = true;
@@ -232,10 +242,8 @@ async function check(rawDomain, { push } = {}) {
   verdictCounts.textContent = '';
 
   if (push !== false) {
-    const url = new URL(window.location.href);
-    url.searchParams.set('domain', domain);
     try {
-      window.history.replaceState(null, '', url.toString());
+      window.history.replaceState(null, '', shareCheckUrl(window.location.href, domain, selector));
     } catch {
       // A browser that refuses the history write still has a working page.
     }
@@ -251,7 +259,7 @@ async function check(rawDomain, { push } = {}) {
   const started = Date.now();
   let lookups = 0;
   try {
-    for await (const ev of runChecks(domain, { signal: controller.signal })) {
+    for await (const ev of runChecks(domain, { signal: controller.signal, selectors })) {
       if (controller.signal.aborted) return;
       if (ev.type === 'progress' && ev.area === 'dkim') {
         setRail('dkim', 'waiting', ev.done + '/' + ev.total);
@@ -270,22 +278,23 @@ async function check(rawDomain, { push } = {}) {
         draw();
         const v = ev.report.verdict;
         verdictEl.dataset.level = v.level;
-        verdictPill.textContent = { good: 'healthy', ok: 'not enforcing', weak: 'weak', bad: 'broken' }[v.level] || v.level;
+        verdictPill.textContent = { good: 'checks passed', ok: 'not enforcing', weak: 'review findings', bad: 'issues found', unknown: 'unverified' }[v.level] || v.level;
         verdictText.textContent = v.sentence;
         const c = ev.report.counts;
         verdictCounts.textContent =
           `${c.critical} critical, ${c.high} serious, ${c.medium} worth fixing, ${c.low} worth knowing, ${c.pass} passing. `
           + `${lookups} DNS questions asked from your browser in ${((Date.now() - started) / 1000).toFixed(1)} seconds. `
-          + `${DKIM_SELECTORS.length} DKIM selectors were tried, because DNS gives no way to list them.`;
+          + (selector ? `The supplied DKIM selector ${selector} was checked.` : `${selectors.length} common DKIM selectors were requested. Other selectors may exist.`);
       }
     }
   } catch (err) {
-    if (controller.signal.aborted) return;
+    if (controller.signal.aborted && !timedOut) return;
     verdictEl.dataset.level = 'unknown';
     verdictPill.textContent = 'no answer';
-    verdictText.textContent = 'The lookups could not be finished: ' + (err && err.message ? err.message : String(err));
-    verdictCounts.textContent = 'Both public resolvers are asked before this appears. A browser extension that blocks DNS over HTTPS, or a network that blocks it, will stop this page working; nothing else on the page depends on it.';
+    verdictText.textContent = timedOut ? 'The check reached its time limit. The findings already shown are partial; retry to check the remaining records.' : 'The lookups could not be finished: ' + (err && err.message ? err.message : String(err));
+    verdictCounts.textContent = 'DNS errors and timeouts do not mean a record is missing. A network or browser extension may block DNS over HTTPS.';
   } finally {
+    window.clearTimeout(timer);
     if (current === controller) {
       current = null;
       setBusy(false);
@@ -294,6 +303,7 @@ async function check(rawDomain, { push } = {}) {
 }
 
 function railState(area, result) {
+  if (result.state === 'unknown') return 'unknown';
   if (area === 'dkim') return result.found && result.found.length ? (result.state === 'ok' ? 'ok' : 'warn') : 'fail';
   if (result.state === 'absent') return 'absent';
   if (result.state === 'fail') return 'fail';
@@ -302,6 +312,7 @@ function railState(area, result) {
 }
 
 function railNote(area, result) {
+  if (result.state === 'unknown') return result.uncertainty === 'selector' ? 'selector not confirmed' : 'not fully verified';
   if (area === 'dkim') {
     const found = result.found || [];
     if (!found.length) return 'none found';
@@ -360,8 +371,14 @@ copyLinkBtn.addEventListener('click', () => {
 
 // A link that carries the domain runs the same lookups again, from whoever
 // opened it. Nothing about the result travels in the link.
-const fromUrl = new URL(window.location.href).searchParams.get('domain');
-if (fromUrl) {
-  input.value = fromUrl;
-  check(fromUrl, { push: false });
+const fromUrl = readCheckUrl(window.location.href);
+// An old query link was already sent to the host before JS could run. Remove
+// it from the current URL immediately and only create fragment links now.
+if (fromUrl.legacy) {
+  try { window.history.replaceState(null, '', shareCheckUrl(window.location.href, fromUrl.domain, fromUrl.selector)); } catch { /* The form still works. */ }
+}
+if (fromUrl.domain) {
+  input.value = fromUrl.domain;
+  selectorInput.value = fromUrl.selector;
+  check(fromUrl.domain, { push: false });
 }

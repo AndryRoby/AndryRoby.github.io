@@ -1,8 +1,7 @@
 // mail.mjs: Mail Doctor core logic.
 //
-// Given the DNS answers for a domain, work out whether e-mail sent from that
-// domain will be authenticated by the receiver, and say exactly which record
-// breaks which published rule.
+// Given DNS answers, check supported record rules. DNS alone cannot establish
+// authentication of a particular message, alignment, or inbox placement.
 //
 // Everything below the "network" section at the bottom is pure: the analysers
 // take a plain object of DNS answers ("a zone") and return findings. Only
@@ -10,7 +9,8 @@
 // against captured answers.
 //
 // Every rule here is a reading of a published standard against a real record.
-// Nothing is generated, nothing is guessed. Sources, quoted in the rule text of
+// Findings use deterministic rules; common DKIM selector names are probes,
+// not evidence that other selectors do not exist. Sources in the rule text of
 // each finding:
 //   RFC 7208  Sender Policy Framework (SPF) for Authorizing Use of Domains in Email
 //   RFC 6376  DomainKeys Identified Mail (DKIM) Signatures
@@ -50,7 +50,7 @@ const TYPE_NAME = Object.fromEntries(Object.entries(DNS_TYPE).map(([k, v]) => [v
 // DNS RCODEs we care about. 0 = ok (possibly with no answers, "NODATA"),
 // 3 = name does not exist ("NXDOMAIN"). -1 is ours: the lookup was not made or
 // failed, which is never the same thing as "the record is not there".
-export const RCODE = { OK: 0, NXDOMAIN: 3, NOT_LOOKED_UP: -1 };
+export const RCODE = { OK: 0, SERVFAIL: 2, NXDOMAIN: 3, REFUSED: 5, NOT_LOOKED_UP: -1 };
 
 // ─────────────────────────── string helpers ───────────────────────────
 
@@ -98,6 +98,34 @@ export function looksLikeDomain(name) {
   const labels = s.split('.');
   if (labels.length < 2) return false;
   return labels.every((l) => l.length >= 1 && l.length <= 63 && /^[a-z0-9_-]+$/.test(l) && !l.startsWith('-') && !l.endsWith('-'));
+}
+
+/** Optional s= value from a real DKIM-Signature, never a whole header. */
+export function normaliseDkimSelector(raw) {
+  const s = normaliseName(raw).replace(/^s\s*=\s*/, '').replace(/;$/, '');
+  return s && s.length <= 253 && s.split('.').every((p) => p.length > 0 && p.length <= 63 && /^[a-z0-9_-]+$/.test(p)) ? s : '';
+}
+
+/** The fragment is local to the browser; domain/selector are never query parameters. */
+export function shareCheckUrl(href, domain, selector = '') {
+  const url = new URL(href);
+  url.searchParams.delete('domain');
+  url.searchParams.delete('selector');
+  const fragment = new URLSearchParams();
+  const d = normaliseDomainInput(domain);
+  if (looksLikeDomain(d)) fragment.set('domain', d);
+  const s = normaliseDkimSelector(selector);
+  if (s) fragment.set('selector', s);
+  url.hash = fragment.toString();
+  return url.toString();
+}
+
+export function readCheckUrl(href) {
+  const url = new URL(href);
+  const fragment = new URLSearchParams(url.hash.slice(1));
+  const domain = normaliseDomainInput(fragment.get('domain') || url.searchParams.get('domain') || '');
+  const selector = normaliseDkimSelector(fragment.get('selector') || url.searchParams.get('selector') || '');
+  return { domain: looksLikeDomain(domain) ? domain : '', selector, legacy: url.searchParams.has('domain') || url.searchParams.has('selector') };
 }
 
 /**
@@ -303,7 +331,7 @@ export function zoneGet(zone, name, type) {
   return { status: RCODE.NOT_LOOKED_UP, records: [] };
 }
 
-const isUnknown = (a) => a.status === RCODE.NOT_LOOKED_UP;
+const isUnknown = (a) => a.status !== RCODE.OK && a.status !== RCODE.NXDOMAIN;
 /** A "void lookup" in RFC 7208 section 4.6.4: NXDOMAIN, or ok with no answers. */
 const isVoid = (a) => a.status === RCODE.NXDOMAIN || (a.status === RCODE.OK && a.records.length === 0);
 
@@ -461,7 +489,6 @@ export function walkSpf(domain, zone) {
     loops: [],
     truncated: false,
   };
-  const seen = new Set();
   const want = (name, type) => {
     const a = zoneGet(zone, name, type);
     if (isUnknown(a) && !state.pending.some((p) => p.name === normaliseName(name) && p.type === type)) {
@@ -470,16 +497,18 @@ export function walkSpf(domain, zone) {
     return a;
   };
 
-  function visit(name, depth, via) {
+  function visit(name, depth, via, ancestors = new Set()) {
     const n = normaliseName(name);
     const node = { name: n, depth, via, record: null, terms: [], state: 'ok' };
     state.nodes.push(node);
-    if (seen.has(n)) {
+    if (ancestors.has(n)) {
       node.state = 'loop';
       state.loops.push(n);
       return node;
     }
-    seen.add(n);
+    // Each recursive branch owns its ancestor path. Shared includes in a
+    // diamond are counted again, while only returning to an ancestor loops.
+    const branch = new Set(ancestors).add(n);
 
     const answer = want(n, 'TXT');
     if (isUnknown(answer)) {
@@ -549,11 +578,11 @@ export function walkSpf(domain, zone) {
         continue;
       }
       if (t.kind === 'mechanism' && t.name === 'include') {
-        visit(target, depth + 1, t.raw);
+        visit(target, depth + 1, t.raw, branch);
         continue;
       }
       if (isRedirect) {
-        visit(target, depth + 1, t.raw);
+        visit(target, depth + 1, t.raw, branch);
       }
     }
     return node;
@@ -963,7 +992,7 @@ export function analyseSpf(domain, zone) {
   }
 
   const state = out.some((f) => f.severity === 'critical') ? 'fail' : out.some((f) => f.severity === 'high' || f.severity === 'medium') ? 'warn' : 'ok';
-  return { present: true, record: record.text, state, findings: out, walk };
+  return { present: true, record: record.text, state: pendingNow ? 'unknown' : state, findings: out, walk };
 }
 
 /** Split a long record into 255 octet quoted strings on term boundaries. */
@@ -1446,7 +1475,7 @@ export function analyseDkim(domain, zone, selectors = DKIM_SELECTORS) {
   }
 
   if (unknown && !probed) {
-    return { found: [], probed: 0, state: 'unknown', findings: [], selectors };
+    return { found: [], probed: 0, state: 'unknown', uncertainty: 'dns', findings: [], selectors };
   }
 
   if (!found.length) {
@@ -1457,12 +1486,13 @@ export function analyseDkim(domain, zone, selectors = DKIM_SELECTORS) {
       // "we found none" is a statement about what we could ask, not about
       // whether the domain signs its mail. Calling it serious would be a
       // confident claim we have no way to make.
-      severity: 'medium',
+      severity: 'info',
       weight: 18,
       title: `No DKIM key at any of the ${probed} selectors tried`,
       detail:
-        'DNS gives no way to list the selectors a domain uses, so the only thing any checker can do is try the names the common senders use. None of them answered. That means either this domain does not sign its mail at all, which is the usual reason, or it signs with a selector chosen by a service we did not try, which is normal for HubSpot, Klaviyo and anything that generates a selector per customer. '
-        + 'Look at the headers of a message you have actually sent: the DKIM-Signature header contains s=, and that is the selector. Selectors tried: '
+        'No key was found at the selector names checked. This does not establish whether the domain signs mail: it may use another selector. '
+        + (unknown ? `${unknown} selector lookup(s) could not be completed. ` : '')
+        + 'Look at a message you actually sent: enter its DKIM-Signature s= value as the optional selector, and use its d= signing domain in the domain field. Selectors requested: '
         + selectors.map((s) => (typeof s === 'string' ? s : s.selector)).join(', ') + '.',
       record: rec('<selector>._domainkey.' + d, 'TXT', '(no record at any selector tried)'),
       rule: 'A DKIM public key lives in a TXT record at <selector>._domainkey.<domain>, and the selector is carried in the s= tag of the signature, not in DNS.',
@@ -1473,7 +1503,7 @@ export function analyseDkim(domain, zone, selectors = DKIM_SELECTORS) {
   }
 
   const state = out.some((f) => f.severity === 'critical') ? 'fail' : out.some((f) => f.severity === 'high') ? 'fail' : out.some((f) => f.severity === 'medium') ? 'warn' : 'ok';
-  return { found, probed, state, findings: out, selectors };
+  return { found, probed, state: !found.length || unknown ? 'unknown' : state, uncertainty: unknown ? 'dns' : !found.length ? 'selector' : null, findings: out, selectors };
 }
 
 // ══════════════════════════════ DMARC ═════════════════════════════════
@@ -1573,6 +1603,7 @@ export function analyseDmarc(domain, zone, context = {}) {
   const d = normaliseName(domain);
   const name = '_dmarc.' + d;
   const out = [];
+  let unresolvedAuthorisation = false;
   const answer = zoneGet(zone, name, 'TXT');
   if (isUnknown(answer)) return { present: false, record: null, state: 'unknown', findings: [], policy: null };
 
@@ -1926,7 +1957,7 @@ export function analyseDmarc(domain, zone, context = {}) {
       if (organizationalDomain(uri.domain) === org) continue;
       const authName = dmarcAuthorisationName(d, uri.domain);
       const auth = zoneGet(zone, authName, 'TXT');
-      if (isUnknown(auth)) continue;
+      if (isUnknown(auth)) { unresolvedAuthorisation = true; continue; }
       const ok = auth.records.some((r) => /^v=DMARC1\b/i.test(r.text.trim()));
       if (ok) {
         out.push(finding({
@@ -1999,26 +2030,14 @@ export function analyseDmarc(domain, zone, context = {}) {
       severity: 'pass',
       weight: 20,
       title: 'p=reject: failing mail is asked to be refused',
-      detail: 'The strongest DMARC policy. A message that claims to be from you and fails is refused at the SMTP conversation, so it never reaches a mailbox at all.',
+      detail: 'This policy requests rejection of messages that fail DMARC. Receivers can apply their own local policy; DNS records alone do not show whether a particular message passes DMARC or is delivered.',
       record: rec(name, 'TXT', record.text),
       rule: 'p=reject asks receivers to refuse mail that fails the DMARC check.',
       rfc: 'RFC 7489 section 6.3',
       level: 'must',
     }));
-    if (context.noSpf && context.noDkim) {
-      out.push(finding({
-        id: 'dmarc_reject_without_auth',
-        area: 'dmarc',
-        severity: 'critical',
-        weight: 7,
-        title: 'p=reject with neither SPF nor DKIM in place',
-        detail: 'DMARC only passes when SPF or DKIM passes and is aligned with the From address. This domain has no SPF record, and no DKIM key was found at any selector tried. If it sends any mail at all, that mail is being refused at every receiver that honours DMARC, by your own instruction.',
-        record: rec(name, 'TXT', record.text),
-        rule: 'A message passes DMARC when at least one of SPF or DKIM passes and is aligned; otherwise the requested policy applies.',
-        rfc: 'RFC 7489 sections 4.2 and 6.6.2',
-        level: 'must',
-      }));
-    }
+    // No-selector-found is not proof of absent DKIM. Do not infer actual
+    // message rejection from a finite set of guessed public key names.
   }
 
   if (!('sp' in t) && policy.p && policy.p !== 'none') {
@@ -2037,7 +2056,7 @@ export function analyseDmarc(domain, zone, context = {}) {
   }
 
   const state = out.some((f) => f.severity === 'critical') ? 'fail' : out.some((f) => f.severity === 'high' || f.severity === 'medium') ? 'warn' : 'ok';
-  return { present: true, record: record.text, state, findings: out, policy };
+  return { present: true, record: record.text, state: unresolvedAuthorisation ? 'unknown' : state, findings: out, policy };
 }
 
 function fixUris(value) {
@@ -2186,6 +2205,7 @@ export function analyseMx(domain, zone) {
         level: 'must',
       }));
     }
+    host.unverified = isUnknown(a4) || isUnknown(a6) || isUnknown(cname);
     host.resolved = host.a > 0 || host.aaaa > 0;
     hosts.push(host);
   }
@@ -2222,7 +2242,7 @@ export function analyseMx(domain, zone) {
   }
 
   const state = out.some((f) => f.severity === 'critical') ? 'fail' : out.some((f) => f.severity === 'high') ? 'warn' : 'ok';
-  return { present: true, hosts, nullMx: false, state, findings: out };
+  return { present: true, hosts, nullMx: false, state: hosts.some((h) => h.unverified) ? 'unknown' : state, findings: out };
 }
 
 // ═════════════════════ MTA-STS, TLS-RPT and BIMI ══════════════════════
@@ -2445,10 +2465,7 @@ export function analyse(domain, zone, opts = {}) {
   const mx = analyseMx(d, zone);
   const spf = analyseSpf(d, zone);
   const dkim = analyseDkim(d, zone, selectors);
-  const dmarc = analyseDmarc(d, zone, {
-    noSpf: spf.state !== 'unknown' && !spf.present,
-    noDkim: dkim.state !== 'unknown' && dkim.found.length === 0,
-  });
+  const dmarc = analyseDmarc(d, zone);
   const hasMx = mx.present && !mx.nullMx;
   const mtasts = analyseMtaSts(d, zone, { hasMx });
   const tlsrpt = analyseTlsRpt(d, zone, { hasMx });
@@ -2463,25 +2480,15 @@ export function analyse(domain, zone, opts = {}) {
 
 /** One sentence at the top, and a level the page can colour. */
 export function verdict(domain, areas, findings, counts) {
-  const { spf, dkim, dmarc, mx } = areas;
-  const unknown = [spf, dkim, dmarc, mx].some((a) => a.state === 'unknown');
-  if (unknown) return { level: 'unknown', sentence: 'Still looking up records for ' + domain + '.' };
+  const { dkim, dmarc } = areas;
+  const unknown = Object.values(areas).some((a) => a.state === 'unknown');
+  if (unknown) return { level: 'unknown', sentence: `Some checks for ${domain} remain unverified. ${dkim.uncertainty === 'selector' ? 'DKIM may use a selector that was not checked. ' : 'Some DNS answers could not be obtained. '}Review the confirmed findings below; this does not determine whether a message is authenticated or delivered.` };
 
   const worst = findings.find((f) => f.severity === 'critical' || f.severity === 'high') || null;
-  const noSpf = !spf.present;
-  const noDkim = dkim.found.length === 0;
-  const noDmarc = !dmarc.present;
-
-  if (noSpf && noDkim && noDmarc) {
-    return {
-      level: 'bad',
-      sentence: `${domain} has none of the three records that prove a message is really from you, so anyone can send mail in its name today and no receiver has anything to check it against.`,
-    };
-  }
   if (counts.critical > 0) {
     return {
       level: 'bad',
-      sentence: `Mail from ${domain} is not properly authenticated: ${counts.critical} thing${counts.critical > 1 ? 's are' : ' is'} broken badly enough to change what receivers do, starting with ${lower(worst.title)}.`,
+      sentence: `DNS checks for ${domain} found ${counts.critical} critical issue${counts.critical > 1 ? 's' : ''}, starting with ${lower(worst.title)}. Check the findings against your sending configuration before changing records.`,
     };
   }
   if (counts.high > 0) {
@@ -2494,18 +2501,12 @@ export function verdict(domain, areas, findings, counts) {
   if (!enforcing) {
     return {
       level: 'ok',
-      sentence: `${domain} has SPF${noDkim ? '' : ', DKIM'} and DMARC in place and nothing is broken, but the DMARC policy still asks receivers to take no action, so a forged message is delivered exactly as before.`,
-    };
-  }
-  if (noDkim) {
-    return {
-      level: 'good',
-      sentence: `${domain} publishes SPF and an enforcing DMARC policy and nothing in the records contradicts the standards, but no DKIM key answered at any selector this page can try, which may mean the domain signs with a selector nobody can guess rather than that it does not sign at all.`,
+      sentence: `The checked records for ${domain} have no critical or serious findings. Its DMARC policy does not request enforcement. Actual message authentication and delivery are not tested.`,
     };
   }
   return {
     level: 'good',
-    sentence: `${domain} publishes SPF, DKIM and an enforcing DMARC policy, and nothing in the records contradicts the standards${counts.medium ? `, with ${counts.medium} smaller thing${counts.medium > 1 ? 's' : ''} worth a look` : ''}.`,
+    sentence: `${domain} publishes SPF, a DKIM key and an enforcing DMARC policy. The supported DNS checks found no critical or serious issue${counts.medium ? `, with ${counts.medium} smaller thing${counts.medium > 1 ? 's' : ''} worth a look` : ''}. A real message is still needed to verify authentication and alignment.`,
   };
 }
 
@@ -2535,17 +2536,28 @@ export async function resolveDoh(name, type, opts = {}) {
   const t = String(type).toUpperCase();
   let lastError = null;
   for (const p of providers) {
+    if (opts.signal?.aborted) throw opts.signal.reason || new Error('DNS lookup cancelled');
+    const controller = new AbortController();
+    const cancel = () => controller.abort(opts.signal.reason);
+    opts.signal?.addEventListener('abort', cancel, { once: true });
+    const timer = setTimeout(() => controller.abort(new Error('DNS lookup timed out')), opts.timeoutMs ?? 8000);
     try {
       const url = `${p.url}?name=${encodeURIComponent(normaliseName(name))}&type=${encodeURIComponent(t)}`;
-      const res = await fetchImpl(url, { headers: { accept: 'application/dns-json' }, signal: opts.signal });
+      const res = await fetchImpl(url, { headers: { accept: 'application/dns-json' }, signal: controller.signal, credentials: 'omit', referrerPolicy: 'no-referrer' });
       if (!res.ok) {
         lastError = new Error(`${p.name} answered ${res.status}`);
         continue;
       }
       const json = await res.json();
-      return { status: typeof json.Status === 'number' ? json.Status : RCODE.NOT_LOOKED_UP, records: answersToRecords(json, t), provider: p.name };
+      const status = typeof json.Status === 'number' ? json.Status : RCODE.NOT_LOOKED_UP;
+      if (isUnknown({ status })) { lastError = new Error(`${p.name} returned DNS status ${status}`); continue; }
+      return { status, records: answersToRecords(json, t), provider: p.name };
     } catch (err) {
+      if (opts.signal?.aborted) throw opts.signal.reason || err;
       lastError = err;
+    } finally {
+      clearTimeout(timer);
+      opts.signal?.removeEventListener('abort', cancel);
     }
   }
   throw lastError || new Error('No DNS provider answered');
@@ -2594,6 +2606,7 @@ export async function* runChecks(domain, opts = {}) {
   let used = 0;
 
   async function ask(name, type) {
+    if (opts.signal?.aborted) throw opts.signal.reason || new Error('DNS lookup cancelled');
     const key = zoneKey(name, type);
     if (key in zone) return zone[key];
     if (used >= maxLookups) {
@@ -2604,7 +2617,8 @@ export async function* runChecks(domain, opts = {}) {
     try {
       const r = await resolve(name, type);
       zone[key] = { status: r.status, records: r.records };
-    } catch {
+    } catch (err) {
+      if (opts.signal?.aborted) throw opts.signal.reason || err;
       zone[key] = { status: RCODE.NOT_LOOKED_UP, records: [] };
     }
     return zone[key];
@@ -2635,7 +2649,7 @@ export async function* runChecks(domain, opts = {}) {
   // 3. DMARC, then the external authorisation records it points at.
   await ask('_dmarc.' + d, 'TXT');
   await askAll(dmarcPending(d, zone));
-  yield { type: 'area', area: 'dmarc', result: analyseDmarc(d, zone, { noSpf: !spf.present, noDkim: false }) };
+  yield { type: 'area', area: 'dmarc', result: analyseDmarc(d, zone) };
 
   // 4. The three small ones, in parallel.
   await askAll([
@@ -2660,13 +2674,6 @@ export async function* runChecks(domain, opts = {}) {
   }
   const dkim = analyseDkim(d, zone, selectors);
   yield { type: 'area', area: 'dkim', result: dkim };
-
-  // DMARC again, now that we know whether anything signs this domain: a
-  // p=reject policy on a domain with neither SPF nor DKIM is its own finding
-  // and it cannot be seen until the selectors have been tried.
-  if (!spf.present && !dkim.found.length) {
-    yield { type: 'area', area: 'dmarc', result: analyseDmarc(d, zone, { noSpf: true, noDkim: true }) };
-  }
 
   yield { type: 'done', report: analyse(d, zone, { selectors }), zone, lookups: used };
 }
