@@ -2,9 +2,10 @@
  *
  * Vsetko sa deje v prehliadaci. Subor sa cita cez FileReader, pravidla bezia
  * tu (pravidla.mjs), XML vznika tu (ubl.js) a doklad sa vykresluje tu
- * (nahlad.js). Na server neodchadza nic okrem overenia platby: po navrate zo
+ * (nahlad.js). Faktura sa nenahrava. Stav platby sa overuje po navrate zo
  * Stripe (?session_id=) sa worker spyta, ci je session zaplatena a na aku sumu
- * (GET /v1/kontrola/status). Rovnaky postup ako na /gdpr-dokumenty/.
+ * (GET /v1/kontrola/status). Samostatny dobrovolny dopyt odosiela dopyt.js,
+ * iba z vedome vyplnenych poli; faktura sa k nemu nepriklada.
  *
  * Slovenska, ceska aj nemecka stranka pouzivaju tento jeden skript; lisia sa
  * len textami v objekte T a atributom lang na <html>.
@@ -19,6 +20,7 @@ import { parsujXml } from './parser.mjs';
 import { vytvorUbl, prepocitaj, prazdnaFaktura, zCentov } from './ubl.js';
 import { vykresliNahlad } from './nahlad.js';
 import { zapojDavku } from './davka-ui.js';
+import { zobrazOpakovanie } from './dopyt-opakovanie.js';
 let davkaUI = null;
 
 /* Jazyk berieme z cesty (/cs/, /de/, /en/), lebo tak je stranka rozdelena; atribut lang
@@ -681,11 +683,13 @@ function prepni(meno, zapisHash) {
 const vstupBlok = $('vstup');
 let xmlText = '';
 let nazovSuboru = '';
+let vstupJeUkazka = false;
 
 function stavVstupu(text) { const s = $('vstup-stav'); if (s) s.textContent = text; }
 
-function prijmiText(text, nazov) {
+function prijmiText(text, nazov, ukazka = false) {
   xmlText = text;
+  vstupJeUkazka = ukazka || text.trim() === VZOR.trim();
   nazovSuboru = nazov || '';
   const ta = $('xml');
   if (ta && ta.value !== text) ta.value = text;
@@ -723,7 +727,7 @@ if (vstupBlok) {
   const vybrat = $('vybrat');
   if (vybrat) vybrat.addEventListener('click', () => subor && subor.click());
   const vzor = $('vzor');
-  if (vzor) vzor.addEventListener('click', () => { prijmiText(VZOR, LANG === 'en' ? 'sample-e-invoice.xml' : 'vzor-efaktura.xml'); stavVstupu(T.vzorNacitany); });
+  if (vzor) vzor.addEventListener('click', () => { prijmiText(VZOR, LANG === 'en' ? 'sample-e-invoice.xml' : 'vzor-efaktura.xml', true); stavVstupu(T.vzorNacitany); });
   const spustit = $('spustit');
   if (spustit) spustit.addEventListener('click', () => {
     const ta = $('xml');
@@ -743,7 +747,7 @@ function kNastroju() {
 const heroVzor = $('hero-vzor');
 if (heroVzor) heroVzor.addEventListener('click', () => {
   prepni('kontrola', true);
-  prijmiText(VZOR, LANG === 'en' ? 'sample-e-invoice.xml' : 'vzor-efaktura.xml');
+  prijmiText(VZOR, LANG === 'en' ? 'sample-e-invoice.xml' : 'vzor-efaktura.xml', true);
   stavVstupu(T.vzorNacitany);
   kNastroju();
 });
@@ -799,6 +803,7 @@ function spustiKontrolu() {
     cielSumar.appendChild(el('p', 'poznamka', T.nacitajteSubor));
     if (akcie) akcie.hidden = true;
     if (kupaBlok) kupaBlok.hidden = true;
+    zobrazOpakovanie(false);
     return;
   }
   const v = skontroluj(xmlText);
@@ -823,6 +828,7 @@ function spustiKontrolu() {
   if (akcie) akcie.hidden = false;
   // Platene tlacidlo hned pod uspesnym vysledkom bezplatnej kontroly (len tam, kde ho stranka ma).
   if (kupaBlok) kupaBlok.hidden = !(bezaliPravidla && s.chyby === 0);
+  zobrazOpakovanie(bezaliPravidla && !vstupJeUkazka);
   track('efaktura_kontrola', { vysledok: s.chyby ? 'chyby' : 'ok', profil: v.profil, produkt: 'efaktura', jazyk: LANG });
 }
 
