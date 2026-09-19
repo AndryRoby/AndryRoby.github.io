@@ -1,10 +1,11 @@
 <!doctype html>
 <html lang="en">
 <head>
-<script src="/style/vzhlad.js?v=93c2659f"></script>
+<meta name="referrer" content="no-referrer">
+<script src="/style/vzhlad.js?v=16f0484e"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://homelab.tailbf8f27.ts.net 'sha256-lSmo0woDlgS1knUeYBS2sy7L0jO8cGyQ8omoePs2Dhc=' 'sha256-Q6/PB1V8Lpl+KvHTUvBZ0jZ45k8BxLuxdMkr0iTit4Q='; connect-src 'self' https://cloudflare-dns.com https://dns.google https://homelab.tailbf8f27.ts.net; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://homelab.tailbf8f27.ts.net 'sha256-4a5f6SRVeAZZ2JJ9VrpAeoACi5Rvo3G/H6XUbevbob4=' 'sha256-aZwd4/z10kdk+H73gxIvIWfe//BB78eirHS4JNA8uy4='; connect-src 'self' https://cloudflare-dns.com https://dns.google https://homelab.tailbf8f27.ts.net; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#0a0908">
 <meta name="robots" content="index, follow">
@@ -14,11 +15,11 @@
 <link rel="icon" href="/favicon.ico" sizes="48x48">
 <link rel="apple-touch-icon" href="/icon-180.png">
 <title>Mail Doctor</title>
-<meta name="description" content="Type a domain and see, in your own browser, whether its e-mail will be delivered or land in spam. Reads the real MX, SPF, DKIM, DMARC, MTA-STS, TLS-RPT and BIMI records from public DNS, names the rule each broken record breaks, and gives you the exact record to publish instead. Free, no account, nothing reaches our servers.">
+<meta name="description" content="Check a domain's public MX, SPF, DKIM and DMARC records in your browser. Inspect DNS findings, rule references and conditional repair suggestions. Free, no account. DNS checks do not predict inbox placement.">
 <link rel="canonical" href="https://arling.sk/mail-doctor/">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Mail Doctor: why your mail goes to spam, read from your own DNS">
-<meta property="og:description" content="One field. Your browser reads the real SPF, DKIM and DMARC records over public DNS and tells you which rule each one breaks, with the exact record to publish instead. Free and client-side.">
+<meta property="og:title" content="Mail Doctor: check your domain's email DNS records">
+<meta property="og:description" content="Check public SPF, DKIM and DMARC records in your browser, with rule references and explicit uncertainty when DNS or a DKIM selector cannot be verified.">
 <meta property="og:url" content="https://arling.sk/mail-doctor/">
 <meta property="og:locale" content="en_GB">
 <meta property="og:image" content="https://arling.sk/icon-512.png">
@@ -26,7 +27,7 @@
 <link rel="alternate" type="text/plain" href="https://arling.sk/llms.txt" title="llms.txt">
 <link rel="preload" href="/fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/style/paper.css?v=89016e6c">
+<link rel="stylesheet" href="/style/paper.css?v=2ebf5aa4">
 <link rel="stylesheet" href="/style/hub.css?v=0bfebd44">
 
 <script type="application/ld+json">
@@ -35,7 +36,7 @@
   "@type": "SoftwareApplication",
   "name": "Mail Doctor",
   "url": "https://arling.sk/mail-doctor/",
-  "description": "Free, client-side checker that reads a domain's real MX, SPF, DKIM, DMARC, MTA-STS, TLS-RPT and BIMI records over DNS over HTTPS and reports, for every finding, the record it came from, the rule it breaks with its RFC section, and the exact record to publish instead.",
+  "description": "Free browser-based checks for public MX, SPF, DKIM, DMARC, MTA-STS, TLS-RPT and BIMI records. Findings cite supported rules; DNS failures and unconfirmed DKIM selectors remain unverified. DNS checks alone do not test actual message authentication or delivery.",
   "applicationCategory": "DeveloperApplication",
   "operatingSystem": "Any",
   "browserRequirements": "Requires JavaScript. All lookups run in the visitor's browser.",
@@ -111,7 +112,7 @@
       "name": "All three records pass and my mail still goes to spam. What now?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Authentication is the entry ticket, not the whole judgement. Once SPF, DKIM and DMARC line up, what decides the inbox is reputation: how many people open your mail, how many mark it as spam, whether your sending address and your link domains are old enough to be known, and whether you send a burst of a thousand messages from an address that sent none last week. A checker cannot see any of that. What it can do is remove authentication from the list of reasons, which is worth doing first because it is the only part that is deterministic."
+        "text": "DNS checks alone do not verify a particular message. Inspect its Authentication-Results and DKIM-Signature headers to check actual results and alignment. Even authenticated messages can be filtered using reputation, message content and receiver policy. This tool does not test those factors or predict the inbox."
       }
     },
     {
@@ -119,7 +120,7 @@
       "name": "Is the domain I type sent to your servers?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "No. The page holds no server of its own. Your browser asks Cloudflare at 1.1.1.1 directly over DNS over HTTPS, with Google at 8.8.8.8 as a fallback if Cloudflare does not answer, and the answers are read and judged by JavaScript running on your machine. We never see the domain, and there is nothing for us to store. The one thing we do count is that the page was opened at all, anonymously, with our own Umami, the same as every other page on this site."
+        "text": "Domains entered in this form are sent directly to Cloudflare's public DNS resolver, with Google as a fallback. Those providers receive the DNS question. New share links keep the domain after #, which is not sent in the page request. This tool does not load analytics. Older links containing ?domain= already sent that query to the page host before opening; the page converts them locally to fragment links."
       }
     },
     {
@@ -231,6 +232,8 @@
   .checks li[data-state="fail"] { color:var(--ink); border-color:var(--accent); }
   .checks li[data-state="fail"] .dot { background:var(--accent); }
   .checks li[data-state="absent"] .dot { background:var(--muted); }
+  .checks li[data-state="unknown"] { color:var(--muted); border-style:dashed; }
+  .checks li[data-state="unknown"] .dot { background:var(--muted); }
   @keyframes pulse { 50% { opacity:.25; } }
   @media (prefers-reduced-motion:reduce) { .checks li[data-state="waiting"] .dot { animation:none; } }
 
@@ -387,34 +390,35 @@
 <body class="noc">
 <div class="wash" aria-hidden="true"><i></i><i></i></div>
 
-<a class="skip" href="#tool">Skip to the checker</a>
-
-<header>
+<a class="skip site-skip" href="#arling-obsah" data-site-label="skip">Skip to content</a>
+<header class="site-header">
   <div class="wrap bar">
-    <a class="brand" href="https://arling.sk/">
+    <a class="brand" href="https://arling.sk/en/" aria-label="ARLing home" data-site-home>
       <svg viewBox="0 0 488 215" width="38" height="15" aria-hidden="true" focusable="false"><path fill="#f4f4f7" fill-rule="evenodd" d="M0.00,213.00L74.00,214.00L181.00,85.00L285.00,214.00L360.00,214.00L206.00,21.00L185.00,4.00L164.00,10.00Z M221.00,0.00L263.00,50.00L395.00,50.00L409.00,55.00L419.00,76.00L401.00,96.00L313.00,98.00L411.00,214.00L487.00,214.00L422.00,139.00L457.00,123.00L482.00,88.00L482.00,48.00L463.00,19.00L417.00,0.00Z"/><path fill="#f2643c" d="M269.00,66.00L269.00,67.00L268.00,68.00L268.00,70.00L267.00,71.00L267.00,76.00L268.00,77.00L268.00,79.00L270.00,81.00L270.00,82.00L271.00,82.00L273.00,84.00L274.00,84.00L277.00,86.00L279.00,86.00L280.00,87.00L287.00,87.00L288.00,86.00L290.00,86.00L291.00,85.00L294.00,84.00L298.00,80.00L298.00,79.00L299.00,78.00L299.00,75.00L300.00,74.00L300.00,72.00L299.00,71.00L299.00,69.00L298.00,68.00L297.00,65.00L295.00,63.00L294.00,63.00L289.00,60.00L278.00,60.00L277.00,61.00L276.00,61.00L275.00,62.00L272.00,63.00Z"/></svg>
       <b>ARLing</b><span>Mail Doctor</span>
     </a>
-    <nav id="hlavne-menu" aria-label="Site"><a href="#tool">Check</a><a href="#how">How it works</a><a href="#faq">FAQ</a><a href="https://arling.sk/shop/">Shop</a><a href="https://arling.sk/en/#tools">Tools</a><a href="https://arling.sk/games/">Games</a><a href="https://arling.sk/notes/">Notes</a><a href="https://arling.sk/how-we-work/">How we work</a><a href="mailto:andrej@arling.sk">Contact</a></nav>
-    <button class="menu-btn" type="button" aria-expanded="false" aria-controls="hlavne-menu"><svg viewBox="0 0 18 12" fill="none" aria-hidden="true"><path d="M1 1h16M1 6h16M1 11h16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>Menu</button>
+    <details class="site-menu" open>
+      <summary class="site-menu-toggle"><svg viewBox="0 0 18 12" fill="none" aria-hidden="true"><path d="M1 1h16M1 6h16M1 11h16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg><span data-site-label="menu">Menu</span></summary>
+      <div class="site-menu-panel"><nav id="hlavne-menu" class="site-main-nav" aria-label="Main navigation" data-site-aria="nav"><a href="https://arling.sk/shop/" data-site-nav="0">Shop</a><a href="https://arling.sk/en/#tools" data-site-nav="1">Tools</a><a href="https://arling.sk/games/" data-site-nav="2">Free puzzles</a><a href="https://arling.sk/notes/en/" data-site-nav="3">Notes</a><a href="https://arling.sk/ucet/en/" data-site-nav="4">Account</a></nav><div class="site-page-links"><p data-site-label="stranka">On this page</p><nav aria-label="On this page" data-site-aria="stranka"><a href="#tool">Check</a><a href="#how">How it works</a><a href="#faq">FAQ</a></nav></div></div>
+    </details>
   </div>
 </header>
 
-<main>
+<main id="arling-obsah" tabindex="-1">
 
 <div class="wrap hero" id="hero">
   <div>
-    <h1 id="h1"><span class="l">Mail going to spam?</span><span class="l">Read the records</span><span class="l">that decide it.</span></h1>
+    <h1 id="h1"><span class="l">Check the DNS</span><span class="l">behind your email.</span></h1>
     <div class="cta r d2">
       <a href="#tool" class="btn btn-solid">Check a domain</a>
       <a href="#how" class="btn btn-line">See how it works</a>
     </div>
   </div>
   <div>
-    <p class="lead r d1">Type a domain. Your browser reads its real MX, SPF, DKIM, DMARC, MTA-STS, TLS-RPT and BIMI records straight from public DNS and tells you which record breaks which published rule, and the exact record to publish instead. Nothing is generated and nothing is guessed: every finding names the record it came from and the section of the standard it breaks.</p>
+    <p class="lead r d1">Read your domain's public mail records, check supported rules and inspect suggested repairs with their sources. A failed DNS lookup stays unverified. DKIM uses the selector from a message you sent, or a list of common names. These checks do not predict inbox placement or prove that a particular message is authenticated.</p>
     <ul class="facts r d3">
       <li><b>7</b> record types read</li>
-      <li><b>74</b> automated tests</li>
+      <li>findings with rule references</li>
       <li><b>0 &euro;</b>, no account</li>
       <li>runs entirely in your browser</li>
     </ul>
@@ -422,7 +426,7 @@
 
   <div class="toolhead r d3">
     <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3.5 7.5l8.5 6 8.5-6"/></svg>01</p>
-    <h2>One field. Seven checks. Every answer from a record you can see.</h2>
+    <h2>Your domain. Seven checks. Public records you can inspect.</h2>
     <p class="sub">The checks run one after another and appear as each answer arrives, so the MX and SPF reading is on screen long before the last DKIM selector has been tried.</p>
   </div>
 
@@ -441,10 +445,15 @@
                autocapitalize="off" spellcheck="false" placeholder="example.com"
                aria-describedby="privacy-line ask-error">
       </div>
+      <div class="ask-field">
+        <label for="selector">DKIM selector, optional</label>
+        <input id="selector" name="selector" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="e.g. google or mail2026" aria-describedby="selector-help ask-error">
+      </div>
       <button class="btn-run" id="run" type="submit">Check</button>
     </form>
     <p class="ask-error" id="ask-error" hidden role="alert"></p>
-    <p class="privacy-line" id="privacy-line"><b>The lookups happen in your browser.</b> It asks Cloudflare at 1.1.1.1 over DNS over HTTPS, with Google at 8.8.8.8 as the fallback, and reads the answers here on your machine. The domain you type never reaches us, because there is no server of ours in the path and nothing for us to store.</p>
+    <p class="privacy-line" id="selector-help">For a known DKIM key, use the <span class="mono">s=</span> value from a sent message's DKIM-Signature header and its <span class="mono">d=</span> signing domain above. Leave the selector blank to try common names. Finding no key does not prove that DKIM is absent.</p>
+    <p class="privacy-line" id="privacy-line"><b>DNS questions go directly to the public resolvers.</b> Cloudflare receives the domain you enter, with Google as the fallback. New share links keep the domain after <span class="mono">#</span>, outside the page request. This tool does not load analytics.</p>
 
     <ul class="checks" id="checks" aria-live="polite" aria-label="The seven checks"></ul>
 
@@ -470,7 +479,7 @@
   <div class="wrap">
     <div class="section-head">
       <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 18a8 8 0 1 1 16 0"/><path d="M12 14.5l3.4-3.1"/><circle cx="12" cy="15.5" r="1"/></svg>02</p>
-      <h2 class="r">Three records decide whether a receiver believes you.</h2>
+      <h2 class="r">Three parts of email authentication to check.</h2>
       <p class="sub r d1">Nothing about them is a matter of taste. Each one is a published standard, each one has a rule that either holds or does not, and the failures below are the ones that cost real delivery.</p>
     </div>
     <div class="rule"></div>
@@ -527,9 +536,9 @@
       </div>
 
       <div class="endpoint-copy r d2">
-        <p><strong style="color:var(--ink)">There is nothing behind this page.</strong> It is a static file. Your browser opens a DNS over HTTPS connection straight to Cloudflare at <span class="mono">1.1.1.1</span>, falls back to Google at <span class="mono">8.8.8.8</span> if that does not answer, and reads the JSON itself. We have no log of your domain because your domain never travels through anything we run.</p>
+        <p><strong style="color:var(--ink)">The checks run in your browser.</strong> It opens DNS over HTTPS connections directly to Cloudflare, with Google as a fallback. Those DNS providers receive the questions. The tool sends no form values to an ARLing service and loads no analytics. Share links created here store the checked domain in the URL fragment.</p>
         <p>The SPF lookup count is the part most checkers get wrong. This one walks every <span class="mono">include</span> and <span class="mono">redirect</span> to the end, counts in the order a receiver reads the terms, stops at <span class="mono">all</span> because nothing after it is ever evaluated, and ignores a <span class="mono">redirect</span> when the record also has <span class="mono">all</span>, exactly as RFC 7208 section 5.1 requires. It then lists every term that cost a lookup, so you can check the count rather than trust it.</p>
-        <div class="note">Suggested records are always the safe step, never the strongest one. A record that is tightened is suggested with <span class="mono">~all</span>, not <span class="mono">-all</span>, and a DMARC record at <span class="mono">p=none</span> is suggested at <span class="mono">p=quarantine; pct=25</span> only once a report address is in place. A checker that makes your mail bounce is worse than no checker.</div>
+        <div class="note">Suggested records depend on your actual sending services. Check those services and message headers before publishing a change. An MX record names the receiving provider, which may differ from your sending provider. Having a report address alone is not evidence that tightening DMARC is safe; first inspect reports showing your legitimate senders.</div>
       </div>
     </div>
   </div>
@@ -610,13 +619,13 @@
     <details class="r d3">
       <summary>All three records pass and my mail still goes to spam. What now?</summary>
       <p>Authentication is the entry ticket, not the whole judgement. Once SPF, DKIM and DMARC line up, what decides the inbox is reputation: how many people open your mail, how many mark it as spam, whether your sending address and your link domains are old enough to be known, and whether you send a burst of a thousand messages from an address that sent none last week.</p>
-      <p>A checker cannot see any of that. What it can do is remove authentication from the list of reasons, which is worth doing first because it is the only part that is deterministic.</p>
+      <p>These DNS checks cannot rule out authentication problems in a particular message. Inspect its Authentication-Results and DKIM-Signature headers to check actual results and alignment. This tool does not test message content, reputation or receiver policy.</p>
     </details>
 
     <details class="r d3">
       <summary>Is the domain I type sent to your servers?</summary>
-      <p>No. The page has no server of its own. Your browser asks Cloudflare at <span class="mono">1.1.1.1</span> directly over DNS over HTTPS, with Google at <span class="mono">8.8.8.8</span> as a fallback if Cloudflare does not answer, and the answers are read and judged by JavaScript running on your machine. We never see the domain, and there is nothing for us to store.</p>
-      <p>The one thing we do count is that the page was opened at all, anonymously, with our own <a href="https://arling.sk/privacy/">Umami</a>, the same as every other page on this site.</p>
+      <p>Domains entered in this form go directly to Cloudflare's public DNS resolver, with Google as a fallback. Those providers receive the DNS question. New share links keep the domain after <span class="mono">#</span>, which is not sent in the page request. Older links containing <span class="mono">?domain=</span> already sent that query to the page host before opening; this page converts them locally to fragment links.</p>
+      <p>This tool does not load analytics or send checked domains to an ARLing service.</p>
     </details>
 
     <details class="r d4">
@@ -639,12 +648,11 @@
   <div class="wrap foot">
     <div><b>ARLing s. r. o.</b><br>Ivanská cesta 32E<br>821 04 Bratislava, Slovakia</div>
     <div>Company ID 56583486<br>VAT ID SK2122352100<br><a href="mailto:andrej@arling.sk">andrej@arling.sk</a></div>
-    <div><a href="https://arling.sk/shop/">shop</a> · <a href="https://arling.sk/privacy/">privacy</a> · <a href="https://arling.sk/podmienky/">terms</a> · <a href="https://arling.sk/gdpr/">GDPR</a> · <a href="https://arling.sk/impressum/">Impressum</a> · <a href="https://arling.sk/llms.txt">llms.txt</a> · <a href="https://arling.sk/sitemap-index.xml">sitemap</a><br>Tools are provided as is, without warranty. Anonymous visit counts via self-hosted Umami.</div>
+    <div><a href="https://arling.sk/shop/">shop</a> · <a href="https://arling.sk/privacy/en/">privacy</a> · <a href="https://arling.sk/podmienky/en/">terms</a> · <a href="https://arling.sk/gdpr/en/">GDPR</a> · <a href="https://arling.sk/impressum/en/">Impressum</a> · <a href="https://arling.sk/llms.txt">llms.txt</a> · <a href="https://arling.sk/sitemap-index.xml">sitemap</a><br>Tools are provided as is, without warranty. This tool does not load analytics.</div>
   </div>
 </footer>
 
 <script type="module" src="app.js"></script>
-<script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="ced2c840-005a-48ca-b135-d3ee8cc39908"></script>
-<script src="/style/prepinac.js?v=2988c181" defer></script>
+<script src="/style/prepinac.js?v=668e98c9" defer></script>
 </body>
 </html>
