@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="sk">
 <head>
-<script src="/style/vzhlad.js?v=396c5936"></script>
+<script src="/style/vzhlad.js?v=dc0ce8df"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://homelab.tailbf8f27.ts.net 'sha256-gk21HZF43HsKozBubfO1sCH56C+0f6lcFdpj+Z2u2wE='; connect-src 'self' https://homelab.tailbf8f27.ts.net; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
@@ -12,7 +12,7 @@
 <link rel="icon" href="../favicon.ico" sizes="48x48">
 <link rel="apple-touch-icon" href="../icon-180.png">
 <title>Súkromie na arling.sk</title>
-<meta name="description" content="Čo nástroje a stránky ARLingu zbierajú, čo nikdy nezbierajú, prečo nemáme cookie lištu, čo sa deje so súborom pri platenej kontrole, čo zaznamenávame na predajných stránkach a ako sa odhlásiť z e-mailového zoznamu.">
+<meta name="description" content="Čo nástroje a stránky ARLingu zbierajú, čo nikdy nezbierajú, prečo nemáme cookie lištu, čo sa deje so súborom pri platenej kontrole, prečo je záznam návštevy vypnutý a ako sa odhlásiť z e-mailového zoznamu.">
 <link rel="canonical" href="https://arling.sk/privacy/">
 <link rel="alternate" hreflang="sk" href="https://arling.sk/privacy/">
 <link rel="alternate" hreflang="en" href="https://arling.sk/privacy/en/">
@@ -92,7 +92,7 @@
     <div class="wrap"><div class="doc">
       <h2 id="s1" class="r">1. Nástroje</h2>
       <div class="rule"></div>
-      <p class="r d1">Každý nástroj beží celý vo vašom prehliadači. Čo vložíte do formulára (adresy, konfiguráciu, XML súbory), sa spracuje na vašom zariadení a nikdy sa neposiela nám ani nikomu inému. Overiť si to môžete v zdrojovom kóde stránky na GitHube. Dve dobrovoľné výnimky, Feed Doctor Monitor a platená kontrola SEPA súboru, sú popísané v častiach 4 a 5. Časť 6 popisuje záznam priebehu návštevy na predajných stránkach; ani ten nikdy neobsahuje to, čo napíšete.</p>
+      <p class="r d1">Každý nástroj beží celý vo vašom prehliadači. Čo vložíte do formulára (adresy, konfiguráciu, XML súbory), sa spracuje na vašom zariadení a nikdy sa neposiela nám ani nikomu inému. Overiť si to môžete v zdrojovom kóde stránky na GitHube. Dve dobrovoľné výnimky, Feed Doctor Monitor a platená kontrola SEPA súboru, sú popísané v častiach 4 a 5. Záznam priebehu návštevy je vypnutý; aktuálny stav opisuje časť 6.</p>
 
       <h2 id="s2" class="r d1">2. Počítanie návštev</h2>
       <p class="r d2">Zobrazenia stránok a kliknutia na tlačidlá počítame vlastným Umami na vlastnom serveri. Umami nenastavuje cookies a neukladá osobné údaje: žiadne IP adresy, mená ani obsah toho, čo píšete. Zaznamenáva stránku, krajinu, typ prehliadača a ktoré tlačidlá boli použité. Preto nemáme cookie lištu: nemáme cookies.</p>
@@ -109,11 +109,9 @@
       <p class="r d5">Súbor a krátky záznam o objednávke (identifikátor platobnej relácie Stripe, e-mail zadaný pri platbe, suma a mena, čas zaplatenia a nahratia, veľkosť súboru a to, či ste na stránke na nahratie zaškrtli súhlas so začatím služby pred uplynutím lehoty na odstúpenie) sú uložené v úložisku Cloudflare Workers KV s lehotou 30 dní od nahratia: po jej uplynutí ich platforma zmaže sama, bez ohľadu na to, či na to niekto myslel. Na požiadanie ich zmažeme skôr. Jeden súbor môže mať najviac 5 MB a k jednej platbe možno nahrať najviac 5 súborov. Pri nahratí server len overí, že ide o XML; obsah potom číta výlučne Andrej Lauko, konateľ, ručne.</p>
       <p class="r d5">Sprostredkovatelia pri tejto službe: Cloudflare (uloženie a spracovanie; Cloudflare má dátové centrá aj v EÚ a prenos je krytý štandardnými zmluvnými doložkami) a Stripe Payments Europe, Ltd. (platba a overenie, že platobná relácia je zaplatená, skôr než súbor prijmeme). Upozornenie, že prišiel nový súbor, posiela náš vlastný server cez ntfy a obsahuje len posledných 8 znakov identifikátora platobnej relácie, nikdy súbor ani jeho obsah. Žiadosť o vymazanie pošlite na <a href="mailto:andrej@arling.sk">andrej@arling.sk</a>.</p>
 
-      <h2 id="s6" class="r d6">6. Záznam priebehu návštevy na predajných stránkach</h2>
-      <p class="r d6">Od 18. septembra 2026 na niekoľkých stránkach, ktoré niečo predávajú, zaznamenávame priebeh návštevy: čo bolo na obrazovke, kam ste stránku posunuli, kam ste pohli myšou a na čo ste klikli. Je to preto, že ľudia k cene prídu a odídu, a bez toho nevieme prečo. Beží to na týchto stránkach a na žiadnych iných: hlavná stránka arling.sk vrátane anglickej a nemeckej verzie, obchod, GDPR dokumenty v slovenskej, českej a nemeckej verzii, predajná stránka kontroly SEPA súboru v slovenskej, anglickej a nemeckej verzii, vzory zmlúv a knihy hlavolamov.</p>
-      <p class="r d6">Nezaznamená sa ani jeden napísaný znak. Každé pole, každá textová plocha a každý upravovateľný text sú zakryté už vo vašom prehliadači, teda skôr, než sa čokoľvek odošle: v zázname ostane, že pole má nejakú dĺžku, nie čo v ňom stálo. Obsah súboru, ktorý niekam vložíte, sa nezaznamenáva vôbec, a na stránkach, kde sa nahráva bankový súbor, faktúra alebo iný dokument, tento záznam vôbec nebeží. Formulár dopytu na hlavnej stránke je zo záznamu vyňatý celý.</p>
-      <p class="r d6">Neukladáme pri tom žiadnu IP adresu, ani na chvíľu, ani do logu, a nenastavuje sa žiadne cookie. Návšteva dostane náhodné číslo, ktoré žije len v pamäti karty prehliadača (sessionStorage) a zanikne zatvorením karty; nedajú sa ním spojiť dve vaše návštevy ani vás nájsť na inej stránke. Ak má váš prehliadač zapnuté „Do Not Track“ alebo Global Privacy Control, záznam sa vôbec nespustí.</p>
-      <p class="r d6">Záznam robí náš vlastný skript z arling.sk a ukladá sa na náš vlastný server na Slovensku. Žiadna tretia strana, žiadny Microsoft Clarity, Hotjar ani podobná služba. Drží sa 14 dní a potom sa celý deň záznamov zmaže sám. Ak chcete zmazanie skôr, napíšte na <a href="mailto:andrej@arling.sk">andrej@arling.sk</a>. Podľa mena ani adresy vás nenájdeme, lebo nič také neukladáme; identifikátor návštevy máte vo svojom prehliadači v úložisku karty pod kľúčom <code>arling.zaznam</code> a s ním záznam nájdeme a zmažeme do 7 dní. Ak ho už nemáte, zmažeme všetky záznamy z dňa a stránky, ktoré uvediete.</p>
+      <h2 id="s6" class="r d6">6. Záznam priebehu návštevy je vypnutý</h2>
+      <p class="r d6">Od 19. septembra 2026 je náš nástroj na záznam priebehu návštevy vypnutý. Nezaznamenáva ani neposiela obsah obrazovky, posúvanie stránky, pohyb myši či priebeh klikania a nevytvára identifikátor návštevy.</p>
+      <p class="r d6">Predchádzajúci text opisoval nedokončenú funkciu ako fungujúcu službu. Tento opis sme opravili. Funkcia nie je dokončená a nie je v prevádzke. Súhrnné meranie návštevnosti opísané v časti 2 tým nie je dotknuté.</p>
 
       <h2 id="s7" class="r d6">7. E-mail a GitHub</h2>
       <p class="r d6">Ak nám napíšete alebo otvoríte issue na GitHube, korešpondenciu si necháme, aby sme vám mohli odpovedať. Právny základ pre všetko vyššie: náš oprávnený záujem na prevádzke nástrojov, váš súhlas pri e-mailovom zozname a dobrovoľných rozšíreniach a plnenie zmluvy pri platených službách (čl. 6 ods. 1 písm. a), b) a f) GDPR).</p>
@@ -143,7 +141,7 @@
       <p class="r d3"><b>E-mailový zoznam:</b> ak zadáte e-mail vo formulári „Dajte mi vedieť o novom nástroji“, uložíme adresu, nástroj, jazyk a dátum. Použijeme ho len na správu o novom nástroji. Žiadny newsletter, žiadne zdieľanie, žiadne sledovanie otvorení. Odhlásenie: odpoveďou na ktorýkoľvek mail alebo na <a href="mailto:andrej@arling.sk">andrej@arling.sk</a>; adresu zmažeme do 7 dní.</p>
       <p class="r d4"><b>Feed Doctor Monitor:</b> prvá z dvoch dobrovoľných výnimiek z bodu o nástrojoch. Ak sa prihlásite na Feed Doctor Monitor (platené rozšírenie bezplatného kontrolóra Feed Doctor), uložíme váš e-mail, adresu feedu a výsledky kontrol (skóre a počty problémov); obsah feedu sa neukladá. Server si stiahne len zadanú adresu feedu, podľa zvoleného plánu (týždenne zdarma, denne v Pro), a upozorní vás, ak sa niečo zhoršilo. Zrušenie kedykoľvek zo stránky monitora alebo odpoveďou na upozornenie; zmaže sa e-mail, adresa feedu aj história.</p>
       <p class="r d5"><b>Kontrola SEPA súboru:</b> druhá výnimka. Súbor pain.001, ktorý nahráte po zaplatení, je uložený u Cloudflare najviac 30 dní a potom sa zmaže sám; číta ho len Andrej Lauko, na trénovanie modelov sa nepoužíva a nikam ďalej sa neposiela. Push upozornenie o novom súbore nesie len posledných 8 znakov identifikátora platby.</p>
-      <p class="r d6"><b>Záznam na predajných stránkach:</b> na hlavnej stránke, v obchode a pri GDPR dokumentoch, kontrole SEPA súboru, vzoroch zmlúv a knihách hlavolamov zaznamenávame priebeh návštevy, aby sme videli, prečo ľudia od ceny odídu. Žiadny napísaný znak, žiadna IP adresa, žiadne cookie a žiadna tretia strana: vlastný skript, vlastný server na Slovensku, po 14 dňoch sa záznam zmaže sám. Tam, kde sa nahráva bankový súbor alebo faktúra, nebeží.</p>
+      <p class="r d6"><b>Záznam priebehu návštevy:</b> od 19. septembra 2026 je vypnutý. Táto nedokončená funkcia nezaznamenáva ani neposiela priebeh vašej návštevy a nevytvára jej identifikátor.</p>
       <p class="r d6"><b>Prevádzkovateľ:</b> ARLing s. r. o., Ivanská cesta 32E, 821 04 Bratislava, IČO 56583486. Máte právo na prístup, opravu a vymazanie údajov a právo podať sťažnosť na Úrad na ochranu osobných údajov SR.</p>
     </div></div>
   </section>

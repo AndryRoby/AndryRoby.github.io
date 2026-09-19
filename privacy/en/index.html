@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<script src="/style/vzhlad.js?v=396c5936"></script>
+<script src="/style/vzhlad.js?v=dc0ce8df"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://homelab.tailbf8f27.ts.net 'sha256-gk21HZF43HsKozBubfO1sCH56C+0f6lcFdpj+Z2u2wE='; connect-src 'self' https://homelab.tailbf8f27.ts.net; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
@@ -12,7 +12,7 @@
 <link rel="icon" href="../../favicon.ico" sizes="48x48">
 <link rel="apple-touch-icon" href="../../icon-180.png">
 <title>Privacy at ARLing</title>
-<meta name="description" content="What the ARLing tools and pages collect, what they never collect, why there is no cookie banner, what we record on the selling pages and how to get off the e-mail list in a week.">
+<meta name="description" content="What the ARLing tools and pages collect, what they never collect, why there is no cookie banner, why session recording is disabled and how to get off the e-mail list in a week.">
 <link rel="canonical" href="https://arling.sk/privacy/en/">
 <link rel="alternate" hreflang="sk" href="https://arling.sk/privacy/">
 <link rel="alternate" hreflang="en" href="https://arling.sk/privacy/en/">
@@ -92,7 +92,7 @@
     <div class="wrap"><div class="doc">
       <h2 id="s1" class="r">1. The tools</h2>
       <div class="rule"></div>
-      <p class="r d1">Every tool runs entirely in your browser. What you paste into a form (URLs, configuration, XML files) is processed on your device and never sent to us or to anyone else. You can verify this in the page source on GitHub. Two opt-in exceptions, Feed Doctor Monitor and the paid SEPA file check, are described in sections 4 and 5. Section 6 describes the session recording on the selling pages; that one never contains what you type either.</p>
+      <p class="r d1">Every tool runs entirely in your browser. What you paste into a form (URLs, configuration, XML files) is processed on your device and never sent to us or to anyone else. You can verify this in the page source on GitHub. Two opt-in exceptions, Feed Doctor Monitor and the paid SEPA file check, are described in sections 4 and 5. Session recording is disabled; section 6 describes its current status.</p>
 
       <h2 id="s2" class="r d1">2. Visit counts</h2>
       <p class="r d2">We count page views and button clicks with self-hosted Umami on our own server. Umami sets no cookies and stores no personal data: no IP addresses, no names, no content of what you type. It records the page, the country, the browser type and which buttons were used. That is why there is no cookie banner: there are no cookies.</p>
@@ -109,11 +109,9 @@
       <p class="r d5">The file and a short order record (the Stripe checkout session id, the e-mail given at payment, the amount and currency, the time of payment and upload, the file size and whether you ticked the box on the upload page consenting to the service starting before the withdrawal period ends) are stored in Cloudflare Workers KV with a 30-day expiry from upload: when it runs out, the platform deletes them itself, whether or not anyone remembered. On request we delete them earlier. One file may be at most 5 MB and at most 5 files can be uploaded per payment. On upload the server only checks that the body is XML; the content is then read exclusively by Andrej Lauko, the managing director, manually.</p>
       <p class="r d5">Sub-processors for this service: Cloudflare (storage and processing; Cloudflare has data centres in the EU as well and the transfer is covered by standard contractual clauses) and Stripe Payments Europe, Ltd. (the payment and the check that the checkout session is paid before we accept a file). The notification that a new file has arrived is sent by our own server through ntfy and carries only the last 8 characters of the checkout session id, never the file or its content. Send deletion requests to <a href="mailto:andrej@arling.sk">andrej@arling.sk</a>.</p>
 
-      <h2 id="s6" class="r d6">6. Session recording on the selling pages</h2>
-      <p class="r d6">Since 18 September 2026 we record how a visit goes on a handful of pages that sell something: what was on the screen, how far you scrolled, where you moved the mouse and what you clicked. The reason is plain: people reach the price and leave, and without this we cannot tell why. It runs on these pages and on no others: the arling.sk home page including its English and German versions, the shop, the GDPR documents pages in Slovak, Czech and German, the sales page of the SEPA file check in Slovak, English and German, the contract templates and the puzzle books.</p>
-      <p class="r d6">Not a single typed character is recorded. Every input, every text area and every editable text is masked in your own browser, that is before anything is sent: the recording keeps that a field had some length, never what stood in it. The content of a file you drop in is not recorded at all, and on the pages where a bank file, an invoice or any other document is uploaded this recording does not run. The enquiry form on the home page is excluded from the recording entirely.</p>
-      <p class="r d6">No IP address is stored, not for a moment and not in a log, and no cookie is set. A visit gets a random number that lives only in the browser tab's memory (sessionStorage) and dies when you close the tab; it cannot join two of your visits and cannot follow you to another site. If your browser has "Do Not Track" or Global Privacy Control switched on, the recording never starts.</p>
-      <p class="r d6">The recording is made by our own script served from arling.sk and is stored on our own server in Slovakia. No third party, no Microsoft Clarity, no Hotjar or anything like it. It is kept for 14 days, after which a whole day of recordings deletes itself. To have it deleted sooner, write to <a href="mailto:andrej@arling.sk">andrej@arling.sk</a>. We cannot find you by name or address, because we store neither; the visit identifier is in your browser's tab storage under the key <code>arling.zaznam</code>, and with it we find and delete the recording within 7 days. If you no longer have it, we delete every recording from the day and the page you name.</p>
+      <h2 id="s6" class="r d6">6. Session recording is disabled</h2>
+      <p class="r d6">Our session recording tool has been disabled since 19 September 2026. It does not record or send screen content, scrolling, mouse movement or click sequences, and it does not create a visit identifier.</p>
+      <p class="r d6">The previous text described an unfinished feature as an operational service. We have corrected that description. The feature is unfinished and is not in operation. This does not affect the aggregate visitor measurement described in section 2.</p>
 
       <h2 id="s7" class="r d6">7. E-mail and GitHub</h2>
       <p class="r d6">If you write to us or open a GitHub issue, we keep that correspondence to answer you. Legal basis for all of the above: our legitimate interest in running the tools, your consent for the e-mail list and opt-in add-ons, and performance of a contract for paid services (GDPR art. 6(1)(a), (b) and (f)).</p>
@@ -143,7 +141,7 @@
       <p class="r d3"><b>The e-mail list:</b> if you enter your e-mail in the "Tell me when a new tool lands" form, we store the address, the tool, the language and the date. We use it only to send word of a new tool. No newsletter, no sharing, no open tracking. To unsubscribe: reply to any mail or write to <a href="mailto:andrej@arling.sk">andrej@arling.sk</a>; we delete the address within 7 days.</p>
       <p class="r d4"><b>Feed Doctor Monitor:</b> the first of two opt-in exceptions to the section on tools. If you sign up for Feed Doctor Monitor (a paid add-on to the free Feed Doctor checker), we store your e-mail, the feed URL and the results of the checks (score and issue counts); feed content is not stored. The server fetches only the feed URL you gave it, on the schedule you chose (weekly for free, daily on Pro), and alerts you if something got worse. Cancel any time from the monitor page or by replying to an alert; the e-mail, feed URL and history are deleted.</p>
       <p class="r d5"><b>SEPA file check:</b> the second exception. The pain.001 file you upload after paying is kept at Cloudflare for at most 30 days and then deletes itself; it is read only by Andrej Lauko, is not used to train models and is not passed on anywhere. The push notification about a new file carries only the last 8 characters of the payment session id.</p>
-      <p class="r d6"><b>Session recording on the selling pages:</b> on the home page, in the shop and on the GDPR documents, SEPA file check, contract templates and puzzle books pages we record how the visit goes, so we can see why people leave at the price. No typed character, no IP address, no cookie and no third party: our own script, our own server in Slovakia, and the recording deletes itself after 14 days. It does not run where a bank file or an invoice is uploaded.</p>
+      <p class="r d6"><b>Session recording:</b> disabled since 19 September 2026. This unfinished feature does not record or send the course of your visit and does not create a visit identifier.</p>
       <p class="r d6"><b>Controller:</b> ARLing s. r. o., Ivanská cesta 32E, 821 04 Bratislava, Company ID 56583486. You have the right to access, correct and delete your data and the right to complain to the Slovak Data Protection Office.</p>
     </div></div>
   </section>

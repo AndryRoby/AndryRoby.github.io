@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="sk">
 <head>
-<script src="/style/vzhlad.js?v=396c5936"></script>
+<script src="/style/vzhlad.js?v=dc0ce8df"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://homelab.tailbf8f27.ts.net 'sha256-XsEOUox/AJqLxgZSRdGpQFLmNlyQQEjPZMhqsa34Zl8='; connect-src 'self' https://homelab.tailbf8f27.ts.net https://arling-asistent.arling.workers.dev; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
@@ -38,7 +38,7 @@
 <link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/style/paper.css?v=2ebf5aa4">
 <script src="/style/prepinac.js?v=668e98c9" defer></script>
-<script type="module" src="/efaktura/app.js?v=c7d77601"></script>
+<script type="module" src="/efaktura/app.js?v=09bf8d39"></script>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -346,6 +346,7 @@
   .rule { transform:scaleX(1) !important; }
 </style></noscript>
 <link rel="stylesheet" href="/efaktura/davka.css?v=dad7031a">
+<link rel="stylesheet" href="/efaktura/dopyt-opakovanie.css?v=9292da89">
 </head>
 <body class="noc">
 <div class="wash" aria-hidden="true"><i></i><i></i></div>
@@ -404,6 +405,26 @@
         <p class="sub r d1">Načítajte súbor UBL 2.1 (Invoice alebo CreditNote) a povieme vám, čo v ňom nesedí. Pri každom náleze uvidíte kód pravidla, vetu po slovensky, cestu k prvku a pod rozbaľovacím odkazom pôvodné anglické znenie pravidla. Podľa poľa CustomizationID si sami vyberieme, či platia pravidlá EN 16931, Peppol BIS Billing 3.0 alebo nemecký XRechnung.</p>
         <div class="vstup-slot"></div>
         <div id="sumar"></div>
+<!-- A096-DOPYT-START -->
+<aside class="ef-opak" id="opakovanie-cta" aria-labelledby="opakovanie-title" hidden>
+  <h3 id="opakovanie-title">Kontrolujete takéto súbory pravidelne?</h3><p>Ak sa rovnaká práca opakuje, opíšte nám svoj postup. Posúdime, či vieme pripraviť konkrétne riešenie pre váš softvér.</p>
+  <button type="button" class="btn btn-line" id="opakovanie-otvor" aria-expanded="false" aria-controls="opakovanie-panel">Požiadať o návrh pravidelnej kontroly</button>
+  <div id="opakovanie-panel" class="ef-opak-panel" hidden>
+    <h4>Ako dnes kontrolujete e-faktúry?</h4><p class="ef-opak-small">Ide o dopyt, nie objednávku. Hotovú integráciu zatiaľ nesľubujeme. Prípadný rozsah a cenu si dohodneme vopred.</p>
+    <form data-dopyt data-efaktura-opakovanie data-source="efaktura-repeat-sk" data-lang="sk" data-thanks="opakovanie-thanks" data-error="opakovanie-error">
+      <div class="ef-opak-trap" aria-hidden="true"><label>Website<input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
+      <label for="opakovanie-software">Používaný softvér</label><input id="opakovanie-software" name="software" type="text" maxlength="100" required aria-describedby="opakovanie-software-hint"><p class="ef-opak-small" id="opakovanie-software-hint">Napríklad názov účtovného programu alebo vlastný export.</p>
+      <label for="opakovanie-frequency">Ako často kontrolu potrebujete?</label><select id="opakovanie-frequency" name="frequency" required><option value="">Vyberte frekvenciu</option><option value="daily">Denne</option><option value="weekly">Týždenne</option><option value="monthly">Mesačne</option><option value="less">Menej často</option><option value="unknown">Zatiaľ neviem</option></select>
+      <label for="opakovanie-problem">Čo sa opakuje a ako to riešite dnes?</label><textarea id="opakovanie-problem" name="problem" rows="4" maxlength="1000" required placeholder="Popíšte krok, ktorý opakujete, alebo kód chyby. Nevkladajte XML ani údaje z faktúr."></textarea>
+      <label for="opakovanie-email">Pracovný e-mail</label><input id="opakovanie-email" name="email" type="email" autocomplete="email" maxlength="254" required>
+      <textarea name="sprava" hidden aria-hidden="true" tabindex="-1"></textarea>
+      <p class="ef-opak-small">Odoslaním pošlete ARLing iba údaje vyplnené v tomto dopyte, aby sme vám mohli odpovedať. Kontrolovaná faktúra sa neprikladá. Neposielajte faktúry ani osobné údaje z nich. <a href="/privacy/">Ochrana údajov</a>.</p>
+      <button type="submit" class="btn btn-solid">Poslať dopyt</button>
+    </form>
+    <p id="opakovanie-thanks" role="status" tabindex="-1" hidden>Dopyt bol doručený. Ozveme sa na zadaný e-mail.</p><p id="opakovanie-error" role="alert" tabindex="-1" hidden>Dopyt sa nepodarilo odoslať. Vyplnené údaje zostali vo formulári. Skúste to znova alebo napíšte na andrej@arling.sk.</p>
+  </div>
+</aside>
+<!-- A096-DOPYT-END -->
         <div class="akcie" id="akcie" hidden>
           <button type="button" class="btn btn-line" id="protokol">Stiahnuť protokol</button>
           <button type="button" class="btn btn-line" id="kopirovat">Skopírovať</button>
@@ -518,7 +539,7 @@
       <div class="rule"></div>
       <div class="prose r d1">
         <p>Tento nástroj kontroluje tvar súboru a skladá z vašich údajov vzorovú faktúru v UBL 2.1. Neposudzuje, či máte fakturovať s DPH alebo bez nej, akú sadzbu má daná služba, či ide o prenesenie daňovej povinnosti a či je obchod vôbec zdaniteľný. To je daňové poradenstvo a na to je účtovník alebo daňový poradca. Za správnosť faktúry zodpovedá ten, kto ju vystavil.</p>
-        <p>Nezakladáme účet a neukladáme vaše údaje. Súbor aj formulár žijú vo vašom prehliadači; adresár dodávateľa a odberateľov je v localStorage a kedykoľvek ho môžete vymazať tlačidlom vo formulári. Na server odchádza jediná vec: po návrate z platby sa pýtame, či je tá platba zaplatená.</p>
+        <p data-efaktura-privacy>Súbor faktúry a údaje formulára na jej vytvorenie zostávajú vo vašom prehliadači. Adresár dodávateľa a odberateľov je v localStorage a môžete ho vymazať tlačidlom vo formulári. Po platbe overujeme jej stav na serveri. Samostatný dobrovoľný dopyt odošle ARLing len údaje, ktoré v ňom vyplníte; faktúra sa k nemu automaticky neprikladá. Návštevnosť meriame vlastným Umami.</p>
         <p>Keď sa zmení zákon, schematron alebo verzia špecifikácie, pravidlá upravíme a napíšeme to sem s dátumom. Fakty na tejto stránke sme overovali 11. 9. 2026 na oficiálnych zdrojoch uvedených vyššie.</p>
       </div>
     </div>
@@ -548,5 +569,6 @@
 
 <div id="tlac" aria-hidden="true"></div>
 <script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="1de7b607-7a25-4214-a8f6-b80957f520a7"></script>
+<script defer src="/dopyt.js?v=d7e58bf8"></script>
 </body>
 </html>
