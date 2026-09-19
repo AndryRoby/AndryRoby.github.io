@@ -529,13 +529,26 @@ function readStoredLang() {
   }
 }
 
-/** Query param wins, then localStorage, then navigator.language, then
- * DEFAULT_LANG ("en", per the brief: de -> DE, sk/cs -> SK, else EN). */
+/** Explicit query and page language win over remembered/browser preferences.
+ * Opening the Slovak URL must not silently turn it (and its home link) English. */
 export function detectLang() {
   try {
     if (typeof location !== 'undefined') {
       const fromQuery = langFromQueryString(location.search);
       if (fromQuery) return fromQuery;
+    }
+  } catch (e) {}
+  try {
+    // A translated route is explicit even if an older generated header differs.
+    const route = typeof location !== 'undefined'
+      ? String(location.pathname || '').match(/\/(sk|cs|en|de)(?:\/index\.html|\/)?$/i)
+      : null;
+    const routed = route && (route[1].toLowerCase() === 'cs' ? 'sk' : route[1].toLowerCase());
+    if (LANGS.includes(routed)) return routed;
+    if (typeof document !== 'undefined' && document.documentElement) {
+      const page = String(document.documentElement.lang || '').toLowerCase().split('-')[0];
+      const normalized = page === 'cs' ? 'sk' : page;
+      if (LANGS.includes(normalized)) return normalized;
     }
   } catch (e) {}
   const stored = readStoredLang();

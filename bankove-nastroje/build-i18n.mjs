@@ -34,6 +34,7 @@ import { createHash } from 'node:crypto';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { DICT, LANGS, STORAGE_KEY, ogLocaleForLang } from './i18n.js';
+import { obalStranku } from '../../../ops/design/obal.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const SITE = 'https://arling.sk';
@@ -332,6 +333,10 @@ export function build(lang, sourceHtml) {
   html = transformJsonLd(html, lang, problems);
   html = translateMarkup(html, lang, problems);
   html = relocateUrls(html, lang);
+
+  // Translation also owns the shared shell's language; copying the Slovak
+  // source header verbatim would leave the home link and navigation in Slovak.
+  html = obalStranku(html, `arling-sk/${TOOL}/${lang}/index.html`).html;
 
   if (problems.length) throw new Error(`build-i18n (${lang}):\n - ` + problems.join('\n - '));
   return prepocitajCsp(html);
