@@ -191,7 +191,7 @@
 </head>
 <body class="noc">
 <div class="wash" aria-hidden="true"><i></i><i></i></div>
-<a class="skip site-skip" href="#obsah" data-site-label="skip">Skip to content</a>
+<a class="skip site-skip" href="#arling-obsah" data-site-label="skip">Skip to content</a>
 <header class="site-header">
   <div class="wrap bar">
     <a class="brand" href="https://arling.sk/en/" aria-label="ARLing home" data-site-home>
@@ -205,7 +205,127 @@
   </div>
 </header>
 
-<main id="obsah">
+<main id="arling-obsah" tabindex="-1">
+  <div class="wrap hero" id="hero">
+    <div>
+      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5" cy="6" r="2.2"/><circle cx="19" cy="6" r="2.2"/><circle cx="5" cy="18" r="2.2"/><path d="M7.2 5h9.6M7.2 7h9.6M5 8.2v7.6"/></svg>Daily walkway logic</p>
+      <h1 id="h1"><span class="l">Cranes.</span></h1>
+      <p class="lead r d3">Cranes rest on sandbanks. Join the sandbanks with straight walkways so that every sandbank has as many walkways as its number, at most two between the same pair, no crossings, and every sandbank can be reached from every other.</p>
+      <p class="proof r d5" id="dnes">A new water every day at midnight, always with exactly one solution. Easy on Monday, hardest on Sunday.</p>
+      <p class="navod r d5">Tap the water between two sandbanks: one walkway, then two, then none again. Drag from one sandbank to another to join them. Keyboard: arrows walk from sandbank to sandbank, <kbd>Ctrl</kbd> plus arrow lays a walkway, <kbd>Shift</kbd> plus arrow notes a pair as never joined, <kbd>U</kbd> undo, <kbd>R</kbd> redo, <kbd>P</kbd> pauses. Nothing lights up while you play; Check judges only when you ask.</p>
+    </div>
+    <div class="r d2">
+      <div class="hra">
+        <div class="horna"><span><span id="datum">Today's water</span><span class="uroven" id="uroven"></span></span><span id="cas-blok">Time <b id="cas">0:00</b><button type="button" class="pauza-btn" id="pauza" hidden>Pause</button></span></div>
+        <div class="doska-obal">
+          <svg class="doska" id="doska" viewBox="0 0 360 360" role="grid" aria-label="Water grid 9 by 9" aria-describedby="cisla-text"></svg>
+          <noscript><p>This game needs JavaScript: the puzzle is generated right in your browser.</p></noscript>
+          <div class="pauza-blok" id="pauza-blok" hidden><p><b>Paused.</b> <span id="pauza-cas"></span></p><button type="button" class="btn btn-solid" id="pokracuj">Resume</button></div>
+        </div>
+        <p class="skryte" id="cisla-text"></p>
+        <div class="ovladanie">
+          <button type="button" class="btn btn-line" id="spat">Undo</button>
+          <button type="button" class="btn btn-line" id="znova">Redo</button>
+          <button type="button" class="btn btn-line" id="reset">Clear</button>
+          <button type="button" class="btn btn-line" id="hint">Hint</button>
+          <button type="button" class="btn btn-line" id="check">Check</button>
+          <button type="button" class="btn btn-line" id="zdielaj" hidden>Share</button>
+          <span class="small" id="seria"></span>
+          <span class="small" id="zdielane" aria-live="polite"></span>
+        </div>
+        <p class="stav" id="stav" aria-live="polite"></p>
+        <nav class="pasik" id="pasik" aria-label="This week"></nav>
+        <p class="odkazy"><a href="/games/cranes/guide/">How to play</a> · <a href="/games/cranes/practice/">Practice sets</a> · <a href="/games/cranes/archive/">Archive</a></p>
+        <p class="historia" id="historia" hidden></p>
+        <details class="nastavenia">
+          <summary>Settings</summary>
+          <label><input type="checkbox" data-nastavenie="casovac"> Show the timer and the Pause button</label>
+          <label><input type="checkbox" data-nastavenie="pauzaPriOdchode"> Pause the clock when you leave the tab or sit still for a minute</label>
+          <label><input type="checkbox" data-nastavenie="autoZnacky"> Auto notes: when a sandbank has all its walkways, or a pair is blocked by a crossing, note the pairs that are left as never joined (off by default: the notes are your own)</label>
+          <label><input type="checkbox" data-nastavenie="zivaKontrola"> Live check: mark a walkway that does not belong as soon as it appears (off by default: finding a mistake is part of the puzzle)</label>
+          <label><input type="checkbox" data-nastavenie="potvrditReset"> Ask before Clear</label>
+          <label><input type="checkbox" data-nastavenie="oslava"> Celebration: confetti and a bigger result when you finish</label>
+          <p class="fineprint">Settings, progress, history and streak stay in this browser. Add this page to your home screen to open it like an app.</p>
+        </details>
+      </div>
+    </div>
+  </div>
+
+  <section id="rules" class="deep pravidla">
+    <div class="wrap">
+      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>01</p>
+      <h2 class="r">Rules.</h2>
+      <p class="sub r d1">Three sentences. The rest is practice.</p>
+      <div class="rule"></div>
+      <div class="r d2">
+        <details open>
+          <summary>How to play</summary>
+          <div class="telo">
+            <p>Cranes rest on sandbanks. Join the sandbanks with straight walkways so that every sandbank has as many walkways as its number, at most two between the same pair, no crossings, and every sandbank can be reached from every other.</p>
+            <p>A walkway runs straight across the water, up and down or left and right, and only between two sandbanks that stand in line with nothing in between. Two walkways may run side by side between the same pair, and that counts as two for both of their numbers.</p>
+            <p>The number on a sandbank is the whole truth about it: when it says four, exactly four walkways leave it, no more and no fewer. When the last number is right and the sandbanks hang together in one piece, the water is finished and the game notices by itself.</p>
+          </div>
+        </details>
+        <details>
+          <summary>Controls</summary>
+          <div class="telo">
+            <p>Tap or click the water between two sandbanks that stand in line: once lays one walkway, twice lays two, a third time takes them away. You can also drag from one sandbank straight to another. Shift and a tap, or the right button, notes a pair as never joined; that note is only for you and is never checked. Nothing lights up while you play: finding a mistake is part of the puzzle.</p>
+            <p><b>Check</b> first tells you only how many walkways are wrong and roughly where. Press it again and it shows which. <b>Hint</b> names the rule and the place, and the second press builds that one step for you. If something on the board is already wrong, the hint points there first. Hints and checks are free and counted, and shown when you finish. <b>Clear</b> empties the water; the clock keeps running and one Undo brings everything back.</p>
+            <p>Keyboard: arrows walk from sandbank to sandbank, <kbd>Ctrl</kbd> plus arrow lays a walkway that way and pressing again makes it two and then none, <kbd>Shift</kbd> plus arrow notes that pair as never joined, <kbd>Enter</kbd> or <kbd>Space</kbd> works on the direction you used last, <kbd>X</kbd> notes it, <kbd>Delete</kbd> clears it, <kbd>U</kbd> or <kbd>Ctrl</kbd>+<kbd>Z</kbd> undo, <kbd>R</kbd> or <kbd>Ctrl</kbd>+<kbd>R</kbd> redo, <kbd>P</kbd> pauses.</p>
+            <p>The clock runs from your first walkway to the last one and pauses when you leave the tab or sit still for a minute, which also hides the water. Your progress, time, history and day streak stay in this browser, and in your <a href="/ucet/">account</a> when you are signed in, so you can continue on another device.</p>
+            <p>A water finished with no hint and no check counts as clean and the week strip gives it a second ring. Only the water of the day builds the streak, and after five days in a row one missed day is forgiven, at most twice in a month. When you finish, <b>Share</b> copies one line with the date, your time and how much help you took. It never copies the water or your walkways, so nothing is spoiled for anyone.</p>
+          </div>
+        </details>
+        <details>
+          <summary>The week</summary>
+          <div class="telo">
+            <p>Monday and Tuesday are easy (a seven by seven water with ten to twelve sandbanks), Wednesday and Thursday medium (nine by nine, sixteen to twenty), Friday and Saturday hard (eleven by eleven, twenty four to twenty eight) and Sunday is the challenge: thirteen by thirteen with thirty two to thirty eight. The week strip under the water takes you to the other days; the <a href="/games/cranes/archive/">archive</a> goes back a year, and the <a href="/games/cranes/practice/">practice sets</a> have eight waters of each level with no date attached.</p>
+            <p>Difficulty is measured, not guessed. Every water is solved by a program that only knows named rules, in three layers: what a single number allows on its own, the patterns between two numbers, and the hard ones, where a count is tried out for one step and ruled out because it ends in a contradiction or cuts a group of sandbanks off from the rest. Easy and Medium never need that third layer; Sunday leans on it the most.</p>
+            <p>No water, not even a Monday, can be beaten by tapping every stretch once. At least three in ten of the pairs you can see are there to be left alone, and at least a quarter of the walkways that do belong are doubles, so the shape of the answer never matches the shape of what is in front of you. On Friday, Saturday and Sunday there is always a crossing to steer around as well.</p>
+          </div>
+        </details>
+        <details>
+          <summary>A few ways in</summary>
+          <div class="telo">
+            <p>Start at the edges and the corners. A sandbank in a corner reaches only two others, so a 4 there means two walkways to each, and a 3 means at least one to each.</p>
+            <p>A 1 with a single neighbour, or a 2 with a single neighbour, has nowhere else to go. So does any sandbank whose neighbours have exactly as much room left as its number still needs.</p>
+            <p>Two sandbanks with a 1 never join to each other, and two with a 2 never join twice: the pair would be finished and cut off from the rest of the water, and every sandbank has to be reachable from every other.</p>
+            <p>When a walkway crosses the line between two other sandbanks, that pair is closed for good. Note it and move on; those notes are what turn a crowded middle into a chain of forced steps.</p>
+          </div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <section id="about">
+    <div class="wrap prose">
+      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 8v.5M12 11v5"/></svg>02</p>
+      <h2 class="r">About this game.</h2>
+      <div class="rule"></div>
+      <p class="r d1">Every water is generated by our own program from its date: new every day and the same for everyone. The program only keeps a water when it has exactly one solution and when its own rule solver finishes it without ever guessing, so there is always a next step you can find. No puzzle is taken from anywhere else. The mechanic is a classic puzzle known under several names; this implementation, the daily waters, the hints and the words are ours.</p>
+      <p class="r d2">Your walkways, time, history and day streak are stored only in this browser. Our anonymous statistics (self-hosted Umami) record the page visit, as on every page of ours, and a few extra events: that someone finished a water and in how many seconds, and that Check or Hint was used. Nothing else.</p>
+      <p class="r d3">This is an early version. If something is missing or in the way, write to <a href="mailto:andrej@arling.sk">andrej@arling.sk</a>.</p>
+    </div>
+  </section>
+</main>
+
+<aside class="predaj" data-predaj="cranes" aria-label="More from ARLing" style="border-top:1px solid var(--line)">
+  <div class="wrap" style="padding:20px 0 28px">
+    <p class="small" style="margin:0 0 6px">Everything on this page is free. For a tablet you can write on, we also make books.</p>
+    <p class="small" style="margin:0;display:flex;flex-wrap:wrap;gap:4px 18px"><a href="/puzzle-post/" data-umami-event="games_to_puzzle_post" data-umami-event-game="cranes">Puzzle Post: 100 hyperlinked puzzles a month for e-ink tablets, 3.90 &euro;</a><a href="/shop/" data-umami-event="games_to_shop" data-umami-event-game="cranes">All puzzle books and titles</a></p>
+  </div>
+</aside>
+
+<footer>
+  <div class="wrap foot">
+    <div><b>ARLing s. r. o.</b><br>Ivanská cesta 32E<br>821 04 Bratislava, Slovakia</div>
+    <div>Company ID 56583486<br>VAT ID SK2122352100<br><a href="mailto:andrej@arling.sk">andrej@arling.sk</a></div>
+    <div><a href="https://arling.sk/shop/">shop</a> · <a href="https://arling.sk/privacy/en/">privacy</a> · <a href="https://arling.sk/podmienky/en/">terms</a> · <a href="https://arling.sk/gdpr/en/">GDPR</a> · <a href="https://arling.sk/impressum/en/">Impressum</a> · <a href="https://arling.sk/llms.txt">llms.txt</a> · <a href="https://arling.sk/sitemap-index.xml">sitemap</a><br>Tools are provided as is, without warranty. Anonymous visit counts via self-hosted Umami.</div>
+  </div>
+</footer>
+<script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="469b28b9-caa6-4ef2-807b-c219c30110fc"></script>
+</body>
+</html><main id="obsah">
 <style>
   .mesiac{margin:0 0 26px}
   .mesiac h3{font:600 15px/1.4 var(--ui);color:var(--ink);margin:0 0 10px}

@@ -299,7 +299,7 @@
 </head>
 <body class="noc">
 <div class="wash" aria-hidden="true"><i></i><i></i></div>
-<a class="skip site-skip" href="#obsah" data-site-label="skip">Skip to content</a>
+<a class="skip site-skip" href="#arling-obsah" data-site-label="skip">Skip to content</a>
 <header class="site-header">
   <div class="wrap bar">
     <a class="brand" href="https://arling.sk/en/" aria-label="ARLing home" data-site-home>
@@ -313,7 +313,152 @@
   </div>
 </header>
 
-<main id="obsah">
+<main id="arling-obsah" tabindex="-1">
+  <div class="wrap hero" id="hero">
+    <div>
+      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="2"/><path d="M3.5 9.5h17M9.5 3.5v17"/><path d="M6.4 12.9l1.4 1.4 2.6 2.6"/><path d="M13.6 6.4l3.6 3.6M17.2 6.4l-3.6 3.6"/></svg>Daily logic grid</p>
+      <h1 id="h1"><span class="l">Dormice.</span></h1>
+      <p class="lead r d3">Every dormouse keeps one store in one tree. One store went missing overnight, and the clues leave exactly one way to work out who had it.</p>
+      <p class="proof r d5" id="dnes">A new copse every day at midnight, always with exactly one answer and never a guess. Easy on Monday, hardest on Sunday.</p>
+      <p class="navod r d5">Tap a square: a cross, then a tick, then empty again. A tick crosses out the rest of its row and column for you. Keyboard: arrows move, <kbd>Space</kbd> cycles, <kbd>X</kbd> crosses, <kbd>D</kbd> ticks, <kbd>Delete</kbd> clears, <kbd>[</kbd> and <kbd>]</kbd> jump between tables, <kbd>P</kbd> pauses. Nothing lights up while you play; Check judges only when you ask.</p>
+      <section class="indicie r d4" id="indicie" aria-labelledby="indicie-nadpis">
+        <div class="hlava"><h2 id="indicie-nadpis">The clues</h2>
+          <button type="button" class="viac" id="indicie-viac" aria-expanded="false" aria-controls="indicie-zoznam">All clues</button></div>
+        <ol id="indicie-zoznam"><li>The clues appear here.</li></ol>
+        <p class="otazka" id="otazka"></p>
+        <p class="fineprint">Every clue is true, and together they leave exactly one way to match everyone up. Tap a clue to strike it out once you have used it.</p>
+      </section>
+    </div>
+    <div class="r d2">
+      <div class="hra">
+        <div class="horna"><span><span id="datum">Today's copse</span><span class="uroven" id="uroven"></span></span><span id="cas-blok">Time <b id="cas">0:00</b><button type="button" class="pauza-btn" id="pauza" hidden>Pause</button></span></div>
+        <div class="doska-obal">
+          <div class="doska" id="doska" role="grid" aria-label="Logic grid, 4 categories of 4 items">
+            <noscript><p>This game needs JavaScript: the puzzle is built right in your browser.</p></noscript>
+          </div>
+          <div class="pauza-blok" id="pauza-blok" hidden><p><b>Paused.</b> <span id="pauza-cas"></span></p><button type="button" class="btn btn-solid" id="pokracuj">Resume</button></div>
+        </div>
+        <div class="citac" id="citac" hidden>
+          <button type="button" id="citac-spat" aria-label="Previous clue">‹</button>
+          <span class="text" id="citac-text" aria-live="polite"></span>
+          <span class="pocet" id="citac-pocet"></span>
+          <button type="button" id="citac-dalej" aria-label="Next clue">›</button>
+        </div>
+        <div class="legenda" id="legenda"></div>
+        <div class="ovladanie">
+          <button type="button" class="btn btn-line" id="spat">Undo</button>
+          <button type="button" class="btn btn-line" id="vpred">Redo</button>
+          <button type="button" class="btn btn-line" id="reset">Clear</button>
+          <button type="button" class="btn btn-line" id="hint">Hint</button>
+          <button type="button" class="btn btn-line" id="check">Check</button>
+          <span class="small" id="seria"></span>
+        </div>
+        <p class="stav" id="stav" aria-live="polite"></p>
+        <div class="rozuzlenie" id="rozuzlenie" hidden></div>
+        <div class="zdielanie" id="zdielanie" hidden>
+          <button type="button" class="btn btn-line" id="zdielaj">Share</button>
+          <span id="zdielanie-stav" aria-live="polite">Copies a short text: the copse, your time, the help you used. No marks and no names, so it spoils nothing.</span>
+          <textarea id="zdielanie-text" rows="6" readonly hidden aria-label="The text to copy"></textarea>
+        </div>
+        <nav class="pasik" id="pasik" aria-label="This week"></nav>
+        <p class="odkazy"><a href="/games/dormice/guide/">How to play</a> · <a href="/games/dormice/practice/">Practice sets</a> · <a href="/games/dormice/archive/">Archive</a></p>
+        <p class="historia" id="historia" hidden></p>
+        <details class="nastavenia">
+          <summary>Settings</summary>
+          <label><input type="checkbox" data-nastavenie="autoKriz"> Auto cross: after a tick, cross out the rest of that row and column</label>
+          <label><input type="checkbox" data-nastavenie="carryAcross"> Carry across: copy what a tick proves into the other tables</label>
+          <label><input type="checkbox" data-nastavenie="zvyraznenie"> Highlight the selected item across every table</label>
+          <label><input type="checkbox" data-nastavenie="preskrtnutie"> Strike a clue out when you tap it</label>
+          <label><input type="checkbox" data-nastavenie="casovac"> Show the timer and the Pause button</label>
+          <label><input type="checkbox" data-nastavenie="pauzaPriOdchode"> Pause the clock when you leave the tab</label>
+          <label><input type="checkbox" data-nastavenie="potvrditReset"> Ask before Clear</label>
+          <label><input type="checkbox" data-nastavenie="oslava"> Celebration: confetti and a bigger result when you finish</label>
+          <p class="fineprint">Auto cross is on to begin with: filling in the crosses after a tick is bookkeeping, not deduction. Carry across is off, because that one is a deduction you have not seen yet. Settings, progress, history and streak stay in this browser.</p>
+        </details>
+      </div>
+    </div>
+  </div>
+
+  <section id="rules" class="deep pravidla">
+    <div class="wrap">
+      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>01</p>
+      <h2 class="r">Rules.</h2>
+      <p class="sub r d1">Seven sentences. The rest is practice.</p>
+      <div class="rule"></div>
+      <div class="r d2">
+        <details open>
+          <summary>How to play</summary>
+          <div class="telo">
+            <p>Every dormouse in the copse keeps one store in one tree, and in the bigger puzzles wakes in one week of the spring. There are as many stores, trees and weeks as there are dormice, and no two dormice share any of them.</p>
+            <p>Every numbered clue beside the grid is true, and the clues together leave exactly one way to match everything up.</p>
+            <p>The grid is your notepad. Each small square joins one item on the left with one item above: put a cross in it when you know the two do not belong together, and a tick when you know they do.</p>
+            <p>As soon as a tick goes into a square, every other square in that row and in that column of the same small table is a cross, because each item belongs to one dormouse and to no other.</p>
+            <p>Ticks carry from table to table. If Pip keeps the sloes and the sloes are in the elm, then Pip woke in the elm, and anything the sloes are not, Pip is not either.</p>
+            <p>The weeks run in order, one week apart, so a clue that says two weeks earlier means exactly two steps along the week column, and a clue that says earlier without a number means any number of steps.</p>
+            <p>One store went missing from the shared larder overnight. Nothing has to be guessed: every square can be reached from the clues by reasoning, and when the table is full the last line tells you who had it, where and when.</p>
+          </div>
+        </details>
+        <details>
+          <summary>Controls</summary>
+          <div class="telo">
+            <p>Tap or click a square: once puts a cross, twice a tick, three times clears it. The cross comes first because there are three of them for every tick. A tick fills the rest of its row and column with crosses by itself, as one step you can take back with a single Undo; you can switch that off in Settings.</p>
+            <p>Tap a header, or a name in the list under the grid, to outline that item everywhere it appears. Tap a clue to strike it out once you have used it; that is your own note and Undo takes it back too.</p>
+            <p><b>Check</b> first tells you how many of your ticks are wrong and which table they are in. Press it again and it marks them. Crosses are never counted: one wrong tick poisons dozens of squares and the number would say nothing useful. <b>Hint</b> names the technique and the place, then fills in exactly one square. Hints and checks are free, counted and shown when you finish. <b>Clear</b> empties the grid; the clock keeps running.</p>
+            <p>Keyboard: arrows move with a wrap at the edge, <kbd>Space</kbd> or <kbd>Enter</kbd> cycles the square, <kbd>X</kbd> crosses, <kbd>D</kbd> ticks, <kbd>Delete</kbd> or <kbd>Backspace</kbd> clears, <kbd>[</kbd> and <kbd>]</kbd> jump to the previous or next table, <kbd>Escape</kbd> drops the selection, <kbd>P</kbd> pauses. <kbd>U</kbd> and <kbd>Ctrl</kbd>+<kbd>Z</kbd> undo, <kbd>R</kbd> and <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> redo.</p>
+            <p>The clock runs from your first move to the last square and pauses when you leave the tab, which also hides the grid but never the clues: the clues are the rules of the day, not the answer. Your progress, time, history and day streak stay in this browser, and in your <a href="/ucet/">account</a> when you are signed in, so you can continue on another device.</p>
+          </div>
+        </details>
+        <details>
+          <summary>The week</summary>
+          <div class="telo">
+            <p>Monday and Tuesday are easy: three categories of five, no weeks. Wednesday and Thursday are medium, Friday and Saturday hard, Sunday the challenge, all of them four categories of four. Hard and Sunday are not bigger than Wednesday, they are harder: the clues get weaker, the order clues get vaguer, and on Sunday one square is only settled by testing an assumption until it breaks.</p>
+            <p>The size stops at twelve columns on purpose. At 390 px of screen a square is then about 29 px across, above the 24 px a finger needs, so the whole staircase fits on a phone and a fact carried from one table to another is a move of the eye. The book prints the same sizes as the game.</p>
+            <p>The week strip under the grid takes you to the other days; the <a href="/games/dormice/archive/">archive</a> goes back a year, and the <a href="/games/dormice/practice/">practice sets</a> have eight copses of each level with no date attached.</p>
+          </div>
+        </details>
+        <details>
+          <summary>A few ways in</summary>
+          <div class="telo">
+            <p>Start with the clues that name two items outright: a tick or a cross goes straight in, and the tick brings a row and a column of crosses with it.</p>
+            <p>When a row of a small table has one square left without a cross, that square is a tick. The same goes for a column: if only one dormouse can still take an item, it is that dormouse.</p>
+            <p>The move that makes this puzzle what it is: a tick joins two rows across the whole staircase. If Pip keeps the sloes, then everything the sloes cannot be, Pip cannot be either, in every other table.</p>
+            <p>Order clues fence the weeks in from both ends. Two weeks before someone means the first item cannot be in the last two weeks and the second cannot be in the first two.</p>
+          </div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <section id="about">
+    <div class="wrap prose">
+      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 8v.5M12 11v5"/></svg>02</p>
+      <h2 class="r">About this game.</h2>
+      <div class="rule"></div>
+      <p class="r d1">Every copse is generated by our own program from its date: new every day and the same for everyone. The program only accepts a puzzle that a person can finish with the rules a person can use, without ever guessing, and a second, independent search then checks that the puzzle really has exactly one answer. The names, the stores and the trees come from our own word lists, and every clue sentence is built from our own template over the constraint behind it. No puzzle and no sentence is taken from anywhere else.</p>
+      <p class="r d2">The mechanic is the public logic grid puzzle, also called a deduction puzzle, a logic problem or a zebra puzzle, printed in magazines for decades. Rules, systems and methods are not protected by copyright; this implementation, the daily puzzles, the hints and the words are ours.</p>
+      <p class="r d3">Your marks, time, history and day streak are stored only in this browser. Our anonymous statistics (self hosted Umami) record the page visit, as on every page of ours, and a few extra events: that someone solved a copse and in how many seconds, and that Check or Hint was used. Nothing else.</p>
+      <p class="r d4">This is an early version. If something is missing or in the way, write to <a href="mailto:andrej@arling.sk">andrej@arling.sk</a>.</p>
+    </div>
+  </section>
+</main>
+
+<aside class="predaj" data-predaj="dormice" aria-label="More from ARLing" style="border-top:1px solid var(--line)">
+  <div class="wrap" style="padding:20px 0 28px">
+    <p class="small" style="margin:0 0 6px">Everything on this page is free. For a tablet you can write on, we also make books.</p>
+    <p class="small" style="margin:0;display:flex;flex-wrap:wrap;gap:4px 18px"><a href="/puzzle-post/" data-umami-event="games_to_puzzle_post" data-umami-event-game="dormice">Puzzle Post: 100 hyperlinked puzzles a month for e-ink tablets, 3.90 &euro;</a><a href="/shop/" data-umami-event="games_to_shop" data-umami-event-game="dormice">All puzzle books and titles</a></p>
+  </div>
+</aside>
+
+<footer>
+  <div class="wrap foot">
+    <div><b>ARLing s. r. o.</b><br>Ivanská cesta 32E<br>821 04 Bratislava, Slovakia</div>
+    <div>Company ID 56583486<br>VAT ID SK2122352100<br><a href="mailto:andrej@arling.sk">andrej@arling.sk</a></div>
+    <div><a href="https://arling.sk/shop/">shop</a> · <a href="https://arling.sk/privacy/en/">privacy</a> · <a href="https://arling.sk/podmienky/en/">terms</a> · <a href="https://arling.sk/gdpr/en/">GDPR</a> · <a href="https://arling.sk/impressum/en/">Impressum</a> · <a href="https://arling.sk/llms.txt">llms.txt</a> · <a href="https://arling.sk/sitemap-index.xml">sitemap</a><br>Tools are provided as is, without warranty. Anonymous visit counts via self-hosted Umami.</div>
+  </div>
+</footer>
+<script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="469b28b9-caa6-4ef2-807b-c219c30110fc"></script>
+</body>
+</html><main id="obsah">
 <style>
   .gif{margin:0;max-width:420px}
   .gif img{width:100%;height:auto;border:1px solid var(--line);border-radius:12px;background:#0a0908}

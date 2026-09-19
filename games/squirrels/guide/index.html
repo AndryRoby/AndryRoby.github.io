@@ -410,7 +410,7 @@
 </head>
 <body class="noc">
 <div class="wash" aria-hidden="true"><i></i><i></i></div>
-<a class="skip site-skip" href="#obsah" data-site-label="skip">Skip to content</a>
+<a class="skip site-skip" href="#arling-obsah" data-site-label="skip">Skip to content</a>
 <header class="site-header">
   <div class="wrap bar">
     <a class="brand" href="https://arling.sk/en/" aria-label="ARLing home" data-site-home>
@@ -424,7 +424,171 @@
   </div>
 </header>
 
-<main id="obsah">
+<main id="arling-obsah" tabindex="-1">
+  <div class="wrap hero" id="hero">
+    <div>
+      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="2"/><path d="M3.5 3.5L12 12M8.5 3.5v17M3.5 8.5h17"/></svg>Daily number logic</p>
+      <h1 id="h1"><span class="l">Squirrels.</span></h1>
+      <p class="lead r d3">Squirrels hide acorns in the hollows. Each sign tells how many acorns are in the run of hollows to its right or below it. Every hollow holds 1 to 9 acorns, and no number repeats within a run.</p>
+      <p class="proof r d5" id="dnes">A new wood every day at midnight, always with exactly one solution. Easy on Monday, hardest on Sunday.</p>
+      <p class="navod r d5">Click a hollow, or drag across several, then a number. Keyboard: arrows move, <kbd>1</kbd> to <kbd>9</kbd> write, <kbd>Delete</kbd> clears; <kbd>Z</kbd> <kbd>X</kbd> <kbd>C</kbd> <kbd>V</kbd> pick between a number, corner marks, centre marks and a colour, and the space bar walks round the four; <kbd>Ctrl</kbd>+<kbd>Z</kbd> undo, <kbd>Ctrl</kbd>+<kbd>Y</kbd> redo; Restart clears the wood, one Undo brings it back; <kbd>P</kbd> pauses. Nothing lights up while you play; Check judges only when you ask.</p>
+    </div>
+    <div class="r d2">
+      <div class="hra" id="hra">
+        <div class="horna"><span><span id="datum">Today's wood</span><span class="uroven" id="uroven"></span></span><span id="cas-blok">Time <b id="cas">0:00</b><button type="button" class="pauza-btn" id="pauza" hidden>Pause</button></span></div>
+        <div class="doska-obal">
+          <div class="doska" id="doska" role="grid" aria-label="Acorn grid 8 by 8" aria-describedby="cisla-text">
+            <noscript><p>This game needs JavaScript: the puzzle is generated right in your browser.</p></noscript>
+          </div>
+          <div class="pauza-blok" id="pauza-blok" hidden><p><b>Paused.</b> <span id="pauza-cas"></span></p><button type="button" class="btn btn-solid" id="pokracuj">Resume</button></div>
+        </div>
+        <p class="skryte" id="cisla-text"></p>
+        <div class="pad" id="pad">
+          <button type="button" data-d="1">1</button>
+          <button type="button" data-d="2">2</button>
+          <button type="button" data-d="3">3</button>
+          <button type="button" data-d="4">4</button>
+          <button type="button" data-d="5">5</button>
+          <button type="button" data-d="6">6</button>
+          <button type="button" data-d="7">7</button>
+          <button type="button" data-d="8">8</button>
+          <button type="button" data-d="9">9</button>
+          <button type="button" class="zmaz" data-d="0" aria-label="Erase the picked hollows">Del</button>
+        </div>
+        <div class="rezimy" id="rezimy" role="group" aria-label="What a number writes">
+          <button type="button" data-rezim="normal" aria-pressed="true">Normal<small>Z</small></button>
+          <button type="button" data-rezim="corner" aria-pressed="false">Corner<small>X</small></button>
+          <button type="button" data-rezim="centre" aria-pressed="false">Centre<small>C</small></button>
+          <button type="button" data-rezim="colour" aria-pressed="false">Colour<small>V</small></button>
+        </div>
+        <div class="ovladanie">
+          <button type="button" class="btn btn-line" id="spat">Undo</button>
+          <button type="button" class="btn btn-line" id="znova">Redo</button>
+          <button type="button" class="btn btn-line" id="reset">Restart</button>
+          <button type="button" class="btn btn-line" id="hint">Hint</button>
+          <button type="button" class="btn btn-line" id="check">Check</button>
+          <span class="small" id="seria"></span>
+        </div>
+        <p class="stav" id="stav" aria-live="polite"></p>
+        <div class="zdielanie" id="zdielanie" hidden>
+          <button type="button" class="btn btn-line" id="zdielaj">Share</button>
+          <span id="zdielanie-stav" aria-live="polite">Copies a short text: the wood, your time, the help you used. No numbers, so it spoils nothing.</span>
+          <textarea id="zdielanie-text" rows="8" readonly hidden aria-label="The text to copy"></textarea>
+        </div>
+        <nav class="pasik" id="pasik" aria-label="This week"></nav>
+        <p class="odkazy"><a href="/games/squirrels/guide/">How to play</a> · <a href="/games/squirrels/practice/">Practice sets</a> · <a href="/games/squirrels/archive/">Archive</a></p>
+        <p class="historia" id="historia" hidden></p>
+        <details class="nastavenia">
+          <summary>Settings</summary>
+          <label class="vyber"><span>Control method: Selection is a hollow first and then a number, Digit first is a number from the pad and then the hollows you tap; the number stays chosen, so one hollow after another takes it</span>
+            <select data-nastavenie="ovladanie" aria-label="Control method">
+              <option value="selection">Selection</option>
+              <option value="digit">Digit first</option>
+            </select></label>
+          <label><input type="checkbox" data-nastavenie="casovac"> Display timer, with the Pause button</label>
+          <label><input type="checkbox" data-nastavenie="zvyrazniRovnake"> Highlight matching numbers everywhere on the board</label>
+          <label class="vyber"><span>Cell selection when dragging: a drag picks every hollow it runs over, or moves a single one</span>
+            <select data-nastavenie="tahVyber" aria-label="Cell selection when dragging">
+              <option value="multiple">Multiple cells</option>
+              <option value="single">Single cell</option>
+            </select></label>
+          <label class="vyber"><span>Number entry with noted cells: Fill cell writes the number over the marks, Add note makes it another mark</span>
+            <select data-nastavenie="zapisSoZnackami" aria-label="Number entry with noted cells">
+              <option value="fill">Fill cell</option>
+              <option value="note">Add note</option>
+            </select></label>
+          <label><input type="checkbox" data-nastavenie="zivaKontrola"> Highlight errors: mark a wrong number as soon as it is written (off by default: finding a mistake is part of the puzzle)</label>
+          <label class="vyber"><span>Default note style: which of the two the <kbd>N</kbd> key reaches first</span>
+            <select data-nastavenie="predvolenyStyl" aria-label="Default note style">
+              <option value="corner">Corner</option>
+              <option value="centre">Centre</option>
+            </select></label>
+          <label><input type="checkbox" data-nastavenie="autoOdstranZnacky"> Auto remove restricted notes: a number written in takes the same mark out of the rest of its two runs (off by default: the marks are your own)</label>
+          <label><input type="checkbox" data-nastavenie="pauzaPriOdchode"> Auto pause: stop the clock when you leave the tab or sit still for a minute</label>
+          <label><input type="checkbox" data-nastavenie="lenPad"> Onscreen input only: numbers come from the pad, the number keys of a keyboard are ignored (arrows, Undo, Redo and Pause keep working)</label>
+          <label><input type="checkbox" data-nastavenie="potvrditReset"> Confirm before Restart</label>
+          <label><input type="checkbox" data-nastavenie="oslava"> Celebration: confetti and a bigger result when you finish</label>
+          <p class="fineprint">Settings, progress, history and streak stay in this browser. Add this page to your home screen to open it like an app.</p>
+        </details>
+      </div>
+    </div>
+  </div>
+
+  <section id="rules" class="deep pravidla">
+    <div class="wrap">
+      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>01</p>
+      <h2 class="r">Rules.</h2>
+      <p class="sub r d1">Three sentences. The rest is practice.</p>
+      <div class="rule"></div>
+      <div class="r d2">
+        <details open>
+          <summary>How to play</summary>
+          <div class="telo">
+            <p>Squirrels hide acorns in the hollows. Each sign tells how many acorns are in the run of hollows to its right or below it. Every hollow holds 1 to 9 acorns, and no number repeats within a run.</p>
+            <p>A run is the unbroken line of hollows that follows a sign, and it ends at the next trunk or at the edge of the wood. Every hollow belongs to one run across and one run down at the same time, and that is where the puzzle lives: the number you write has to suit both.</p>
+            <p>Every wood has exactly one arrangement of acorns that fits every sign. When the last hollow is right, the game notices by itself.</p>
+          </div>
+        </details>
+        <details>
+          <summary>Controls</summary>
+          <div class="telo">
+            <p><b>Moving about.</b> Click or tap a hollow to pick it. Drag with the mouse or the finger across the wood to pick several at once, <kbd>Ctrl</kbd> (on a Mac <kbd>Cmd</kbd>) plus a click adds one to the picked hollows or takes it away, and <kbd>Ctrl</kbd> plus an arrow grows the picked patch. The arrow keys move from hollow to hollow and step over the edge of the wood to the other side; <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> do the same. <kbd>Escape</kbd> lets the whole selection go.</p>
+            <p><b>Writing.</b> <kbd>1</kbd> to <kbd>9</kbd>, on the number row or the numeric keypad, or the pad under the wood, write into every picked hollow at once. The same number again takes it back. <kbd>Delete</kbd> or <kbd>Backspace</kbd> clears in one order: the numbers first, then the marks, then the colour, so one more press always takes away one more layer. A number written into a hollow with marks in it covers them; they come back when the number goes.</p>
+            <p><b>The four modes.</b> The buttons under the pad say what a number writes: <b>Normal</b> the big number, <b>Corner</b> a small mark in the corners of the hollow, <b>Centre</b> a small mark in the middle, <b>Colour</b> one of nine colours. <kbd>Z</kbd> <kbd>X</kbd> <kbd>C</kbd> <kbd>V</kbd> pick one, the space bar walks round all four, <kbd>N</kbd> steps through the two kinds of mark and back. Holding <kbd>Shift</kbd> writes a corner mark and holding <kbd>Ctrl</kbd> a centre mark for that one number, without leaving the mode you are in.</p>
+            <p><b>Undo and Redo.</b> <kbd>Ctrl</kbd>+<kbd>Z</kbd> or <kbd>U</kbd> goes back, <kbd>Ctrl</kbd>+<kbd>Y</kbd>, <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> or <kbd>R</kbd> goes forward, as far as you like in either direction. <kbd>Ctrl</kbd>+<kbd>R</kbd> is left alone: that is the browser reloading the page. <b>Restart</b> takes every number, mark and colour off the wood; the clock keeps running and one Undo brings it all back.</p>
+            <p><b>Check and Hint.</b> Nothing lights up while you play: finding a mistake is part of the puzzle. <b>Check</b> first tells you only how many numbers are wrong and which rows or columns they sit in; press it again and it marks them. <b>Hint</b> names the rule and the place without giving the number away, and the second press writes that one number and explains it. If something on the board is already wrong, the hint points there first. Hints and checks are free and counted, and shown when you finish. <kbd>P</kbd> pauses.</p>
+            <p>The clock runs from your first number to the last hollow and pauses when you leave the tab or sit still for a minute, which also hides the wood. Your progress, time, history and day streak stay in this browser, and in your <a href="/ucet/">account</a> when you are signed in, so you can continue on another device. The day turns over at midnight where you are. Only the wood of the day counts towards the streak, the archive is for practice; once you are five days in, a single missed day is forgiven, at most twice a month.</p>
+          </div>
+        </details>
+        <details>
+          <summary>The week</summary>
+          <div class="telo">
+            <p>Monday and Tuesday are easy (six by six), Wednesday and Thursday medium (eight by eight), Friday and Saturday hard (ten by ten) and Sunday is the challenge: twelve by twelve. The week strip under the wood takes you to the other days; the <a href="/games/squirrels/archive/">archive</a> goes back a year, and the <a href="/games/squirrels/practice/">practice sets</a> have eight woods of each level with no date attached.</p>
+            <p>Difficulty is measured, not guessed. Every wood is solved by a program that only knows named rules, in three layers: the plain ones (the last empty hollow of a run, a total that can be made in only one way, and the single number that both crossing runs still allow), the patterns inside a run (a number the run has to use that fits only one hollow, a pair of hollows holding two numbers between them, a total narrowed down by the crossing runs), and the hard one (writing a number in and dropping it because it runs into a contradiction). Easy and Medium never need that third layer; Sunday leans on it the most.</p>
+          </div>
+        </details>
+        <details>
+          <summary>A few ways in</summary>
+          <div class="telo">
+            <p>Short runs with extreme totals are the way in. Two hollows adding to 3 can only be 1 and 2; to 4, only 1 and 3; to 16, only 7 and 9; to 17, only 8 and 9. Three hollows adding to 6 are 1, 2 and 3; to 24, they are 7, 8 and 9.</p>
+            <p>Where two such runs cross, the hollow they share has to suit both sets, and often only one number is in both.</p>
+            <p>When a run has one empty hollow left, its number is simply the total minus what is already there. That one number then narrows the run crossing it, which is how a wood unravels.</p>
+            <p>If a number the run must use fits only one of its hollows, that is where it goes, even when that hollow could still hold other numbers on its own.</p>
+          </div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <section id="about">
+    <div class="wrap prose">
+      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 8v.5M12 11v5"/></svg>02</p>
+      <h2 class="r">About this game.</h2>
+      <div class="rule"></div>
+      <p class="r d1">Every wood is generated by our own program from its date: new every day and the same for everyone. The program only keeps a wood when it has exactly one solution and when its own rule solver finishes it without ever guessing, so there is always a next step you can find. No puzzle is taken from anywhere else. The mechanic is a classic number puzzle known under several names; this implementation, the daily woods, the hints and the words are ours.</p>
+      <p class="r d2">Your numbers, time, history and day streak are stored only in this browser. Our anonymous statistics (self-hosted Umami) record the page visit, as on every page of ours, and a few extra events: that someone solved a wood and in how many seconds, and that Check or Hint was used. Nothing else.</p>
+      <p class="r d3">This is an early version. If something is missing or in the way, write to <a href="mailto:andrej@arling.sk">andrej@arling.sk</a>.</p>
+    </div>
+  </section>
+</main>
+
+<aside class="predaj" data-predaj="squirrels" aria-label="More from ARLing" style="border-top:1px solid var(--line)">
+  <div class="wrap" style="padding:20px 0 28px">
+    <p class="small" style="margin:0 0 6px">Everything on this page is free. For a tablet you can write on, we also make books.</p>
+    <p class="small" style="margin:0;display:flex;flex-wrap:wrap;gap:4px 18px"><a href="/puzzle-post/" data-umami-event="games_to_puzzle_post" data-umami-event-game="squirrels">Puzzle Post: 100 hyperlinked puzzles a month for e-ink tablets, 3.90 &euro;</a><a href="/shop/" data-umami-event="games_to_shop" data-umami-event-game="squirrels">All puzzle books and titles</a></p>
+  </div>
+</aside>
+
+<footer>
+  <div class="wrap foot">
+    <div><b>ARLing s. r. o.</b><br>Ivanská cesta 32E<br>821 04 Bratislava, Slovakia</div>
+    <div>Company ID 56583486<br>VAT ID SK2122352100<br><a href="mailto:andrej@arling.sk">andrej@arling.sk</a></div>
+    <div><a href="https://arling.sk/shop/">shop</a> · <a href="https://arling.sk/privacy/en/">privacy</a> · <a href="https://arling.sk/podmienky/en/">terms</a> · <a href="https://arling.sk/gdpr/en/">GDPR</a> · <a href="https://arling.sk/impressum/en/">Impressum</a> · <a href="https://arling.sk/llms.txt">llms.txt</a> · <a href="https://arling.sk/sitemap-index.xml">sitemap</a><br>Tools are provided as is, without warranty. Anonymous visit counts via self-hosted Umami.</div>
+  </div>
+</footer>
+<script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="469b28b9-caa6-4ef2-807b-c219c30110fc"></script>
+</body>
+</html><main id="obsah">
 <style>
   .gif{margin:0;max-width:420px}
   .gif img{width:100%;height:auto;border:1px solid var(--line);border-radius:12px;background:#0a0908}
