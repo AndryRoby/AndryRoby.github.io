@@ -24,7 +24,6 @@ export const DICT = {
   'lang.en.aria': { sk: 'English', en: 'English' },
 
   // hero
-  'hero.kicker': { sk: 'Váš účet', en: 'Your account' },
   'hero.h1': { sk: 'Používanie a predplatné', en: 'Usage and subscription' },
   'hero.lead': {
     sk: 'Prehľad účtu ARLing Asistenta pre váš e-shop: koľko rozhovorov ste tento mesiac použili, embed kód a prechod na platený plán. Stránka ukazuje len počítadlá, žiadne osobné údaje ani obsah rozhovorov.',

@@ -1,0 +1,82 @@
+/* Denné hry arling.sk: spoločná časť. Fable, 20. 9. 2026.
+
+   Prečo súbor. Jedenásť rozcestí hier malo každé svoj vlastný inline <style>
+   (9,4 až 26 kB) a zhruba päťdesiat pravidiel v nich bolo znak po znaku
+   rovnakých. Tie isté šablóny stavajú denné, cvičné, archívne a guide stránky,
+   takže tá istá CSS išla po drôte na zhruba 10 000 stránkach. Tu je raz.
+   Zvyšok (doska, farby, animácie konkrétnej hry) ostáva v stránke hry.
+
+   Mierku písma a rytmus sekcií drží /style/obsah.css, ktorý stránky hier
+   načítavajú spolu s týmto súborom (body class="noc obsah hra").
+   /style/hub.css sem nepatrí, ten patrí predajnej rodine. */
+
+header{padding-top:env(safe-area-inset-top,0px)}
+.horna b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+.horna .uroven{color:var(--muted);font-size:12px;letter-spacing:.06em;text-transform:uppercase;margin-left:8px;white-space:nowrap}
+.pauza-btn{font:500 12px/1 var(--ui);color:var(--muted);background:transparent;border:1px solid var(--line);border-radius:999px;padding:4px 10px;cursor:pointer;margin-left:8px;vertical-align:1px}
+.pauza-btn:hover{color:var(--ink);border-color:var(--ink)}
+.pauza-blok[hidden]{display:none}
+.pauza-blok p{margin:0;color:var(--body);font-size:15px;line-height:1.5}
+.pauza-blok b{color:var(--ink)}
+.doska.hotovo{border-color:var(--ok);box-shadow:0 0 0 4px rgba(94,207,154,.14)}
+.stav{font-family:var(--ui);font-size:15px;line-height:1.5;color:var(--body);margin:12px 0 0;min-height:1.5em}
+.stav b{color:var(--ink)}
+.stav.ok{color:var(--ok)}
+.oslava-streak{display:block;margin-top:8px;font-family:var(--ui);font-size:13px;color:var(--body)}
+.oslava-dalej{display:block;margin-top:6px;font-family:var(--ui);font-size:13px}
+.oslava-dalej a{color:var(--accent-light)}
+.oslava-pulz{animation:oslava-pulz .3s ease}
+@keyframes oslava-pulz{0%{transform:scale(1)}50%{transform:scale(1.02)}100%{transform:scale(1)}}
+@media (prefers-reduced-motion:reduce){ .oslava-pulz{animation:none} }
+.pasik{display:flex;gap:6px;margin-top:14px}
+.den small{font-size:10px;letter-spacing:.08em}
+.den b{font-size:15px;color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+.den.dnes{border-color:var(--accent);color:var(--accent)}
+.den.rozohrane{border-style:dashed}
+.den.hotove{background:rgba(94,207,154,.12);border-color:var(--ok)}
+.den.hotove b{color:var(--ok)}
+.den.buduci{opacity:.38}
+a.den:hover{border-color:var(--ink);color:var(--ink)}
+.odkazy{font-family:var(--ui);font-size:13px;color:var(--muted);margin:12px 0 0}
+.odkazy a{color:var(--body)}
+.historia{font-family:var(--ui);font-size:13px;color:var(--body);line-height:1.5;margin:10px 0 0}
+.historia b{color:var(--ink)}
+.nastavenia{margin-top:14px;border:1px solid var(--line);border-radius:12px;background:var(--card);padding:0 14px}
+.nastavenia summary{cursor:pointer;font:600 13px/1.4 var(--ui);color:var(--muted);padding:10px 0;list-style:none}
+.nastavenia summary::-webkit-details-marker{display:none}
+.nastavenia[open] summary{color:var(--ink)}
+.nastavenia label{display:flex;gap:10px;align-items:flex-start;font-family:var(--ui);font-size:13px;color:var(--body);line-height:1.5;padding:6px 0}
+.nastavenia input{margin-top:3px;flex:none}
+.nastavenia .fineprint{padding:6px 0 12px;margin:0}
+.navod{font-family:var(--ui);font-size:13px;color:var(--muted);margin:10px 0 0;max-width:none}
+.navod kbd{font-size:12px}
+.pravidla details{border:1px solid var(--line);border-radius:12px;background:var(--card);padding:0 18px;max-width:68ch}
+.pravidla details+details{margin-top:10px}
+.pravidla summary{cursor:pointer;font:600 15px/1.4 var(--ui);color:var(--ink);padding:14px 0;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.pravidla summary::-webkit-details-marker{display:none}
+.pravidla summary::after{content:"";width:.5em;height:.5em;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(45deg);flex:none;margin-right:4px;transition:transform .2s var(--ease)}
+.pravidla details[open] summary::after{transform:rotate(225deg)}
+.pravidla .telo{padding:0 0 16px}
+.pravidla .telo p{margin:0 0 10px}
+.pravidla .telo p:last-child{margin:0}
+.prose p{margin:0 0 14px}
+.prose p:last-child{margin-bottom:0}
+.sub{margin:0 0 6px}
+noscript p{font-family:var(--ui);color:var(--accent-light)}
+
+/* ── Doska na telefóne ────────────────────────────────────────────────────
+   Predtým išla doska na 480 px do krajov obrazovky (margin-inline na celých
+   100vw), takže na nej nebol žiadny bočný okraj a na dvoch hrách z toho
+   vychádzalo 1 px vodorovného preťaženia dokumentu. DESIGN.md 9 chce 16 px
+   okraj a žiadne vodorovné rolovanie; doska si drží aj svoj rám a zaoblenie. */
+@media (max-width:480px){
+  body.noc.hra .doska-obal{margin-inline:calc((100% - 100vw) / 2 + 16px);width:auto}
+  body.noc.hra .doska{border-radius:8px;border-left-width:2px;border-right-width:2px}
+}
+
+/* Hlavička hárku hry stojí tam, kde stál zakázaný eyebrow (DESIGN.md 3). */
+.hra .uv-masthead{margin:clamp(20px,3vw,34px) auto clamp(4px,1vw,12px)}
+.hra .hero{padding-top:clamp(18px,2.2vw,30px)}
+.hra .lead{margin-bottom:14px}
+.hra .uv-actions{margin-top:20px}
+

@@ -1,0 +1,263 @@
+/* Právne, účtové a statické stránky arling.sk (Fable, 20. 9. 2026).
+   Súkromie, Podmienky, GDPR, Odstúpenie, Impressum, Účet, 404 a Pozadia.
+
+   Prečo vznikol. Týchto 26 stránok nemá generátor, takže každá si niesla vlastný
+   vložený <style> s tým istým čítacím stĺpcom a s tou istou snahou zmenšiť nadpisy
+   v dokumente. Snaha bola márna: paper.css má body.noc h2 (0,1,2) a stránka mala
+   .doc h2 (0,1,1), takže nadpis časti dokumentu sa kreslil 48 px namiesto 27 px,
+   ktoré si autor želal. Tu je ten stĺpec a tá mierka definovaná raz, s váhou,
+   ktorá paper.css prebije, a bez toho, aby sa paper.css (10 000 strán) dotkla.
+
+   Mierku, komponenty aj rytmus preberá od úvodu (style/uvod.css, DESIGN.md).
+   Rovnaké názvy tried zámerne: hárok má vyzerať ako jeden katalóg, nie ako
+   dvadsať stránok od dvadsiatich ľudí.
+
+   Čítací stĺpec: 55ch. V ARLing Sans je nula 0,6125 em, ale priemerný znak
+   iba 0,44 em, takže jednotka ch klame: 55ch je pri 17 px asi 572 px a
+   odmerané 64 znaky na riadok. 72ch, ktoré si stránky písali predtým, bolo
+   704 px a 99 znakov. DESIGN.md 2 žiada 54 až 60, zadanie tejto rodiny 65 až
+   75; 64 je jediné číslo, ktoré obe znesú. */
+
+/* ── 1. Mierka a plocha ─────────────────────────────────────────────────── */
+body.noc.pravne{
+  --wrap:min(1240px,92vw);
+  --linka-silna:rgba(255,255,255,.42);
+  --tien:0 26px 60px -20px rgba(0,0,0,.75),0 0 0 1px rgba(255,255,255,.06);
+  /* #74716e na #0a0908 meria 4,10 : 1, pod hranicou 4,5 : 1 z DESIGN.md 4.8.
+     Oprava patrí do paper.css, ten je spoločný pre 10 000 strán, tak sa robí tu:
+     #85817e meria 5,15 : 1 a drží tú istú teplú šeď. */
+  --muted:#85817e;
+  font:17px/1.62 var(--text);
+}
+body.noc.pravne h1{font-size:clamp(34px,4.5vw,60px);font-weight:600;line-height:1.05;letter-spacing:-.024em;margin:0;text-wrap:balance}
+body.noc.pravne h2{font-size:clamp(26px,2.9vw,38px);font-weight:600;line-height:1.08;letter-spacing:-.02em;margin:0;text-wrap:balance}
+body.noc.pravne h3{font-size:18px;font-weight:600;line-height:1.3;letter-spacing:-.01em;margin:0}
+/* Nadpis vnútri dokumentu je očíslovaná časť zmluvy, nie sekcia stránky. */
+body.noc.pravne .doc h2{font-size:clamp(21px,1.9vw,27px);line-height:1.22;letter-spacing:-.015em;margin:clamp(34px,3.2vw,46px) 0 0}
+body.noc.pravne .doc h2:first-child{margin-top:0}
+body.noc.pravne .doc h2+p,body.noc.pravne .doc h2+.rule{margin-top:14px}
+body.noc.pravne .doc h3{margin:26px 0 0}
+/* Rytmus sekcií z DESIGN.md 1, nie 112 px z paper.css. */
+body.noc.pravne section{padding:clamp(52px,6vw,96px) 0}
+.pravne p{max-width:none}
+.pravne a{color:inherit}
+.pravne .doc a,.pravne .uv-colophon a,.pravne .uv-note a,.pravne .uv-facts dd a,.pravne .lead a{color:var(--accent-light)}
+.pravne .doc a:hover,.pravne .uv-colophon a:hover,.pravne .uv-note a:hover,.pravne .uv-facts dd a:hover,.pravne .lead a:hover{color:var(--ink)}
+
+/* ── 2. Hlavička hárku ──────────────────────────────────────────────────── */
+.pravne .uv-masthead{display:flex;justify-content:space-between;gap:12px;padding:10px 0;margin:0;
+  border-top:1px solid var(--linka-silna);border-bottom:1px solid var(--line);
+  font:500 13px/1.3 var(--ui);color:var(--muted);letter-spacing:.01em}
+.pravne .uv-masthead span:nth-child(2){color:var(--body)}
+
+/* ── 3. Úvodný blok: vľavo dokument, vpravo jeho vlastný obsah ──────────── */
+body.noc.pravne .uv-lead{padding:34px 0 0;border-top:0}
+.pravne .uv-lead-grid{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);
+  gap:clamp(28px,5vw,72px);align-items:start;padding:clamp(34px,5vw,64px) 0 clamp(8px,1vw,16px)}
+.pravne .uv-lead-grid.jeden{grid-template-columns:minmax(0,1fr);max-width:62ch}
+.pravne .uv-lead h1{max-width:18ch}
+.pravne .uv-lead-p{margin:22px 0 0;font-size:clamp(18px,1.3vw,21px);line-height:1.5;max-width:46ch;color:var(--body)}
+.pravne .uv-note{margin:16px 0 0;font:500 13.5px/1.5 var(--ui);color:var(--muted);max-width:52ch}
+.pravne .uv-actions{display:flex;flex-wrap:wrap;align-items:center;gap:14px 26px;margin:26px 0 0}
+.pravne .uv-facts{display:grid;grid-template-columns:1fr 1fr;gap:0 28px;margin:34px 0 0;padding:0}
+.pravne .uv-facts div{border-top:1px solid var(--line);padding:11px 0 12px}
+.pravne .uv-facts dt{font:600 12.5px/1.3 var(--ui);color:var(--muted);letter-spacing:.02em}
+.pravne .uv-facts dd{margin:4px 0 0;font-size:15.5px;line-height:1.42;color:var(--body)}
+.pravne .uv-lead-art{margin:0;justify-self:end;width:100%;max-width:400px}
+.pravne .uv-lead-art figcaption{margin-top:14px;font:500 13px/1.45 var(--ui);color:var(--muted)}
+.pravne .uv-lead-page img{display:block;width:100%;height:auto;background:#fff;border:1px solid var(--line);
+  box-shadow:var(--tien),0 0 90px -30px rgba(255,190,140,.22)}
+
+/* ── 4. Obsah dokumentu: pravítkované riadky ako v tlačenom katalógu ────── */
+body.noc.pravne .uv-index-title{font:600 15px/1.3 var(--ui);color:var(--body);margin:0 0 4px;letter-spacing:0}
+.pravne .index{display:flex;flex-direction:column;gap:0;margin:0;border-top:1px solid var(--linka-silna)}
+.pravne .index a{display:flex;align-items:baseline;gap:14px;padding:9px 10px;margin:0 -10px;
+  border-bottom:1px solid var(--line);border-radius:8px;text-decoration:none;color:var(--ink);
+  font:15.5px/1.38 var(--text);transition:background-color .18s var(--ease)}
+.pravne .index a:hover,.pravne .index a:focus-visible{background:rgba(255,255,255,.04)}
+.pravne .index .n{flex:none;width:2.4em;font:500 13px/1.5 var(--ui);color:var(--muted);
+  letter-spacing:.04em;font-variant-numeric:tabular-nums}
+.pravne .index .t{flex:1 1 auto;white-space:normal;overflow:visible;text-overflow:clip}
+.pravne .index .dots{display:none}
+.pravne .index .c{flex:none;font:500 13px/1.5 var(--ui);color:var(--muted)}
+.pravne .index a:hover .t{color:var(--ink)}
+
+/* ── 5. Dokument ────────────────────────────────────────────────────────── */
+/* Dokument je jedna plocha, nie tri striedajúce sa pásma. Časti 1 az 15 tecú
+   za sebou ako v tlačenej príručke; deliacu linku nesie nadpis časti, nie
+   samostatný <div class="rule">. */
+body.noc.pravne .doc-cast{border-top:0;padding:0 0 clamp(30px,3.4vw,52px)}
+body.noc.pravne .doc-cast:first-of-type{padding-top:clamp(20px,2.4vw,36px)}
+body.noc.pravne .doc-cast:last-of-type{padding-bottom:clamp(52px,6vw,96px)}
+.pravne .doc{max-width:55ch}
+/* Číslo časti stojí vo vonkajšom okraji, ako folio v tlačenom zákone.
+   Tým margin nesie údaj, nie prázdno, a čitateľ vidí, kde v dokumente je. */
+body.noc.pravne .doc h2{position:relative;border-top:1px solid var(--line);padding-top:clamp(18px,1.9vw,26px)}
+body.noc.pravne .doc h2:first-child{border-top-color:var(--linka-silna)}
+.pravne .doc h2 .c{position:absolute;left:calc(100% + 30px);top:calc(clamp(18px,1.9vw,26px) + .28em);
+  font:500 13px/1 var(--ui);color:var(--muted);font-variant-numeric:tabular-nums;letter-spacing:.06em}
+.pravne .doc p{margin:0 0 15px}
+.pravne .doc p:last-child{margin-bottom:0}
+body.noc.pravne .doc p b,body.noc.pravne .doc p strong{color:var(--ink);font-weight:600}
+.pravne .doc address{font-style:normal;margin:0 0 15px}
+body.noc.pravne .doc .small{font-family:var(--ui);font-size:14px;line-height:1.55;color:var(--muted)}
+/* Údaje o firme: menovka nad hodnotou, aby na 390 px nevznikol úzky stĺpec textu. */
+.pravne .doc dl{margin:0 0 18px;padding:0;border-top:1px solid var(--line)}
+.pravne .doc dl div{border-bottom:1px solid var(--line);padding:10px 0 11px}
+.pravne .doc dt{font:600 12.5px/1.3 var(--ui);color:var(--muted);letter-spacing:.02em}
+.pravne .doc dd{margin:4px 0 0;font-size:16px;line-height:1.45;color:var(--body)}
+/* Linka pod nadpisom sa v paper.css kreslí až s triedou .in, ktorú pridával
+   pozorovateľ sekcií. Ten je preč, tak je linka rovno nakreslená. */
+.pravne .rule{transform:none;transition:none;margin:20px 0 24px}
+.pravne .doc .rule{margin:16px 0 20px}
+
+/* Vzorový formulár na odstúpenie: list, ktorý sa dá skopírovať vcelku. */
+.pravne .vzor{border:1px solid var(--line);border-radius:14px;background:var(--card-plna);
+  padding:clamp(18px,2.4vw,30px);margin:22px 0 26px}
+.pravne .vzor p{margin:0 0 14px;font-size:16px;line-height:1.55}
+.pravne .vzor p:last-child{margin:0}
+body.noc.pravne .vzor .nadpis{font:600 15px/1.3 var(--display);color:var(--ink);letter-spacing:-.01em}
+.pravne .vzor .pozn{font:500 13.5px/1.5 var(--ui);color:var(--muted)}
+
+/* ── 6. Zhrnutie na atramente ───────────────────────────────────────────── */
+body.noc.pravne .band{background:var(--paper-deep);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+body.noc.pravne .band h2,body.noc.pravne .band h3{color:var(--ink)}
+body.noc.pravne .band a{color:var(--accent-light)}
+body.noc.pravne .band .rule{background:var(--line)}
+/* Zhrnutie: každý riadok vedie na svoju očíslovanú časť, nie druhý opis dokumentu. */
+.pravne .uv-zhrnutie{list-style:none;margin:22px 0 0;padding:0;border-top:1px solid var(--linka-silna);max-width:55ch}
+.pravne .uv-zhrnutie li{border-bottom:1px solid var(--line)}
+.pravne .uv-zhrnutie a{display:grid;grid-template-columns:2.4em minmax(0,1fr);gap:14px;align-items:baseline;
+  padding:11px 10px;margin:0 -10px;border-radius:8px;text-decoration:none;color:inherit;
+  transition:background-color .18s var(--ease)}
+.pravne .uv-zhrnutie a:hover,.pravne .uv-zhrnutie a:focus-visible{background:rgba(255,255,255,.04)}
+.pravne .uv-zhrnutie .n{font:500 13px/1.5 var(--ui);color:var(--muted);font-variant-numeric:tabular-nums}
+body.noc.pravne .uv-zhrnutie strong{display:block;font:600 16px/1.35 var(--display);color:var(--ink);letter-spacing:-.01em}
+.pravne .uv-zhrnutie span.t{display:block;margin-top:3px;font-size:15.5px;line-height:1.45;color:var(--body)}
+
+/* ── 7. Tlačidlá a tiché odkazy ─────────────────────────────────────────── */
+body.noc.pravne .btn{height:48px;border-radius:10px;font:600 15px/1 var(--ui)}
+body.noc.pravne .btn-solid{background:var(--accent);color:#0a0908}
+body.noc.pravne .btn-solid:hover{background:#ff7a55;color:#0a0908}
+body.noc.pravne .btn-line{border-color:rgba(255,255,255,.35);color:var(--ink);background:transparent;font-weight:500}
+body.noc.pravne .btn-line:hover{background:rgba(255,255,255,.06);color:var(--ink);border-color:rgba(255,255,255,.5)}
+.pravne .uv-quiet{font:500 15px/1.4 var(--ui);color:var(--body);text-decoration:underline;
+  text-decoration-thickness:1px;text-underline-offset:.18em;text-decoration-color:rgba(255,255,255,.25)}
+.pravne .uv-quiet:hover{color:var(--ink);text-decoration-color:var(--accent)}
+
+/* ── 8. Tiráž: kto vydáva, ako sa platí, čo je verejné ──────────────────── */
+body.noc.pravne .uv-colophon{margin-top:0;border-top:1px solid var(--linka-silna);
+  padding:clamp(36px,4.5vw,64px) 0 clamp(32px,4vw,56px)}
+.pravne .uv-colophon-rows{display:grid;grid-template-columns:1fr 1fr;gap:0 40px;margin:22px 0 0;padding:0;border-top:0}
+.pravne .uv-colophon-rows div{border-top:1px solid var(--line);border-bottom:0;padding:12px 0 14px}
+.pravne .uv-colophon-rows dt{font:600 12.5px/1.3 var(--ui);color:var(--muted);letter-spacing:.02em}
+.pravne .uv-colophon-rows dd{margin:5px 0 0;font-size:15.5px;line-height:1.45;color:var(--body)}
+
+/* ── 9. Jediný autorský pohyb: úvodná dvojstrana sa usadí ───────────────── */
+.pravne .uv-usadenie{animation:pravne-usadenie .85s var(--spring) both}
+@keyframes pravne-usadenie{from{opacity:0;transform:translate3d(0,16px,0)}to{opacity:1;transform:none}}
+
+/* ── 10. Účet: hárok nákupov, prihlásenie, prázdny stav ─────────────────── */
+.pravne .uv-sheet{list-style:none;margin:22px 0 0;padding:0;border-top:1px solid var(--linka-silna)}
+.pravne .uv-sheet li{border-bottom:1px solid var(--line)}
+.pravne .uv-sheet-row{display:grid;grid-template-columns:56px minmax(0,1fr) minmax(110px,auto) minmax(150px,auto);
+  gap:10px 22px;align-items:center;padding:14px 12px;margin:0 -12px}
+.pravne .uv-sheet-row.bez-obalky{grid-template-columns:minmax(0,1fr) minmax(110px,auto) minmax(150px,auto)}
+.pravne .uv-sheet img{width:56px;height:74px;object-fit:cover;object-position:top;display:block;
+  border:1px solid var(--line);background:#fff}
+body.noc.pravne .uv-row-main strong{display:block;font:600 18px/1.25 var(--display);color:var(--ink);letter-spacing:-.01em}
+.pravne .uv-row-main span{display:block;margin-top:3px;font-size:15.5px;line-height:1.4;color:var(--body)}
+.pravne .uv-row-format{font:500 13px/1.35 var(--ui);color:var(--muted)}
+.pravne .uv-row-price{font:600 16px/1.2 var(--ui);color:var(--ink);text-align:right;white-space:nowrap;
+  font-variant-numeric:tabular-nums}
+.pravne .uv-row-price small{display:block;font:400 12px/1.4 var(--ui);color:var(--muted)}
+.pravne .uv-row-akcia{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+.pravne .uv-row-akcia .btn{height:38px;padding:0 15px;font-size:14px}
+.pravne .uv-row-akcia .vedlajsi,.pravne .uv-row-akcia .poznamka{margin:0;font:500 13px/1.45 var(--ui);color:var(--muted);max-width:30ch}
+
+.pravne .prihlasenie{display:flex;flex-wrap:wrap;gap:12px 14px;align-items:end;max-width:460px;margin:26px 0 0}
+.pravne .prihlasenie .pole{flex:1 1 220px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.pravne .prihlasenie label{font:600 12.5px/1.3 var(--ui);color:var(--muted);letter-spacing:.02em}
+.pravne .prihlasenie input{width:100%;box-sizing:border-box;font:16px/1.4 var(--ui);color:var(--ink);
+  background:var(--card-plna);border:1px solid var(--line);border-radius:10px;padding:12px 13px;caret-color:var(--accent)}
+.pravne .prihlasenie input:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-color:var(--ink)}
+.pravne .prihlasenie .btn{flex:none}
+.pravne .hlaska{font:500 14px/1.6 var(--ui);color:var(--body);margin:12px 0 0;max-width:52ch;min-height:1.4em}
+.pravne .hlaska-chyba{color:var(--accent-light);font-weight:600}
+.pravne .hlaska-ok{color:var(--ok);font-weight:600}
+.pravne .pomoc{font:500 13.5px/1.55 var(--ui);color:var(--muted);margin:10px 0 0;max-width:52ch}
+.pravne .odkaz-btn{background:none;border:0;padding:0;margin:0;font:inherit;color:var(--body);
+  text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px;cursor:pointer}
+.pravne .odkaz-btn:hover{color:var(--ink)}
+.pravne .stav{border-top:1px solid var(--linka-silna);border-bottom:1px solid var(--line);padding:11px 0;margin:26px 0 0;
+  font:500 14px/1.5 var(--ui);color:var(--body);max-width:52ch}
+body.noc.pravne .stav b{color:var(--ink);font-weight:600}
+.pravne .prazdny{margin:22px 0 0;font-size:16px;line-height:1.55;color:var(--muted);max-width:50ch}
+
+/* Hry: sekvencia riadkov, nie mriežka kariet. */
+.pravne .hra-blok{padding:20px 0;border-top:1px solid var(--line)}
+.pravne .hra-blok:first-child{padding-top:0;border-top:0}
+.pravne .hry-fakty{display:flex;gap:10px 28px;flex-wrap:wrap;margin:10px 0 16px}
+.pravne .hry-fakty div{min-width:104px}
+body.noc.pravne .hry-fakty b{display:block;font:600 26px/1 var(--display);color:var(--ink);font-variant-numeric:tabular-nums}
+.pravne .hry-fakty span{display:block;font:500 12.5px/1.3 var(--ui);color:var(--muted);margin-top:4px}
+.pravne .hra-blok .btn{height:38px;padding:0 15px;font-size:14px}
+
+/* Otázky a odpovede. */
+.pravne details.qa{border-top:1px solid var(--line);padding:14px 0}
+.pravne details.qa:last-of-type{border-bottom:1px solid var(--line)}
+body.noc.pravne details.qa>summary{list-style:none;cursor:pointer;font:600 17px/1.35 var(--display);color:var(--ink);
+  display:flex;align-items:center;gap:12px}
+.pravne details.qa>summary::-webkit-details-marker{display:none}
+.pravne details.qa>summary::before{content:"";flex:none;width:9px;height:9px;border-right:1.5px solid var(--accent);
+  border-bottom:1.5px solid var(--accent);transform:rotate(-45deg);transition:transform .2s var(--ease)}
+.pravne details.qa[open]>summary::before{transform:rotate(45deg)}
+.pravne details.qa p{margin:12px 0 0 21px;max-width:50ch;font-size:16px;line-height:1.55}
+
+/* ── 11. Pozadia: vnútorná ukážka, jediné miesto s viacerými plátnami ───── */
+.pravne .ukazky{display:grid;gap:clamp(18px,2.4vw,30px);grid-template-columns:repeat(auto-fit,minmax(min(420px,100%),1fr))}
+.pravne .ukazka{position:relative;isolation:isolate;border:1px solid var(--line);border-radius:14px;
+  overflow:hidden;aspect-ratio:16/10;background:var(--paper-deep)}
+.pravne .ukazka canvas{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none;z-index:0;
+  -webkit-mask-image:none;mask-image:none;transform:none;left:0;max-width:none}
+.pravne .ukazka .popis{position:relative;z-index:1;padding:clamp(16px,2vw,24px);display:flex;
+  flex-direction:column;justify-content:flex-end;height:100%}
+body.noc.pravne .ukazka h2{font-size:clamp(20px,2vw,26px);margin:0 0 6px}
+.pravne .ukazka p{margin:0;font-size:14.5px;line-height:1.5;max-width:44ch}
+.pravne .ukazka .kde{margin-top:10px;font:500 12.5px/1.4 var(--ui);color:var(--muted)}
+.pravne .ukazka code{font-size:12px}
+
+/* ── 12. Zlomy ──────────────────────────────────────────────────────────── */
+@media(max-width:1040px){
+  /* Pod 1040 px už vonkajší okraj nie je, tak sa číslo časti vráti do riadku. */
+  .pravne .doc h2 .c{position:static;display:inline;margin-right:.5em;font-size:inherit;color:var(--muted)}
+  .pravne .doc h2 .c::after{content:"."}
+  .pravne .uv-lead-grid{grid-template-columns:1fr;gap:34px}
+  .pravne .uv-lead-art{justify-self:start;max-width:340px}
+  .pravne .uv-sheet-row{grid-template-columns:56px minmax(0,1fr);gap:8px 18px}
+  .pravne .uv-sheet-row.bez-obalky{grid-template-columns:minmax(0,1fr)}
+  .pravne .uv-sheet-row .uv-row-format,.pravne .uv-sheet-row .uv-row-price,.pravne .uv-sheet-row .uv-row-akcia{grid-column:2}
+  .pravne .uv-sheet-row.bez-obalky .uv-row-format,
+  .pravne .uv-sheet-row.bez-obalky .uv-row-price,
+  .pravne .uv-sheet-row.bez-obalky .uv-row-akcia{grid-column:1}
+  .pravne .uv-row-price{text-align:left}
+  .pravne .uv-row-price small{display:inline;margin-left:8px}
+}
+@media(max-width:680px){
+  .pravne .uv-lead{padding-top:20px}
+  .pravne .uv-masthead{flex-wrap:wrap;gap:6px 14px;font-size:12.5px}
+  .pravne .uv-masthead span:last-child{width:100%}
+  body.noc.pravne h1{font-size:clamp(30px,8.4vw,38px)}
+  .pravne .uv-lead h1{max-width:none}
+  .pravne .uv-lead-p{font-size:17.5px}
+  .pravne .uv-facts,.pravne .uv-colophon-rows{grid-template-columns:1fr}
+  .pravne .uv-lead-art{max-width:280px}
+  .pravne .prihlasenie .btn{width:100%}
+  .pravne .index .c{flex-basis:100%;padding-left:calc(2.4em + 14px);margin-top:2px}
+  .pravne .uv-zhrnutie a{grid-template-columns:minmax(0,1fr)}
+  .pravne .uv-zhrnutie .n{display:none}
+}
+@media(prefers-reduced-motion:reduce){
+  .pravne .uv-usadenie{animation:none}
+  .pravne .index a,.pravne .uv-zhrnutie a,.pravne details.qa>summary::before{transition:none}
+}
