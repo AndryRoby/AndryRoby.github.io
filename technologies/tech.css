@@ -1,0 +1,412 @@
+/* Technológie webov / Stacklog. Len to, čo je vlastné tomuto nástroju.
+   Všetky farby, písma, tlačidlá, hlavička a pätička sú z /style/paper.css
+   a /style/nastroj.css (body class="noc nastroj"). Tu nie je ani jedna farba,
+   ktorá by nebola tokenom hubu.
+
+   Rukopis stránky: meračský hárok. Silná linka otvára blok, vlasové linky
+   oddeľujú riadky, čísla sú tabuľkové, medená je len na troch miestach
+   (jedno tlačidlo, nameraný pruh v riadku, rast v krivke). Žiadne karty,
+   žiadne mriežky kariet, žiadne ikony namiesto obsahu.
+
+   Generuje: ops/technologie/postav.mjs. Neupravovať vygenerované HTML. */
+
+/* ── 1. Lokálne tokeny ─────────────────────────────────────────────────── */
+body.noc.nastroj{
+  --rast:#f2643c;                    /* rast: medená */
+  --pokles:#8a8784;                  /* pokles: tlmená, nikdy zelená a červená samé */
+  --gutter:clamp(56px,7vw,84px);     /* ľavý stĺpec dátumov v denníku */
+}
+
+/* Kotvy nesmú skončiť pod pevnou hlavičkou. */
+.th-sek{scroll-margin-top:calc(var(--hlavicka,72px) + 12px)}
+/* Rytmus hárku je tesnejší než predvolený nočný (112 px robí z tabuliek ostrovy). */
+body.nastroj main section.th-sek{padding:clamp(38px,4.4vw,66px) 0}
+body.nastroj main>.wrap{padding-bottom:clamp(44px,5vw,78px)}
+body.nastroj main .th-doc ul+.th-akcie,body.nastroj main .th-akcie{margin-top:24px}
+
+/* ── 2. Hlavička hárku: cesty produktu medzi silnou a slabou linkou ─────
+   Nahrádza eyebrow nad nadpisom (ten je zakázaný) a je to zároveň jediná
+   navigácia nástroja. Hlavička hubu patrí obalu a cudzie odkazy do nej nesmú,
+   preto slabiny a metóda visia tu, hneď nad nadpisom, nie v pätičke. */
+.th-masthead{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 22px;
+  padding:9px 0 10px;margin:0;border-top:1px solid var(--linka-silna);border-bottom:1px solid var(--line)}
+.th-masthead a{font:500 13px/1.6 var(--ui);color:var(--muted);letter-spacing:.01em;
+  text-decoration:none;white-space:nowrap}
+.th-masthead a:first-child{font-weight:600;color:var(--body)}
+.th-masthead a:hover{color:var(--ink)}
+/* Podčiarknutie drží text, nie okraj riadku: na 390 px sa navigácia zalomí
+   a absolútne umiestnená linka by preškrtla položku na ďalšom riadku. */
+.th-masthead a[aria-current="page"]{color:var(--ink);text-decoration:underline;
+  text-decoration-color:var(--accent);text-decoration-thickness:1.5px;text-underline-offset:7px}
+
+/* ── 3. Úvodný blok ───────────────────────────────────────────────────── */
+.th-lead{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);
+  gap:clamp(30px,5vw,72px);align-items:start;padding:clamp(34px,5vw,60px) 0 clamp(24px,3vw,40px)}
+.th-lead>div{min-width:0}
+.th-lead h1{margin:0;max-width:16ch;text-wrap:balance}
+.th-lead-p{margin:20px 0 0;font-size:clamp(17px,1.25vw,20px);line-height:1.5;max-width:56ch;color:var(--body)}
+
+/* Vyhľadávacie pole. Jediná akcia na stránke, preto je najväčšia vec pod nadpisom. */
+.th-navestie{display:block;margin:28px 0 8px;font:600 12.5px/1.3 var(--ui);color:var(--muted);letter-spacing:.02em}
+.th-form{display:flex;gap:10px;margin:0;max-width:560px;flex-wrap:wrap}
+.th-pole{flex:1 1 260px;min-width:0;display:flex;align-items:center;gap:0;
+  background:var(--card-plna);border:1px solid rgba(255,255,255,.18);border-radius:10px;
+  transition:border-color .18s var(--ease),box-shadow .18s var(--ease)}
+.th-pole:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px rgba(242,100,60,.18)}
+.th-pole span{padding:0 0 0 14px;font:500 15px/1 var(--mono);color:var(--muted);user-select:none}
+body.noc.nastroj .th-pole input{flex:1;min-width:0;background:none;border:0;border-radius:0;outline:none;
+  box-shadow:none;padding:13px 14px 13px 6px;font:500 16px/1.2 var(--mono);color:var(--ink);caret-color:var(--accent)}
+body.noc.nastroj .th-pole input:focus{border:0;box-shadow:none}
+.th-pole input::placeholder{color:var(--muted);opacity:.8}
+.th-form .btn{flex:0 0 auto}
+.th-pod{margin:14px 0 0;font:500 13.5px/1.5 var(--ui);color:var(--muted);max-width:52ch}
+
+/* Štyri fakty, každý pod vlastnou linkou. */
+.th-facts{display:grid;grid-template-columns:1fr 1fr;gap:0 30px;margin:32px 0 0;padding:0}
+.th-facts div{border-top:1px solid var(--line);padding:11px 0 12px;min-width:0}
+.th-facts dt{font:600 12.5px/1.3 var(--ui);color:var(--muted);letter-spacing:.02em}
+.th-facts dd{margin:4px 0 0;font:15px/1.45 var(--ui);color:var(--body);max-width:36ch}
+
+/* ── 4. Schéma merania: jedna požiadavka, päť čítaní ───────────────────── */
+/* Nie snímka, ktorú nemáme, a nie ikony. Kreslené linkami: vľavo zvislá os,
+   z nej krátke zárezy k piatim riadkom. Je to fakt o našom softvéri. */
+.th-pipe{margin:0;border-top:1px solid var(--linka-silna);padding-top:18px}
+.th-pipe h2{font-size:clamp(19px,1.6vw,23px)!important;margin:0 0 8px}
+.th-pipe>p{font:15px/1.5 var(--ui);color:var(--muted);margin:0 0 18px;max-width:46ch}
+.th-pipe ol{list-style:none;margin:0;padding:0 0 0 20px;position:relative}
+.th-pipe ol::before{content:"";position:absolute;left:0;top:10px;bottom:10px;width:1px;background:rgba(255,255,255,.22)}
+.th-pipe li{position:relative;display:grid;grid-template-columns:minmax(76px,auto) minmax(0,1fr);
+  gap:4px 16px;padding:10px 0;border-bottom:1px solid var(--line)}
+.th-pipe li:last-child{border-bottom:0}
+.th-pipe li::before{content:"";position:absolute;left:-20px;top:20px;width:12px;height:1px;background:rgba(255,255,255,.22)}
+.th-pipe li:last-child::before{background:var(--accent);width:16px}
+.th-pipe b{font:600 13px/1.5 var(--ui);color:var(--ink);letter-spacing:.01em}
+.th-pipe span{font:13.5px/1.5 var(--mono);color:var(--muted);overflow-wrap:anywhere}
+.th-pipe li:last-child span{color:var(--body);font-family:var(--ui)}
+
+/* ── 5. Denník zmien: dátum v ľavom žľabe, zmena vpravo ────────────────── */
+.th-ledger{list-style:none;margin:22px 0 0;padding:0;border-top:1px solid var(--linka-silna)}
+.th-ledger li{display:grid;grid-template-columns:var(--gutter) minmax(0,1fr);gap:2px 20px;
+  padding:12px 0;border-bottom:1px solid var(--line);align-items:baseline}
+.th-ledger time{font:500 13px/1.5 var(--mono);color:var(--muted);font-variant-numeric:tabular-nums}
+.th-ledger b{font:600 15.5px/1.4 var(--ui);color:var(--ink);overflow-wrap:anywhere}
+.th-ledger p{margin:3px 0 0;font:14.5px/1.45 var(--ui);color:var(--body)}
+.th-ledger .th-od{color:var(--muted)}
+.th-prazdne{margin:22px 0 0;padding:18px 0 0;border-top:1px solid var(--linka-silna);
+  font:15.5px/1.55 var(--ui);color:var(--muted);max-width:60ch}
+
+/* ── 6. Katalóg kategórií: pravítkované riadky v dvoch stĺpcoch ────────── */
+.th-cats{display:grid;grid-template-columns:1fr 1fr;gap:0 40px;margin:24px 0 0;padding:0;list-style:none}
+.th-cats li{border-top:1px solid var(--line);padding:12px 0 13px;min-width:0}
+.th-cats b{display:block;font:600 16px/1.3 var(--ui);color:var(--ink)}
+.th-cats span{display:block;margin-top:3px;font:13px/1.5 var(--mono);color:var(--muted)}
+
+/* ── 7. Tabuľka merania ───────────────────────────────────────────────── */
+/* Menovateľ nad tabuľkou: jeden riadok údajov, nie schovaná poznámka pod čiarou. */
+.th-panel{display:flex;flex-wrap:wrap;gap:6px 30px;margin:0 0 6px;padding:13px 0 0;
+  border-top:1px solid var(--linka-silna);font:500 13.5px/1.5 var(--ui);color:var(--muted)}
+.th-panel>div{display:flex;align-items:baseline;gap:8px;min-width:0}
+.th-panel dt{color:var(--muted)}
+.th-panel dd{margin:0;color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+.th-pravidla{margin:10px 0 0;font:500 13px/1.55 var(--ui);color:var(--muted);max-width:74ch}
+/* Na širokej obrazovke sa tabuľky neposúvajú, takže veta o posúvaní tam nepatrí. */
+.th-posun{display:none}
+@media (max-width:860px){.th-posun{display:block;margin:8px 0 0;font:500 13px/1.5 var(--ui);color:var(--muted)}}
+
+/* Dvojice názov a hodnota pod sebou (limity API). */
+.th-def{margin:18px 0 0;padding:0;border-top:1px solid var(--linka-silna);max-width:70ch}
+.th-def>div{display:grid;grid-template-columns:minmax(140px,auto) minmax(0,1fr);gap:3px 24px;
+  padding:11px 0 12px;border-bottom:1px solid var(--line)}
+.th-def dt{font:600 14px/1.5 var(--ui);color:var(--ink)}
+.th-def dd{margin:0;font:15px/1.5 var(--ui);color:var(--body)}
+
+.th-tabh{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;
+  gap:6px 18px;margin:clamp(30px,3.5vw,48px) 0 0}
+.th-tabh h2{font-size:clamp(20px,1.8vw,26px)!important;margin:0}
+.th-tabh p{margin:0;font:500 13px/1.5 var(--ui);color:var(--muted);font-variant-numeric:tabular-nums}
+
+.th-scroll{margin:12px 0 0}
+table.th-tab{width:100%;border-collapse:separate;border-spacing:0;font-family:var(--ui)}
+table.th-tab th,table.th-tab td{border-bottom:1px solid var(--line);padding:10px 14px;text-align:left;vertical-align:baseline}
+table.th-tab thead th{position:sticky;top:var(--hlavicka,72px);z-index:2;background:#0a0908;
+  border-top:1px solid var(--linka-silna);border-bottom:1px solid var(--line);
+  font:600 12.5px/1.3 var(--ui);color:var(--muted);letter-spacing:.01em;white-space:nowrap;padding:9px 14px}
+table.th-tab th:first-child,table.th-tab td:first-child{padding-left:0}
+table.th-tab th:last-child,table.th-tab td:last-child{padding-right:0;text-align:right}
+table.th-tab tbody tr:hover td{background:rgba(255,255,255,.035)}
+table.th-tab .n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+table.th-tab .nazov{font:600 15.5px/1.4 var(--ui);color:var(--ink)}
+table.th-tab .nazov small{display:block;font:400 12px/1.4 var(--ui);color:var(--muted);margin-top:2px}
+
+/* Triedenie: menovka je tlačidlo, šípka je kreslená, nie glyf. */
+.th-sort{display:inline-flex;align-items:center;gap:7px;background:none;border:0;padding:0;
+  font:inherit;color:inherit;cursor:pointer}
+.th-sort::after{content:"";width:0;height:0;border-left:3.5px solid transparent;border-right:3.5px solid transparent;
+  border-bottom:4px solid currentColor;opacity:0;transition:opacity .15s var(--ease),transform .15s var(--ease)}
+.th-sort:hover{color:var(--ink)}
+[aria-sort] .th-sort{color:var(--ink)}
+[aria-sort="ascending"] .th-sort::after{opacity:1}
+[aria-sort="descending"] .th-sort::after{opacity:1;transform:rotate(180deg)}
+
+/* Nameraný pruh pod číslom. Je to meranie, nie ozdoba: šírka = hodnota.
+   Dráha je vo všetkých riadkoch rovnako dlhá a zarovnaná pod číslo, takže sa
+   dĺžky dajú porovnať okom bez čítania čísel. */
+.th-bar{display:block;height:2px;width:100%;max-width:150px;margin:5px 0 0 auto;
+  background:rgba(255,255,255,.10);border-radius:1px}
+.th-bar i{display:block;height:100%;background:var(--accent);border-radius:1px;opacity:.85}
+
+.th-zmena.hore{color:var(--rast)}
+.th-zmena.dole,.th-zmena.nula{color:var(--pokles)}
+.th-malo{color:var(--muted);font-style:normal}
+.th-spark{display:inline-block;vertical-align:middle}
+.th-spark polyline{fill:none;stroke-width:1.5;stroke-linejoin:round;stroke-linecap:round}
+.th-spark.hore polyline{stroke:var(--accent)}
+.th-spark.dole polyline,.th-spark.nula polyline{stroke:var(--pokles)}
+
+/* ── 8. Oznam o ukážke. Nedá sa zavrieť a je prvá vec nad tabuľkou. ────── */
+.th-oznam{margin:clamp(16px,2vw,26px) 0 0;padding:16px 18px;border:1px solid rgba(242,100,60,.32);
+  border-radius:12px;background:rgba(242,100,60,.07);max-width:74ch}
+.th-oznam b{display:block;font:600 15.5px/1.35 var(--ui);color:var(--ink);margin-bottom:6px}
+.th-oznam p{margin:0;font:14.5px/1.55 var(--ui);color:var(--body)}
+
+/* ── 9. Prepínač domény najvyššej úrovne ──────────────────────────────── */
+.th-tld{display:flex;gap:8px;margin:22px 0 0;padding:0;list-style:none;flex-wrap:wrap}
+.th-tld a{display:inline-flex;align-items:center;min-height:40px;padding:0 16px;border-radius:10px;
+  border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.03);
+  font:600 14px/1 var(--ui);color:var(--body);text-decoration:none;font-variant-numeric:tabular-nums}
+.th-tld a:hover{color:var(--ink);border-color:rgba(255,255,255,.34)}
+.th-tld a[aria-current="true"]{color:#0a0908;background:var(--accent);border-color:var(--accent)}
+
+/* ── 10. Výsledok kontroly ────────────────────────────────────────────── */
+.th-vysledok{margin:clamp(28px,3.5vw,44px) 0 0}
+.th-vysledok[hidden]{display:none}
+.th-hlava{border-top:1px solid var(--linka-silna);padding-top:16px}
+.th-hlava h2{font-size:clamp(22px,2.2vw,30px)!important;margin:0;overflow-wrap:anywhere}
+.th-hlava dl{display:flex;flex-wrap:wrap;gap:4px 26px;margin:10px 0 0}
+.th-zmeny-h{margin:30px 0 0!important}
+.th-hlava div{display:flex;gap:8px;align-items:baseline;min-width:0}
+.th-hlava dt{font:600 12.5px/1.5 var(--ui);color:var(--muted)}
+.th-hlava dd{margin:0;font:13.5px/1.5 var(--mono);color:var(--body);overflow-wrap:anywhere}
+.th-stav{display:inline-flex;align-items:center;gap:7px;border-radius:999px;padding:4px 12px;
+  border:1px solid rgba(255,255,255,.16);font:500 12.5px/1.3 var(--ui);color:var(--muted)}
+.th-stav.zivy{border-color:rgba(242,100,60,.4);color:#ffb59d}
+
+.th-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,320px);gap:clamp(24px,3vw,48px);
+  align-items:start;margin-top:22px}
+.th-grid>*{min-width:0}
+
+/* Nálezy: riadok s dôkazom, ktorý sa dá rozbaliť. */
+.th-nalezy{width:100%;border-collapse:separate;border-spacing:0;font-family:var(--ui)}
+.th-nalezy caption{text-align:left;font:600 12.5px/1.3 var(--ui);color:var(--muted);padding:0 0 8px}
+.th-nalezy th{position:sticky;top:var(--hlavicka,72px);z-index:2;background:#0a0908;text-align:left;
+  font:600 12.5px/1.3 var(--ui);color:var(--muted);padding:9px 12px 9px 0;
+  border-top:1px solid var(--linka-silna);border-bottom:1px solid var(--line);white-space:nowrap}
+.th-nalezy td{padding:10px 12px 10px 0;border-bottom:1px solid var(--line);vertical-align:baseline}
+.th-nalezy tr:hover td{background:rgba(255,255,255,.035)}
+.th-kat{font:600 12.5px/1.4 var(--ui);color:var(--muted);white-space:nowrap}
+.th-nalezy .meno{font:600 15.5px/1.35 var(--ui);color:var(--ink)}
+.th-nalezy .verzia{font:500 13px/1.4 var(--mono);color:var(--body);font-variant-numeric:tabular-nums}
+.th-istota{font:500 12.5px/1.3 var(--ui);color:var(--muted);white-space:nowrap}
+.th-istota.certain{color:#ffb59d}
+.th-dokaz{background:none;border:0;padding:0;font:500 12.5px/1.3 var(--ui);color:var(--body);
+  cursor:pointer;text-decoration:underline;text-decoration-color:rgba(255,255,255,.28);text-underline-offset:.2em}
+.th-dokaz:hover{color:var(--ink);text-decoration-color:var(--accent)}
+.th-dokazy td{padding-top:0;padding-bottom:14px}
+.th-dokazy ul{list-style:none;margin:0;padding:0}
+.th-dokazy li{display:grid;grid-template-columns:minmax(92px,auto) minmax(0,1fr);gap:2px 14px;padding:4px 0}
+.th-dokazy dfn{font:500 12px/1.5 var(--ui);color:var(--muted);font-style:normal}
+body.noc .th-dokazy code{display:block;background:none;border:0;border-radius:0;padding:0;
+  font:12.5px/1.5 var(--mono);color:#e8c9bd;overflow-wrap:anywhere}
+
+/* Pravý stĺpec: prvky webu a trinásť kontrol hygieny. */
+.th-rail h3{font-size:16px!important;margin:0 0 8px}
+.th-rail+.th-rail{margin-top:26px}
+.th-rail dl,.th-rail ul{margin:0;padding:0;list-style:none;border-top:1px solid var(--linka-silna)}
+.th-rail dl div,.th-rail li{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,auto);
+  gap:2px 14px;padding:8px 0;border-bottom:1px solid var(--line);align-items:baseline}
+.th-rail dt,.th-rail .co{font:500 13.5px/1.4 var(--ui);color:var(--body)}
+.th-rail dd,.th-rail .ako{margin:0;font:500 13px/1.4 var(--mono);color:var(--ink);text-align:right;
+  font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.th-rail .stav{font:500 12.5px/1.4 var(--ui);text-align:right;white-space:nowrap}
+.th-rail .stav.pass{color:var(--ok)}
+.th-rail .stav.warn{color:#ffb59d}
+.th-rail .stav.fail{color:var(--accent)}
+.th-rail .preco{grid-column:1/-1;margin:2px 0 0;font:12.5px/1.5 var(--ui);color:var(--muted)}
+
+.th-stav-riadok{margin:14px 0 0;font:500 13.5px/1.5 var(--ui);color:var(--muted)}
+.th-chyba{margin:18px 0 0;padding:14px 16px;border:1px solid rgba(242,100,60,.4);border-radius:12px;
+  background:rgba(242,100,60,.06);font:15px/1.5 var(--ui);color:var(--body);max-width:62ch}
+.th-chyba b{display:block;color:var(--ink);font-weight:600;margin-bottom:4px}
+.th-chyba code{font:12.5px/1.5 var(--mono)}
+
+/* Jediný autorský pohyb na stránke: výsledok sa usadí, keď dorazí. */
+@media (prefers-reduced-motion:no-preference){
+  .th-usadenie{animation:th-usad .42s cubic-bezier(.16,1,.3,1) both}
+}
+@keyframes th-usad{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+/* ── 11. Dokumenty (metodika, robot, podmienky) ───────────────────────── */
+.th-doc{max-width:68ch}
+.th-doc section{padding:clamp(22px,2.4vw,32px) 0 0;border-top:1px solid var(--line);margin-top:clamp(22px,2.4vw,32px)}
+.th-doc>section:first-child{border-top:1px solid var(--linka-silna);margin-top:clamp(8px,1.2vw,16px)}
+.th-doc h2{font-size:clamp(20px,1.9vw,26px)!important;margin:0 0 10px}
+.th-doc p{font:16px/1.62 var(--ui);color:var(--body);margin:0 0 12px;max-width:66ch}
+.th-doc ul{margin:10px 0 0;padding:0;list-style:none}
+.th-doc ul li{position:relative;padding:8px 0 9px 18px;border-top:1px solid var(--line);
+  font:15.5px/1.55 var(--ui);color:var(--body)}
+.th-doc ul li::before{content:"";position:absolute;left:0;top:16px;width:7px;height:1px;background:var(--accent)}
+.th-doc dl{margin:10px 0 0;padding:0}
+.th-doc dl div{display:grid;grid-template-columns:minmax(110px,auto) minmax(0,1fr);gap:3px 20px;
+  padding:9px 0 10px;border-top:1px solid var(--line)}
+.th-doc dt{font:600 14px/1.5 var(--ui);color:var(--ink)}
+.th-doc dd{margin:0;font:15px/1.55 var(--ui);color:var(--body)}
+.th-doc pre{margin:12px 0 0;background:rgba(255,255,255,.035);border:1px solid var(--line);
+  border-radius:10px;padding:13px 15px;font:13px/1.6 var(--mono);color:#e8c9bd;overflow-x:auto}
+
+/* ── 12. API: koncové body, chyby, ceny ───────────────────────────────── */
+.th-ends{list-style:none;margin:20px 0 0;padding:0;border-top:1px solid var(--linka-silna)}
+.th-ends li{padding:16px 0;border-bottom:1px solid var(--line)}
+.th-ends h3{margin:0;font:600 15px/1.4 var(--mono)!important;color:var(--ink);overflow-wrap:anywhere;letter-spacing:0}
+.th-ends p{margin:6px 0 0;font:15px/1.5 var(--ui);color:var(--body);max-width:62ch}
+.th-ends pre{margin:10px 0 0;background:rgba(255,255,255,.035);border:1px solid var(--line);
+  border-radius:10px;padding:12px 14px;font:12.5px/1.6 var(--mono);color:#e8c9bd;overflow-x:auto}
+
+.th-ceny{list-style:none;margin:20px 0 0;padding:0;border-top:1px solid var(--linka-silna);max-width:560px}
+.th-ceny li{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,auto);gap:4px 20px;
+  padding:14px 0;border-bottom:1px solid var(--line);align-items:baseline}
+.th-ceny b{display:block;font:600 16px/1.3 var(--ui);color:var(--ink)}
+.th-ceny span{display:block;margin-top:3px;font:14px/1.45 var(--ui);color:var(--muted)}
+.th-ceny .suma{display:block;margin:0}
+.th-ceny .suma{font:600 18px/1.2 var(--ui);color:var(--ink);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.th-ceny .suma small{display:block;font:400 12px/1.4 var(--ui);color:var(--muted)}
+
+/* Zoznam dvojíc na porovnanie: pravítkované riadky, nie mriežka kariet. */
+.th-pary{list-style:none;margin:24px 0 0;padding:0;border-top:1px solid var(--linka-silna);
+  columns:2;column-gap:44px}
+.th-pary li{break-inside:avoid;border-bottom:1px solid var(--line)}
+.th-pary a{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:2px 16px;
+  padding:12px 10px;margin:0 -10px;border-radius:8px;text-decoration:none;color:inherit;
+  transition:background-color .16s var(--ease)}
+.th-pary a:hover,.th-pary a:focus-visible{background:rgba(255,255,255,.04)}
+.th-pary b{font:600 15.5px/1.35 var(--ui);color:var(--ink)}
+.th-pary span{font:13px/1.4 var(--ui);color:var(--muted)}
+
+/* ── 13. Porovnanie ───────────────────────────────────────────────────── */
+.th-vs{display:grid;grid-template-columns:1fr 1fr;gap:0 clamp(24px,4vw,56px);margin:24px 0 0;
+  border-top:1px solid var(--linka-silna)}
+.th-vs>div{padding:18px 0 20px;min-width:0}
+.th-vs h2{font-size:clamp(20px,1.8vw,26px)!important;margin:0 0 4px}
+.th-vs .velke{font:600 clamp(30px,4vw,44px)/1 var(--ui);color:var(--ink);
+  letter-spacing:-.02em;display:block;margin:10px 0 0}
+.th-vs .velke small{font:500 14px/1 var(--ui);color:var(--muted);margin-left:6px;letter-spacing:0}
+.th-vs p{margin:14px 0 0;font:13px/1.5 var(--ui);color:var(--muted);display:flex;align-items:center;gap:10px}
+.th-vs .th-bar{max-width:220px;margin:12px 0 0}
+.th-vs-tld{margin:16px 0 0;padding:0;border-top:1px solid var(--line)}
+.th-vs-tld>div{display:grid;grid-template-columns:minmax(44px,auto) minmax(0,1fr) minmax(0,auto);
+  gap:0 16px;padding:8px 0;border-bottom:1px solid var(--line);align-items:baseline}
+.th-vs-tld dt{font:600 13.5px/1.4 var(--mono);color:var(--body)}
+.th-vs-tld dd{margin:0;font:600 15px/1.4 var(--ui);color:var(--ink);font-variant-numeric:tabular-nums}
+.th-vs-tld dd.n{font-weight:500;color:var(--muted);font-size:13.5px;text-align:right}
+
+/* ── 14. Pätka stránky nástroja: zdroje a jedna cesta ďalej ───────────── */
+.th-koniec{margin-top:clamp(36px,4.5vw,64px);border-top:1px solid var(--linka-silna);
+  padding:clamp(24px,3vw,40px) 0 0}
+.th-koniec h2{font-size:clamp(20px,1.9vw,26px)!important;margin:0 0 10px}
+.th-zdroje{list-style:none;margin:16px 0 0;padding:0}
+.th-zdroje li{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,auto);gap:2px 20px;
+  padding:10px 0;border-top:1px solid var(--line);align-items:baseline}
+.th-zdroje b{font:600 14.5px/1.4 var(--ui);color:var(--ink)}
+.th-zdroje span{font:13px/1.5 var(--ui);color:var(--muted);text-align:right;white-space:nowrap}
+.th-zdroje p{grid-column:1/-1;margin:3px 0 0;font:14px/1.5 var(--ui);color:var(--body);max-width:70ch}
+.th-zdroje .von b{color:var(--muted)}
+.th-akcie{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;margin-top:26px}
+.th-tichy{font:500 15px/1.4 var(--ui);color:var(--body);text-decoration:underline;
+  text-decoration-thickness:1px;text-underline-offset:.2em;text-decoration-color:rgba(255,255,255,.25)}
+.th-tichy:hover{color:var(--ink);text-decoration-color:var(--accent)}
+
+/* ── 15. Otázky ───────────────────────────────────────────────────────── */
+.th-faq{margin:20px 0 0;border-top:1px solid var(--linka-silna)}
+.th-faq details{border-bottom:1px solid var(--line);padding:0}
+.th-faq summary{list-style:none;cursor:pointer;padding:14px 26px 14px 0;position:relative;
+  font:600 16px/1.4 var(--ui);color:var(--ink)}
+.th-faq summary::-webkit-details-marker{display:none}
+.th-faq summary::after{content:"";position:absolute;right:4px;top:22px;width:9px;height:9px;
+  border-right:1.5px solid var(--muted);border-bottom:1.5px solid var(--muted);
+  transform:rotate(45deg);transition:transform .18s var(--ease)}
+.th-faq details[open] summary::after{transform:rotate(-135deg)}
+.th-faq summary:hover{color:var(--accent-light)}
+.th-faq p{margin:0 0 16px;font:15.5px/1.6 var(--ui);color:var(--body);max-width:66ch}
+
+/* ── 16. Zlomy. 1040 px a 860 px a 680 px, ako zvyšok hubu. ───────────── */
+@media (max-width:1040px){
+  .th-lead{grid-template-columns:1fr;gap:34px}
+  .th-lead h1{max-width:20ch}
+  .th-grid{grid-template-columns:1fr}
+}
+@media (max-width:860px){
+  /* Tabuľka sa na telefóne posúva vodorovne a prvý stĺpec ostáva na mieste. */
+  .th-scroll{overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:thin;
+    scrollbar-color:rgba(255,255,255,.22) transparent}
+  .th-scroll::-webkit-scrollbar{height:8px}
+  .th-scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,.22);border-radius:4px}
+  .th-scroll::-webkit-scrollbar-track{background:transparent}
+  table.th-tab{min-width:620px}
+  /* Lepivá hlavička sa vo vodorovnom posúvači správa inak: kontajner nemá zvislý
+     posun, takže by sa riadok len posunul o 72 px nadol a prekryl prvé dva riadky
+     (videné na 390 px, 21. 9. 2026). Na telefóne preto drží len prvý stĺpec. */
+  table.th-tab thead th,table.th-nalezy thead th{position:static}
+  table.th-tab th:first-child,table.th-tab td:first-child,
+  table.th-nalezy th:first-child,table.th-nalezy td:first-child{position:sticky;left:0;z-index:3;
+    background:#0a0908;padding-right:16px;box-shadow:1px 0 0 var(--line)}
+  table.th-tab thead th:first-child,table.th-nalezy thead th:first-child{z-index:4;top:auto}
+  table.th-tab tbody tr:hover td:first-child{background:#0f0d0c}
+  .th-nalezy{min-width:520px}
+  .th-dokazy td:first-child{position:static;box-shadow:none}
+}
+@media (max-width:680px){
+  .th-masthead{font-size:12.5px;gap:3px 14px}
+  .th-masthead span:last-child{width:100%}
+  .th-lead{padding-top:22px}
+  .th-lead h1{max-width:none}
+  .th-lead-p{font-size:17px}
+  .th-facts,.th-cats,.th-vs{grid-template-columns:1fr}
+  .th-pary{columns:1}
+  .th-vs>div+div{border-top:1px solid var(--line)}
+  .th-form{max-width:none}
+  .th-form .btn{width:100%;justify-content:center}
+  .th-ledger li{grid-template-columns:1fr;gap:2px}
+  .th-pipe li{grid-template-columns:1fr;gap:2px}
+  .th-hlava dl{gap:4px 18px}
+  .th-ceny li{grid-template-columns:1fr}
+  .th-ceny .suma{text-align:left;margin-top:6px}
+  .th-zdroje li{grid-template-columns:1fr}
+  .th-zdroje span{text-align:left}
+}
+
+/* ── 17. Tabuľky pod 600 px ────────────────────────────────────────────────
+   paper.css mení pod 600 px každú tabuľku na zvislé karty a skrýva hlavičku.
+   Pre bežný obsah je to správne, pre meranie nie: dvanásť čísel pod sebou sa
+   nedá porovnať a stĺpec Používanie stratí zmysel. Naše dve tabuľky preto
+   ostávajú tabuľkami, posúvajú sa vodorovne a prvý stĺpec drží na mieste. */
+@media (max-width:600px){
+  table.th-tab,table.th-nalezy{display:table;min-width:560px;width:100%}
+  table.th-tab thead,table.th-nalezy thead{display:table-header-group}
+  table.th-tab tbody,table.th-nalezy tbody{display:table-row-group}
+  table.th-tab tr,table.th-nalezy tr{display:table-row;background:none;border:0;
+    border-radius:0;margin:0;padding:0}
+  table.th-tab th,table.th-tab td,
+  table.th-nalezy th,table.th-nalezy td{display:table-cell;width:auto}
+  table.th-tab td::before,table.th-nalezy td::before{content:none}
+  /* display:table-row prebije [hidden] z prehliadača, preto ho vraciame späť:
+     bez tohto sa na telefóne ukázali všetky dôkazy naraz (21. 9. 2026). */
+  table.th-tab tr[hidden],table.th-nalezy tr[hidden]{display:none}
+  table.th-tab td,table.th-nalezy td{padding:9px 12px}
+  table.th-tab th:first-child,table.th-tab td:first-child{padding-left:0}
+}
+/* Pruhovanie z paper.css by sa pod lepiacim prvým stĺpcom rozpadlo: ten musí
+   mať nepriehľadné pozadie, takže by v párnych riadkoch nesedel s okolím.
+   Riadky oddeľujú vlasové linky, to na meranie stačí. */
+body.noc table.th-tab tbody tr:nth-child(even),
+body.noc table.th-nalezy tbody tr:nth-child(even){background:none}
+body.noc table.th-tab tbody tr:hover,
+body.noc table.th-nalezy tbody tr:hover{background:none}

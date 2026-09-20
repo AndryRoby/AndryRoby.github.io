@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://homelab.tailbf8f27.ts.net; connect-src 'self' https://homelab.tailbf8f27.ts.net; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
 <meta name="color-scheme" content="dark">
-<meta name="robots" content="noindex, follow">
+<meta name="robots" content="index, follow">
 <link rel="manifest" href="/games/dormice/manifest.json">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -36,6 +36,8 @@
 <link rel="preload" href="/fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/style/paper.css?v=2ebf5aa4">
+<link rel="stylesheet" href="/style/obsah.css">
+<link rel="stylesheet" href="/style/hra.css">
 <script src="/style/prepinac.js?v=668e98c9" defer></script>
 <script type="module" src="/games/dormice/game.js?v=1"></script>
 <style>
@@ -60,21 +62,17 @@
      24 px floor of WCAG 2.5.8, so the label column gives four points back:
      the row labels are single characters and never needed them. */
   @media (max-width:360px){ .doska{--popis:24px} }
-  header{padding-top:env(safe-area-inset-top,0px)}
+
   .horna{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:0 0 10px;
          font-family:var(--ui);font-size:14px;color:var(--muted)}
-  .horna b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
-  .horna .uroven{color:var(--muted);font-size:12px;letter-spacing:.06em;text-transform:uppercase;margin-left:8px;white-space:nowrap}
+
   .horna #cas-blok{white-space:nowrap}
   @media (max-width:480px){ .horna .uroven{display:block;margin:2px 0 0} }
-  .pauza-btn{font:500 12px/1 var(--ui);color:var(--muted);background:transparent;border:1px solid var(--line);border-radius:999px;padding:4px 10px;cursor:pointer;margin-left:8px;vertical-align:1px}
-  .pauza-btn:hover{color:var(--ink);border-color:var(--ink)}
+
   .doska-obal{position:relative}
   .pauza-blok{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
      background:rgba(10,9,8,.92);border:2px solid var(--line);border-radius:8px;text-align:center;font-family:var(--ui);padding:20px;z-index:2}
-  .pauza-blok[hidden]{display:none}
-  .pauza-blok p{margin:0;color:var(--body);font-size:15px;line-height:1.5}
-  .pauza-blok b{color:var(--ink)}
+
   .doska.pauza .b,.doska.pauza .h,.doska.pauza .prazdne{visibility:hidden}
 
   /* The staircase. One grid for every small table, so a fact carried from one
@@ -89,7 +87,7 @@
      then, but hidden has to mean hidden. */
   .doska[hidden]{display:none}
   .riadok{display:contents}
-  .doska.hotovo{border-color:var(--ok);box-shadow:0 0 0 4px rgba(94,207,154,.14)}
+
   .h{background:var(--card);font-family:var(--ui);color:var(--muted);font-weight:600;
      display:flex;align-items:center;justify-content:center;min-width:0;font-size:13px;line-height:1}
   .h.roh{background:var(--card-plna)}
@@ -157,17 +155,9 @@
 
   .ovladanie{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:14px}
   .ovladanie .btn{height:40px;padding:0 16px;font-size:14px}
-  .stav{font-family:var(--ui);font-size:15px;line-height:1.5;color:var(--body);margin:12px 0 0;min-height:1.5em}
-  .stav b{color:var(--ink)}
-  .stav.ok{color:var(--ok)}
+
   .stav.ok b{color:var(--ok)}
   .stav.ok b{display:block;font:700 clamp(22px,3.2vw,30px)/1.15 var(--display);letter-spacing:-.01em;margin:0 0 6px}
-  .oslava-streak{display:block;margin-top:8px;font-family:var(--ui);font-size:13px;color:var(--body)}
-  .oslava-dalej{display:block;margin-top:6px;font-family:var(--ui);font-size:13px}
-  .oslava-dalej a{color:var(--accent-light)}
-  .oslava-pulz{animation:oslava-pulz .3s ease}
-  @keyframes oslava-pulz{0%{transform:scale(1)}50%{transform:scale(1.02)}100%{transform:scale(1)}}
-  @media (prefers-reduced-motion:reduce){ .oslava-pulz{animation:none} }
 
   /* The reward of the genre: one sentence, then the table in full names.
      Neither is anywhere in the page before the puzzle is finished. */
@@ -188,21 +178,9 @@
     .rozuzlenie td::before{margin-bottom:2px}
   }
 
-  .pasik{display:flex;gap:6px;margin-top:14px}
   .den{flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;padding:6px 0 5px;border:1px solid var(--line);border-radius:10px;
        text-decoration:none;color:var(--muted);font-family:var(--ui);min-width:0;background:var(--card)}
-  .den small{font-size:10px;letter-spacing:.08em}
-  .den b{font-size:15px;color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
-  .den.dnes{border-color:var(--accent);color:var(--accent)}
-  .den.rozohrane{border-style:dashed}
-  .den.hotove{background:rgba(94,207,154,.12);border-color:var(--ok)}
-  .den.hotove b{color:var(--ok)}
-  .den.buduci{opacity:.38}
-  a.den:hover{border-color:var(--ink);color:var(--ink)}
-  .odkazy{font-family:var(--ui);font-size:13px;color:var(--muted);margin:12px 0 0}
-  .odkazy a{color:var(--body)}
-  .historia{font-family:var(--ui);font-size:13px;color:var(--body);line-height:1.5;margin:10px 0 0}
-  .historia b{color:var(--ink)}
+
   .zdielanie{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px;
              font-family:var(--ui);font-size:13px;line-height:1.45;color:var(--muted)}
   .zdielanie[hidden]{display:none}
@@ -210,13 +188,6 @@
   .zdielanie span{flex:1;min-width:180px}
   .zdielanie textarea{width:100%;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--body);
                       font:12px/1.5 var(--ui);padding:8px 10px;resize:vertical}
-  .nastavenia{margin-top:14px;border:1px solid var(--line);border-radius:12px;background:var(--card);padding:0 14px}
-  .nastavenia summary{cursor:pointer;font:600 13px/1.4 var(--ui);color:var(--muted);padding:10px 0;list-style:none}
-  .nastavenia summary::-webkit-details-marker{display:none}
-  .nastavenia[open] summary{color:var(--ink)}
-  .nastavenia label{display:flex;gap:10px;align-items:flex-start;font-family:var(--ui);font-size:13px;color:var(--body);line-height:1.5;padding:6px 0}
-  .nastavenia input{margin-top:3px;flex:none}
-  .nastavenia .fineprint{padding:6px 0 12px;margin:0}
 
   /* The clues. The whole list, because the way a person solves these is to run
      down all of them looking for the one they can use now. Beside the board on
@@ -271,22 +242,8 @@
     .indicie .otazka{margin-top:9px;padding-top:9px}
   }
 
-  .navod{font-family:var(--ui);font-size:13px;color:var(--muted);margin:10px 0 0;max-width:none}
-  .navod kbd{font-size:12px}
   @media (max-width:860px){ .navod{display:none} }
-  .pravidla details{border:1px solid var(--line);border-radius:12px;background:var(--card);padding:0 18px;max-width:68ch}
-  .pravidla details+details{margin-top:10px}
-  .pravidla summary{cursor:pointer;font:600 15px/1.4 var(--ui);color:var(--ink);padding:14px 0;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:12px}
-  .pravidla summary::-webkit-details-marker{display:none}
-  .pravidla summary::after{content:"";width:.5em;height:.5em;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(45deg);flex:none;margin-right:4px;transition:transform .2s var(--ease)}
-  .pravidla details[open] summary::after{transform:rotate(225deg)}
-  .pravidla .telo{padding:0 0 16px}
-  .pravidla .telo p{margin:0 0 10px}
-  .pravidla .telo p:last-child{margin:0}
-  .prose p{margin:0 0 14px}
-  .prose p:last-child{margin-bottom:0}
-  .sub{margin:0 0 6px}
-  noscript p{font-family:var(--ui);color:var(--accent-light)}
+
 </style>
 <noscript><style>
   .r, .w { opacity:1 !important; transform:none !important; filter:none !important; }
@@ -299,8 +256,7 @@
   .indicie .fineprint { display:block !important; }
 </style></noscript>
 </head>
-<body class="noc" data-den="2026-09-21">
-<div class="wash" aria-hidden="true"><i></i><i></i></div>
+<body class="noc obsah hra" data-den="2026-09-21">
 <a class="skip site-skip" href="#arling-obsah" data-site-label="skip">Skip to content</a>
 <header class="site-header">
   <div class="wrap bar">
@@ -318,16 +274,16 @@
 <main id="arling-obsah" tabindex="-1">
   <div class="wrap hero" id="hero">
     <div>
-      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="2"/><path d="M3.5 9.5h17M9.5 3.5v17"/><path d="M6.4 12.9l1.4 1.4 2.6 2.6"/><path d="M13.6 6.4l3.6 3.6M17.2 6.4l-3.6 3.6"/></svg>Daily logic grid</p>
       <h1 id="h1"><span class="l">Dormice.</span></h1>
       <p class="lead r d3">Every dormouse keeps one store in one tree. One store went missing overnight, and the clues leave exactly one way to work out who had it.</p>
-      <p class="proof r d5" id="dnes">This copse opens on Monday 21 September 2026 at midnight, Bratislava time.</p>
+      <p class="uv-actions"><a class="btn btn-solid" href="#doska">Play today's case</a><a class="uv-quiet" href="/games/dormice/guide/">How to play</a></p>
+      <p class="proof r d5" id="dnes">The copse for Monday 21 September 2026, easy: three categories of five, no weeks. Exactly one answer, and never a guess.</p>
       <p class="navod r d5">Tap a square: a cross, then a tick, then empty again. A tick crosses out the rest of its row and column for you. Keyboard: arrows move, <kbd>Space</kbd> cycles, <kbd>X</kbd> crosses, <kbd>D</kbd> ticks, <kbd>Delete</kbd> clears, <kbd>[</kbd> and <kbd>]</kbd> jump between tables, <kbd>P</kbd> pauses. Nothing lights up while you play; Check judges only when you ask.</p>
       <section class="indicie r d4" id="indicie" aria-labelledby="indicie-nadpis">
         <div class="hlava"><h2 id="indicie-nadpis">The clues</h2>
           <button type="button" class="viac" id="indicie-viac" aria-expanded="false" aria-controls="indicie-zoznam">All clues</button></div>
-        <ol id="indicie-zoznam"></ol>
-        <p class="otazka" id="otazka"></p>
+        <ol id="indicie-zoznam"><li data-i="0"><button type="button" class="veta" aria-pressed="false" data-i="0">The dormouse in the oak keeps the chestnuts or the haws.</button></li><li data-i="1"><button type="button" class="veta" aria-pressed="false" data-i="1">The dormouse with the haws sleeps in the bramble patch or the willow stump.</button></li><li data-i="2"><button type="button" class="veta" aria-pressed="false" data-i="2">Rue sleeps in the bramble patch or the dead branch.</button></li><li data-i="3"><button type="button" class="veta" aria-pressed="false" data-i="3">The dormouse with the elderberries sleeps in the oak or the willow stump.</button></li><li data-i="4"><button type="button" class="veta" aria-pressed="false" data-i="4">Vetch keeps the juniper berries or the chestnuts.</button></li><li data-i="5"><button type="button" class="veta" aria-pressed="false" data-i="5">Yarrow sleeps in the dead branch.</button></li><li data-i="6"><button type="button" class="veta" aria-pressed="false" data-i="6">The dormouse with the mushrooms is Tansy or Rue.</button></li></ol>
+        <p class="otazka" id="otazka"><b>The question.</b> The chestnuts went missing from the shared larder overnight. Which dormouse had them, in which tree?</p>
         <p class="fineprint">Every clue is true, and together they leave exactly one way to match everyone up. Tap a clue to strike it out once you have used it.</p>
       </section>
     </div>
@@ -336,7 +292,7 @@
         <div class="horna"><span><span id="datum">Monday 21 September 2026</span><span class="uroven" id="uroven">Easy · 3 × 5</span></span><span id="cas-blok">Time <b id="cas">0:00</b><button type="button" class="pauza-btn" id="pauza" hidden>Pause</button></span></div>
         <div class="doska-obal">
           <div class="doska" id="doska" role="grid" aria-label="Logic grid, 3 categories of 5 items">
-            <noscript><p>This game needs JavaScript to play; the grid, the names and the clues above are today's copse.</p></noscript>
+            <div class="riadok" role="row" aria-rowindex="1"><div class="h roh" role="columnheader" aria-colindex="1"></div><div class="h skupina" role="columnheader" aria-colindex="2" style="grid-column:span 5"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M8 3.2c2.6 0 4.2 2 4.2 4.6 0 3-2 5-4.2 5S3.8 10.8 3.8 7.8C3.8 5.2 5.4 3.2 8 3.2z"/><path d="M8 3.2V1.6"/><path d="M6 6.4c.7.7 1.7 1 2.6.6"/></svg>Stores</div><div class="h skupina" role="columnheader" aria-colindex="7" style="grid-column:span 5"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M8 1.8 4.2 7h2L3 12h10l-3.2-5h2z"/><path d="M8 12v2.4"/></svg>Trees</div></div><div class="riadok" role="row" aria-rowindex="2"><div class="h roh" role="columnheader" aria-colindex="1"></div><div class="h hc" role="columnheader" aria-colindex="2" data-a="1" data-x="0" title="elderberries">E</div><div class="h hc" role="columnheader" aria-colindex="3" data-a="1" data-x="1" title="juniper berries">J</div><div class="h hc" role="columnheader" aria-colindex="4" data-a="1" data-x="2" title="chestnuts">C</div><div class="h hc" role="columnheader" aria-colindex="5" data-a="1" data-x="3" title="haws">H</div><div class="h hc" role="columnheader" aria-colindex="6" data-a="1" data-x="4" title="mushrooms">M</div><div class="h hc" role="columnheader" aria-colindex="7" data-a="2" data-x="0" title="bramble patch">B</div><div class="h hc" role="columnheader" aria-colindex="8" data-a="2" data-x="1" title="dead branch">D</div><div class="h hc" role="columnheader" aria-colindex="9" data-a="2" data-x="2" title="alder">A</div><div class="h hc" role="columnheader" aria-colindex="10" data-a="2" data-x="3" title="oak">O</div><div class="h hc" role="columnheader" aria-colindex="11" data-a="2" data-x="4" title="willow stump">W</div></div><div class="riadok" role="row" aria-rowindex="3"><div class="h skupina pruh" role="rowheader" aria-colindex="1" style="grid-column:1 / -1"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M4 10.5a4 4 0 0 1 7.6-1.7"/><circle cx="8.5" cy="9.5" r="4"/><path d="M6.7 6.1a1.6 1.6 0 1 1 2.2-2.2"/><path d="M12 12.6c1.6.6 1.9 2.6.2 2.9"/></svg>Dormice</div></div><div class="riadok" role="row" aria-rowindex="4"><div class="h hr" role="rowheader" aria-colindex="1" data-a="0" data-x="0" title="Tansy">T</div><button class="b tl tt" role="gridcell" data-i="0" data-t="0,1" data-r="0" data-c="0" data-ra="0" data-rx="0" data-ca="1" data-cy="0" data-rr="0" data-cc="0" aria-colindex="2"></button><button class="b tt" role="gridcell" data-i="1" data-t="0,1" data-r="0" data-c="1" data-ra="0" data-rx="0" data-ca="1" data-cy="1" data-rr="0" data-cc="1" aria-colindex="3"></button><button class="b tt" role="gridcell" data-i="2" data-t="0,1" data-r="0" data-c="2" data-ra="0" data-rx="0" data-ca="1" data-cy="2" data-rr="0" data-cc="2" aria-colindex="4"></button><button class="b tt" role="gridcell" data-i="3" data-t="0,1" data-r="0" data-c="3" data-ra="0" data-rx="0" data-ca="1" data-cy="3" data-rr="0" data-cc="3" aria-colindex="5"></button><button class="b tt" role="gridcell" data-i="4" data-t="0,1" data-r="0" data-c="4" data-ra="0" data-rx="0" data-ca="1" data-cy="4" data-rr="0" data-cc="4" aria-colindex="6"></button><button class="b tl tt" role="gridcell" data-i="5" data-t="0,2" data-r="0" data-c="0" data-ra="0" data-rx="0" data-ca="2" data-cy="0" data-rr="0" data-cc="5" aria-colindex="7"></button><button class="b tt" role="gridcell" data-i="6" data-t="0,2" data-r="0" data-c="1" data-ra="0" data-rx="0" data-ca="2" data-cy="1" data-rr="0" data-cc="6" aria-colindex="8"></button><button class="b tt" role="gridcell" data-i="7" data-t="0,2" data-r="0" data-c="2" data-ra="0" data-rx="0" data-ca="2" data-cy="2" data-rr="0" data-cc="7" aria-colindex="9"></button><button class="b tt" role="gridcell" data-i="8" data-t="0,2" data-r="0" data-c="3" data-ra="0" data-rx="0" data-ca="2" data-cy="3" data-rr="0" data-cc="8" aria-colindex="10"></button><button class="b tt" role="gridcell" data-i="9" data-t="0,2" data-r="0" data-c="4" data-ra="0" data-rx="0" data-ca="2" data-cy="4" data-rr="0" data-cc="9" aria-colindex="11"></button></div><div class="riadok" role="row" aria-rowindex="5"><div class="h hr" role="rowheader" aria-colindex="1" data-a="0" data-x="1" title="Vetch">V</div><button class="b tl" role="gridcell" data-i="10" data-t="0,1" data-r="1" data-c="0" data-ra="0" data-rx="1" data-ca="1" data-cy="0" data-rr="1" data-cc="0" aria-colindex="2"></button><button class="b " role="gridcell" data-i="11" data-t="0,1" data-r="1" data-c="1" data-ra="0" data-rx="1" data-ca="1" data-cy="1" data-rr="1" data-cc="1" aria-colindex="3"></button><button class="b " role="gridcell" data-i="12" data-t="0,1" data-r="1" data-c="2" data-ra="0" data-rx="1" data-ca="1" data-cy="2" data-rr="1" data-cc="2" aria-colindex="4"></button><button class="b " role="gridcell" data-i="13" data-t="0,1" data-r="1" data-c="3" data-ra="0" data-rx="1" data-ca="1" data-cy="3" data-rr="1" data-cc="3" aria-colindex="5"></button><button class="b " role="gridcell" data-i="14" data-t="0,1" data-r="1" data-c="4" data-ra="0" data-rx="1" data-ca="1" data-cy="4" data-rr="1" data-cc="4" aria-colindex="6"></button><button class="b tl" role="gridcell" data-i="15" data-t="0,2" data-r="1" data-c="0" data-ra="0" data-rx="1" data-ca="2" data-cy="0" data-rr="1" data-cc="5" aria-colindex="7"></button><button class="b " role="gridcell" data-i="16" data-t="0,2" data-r="1" data-c="1" data-ra="0" data-rx="1" data-ca="2" data-cy="1" data-rr="1" data-cc="6" aria-colindex="8"></button><button class="b " role="gridcell" data-i="17" data-t="0,2" data-r="1" data-c="2" data-ra="0" data-rx="1" data-ca="2" data-cy="2" data-rr="1" data-cc="7" aria-colindex="9"></button><button class="b " role="gridcell" data-i="18" data-t="0,2" data-r="1" data-c="3" data-ra="0" data-rx="1" data-ca="2" data-cy="3" data-rr="1" data-cc="8" aria-colindex="10"></button><button class="b " role="gridcell" data-i="19" data-t="0,2" data-r="1" data-c="4" data-ra="0" data-rx="1" data-ca="2" data-cy="4" data-rr="1" data-cc="9" aria-colindex="11"></button></div><div class="riadok" role="row" aria-rowindex="6"><div class="h hr" role="rowheader" aria-colindex="1" data-a="0" data-x="2" title="Yarrow">Y</div><button class="b tl" role="gridcell" data-i="20" data-t="0,1" data-r="2" data-c="0" data-ra="0" data-rx="2" data-ca="1" data-cy="0" data-rr="2" data-cc="0" aria-colindex="2"></button><button class="b " role="gridcell" data-i="21" data-t="0,1" data-r="2" data-c="1" data-ra="0" data-rx="2" data-ca="1" data-cy="1" data-rr="2" data-cc="1" aria-colindex="3"></button><button class="b " role="gridcell" data-i="22" data-t="0,1" data-r="2" data-c="2" data-ra="0" data-rx="2" data-ca="1" data-cy="2" data-rr="2" data-cc="2" aria-colindex="4"></button><button class="b " role="gridcell" data-i="23" data-t="0,1" data-r="2" data-c="3" data-ra="0" data-rx="2" data-ca="1" data-cy="3" data-rr="2" data-cc="3" aria-colindex="5"></button><button class="b " role="gridcell" data-i="24" data-t="0,1" data-r="2" data-c="4" data-ra="0" data-rx="2" data-ca="1" data-cy="4" data-rr="2" data-cc="4" aria-colindex="6"></button><button class="b tl" role="gridcell" data-i="25" data-t="0,2" data-r="2" data-c="0" data-ra="0" data-rx="2" data-ca="2" data-cy="0" data-rr="2" data-cc="5" aria-colindex="7"></button><button class="b " role="gridcell" data-i="26" data-t="0,2" data-r="2" data-c="1" data-ra="0" data-rx="2" data-ca="2" data-cy="1" data-rr="2" data-cc="6" aria-colindex="8"></button><button class="b " role="gridcell" data-i="27" data-t="0,2" data-r="2" data-c="2" data-ra="0" data-rx="2" data-ca="2" data-cy="2" data-rr="2" data-cc="7" aria-colindex="9"></button><button class="b " role="gridcell" data-i="28" data-t="0,2" data-r="2" data-c="3" data-ra="0" data-rx="2" data-ca="2" data-cy="3" data-rr="2" data-cc="8" aria-colindex="10"></button><button class="b " role="gridcell" data-i="29" data-t="0,2" data-r="2" data-c="4" data-ra="0" data-rx="2" data-ca="2" data-cy="4" data-rr="2" data-cc="9" aria-colindex="11"></button></div><div class="riadok" role="row" aria-rowindex="7"><div class="h hr" role="rowheader" aria-colindex="1" data-a="0" data-x="3" title="Rue">R</div><button class="b tl" role="gridcell" data-i="30" data-t="0,1" data-r="3" data-c="0" data-ra="0" data-rx="3" data-ca="1" data-cy="0" data-rr="3" data-cc="0" aria-colindex="2"></button><button class="b " role="gridcell" data-i="31" data-t="0,1" data-r="3" data-c="1" data-ra="0" data-rx="3" data-ca="1" data-cy="1" data-rr="3" data-cc="1" aria-colindex="3"></button><button class="b " role="gridcell" data-i="32" data-t="0,1" data-r="3" data-c="2" data-ra="0" data-rx="3" data-ca="1" data-cy="2" data-rr="3" data-cc="2" aria-colindex="4"></button><button class="b " role="gridcell" data-i="33" data-t="0,1" data-r="3" data-c="3" data-ra="0" data-rx="3" data-ca="1" data-cy="3" data-rr="3" data-cc="3" aria-colindex="5"></button><button class="b " role="gridcell" data-i="34" data-t="0,1" data-r="3" data-c="4" data-ra="0" data-rx="3" data-ca="1" data-cy="4" data-rr="3" data-cc="4" aria-colindex="6"></button><button class="b tl" role="gridcell" data-i="35" data-t="0,2" data-r="3" data-c="0" data-ra="0" data-rx="3" data-ca="2" data-cy="0" data-rr="3" data-cc="5" aria-colindex="7"></button><button class="b " role="gridcell" data-i="36" data-t="0,2" data-r="3" data-c="1" data-ra="0" data-rx="3" data-ca="2" data-cy="1" data-rr="3" data-cc="6" aria-colindex="8"></button><button class="b " role="gridcell" data-i="37" data-t="0,2" data-r="3" data-c="2" data-ra="0" data-rx="3" data-ca="2" data-cy="2" data-rr="3" data-cc="7" aria-colindex="9"></button><button class="b " role="gridcell" data-i="38" data-t="0,2" data-r="3" data-c="3" data-ra="0" data-rx="3" data-ca="2" data-cy="3" data-rr="3" data-cc="8" aria-colindex="10"></button><button class="b " role="gridcell" data-i="39" data-t="0,2" data-r="3" data-c="4" data-ra="0" data-rx="3" data-ca="2" data-cy="4" data-rr="3" data-cc="9" aria-colindex="11"></button></div><div class="riadok" role="row" aria-rowindex="8"><div class="h hr" role="rowheader" aria-colindex="1" data-a="0" data-x="4" title="Pip">P</div><button class="b tl" role="gridcell" data-i="40" data-t="0,1" data-r="4" data-c="0" data-ra="0" data-rx="4" data-ca="1" data-cy="0" data-rr="4" data-cc="0" aria-colindex="2"></button><button class="b " role="gridcell" data-i="41" data-t="0,1" data-r="4" data-c="1" data-ra="0" data-rx="4" data-ca="1" data-cy="1" data-rr="4" data-cc="1" aria-colindex="3"></button><button class="b " role="gridcell" data-i="42" data-t="0,1" data-r="4" data-c="2" data-ra="0" data-rx="4" data-ca="1" data-cy="2" data-rr="4" data-cc="2" aria-colindex="4"></button><button class="b " role="gridcell" data-i="43" data-t="0,1" data-r="4" data-c="3" data-ra="0" data-rx="4" data-ca="1" data-cy="3" data-rr="4" data-cc="3" aria-colindex="5"></button><button class="b " role="gridcell" data-i="44" data-t="0,1" data-r="4" data-c="4" data-ra="0" data-rx="4" data-ca="1" data-cy="4" data-rr="4" data-cc="4" aria-colindex="6"></button><button class="b tl" role="gridcell" data-i="45" data-t="0,2" data-r="4" data-c="0" data-ra="0" data-rx="4" data-ca="2" data-cy="0" data-rr="4" data-cc="5" aria-colindex="7"></button><button class="b " role="gridcell" data-i="46" data-t="0,2" data-r="4" data-c="1" data-ra="0" data-rx="4" data-ca="2" data-cy="1" data-rr="4" data-cc="6" aria-colindex="8"></button><button class="b " role="gridcell" data-i="47" data-t="0,2" data-r="4" data-c="2" data-ra="0" data-rx="4" data-ca="2" data-cy="2" data-rr="4" data-cc="7" aria-colindex="9"></button><button class="b " role="gridcell" data-i="48" data-t="0,2" data-r="4" data-c="3" data-ra="0" data-rx="4" data-ca="2" data-cy="3" data-rr="4" data-cc="8" aria-colindex="10"></button><button class="b " role="gridcell" data-i="49" data-t="0,2" data-r="4" data-c="4" data-ra="0" data-rx="4" data-ca="2" data-cy="4" data-rr="4" data-cc="9" aria-colindex="11"></button></div><div class="riadok" role="row" aria-rowindex="9"><div class="h skupina pruh" role="rowheader" aria-colindex="1" style="grid-column:1 / -1"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M8 1.8 4.2 7h2L3 12h10l-3.2-5h2z"/><path d="M8 12v2.4"/></svg>Trees</div></div><div class="riadok" role="row" aria-rowindex="10"><div class="h hr" role="rowheader" aria-colindex="1" data-a="2" data-x="0" title="bramble patch">B</div><button class="b tl tt" role="gridcell" data-i="50" data-t="1,2" data-r="0" data-c="0" data-ra="2" data-rx="0" data-ca="1" data-cy="0" data-rr="5" data-cc="0" aria-colindex="2"></button><button class="b tt" role="gridcell" data-i="51" data-t="1,2" data-r="1" data-c="0" data-ra="2" data-rx="0" data-ca="1" data-cy="1" data-rr="5" data-cc="1" aria-colindex="3"></button><button class="b tt" role="gridcell" data-i="52" data-t="1,2" data-r="2" data-c="0" data-ra="2" data-rx="0" data-ca="1" data-cy="2" data-rr="5" data-cc="2" aria-colindex="4"></button><button class="b tt" role="gridcell" data-i="53" data-t="1,2" data-r="3" data-c="0" data-ra="2" data-rx="0" data-ca="1" data-cy="3" data-rr="5" data-cc="3" aria-colindex="5"></button><button class="b tt" role="gridcell" data-i="54" data-t="1,2" data-r="4" data-c="0" data-ra="2" data-rx="0" data-ca="1" data-cy="4" data-rr="5" data-cc="4" aria-colindex="6"></button><div class="prazdne tl tt" role="gridcell" aria-disabled="true" aria-colindex="7"></div><div class="prazdne tt" role="gridcell" aria-disabled="true" aria-colindex="8"></div><div class="prazdne tt" role="gridcell" aria-disabled="true" aria-colindex="9"></div><div class="prazdne tt" role="gridcell" aria-disabled="true" aria-colindex="10"></div><div class="prazdne tt" role="gridcell" aria-disabled="true" aria-colindex="11"></div></div><div class="riadok" role="row" aria-rowindex="11"><div class="h hr" role="rowheader" aria-colindex="1" data-a="2" data-x="1" title="dead branch">D</div><button class="b tl" role="gridcell" data-i="55" data-t="1,2" data-r="0" data-c="1" data-ra="2" data-rx="1" data-ca="1" data-cy="0" data-rr="6" data-cc="0" aria-colindex="2"></button><button class="b " role="gridcell" data-i="56" data-t="1,2" data-r="1" data-c="1" data-ra="2" data-rx="1" data-ca="1" data-cy="1" data-rr="6" data-cc="1" aria-colindex="3"></button><button class="b " role="gridcell" data-i="57" data-t="1,2" data-r="2" data-c="1" data-ra="2" data-rx="1" data-ca="1" data-cy="2" data-rr="6" data-cc="2" aria-colindex="4"></button><button class="b " role="gridcell" data-i="58" data-t="1,2" data-r="3" data-c="1" data-ra="2" data-rx="1" data-ca="1" data-cy="3" data-rr="6" data-cc="3" aria-colindex="5"></button><button class="b " role="gridcell" data-i="59" data-t="1,2" data-r="4" data-c="1" data-ra="2" data-rx="1" data-ca="1" data-cy="4" data-rr="6" data-cc="4" aria-colindex="6"></button><div class="prazdne tl" role="gridcell" aria-disabled="true" aria-colindex="7"></div><div class="prazdne " role="gridcell" aria-disabled="true" aria-colindex="8"></div><div class="prazdne " role="gridcell" aria-disabled="true" aria-colindex="9"></div><div class="prazdne " role="gridcell" aria-disabled="true" aria-colindex="10"></div><div class="prazdne " role="gridcell" aria-disabled="true" aria-colindex="11"></div></div><div class="riadok" role="row" aria-rowindex="12"><div class="h hr" role="rowheader" aria-colindex="1" data-a="2" data-x="2" title="alder">A</div><button class="b tl" role="gridcell" data-i="60" data-t="1,2" data-r="0" data-c="2" data-ra="2" data-rx="2" data-ca="1" data-cy="0" data-rr="7" data-cc="0" aria-colindex="2"></button><button class="b " role="gridcell" data-i="61" data-t="1,2" data-r="1" data-c="2" data-ra="2" data-rx="2" data-ca="1" data-cy="1" data-rr="7" data-cc="1" aria-colindex="3"></button><button class="b " role="gridcell" data-i="62" data-t="1,2" data-r="2" data-c="2" data-ra="2" data-rx="2" data-ca="1" data-cy="2" data-rr="7" data-cc="2" aria-colindex="4"></button><button class="b " role="gridcell" data-i="63" data-t="1,2" data-r="3" data-c="2" data-ra="2" data-rx="2" data-ca="1" data-cy="3" data-rr="7" data-cc="3" aria-colindex="5"></button><button class="b " role="gridcell" data-i="64" data-t="1,2" data-r="4" data-c="2" data-ra="2" data-rx="2" data-ca="1" data-cy="4" data-rr="7" data-cc="4" aria-colindex="6"></button><div class="prazdne tl" role="gridcell" aria-disabled="true" aria-colindex="7"></div><div class="prazdne " role="gridcell" aria-disabled="true" aria-colindex="8"></div><div class="prazdne " role="gridcell" aria-disabled="true" aria-colindex="9"></div><div class="prazdne " role="gridcell" aria-disabled="true" aria-colindex="10"></div><div class="prazdne " role="gridcell" aria-disabled="true" aria-colindex="11"></div></div><div class="riadok" role="row" aria-rowindex="13"><div class="h hr" role="rowheader" aria-colindex="1" data-a="2" data-x="3" title="oak">O</div><button class="b tl" role="gridcell" data-i="65" data-t="1,2" data-r="0" data-c="3" data-ra="2" data-rx="3" data-ca="1" data-cy="0" data-rr="8" data-cc="0" aria-colindex="2"></button><button class="b " role="gridcell" data-i="66" data-t="1,2" data-r="1" data-c="3" data-ra="2" data-rx="3" data-ca="1" data-cy="1" data-rr="8" data-cc="1" aria-colindex="3"></button><button class="b " role="gridcell" data-i="67" data-t="1,2" data-r="2" data-c="3" data-ra="2" data-rx="3" data-ca="1" data-cy="2" data-rr="8" data-cc="2" aria-colindex="4"></button><button class="b " role="gridcell" data-i="68" data-t="1,2" data-r="3" data-c="3" data-ra="2" data-rx="3" data-ca="1" data-cy="3" data-rr="8" data-cc="3" aria-colindex="5"></button><button class="b " role="gridcell" data-i="69" data-t="1,2" data-r="4" data-c="3" data-ra="2" data-rx="3" data-ca="1" data-cy="4" data-rr="8" data-cc="4" aria-colindex="6"></button><div class="prazdne tl" role="gridcell" aria-disabled="true" aria-colindex="7"></div><div class="prazdne " role="gridcell" aria-disabled="true" aria-colindex="8"></div><div class="prazdne " role="gridcell" aria-disabled="true" aria-colindex="9"></div><div class="prazdne " role="gridcell" aria-disabled="true" aria-colindex="10"></div><div class="prazdne " role="gridcell" aria-disabled="true" aria-colindex="11"></div></div><div class="riadok" role="row" aria-rowindex="14"><div class="h hr" role="rowheader" aria-colindex="1" data-a="2" data-x="4" title="willow stump">W</div><button class="b tl" role="gridcell" data-i="70" data-t="1,2" data-r="0" data-c="4" data-ra="2" data-rx="4" data-ca="1" data-cy="0" data-rr="9" data-cc="0" aria-colindex="2"></button><button class="b " role="gridcell" data-i="71" data-t="1,2" data-r="1" data-c="4" data-ra="2" data-rx="4" data-ca="1" data-cy="1" data-rr="9" data-cc="1" aria-colindex="3"></button><button class="b " role="gridcell" data-i="72" data-t="1,2" data-r="2" data-c="4" data-ra="2" data-rx="4" data-ca="1" data-cy="2" data-rr="9" data-cc="2" aria-colindex="4"></button><button class="b " role="gridcell" data-i="73" data-t="1,2" data-r="3" data-c="4" data-ra="2" data-rx="4" data-ca="1" data-cy="3" data-rr="9" data-cc="3" aria-colindex="5"></button><button class="b " role="gridcell" data-i="74" data-t="1,2" data-r="4" data-c="4" data-ra="2" data-rx="4" data-ca="1" data-cy="4" data-rr="9" data-cc="4" aria-colindex="6"></button><div class="prazdne tl" role="gridcell" aria-disabled="true" aria-colindex="7"></div><div class="prazdne " role="gridcell" aria-disabled="true" aria-colindex="8"></div><div class="prazdne " role="gridcell" aria-disabled="true" aria-colindex="9"></div><div class="prazdne " role="gridcell" aria-disabled="true" aria-colindex="10"></div><div class="prazdne " role="gridcell" aria-disabled="true" aria-colindex="11"></div></div><noscript><p>This game needs JavaScript to play; the grid, the names and the clues above are today's copse.</p></noscript>
           </div>
           <div class="pauza-blok" id="pauza-blok" hidden><p><b>Paused.</b> <span id="pauza-cas"></span></p><button type="button" class="btn btn-solid" id="pokracuj">Resume</button></div>
         </div>
@@ -346,7 +302,7 @@
           <span class="pocet" id="citac-pocet"></span>
           <button type="button" id="citac-dalej" aria-label="Next clue">›</button>
         </div>
-        <div class="legenda" id="legenda"></div>
+        <div class="legenda" id="legenda"><div><h3><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M4 10.5a4 4 0 0 1 7.6-1.7"/><circle cx="8.5" cy="9.5" r="4"/><path d="M6.7 6.1a1.6 1.6 0 1 1 2.2-2.2"/><path d="M12 12.6c1.6.6 1.9 2.6.2 2.9"/></svg>Dormice</h3><ul><li><button type="button" class="pol" data-a="0" data-x="0"><b>T</b><span>Tansy</span></button></li><li><button type="button" class="pol" data-a="0" data-x="1"><b>V</b><span>Vetch</span></button></li><li><button type="button" class="pol" data-a="0" data-x="2"><b>Y</b><span>Yarrow</span></button></li><li><button type="button" class="pol" data-a="0" data-x="3"><b>R</b><span>Rue</span></button></li><li><button type="button" class="pol" data-a="0" data-x="4"><b>P</b><span>Pip</span></button></li></ul></div><div><h3><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M8 3.2c2.6 0 4.2 2 4.2 4.6 0 3-2 5-4.2 5S3.8 10.8 3.8 7.8C3.8 5.2 5.4 3.2 8 3.2z"/><path d="M8 3.2V1.6"/><path d="M6 6.4c.7.7 1.7 1 2.6.6"/></svg>Stores</h3><ul><li><button type="button" class="pol" data-a="1" data-x="0"><b>E</b><span>elderberries</span></button></li><li><button type="button" class="pol" data-a="1" data-x="1"><b>J</b><span>juniper berries</span></button></li><li><button type="button" class="pol" data-a="1" data-x="2"><b>C</b><span>chestnuts</span></button></li><li><button type="button" class="pol" data-a="1" data-x="3"><b>H</b><span>haws</span></button></li><li><button type="button" class="pol" data-a="1" data-x="4"><b>M</b><span>mushrooms</span></button></li></ul></div><div><h3><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M8 1.8 4.2 7h2L3 12h10l-3.2-5h2z"/><path d="M8 12v2.4"/></svg>Trees</h3><ul><li><button type="button" class="pol" data-a="2" data-x="0"><b>B</b><span>bramble patch</span></button></li><li><button type="button" class="pol" data-a="2" data-x="1"><b>D</b><span>dead branch</span></button></li><li><button type="button" class="pol" data-a="2" data-x="2"><b>A</b><span>alder</span></button></li><li><button type="button" class="pol" data-a="2" data-x="3"><b>O</b><span>oak</span></button></li><li><button type="button" class="pol" data-a="2" data-x="4"><b>W</b><span>willow stump</span></button></li></ul></div></div>
         <div class="ovladanie">
           <button type="button" class="btn btn-line" id="spat">Undo</button>
           <button type="button" class="btn btn-line" id="vpred">Redo</button>
@@ -383,7 +339,6 @@
 
   <section id="rules" class="deep pravidla">
     <div class="wrap">
-      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>01</p>
       <h2 class="r">Rules.</h2>
       <p class="sub r d1">Seven sentences. The rest is practice.</p>
       <div class="rule"></div>

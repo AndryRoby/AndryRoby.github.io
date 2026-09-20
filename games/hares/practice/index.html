@@ -34,6 +34,8 @@
 <link rel="preload" href="/fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/style/paper.css?v=2ebf5aa4">
+<link rel="stylesheet" href="/style/obsah.css">
+<link rel="stylesheet" href="/style/hra.css">
 <script src="/style/prepinac.js?v=668e98c9" defer></script>
 <script type="module" src="/games/hares/zoznamy.js?v=1"></script>
 <style>
@@ -59,14 +61,13 @@
      page never scrolls sideways (the wrap gutter is a percentage, so a fixed
      negative margin would overshoot it by a pixel). */
   @media (max-width:480px){ .doska-obal{margin-inline:calc((100% - 100vw) / 2)} }
-  header{padding-top:env(safe-area-inset-top,0px)}
+
   /* The row above the meadow: the date and the level on the left, the clock on
      the right. It wraps rather than grow wider than the meadow it stands on,
      and the clock keeps to the right edge on a line of its own as well. */
   .horna{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:12px;margin:0 0 10px;
          font-family:var(--ui);font-size:14px;color:var(--muted)}
-  .horna b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
-  .horna .uroven{color:var(--muted);font-size:12px;letter-spacing:.06em;text-transform:uppercase;margin-left:8px;white-space:nowrap}
+
   .horna #cas-blok,.horna #datum{white-space:nowrap}
   /* The two halves of the row may shrink, so nothing in it can decide how wide
      the meadow is; the clock stays at the right edge even once it has wrapped
@@ -79,14 +80,11 @@
      would change the column, and the meadow would step sideways under it. */
   .horna #pauza[hidden]{display:inline-block;visibility:hidden}
   @media (max-width:480px){ .horna .uroven{display:block;margin:2px 0 0;white-space:normal} .hra{min-width:0} }
-  .pauza-btn{font:500 12px/1 var(--ui);color:var(--muted);background:transparent;border:1px solid var(--line);border-radius:999px;padding:4px 10px;cursor:pointer;margin-left:8px;vertical-align:1px}
-  .pauza-btn:hover{color:var(--ink);border-color:var(--ink)}
+
   .doska-obal{position:relative;touch-action:pan-y}
   .pauza-blok{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
      background:rgba(10,9,8,.9);border:2px solid var(--line);border-radius:8px;text-align:center;font-family:var(--ui);padding:20px;z-index:3}
-  .pauza-blok[hidden]{display:none}
-  .pauza-blok p{margin:0;color:var(--body);font-size:15px;line-height:1.5}
-  .pauza-blok b{color:var(--ink)}
+
   /* ── The meadow ─────────────────────────────────────────────────────────
      A square grid of burrows built by game.js. Every burrow holds one number
      or the small notes you keep while you think; the numbers the puzzle gives
@@ -101,7 +99,7 @@
          --pole:#262019;--pole-dane:#120f0c}
   .doska[hidden]{display:none}
   @media (max-width:480px){ .doska{border-radius:0;border-left:0;border-right:0} }
-  .doska.hotovo{border-color:var(--ok);box-shadow:0 0 0 4px rgba(94,207,154,.14)}
+
   .doska.pauza .b{visibility:hidden}
   .riadok{display:contents}
   /* One rule for every burrow; the two lines it draws come from its own
@@ -306,16 +304,9 @@
     .ovladanie #hint,.ovladanie #check{grid-column:span 3}
     .ovladanie #seria{grid-column:1 / -1}
   }
-  .stav{font-family:var(--ui);font-size:15px;line-height:1.5;color:var(--body);margin:12px 0 0;min-height:1.5em}
-  .stav b{color:var(--ink)}
-  .stav.ok{color:var(--ok)}
+
   .stav.ok b{color:var(--ok);display:block;font:700 clamp(22px,3.2vw,30px)/1.15 var(--display);letter-spacing:-.01em;margin:0 0 6px}
-  .oslava-streak{display:block;margin-top:8px;font-family:var(--ui);font-size:13px;color:var(--body)}
-  .oslava-dalej{display:block;margin-top:6px;font-family:var(--ui);font-size:13px}
-  .oslava-dalej a{color:var(--accent-light)}
-  .oslava-pulz{animation:oslava-pulz .3s ease}
-  @keyframes oslava-pulz{0%{transform:scale(1)}50%{transform:scale(1.02)}100%{transform:scale(1)}}
-  @media (prefers-reduced-motion:reduce){ .oslava-pulz{animation:none} }
+
   /* Share, only after the meadow is finished (ops/spec-hry-ux.md, part 8).
      The textarea is the way out when the browser refuses the clipboard. */
   .zdielanie{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px;
@@ -325,63 +316,33 @@
   .zdielanie span{flex:1;min-width:180px}
   .zdielanie textarea{width:100%;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--body);
                       font:12px/1.5 var(--ui);padding:8px 10px;resize:vertical}
-  .pasik{display:flex;gap:6px;margin-top:14px}
+
   .den{position:relative;flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;padding:6px 0 5px;border:1px solid var(--line);border-radius:10px;
        text-decoration:none;color:var(--muted);font-family:var(--ui);min-width:0;background:var(--card)}
-  .den small{font-size:10px;letter-spacing:.08em}
-  .den b{font-size:15px;color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
-  .den.dnes{border-color:var(--accent);color:var(--accent)}
-  .den.rozohrane{border-style:dashed}
-  .den.hotove{background:rgba(94,207,154,.12);border-color:var(--ok)}
-  .den.hotove b{color:var(--ok)}
+
   /* Two marks for a finished meadow (ops/spec-hry-ux.md, part 8): solved, and
      solved clean with no hint and no check, which gets the dot as well. The
      screen reader gets the same difference in the aria-label, not only the
      colour. */
   .den.ciste::after{content:"";position:absolute;top:3px;right:4px;width:5px;height:5px;border-radius:50%;background:var(--ok)}
-  .den.buduci{opacity:.38}
-  a.den:hover{border-color:var(--ink);color:var(--ink)}
-  .odkazy{font-family:var(--ui);font-size:13px;color:var(--muted);margin:12px 0 0}
-  .odkazy a{color:var(--body)}
-  .historia{font-family:var(--ui);font-size:13px;color:var(--body);line-height:1.5;margin:10px 0 0}
-  .historia b{color:var(--ink)}
-  .nastavenia{margin-top:14px;border:1px solid var(--line);border-radius:12px;background:var(--card);padding:0 14px}
-  .nastavenia summary{cursor:pointer;font:600 13px/1.4 var(--ui);color:var(--muted);padding:10px 0;list-style:none}
-  .nastavenia summary::-webkit-details-marker{display:none}
-  .nastavenia[open] summary{color:var(--ink)}
-  .nastavenia label{display:flex;gap:10px;align-items:flex-start;font-family:var(--ui);font-size:13px;color:var(--body);line-height:1.5;padding:6px 0}
-  .nastavenia input{margin-top:3px;flex:none}
-  .nastavenia .fineprint{padding:6px 0 12px;margin:0}
+
   .skryte{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
-  .navod{font-family:var(--ui);font-size:13px;color:var(--muted);margin:10px 0 0;max-width:none}
-  .navod kbd{font-size:12px}
+
   /* On the phone the meadow goes under the text; the keyboard note there would
      just push the game further down. It is in the Rules section too. */
   @media (max-width:860px){ .navod{display:none} }
-  .pravidla details{border:1px solid var(--line);border-radius:12px;background:var(--card);padding:0 18px;max-width:68ch}
-  .pravidla details+details{margin-top:10px}
-  .pravidla summary{cursor:pointer;font:600 15px/1.4 var(--ui);color:var(--ink);padding:14px 0;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:12px}
-  .pravidla summary::-webkit-details-marker{display:none}
-  .pravidla summary::after{content:"";width:.5em;height:.5em;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(45deg);flex:none;margin-right:4px;transition:transform .2s var(--ease)}
-  .pravidla details[open] summary::after{transform:rotate(225deg)}
-  .pravidla .telo{padding:0 0 16px}
-  .pravidla .telo p{margin:0 0 10px}
-  .pravidla .telo p:last-child{margin:0}
+
   .jazyk{font:500 13px/1 var(--ui);color:var(--muted);background:transparent;border:1px solid var(--line);border-radius:999px;padding:6px 12px;cursor:pointer;margin-top:14px}
   .jazyk:hover{color:var(--ink);border-color:var(--ink)}
-  .prose p{margin:0 0 14px}
-  .prose p:last-child{margin-bottom:0}
-  .sub{margin:0 0 6px}
-  noscript p{font-family:var(--ui);color:var(--accent-light)}
+
 </style>
 <noscript><style>
   .r, .w { opacity:1 !important; transform:none !important; filter:none !important; }
   .rule { transform:scaleX(1) !important; }
 </style></noscript>
 </head>
-<body class="noc">
-<div class="wash" aria-hidden="true"><i></i><i></i></div>
-<a class="skip site-skip" href="#arling-obsah" data-site-label="skip">Skip to content</a>
+<body class="noc obsah hra">
+<a class="skip site-skip" href="#obsah" data-site-label="skip">Skip to content</a>
 <header class="site-header">
   <div class="wrap bar">
     <a class="brand" href="https://arling.sk/en/" aria-label="ARLing home" data-site-home>
@@ -395,156 +356,7 @@
   </div>
 </header>
 
-<main id="arling-obsah" tabindex="-1">
-  <div class="wrap hero" id="hero">
-    <div>
-      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="2"/><path d="M9 3.5v17M15 3.5v17M3.5 9h17M3.5 15h17"/></svg>Daily number logic</p>
-      <h1 id="h1"><span class="l">Hares.</span></h1>
-      <p class="lead r d3">Fill the meadow so that every row, column and block has each number once. Hares leap like a chess knight: two burrows a knight's leap apart never hold the same number. From Friday on, hares also refuse to sit next to the same number in any direction, corners included.</p>
-      <p class="proof r d5" id="dnes">A new meadow every day at midnight, always with exactly one solution. Easy on Monday, hardest on Sunday.</p>
-      <p class="navod r d5">Click a burrow, or drag across several, then a number from the pad. Keyboard: arrows move and wrap round the edge, <kbd>Ctrl</kbd> plus an arrow widens the selection, the number keys write, <kbd>Delete</kbd> clears, <kbd>Z</kbd> <kbd>X</kbd> <kbd>C</kbd> <kbd>V</kbd> pick Normal, Corner, Centre and Colour, <kbd>U</kbd> undo, <kbd>R</kbd> redo, <kbd>P</kbd> pauses. Restart puts the meadow back to the numbers it was given, and one Undo brings your board back. Nothing lights up while you play; Check judges only when you ask.</p>
-    </div>
-    <div class="r d2">
-      <div class="hra" id="hra">
-        <div class="horna"><span><span id="datum">Today's meadow</span><span class="uroven" id="uroven"></span></span><span id="cas-blok">Time <b id="cas">0:00</b><button type="button" class="pauza-btn" id="pauza" hidden>Pause</button></span></div>
-        <div class="doska-obal">
-          <div class="doska" id="doska" role="grid" aria-label="Meadow grid 9 by 9" aria-describedby="cisla-text">
-            <noscript><p>This game needs JavaScript: the puzzle is generated right in your browser.</p></noscript>
-          </div>
-          <div class="pauza-blok" id="pauza-blok" hidden><p><b>Paused.</b> <span id="pauza-cas"></span></p><button type="button" class="btn btn-solid" id="pokracuj">Resume</button></div>
-        </div>
-        <p class="skryte" id="cisla-text"></p>
-        <div class="pad" id="pad">
-          <button type="button" data-d="1">1</button>
-          <button type="button" data-d="2">2</button>
-          <button type="button" data-d="3">3</button>
-          <button type="button" data-d="4">4</button>
-          <button type="button" data-d="5">5</button>
-          <button type="button" data-d="6">6</button>
-          <button type="button" data-d="7">7</button>
-          <button type="button" data-d="8">8</button>
-          <button type="button" data-d="9">9</button>
-          <button type="button" class="zmaz" data-d="0" aria-label="Empty the burrow">Del</button>
-        </div>
-        <div class="pad farby-pad" id="farby" hidden></div>
-        <div class="rezimy" id="rezimy" role="group" aria-label="What a number writes">
-          <button type="button" data-rezim="normal" aria-pressed="true" aria-keyshortcuts="Z">Normal<small>Z</small></button>
-          <button type="button" data-rezim="corner" aria-pressed="false" aria-keyshortcuts="X">Corner<small>X</small></button>
-          <button type="button" data-rezim="centre" aria-pressed="false" aria-keyshortcuts="C">Centre<small>C</small></button>
-          <button type="button" data-rezim="colour" aria-pressed="false" aria-keyshortcuts="V">Colour<small>V</small></button>
-        </div>
-        <div class="ovladanie">
-          <button type="button" class="btn btn-line" id="spat">Undo</button>
-          <button type="button" class="btn btn-line" id="znova">Redo</button>
-          <button type="button" class="btn btn-line" id="reset">Restart</button>
-          <button type="button" class="btn btn-line" id="hint">Hint</button>
-          <button type="button" class="btn btn-line" id="check">Check</button>
-          <span class="small" id="seria"></span>
-        </div>
-        <p class="stav" id="stav" aria-live="polite"></p>
-        <div class="zdielanie" id="zdielanie" hidden>
-          <button type="button" class="btn btn-line" id="zdielaj">Share</button>
-          <span id="zdielanie-stav" aria-live="polite">Copies a short text: the meadow, your time, the help you used. No numbers, so it spoils nothing.</span>
-          <textarea id="zdielanie-text" rows="8" readonly hidden aria-label="The text to copy"></textarea>
-        </div>
-        <nav class="pasik" id="pasik" aria-label="This week"></nav>
-        <p class="odkazy"><a href="/games/hares/guide/">How to play</a> · <a href="/games/hares/practice/">Practice sets</a> · <a href="/games/hares/archive/">Archive</a></p>
-        <p class="historia" id="historia" hidden></p>
-        <details class="nastavenia">
-          <summary>Settings</summary>
-          <label><input type="checkbox" data-nastavenie="cifraPrva"> Digit first: pick a number from the pad, then tap the burrows it goes into; the number stays chosen, so one tap after another writes it again (off: pick the burrows first, then the number)</label>
-          <label><input type="checkbox" data-nastavenie="casovac"> Display timer: show the clock and the Pause button</label>
-          <label><input type="checkbox" data-nastavenie="zvyrazniRovnake"> Highlight matching numbers: with one burrow picked, light up every burrow holding the same number</label>
-          <label><input type="checkbox" data-nastavenie="tahViac"> Cell selection when dragging: a drag across the meadow selects every burrow it crosses (off: it moves the one selected burrow)</label>
-          <label><input type="checkbox" data-nastavenie="znackyPridavat"> Number entry with noted cells, Add note: in a burrow that already has marks, a number becomes another mark (off: it fills the burrow and the marks wait underneath)</label>
-          <label><input type="checkbox" data-nastavenie="zivaKontrola"> Highlight errors: mark a wrong number as soon as it is written (off by default: finding a mistake is part of the puzzle)</label>
-          <label><input type="checkbox" data-nastavenie="predvolenaCentre"> Default note style Centre: the Notes key writes in the middle of the burrow (off: in the corners)</label>
-          <label><input type="checkbox" data-nastavenie="autoOdstranZnacky"> Auto remove restricted notes: a number written in takes the same mark out of every burrow it rules out</label>
-          <label><input type="checkbox" data-nastavenie="pauzaPriOdchode"> Auto pause: stop the clock when you leave the tab or sit still for a minute</label>
-          <label><input type="checkbox" data-nastavenie="lenPad"> Onscreen input only: numbers come from the pad, the number keys of a keyboard are ignored (arrows, Undo, Redo and Pause keep working)</label>
-          <label><input type="checkbox" data-nastavenie="potvrditReset"> Confirm before Restart</label>
-          <label><input type="checkbox" data-nastavenie="oslava"> Celebration: confetti and a bigger result when you finish</label>
-          <p class="fineprint">Settings, progress, history and streak stay in this browser. Add this page to your home screen to open it like an app.</p>
-        </details>
-      </div>
-    </div>
-  </div>
-
-  <section id="rules" class="deep pravidla">
-    <div class="wrap">
-      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>01</p>
-      <h2 class="r">Rules.</h2>
-      <p class="sub r d1">Three sentences. The rest is practice.</p>
-      <div class="rule"></div>
-      <div class="r d2">
-        <details open>
-          <summary>How to play</summary>
-          <div class="telo">
-            <p>Fill the meadow so that every row, column and block has each number once. Hares leap like a chess knight: two burrows a knight's leap apart never hold the same number. From Friday on, hares also refuse to sit next to the same number in any direction, corners included.</p>
-            <p>A knight's leap is two burrows one way and one across, the move a knight makes on a chessboard. It reaches over rows, columns and blocks alike, which is where the puzzle differs from the number square you already know: a burrow far away can still rule a number out.</p>
-            <p>The numbers the meadow gives you are heavier and sit a shade darker. Every meadow has exactly one filling that fits every rule. When the last burrow is right, the game notices by itself.</p>
-          </div>
-        </details>
-        <details>
-          <summary>Controls</summary>
-          <div class="telo">
-            <p><b>Moving.</b> Tap or click a burrow to select it; drag across the meadow and every burrow you cross joins the selection. <kbd>Ctrl</kbd> (on a Mac <kbd>Cmd</kbd>) plus a click adds one burrow or takes it out again. The arrow keys, or <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd>, move the selection and wrap round the edge; <kbd>Ctrl</kbd> plus an arrow widens it. <kbd>Escape</kbd> lets the selection go. A burrow the meadow gave you can be selected, for the marks and colours around it, but never overwritten.</p>
-            <p><b>Writing.</b> The keys <kbd>1</kbd> to <kbd>9</kbd>, the numeric keypad and the pad under the meadow all write the same way, into every selected burrow at once. The same number again takes it back, so the way out is always one press. <kbd>Delete</kbd> or <kbd>Backspace</kbd> clears in one order: the big numbers first, then the marks of those burrows, then the colour. A number written into a burrow that already carries marks simply covers them; take the number out and they are all back.</p>
-            <p><b>Four modes.</b> The four buttons under the pad say what a number writes: <b>Normal</b> the big number, <b>Corner</b> a small mark in the corners, <b>Centre</b> a small mark in the middle, <b>Colour</b> one of nine colours over the burrow. Keys <kbd>Z</kbd> <kbd>X</kbd> <kbd>C</kbd> <kbd>V</kbd> pick one, the spacebar cycles through them, <kbd>N</kbd> goes Corner, Centre, Normal, and holding <kbd>Shift</kbd> borrows Corner or <kbd>Ctrl</kbd> Centre for as long as you hold it. Nothing lights up while you play: finding a mistake is part of the puzzle.</p>
-            <p><b>Undo, Redo and Restart.</b> <kbd>U</kbd> or <kbd>Ctrl</kbd>+<kbd>Z</kbd> go back, <kbd>R</kbd>, <kbd>Ctrl</kbd>+<kbd>Y</kbd> or <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> forward, as far as you like; <kbd>Ctrl</kbd>+<kbd>R</kbd> stays your browser's reload, we never take it. <b>Restart</b> puts the meadow back to the numbers it was given and clears everything else, colours included; the clock keeps running and one Undo brings it all back. <kbd>P</kbd> pauses.</p>
-            <p><b>Check and Hint.</b> <b>Check</b> first tells you only how many numbers are wrong and which rows or columns they sit in; press it again and it marks them. With exactly one burrow selected it reads only that row, column and block. <b>Hint</b> names the rule and the place without giving the number away, and the second press writes that one number and explains it. If something on the board is already wrong, the hint points there first. Hints and checks are free and counted, and shown when you finish.</p>
-            <p>The clock runs from your first number to the last burrow and pauses when you leave the tab or sit still for a minute, which also hides the meadow. Your progress, time, history and day streak stay in this browser, and in your <a href="/ucet/">account</a> when you are signed in, so you can continue on another device. The day turns over at midnight where you are. Only the meadow of the day counts towards the streak, the archive is for practice; once you are five days in, a single missed day is forgiven, at most twice a month.</p>
-          </div>
-        </details>
-        <details>
-          <summary>The week</summary>
-          <div class="telo">
-            <p>Monday and Tuesday are easy: six by six, blocks of two rows by three columns, numbers 1 to 6, with the knight's leap. Wednesday and Thursday are medium and Friday and Saturday hard, both nine by nine with blocks of three by three; from Friday the touching rule joins in and fewer numbers are given away. Sunday is the challenge, the same nine by nine with both extra rules and the fewest numbers to start from. The week strip under the meadow takes you to the other days; the <a href="/games/hares/archive/">archive</a> goes back a year, and the <a href="/games/hares/practice/">practice sets</a> have eight meadows of each level with no date attached.</p>
-            <p>Difficulty is measured, not guessed. Every meadow is solved by a program that only knows named rules, in three layers: the plain ones (a burrow with a single number left once its row, its column, its block and every hare within reach have taken theirs, and a number that fits only one burrow of a row, a column or a block), the patterns (a number held in place by the knight's leap or the touching rule alone, a pair of burrows holding two numbers between them, a number confined to one line inside a block), and the hard one (writing a number in, following it one step and dropping it because it runs into a contradiction). Easy and Medium never need that third layer; Sunday leans on it the most.</p>
-          </div>
-        </details>
-        <details>
-          <summary>A few ways in</summary>
-          <div class="telo">
-            <p>Start where the meadow is crowded. A block with six or seven numbers in it usually gives the rest away, and every number you write there narrows two more lines at once.</p>
-            <p>Then use the leap. When a row is missing a number and two of its empty burrows sit a knight's leap from that same number elsewhere, the third burrow is the only one left. That step is the heart of this puzzle, and the classic number square has nothing like it.</p>
-            <p>On the king days, look at pairs of touching burrows first. Two burrows side by side or corner to corner cannot both hold the same number, which quietly halves a lot of choices around a block edge.</p>
-            <p>When a number can only sit in one row of a block, it is gone from the rest of that row everywhere else on the board. That is often the step that unlocks a stubborn corner.</p>
-          </div>
-        </details>
-      </div>
-    </div>
-  </section>
-
-  <section id="about">
-    <div class="wrap prose">
-      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 8v.5M12 11v5"/></svg>02</p>
-      <h2 class="r">About this game.</h2>
-      <div class="rule"></div>
-      <p class="r d1">Every meadow is generated by our own program from its date: new every day and the same for everyone. The program only keeps a meadow when it has exactly one solution and when its own rule solver finishes it without ever guessing, so there is always a next step you can find. No puzzle is taken from anywhere else. The mechanic is a classic number square with a chess move added on top; this implementation, the daily meadows, the hints and the words are ours.</p>
-      <p class="r d2">Your numbers, time, history and day streak are stored only in this browser. Our anonymous statistics (self-hosted Umami) record the page visit, as on every page of ours, and a few extra events: that someone solved a meadow and in how many seconds, and that Check or Hint was used. Nothing else.</p>
-      <p class="r d3">This is an early version. If something is missing or in the way, write to <a href="mailto:andrej@arling.sk">andrej@arling.sk</a>.</p>
-    </div>
-  </section>
-</main>
-
-<aside class="predaj" data-predaj="hares" aria-label="More from ARLing" style="border-top:1px solid var(--line)">
-  <div class="wrap" style="padding:20px 0 28px">
-    <p class="small" style="margin:0 0 6px">Everything on this page is free. For a tablet you can write on, we also make books.</p>
-    <p class="small" style="margin:0;display:flex;flex-wrap:wrap;gap:4px 18px"><a href="/puzzle-post/" data-umami-event="games_to_puzzle_post" data-umami-event-game="hares">Puzzle Post: 100 hyperlinked puzzles a month for e-ink tablets, 3.90 &euro;</a><a href="/shop/" data-umami-event="games_to_shop" data-umami-event-game="hares">All puzzle books and titles</a></p>
-  </div>
-</aside>
-
-<footer>
-  <div class="wrap foot">
-    <div><b>ARLing s. r. o.</b><br>Ivanská cesta 32E<br>821 04 Bratislava, Slovakia</div>
-    <div>Company ID 56583486<br>VAT ID SK2122352100<br><a href="mailto:andrej@arling.sk">andrej@arling.sk</a></div>
-    <div><a href="https://arling.sk/shop/">shop</a> · <a href="https://arling.sk/privacy/en/">privacy</a> · <a href="https://arling.sk/podmienky/en/">terms</a> · <a href="https://arling.sk/gdpr/en/">GDPR</a> · <a href="https://arling.sk/impressum/en/">Impressum</a> · <a href="https://arling.sk/llms.txt">llms.txt</a> · <a href="https://arling.sk/sitemap-index.xml">sitemap</a><br>Tools are provided as is, without warranty. Anonymous visit counts via self-hosted Umami.</div>
-  </div>
-</footer>
-<script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="469b28b9-caa6-4ef2-807b-c219c30110fc"></script>
-</body>
-</html><main id="obsah">
+<main id="obsah">
 <style>
   .mesiac{margin:0 0 26px}
   .mesiac h3{font:600 15px/1.4 var(--ui);color:var(--ink);margin:0 0 10px}

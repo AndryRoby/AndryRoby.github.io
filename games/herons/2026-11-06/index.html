@@ -36,6 +36,8 @@
 <link rel="preload" href="/fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/style/paper.css?v=2ebf5aa4">
+<link rel="stylesheet" href="/style/obsah.css">
+<link rel="stylesheet" href="/style/hra.css">
 <script src="/style/prepinac.js?v=668e98c9" defer></script>
 <script type="module" src="/games/herons/game.js?v=4"></script>
 <style>
@@ -56,22 +58,18 @@
     .hra{max-width:100%}
     .doska-obal{--sirka:min(100vw,calc(var(--n,6) * 68px));margin-inline:calc((100% - var(--sirka)) / 2)}
   }
-  header{padding-top:env(safe-area-inset-top,0px)}
+
   .horna{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:0 0 10px;
          font-family:var(--ui);font-size:14px;color:var(--muted)}
-  .horna b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
-  .horna .uroven{color:var(--muted);font-size:12px;letter-spacing:.06em;text-transform:uppercase;margin-left:8px;white-space:nowrap}
+
   .horna #cas-blok,.horna #datum{white-space:nowrap}
   @media (max-width:480px){ .horna .uroven{display:block;margin:2px 0 0} }
-  .pauza-btn{font:500 12px/1 var(--ui);color:var(--muted);background:transparent;border:1px solid var(--line);border-radius:999px;padding:4px 10px;cursor:pointer;margin-left:8px;vertical-align:1px}
-  .pauza-btn:hover{color:var(--ink);border-color:var(--ink)}
+
   .doska-obal{position:relative;touch-action:pan-y}
   /* the width itself is set above, with the marsh */
   .pauza-blok{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
      background:rgba(10,9,8,.9);border:2px solid var(--line);border-radius:8px;text-align:center;font-family:var(--ui);padding:20px;z-index:2}
-  .pauza-blok[hidden]{display:none}
-  .pauza-blok p{margin:0;color:var(--body);font-size:15px;line-height:1.5}
-  .pauza-blok b{color:var(--ink)}
+
   /* ── The marsh ──────────────────────────────────────────────────────────
      One SVG, drawn by game.js: a faint grid of cells, one group per cell with
      the flight path that runs through it, and the nests on top. The path is a
@@ -83,7 +81,7 @@
   /* An SVG is not an HTML element, so the browser's own rule for [hidden]
      does not reach it: a future day hides the marsh with this one. */
   .doska[hidden]{display:none}
-  .doska.hotovo{border-color:var(--ok);box-shadow:0 0 0 4px rgba(94,207,154,.14)}
+
   .doska.hotovo,.doska.pauza{cursor:default}
   .doska.pauza .plocha{visibility:hidden}
   .mriezka line{stroke:rgba(255,255,255,.10);stroke-width:1}
@@ -151,66 +149,26 @@
      asi 25 px navyse: uzsi gap a padding ich usetri dost s rezervou a
      sirsieho telefonu sa to netyka. */
   @media (max-width:359px){ .ovladanie{gap:4px} .ovladanie .btn{padding:0 6px;font-size:13px} }
-  .stav{font-family:var(--ui);font-size:15px;line-height:1.5;color:var(--body);margin:12px 0 0;min-height:1.5em}
-  .stav b{color:var(--ink)}
-  .stav.ok{color:var(--ok)}
+
   .stav.ok b{color:var(--ok);display:block;font:700 clamp(22px,3.2vw,30px)/1.15 var(--display);letter-spacing:-.01em;margin:0 0 6px}
-  .oslava-streak{display:block;margin-top:8px;font-family:var(--ui);font-size:13px;color:var(--body)}
-  .oslava-dalej{display:block;margin-top:6px;font-family:var(--ui);font-size:13px}
-  .oslava-dalej a{color:var(--accent-light)}
-  .oslava-pulz{animation:oslava-pulz .3s ease}
-  @keyframes oslava-pulz{0%{transform:scale(1)}50%{transform:scale(1.02)}100%{transform:scale(1)}}
-  @media (prefers-reduced-motion:reduce){ .oslava-pulz{animation:none} }
-  .pasik{display:flex;gap:6px;margin-top:14px}
+
   .den{flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;padding:6px 0 5px;border:1px solid var(--line);border-radius:10px;
        text-decoration:none;color:var(--muted);font-family:var(--ui);min-width:0;background:var(--card)}
-  .den small{font-size:10px;letter-spacing:.08em}
-  .den b{font-size:15px;color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
-  .den.dnes{border-color:var(--accent);color:var(--accent)}
-  .den.rozohrane{border-style:dashed}
-  .den.hotove{background:rgba(94,207,154,.12);border-color:var(--ok)}
-  .den.hotove b{color:var(--ok)}
-  .den.buduci{opacity:.38}
-  a.den:hover{border-color:var(--ink);color:var(--ink)}
-  .odkazy{font-family:var(--ui);font-size:13px;color:var(--muted);margin:12px 0 0}
-  .odkazy a{color:var(--body)}
-  .historia{font-family:var(--ui);font-size:13px;color:var(--body);line-height:1.5;margin:10px 0 0}
-  .historia b{color:var(--ink)}
-  .nastavenia{margin-top:14px;border:1px solid var(--line);border-radius:12px;background:var(--card);padding:0 14px}
-  .nastavenia summary{cursor:pointer;font:600 13px/1.4 var(--ui);color:var(--muted);padding:10px 0;list-style:none}
-  .nastavenia summary::-webkit-details-marker{display:none}
-  .nastavenia[open] summary{color:var(--ink)}
-  .nastavenia label{display:flex;gap:10px;align-items:flex-start;font-family:var(--ui);font-size:13px;color:var(--body);line-height:1.5;padding:6px 0}
-  .nastavenia input{margin-top:3px;flex:none}
-  .nastavenia .fineprint{padding:6px 0 12px;margin:0}
-  .navod{font-family:var(--ui);font-size:13px;color:var(--muted);margin:10px 0 0;max-width:none}
-  .navod kbd{font-size:12px}
+
   /* On the phone the marsh goes under the text; the keyboard note there would
      just push the game further down. It is in the Rules section too. */
   @media (max-width:860px){ .navod{display:none} }
-  .pravidla details{border:1px solid var(--line);border-radius:12px;background:var(--card);padding:0 18px;max-width:68ch}
-  .pravidla details+details{margin-top:10px}
-  .pravidla summary{cursor:pointer;font:600 15px/1.4 var(--ui);color:var(--ink);padding:14px 0;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:12px}
-  .pravidla summary::-webkit-details-marker{display:none}
-  .pravidla summary::after{content:"";width:.5em;height:.5em;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(45deg);flex:none;margin-right:4px;transition:transform .2s var(--ease)}
-  .pravidla details[open] summary::after{transform:rotate(225deg)}
-  .pravidla .telo{padding:0 0 16px}
-  .pravidla .telo p{margin:0 0 10px}
-  .pravidla .telo p:last-child{margin:0}
+
   .jazyk{font:500 13px/1 var(--ui);color:var(--muted);background:transparent;border:1px solid var(--line);border-radius:999px;padding:6px 12px;cursor:pointer;margin-top:14px}
   .jazyk:hover{color:var(--ink);border-color:var(--ink)}
-  .prose p{margin:0 0 14px}
-  .prose p:last-child{margin-bottom:0}
-  .sub{margin:0 0 6px}
-  noscript p{font-family:var(--ui);color:var(--accent-light)}
+
 </style>
 <noscript><style>
   .r, .w { opacity:1 !important; transform:none !important; filter:none !important; }
   .rule { transform:scaleX(1) !important; }
 </style></noscript>
 </head>
-<body class="noc" data-den="2026-11-06">
-<div class="wash" aria-hidden="true"><i></i><i></i></div>
+<body class="noc obsah hra" data-den="2026-11-06">
 <a class="skip site-skip" href="#arling-obsah" data-site-label="skip">Skip to content</a>
 <header class="site-header">
   <div class="wrap bar">
@@ -228,9 +186,9 @@
 <main id="arling-obsah" tabindex="-1">
   <div class="wrap hero" id="hero">
     <div>
-      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19v-6a3 3 0 0 1 3-3h5a3 3 0 0 0 3-3V5"/><circle cx="4" cy="20.5" r="2"/><circle cx="16" cy="4" r="2"/></svg>Daily path logic</p>
       <h1 id="h1"><span class="l">Herons.</span></h1>
       <p class="lead r d3">Each pair of nests belongs to one pair of herons. Draw a flight path between the two nests of every pair. Paths run through neighbouring cells, never cross, and every cell of the marsh is used by exactly one path.</p>
+      <p class="uv-actions"><a class="btn btn-solid" href="#doska">Play today's marsh</a><a class="uv-quiet" href="/games/herons/guide/">How to play</a></p>
       <p class="proof r d5" id="dnes">This marsh opens on Friday 6 November 2026 at midnight, Bratislava time.</p>
       <p class="navod r d5">Drag out of a nest and the path follows your finger; drag back along it and it rubs out. Tap a cell of a path to clear it from there on. Keyboard: arrows move the cursor, <kbd>Enter</kbd> starts and ends drawing, <kbd>Delete</kbd> clears from the cursor on, <kbd>U</kbd> undo, <kbd>R</kbd> redo, <kbd>P</kbd> pauses. Nothing lights up while you play; Check judges only when you ask.</p>
     </div>
@@ -273,7 +231,6 @@
 
   <section id="rules" class="deep pravidla">
     <div class="wrap">
-      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>01</p>
       <h2 class="r">Rules.</h2>
       <p class="sub r d1">Three sentences. The rest is practice.</p>
       <div class="rule"></div>

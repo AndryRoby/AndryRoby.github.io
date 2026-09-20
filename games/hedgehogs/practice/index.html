@@ -34,6 +34,8 @@
 <link rel="preload" href="/fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/style/paper.css?v=2ebf5aa4">
+<link rel="stylesheet" href="/style/obsah.css">
+<link rel="stylesheet" href="/style/hra.css">
 <script src="/style/prepinac.js?v=668e98c9" defer></script>
 <script type="module" src="/games/hedgehogs/zoznamy.js?v=1"></script>
 <style>
@@ -44,21 +46,17 @@
   @media (max-width:860px){ .hra{margin:0 auto;max-width:min(100%,calc(var(--n,9) * 64px))} }
   /* Narrow phones: the garden takes the whole screen width (cells at least 40 px on 390 px screens). */
   @media (max-width:480px){ .doska-obal{margin:0 calc(-1 * var(--pad, 22px))} .doska{border-radius:0;border-left:0;border-right:0} }
-  header{padding-top:env(safe-area-inset-top,0px)}
+
   .horna{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:0 0 10px;
          font-family:var(--ui);font-size:14px;color:var(--muted)}
-  .horna b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
-  .horna .uroven{color:var(--muted);font-size:12px;letter-spacing:.06em;text-transform:uppercase;margin-left:8px;white-space:nowrap}
+
   .horna #cas-blok{white-space:nowrap}
   @media (max-width:480px){ .horna .uroven{display:block;margin:2px 0 0} }
-  .pauza-btn{font:500 12px/1 var(--ui);color:var(--muted);background:transparent;border:1px solid var(--line);border-radius:999px;padding:4px 10px;cursor:pointer;margin-left:8px;vertical-align:1px}
-  .pauza-btn:hover{color:var(--ink);border-color:var(--ink)}
+
   .doska-obal{position:relative}
   .pauza-blok{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
      background:rgba(10,9,8,.9);border:2px solid var(--line);border-radius:8px;text-align:center;font-family:var(--ui);padding:20px;z-index:2}
-  .pauza-blok[hidden]{display:none}
-  .pauza-blok p{margin:0;color:var(--body);font-size:15px;line-height:1.5}
-  .pauza-blok b{color:var(--ink)}
+
   .doska.pauza .b{visibility:hidden}
   .doska{display:grid;grid-template-columns:repeat(var(--n,8),minmax(0,1fr));
          border:2px solid var(--ink);border-radius:8px;overflow:hidden;
@@ -66,7 +64,7 @@
          --tenka:rgba(255,255,255,.11);--hruba:var(--ink);
          --hviezda:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpolygon points='3.4,14.0 1.2,12.3 3.9,11.4 2.3,9.0 5.2,9.1 4.6,6.3 7.2,7.4 7.6,4.6 9.7,6.5 11.0,4.0 12.3,6.5 14.4,4.6 14.8,7.4 17.4,6.3 16.8,9.1 19.7,9.0 18.1,11.4 20.8,12.3 18.6,14.0 20.8,13.4 23.2,15.2 21.6,17.6 19.4,19.5 3.2,19.5 1.4,17.4'/%3E%3Ccircle cx='18.6' cy='15.9' r='1.15' fill='%230a0908'/%3E%3Ccircle cx='22.6' cy='15.6' r='0.9'/%3E%3C/svg%3E")}
   .riadok{display:contents}
-  .doska.hotovo{border-color:var(--ok);box-shadow:0 0 0 4px rgba(94,207,154,.14)}
+
   .b{appearance:none;-webkit-appearance:none;border:0;margin:0;padding:0;background:transparent;
      aspect-ratio:1;width:100%;display:block;position:relative;cursor:pointer;color:var(--ink);
      box-shadow:inset 1px 0 0 var(--tenka),inset 0 1px 0 var(--tenka);border-radius:0}
@@ -108,16 +106,9 @@
   .hotovo .b{cursor:default}
   .ovladanie{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:14px}
   .ovladanie .btn{height:40px;padding:0 16px;font-size:14px}
-  .stav{font-family:var(--ui);font-size:15px;line-height:1.5;color:var(--body);margin:12px 0 0;min-height:1.5em}
-  .stav b{color:var(--ink)}
-  .stav.ok{color:var(--ok)}
+
   .stav.ok b{color:var(--ok);display:block;font:700 clamp(22px,3.2vw,30px)/1.15 var(--display);letter-spacing:-.01em;margin:0 0 6px}
-  .oslava-streak{display:block;margin-top:8px;font-family:var(--ui);font-size:13px;color:var(--body)}
-  .oslava-dalej{display:block;margin-top:6px;font-family:var(--ui);font-size:13px}
-  .oslava-dalej a{color:var(--accent-light)}
-  .oslava-pulz{animation:oslava-pulz .3s ease}
-  @keyframes oslava-pulz{0%{transform:scale(1)}50%{transform:scale(1.02)}100%{transform:scale(1)}}
-  @media (prefers-reduced-motion:reduce){ .oslava-pulz{animation:none} }
+
   /* Share, only after the garden is finished (ops/spec-hry-ux.md, part 8).
      The textarea is the way out when the browser refuses the clipboard. */
   .zdielanie{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px;
@@ -127,57 +118,25 @@
   .zdielanie span{flex:1;min-width:180px}
   .zdielanie textarea{width:100%;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--body);
                       font:12px/1.5 var(--ui);padding:8px 10px;resize:vertical}
-  .pasik{display:flex;gap:6px;margin-top:14px}
+
   .den{flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;padding:6px 0 5px;border:1px solid var(--line);border-radius:10px;
        text-decoration:none;color:var(--muted);font-family:var(--ui);min-width:0;background:var(--card)}
-  .den small{font-size:10px;letter-spacing:.08em}
-  .den b{font-size:15px;color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
-  .den.dnes{border-color:var(--accent);color:var(--accent)}
-  .den.rozohrane{border-style:dashed}
-  .den.hotove{background:rgba(94,207,154,.12);border-color:var(--ok)}
-  .den.hotove b{color:var(--ok)}
-  .den.buduci{opacity:.38}
-  a.den:hover{border-color:var(--ink);color:var(--ink)}
-  .odkazy{font-family:var(--ui);font-size:13px;color:var(--muted);margin:12px 0 0}
-  .odkazy a{color:var(--body)}
-  .historia{font-family:var(--ui);font-size:13px;color:var(--body);line-height:1.5;margin:10px 0 0}
-  .historia b{color:var(--ink)}
-  .nastavenia{margin-top:14px;border:1px solid var(--line);border-radius:12px;background:var(--card);padding:0 14px}
-  .nastavenia summary{cursor:pointer;font:600 13px/1.4 var(--ui);color:var(--muted);padding:10px 0;list-style:none}
-  .nastavenia summary::-webkit-details-marker{display:none}
-  .nastavenia[open] summary{color:var(--ink)}
-  .nastavenia label{display:flex;gap:10px;align-items:flex-start;font-family:var(--ui);font-size:13px;color:var(--body);line-height:1.5;padding:6px 0}
-  .nastavenia input{margin-top:3px;flex:none}
-  .nastavenia .fineprint{padding:6px 0 12px;margin:0}
-  .navod{font-family:var(--ui);font-size:13px;color:var(--muted);margin:10px 0 0;max-width:none}
-  .navod kbd{font-size:12px}
+
   /* Na telefóne ide mriežka pod text; návod na klávesnicu tam nemá zmysel
      a len odsúva hru nižšie. Celý je aj v sekcii Pravidlá. */
   @media (max-width:860px){ .navod{display:none} }
-  .pravidla details{border:1px solid var(--line);border-radius:12px;background:var(--card);padding:0 18px;max-width:68ch}
-  .pravidla details+details{margin-top:10px}
-  .pravidla summary{cursor:pointer;font:600 15px/1.4 var(--ui);color:var(--ink);padding:14px 0;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:12px}
-  .pravidla summary::-webkit-details-marker{display:none}
-  .pravidla summary::after{content:"";width:.5em;height:.5em;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(45deg);flex:none;margin-right:4px;transition:transform .2s var(--ease)}
-  .pravidla details[open] summary::after{transform:rotate(225deg)}
-  .pravidla .telo{padding:0 0 16px}
-  .pravidla .telo p{margin:0 0 10px}
-  .pravidla .telo p:last-child{margin:0}
+
   .jazyk{font:500 13px/1 var(--ui);color:var(--muted);background:transparent;border:1px solid var(--line);border-radius:999px;padding:6px 12px;cursor:pointer;margin-top:14px}
   .jazyk:hover{color:var(--ink);border-color:var(--ink)}
-  .prose p{margin:0 0 14px}
-  .prose p:last-child{margin-bottom:0}
-  .sub{margin:0 0 6px}
-  noscript p{font-family:var(--ui);color:var(--accent-light)}
+
 </style>
 <noscript><style>
   .r, .w { opacity:1 !important; transform:none !important; filter:none !important; }
   .rule { transform:scaleX(1) !important; }
 </style></noscript>
 </head>
-<body class="noc">
-<div class="wash" aria-hidden="true"><i></i><i></i></div>
-<a class="skip site-skip" href="#arling-obsah" data-site-label="skip">Skip to content</a>
+<body class="noc obsah hra">
+<a class="skip site-skip" href="#obsah" data-site-label="skip">Skip to content</a>
 <header class="site-header">
   <div class="wrap bar">
     <a class="brand" href="https://arling.sk/en/" aria-label="ARLing home" data-site-home>
@@ -191,125 +150,7 @@
   </div>
 </header>
 
-<main id="arling-obsah" tabindex="-1">
-  <div class="wrap hero" id="hero">
-    <div>
-      <p class="kicker"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="3.4,14.0 1.2,12.3 3.9,11.4 2.3,9.0 5.2,9.1 4.6,6.3 7.2,7.4 7.6,4.6 9.7,6.5 11.0,4.0 12.3,6.5 14.4,4.6 14.8,7.4 17.4,6.3 16.8,9.1 19.7,9.0 18.1,11.4 20.8,12.3 18.6,14.0 20.8,13.4 23.2,15.2 21.6,17.6 19.4,19.5 3.2,19.5 1.4,17.4"/></svg>Daily logic puzzle</p>
-      <h1 id="h1"><span class="l">Hedgehogs.</span></h1>
-      <p class="lead r d3">Two hedgehogs in every row, every column and every flowerbed. No two hedgehogs may touch, not even at a corner: they prickle.</p>
-      <p class="proof r d5" id="dnes">A new garden every day at midnight, always with exactly one solution. Easy on Monday, hardest on Sunday.</p>
-      <p class="navod r d5">Tap a cell: dot, then hedgehog, then empty. Hold and drag to sweep dots. Keyboard: arrows move, <kbd>Space</kbd> cycles, <kbd>X</kbd> dot, <kbd>H</kbd> hedgehog, <kbd>Delete</kbd> clears, <kbd>P</kbd> pauses. Nothing lights up while you play; Check judges only when you ask.</p>
-    </div>
-    <div class="r d2">
-      <div class="hra">
-        <div class="horna"><span><span id="datum">Today's garden</span><span class="uroven" id="uroven"></span></span><span id="cas-blok">Time <b id="cas">0:00</b><button type="button" class="pauza-btn" id="pauza" hidden>Pause</button></span></div>
-        <div class="doska-obal">
-          <div class="doska" id="doska" role="grid" aria-label="Garden grid 9 by 9">
-            <noscript><p>This game needs JavaScript: the puzzle is generated right in your browser.</p></noscript>
-          </div>
-          <div class="pauza-blok" id="pauza-blok" hidden><p><b>Paused.</b> <span id="pauza-cas"></span></p><button type="button" class="btn btn-solid" id="pokracuj">Resume</button></div>
-        </div>
-        <div class="ovladanie">
-          <button type="button" class="btn btn-line" id="spat">Undo</button>
-          <button type="button" class="btn btn-line" id="reset">Clear</button>
-          <button type="button" class="btn btn-line" id="hint">Hint</button>
-          <button type="button" class="btn btn-line" id="check">Check</button>
-          <span class="small" id="seria"></span>
-        </div>
-        <p class="stav" id="stav" aria-live="polite"></p>
-        <div class="zdielanie" id="zdielanie" hidden>
-          <button type="button" class="btn btn-line" id="zdielaj">Share</button>
-          <span id="zdielanie-stav" aria-live="polite">Copies a short text: the garden, your time, the help you used. No cells, so it spoils nothing.</span>
-          <textarea id="zdielanie-text" rows="6" readonly hidden aria-label="The text to copy"></textarea>
-        </div>
-        <nav class="pasik" id="pasik" aria-label="This week"></nav>
-        <p class="odkazy"><a href="/games/hedgehogs/guide/">How to play</a> · <a href="/games/hedgehogs/practice/">Practice sets</a> · <a href="/games/hedgehogs/archive/">Archive</a></p>
-        <p class="historia" id="historia" hidden></p>
-        <details class="nastavenia">
-          <summary>Settings</summary>
-          <label><input type="checkbox" data-nastavenie="casovac"> Show the timer and the Pause button</label>
-          <label><input type="checkbox" data-nastavenie="pauzaPriOdchode"> Pause the clock when you leave the tab</label>
-          <label><input type="checkbox" data-nastavenie="autoBodky"> Auto dots: a hedgehog dots its neighbours and completed rows, columns and flowerbeds (off by default: placing the dots is part of the puzzle)</label>
-          <label><input type="checkbox" data-nastavenie="potvrditReset"> Ask before Clear</label>
-          <label><input type="checkbox" data-nastavenie="oslava"> Celebration: confetti and a bigger result when you finish</label>
-          <p class="fineprint">Settings, progress, history and streak stay in this browser. Add this page to your home screen to open it like an app.</p>
-        </details>
-      </div>
-    </div>
-  </div>
-
-  <section id="rules" class="deep pravidla">
-    <div class="wrap">
-      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>01</p>
-      <h2 class="r">Rules.</h2>
-      <p class="sub r d1">Three sentences. The rest is practice.</p>
-      <div class="rule"></div>
-      <div class="r d2">
-        <details open>
-          <summary>How to play</summary>
-          <div class="telo">
-            <p>Place exactly two hedgehogs in every row, every column and every flowerbed (the outlined regions). A garden with nine rows has nine columns and nine flowerbeds, so eighteen hedgehogs in total; the size changes through the week, from eight by eight on Monday to ten by ten from Friday.</p>
-            <p>No two hedgehogs may touch: not side by side, not diagonally. They prickle.</p>
-            <p>A dot is your own note that a cell stays empty. When you place the last hedgehog, the game checks the solution by itself.</p>
-          </div>
-        </details>
-        <details>
-          <summary>Controls</summary>
-          <div class="telo">
-            <p>Tap or click a cell: once for a dot, twice for a hedgehog, three times to clear it. Hold the button or your finger and drag to sweep dots over many cells at once. Nothing lights up while you play: finding a mistake is part of the puzzle.</p>
-            <p><b>Check</b> first tells you only how many marks are wrong. Press it again and it shows which. <b>Hint</b> outlines the next step a patient friend would point at and explains it; press it again to fill it in. Hints are counted and shown when you finish. <b>Clear</b> empties the garden; the clock keeps running.</p>
-            <p>Keyboard: arrows move, <kbd>Space</kbd> or <kbd>Enter</kbd> cycles the cell, <kbd>X</kbd> dot, <kbd>H</kbd> hedgehog, <kbd>Delete</kbd> or <kbd>Backspace</kbd> clears, <kbd>P</kbd> pauses. Undo takes back the last move.</p>
-            <p>The clock runs from your first move to the last hedgehog and pauses when you leave the tab, which also hides the garden. Your progress, time, history and day streak stay in this browser, and in your <a href="/ucet/">account</a> when you are signed in, so you can continue on another device.</p>
-          </div>
-        </details>
-        <details>
-          <summary>The week</summary>
-          <div class="telo">
-            <p>Monday and Tuesday are easy (eight by eight), Wednesday and Thursday medium (nine by nine), Friday and Saturday hard (ten by ten) and Sunday is the challenge: the hardest of the candidate gardens for that date. The week strip under the garden takes you to the other days; the <a href="/games/hedgehogs/archive/">archive</a> goes back a year, and the <a href="/games/hedgehogs/practice/">practice sets</a> have eight gardens of each level with no date attached.</p>
-            <p>Difficulty is measured, not guessed: the program plays every candidate garden with the same hints you can ask for and counts how often it gets stuck. Easy days never get stuck, Sunday gets stuck most.</p>
-          </div>
-        </details>
-        <details>
-          <summary>A few ways in</summary>
-          <div class="telo">
-            <p>A flowerbed that fits inside one row or one column holds both hedgehogs of that row or column, so every other cell in that line is empty.</p>
-            <p>Two flowerbeds that together cover exactly two rows use up all four hedgehogs of those rows. Any cell of a third flowerbed inside those rows is empty.</p>
-            <p>A hedgehog empties all eight cells around it. When a flowerbed has only a few cells left, count how many hedgehogs still fit without touching.</p>
-          </div>
-        </details>
-      </div>
-    </div>
-  </section>
-
-  <section id="about">
-    <div class="wrap prose">
-      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 8v.5M12 11v5"/></svg>02</p>
-      <h2 class="r">About this game.</h2>
-      <div class="rule"></div>
-      <p class="r d1">Every garden is generated by our own program from its date: new every day and the same for everyone. The program first solves it itself and only accepts a garden with exactly one solution, then measures how hard it is. No puzzle is taken from anywhere else. The mechanic itself is a classic pencil puzzle known under several names; this implementation, the gardens, the hints and the words are ours.</p>
-      <p class="r d2">Your grid, time, history and day streak are stored only in this browser. Our anonymous statistics (self-hosted Umami) record the page visit, as on every page of ours, and a few extra events: that someone solved a garden and in how many seconds, and that Check or Hint was used. Nothing else.</p>
-      <p class="r d3">This is an early version. If something is missing or in the way, write to <a href="mailto:andrej@arling.sk">andrej@arling.sk</a>.</p>
-    </div>
-  </section>
-</main>
-
-<aside class="predaj" data-predaj="hedgehogs" aria-label="More from ARLing" style="border-top:1px solid var(--line)">
-  <div class="wrap" style="padding:20px 0 28px">
-    <p class="small" style="margin:0 0 6px">Everything on this page is free. For a tablet you can write on, we also make books.</p>
-    <p class="small" style="margin:0;display:flex;flex-wrap:wrap;gap:4px 18px"><a href="/puzzle-post/" data-umami-event="games_to_puzzle_post" data-umami-event-game="hedgehogs">Puzzle Post: 100 hyperlinked puzzles a month for e-ink tablets, 3.90 &euro;</a><a href="/shop/" data-umami-event="games_to_shop" data-umami-event-game="hedgehogs">All puzzle books and titles</a></p>
-  </div>
-</aside>
-
-<footer>
-  <div class="wrap foot">
-    <div><b>ARLing s. r. o.</b><br>Ivanská cesta 32E<br>821 04 Bratislava, Slovakia</div>
-    <div>Company ID 56583486<br>VAT ID SK2122352100<br><a href="mailto:andrej@arling.sk">andrej@arling.sk</a></div>
-    <div><a href="https://arling.sk/shop/">shop</a> · <a href="https://arling.sk/privacy/en/">privacy</a> · <a href="https://arling.sk/podmienky/en/">terms</a> · <a href="https://arling.sk/gdpr/en/">GDPR</a> · <a href="https://arling.sk/impressum/en/">Impressum</a> · <a href="https://arling.sk/llms.txt">llms.txt</a> · <a href="https://arling.sk/sitemap-index.xml">sitemap</a><br>Tools are provided as is, without warranty. Anonymous visit counts via self-hosted Umami.</div>
-  </div>
-</footer>
-<script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="469b28b9-caa6-4ef2-807b-c219c30110fc"></script>
-</body>
-</html><main id="obsah">
+<main id="obsah">
 <style>
   .mesiac{margin:0 0 26px}
   .mesiac h3{font:600 15px/1.4 var(--ui);color:var(--ink);margin:0 0 10px}

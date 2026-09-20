@@ -74,9 +74,40 @@ noscript p{font-family:var(--ui);color:var(--accent-light)}
   body.noc.hra .doska{border-radius:8px;border-left-width:2px;border-right-width:2px}
 }
 
-/* Hlavička hárku hry stojí tam, kde stál zakázaný eyebrow (DESIGN.md 3). */
-.hra .uv-masthead{margin:clamp(20px,3vw,34px) auto clamp(4px,1vw,12px)}
-.hra .hero{padding-top:clamp(18px,2.2vw,30px)}
+/* Hárok hry sa otvára nadpisom a doskou, bez pásu nad nadpisom. */
+.hra .hero{padding-top:clamp(26px,3.2vw,48px)}
 .hra .lead{margin-bottom:14px}
 .hra .uv-actions{margin-top:20px}
+
+/* ── Rozloženie hárku hry ──────────────────────────────────────
+   20. 9. 2026, sťažnosť z monitora 1955 px: „všetko je posunuté“ a dokument
+   mal 2158 px. Príčina bola jedna trieda na dvoch miestach. Telo stránky je
+   <body class="noc obsah hra"> a panel s doskou je <div class="hra">, takže
+   pravidlo stránky .hra{max-width:...;margin:0 auto} (v každej hre iné číslo,
+   Hedgehogs 504 px, Herons 380 px) zúžilo CELÉ telo na šírku dosky a
+   vycentrovalo ho. Každý .wrap (1432 px) potom vytekal z tela doprava:
+   obsah začínal na 726 px, končil na 2158 px, doska bola za pravou hranou
+   a medzi textom a doskou zívala diera. Preto sa telo vracia na celú šírku
+   a šírku si drží už len panel s doskou.
+   Selektory majú zámerne ťažšiu špecifickosť než .hra v <style> stránky,
+   aby platili aj na už postavených dňoch, cvičeniach a archívoch. */
+body.noc.hra{max-width:none;width:auto;margin:0}
+
+/* Jedna šírka pre hlavičku aj obsah, vycentrovaná, najviac 1280 px. */
+body.noc.hra{--wrap:min(1280px,89vw)}
+
+/* Dva stĺpce: text 5/12, doska 7/12 hneď vedľa textu (bez auto okrajov).
+   Doska dostáva 640 px, prípadne celý stĺpec, ak je užší. Je to strop pre
+   všetky hry naraz a prebíja vlastné číslo hry zo <style> stránky (Hedgehogs
+   504, Herons 380): tie čísla boli písané pre stĺpec, ktorý vtedy vznikol
+   omylom, a nechávali v pravej polovici prázdny pás. */
+@media (min-width:1100px){
+  .hra .hero{grid-template-columns:minmax(0,5fr) minmax(0,7fr);align-items:start}
+  .hra .hero .hra{width:min(640px,100%);max-width:min(640px,100%);margin-left:0;margin-right:0}
+}
+/* Pod 1100 px je stĺpec na text už príliš úzky: doska ide pod text a na stred. */
+@media (max-width:1099px){
+  .hra .hero{grid-template-columns:minmax(0,1fr)}
+  .hra .hero .hra{width:min(640px,100%);margin-left:auto;margin-right:auto}
+}
 

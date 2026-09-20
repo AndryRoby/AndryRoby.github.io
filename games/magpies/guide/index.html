@@ -34,6 +34,8 @@
 <link rel="preload" href="/fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/style/paper.css?v=2ebf5aa4">
+<link rel="stylesheet" href="/style/obsah.css">
+<link rel="stylesheet" href="/style/hra.css">
 <script src="/style/prepinac.js?v=668e98c9" defer></script>
 <script type="module" src="/games/magpies/zoznamy.js?v=1"></script>
 <style>
@@ -44,28 +46,24 @@
   @media (max-width:860px){ .hra{margin:0 auto;max-width:min(100%,calc(var(--n,10) * 48px + 96px))} }
   /* Narrow phones: the board takes the whole screen width. */
   @media (max-width:480px){ .doska-obal{margin:0 calc(-1 * var(--pad, 22px))} .doska{border-radius:0;border-left:0;border-right:0} }
-  header{padding-top:env(safe-area-inset-top,0px)}
+
   .horna{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:0 0 10px;
          font-family:var(--ui);font-size:14px;color:var(--muted)}
-  .horna b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
-  .horna .uroven{color:var(--muted);font-size:12px;letter-spacing:.06em;text-transform:uppercase;margin-left:8px;white-space:nowrap}
+
   .horna #cas-blok{white-space:nowrap}
   @media (max-width:480px){ .horna .uroven{display:block;margin:2px 0 0} }
-  .pauza-btn{font:500 12px/1 var(--ui);color:var(--muted);background:transparent;border:1px solid var(--line);border-radius:999px;padding:4px 10px;cursor:pointer;margin-left:8px;vertical-align:1px}
-  .pauza-btn:hover{color:var(--ink);border-color:var(--ink)}
+
   .doska-obal{position:relative}
   .pauza-blok{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
      background:rgba(10,9,8,.9);border:2px solid var(--line);border-radius:8px;text-align:center;font-family:var(--ui);padding:20px;z-index:2}
-  .pauza-blok[hidden]{display:none}
-  .pauza-blok p{margin:0;color:var(--body);font-size:15px;line-height:1.5}
-  .pauza-blok b{color:var(--ink)}
+
   .doska.pauza .b,.doska.pauza .h{visibility:hidden}
   .doska{display:grid;grid-template-columns:max-content repeat(var(--n,10),minmax(0,1fr));
          align-items:start;border:2px solid var(--ink);border-radius:8px;overflow:hidden;
          background:var(--card-plna);touch-action:none;user-select:none;-webkit-user-select:none;
          --tenka:rgba(255,255,255,.11);--hruba:var(--ink)}
   .riadok{display:contents}
-  .doska.hotovo{border-color:var(--ok);box-shadow:0 0 0 4px rgba(94,207,154,.14)}
+
   .h{background:var(--card);font-family:var(--ui);color:var(--muted);font-variant-numeric:tabular-nums;font-weight:600;display:flex;min-width:0}
   .h.roh{background:var(--card-plna)}
   .h.hc{flex-direction:column;align-self:end;justify-content:flex-end;align-items:center;gap:0;padding:3px 1px 3px;
@@ -97,32 +95,14 @@
   .hotovo .b{cursor:default}
   .ovladanie{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:14px}
   .ovladanie .btn{height:40px;padding:0 16px;font-size:14px}
-  .stav{font-family:var(--ui);font-size:15px;line-height:1.5;color:var(--body);margin:12px 0 0;min-height:1.5em}
-  .stav b{color:var(--ink)}
-  .stav.ok{color:var(--ok)}
+
   .stav.ok b{color:var(--ok)}
-  .pasik{display:flex;gap:6px;margin-top:14px}
+
   .den{flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;padding:6px 0 5px;border:1px solid var(--line);border-radius:10px;
        text-decoration:none;color:var(--muted);font-family:var(--ui);min-width:0;background:var(--card)}
-  .den small{font-size:10px;letter-spacing:.08em}
-  .den b{font-size:15px;color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
-  .den.dnes{border-color:var(--accent);color:var(--accent)}
-  .den.rozohrane{border-style:dashed}
-  .den.hotove{background:rgba(94,207,154,.12);border-color:var(--ok)}
-  .den.hotove b{color:var(--ok)}
-  .den.buduci{opacity:.38}
-  a.den:hover{border-color:var(--ink);color:var(--ink)}
-  .odkazy{font-family:var(--ui);font-size:13px;color:var(--muted);margin:12px 0 0}
-  .odkazy a{color:var(--body)}
-  .historia{font-family:var(--ui);font-size:13px;color:var(--body);line-height:1.5;margin:10px 0 0}
-  .historia b{color:var(--ink)}
+
   .stav.ok b{display:block;font:700 clamp(22px,3.2vw,30px)/1.15 var(--display);letter-spacing:-.01em;margin:0 0 6px}
-  .oslava-streak{display:block;margin-top:8px;font-family:var(--ui);font-size:13px;color:var(--body)}
-  .oslava-dalej{display:block;margin-top:6px;font-family:var(--ui);font-size:13px}
-  .oslava-dalej a{color:var(--accent-light)}
-  .oslava-pulz{animation:oslava-pulz .3s ease}
-  @keyframes oslava-pulz{0%{transform:scale(1)}50%{transform:scale(1.02)}100%{transform:scale(1)}}
-  @media (prefers-reduced-motion:reduce){ .oslava-pulz{animation:none} }
+
   /* Share, only after the picture is finished (ops/spec-hry-ux.md, part 8).
      The textarea is the way out when the browser refuses the clipboard. */
   .zdielanie{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px;
@@ -132,42 +112,22 @@
   .zdielanie span{flex:1;min-width:180px}
   .zdielanie textarea{width:100%;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--body);
                       font:12px/1.5 var(--ui);padding:8px 10px;resize:vertical}
-  .nastavenia{margin-top:14px;border:1px solid var(--line);border-radius:12px;background:var(--card);padding:0 14px}
-  .nastavenia summary{cursor:pointer;font:600 13px/1.4 var(--ui);color:var(--muted);padding:10px 0;list-style:none}
-  .nastavenia summary::-webkit-details-marker{display:none}
-  .nastavenia[open] summary{color:var(--ink)}
-  .nastavenia label{display:flex;gap:10px;align-items:flex-start;font-family:var(--ui);font-size:13px;color:var(--body);line-height:1.5;padding:6px 0}
-  .nastavenia input{margin-top:3px;flex:none}
-  .nastavenia .fineprint{padding:6px 0 12px;margin:0}
-  .navod{font-family:var(--ui);font-size:13px;color:var(--muted);margin:10px 0 0;max-width:none}
-  .navod kbd{font-size:12px}
+
   /* On the phone the grid goes under the text; the keyboard note there would
      just push the game further down. It is in the Rules section too. */
   @media (max-width:860px){ .navod{display:none} }
-  .pravidla details{border:1px solid var(--line);border-radius:12px;background:var(--card);padding:0 18px;max-width:68ch}
-  .pravidla details+details{margin-top:10px}
-  .pravidla summary{cursor:pointer;font:600 15px/1.4 var(--ui);color:var(--ink);padding:14px 0;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:12px}
-  .pravidla summary::-webkit-details-marker{display:none}
-  .pravidla summary::after{content:"";width:.5em;height:.5em;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(45deg);flex:none;margin-right:4px;transition:transform .2s var(--ease)}
-  .pravidla details[open] summary::after{transform:rotate(225deg)}
-  .pravidla .telo{padding:0 0 16px}
-  .pravidla .telo p{margin:0 0 10px}
-  .pravidla .telo p:last-child{margin:0}
+
   .jazyk{font:500 13px/1 var(--ui);color:var(--muted);background:transparent;border:1px solid var(--line);border-radius:999px;padding:6px 12px;cursor:pointer;margin-top:14px}
   .jazyk:hover{color:var(--ink);border-color:var(--ink)}
-  .prose p{margin:0 0 14px}
-  .prose p:last-child{margin-bottom:0}
-  .sub{margin:0 0 6px}
-  noscript p{font-family:var(--ui);color:var(--accent-light)}
+
 </style>
 <noscript><style>
   .r, .w { opacity:1 !important; transform:none !important; filter:none !important; }
   .rule { transform:scaleX(1) !important; }
 </style></noscript>
 </head>
-<body class="noc">
-<div class="wash" aria-hidden="true"><i></i><i></i></div>
-<a class="skip site-skip" href="#arling-obsah" data-site-label="skip">Skip to content</a>
+<body class="noc obsah hra">
+<a class="skip site-skip" href="#obsah" data-site-label="skip">Skip to content</a>
 <header class="site-header">
   <div class="wrap bar">
     <a class="brand" href="https://arling.sk/en/" aria-label="ARLing home" data-site-home>
@@ -181,124 +141,7 @@
   </div>
 </header>
 
-<main id="arling-obsah" tabindex="-1">
-  <div class="wrap hero" id="hero">
-    <div>
-      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="2"/><path d="M3.5 9.5h17M3.5 14.5h17M9.5 3.5v17M14.5 3.5v17"/></svg>Daily picture logic</p>
-      <h1 id="h1"><span class="l">Magpies.</span></h1>
-      <p class="lead r d3">Magpies collect shiny things. Follow the numbers by every row and column to work out which cells are filled, and a picture appears.</p>
-      <p class="proof r d5" id="dnes">A new picture every day at midnight, always with exactly one solution. Easy on Monday, hardest on Sunday.</p>
-      <p class="navod r d5">Tap a cell: filled, then a cross, then empty. Hold and drag to sweep. Keyboard: arrows move, <kbd>Space</kbd> cycles, <kbd>F</kbd> fill, <kbd>X</kbd> cross, <kbd>Delete</kbd> clears, <kbd>P</kbd> pauses. Nothing lights up while you play; Check judges only when you ask.</p>
-    </div>
-    <div class="r d2">
-      <div class="hra">
-        <div class="horna"><span><span id="datum">Today's picture</span><span class="uroven" id="uroven"></span></span><span id="cas-blok">Time <b id="cas">0:00</b><button type="button" class="pauza-btn" id="pauza" hidden>Pause</button></span></div>
-        <div class="doska-obal">
-          <div class="doska" id="doska" role="grid" aria-label="Picture grid 10 by 10">
-            <noscript><p>This game needs JavaScript: the puzzle is generated right in your browser.</p></noscript>
-          </div>
-          <div class="pauza-blok" id="pauza-blok" hidden><p><b>Paused.</b> <span id="pauza-cas"></span></p><button type="button" class="btn btn-solid" id="pokracuj">Resume</button></div>
-        </div>
-        <div class="ovladanie">
-          <button type="button" class="btn btn-line" id="spat">Undo</button>
-          <button type="button" class="btn btn-line" id="reset">Clear</button>
-          <button type="button" class="btn btn-line" id="hint">Hint</button>
-          <button type="button" class="btn btn-line" id="check">Check</button>
-          <span class="small" id="seria"></span>
-        </div>
-        <p class="stav" id="stav" aria-live="polite"></p>
-        <div class="zdielanie" id="zdielanie" hidden>
-          <button type="button" class="btn btn-line" id="zdielaj">Share</button>
-          <span id="zdielanie-stav" aria-live="polite">Copies a short text: the picture, your time, the help you used. No cells, so it spoils nothing.</span>
-          <textarea id="zdielanie-text" rows="6" readonly hidden aria-label="The text to copy"></textarea>
-        </div>
-        <nav class="pasik" id="pasik" aria-label="This week"></nav>
-        <p class="odkazy"><a href="/games/magpies/guide/">How to play</a> · <a href="/games/magpies/practice/">Practice sets</a> · <a href="/games/magpies/archive/">Archive</a></p>
-        <p class="historia" id="historia" hidden></p>
-        <details class="nastavenia">
-          <summary>Settings</summary>
-          <label><input type="checkbox" data-nastavenie="casovac"> Show the timer and the Pause button</label>
-          <label><input type="checkbox" data-nastavenie="pauzaPriOdchode"> Pause the clock when you leave the tab</label>
-          <label><input type="checkbox" data-nastavenie="potvrditReset"> Ask before Clear</label>
-          <label><input type="checkbox" data-nastavenie="oslava"> Celebration: confetti and a bigger result when you finish</label>
-          <p class="fineprint">Settings, progress, history and streak stay in this browser. Add this page to your home screen to open it like an app.</p>
-        </details>
-      </div>
-    </div>
-  </div>
-
-  <section id="rules" class="deep pravidla">
-    <div class="wrap">
-      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>01</p>
-      <h2 class="r">Rules.</h2>
-      <p class="sub r d1">Three sentences. The rest is practice.</p>
-      <div class="rule"></div>
-      <div class="r d2">
-        <details open>
-          <summary>How to play</summary>
-          <div class="telo">
-            <p>Every row and every column has a list of numbers: the lengths of its blocks of filled cells, in order, with at least one empty cell between two blocks. A filled cell means a magpie left something shiny there; an empty cell means nothing. Work out, from the numbers alone, which cells must be filled and which must be empty.</p>
-            <p>The grid size changes through the week, from eight by eight on Monday to fifteen by fifteen on Sunday. Every picture has exactly one arrangement of filled cells that fits every number.</p>
-            <p>A cross is your own note that a cell stays empty. When every number is satisfied, the game checks the picture by itself.</p>
-          </div>
-        </details>
-        <details>
-          <summary>Controls</summary>
-          <div class="telo">
-            <p>Tap or click a cell: once fills it, twice puts a cross, three times clears it. Hold the button or your finger and drag to sweep the same mark over many cells at once. Nothing lights up while you play: finding a mistake is part of the puzzle.</p>
-            <p><b>Check</b> first tells you only how many marks are wrong. Press it again and it shows which. <b>Hint</b> outlines the row or column it is looking at, marks what follows and explains why; press it again to fill it in. Hints are counted and shown when you finish. <b>Clear</b> empties the grid; the clock keeps running.</p>
-            <p>Keyboard: arrows move, <kbd>Space</kbd> or <kbd>Enter</kbd> cycles the cell, <kbd>F</kbd> fill, <kbd>X</kbd> cross, <kbd>Delete</kbd> or <kbd>Backspace</kbd> clears, <kbd>P</kbd> pauses. Undo takes back the last move.</p>
-            <p>The clock runs from your first move to the last cell and pauses when you leave the tab, which also hides the grid. Your progress, time, history and day streak stay in this browser, and in your <a href="/ucet/">account</a> when you are signed in, so you can continue on another device.</p>
-          </div>
-        </details>
-        <details>
-          <summary>The week</summary>
-          <div class="telo">
-            <p>Monday and Tuesday are easy (eight by eight), Wednesday and Thursday medium (ten by ten), Friday and Saturday hard (twelve by twelve) and Sunday is the challenge: fifteen by fifteen. The week strip under the grid takes you to the other days; the <a href="/games/magpies/archive/">archive</a> goes back a year, and the <a href="/games/magpies/practice/">practice sets</a> have eight pictures of each level with no date attached.</p>
-            <p>Difficulty is measured, not guessed: every picture is checked to be solvable by line logic alone (no guessing), and the candidates for a date are ranked by how many settling passes that logic needs. Easy days settle fast; Sunday needs the most passes.</p>
-          </div>
-        </details>
-        <details>
-          <summary>A few ways in</summary>
-          <div class="telo">
-            <p>A block bigger than half the line always overlaps itself: work out its leftmost and rightmost position and mark what both agree on.</p>
-            <p>Once a line's numbers add up (with their gaps) to exactly the line's length, every block's position is forced: no other arrangement fits.</p>
-            <p>A cross you place narrows the room left for a block, sometimes forcing more cells around it; a filled cell you place can rule out arrangements that miss it.</p>
-          </div>
-        </details>
-      </div>
-    </div>
-  </section>
-
-  <section id="about">
-    <div class="wrap prose">
-      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 8v.5M12 11v5"/></svg>02</p>
-      <h2 class="r">About this game.</h2>
-      <div class="rule"></div>
-      <p class="r d1">Every picture is generated by our own program from its date: new every day and the same for everyone. The program only accepts a picture that pure row-and-column logic can solve completely on its own, without ever having to guess. No picture is taken from anywhere else. The mechanic itself is a classic picture-logic puzzle known as a nonogram under several names; this implementation, the daily pictures, the hints and the words are ours.</p>
-      <p class="r d2">Your grid, time, history and day streak are stored only in this browser. Our anonymous statistics (self-hosted Umami) record the page visit, as on every page of ours, and a few extra events: that someone solved a picture and in how many seconds, and that Check or Hint was used. Nothing else.</p>
-      <p class="r d3">This is an early version. If something is missing or in the way, write to <a href="mailto:andrej@arling.sk">andrej@arling.sk</a>.</p>
-    </div>
-  </section>
-</main>
-
-<aside class="predaj" data-predaj="magpies" aria-label="More from ARLing" style="border-top:1px solid var(--line)">
-  <div class="wrap" style="padding:20px 0 28px">
-    <p class="small" style="margin:0 0 6px">Everything on this page is free. For a tablet you can write on, we also make books.</p>
-    <p class="small" style="margin:0;display:flex;flex-wrap:wrap;gap:4px 18px"><a href="/puzzle-post/" data-umami-event="games_to_puzzle_post" data-umami-event-game="magpies">Puzzle Post: 100 hyperlinked puzzles a month for e-ink tablets, 3.90 &euro;</a><a href="/shop/" data-umami-event="games_to_shop" data-umami-event-game="magpies">All puzzle books and titles</a></p>
-  </div>
-</aside>
-
-<footer>
-  <div class="wrap foot">
-    <div><b>ARLing s. r. o.</b><br>Ivanská cesta 32E<br>821 04 Bratislava, Slovakia</div>
-    <div>Company ID 56583486<br>VAT ID SK2122352100<br><a href="mailto:andrej@arling.sk">andrej@arling.sk</a></div>
-    <div><a href="https://arling.sk/shop/">shop</a> · <a href="https://arling.sk/privacy/en/">privacy</a> · <a href="https://arling.sk/podmienky/en/">terms</a> · <a href="https://arling.sk/gdpr/en/">GDPR</a> · <a href="https://arling.sk/impressum/en/">Impressum</a> · <a href="https://arling.sk/llms.txt">llms.txt</a> · <a href="https://arling.sk/sitemap-index.xml">sitemap</a><br>Tools are provided as is, without warranty. Anonymous visit counts via self-hosted Umami.</div>
-  </div>
-</footer>
-<script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="469b28b9-caa6-4ef2-807b-c219c30110fc"></script>
-</body>
-</html><main id="obsah">
+<main id="obsah">
 <style>
   .gif{margin:0;max-width:420px}
   .gif img{width:100%;height:auto;border:1px solid var(--line);border-radius:12px;background:#0a0908}
