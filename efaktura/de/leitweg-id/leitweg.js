@@ -9,13 +9,15 @@
  *      presuva sa ten isty prvok aj s obsluhou z app.js. Dovod: na sirke 390 px
  *      bolo pole 5 777 px od vrchu stranky, az za skupinami Verkaufer a Kaufer,
  *      hoci cela stranka je prave o nom;
- *   2. da mu kotvu #pole-leitweg, priklad tvaru do placeholder, kratku napovedu
- *      BT-10 a zaostri ho bez posunu stranky (preventScroll), aby navstevnik
- *      nepreskocil kroky a cenu nad formularom;
+ *   2. da mu kotvu #pole-leitweg, priklad tvaru do placeholder a kratku napovedu
+ *      BT-10;
  *   3. obsluzi tri odkazy v ramci stranky (preskocenie na nastroj, tlacidlo nad
  *      zahybom a odkaz v kroku 2), lebo obycajny skok na kotvu tu nefunguje
  *      a jeden z nich dokonca schoval formular; viac nizsie pri prenes();
- *   4. posle do Umami tool_run s menovkou stranky, ked niekto nastroj naozaj
+ *   4. obsluzi kontrolu Leitweg-ID nad zahybom (A-101): tvar a prufziffer pocita
+ *      /efaktura/leitweg-kontrola.mjs, tu je text, meranie a prenos overenej ID
+ *      do pola BT-10 vo formulari;
+ *   5. posle do Umami tool_run s menovkou stranky, ked niekto nastroj naozaj
  *      pouzije (pisanie vo formulari, vyber suboru, ukazkovy subor, kontrola).
  *
  * Co tu zamerne nie je:
@@ -26,9 +28,11 @@
  *   - kupa_click. Je priamo na tlacidlach ako data-umami-event s menovkou
  *     data-umami-event-place, tak ako na ostatnych strankach webu.
  */
+import { skontrolujLeitweg } from '/efaktura/leitweg-kontrola.mjs';
+
 const MENOVKA = 'leitweg-id';
 const POPIS_POLA = 'Leitweg-ID / Käuferreferenz';
-const PRIKLAD = '04011000-12345-34';
+const PRIKLAD = '04011000-12345-03';
 
 const sleduj = (meno, data) => {
   try {
@@ -48,7 +52,6 @@ function najdiPole() {
   return null;
 }
 
-let zaostrene = false;
 function pripravPole() {
   const formular = document.getElementById('formular');
   const popiska = najdiPole();
@@ -79,11 +82,10 @@ function pripravPole() {
   }
   formular.insertBefore(skupina, formular.firstChild);
 
-  if (!zaostrene) {
-    zaostrene = true;
-    // preventScroll: zaostrenie nesmie prehodit stranku dolu cez kroky a cenu
-    try { vstup.focus({ preventScroll: true }); } catch (e) { /* stary prehliadac */ }
-  }
+  // Ziadne zaostrenie pri nacitani. Do 20. 9. tu bolo focus({preventScroll:true}),
+  // aby bolo pole hned pripravene. Odkedy je nad zahybom kontrola Leitweg-ID,
+  // by to focus odtiahlo do formulara nizsie na stranke a citacka obrazovky by
+  // zacala inde, nez je viditelny zaciatok stranky.
 }
 
 pripravPole();
@@ -151,6 +153,82 @@ document.addEventListener('click', (e) => {
   e.preventDefault();
   prenes(ciel, href === '#pole-leitweg');
 });
+
+/* ── Leitweg-ID prüfen: male tlacidlo zadarmo nad zahybom (A-101) ─────────
+ *
+ * Dopyt "leitweg id" je informacny. Kto sem pride z reklamy, ma v ruke jednu
+ * Leitweg-ID a chce vediet, ci sedi; nechce zatial vyplnat celu fakturu ani
+ * platit 2,90 €. Audit 20. 9.: 127 platenych klikov, 0 platieb, na 390 px nad
+ * zahybom iba nadpis a odsek. Tu je teda prva vec na stranke nieco, co pomoze
+ * hned a zadarmo, a az potom ponuka.
+ *
+ * Tvar aj prufziffer pocita /efaktura/leitweg-kontrola.mjs, testovane v
+ * products/arling-sk/efaktura/tests.mjs. Tu je len text a prepojenie na formular.
+ */
+const SPRAVY = {
+  prazdne: () => 'Bitte eine Leitweg-ID eingeben, zum Beispiel 991-33333TEST-33.',
+  znaky: () => 'Erlaubt sind nur Ziffern, Buchstaben und Bindestriche.',
+  'bez-pruefziffer': () => 'Am Ende fehlt der Bindestrich mit der zweistelligen Prüfziffer, etwa ' + PRIKLAD + '.',
+  grob: () => 'Die Grobadressierung vor dem ersten Bindestrich muss aus 2 bis 12 Ziffern bestehen.',
+  fein: () => 'Die Feinadressierung steht zwischen zwei Bindestrichen und darf höchstens 30 Buchstaben und Ziffern enthalten.',
+  pruefziffer: (v) => 'Die Prüfziffer ' + v.pruefziffer + ' passt nicht. Zu ' + v.grob + (v.fein ? '-' + v.fein : '') + ' gehört ' + v.ocakavana + '.',
+  ok: () => 'Form und Prüfziffer stimmen.',
+};
+
+const lwVstup = document.getElementById('lw-vstup');
+const lwSpustit = document.getElementById('lw-spustit');
+const lwVysledok = document.getElementById('lw-vysledok');
+const lwDalej = document.getElementById('lw-dalej');
+
+/* Prenesie overenu ID do pola BT-10 vo formulari. Hodnotu treba zapisat a hned
+ * poslat udalost input: app.js si model formulara drzi sam a mimo tejto udalosti
+ * by o zmene nevedel (app.js r. 971 a 1109). */
+function doFormulara(hodnota) {
+  const zalozka = document.querySelector('.zalozka[data-tab="vytvorit"]');
+  if (zalozka && !zalozka.classList.contains('aktivna')) zalozka.click();
+  pripravPole();
+  const popiska = document.getElementById('pole-leitweg');
+  const vstup = popiska && popiska.querySelector('input');
+  if (!vstup) return;
+  vstup.value = hodnota;
+  vstup.dispatchEvent(new Event('input', { bubbles: true }));
+  prenes(popiska, true);
+  sleduj('leitweg_do_formulara', { hodnota_dlzka: hodnota.length });
+}
+
+let lwPoslane = false;
+function lwSkontroluj() {
+  if (!lwVstup || !lwVysledok) return;
+  const v = skontrolujLeitweg(lwVstup.value);
+  lwVysledok.textContent = (SPRAVY[v.kod] || SPRAVY.prazdne)(v);
+  lwVysledok.classList.toggle('je-ok', v.ok);
+  lwVysledok.classList.toggle('je-chyba', !v.ok && v.kod !== 'prazdne');
+  if (lwDalej) {
+    lwDalej.textContent = '';
+    lwDalej.hidden = !v.ok;
+    if (v.ok) {
+      const veta = document.createElement('p');
+      veta.innerHTML = 'So gehört sie in die XRechnung: Käuferreferenz (<b>BT-10</b>), in UBL 2.1 das Element cbc:BuyerReference.';
+      lwDalej.appendChild(veta);
+      const tlacidlo = document.createElement('button');
+      tlacidlo.type = 'button';
+      tlacidlo.className = 'btn btn-solid';
+      tlacidlo.textContent = 'XRechnung mit dieser Leitweg-ID erstellen';
+      tlacidlo.setAttribute('data-umami-event', 'kupa_click');
+      tlacidlo.setAttribute('data-umami-event-place', 'leitweg-pruefung');
+      tlacidlo.addEventListener('click', () => doFormulara(v.hodnota));
+      lwDalej.appendChild(tlacidlo);
+    }
+  }
+  if (!lwPoslane) { lwPoslane = true; sleduj('leitweg_pruefung', { vysledok: v.kod }); }
+}
+
+if (lwSpustit) lwSpustit.addEventListener('click', lwSkontroluj);
+if (lwVstup) {
+  lwVstup.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); lwSkontroluj(); } });
+  // Az od siedmeho znaku, aby prva pismenka nehlasili chybu skor, nez clovek dopise.
+  lwVstup.addEventListener('input', () => { if (lwVstup.value.trim().length >= 7) lwSkontroluj(); });
+}
 
 /* tool_run: prve skutocne pouzitie nastroja na tejto stranke. */
 let poslane = false;

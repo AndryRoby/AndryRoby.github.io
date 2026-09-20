@@ -4,7 +4,7 @@
 <script src="/style/vzhlad.js?v=dc0ce8df"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://homelab.tailbf8f27.ts.net 'sha256-9JTK27DYH7lRUYuRP4Vo0kJo0+g+86KGqpMqqPklvSk='; connect-src 'self' https://homelab.tailbf8f27.ts.net https://arling-asistent.arling.workers.dev; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://homelab.tailbf8f27.ts.net https://www.googletagmanager.com 'sha256-9JTK27DYH7lRUYuRP4Vo0kJo0+g+86KGqpMqqPklvSk=' 'sha256-hS4HVVVN79AQYfgD+rVAWbGyOQwA2z8iw3RaCXbBgIY='; connect-src 'self' https://homelab.tailbf8f27.ts.net https://arling-asistent.arling.workers.dev https://www.google.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://www.googletagmanager.com; img-src 'self' data: https://www.google.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://www.googletagmanager.com; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#0a0908">
 <link rel="preconnect" href="https://homelab.tailbf8f27.ts.net" crossorigin>
@@ -35,7 +35,7 @@
 <link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/style/paper.css?v=2ebf5aa4">
 <script src="/style/prepinac.js?v=668e98c9" defer></script>
-<script type="module" src="/efaktura/app.js?v=c7d77601"></script>
+<script type="module" src="/efaktura/app.js?v=fa99a4d5"></script>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -148,6 +148,12 @@
   .hero .lead { max-width:56ch; }
   /* Pri 1280 sa nadpis lamal v strede slova; mensi stupen ho zlomi medzi slovami. */
   body.noc .hero h1, .hero h1 { font-size:clamp(34px,3.6vw,50px); line-height:1.08; }
+  /* Cena a spustenie nastroja nad zahybom: na 390 px bol vstup nastroja az na
+     y=1824 pri okne 844 px, teda dve obrazovky pod cenou. Preto je tu kratky
+     riadok s cenou a tri tlacidla, ktore spustaju ten isty nastroj nizsie. */
+  .cena-hore { font-family:var(--ui); font-size:15px; color:var(--body); margin:14px 0 16px; max-width:52ch; }
+  .start-nastroj { display:flex; flex-wrap:wrap; gap:10px; margin:0 0 26px; }
+  .start-nastroj .btn { height:42px; }
   .cena { border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:var(--radius); background:var(--card); padding:clamp(20px,2vw,30px); min-width:0; }
   .cena .suma { font:700 clamp(34px,3.4vw,46px)/1 var(--display); color:var(--ink); letter-spacing:-.02em; display:block; }
   .cena .zaco { font-family:var(--ui); font-size:14px; color:var(--body); margin:8px 0 16px; }
@@ -271,6 +277,17 @@
   .sucty b { color:var(--muted); font-weight:500; }
   .brana { border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:var(--radius); background:var(--card); padding:clamp(18px,2vw,26px); margin:22px 0 0; }
   .brana h3 { margin-bottom:6px; }
+  /* Kupa hned pod vysledkom bezplatnej kontroly: to iste tlacidlo ako dole,
+     len s vlastnou udalostou kupa_click_vysledok, aby bolo vidiet, kde sa klika. */
+  .kupa-vysledok { border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:var(--radius); background:var(--card); padding:16px 18px; margin:0 0 18px; }
+  .kupa-vysledok .pomoc { margin:0 0 4px; }
+  .kupa-vysledok .cta { margin:12px 0 0; }
+  .odkazy-pravne { margin-top:14px; }
+  /* Dlhy odsek o predajcovi a odstupeni je pod tlacidlami zabaleny; odkazy AGB a Widerruf ostavaju nad nim. */
+  details.pravne { margin:2px 0 0; }
+  details.pravne summary { cursor:pointer; font:500 12.5px/1.5 var(--ui); color:var(--muted); }
+  details.pravne summary:hover { color:var(--ink); }
+  details.pravne .pomoc { margin:8px 0 0; }
   .brana .cta { margin:16px 0 0; }
   .brana .btn { height:42px; }
   .odomknute { border:1px solid var(--ok); border-radius:12px; background:rgba(94,207,154,.10); padding:12px 15px; margin:20px 0 0; font-family:var(--ui); font-size:13.5px; color:var(--body); }
@@ -313,6 +330,7 @@
   .rule { transform:scaleX(1) !important; }
 </style></noscript>
 <link rel="stylesheet" href="/efaktura/davka.css?v=dad7031a">
+<link rel="stylesheet" href="/efaktura/dopyt-opakovanie.css?v=9292da89">
 </head>
 <body class="noc">
 <div class="wash" aria-hidden="true"><i></i><i></i></div>
@@ -333,8 +351,14 @@
 <main id="arling-obsah" tabindex="-1">
   <div class="wrap hero" id="hero">
     <div>
-      <p class="kicker">E-Rechnung nach EN 16931</p>
+      <p class="kicker">XRechnung nach EN 16931</p>
       <h1><span class="l">XRechnung prüfen: Validator im Browser.</span><span class="l">Die Datei bleibt bei Ihnen.</span></h1>
+      <p class="cena-hore">2,90 € zzgl. MwSt. für das XML einer Rechnung, 9,90 € zzgl. MwSt. für 30 Tage ohne Begrenzung der Anzahl. Prüfung und Vorschau kostenlos, ohne Konto.</p>
+      <div class="start-nastroj">
+        <button type="button" class="btn btn-solid" id="hero-vzor">Beispiel laden und prüfen</button>
+        <button type="button" class="btn btn-line" id="hero-subor">Eigene Datei prüfen</button>
+        <a class="btn btn-line" id="hero-vytvorit" href="#vytvorit">XRechnung erstellen</a>
+      </div>
       <p class="lead r d3">Sie haben eine XML-Datei bekommen oder selbst erzeugt und wollen vor dem Versand wissen, ob sie durchgeht. Ziehen Sie sie hierher, und der Validator nennt Ihnen zu jedem Fund den Regelcode, einen Satz auf Deutsch, den Pfad zum Element und auf Wunsch den englischen Originalwortlaut der Regel. Welcher Regelsatz gilt, entscheidet das Feld CustomizationID: EN 16931, Peppol BIS Billing 3.0 oder XRechnung 3.x. Die Datei wird in Ihrem Browser gelesen und nirgendwo hochgeladen.</p>
       <ul class="facts proof r d5">
         <li><b>332 Regelcodes</b> aus EN 16931, Peppol BIS Billing 3.0 und XRechnung 3.x</li>
@@ -371,6 +395,32 @@
         <p class="sub r d1">Laden Sie eine UBL-2.1-Datei (Invoice oder CreditNote) und wir sagen Ihnen, was daran nicht stimmt. Zu jedem Befund sehen Sie den Regelcode, einen Satz auf Deutsch, den Pfad zum Element und unter einem Aufklapp-Link den englischen Originalwortlaut der Regel. Anhand des Feldes CustomizationID wählen wir selbst aus, ob die Regeln von EN 16931, Peppol BIS Billing 3.0 oder XRechnung gelten.</p>
         <div class="vstup-slot"></div>
         <div id="sumar"></div>
+<!-- A096-DOPYT-START -->
+<aside class="ef-opak" id="opakovanie-cta" aria-labelledby="opakovanie-title" hidden>
+  <h3 id="opakovanie-title">Prüfen Sie solche Dateien regelmäßig?</h3><p>Wenn sich dieselbe Arbeit wiederholt, beschreiben Sie Ihren Ablauf. Wir prüfen, ob wir eine konkrete Lösung für Ihre Software anbieten können.</p>
+  <button type="button" class="btn btn-line" id="opakovanie-otvor" aria-expanded="false" aria-controls="opakovanie-panel">Regelmäßige Prüfung anfragen</button>
+  <div id="opakovanie-panel" class="ef-opak-panel" hidden>
+    <h4>Wie prüfen Sie Ihre E-Rechnungen heute?</h4><p class="ef-opak-small">Dies ist eine Anfrage, keine Bestellung. Eine fertige Integration versprechen wir noch nicht. Umfang und möglichen Preis vereinbaren wir vorab.</p>
+    <form data-dopyt data-efaktura-opakovanie data-source="efaktura-repeat-de" data-lang="de" data-thanks="opakovanie-thanks" data-error="opakovanie-error">
+      <div class="ef-opak-trap" aria-hidden="true"><label>Website<input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
+      <label for="opakovanie-software">Verwendete Software</label><input id="opakovanie-software" name="software" type="text" maxlength="100" required aria-describedby="opakovanie-software-hint"><p class="ef-opak-small" id="opakovanie-software-hint">Zum Beispiel Ihr Buchhaltungsprogramm oder ein eigener Export.</p>
+      <label for="opakovanie-frequency">Wie oft benötigen Sie die Prüfung?</label><select id="opakovanie-frequency" name="frequency" required><option value="">Häufigkeit wählen</option><option value="daily">Täglich</option><option value="weekly">Wöchentlich</option><option value="monthly">Monatlich</option><option value="less">Seltener</option><option value="unknown">Noch unklar</option></select>
+      <label for="opakovanie-problem">Was wiederholt sich und wie lösen Sie es heute?</label><textarea id="opakovanie-problem" name="problem" rows="4" maxlength="1000" required placeholder="Beschreiben Sie den wiederkehrenden Schritt oder den Fehlercode. Keine XML-Dateien oder Rechnungsdaten einfügen."></textarea>
+      <label for="opakovanie-email">Geschäftliche E-Mail-Adresse</label><input id="opakovanie-email" name="email" type="email" autocomplete="email" maxlength="254" required>
+      <textarea name="sprava" hidden aria-hidden="true" tabindex="-1"></textarea>
+      <p class="ef-opak-small">Sie senden ARLing nur Ihre Angaben in dieser Anfrage, damit wir antworten können. Die geprüfte Rechnung wird nicht angehängt. Bitte keine Rechnungen oder personenbezogenen Daten daraus senden. <a href="/privacy/de/">Datenschutz</a>.</p>
+      <button type="submit" class="btn btn-solid">Anfrage senden</button>
+    </form>
+    <p id="opakovanie-thanks" role="status" tabindex="-1" hidden>Ihre Anfrage wurde zugestellt. Wir antworten an die angegebene E-Mail-Adresse.</p><p id="opakovanie-error" role="alert" tabindex="-1" hidden>Die Anfrage konnte nicht gesendet werden. Ihre Angaben bleiben im Formular. Bitte versuchen Sie es erneut oder schreiben Sie an andrej@arling.sk.</p>
+  </div>
+</aside>
+<!-- A096-DOPYT-END -->
+        <div class="kupa-vysledok" id="kupa-vysledok-blok" hidden>
+          <p class="pomoc">Prüfung und Vorschau bleiben kostenlos. Bezahlt wird nur der XML-Download einer Rechnung, die Sie hier im Formular erstellen.</p>
+          <div class="cta">
+            <button type="button" class="btn btn-solid" id="kupa-vysledok" data-link="https://buy.stripe.com/9B65kx1fA8C7aoW7C54ko0m" data-link-test="https://buy.stripe.com/test_fZueV75vQ8C740y8G94ko0e">Eine Rechnung für 2,90 € zzgl. MwSt. kaufen</button>
+          </div>
+        </div>
         <div class="akcie" id="akcie" hidden>
           <button type="button" class="btn btn-line" id="protokol">Protokoll herunterladen</button>
           <button type="button" class="btn btn-line" id="kopirovat">Kopieren</button>
@@ -405,11 +455,16 @@
             <div class="brana" id="brana">
               <h3>XML-Download</h3>
               <p class="pomoc">Formular und Vorschau sind kostenlos. Für den Download des fertigen XML wird gezahlt: 2,90 € zzgl. MwSt. für eine Rechnung (in diesem Browser 24 Stunden freigeschaltet, damit Sie sie korrigieren und erneut herunterladen können) oder 9,90 € zzgl. MwSt. für 30 Tage ohne Begrenzung der Rechnungsanzahl. Das XML entsteht in Ihrem Browser und wird an keinen Server gesendet, wir sehen es nie.</p>
+              <p class="pomoc vratenie">Funktioniert unser Werkzeug nicht, lässt sich das gekaufte XML also nicht herunterladen oder ist es fehlerhaft, schreiben Sie an <a href="mailto:andrej@arling.sk">andrej@arling.sk</a>: wir korrigieren es oder veranlassen die Erstattung über Stripe.</p>
               <div class="cta">
                 <button type="button" class="btn btn-solid" id="kupa-jedna" data-link="https://buy.stripe.com/9B65kx1fA8C7aoW7C54ko0m" data-link-test="https://buy.stripe.com/test_fZueV75vQ8C740y8G94ko0e">Eine Rechnung für 2,90 € zzgl. MwSt. kaufen</button>
                 <button type="button" class="btn btn-line" id="kupa-30dni" data-link="https://buy.stripe.com/28E28l7DY19F40y4pT4ko0p" data-link-test="https://buy.stripe.com/test_00w8wJ9M6f0v8gO4pT4ko0i">Für 30 Tage freischalten, 9,90 € zzgl. MwSt.</button>
               </div>
-              <p class="pomoc">Den Verkauf wickelt Stripe als Merchant of Record ab (Stripe Payments Europe, Ltd., Dublin): den Kaufvertrag schließen Sie mit Stripe, das die Zahlung einzieht, den Beleg ausstellt und die Umsatzsteuer abführt; den Inhalt liefert ARLing. Mit dem Klick auf Bezahlen stimmen Sie der sofortigen Bereitstellung digitaler Inhalte zu und nehmen zur Kenntnis, dass Sie damit Ihr Widerrufsrecht verlieren (§ 356 Abs. 5 BGB; nach slowakischem Recht, dem Sitzstaat von ARLing, § 19 Abs. 1 Buchst. m) des Gesetzes Nr. 108/2024 Z. z.). <a href="https://arling.sk/podmienky/">AGB</a> · <a href="https://arling.sk/odstupenie/">Widerruf</a></p>
+              <p class="pomoc odkazy-pravne">Verkauf über Stripe als Merchant of Record. <a href="https://arling.sk/podmienky/de/">AGB</a> · <a href="https://arling.sk/odstupenie/de/">Widerruf</a></p>
+              <details class="pravne">
+                <summary>Wer verkauft und was mit dem Widerrufsrecht passiert</summary>
+                <p class="pomoc">Den Verkauf wickelt Stripe als Merchant of Record ab (Stripe Payments Europe, Ltd., Dublin): den Kaufvertrag schließen Sie mit Stripe, das die Zahlung einzieht, den Beleg ausstellt und die Umsatzsteuer abführt; den Inhalt liefert ARLing. Mit dem Klick auf Bezahlen stimmen Sie der sofortigen Bereitstellung digitaler Inhalte zu und nehmen zur Kenntnis, dass Sie damit Ihr Widerrufsrecht verlieren (§ 356 Abs. 5 BGB; nach slowakischem Recht, dem Sitzstaat von ARLing, § 19 Abs. 1 Buchst. m) des Gesetzes Nr. 108/2024 Z. z.).</p>
+              </details>
             </div>
             <div class="odomknute" id="odomknute" hidden></div>
             <p class="stav-platby" id="stav-platby" aria-live="polite"></p>
@@ -482,7 +537,7 @@
       <div class="rule"></div>
       <div class="prose r d1">
         <p>Dieses Werkzeug prüft die Form der Datei und setzt aus Ihren Angaben eine Musterrechnung in UBL 2.1 zusammen. Es beurteilt nicht, ob Sie mit oder ohne Umsatzsteuer abrechnen müssen, welcher Satz für eine Leistung gilt, ob die Steuerschuld übergeht und ob der Umsatz überhaupt steuerbar ist. Das ist Steuerberatung, dafür sind Steuerberaterin oder Steuerberater da. Für die Richtigkeit der Rechnung haftet, wer sie ausstellt.</p>
-        <p>Wir legen kein Konto an und speichern Ihre Daten nicht. Datei und Formular leben in Ihrem Browser; das Adressbuch für Verkäufer und Käufer liegt im localStorage und lässt sich jederzeit über eine Schaltfläche im Formular löschen. An den Server geht eine einzige Sache: nach der Rückkehr von der Zahlung fragen wir, ob diese Zahlung bezahlt ist.</p>
+        <p data-efaktura-privacy>Die Rechnungsdatei und die Angaben im Rechnungsformular bleiben in Ihrem Browser. Das Adressbuch für Verkäufer und Käufer liegt im localStorage und lässt sich über eine Schaltfläche im Formular löschen. Nach einer Zahlung prüfen wir deren Status auf dem Server. Eine separate freiwillige Anfrage sendet ARLing nur die dort eingegebenen Angaben; die Rechnung wird nicht automatisch angehängt. Besuche messen wir mit unserem eigenen Umami.</p>
         <p>Wenn sich Gesetz, Schematron oder Version der Spezifikation ändern, passen wir die Regeln an und schreiben es hier mit Datum. Die Fakten auf dieser Seite haben wir am 11. 9. 2026 an den oben genannten offiziellen Quellen geprüft.</p>
       </div>
     </div>
@@ -513,5 +568,64 @@
 
 <div id="tlac" aria-hidden="true"></div>
 <script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="1de7b607-7a25-4214-a8f6-b80957f520a7"></script>
+<script defer src="/dopyt.js?v=d7e58bf8"></script>
+<!-- Konverzia Google Ads. Znacka sa nacita az vtedy, ked si stranka u Stripu overila
+     zaplatenu objednavku (udalost "arling:platba-overena" z /efaktura/app.js), nikdy pri
+     obycajnom otvoreni stranky. Kym su v ADS zastupne hodnoty, cely blok nerobi nic:
+     nenacita sa ziadny skript Googlu a neodide ziadny poziadavok.
+     Kde vziat ID a stitok a kam ich vlozit: ops/ads/konverzie-navod.md -->
+<script>
+(function () {
+  /* JEDINE miesto na upravu. ID konverznej akcie (AW-...) a jej stitok z Google Ads. */
+  var ADS = { id: 'AW-XXXXXXXXX', label: 'LABEL' };
+
+  /* Zastupne hodnoty = meranie je vypnute. Ziadne dataLayer, ziadny gtag.js. */
+  if (!/^AW-[0-9]{6,}$/.test(ADS.id) || !ADS.label || ADS.label === 'LABEL') return;
+
+  var nacitane = false;
+  var poslane = {};
+
+  function nacitajZnacku() {
+    if (nacitane) return;
+    nacitane = true;
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { window.dataLayer.push(arguments); }
+    window.gtag = gtag;
+    /* Consent Mode v2: vsetko zamietnute EST PRED nacitanim znacky, takze Google
+       neulozi do prehliadaca ziadnu cookie ani identifikator a posle len bezcookie
+       ping. Ked raz bude na stranke lista suhlasu, zavola gtag('consent','update',...). */
+    gtag('consent', 'default', {
+      ad_storage: 'denied',
+      ad_user_data: 'denied',
+      ad_personalization: 'denied',
+      analytics_storage: 'denied',
+      wait_for_update: 500,
+    });
+    gtag('set', 'ads_data_redaction', true);
+    gtag('set', 'url_passthrough', false);
+    var s = document.createElement('script');
+    s.async = true;
+    s.src = 'https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(ADS.id);
+    document.head.appendChild(s);
+    gtag('js', new Date());
+    gtag('config', ADS.id);
+  }
+
+  window.addEventListener('arling:platba-overena', function (e) {
+    var d = (e && e.detail) || {};
+    if (!d.session || d.test) return;      /* testovacia platba sa nikdy neposiela */
+    if (poslane[d.session]) return;        /* jedna objednavka = jedna konverzia */
+    poslane[d.session] = true;
+    nacitajZnacku();
+    var u = { send_to: ADS.id + '/' + ADS.label, transaction_id: d.session };
+    /* Suma chodi zo Stripu v centoch; /api/purchase/links ziadnu sumu nevracia. */
+    if (typeof d.suma === 'number' && d.suma > 0) {
+      u.value = d.suma / 100;
+      u.currency = String(d.mena || 'eur').toUpperCase();
+    }
+    window.gtag('event', 'conversion', u);
+  });
+})();
+</script>
 </body>
 </html>
