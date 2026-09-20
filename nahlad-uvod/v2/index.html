@@ -1,0 +1,729 @@
+<!doctype html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>ARLing, softvér pre malé firmy a účtovníkov</title>
+<meta name="description" content="ARLing robí softvér pre malé firmy a účtovníkov. Kontrola e-faktúry, SEPA súboru a bankového výpisu priamo v prehliadači.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<style>
+/* ──────────────────────────────────────────────────────────────────────────
+   ARLing, náhľad úvodu B: Svetlá kancelária.
+   Papier je firma, tmavá obrazovka je softvér. Jediný akcent je meď.
+   ────────────────────────────────────────────────────────────────────────── */
+
+@font-face{font-family:"ARLing Sans";src:url(/fonts/arling-sans.woff2) format("woff2-variations"),url(/fonts/arling-sans.woff2) format("woff2");font-weight:400 700;font-style:normal;font-display:swap}
+@font-face{font-family:"ARLing Serif";src:url(/fonts/arling-serif.woff2) format("woff2-variations"),url(/fonts/arling-serif.woff2) format("woff2");font-weight:400 600;font-style:normal;font-display:swap}
+
+:root{
+  --sans:"ARLing Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --serif:"ARLing Serif",Georgia,"Times New Roman",serif;
+
+  --papier:#fbfaf7;
+  --papier-2:#f4f1ec;
+  --plocha:#ffffff;
+  --obrazovka:#0b0907;
+
+  --atrament:#151110;
+  --telo:#4d453d;
+  --stlmene:#6e655c;
+
+  --linka:rgba(21,17,16,.11);
+  --linka-slaba:rgba(21,17,16,.06);
+
+  --med:#f2643c;
+  --med-tmava:#b8431f;
+  --med-slaba:rgba(242,100,60,.12);
+
+  --tien-1:0 1px 2px rgba(43,29,18,.05), 0 10px 26px -14px rgba(43,29,18,.16);
+  --tien-2:0 2px 4px rgba(43,29,18,.06), 0 28px 54px -24px rgba(43,29,18,.28);
+  --tien-3:0 2px 6px rgba(43,29,18,.08), 0 54px 96px -42px rgba(43,29,18,.46);
+
+  --r-plocha:18px;
+  --r-obrazovka:12px;
+  --obal:1200px;
+  --okraj:clamp(20px,4vw,40px);
+  --lahka:cubic-bezier(.16,1,.3,1);
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;
+  background:var(--papier);
+  color:var(--telo);
+  font:400 17px/1.62 var(--serif);
+  letter-spacing:-.003em;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+img{display:block;max-width:100%}
+a{color:inherit}
+
+/* povrchy prehliadača, ktoré nikto nenavrhol */
+::selection{background:rgba(242,100,60,.26);color:var(--atrament)}
+:focus-visible{outline:2px solid var(--med-tmava);outline-offset:3px;border-radius:4px}
+html{scrollbar-color:rgba(21,17,16,.28) var(--papier-2)}
+::-webkit-scrollbar{width:12px;height:12px}
+::-webkit-scrollbar-track{background:var(--papier-2)}
+::-webkit-scrollbar-thumb{background:rgba(21,17,16,.24);border:3px solid var(--papier-2);border-radius:99px}
+::-webkit-scrollbar-thumb:hover{background:rgba(21,17,16,.38)}
+
+h1,h2,h3,.sans{font-family:var(--sans);color:var(--atrament);font-weight:700;letter-spacing:-.028em;text-wrap:balance}
+h1{font-size:clamp(2.2rem,5.4vw,4rem);line-height:1.04;margin:0}
+h2{font-size:clamp(1.75rem,3.1vw,2.6rem);line-height:1.08;margin:0 0 14px;letter-spacing:-.026em}
+h3{font-size:1.125rem;line-height:1.3;margin:0 0 8px;letter-spacing:-.018em}
+p{margin:0 0 14px}
+p:last-child{margin-bottom:0}
+
+.obal{width:100%;max-width:var(--obal);margin:0 auto;padding-inline:var(--okraj)}
+.sekcia{padding-block:clamp(64px,8vw,116px)}
+.uvodnik{max-width:46rem}
+.uvodnik p{font-size:1.06rem;color:var(--telo);max-width:38rem}
+
+/* ── hlavička ─────────────────────────────────────────────────────────── */
+.hlava{
+  position:sticky;top:0;z-index:40;
+  background:rgba(251,250,247,.78);
+  backdrop-filter:blur(16px) saturate(1.35);
+  -webkit-backdrop-filter:blur(16px) saturate(1.35);
+  border-bottom:1px solid transparent;
+  transition:border-color .3s ease, background .3s ease;
+}
+.hlava.pri-scrolle{border-bottom-color:var(--linka);background:rgba(251,250,247,.92)}
+.hlava .obal{display:flex;align-items:center;gap:26px;height:72px}
+.znacka{display:inline-flex;align-items:center;gap:10px;text-decoration:none;color:var(--atrament);font:700 17px/1 var(--sans);letter-spacing:-.022em}
+.znacka svg{display:block;width:34px;height:15px}
+.menu{display:flex;align-items:center;gap:4px;margin-left:auto}
+.menu a{
+  font:500 14.5px/1 var(--sans);color:var(--telo);text-decoration:none;
+  padding:9px 12px;border-radius:99px;letter-spacing:-.008em;
+  transition:color .2s ease, background .2s ease;
+}
+.menu a:hover{color:var(--atrament);background:rgba(21,17,16,.05)}
+
+.tlacidlo{
+  display:inline-flex;align-items:center;justify-content:center;gap:9px;
+  font:600 15px/1 var(--sans);letter-spacing:-.012em;text-decoration:none;
+  height:46px;padding:0 22px;border-radius:99px;border:1px solid transparent;
+  transition:transform .18s var(--lahka), box-shadow .24s ease, background .2s ease, border-color .2s ease;
+}
+.tlacidlo.hlavne{
+  background:var(--med);color:#1a1410;
+  box-shadow:0 1px 1px rgba(255,255,255,.4) inset, 0 8px 20px -10px rgba(242,100,60,.85);
+}
+.tlacidlo.hlavne:hover{transform:translateY(-2px);box-shadow:0 1px 1px rgba(255,255,255,.4) inset, 0 16px 30px -12px rgba(242,100,60,.9)}
+.tlacidlo.hlavne:active{transform:translateY(0)}
+.tlacidlo.tiche{background:transparent;color:var(--atrament);border-color:var(--linka)}
+.tlacidlo.tiche:hover{background:var(--plocha);border-color:rgba(21,17,16,.2);transform:translateY(-2px);box-shadow:var(--tien-1)}
+.hlava .tlacidlo{height:40px;padding:0 18px;font-size:14.5px}
+
+/* ── hero ─────────────────────────────────────────────────────────────── */
+.hero{position:relative;padding-top:clamp(48px,5.4vw,72px);padding-bottom:clamp(40px,5vw,72px);text-align:center;isolation:isolate}
+.hero .obal{position:relative;z-index:2}
+.ziara{position:absolute;inset:-160px 0 0;z-index:0;pointer-events:none;overflow:hidden}
+.ziara i{position:absolute;display:block;border-radius:50%;filter:blur(90px)}
+.ziara i:nth-child(1){width:min(1040px,120vw);height:640px;left:50%;top:40px;transform:translateX(-50%);background:radial-gradient(closest-side,rgba(242,100,60,.30),rgba(242,100,60,0) 72%)}
+.ziara i:nth-child(2){width:620px;height:420px;left:6%;top:230px;background:radial-gradient(closest-side,rgba(255,181,92,.30),rgba(255,181,92,0) 70%)}
+.ziara i:nth-child(3){width:560px;height:400px;right:2%;top:150px;background:radial-gradient(closest-side,rgba(126,150,178,.26),rgba(126,150,178,0) 70%)}
+.ziara::after{
+  content:"";position:absolute;inset:0;
+  background:
+    repeating-linear-gradient(to bottom,rgba(21,17,16,.055) 0 1px,transparent 1px 30px),
+    repeating-linear-gradient(to right,rgba(21,17,16,.045) 0 1px,transparent 1px 30px);
+  -webkit-mask-image:radial-gradient(76% 62% at 50% 34%,#000 0%,transparent 78%);
+  mask-image:radial-gradient(76% 62% at 50% 34%,#000 0%,transparent 78%);
+}
+.hero h1{max-width:19ch;margin-inline:auto}
+.hero .veta{
+  font-size:clamp(1.05rem,1.5vw,1.22rem);line-height:1.58;color:var(--telo);
+  max-width:38rem;margin:20px auto 0;
+}
+.akcie{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:30px}
+
+/* ── scéna s notebookom ───────────────────────────────────────────────── */
+.scena{position:relative;margin:clamp(44px,5.6vw,76px) auto 0;max-width:980px}
+.notebook{position:relative}
+.veko{
+  position:relative;padding:11px;border-radius:20px;
+  background:linear-gradient(168deg,#fdfcfa 0%,#ece7de 48%,#ddd6ca 100%);
+  box-shadow:var(--tien-3), 0 0 0 1px rgba(21,17,16,.09);
+}
+.veko::after{
+  content:"";position:absolute;inset:11px;border-radius:var(--r-obrazovka);
+  box-shadow:inset 0 0 0 1px rgba(21,17,16,.5), inset 0 1px 0 rgba(255,255,255,.06);
+  pointer-events:none;z-index:2;
+}
+.obrazovka{
+  position:relative;border-radius:var(--r-obrazovka);overflow:hidden;background:var(--obrazovka);
+  aspect-ratio:1200/930;
+}
+.obrazovka img{width:100%;height:100%;object-fit:cover;object-position:50% 0}
+.odlesk{
+  position:absolute;inset:0;z-index:1;pointer-events:none;
+  background:linear-gradient(104deg,rgba(255,255,255,.10) 0%,rgba(255,255,255,.02) 26%,transparent 52%);
+}
+.podstavec{
+  position:relative;height:13px;width:112%;margin-left:-6%;
+  border-radius:0 0 13px 13px;
+  background:linear-gradient(180deg,#e7e1d7 0%,#cfc7ba 62%,#b9b0a2 100%);
+  box-shadow:0 18px 30px -18px rgba(43,29,18,.5);
+}
+.podstavec::after{
+  content:"";position:absolute;left:50%;top:0;transform:translateX(-50%);
+  width:112px;height:5px;border-radius:0 0 6px 6px;
+  background:linear-gradient(180deg,#b6ada0,#cdc5b8);
+}
+
+/* plávajúce prvky */
+.plavak{position:absolute;z-index:3}
+.plavak-okno{
+  left:-66px;bottom:26px;width:290px;
+  border-radius:16px;overflow:hidden;background:var(--obrazovka);
+  box-shadow:0 2px 4px rgba(43,29,18,.10), 0 34px 60px -26px rgba(43,29,18,.55), 0 0 0 1px rgba(21,17,16,.12);
+}
+.plavak-okno img{width:100%;height:172px;object-fit:cover;object-position:50% 14%}
+.plavak-okno figcaption{
+  font:500 12.5px/1.4 var(--sans);color:#cfc7bf;letter-spacing:-.004em;
+  padding:11px 14px 13px;border-top:1px solid rgba(255,255,255,.09);text-align:left;
+}
+.plavak-fakt{
+  right:-52px;bottom:-16px;max-width:242px;text-align:left;
+  background:rgba(255,255,255,.92);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  border:1px solid var(--linka);border-radius:16px;padding:14px 16px;
+  box-shadow:var(--tien-2);
+  font:500 13.5px/1.45 var(--sans);color:var(--atrament);letter-spacing:-.008em;
+}
+.plavak-fakt span{display:block;color:var(--stlmene);font-weight:400;margin-top:4px}
+.bod{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--med);margin-right:8px;vertical-align:1px;box-shadow:0 0 0 4px var(--med-slaba)}
+
+/* ── pás noriem ───────────────────────────────────────────────────────── */
+.normy{border-top:1px solid var(--linka-slaba);border-bottom:1px solid var(--linka-slaba);background:linear-gradient(180deg,rgba(244,241,236,.55),rgba(244,241,236,0))}
+.normy .obal{padding-block:30px;display:flex;flex-wrap:wrap;align-items:center;gap:14px 26px}
+.normy p{font:500 14.5px/1.45 var(--sans);color:var(--stlmene);margin:0;max-width:19rem;letter-spacing:-.008em}
+.cipy{display:flex;flex-wrap:wrap;gap:8px;margin-left:auto}
+.cip{
+  font:500 13px/1 var(--sans);color:var(--atrament);letter-spacing:-.004em;
+  padding:9px 14px;border-radius:99px;background:var(--plocha);
+  border:1px solid var(--linka);box-shadow:0 1px 1px rgba(43,29,18,.03);
+  white-space:nowrap;
+}
+
+/* ── tri body ─────────────────────────────────────────────────────────── */
+.body3{display:grid;grid-template-columns:repeat(3,1fr);gap:0;margin-top:44px}
+.body3 > div{padding:0 clamp(18px,2.4vw,34px);border-left:1px solid var(--linka-slaba)}
+.body3 > div:first-child{padding-left:0;border-left:0}
+.body3 > div:last-child{padding-right:0}
+.body3 svg{width:26px;height:26px;color:var(--med-tmava);margin-bottom:16px}
+.body3 p{font-size:1rem;color:var(--telo)}
+
+/* ── bento ────────────────────────────────────────────────────────────── */
+.mriezka{display:grid;grid-template-columns:repeat(12,1fr);gap:clamp(14px,1.5vw,20px);margin-top:44px}
+.dlazdica{
+  grid-column:span 6;display:flex;flex-direction:column;
+  background:var(--plocha);border:1px solid var(--linka);border-radius:var(--r-plocha);
+  overflow:hidden;box-shadow:var(--tien-1);text-decoration:none;color:inherit;
+  transition:transform .3s var(--lahka), box-shadow .3s ease, border-color .3s ease;
+}
+.dlazdica:hover{transform:translateY(-4px);box-shadow:var(--tien-2);border-color:rgba(21,17,16,.18)}
+.dlazdica.sirka7{grid-column:span 7}
+.dlazdica.sirka5{grid-column:span 5}
+.nahlad{position:relative;background:var(--obrazovka);overflow:hidden;flex:1 1 auto;min-height:clamp(236px,24vw,344px)}
+.nahlad img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform .5s var(--lahka)}
+.dlazdica:hover .nahlad img{transform:scale(1.025)}
+.nahlad::after{content:"";position:absolute;inset:0;box-shadow:inset 0 -1px 0 rgba(255,255,255,.08)}
+.dlazdica .text{padding:20px 22px 22px;display:flex;flex-direction:column}
+.dlazdica p{font-size:.985rem;color:var(--telo);margin:0}
+.stav{
+  display:inline-flex;align-items:center;gap:7px;margin-top:16px;
+  font:600 12.5px/1 var(--sans);letter-spacing:-.004em;color:var(--med-tmava);
+}
+.stav.plateny{color:var(--stlmene)}
+.stav i{width:6px;height:6px;border-radius:50%;background:currentColor;display:block}
+.odkaz{
+  display:inline-flex;align-items:center;gap:8px;margin-top:18px;
+  font:600 14.5px/1 var(--sans);color:var(--atrament);letter-spacing:-.01em;
+}
+.odkaz svg{width:15px;height:15px;transition:transform .26s var(--lahka)}
+.dlazdica:hover .odkaz svg{transform:translateX(4px)}
+.dlazdica:hover .odkaz{color:var(--med-tmava)}
+
+.nahlad img.spodok{top:auto;bottom:0;left:50%;right:auto;width:142%;height:auto;max-width:none;
+  transform:translateX(-50%);transform-origin:50% 100%}
+.dlazdica:hover .nahlad img.spodok{transform:translateX(-50%) scale(1.02)}
+.nahlad img.spodok.vlavo{left:0;width:132%;transform:none;transform-origin:0 100%}
+.nahlad img.spodok.vpravo{left:auto;right:0;width:136%;transform:none;transform-origin:100% 100%}
+.dlazdica:hover .nahlad img.spodok.vlavo,
+.dlazdica:hover .nahlad img.spodok.vpravo{transform:scale(1.02)}
+
+/* ── piloty ───────────────────────────────────────────────────────────── */
+.piloty{
+  background:var(--plocha);border:1px solid var(--linka);border-radius:calc(var(--r-plocha) + 6px);
+  box-shadow:var(--tien-1);padding:clamp(26px,3.4vw,46px);margin-top:40px;
+}
+.piloty .dvojica{display:grid;grid-template-columns:1fr 1fr;gap:clamp(24px,3vw,48px)}
+.piloty .dvojica > div + div{border-left:1px solid var(--linka-slaba);padding-left:clamp(24px,3vw,48px)}
+.piloty h3{font-size:1.25rem}
+.piloty p{font-size:1rem}
+.piloty .spodok{
+  display:flex;flex-wrap:wrap;align-items:center;gap:16px 22px;
+  margin-top:clamp(24px,3vw,36px);padding-top:24px;border-top:1px solid var(--linka-slaba);
+}
+.piloty .spodok p{font-size:.985rem;max-width:34rem;margin:0}
+
+/* ── dôvera ───────────────────────────────────────────────────────────── */
+.dovera{background:var(--papier-2);border-top:1px solid var(--linka-slaba)}
+.dovera .stlpce{display:grid;grid-template-columns:1.05fr .95fr;gap:clamp(30px,5vw,80px);align-items:start}
+.dovera p{font-size:1.02rem}
+.udaje{margin:26px 0 0;padding:0;list-style:none;border-top:1px solid var(--linka)}
+.udaje li{
+  display:flex;justify-content:space-between;gap:24px;padding:13px 0;
+  border-bottom:1px solid var(--linka);font:500 14.5px/1.4 var(--sans);color:var(--atrament);
+  letter-spacing:-.008em;
+}
+.udaje li span:first-child{color:var(--stlmene);font-weight:400}
+.udaje li span:last-child{text-align:right}
+.udaje li span.cislo{font-variant-numeric:tabular-nums;letter-spacing:.01em}
+
+/* ── výzva ────────────────────────────────────────────────────────────── */
+.vyzva{position:relative;overflow:hidden;background:var(--papier);text-align:center;border-top:1px solid var(--linka-slaba)}
+.vyzva::before{
+  content:"";position:absolute;left:50%;top:-40%;transform:translateX(-50%);
+  width:min(1100px,130vw);height:560px;border-radius:50%;filter:blur(90px);
+  background:radial-gradient(closest-side,rgba(242,100,60,.24),rgba(242,100,60,0) 70%);
+}
+.vyzva .obal{position:relative;z-index:1}
+.vyzva h2{max-width:20ch;margin-inline:auto}
+.vyzva p{max-width:30rem;margin:16px auto 0;font-size:1.05rem}
+.vyzva .akcie{margin-top:28px}
+.vyzva .drobne{margin-top:18px;font:500 13.5px/1.5 var(--sans);color:var(--stlmene)}
+
+/* ── päta ─────────────────────────────────────────────────────────────── */
+.pata{background:var(--papier-2);border-top:1px solid var(--linka);padding-block:56px 34px}
+.pata .vrch{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:34px}
+.pata h4{font:600 13px/1 var(--sans);color:var(--atrament);margin:0 0 16px;letter-spacing:-.006em}
+.pata ul{margin:0;padding:0;list-style:none;display:grid;gap:10px}
+.pata li a{font:400 14.5px/1.4 var(--sans);color:var(--telo);text-decoration:none;text-underline-offset:3px}
+.pata li a:hover{color:var(--atrament);text-decoration:underline;text-decoration-color:var(--med)}
+.pata .sidlo{font-size:.95rem;color:var(--stlmene);margin-top:16px;max-width:22rem}
+.pata .spodok{
+  display:flex;flex-wrap:wrap;gap:12px 28px;align-items:center;justify-content:space-between;
+  margin-top:44px;padding-top:22px;border-top:1px solid var(--linka);
+  font:400 13.5px/1.5 var(--sans);color:var(--stlmene);
+}
+.pata .spodok a{color:var(--telo);text-decoration:underline;text-decoration-color:var(--linka);text-underline-offset:3px}
+.pata .spodok a:hover{text-decoration-color:var(--med)}
+
+/* ── pohyb ────────────────────────────────────────────────────────────── */
+.js [data-nastup]{
+  opacity:0;transform:translateY(16px);
+  transition:opacity .8s var(--lahka), transform .8s var(--lahka);
+  transition-delay:calc(var(--k,0) * 90ms);
+}
+.js .scena{
+  opacity:0;transform:translateY(38px) scale(.968);transform-origin:50% 100%;
+  transition:opacity 1.15s var(--lahka), transform 1.15s var(--lahka);
+  transition-delay:.26s;
+}
+.js .plavak{
+  opacity:0;transform:translateY(22px) scale(.95);
+  transition:opacity .85s var(--lahka), transform .85s var(--lahka);
+}
+.js .plavak-okno{transition-delay:1.05s}
+.js .plavak-fakt{transition-delay:1.22s}
+.js.nastup [data-nastup],
+.js.nastup .scena,
+.js.nastup .plavak{opacity:1;transform:none}
+
+.js .odhal{opacity:0;transform:translateY(22px);transition:opacity .7s var(--lahka),transform .7s var(--lahka);transition-delay:calc(var(--k,0) * 70ms)}
+.js .odhal.vidno{opacity:1;transform:none}
+
+@media (prefers-reduced-motion:reduce){
+  .js [data-nastup],.js .scena,.js .plavak,.js .odhal{opacity:1 !important;transform:none !important;animation:none;transition:none}
+  *{animation-duration:.001ms !important;transition-duration:.001ms !important}
+}
+
+/* ── responzívne ──────────────────────────────────────────────────────── */
+@media (max-width:1180px){
+  .plavak-okno{left:-16px;bottom:18px;width:238px}
+  .plavak-fakt{right:-10px;bottom:-10px}
+}
+@media (max-width:980px){
+  .plavak{display:none}
+  .dovera .stlpce{grid-template-columns:1fr;gap:34px}
+  .pata .vrch{grid-template-columns:1fr 1fr;gap:30px}
+  .body3{grid-template-columns:1fr;gap:26px;margin-top:34px}
+  .body3 > div{padding:0 0 0 18px;border-left:1px solid var(--linka)}
+  .body3 > div:first-child{padding-left:18px;border-left:1px solid var(--linka)}
+  .body3 svg{margin-bottom:12px}
+  .dlazdica,.dlazdica.sirka7,.dlazdica.sirka5,.dlazdica.sirka6{grid-column:span 12}
+  .normy .obal{flex-direction:column;align-items:flex-start;gap:16px}
+  .cipy{margin-left:0}
+  .piloty .dvojica{grid-template-columns:1fr;gap:26px}
+  .piloty .dvojica > div + div{border-left:0;padding-left:0;border-top:1px solid var(--linka-slaba);padding-top:26px}
+}
+@media (max-width:760px){
+  .menu{display:none}
+  .hlava .obal{gap:14px}
+  .hlava .tlacidlo{margin-left:auto}
+  .hero{padding-top:34px}
+  .hero .veta{font-size:1.02rem}
+  .akcie{flex-direction:column;align-items:stretch}
+  .akcie .tlacidlo{width:100%}
+  .veko{padding:7px;border-radius:14px}
+  .podstavec{width:108%;margin-left:-4%}
+  .veko::after{inset:7px;border-radius:9px}
+  .obrazovka{border-radius:9px;aspect-ratio:4/3}
+  .obrazovka img{object-position:0 0;width:170%;max-width:none}
+  .dlazdica .nahlad,.dlazdica.sirka7 .nahlad,.dlazdica.sirka5 .nahlad{aspect-ratio:4/3}
+  .udaje li{flex-direction:column;gap:2px}
+  .udaje li span:last-child{text-align:left}
+  .pata .vrch{grid-template-columns:1fr;gap:26px}
+  .pata .spodok{flex-direction:column;align-items:flex-start}
+}
+</style>
+</head>
+<body>
+<script>document.documentElement.classList.add('js')</script>
+
+<header class="hlava" id="hlava">
+  <div class="obal">
+    <a class="znacka" href="/" aria-label="ARLing, domov">
+      <svg viewBox="0 0 488 215" aria-hidden="true" focusable="false"><path fill="currentColor" fill-rule="evenodd" d="M0,213L74,214L181,85L285,214L360,214L206,21L185,4L164,10Z M221,0L263,50L395,50L409,55L419,76L401,96L313,98L411,214L487,214L422,139L457,123L482,88L482,48L463,19L417,0Z"/><path fill="#f2643c" d="M269,66L269,67L268,68L268,70L267,71L267,76L268,77L268,79L270,81L270,82L271,82L273,84L274,84L277,86L279,86L280,87L287,87L288,86L290,86L291,85L294,84L298,80L298,79L299,78L299,75L300,74L300,72L299,71L299,69L298,68L297,65L295,63L294,63L289,60L278,60L277,61L276,61L275,62L272,63Z"/></svg>
+      <span>ARLing</span>
+    </a>
+    <nav class="menu" aria-label="Hlavné menu">
+      <a href="#nastroje">Nástroje</a>
+      <a href="#piloty">Aplikácie</a>
+      <a href="#firma">Firma</a>
+    </nav>
+    <a class="tlacidlo hlavne" href="/efaktura/">Skúsiť zadarmo</a>
+  </div>
+</header>
+
+<main>
+
+  <!-- hero ───────────────────────────────────────────────────────────── -->
+  <section class="hero">
+    <div class="ziara" aria-hidden="true"><i></i><i></i><i></i></div>
+    <div class="obal">
+      <h1 data-nastup style="--k:0">Doklady, ktoré sedia na prvýkrát</h1>
+      <p class="veta" data-nastup style="--k:1">
+        ARLing je softvérová firma pre malé podniky a účtovníkov. E-faktúru, SEPA súbor aj
+        bankový výpis si skontrolujete v prehliadači, zadarmo.
+      </p>
+      <div class="akcie" data-nastup style="--k:2">
+        <a class="tlacidlo hlavne" href="/efaktura/">Skúsiť zadarmo</a>
+        <a class="tlacidlo tiche" href="#nastroje">Pozrieť nástroje</a>
+      </div>
+
+      <div class="scena">
+        <div class="notebook">
+          <div class="veko">
+            <div class="obrazovka">
+              <img src="/style/dlazdice/proof-priestor-sk.webp" width="1200" height="930"
+                   alt="Obrazovka aplikácie Proof so zoznamom zákaziek, stavmi schválenia a verziami, ukážkové dáta"
+                   fetchpriority="high" decoding="async">
+              <span class="odlesk" aria-hidden="true"></span>
+            </div>
+          </div>
+          <div class="podstavec" aria-hidden="true"></div>
+        </div>
+
+        <figure class="plavak plavak-okno">
+          <img src="/style/dlazdice/kontrola-suboru.webp" width="960" height="960"
+               alt="Nález ku SEPA súboru pain.001 s číslami riadkov a odporúčaním" loading="lazy" decoding="async">
+          <figcaption>Nález ku SEPA súboru, písomne do 24 hodín</figcaption>
+        </figure>
+
+        <div class="plavak plavak-fakt">
+          <span class="bod" aria-hidden="true"></span>Dáta na vlastnom serveri
+          <span>Bratislava, Európska únia</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- normy ──────────────────────────────────────────────────────────── -->
+  <section class="normy" aria-label="Formáty a normy">
+    <div class="obal">
+      <p>Pracujeme s formátmi, ktoré banky a odberatelia naozaj vyžadujú.</p>
+      <div class="cipy">
+        <span class="cip">EN 16931</span>
+        <span class="cip">XRechnung</span>
+        <span class="cip">Peppol BIS Billing 3.0</span>
+        <span class="cip">UBL 2.1</span>
+        <span class="cip">ISO 20022 pain.001</span>
+        <span class="cip">camt.053</span>
+        <span class="cip">MT940</span>
+        <span class="cip">DATEV EXTF</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- tri body ───────────────────────────────────────────────────────── -->
+  <section class="sekcia">
+    <div class="obal">
+      <div class="uvodnik">
+        <h2>Nástroje, ktoré robia jednu vec poriadne</h2>
+        <p>Namiesto veľkého systému dostanete jednu obrazovku na jednu úlohu. Otvoríte ju, keď treba, a zavriete, keď je hotovo.</p>
+      </div>
+      <div class="body3">
+        <div>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="2.75" y="4.25" width="18.5" height="15.5" rx="2.5"/><path d="M2.75 8.75h18.5"/><path d="M8.5 14.4l2.4 2.4 4.6-4.9"/>
+          </svg>
+          <h3>Súbor ostáva u vás</h3>
+          <p>Kontroly bežia priamo v prehliadači. Nič nenahrávate na cudzí server a nezakladáte si účet.</p>
+        </div>
+        <div>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M6 2.75h8.5L19.25 7.5v13.75H6z" /><path d="M14.25 2.75V7.5h5"/><path d="M9 12h7"/><path d="M9 15.75h4.5"/>
+          </svg>
+          <h3>Presný nález, nie hláška</h3>
+          <p>Dostanete číslo riadka, pravidlo a vetu, ktorou to poviete dodávateľovi svojho softvéru.</p>
+        </div>
+        <div>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3" y="3.75" width="18" height="7" rx="2"/><rect x="3" y="13.25" width="18" height="7" rx="2"/><path d="M6.75 7.25h.01"/><path d="M6.75 16.75h.01"/>
+          </svg>
+          <h3>Platené časti v EÚ</h3>
+          <p>Aplikácie Proof a Renewals bežia na vlastnom serveri v Bratislave. Žiadny cudzí cloud.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- bento ──────────────────────────────────────────────────────────── -->
+  <section class="sekcia" id="nastroje" style="padding-top:0">
+    <div class="obal">
+      <div class="uvodnik">
+        <h2>Čo si u nás môžete otvoriť</h2>
+        <p>Štyri nástroje na doklady a dve aplikácie, ktoré bežia každý deň. Ukážky nižšie sú skutočné obrazovky s ukážkovými dátami.</p>
+      </div>
+
+      <div class="mriezka">
+        <a class="dlazdica sirka7 odhal" style="--k:0" href="/efaktura/">
+          <div class="nahlad"><img src="/style/dlazdice/efaktura.webp" width="960" height="960" style="object-position:50% 24%"
+            alt="Náhľad e-faktúry v štandarde Peppol BIS Billing 3.0 s nulovým počtom chýb a varovaní" loading="lazy" decoding="async"></div>
+          <div class="text">
+            <h3>E-faktúra pre Nemecko a Peppol</h3>
+            <p>Skontrolujete XRechnung aj Peppol BIS 3.0, pozriete si čitateľný náhľad a zistíte, čo odberateľ odmietne.</p>
+            <span class="stav"><i aria-hidden="true"></i>Kontrola zdarma, XML za 2,90 €</span>
+            <span class="odkaz">Otvoriť nástroj
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 8h11"/><path d="M9 3.5L13.5 8 9 12.5"/></svg>
+            </span>
+          </div>
+        </a>
+
+        <a class="dlazdica sirka5 odhal" style="--k:1" href="/kontrola-suboru/">
+          <div class="nahlad"><img src="/style/dlazdice/kontrola-suboru.webp" width="960" height="960" style="object-position:50% 30%"
+            alt="Nález ku SEPA súboru pain.001 s číslami riadkov a odporúčaním" loading="lazy" decoding="async"></div>
+          <div class="text">
+            <h3>Kontrola SEPA súboru</h3>
+            <p>Banka odmietla platobný súbor pain.001. Nájdeme riadok, v ktorom je chyba.</p>
+            <span class="stav"><i aria-hidden="true"></i>Zdarma</span>
+            <span class="odkaz">Otvoriť nástroj
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 8h11"/><path d="M9 3.5L13.5 8 9 12.5"/></svg>
+            </span>
+          </div>
+        </a>
+
+        <a class="dlazdica sirka5 odhal" style="--k:2" href="/bankove-nastroje/">
+          <div class="nahlad"><img src="/style/dlazdice/camt053-to-excel.webp" width="960" height="1037" style="object-position:50% 30%"
+            alt="Výstup nástroja, ktorý prevádza bankový výpis camt.053 do Excelu, CSV a MT940" loading="lazy" decoding="async"></div>
+          <div class="text">
+            <h3>Bankový výpis do Excelu</h3>
+            <p>Výpis camt.053 z banky premeníte na tabuľku, ktorú účtovníčka otvorí bez čarovania.</p>
+            <span class="stav"><i aria-hidden="true"></i>Zdarma</span>
+            <span class="odkaz">Otvoriť nástroj
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 8h11"/><path d="M9 3.5L13.5 8 9 12.5"/></svg>
+            </span>
+          </div>
+        </a>
+
+        <a class="dlazdica sirka7 odhal" style="--k:3" href="/gdpr-dokumenty/">
+          <div class="nahlad"><img src="/style/dlazdice/gdpr-dokumenty.webp" width="960" height="960" style="object-position:50% 20%"
+            alt="Vzor zásad ochrany osobných údajov s odkazmi na články GDPR a lehotou 72 hodín" loading="lazy" decoding="async"></div>
+          <div class="text">
+            <h3>Dokumenty ku GDPR</h3>
+            <p>Záznamy o spracovateľských činnostiach, sprostredkovateľská zmluva, cookies a postup pri porušení. Vyplníte údajmi firmy.</p>
+            <span class="stav plateny"><i aria-hidden="true"></i>Platený balík</span>
+            <span class="odkaz">Pozrieť obsah
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 8h11"/><path d="M9 3.5L13.5 8 9 12.5"/></svg>
+            </span>
+          </div>
+        </a>
+
+        <a class="dlazdica sirka6 odhal" style="--k:4" href="/proof/">
+          <div class="nahlad"><img class="spodok vlavo" src="/style/dlazdice/proof-priestor-sk.webp" width="1200" height="930"
+            alt="Zoznam zákaziek v aplikácii Proof so stavmi schválené, čaká na rozhodnutie a požadovaná oprava" loading="lazy" decoding="async"></div>
+          <div class="text">
+            <h3>Proof, schválenie pred tlačou</h3>
+            <p>Zákazník potvrdí návrh skôr, než pustíte stroj. Každá verzia má dátum, meno a rozhodnutie.</p>
+            <span class="stav"><i aria-hidden="true"></i>Pilot zdarma</span>
+            <span class="odkaz">Otvoriť aplikáciu
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 8h11"/><path d="M9 3.5L13.5 8 9 12.5"/></svg>
+            </span>
+          </div>
+        </a>
+
+        <a class="dlazdica sirka6 odhal" style="--k:5" href="/renewals/">
+          <div class="nahlad"><img class="spodok vlavo" src="/style/dlazdice/renewals-priestor-en.webp" width="1200" height="1000"
+            alt="Zoznam dokladov od dodávateľov v aplikácii Renewals s dátumami platnosti a stavom kontroly" loading="lazy" decoding="async"></div>
+          <div class="text">
+            <h3>Renewals, platnosť dokladov</h3>
+            <p>Poistenia, osvedčenia a živnostenské listy dodávateľov na jednom mieste. Vidíte, čo expiruje a čo chýba.</p>
+            <span class="stav"><i aria-hidden="true"></i>Pilot zdarma</span>
+            <span class="odkaz">Otvoriť aplikáciu
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 8h11"/><path d="M9 3.5L13.5 8 9 12.5"/></svg>
+            </span>
+          </div>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- piloty ─────────────────────────────────────────────────────────── -->
+  <section class="sekcia" id="piloty" style="padding-top:0">
+    <div class="obal">
+      <div class="uvodnik">
+        <h2>Dve aplikácie hľadajú prvé firmy</h2>
+        <p>Proof aj Renewals sú hotové a bežia. Pilot je zadarmo, lebo potrebujeme počuť, čo vám v nich chýba.</p>
+      </div>
+      <div class="piloty">
+        <div class="dvojica">
+          <div>
+            <h3>Proof</h3>
+            <p>Pre reklamné štúdiá a tlačiarne. Pošlete zákazníkovi odkaz na náhľad, on schváli alebo požiada o opravu, a vy máte písomný záznam pred výrobou.</p>
+          </div>
+          <div>
+            <h3>Renewals</h3>
+            <p>Pre firmy, ktoré zbierajú doklady od dodávateľov. Vidíte, ktoré poistenie alebo osvedčenie o mesiac skončí a ktorý súbor ešte nikto neposlal.</p>
+          </div>
+        </div>
+        <div class="spodok">
+          <p>Pilot znamená, že aplikáciu používate naostro a neplatíte. Za to nám raz za čas poviete, čo vás v nej hnevá.</p>
+          <a class="tlacidlo tiche" href="/kontakt/">Napísať nám</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- dôvera ─────────────────────────────────────────────────────────── -->
+  <section class="sekcia dovera" id="firma">
+    <div class="obal stlpce">
+      <div>
+        <h2>Kto za tým stojí</h2>
+        <p>ARLing je malá softvérová firma z Bratislavy. Staviame nástroje pre ľudí, ktorí posielajú faktúry a doklady každý týždeň, a ktorých mrzí, keď sa vrátia späť.</p>
+        <p>Na tejto stránke nenájdete logá klientov, hodnotenia ani počty používateľov. Firma je nová a tie čísla zatiaľ nemáme. Ukážky vyššie sú skutočné obrazovky našich aplikácií s ukážkovými dátami.</p>
+      </div>
+      <div>
+        <ul class="udaje">
+          <li><span>Obchodné meno</span><span>ARLing s. r. o.</span></li>
+          <li><span>IČO</span><span class="cislo">56583486</span></li>
+          <li><span>Sídlo</span><span>Bratislava, Slovensko</span></li>
+          <li><span>Kde bežia dáta</span><span>vlastný server v EÚ</span></li>
+          <li><span>Jazyky rozhrania</span><span>slovenčina, angličtina, nemčina</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- výzva ──────────────────────────────────────────────────────────── -->
+  <section class="sekcia vyzva">
+    <div class="obal">
+      <h2>Začnite tým, že skontrolujete jednu faktúru</h2>
+      <p>Otvoríte súbor, o pár sekúnd viete, či prejde. Ak neprejde, uvidíte prečo.</p>
+      <div class="akcie">
+        <a class="tlacidlo hlavne" href="/efaktura/">Skúsiť zadarmo</a>
+      </div>
+      <p class="drobne">Bez registrácie a bez platobnej karty.</p>
+    </div>
+  </section>
+
+</main>
+
+<footer class="pata">
+  <div class="obal">
+    <div class="vrch">
+      <div>
+        <a class="znacka" href="/" aria-label="ARLing, domov">
+          <svg viewBox="0 0 488 215" aria-hidden="true" focusable="false"><path fill="currentColor" fill-rule="evenodd" d="M0,213L74,214L181,85L285,214L360,214L206,21L185,4L164,10Z M221,0L263,50L395,50L409,55L419,76L401,96L313,98L411,214L487,214L422,139L457,123L482,88L482,48L463,19L417,0Z"/><path fill="#f2643c" d="M269,66L269,67L268,68L268,70L267,71L267,76L268,77L268,79L270,81L270,82L271,82L273,84L274,84L277,86L279,86L280,87L287,87L288,86L290,86L291,85L294,84L298,80L298,79L299,78L299,75L300,74L300,72L299,71L299,69L298,68L297,65L295,63L294,63L289,60L278,60L277,61L276,61L275,62L272,63Z"/></svg>
+          <span>ARLing</span>
+        </a>
+        <p class="sidlo">ARLing s. r. o., IČO 56583486, Bratislava. Softvér pre malé firmy a účtovníkov.</p>
+      </div>
+      <div>
+        <h4>Nástroje</h4>
+        <ul>
+          <li><a href="/efaktura/">E-faktúra</a></li>
+          <li><a href="/kontrola-suboru/">Kontrola SEPA súboru</a></li>
+          <li><a href="/bankove-nastroje/">Bankový výpis do Excelu</a></li>
+          <li><a href="/gdpr-dokumenty/">Dokumenty ku GDPR</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Aplikácie</h4>
+        <ul>
+          <li><a href="/proof/">Proof</a></li>
+          <li><a href="/renewals/">Renewals</a></li>
+          <li><a href="/kontakt/">Kontakt</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Firma</h4>
+        <ul>
+          <li><a href="/podmienky/">Obchodné podmienky</a></li>
+          <li><a href="/privacy/">Ochrana údajov</a></li>
+          <li><a href="/impressum/">Impressum</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="spodok">
+      <span>© 2026 ARLing s. r. o.</span>
+      <span>Knihy, puzzle a hry vydávame popri tom v <a href="/shop/">obchode ARLing</a>.</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var doc = document.documentElement;
+  var tichy = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* jeden autorský moment: nadpis sa zdvihne, notebook sa otvorí */
+  if (tichy) { doc.classList.remove('js'); }
+  else {
+    requestAnimationFrame(function () { doc.classList.add('nastup'); });
+
+    /* jemné odhalenie dlaždíc, nikde inde */
+    var ciele = document.querySelectorAll('.odhal');
+    if ('IntersectionObserver' in window) {
+      var io = new IntersectionObserver(function (zaznamy) {
+        zaznamy.forEach(function (z) {
+          if (z.isIntersecting) { z.target.classList.add('vidno'); io.unobserve(z.target); }
+        });
+      }, { rootMargin: '0px 0px -12% 0px', threshold: 0.12 });
+      ciele.forEach(function (c) { io.observe(c); });
+    } else {
+      ciele.forEach(function (c) { c.classList.add('vidno'); });
+    }
+  }
+
+  /* hlavička dostane linku, až keď je pod ňou obsah */
+  var hlava = document.getElementById('hlava');
+  var tiká = false;
+  addEventListener('scroll', function () {
+    if (tiká) return;
+    tiká = true;
+    requestAnimationFrame(function () {
+      hlava.classList.toggle('pri-scrolle', window.scrollY > 8);
+      tiká = false;
+    });
+  }, { passive: true });
+})();
+</script>
+</body>
+</html>
