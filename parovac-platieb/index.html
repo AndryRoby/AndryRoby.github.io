@@ -138,6 +138,7 @@
 <link rel="preload" href="/fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/style/paper.css?v=2ebf5aa4">
+<link rel="stylesheet" href="/style/nastroj.css?v=82839fc6">
 <script src="/style/prepinac.js?v=668e98c9" defer></script>
 <style>
   /* Len to, čo je vlastné tejto stránke: samotný párovač, jeho výsledky, cena a licencia.
@@ -174,8 +175,7 @@
   ol.rules { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(260px,100%),1fr));
              gap:26px 40px; margin:0; padding:0; list-style:none; counter-reset:r; }
   ol.rules li { padding-top:14px; border-top:1px solid var(--line); min-width:0; }
-  ol.rules li::before { counter-increment:r; content:counter(r,decimal-leading-zero);
-    font:500 12px/1 var(--ui); letter-spacing:.12em; color:var(--accent); display:block; margin-bottom:8px; }
+  /* bez cisla: nezavisle pravidla nie su postupnost */
   ol.rules b { display:block; color:var(--ink); margin-bottom:4px; }
   ol.rules p { margin:0; font-size:15.5px; color:var(--muted); overflow-wrap:anywhere; }
 
@@ -188,7 +188,7 @@
   @media (max-width:900px) { .pane + .pane { border-left:none; border-top:1px solid var(--line); } }
   .pane-head { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 16px;
     border-bottom:1px solid var(--line); background:var(--paper); flex-wrap:wrap; }
-  .pane-title { font:12px/1 var(--mono); letter-spacing:.04em; text-transform:uppercase; color:var(--muted); }
+  .pane-title { font:12px/1 var(--mono); letter-spacing:0; text-transform:none; color:var(--muted); }
   .pane-actions { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
 
   .icon-btn { font:12.5px/1 var(--ui); padding:9px 11px; border:1px solid var(--line); background:var(--paper);
@@ -201,7 +201,7 @@
   select:disabled, input:disabled { opacity:.55; cursor:default; }
 
   .form-section { display:flex; flex-direction:column; gap:10px; min-width:0; padding:16px; }
-  .form-section-title { font:12px/1 var(--mono); letter-spacing:.04em; text-transform:uppercase; color:var(--muted);
+  .form-section-title { font:12px/1 var(--mono); letter-spacing:0; text-transform:none; color:var(--muted);
     border-bottom:1px solid var(--line); padding-bottom:6px; display:flex; justify-content:space-between;
     align-items:baseline; gap:8px; flex-wrap:wrap; }
   .form-section-title .hint-inline { text-transform:none; font:11.5px/1.4 var(--ui); color:var(--muted); letter-spacing:0; }
@@ -219,7 +219,7 @@
   .json-in:focus { outline:none; border-color:var(--accent); }
 
   .mapping-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(100px,1fr)); gap:8px 10px; }
-  .mapping-grid .field label { font-size:10.5px; text-transform:uppercase; letter-spacing:.03em; }
+  .mapping-grid .field label { font-size:10.5px; text-transform:none; letter-spacing:0; }
   .mapping-grid .field select { padding:6px 7px; font-size:12px; }
 
   .pro-row { border-top:1px solid var(--line); padding-top:12px; margin-top:2px; display:flex; flex-direction:column; gap:8px; }
@@ -288,7 +288,7 @@
   @media (max-width:860px) { .endpoint { grid-template-columns:minmax(0,1fr); } }
   .codeblock { border:1px solid var(--line); background:var(--card); border-radius:var(--radius); overflow:hidden; min-width:0; }
   .codeblock-head { padding:10px 14px; border-bottom:1px solid var(--line); font:11px/1 var(--mono);
-    letter-spacing:.04em; text-transform:uppercase; color:var(--muted); display:flex; justify-content:space-between; }
+    letter-spacing:0; text-transform:none; color:var(--muted); display:flex; justify-content:space-between; }
   .codeblock pre { margin:0; border:none; border-radius:0; background:none; padding:16px 18px; font-size:12.5px;
     line-height:1.7; overflow-x:auto; color:var(--body); }
   .endpoint-copy p { margin:0 0 14px; font-size:15.5px; }
@@ -376,7 +376,7 @@
   @media print { .sticky-cta { display:none !important; } }
 </style>
 </head>
-<body class="noc">
+<body class="noc nastroj">
 
 <div class="wash" aria-hidden="true"><i></i><i></i></div>
 
@@ -429,7 +429,6 @@
 
   <section id="problem" class="deep">
     <div class="wrap">
-      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>01</p>
       <h2 class="r">Tri veci, ktoré pri ručnom párovaní najčastejšie zaberú čas alebo sa pokazia.</h2>
       <div class="rule"></div>
       <p class="sub r d1">Porovnávať výpis z banky s tabuľkou faktúr riadok po riadku sa dá, ale pri väčšom počte faktúr je to pomalé a chybové.</p>
@@ -452,7 +451,6 @@
 
   <section id="playground">
     <div class="wrap">
-      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="7" height="15" rx="1.5"/><rect x="13.5" y="4.5" width="7" height="15" rx="1.5"/><path d="M10.5 9h3M10.5 15h3"/></svg>02</p>
       <h2 class="r">Vložte faktúry, nahrajte výpis. Dostanete štyri zoznamy.</h2>
       <div class="rule"></div>
       <p class="sub r d1">Nič z toho, čo vložíte alebo nahráte, sa neodosiela. Párovanie beží vo vašom prehliadači.</p>
@@ -572,7 +570,6 @@
 
   <section id="endpoint" class="band">
     <div class="wrap">
-      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 7 4.5 12 9 17M15 7l4.5 5-4.5 5"/></svg>03</p>
       <h2 class="r">Štyri funkcie. Faktúry a výpis dnu, štyri zoznamy von.</h2>
       <div class="rule"></div>
       <p class="sub r d1">Žiadny server, žiadny API kľúč, žiadna registrácia. <code>parovac.js</code> je čistý JavaScript bez závislostí: prečítajte si ho, forknite, alebo ho spustite vo vlastnom kóde či CI.</p>
@@ -613,7 +610,6 @@ const csv = toCsv(rep.matched, { columns: MATCHED_COLUMNS });</pre>
 
   <section id="pro" class="deep">
     <div class="wrap">
-      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="12" r="3.5"/><path d="M11.5 12H21M18 12v3M15 12v2.2"/></svg>04</p>
       <h2 class="r">Pro pre účtovníka, ktorý to robí každý mesiac.</h2>
       <div class="rule"></div>
       <p class="sub r d1">Bezplatná verzia ukáže celé tabuľky na obrazovke, bez limitu na počet riadkov, navždy. Stiahnutý súbor má bez licencie prvých 20 riadkov ako ukážku. Pro je pohodlie pri opakovanom mesačnom spracovaní viacerých účtov, nie odomknutá funkčnosť párovania.</p>
@@ -694,7 +690,6 @@ const csv = toCsv(rep.matched, { columns: MATCHED_COLUMNS });</pre>
 
   <section id="faq">
     <div class="wrap">
-      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.8a2.5 2.5 0 1 1 2.9 2.5v1.4"/><circle cx="12.5" cy="16.6" r=".7" fill="currentColor" stroke="none"/></svg>05</p>
       <h2 class="r">Otázky, ktoré ľudia naozaj hľadajú.</h2>
       <div class="rule"></div>
       <p class="sub r d1">Priame odpovede na otázky o párovaní výpisu z banky s faktúrami.</p>

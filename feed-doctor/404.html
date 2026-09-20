@@ -16,24 +16,11 @@
 <link rel="preload" href="fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="style/paper.css?v=2ebf5aa4">
+<link rel="stylesheet" href="/style/pravne.css">
+<link rel="stylesheet" href="style/nastroj.css?v=82839fc6">
 
-<style>
-  /* Only what is specific to this page. Everything else is style/paper.css. */
-  /* No screenshot belongs on a page that does not exist, so the hero stays one
-     column and the text is allowed to run wide instead of leaving half of it empty. */
-  .lost{padding:clamp(48px,7vw,104px) 0 clamp(40px,5vw,80px)}
-  .lost h1{font-size:clamp(34px,5vw,64px);max-width:16ch}
-  .lost .lead{max-width:52ch}
-  .index{max-width:560px}
-  /* Three surfaces, the same rhythm as the checker: paper, the muted second
-     surface under the index, and ink under the footer. */
-  footer.band{background:var(--ink);color:#a8a294;border-top:none}
-  footer.band a{color:#e9e4d8}
-  footer.band a:hover{color:var(--accent-light)}
-</style>
 </head>
-<body class="noc">
-<div class="wash" aria-hidden="true"><i></i><i></i></div>
+<body class="noc nastroj pravne">
 
 <a class="skip site-skip" href="#arling-obsah" data-site-label="skip">Skip to content</a>
 <header class="site-header">
@@ -52,10 +39,9 @@
 <main id="arling-obsah" tabindex="-1">
   <div class="wrap lost" id="hero">
     <div>
-      <p class="kicker r">404</p>
-      <h1 id="h1"><span class="l">This page</span><span class="l">does not exist.</span></h1>
-      <p class="lead r d3">The link you followed does not match a page here. Head back and paste, upload, or fetch your feed instead.</p>
-      <div class="cta r d4">
+      <h1 id="h1">This page does not exist.</h1>
+      <p class="lead">The link you followed does not match a page here. Head back and paste, upload, or fetch your feed instead.</p>
+      <div class="cta">
         <a class="btn btn-solid" href="./" data-umami-event="404_back">Back to the feed checker</a>
       </div>
     </div>
@@ -63,10 +49,9 @@
 
   <section class="deep">
     <div class="wrap">
-      <p class="kicker r"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>01</p>
-      <h2 class="r" id="instead">Where to go instead</h2>
+      <h2 id="instead">Where to go instead</h2>
       <div class="rule"></div>
-      <nav class="index r d1" aria-labelledby="instead">
+      <nav class="index" aria-labelledby="instead">
         <a href="./#tool" data-umami-event="404-index-tool"><span class="n">[1]</span><span class="t">Check a feed</span><span class="dots"></span></a>
         <a href="./#checks" data-umami-event="404-index-checks"><span class="n">[2]</span><span class="t">The 31 rules</span><span class="dots"></span></a>
         <a href="./#faq" data-umami-event="404-index-faq"><span class="n">[3]</span><span class="t">Questions and answers</span><span class="dots"></span></a>
@@ -85,39 +70,6 @@
 
 <!-- Motion: no library, no requestAnimationFrame loop, one IntersectionObserver.
      Same code as the approved reference page at arling.sk/nahlad/. -->
-<script>
-(function () {
-  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var hero = document.getElementById('hero');
-  if (reduce) {
-    document.querySelectorAll('.r, section').forEach(function (e) { e.classList.add('in'); });
-  }
-  if (!reduce && hero) {
-    requestAnimationFrame(function () {
-      hero.querySelectorAll('.r').forEach(function (e) { e.classList.add('in'); });
-    });
-  }
-  var io = new IntersectionObserver(function (entries) {
-    entries.forEach(function (en) {
-      if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); }
-    });
-  }, { rootMargin: '0px 0px -12% 0px', threshold: 0 });
-  document.querySelectorAll('section').forEach(function (s) { io.observe(s); });
-
-  // the headline arrives word by word, like a well set title
-  var h1 = document.getElementById('h1');
-  if (h1 && !reduce) {
-    var i = 0;
-    Array.prototype.forEach.call(h1.querySelectorAll('.l'), function (line) {
-      line.innerHTML = line.textContent.split(' ').map(function (w) {
-        var d = (i++ * 0.06).toFixed(2);
-        return '<span class="w" style="transition-delay:' + d + 's">' + w + '</span>';
-      }).join(' ');
-    });
-    requestAnimationFrame(function () { h1.classList.add('in'); });
-  }
-})();
-</script>
 <script src="/style/prepinac.js?v=668e98c9" defer></script>
 </body>
 </html>

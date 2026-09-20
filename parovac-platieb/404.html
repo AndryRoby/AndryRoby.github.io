@@ -16,32 +16,11 @@
 <link rel="preload" href="/fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/style/paper.css?v=2ebf5aa4">
+<link rel="stylesheet" href="/style/pravne.css">
+<link rel="stylesheet" href="/style/nastroj.css?v=82839fc6">
 <script src="/style/prepinac.js?v=668e98c9" defer></script>
-<style>
-  /* Vlastné len pre túto stránku. */
-  .mark { display:flex; align-items:center; gap:11px; text-decoration:none; color:var(--ink); }
-  .mark b { font:600 21px/1 var(--display); letter-spacing:-.01em; }
-  .part { color:var(--muted); font-family:var(--ui); font-size:13px; border-left:1px solid var(--line);
-          padding-left:11px; margin-left:11px; }
-  .code { font-family:var(--mono); font-size:13px; color:var(--muted); }
-  /* Žiadna kreslená scéna: úvod je jednostĺpcový, register stále v druhej papierovej ploche. */
-  .hero { grid-template-columns:1fr; align-items:start; }
-  .hero > div { max-width:none; }
-  .index { max-width:44em; }
-  @media (max-width:760px) {
-    .index a { flex-wrap:wrap; }
-    .index .t { white-space:normal; overflow:visible; }
-    .index .dots { display:none; }
-    .index .c { flex-basis:100%; padding-left:2.1em; margin-top:2px; }
-  }
-  /* Tretia plocha: pätička na atramente. */
-  footer.band { background:var(--ink); color:#a8a294; border-top:none; }
-  footer.band a { color:#e9e4d8; }
-  footer.band a:hover { color:#d97757; }
-</style>
 </head>
-<body class="noc">
-<div class="wash" aria-hidden="true"><i></i><i></i></div>
+<body class="noc nastroj pravne">
 
 <a class="skip site-skip" href="#arling-obsah" data-site-label="skip">Prejsť na obsah</a>
 <header class="site-header">
@@ -60,20 +39,18 @@
 <main id="arling-obsah" tabindex="-1">
   <div class="wrap hero">
     <div>
-      <p class="kicker r">Párovač platieb</p>
-      <h1 id="h1"><span class="l">Táto stránka</span><span class="l">neexistuje.</span></h1>
-      <p class="lead r d3">Ani vo výpise z banky by ste ju nenašli. Vráťte sa a namiesto nej spárujte svoj <code>camt.053</code> výpis s faktúrami.</p>
-      <div class="cta r d4"><a class="btn btn-solid" href="./" data-umami-event="back_to_parovac">Späť na Párovač platieb</a></div>
-      <p class="proof r d5"><span class="code">404</span> &middot; arling.sk/parovac-platieb/</p>
+      <h1 id="h1">Táto stránka neexistuje.</h1>
+      <p class="lead">Ani vo výpise z banky by ste ju nenašli. Vráťte sa a namiesto nej spárujte svoj <code>camt.053</code> výpis s faktúrami.</p>
+      <div class="cta"><a class="btn btn-solid" href="./" data-umami-event="back_to_parovac">Späť na Párovač platieb</a></div>
+      <p class="proof"><span class="code">404</span> &middot; arling.sk/parovac-platieb/</p>
     </div>
   </div>
 
   <section class="deep">
     <div class="wrap">
-      <p class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>01 &nbsp;Sekcie</p>
-      <h2 class="r">Všetky sekcie.</h2>
+      <h2>Všetky sekcie.</h2>
       <div class="rule"></div>
-      <nav class="index r d1" aria-label="Sekcie">
+      <nav class="index" aria-label="Sekcie">
         <a href="./#problem" data-umami-event="index-parovac" data-umami-event-part="problem"><span class="n">01</span><span class="t">Ako to funguje</span><span class="dots"></span><span class="c">tri veci, ktoré zaberú čas</span></a>
         <a href="./#playground" data-umami-event="index-parovac" data-umami-event-part="playground"><span class="n">02</span><span class="t">Párovanie</span><span class="dots"></span><span class="c">faktúry a výpis</span></a>
         <a href="./#endpoint" data-umami-event="index-parovac" data-umami-event-part="endpoint"><span class="n">03</span><span class="t">API</span><span class="dots"></span><span class="c">parovac.js</span></a>
@@ -92,35 +69,5 @@
   </div>
 </footer>
 
-<script>
-(function () {
-  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
-  function typeset(h1) {
-    if (!h1) return;
-    var i = 0;
-    Array.prototype.forEach.call(h1.querySelectorAll('.l'), function (line) {
-      line.innerHTML = line.textContent.split(' ').map(function (w) {
-        return '<span class="w" style="transition-delay:' + (i++ * 0.06).toFixed(2) + 's">' + esc(w) + '</span>';
-      }).join(' ');
-    });
-    if (reduce) { h1.classList.add('in'); return; }
-    requestAnimationFrame(function () { h1.classList.add('in'); });
-  }
-  if (reduce) {
-    document.querySelectorAll('section, .hero, .r').forEach(function (e) { e.classList.add('in'); });
-  } else {
-    var hero = document.querySelector('.hero');
-    if (hero) requestAnimationFrame(function () { hero.classList.add('in'); });
-    var io = new IntersectionObserver(function (entries) {
-      entries.forEach(function (en) {
-        if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); }
-      });
-    }, { rootMargin: '0px 0px -12% 0px', threshold: 0.1 });
-    document.querySelectorAll('section').forEach(function (s) { io.observe(s); });
-  }
-  typeset(document.getElementById('h1'));
-})();
-</script>
 </body>
 </html>

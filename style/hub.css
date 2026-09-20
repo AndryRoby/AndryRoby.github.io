@@ -329,3 +329,226 @@ body.noc .hotovo.hotovo-panel { --panel-plocha:rgba(242,100,60,.09); --panel-lin
 .obalky-rad img { display:block; width:100%; height:auto; border:1px solid var(--line); border-radius:4px;
                   box-shadow:0 10px 30px rgba(0,0,0,.28); }
 .obalky-rad figcaption { font:400 13px/1.55 var(--ui); color:var(--muted); margin:14px 0 0; max-width:74ch; }
+
+/* ── 11. Predajná vrstva (body.predaj) ───────────────────────────────────
+   20. 9. 2026, A-091. Trinásť predajných stránok malo sedem vlastných
+   štýlov a nadpis h1 meral 88, 80, 60 a 56 bodov na štyroch stránkach tej
+   istej rodiny. Toto je spoločná vrstva: mierka písma, kontrast metadát,
+   číslice v cenách, hlavička hárku a tiráž, rovnaké ako na úvode
+   (style/uvod.css, ops/design/postav-uvod.mjs).
+
+   Váha selektorov: tento súbor sa načíta pred vlastným <style> stránky,
+   takže každé pravidlo má navyše triedu .predaj. `body.predaj h1` je
+   (0,2,1) a prebije `body.noc h1` (0,1,1) z paper.css aj `.hero h1`
+   z vlastného štýlu stránky.
+
+   Požiadavka na paper.css, ktorú tu riešime len ako prekrytie (paper.css
+   používa okolo desaťtisíc stránok a nesmieme ho meniť):
+     --muted #74716e na --paper #0a0908 meria 4,10 : 1, teda pod hranicou
+     4,5 : 1 z DESIGN.md, pravidlo 8. Tu ho dvíhame na #aaa39d (8,2 : 1),
+     ako to už robí style/obchod.css. Token patrí do paper.css.
+     To isté platí pre h1: paper.css dáva váhu 700 a -.028em, DESIGN.md
+     chce 600 a -.024em. */
+
+body.predaj {
+  --muted:#aaa39d;                      /* 8,2 : 1 na #0a0908, bolo 4,10 : 1 */
+  --body:#c5beb8;
+  --rule-strong:rgba(255,255,255,.42);  /* začiatok hárku a tiráže */
+}
+
+/* Mierka písma: DESIGN.md, časť 2. Jedna pre celú rodinu. */
+body.predaj h1 { font-family:var(--display); font-size:clamp(34px,4.5vw,60px); font-weight:600;
+                 line-height:1.05; letter-spacing:-.024em; text-wrap:balance; }
+body.predaj h2 { font-family:var(--display); font-size:clamp(26px,2.9vw,38px); font-weight:600;
+                 line-height:1.08; letter-spacing:-.02em; text-wrap:balance; }
+body.predaj h3 { font-family:var(--display); font-size:clamp(18px,1.4vw,20px); font-weight:600;
+                 line-height:1.3; letter-spacing:-.01em; }
+body.predaj { font-size:16.5px; line-height:1.55; }
+
+/* Riadok odseku: DESIGN.md chce 54 až 60 znakov, craft-floor 65 až 75.
+   Držíme 64 pre prózu a 56 pre úvodnú vetu. Meralo sa 133 až 157 znakov. */
+.predaj .lead { max-width:56ch; }
+.predaj .sub, .predaj .prose p, .predaj .drobne, .predaj .zaco, .predaj .pomoc,
+.predaj .proof, .predaj .dokazy span, .predaj .uzsie > p, .predaj details p,
+.predaj .detail p, .predaj figcaption, .predaj .meta { max-width:64ch; }
+.predaj .akcie, .predaj .uv-actions, .predaj .proof:has(.btn) { max-width:none; }
+
+/* Číslice v cenách: DESIGN.md, časť 1. Proporcionálne číslice robili
+   z „4.90" a „19.90" pod sebou dva rôzne široké stĺpce. */
+.predaj .suma, .predaj .product-price, .predaj .cena, .predaj .uv-row-price,
+.predaj .price, .predaj .meta, .predaj .fakty b, .predaj .facts b {
+  font-variant-numeric:tabular-nums; }
+
+/* ── Hlavička hárku ──────────────────────────────────────────────────────
+   Nahrádza eyebrow nad nadpisom (DESIGN.md, časť 3: eyebrow a kickery sú
+   zakázané). Jeden riadok medzi silnou a slabou linkou, tri údaje. */
+.predaj .uv-masthead { display:flex; justify-content:space-between; gap:12px;
+                       margin:0 0 clamp(24px,3vw,38px); padding:10px 0;
+                       border-top:1px solid var(--rule-strong); border-bottom:1px solid var(--line);
+                       font:500 13px/1.3 var(--ui); color:var(--muted); letter-spacing:.01em;
+                       max-width:none; }
+.predaj .uv-masthead span:nth-child(2) { color:var(--body); }
+/* Hlavička hárku stojí nad úvodom, takže úvod už nepotrebuje vlastnú hornú
+   medzeru; paper.css mu dáva až 104 bodov. Tri triedy prebijú aj vlastný
+   <style> stránky, ktorý ho prestavuje na padding-block. */
+.predaj .uv-masthead { margin-top:clamp(26px,3.2vw,44px); }
+.predaj .uv-masthead + .hero, .predaj .uv-masthead + .wrap, .predaj .uv-masthead + div,
+.predaj .uv-masthead + section > .hero { padding-top:0; }
+@media (max-width:680px) {
+  .predaj .uv-masthead { flex-wrap:wrap; gap:6px 14px; font-size:12.5px; }
+  .predaj .uv-masthead span:last-child { width:100%; }
+}
+
+/* ── Hárok: pravítkované riadky namiesto mriežky kariet ──────────────────
+   Rovnaké triedy ako na úvode (style/uvod.css), aby web čítal ako jeden
+   katalóg. Bez obrázka je prvý stĺpec vynechaný. */
+.predaj .uv-sheet { list-style:none; margin:0; padding:0; border-top:1px solid var(--rule-strong); }
+.predaj .uv-sheet > li { border-bottom:1px solid var(--line); display:grid;
+                         grid-template-columns:minmax(0,1fr); gap:10px 28px;
+                         align-items:start; padding:18px 0; }
+@media (min-width:820px) {
+  .predaj .uv-sheet > li { grid-template-columns:minmax(0,1.5fr) minmax(150px,auto) minmax(215px,auto);
+                           align-items:start; }
+}
+.predaj .uv-sheet > li::before { content:none; }
+.predaj .uv-row-main strong { display:block; font:600 18px/1.25 var(--display);
+                              color:var(--ink); letter-spacing:-.01em; }
+.predaj .uv-row-main span { display:block; margin-top:5px; font:400 15.5px/1.45 var(--ui);
+                            color:var(--body); max-width:52ch; }
+.predaj .uv-row-format { font:500 13px/1.45 var(--ui); color:var(--muted); }
+.predaj .uv-row-price { font:600 17px/1.2 var(--ui); color:var(--ink);
+                        font-variant-numeric:tabular-nums; }
+.predaj .uv-row-price small { display:block; margin-top:3px; font:400 12.5px/1.35 var(--ui); color:var(--muted); }
+.predaj .uv-row-do { display:flex; flex-wrap:wrap; align-items:center; gap:4px 18px; margin:2px 0 0; }
+@media (min-width:820px) {
+  .predaj .uv-row-do { justify-content:flex-start; }
+}
+
+/* Tichý odkaz namiesto druhého plného tlačidla. DESIGN.md, časť 3:
+   jedno plné tlačidlo na obrazovku, ostatné cesty sú tiché odkazy. */
+.predaj .tichy, .predaj .uv-quiet {
+  display:inline-flex; align-items:center; min-height:44px;
+  font:500 14.5px/1.5 var(--ui); color:var(--body); text-decoration:underline;
+  text-decoration-thickness:1px; text-underline-offset:3px;
+  text-decoration-color:rgba(255,255,255,.25); background:none; border:0; padding:0; cursor:pointer; }
+.predaj .tichy:hover, .predaj .uv-quiet:hover { color:var(--accent-light); text-decoration-color:currentColor; }
+.predaj .tichy:focus-visible, .predaj .uv-quiet:focus-visible { outline:2px solid var(--accent-light); outline-offset:4px; }
+
+/* ── Kreslená šípka namiesto glyfu ───────────────────────────────────────
+   craft-floor odmieta glyfy ako ikonový systém; DESIGN.md, časť 3 chce
+   šípku kreslenú v CSS. Rovnaký tvar ako .uv-more > summary::before
+   v style/uvod.css. Bolo tu content:"+" a content:"\2013". */
+.predaj .detail > summary::after,
+.predaj #otazky summary::after,
+.predaj .shop-faq summary::after {
+  content:""; position:absolute; right:3px; top:9px;
+  width:9px; height:9px;
+  border-right:1.5px solid var(--accent); border-bottom:1.5px solid var(--accent);
+  transform:rotate(45deg); transition:transform .2s var(--ease); font-size:0; }
+.predaj .detail[open] > summary::after,
+.predaj #otazky details[open] summary::after,
+.predaj .shop-faq details[open] summary::after { transform:rotate(-135deg); top:13px; }
+.predaj .shop-faq summary::after { top:50%; margin-top:-7px; }
+.predaj .shop-faq details[open] summary::after { top:50%; margin-top:-3px; }
+
+/* ── Tiráž na každej predajnej stránke ───────────────────────────────────
+   Kto predáva, kto to robí, ako sa platí a čo je zadarmo, viditeľné bez
+   kliknutia. Bolo to zabalené v <details>Price and seller</details>.
+   Do pätičky to nesmie: tú prepisuje ops/design/obal.mjs. */
+.predaj .uv-colophon { border-top:1px solid var(--rule-strong); background:none;
+                       padding:clamp(36px,4.5vw,64px) 0 clamp(32px,4vw,56px); }
+.predaj .uv-colophon h2 { font-size:clamp(22px,2.2vw,30px); }
+.predaj .uv-colophon-rows { display:grid; grid-template-columns:1fr 1fr; gap:0 40px; margin:22px 0 0; padding:0; }
+.predaj .uv-colophon-rows div { border-top:1px solid var(--line); padding:12px 0 14px; }
+.predaj .uv-colophon-rows dt { font:600 12.5px/1.3 var(--ui); color:var(--muted); letter-spacing:.02em; }
+.predaj .uv-colophon-rows dd { margin:5px 0 0; font:400 15.5px/1.45 var(--ui); color:var(--body); max-width:52ch; }
+.predaj .uv-colophon-rows dd a { color:var(--body); }
+.predaj .uv-colophon-rows dd a:hover { color:var(--accent-light); }
+.predaj .uv-colophon .uv-actions { display:flex; flex-wrap:wrap; align-items:center;
+                                   gap:12px 20px; margin:26px 0 0; max-width:none; }
+@media (max-width:680px) {
+  .predaj .uv-colophon-rows { grid-template-columns:1fr; }
+  .predaj .uv-colophon .uv-actions .btn { width:100%; justify-content:center; }
+}
+
+/* ── Spoločné predajné komponenty ────────────────────────────────────────
+   Deväť stránok nieslo tie isté pravidlá vo vlastnom <style>: cenový box,
+   regál kníh, desať druhov, otázky, drobné písmo. Tu sú raz; vo vlastnom
+   <style> stránky ostalo len to, čo je naozaj jej vlastné. */
+
+/* Cenový box a jedno číslo bez predplatného. */
+.predaj .cena, .predaj .jedno { border:1px solid var(--line); border-left:3px solid var(--accent);
+                                border-radius:var(--radius); background:var(--card);
+                                padding:clamp(20px,2vw,30px); min-width:0; }
+.predaj .jedno { max-width:640px; padding:clamp(20px,2vw,28px); }
+.predaj .cena .suma, .predaj .jedno .suma {
+  display:block; margin:0; font:600 clamp(34px,3.6vw,46px)/1 var(--display);
+  color:var(--ink); letter-spacing:-.024em; font-variant-numeric:tabular-nums; }
+.predaj .jedno .suma { margin:0 0 16px; }
+.predaj .cena .suma i, .predaj .jedno .suma i {
+  font-style:normal; font-family:var(--ui); font-size:15px; font-weight:500;
+  color:var(--muted); letter-spacing:0; margin-left:10px; }
+.predaj .cena .zaco { font-family:var(--ui); font-size:14px; color:var(--body); margin:10px 0 18px; }
+.predaj .cena .btn, .predaj .jedno .btn { width:100%; justify-content:center; }
+.predaj .cena .akcie, .predaj .jedno .akcie { display:flex; flex-direction:column; gap:10px; margin:0 0 4px; }
+.predaj .cena .akcie .btn, .predaj .jedno .akcie .btn { height:48px; }
+.predaj .cena .pomoc, .predaj .jedno .pomoc { font-family:var(--ui); font-size:13px; color:var(--muted);
+                                              line-height:1.55; margin:14px 0 0; }
+.predaj .cena .pomoc a { color:var(--body); }
+.predaj .cena ul { list-style:none; margin:18px 0 0; padding:0; display:flex; flex-direction:column;
+                   gap:9px; font-family:var(--ui); font-size:14px; color:var(--body); }
+.predaj .cena li { display:flex; gap:10px; max-width:58ch; }
+.predaj .cena li::before { content:""; width:6px; height:6px; border-radius:50%;
+                           background:var(--accent); flex:none; margin-top:8px; }
+
+/* Viditeľné označenie testu: keď stránka beží s ?test=1, tlačidlá vedú do
+   Stripe test módu a nikto nesmie čakať, že zaplatil. */
+.predaj .test-odznak { display:block; border:1px solid var(--accent); border-radius:12px;
+                       padding:10px 12px; margin:0 0 14px; font-family:var(--ui);
+                       font-size:13px; line-height:1.5; color:var(--body); max-width:none; }
+.predaj .test-odznak b { font:700 12px/1.2 var(--ui); letter-spacing:.14em; text-transform:uppercase;
+                         color:var(--accent); display:block; margin:0 0 4px; }
+.predaj .stav-platby { font-family:var(--ui); font-size:14px; color:var(--body);
+                       min-height:1.5em; margin:14px 0 0; line-height:1.55; max-width:64ch; }
+.predaj .stav-platby b { color:var(--ok); }
+.predaj .stav-platby .btn { height:38px; padding:0 12px; font-size:13px; margin-top:8px; width:auto; }
+
+/* Obálka ako druhý artefakt vedľa skutočnej strany. */
+.predaj .obalka { margin:0; min-width:0; }
+.predaj .obalka img { display:block; width:100%; height:auto; border:1px solid var(--line);
+                      border-radius:4px; box-shadow:0 10px 30px rgba(0,0,0,.28); }
+.predaj .obalka figcaption { font:400 13px/1.5 var(--ui); color:var(--muted); margin:12px 0 0; max-width:44ch; }
+
+/* Tri kroky a desať druhov ako riadky, nie mriežka kariet. */
+.predaj .kroky { list-style:none; margin:0; padding:0; display:grid;
+                 gap:clamp(20px,2.4vw,34px); grid-template-columns:minmax(0,1fr); }
+@media (min-width:760px) { .predaj .kroky { grid-template-columns:repeat(3,minmax(0,1fr)); } }
+.predaj .kroky li { border-top:1px solid var(--line); padding-top:16px; }
+.predaj .kroky li::before { content:none; }
+.predaj .kroky h3 { margin:10px 0 0; }
+.predaj .kroky b { display:flex; align-items:center; justify-content:center; width:34px; height:34px;
+                   font:600 15px/1 var(--ui); color:#0a0908; background:var(--accent);
+                   font-variant-numeric:tabular-nums; }
+.predaj .kroky p { margin:8px 0 0; font-size:15.5px; max-width:44ch; }
+
+.predaj .druhy { list-style:none; margin:0; padding:0; border-top:1px solid var(--line); }
+.predaj .druhy li { display:grid; grid-template-columns:minmax(0,1fr); gap:4px 22px;
+                    padding:14px 0; border-bottom:1px solid var(--line); max-width:none; }
+@media (min-width:700px) { .predaj .druhy li { grid-template-columns:minmax(0,220px) minmax(0,1fr); align-items:baseline; } }
+.predaj .druhy li::before { content:none; }
+.predaj .druhy b { font:600 17px/1.3 var(--display); color:var(--ink); }
+.predaj .druhy span { font-family:var(--ui); font-size:15px; color:var(--body); max-width:62ch; }
+
+/* Otázky. */
+.predaj #otazky details { border-top:1px solid var(--line); padding:16px 0; }
+.predaj #otazky details:first-of-type { border-top:none; padding-top:0; }
+.predaj #otazky details:last-of-type { border-bottom:1px solid var(--line); }
+.predaj #otazky summary { cursor:pointer; font:600 clamp(17px,1.3vw,19px)/1.35 var(--display);
+                          color:var(--ink); list-style:none; display:block; position:relative;
+                          padding-right:28px; min-height:26px; }
+.predaj #otazky summary::-webkit-details-marker { display:none; }
+.predaj #otazky summary:hover { color:var(--accent-light); }
+.predaj #otazky details p { margin:10px 0 0; }
+.predaj #otazky details p + p { margin-top:10px; }
+
+.predaj .uzsie > * { max-width:1060px; }

@@ -1,0 +1,123 @@
+/* Obsahové stránky arling.sk: hry, Notes, Ako pracujeme, Kontakt, Značka, Odkazy.
+   Robí pre túto rodinu presne to, čo style/uvod.css robí pre úvod: doťahuje
+   mierku písma, rytmus sekcií a katalógové komponenty na DESIGN.md, bez toho
+   aby siahla na style/paper.css (ten nesie zhruba 10 000 stránok).
+   Triedy sú tie isté ako na úvode (uv-masthead, uv-lead-grid, uv-sheet,
+   uv-facts, uv-quiet), aby web čítal ako jeden katalóg. Fable, 20. 9. 2026. */
+
+body.noc.obsah{--linka-silna:rgba(255,255,255,.42);
+  --tien:0 26px 60px -20px rgba(0,0,0,.75),0 0 0 1px rgba(255,255,255,.06);
+  font:17px/1.55 var(--text)}
+
+/* ── Mierka písma (DESIGN.md 2) ───────────────────────────────────────────
+   paper.css dáva nočnej ploche h1 88/700 a h2 48/700, čo je 47 % nad stropom
+   a o stupeň ťažšie. Tu sa vracia na katalógovú mierku úvodu. */
+body.noc.obsah h1{font-size:clamp(34px,4.5vw,60px);font-weight:600;line-height:1.05;letter-spacing:-.024em}
+body.noc.obsah h2{font-size:clamp(26px,2.9vw,38px);font-weight:600;line-height:1.08;letter-spacing:-.02em}
+body.noc.obsah h3{font-size:clamp(18px,1.5vw,22px);font-weight:600;line-height:1.28;letter-spacing:-.012em}
+body.noc.obsah .lead{font-size:clamp(18px,1.3vw,21px);line-height:1.5;max-width:54ch;color:var(--body)}
+body.noc.obsah p{max-width:66ch}
+
+/* Rytmus sekcií: nad nadpisom viac miesta než pod ním (DESIGN.md 1 a craft-floor). */
+body.noc.obsah section{padding-top:clamp(52px,6vw,96px);padding-bottom:clamp(38px,4.4vw,70px)}
+
+/* Tlačidlá a tichý odkaz: jedno plné tlačidlo na obrazovku, zvyšok ticho. */
+body.noc.obsah .btn-line{border-color:rgba(255,255,255,.35);color:var(--ink);background:transparent}
+body.noc.obsah .btn-line:hover{background:rgba(255,255,255,.06);color:var(--ink);border-color:rgba(255,255,255,.5)}
+.obsah .uv-quiet{font:500 15px/1.4 var(--ui);color:var(--body);text-decoration:underline;
+  text-decoration-thickness:1px;text-underline-offset:.18em;text-decoration-color:rgba(255,255,255,.25)}
+.obsah .uv-quiet:hover{color:var(--ink);text-decoration-color:var(--accent)}
+.obsah .uv-actions{display:flex;flex-wrap:wrap;align-items:center;gap:14px 26px;margin:26px 0 0;max-width:none}
+
+/* ── Hlavička hárku ───────────────────────────────────────────────────────
+   Jeden riadok medzi silnou a slabou linkou, tri údaje: čo to je, kde to je,
+   ktorý katalóg. Nahrádza eyebrow, ktorý DESIGN.md 3 zakazuje. */
+.obsah .uv-masthead{display:flex;justify-content:space-between;gap:12px;margin:0;max-width:none;
+  padding:10px 0;border-top:1px solid var(--linka-silna);border-bottom:1px solid var(--line);
+  font:500 13px/1.3 var(--ui);color:var(--muted);letter-spacing:.01em}
+.obsah .uv-masthead span:nth-child(2){color:var(--body)}
+
+/* ── Úvodný blok ──────────────────────────────────────────────────────────
+   Vľavo h1, jedna veta, jedna akcia, štyri fakty; vpravo skutočný artefakt. */
+.obsah .uv-lead{padding-top:34px}
+.obsah .uv-lead-grid{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);
+  gap:clamp(28px,5vw,72px);align-items:start;padding:clamp(34px,5vw,64px) 0 0}
+.obsah .uv-lead-text h1{max-width:18ch}
+.obsah .uv-lead-p{margin-top:22px;font-size:clamp(18px,1.3vw,21px);line-height:1.5;max-width:54ch;color:var(--body)}
+.obsah .uv-facts{display:grid;grid-template-columns:1fr 1fr;gap:0 28px;margin:34px 0 0;padding:0}
+.obsah .uv-facts div{border-top:1px solid var(--line);padding:11px 0 12px}
+.obsah .uv-facts dt{font:600 12.5px/1.3 var(--ui);color:var(--muted);letter-spacing:.02em}
+.obsah .uv-facts dd{margin:4px 0 0;font-size:15.5px;line-height:1.42;color:var(--body);font-variant-numeric:tabular-nums}
+.obsah .uv-lead-art{margin:0;justify-self:end;width:100%;max-width:430px}
+.obsah .uv-lead-art figcaption{margin-top:14px;font:500 13px/1.45 var(--ui);color:var(--muted);max-width:44ch}
+.obsah .uv-lead-art a{display:block;color:inherit}
+/* Jediný autorský pohyb rodiny: artefakt sa pri načítaní usadí na hárok. */
+.obsah .uv-garden,.obsah .uv-lead-art img{display:block;width:100%;height:auto;background:#fff;
+  border:1px solid rgba(255,255,255,.14);box-shadow:var(--tien),0 0 90px -30px rgba(255,190,140,.22);
+  animation:uv-usadenie .9s var(--spring) both}
+@keyframes uv-usadenie{from{opacity:0;transform:translateY(22px) rotate(-.6deg)}to{opacity:1;transform:none}}
+
+/* ── Hárok: pravítkované riadky namiesto mriežky kariet (DESIGN.md 3) ───── */
+.obsah .uv-sheet-sec{margin-top:clamp(52px,6vw,96px)}
+.obsah .uv-sheet-head{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px 40px;align-items:end;margin-bottom:22px}
+.obsah .uv-sheet-head p{color:var(--muted);font-size:15.5px;line-height:1.45;max-width:52ch;margin:0}
+.obsah .uv-sheet{list-style:none;margin:0;padding:0;border-top:1px solid var(--linka-silna)}
+.obsah .uv-sheet li{border-bottom:1px solid var(--line);margin:0}
+.obsah .uv-sheet li>a{position:relative;display:grid;
+  grid-template-columns:56px minmax(0,1fr) minmax(120px,auto) minmax(90px,auto);
+  gap:10px 22px;align-items:center;padding:13px 12px;margin:0 -12px;text-decoration:none;color:inherit;
+  border-radius:10px;transition:background-color .18s var(--ease)}
+.obsah .uv-sheet li>a:hover,.obsah .uv-sheet li>a:focus-visible{background:rgba(255,255,255,.04)}
+.obsah .uv-sheet img,.obsah .uv-sheet .uv-thumb{width:56px;height:74px;object-fit:cover;object-position:top;
+  display:block;border:1px solid rgba(255,255,255,.14);background:#fff;transform-origin:left center;
+  transition:transform .32s var(--spring),box-shadow .32s var(--ease);z-index:1}
+.obsah .uv-sheet li>a:hover img,.obsah .uv-sheet li>a:focus-visible img,
+.obsah .uv-sheet li>a:hover .uv-thumb,.obsah .uv-sheet li>a:focus-visible .uv-thumb{transform:scale(2.4);box-shadow:var(--tien);z-index:3}
+.obsah .uv-row-main strong{display:block;font:600 18px/1.25 var(--display);color:var(--ink);letter-spacing:-.01em}
+.obsah .uv-row-main span{display:block;margin-top:3px;font-size:15.5px;line-height:1.4;color:var(--body)}
+.obsah .uv-row-format{font:500 13px/1.35 var(--ui);color:var(--muted)}
+.obsah .uv-row-price{font:600 16px/1.2 var(--ui);color:var(--ink);text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.obsah .uv-row-price small{display:block;font:400 12px/1.3 var(--ui);color:var(--muted)}
+.obsah .uv-sheet-plain li>a{grid-template-columns:minmax(0,1fr) minmax(120px,auto)}
+.obsah .uv-sheet-note li>a{grid-template-columns:minmax(0,1fr)}
+
+/* Podriadok hárku: ticho pod zoznamom, jedna veta a odkazy. */
+.obsah .uv-sheet-foot{margin:18px 0 0;font:500 14.5px/1.5 var(--ui);color:var(--muted);max-width:76ch}
+.obsah .uv-sheet-foot a{color:var(--body)}
+.obsah .uv-sheet-foot a:hover{color:var(--ink)}
+
+/* ── Tiráž: silná linka, dl s faktami, dve tiché tlačidlá ───────────────── */
+.obsah .uv-colophon{margin-top:clamp(52px,6vw,96px);border-top:1px solid var(--linka-silna);
+  padding:clamp(36px,4.5vw,64px) 0 clamp(32px,4vw,56px)}
+.obsah .uv-colophon-rows{display:grid;grid-template-columns:1fr 1fr;gap:0 40px;margin:22px 0 0;padding:0}
+.obsah .uv-colophon-rows div{border-top:1px solid var(--line);padding:12px 0 14px}
+.obsah .uv-colophon-rows dt{font:600 12.5px/1.3 var(--ui);color:var(--muted);letter-spacing:.02em}
+.obsah .uv-colophon-rows dd{margin:5px 0 0;font-size:15.5px;line-height:1.45;color:var(--body)}
+
+@media(max-width:1040px){
+  .obsah .uv-lead-grid{grid-template-columns:1fr;gap:34px}
+  .obsah .uv-lead-art{justify-self:start;max-width:380px}
+  .obsah .uv-sheet-head{grid-template-columns:1fr;gap:10px}
+}
+@media(max-width:680px){
+  .obsah .uv-lead{padding-top:22px}
+  .obsah .uv-masthead{flex-wrap:wrap;gap:6px 14px;font-size:12.5px}
+  .obsah .uv-masthead span:last-child{width:100%}
+  body.noc.obsah h1{font-size:clamp(30px,8.6vw,38px)}
+  .obsah .uv-lead-text h1{max-width:none}
+  .obsah .uv-lead-p{font-size:17.5px}
+  .obsah .uv-facts,.obsah .uv-colophon-rows{grid-template-columns:1fr}
+  .obsah .uv-lead-art{max-width:300px}
+  .obsah .uv-sheet li>a{grid-template-columns:52px minmax(0,1fr);padding:12px 8px;margin:0 -8px}
+  .obsah .uv-sheet img,.obsah .uv-sheet .uv-thumb{width:52px;height:68px;grid-row:1/3}
+  .obsah .uv-sheet li>a:hover img,.obsah .uv-sheet li>a:focus-visible img,
+  .obsah .uv-sheet li>a:hover .uv-thumb,.obsah .uv-sheet li>a:focus-visible .uv-thumb{transform:none;box-shadow:none}
+  .obsah .uv-row-format{grid-column:2}
+  .obsah .uv-row-price{grid-column:2;text-align:left;display:flex;gap:8px;align-items:baseline}
+  .obsah .uv-row-price small{display:inline}
+  .obsah .uv-sheet-plain li>a,.obsah .uv-sheet-note li>a{grid-template-columns:minmax(0,1fr)}
+}
+@media(prefers-reduced-motion:reduce){
+  .obsah .uv-garden,.obsah .uv-lead-art img{animation:none}
+  .obsah .uv-sheet img,.obsah .uv-sheet .uv-thumb{transition:none}
+}
