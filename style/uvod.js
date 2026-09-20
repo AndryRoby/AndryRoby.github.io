@@ -15,6 +15,13 @@
   /* Menu: Produkty, jazyk a mobilné menu sú details. Otvorí sa vždy len jedno, zatvára sa
      kliknutím na odkaz, mimo hlavičky, klávesom Escape a pri zmene šírky. Na myši sa
      Produkty otvárajú prejdením s malým oneskorením, aby nepreblikovali. */
+  var hlavicka = document.querySelector('header');
+  if (hlavicka) {
+    var cakaH = false;
+    var hlavickaStav = function () { cakaH = false; hlavicka.classList.toggle('plny', window.scrollY > 12); };
+    window.addEventListener('scroll', function () { if (!cakaH) { cakaH = true; requestAnimationFrame(hlavickaStav); } }, { passive: true });
+    hlavickaStav();
+  }
   var pas = document.querySelector('header .pas');
   if (pas) {
     var detaily = Array.prototype.slice.call(pas.querySelectorAll('details'));
