@@ -761,6 +761,18 @@ if (heroSubor) heroSubor.addEventListener('click', () => {
 const heroVytvorit = $('hero-vytvorit');
 if (heroVytvorit) heroVytvorit.addEventListener('click', () => { prepni('vytvorit', true); kNastroju(); });
 
+/* Kto hlada "e-rechnung freiberufler", ma najcastejsie v prilohe XML od dodavatela
+ * a chce ho precitat, nie zoznam nalezov. hero-subor otvara zalozku Prufung,
+ * preto samostatne tlacidlo na Vorschau: prepneme panel EST pred vyberom suboru,
+ * lebo prijmiText() sa riadi tym, ktora zalozka je prave aktivna (r. 698). */
+const heroCitat = $('hero-citat');
+if (heroCitat) heroCitat.addEventListener('click', () => {
+  prepni('nahlad', true);
+  kNastroju();
+  const s = $('subor');
+  if (s) s.click();
+});
+
 /* ── Zalozka 1: kontrola ────────────────────────────────────────────────── */
 let poslednyVysledok = null;
 
@@ -1279,6 +1291,16 @@ async function overPlatbu(sid, pokus) {
     zmaz(CAKAJUCA);
     stavPlatby.innerHTML = (typ === '30dni' ? T.zaplatene30 : T.zaplateneJedna) + (st.livemode === false ? ' ' + T.testPoznamka : '');
     track('efaktura_zaplatene', { typ, test: st.livemode === false, produkt: 'efaktura', jazyk: LANG });
+    /* Jediny oznam von: platba je overena u Stripu. Meranie konverzii Google Ads
+     * pocuva na tuto udalost vo vlozenom skripte na navratovej stranke
+     * (products/arling-sk/efaktura/de/index.html a .../en/index.html, cast
+     * "Konverzia Google Ads"). Ked stranka meranie nema, nikto nepocuva a
+     * nedeje sa nic. Suma je v centoch, presne ako ju vratil Stripe. */
+    try {
+      window.dispatchEvent(new CustomEvent('arling:platba-overena', {
+        detail: { session: sid, suma: zaklad, mena: st.currency, test: st.livemode === false },
+      }));
+    } catch (e) { /* nic */ }
     ukazPlatbu();
     return true;
   }

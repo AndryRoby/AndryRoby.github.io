@@ -50,10 +50,10 @@ export function pravidlaXrechnung(ctx) {
   // BR-DE-15 referencia odberatela
   if (hod(d, 'cbc:BuyerReference') === '') {
     pridaj(ctx, 'BR-DE-15', CH, d, '',
-      'XRechnung vyžaduje referenciu odberateľa (BT-10, cbc:BuyerReference). Pri nemeckej verejnej správe je to Leitweg-ID, napríklad 04011000-12345-34.',
-      'XRechnung vyžaduje referenci odběratele (BT-10, cbc:BuyerReference). U německé veřejné správy je to Leitweg-ID, například 04011000-12345-34.',
-      'XRechnung verlangt die Leitweg-ID beziehungsweise Käuferreferenz (BT-10, cbc:BuyerReference), zum Beispiel 04011000-12345-34.',
-      'XRechnung requires a buyer reference (BT-10, cbc:BuyerReference). For German public bodies this is the Leitweg-ID, for example 04011000-12345-34.',
+      'XRechnung vyžaduje referenciu odberateľa (BT-10, cbc:BuyerReference). Pri nemeckej verejnej správe je to Leitweg-ID, napríklad 04011000-12345-03.',
+      'XRechnung vyžaduje referenci odběratele (BT-10, cbc:BuyerReference). U německé veřejné správy je to Leitweg-ID, například 04011000-12345-03.',
+      'XRechnung verlangt die Leitweg-ID beziehungsweise Käuferreferenz (BT-10, cbc:BuyerReference), zum Beispiel 04011000-12345-03.',
+      'XRechnung requires a buyer reference (BT-10, cbc:BuyerReference). For German public bodies this is the Leitweg-ID, for example 04011000-12345-03.',
       kdeKoren);
   }
   // BR-DE-16 identifikator predajcu pri pouzitych kategoriach DPH

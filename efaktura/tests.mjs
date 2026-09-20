@@ -7,6 +7,7 @@ import { parsujXml, txt, hod } from './parser.mjs';
 import { vytvorUbl, prepocitaj, prazdnaFaktura, naCenty, zCentov } from './ubl.js';
 import { vykresliNahlad, precitajDoklad } from './nahlad.js';
 import * as K from './kodovniky.mjs';
+import { skontrolujLeitweg, prufziffer, mod97 } from './leitweg-kontrola.mjs';
 import { readFileSync } from 'node:fs';
 
 let prebehlo = 0;
@@ -294,7 +295,7 @@ const F8_XRECHNUNG = `<?xml version="1.0" encoding="UTF-8"?>
   </cac:AccountingSupplierParty>
   <cac:AccountingCustomerParty>
     <cac:Party>
-      <cbc:EndpointID schemeID="0204">04011000-12345-34</cbc:EndpointID>
+      <cbc:EndpointID schemeID="0204">04011000-12345-03</cbc:EndpointID>
       <cac:PostalAddress>
         <cbc:StreetName>Amtsweg 1</cbc:StreetName>
         <cbc:CityName>Bonn</cbc:CityName>
@@ -590,7 +591,7 @@ function fakturaDe() {
   const f = fakturaSk();
   return Object.assign(f, {
     profil: 'xrechnung', cislo: 'DE-2026-100', mena: 'EUR',
-    referenciaOdberatela: '04011000-12345-34',
+    referenciaOdberatela: '04011000-12345-03',
     dodavatel: Object.assign({}, f.dodavatel, {
       nazov: 'Muster Verkaeufer GmbH', icDph: 'DE123456789', krajina: 'DE',
       ulica: 'Hauptstrasse 3', mesto: 'Berlin', psc: '10115',
@@ -600,7 +601,7 @@ function fakturaDe() {
     odberatel: Object.assign({}, f.odberatel, {
       nazov: 'Muster Amt', icDph: '', krajina: 'DE',
       ulica: 'Amtsweg 1', mesto: 'Bonn', psc: '53111',
-      endpoint: '04011000-12345-34', endpointSchema: '0204'
+      endpoint: '04011000-12345-03', endpointSchema: '0204'
     }),
     polozky: [
       { nazov: 'Beratungsleistung', mnozstvo: 4, jednotka: 'HUR', cena: 95, sadzba: 19, kategoria: 'S' },
@@ -1167,6 +1168,71 @@ const PRIPADY = [
   const zleEn = vp.nalezy.filter((n) => DIAK.test(n.sprava.en)).map((n) => n.kod + ': ' + n.sprava.en.slice(0, 70));
   ok('35. pokazeny anglicky vzor hlasi kodovniky po anglicky', zleEn.length === 0, zleEn.slice(0, 3).join(' | '));
   ok('35. pokazeny anglicky vzor hlasi kodovnikove pravidla', kody(vp).some((k) => k.startsWith('BR-CL-')), kody(vp).join(', '));
+}
+
+// ------------------------------------------- Leitweg-ID: tvar a prufziffer (A-101)
+// Male tlacidlo zadarmo nad zahybom na /efaktura/de/leitweg-id/. Kontroluje sa tvar
+// podla Leitweg-ID Formatspezifikation 2.0.2 a prufziffer ISO 7064 MOD 97-10.
+{
+  const L = skontrolujLeitweg;
+
+  // Vzorova ID zo specifikacie 2.0 KoSIT. Jediny cudzi retazec v tomto subore a je
+  // zamerne testovaci, nie ziva adresa uradu.
+  const VZOR = '991-33333TEST-33';
+  ok('40. vzorova Leitweg-ID zo specifikacie plati', L(VZOR).ok, JSON.stringify(L(VZOR)));
+  ok('40. prufziffer sa pocita z Grob + Fein bez pomlciek', prufziffer('99133333TEST') === '33', prufziffer('99133333TEST'));
+  ok('40. mod97 berie pismeno ako dve cislice', mod97('A') === 10 && mod97('Z') === 35, mod97('A') + '/' + mod97('Z'));
+  ok('40. mod97 odmietne cudzi znak', mod97('99-1') === null);
+
+  // Bez Feinadressierung.
+  ok('40. sama Grobadressierung s prufziffer plati', L('04011000-45').ok, JSON.stringify(L('04011000-45')));
+  ok('40. Grobadressierung smie mat dve cislice', L('99-' + prufziffer('99')).ok);
+  ok('40. Grobadressierung smie mat dvanast cislic', L('123456789012-' + prufziffer('123456789012')).ok);
+
+  // Zle prufziffery.
+  const zla = L('991-33333TEST-34');
+  ok('40. zla prufziffer sa hlasi', !zla.ok && zla.kod === 'pruefziffer', zla.kod);
+  ok('40. pri zlej prufziffer vrati spravnu', zla.ocakavana === '33', String(zla.ocakavana));
+  // Priklad, ktory mame na strankach dlhsie (04011000-12345-03), prufziffer nema.
+  // Test je tu preto, aby sa nikdy nevratil do textu ako "platny" priklad.
+  const stary = L('04011000-12345-03');
+  ok('40. 04011000-12345-03 nema platnu prufziffer', !stary.ok && stary.kod === 'pruefziffer', stary.kod);
+  ok('40. spravna prufziffer pre 04011000-12345 je 03', stary.ocakavana === '03', String(stary.ocakavana));
+  ok('40. 04011000-12345-03 plati', L('04011000-12345-03').ok);
+
+  // Tvar.
+  ok('40. prazdny vstup', L('').kod === 'prazdne' && L('   ').kod === 'prazdne');
+  ok('40. null je prazdny vstup', L(null).kod === 'prazdne');
+  ok('40. medzery vo vnutri sa ignoruju', L(' 991-33333TEST-33 ').ok && L('991 - 33333TEST - 33').ok);
+  ok('40. male pismena vo Feinadressierung plati', L('991-33333test-33').ok);
+  ok('40. cudzi znak sa hlasi ako znaky', L('991-33333TEST/33').kod === 'znaky', L('991-33333TEST/33').kod);
+  ok('40. bodka vo Feinadressierung nie je alfanumericky znak', L('991-3333.TEST-33').kod === 'znaky', L('991-3333.TEST-33').kod);
+  ok('40. bez pomlcky a dvoch cislic na konci', L('0401100012345').kod === 'bez-pruefziffer', L('0401100012345').kod);
+  ok('40. trojciferna koncovka nie je prufziffer', L('04011000-123').kod === 'bez-pruefziffer', L('04011000-123').kod);
+  ok('40. jedna cislica v Grobadressierung je malo', L('9-' + prufziffer('9')).kod === 'grob', L('9-35').kod);
+  ok('40. trinast cislic v Grobadressierung je vela', L('1234567890123-' + prufziffer('1234567890123')).kod === 'grob');
+  ok('40. pismeno v Grobadressierung sa hlasi', L('99A-33333TEST-33').kod === 'grob', L('99A-33333TEST-33').kod);
+  ok('40. prazdna Feinadressierung medzi pomlckami', L('04011000--03').kod === 'fein', L('04011000--03').kod);
+  ok('40. Feinadressierung nad 30 znakov', L('991-' + 'A'.repeat(31) + '-33').kod === 'fein', L('991-' + 'A'.repeat(31) + '-33').kod);
+  ok('40. Feinadressierung presne 30 znakov je este dobra', L('991-' + 'A'.repeat(30) + '-' + prufziffer('991' + 'A'.repeat(30))).ok);
+  ok('40. dve pomlcky navyse su zly tvar', L('991-333-TEST-33').kod === 'fein', L('991-333-TEST-33').kod);
+  ok('40. sama prufziffer bez adresy', L('-33').kod === 'grob', L('-33').kod);
+
+  // Prufziffer nesmie nikdy vyjst mimo dvoch cislic.
+  let mimo = [];
+  for (let i = 10; i < 3000; i++) {
+    const p = prufziffer(String(i));
+    if (!/^[0-9]{2}$/.test(p)) mimo.push(i + '=' + p);
+  }
+  ok('40. prufziffer je vzdy dvojciferna', mimo.length === 0, mimo.slice(0, 3).join(', '));
+
+  // A cokolvek, co sama funkcia oznaci za platne, musi prejst celou kontrolou.
+  let nesedi = [];
+  for (let i = 10; i < 500; i++) {
+    const id = i + '-' + prufziffer(String(i));
+    if (!L(id).ok) nesedi.push(id);
+  }
+  ok('40. vlastna prufziffer prejde vlastnou kontrolou', nesedi.length === 0, nesedi.slice(0, 3).join(', '));
 }
 
 // ---------------------------------------------------------------- vysledok

@@ -96,10 +96,10 @@ function kontrolyNavyse(ctx) {
     const v = txt(ref);
     if (v !== '' && /^\d/.test(v) && v.indexOf('-') > 0 && !LEITWEG.test(v)) {
       pridaj(ctx, 'ARL-LEITWEG', VAR, ref, v,
-        'Referencia odberateľa "' + v + '" vyzerá ako nemecké Leitweg-ID, ale nemá očakávaný tvar: 2 až 12 číslic, voliteľná jemná časť a na konci pomlčka s dvojcifernou kontrolou, napríklad 04011000-12345-34.',
-        'Reference odběratele "' + v + '" vypadá jako německé Leitweg-ID, ale nemá očekávaný tvar: 2 až 12 číslic, volitelná jemná část a na konci pomlčka s dvojcifernou kontrolou, například 04011000-12345-34.',
-        'Die Käuferreferenz "' + v + '" sieht wie eine Leitweg-ID aus, hat aber nicht die erwartete Form: 2 bis 12 Ziffern, optionale Feinadressierung und am Ende ein Bindestrich mit zweistelliger Prüfziffer, zum Beispiel 04011000-12345-34.',
-        'The buyer reference "' + v + '" looks like a German Leitweg-ID but does not match the expected shape: 2 to 12 digits, an optional fine-grained part, and a hyphen with a two digit check at the end, for example 04011000-12345-34.');
+        'Referencia odberateľa "' + v + '" vyzerá ako nemecké Leitweg-ID, ale nemá očakávaný tvar: 2 až 12 číslic, voliteľná jemná časť a na konci pomlčka s dvojcifernou kontrolou, napríklad 04011000-12345-03.',
+        'Reference odběratele "' + v + '" vypadá jako německé Leitweg-ID, ale nemá očekávaný tvar: 2 až 12 číslic, volitelná jemná část a na konci pomlčka s dvojcifernou kontrolou, například 04011000-12345-03.',
+        'Die Käuferreferenz "' + v + '" sieht wie eine Leitweg-ID aus, hat aber nicht die erwartete Form: 2 bis 12 Ziffern, optionale Feinadressierung und am Ende ein Bindestrich mit zweistelliger Prüfziffer, zum Beispiel 04011000-12345-03.',
+        'The buyer reference "' + v + '" looks like a German Leitweg-ID but does not match the expected shape: 2 to 12 digits, an optional fine-grained part, and a hyphen with a two digit check at the end, for example 04011000-12345-03.');
     }
   }
   // datumy: musia existovat v kalendari
