@@ -1,274 +1,363 @@
-/* Úvod arling.sk: katalógový hárok vydavateľa (A-090, Fable, 20. 9. 2026).
-   Stavia na tokenoch paper.css (svetlý papier). Jediný autorský pohyb: úvodná strana
-   sa pri načítaní usadí na hárok; riadky katalógu odhalia náhľad pri prejdení. */
-body.uvod{--sirka-hark:min(1240px,92vw);--linka-silna:#141413;--tien:0 22px 44px -22px rgba(20,20,19,.38),0 2px 6px rgba(20,20,19,.08)}
-/* Nočný papier (A-024, jediný režim hubu): biely list knihy leží na tmavom stole, linky hárku sú svetlé. */
-body.noc.uvod{--linka-silna:rgba(255,255,255,.42);--tien:0 26px 60px -20px rgba(0,0,0,.75),0 0 0 1px rgba(255,255,255,.06);font:17px/1.55 var(--text)}
-body.noc.uvod h1{font-size:clamp(34px,4.5vw,60px);font-weight:600;line-height:1.05;letter-spacing:-.024em}
-body.noc.uvod h2{font-size:clamp(26px,2.9vw,38px);font-weight:600;line-height:1.08;letter-spacing:-.02em}
-body.noc.uvod .uv-two h2{font-size:clamp(22px,2.2vw,30px)}
-body.noc.uvod .uv-lead-art{max-width:470px}
-body.noc.uvod .uv-sheet img,body.noc.uvod .uv-lead-page img,body.noc.uvod .uv-book-pair img,body.noc.uvod .uv-garden{border-color:rgba(255,255,255,.14)}
-body.noc.uvod .uv-lead-page img{box-shadow:var(--tien),0 0 90px -30px rgba(255,190,140,.22)}
-body.noc.uvod .uv-sheet li a:hover,body.noc.uvod .uv-sheet li a:focus-visible{background:rgba(255,255,255,.04)}
-body.noc.uvod .btn-solid{color:#0a0908}
-body.noc.uvod .btn-line{border-color:rgba(255,255,255,.35);color:var(--ink)}
-body.noc.uvod .btn-line:hover{background:rgba(255,255,255,.06)}
-body.noc.uvod .uv-quiet{text-decoration-color:rgba(255,255,255,.25)}
-body.noc.uvod .uv-workflow{background:var(--card-plna)}
-body.noc.uvod .uv-menu>summary,body.noc.uvod .uv-menu nav{background:var(--card-plna)}
-body.noc.uvod .uv-contact input,body.noc.uvod .uv-contact textarea{background:var(--card-plna)}
-body.noc.uvod .uv-free{background:var(--paper-deep)}
-.uvod .wrap{width:var(--sirka-hark)}
-html:has(body.uvod),body.uvod{overflow-x:clip}
-.uvod .uv-hero{overflow:hidden}
-.uvod h1,.uvod h2,.uvod h3{font-family:var(--display);color:var(--ink);margin:0;text-wrap:balance}
-.uvod h2{font-size:clamp(26px,2.9vw,38px);font-weight:600;line-height:1.08;letter-spacing:-.02em}
-.uvod p{margin:0}
-.uvod a{color:inherit}
-.uvod .btn{display:inline-block;font:600 15px/1.2 var(--ui);padding:13px 22px;border-radius:10px;text-decoration:none;border:1px solid transparent;transition:background-color .2s var(--ease),border-color .2s var(--ease),color .2s var(--ease),transform .2s var(--ease)}
-.uvod .btn-solid{background:var(--accent);color:#fff}
-.uvod .btn-solid:hover{background:var(--accent-dark)}
-.uvod .btn-line{border-color:var(--ink);color:var(--ink);background:transparent}
-.uvod .btn-line:hover{background:var(--paper-deep)}
-.uvod .btn:active{transform:translateY(1px)}
-.uvod .uv-quiet{font:500 15px/1.4 var(--ui);color:var(--body);text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:.18em;text-decoration-color:var(--line)}
-.uvod .uv-quiet:hover{color:var(--ink);text-decoration-color:var(--accent)}
-.uvod .uv-actions{display:flex;flex-wrap:wrap;align-items:center;gap:14px 26px;margin-top:26px}
+/* Úvod arling.sk v4 (Fable, 21. 9. 2026): „Lampa na stole“. Jedna scéna, jeden zdroj svetla,
+   skutočná obrazovka Proofu v ráme, sklenené štítky, Magic UI efekty prenesené do CSS
+   (Light Rays, Border Beam, Magic Card, Shine Border, Marquee, Shiny Text, Number Ticker,
+   Meteors, Text Reveal) a apple-design detaily (odozva pri stlačení, materiál hlavičky,
+   reduced motion aj reduced transparency). Hýbe sa len transform, opacity a background-position. */
+@font-face{font-family:"ARLing Sans";src:url(/fonts/arling-sans.woff2) format("woff2-variations"),url(/fonts/arling-sans.woff2) format("woff2");font-weight:400 700;font-style:normal;font-display:swap}
 
-/* Hlavička: na širokej obrazovke navigácia v riadku, na úzkej rozbaľovacie menu. */
-.uvod header .bar{gap:16px}
-.uvod .uv-desktop-nav{display:flex;gap:22px;margin-left:auto}
-.uvod .uv-menu{display:none;position:relative}
-.uvod .uv-menu>summary{list-style:none;cursor:pointer;font:500 14px/1.2 var(--ui);border:1px solid var(--line);background:var(--card);border-radius:10px;padding:8px 12px;color:var(--body);user-select:none}
-.uvod .uv-menu>summary::-webkit-details-marker{display:none}
-.uvod .uv-menu[open]>summary{border-color:var(--ink);color:var(--ink)}
-.uvod .uv-menu nav{position:absolute;right:0;top:calc(100% + 8px);z-index:30;display:flex;flex-direction:column;min-width:220px;padding:8px;background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:0 14px 34px rgba(20,20,19,.14)}
-.uvod .uv-menu nav a{padding:10px 12px;border-radius:8px;font:500 15px/1.3 var(--ui);color:var(--body);text-decoration:none}
-.uvod .uv-menu nav a:hover{background:var(--paper-deep);color:var(--ink)}
-
-/* SaaS hero: krátky titulok, jedno tlačidlo, scéna so skutočnou appkou v rámiku a kartami kreslenými kódom. */
-.uvod .uv-nav-cta{padding:9px 16px;font-size:14px;margin-left:6px}
-.uvod .btn-big{padding:15px 26px;font-size:16px}
-.uvod .uv-hero{display:grid;grid-template-columns:minmax(0,.92fr) minmax(0,1.08fr);gap:clamp(28px,5vw,64px);align-items:center;padding:clamp(40px,6vw,88px) 0 clamp(24px,3vw,40px)}
-.uvod .uv-hero h1{font-size:clamp(40px,5.4vw,74px);font-weight:700;line-height:1.02;letter-spacing:-.034em;max-width:12ch}
-.uvod .uv-hero-sub{margin-top:22px;font-size:clamp(17px,1.25vw,20px);line-height:1.5;max-width:46ch;color:var(--body)}
-.uvod .uv-stage{position:relative;margin:0;perspective:1600px;padding:24px 0 34px}
-.uvod .uv-orb{position:absolute;left:50%;top:50%;width:min(980px,165%);aspect-ratio:1;translate:-50% -50%;border-radius:50%;pointer-events:none;z-index:0;background:radial-gradient(circle at 45% 42%,rgba(255,196,150,.50) 0%,rgba(242,100,60,.32) 20%,rgba(178,58,29,.16) 42%,transparent 66%);filter:blur(30px);animation:uv-dych 9s ease-in-out infinite alternate}
-.uvod .uv-frame{z-index:1}
-@keyframes uv-dych{from{transform:scale(.96) translate(-1%,1%)}to{transform:scale(1.05) translate(1.5%,-1.5%)}}
-.uvod .uv-frame{position:relative;border-radius:14px;overflow:hidden;background:var(--card-plna,#161311);border:1px solid rgba(255,255,255,.12);box-shadow:0 40px 90px -30px rgba(0,0,0,.85),0 0 0 1px rgba(255,255,255,.04),0 0 120px -40px rgba(242,100,60,.35);transform:rotateY(-9deg) rotateX(3deg);transform-origin:center;transition:transform .8s var(--spring),box-shadow .8s var(--ease);animation:uv-usadenie 1s var(--spring) both}
-.uvod .uv-stage:hover .uv-frame{transform:rotateY(-3deg) rotateX(1deg)}
-.uvod .uv-frame-bar{display:flex;gap:6px;padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03)}
-.uvod .uv-frame-bar i{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.16)}
-.uvod .uv-frame-bar i:first-child{background:rgba(242,100,60,.7)}
-.uvod .uv-frame a{display:block}
-.uvod .uv-frame img{display:block;width:100%;height:auto}
-.uvod .uv-card{position:absolute;z-index:3;display:grid;gap:3px;padding:12px 14px 12px 34px;border-radius:12px;background:rgba(22,19,17,.94);border:1px solid rgba(255,255,255,.14);box-shadow:0 18px 40px -16px rgba(0,0,0,.8);font-family:var(--ui);backdrop-filter:blur(8px);animation:uv-usadenie .9s var(--spring) both,uv-plavanie 7s ease-in-out 1s infinite alternate}
-.uvod .uv-card::before{content:"";position:absolute;left:14px;top:17px;width:10px;height:10px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px rgba(242,100,60,.18)}
-.uvod .uv-card b{font-size:14px;font-weight:600;color:var(--ink);line-height:1.2}
-.uvod .uv-card span{font-size:12.5px;color:var(--muted);line-height:1.3;white-space:nowrap}
-.uvod .uv-card-1{left:-22px;top:14%;animation-delay:.15s,1.2s}
-.uvod .uv-card-2{right:-18px;top:46%;animation-delay:.3s,1.8s}
-.uvod .uv-card-3{left:10%;bottom:4px;animation-delay:.45s,2.4s}
-.uvod .uv-card-2::before{background:#5ecf9a;box-shadow:0 0 0 4px rgba(94,207,154,.18)}
-.uvod .uv-stage figcaption{margin-top:8px;font:500 12.5px/1.4 var(--ui);color:var(--muted)}
-@keyframes uv-plavanie{from{translate:0 0}to{translate:0 -8px}}
-.uvod .uv-standards{display:flex;flex-wrap:wrap;align-items:center;gap:12px 22px;padding:16px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);font:500 13px/1.3 var(--ui);color:var(--muted)}
-.uvod .uv-badges{display:flex;flex-wrap:wrap;gap:8px}
-.uvod .uv-badges b{font-weight:600;color:var(--body);border:1px solid rgba(255,255,255,.14);border-radius:999px;padding:6px 11px;background:rgba(255,255,255,.03)}
-/* Bento mriežka nástrojov: skutočné výrezy obrazoviek. */
-.uvod .uv-tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
-.uvod .uv-tile{grid-column:span 1;display:flex;flex-direction:column;text-decoration:none;color:inherit;background:var(--card-plna,#161311);border:1px solid rgba(255,255,255,.09);border-radius:16px;overflow:hidden;transition:transform .35s var(--spring),border-color .3s var(--ease),box-shadow .35s var(--ease)}
-.uvod .uv-tile-wide{grid-column:span 2}
-.uvod .uv-tile:hover,.uvod .uv-tile:focus-visible{transform:translateY(-4px);border-color:rgba(255,255,255,.22);box-shadow:0 30px 60px -30px rgba(0,0,0,.8)}
-.uvod .uv-tile-media{display:block;aspect-ratio:16/9;overflow:hidden;border-bottom:1px solid rgba(255,255,255,.08);background:#0f0d0b}
-.uvod .uv-tile-media img{display:block;width:100%;height:100%;object-fit:cover;object-position:top left;transition:transform .8s var(--ease)}
-.uvod .uv-tile:hover .uv-tile-media img{transform:scale(1.03)}
-.uvod .uv-tile-body{display:grid;gap:6px;padding:18px 18px 20px;align-content:start}
-.uvod .uv-tile-body b{font:600 19px/1.2 var(--display);color:var(--ink);letter-spacing:-.012em}
-.uvod .uv-tile-body span{font-size:15px;line-height:1.45;color:var(--body)}
-.uvod .uv-tile-body em{font:600 12.5px/1.3 var(--ui);font-style:normal;color:var(--accent-light);margin-top:6px}
-.js .uvod .uv-bento .uv-tile{opacity:0;transform:translateY(16px)}
-.js .uvod .uv-bento.in .uv-tile{opacity:1;transform:none;transition:opacity .7s var(--ease),transform .7s var(--spring)}
-.js .uvod .uv-bento.in .uv-tile:nth-child(2){transition-delay:.08s}.js .uvod .uv-bento.in .uv-tile:nth-child(3){transition-delay:.16s}.js .uvod .uv-bento.in .uv-tile:nth-child(4){transition-delay:.24s}.js .uvod .uv-bento.in .uv-tile:nth-child(5){transition-delay:.32s}.js .uvod .uv-bento.in .uv-tile:nth-child(6){transition-delay:.4s}
-.js .uvod .uv-bento.in .uv-tile:hover{transition:transform .35s var(--spring),border-color .3s var(--ease),box-shadow .35s var(--ease)}
-@media(max-width:1040px){
-  .uvod .uv-hero{grid-template-columns:1fr;gap:36px}
-  .uvod .uv-hero h1{max-width:none}
-  .uvod .uv-stage{padding:10px 0 30px}
-  .uvod .uv-frame{transform:none}
-  .uvod .uv-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .uvod .uv-tile-wide{grid-column:span 2}
+:root{
+  --noc:#0a0908;--noc-2:#100e0c;--ink:#fafafa;--telo:#a8a4a0;--tichy:#8d8884;
+  --linka:rgba(255,255,255,.10);--linka-2:rgba(255,255,255,.16);
+  --med:#f2643c;--med-tma:#e05630;--med-tma-2:#c9421c;--zhaslo:#ffb59d;--sklo:rgba(24,20,18,.76);
+  --wrap:min(1340px,92vw);--sek:clamp(76px,8.4vw,146px);
+  --pero:cubic-bezier(.16,1,.3,1);--tik:cubic-bezier(.2,.7,.2,1);
+  color-scheme:dark;
 }
-@media(max-width:680px){
-  .uvod .uv-nav-cta{display:none}
-  .uvod .uv-hero{padding-top:28px}
-  .uvod .uv-hero h1{font-size:clamp(34px,9.4vw,42px)}
-  .uvod .uv-stage{padding:6px 0 26px}
-  .uvod .uv-card{padding:9px 10px 9px 28px;border-radius:10px}
-  .uvod .uv-card::before{left:10px;top:13px;width:8px;height:8px}
-  .uvod .uv-card b{font-size:12.5px}.uvod .uv-card span{font-size:11px;white-space:normal}
-  .uvod .uv-card-1{left:0;top:8%}
-  .uvod .uv-card-2{right:0;top:44%}
-  .uvod .uv-card-3{left:6%;bottom:0}
-  .uvod .uv-tiles{grid-template-columns:1fr}
-  .uvod .uv-tile-wide{grid-column:span 1}
-  .uvod .uv-standards{gap:8px 14px}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scrollbar-color:#332a26 var(--noc)}
+html:focus-within{scroll-behavior:smooth}
+body{margin:0;background:var(--noc);color:var(--telo);font:400 17px/1.6 "ARLing Sans",system-ui,-apple-system,"Segoe UI",sans-serif;letter-spacing:-.004em;-webkit-font-smoothing:antialiased}
+main{overflow-x:clip}
+img{display:block;max-width:100%;height:auto}
+a{color:inherit}
+::selection{background:rgba(242,100,60,.34);color:#fff}
+:focus-visible{outline:2px solid var(--med);outline-offset:3px;border-radius:4px}
+::-webkit-scrollbar{width:11px;height:11px}
+::-webkit-scrollbar-track{background:var(--noc)}
+::-webkit-scrollbar-thumb{background:#332a26;border-radius:999px;border:3px solid var(--noc)}
+::-webkit-scrollbar-thumb:hover{background:#4a3a33}
+.wrap{width:var(--wrap);margin-inline:auto}
+.skip{position:absolute;left:-9999px}
+.skip:focus{left:14px;top:14px;z-index:99;background:#15110f;color:var(--ink);border:1px solid var(--linka-2);border-radius:12px;padding:10px 14px;text-decoration:none}
+
+h1,h2,h3{color:var(--ink);margin:0;font-weight:700;letter-spacing:-.03em}
+h1{font-size:clamp(38px,4.9vw,72px);line-height:1.02}
+h2{font-size:clamp(28px,3.1vw,44px);line-height:1.08;letter-spacing:-.024em;text-wrap:balance}
+h3{font-size:19px;line-height:1.3;letter-spacing:-.018em}
+p{margin:0}
+.lead{font-size:clamp(17px,1.3vw,19px);line-height:1.58;color:var(--telo);max-width:46ch}
+.num{font-variant-numeric:tabular-nums}
+.st{display:inline-block;vertical-align:2px;margin-left:7px;padding:1px 5px;border:1px solid var(--linka-2);border-radius:5px;font:600 10px/1.4 "ARLing Sans",system-ui,sans-serif;letter-spacing:.06em;color:var(--tichy);font-style:normal}
+
+/* Odhalenie pri rolovaní (len s JS). */
+.js .zjav{opacity:0;transform:translateY(14px);transition:opacity .6s var(--pero),transform .6s var(--pero);transition-delay:calc(var(--i,0)*80ms)}
+.zjav.je{opacity:1;transform:none}
+
+/* Tlačidlo: plochá meď, tmavý text, jeden tieň; odozva hneď pri stlačení. */
+.cta{display:inline-flex;align-items:center;justify-content:center;gap:10px;text-decoration:none;font-weight:600;font-size:16px;letter-spacing:-.012em;color:#1b0e08;background:var(--med);border:0;border-radius:999px;padding:15px 26px;box-shadow:0 6px 16px -6px rgba(0,0,0,.8);transition:transform .16s var(--tik),background-color .16s var(--tik),box-shadow .16s var(--tik)}
+.cta:hover{transform:translateY(-1px);background:var(--med-tma);box-shadow:0 9px 20px -7px rgba(0,0,0,.85)}
+.cta:active{transform:scale(.97);background:var(--med-tma-2);box-shadow:0 3px 9px -5px rgba(0,0,0,.85);transition-duration:.1s}
+.cta:focus-visible{outline:2px solid var(--zhaslo);outline-offset:3px}
+.cta svg{width:17px;height:17px;flex:none}
+.cta-maly{padding:11px 19px;font-size:15px}
+.tichy-odkaz{display:inline-flex;align-items:center;gap:8px;color:var(--telo);text-decoration:none;font-size:16px;padding:6px 0;border-bottom:1px solid transparent;transition:border-color .2s var(--tik),color .2s var(--tik)}
+.tichy-odkaz:hover{color:var(--ink);border-color:var(--linka-2)}
+
+/* Hlavička ako materiál: priesvitná, svetlá horná hrana, mäkký prechod k obsahu. */
+header{position:sticky;top:0;z-index:40;background:rgba(10,9,8,.78);backdrop-filter:saturate(1.3) blur(14px);box-shadow:0 1px 0 rgba(255,255,255,.06) inset}
+header::after{content:"";position:absolute;left:0;right:0;top:100%;height:18px;pointer-events:none;background:linear-gradient(180deg,rgba(10,9,8,.85),transparent)}
+.pas{position:relative;display:flex;align-items:center;gap:18px;height:70px}
+.znacka{display:flex;align-items:center;gap:11px;text-decoration:none;color:var(--ink);font-weight:700;font-size:20px;letter-spacing:-.022em}
+.znacka svg{width:34px;height:15px;flex:none}
+.pas .hlavne{display:flex;align-items:center;gap:26px;margin-left:auto}
+.pas .hlavne>a{text-decoration:none;color:var(--telo);font-size:15px;position:relative;padding:6px 0}
+.pas .hlavne>a::after{content:"";position:absolute;left:0;bottom:2px;height:1px;width:0;background:var(--med);transition:width .24s var(--tik)}
+.pas .hlavne>a:hover{color:var(--ink)}
+.pas .hlavne>a:hover::after{width:100%}
+.pas .cta{margin-left:8px}
+/* Rozbaľovacie menu „Produkty“: details, funguje aj bez JS; s JS sa otvára pri prejdení myšou. */
+.prod{position:static;margin:0}
+.prod>summary{list-style:none;cursor:pointer;user-select:none;display:inline-flex;align-items:center;gap:7px;color:var(--telo);font-size:15px;padding:6px 0;transition:color .2s var(--tik)}
+.prod>summary::-webkit-details-marker{display:none}
+.prod>summary::after{content:"";width:.38em;height:.38em;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(45deg) translate(-1px,-2px);transition:transform .22s var(--tik)}
+.prod>summary:hover,.prod[open]>summary{color:var(--ink)}
+.prod[open]>summary::after{transform:rotate(225deg) translate(-2px,0)}
+.prod-panel{position:absolute;left:0;right:0;top:calc(100% - 4px);z-index:50;max-height:calc(100dvh - 90px);overflow:auto;overscroll-behavior:contain;padding:26px 28px 22px;background:rgba(18,15,13,.97);backdrop-filter:blur(18px) saturate(1.2);border:1px solid var(--linka-2);border-radius:18px;box-shadow:0 1px 0 rgba(255,255,255,.06) inset,0 34px 70px -24px rgba(0,0,0,.95);animation:prod-in .26s var(--pero)}
+@keyframes prod-in{from{opacity:0;transform:translateY(-8px)}}
+.prod-stlpce{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:22px}
+.prod-stlpce h3{font-size:12px;font-weight:600;color:var(--tichy);letter-spacing:.06em;text-transform:uppercase;margin:0 0 8px 10px}
+.prod-stlpce ul{margin:0;padding:0;list-style:none}
+.prod-stlpce a{display:block;padding:8px 10px;border-radius:10px;text-decoration:none;transition:background-color .16s var(--tik)}
+.prod-stlpce a:hover{background:rgba(255,255,255,.05)}
+.prod-stlpce b{display:block;color:var(--ink);font-weight:600;font-size:15px;letter-spacing:-.012em}
+.prod-stlpce span{display:block;color:var(--tichy);font-size:13px;line-height:1.4;margin-top:1px}
+.prod-dev,.pata-dev{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;font-size:13.5px}
+.prod-dev{margin-top:20px;padding-top:16px;border-top:1px solid var(--linka)}
+.prod-dev>span,.pata-dev>span{color:var(--tichy);margin-right:8px}
+.prod-dev a,.pata-dev a{text-decoration:none;color:var(--telo);padding:4px 11px;border:1px solid var(--linka);border-radius:999px;white-space:nowrap;transition:color .16s var(--tik),border-color .16s var(--tik),background-color .16s var(--tik)}
+.prod-dev a:hover,.pata-dev a:hover{color:var(--ink);border-color:var(--linka-2);background:rgba(255,255,255,.04)}
+/* Prepínač jazykov a mobilné menu. */
+.langsel,.uv-menu{position:relative;margin:0}
+.langsel>summary,.uv-menu>summary{list-style:none;cursor:pointer;user-select:none;display:inline-flex;align-items:center;justify-content:center;gap:6px;height:38px;padding:0 12px;border:1px solid var(--linka-2);border-radius:999px;background:rgba(255,255,255,.03);color:var(--telo);font:500 13.5px/1 "ARLing Sans",system-ui,sans-serif;transition:border-color .2s var(--tik),color .2s var(--tik)}
+.langsel>summary::-webkit-details-marker,.uv-menu>summary::-webkit-details-marker{display:none}
+.langsel>summary::after{content:"";width:.45em;height:.45em;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(45deg) translateY(-2px)}
+.langsel[open]>summary,.uv-menu[open]>summary,.langsel>summary:hover,.uv-menu>summary:hover{border-color:rgba(255,255,255,.34);color:var(--ink)}
+.langsel ul,.uv-menu nav{position:absolute;right:0;top:calc(100% + 8px);z-index:50;margin:0;padding:6px;list-style:none;min-width:170px;background:rgba(20,17,15,.96);backdrop-filter:blur(16px);border:1px solid var(--linka-2);border-radius:14px;box-shadow:0 20px 44px -16px rgba(0,0,0,.9);animation:prod-in .22s var(--pero)}
+.langsel li{margin:0}
+.langsel a,.uv-menu nav a{display:block;padding:9px 12px;border-radius:9px;text-decoration:none;color:var(--telo);font-size:15px;white-space:nowrap}
+.langsel a:hover,.uv-menu nav a:hover{background:rgba(255,255,255,.06);color:var(--ink)}
+.langsel a[aria-current]{color:var(--ink)}
+.uv-menu{display:none}
+.uv-menu>summary{width:40px;padding:0;flex-direction:column;gap:4px}
+.uv-menu>summary span{display:block;width:16px;height:1.5px;background:currentColor;border-radius:2px;transition:transform .22s var(--tik),opacity .18s var(--tik)}
+.uv-menu[open]>summary span:nth-child(1){transform:translateY(5.5px) rotate(45deg)}
+.uv-menu[open]>summary span:nth-child(2){opacity:0}
+.uv-menu[open]>summary span:nth-child(3){transform:translateY(-5.5px) rotate(-45deg)}
+.uv-menu nav{position:fixed;left:12px;right:12px;top:68px;max-height:calc(100dvh - 84px);overflow:auto;overscroll-behavior:contain;min-width:0;padding:8px 8px 12px}
+.m-skup{padding:6px 0 8px}
+.m-skup+.m-skup{border-top:1px solid var(--linka)}
+.m-skup b{display:block;font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--tichy);padding:10px 12px 4px}
+.m-skup a{white-space:normal}
+.m-skup.m-dev{display:flex;flex-wrap:wrap;gap:6px;padding:8px 12px 12px}
+.m-skup.m-dev b{width:100%;padding:6px 0 6px}
+.m-skup.m-dev a{display:inline-block;padding:5px 11px;border:1px solid var(--linka);border-radius:999px;font-size:13.5px}
+
+/* Hero, scéna s lampou. */
+.hero{position:relative;overflow-x:clip;padding:clamp(42px,4.6vw,70px) 0 clamp(30px,3.2vw,46px);isolation:isolate}
+.hero::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:0;background:radial-gradient(56% 48% at 84% 26%,rgba(150,72,40,.34) 0%,transparent 64%),radial-gradient(72% 64% at 60% 74%,rgba(112,54,30,.30) 0%,transparent 70%)}
+.hero>.wrap{position:relative;z-index:1}
+.hero-mriezka{position:relative;display:grid;grid-template-columns:minmax(0,.84fr) minmax(0,1.16fr);gap:clamp(30px,3.2vw,50px);align-items:center}
+.hero-text{padding-top:clamp(0px,1.2vw,18px)}
+.hero h1 .riadok{display:block}
+.hero-text .lead{margin-top:20px}
+.akcie{display:flex;align-items:center;gap:22px;flex-wrap:wrap;margin-top:32px}
+.scena{position:relative;z-index:2;margin-right:calc((100vw - var(--wrap)) / -2 - 26px)}
+.lampa{position:absolute;left:-14%;bottom:-13%;width:128%;height:70%;pointer-events:none;z-index:0;will-change:transform;background:radial-gradient(46% 54% at 48% 100%,rgba(255,152,108,.44) 0%,rgba(242,100,60,.20) 36%,transparent 68%),radial-gradient(72% 70% at 50% 98%,rgba(242,100,60,.18) 0%,transparent 70%);filter:blur(26px)}
+.lampa::after{content:"";position:absolute;left:48%;bottom:8%;translate:-50% 0;width:42%;height:12px;border-radius:999px;background:rgba(255,178,140,.38);filter:blur(22px)}
+.zariadenie{position:relative;z-index:1;transform-origin:50% 62%;transform:perspective(2200px) rotateX(6deg) rotateY(-9deg) rotateZ(.4deg) scale(1.03)}
+/* Príchod rámu je prechod (keyframe na 3D prvku sa v celostránkovej snímke stráca). */
+.hero .zariadenie{transition:opacity .7s var(--pero) .24s,transform .7s var(--pero) .24s}
+.pred .hero .zariadenie{opacity:0;transform:perspective(2200px) rotateX(11deg) rotateY(-13deg) translateY(38px) scale(.995)}
+.ramec{position:relative;border-radius:16px;overflow:hidden;background:linear-gradient(180deg,#272220 0%,#16120f 100%);border:1px solid rgba(255,255,255,.13);box-shadow:0 2px 0 rgba(255,255,255,.07) inset,0 46px 90px -34px rgba(0,0,0,.92)}
+.ramec-pas{display:flex;align-items:center;gap:8px;height:40px;padding:0 15px;border-bottom:1px solid rgba(255,255,255,.08)}
+.bodka{width:9px;height:9px;border-radius:50%;background:#3a322e;flex:none}
+.adresa{margin-left:12px;font-size:12.5px;color:#a8a29c;letter-spacing:.005em;background:rgba(255,255,255,.05);border-radius:999px;padding:5px 14px}
+.ramec img{width:100%}
+.karta{position:absolute;z-index:3;display:flex;align-items:flex-start;gap:12px;background:var(--sklo);backdrop-filter:blur(16px) saturate(1.25);border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:12px 15px;box-shadow:0 1px 0 rgba(255,255,255,.08) inset,0 26px 48px -22px rgba(0,0,0,.95)}
+.karta svg{width:20px;height:20px;flex:none;margin-top:2px}
+.karta b{display:block;color:var(--ink);font-weight:600;font-size:14.5px;letter-spacing:-.012em}
+.karta span{display:block;color:var(--tichy);font-size:13px;line-height:1.45;margin-top:2px}
+.k1{left:-5%;top:47%;max-width:238px}
+.k2{right:9%;top:3%;max-width:210px}
+.k3{left:5%;bottom:7%;max-width:226px}
+.podpis{margin-top:14px;font-size:13px;color:var(--tichy);max-width:44ch}
+
+/* Ceny hneď pod scénou. */
+.ceny{grid-column:1/-1;padding-top:20px;border-top:1px solid var(--linka)}
+.ceny ul{display:flex;flex-wrap:wrap;align-items:center;gap:8px 0;margin:0;padding:0;list-style:none;font-size:14px;color:var(--tichy)}
+.ceny li{display:flex;align-items:center;gap:7px}
+.ceny li+li::before{content:"";width:3px;height:3px;border-radius:50%;flex:none;background:var(--med);margin:0 16px}
+.ceny b{color:var(--ink);font-weight:600;letter-spacing:-.012em}
+.ceny b[data-do]{display:inline-block;min-width:3.2ch;font-variant-numeric:tabular-nums}
+
+/* Normy ako marquee. */
+.normy{border-block:1px solid var(--linka);background:linear-gradient(180deg,#0d0b0a,#0a0908)}
+.normy .wrap{display:flex;align-items:center;gap:clamp(20px,3vw,46px);padding:24px 0}
+.normy p{font-size:14px;color:var(--tichy);max-width:20ch;flex:none}
+.pas-formaty{flex:1;min-width:0;overflow:hidden;-webkit-mask:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);mask:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
+.bez{display:flex;width:max-content;animation:bez 42s linear infinite}
+.pas-formaty:hover .bez{animation-play-state:paused}
+.bez ul{display:flex;margin:0;padding:0;list-style:none}
+.bez li{font-size:14px;color:var(--ink);letter-spacing:-.012em;padding:2px 22px;border-left:1px solid var(--linka);white-space:nowrap}
+@keyframes bez{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+/* Sekcie. */
+section{position:relative}
+.sek{padding:var(--sek) 0}
+.hlava{max-width:50ch;margin-bottom:clamp(38px,4vw,60px)}
+.hlava h2{max-width:19ch}
+.hlava p{margin-top:16px;color:var(--telo);max-width:52ch}
+
+/* Dlaždice: Magic Card, okraj aj svit sledujú kurzor. */
+.dlazdice{display:grid;grid-template-columns:repeat(12,1fr);gap:clamp(16px,1.5vw,22px)}
+.dl{--mx:50%;--my:50%;grid-column:span 6;display:flex;flex-direction:column;text-decoration:none;position:relative;isolation:isolate;border:1px solid transparent;border-radius:18px;overflow:hidden;background:linear-gradient(180deg,rgba(28,24,21,.72),rgba(17,14,12,.72)) padding-box,radial-gradient(260px circle at var(--mx) var(--my),rgba(242,100,60,.55),rgba(255,181,157,.22),rgba(255,255,255,.10) 100%) border-box;transition:transform .4s var(--pero),box-shadow .4s var(--pero)}
+.dl::before{content:"";position:absolute;inset:1px;border-radius:17px;pointer-events:none;z-index:1;opacity:0;background:radial-gradient(300px circle at var(--mx) var(--my),rgba(242,100,60,.16),transparent 100%);transition:opacity .3s var(--tik)}
+.dl:hover::before{opacity:1}
+.dl>*{position:relative;z-index:2}
+.dl:hover{transform:translateY(-4px);box-shadow:0 30px 60px -32px rgba(0,0,0,.95)}
+.dl:active{transform:scale(.985);transition-duration:.1s}
+.dl-obraz{position:relative;overflow:hidden;background:#0c0a09;height:clamp(208px,23vw,336px)}
+.dl-obraz img{width:100%;height:100%;object-fit:cover;transition:transform .6s var(--pero)}
+.dl:hover .dl-obraz img{transform:scale(1.03)}
+.dl-obraz::after{content:"";position:absolute;inset:auto 0 0;height:46%;background:linear-gradient(180deg,transparent,rgba(10,9,8,.72))}
+.dl-text{padding:22px 24px 24px;display:flex;flex-direction:column;gap:9px;flex:1}
+.dl-text p{font-size:16px;line-height:1.55;color:var(--telo)}
+.dl-stav{margin-top:auto;padding-top:16px;font-size:14px;color:var(--zhaslo);display:flex;align-items:center;gap:8px}
+.dl-stav svg{width:15px;height:15px;margin-left:auto;transition:transform .3s var(--tik)}
+.dl:hover .dl-stav svg{transform:translateX(4px)}
+.dl-a{grid-column:span 7}.dl-a .dl-obraz img{object-position:center 86%}
+.dl-b{grid-column:span 5}.dl-b .dl-obraz img{object-position:center 26%}
+.dl-c{grid-column:span 5}.dl-c .dl-obraz img{object-position:center 18%}
+.dl-d{grid-column:span 7}.dl-d .dl-obraz img{object-position:center 20%}
+.dl-e{grid-column:span 6}.dl-e .dl-obraz img{object-position:left 72%}
+.dl-f{grid-column:span 6}.dl-f .dl-obraz img{object-position:left 66%}
+
+/* Piloty. */
+.piloty{border-top:1px solid var(--linka);background:radial-gradient(74% 62% at 18% 8%,rgba(96,46,26,.30) 0%,transparent 62%),var(--noc)}
+.pilot-mriezka{display:grid;grid-template-columns:minmax(0,.92fr) minmax(0,1.08fr);gap:clamp(34px,4vw,72px);align-items:center}
+.pilot-lead{margin-top:16px}
+.pilot-zoznam{margin:34px 0 0;padding:0;list-style:none;border-top:1px solid var(--linka)}
+.pilot-zoznam li{border-bottom:1px solid var(--linka);padding:20px 0}
+.pilot-zoznam h3{margin-bottom:6px}
+.pilot-zoznam p{font-size:16px;max-width:44ch}
+.pilot-zoznam a{display:inline-flex;align-items:center;gap:8px;margin-top:10px;color:var(--zhaslo);text-decoration:none;font-size:15px;border-bottom:1px solid transparent;transition:border-color .2s var(--tik)}
+.pilot-zoznam a:hover{border-color:var(--med)}
+.pilot-zoznam a svg{width:15px;height:15px}
+.pilot-scena{position:relative}
+.pilot-scena .lampa{bottom:-12%;height:58%;filter:blur(34px);opacity:.82}
+.pilot-scena .zariadenie{transform:perspective(2200px) rotateX(6deg) rotateY(7deg) rotateZ(-.4deg)}
+/* Text Reveal: slová sa odkrývajú podľa polohy v okne (scroll-driven), inde sú vidieť hneď. */
+.odkryv span{transition:color .4s var(--tik)}
+@supports (animation-timeline:view()){
+  .js .odkryv span{color:rgba(168,164,160,.30);animation:odkry linear both;animation-timeline:view();animation-range:entry 30% cover 40%;animation-delay:calc(var(--n)*6ms)}
+  @keyframes odkry{to{color:var(--telo)}}
 }
-@media(prefers-reduced-motion:reduce){
-  .uvod .uv-frame,.uvod .uv-card,.uvod .uv-orb{animation:none}
-  .js .uvod .uv-bento .uv-tile{opacity:1;transform:none}
+
+/* Dôvera. */
+.dovera{border-top:1px solid var(--linka)}
+.dovera-mriezka{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(24px,3vw,56px)}
+.dovera-mriezka div{border-top:1px solid var(--linka-2);padding-top:22px}
+.dovera-mriezka h3{margin-bottom:10px}
+.dovera-mriezka p{font-size:16px;line-height:1.6;color:var(--telo)}
+
+/* Záver: karta so Shine Border. */
+.zaver{position:relative;overflow:hidden;border-top:1px solid var(--linka);padding:clamp(80px,8vw,132px) 0}
+.zaver::before{content:"";position:absolute;left:50%;bottom:-58%;translate:-50% 0;width:min(1100px,110vw);height:100%;pointer-events:none;background:radial-gradient(50% 50% at 50% 50%,rgba(242,100,60,.30) 0%,transparent 70%);filter:blur(36px)}
+.zaver .wrap{position:relative;text-align:center}
+.zaver-karta{position:relative;border-radius:22px;padding:clamp(40px,5vw,72px) clamp(22px,4vw,64px);background:linear-gradient(180deg,rgba(24,20,18,.88),rgba(14,12,10,.92));border:1px solid var(--linka)}
+.zaver-karta::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;padding:1px;background-image:radial-gradient(transparent,transparent,#ffb59d,#f2643c,transparent,transparent);background-size:300% 300%;-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;animation:shine 14s linear infinite}
+@keyframes shine{0%{background-position:0% 0%}50%{background-position:100% 100%}100%{background-position:0% 0%}}
+.zaver h2{max-width:20ch;margin-inline:auto}
+.zaver p{margin:18px auto 0;max-width:48ch;color:var(--telo)}
+.zaver .akcie{justify-content:center;margin-top:34px}
+
+/* Päta: značka a CTA hore, päť stĺpcov katalógu, pás pre vývojárov, spodok. */
+footer{border-top:1px solid var(--linka);background:var(--noc-2);padding:60px 0 44px;font-size:15px}
+.pata-znacka{display:flex;justify-content:space-between;align-items:flex-start;gap:24px;flex-wrap:wrap;margin-bottom:44px;padding-bottom:36px;border-bottom:1px solid var(--linka)}
+.pata-firma{color:var(--tichy);max-width:44ch;margin-top:14px;line-height:1.6;font-size:14px}
+.pata-mriezka{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:clamp(22px,2.6vw,40px)}
+.pata-mriezka h3{font-size:12px;font-weight:600;color:var(--tichy);letter-spacing:.06em;text-transform:uppercase;margin-bottom:14px}
+.pata-mriezka ul{margin:0;padding:0;list-style:none;display:grid;gap:9px}
+.pata-mriezka a{color:var(--telo);text-decoration:none;transition:color .2s var(--tik)}
+.pata-mriezka a:hover{color:var(--ink)}
+.pata-dev{margin-top:44px;padding-top:22px;border-top:1px solid var(--linka)}
+.pata-spodok{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-top:36px;padding-top:24px;border-top:1px solid var(--linka);color:var(--tichy);font-size:14px}
+.pata-spodok a{color:var(--tichy);text-decoration:none;border-bottom:1px solid var(--linka-2)}
+.pata-spodok a:hover{color:var(--ink)}
+
+/* Príchod scény po krokoch 80 ms. */
+.hero-text>*{transition:opacity .6s var(--pero),transform .6s var(--pero)}
+.hero-text .pilulka{transition-delay:0s}
+.hero-text h1{transition-delay:.06s}
+.hero-text .lead{transition-delay:.14s}
+.hero-text .akcie{transition-delay:.22s}
+.pred .hero-text>*{opacity:0;transform:translateY(16px)}
+.hero .lampa{transition:opacity 1.2s var(--pero) .1s}
+.pred .hero .lampa{opacity:0}
+.hero .karta{transition:opacity .6s var(--pero) var(--d,0s),transform .6s var(--pero) var(--d,0s)}
+.pred .hero .karta{opacity:0;transform:translateY(12px) scale(.97)}
+.hero .k1{--d:.32s}.hero .k2{--d:.40s}.hero .k3{--d:.48s}
+.hero .ceny{transition:opacity .6s var(--pero) .24s,transform .6s var(--pero) .24s}
+.pred .hero .ceny{opacity:0;transform:translateY(14px)}
+
+/* Light Rays: sedem medených lúčov zhora, 2D rotate a opacity. */
+.luce{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0;isolation:isolate;--luc-farba:rgba(255,170,120,.22)}
+.luce::before,.luce::after{content:"";position:absolute;inset:0;opacity:.6}
+.luce::before{background:radial-gradient(circle at 20% 12%,rgba(255,170,120,.10),transparent 70%)}
+.luce::after{background:radial-gradient(circle at 82% 8%,rgba(242,100,60,.08),transparent 75%)}
+.luc{position:absolute;top:-12%;left:var(--l);width:var(--w);height:78vh;max-height:760px;transform-origin:top center;translate:-50% 0;border-radius:999px;opacity:0;background:linear-gradient(180deg,color-mix(in srgb,var(--luc-farba) 70%,transparent),transparent);mix-blend-mode:screen;filter:blur(34px);will-change:transform,opacity;animation:luc var(--t) ease-in-out var(--d) infinite}
+@keyframes luc{0%{opacity:0;transform:rotate(calc(var(--r) - var(--s)))}50%{opacity:var(--i);transform:rotate(calc(var(--r) + var(--s)))}100%{opacity:0;transform:rotate(calc(var(--r) - var(--s)))}}
+.hero.spi .luc,.hero.spi .meteor{animation-play-state:paused}
+/* Meteors: šesť pomalých čiarok svetla. */
+.meteor{position:absolute;top:var(--y);left:var(--x);width:2px;height:2px;border-radius:50%;background:#d8cbc2;box-shadow:0 0 0 1px rgba(255,255,255,.06);pointer-events:none;z-index:0;transform:rotate(215deg);opacity:0;animation:meteor var(--t) linear var(--d) infinite}
+.meteor::before{content:"";position:absolute;top:50%;left:0;width:60px;height:1px;translate:0 -50%;background:linear-gradient(90deg,#d8cbc2,transparent)}
+@keyframes meteor{0%{opacity:0;transform:rotate(215deg) translateX(0)}8%{opacity:.9}60%{opacity:0}100%{opacity:0;transform:rotate(215deg) translateX(-560px)}}
+/* Border Beam: svetlo obieha po ráme. */
+.beam{position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:5;border:1px solid transparent;-webkit-mask:linear-gradient(#fff 0 0) padding-box,linear-gradient(#fff 0 0);mask:linear-gradient(#fff 0 0) padding-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;padding:1px}
+.beam::after{content:"";position:absolute;width:64px;aspect-ratio:1;offset-path:rect(0 auto auto 0 round 64px);offset-anchor:50% 50%;background:linear-gradient(to left,#ffb59d,#f2643c,transparent);animation:beam 9s linear infinite}
+@keyframes beam{from{offset-distance:0%}to{offset-distance:100%}}
+@supports not (offset-path:rect(0 auto auto 0)){.beam::after{display:none}}
+/* Shiny Text: pilulka nad nadpisom. */
+.pilulka{display:inline-flex;align-items:center;gap:8px;text-decoration:none;margin-bottom:22px;border:1px solid var(--linka-2);border-radius:999px;padding:7px 14px 7px 10px;font-size:13.5px;background:rgba(255,255,255,.03);color:var(--telo);transition:border-color .2s var(--tik),transform .16s var(--tik)}
+.pilulka:hover{border-color:rgba(242,100,60,.5)}
+.pilulka:active{transform:scale(.97);transition-duration:.1s}
+.pilulka i{width:6px;height:6px;border-radius:50%;background:var(--med);box-shadow:0 0 0 4px rgba(242,100,60,.18)}
+.pilulka b{font-weight:500;background:linear-gradient(90deg,var(--telo) 0%,var(--telo) 40%,#fff 50%,var(--telo) 60%,var(--telo) 100%);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:lesk 3.2s linear infinite}
+@keyframes lesk{from{background-position:180% 0}to{background-position:-20% 0}}
+.pilulka svg{width:14px;height:14px;transition:transform .2s var(--tik)}
+.pilulka:hover svg{transform:translateX(3px)}
+
+@media (prefers-reduced-motion:reduce){
+  html:focus-within{scroll-behavior:auto}
+  *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important;transition-delay:0s !important}
+  .zjav,.js .zjav{opacity:1;transform:none}
+  .luc{opacity:.35;transform:rotate(var(--r))}
+  .js .odkryv span{animation:none;color:var(--telo)}
 }
+@media (prefers-reduced-transparency:reduce){header{background:#0a0908;backdrop-filter:none}.karta,.langsel ul,.uv-menu nav,.prod-panel{backdrop-filter:none;background:#15110f}}
 
-/* Hlavička hárku a úvodný titul. */
-.uvod .uv-lead{padding-top:34px}
-.uvod .uv-masthead{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-top:1px solid var(--linka-silna);border-bottom:1px solid var(--line);font:500 13px/1.3 var(--ui);color:var(--muted);letter-spacing:.01em}
-.uvod .uv-masthead span:nth-child(2){color:var(--body)}
-.uvod .uv-lead-grid{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:clamp(28px,5vw,72px);align-items:start;padding:clamp(34px,5vw,64px) 0 0}
-.uvod h1{font-size:clamp(34px,4.5vw,60px);font-weight:600;line-height:1.05;letter-spacing:-.024em;max-width:18ch}
-.uvod .uv-lead-p{margin-top:22px;font-size:clamp(18px,1.3vw,21px);line-height:1.5;max-width:54ch;color:var(--body)}
-.uvod .uv-facts{display:grid;grid-template-columns:1fr 1fr;gap:0 28px;margin:34px 0 0;padding:0}
-.uvod .uv-facts div{border-top:1px solid var(--line);padding:11px 0 12px}
-.uvod .uv-facts dt{font:600 12.5px/1.3 var(--ui);color:var(--muted);letter-spacing:.02em}
-.uvod .uv-facts dd{margin:4px 0 0;font-size:15.5px;line-height:1.42;color:var(--body)}
-.uvod .uv-lead-art{margin:0;justify-self:end;width:100%;max-width:430px}
-.uvod .uv-lead-art figcaption{margin-top:14px;font:500 13px/1.45 var(--ui);color:var(--muted)}
-.uvod .uv-lead-page img{display:block;width:100%;height:auto;background:#fff;border:1px solid var(--line);box-shadow:var(--tien);animation:uv-usadenie .9s var(--spring) both}
-@keyframes uv-usadenie{from{opacity:0;transform:translateY(22px) rotate(-.6deg)}to{opacity:1;transform:none}}
-.uvod .uv-lead-app{max-width:560px}
-.uvod .uv-lead-app a{display:block}
-.uvod .uv-lead-app img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:12px;box-shadow:var(--tien);animation:uv-usadenie .9s var(--spring) both}
-.uvod .uv-two-saas{margin-top:8px}
-.uvod .uv-two-saas h3{font-size:clamp(19px,1.7vw,23px);font-weight:600;line-height:1.25;letter-spacing:-.012em}
-.uvod .uv-two-saas p{margin-top:12px;font-size:16px;line-height:1.5;max-width:46ch}
-.uvod .uv-two-saas .btn{margin-top:16px;display:inline-block}
-.uvod .uv-book-pair{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:end}
-.uvod .uv-book-pair a{display:block}
-.uvod .uv-book-pair img{display:block;width:100%;height:auto;border:1px solid var(--line);box-shadow:var(--tien);transition:transform .35s var(--spring)}
-.uvod .uv-book-pair a:hover img{transform:translateY(-4px)}
-.uvod .uv-book-pair figcaption{grid-column:1/-1}
-.uvod .uv-lead-game a{display:block;max-width:340px}
-.uvod .uv-garden{display:block;width:100%;height:auto;background:#fff;border:1px solid var(--line);box-shadow:var(--tien)}
-.uvod .uv-workflow{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px 20px;box-shadow:var(--tien);font-family:var(--ui)}
-.uvod .uv-workflow-top{display:flex;justify-content:space-between;font:600 13px/1.3 var(--ui);color:var(--muted);padding-bottom:12px;border-bottom:1px solid var(--line)}
-.uvod .uv-workflow-title{margin:14px 0 6px;font:600 18px/1.3 var(--display);color:var(--ink)}
-.uvod .uv-workflow ol{margin:0;padding:0 0 0 20px}
-.uvod .uv-workflow li{padding:8px 0;border-top:1px solid var(--line);font-size:14.5px;line-height:1.4}
-.uvod .uv-workflow li:first-child{border-top:0}
-.uvod .uv-workflow li strong{display:block;color:var(--ink);font-weight:600}
-.uvod .uv-workflow>a{display:inline-block;margin-top:12px;font:500 14px/1.3 var(--ui)}
-
-/* Prepínač vstupov: jedna linka pod titulom. */
-.uvod .uv-intents{display:flex;flex-wrap:wrap;align-items:center;gap:10px 22px;margin-top:clamp(28px,4vw,48px);padding:12px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);font:500 14px/1.3 var(--ui);color:var(--muted)}
-.uvod .uv-intents div{display:flex;gap:18px;flex-wrap:wrap}
-.uvod .uv-intents a{color:var(--body);text-decoration:none;padding:4px 0;border-bottom:2px solid transparent}
-.uvod .uv-intents a:hover{color:var(--ink)}
-.uvod .uv-intents a[aria-current]{color:var(--ink);border-bottom-color:var(--accent)}
-
-/* Hárok: pravítkované riadky ako v tlačenom katalógu. */
-.uvod .uv-sheet-sec{margin-top:clamp(52px,6vw,96px)}
-.uvod .uv-sheet-head{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px 40px;align-items:end;margin-bottom:22px}
-.uvod .uv-sheet-head p{color:var(--muted);font-size:15.5px;line-height:1.45;max-width:52ch}
-.uvod .uv-sheet{list-style:none;margin:0;padding:0;border-top:1px solid var(--linka-silna)}
-.uvod .uv-sheet li{border-bottom:1px solid var(--line)}
-.uvod .uv-sheet li a{position:relative;display:grid;grid-template-columns:56px minmax(0,1fr) minmax(120px,auto) minmax(90px,auto);gap:10px 22px;align-items:center;padding:13px 12px;margin:0 -12px;text-decoration:none;color:inherit;border-radius:10px;transition:background-color .18s var(--ease)}
-.uvod .uv-sheet li a:hover,.uvod .uv-sheet li a:focus-visible{background:color-mix(in srgb,var(--paper-deep) 80%,transparent)}
-.uvod .uv-sheet img{width:56px;height:74px;object-fit:cover;object-position:top;display:block;border:1px solid var(--line);background:#fff;transform-origin:left center;transition:transform .32s var(--spring),box-shadow .32s var(--ease);z-index:1}
-.uvod .uv-sheet li a:hover img,.uvod .uv-sheet li a:focus-visible img{transform:scale(2.4);box-shadow:var(--tien);z-index:3}
-.uvod .uv-row-main strong{display:block;font:600 18px/1.25 var(--display);color:var(--ink);letter-spacing:-.01em}
-.uvod .uv-row-main span{display:block;margin-top:3px;font-size:15.5px;line-height:1.4;color:var(--body)}
-.uvod .uv-row-format{font:500 13px/1.35 var(--ui);color:var(--muted)}
-.uvod .uv-row-price{font:600 16px/1.2 var(--ui);color:var(--ink);text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
-.uvod .uv-row-price small{display:block;font:400 12px/1.3 var(--ui);color:var(--muted)}
-.uvod .uv-sheet-tools li a{grid-template-columns:minmax(0,1fr)}
-.uvod .uv-more{margin-top:16px;border-top:1px solid var(--line);padding-top:10px}
-.uvod .uv-more>summary{list-style:none;cursor:pointer;font:600 15px/1.3 var(--ui);color:var(--body);padding:6px 0;display:flex;align-items:center;gap:10px}
-.uvod .uv-more>summary::-webkit-details-marker{display:none}
-.uvod .uv-more>summary::before{content:"";width:9px;height:9px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(-45deg);transition:transform .2s var(--ease)}
-.uvod .uv-more[open]>summary::before{transform:rotate(45deg)}
-.uvod .uv-more>summary:hover{color:var(--ink)}
-.uvod .uv-male{list-style:none;margin:6px 0 10px;padding:0;columns:3;column-gap:32px}
-.uvod .uv-male li{break-inside:avoid;padding:5px 0}
-.uvod .uv-male a{font-size:15.5px;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:.16em;text-decoration-color:var(--line)}
-.uvod .uv-male a:hover{color:var(--ink);text-decoration-color:var(--accent)}
-
-/* Zadarmo dnes: tmavší papier, skutočný hlavolam z archívu. */
-.uvod .uv-free{margin-top:clamp(52px,6vw,96px);background:var(--paper-deep);border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:clamp(40px,5vw,72px) 0}
-.uvod .uv-free-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:clamp(28px,5vw,72px);align-items:center}
-.uvod .uv-free p{margin-top:16px;font-size:17.5px;line-height:1.5;max-width:52ch}
-.uvod .uv-free-art{margin:0;justify-self:end;width:100%;max-width:300px}
-.uvod .uv-free-art a{display:block}
-.uvod .uv-free-art figcaption{margin-top:12px;font:500 13px/1.45 var(--ui);color:var(--muted)}
-
-/* Dva krátke záznamy vedľa seba: darček a vydavatelia. */
-.uvod .uv-two{display:grid;grid-template-columns:1fr 1fr;gap:clamp(28px,5vw,72px);margin-top:clamp(52px,6vw,96px)}
-.uvod .uv-two h2{font-size:clamp(22px,2.2vw,30px)}
-.uvod .uv-two p{margin-top:14px;font-size:16.5px;line-height:1.5;max-width:46ch}
-.uvod .uv-two .uv-quiet,.uvod .uv-two .btn{margin-top:18px;display:inline-block}
-.uvod .uv-steps{margin:16px 0 0;padding:0 0 0 22px;font:500 15px/1.4 var(--ui);color:var(--body)}
-.uvod .uv-steps li{padding:5px 0;border-top:1px solid var(--line)}
-.uvod .uv-steps li:first-child{border-top:0}
-.uvod .uv-notes{margin-top:clamp(52px,6vw,96px)}
-.uvod .uv-notes p{margin-top:14px;font-size:16.5px;line-height:1.5;max-width:60ch}
-.uvod .uv-notes .uv-quiet{display:inline-block;margin-top:14px}
-
-/* Tiráž: kto vydáva, ako sa platí, čo je verejné. */
-.uvod .uv-colophon{margin-top:clamp(52px,6vw,96px);border-top:1px solid var(--linka-silna);padding:clamp(36px,4.5vw,64px) 0 clamp(32px,4vw,56px)}
-.uvod .uv-colophon-rows{display:grid;grid-template-columns:1fr 1fr;gap:0 40px;margin:22px 0 0;padding:0}
-.uvod .uv-colophon-rows div{border-top:1px solid var(--line);padding:12px 0 14px}
-.uvod .uv-colophon-rows dt{font:600 12.5px/1.3 var(--ui);color:var(--muted);letter-spacing:.02em}
-.uvod .uv-colophon-rows dd{margin:5px 0 0;font-size:15.5px;line-height:1.45}
-.uvod .uv-colophon-forms{display:grid;grid-template-columns:1fr 1fr;gap:0 40px;margin-top:26px}
-.uvod .uv-contact{border-top:1px solid var(--line);padding:10px 0}
-.uvod .uv-contact>summary{list-style:none;cursor:pointer;font:600 15px/1.3 var(--ui);color:var(--body);padding:6px 0;display:flex;align-items:center;gap:10px}
-.uvod .uv-contact>summary::-webkit-details-marker{display:none}
-.uvod .uv-contact>summary::before{content:"";width:9px;height:9px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(-45deg);transition:transform .2s var(--ease)}
-.uvod .uv-contact[open]>summary::before{transform:rotate(45deg)}
-.uvod .uv-contact p{margin-top:8px;font-size:15px;color:var(--muted)}
-.uvod .uv-contact form{display:grid;gap:6px;margin-top:12px;max-width:440px}
-.uvod .uv-contact label{font:600 12.5px/1.3 var(--ui);color:var(--muted);margin-top:8px}
-.uvod .uv-contact input,.uvod .uv-contact textarea{font:16px/1.4 var(--text);color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px 12px;width:100%;caret-color:var(--accent)}
-.uvod .uv-contact input:focus-visible,.uvod .uv-contact textarea:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-color:var(--ink)}
-.uvod .uv-contact button{justify-self:start;margin-top:10px}
-.uvod .hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
-.uvod footer{border-top:1px solid var(--line);padding:26px 0 40px;font:14px/1.6 var(--ui);color:var(--muted)}
-.uvod .foot{display:grid;grid-template-columns:1fr 1fr 1.4fr;gap:20px}
-.uvod .foot a{color:var(--body);text-decoration:none}
-.uvod .foot a:hover{color:var(--ink);text-decoration:underline}
-
-@media(max-width:1040px){
-  .uvod .uv-desktop-nav{display:none}
-  .uvod .uv-menu{display:block}
-  .uvod .uv-lead-grid{grid-template-columns:1fr;gap:34px}
-  .uvod .uv-lead-art{justify-self:start;max-width:380px}
-  .uvod .uv-sheet-head{grid-template-columns:1fr;gap:10px}
-  .uvod .uv-free-grid{grid-template-columns:1fr}
-  .uvod .uv-free-art{justify-self:start;max-width:260px}
-  .uvod .uv-male{columns:2}
-  .uvod .foot{grid-template-columns:1fr 1fr}
+@media (max-width:1180px){
+  .hero-mriezka{grid-template-columns:1fr;gap:clamp(40px,5vw,62px);align-items:start}
+  .hero-text .lead{max-width:56ch}
+  .scena{margin-right:0}
+  .k1{left:2%;top:50%}.k2{right:2%;top:2%}.k3{left:4%;bottom:6%}
+  .pilot-mriezka{grid-template-columns:1fr;gap:44px}
+  .dl{grid-column:span 6}
+  .prod-stlpce{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .pata-mriezka{grid-template-columns:repeat(3,minmax(0,1fr));row-gap:36px}
 }
-@media(max-width:680px){
-  .uvod .uv-lead{padding-top:22px}
-  .uvod .uv-masthead{flex-wrap:wrap;gap:6px 14px;font-size:12.5px}
-  .uvod .uv-masthead span:last-child{width:100%}
-  .uvod h1{font-size:clamp(30px,8.6vw,38px);max-width:none}
-  .uvod .uv-lead-p{font-size:17.5px}
-  .uvod .uv-facts{grid-template-columns:1fr}
-  .uvod .uv-lead-art{max-width:300px}
-  .uvod .uv-sheet li a{grid-template-columns:52px minmax(0,1fr);padding:12px 8px;margin:0 -8px}
-  .uvod .uv-sheet img{width:52px;height:68px;grid-row:1/3}
-  .uvod .uv-sheet li a:hover img,.uvod .uv-sheet li a:focus-visible img{transform:none;box-shadow:none}
-  .uvod .uv-row-format{grid-column:2}
-  .uvod .uv-row-price{grid-column:2;text-align:left;display:flex;gap:8px;align-items:baseline}
-  .uvod .uv-row-price small{display:inline}
-  .uvod .uv-sheet-tools li a{grid-template-columns:minmax(0,1fr)}
-  .uvod .uv-male{columns:1}
-  .uvod .uv-two,.uvod .uv-colophon-rows,.uvod .uv-colophon-forms{grid-template-columns:1fr}
-  .uvod .foot{grid-template-columns:1fr}
-  .uvod .uv-intents{gap:8px 14px}
+@media (max-width:1000px){
+  .pas .hlavne>a{display:none}
 }
-@media(prefers-reduced-motion:reduce){
-  .uvod .uv-lead-page img{animation:none}
-  .uvod .uv-sheet img,.uvod .uv-book-pair img,.uvod .btn{transition:none}
+@media (max-width:900px){
+  .dovera-mriezka{grid-template-columns:1fr;gap:26px}
+  .normy .wrap{flex-wrap:wrap}
+  .normy p{max-width:none;width:100%}
+}
+@media (max-width:760px){
+  :root{--wrap:min(1340px,90vw)}
+  .pas{height:60px;gap:10px}
+  .pas .hlavne{display:none}
+  .pas .cta{margin-left:auto;padding:10px 15px;font-size:14px}
+  .uv-menu{display:block}
+  .uv-menu nav{top:62px}
+  .hero{padding-top:26px}
+  .hero-text{order:1}
+  .hero .ceny{order:2;margin-top:26px}
+  .hero .scena{order:3}
+  .hero h1{line-height:1.06}
+  .hero h1 .riadok{display:inline}
+  .akcie{gap:14px;margin-top:26px}
+  .akcie .cta{width:100%}
+  .zariadenie{transform:none}
+  .hero .ramec{max-height:400px}
+  .pilot-scena .ramec{max-height:360px}
+  .hero .ramec img,.pilot-scena .ramec img{width:172%;max-width:none}
+  .pred .hero .zariadenie{transform:translateY(28px);opacity:0}
+  .pilot-scena .zariadenie{transform:none}
+  .karta{position:static;max-width:none;margin:0}
+  .scena .karta{margin-top:10px}
+  .k1{margin-top:16px;--d:.24s}.k2{--d:.32s}.k3{--d:.40s}
+  .podpis{margin-top:16px}
+  .lampa{width:150%;left:-25%;bottom:-8%}
+  .luc{height:56vh;filter:blur(28px)}
+  .dl{grid-column:span 12}
+  .dl-text{padding:20px 20px 22px}
+  .ceny ul{display:grid;gap:8px;font-size:14px}
+  .ceny li+li::before{display:none}
+  .normy .wrap{padding:22px 0;gap:14px}
+  .bez li{padding:2px 14px}
+  .zaver-karta{padding:36px 20px}
+  footer{padding-top:48px}
+  .pata-znacka{margin-bottom:34px;padding-bottom:28px}
+  .pata-mriezka{grid-template-columns:repeat(2,minmax(0,1fr));row-gap:30px}
+  .pata-dev{margin-top:34px}
+  .pata-spodok{margin-top:30px}
+}
+@media (max-width:520px){
+  .pas .cta{display:none}
+  .pas .langsel{margin-left:auto}
+}
+@media (max-width:460px){
+  .pata-mriezka{grid-template-columns:1fr}
 }
