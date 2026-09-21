@@ -1193,10 +1193,9 @@ const PRIPADY = [
   const zla = L('991-33333TEST-34');
   ok('40. zla prufziffer sa hlasi', !zla.ok && zla.kod === 'pruefziffer', zla.kod);
   ok('40. pri zlej prufziffer vrati spravnu', zla.ocakavana === '33', String(zla.ocakavana));
-  // Priklad, ktory mame na strankach dlhsie (04011000-12345-03), prufziffer nema.
-  // Test je tu preto, aby sa nikdy nevratil do textu ako "platny" priklad.
+  // Priklad zo stranok (04011000-12345-03) JE platny: ISO 7064 MOD 97-10 nad 0401100012345 + 03 dava zvysok 1
+  // (prepocitane nezavisle 21. 9. 2026). Starsi test tu tvrdil opak a protirecil nasledujucim dvom riadkom.
   const stary = L('04011000-12345-03');
-  ok('40. 04011000-12345-03 nema platnu prufziffer', !stary.ok && stary.kod === 'pruefziffer', stary.kod);
   ok('40. spravna prufziffer pre 04011000-12345 je 03', stary.ocakavana === '03', String(stary.ocakavana));
   ok('40. 04011000-12345-03 plati', L('04011000-12345-03').ok);
 
