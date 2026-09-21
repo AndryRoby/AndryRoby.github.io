@@ -43,6 +43,9 @@
       var cas;
       prod.addEventListener('pointerenter', function () { clearTimeout(cas); cas = setTimeout(function () { prod.open = true; }, 90); });
       prod.addEventListener('pointerleave', function () { clearTimeout(cas); cas = setTimeout(function () { prod.open = false; }, 180); });
+      /* Na myši klik na slovo Produkty otvorené menu nezatvára (Andrej 21. 9.); zatvára odchod kurzora, Escape, klik mimo. */
+      var sumar = prod.querySelector('summary');
+      if (sumar) sumar.addEventListener('click', function (e) { if (prod.open) e.preventDefault(); });
     }
     window.matchMedia('(min-width: 761px)').addEventListener('change', function () { zatvor(null); });
   }
