@@ -160,6 +160,37 @@
   // tvrdiť, že nejaký štvorec čaká alebo že je váš.
   var navratBezStvorca = !Number(parametre.get('p'));
   var navratZPokladne = parametre.get('paid') ? 'paid' : parametre.get('cancelled') ? 'cancelled' : '';
+
+  // ── Kreslenie hneď po platbe ─────────────────────────────────────────────
+  // Stripe vracia človeka s ?p=ID&paid=1&session_id=cs_…. Odkaz do panela
+  // majiteľa (jediný kľúč k menu, odkazu a kresbe) chodil doteraz len e-mailom,
+  // takže kto ho hneď nedostal, nemal po platbe čo robiť. Číslo platobnej
+  // relácie má len ten, kto práve zaplatil, a služba z neho vie vydať nový kľúč
+  // (/api/owner/session-link).
+  //
+  // KDE TO ČÍSLO ŽIJE. V sessionStorage tejto karty a v pamäti stránky, nikde
+  // inde. Nie v adrese (tú si zapisuje Umami a história prehliadača) a nie v
+  // localStorage (prežilo by zavretie karty). Odloží sa TU, ešte pred
+  // vyčistením adresy o pár riadkov nižšie.
+  var poPlatbe = { session: '', panel: '', stvorec: 0 };
+  function ulozPoPlatbe() {
+    try {
+      sessionStorage.setItem('svet-po-platbe', JSON.stringify({ s: poPlatbe.session, u: poPlatbe.panel, p: poPlatbe.stvorec }));
+    } catch (e) {}
+  }
+  try {
+    var ulozenaPlatba = JSON.parse(sessionStorage.getItem('svet-po-platbe') || 'null');
+    if (ulozenaPlatba && typeof ulozenaPlatba === 'object') {
+      poPlatbe.session = String(ulozenaPlatba.s || '');
+      poPlatbe.panel = String(ulozenaPlatba.u || '');
+      poPlatbe.stvorec = Number(ulozenaPlatba.p) || 0;
+    }
+  } catch (e) {}
+  if (navratZPokladne === 'paid' && parametre.get('session_id')) {
+    poPlatbe = { session: String(parametre.get('session_id')), panel: '', stvorec: Number(parametre.get('p')) || 0 };
+    ulozPoPlatbe();
+  }
+
   if (navratZPokladne || parametre.get('session_id')) {
     var cista = new URL(location.href);
     ['paid', 'cancelled', 'session_id'].forEach(function (k) { cista.searchParams.delete(k); });
@@ -1095,11 +1126,24 @@
     if (p && p.founder_no) h += '<div><dt>' + esc(T.zakladatel) + '</dt><dd>' + esc(String(p.founder_no)) + ' / 100</dd></div>';
     h += '</dl>';
 
-    if (stav === 'predana') {
-      if (moje[id]) h += '<p class="list-moje">' + esc(T.jeVas) + '</p>';
+    // Štvorec z platby, za ktorú práve prišiel kľúč do panela. Kým sa stav v
+    // blokoch prekreslí, vie o ňom len táto karta, a tlačidlo na kreslenie má
+    // byť hlavné: to je presne to, čo po platbe chýbalo.
+    //
+    // ČÍSLO ŠTVORCA JE Z ADRESY, A TÚ SI PÍŠE KTOKOĽVEK. Kľúč do panela vydá
+    // služba len tomu, kto naozaj zaplatil, ale to, KTORÝ štvorec sa kúpil,
+    // stránka z neho nevyčíta: berie ho z ?p=. Keď služba o tomto štvorci už
+    // odpovedala a hovorí, že zaplatený nie je, veta „This square is yours“ ani
+    // tlačidlo sa neukážu. Kým neodpovedala (p je prázdne hneď po platbe, lebo
+    // si ho pýtame nanovo), tlačidlo tam je: vtedy stránka nemá čo vyvracať.
+    var mojPoPlatbe = !!(poPlatbe.panel && poPlatbe.stvorec === id
+      && (!p || p.status === 'paid' || p.status === 'hidden'));
+    if (stav === 'predana' || mojPoPlatbe) {
+      if (moje[id] || mojPoPlatbe) h += '<p class="list-moje">' + esc(T.jeVas) + '</p>';
+      if (mojPoPlatbe) h += '<a class="btn btn-solid" href="' + esc(poPlatbe.panel) + '">' + esc(T.poPlatbeTlacidlo) + '</a>';
       if (p && p.link) h += '<a class="btn btn-line" rel="nofollow ugc noopener noreferrer" target="_blank" href="' + esc(p.link) + '">' + esc(T.otvorOdkaz) + '</a>';
       h += '<a class="btn btn-line" href="' + esc(CESTA_MAPY + T.cestaParcely + '?id=' + id) + '" data-umami-event="svet_zdielanie">' + esc(T.zdielat) + '</a>';
-      if (!moje[id]) h += '<button class="btn btn-line" type="button" data-akcia="nahlasit">' + esc(T.nahlasit) + '</button>';
+      if (!moje[id] && !mojPoPlatbe) h += '<button class="btn btn-line" type="button" data-akcia="nahlasit">' + esc(T.nahlasit) + '</button>';
       h += '<p class="list-pravne">' + esc(T.predaneVysvetlenie) + '</p>';
     } else if (stav === 'zatvorena') {
       h += '<p class="list-pravne">' + esc(T.nepredajneVysvetlenie) + '</p>';
@@ -1236,7 +1280,9 @@
   function skusSluzbu() {
     api('/api/health').then(function () {
       S.sluzba = 'bezi';
-      if (!navratZPokladne) skryPas();
+      // Pás po návrate z pokladne sa neschováva; ani ten s odkazom do panela,
+      // ktorý v tejto karte prežil obnovenie stránky.
+      if (!navratZPokladne && !poPlatbe.panel) skryPas();
       nacitajStav();
       nacitajVrstvu();
       nacitajMoje();
@@ -1253,8 +1299,63 @@
   }
 
   var pasEl = koren.querySelector('[data-pas]');
-  function pas(text) { if (pasEl) { pasEl.textContent = text; pasEl.hidden = false; } }
+  function pas(text) { if (pasEl) { pasEl.classList.remove('mapa-stav-akcia'); pasEl.textContent = text; pasEl.hidden = false; } }
+  /**
+   * Pás s vetou a jedným tlačidlom. Pás je role="status" (postav.mjs), takže ho
+   * čítačka prečíta sama; FOKUS SA NEKRADNE. Kto práve píše do vyhľadávania,
+   * nesmie prísť o kurzor len preto, že dorazila platba.
+   */
+  function pasSTlacidlom(text, popis, url) {
+    if (!pasEl) return;
+    pasEl.innerHTML = '<span>' + esc(text) + '</span><a class="btn btn-solid" href="' + esc(url) + '">' + esc(popis) + '</a>';
+    pasEl.classList.add('mapa-stav-akcia');
+    pasEl.hidden = false;
+  }
   function skryPas() { if (pasEl) pasEl.hidden = true; }
+
+  // ── Odkaz do panela hneď po platbe ───────────────────────────────────────
+  // Mapa sa pýta služby každé 3 sekundy najviac 40 sekúnd. Kým platba nedorazí,
+  // služba odpovedá {"ok":false,"reason":"pending"} a v páse ostáva dnešná veta
+  // o e-maile; keď dorazí, vráti odkaz do panela a pás aj list štvorca dostanú
+  // tlačidlo „Name it and draw“. E-mail s odkazom sa posiela ďalej ako doteraz.
+  var PYTANIE_MS = 3000, PYTANIE_NAJDLHSIE_MS = 40000;
+  function ukazOdkazDoPanela() {
+    if (!poPlatbe.panel) return;
+    // Balík sa kupuje bez štvorca. Vtedy sa nesmie napísať „the square is
+    // yours“: kúpil sa kredit a štvorce si človek vyberie až na mape.
+    var jeStvorec = poPlatbe.stvorec > 0;
+    pasSTlacidlom(jeStvorec ? T.poPlatbeHotovo : T.poPlatbeHotovoBalik,
+      jeStvorec ? T.poPlatbeTlacidlo : T.poPlatbeTlacidloBalik, poPlatbe.panel);
+  }
+  function pytajOdkazDoPanela() {
+    if (!API || !poPlatbe.session) return;
+    if (poPlatbe.panel) { ukazOdkazDoPanela(); return; }
+    var koniec = Date.now() + PYTANIE_NAJDLHSIE_MS;
+    function znova() { if (Date.now() < koniec) setTimeout(skus, PYTANIE_MS); }
+    function skus() {
+      fetch(API + '/api/owner/session-link', {
+        method: 'POST', credentials: 'omit', cache: 'no-store', referrerPolicy: 'no-referrer',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ session_id: poPlatbe.session }),
+      })
+        .then(function (o) { return o.ok ? o.json() : null; })
+        .then(function (d) {
+          if (!d || !d.ok || !d.owner_url) { znova(); return; }
+          poPlatbe.panel = String(d.owner_url);
+          ulozPoPlatbe();
+          sleduj('svet_panel_hned_po_platbe');
+          ukazOdkazDoPanela();
+          // Štvorec už je zaplatený; nech to list aj mapa ukážu bez obnovenia.
+          if (poPlatbe.stvorec) {
+            delete parcely[poPlatbe.stvorec];
+            nacitajParcelu(poPlatbe.stvorec);
+          }
+          obnovList();
+        })
+        .catch(function () { znova(); });
+    }
+    skus();
+  }
 
   function nacitajStav() {
     api('/api/state.json').then(function (d) {
@@ -1735,6 +1836,9 @@
       }
       ziadaj();
       skusSluzbu();
+      // Až po vete o e-maile: keď platba dorazí do 40 sekúnd, veta sa nahradí
+      // tlačidlom na kreslenie. Keď nedorazí, ostane veta o e-maile.
+      pytajOdkazDoPanela();
       if (LADENIE > 1) setTimeout(meranyPosun, 1300);
     })
     .catch(function () { pas(T.mapaChyba); });
