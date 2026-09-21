@@ -42,6 +42,9 @@ import '../kniha.mjs?v=1';
  */
 import { zadaniePreDen, zadanieCvicenie, rozbal, tyzden, urovenDna, posunDen, pekneDatum, kratkyDatum, UROVNE, SADY, PRVY_DEN, DNI } from './plan.mjs';
 import { todayBratislava, isValidDate, geometria } from './generator.mjs';
+// Which days still have a page of their own and what ?d= may hold: one rule
+// for all eleven games, /games/okno.mjs (the generators read the same file).
+import { denZParametra, adresaDna, trvalaAdresaDna } from '../okno.mjs?v=1';
 import { jeVyriesene, porovnaj, napoveda } from './logika.mjs';
 import * as ucet from '/style/ucet.js';
 import { oslava } from '../oslava.js';
@@ -102,7 +105,10 @@ if (body.dataset.sada) {
 } else if (body.dataset.den && isValidDate(body.dataset.den)) {
   datum = body.dataset.den;
 } else {
-  try { const d = new URL(location.href).searchParams.get('d'); if (d && isValidDate(d)) datum = d; } catch (e) { /* today */ }
+  // ?d= opens one day on this page; that is how a day too old to have a page of
+  // its own is played. Only a real date from the first day to today passes,
+  // anything else (a future day, other text) leaves today in place.
+  try { const d = denZParametra(new URL(location.href).searchParams.get('d'), PRVY_DEN, dnes); if (d) datum = d; } catch (e) { /* today */ }
 }
 const jeDnes = rezim === 'den' && datum === dnes;
 const jeBuduci = rezim === 'den' && datum > dnes;
@@ -768,7 +774,7 @@ function textZdielania() {
     : 'no hint, no check';
   const odkaz = rezim === 'cvicenie'
     ? 'https://arling.sk/games/herons/practice/' + sada + '/' + (kSada === 1 ? '' : kSada + '/')
-    : 'https://arling.sk/games/herons/' + (jeDnes ? '' : datum + '/');
+    : (jeDnes ? 'https://arling.sk/games/herons/' : trvalaAdresaDna('https://arling.sk/games/herons/', datum));   // ?d=, so the link still opens after the day's page is gone
   return kto + '\nSolved in ' + formatCas(sekundy) + ', ' + pomoc + '.\n' + odkaz;
 }
 function skopiruj(t) {
@@ -986,7 +992,7 @@ function ukazPasik() {
     const tag = d === datum || buduci || pred ? 'span' : 'a';
     const a = document.createElement(tag);
     a.className = 'den' + (d === datum ? ' dnes' : '') + (buduci || pred ? ' buduci' : '') + (st && st.done ? ' hotove' : st && st.v && st.v.some((y) => y) ? ' rozohrane' : '');
-    if (tag === 'a') a.href = '/games/herons/' + d + '/';
+    if (tag === 'a') a.href = adresaDna('/games/herons/', d, dnes);
     a.innerHTML = '<small>' + DNI[k] + '</small><b>' + Number(d.slice(8)) + '</b>';
     a.title = pekneDatum(d) + ', ' + UROVNE[urovenDna(d)].label + (buduci ? ' (not yet)' : '');
     a.setAttribute('aria-label', a.title + (st && st.done ? ', solved' : ''));
