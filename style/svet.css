@@ -45,7 +45,9 @@ body.noc .mapa {
   contain: strict;
 }
 
-.mapa canvas {
+/* Len plátno mapy (priamy potomok). Plátno editora kresby je tiež vnútri .mapa a toto pravidlo ho
+   21. 9. 2026 roztiahlo cez celý hárok, takže paleta a tlačidlá ostali pod ním a kresliť sa nedalo. */
+.mapa > canvas {
   position: absolute;
   inset: 0;
   display: block;
@@ -55,7 +57,7 @@ body.noc .mapa {
   cursor: grab;
   outline-offset: -3px;
 }
-.mapa canvas:active { cursor: grabbing; }
+.mapa > canvas:active { cursor: grabbing; }
 .mapa canvas.presuva { cursor: grabbing; }
 
 /* ── Sklenený panel: nadpis, jedna veta, hľadanie ───────────────────────── */
@@ -346,6 +348,34 @@ body.noc .mapa-panel.mala .mapa-veta { max-height: 0; margin-bottom: 0; opacity:
 }
 .kreslenie-ovladanie button:hover { background: rgba(255, 255, 255, .1); }
 
+/* Editor kresby. Nad plátnom sa nedá rolovať (touch-action: none), preto sa v tomto režime
+   musí všetko zmestiť naraz: plátno je štvorec, ktorého strana sa ráta z výšky okna.
+   21. 9. 2026: na telefóne bolo vidno len plátno, paleta a tlačidlá ostali pod okrajom. */
+.list.list-kresli { max-height: calc(100% - 96px); }
+.list-kresli .kreslenie canvas { width: min(100%, calc(100dvh - 430px)); min-width: 180px; margin-inline: auto; }
+.list-kresli .list-miesto { font-size: 13px; line-height: 1.4; }
+@media (max-width: 720px) {
+  .list.list-kresli {
+    top: 0; max-height: none; z-index: 6;
+    border-radius: 0; border: 0;
+    padding: max(14px, env(safe-area-inset-top)) 16px max(14px, env(safe-area-inset-bottom));
+    display: flex; flex-direction: column;
+    background: #0d0b0a;
+    backdrop-filter: none; -webkit-backdrop-filter: none;
+  }
+  .list-kresli .kreslenie { margin-top: 10px; }
+  .list-kresli .kreslenie canvas { width: min(100%, calc(100dvh - 392px)); }
+  .list-kresli .paleta { gap: 6px; margin-top: 10px; }
+  .list-kresli .paleta button { aspect-ratio: auto; height: 38px; }
+  .list-kresli .kreslenie-ovladanie button { height: 42px; font-size: 14px; }
+  .list-kresli .list-pravne { margin-top: 8px; font-size: 11.5px; }
+  .list-kresli .btn { min-height: 46px; }
+}
+@media (max-width: 720px) and (max-height: 700px) {
+  .list-kresli .list-miesto { display: none; }
+  .list-kresli .kreslenie canvas { width: min(100%, calc(100dvh - 340px)); }
+}
+
 /* ── Kresba vlastníka a jeho odkaz v liste ──────────────────────────────── */
 .list-kresba {
   display: block; width: 88px; height: 88px; margin: 0 0 12px;
@@ -594,3 +624,6 @@ body.noc .majitel .majitel-predplatne h2 { margin-top: 0; }
 
 /* ── Bez JavaScriptu mapa nie je. Povedzme to rovno. ─────────────────────── */
 .bez-js { margin: 0; padding: 22px; border: 1px solid var(--line); border-radius: 12px; font-family: var(--ui); color: var(--body); }
+
+/* Medzera medzi ovládaním kresby a tlačidlom kúpy v editore. */
+.list-kresli .kreslenie + .btn { margin-top: 12px; }

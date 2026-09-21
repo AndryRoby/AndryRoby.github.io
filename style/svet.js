@@ -1068,6 +1068,7 @@
   function ukazList() {
     if (!S.vybrana) return;
     listRezim = 'prehlad';
+    list.classList.remove('list-kresli');
     var r = S.vybrana.r, c = S.vybrana.c, id = S.vybrana.id;
     var lat = stredRiadku(r), lon = -180 + ((c + 0.5) * 360) / STL[r];
     var p = parcely[id];
@@ -1373,6 +1374,7 @@
     if (!S.vybrana) return;
     sleduj(balik ? 'svet_otvorena_pokladna_balik' : 'svet_otvorena_pokladna');
     listRezim = 'pokladna';
+    list.classList.remove('list-kresli');
     var id = S.vybrana.id;
     var h = '<p class="list-cislo">' + (balik ? esc(T.balikNadpis) : esc(T.cislo) + ' ' + cisloText(id)) + '</p>';
     if (TEST) h += '<p class="list-test" role="note">' + esc(T.testRezim) + '</p>';
@@ -1485,6 +1487,10 @@
     if (!S.vybrana) return;
     sleduj('svet_prve_kreslenie');
     listRezim = 'kreslenie';
+    // Na telefóne zaberie editor celú obrazovku: plátno, paleta aj tlačidlá musia byť vidno naraz,
+    // lebo nad plátnom sa nedá rolovať (touch-action: none).
+    list.classList.add('list-kresli');
+    list.scrollTop = 0;
     var id = S.vybrana.id;
     // Úložisko môže byť zakázané (súkromné okno, prísne nastavenie). Kreslenie má
     // fungovať aj vtedy, len sa kresba nezapamätá.
@@ -1524,23 +1530,51 @@
       }
     }
     prekresli();
-    function maluj(e) {
+    // Ťah prstom alebo myšou. Medzi dvoma udalosťami pohybu sa kreslí súvislá čiara
+    // (Bresenham), inak rýchly prst nechá len bodky (nájdené 21. 9. 2026 na telefóne:
+    // z dvoch dlhých ťahov ostalo deväť bodov). Ukladá sa na konci ťahu, nie pri každom bode.
+    function bod(e) {
       var r = kp.getBoundingClientRect();
       var x = Math.floor(((e.clientX - r.left) / r.width) * 32), y = Math.floor(((e.clientY - r.top) / r.height) * 32);
-      if (x < 0 || y < 0 || x > 31 || y > 31) return;
-      body[y * 32 + x] = farba;
-      prekresli();
+      return { x: x < 0 ? 0 : x > 31 ? 31 : x, y: y < 0 ? 0 : y > 31 ? 31 : y };
+    }
+    function ciara(a, b) {
+      var dx = Math.abs(b.x - a.x), dy = Math.abs(b.y - a.y), sx = a.x < b.x ? 1 : -1, sy = a.y < b.y ? 1 : -1, chyba = dx - dy, x = a.x, y = a.y;
+      for (;;) {
+        body[y * 32 + x] = farba;
+        if (x === b.x && y === b.y) break;
+        var e2 = 2 * chyba;
+        if (e2 > -dy) { chyba -= dy; x += sx; }
+        if (e2 < dx) { chyba += dx; y += sy; }
+      }
+    }
+    function uloz() {
       var s = '';
       for (var i = 0; i < 1024; i++) s += String.fromCharCode(body[i]);
       try { localStorage.setItem('svet-kresba-' + id, btoa(s)); } catch (e2) {}
     }
-    var malujem = false;
-    kp.addEventListener('pointerdown', function (e) { malujem = true; try { kp.setPointerCapture(e.pointerId); } catch (err) {} maluj(e); });
-    kp.addEventListener('pointermove', function (e) { if (malujem) maluj(e); });
-    kp.addEventListener('pointerup', function () { malujem = false; });
+    var posledny = null;
+    kp.addEventListener('pointerdown', function (e) {
+      if (e.button) return;
+      e.preventDefault();
+      try { kp.setPointerCapture(e.pointerId); } catch (err) {}
+      posledny = bod(e);
+      ciara(posledny, posledny);
+      prekresli();
+    });
+    kp.addEventListener('pointermove', function (e) {
+      if (!posledny) return;
+      // Prehliadač zlučuje rýchle pohyby do jednej udalosti; rozbalené dajú hladšiu čiaru.
+      var kusy = e.getCoalescedEvents ? e.getCoalescedEvents() : null;
+      if (!kusy || !kusy.length) kusy = [e];
+      for (var k = 0; k < kusy.length; k++) { var b = bod(kusy[k]); ciara(posledny, b); posledny = b; }
+      prekresli();
+    });
+    function koniecTahu() { if (posledny) { posledny = null; uloz(); } }
+    kp.addEventListener('pointerup', koniecTahu);
     // Prehliadač vie ťah prerušiť (prichádzajúci hovor, gesto systému). Bez tohto
     // by sa potom maľovalo aj pri obyčajnom pohybe myši nad plátnom.
-    kp.addEventListener('pointercancel', function () { malujem = false; });
+    kp.addEventListener('pointercancel', koniecTahu);
     list.querySelector('.paleta').addEventListener('click', function (e) {
       var b = e.target.closest('[data-farba]');
       if (!b) return;
