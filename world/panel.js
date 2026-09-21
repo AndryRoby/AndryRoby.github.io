@@ -352,7 +352,12 @@
   /**
    * Stiahnutie certifikátu. `sam` je príchod z e-mailu: vtedy sa o tom napíše
    * veta, lebo sťahovanie, ktoré sa spustí bez kliknutia, inak vyzerá ako nič.
-   * Keby prehliadač také sťahovanie zastavil, tlačidlo pri štvorci ostáva.
+   *
+   * ČO STRÁNKA VIE A ČO NIE. Vie, že PDF prišlo a že klikla na odkaz, ktorý ho
+   * ponúka na uloženie. NEVIE, či prehliadač súbor naozaj uložil: sťahovanie
+   * spustené bez kliknutia sa dá zablokovať. Preto veta po úspechu hovorí
+   * „download has started“ a odkazuje na tlačidlo, nie „is saved“. Tlačidlo pri
+   * štvorci ostáva viditeľné vždy; na čas sťahovania je len nedostupné.
    */
   function stiahniCertifikat(p, tlacidlo, stavEl, sam) {
     var text = tlacidlo ? tlacidlo.textContent : '';
