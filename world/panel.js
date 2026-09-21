@@ -50,6 +50,15 @@
     try { return sessionStorage.getItem('svet-kluc') || ''; } catch (e) { return ''; }
   }
 
+  // Certifikát z e-mailu po platbe: odkaz je /world/owner/#t=…&cert=ID. Ten istý
+  // kľúč otvorí panel a číslo za ním povie, ktorý certifikát si človek prišiel
+  // stiahnuť. Do otáznika sa nedáva nič, kľúč aj číslo ostávajú za mriežkou.
+  var CERT = 0;
+  function citajCert() {
+    var m = /[#&]cert=(\d{1,9})(?:&|$)/.exec(location.hash || '');
+    return m ? Number(m[1]) : 0;
+  }
+
   // Prepínač jazyka vedie na druhý panel. Kľúč si tam odnesie za mriežkou; v HTML
   // odkazu nie je, pripíše sa až pri kliknutí.
   document.addEventListener('click', function (e) {
@@ -80,24 +89,65 @@
   function spravaSluzby(d) { return (JAZYK === 'sk' ? d.sprava : d.message) || d.message || d.sprava || ''; }
 
   // ── Celostránkové stavy ──────────────────────────────────────────────────
-  function hlaska(nadpis, odseky, tlacidlo) {
+  // Formulár stratného odkazu je ZA hláškou, nie v nej: hláška je živá oblasť
+  // (role="status") a formulár do živej oblasti nepatrí, čítačka by ho pri
+  // každej zmene textu prečítala celý znova.
+  function hlaska(nadpis, odseky, tlacidlo, sFormularom) {
     var h = '<div class="majitel-hlaska" role="status"><h2>' + esc(nadpis) + '</h2>';
     for (var i = 0; i < odseky.length; i++) h += '<p>' + esc(odseky[i]) + '</p>';
     if (tlacidlo) h += '<p><button class="btn btn-solid" type="button" data-znova>' + esc(tlacidlo) + '</button></p>';
-    koren.innerHTML = h + '</div>';
+    h += '</div>';
+    if (sFormularom) h += formularHtml();
+    koren.innerHTML = h;
     var b = koren.querySelector('[data-znova]');
     if (b) b.addEventListener('click', nacitaj);
+    if (sFormularom) ozivFormular();
+  }
+
+  // ── Stratený odkaz ───────────────────────────────────────────────────────
+  // Jedno pole, jedno tlačidlo a po odoslaní vždy tá istá veta. Služba odpovedá
+  // rovnako známej aj neznámej adrese, takže sa cez tento formulár nedá zistiť,
+  // kto si štvorec kúpil. Kľúč sa sem neposiela: sem sa chodí práve preto, že žiadny nie je.
+  function formularHtml() {
+    return '<form class="pole" data-stratene novalidate>'
+      + '<h4><label for="svet-stratene">' + esc(T.stratenyPopis) + '</label></h4>'
+      + '<input id="svet-stratene" type="email" inputmode="email" autocomplete="email" maxlength="200" spellcheck="false" autocapitalize="off" placeholder="' + esc(T.stratenyPole) + '" data-vstup="email">'
+      + '<div class="pole-akcie"><button class="btn btn-solid" type="submit">' + esc(T.stratenyTlacidlo) + '</button></div>'
+      + '<p class="stav" data-stav="stratene" role="status"></p></form>';
+  }
+
+  function ozivFormular() {
+    var f = koren.querySelector('[data-stratene]');
+    if (!f) return;
+    var pole = f.querySelector('[data-vstup="email"]');
+    var stav = f.querySelector('[data-stav="stratene"]');
+    var tlacidlo = f.querySelector('button[type="submit"]');
+    f.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var adresa = (pole.value || '').trim();
+      if (adresa.indexOf('@') < 1 || adresa.length > 200) { ukazSpravu(stav, 'skryte', T.stratenyZlaAdresa); pole.focus(); return; }
+      var text = tlacidlo.textContent;
+      tlacidlo.disabled = true;
+      tlacidlo.textContent = T.stratenyOdosielam;
+      volaj('/api/owner/send-link', { email: adresa }).then(function (v) {
+        tlacidlo.disabled = false;
+        tlacidlo.textContent = text;
+        if (v.kod === 200) { pole.value = ''; ukazSpravu(stav, 'verejne', T.stratenyHotovo); return; }
+        ukazSpravu(stav, 'skryte', v.kod === 429 ? T.stratenyLimit : T.stratenyChyba);
+      });
+    });
   }
 
   var MAJITEL = null;
   function nacitaj() {
     KLUC = citajKluc();
-    if (!KLUC) { hlaska(T.bezKlucaNadpis, [T.bezKluca, T.bezKlucaPomoc]); return; }
+    CERT = citajCert();
+    if (!KLUC) { hlaska(T.bezKlucaNadpis, [T.bezKluca, T.bezKlucaPomoc], null, true); return; }
     koren.innerHTML = '<p class="majitel-hlaska" role="status">' + esc(T.nacitavam) + '</p>';
     volaj('/api/owner').then(function (v) {
       if (v.kod === 401) {
         try { sessionStorage.removeItem('svet-kluc'); sessionStorage.removeItem('svet-majitel'); } catch (e) {}
-        hlaska(T.zlyKlucNadpis, [T.zlyKluc, T.bezKlucaPomoc]);
+        hlaska(T.zlyKlucNadpis, [T.zlyKluc, T.bezKlucaPomoc], null, true);
         return;
       }
       if (v.kod !== 200 || !v.d.ok) { hlaska(T.chybaSieteNadpis, [T.chybaSiete], T.skusitZnova); return; }
@@ -290,29 +340,38 @@
     odkaz.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); ulozOdkaz.click(); } });
 
     // Certifikát: kľúč ide v hlavičke a PDF sa uloží z pamäte, takže sa kľúč
-    // nedostane do adresy ani do histórie sťahovania.
+    // nedostane do adresy ani do histórie sťahovania. Tá istá cesta sa spustí
+    // tlačidlom aj sama, keď človek príde z e-mailu s &cert=ID v adrese.
     var cert = el.querySelector('[data-certifikat]');
-    if (cert) cert.addEventListener('click', function () {
-      var text = cert.textContent;
-      cert.disabled = true;
-      cert.textContent = T.ukladam;
-      stavy.certifikat.hidden = true;
-      fetch(API + p.certificate_path, { headers: { 'X-Svet-Token': KLUC }, credentials: 'omit', cache: 'no-store', referrerPolicy: 'no-referrer' })
-        .then(function (o) { if (!o.ok) throw new Error('stav ' + o.status); return o.blob(); })
-        .then(function (blob) {
-          var adresa = URL.createObjectURL(blob), a = document.createElement('a');
-          a.href = adresa;
-          a.download = T.certifikatSubor + p.id + '.pdf';
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
-          setTimeout(function () { URL.revokeObjectURL(adresa); }, 60000);
-        })
-        .catch(function () { stavy.certifikat.hidden = false; ukazSpravu(stavy.certifikat, 'skryte', T.certifikatChyba); })
-        .then(function () { cert.disabled = false; cert.textContent = text; });
-    });
+    if (cert) cert.addEventListener('click', function () { stiahniCertifikat(p, cert, stavy.certifikat, false); });
+    if (cert && CERT && CERT === p.id) stiahniCertifikat(p, cert, stavy.certifikat, true);
 
     kreslenie(el, p, stavy.art, uloz);
+  }
+
+  /**
+   * Stiahnutie certifikátu. `sam` je príchod z e-mailu: vtedy sa o tom napíše
+   * veta, lebo sťahovanie, ktoré sa spustí bez kliknutia, inak vyzerá ako nič.
+   * Keby prehliadač také sťahovanie zastavil, tlačidlo pri štvorci ostáva.
+   */
+  function stiahniCertifikat(p, tlacidlo, stavEl, sam) {
+    var text = tlacidlo ? tlacidlo.textContent : '';
+    if (tlacidlo) { tlacidlo.disabled = true; tlacidlo.textContent = T.ukladam; }
+    if (sam) { stavEl.hidden = false; ukazSpravu(stavEl, 'caka', T.certifikatSam); } else { stavEl.hidden = true; }
+    return fetch(API + p.certificate_path, { headers: { 'X-Svet-Token': KLUC }, credentials: 'omit', cache: 'no-store', referrerPolicy: 'no-referrer' })
+      .then(function (o) { if (!o.ok) throw new Error('stav ' + o.status); return o.blob(); })
+      .then(function (blob) {
+        var adresa = URL.createObjectURL(blob), a = document.createElement('a');
+        a.href = adresa;
+        a.download = T.certifikatSubor + p.id + '.pdf';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(function () { URL.revokeObjectURL(adresa); }, 60000);
+        if (sam) ukazSpravu(stavEl, 'verejne', T.certifikatHotovo);
+      })
+      .catch(function () { stavEl.hidden = false; ukazSpravu(stavEl, 'skryte', T.certifikatChyba); })
+      .then(function () { if (tlacidlo) { tlacidlo.disabled = false; tlacidlo.textContent = text; } });
   }
 
   // ── Kreslenie 32 × 32, prstom aj myšou ───────────────────────────────────
