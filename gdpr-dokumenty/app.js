@@ -45,6 +45,13 @@ const T = {
     vymazat: 'Vymazať vyplnené údaje z tohto prehliadača?',
     testCudzi: 'Toto je testovacia platba zo Stripe test módu. Odomkne dokumenty len v prehliadači, ktorý test spustil cez ?test=1.',
     testPoznamka: '(Testovací režim: platba bola v Stripe test móde, žiadne peniaze neprišli.)',
+    testVodoznak: 'TESTOVACÍ VÝTLAČOK. Tento dokument odomkla platba v Stripe test móde, žiadne peniaze neprišli. Nepoužívajte ho ako skutočný dokument firmy.',
+    odkazNadpis: 'Uložte si tento odkaz.',
+    odkazText: 'Týmto odkazom sa k zaplatenému balíku dostanete aj v inom prehliadači alebo na inom počítači. Stránka si platbu overí znova priamo u Stripe, takže odkaz sa dá použiť opakovane.',
+    odkazMail: 'Poslať mi odkaz e-mailom',
+    odkazPravda: 'Vyplnené údaje firmy ostávajú len v tomto prehliadači a nikam sa neposielajú. V inom prehliadači sa balík odomkne, ale formulár si vyplníte znova. Od nás vám o tomto nákupe žiadny e-mail nepríde, doklad posiela Stripe.',
+    odkazPredmet: 'Odkaz na môj balík GDPR dokumentov z arling.sk',
+    odkazTelo: (u) => 'Odkaz na zaplatený balík GDPR dokumentov:\n\n' + u + '\n\nOdkaz si odložte. Po jeho otvorení sa balík odomkne aj v inom prehliadači.',
     docxPripona: ' (DOCX)',
     locale: 'sk-SK',
     ucetOdosielam: 'Posielam kód…',
@@ -83,6 +90,13 @@ const T = {
     vymazat: 'Smazat vyplněné údaje z tohoto prohlížeče?',
     testCudzi: 'Toto je testovací platba ze Stripe test módu. Odemkne dokumenty jen v prohlížeči, který test spustil přes ?test=1.',
     testPoznamka: '(Testovací režim: platba byla ve Stripe test módu, žádné peníze nepřišly.)',
+    testVodoznak: 'TESTOVACÍ VÝTISK. Tento dokument odemkla platba ve Stripe test módu, žádné peníze nepřišly. Nepoužívejte ho jako skutečný dokument firmy.',
+    odkazNadpis: 'Uložte si tento odkaz.',
+    odkazText: 'Tímto odkazem se k zaplacenému balíčku dostanete i v jiném prohlížeči nebo na jiném počítači. Stránka si platbu ověří znovu přímo u Stripe, takže odkaz lze použít opakovaně.',
+    odkazMail: 'Poslat mi odkaz e-mailem',
+    odkazPravda: 'Vyplněné údaje firmy zůstávají jen v tomto prohlížeči a nikam se neodesílají. V jiném prohlížeči se balíček odemkne, ale formulář vyplníte znovu. Od nás vám o tomto nákupu žádný e-mail nepřijde, doklad posílá Stripe.',
+    odkazPredmet: 'Odkaz na můj balíček GDPR dokumentů z arling.sk',
+    odkazTelo: (u) => 'Odkaz na zaplacený balíček GDPR dokumentů:\n\n' + u + '\n\nOdkaz si uložte. Po jeho otevření se balíček odemkne i v jiném prohlížeči.',
     docxPripona: ' (DOCX)',
     locale: 'cs-CZ',
     ucetOdosielam: 'Posílám kód…',
@@ -121,6 +135,13 @@ const T = {
     vymazat: 'Eingegebene Daten aus diesem Browser löschen?',
     testCudzi: 'Dies ist eine Testzahlung aus dem Stripe-Testmodus. Sie schaltet Dokumente nur in dem Browser frei, der den Test über ?test=1 gestartet hat.',
     testPoznamka: '(Testmodus: die Zahlung erfolgte im Stripe-Testmodus, es wurde kein Geld überwiesen.)',
+    testVodoznak: 'TESTAUSDRUCK. Dieses Dokument wurde durch eine Zahlung im Stripe-Testmodus freigeschaltet, es wurde kein Geld überwiesen. Verwenden Sie es nicht als echtes Unternehmensdokument.',
+    odkazNadpis: 'Bewahren Sie diesen Link auf.',
+    odkazText: 'Mit diesem Link kommen Sie auch in einem anderen Browser oder an einem anderen Rechner an das bezahlte Paket. Die Seite prüft die Zahlung erneut direkt bei Stripe, der Link lässt sich also mehrfach verwenden.',
+    odkazMail: 'Link per E-Mail an mich senden',
+    odkazPravda: 'Die eingegebenen Unternehmensdaten bleiben nur in diesem Browser und werden nirgendwohin gesendet. In einem anderen Browser wird das Paket freigeschaltet, das Formular füllen Sie dort erneut aus. Von uns kommt zu diesem Kauf keine E-Mail, den Beleg sendet Stripe.',
+    odkazPredmet: 'Link zu meinem GDPR-Dokumentenpaket von arling.sk',
+    odkazTelo: (u) => 'Link zum bezahlten GDPR-Dokumentenpaket:\n\n' + u + '\n\nBewahren Sie den Link auf. Beim Öffnen wird das Paket auch in einem anderen Browser freigeschaltet.',
     docxPripona: ' (DOCX)',
     locale: 'de-DE',
     ucetOdosielam: 'Code wird gesendet…',
@@ -242,11 +263,18 @@ function sledujCenuVidenu() {
 /* ── Náhľad ────────────────────────────────────────────────────────────── */
 let vybrany = 'd1';
 let d = null;
-const PATA = () => T.pata(new Date().toLocaleDateString(T.locale));
+const PATA = () => T.pata(new Date().toLocaleDateString(T.locale)) + (testovyNakup() ? ' ' + T.testVodoznak : '');
 
 function odomknute() {
   const z = nacitaj('gdpr:zaplatene');
   return !!(z && z.session);
+}
+/* Odomkla balík testovacia platba (Stripe test mód)? Potom smie vzniknúť len
+ * výslovne označený testovací výstup: pätka nesie vetu o teste a názov súboru
+ * začína na TEST-. Živý balík sa tým nemení. Nález N1 auditu z 21. 9. 2026. */
+function testovyNakup() {
+  const z = nacitaj('gdpr:zaplatene');
+  return !!(z && z.session && z.test === true);
 }
 function prekresli() {
   d = precitajFormular();
@@ -274,7 +302,7 @@ function prekresli() {
   const zadarmoBtn = $('stiahnut-zadarmo');
   zadarmoBtn.hidden = !dok.zadarmo;
   stiahnutBlok.hidden = !odomknute();
-  if (odomknute()) postavStiahnutie(zoznam);
+  if (odomknute()) { postavStiahnutie(zoznam); postavOdkazSpat(); }
   $('pocet-dokumentov').textContent = zoznam.length;
   const pozn = $('nahlad-poznamka');
   if (pozn) pozn.innerHTML = odomknute() ? T.poznamkaOdomknute(zoznam.length) : T.poznamka(zoznam.length);
@@ -314,7 +342,73 @@ function stiahni(nazov, bytes, typ) {
   setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
 }
 const bezDiakritiky = (s) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-|-$/g, '').toLowerCase();
-function subor(x) { return bezDiakritiky(x.nazov).slice(0, 60) + '.docx'; }
+function subor(x) { return (testovyNakup() ? 'TEST-' : '') + bezDiakritiky(x.nazov).slice(0, 60) + '.docx'; }
+/* ── Návrat k nákupu bez e-mailu ──────────────────────────────────────────
+ * Od ARLing nechodí pri tomto balíku žiadny e-mail a odomknutie žije
+ * v localStorage jedného prehliadača (nález N5 auditu z 21. 9. 2026). Kto
+ * zaplatí v telefóne a vráti sa na počítači, nemá dnes cestu späť.
+ * Najmenšie poctivé riešenie bez zmeny backendu: ukázať odkaz so session id.
+ * Ten istý koncový bod, ktorý stránka volá po platbe
+ * (GET /v1/kontrola/status), je len čítanie session v Stripe a dá sa volať
+ * opakovane, takže otvorenie odkazu v inom prehliadači balík odomkne znova.
+ * Odosielanie e-mailu tu nie je: tlačidlo otvorí vlastného poštového klienta
+ * cez mailto:, nič sa neposiela z nášho servera. */
+function odkazNaNakup() {
+  const z = nacitaj('gdpr:zaplatene');
+  if (!z || !z.session) return '';
+  try {
+    const u = new URL(location.href);
+    u.hash = '';
+    u.search = '';
+    u.searchParams.set('session_id', z.session);
+    if (z.test) u.searchParams.set('test', '1');
+    return u.toString();
+  } catch (e) { return ''; }
+}
+function postavOdkazSpat() {
+  const obal = $('stiahnut');
+  if (!obal) return;
+  const url = odkazNaNakup();
+  let blok = $('odkaz-spat');
+  if (!url) { if (blok) blok.hidden = true; return; }
+  if (!blok) {
+    blok = document.createElement('div');
+    blok.id = 'odkaz-spat';
+    blok.className = 'odkaz-spat';
+    obal.appendChild(blok);
+  }
+  blok.hidden = false;
+  blok.textContent = '';
+  const h = document.createElement('h3');
+  h.textContent = T.odkazNadpis;
+  blok.appendChild(h);
+  const p = document.createElement('p');
+  p.textContent = T.odkazText;
+  blok.appendChild(p);
+  const pa = document.createElement('p');
+  pa.className = 'odkaz-spat-url';
+  // Dlhé session id sa na telefóne musí zalomiť, inak by rozbilo rozloženie.
+  pa.style.overflowWrap = 'anywhere';
+  const a = document.createElement('a');
+  a.href = url;
+  a.textContent = url;
+  a.rel = 'nofollow';
+  pa.appendChild(a);
+  blok.appendChild(pa);
+  const cta = document.createElement('p');
+  const mail = document.createElement('a');
+  mail.className = 'btn btn-line';
+  mail.href = 'mailto:?subject=' + encodeURIComponent(T.odkazPredmet) + '&body=' + encodeURIComponent(T.odkazTelo(url));
+  mail.textContent = T.odkazMail;
+  mail.addEventListener('click', () => track('gdpr_odkaz_mailto', { produkt: 'gdpr', jazyk: LANG }));
+  cta.appendChild(mail);
+  blok.appendChild(cta);
+  const pravda = document.createElement('p');
+  pravda.className = 'pomoc';
+  pravda.textContent = T.odkazPravda;
+  blok.appendChild(pravda);
+}
+
 function postavStiahnutie(zoznam) {
   const ul = $('zoznam-stiahnutie');
   ul.textContent = '';
@@ -336,7 +430,7 @@ $('stiahnut-zadarmo').addEventListener('click', () => {
 $('stiahnut-vsetko').addEventListener('click', () => {
   const zoznam = zoznamDokumentov(d);
   const subory = zoznam.map((x) => [subor(x), docx(x.fn(d), PATA())]);
-  stiahni('gdpr-dokumenty-' + bezDiakritiky((d.firma && d.firma.nazov) || 'firma') + '.zip', zip(subory), 'application/zip');
+  stiahni((testovyNakup() ? 'TEST-' : '') + 'gdpr-dokumenty-' + bezDiakritiky((d.firma && d.firma.nazov) || 'firma') + '.zip', zip(subory), 'application/zip');
   track('gdpr_stiahnute', { dokument: 'zip', pocet: subory.length, produkt: 'gdpr', jazyk: LANG });
 });
 
@@ -440,7 +534,13 @@ async function overPlatbu(sid, test, pokus) {
   } catch (e) { siet = true; }
   // Suma pred zľavovým kódom (amount_subtotal); starší worker ju neposiela, vtedy platí amount_total.
   const zaklad = st && typeof st.amount_subtotal === 'number' ? st.amount_subtotal : st && st.amount_total;
-  if (st && st.paid && typeof zaklad === 'number' && zaklad >= CENA_CENTY) {
+  /* Presne 3900 centov v eurách a livemode zhodný s režimom tohto prehliadača.
+   * Predtým tu stálo „aspoň 3900“ bez livemode, takže balík odomkla aj zaplatená
+   * kontrola za 149 € a testovacia platba vydávala ostrý balík (nález N1 auditu
+   * z 21. 9. 2026). Zľavový kód UCTOVNIK znižuje amount_total, nie
+   * amount_subtotal, preto presná zhoda zľavu nerozbije. */
+  if (st && st.paid && typeof zaklad === 'number' && zaklad === CENA_CENTY
+      && st.currency === 'eur' && st.livemode === !testRezim()) {
     uloz('gdpr:zaplatene', { session: sid, t: Date.now(), test: st.livemode === false });
     try { localStorage.removeItem(CAKAJUCA); } catch (e) { /* nič */ }
     stavPlatby.innerHTML = T.zaplatene + (st.livemode === false ? ' ' + T.testPoznamka : '');
