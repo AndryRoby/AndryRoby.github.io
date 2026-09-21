@@ -4,6 +4,8 @@
  * page was last built. Nothing leaves the browser. */
 import { posunDen, denVTyzdni, urovenDna, pekneDatum, kratkyDatum, UROVNE, DNI, MESIACE } from './plan.mjs';
 import { todayBratislava, isValidDate } from './generator.mjs';
+// A day older than the window has no page of its own (/games/okno.mjs).
+import { adresaDna } from '../okno.mjs?v=1';
 
 function nacitaj(k) { try { const s = localStorage.getItem(k); return s ? JSON.parse(s) : null; } catch (e) { return null; } }
 function formatCas(sek) {
@@ -70,7 +72,7 @@ if (mesiace) {
     const tb = document.querySelector('#historia-tab tbody');
     for (const h of hotove) {
       const tr = document.createElement('tr');
-      tr.innerHTML = '<td><a href="/games/magpies/' + h.d + '/">' + pekneDatum(h.d) + '</a></td><td>' + UROVNE[urovenDna(h.d)].label + '</td><td><b>' + formatCas(h.sec) + '</b></td><td>' + (h.hints || 'none') + '</td>';
+      tr.innerHTML = '<td><a href="' + adresaDna('/games/magpies/', h.d, dnes) + '">' + pekneDatum(h.d) + '</a></td><td>' + UROVNE[urovenDna(h.d)].label + '</td><td><b>' + formatCas(h.sec) + '</b></td><td>' + (h.hints || 'none') + '</td>';
       tb.appendChild(tr);
     }
     blok.hidden = false;
