@@ -63,6 +63,17 @@ export const DICT = {
     de: 'Screenshot des Zahlungsabgleichs: zugeordnete Rechnungen, Überzahlungen, überfällige Zahlungen und nicht zugeordnete Zahlungen',
   },
   'rail.hero': { sk: 'Úvod', en: 'Start', de: 'Anfang' },
+  // ilustrácia nad prvou veľkou sekciou (vyrobená generátorom obrázkov podľa nášho zadania)
+  'ilu.alt': {
+    sk: 'Dlhý biely papierový pás bankového výpisu sa skladá do úhľadnej mriežky bielych kartičiek, jedna kartička je z medi.',
+    en: 'A long white paper bank statement strip folding itself into a tidy grid of white cards, with one card in copper.',
+    de: 'Ein langer weißer Papierstreifen eines Kontoauszugs faltet sich zu einem ordentlichen Raster weißer Karten, eine Karte ist aus Kupfer.',
+  },
+  'ilu.caption': {
+    sk: 'Výpis z banky poskladaný do tabuľky. Jeden riadok drží súčet.',
+    en: 'A bank statement folded into a table. One row holds the total.',
+    de: 'Ein Kontoauszug, zu einer Tabelle gefaltet. Eine Zeile hält die Summe.',
+  },
 
   // ── section 01: tools index ─────────────────────────────────────────
   's1.h2': { sk: 'Štyri nástroje, jeden za druhým.', en: 'Four tools, one after another.', de: 'Vier Tools, eines nach dem anderen.' },

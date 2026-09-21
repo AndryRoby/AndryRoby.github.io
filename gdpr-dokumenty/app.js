@@ -163,7 +163,19 @@ const T = {
 const KLUC_FORM = 'gdpr:formular:' + LANG;
 
 const API = 'https://arling-asistent.arling.workers.dev';
-const CENA_CENTY = 3900;
+/* Ceny, ktoré tento balík odomykajú, v centoch. Prvá je tá, ktorá je na stránke
+ * dnes; ďalšie sú ceny, za ktoré ľudia zaplatili v minulosti.
+ *
+ * Prečo zoznam a nie jedno číslo (22. 9. 2026): zmena ceny je podľa
+ * ops/stripe/cennik.md vždy NOVÝ objekt Price a nový platobný odkaz, starý sa
+ * vypína až po prepísaní stránok. Pri jedinom čísle by sa v tom okne buď
+ * neodomklo to, čo si niekto práve kúpil za novú cenu, alebo by prestal
+ * fungovať návratový odkaz tomu, kto zaplatil za starú. Zoznam obe okná zatvára
+ * a nič nepúšťa navyše: iná suma než tieto (napríklad kontrola za 149 €) balík
+ * neodomkne, presne ako doteraz. Chystaná cena 49 € je v zozname vopred, pokiaľ
+ * v Stripe cena 4900 neexistuje, nemá ju kto zaplatiť. */
+const CENY_CENTY = [3900, 4900];
+const CENA_CENTY = CENY_CENTY[0];
 const $ = (id) => document.getElementById(id);
 const form = $('formular');
 const nahlad = $('nahlad');
@@ -534,12 +546,12 @@ async function overPlatbu(sid, test, pokus) {
   } catch (e) { siet = true; }
   // Suma pred zľavovým kódom (amount_subtotal); starší worker ju neposiela, vtedy platí amount_total.
   const zaklad = st && typeof st.amount_subtotal === 'number' ? st.amount_subtotal : st && st.amount_total;
-  /* Presne 3900 centov v eurách a livemode zhodný s režimom tohto prehliadača.
-   * Predtým tu stálo „aspoň 3900“ bez livemode, takže balík odomkla aj zaplatená
-   * kontrola za 149 € a testovacia platba vydávala ostrý balík (nález N1 auditu
-   * z 21. 9. 2026). Zľavový kód UCTOVNIK znižuje amount_total, nie
-   * amount_subtotal, preto presná zhoda zľavu nerozbije. */
-  if (st && st.paid && typeof zaklad === 'number' && zaklad === CENA_CENTY
+  /* Presne jedna zo súm v CENY_CENTY, v eurách, a livemode zhodný s režimom
+   * tohto prehliadača. Predtým tu stálo „aspoň 3900“ bez livemode, takže balík
+   * odomkla aj zaplatená kontrola za 149 € a testovacia platba vydávala ostrý
+   * balík (nález N1 auditu z 21. 9. 2026). Zľavový kód UCTOVNIK znižuje
+   * amount_total, nie amount_subtotal, preto presná zhoda zľavu nerozbije. */
+  if (st && st.paid && typeof zaklad === 'number' && CENY_CENTY.includes(zaklad)
       && st.currency === 'eur' && st.livemode === !testRezim()) {
     uloz('gdpr:zaplatene', { session: sid, t: Date.now(), test: st.livemode === false });
     try { localStorage.removeItem(CAKAJUCA); } catch (e) { /* nič */ }
