@@ -1,25 +1,26 @@
 /* The World in Squares: prehliadač mapy.
    Zdroj: ops/svet/svet.js, do hubu ho kopíruje ops/svet/postav.mjs. Neupravovať v produkte.
 
-   Jediná technická požiadavka vlastníka znela „nesekavo a dobre optimalizované“.
+   Požiadavka vlastníka: mapa má byť krásna, presná a nesekavá, s hranicami všade.
    Preto:
      · jeden canvas, žiadna knižnica (knižnica by aj tak neprešla prísnym CSP hubu),
-     · jedna slučka requestAnimationFrame s dirty príznakom, nekreslí sa do prázdna,
-     · kreslí sa priamo v zariadeniových pixeloch, takže čiary mriežky sú ostré
-       a v snímku nie je ani jedno ctx.scale,
-     · podkladové dlaždice ako ImageBitmap, dekódované mimo hlavného vlákna,
-     · devicePixelRatio zastropovaný na 2,
-     · v snímku sa nealokuje: všetky pomocné čísla sú mimo slučky,
-     · mriežka sa kreslí ako jedna cesta a až nad prahom priblíženia.
+     · podklad je vektor z Natural Earth v troch úrovniach podrobnosti; sťahujú sa
+       len dlaždice vo výreze a každá sa raz prevedie na Path2D, ktoré sa potom
+       len posúva a škáluje transformáciou plátna,
+     · jedna slučka requestAnimationFrame s dirty príznakom, nekreslí sa do prázdna;
+       zotrvačnosť, plynulé priblíženie aj prelet bežia v tej istej slučke,
+     · kreslí sa v zariadeniových pixeloch, devicePixelRatio zastropovaný na 2,
+     · keď snímky pri ťahaní nestíhajú, podklad sa vykreslí raz do zásobného plátna
+       s okrajom a pri posune sa len prekladá,
+     · mriežka sa kreslí ako jedna cesta a až keď má bunka aspoň 6 px.
 
-   Mapa je v Mercatore. Nie z módy: naša bunka je na zemi štvorec 10 × 10 km a
+   Mapa je v Mercatore. Nie z módy: naša bunka je na zemi štvorec asi 10 × 10 km a
    Mercator je konformný, takže štvorec na zemi je štvorec aj na obrazovke, v každom
-   priblížení a na každej šírke. Na obyčajnej rovnobežníkovej mape by bunka nad
-   Bratislavou bola obdĺžnik 3:2 a produkt menom „svet po štvorcoch“ by ukazoval
-   obdĺžniky.
+   priblížení a na každej šírke.
 
-   Keď homelab nebeží, mapa sa načíta z podkladových dlaždíc a hore je úprimný pás.
-   Žiadne nekonečné kolečko a žiadne tvrdenie, že sa dá kúpiť, keď sa nedá. */
+   Keď homelab nebeží, mapa sa načíta celá a hore je úprimný pás. Žiadne nekonečné
+   kolečko a žiadne tvrdenie, že sa dá kúpiť, keď sa nedá.
+   Ladenie: ?debug=1 vypíše čas kreslenia snímky, ?debug=2 navyše spraví meraný posun. */
 (function () {
   'use strict';
 
@@ -34,18 +35,32 @@
 
   // ── Spoločné pomôcky. Používa ich mapa, stránka parcely aj rebríček. ─────
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (x) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[x]; }); }
-  function cisloText(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '\u00a0'); }
-  function km(x) { var s = x.toFixed(2); return JAZYK === 'en' ? s : s.replace('.', ','); }
+  function cisloText(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' '); }
+  function km(x) { return x.toFixed(2); }
   function stupne(lat, lon) {
     return Math.abs(lat).toFixed(3) + '° ' + (lat >= 0 ? T.sever : T.juh) + ', '
       + Math.abs(lon).toFixed(3) + '° ' + (lon >= 0 ? T.vychod : T.zapad);
   }
   /**
+   * Meno miesta. Krajina existuje len pri súši s kódom krajiny: more, Antarktída a
+   * územia bez kódu majú namiesto nej pole area a krajina sa k nim nikdy nedopĺňa.
+   * Pri mori je mesto len najbližšie mesto na brehu, preto sa píše zvlášť.
+   */
+  function miestoHtml(p) {
+    if (!p) return '';
+    var krajina = p.country_name || p.country || '';
+    if (p.terrain === 'sea') {
+      return '<b>' + esc(p.area || T.more) + '</b>' + (p.city ? '<span class="list-blizko">' + esc(T.najblizsie) + ' ' + esc(p.city) + '</span>' : '');
+    }
+    var casti = [p.region && p.region !== p.city ? p.region : null, krajina || p.area].filter(Boolean);
+    if (p.city) return '<b>' + esc(p.city) + '</b>' + (casti.length ? ', ' + esc(casti.join(', ')) : '');
+    return casti.length ? '<b>' + esc(casti.join(', ')) + '</b>' : '';
+  }
+  /**
    * Umami. Návšteva, klik na bunku, otvorenie pokladne a návrat z nej sa merajú
    * oddelene; platbu samotnú vidí len služba cez webhook, stránka ju nemeria.
    * Tento skript beží pred skriptom Umami (oba sú defer, náš je v hlave prvý),
-   * takže prvé udalosti počkajú na načítanie stránky. Bez toho sa zobrazenie
-   * mapy nezapísalo nikdy.
+   * takže prvé udalosti počkajú na načítanie stránky.
    */
   var cakajuceUdalosti = [];
   function sleduj(meno) {
@@ -67,6 +82,7 @@
       if (o.ok) return o.json();
       // Chyba nesie aj dôvod zo služby ({"reason": …}): 403 môže byť cudzí držiak
       // aj vypnutý testovací režim a človek má dostať vetu k tomu, čo sa naozaj stalo.
+      // Vety služby sa nezobrazujú, len jej kódy: stránka má na každý vlastnú vetu.
       return o.json().catch(function () { return {}; }).then(function (d) {
         var chyba = new Error('stav ' + o.status);
         chyba.dovod = (d && d.reason) || '';
@@ -109,7 +125,8 @@
   }
 
   // ── Mercator ─────────────────────────────────────────────────────────────
-  var MERC = 85.05112877980659;
+  // Svet je štvorec: dĺžka ±180 a Mercatorova súradnica ±180 (šírka ±85,0511°).
+  var MERC = 85.05112877980659, Y_SVETA = 180;
   function doY(lat) {
     var f = lat > MERC ? MERC : lat < -MERC ? -MERC : lat;
     return (180 / Math.PI) * Math.log(Math.tan(Math.PI / 4 + (f * Math.PI) / 360));
@@ -122,10 +139,9 @@
   var ctx = platno.getContext('2d', { alpha: false });
   var dpr = Math.min(2, window.devicePixelRatio || 1);
   var S = {
-    lon: 12, my: doY(24), s: 1,        // s je v zariadeniových pixeloch na stupeň dĺžky; prvý pohľad je celý svet
+    lon: 10, my: doY(25), s: 1,        // s je v zariadeniových pixeloch na stupeň dĺžky
     w: 0, h: 0, stredX: 0, stredY: 0, volnaVyska: 0,
     vybrana: null, podKurzorom: null,
-    mriezka: null, dlazdice: [],
     sluzba: 'neznama', stav: null,
     vyberOd: 0,
   };
@@ -137,9 +153,9 @@
   // návštev a obnovenie stránky nemá ďakovať druhý raz.
   var parametre = new URLSearchParams(location.search);
   // Skúšobný nákup: ?test=1 v adrese. Pokladňa si potom od služby pýta testovací
-  // režim Stripe (testovací kľúč a testovaciu cenu) a povie to aj človeku. Bez
-  // tohto sa z tejto stránky dala otvoriť len živá pokladňa.
+  // režim Stripe (testovací kľúč a testovaciu cenu) a povie to aj človeku.
   var TEST = parametre.get('test') === '1';
+  var LADENIE = Number(parametre.get('debug')) || 0;
   // Balík sa kupuje bez štvorca, takže návrat z jeho pokladne nemá ?p= a nesmie
   // tvrdiť, že nejaký štvorec čaká alebo že je váš.
   var navratBezStvorca = !Number(parametre.get('p'));
@@ -151,61 +167,23 @@
     sleduj(navratZPokladne === 'paid' ? 'svet_navrat_z_pokladne' : 'svet_pokladna_zrusena');
   }
 
+  // Paleta webu: more je presne pozadie stránky, súš o stupeň svetlejšia, pobrežie
+  // tenká tlmená meď, hranice teplá sivá. Čiary sú nepriehľadné farby, nie alfa:
+  // kde sa na okraji dlaždíc stretnú dva konce, nevznikne svetlejšia bodka.
   var FARBY = {
-    more: '#0a0908', mriezka: 'rgba(255,255,255,.085)', mriezkaSilna: 'rgba(255,255,255,.16)',
-    vyber: '#ffd9c9', predane: 'rgba(242,100,60,.85)', rezervovane: 'rgba(242,100,60,.32)',
+    more: '#0a0908', sus: '#1b1714', pobrezie: '#94452c', breh: '#4e2c20', hranica: '#6b6057', kraj: '#332c27',
+    stat: '#978f86', mesto: '#ddd7d0', bod: '#f2643c', voda: '#6f675f',
+    mriezka: 'rgba(255,255,255,', vyber: '#ffd9c9',
+    predane: 'rgba(242,100,60,.85)', rezervovane: 'rgba(242,100,60,.32)', moje: 'rgba(255,217,201,.92)',
   };
   // Stavy bunky v /api/chunk, jeden bajt na bunku. Tie isté čísla ako ST_* v
-  // products/svet/mriezka.py: 0 nepredajné (more, Antarktída, územie bez kódu),
+  // products/svet/mriezka.py: 0 zatvorené (pri predaji celého sveta sa nevyskytuje),
   // 1 voľné, 2 práve v pokladni, 3 až 7 zaplatené.
-  var ST_ZATVORENE = 0, ST_VOLNE = 1, ST_REZERVOVANE = 2, ST_PREDANE = 3;
-
-  // ── Dlaždice ─────────────────────────────────────────────────────────────
-  var obrazky = {};
-  function dlazdica(src) {
-    var z = obrazky[src];
-    if (z) return z.bmp || null;
-    obrazky[src] = z = { bmp: null };
-    fetch(ZAKLAD + src, { cache: 'force-cache' })
-      .then(function (o) { if (!o.ok) throw 0; return o.blob(); })
-      .then(function (b) { return createImageBitmap(b); })
-      .then(function (bmp) { z.bmp = bmp; ziadaj(); })
-      .catch(function () { z.chyba = true; });
-    return null;
-  }
-
-  function hustota(d) { return d.w / (d.xMax - d.xMin); }
-
-  /**
-   * Najlepšia dlaždica zo skupiny: najhrubšia, ktorá je ešte dosť hustá pre
-   * aktuálne priblíženie, a keď taká nie je, tak najhustejšia dostupná. Kým sa
-   * hustejšia sťahuje, kreslí sa hrubšia, takže mapa nikdy nezmizne.
-   */
-  function najlepsia(zoznam, musiByt) {
-    var v = null;
-    for (var i = 0; i < zoznam.length; i++) {
-      var d = zoznam[i];
-      if (musiByt && !(obrazky[d.src] && obrazky[d.src].bmp)) continue;
-      if (!v) { v = d; continue; }
-      var hd = hustota(d), hv = hustota(v);
-      if (hv < S.s ? hd > hv : (hd >= S.s && hd < hv)) v = d;
-    }
-    return v;
-  }
-
-  function vidnoDlazdicu(d) {
-    return naX(d.xMax) > 0 && naX(d.xMin) < S.w && naY(d.yMin) > 0 && naY(d.yMax) < S.h;
-  }
-  /** Kryje dlaždica celý výrez? Potom nemá zmysel sťahovať hustejšiu svetovú. */
-  function pokryva(d) {
-    return naX(d.xMin) <= 0 && naX(d.xMax) >= S.w && naY(d.yMax) <= 0 && naY(d.yMin) >= S.h;
-  }
+  var ST_VOLNE = 1, ST_REZERVOVANE = 2, ST_PREDANE = 3;
 
   // ── Prevody obrazovka a svet ─────────────────────────────────────────────
   // Stred pohľadu nie je stred plátna. List s vybranou bunkou je na telefóne
-  // spodný hárok a na počítači karta vľavo dole, takže by inak bola vybraná
-  // bunka pod ním. Tu sa raz spočíta stred voľnej plochy a všetko ostatné sa
-  // počíta z neho.
+  // spodný hárok, takže by inak bola vybraná bunka pod ním.
   function naX(lon) { return (lon - S.lon) * S.s + S.stredX; }
   function naY(my) { return (S.my - my) * S.s + S.stredY; }
   function zX(x) { return S.lon + (x - S.stredX) / S.s; }
@@ -222,93 +200,367 @@
     }
   }
 
+  /**
+   * Najmenšie priblíženie je to, pri ktorom sa do okna zmestí celý svet, na šírku
+   * aj na výšku; do strán sa svet opakuje. Najväčšie má bunku 220 px.
+   */
   function medze() {
-    var d = S.dlazdice[0] || { yMin: -105.6, yMax: 166 };
-    var minS = Math.max(S.w / 360, S.h / (d.yMax - d.yMin));
     var r = riadokZoSirky(zY(S.my));
-    var maxS = 220 / (360 / STL[r]);
-    return { minS: minS, maxS: maxS, yMin: d.yMin, yMax: d.yMax };
+    return { minS: Math.max(0.2, Math.min(S.w / 360, S.h / (2 * Y_SVETA))), maxS: 220 / (360 / STL[r]) };
   }
   function uprav() {
     var m = medze();
     if (S.s < m.minS) S.s = m.minS;
     if (S.s > m.maxS) S.s = m.maxS;
-    var pol = S.h / 2 / S.s;
-    var lo = m.yMin + pol, hi = m.yMax - pol;
-    S.my = lo > hi ? (m.yMin + m.yMax) / 2 : Math.min(hi, Math.max(lo, S.my));
+    // Okraj sveta nesmie vojsť do okna, kým je svet vyšší než okno. Keď je nižší
+    // (telefón na výšku pri celom svete), smie sa v okne posúvať, ale nie z neho von.
+    var lo = (S.h - S.stredY) / S.s - Y_SVETA, hi = Y_SVETA - S.stredY / S.s;
+    S.my = lo > hi ? Math.min(lo, Math.max(hi, S.my)) : Math.min(hi, Math.max(lo, S.my));
     S.lon = (((S.lon + 180) % 360) + 360) % 360 - 180;
     naplanujBloky();
   }
 
-  // ── Kreslenie ────────────────────────────────────────────────────────────
-  var naplanovane = false, poslednyCas = 0;
-  function ziadaj() { if (!naplanovane) { naplanovane = true; requestAnimationFrame(snimok); } }
-  function snimok(t) { naplanovane = false; poslednyCas = t; kresli(t); if (zivaAnimacia(t)) ziadaj(); }
-  function zivaAnimacia(t) { return !POKOJ && S.vyberOd && t - S.vyberOd < 240; }
-
-  /**
-   * Nakreslí len tú časť dlaždice, ktorá je práve vidno. Kreslenie celej
-   * dlaždice do obdĺžnika širokého desaťtisíce pixelov Chrome pri väčšom
-   * priblížení potichu preskočí a z mapy ostane čierna plocha.
-   */
-  function kresliDlazdicu(d) {
-    var bmp = obrazky[d.src].bmp;
-    var spx = d.w / (d.xMax - d.xMin), spy = d.h / (d.yMax - d.yMin);
-    var yHore = Math.min(d.yMax, zYObr(0)), yDole = Math.max(d.yMin, zYObr(S.h));
-    if (yHore <= yDole) return;
-    var sy = Math.max(0, (d.yMax - yHore) * spy), sh = Math.min(d.h - sy, (yHore - yDole) * spy);
-    var dy = naY(yHore), dh = (yHore - yDole) * S.s;
-    ctx.imageSmoothingEnabled = S.s < spx;
-    var odK = d.svet ? Math.floor((zX(0) + 180) / 360) : 0;
-    var doK = d.svet ? Math.floor((zX(S.w) + 180) / 360) : 0;
-    for (var k = odK; k <= doK; k++) {
-      var lonOd = Math.max(d.xMin, zX(0) - k * 360), lonDo = Math.min(d.xMax, zX(S.w) - k * 360);
-      if (lonDo <= lonOd) continue;
-      var sx = Math.max(0, (lonOd - d.xMin) * spx), sw = Math.min(d.w - sx, (lonDo - lonOd) * spx);
-      if (sw <= 0 || sh <= 0) continue;
-      ctx.drawImage(bmp, sx, sy, sw, sh, naX(lonOd + k * 360), dy, (lonDo - lonOd) * S.s, dh);
+  // ── Vektorový podklad ────────────────────────────────────────────────────
+  // Index dlaždíc príde v mriezka.json. Dlaždica je JSON s celými číslami: prvý bod
+  // tvaru a potom rozdiely, v jednotkách úrovne od ľavého horného rohu dlaždice.
+  var POD = null, DL = {}, snimokC = 0, PRAZDNA = { ok: true }, nacitaneV = 0;
+  function cestaZ(zoznam, zavri) {
+    var p = new Path2D();
+    for (var i = 0; i < zoznam.length; i++) {
+      var a = zoznam[i], x = a[0], y = a[1];
+      p.moveTo(x, y);
+      for (var k = 2; k < a.length; k += 2) { x += a[k]; y += a[k + 1]; p.lineTo(x, y); }
+      if (zavri) p.closePath();
     }
+    return p;
+  }
+  /** Hotová dlaždica, alebo null, kým sa sťahuje. S lenHotove sa nič nové nepýta. */
+  function dlazdicaV(z, i, j, lenHotove) {
+    var u = POD.urovne[z];
+    if (!POD.ma[z][j * u.n + i]) return PRAZDNA;   // otvorené more, súbor neexistuje
+    var meno = z + '/' + i + '_' + j, d = DL[meno];
+    if (d) { d.pouzita = snimokC; return d.ok ? d : null; }
+    if (lenHotove) return null;
+    DL[meno] = d = { ok: false, pouzita: snimokC };
+    fetch(ZAKLAD + 'map/' + meno + '.json?v=' + POD.v, { cache: 'force-cache' })
+      .then(function (o) { if (!o.ok) throw 0; return o.json(); })
+      .then(function (g) {
+        ['l', 'k'].forEach(function (v) { if (g[v]) d[v] = cestaZ(g[v], true); });
+        ['c', 'j', 'b', 'd', 'a'].forEach(function (v) { if (g[v]) d[v] = cestaZ(g[v], false); });
+        d.p = g.p; d.n = g.n; d.s = g.s;
+        d.ok = true;
+        nacitaneV = performance.now();
+        upratDlazdice();
+        kes.plati = false;
+        ziadaj();
+      })
+      .catch(function () { setTimeout(function () { delete DL[meno]; ziadaj(); }, 5000); });
+    return null;
+  }
+  /** V pamäti ostáva najviac 72 dlaždíc; zahadzujú sa tie, ktoré sa najdlhšie nekreslili. */
+  function upratDlazdice() {
+    var kluce = Object.keys(DL);
+    if (kluce.length <= 72) return;
+    kluce.sort(function (a, b) { return DL[a].pouzita - DL[b].pouzita; });
+    for (var i = 0; i < kluce.length - 72; i++) if (kluce[i] !== '0/0_0') delete DL[kluce[i]];
   }
 
-  var svetove = [], regionalne = [];
+  /** Úroveň podrobnosti pre dané priblíženie. */
+  function urovenPre(s) { return s >= POD.urovne[2].od ? 2 : s >= POD.urovne[1].od ? 1 : 0; }
+
+  /**
+   * Čo sa má nakresliť pre pohľad V: dlaždice úrovne z vo výreze. Kým sa jemnejšia
+   * sťahuje, kreslí sa na jej mieste hrubšia, orezaná na jej obdĺžnik, takže mapa
+   * nikdy nezmizne a nikdy nie sú cez seba dve rôzne pobrežia.
+   */
+  function kusyPre(V, z) {
+    var u = POD.urovne[z], D = 360 / u.n, von = [];
+    var lonOd = V.lon - V.cx / V.s, lonDo = V.lon + (V.w - V.cx) / V.s;
+    var yHore = Math.min(Y_SVETA, V.my + V.cy / V.s), yDole = Math.max(-Y_SVETA, V.my - (V.h - V.cy) / V.s);
+    if (yHore <= yDole) return von;
+    var jOd = Math.max(0, Math.floor((Y_SVETA - yHore) / D)), jDo = Math.min(u.n - 1, Math.floor((Y_SVETA - yDole) / D));
+    for (var iu = Math.floor((lonOd + 180) / D); iu <= Math.floor((lonDo + 180) / D); iu++) {
+      var i = ((iu % u.n) + u.n) % u.n, posun = (iu - i) * D;
+      for (var j = jOd; j <= jDo; j++) {
+        var zz = z, ii = i, jj = j, d = dlazdicaV(z, i, j, false), orez = null;
+        while (!d && zz > 0) {
+          orez = orez || [(-180 + i * D + posun - V.lon) * V.s + V.cx, (V.my - (Y_SVETA - j * D)) * V.s + V.cy, D * V.s, D * V.s];
+          var pomer = POD.urovne[zz].n / POD.urovne[zz - 1].n;
+          zz--; ii = Math.floor(ii / pomer); jj = Math.floor(jj / pomer);
+          d = dlazdicaV(zz, ii, jj, zz > 0);
+        }
+        if (!d || d === PRAZDNA) continue;
+        var uu = POD.urovne[zz], DD = 360 / uu.n;
+        von.push({
+          d: d, q: uu.q, k: V.s / uu.q, orez: orez, hruba: zz !== z,
+          x0: -180 + ii * DD + posun, y0: Y_SVETA - jj * DD,
+          tx: (-180 + ii * DD + posun - V.lon) * V.s + V.cx, ty: (V.my - (Y_SVETA - jj * DD)) * V.s + V.cy,
+        });
+      }
+    }
+    return von;
+  }
+
+  /** Jedna vrstva cez všetky dlaždice: najprv všetky výplne, potom všetky čiary, aby lem susednej dlaždice neprekryl čiaru. */
+  function vrstva(c, kusy, co, farba, hrubka, ciarky) {
+    if (hrubka) { c.strokeStyle = farba; c.lineJoin = 'round'; c.lineCap = ciarky ? 'butt' : 'round'; } else c.fillStyle = farba;
+    for (var i = 0; i < kusy.length; i++) {
+      var ks = kusy[i], p = ks.d[co];
+      if (!p) continue;
+      if (ks.orez) { c.save(); c.setTransform(1, 0, 0, 1, 0, 0); c.beginPath(); c.rect(ks.orez[0], ks.orez[1], ks.orez[2], ks.orez[3]); c.clip(); }
+      c.setTransform(ks.k, 0, 0, ks.k, ks.tx, ks.ty);
+      if (hrubka) {
+        c.lineWidth = (hrubka * dpr) / ks.k;
+        c.setLineDash(ciarky ? [(5 * dpr) / ks.k, (4 * dpr) / ks.k] : []);
+        c.stroke(p);
+      } else c.fill(p);
+      if (ks.orez) c.restore();
+    }
+    c.setLineDash([]);
+  }
+
+  var pismoNacitane = false;
+  function kresliPodklad(c, V) {
+    var z = urovenPre(V.s), kusy = kusyPre(V, z);
+    vrstva(c, kusy, 'l', FARBY.sus, 0);
+    vrstva(c, kusy, 'k', FARBY.more, 0);
+    if (z > 0) vrstva(c, kusy, 'a', FARBY.kraj, z > 1 ? 0.8 : 0.6);
+    vrstva(c, kusy, 'j', FARBY.breh, 0.8);
+    vrstva(c, kusy, 'd', FARBY.hranica, 0.9, true);
+    vrstva(c, kusy, 'b', FARBY.hranica, z ? 1.1 : 0.8);
+    vrstva(c, kusy, 'c', FARBY.pobrezie, z ? 1.15 : 0.95);
+    c.setTransform(1, 0, 0, 1, 0, 0);
+    return kusy;
+  }
+
+  // ── Menovky: štáty, moria a mestá ────────────────────────────────────────
+  // Priblíženie v stupnici webových máp (256 px na svet pri nule), lebo v nej má
+  // Natural Earth pri každom štáte a mori zapísané, odkedy dokedy sa má písať.
+  var PISMO = '"ARLing Sans",system-ui,-apple-system,"Segoe UI",sans-serif';
+  var PISMO_VODY = '"ARLing Serif",Georgia,serif';
+  var sirky = {};
+  function sirkaTextu(c, pismo, text) {
+    var k = pismo + text, w = sirky[k];
+    if (w === undefined) { c.font = pismo; w = sirky[k] = c.measureText(text).width; }
+    return w;
+  }
+  function kresliMena(c, V, kusy) {
+    var d0 = DL['0/0_0'];
+    if (!d0 || !d0.ok) return;
+    var zoom = Math.log(((V.s / dpr) * 360) / 256) / Math.LN2;
+    var obsadene = [], q0 = POD.urovne[0].q;
+    function miesto(x, y, w, h) {
+      if (x + w < 0 || x > V.w || y + h < 0 || y > V.h) return false;
+      for (var i = 0; i < obsadene.length; i += 4) {
+        if (x < obsadene[i] + obsadene[i + 2] && x + w > obsadene[i] && y < obsadene[i + 1] + obsadene[i + 3] && y + h > obsadene[i + 1]) return false;
+      }
+      obsadene.push(x, y, w, h);
+      return true;
+    }
+    var kOd = Math.floor((V.lon - V.cx / V.s + 180) / 360), kDo = Math.floor((V.lon + (V.w - V.cx) / V.s + 180) / 360);
+    function nadSvetom(zaznamy, kresli) {
+      if (!zaznamy) return;
+      for (var k = kOd; k <= kDo; k++) for (var i = 0; i < zaznamy.length; i++) {
+        var m = zaznamy[i];
+        if (zoom < m[2] / 10 - 0.25 || zoom > m[3] / 10 + 0.6) continue;
+        kresli(m, (m[0] / q0 - 180 + 360 * k - V.lon) * V.s + V.cx, (V.my - (Y_SVETA - m[1] / q0)) * V.s + V.cy);
+      }
+    }
+    c.textBaseline = 'middle';
+    c.textAlign = 'center';
+    // Tmavý lem pod písmom: meno ostane čitateľné aj tam, kde cezeň vedie hranica.
+    c.lineJoin = 'round';
+    c.lineWidth = 3 * dpr;
+    c.strokeStyle = 'rgba(12,10,9,.8)';
+    // Štáty: verzálky s rozpalom, tlmene. Čím viac je štát priblížený, tým väčšie písmo.
+    if ('letterSpacing' in c) c.letterSpacing = (0.9 * dpr).toFixed(1) + 'px';
+    c.fillStyle = FARBY.stat;
+    nadSvetom(d0.n, function (m, x, y) {
+      var px = Math.round(Math.min(14, 10 + Math.max(0, zoom - m[2] / 10) * 1.6) * dpr), pismo = '600 ' + px + 'px ' + PISMO;
+      var text = m[4].toUpperCase(), w = sirkaTextu(c, pismo, text);
+      if (!miesto(x - w / 2 - 4 * dpr, y - px * 0.7, w + 8 * dpr, px * 1.4)) return;
+      c.font = pismo;
+      c.strokeText(text, x, y);
+      c.fillText(text, x, y);
+    });
+    if ('letterSpacing' in c) c.letterSpacing = '0px';
+    // Mestá: bod a meno vpravo od neho. Koľko ich je, závisí od priblíženia.
+    var najRad = zoom < 3.4 ? -1 : zoom < 4.3 ? 1 : zoom < 5.2 ? 3 : zoom < 6.1 ? 5 : zoom < 7 ? 7 : 12;
+    var pxM = Math.round(11.5 * dpr), pismoM = '500 ' + pxM + 'px ' + PISMO, pocet = 0;
+    c.textAlign = 'left';
+    for (var a = 0; a < kusy.length && najRad >= 0; a++) {
+      var ks = kusy[a], mesta = ks.d.p;
+      if (!mesta || ks.hruba) continue;
+      for (var b = 0; b < mesta.length && pocet < 60; b++) {
+        var m = mesta[b];
+        if (m[2] > najRad) break;          // zoznam je zoradený podľa významu
+        var x = m[0] * ks.k + ks.tx, y = m[1] * ks.k + ks.ty;
+        if (x < -40 || x > V.w + 40 || y < -20 || y > V.h + 20) continue;
+        var w = sirkaTextu(c, pismoM, m[3]);
+        if (!miesto(x - 4 * dpr, y - pxM * 0.75, w + 13 * dpr, pxM * 1.5)) continue;
+        pocet++;
+        c.fillStyle = FARBY.bod;
+        c.beginPath();
+        c.arc(x, y, (m[4] ? 2.6 : 2) * dpr, 0, 6.2832);
+        c.fill();
+        c.fillStyle = FARBY.mesto;
+        c.font = pismoM;
+        c.strokeText(m[3], x + 6 * dpr, y + 0.5 * dpr);
+        c.fillText(m[3], x + 6 * dpr, y + 0.5 * dpr);
+      }
+    }
+    // Moria a oceány: kurzíva s pätkami, ako na papierových mapách. Písmo sa pýta až tu.
+    if (!pismoNacitane && document.fonts && document.fonts.load) {
+      pismoNacitane = true;
+      document.fonts.load('italic 400 14px ' + PISMO_VODY).then(function () { sirky = {}; ziadaj(); }, function () {});
+    }
+    c.textAlign = 'center';
+    c.fillStyle = FARBY.voda;
+    nadSvetom(d0.s, function (m, x, y) {
+      var px = Math.round((m[2] <= 10 ? 14.5 : 12.5) * dpr), pismo = 'italic 400 ' + px + 'px ' + PISMO_VODY;
+      var w = sirkaTextu(c, pismo, m[4]);
+      if (!miesto(x - w / 2 - 6 * dpr, y - px * 0.8, w + 12 * dpr, px * 1.6)) return;
+      c.font = pismo;
+      c.fillText(m[4], x, y);
+    });
+    c.textAlign = 'start';
+    c.textBaseline = 'alphabetic';
+  }
+
+  // ── Zásobné plátno podkladu ──────────────────────────────────────────────
+  // Čas rastrovania ciest v prehliadači z JavaScriptu nevidno, vidno len to, že
+  // snímky pri pohybe meškajú. Vtedy sa podklad vykreslí raz, väčší o okraj, a pri
+  // posune sa len prekladá; pri priblížení sa krátko škáluje a po dobehnutí sa
+  // vykreslí načisto. Na rýchlom počítači sa toto nikdy nezapne.
+  var kes = { platno: null, c: null, V: null, plati: false, zapnute: parametre.get('kes') === '1', uroven: -1 }, usadenie = 0;
+  function pohlad() { return { lon: S.lon, my: S.my, s: S.s, cx: S.stredX, cy: S.stredY, w: S.w, h: S.h }; }
+  /** Nakreslí plochy a čiary podkladu a vráti dlaždice aktuálneho pohľadu, z ktorých sa potom píšu mená. */
+  function podklad() {
+    var V = pohlad();
+    if (!POD) return null;
+    if (!kes.zapnute) return kresliPodklad(ctx, V);
+    var K = kes.V, pomer = K ? S.s / K.s : 0;
+    if (K && kes.plati) {
+      var dLon = K.lon - S.lon;
+      dLon -= 360 * Math.round(dLon / 360);
+      var x0 = (dLon - K.cx / K.s) * S.s + S.stredX, y0 = (S.my - (K.my + K.cy / K.s)) * S.s + S.stredY;
+      var presne = Math.abs(pomer - 1) < 0.0015;
+      if (x0 <= 0 && y0 <= 0 && x0 + K.w * pomer >= S.w && y0 + K.h * pomer >= S.h && (presne || (pomer > 0.5 && pomer < 2))) {
+        ctx.imageSmoothingEnabled = !presne;
+        if (presne) ctx.drawImage(kes.platno, Math.round(x0), Math.round(y0));
+        else {
+          ctx.drawImage(kes.platno, x0, y0, K.w * pomer, K.h * pomer);
+          clearTimeout(usadenie);
+          usadenie = setTimeout(function () { kes.plati = false; ziadaj(); }, 110);
+        }
+        return kusyPre(V, urovenPre(V.s));
+      }
+    }
+    var okraj = Math.round(Math.min(S.w, S.h) * 0.3);
+    while (okraj > 0 && (S.w + 2 * okraj) * (S.h + 2 * okraj) > 14e6) okraj = Math.round(okraj * 0.7);
+    if (!kes.platno) { kes.platno = document.createElement('canvas'); kes.c = kes.platno.getContext('2d', { alpha: false }); }
+    var w = S.w + 2 * okraj, h = S.h + 2 * okraj;
+    if (kes.platno.width !== w || kes.platno.height !== h) { kes.platno.width = w; kes.platno.height = h; }
+    V.w = w; V.h = h; V.cx += okraj; V.cy += okraj;
+    kes.c.setTransform(1, 0, 0, 1, 0, 0);
+    kes.c.fillStyle = FARBY.more;
+    kes.c.fillRect(0, 0, w, h);
+    kresliPodklad(kes.c, V);
+    kes.V = V; kes.plati = true;
+    ctx.drawImage(kes.platno, -okraj, -okraj);
+    return kusyPre(pohlad(), urovenPre(S.s));
+  }
+
+  // ── Kreslenie ────────────────────────────────────────────────────────────
+  var naplanovane = false, poslednyCas = 0, predoslySnimok = 0, pomale = 0;
+  var meranie = { kres: [], odstup: [], text: '', bezi: false };
+  function ziadaj() { if (!naplanovane) { naplanovane = true; requestAnimationFrame(snimok); } }
+  function snimok(t) {
+    naplanovane = false;
+    var dt = predoslySnimok ? Math.min(64, t - predoslySnimok) : 16;
+    var plynule = predoslySnimok && t - predoslySnimok < 120;
+    predoslySnimok = t; poslednyCas = t; snimokC++;
+    var zije = krokAnimacii(t, dt);
+    var t0 = performance.now();
+    var dlazdic = kresli(t);
+    var cas = performance.now() - t0;
+    // Tri meškajúce snímky po sebe pri pohybe: prepni podklad na zásobné plátno.
+    // Pol sekundy po načítaní dlaždice sa neráta: vtedy mešká rozbaľovanie dát, nie kreslenie.
+    if (plynule && (zije || tahanie) && t0 - nacitaneV > 500) {
+      pomale = dt > 26 ? pomale + 1 : 0;
+      if (pomale >= 3 && !kes.zapnute && POD && urovenPre(S.s) > 0) { kes.zapnute = true; kes.uroven = urovenPre(S.s); }
+    }
+    if (kes.zapnute && kes.uroven >= 0 && POD && urovenPre(S.s) !== kes.uroven && !zije && !tahanie) { kes.zapnute = false; kes.uroven = -1; pomale = 0; }
+    if (LADENIE) ladiaciPas(cas, plynule ? dt : 0, dlazdic);
+    if (zije || zivaAnimacia(t)) ziadaj(); else predoslySnimok = 0;
+  }
+  function zivaAnimacia(t) { return !POKOJ && S.vyberOd && t - S.vyberOd < 240; }
+
   function kresli(t) {
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.fillStyle = FARBY.more;
     ctx.fillRect(0, 0, S.w, S.h);
-
-    // Svetová dlaždica je vespodok, regionálna sa na ňu položí ako ostrejší výrez.
-    // Bez toho by pri zazoomovaní na kraj výrezu ostala čierna plocha.
-    var viditelne = regionalne.filter(vidnoDlazdicu);
-    var chcemR = najlepsia(viditelne, false);
-    if (chcemR) dlazdica(chcemR.src);
-    var reg = najlepsia(viditelne, true);
-
-    // Najprv vždy tá najlacnejšia svetová dlaždica, aby bolo na čo pozerať do
-    // sekundy. Hustejšiu sťahujeme, len keď výrez naozaj nie je celý pod
-    // regionálnou dlaždicou: inak by každé otvorenie mapy stiahlo 215 kB za nič.
-    var zakl = najlepsia(svetove, true);
-    if (!zakl) dlazdica(svetove.length ? svetove[0].src : '');
-    else if (!(reg && pokryva(reg))) {
-      var chcem = najlepsia(svetove, false);
-      if (chcem && chcem !== zakl) dlazdica(chcem.src);
-    }
-    if (zakl) kresliDlazdicu(zakl);
-    if (reg && (!zakl || hustota(reg) > hustota(zakl))) kresliDlazdicu(reg);
-
+    var kusy = podklad();
     kresliPredane();
     kresliMriezku();
     kresliVyber(t);
+    // Mená idú navrch: inak by meno mesta zmizlo pod predaným štvorcom, ktorý na ňom leží.
+    if (kusy) kresliMena(ctx, pohlad(), kusy);
+    return kusy ? kusy.length : 0;
+  }
+
+  /** Ladiaci pás: čas kreslenia snímky v JavaScripte a odstup snímok pri pohybe. */
+  function ladiaciPas(cas, odstup, dlazdic) {
+    function zhrn(p) {
+      if (!p.length) return 'n/a';
+      var s = p.slice().sort(function (a, b) { return a - b; }), sum = 0;
+      for (var i = 0; i < s.length; i++) sum += s[i];
+      return (sum / s.length).toFixed(1) + ' avg, ' + s[Math.floor(s.length * 0.95)].toFixed(1) + ' p95, ' + s[s.length - 1].toFixed(1) + ' max';
+    }
+    meranie.kres.push(cas); if (meranie.kres.length > 240) meranie.kres.shift();
+    if (odstup) { meranie.odstup.push(odstup); if (meranie.odstup.length > 240) meranie.odstup.shift(); }
+    var riadky = ['draw ' + cas.toFixed(1) + ' ms (' + zhrn(meranie.kres) + ')',
+      'frame gap ms: ' + zhrn(meranie.odstup),
+      'level ' + (POD ? urovenPre(S.s) : '-') + ', tiles ' + dlazdic + ', ' + (S.s / dpr).toFixed(1) + ' css px/deg, dpr ' + dpr + ', ' + S.w + 'x' + S.h + (kes.zapnute ? ', buffer on' : '')];
+    if (meranie.text) riadky.push(meranie.text);
+    ctx.font = 12 * dpr + 'px monospace';
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = 'rgba(0,0,0,.78)';
+    ctx.fillRect(S.w / 2 - 250 * dpr, S.h - (riadky.length * 16 + 14) * dpr, 500 * dpr, (riadky.length * 16 + 8) * dpr);
+    ctx.fillStyle = '#9fe870';
+    for (var i = 0; i < riadky.length; i++) ctx.fillText(riadky[i], S.w / 2 - 242 * dpr, S.h - ((riadky.length - i) * 16 + 10) * dpr);
+    ctx.textBaseline = 'alphabetic';
+  }
+  /** ?debug=2: dve sekundy rovnomerného posunu, ako pri ťahaní, a výsledok do ladiaceho pásu. */
+  function meranyPosun() {
+    if (meranie.bezi) return;
+    meranie.bezi = true; meranie.kres = []; meranie.odstup = [];
+    var zostava = 120;
+    anim.meranie = function () {
+      S.lon += (4 * dpr) / S.s;
+      if (--zostava > 0) return true;
+      var s = meranie.odstup.slice().sort(function (a, b) { return a - b; });
+      meranie.text = 'pan test 120 frames: median gap ' + (s[s.length >> 1] || 0).toFixed(1) + ' ms = ' + (1000 / (s[s.length >> 1] || 1000)).toFixed(0) + ' fps';
+      return false;
+    };
+    ziadaj();
   }
 
   /**
    * Sú bunky dosť veľké na to, aby sa kreslili presne z blokov a nie z vrstvy?
-   * Prah je osem zariadeniových pixelov na bunku: blok 64 × 64 má vtedy aspoň
-   * 512 px, takže celý výrez pokryje najviac dvadsaťštyri blokov, ktoré sa naraz
-   * sťahujú. Pri nižšom prahu by časť výrezu ostala bez blokov aj bez vrstvy.
+   * Prah je osem pixelov na bunku: blok 64 × 64 má vtedy aspoň 512 px, takže
+   * výrez pokryje najviac tridsaťdva blokov, ktoré sa naraz sťahujú.
    */
-  function zblizka() {
-    var rHore = riadokZoSirky(zY(zYObr(0)));
-    return (360 / STL[rHore]) * S.s >= 8;
+  function zblizka() { return bunkaVStrede() >= 8 * dpr; }
+  /**
+   * Šírka bunky v strede pohľadu, v zariadeniových pixeloch. Zo stredu, nie z
+   * horného okraja: keď je svet menší než okno, horný okraj leží za pólom, kde má
+   * riadok tri bunky po 120 stupňov, a mapa by si myslela, že je priblížená.
+   */
+  function bunkaVStrede() {
+    return (360 / STL[riadokZoSirky(zY(naSvete(zYObr(S.stredY))))]) * S.s;
   }
+  function naSvete(my) { return my > Y_SVETA ? Y_SVETA : my < -Y_SVETA ? -Y_SVETA : my; }
 
   /**
    * Predané bunky. Pri pohľade zďaleka celosvetová vrstva z homelabu, zblízka
@@ -317,14 +569,11 @@
    */
   function kresliPredane() {
     var blizko = zblizka();
-    if (vrstva.platno && !(blizko && Object.keys(bloky).length)) {
-      var d = S.dlazdice[0];
-      var x0 = naX(-180), y0 = naY(d.yMax), sirka = 360 * S.s, vyska = (d.yMax - d.yMin) * S.s;
-      // Zďaleka sa vrstva zmenšuje; bez vyhladenia by jednopixelová bunka pri
-      // zmenšení vypadla celá, s ním aspoň zosvetlí svoj pixel.
-      ctx.imageSmoothingEnabled = sirka < vrstva.platno.width;
+    if (vrstva2.platno && !(blizko && Object.keys(bloky).length)) {
+      var x0 = naX(-180), y0 = naY(Y_SVETA), sirka = 360 * S.s, vyska = 2 * Y_SVETA * S.s;
+      ctx.imageSmoothingEnabled = sirka < vrstva2.platno.width;
       for (var k = Math.floor((0 - (x0 + sirka)) / sirka); k <= Math.ceil((S.w - x0) / sirka); k++) {
-        ctx.drawImage(vrstva.platno, x0 + k * sirka, y0, sirka, vyska);
+        ctx.drawImage(vrstva2.platno, x0 + k * sirka, y0, sirka, vyska);
       }
     }
     if (!blizko) return;
@@ -332,17 +581,16 @@
     if (!kluce.length) return;
     // Jedna cesta a jedno fill na farbu pre celý viditeľný výsek: tisíc predaných
     // buniek je tisíc obdĺžnikov v jednej ceste, nie tisíc volaní fill.
-    kresliStav(kluce, ST_PREDANE, 255, FARBY.predane);
-    kresliStav(kluce, ST_REZERVOVANE, ST_REZERVOVANE, FARBY.rezervovane);
+    kresliStav(kluce, ST_PREDANE, 255, FARBY.predane, false);
+    kresliStav(kluce, ST_PREDANE, 255, FARBY.moje, true);
+    kresliStav(kluce, ST_REZERVOVANE, ST_REZERVOVANE, FARBY.rezervovane, false);
     kresliKresby(kluce);
   }
 
   // ── Kresby majiteľov priamo na mape ──────────────────────────────────────
   // Služba lepí schválené kresby bloku 64 × 64 do jedného obrázka (/api/art),
-  // 32 × 32 bodov na bunku. Kým ho mapa nečítala, kresba bola vidno len v liste
-  // po kliknutí a „verejné na mape“ v paneli majiteľa nebola celá pravda.
-  // Obrázok sa pýta len pre blok, ktorý kresbu naozaj má (stav 4 alebo 6), a v
-  // pamäti ostávajú najviac štyri: rozbalený má 16 MB.
+  // 32 × 32 bodov na bunku. Obrázok sa pýta len pre blok, ktorý kresbu naozaj má
+  // (stav 4 alebo 6), a v pamäti ostávajú najviac štyri: rozbalený má 16 MB.
   var ST_KRESBA = 4, ST_ZAKLADATEL_KRESBA = 6, KRESBA_PX = 32;
   var atlasy = {}, atlasPoradie = [];
   function atlasBloku(kluc, b) {
@@ -405,7 +653,8 @@
     }
   }
 
-  function kresliStav(kluce, od, po, farba) {
+  function kresliStav(kluce, od, po, farba, lenMoje) {
+    if (lenMoje && !mojePocet) return;
     ctx.fillStyle = farba;
     ctx.beginPath();
     var kreslene = 0;
@@ -417,6 +666,7 @@
         if (st < od || st > po) continue;
         var r = b.r0 + (j >> 6), c = b.c0 + (j & 63);
         if (r >= RIADKY || c >= STL[r]) continue;
+        if (lenMoje && !moje[cislo(r, c)]) continue;
         obdlznikBunky(r, c);
         if (++kreslene > 20000) { i = kluce.length; break; }
       }
@@ -448,29 +698,40 @@
     return g;
   }
 
-  /** Mriežka sa kreslí až nad prahom priblíženia a len pre viditeľné riadky. */
+  /**
+   * Mriežka sa ukáže, až keď má bunka aspoň 6 px, a nabieha postupne: pri šiestich
+   * pixeloch je sotva vidno, pri tridsiatich je zreteľná. Len viditeľné riadky.
+   */
   function kresliMriezku() {
-    var rHore = riadokZoSirky(zY(zYObr(0))), rDole = riadokZoSirky(zY(zYObr(S.h)));
-    var bunkaPx = (360 / STL[rHore]) * S.s;
-    if (bunkaPx < 14) return;
-    var jemna = bunkaPx < 30;
-    ctx.strokeStyle = jemna ? FARBY.mriezka : FARBY.mriezkaSilna;
+    var yHore = naSvete(zYObr(0)), yDole = naSvete(zYObr(S.h));
+    if (yHore <= yDole) return;
+    // Len riadky, ktoré Mercator vie ukázať. Za 85. rovnobežkou má riadok pár buniek
+    // po desiatkach stupňov a z mriežky by bol cez celý svet sivý pás.
+    var rHore = Math.max(55, riadokZoSirky(zY(yHore))), rDole = Math.min(RIADKY - 56, riadokZoSirky(zY(yDole)));
+    var prah = 6 * dpr;
+    // V Mercatore sú bunky bližšie k pólom na obrazovke väčšie, takže prah sa pýta
+    // každého riadku zvlášť; sila čiary ide podľa stredu pohľadu.
+    if (Math.max(360 / STL[rHore], 360 / STL[rDole]) * S.s < prah) return;
+    var bunkaPx = bunkaVStrede() / dpr;
+    var sila = bunkaPx < 6 ? 0.035 : bunkaPx < 30 ? 0.035 + ((bunkaPx - 6) / 24) * 0.075 : 0.16;
+    ctx.strokeStyle = FARBY.mriezka + sila.toFixed(3) + ')';
     ctx.lineWidth = 1;
     ctx.beginPath();
-    var useky = 0;
-    for (var r = rHore; r <= rDole && r < RIADKY; r++) {
+    var useky = 0, predosly = false;
+    for (var r = rHore; r <= rDole; r++) {
+      var sirkaDeg = 360 / STL[r];
+      if (sirkaDeg * S.s < prah) { predosly = false; continue; }
       var yh = Math.round(naY(doY(90 - r * RIADOK))) + 0.5;
       var yd = Math.round(naY(doY(90 - (r + 1) * RIADOK))) + 0.5;
-      ctx.moveTo(0, yh); ctx.lineTo(S.w, yh);
-      if (yd - yh < 9) continue;
-      var sirkaDeg = 360 / STL[r];
+      if (!predosly) { ctx.moveTo(0, yh); ctx.lineTo(S.w, yh); }
+      ctx.moveTo(0, yd); ctx.lineTo(S.w, yd);
+      predosly = true;
       var prvy = Math.floor((zX(0) + 180) / sirkaDeg);
       var posledny = Math.ceil((zX(S.w) + 180) / sirkaDeg);
-      if (posledny - prvy > 400) continue;
       for (var c = prvy; c <= posledny; c++) {
         var x = Math.round(naX(-180 + c * sirkaDeg)) + 0.5;
         ctx.moveTo(x, yh); ctx.lineTo(x, yd);
-        if (++useky > 14000) { c = posledny; r = rDole; }
+        if (++useky > 60000) { c = posledny; r = rDole; }
       }
     }
     ctx.stroke();
@@ -479,7 +740,7 @@
   function kresliVyber(t) {
     if (S.podKurzorom && (!S.vybrana || S.podKurzorom.id !== S.vybrana.id)) {
       var bunkaPx = (360 / STL[S.podKurzorom.r]) * S.s;
-      if (bunkaPx >= 6) {
+      if (bunkaPx >= 6 * dpr) {
         ctx.beginPath();
         obdlznikBunky(S.podKurzorom.r, S.podKurzorom.c);
         ctx.fillStyle = 'rgba(255,255,255,.10)';
@@ -494,6 +755,12 @@
     ctx.strokeStyle = FARBY.vyber;
     ctx.lineWidth = Math.max(1.5, 2 * dpr);
     ctx.stroke();
+    // Bunka menšia než pár pixelov by bola neviditeľná: dostane značku, ktorá ju ukáže.
+    if (g.w < 9 * dpr) {
+      ctx.beginPath();
+      ctx.arc(g.x + g.w / 2, g.y + g.h / 2, 7 * dpr, 0, 6.2832);
+      ctx.stroke();
+    }
     // Jediný pohyb, ktorý si človek nevypýtal: prsteň, ktorý sadne na vybranú bunku.
     if (zivaAnimacia(t)) {
       var p = (t - S.vyberOd) / 240;
@@ -510,14 +777,18 @@
   }
 
   // ── Rozmer plátna ────────────────────────────────────────────────────────
-  var zmenaCakajuca = 0;
+  var zmenaCakajuca = 0, prvyRozmer = true;
   function prepocitaj() {
     var r = platno.getBoundingClientRect();
     var w = Math.max(1, Math.round(r.width * dpr)), h = Math.max(1, Math.round(r.height * dpr));
     if (w === S.w && h === S.h) return;
+    // Kým sa mapy nikto nedotkol, zmena okna drží prvý pohľad na celý svet.
+    var drzSvet = prvyRozmer || (!dotknute && !S.vybrana);
     S.w = w; S.h = h;
     platno.width = w; platno.height = h;
+    kes.plati = false;
     prepocitajStred();
+    if (drzSvet && w > 1) { var ps = pohladNaSvet(); S.s = ps.s; S.lon = ps.lon; S.my = ps.my; prvyRozmer = false; }
     uprav();
     ziadaj();
   }
@@ -530,45 +801,145 @@
     window.addEventListener('resize', prepocitaj, { passive: true });
   }
 
+  // ── Pohyb: zotrvačnosť, plynulé priblíženie a prelet v jednej slučke ─────
+  var anim = { zotrv: null, zoom: null, let: null, meranie: null };
+  function zastavPohyb() { anim.zotrv = anim.zoom = anim.let = null; }
+  function krokAnimacii(t, dt) {
+    var zije = false, zmena = false, a;
+    if ((a = anim.zotrv)) {
+      S.lon -= (a.vx * dt) / S.s;
+      S.my += (a.vy * dt) / S.s;
+      var tlm = Math.exp(-dt / 300);
+      a.vx *= tlm; a.vy *= tlm;
+      zmena = true;
+      if (Math.abs(a.vx) + Math.abs(a.vy) < 0.02 * dpr) anim.zotrv = null; else zije = true;
+    }
+    if ((a = anim.zoom)) {
+      var ls = Math.log(S.s), krok = (a.ciel - ls) * (1 - Math.exp(-dt / 75));
+      if (Math.abs(a.ciel - ls) < 0.002) krok = a.ciel - ls;
+      priblizNa(a.x, a.y, Math.exp(krok), true);
+      zmena = true;
+      // Koniec: cieľ je dosiahnutý, alebo priblíženie narazilo na medzu a ďalej sa nepohne.
+      if (krok === a.ciel - ls || Math.abs(Math.log(S.s) - ls) < 1e-7) anim.zoom = null; else zije = true;
+    }
+    if ((a = anim.let)) {
+      var p = Math.max(0, Math.min(1, (t - a.od) / a.trva)), e = p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
+      S.lon = a.lon0 + a.dLon * e;
+      S.my = a.my0 + (a.my1 - a.my0) * e;
+      S.s = Math.exp(a.ls0 + (a.ls1 - a.ls0) * e - a.skok * Math.sin(Math.PI * p));
+      zmena = true;
+      if (p >= 1) { anim.let = null; if (a.potom) a.potom(); } else zije = true;
+    }
+    if (anim.meranie) { zmena = true; if (anim.meranie()) zije = true; else anim.meranie = null; }
+    if (zmena) uprav();
+    return zije;
+  }
+
+  /** Priblíženie okolo bodu obrazovky: miesto pod kurzorom alebo medzi prstami ostane pod ním. */
+  function priblizNa(x, y, nasob, ticho) {
+    var lonPod = zX(x), myPod = zYObr(y);
+    S.s *= nasob;
+    var m = medze();
+    S.s = Math.min(m.maxS, Math.max(m.minS, S.s));
+    S.lon = lonPod - (x - S.stredX) / S.s;
+    S.my = myPod + (y - S.stredY) / S.s;
+    if (!ticho) { uprav(); ziadaj(); }
+  }
+  /** Plynulé priblíženie o násobok; s obmedzeným pohybom hneď. */
+  function priblizPlynule(x, y, nasob) {
+    dotyk();
+    anim.let = null; anim.zotrv = null;
+    if (POKOJ) { priblizNa(x, y, nasob); return; }
+    var m = medze(), od = anim.zoom ? anim.zoom.ciel : Math.log(S.s);
+    anim.zoom = { x: x, y: y, ciel: Math.min(Math.log(m.maxS), Math.max(Math.log(m.minS), od + Math.log(nasob))) };
+    ziadaj();
+  }
+
+  /**
+   * Pohľad na celý svet: celá šírka mapy presne na šírku okna. Na počítači je svet
+   * vyšší než okno, tak sa ukáže obývaný pás so stredom na 25. rovnobežke. Na
+   * telefóne na výšku je svet nižší než okno a sadne do voľného miesta medzi
+   * skleneným panelom hore a legendou dole, nie pod panel.
+   */
+  function pohladNaSvet() {
+    var s = Math.max(medze().minS, S.w / 360), my = doY(25);
+    if (360 * s < S.h) {
+      var hore = 0, m = platno.getBoundingClientRect(), r = panel ? panel.getBoundingClientRect() : null;
+      if (r && r.width > m.width * 0.8) hore = (r.bottom - m.top) * dpr;
+      my = ((hore + S.h - 150 * dpr) / 2 - S.stredY) / s;
+    }
+    return { s: s, lon: 10, my: my };
+  }
+
+  /** Prelet na miesto. Pri veľkej vzdialenosti sa cestou oddiali, aby bolo vidno, kam sa letí. */
+  function letNa(lat, lon, cielS, potom) {
+    var my1 = doY(lat), dLon = lon - S.lon;
+    dLon -= 360 * Math.round(dLon / 360);
+    zastavPohyb();
+    if (POKOJ) { S.lon = lon; S.my = my1; S.s = cielS; uprav(); ziadaj(); if (potom) potom(); return; }
+    var mens = Math.min(S.s, cielS), draha = Math.sqrt(dLon * dLon + (my1 - S.my) * (my1 - S.my)) * mens;
+    var skok = Math.max(0, Math.min(2.2, Math.log(draha / (0.7 * Math.min(S.w, S.h)))));
+    var najmenej = Math.log(medze().minS);
+    skok = Math.max(0, Math.min(skok, Math.log(mens) - najmenej));
+    anim.let = { od: performance.now(), trva: 520 + 330 * skok, lon0: S.lon, dLon: dLon, my0: S.my, my1: my1, ls0: Math.log(S.s), ls1: Math.log(cielS), skok: skok, potom: potom };
+    ziadaj();
+  }
+  function celySvet() {
+    dotyk();
+    var ps = pohladNaSvet();
+    letNa(zY(ps.my), ps.lon, ps.s, null);
+  }
+
   // ── Ovládanie myšou, prstom a klávesnicou ────────────────────────────────
-  var tahanie = null, zotrvacnost = null, prsty = {};
+  var tahanie = null, prsty = {}, stipka = null, dotknute = false, poslednyTuk = null;
+  var panel = koren.querySelector('[data-panel]');
+  /** Prvý dotyk mapy zmenší úvodný panel: odvtedy je hrdinom len mapa. */
+  function dotyk() {
+    if (dotknute) return;
+    dotknute = true;
+    if (panel) panel.classList.add('mala');
+  }
   function bod(e) { var r = platno.getBoundingClientRect(); return { x: (e.clientX - r.left) * dpr, y: (e.clientY - r.top) * dpr }; }
+  function vzdialenost(a, b) { var dx = a.x - b.x, dy = a.y - b.y; return Math.sqrt(dx * dx + dy * dy) || 1; }
 
   platno.addEventListener('pointerdown', function (e) {
     platno.setPointerCapture(e.pointerId);
     prsty[e.pointerId] = bod(e);
-    zotrvacnost = null;
-    if (Object.keys(prsty).length === 1) {
+    zastavPohyb();
+    var k = Object.keys(prsty);
+    if (k.length === 1) {
       var p = prsty[e.pointerId];
-      tahanie = { x: p.x, y: p.y, lon: S.lon, my: S.my, pohol: false, cas: performance.now(), vx: 0, vy: 0 };
+      tahanie = { x: p.x, y: p.y, lon: S.lon, my: S.my, pohol: false, stopa: [] };
     } else {
       tahanie = null;
-      var k = Object.keys(prsty);
-      stipka = { d: vzdialenost(prsty[k[0]], prsty[k[1]]), s: S.s };
+      var a = prsty[k[0]], b = prsty[k[1]];
+      // Štipnutie drží pod prstami to isté miesto sveta: mapa sa zároveň posúva aj približuje.
+      stipka = { d: vzdialenost(a, b), s: S.s, lon: zX((a.x + b.x) / 2), my: zYObr((a.y + b.y) / 2) };
+      dotyk();
     }
   });
-  var stipka = null;
-
-  function vzdialenost(a, b) { var dx = a.x - b.x, dy = a.y - b.y; return Math.sqrt(dx * dx + dy * dy) || 1; }
 
   platno.addEventListener('pointermove', function (e) {
     var p = bod(e);
     if (prsty[e.pointerId]) prsty[e.pointerId] = p;
     var k = Object.keys(prsty);
     if (k.length >= 2 && stipka) {
-      var teraz = vzdialenost(prsty[k[0]], prsty[k[1]]);
-      var stred = { x: (prsty[k[0]].x + prsty[k[1]].x) / 2, y: (prsty[k[0]].y + prsty[k[1]].y) / 2 };
-      priblizNa(stred.x, stred.y, (stipka.s * teraz) / stipka.d / S.s);
+      var a = prsty[k[0]], b = prsty[k[1]], m = medze();
+      S.s = Math.min(m.maxS, Math.max(m.minS, (stipka.s * vzdialenost(a, b)) / stipka.d));
+      S.lon = stipka.lon - ((a.x + b.x) / 2 - S.stredX) / S.s;
+      S.my = stipka.my + ((a.y + b.y) / 2 - S.stredY) / S.s;
+      uprav(); ziadaj();
       return;
     }
     if (tahanie) {
       var dx = p.x - tahanie.x, dy = p.y - tahanie.y;
-      if (!tahanie.pohol && Math.abs(dx) + Math.abs(dy) > 4 * dpr) { tahanie.pohol = true; platno.classList.add('presuva'); }
+      if (!tahanie.pohol && Math.abs(dx) + Math.abs(dy) > 4 * dpr) { tahanie.pohol = true; platno.classList.add('presuva'); dotyk(); }
       if (tahanie.pohol) {
-        var cas = performance.now(), dt = Math.max(8, cas - tahanie.cas);
-        tahanie.vx = ((p.x - (tahanie.px || p.x)) / dt) * 16;
-        tahanie.vy = ((p.y - (tahanie.py || p.y)) / dt) * 16;
-        tahanie.px = p.x; tahanie.py = p.y; tahanie.cas = cas;
+        // Rýchlosť sa berie z posledných 90 ms ťahu, nie z posledného kroku myši:
+        // jeden rozkmitaný krok by inak mapu odhodil nesprávnym smerom.
+        var cas = performance.now(), st = tahanie.stopa;
+        st.push({ x: p.x, y: p.y, t: cas });
+        while (st.length > 2 && cas - st[0].t > 90) st.shift();
         S.lon = tahanie.lon - dx / S.s;
         S.my = tahanie.my + dy / S.s;
         uprav(); ziadaj();
@@ -576,8 +947,8 @@
       return;
     }
     if (e.pointerType === 'mouse') {
-      var b = bunkaNa(p.x, p.y);
-      if ((b && b.id) !== (S.podKurzorom && S.podKurzorom.id)) { S.podKurzorom = b; ziadaj(); }
+      var bunka = bunkaNa(p.x, p.y);
+      if ((bunka && bunka.id) !== (S.podKurzorom && S.podKurzorom.id)) { S.podKurzorom = bunka; ziadaj(); }
     }
   }, { passive: true });
 
@@ -586,63 +957,72 @@
     if (Object.keys(prsty).length < 2) stipka = null;
     if (!tahanie) return;
     platno.classList.remove('presuva');
+    var p = bod(e);
     if (!tahanie.pohol) {
-      var p = bod(e);
-      var b = bunkaNa(p.x, p.y);
-      if (b) vyber(b.r, b.c, false);
-    } else if (!POKOJ && (Math.abs(tahanie.vx) > 1 || Math.abs(tahanie.vy) > 1)) {
-      zotrvacnost = { vx: tahanie.vx, vy: tahanie.vy };
-      requestAnimationFrame(dojazd);
+      // Dva ťuky prstom rýchlo po sebe na tom istom mieste priblížia (myš má dblclick).
+      var teraz = performance.now();
+      if (e.pointerType !== 'mouse' && poslednyTuk && teraz - poslednyTuk.t < 320 && vzdialenost(p, poslednyTuk) < 32 * dpr) {
+        poslednyTuk = null;
+        priblizPlynule(p.x, p.y, 2);
+      } else {
+        poslednyTuk = { x: p.x, y: p.y, t: teraz };
+        var b = bunkaNa(p.x, p.y);
+        if (b) vyber(b.r, b.c, false);
+      }
+    } else if (!POKOJ) {
+      var st = tahanie.stopa, prva = st[0], posl = st[st.length - 1];
+      if (prva && posl && posl.t - prva.t > 12 && performance.now() - posl.t < 60) {
+        var vx = (posl.x - prva.x) / (posl.t - prva.t), vy = (posl.y - prva.y) / (posl.t - prva.t);
+        if (Math.abs(vx) + Math.abs(vy) > 0.12 * dpr) { anim.zotrv = { vx: vx, vy: vy }; ziadaj(); }
+      }
     }
     tahanie = null;
   }
   platno.addEventListener('pointerup', koniecTahu);
   platno.addEventListener('pointercancel', function (e) { delete prsty[e.pointerId]; tahanie = null; stipka = null; platno.classList.remove('presuva'); });
-
-  function dojazd() {
-    if (!zotrvacnost) return;
-    S.lon -= zotrvacnost.vx / S.s;
-    S.my += zotrvacnost.vy / S.s;
-    zotrvacnost.vx *= 0.92; zotrvacnost.vy *= 0.92;
-    uprav(); ziadaj();
-    if (Math.abs(zotrvacnost.vx) > 0.4 || Math.abs(zotrvacnost.vy) > 0.4) requestAnimationFrame(dojazd);
-    else zotrvacnost = null;
-  }
-
-  function priblizNa(x, y, nasob) {
-    var lonPod = zX(x), myPod = zYObr(y);
-    S.s *= nasob;
-    var m = medze();
-    S.s = Math.min(m.maxS, Math.max(m.minS, S.s));
-    S.lon = lonPod - (x - S.w / 2) / S.s;
-    S.my = myPod + (y - S.h / 2) / S.s;
-    uprav(); ziadaj();
-  }
+  platno.addEventListener('dblclick', function (e) {
+    e.preventDefault();
+    var p = bod(e);
+    priblizPlynule(p.x, p.y, e.shiftKey ? 0.5 : 2);
+  });
 
   platno.addEventListener('wheel', function (e) {
     e.preventDefault();
     var p = bod(e);
     var krok = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY;
-    priblizNa(p.x, p.y, Math.exp(-krok * 0.0018));
+    // Štipnutie na touchpade prichádza ako koliesko s Ctrl a malými krokmi.
+    priblizPlynule(p.x, p.y, Math.exp(-krok * (e.ctrlKey ? 0.012 : 0.0022)));
   }, { passive: false });
 
   platno.addEventListener('keydown', function (e) {
-    var krok = 60 * dpr, spracovane = true;
+    var krok = 80 * dpr, spracovane = true;
     if (e.key === 'ArrowLeft') S.lon -= krok / S.s;
     else if (e.key === 'ArrowRight') S.lon += krok / S.s;
     else if (e.key === 'ArrowUp') S.my += krok / S.s;
     else if (e.key === 'ArrowDown') S.my -= krok / S.s;
-    else if (e.key === '+' || e.key === '=') priblizNa(S.w / 2, S.h / 2, 1.35);
-    else if (e.key === '-' || e.key === '_') priblizNa(S.w / 2, S.h / 2, 1 / 1.35);
-    else if (e.key === 'Enter' || e.key === ' ') { var b = bunkaNa(S.w / 2, S.h / 2); if (b) vyber(b.r, b.c, false); }
+    else if (e.key === '+' || e.key === '=') priblizPlynule(S.stredX, S.stredY, 1.6);
+    else if (e.key === '-' || e.key === '_') priblizPlynule(S.stredX, S.stredY, 1 / 1.6);
+    else if (e.key === '0' || e.key === 'Home') celySvet();
+    else if (e.key === 'Enter' || e.key === ' ') { var b = bunkaNa(S.stredX, S.stredY); if (b) vyber(b.r, b.c, false); }
     else spracovane = false;
-    if (spracovane) { e.preventDefault(); uprav(); ziadaj(); }
+    if (spracovane) { e.preventDefault(); dotyk(); zastavPohybOkremZoomu(); uprav(); ziadaj(); }
+  });
+  function zastavPohybOkremZoomu() { anim.zotrv = null; }
+
+  // Tlačidlá plus, mínus a celý svet.
+  var ovladanie = koren.querySelector('[data-ovladanie]');
+  if (ovladanie) ovladanie.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-krok]');
+    if (!b) return;
+    var k = b.getAttribute('data-krok');
+    if (k === 'svet') celySvet();
+    else priblizPlynule(S.stredX, S.stredY, k === '+' ? 2 : 0.5);
   });
 
   function bunkaNa(x, y) {
-    var lat = zY(zYObr(y));
-    if (lat > 89.99 || lat < -89.99) return null;
-    var r = riadokZoSirky(lat), c = stlpecZDlzky(r, zX(x));
+    var my = zYObr(y);
+    if (my > Y_SVETA || my < -Y_SVETA) return null;
+    var r = riadokZoSirky(zY(my)), c = stlpecZDlzky(r, zX(x));
     return { r: r, c: c, id: cislo(r, c) };
   }
 
@@ -651,6 +1031,7 @@
   var oznam = koren.querySelector('[data-oznam]');
 
   function vyber(r, c, tichy) {
+    dotyk();
     S.vybrana = { r: r, c: c, id: cislo(r, c) };
     S.vyberOd = poslednyCas || performance.now();
     ziadaj();
@@ -661,7 +1042,6 @@
     url.searchParams.set('p', String(S.vybrana.id));
     history.replaceState(null, '', url);
   }
-
 
   var parcely = {};
   // Držiak rezervácie (hold) podľa čísla štvorca. Žije v sessionStorage, aby
@@ -686,7 +1066,7 @@
   var listRezim = 'prehlad';
   function obnovList() { if (listRezim === 'prehlad') ukazList(); }
   function ukazList() {
-    if (!S.vybrana) return;   // statická pozvánka v HTML ostáva
+    if (!S.vybrana) return;
     listRezim = 'prehlad';
     var r = S.vybrana.r, c = S.vybrana.c, id = S.vybrana.id;
     var lat = stredRiadku(r), lon = -180 + ((c + 0.5) * 360) / STL[r];
@@ -694,23 +1074,18 @@
     var stav = stavBunky(r, c, p);
     // Rezervácia, ktorú drží tento prehliadač, nie je „niekto iný práve platí“.
     if (stav === 'rezervovana' && citajDrziak(id)) stav = 'volna';
-    var h = '';
+    var h = '<button class="list-zavri" type="button" data-akcia="zavri" aria-label="' + esc(T.zavriet) + '">×</button>';
     h += '<p class="list-cislo">' + esc(T.cislo) + ' ' + cisloText(id) + '</p>';
-    // Každý stav má vlastnú vetu. Kým tu bolo „Zisťujem miesto…“ aj vtedy, keď
-    // homelab nebeží, točilo sa to donekonečna nad štvorcom, ktorý sa nemal
-    // odkiaľ dozvedieť. Nečakanie na nič sa musí povedať nahlas. Krajina sa píše
-    // menom (Czechia), nie kódom; kód ostáva len keď služba meno neposlala.
-    var krajina = p && (p.country_name || p.country);
-    var casti = p ? [p.region !== p.city ? p.region : null, krajina].filter(Boolean) : [];
-    var miesto = p && p.city ? '<b>' + esc(p.city) + '</b>' + (casti.length ? ', ' + esc(casti.join(', ')) : '')
-      : casti.length ? '<b>' + esc(casti.join(', ')) + '</b>'
-        : stav === 'zatvorena' ? esc(p ? (p.land ? T.nepredajnaSus : T.more) : T.nepredajne)
-          : (S.sluzba === 'nedostupna' || zlyhane[id]) ? esc(T.miestoBezSluzby)
-            : p ? '' : esc(T.miestoZistujem);
+    // Každý stav má vlastnú vetu. More má meno mora, územie bez krajiny meno územia
+    // a keď služba nevie nič, ostanú súradnice. Keď homelab nebeží, povie sa to
+    // nahlas, netočí sa „zisťujem miesto“ donekonečna.
+    var miesto = miestoHtml(p)
+      || (stav === 'zatvorena' ? esc(T.nepredajne)
+        : (S.sluzba === 'nedostupna' || zlyhane[id]) ? esc(T.miestoBezSluzby)
+          : p ? '' : esc(T.miestoZistujem));
     h += '<p class="list-miesto">' + miesto + '</p>';
     // Názvy polí sú tie, ktoré naozaj posiela app.py: art_url (hotová adresa
-    // obrázka, nie stav kresby) a founder_no. Odkaz už služba posiela len vtedy,
-    // keď je schválený aj zapnutý, takže sa tu netestuje druhý príznak.
+    // obrázka, nie stav kresby) a founder_no.
     if (p && p.art_url) h += '<img class="list-kresba" alt="' + esc(T.kresbaAlt) + '" src="' + esc(p.art_url) + '" width="88" height="88" loading="lazy" decoding="async">';
     h += '<dl class="list-udaje">';
     h += '<div><dt>' + esc(T.suradnice) + '</dt><dd>' + esc(stupne(lat, lon)) + '</dd></div>';
@@ -720,18 +1095,18 @@
     h += '</dl>';
 
     if (stav === 'predana') {
-      if (p && p.link) h +='<a class="btn btn-line" rel="nofollow ugc noopener noreferrer" target="_blank" href="' + esc(p.link) + '">' + esc(T.otvorOdkaz) + '</a>';
+      if (moje[id]) h += '<p class="list-moje">' + esc(T.jeVas) + '</p>';
+      if (p && p.link) h += '<a class="btn btn-line" rel="nofollow ugc noopener noreferrer" target="_blank" href="' + esc(p.link) + '">' + esc(T.otvorOdkaz) + '</a>';
       h += '<a class="btn btn-line" href="' + esc(CESTA_MAPY + T.cestaParcely + '?id=' + id) + '" data-umami-event="svet_zdielanie">' + esc(T.zdielat) + '</a>';
-      h += '<button class="btn btn-line" type="button" data-akcia="nahlasit">' + esc(T.nahlasit) + '</button>';
+      if (!moje[id]) h += '<button class="btn btn-line" type="button" data-akcia="nahlasit">' + esc(T.nahlasit) + '</button>';
       h += '<p class="list-pravne">' + esc(T.predaneVysvetlenie) + '</p>';
     } else if (stav === 'zatvorena') {
       h += '<p class="list-pravne">' + esc(T.nepredajneVysvetlenie) + '</p>';
-      h += '<a class="btn btn-line" href="#predaj">' + esc(T.coSaPredava) + '</a>';
     } else if (stav === 'rezervovana') {
       h += '<p class="list-pravne">' + esc(T.rezervovane) + '</p>';
     } else if (stav === 'neznamy') {
       // Služba nebeží alebo ešte neodpovedala. Stránka vtedy nevie, či je
-      // štvorec voľný, more alebo predaný, a nesmie sa tváriť, že vie.
+      // štvorec voľný alebo predaný, a nesmie sa tváriť, že vie.
       var bezOdpovede = S.sluzba === 'nedostupna' || zlyhane[id];
       h += '<button class="btn btn-solid" type="button" disabled>' + esc(bezOdpovede ? T.kupitNedostupne : T.miestoZistujem) + '</button>';
       if (bezOdpovede) h += '<p class="list-pravne">' + esc(T.stavNeznamy) + '</p>';
@@ -743,8 +1118,7 @@
       }
       h += '<button class="btn ' + (maKredit ? 'btn-line' : 'btn-solid') + '" type="button" data-akcia="kupit">' + esc(T.kupit) + '</button>';
       h += '<button class="btn btn-line" type="button" data-akcia="kreslit">' + esc(T.skusKreslit) + '</button>';
-      // Cenník sľubuje balíky 3 a 10. Kým sa odtiaľto dal kúpiť len jeden štvorec,
-      // bola to ponuka bez tlačidla.
+      // Cenník sľubuje balíky 3 a 10, tak sa musia dať kúpiť aj odtiaľto.
       h += '<button class="list-balik" type="button" data-akcia="balik">' + esc(T.balikTlacidlo) + '</button>';
       h += '<p class="list-pravne">' + esc(T.licenciaVeta) + ' <a href="' + esc(T.cestaPodmienky) + '">' + esc(T.podmienkyOdkaz) + '</a></p>';
     }
@@ -752,15 +1126,16 @@
     list.hidden = false;
     prepocitajStred();
     if (!POKOJ) { list.classList.remove('prichadza'); void list.offsetWidth; list.classList.add('prichadza'); }
-    if (oznam) oznam.textContent = T.cislo + ' ' + cisloText(id) + '. ' + (p && p.city ? p.city : '') + ' ' + km(sirkaKm(r)) + ' × ' + km(vyskaKm(r)) + ' km.';
+    if (oznam) oznam.textContent = T.cislo + ' ' + cisloText(id) + '. ' + (p ? (p.city || p.area || p.country_name || '') : '') + ' ' + km(sirkaKm(r)) + ' × ' + km(vyskaKm(r)) + ' km.';
   }
 
   /**
    * Čo sa s bunkou dá robiť: 'volna', 'rezervovana', 'predana', 'zatvorena'
-   * alebo 'neznamy'. V predaji je celý svet, takže o tom nerozhoduje žiadny
-   * obdĺžnik v mriezka.json, ale služba: najprv odpoveď /api/parcel pre túto
-   * bunku, inak jej bajt v bloku z /api/chunk. Keď nie je ani jedno (služba
-   * nebeží, alebo ešte neodpovedala), stav je neznámy a nič sa netvrdí.
+   * alebo 'neznamy'. V predaji je celý svet, súš aj more, a rozhoduje o tom
+   * služba: najprv odpoveď /api/parcel pre túto bunku, inak jej bajt v bloku z
+   * /api/chunk. Keď nie je ani jedno (služba nebeží, alebo ešte neodpovedala),
+   * stav je neznámy a nič sa netvrdí. „Zatvorená“ ostáva len pre skutočnú
+   * výnimku, ktorú by služba sama ohlásila.
    */
   function stavBunky(r, c, p) {
     if (p) {
@@ -778,18 +1153,29 @@
   list.addEventListener('click', function (e) {
     var b = e.target.closest('[data-akcia]');
     if (!b) return;
-    if (b.getAttribute('data-akcia') === 'kupit') pokladna(false);
-    else if (b.getAttribute('data-akcia') === 'balik') pokladna(true);
-    else if (b.getAttribute('data-akcia') === 'kreslit') kresliacePlatno();
-    else if (b.getAttribute('data-akcia') === 'nahlasit') nahlasit();
-    else if (b.getAttribute('data-akcia') === 'kredit') vezmiZKreditu(b);
+    var a = b.getAttribute('data-akcia');
+    if (a === 'kupit') pokladna(false);
+    else if (a === 'balik') pokladna(true);
+    else if (a === 'kreslit') kresliacePlatno();
+    else if (a === 'nahlasit') nahlasit();
+    else if (a === 'kredit') vezmiZKreditu(b);
+    else if (a === 'zavri') zavriList();
   });
+  function zavriList() {
+    S.vybrana = null;
+    list.hidden = true;
+    prepocitajStred();
+    var url = new URL(location.href);
+    url.searchParams.delete('p');
+    history.replaceState(null, '', url);
+    uprav(); ziadaj();
+  }
 
-  // ── Výber štvorca z kreditu balíka ───────────────────────────────────────
+  // ── Moje štvorce a výber z kreditu balíka ────────────────────────────────
   // Kľúč majiteľa sem príde len cez sessionStorage z panela majiteľa, v tej
   // istej karte. Do adresy tejto stránky sa nedostane nikdy: beží na nej Umami
-  // a to si adresu zapisuje.
-  var majitel = null;
+  // a to si adresu zapisuje. Službe ide v hlavičke, nikdy v adrese.
+  var majitel = null, moje = {}, mojePocet = 0;
   try {
     var ulozenyMajitel = JSON.parse(sessionStorage.getItem('svet-majitel') || 'null');
     if (ulozenyMajitel && typeof ulozenyMajitel.t === 'string' && ulozenyMajitel.t) majitel = { t: ulozenyMajitel.t, k: Number(ulozenyMajitel.k) || 0 };
@@ -799,6 +1185,22 @@
       if (majitel) sessionStorage.setItem('svet-majitel', JSON.stringify(majitel));
       else sessionStorage.removeItem('svet-majitel');
     } catch (e) {}
+  }
+  // „Yours“ v legende: štvorce kúpené v tomto prehliadači (číslo si stránka
+  // zapamätá pri návrate z pokladne) a štvorce majiteľa, ktorý prišiel z panela.
+  // Farbu dostanú až vtedy, keď ich služba naozaj vedie ako zaplatené.
+  function pridajMoje(id) { if (id > 0 && !moje[id]) { moje[id] = 1; mojePocet++; } }
+  try { JSON.parse(localStorage.getItem('svet-moje') || '[]').forEach(function (x) { pridajMoje(Number(x)); }); } catch (e) {}
+  if (navratZPokladne === 'paid' && !navratBezStvorca) {
+    pridajMoje(Number(parametre.get('p')));
+    try { localStorage.setItem('svet-moje', JSON.stringify(Object.keys(moje).map(Number).slice(-200))); } catch (e) {}
+  }
+  function nacitajMoje() {
+    if (!majitel || !API) return;
+    fetch(API + '/api/owner', { credentials: 'omit', cache: 'no-store', referrerPolicy: 'no-referrer', headers: { 'X-Svet-Token': majitel.t } })
+      .then(function (o) { return o.ok ? o.json() : null; })
+      .then(function (d) { if (d && d.parcels) { d.parcels.forEach(function (x) { pridajMoje(Number(x.id)); }); ziadaj(); obnovList(); } })
+      .catch(function () {});
   }
 
   function vezmiZKreditu(tlacidlo) {
@@ -815,6 +1217,7 @@
       if (v.kod !== 200 || !v.d.ok) { delete parcely[id]; nacitajParcelu(id); pas(T.kreditChyba); ukazList(); return; }
       majitel.k = Number(v.d.credit) || 0;
       ulozMajitela();
+      pridajMoje(id);
       if (v.d.parcel) parcely[id] = v.d.parcel;
       delete bloky[(S.vybrana.r >> 6) + ',' + (S.vybrana.c >> 6)];
       naplanujBloky();
@@ -826,7 +1229,7 @@
   }
 
   // ── Homelab. Keď nebeží, mapa funguje ďalej a napíše sa to. ─────────────
-  var vrstva = { platno: null, kedy: 0 };
+  var vrstva2 = { platno: null, kedy: 0 };
   var bloky = {};
 
   function skusSluzbu() {
@@ -835,6 +1238,7 @@
       if (!navratZPokladne) skryPas();
       nacitajStav();
       nacitajVrstvu();
+      nacitajMoje();
       naplanujBloky();
       // Bunka z adresy (?p=) sa vybrala skôr, než služba odpovedala, takže jej
       // údaje sa pýtame až teraz. Bez toho ostala navždy pri „zisťujem miesto“.
@@ -854,13 +1258,11 @@
   function nacitajStav() {
     api('/api/state.json').then(function (d) {
       S.stav = d;
-      var el = koren.querySelector('[data-pocitadlo]');
-      // Tvar odpovede je {"etapa":{"buniek":…,"predanych":…}}. S d.sold a
-      // d.total sa počítadlo po pripojení služby nikdy nezmenilo.
+      // Tvar odpovede je {"etapa":{"buniek":…,"predanych":…}}. Počítadlo je pod
+      // mapou, v páse čísel, a ukazuje len to, čo služba naozaj vedie ako obsadené.
+      var el = document.querySelector('[data-pocitadlo]');
       var e = d && d.etapa;
-      if (el && e && typeof e.predanych === 'number' && typeof e.buniek === 'number') {
-        el.innerHTML = '<b>' + cisloText(e.predanych) + ' / ' + cisloText(e.buniek) + '</b>' + esc(T.pocitadloPopis);
-      }
+      if (el && e && typeof e.predanych === 'number') el.textContent = cisloText(e.predanych);
     }).catch(function () {});
   }
 
@@ -869,27 +1271,24 @@
     fetch(API + '/api/overlay.png', { cache: 'default' })
       .then(function (o) { if (!o.ok) throw 0; return o.blob(); })
       .then(createImageBitmap)
-      .then(function (b) { vrstva.platno = doMercatoraVrstvu(b); b.close(); vrstva.kedy = Date.now(); ziadaj(); })
+      .then(function (b) { vrstva2.platno = doMercatoraVrstvu(b); b.close(); vrstva2.kedy = Date.now(); ziadaj(); })
       .catch(function () {});
   }
 
   /**
    * Vrstva zo služby je rovnobežníková (riadok obrázka = rovnaký kus zemepisnej
-   * šírky od pólu k pólu), mapa je v Mercatore. Kým sa vrstva len natiahla cez
-   * mapu, predaný štvorec v Bratislave svietil nad Rímom. Tu sa raz za minútu
-   * prevzorkuje po riadkoch do plátna v Mercatore s presne tým výrezom, aký má
-   * svetová dlaždica; v snímku je to potom jedno drawImage ako predtým.
+   * šírky od pólu k pólu), mapa je v Mercatore. Tu sa raz za minútu prevzorkuje po
+   * riadkoch do štvorcového plátna v Mercatore; v snímku je to potom jedno drawImage.
    */
   function doMercatoraVrstvu(bmp) {
-    var d = S.dlazdice[0] || { yMin: -105.6, yMax: 166 };
-    var w = bmp.width, h = Math.max(1, Math.round((w * (d.yMax - d.yMin)) / 360));
-    var p = vrstva.platno || document.createElement('canvas');
+    var w = bmp.width, h = w;
+    var p = vrstva2.platno || document.createElement('canvas');
     p.width = w; p.height = h;
     var c = p.getContext('2d');
     c.imageSmoothingEnabled = false;
     c.clearRect(0, 0, w, h);
     for (var j = 0; j < h; j++) {
-      var lat = zY(d.yMax - ((j + 0.5) * (d.yMax - d.yMin)) / h);
+      var lat = zY(Y_SVETA - ((j + 0.5) * 2 * Y_SVETA) / h);
       var zdroj = Math.min(bmp.height - 1, Math.max(0, Math.floor(((90 - lat) / 180) * bmp.height)));
       c.drawImage(bmp, 0, zdroj, w, 1, 0, j, w, 1);
     }
@@ -906,38 +1305,34 @@
 
   /**
    * Vlastníctvo po blokoch 64 × 64. Prehliadač nikdy nedostane všetkých päť
-   * miliónov buniek, sťahuje len bloky, ktoré práve vidno. To je jediný dôvod,
-   * prečo mapa nebude sekať ani vtedy, keď bude predané celé Slovensko.
+   * miliónov buniek, sťahuje len bloky, ktoré práve vidno.
    */
   function dopytajBloky() {
     if (S.sluzba !== 'bezi' || document.hidden) return;
-    var rHore = riadokZoSirky(zY(zYObr(0))), rDole = riadokZoSirky(zY(zYObr(S.h)));
+    var rHore = riadokZoSirky(zY(naSvete(zYObr(0)))), rDole = riadokZoSirky(zY(naSvete(zYObr(S.h))));
     if (!zblizka()) return;
-    var zoznam = [];
+    var zoznam = [], STROP = 32;
     // Blok je 64 riadkov × 64 STĹPCOV V RIADKU, a riadky majú rôzny počet stĺpcov.
-    // Ten istý poludník je preto v hornom riadku bloku v inom stĺpci než v dolnom
-    // (nad Bratislavou o 37 stĺpcov na 15 riadkov). Kým sa stĺpce brali zo
-    // stredného riadku bloku, pýtal sa susedný blok a predané štvorce sa nad
-    // Slovenskom nenakreslili vôbec. Berú sa preto z krajných VIDITEĽNÝCH riadkov.
+    // Ten istý poludník je preto v hornom riadku bloku v inom stĺpci než v dolnom.
+    // Stĺpce sa preto berú z krajných VIDITEĽNÝCH riadkov, nie zo stredu bloku.
     var lonOd = zX(0), lonDo = zX(S.w);
-    for (var rb = rHore >> 6; rb <= (rDole >> 6) && zoznam.length < 24; rb++) {
+    for (var rb = rHore >> 6; rb <= (rDole >> 6) && zoznam.length < STROP; rb++) {
       var rOd = Math.max(rHore, rb << 6), rDo = Math.min(rDole, (rb << 6) + 63, RIADKY - 1);
       var cOd = Math.min(stlpecZDlzky(rOd, lonOd), stlpecZDlzky(rDo, lonOd)) >> 6;
       var cDo = Math.max(stlpecZDlzky(rOd, lonDo), stlpecZDlzky(rDo, lonDo)) >> 6;
       var posledny = (Math.max(STL[rOd], STL[rDo]) - 1) >> 6;
       if (cDo >= cOd) {
-        for (var c = cOd; c <= cDo && zoznam.length < 24; c++) zoznam.push([rb, c]);
+        for (var c = cOd; c <= cDo && zoznam.length < STROP; c++) zoznam.push([rb, c]);
       } else {
         // Výrez leží cez 180. poludník: od ľavého okraja po koniec riadku a od nuly po pravý okraj.
-        for (var c1 = cOd; c1 <= posledny && zoznam.length < 24; c1++) zoznam.push([rb, c1]);
-        for (var c2 = 0; c2 <= cDo && zoznam.length < 24; c2++) zoznam.push([rb, c2]);
+        for (var c1 = cOd; c1 <= posledny && zoznam.length < STROP; c1++) zoznam.push([rb, c1]);
+        for (var c2 = 0; c2 <= cDo && zoznam.length < STROP; c2++) zoznam.push([rb, c2]);
       }
     }
     zoznam.forEach(function (b) {
       var kluc = b[0] + ',' + b[1];
       if (bloky[kluc] && !bloky[kluc].stare) return;
       // Služba posiela 4096 bajtov, jeden stav na bunku (ST_* vyššie), nie bity.
-      // Kým sa tu čítali ako bity, každá ôsma voľná bunka sa kreslila ako predaná.
       // Zastaraný blok sa kreslí ďalej, kým nepríde nový, aby predané bunky neblikli.
       var blok = bloky[kluc] || (bloky[kluc] = { r0: b[0] << 6, c0: b[1] << 6, stavy: null });
       blok.stare = false;
@@ -1008,8 +1403,7 @@
       tlacidlo.textContent = T.pripravujem;
       // Rezervácia vráti držiak (hold). Bez neho pokladňa vráti 403: je to
       // to jediné, čím služba vie, že túto bunku drží práve tento prehliadač.
-      // Mená polí sú presne tie, ktoré číta app.py, teda consent_delivery,
-      // nie consentDelivery. Kým tu boli iné, kúpiť sa nedalo vôbec.
+      // Mená polí sú presne tie, ktoré číta app.py, teda consent_delivery.
       var objednavka = { locale: JAZYK, email: mail.value.trim(), consent_delivery: true, consent_age: true };
       if (TEST) objednavka.test = true;
       var krok;
@@ -1074,8 +1468,7 @@
     if (!S.vybrana) return;
     var dovod = window.prompt(T.nahlasitVyzva, '');
     if (!dovod) return;
-    // parcel_id a field, presne ako ich číta app.py. S „parcel“ vracala služba
-    // 400 a tlačidlo Nahlásiť bolo len ozdoba.
+    // parcel_id a field, presne ako ich číta app.py.
     api('/api/report', { parcel_id: S.vybrana.id, field: 'art', reason: dovod.slice(0, 80), detail: dovod.slice(0, 1000) })
       .then(function () { pas(T.nahlasenePrijate); })
       .catch(function () { pas(T.nahlasenieMailom); });
@@ -1087,7 +1480,7 @@
   // sa rozídu, človek dostane inú kresbu, než akú nakreslil. Poradie je záväzné.
   var PALETA = ['#10100e', '#3a3632', '#6f665c', '#b9aea1', '#f2ece2', '#b4552d', '#d98a3d', '#f0c674',
     '#7d8f4a', '#4a7a55', '#4f8fa6', '#35597e', '#6d5a8f', '#a0486b', '#8a5a3c', '#cfd6c9'];
-  var PRAZDNA = 0;   // index „nič“; formát ukladá štyri bity, takže 255 neexistuje
+  var PRAZDNA_FARBA = 0;   // index „nič“; formát ukladá štyri bity na bod
   function kresliacePlatno() {
     if (!S.vybrana) return;
     sleduj('svet_prve_kreslenie');
@@ -1113,20 +1506,20 @@
     for (var fi = 0; fi < svatky.length; fi++) svatky[fi].style.background = PALETA[fi];
     var kp = list.querySelector('[data-kresba]');
     var kctx = kp.getContext('2d');
-    var body = new Uint8Array(1024).fill(PRAZDNA);
+    var body = new Uint8Array(1024).fill(PRAZDNA_FARBA);
     if (ulozene) {
       try {
         var u = atob(ulozene);
-        // Staršie uložené kresby používali 255 ako prázdno; služba berie len
+        // Staršie uložené kresby mali prázdno mimo palety; služba berie len
         // 0 až 15, tak sa to tu preloží a nikomu nič nezmizne.
-        for (var i = 0; i < 1024 && i < u.length; i++) { var v = u.charCodeAt(i); body[i] = v > 15 ? PRAZDNA : v; }
+        for (var i = 0; i < 1024 && i < u.length; i++) { var v = u.charCodeAt(i); body[i] = v > 15 ? PRAZDNA_FARBA : v; }
       } catch (e) {}
     }
     var farba = 5;
     function prekresli() {
       kctx.clearRect(0, 0, 32, 32);
       for (var i = 0; i < 1024; i++) {
-        kctx.fillStyle = PALETA[body[i]] || PALETA[PRAZDNA];
+        kctx.fillStyle = PALETA[body[i]] || PALETA[PRAZDNA_FARBA];
         kctx.fillRect(i % 32, (i / 32) | 0, 1, 1);
       }
     }
@@ -1155,11 +1548,11 @@
       list.querySelectorAll('[data-farba]').forEach(function (x) { x.setAttribute('aria-pressed', String(Number(x.getAttribute('data-farba')) === farba)); });
     });
     list.querySelector('[data-kres="guma"]').addEventListener('click', function () {
-      farba = PRAZDNA;
+      farba = PRAZDNA_FARBA;
       list.querySelectorAll('[data-farba]').forEach(function (x) { x.setAttribute('aria-pressed', 'false'); });
     });
     list.querySelector('[data-kres="vycisti"]').addEventListener('click', function () {
-      body.fill(PRAZDNA);
+      body.fill(PRAZDNA_FARBA);
       prekresli();
       // Vymazaná kresba sa musí vymazať aj z úložiska. Inak by sa pri kúpe na
       // štvorec preniesla tá stará, ktorú človek práve zahodil.
@@ -1168,11 +1561,11 @@
     list.querySelector('[data-akcia="spat2"]').addEventListener('click', ukazList);
   }
 
-  // ── Hľadanie obce ────────────────────────────────────────────────────────
+  // ── Hľadanie miesta ──────────────────────────────────────────────────────
   var hladaciePole = koren.querySelector('[data-hladanie]');
   var navrhy = koren.querySelector('[data-navrhy]');
   var index = null, indexSa = false;
-  function bezDiakritiky(s) { return s.normalize ? s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase() : s.toLowerCase(); }
+  function bezDiakritiky(s) { return s.normalize ? s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase() : s.toLowerCase(); }
 
   function nacitajIndex() {
     if (index || indexSa) return;
@@ -1204,12 +1597,7 @@
       if (k.lastIndexOf(q, 0) === 0) { zac.push(i); if (zac.length > 60) break; }
       else if (vnutri.length < 40 && k.indexOf(q) > 0) vnutri.push(i);
     }
-    var domace = JAZYK === 'sk' ? ['SK', 'CZ'] : [];
-    var vysl = zac.concat(vnutri).sort(function (a, b) {
-      var da = domace.indexOf(index.kod[a]) >= 0 ? 0 : 1, db = domace.indexOf(index.kod[b]) >= 0 ? 0 : 1;
-      if (da !== db) return da - db;
-      return index.meno[a].length - index.meno[b].length;
-    }).slice(0, 12);
+    var vysl = zac.concat(vnutri).sort(function (a, b) { return index.meno[a].length - index.meno[b].length; }).slice(0, 12);
     if (!vysl.length) { navrhy.hidden = false; navrhy.innerHTML = '<li><button type="button" disabled>' + esc(T.nicSaNenaslo) + '</button></li>'; return; }
     navrhy.innerHTML = vysl.map(function (i) {
       return '<li><button type="button" data-i="' + i + '">' + esc(index.meno[i]) + '<span>' + esc(index.kod[i]) + '</span></button></li>';
@@ -1240,7 +1628,7 @@
       var i = Number(b.getAttribute('data-i'));
       navrhy.hidden = true;
       hladaciePole.value = index.meno[i];
-      letNa(index.lat[i], index.lon[i]);
+      letNaBunku(index.lat[i], index.lon[i]);
       sleduj('svet_hladanie');
     });
     document.addEventListener('click', function (e) { if (!koren.querySelector('.hladanie').contains(e.target)) navrhy.hidden = true; });
@@ -1257,56 +1645,46 @@
       navigator.geolocation.getCurrentPosition(function (p) {
         skryPas();
         sleduj('svet_moja_poloha');
-        letNa(p.coords.latitude, p.coords.longitude);
+        letNaBunku(p.coords.latitude, p.coords.longitude);
       }, function () { pas(T.polohaZamietnuta); }, { enableHighAccuracy: false, timeout: 12000, maximumAge: 600000 });
     });
   }
 
-  function letNa(lat, lon) {
+  /** Plynulý prelet na nájdené miesto a výber štvorca, v ktorom leží. */
+  function letNaBunku(lat, lon) {
+    dotyk();
     var r = riadokZoSirky(lat), c = stlpecZDlzky(r, lon);
-    var cielS = Math.min(medze().maxS, 72 / (360 / STL[r]));
-    var odLon = S.lon, odMy = S.my, odS = S.s;
-    var doLon = lon, doMy = doY(lat);
-    if (POKOJ) { S.lon = doLon; S.my = doMy; S.s = cielS; uprav(); vyber(r, c, true); return; }
-    var zac = performance.now(), trvanie = 420;
-    (function krok(t) {
-      var p = Math.min(1, (t - zac) / trvanie), e = 1 - Math.pow(1 - p, 4);
-      S.lon = odLon + (doLon - odLon) * e;
-      S.my = odMy + (doMy - odMy) * e;
-      S.s = odS * Math.pow(cielS / odS, e);
-      uprav(); ziadaj();
-      if (p < 1) requestAnimationFrame(krok); else vyber(r, c, true);
-    })(performance.now());
+    letNa(lat, lon, Math.min(220 / (360 / STL[r]), (72 * dpr) / (360 / STL[r])), function () { vyber(r, c, true); });
   }
 
   // ── Štart ────────────────────────────────────────────────────────────────
-  fetch(ZAKLAD + 'mriezka.json', { cache: 'force-cache' })
+  fetch(ZAKLAD + 'mriezka.json', { cache: 'no-cache' })
     .then(function (o) { return o.json(); })
     .then(function (m) {
-      S.mriezka = m;
-      S.dlazdice = m.dlazdice;
-      svetove = m.dlazdice.filter(function (d) { return d.svet; });
-      regionalne = m.dlazdice.filter(function (d) { return !d.svet; });
-      var e = m.etapa;
-      var el = koren.querySelector('[data-pocitadlo]');
-      if (el && e) el.innerHTML = '<b>' + cisloText(e.buniek) + '</b>' + esc(T.pocitadloEtapa);
+      if (m.podklad && window.Path2D) {
+        POD = m.podklad;
+        POD.ma = POD.dlazdice.map(function (zoznam) { var o = {}; zoznam.forEach(function (x) { o[x] = 1; }); return o; });
+        // Celý svet sa pýta hneď: nesie mená štátov a morí pre každé priblíženie a
+        // kreslí sa na mieste jemnejších dlaždíc, kým sa sťahujú.
+        dlazdicaV(0, 0, 0, false);
+      }
       prepocitaj();
       var id = Number(parametre.get('p'));
       var b = id ? zCisla(id) : null;
+      // Odkaz na pohľad: #v=šírka,dĺžka,pixelov na stupeň. Len sa číta, stránka ho
+      // sama do adresy nepíše, aby v štatistike návštev nevznikali tisíce adries.
+      var pohlad = /^#v=(-?[\d.]+),(-?[\d.]+),([\d.]+)$/.exec(location.hash || '');
       if (b) {
+        dotyk();
         S.lon = -180 + ((b.c + 0.5) * 360) / STL[b.r];
         S.my = doY(stredRiadku(b.r));
-        S.s = Math.min(medze().maxS, 96 / (360 / STL[b.r]));
+        // Bunka z odkazu má 96 px na počítači a asi 56 px na telefóne, aby okolo nej ostalo vidno okolie.
+        S.s = Math.min(220, Math.min(96, Math.max(48, S.w / dpr / 7)) * dpr) / (360 / STL[b.r]);
         uprav();
         vyber(b.r, b.c, true);
-      } else {
-        // Prvý pohľad je celý svet: v predaji je celá súš, tak sa nezačína nad
-        // jednou krajinou. Najmenšie priblíženie je presne to, pri ktorom mapa
-        // vyplní plátno; stred je posunutý na sever, lebo tam je väčšina súše
-        // a spodnú tretinu plátna na počítači aj tak kryje list.
-        S.lon = 12;
-        S.my = doY(24);
-        S.s = medze().minS;
+      } else if (pohlad) {
+        dotyk();
+        S.my = doY(Number(pohlad[1])); S.lon = Number(pohlad[2]); S.s = Number(pohlad[3]) * dpr;
         uprav();
       }
       if (navratZPokladne) {
@@ -1315,6 +1693,7 @@
       }
       ziadaj();
       skusSluzbu();
+      if (LADENIE > 1) setTimeout(meranyPosun, 1300);
     })
     .catch(function () { pas(T.mapaChyba); });
 
@@ -1323,26 +1702,19 @@
   sleduj('svet_zobrazenie_mapy');
   }
 
-  // ── Stránka jednej parcely. Funguje aj bez homelabu: miesto, rozmer a
-  //    súradnice vie mriežka sama, z homelabu prichádza len meno a kresba. ──
+  // ── Stránka jednej parcely. Funguje aj bez homelabu: rozmer a súradnice vie
+  //    mriežka sama, z homelabu prichádza meno miesta, meno majiteľa a kresba. ──
   function strankaParcely(koren) {
     var id = Number(new URLSearchParams(location.search).get('id'));
     var b = zCisla(id);
     if (!b) { koren.innerHTML = '<p>' + esc(T.chybaParcely) + '</p>'; return; }
     var lat = stredRiadku(b.r), lon = -180 + ((b.c + 0.5) * 360) / STL[b.r];
-    // Tu sa nesmie použiť „Mimo otvorenej etapy“: táto stránka o etapách nič
-    // nevie, takže by o štvorci v Bratislave tvrdila nepravdu vždy, keď homelab
-    // nebeží. Chýbajúce meno miesta je chýbajúce meno miesta, nie stav predaja.
+    // Chýbajúce meno miesta je chýbajúce meno miesta, nie stav predaja.
     function vykresli(p, bezSluzby) {
       var h = '<div class="parcela-hlava">';
       h += p && p.art_url ? '<img src="' + esc(p.art_url) + '" width="128" height="128" decoding="async" alt="' + esc(T.kresbaAlt) + '">' : '';
       h += '<div><p class="list-cislo">' + esc(T.cislo) + ' ' + cisloText(id) + '</p>';
-      var krajina = p && (p.country_name || p.country);
-      var casti = p ? [p.region !== p.city ? p.region : null, krajina].filter(Boolean) : [];
-      h += '<p class="list-miesto">' + (p && p.city ? '<b>' + esc(p.city) + '</b>' + (casti.length ? ', ' + esc(casti.join(', ')) : '')
-        : casti.length ? '<b>' + esc(casti.join(', ')) + '</b>'
-          : p && !p.for_sale && p.status === 'closed' ? esc(p.land ? T.nepredajnaSus : T.more)
-            : esc(p || bezSluzby ? T.miestoBezSluzby : T.miestoZistujem)) + '</p></div></div>';
+      h += '<p class="list-miesto">' + (miestoHtml(p) || esc(p || bezSluzby ? T.miestoBezSluzby : T.miestoZistujem)) + '</p></div></div>';
       h += '<dl class="list-udaje">';
       h += '<div><dt>' + esc(T.suradnice) + '</dt><dd>' + esc(stupne(lat, lon)) + '</dd></div>';
       h += '<div><dt>' + esc(T.rozmer) + '</dt><dd>' + km(sirkaKm(b.r)) + ' × ' + km(vyskaKm(b.r)) + ' km</dd></div>';
@@ -1359,13 +1731,12 @@
 
   // ── Rebríček. Len skutočné dáta; keď je prázdno, napíše sa, že je prázdno. ──
   function rebricek(koren) {
-    // Služba vracia {"poradie":[{"nazov":…,"spolu":…,"za_mesiac":…}]}.
-    // S d.rows bol rebríček prázdny aj vtedy, keď bolo čo ukázať.
+    // Služba vracia {"poradie":[{"nazov":…,"spolu":…,"za_mesiac":…}]}. Rebríček
+    // miest more neobsahuje; územie bez kódu krajiny má krajinu prázdnu a nič sa
+    // mu nedopĺňa.
     api('/api/leaderboard?scope=obec').then(function (d) {
       var riadky = (d && d.poradie) || [];
       if (!riadky.length) return;
-      // Krajina je v každom riadku: vo svete je 189 názvov miest viackrát a
-      // Springfield bez krajiny nič nehovorí. Služba ich zoskupuje podľa slugu.
       var h = '<table class="rebricek"><thead><tr><th>' + esc(T.rebricekMiesto) + '</th><th>' + esc(T.rebricekKrajina) + '</th><th>' + esc(T.rebricekZaMesiac) + '</th><th>' + esc(T.rebricekPocet) + '</th></tr></thead><tbody>';
       for (var i = 0; i < riadky.length && i < 50; i++) {
         h += '<tr><td>' + esc(riadky[i].nazov) + '</td><td>' + esc(riadky[i].krajina_nazov || riadky[i].krajina || '') + '</td><td>' + cisloText(riadky[i].za_mesiac || 0) + '</td><td>' + cisloText(riadky[i].spolu) + '</td></tr>';

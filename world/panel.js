@@ -1,4 +1,5 @@
-/* The World in Squares: panel majiteľa (/world/owner/ a /svet/majitel/).
+/* The World in Squares: panel majiteľa (/world/owner/). Stará adresa /svet/majitel/
+   sem od 21. 9. 2026 len presmeruje, aj s kľúčom za mriežkou.
    Zdroj: ops/svet/majitel.js, do hubu ho ako /world/panel.js kopíruje ops/svet/postav.mjs.
    Neupravovať v produkte.
 
@@ -169,8 +170,26 @@
   function ukazStav(el, s) { el.className = 'stav stav-' + s.trieda; el.innerHTML = s.html; }
   function ukazSpravu(el, trieda, text) { el.className = 'stav stav-' + trieda; el.textContent = text; }
 
+  /**
+   * Kde stvorec lezi. To iste pravidlo ako miestoHtml() na mape a ako
+   * riadky_miesta() na certifikate: krajina existuje len pri susi s kodom
+   * krajiny, more a uzemia bez kodu maju namiesto nej "area" a krajina sa im
+   * nikdy nedoplna. Pri mori je "city" len najblizsie mesto na brehu, takze sa
+   * nesmie napisat tak, akoby stvorec lezal v nom.
+   */
+  function miestoHtml(p) {
+    if (p.terrain === 'sea') {
+      return '<b>' + esc(p.area || T.more) + '</b>'
+        + (p.city ? ' <span class="stvorec-blizko">' + esc(T.najblizsie) + ' ' + esc(p.city) + '</span>' : '');
+    }
+    var casti = [p.region && p.region !== p.city ? p.region : null,
+      p.country_name || p.country || p.area].filter(Boolean).join(', ');
+    if (p.city) return '<b>' + esc(p.city) + '</b>' + (casti ? ', ' + esc(casti) : '');
+    return casti ? '<b>' + esc(casti) + '</b>' : '';
+  }
+
   function stvorecHtml(p) {
-    var id = p.id, miesto = [p.region !== p.city ? p.region : null, p.country_name || p.country].filter(Boolean).join(', ');
+    var id = p.id;
     var meta = [];
     if (p.paid_at) meta.push(esc(T.kupene) + ' ' + esc(datum(p.paid_at)));
     if (p.founder_no) meta.push(esc(T.zakladatel) + ' ' + esc(String(p.founder_no)) + ' ' + esc(T.zo100));
@@ -180,7 +199,7 @@
     // Zamerne div, nie <header>: paper.css styluje kazdy <header> ako hlavicku webu.
     h += '<div class="stvorec-hlava"><div>';
     h += '<h3 class="stvorec-cislo">' + esc(T.cislo) + ' ' + cisloText(id) + '</h3>';
-    h += '<p class="stvorec-miesto">' + (p.city ? '<b>' + esc(p.city) + '</b>' + (miesto ? ', ' : '') : '') + esc(miesto) + '</p>';
+    h += '<p class="stvorec-miesto">' + miestoHtml(p) + '</p>';
     if (meta.length) h += '<p class="stvorec-meta">' + meta.join(' · ') + '</p>';
     if (p.status === 'hidden') h += '<p class="stav stav-skryte">' + esc(T.skryta) + '</p>';
     h += '</div><div class="stvorec-akcie">';
