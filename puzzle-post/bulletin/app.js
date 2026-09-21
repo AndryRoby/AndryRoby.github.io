@@ -34,7 +34,9 @@ const API = 'https://arling-asistent.arling.workers.dev';
 
 /* Centy pred zlavovym kodom. Musia sediet s ops/stripe/puzzle-post-bulletin.mjs. */
 const CENY = { 'bulletin-mesacne': 1900, 'bulletin-rocne': 19000, 'pro-mesacne': 3900, 'pro-rocne': 39000 };
-const NAJMENSIA = Math.min.apply(null, Object.keys(CENY).map(function (k) { return CENY[k]; }));
+/* Vsetky styri sumy: ked navratova adresa plan nenesie, platba sa prijme len
+   vtedy, ked sa rovna niektorej z nich. Ziadne "aspon tolko". */
+const SUMY = Object.keys(CENY).map(function (k) { return CENY[k]; });
 
 const CAKAJUCA = 'bulletin:cakajuca';
 
@@ -127,8 +129,13 @@ async function overPlatbu(sid, plan, pokus) {
   const zaklad = st && typeof st.amount_subtotal === 'number' ? st.amount_subtotal : st && st.amount_total;
   if (st && st.paid) {
     const jeTest = st.livemode === false;
-    const treba = CENY[plan] || NAJMENSIA;
-    if (typeof zaklad === 'number' && zaklad >= treba) {
+    // Presna suma z registra, nie "aspon tolko": inak by zaplatena kontrola za
+    // 149 EUR alebo hocijaka drahsia session odomkla aj tuto stranku (nalez N1
+    // auditu z 21. 9. 2026). Ked plan v adrese chyba, prijme sa ktorakolvek zo
+    // styroch cien registra. livemode musi sediet s rezimom tohto prehliadaca:
+    // testovaci rezim nikdy nepotvrdi zivu platbu a naopak.
+    const sediSuma = typeof zaklad === 'number' && (plan ? zaklad === CENY[plan] : SUMY.includes(zaklad));
+    if (sediSuma && st.livemode === !testRezim() && st.currency === 'eur') {
       zabudni(CAKAJUCA);
       stavPlatby.innerHTML = T.zaplatene + (jeTest ? ' ' + T.testPoznamka : '') + ' ' + T.nedoslo;
       track('zaplatene', { plan: plan || '', test: jeTest, produkt: 'puzzle-post-bulletin' });
@@ -165,6 +172,8 @@ async function ukazPrvuStranu(sid, jeTest) {
     poznamka: zo.tyzden ? T.tyzden(zo.tyzden) : '',
     subory: zo.subory,
     email: zo.email,
+    // Veta o e-maile len ked to sluzba potvrdi (nalez N8 auditu z 21. 9. 2026).
+    emailed: zo.emailed,
     session: sid,
     test: jeTest,
   });

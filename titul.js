@@ -66,9 +66,15 @@ export const PANEL = {
   nadpis: 'Your files',
   stiahnut: 'Download ',
   ukazka: 'Free sample',
+  /* Veta o e-maile sa smie povedať len vtedy, keď licenčná služba potvrdí, že
+   * e-mail naozaj odišiel (pole emailed v odpovedi /api/purchase/links). Kým
+   * také pole nepríde, platí mailNeisty: nič sa netvrdí, len sa povie, čo robiť.
+   * Nález N4 a N8 auditu z 21. 9. 2026: stránka hovorila „were also sent to“
+   * aj vtedy, keď odkazy prišli zo samotnej stránky a žiadny e-mail neodišiel. */
   mailPred: 'These links stay in this browser and were also sent to ',
   mailBez: 'the e-mail address you paid with',
   mailPo: '.',
+  mailNeisty: 'Save these links now: they stay in this browser only. We cannot confirm here whether the e-mail with them has gone out, so if nothing arrives within a few minutes, write to andrej@arling.sk with the order number below and we will send the files by hand.',
   objednavka: 'Order ',
   test: 'Test mode: the payment was made in Stripe test mode, no money is taken; the files below are the real ones.',
   bezCesty: 'The payment is confirmed, but the download is not switched on yet. Write to andrej@arling.sk with the order number below and we will send you the files today.',
@@ -221,6 +227,8 @@ export async function odkazyZoSluzby(sid, volby = {}) {
   return {
     subory,
     email: typeof odpoved.email === 'string' ? odpoved.email : '',
+    // Len jasne potvrdene odoslanie. Chybajuce pole znamena "nevieme", nie "ano".
+    emailed: odpoved.emailed === true,
     tyzden: typeof odpoved.week === 'string' ? odpoved.week : '',
     nazov: typeof odpoved.title === 'string' ? odpoved.title : '',
     produkt: typeof odpoved.product === 'string' ? odpoved.product : '',
@@ -230,8 +238,9 @@ export async function odkazyZoSluzby(sid, volby = {}) {
 /** Najprv sluzba, potom blok titul-data. Vracia vzdy pouzitelny tvar. */
 export async function zdrojSuborov(sid, data, volby = {}) {
   const zo = await odkazyZoSluzby(sid, volby);
-  if (zo) return { zdroj: 'sluzba', subory: zo.subory, email: zo.email, tyzden: zo.tyzden, nazov: zo.nazov };
-  return { zdroj: 'stranka', subory: suboryZoStranky(data), email: '', tyzden: '', nazov: '' };
+  if (zo) return { zdroj: 'sluzba', subory: zo.subory, email: zo.email, emailed: zo.emailed, tyzden: zo.tyzden, nazov: zo.nazov };
+  // Zdroj "stranka" znamena, ze sluzba neodpovedala, takze o e-maile nevieme nic.
+  return { zdroj: 'stranka', subory: suboryZoStranky(data), email: '', emailed: false, tyzden: '', nazov: '' };
 }
 
 /* ── Panel po zaplateni ────────────────────────────────────────────────── */
@@ -290,12 +299,19 @@ export function vykresliPanel(koren, stav = {}) {
     koren.appendChild(p);
   }
 
+  /* O e-maile sa hovori len to, co je dokazane. emailed === true prichadza
+     z licencnej sluzby a znamena, ze e-mail bol naozaj odoslany; cokolvek ine
+     (stare API bez toho pola, vypadok sluzby, zlyhany Resend) je "nevieme". */
   const mail = prvok('p', 'hotovo-mail');
-  mail.appendChild(d.createTextNode(PANEL.mailPred));
-  const kto = d.createElement('b');
-  kto.textContent = stav.email ? String(stav.email) : PANEL.mailBez;
-  mail.appendChild(kto);
-  mail.appendChild(d.createTextNode(PANEL.mailPo));
+  if (stav.emailed === true) {
+    mail.appendChild(d.createTextNode(PANEL.mailPred));
+    const kto = d.createElement('b');
+    kto.textContent = stav.email ? String(stav.email) : PANEL.mailBez;
+    mail.appendChild(kto);
+    mail.appendChild(d.createTextNode(PANEL.mailPo));
+  } else {
+    mail.textContent = PANEL.mailNeisty;
+  }
   koren.appendChild(mail);
 
   const cislo = cisloObjednavky(stav.session);
@@ -392,6 +408,7 @@ export async function ukazPoPlatbe(volby = {}) {
   vykresliPanel(volby.blok, {
     subory: zdroj.subory,
     email: zdroj.email,
+    emailed: zdroj.emailed,
     session: volby.sid,
     test: !!volby.test,
     nadpis: volby.nadpis,

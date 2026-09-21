@@ -111,7 +111,15 @@ const T = {
     siet: 'Overenie platby zlyhalo (sieť). Obnovte stránku; ak to pretrvá, napíšte na andrej@arling.sk.',
     testCudzi: 'Toto je testovacia platba zo Stripe test módu. Odomkne sťahovanie len v prehliadači, ktorý test spustil cez ?test=1.',
     testPoznamka: '(Testovací režim: platba bola v Stripe test móde, žiadne peniaze neprišli.)',
+    testVodoznakXml: 'TESTOVACIA FAKTURA: odomknuta platbou v Stripe test mode, ziadne peniaze neprisli. Nepouzivajte tento subor ako skutocny doklad.',
+    testStiahnutie: 'V testovacom režime sa sťahuje výslovne označené testovacie XML: názov súboru začína na TEST- a v poznámke dokladu stojí veta o testovacej faktúre. Ostré XML vydáva len zaplatená živá platba.',
     odomknuteDo: (d) => 'Odomknuté do ' + d + '.',
+    odkazNadpis: 'Uložte si tento odkaz.',
+    odkazText: 'Týmto odkazom sa k zaplatenému sťahovaniu dostanete aj v inom prehliadači alebo na inom počítači, kým platnosť trvá. Stránka si platbu overí znova priamo u Stripe, takže odkaz sa dá použiť opakovane.',
+    odkazMail: 'Poslať mi odkaz e-mailom',
+    odkazPravda: 'Vyplnená faktúra ostáva len v tomto prehliadači a nikam sa neposiela. V inom prehliadači sa sťahovanie odomkne, ale údaje faktúry si zadáte znova. Od nás vám o tomto nákupe žiadny e-mail nepríde, doklad posiela Stripe.',
+    odkazPredmet: 'Odkaz na moje zaplatené XML z arling.sk',
+    odkazTelo: (u) => 'Odkaz na zaplatené sťahovanie XML:\n\n' + u + '\n\nOdkaz si odložte. Po jeho otvorení sa sťahovanie odomkne aj v inom prehliadači.',
     mailtoPredmet: 'E-faktúra: XML na stiahnutie',
     mailtoTelo: 'Dobrý deň,\n\nplatba za XML z arling.sk/efaktura/ sa ešte zapína. Vyplnenú faktúru mám pripravenú v prehliadači. Poprosím o pokyny.\n\nĎakujem',
   },
@@ -168,7 +176,15 @@ const T = {
     siet: 'Ověření platby selhalo (síť). Obnovte stránku; pokud to přetrvává, napište na andrej@arling.sk.',
     testCudzi: 'Toto je testovací platba ze Stripe test módu. Odemkne stahování jen v prohlížeči, který test spustil přes ?test=1.',
     testPoznamka: '(Testovací režim: platba byla ve Stripe test módu, žádné peníze nepřišly.)',
+    testVodoznakXml: 'TESTOVACI FAKTURA: odemcena platbou ve Stripe test modu, zadne penize neprisly. Nepouzivejte tento soubor jako skutecny doklad.',
+    testStiahnutie: 'V testovacím režimu se stahuje výslovně označené testovací XML: název souboru začíná na TEST- a v poznámce dokladu stojí věta o testovací faktuře. Ostré XML vydá jen zaplacená živá platba.',
     odomknuteDo: (d) => 'Odemčeno do ' + d + '.',
+    odkazNadpis: 'Uložte si tento odkaz.',
+    odkazText: 'Tímto odkazem se k zaplacenému stahování dostanete i v jiném prohlížeči nebo na jiném počítači, dokud platnost trvá. Stránka si platbu ověří znovu přímo u Stripe, takže odkaz lze použít opakovaně.',
+    odkazMail: 'Poslat mi odkaz e-mailem',
+    odkazPravda: 'Vyplněná faktura zůstává jen v tomto prohlížeči a nikam se neodesílá. V jiném prohlížeči se stahování odemkne, ale údaje faktury zadáte znovu. Od nás vám o tomto nákupu žádný e-mail nepřijde, doklad posílá Stripe.',
+    odkazPredmet: 'Odkaz na moje zaplacené XML z arling.sk',
+    odkazTelo: (u) => 'Odkaz na zaplacené stahování XML:\n\n' + u + '\n\nOdkaz si uložte. Po jeho otevření se stahování odemkne i v jiném prohlížeči.',
     mailtoPredmet: 'E-faktura: XML ke stažení',
     mailtoTelo: 'Dobrý den,\n\nplatba za XML z arling.sk/efaktura/ se ještě zapíná. Vyplněnou fakturu mám připravenou v prohlížeči. Poprosím o pokyny.\n\nDěkuji',
   },
@@ -227,7 +243,15 @@ const T = {
     siet: 'Die Prüfung der Zahlung ist fehlgeschlagen (Netzwerk). Laden Sie die Seite neu; falls das anhält, schreiben Sie an andrej@arling.sk.',
     testCudzi: 'Dies ist eine Testzahlung aus dem Stripe-Testmodus. Sie schaltet den Download nur in dem Browser frei, der den Test über ?test=1 gestartet hat.',
     testPoznamka: '(Testmodus: die Zahlung erfolgte im Stripe-Testmodus, es wurde kein Geld überwiesen.)',
+    testVodoznakXml: 'TESTRECHNUNG: durch eine Zahlung im Stripe-Testmodus freigeschaltet, es wurde kein Geld ueberwiesen. Verwenden Sie diese Datei nicht als echten Beleg.',
+    testStiahnutie: 'Im Testmodus wird ausdrücklich gekennzeichnetes Test-XML heruntergeladen: der Dateiname beginnt mit TEST- und im Hinweis des Belegs steht der Satz über die Testrechnung. Echtes XML gibt nur eine bezahlte Livezahlung frei.',
     odomknuteDo: (d) => 'Freigeschaltet bis ' + d + '.',
+    odkazNadpis: 'Bewahren Sie diesen Link auf.',
+    odkazText: 'Mit diesem Link kommen Sie auch in einem anderen Browser oder an einem anderen Rechner an den bezahlten Download, solange die Freischaltung gilt. Die Seite prüft die Zahlung erneut direkt bei Stripe, der Link lässt sich also mehrfach verwenden.',
+    odkazMail: 'Link per E-Mail an mich senden',
+    odkazPravda: 'Die ausgefüllte Rechnung bleibt nur in diesem Browser und wird nirgendwohin gesendet. In einem anderen Browser wird der Download freigeschaltet, die Rechnungsdaten geben Sie dort erneut ein. Von uns kommt zu diesem Kauf keine E-Mail, den Beleg sendet Stripe.',
+    odkazPredmet: 'Link zu meinem bezahlten XML von arling.sk',
+    odkazTelo: (u) => 'Link zum bezahlten XML-Download:\n\n' + u + '\n\nBewahren Sie den Link auf. Beim Öffnen wird der Download auch in einem anderen Browser freigeschaltet.',
     mailtoPredmet: 'E-Rechnung: XML zum Herunterladen',
     mailtoTelo: 'Guten Tag,\n\ndie Zahlung für das XML von arling.sk/efaktura/ wird noch aktiviert. Die ausgefüllte Rechnung liegt in meinem Browser bereit. Bitte um Hinweise.\n\nVielen Dank',
   },
@@ -288,7 +312,15 @@ const T = {
     siet: 'Checking the payment failed (network). Reload the page; if it keeps happening, write to andrej@arling.sk.',
     testCudzi: 'This is a test payment from Stripe test mode. It unlocks the download only in the browser that started the test with ?test=1.',
     testPoznamka: '(Test mode: the payment was in Stripe test mode, no money changed hands.)',
+    testVodoznakXml: 'TEST INVOICE: unlocked by a payment in Stripe test mode, no money changed hands. Do not use this file as a real document.',
+    testStiahnutie: 'In test mode the download is an explicitly marked test XML: the file name starts with TEST- and the document note carries the sentence about a test invoice. Only a paid live payment produces the real XML.',
     odomknuteDo: (d) => 'Unlocked until ' + d + '.',
+    odkazNadpis: 'Save this link.',
+    odkazText: 'This link takes you back to the paid download in another browser or on another computer, for as long as the unlock lasts. The page checks the payment again straight with Stripe, so the link works more than once.',
+    odkazMail: 'E-mail the link to me',
+    odkazPravda: 'The invoice you filled in stays in this browser only and is never sent anywhere. In another browser the download unlocks, but you enter the invoice data again. We send you no e-mail about this purchase; the receipt comes from Stripe.',
+    odkazPredmet: 'Link to my paid XML from arling.sk',
+    odkazTelo: (u) => 'Link to the paid XML download:\n\n' + u + '\n\nKeep this link. Opening it unlocks the download in another browser too.',
     mailtoPredmet: 'E-invoice: XML download',
     mailtoTelo: 'Hello,\n\nthe payment for the XML from arling.sk/efaktura/ is still being switched on. The filled in invoice is ready in my browser. Please advise.\n\nThank you',
   },
@@ -1206,6 +1238,81 @@ function odkazNaKupu(btn) {
 function mailtoOdkaz() {
   return 'mailto:andrej@arling.sk?subject=' + encodeURIComponent(T.mailtoPredmet) + '&body=' + encodeURIComponent(T.mailtoTelo);
 }
+/* Odomkla stahovanie testovacia platba? odomknute() uz ziada, aby sa z.test
+ * rovnal rezimu tohto prehliadaca, takze odomknute v testovom rezime je vzdy
+ * testovacia platba. Vtedy z generatora vyjde vyslovne oznacene testovacie XML
+ * (nazov TEST-... a veta v poznamke dokladu), nikdy ostre. Nalez N1 auditu
+ * z 21. 9. 2026: verejny parameter ?test=1 vydaval ostre XML. */
+function testovyNakup() {
+  return !!odomknute() && testRezim();
+}
+/* Kopia faktury s vetou o teste v poznamke dokladu (cbc:Note). Vlastnu
+ * poznamku pouzivatela neprepise, len sa pred nu pripoji. Ciste, bez DOM:
+ * testuje sa v products/arling-sk/efaktura/platba.test.mjs. */
+function fakturaSTestomVPoznamke(f, veta) {
+  const p = String((f && f.poznamka) || '').trim();
+  return Object.assign({}, f, { poznamka: p ? veta + ' ' + p : veta });
+}
+function oznacXmlAkoTest(f) {
+  try {
+    return vytvorUbl(fakturaSTestomVPoznamke(f, T.testVodoznakXml), { profil: f.profil || 'peppol', jazyk: LANG });
+  } catch (e) { return ''; }
+}
+/* Je odpoved workera platbou presne za tento produkt a presne v tomto rezime?
+ * Vracia 'jedna', '30dni' alebo null. Presna suma a mena z registra
+ * (ops/stripe/efaktura-odkazy.json: 290 a 990 centov, EUR) a livemode zhodny
+ * s rezimom prehliadaca; testovacia platba tak nikdy neodomkne ostry rezim
+ * a ziva platba neodomkne testovaci. Ciste, bez DOM a bez siete. */
+function jeNasaPlatba(st, jeTest) {
+  if (!st || typeof st !== 'object' || !st.paid) return null;
+  if (st.livemode !== !jeTest) return null;
+  if (st.currency !== 'eur') return null;
+  const zaklad = typeof st.amount_subtotal === 'number' ? st.amount_subtotal : st.amount_total;
+  if (zaklad === CENA_30DNI) return '30dni';
+  if (zaklad === CENA_JEDNA) return 'jedna';
+  return null;
+}
+/* Navrat k nakupu bez e-mailu (nalez N5 auditu). Ten isty koncovy bod, ktory
+ * stranka vola po platbe (GET /v1/kontrola/status), je len citanie session
+ * v Stripe a da sa volat opakovane, takze tento odkaz odomkne stahovanie aj
+ * v inom prehliadaci, kym platnost trva. Ziadne odosielanie z nasho servera:
+ * tlacidlo otvori vlastneho postoveho klienta cez mailto:. */
+function odkazNaNakup() {
+  const z = nacitaj('efaktura:zaplatene');
+  if (!z || !z.session) return '';
+  try {
+    const u = new URL(location.href);
+    u.hash = '';
+    u.search = '';
+    u.searchParams.set('session_id', z.session);
+    if (z.test) u.searchParams.set('test', '1');
+    return u.toString();
+  } catch (e) { return ''; }
+}
+function postavOdkazSpat(koren) {
+  const url = odkazNaNakup();
+  if (!koren || !url) return;
+  const el2 = (tag, trieda, text) => { const x = document.createElement(tag); if (trieda) x.className = trieda; if (text) x.textContent = text; return x; };
+  koren.appendChild(el2('h3', null, T.odkazNadpis));
+  koren.appendChild(el2('p', null, T.odkazText));
+  const pa = el2('p', 'odkaz-spat-url');
+  // Dlhe session id sa na telefone musi zalomit, inak by rozbilo rozlozenie.
+  pa.style.overflowWrap = 'anywhere';
+  const a = document.createElement('a');
+  a.href = url;
+  a.rel = 'nofollow';
+  a.textContent = url;
+  pa.appendChild(a);
+  koren.appendChild(pa);
+  const cta = el2('p');
+  const mail = el2('a', 'btn btn-line', T.odkazMail);
+  mail.href = 'mailto:?subject=' + encodeURIComponent(T.odkazPredmet) + '&body=' + encodeURIComponent(T.odkazTelo(url));
+  mail.addEventListener('click', () => track('efaktura_odkaz_mailto', { produkt: 'efaktura', jazyk: LANG }));
+  cta.appendChild(mail);
+  koren.appendChild(cta);
+  koren.appendChild(el2('p', 'pomoc', T.odkazPravda));
+  if (testovyNakup()) koren.appendChild(el2('p', 'pomoc', T.testStiahnutie));
+}
 
 const stavPlatby = $('stav-platby');
 const btnJedna = $('kupa-jedna');
@@ -1225,7 +1332,11 @@ function ukazPlatbu() {
     if (typ) {
       const z = nacitaj('efaktura:zaplatene') || {};
       const doKedy = new Date((z.t || 0) + (PLATNOST[typ] || 0));
-      odomkBlok.textContent = T.odomknuteDo(doKedy.toLocaleDateString(T.locale) + ' ' + doKedy.toLocaleTimeString(T.locale, { hour: '2-digit', minute: '2-digit' }));
+      odomkBlok.textContent = '';
+      const prvy = document.createElement('p');
+      prvy.textContent = T.odomknuteDo(doKedy.toLocaleDateString(T.locale) + ' ' + doKedy.toLocaleTimeString(T.locale, { hour: '2-digit', minute: '2-digit' }));
+      odomkBlok.appendChild(prvy);
+      postavOdkazSpat(odomkBlok);
     }
   }
 }
@@ -1257,7 +1368,13 @@ if (btnStiahnut) btnStiahnut.addEventListener('click', () => {
   if (!posledneXml || !blokChyb) return;
   // brana: bez zaplatenia sa nestahuje nic, aj keby sa tlacidlo objavilo inak
   if (!odomknute()) { ukazPlatbu(); return; }
-  const v = skontroluj(posledneXml);
+  /* Testovacia platba nesmie vydat ostre XML. Poznamka dokladu (cbc:Note)
+     nesie vetu o testovacej fakture, nazov suboru zacina na TEST-. Vlastnu
+     poznamku pouzivatela to neprepise, len sa pred nu pripoji. */
+  const jeTest = testovyNakup();
+  const xml = jeTest ? oznacXmlAkoTest(faktura) : posledneXml;
+  if (!xml) return;
+  const v = skontroluj(xml);
   vycisti(blokChyb);
   if (v.sumar.chyby > 0) {
     blokChyb.hidden = false;
@@ -1267,9 +1384,10 @@ if (btnStiahnut) btnStiahnut.addEventListener('click', () => {
   }
   blokChyb.hidden = false;
   blokChyb.appendChild(el('p', 'poznamka je-ok', T.generatorOk));
-  const meno = 'faktura-' + String(faktura.cislo || 'bez-cisla').replace(/[^A-Za-z0-9._-]+/g, '-') + '.xml';
-  stiahni(meno, posledneXml, 'application/xml;charset=utf-8');
-  track('efaktura_stiahnute', { profil: faktura.profil || 'peppol', produkt: 'efaktura', jazyk: LANG });
+  if (jeTest) blokChyb.appendChild(el('p', 'poznamka', T.testStiahnutie));
+  const meno = (jeTest ? 'TEST-' : '') + 'faktura-' + String(faktura.cislo || 'bez-cisla').replace(/[^A-Za-z0-9._-]+/g, '-') + '.xml';
+  stiahni(meno, xml, 'application/xml;charset=utf-8');
+  track('efaktura_stiahnute', { profil: faktura.profil || 'peppol', test: jeTest, produkt: 'efaktura', jazyk: LANG });
 });
 
 const CAKAJUCA = 'efaktura:cakajuca';
@@ -1285,8 +1403,8 @@ async function overPlatbu(sid, pokus) {
   } catch (e) { siet = true; }
   // Suma pred zlavovym kodom (amount_subtotal); starsi worker ju neposiela, vtedy plati amount_total.
   const zaklad = st && typeof st.amount_subtotal === 'number' ? st.amount_subtotal : st && st.amount_total;
-  if (st && st.paid && st.livemode === !testRezim() && st.currency === 'eur' && (zaklad === CENA_JEDNA || zaklad === CENA_30DNI)) {
-    const typ = zaklad >= CENA_30DNI ? '30dni' : 'jedna';
+  const typ = jeNasaPlatba(st, testRezim());
+  if (typ) {
     uloz('efaktura:zaplatene', { session: sid, t: Date.now(), typ, test: st.livemode === false });
     zmaz(CAKAJUCA);
     stavPlatby.innerHTML = (typ === '30dni' ? T.zaplatene30 : T.zaplateneJedna) + (st.livemode === false ? ' ' + T.testPoznamka : '');

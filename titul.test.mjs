@@ -159,6 +159,16 @@ test('odkazy zo sluzby: dotaz ide na koncovy bod licencnej sluzby', async () => 
   assert.equal(zo.subory.length, 1);
   assert.equal(zo.email, 'kto@example.com');
   assert.equal(zo.tyzden, '2026-W39');
+  assert.equal(zo.emailed, false, 'odpoved bez pola emailed neznamena, ze e-mail odisiel');
+});
+
+test('emailed zo sluzby prejde az po stranku, a to len ako true', async () => {
+  const ano = await odkazyZoSluzby('cs_1', { fetch: fetchDvojnik({ ok: true, emailed: true, email: 'kto@example.com',
+    files: [{ label: 'A4 PDF', url: 'https://arling.sk/f/a.pdf' }] }) });
+  assert.equal(ano.emailed, true);
+  const nie = await odkazyZoSluzby('cs_1', { fetch: fetchDvojnik({ ok: true, emailed: 'true', email: 'kto@example.com',
+    files: [{ label: 'A4 PDF', url: 'https://arling.sk/f/a.pdf' }] }) });
+  assert.equal(nie.emailed, false, 'retazec "true" nie je potvrdenie');
 });
 
 test('najprv sluzba: ked odpovie, subory su jej', async () => {
@@ -168,6 +178,7 @@ test('najprv sluzba: ked odpovie, subory su jej', async () => {
   assert.equal(z.zdroj, 'sluzba');
   assert.equal(z.subory.length, 1);
   assert.equal(z.email, 'kto@example.com');
+  assert.equal(z.emailed, false);
 });
 
 test('potom stranka: ok:false, chyba HTTP, vynimka aj chybajuci fetch koncia na bloku titul-data', async () => {
@@ -183,6 +194,7 @@ test('potom stranka: ok:false, chyba HTTP, vynimka aj chybajuci fetch koncia na 
     assert.equal(z.subory.length, 2);
     assert.equal(z.subory[0].href, 'files/abcdefgh12345678/Ben-Hur-eink.pdf');
     assert.equal(z.email, '', 'e-mail pozna len sluzba');
+    assert.equal(z.emailed, false, 'ked sluzba neodpovedala, o e-maile nevieme nic');
   }
 });
 
@@ -218,6 +230,7 @@ test('panel po zaplateni: nadpis, tlacidlo na kazdy subor, e-mail a cislo objedn
       { nazov: 'A4 PDF', href: 'files/abcdefgh12345678/Ben-Hur-A4.pdf', velkost: '5.36 MB', popis: '953 pages' },
     ],
     email: 'kto@example.com',
+    emailed: true,
     session: 'cs_test_a1b2c3d4e5f6g7h8',
     ukazka: { href: 'Ben-Hur-Sample-eink.pdf', text: 'Free sample' },
   });
@@ -241,13 +254,37 @@ test('panel po zaplateni: nadpis, tlacidlo na kazdy subor, e-mail a cislo objedn
   delete globalThis.document;
 });
 
-test('panel bez e-mailu zo sluzby povie, kam sa subory poslali', () => {
+test('potvrdene odoslanie bez adresy povie aspon, kam sa subory poslali', () => {
   const { novy } = fakeDom();
   const koren = novy('div');
-  vykresliPanel(koren, { subory: [{ nazov: 'A4 PDF', href: 'files/x/a.pdf' }], session: '' });
+  vykresliPanel(koren, { subory: [{ nazov: 'A4 PDF', href: 'files/x/a.pdf' }], emailed: true, session: '' });
   assert.equal(text(najdi(koren, 'hotovo-mail')), PANEL.mailPred + PANEL.mailBez + '.');
   assert.equal(najdi(koren, 'hotovo-cislo'), null, 'bez session ziadne cislo objednavky');
   delete globalThis.document;
+});
+
+/* Nalez N4 a N8 auditu z 21. 9. 2026: stranka tvrdila "were also sent to" aj
+   vtedy, ked e-mail neodisiel (odkazy zo samotnej stranky alebo zlyhany Resend). */
+test('bez potvrdenia od sluzby sa o e-maile netvrdi nic', () => {
+  const { novy } = fakeDom();
+  const koren = novy('div');
+  vykresliPanel(koren, { subory: [{ nazov: 'A4 PDF', href: 'files/x/a.pdf' }], email: 'kto@example.com', session: 'cs_live_a1b2c3d4' });
+  const veta = text(najdi(koren, 'hotovo-mail'));
+  assert.equal(veta, PANEL.mailNeisty);
+  assert.ok(!veta.includes('were also sent to'), 'ziadne tvrdenie o odoslanom e-maile');
+  assert.ok(!veta.includes('kto@example.com'), 'adresa sa bez potvrdenia neukazuje ako prijemca');
+  assert.ok(veta.includes('andrej@arling.sk'), 'clovek ma vediet, komu napisat');
+  delete globalThis.document;
+});
+
+test('emailed sa prijme len ako presne true, nie ako "pravdiva" hodnota', () => {
+  for (const hodnota of [undefined, null, false, 1, 'yes', 'true']) {
+    const { novy } = fakeDom();
+    const koren = novy('div');
+    vykresliPanel(koren, { subory: [{ nazov: 'A4 PDF', href: 'a.pdf' }], email: 'kto@example.com', emailed: hodnota });
+    assert.equal(text(najdi(koren, 'hotovo-mail')), PANEL.mailNeisty, 'emailed=' + String(hodnota));
+    delete globalThis.document;
+  }
 });
 
 test('panel v testovom rezime ma poznamku o teste a vlastny nadpis', () => {
