@@ -39,6 +39,7 @@
 <link rel="stylesheet" href="/style/paper.css?v=9731ac14">
 <script src="/style/prepinac.js?v=668e98c9" defer></script>
 <script type="module" src="/efaktura/app.js?v=fa99a4d5"></script>
+<script src="/efaktura/efaktura-v4.js?v=3d58adc9" defer></script>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -159,196 +160,15 @@
   ]
 }
 </script>
-<style>
-  section[id] { scroll-margin-top:14px; }
-  [hidden] { display:none !important; }
-  .hero { grid-template-columns:minmax(0,7fr) minmax(0,5fr); align-items:center; padding-block:clamp(30px,5vh,64px); }
-  @media (max-width:960px) { .hero { grid-template-columns:minmax(0,1fr); } }
-  .hero .lead { max-width:56ch; }
-  /* Pri 1280 sa nadpis lamal v strede slova; mensi stupen ho zlomi medzi slovami. */
-  body.noc .hero h1, .hero h1 { font-size:clamp(34px,3.6vw,50px); line-height:1.08; }
-  .cena { border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:var(--radius); background:var(--card); padding:clamp(20px,2vw,30px); min-width:0; }
-  .cena .suma { font:700 clamp(34px,3.4vw,46px)/1 var(--display); color:var(--ink); letter-spacing:-.02em; display:block; }
-  .cena .zaco { font-family:var(--ui); font-size:14px; color:var(--body); margin:8px 0 16px; }
-  .cena ul { list-style:none; margin:0 0 18px; padding:0; display:flex; flex-direction:column; gap:9px; font-family:var(--ui); font-size:14px; color:var(--body); }
-  .cena li { display:flex; gap:10px; }
-  .cena li::before { content:""; width:6px; height:6px; border-radius:50%; background:var(--accent); flex:none; margin-top:8px; }
-  .cena .btn { width:100%; justify-content:center; }
-  .cena .pomoc { margin-top:14px; }
-  .pomoc { font-family:var(--ui); font-size:12.5px; color:var(--muted); margin:2px 0 8px; line-height:1.5; max-width:62ch; }
-  .sub { color:var(--body); max-width:68ch; margin:0 0 24px; }
-
-  /* Záložky */
-  .zalozky { display:flex; flex-wrap:wrap; gap:6px; margin:0 0 20px; }
-  .zalozka { font:500 13.5px/1.2 var(--ui); color:var(--muted); background:transparent; border:1px solid var(--line); border-radius:999px; padding:9px 15px; cursor:pointer; }
-  .zalozka:hover { color:var(--ink); border-color:var(--ink); }
-  .zalozka.aktivna { color:var(--ink); border-color:var(--accent); background:rgba(242,100,60,.10); }
-  .panel h2 { margin-bottom:8px; }
-  .panel > .sub { margin-bottom:20px; }
-
-  /* Vstup: pretiahnutie, výber súboru, vložené XML */
-  .vstup { border:1px solid var(--line); border-radius:var(--radius); background:var(--card); padding:clamp(16px,1.8vw,24px); margin:0 0 22px; }
-  .dropzone { border:1px dashed var(--line); border-radius:12px; padding:26px 18px; text-align:center; cursor:pointer; font-family:var(--ui); font-size:14.5px; color:var(--body); }
-  .dropzone:hover, .dropzone.nad { border-color:var(--accent); color:var(--ink); background:rgba(242,100,60,.06); }
-  .dropzone b { color:var(--ink); }
-  .vstup-akcie { display:flex; flex-wrap:wrap; gap:10px; margin:14px 0 0; }
-  .vstup .btn { height:38px; padding:0 15px; font-size:13.5px; }
-  .vstup textarea { width:100%; box-sizing:border-box; min-height:110px; margin:14px 0 0; font:13px/1.5 var(--mono); color:var(--ink); background:var(--card-plna,#161311); border:1px solid var(--line); border-radius:10px; padding:10px 12px; resize:vertical; }
-  .vstup textarea:focus { outline:2px solid var(--accent); outline-offset:-1px; }
-  .vstup-stav { font-family:var(--ui); font-size:13px; color:var(--muted); margin:12px 0 0; min-height:1.3em; }
-
-  /* Nálezy */
-  .sumar-stav { font:600 clamp(17px,1.4vw,20px)/1.35 var(--display); margin:0 0 10px; }
-  .sumar-stav.je-ok { color:var(--ok); }
-  .sumar-stav.je-chyba { color:var(--accent-light); }
-  .sumar-meta { display:flex; flex-wrap:wrap; gap:8px 20px; font-family:var(--ui); font-size:13px; color:var(--muted); margin:0 0 6px; }
-  .akcie { display:flex; gap:10px; flex-wrap:wrap; margin:14px 0 22px; }
-  .akcie .btn { height:38px; padding:0 15px; font-size:13.5px; }
-  .nalez { border-top:1px solid var(--line); padding:16px 0; }
-  .nalez:last-child { border-bottom:1px solid var(--line); }
-  .nalez-hlava { display:flex; align-items:center; gap:10px; margin:0 0 6px; }
-  .nalez-znacka { font:600 11px/1 var(--ui); letter-spacing:.10em; text-transform:uppercase; padding:5px 9px; border-radius:999px; border:1px solid var(--line); color:var(--muted); }
-  .nalez-chyba .nalez-znacka { color:var(--accent-light); border-color:var(--accent); }
-  .nalez-varovanie .nalez-znacka { color:#e8c07a; border-color:rgba(232,192,122,.5); }
-  .nalez-informacia .nalez-znacka { color:var(--ok); border-color:rgba(94,207,154,.5); }
-  .nalez-kod { font:600 13px/1 var(--mono); color:var(--ink); }
-  .nalez-veta { margin:0 0 8px; max-width:76ch; font-size:15px; }
-  .nalez-meta { font-family:var(--ui); font-size:12.5px; color:var(--muted); margin:0 0 3px; max-width:none; overflow-wrap:anywhere; }
-  .nalez-meta code { font:12px/1.5 var(--mono); color:var(--body); }
-  .nalez-original { border:none; padding:8px 0 0; }
-  .nalez-original summary { font:500 13px/1.3 var(--ui); color:var(--muted); }
-  .nalez-original summary:hover { color:var(--ink); }
-  .nalez-original p { font:13px/1.55 var(--mono); color:var(--body); margin:8px 0 0; max-width:80ch; }
-
-  /* Doklad ako papier */
-  .doklad-obal { background:#f6f4ef; color:#1b1a17; border-radius:var(--radius); padding:clamp(20px,2.6vw,36px); box-shadow:0 20px 60px rgba(0,0,0,.35); overflow-x:auto; }
-  .doklad-obal:empty { display:none; }
-  .efa-doklad { font:15px/1.55 Georgia,"Times New Roman",serif; }
-  body.noc .efa-doklad h2 { font:700 23px/1.2 var(--display); color:#111; margin:0 0 12px; letter-spacing:-.01em; }
-  body.noc .efa-doklad h3 { font:600 15px/1.3 var(--display); color:#111; margin:22px 0 8px; text-transform:uppercase; letter-spacing:.06em; }
-  body.noc .efa-doklad h2::before, body.noc .efa-doklad h2::after, body.noc .efa-doklad h3::before, body.noc .efa-doklad h3::after { display:none; }
-  body.noc .efa-doklad p, body.noc .efa-doklad td, body.noc .efa-doklad li { color:#1b1a17; }
-  body.noc .efa-doklad th { color:#111; }
-  body.noc .efa-doklad b, body.noc .efa-doklad strong { color:#111; }
-  body.noc .efa-doklad p, .efa-doklad p { margin:0 0 5px; max-width:none; }
-  .efa-udaj { display:flex; flex-wrap:wrap; gap:2px 10px; font-size:14px; }
-  .efa-udaj .efa-popis { color:#57534a; min-width:132px; flex:0 0 auto; }
-  .efa-udaj .efa-hodnota { min-width:0; overflow-wrap:anywhere; word-break:break-word; }
-  .efa-strany { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(240px,100%),1fr)); gap:18px 30px; margin:20px 0 0; }
-  .efa-nazov { font-weight:700; }
-  .efa-tabulka { width:100%; border-collapse:collapse; font-size:13.5px; margin:6px 0 10px; }
-  .efa-tabulka th, .efa-tabulka td { border:1px solid #bbb6aa; padding:6px 8px; text-align:left; vertical-align:top; }
-  .efa-tabulka th { background:#e9e5dc; font:600 12px/1.3 var(--ui); letter-spacing:.03em; text-transform:none; }
-  /* Doklad je dokument, nie responzivna tabulka. Paper.css pod 600 px meni bunky
-     na bloky s popiskom z data-th; nahlad faktury taky popisok nema, takze by
-     z tabulky ostali holé cisla. Vraciame ju na tabulku, ktora scrolluje vo
-     vnutri .doklad-obal (ten ma overflow-x:auto). */
-  @media (max-width:600px) {
-    .efa-doklad .efa-tabulka { display:table; width:100%; min-width:520px; }
-    .efa-doklad .efa-tabulka thead { display:table-header-group; }
-    .efa-doklad .efa-tabulka tbody { display:table-row-group; }
-    .efa-doklad .efa-tabulka tr { display:table-row; background:transparent; border:0; border-radius:0; margin:0; padding:0; }
-    .efa-doklad .efa-tabulka th, .efa-doklad .efa-tabulka td { display:table-cell; width:auto; border:1px solid #bbb6aa; padding:6px 8px; }
-    .efa-doklad .efa-tabulka td::before { content:none; display:none; }
-  }
-  .efa-uhrada { display:flex; gap:10px; font-size:17px; margin-top:8px; }
-  .efa-uhrada .efa-popis { min-width:132px; color:#57534a; }
-  /* Doklad je samostatny dokument vo vnutri stranky: globalne pravidla pre
-     header, footer a section sa nan nesmu vztahovat. */
-  body.noc .efa-doklad section, .efa-doklad section { padding:0; border-top:none; position:static; }
-  body.noc .efa-doklad h3 + p, body.noc .efa-doklad h3 + div { margin-top:6px; }
-  /* Bez "body.noc" pred selektorom prehráva scrollovacia hlavička stránky
-     (body.noc.posunute header) svoje tmavé priesvitné pozadie aj sem: rovnaký
-     "header" tag, vyššia špecifickosť. Vtedy je hlavička dokladu tmavá so
-     sivastým pozadím a text splýva. S "body.noc" tu vyhráva táto trieda. */
-  body.noc .efa-doklad .efa-hlavicka { position:static; z-index:auto; background:transparent; backdrop-filter:none; border-bottom:1px solid #ddd8cc; padding:0 0 14px; margin:0 0 6px; }
-  .efa-doklad .efa-pata { position:static; background:transparent; border-top:1px solid #ddd8cc; padding:12px 0 0; margin:22px 0 0; color:#666; font-family:var(--ui); font-size:12px; }
-  .efa-doklad .efa-polozky, .efa-doklad .efa-rozpis, .efa-doklad .efa-sucty,
-  .efa-doklad .efa-platba, .efa-doklad .efa-poznamky, .efa-doklad .efa-prilohy,
-  .efa-doklad .efa-miesto { margin:22px 0 0; }
-  .efa-pata .efa-popis { min-width:132px; }
-  .efa-chyba { color:#8f2e17; }
-  .nahlad-hlava { display:flex; justify-content:space-between; gap:12px; align-items:center; flex-wrap:wrap; margin:0 0 12px; font-family:var(--ui); font-size:13px; color:var(--muted); }
-  .nahlad-hlava .btn { height:38px; padding:0 15px; font-size:13.5px; }
-
-  /* Dielňa generátora */
-  .dielna { display:grid; grid-template-columns:minmax(0,5fr) minmax(0,7fr); gap:32px var(--gap); align-items:start; }
-  @media (max-width:899px) { .dielna { grid-template-columns:minmax(0,1fr); } }
-  /* Pri scrollovaní dlhého formulára náhľad zmizne z obrazovky. Od 900 px ho
-     preto pribíjame vedľa formulára cez position:sticky, s vlastným scrollom,
-     keby bol vyšší než okno. Pod 900 px ostáva pod formulárom ako predtým;
-     tam pomáha odkaz "Zobraziť náhľad", ktorý naň hneď skroluje. */
-  #nahlad-zivy { scroll-margin-top:calc(var(--hlavicka) + 12px); }
-  @media (min-width:900px) {
-    /* Cely pravy stlpec (sucty, tlacidlo PDF, nahlad, platba) je sticky a scrolluje vo vlastnom ramci (Andrej 11. 9.). */
-    .dielna > .stlpec-nahlad { position:sticky; top:calc(var(--hlavicka) + 12px); max-height:calc(100vh - var(--hlavicka) - 24px); overflow:auto; overscroll-behavior:contain; padding-right:4px; }
-  }
-  .zobrazit-nahlad { display:none; margin:0 0 16px; }
-  @media (max-width:899px) { .zobrazit-nahlad { display:inline-flex; } }
-  fieldset { border:1px solid var(--line); border-radius:var(--radius); padding:14px 16px 10px; margin:0 0 14px; min-width:0; }
-  legend { font:600 12px/1 var(--ui); letter-spacing:.09em; text-transform:uppercase; color:var(--accent); padding:0 6px; }
-  .pole { display:grid; grid-template-columns:minmax(0,160px) minmax(0,1fr); gap:6px 12px; align-items:center; margin:0 0 8px; font-family:var(--ui); font-size:13.5px; color:var(--body); }
-  @media (max-width:560px) { .pole { grid-template-columns:minmax(0,1fr); } }
-  .pole-napoveda { grid-column:1/-1; color:var(--muted); font-size:12px; line-height:1.45; margin:2px 0 0; }
-  .poznamka-sadzba { color:var(--muted); font-family:var(--ui); font-size:12.5px; line-height:1.5; margin:6px 0 0; max-width:60ch; }
-  .pole input, .pole select { width:100%; box-sizing:border-box; font:14px/1.4 var(--ui); color:var(--ink); background:var(--card-plna,#161311); border:1px solid var(--line); border-radius:8px; padding:8px 10px; }
-  .pole input:focus, .pole select:focus { outline:2px solid var(--accent); outline-offset:-1px; }
-  .formular-pata { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin:10px 0 4px; }
-  .formular-pata .btn { height:34px; padding:0 13px; font-size:12.5px; }
-  .polozka { border-top:1px solid var(--line); padding:12px 0 4px; position:relative; }
-  .polozka:first-child { border-top:none; padding-top:2px; }
-  .polozka-cislo { font:500 11px/1 var(--ui); letter-spacing:.12em; color:var(--accent); margin:0 0 8px; }
-  .polozka-zmazat { height:30px; padding:0 11px; font-size:12px; margin:2px 0 8px; }
-  .sucty { display:flex; flex-wrap:wrap; gap:6px 22px; font-family:var(--ui); font-size:14px; color:var(--body); margin:0 0 14px; }
-  .sucty b { color:var(--muted); font-weight:500; }
-  .brana { border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:var(--radius); background:var(--card); padding:clamp(18px,2vw,26px); margin:22px 0 0; }
-  .brana h3 { margin-bottom:6px; }
-  .brana .cta { margin:16px 0 0; }
-  .brana .btn { height:42px; }
-  .odomknute { border:1px solid var(--ok); border-radius:12px; background:rgba(94,207,154,.10); padding:12px 15px; margin:20px 0 0; font-family:var(--ui); font-size:13.5px; color:var(--body); }
-  .stav-platby { font-family:var(--ui); font-size:14px; color:var(--body); min-height:1.4em; margin:12px 0 0; max-width:70ch; }
-  .stav-platby b { color:var(--ok); }
-  .stav-platby .btn { height:32px; padding:0 12px; font-size:12.5px; margin-left:8px; vertical-align:middle; }
-  .chyby-generatora { margin:18px 0 0; }
-  .chyby-generatora .poznamka { font-family:var(--ui); font-size:14px; color:var(--accent-light); margin:0 0 10px; }
-  .chyby-generatora .poznamka.je-ok { color:var(--ok); }
-  .poznamka { font-family:var(--ui); font-size:14px; color:var(--muted); }
-
-  details.otazka { border-top:1px solid var(--line); padding:16px 0; }
-  details.otazka:last-of-type { border-bottom:1px solid var(--line); }
-  details.otazka summary { cursor:pointer; font:600 clamp(16.5px,1.3vw,19px)/1.35 var(--display); color:var(--ink); list-style:none; display:block; position:relative; padding-right:26px; }
-  details.otazka summary::-webkit-details-marker { display:none; }
-  details.otazka summary::after { content:"+"; color:var(--accent); font-family:var(--ui); position:absolute; right:0; top:0; }
-  details.otazka[open] summary::after { content:"\2013"; }
-  details.otazka p { margin:10px 0 0; max-width:72ch; }
-  .zdroje { font-family:var(--ui); font-size:13.5px; color:var(--body); line-height:1.6; }
-  .zdroje li { margin:0 0 6px; }
-  noscript p { font-family:var(--ui); color:var(--accent-light); }
-
-  /* Tlač: na papier ide len doklad, formát A4. */
-  #tlac { display:none; }
-  @media print {
-    @page { size:A4; margin:14mm; }
-    body { background:#fff; }
-    body.tlaci > *:not(#tlac) { display:none !important; }
-    body.tlaci #tlac { display:block !important; background:#fff; color:#000; }
-    body.tlaci #tlac .efa-doklad { font:11.5pt/1.45 Georgia,"Times New Roman",serif; color:#000; }
-    body.tlaci #tlac h2 { font-size:17pt; color:#000; }
-    body.tlaci #tlac h3 { font-size:11pt; color:#000; text-transform:uppercase; letter-spacing:.05em; margin:14pt 0 5pt; }
-    body.tlaci #tlac .efa-tabulka { font-size:9.5pt; page-break-inside:auto; }
-    body.tlaci #tlac .efa-tabulka th { background:#eee; }
-    body.tlaci #tlac .efa-strany { display:grid; grid-template-columns:1fr 1fr; gap:10mm; }
-    body.tlaci #tlac section { page-break-inside:avoid; }
-  }
-</style>
 <noscript><style>
   .r, .w { opacity:1 !important; transform:none !important; filter:none !important; }
   .rule { transform:scaleX(1) !important; }
 </style></noscript>
 <link rel="stylesheet" href="/efaktura/davka.css?v=dad7031a">
 <link rel="stylesheet" href="/efaktura/dopyt-opakovanie.css?v=9292da89">
+<link rel="stylesheet" href="/efaktura/efaktura-v4.css?v=3e8b6794">
 </head>
-<body class="noc">
+<body class="noc efv4">
 <div class="wash" aria-hidden="true"><i></i><i></i></div>
 <a class="skip site-skip" href="#arling-obsah" data-site-label="skip">Prejsť na obsah</a>
 <header class="site-header">
@@ -367,46 +187,58 @@
 </header>
 
 <main id="arling-obsah" tabindex="-1">
-  <div class="wrap hero" id="hero">
-    <div>
-      <p class="kicker">E-faktúra podľa EN 16931</p>
-      <h1><span class="l">Skontrolujte, prezrite a vytvorte e-faktúru.</span><span class="l">V prehliadači, hneď.</span></h1>
-      <p class="lead r d3">Od 1. januára 2027 posielajú slovenskí platitelia DPH faktúry ako štruktúrované XML cez sieť Peppol. Tu si súbor skontrolujete podľa pravidiel EN 16931 a Peppol BIS Billing 3.0, pozriete si ho ako bežný doklad a vytvoríte nový bez účtovného programu. Súbor sa číta vo vašom prehliadači a nikam sa neposiela.</p>
-      <ul class="facts proof r d5">
-        <li>kontrola a náhľad <b>zadarmo</b>, bez účtu, bez limitu</li>
-        <li>pravidlá EN 16931, Peppol a nemecký <b>XRechnung</b></li>
-        <li>vlastné hlásenia po slovensky, s <b>cestou k prvku</b></li>
-      </ul>
-    </div>
-    <div class="cena r d2">
-      <span class="suma">2,90 € bez DPH</span>
-      <p class="zaco">za stiahnutie XML jednej faktúry, alebo 9,90 € bez DPH na 30 dní bez obmedzenia počtu faktúr. Kontrola a náhľad sú zadarmo.</p>
-      <p class="pomoc dan-platby">Ceny sú bez DPH. Stripe pripočíta príslušnú daň podľa údajov zákazníka a konečnú sumu ukáže pred zaplatením.</p>
-      <ul>
-        <li>vyplníte formulár a vidíte doklad naživo</li>
-        <li>XML vzniká v prehliadači, neposiela sa na server</li>
-        <li>pred stiahnutím ho prežerieme vlastnou kontrolou</li>
-      </ul>
-      <a class="btn btn-solid" href="#vytvorit">Prejsť na vytvorenie faktúry</a>
-      <p class="pomoc">Predávajúci: ARLing s. r. o., IČO 56583486, Bratislava. Platbu spracuje Stripe.</p>
-    </div>
-  </div>
-
-  <section id="nastroj" class="deep">
+  <section class="ef-hero" id="hero" data-tab="kontrola" data-vysledok="0">
     <div class="wrap">
-      <p class="kicker">Nástroj</p>
-      <div class="zalozky" role="tablist" id="zalozky">
+      <div class="ef-hero-text">
+        <h1><span class="l">Skontrolujte a vytvorte e-faktúru.</span> <span class="l">Chyby nájdete skôr než odberateľ.</span></h1>
+        <p class="lead r d3">Vložte XML a hneď uvidíte, ktoré pravidlo EN 16931, Peppol alebo XRechnung súbor porušuje a kde. Zadarmo, bez registrácie, súbor neopustí váš prehliadač.</p>
+      </div>
+
+      <div class="ef-mriezka" id="nastroj">
+        <div class="ef-prepinac">
+          <div class="zalozky" role="tablist" id="zalozky">
         <button type="button" class="zalozka aktivna" data-tab="kontrola" role="tab" aria-selected="true">Kontrola</button>
         <button type="button" class="zalozka" data-tab="nahlad" role="tab" aria-selected="false">Náhľad</button>
         <button type="button" class="zalozka" data-tab="vytvorit" role="tab" aria-selected="false">Vytvoriť</button>
       </div>
-      <noscript><p>Nástroj potrebuje JavaScript: súbor sa číta a kontroluje priamo vo vašom prehliadači, nie na serveri.</p></noscript>
+          <a class="ef-dalej" id="hero-vytvorit" href="#vytvorit" data-umami-event="efaktura_hero_vytvorit">Nemáte súbor? Vytvorte faktúru vo formulári</a>
+        </div>
+        <noscript><p>Nástroj potrebuje JavaScript: súbor sa číta a kontroluje priamo vo vašom prehliadači, nie na serveri.</p></noscript>
 
-      <section class="panel" id="panel-kontrola">
-        <h2 class="r">Kontrola e-faktúry</h2>
-        <p class="sub r d1">Načítajte súbor UBL 2.1 (Invoice alebo CreditNote) a povieme vám, čo v ňom nesedí. Pri každom náleze uvidíte kód pravidla, vetu po slovensky, cestu k prvku a pod rozbaľovacím odkazom pôvodné anglické znenie pravidla. Podľa poľa CustomizationID si sami vyberieme, či platia pravidlá EN 16931, Peppol BIS Billing 3.0 alebo nemecký XRechnung.</p>
-        <div class="vstup-slot"></div>
-        <div id="sumar"></div>
+        <section class="panel" id="panel-kontrola">
+          <div class="ef-lavy">
+            <div class="vstup-slot">
+              <!-- Jeden vstupný blok pre kontrolu aj náhľad; skript ho presunie do aktívnej záložky. -->
+              <div class="vstup" id="vstup">
+                <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Pretiahnite sem súbor XML alebo kliknite a vyberte ho" data-umami-event="efaktura_hero_vstup" data-umami-event-sposob="dropzone">
+                  <b><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M5 20h14"/></svg>Pretiahnite sem súbor XML</b><span>alebo kliknite a vyberte ho z počítača</span>
+                </div>
+                <input type="file" id="subor" accept=".xml,text/xml,application/xml" hidden>
+                <div class="vstup-akcie">
+                  <button type="button" class="btn btn-solid" id="vybrat" data-umami-event="efaktura_hero_vstup" data-umami-event-sposob="subor">Vybrať súbor</button>
+                  <button type="button" class="btn btn-line" id="vzor" data-umami-event="efaktura_hero_vstup" data-umami-event-sposob="vzor">Načítať vzor</button>
+                </div>
+                <label class="pomoc ef-xml-label" for="xml">Alebo sem vložte XML:</label>
+                <textarea id="xml" spellcheck="false" placeholder="&lt;Invoice xmlns=&quot;urn:oasis:names:specification:ubl:schema:xsd:Invoice-2&quot;&gt; ..."></textarea>
+                <div class="ef-vlozene">
+                  <button type="button" class="btn btn-line" id="spustit" data-umami-event="efaktura_hero_vstup" data-umami-event-sposob="vlozene">Skontrolovať vložené XML</button>
+                  <p class="vstup-stav" id="vstup-stav" aria-live="polite"></p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="ef-pravy">
+            <div class="ef-lampa" aria-hidden="true"></div>
+            <div class="ef-ramec">
+              <div class="ef-ramec-pas"><i class="ef-bodka"></i><i class="ef-bodka"></i><i class="ef-bodka"></i><h2>Kontrola e-faktúry</h2><span class="ef-stitok ef-len-ukazka">Ukážka</span></div>
+              <div class="ef-ramec-telo">
+                <div class="ef-ukazka" role="group" aria-label="Ukážka výsledku kontroly">
+            <p class="sumar-stav je-chyba">Našli sme 2 chyby. Opravte ich a skúste znova.</p>
+            <p class="sumar-meta"><span>Profil: Peppol BIS Billing 3.0</span><span>Typ dokladu: Invoice</span><span>2 chyby</span><span>0 varovaní</span><span>0 informácií</span></p>
+            <p class="sumar-meta sumar-pravidla">Pre tento profil sme vyhodnotili 289 pravidiel.</p>
+            <div class="ef-ukazka-nalezy"><article class="nalez nalez-chyba"><p class="nalez-hlava"><span class="nalez-znacka">Chyba</span><code class="nalez-kod">BR-CO-15</code></p><p class="nalez-veta">Suma s DPH (BT-112) má byť základ dane 450.00 plus DPH 103.50, teda 553.50. V súbore je 553.51.</p><p class="nalez-meta"><span class="nalez-popis">Hodnota v súbore: </span><code>553.51</code></p><p class="nalez-meta"><span class="nalez-popis">Cesta k prvku: </span><code>/Invoice/cac:LegalMonetaryTotal/cbc:TaxInclusiveAmount</code></p></article><article class="nalez nalez-chyba"><p class="nalez-hlava"><span class="nalez-znacka">Chyba</span><code class="nalez-kod">ARL-IBAN</code></p><p class="nalez-veta">IBAN "SK3112000000198742637542" neprešiel kontrolou mod 97 podľa ISO 13616. Skontrolujte, či nie je preklep v čísle účtu.</p><p class="nalez-meta"><span class="nalez-popis">Hodnota v súbore: </span><code>SK3112000000198742637542</code></p><p class="nalez-meta"><span class="nalez-popis">Cesta k prvku: </span><code>/Invoice/cac:PaymentMeans/cac:PayeeFinancialAccount/cbc:ID</code></p></article></div>
+                </div>
+                <div id="sumar"></div>
 <!-- A096-DOPYT-START -->
 <aside class="ef-opak" id="opakovanie-cta" aria-labelledby="opakovanie-title" hidden>
   <h3 id="opakovanie-title">Kontrolujete takéto súbory pravidelne?</h3><p>Ak sa rovnaká práca opakuje, opíšte nám svoj postup. Posúdime, či vieme pripraviť konkrétne riešenie pre váš softvér.</p>
@@ -427,25 +259,39 @@
   </div>
 </aside>
 <!-- A096-DOPYT-END -->
-        <div class="akcie" id="akcie" hidden>
+                <div class="akcie" id="akcie" hidden>
           <button type="button" class="btn btn-line" id="protokol">Stiahnuť protokol</button>
           <button type="button" class="btn btn-line" id="kopirovat">Skopírovať</button>
         </div>
-        <div id="nalezy"></div>
-      </section>
+                <div id="nalezy"></div>
+              </div>
+              <span class="ef-beam" aria-hidden="true"></span>
+            </div>
+            <p class="ef-podpis ef-len-ukazka">Ukážka: naša vzorová faktúra s dvoma chybami, ktoré sme do nej vložili zámerne. Po načítaní súboru tu uvidíte svoj výsledok.</p>
+          </div>
+        </section>
 
-      <section class="panel" id="panel-nahlad" hidden>
-        <h2 class="r">Náhľad e-faktúry ako dokladu</h2>
-        <p class="sub r d1">To isté XML si pozriete ako obyčajnú faktúru: kto komu, za čo, kedy, koľko a kam zaplatiť. Hodí sa, keď vám príde súbor od dodávateľa a potrebujete ho prečítať bez účtovného programu. Tlačidlom nižšie ho uložíte ako PDF vo formáte A4.</p>
-        <div class="vstup-slot"></div>
-        <div class="nahlad-hlava">
+        <section class="panel" id="panel-nahlad" hidden>
+          <div class="ef-lavy">
+            <p class="sub r d1">To isté XML si pozriete ako obyčajnú faktúru: kto komu, za čo, kedy, koľko a kam zaplatiť. Hodí sa, keď vám príde súbor od dodávateľa a potrebujete ho prečítať bez účtovného programu. Tlačidlom nižšie ho uložíte ako PDF vo formáte A4.</p>
+            <div class="vstup-slot"></div>
+          </div>
+          <div class="ef-pravy">
+            <div class="ef-lampa" aria-hidden="true"></div>
+            <div class="ef-ramec">
+              <div class="ef-ramec-pas"><i class="ef-bodka"></i><i class="ef-bodka"></i><i class="ef-bodka"></i><h2>Náhľad e-faktúry ako dokladu</h2></div>
+              <div class="ef-ramec-telo">
+                <div class="nahlad-hlava">
           <span id="nahlad-stav">Načítajte súbor a doklad sa vykreslí tu.</span>
           <button type="button" class="btn btn-line" id="pdf" hidden>Uložiť ako PDF</button>
         </div>
-        <div class="doklad-obal" id="doklad"></div>
-      </section>
+                <div class="doklad-obal" id="doklad"></div>
+              </div>
+            </div>
+          </div>
+        </section>
 
-      <section class="panel" id="panel-vytvorit" hidden>
+        <section class="panel" id="panel-vytvorit" hidden>
         <h2 class="r">Vytvoriť e-faktúru bez účtovného programu</h2>
         <p class="sub r d1">Vyplňte dodávateľa, odberateľa, čísla a položky. Vpravo sa priebežne skladá doklad a z neho vzniká XML v UBL 2.1. Dodávateľa aj odberateľov si uložíte do adresára, ktorý ostáva len vo vašom prehliadači. Pred stiahnutím prejde vygenerované XML tou istou kontrolou ako v prvej záložke; ak má chybu, nestiahneme ho.</p>
         <a class="btn btn-line zobrazit-nahlad" href="#nahlad-zivy">Zobraziť náhľad</a>
@@ -478,36 +324,93 @@
         </div>
       </section>
 
-      <!-- Jeden vstupný blok pre kontrolu aj náhľad; skript ho presunie do aktívnej záložky. -->
-      <div class="vstup" id="vstup">
-        <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Pretiahnite sem súbor XML alebo kliknite a vyberte ho">
-          <b>Pretiahnite sem súbor XML</b><br>alebo kliknite a vyberte ho z počítača
+        <div class="ef-ceny">
+          <ul aria-label="Ceny"><li class="ef-c-zadarmo"><b>0 €</b> kontrola a náhľad, bez registrácie</li><li class="ef-c-jedna"><b>2,90 € bez DPH</b> XML jednej faktúry</li><li class="ef-c-30dni"><b>9,90 € bez DPH</b> 30 dní bez limitu faktúr</li></ul>
+          <a href="#cennik" data-umami-event="efaktura_cena_klik" data-umami-event-miesto="hero">Ceny podrobne</a>
         </div>
-        <input type="file" id="subor" accept=".xml,text/xml,application/xml" hidden>
-        <div class="vstup-akcie">
-          <button type="button" class="btn btn-line" id="vybrat">Vybrať súbor</button>
-          <button type="button" class="btn btn-line" id="vzor">Načítať vzor</button>
-          <button type="button" class="btn btn-solid" id="spustit">Skontrolovať vložené XML</button>
-        </div>
-        <label class="pomoc" for="xml" style="display:block;margin-top:14px">Alebo sem vložte XML:</label>
-        <textarea id="xml" spellcheck="false" placeholder="&lt;Invoice xmlns=&quot;urn:oasis:names:specification:ubl:schema:xsd:Invoice-2&quot;&gt; ..."></textarea>
-        <p class="vstup-stav" id="vstup-stav" aria-live="polite"></p>
       </div>
     </div>
   </section>
 
-  <section id="co-kontrolujeme" class="deep">
+  <section class="ef-normy" aria-label="Normy a pravidlá, ktoré kontrolujeme">
     <div class="wrap">
-      <p class="kicker">Čo kontrolujeme a čo nie</p>
-      <h2 class="r">Poctivý zoznam, nie sľub úplnosti.</h2>
-      <div class="rule"></div>
-      <div class="prose r d1">
+      <p><b data-do="332">332</b> kódov pravidiel z oficiálnych schematronov</p>
+      <p class="ef-sr">EN 16931, XRechnung 3.0, Peppol BIS Billing 3.0, UBL 2.1, Invoice, CreditNote, BR-01 až BR-65, BR-CO, BR-DEC, BR-CL, BR-DE-1 až BR-DE-31, Leitweg-ID, IBAN mod 97, CustomizationID</p>
+      <div class="ef-pas" aria-hidden="true"><div class="ef-bez"><ul><li>EN 16931</li><li>XRechnung 3.0</li><li>Peppol BIS Billing 3.0</li><li>UBL 2.1</li><li>Invoice</li><li>CreditNote</li><li>BR-01 až BR-65</li><li>BR-CO</li><li>BR-DEC</li><li>BR-CL</li><li>BR-DE-1 až BR-DE-31</li><li>Leitweg-ID</li><li>IBAN mod 97</li><li>CustomizationID</li></ul><ul><li>EN 16931</li><li>XRechnung 3.0</li><li>Peppol BIS Billing 3.0</li><li>UBL 2.1</li><li>Invoice</li><li>CreditNote</li><li>BR-01 až BR-65</li><li>BR-CO</li><li>BR-DEC</li><li>BR-CL</li><li>BR-DE-1 až BR-DE-31</li><li>Leitweg-ID</li><li>IBAN mod 97</li><li>CustomizationID</li></ul></div></div>
+    </div>
+  </section>
+
+  <section class="ef-sek" id="ako">
+    <div class="wrap">
+      <div class="ef-hlava zjav"><h2>Tri kroky, žiadna inštalácia.</h2></div>
+      <ol class="ef-kroky">
+        <li class="ef-dl ef-k1 zjav"><div class="ef-dl-text"><h3>Vložte súbor</h3><p>Pretiahnite XML z účtovného programu, vyberte ho z počítača alebo vložte jeho text. Čítame UBL 2.1, faktúru aj dobropis. Súbor v syntaxi CII rozpoznáme a povieme vám to, pravidlá naň nespúšťame.</p></div><div class="ef-vyrez" role="img" aria-label="Výrez zo vzorového XML"><pre class="ef-xml" aria-hidden="true"><b>&lt;Invoice xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2" xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2" xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2"&gt;</b>
+  <b>&lt;cbc:CustomizationID&gt;</b><i>urn:cen.eu:en16931:2017#compliant#urn:fdc:peppol.eu:2017:poacc:billing:3.0</i><b>&lt;/cbc:CustomizationID&gt;</b>
+  <b>&lt;cbc:ProfileID&gt;</b><i>urn:fdc:peppol.eu:2017:poacc:billing:01:1.0</i><b>&lt;/cbc:ProfileID&gt;</b>
+  <b>&lt;cbc:ID&gt;</b><i>2026-0142</i><b>&lt;/cbc:ID&gt;</b>
+  <b>&lt;cbc:IssueDate&gt;</b><i>2026-09-11</i><b>&lt;/cbc:IssueDate&gt;</b>
+  <b>&lt;cbc:DueDate&gt;</b><i>2026-09-25</i><b>&lt;/cbc:DueDate&gt;</b>
+  <b>&lt;cbc:InvoiceTypeCode&gt;</b><i>380</i><b>&lt;/cbc:InvoiceTypeCode&gt;</b>
+  <b>&lt;cbc:Note&gt;</b><i>Vzorová faktúra z arling.sk/efaktura/. Údaje sú vymyslené.</i><b>&lt;/cbc:Note&gt;</b>
+  <b>&lt;cbc:DocumentCurrencyCode&gt;</b><i>EUR</i><b>&lt;/cbc:DocumentCurrencyCode&gt;</b>
+  <b>&lt;cbc:BuyerReference&gt;</b><i>OBJ-2026-77</i><b>&lt;/cbc:BuyerReference&gt;</b>
+  <b>&lt;cac:AccountingSupplierParty&gt;</b>
+    <b>&lt;cac:Party&gt;</b></pre></div></li>
+        <li class="ef-dl ef-k2 zjav" style="--i:1"><div class="ef-dl-text"><h3>Pozrite si chyby s vysvetlením</h3><p>Pri každom náleze vidíte kód pravidla, vetu po slovensky, hodnotu zo súboru, cestu k prvku a pôvodné anglické znenie pravidla. Podľa poľa CustomizationID sami vyberieme, či platia pravidlá EN 16931, Peppol BIS Billing 3.0 alebo XRechnung.</p></div><div class="ef-vyrez ef-vyrez-nalez" role="group" aria-label="Skutočný nález kontroly s pôvodným znením pravidla"><article class="nalez nalez-chyba"><p class="nalez-hlava"><span class="nalez-znacka">Chyba</span><code class="nalez-kod">BR-CO-15</code></p><p class="nalez-veta">Suma s DPH (BT-112) má byť základ dane 450.00 plus DPH 103.50, teda 553.50. V súbore je 553.51.</p><p class="nalez-meta"><span class="nalez-popis">Hodnota v súbore: </span><code>553.51</code></p><p class="nalez-meta"><span class="nalez-popis">Cesta k prvku: </span><code>/Invoice/cac:LegalMonetaryTotal/cbc:TaxInclusiveAmount</code></p><details class="nalez-original" open><summary>Pôvodné znenie pravidla (anglicky)</summary><p>[BR-CO-15]-Invoice total amount with VAT (BT-112) = Invoice total amount without VAT (BT-109) + Invoice total VAT amount (BT-110).</p></details></article></div></li>
+        <li class="ef-dl ef-k3 zjav"><div class="ef-dl-text"><h3>Stiahnite protokol alebo si kúpte XML</h3><p>Protokol kontroly a náhľad dokladu s uložením do PDF sú zadarmo. Platí sa len za XML faktúry, ktorú si vytvoríte vo formulári: 2,90 € bez DPH za jednu, alebo 9,90 € bez DPH na 30 dní. Pred stiahnutím prejde tou istou kontrolou.</p></div><div class="ef-vyrez" role="img" aria-label="Výrez z náhľadu vzorovej faktúry"><div class="ef-vyrez-papier" aria-hidden="true"><div class="efa-doklad"><div class="efa-hlavicka"><p class="efa-t2">Faktúra 2026-0142</p><div class="efa-udaj"><span class="efa-popis">Dátum vystavenia</span><span class="efa-hodnota">2026-09-11</span></div><div class="efa-udaj"><span class="efa-popis">Dátum dodania</span><span class="efa-hodnota">2026-09-10</span></div><div class="efa-udaj"><span class="efa-popis">Splatnosť</span><span class="efa-hodnota">2026-09-25</span></div><div class="efa-udaj"><span class="efa-popis">Referencia odberateľa</span><span class="efa-hodnota">OBJ-2026-77</span></div></div><div class="efa-strany"><div class="efa-strana"><p class="efa-t3">Dodávateľ</p><p class="efa-nazov">Vzorová dielna s. r. o.</p><p class="efa-adresa">Krivánska 4</p><p class="efa-adresa">97401 Banská Bystrica</p><p class="efa-adresa">SK</p><div class="efa-udaj"><span class="efa-popis">IČO</span><span class="efa-hodnota">51234567</span></div><div class="efa-udaj"><span class="efa-popis">IČ DPH</span><span class="efa-hodnota">SK2120000001</span></div><div class="efa-udaj"><span class="efa-popis">Kontakt</span><span class="efa-hodnota">Jana Vzorová</span></div><div class="efa-udaj"><span class="efa-popis">Telefón</span><span class="efa-hodnota">+421 900 000 000</span></div><div class="efa-udaj"><span class="efa-popis">E-mail</span><span class="efa-hodnota">fakturacia@vzorovadielna.sk</span></div><div class="efa-udaj"><span class="efa-popis">Elektronická adresa</span><span class="efa-hodnota">2120000001 (0245)</span></div></div><div class="efa-strana"><p class="efa-t3">Odberateľ</p><p class="efa-nazov">Odberateľ Východ a. s.</p><p class="efa-adresa">Námestie 12</p><p class="efa-adresa">04001 Košice</p><p class="efa-adresa">SK</p><div class="efa-udaj"><span class="efa-popis">IČO</span><span class="efa-hodnota">36000002</span></div><div class="efa-udaj"><span class="efa-popis">IČ DPH</span><span class="efa-hodnota">SK2130000002</span></div><div class="efa-udaj"><span class="efa-popis">Elektronická adresa</span><span class="efa-hodnota">2130000002 (0245)</span></div></div></div><div class="efa-polozky"><p class="efa-t3">Položky</p><table class="efa-tabulka"><thead><tr><th>Čís.</th><th>Názov</th><th>Množstvo</th><th>Jednotka</th><th>Cena za jednotku</th><th>DPH</th><th>Suma bez DPH</th></tr></thead><tbody><tr><td>1</td><td>Servis obrábacieho stroja</td><td>6</td><td>hodina</td><td>45.00 EUR</td><td>23.00 % S</td><td>270.00 EUR</td></tr><tr><td>2</td><td>Náhradné ložiská</td><td>4</td><td>kus</td><td>45.00 EUR</td><td>23.00 % S</td><td>180.00 EUR</td></tr></tbody></table></div></div></div></div></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="ef-sek ef-tepla" id="pre-koho">
+    <div class="wrap">
+      <div class="ef-hlava zjav"><h2>Komu to pomôže a odkedy to platí.</h2></div>
+      <ul class="ef-komu">
+        <li class="zjav" style="--i:0"><b>Slovensko<span>od 1. januára 2027</span></b><p>Platitelia DPH posielajú tuzemské faktúry medzi firmami ako štruktúrované XML cez sieť Peppol, na základe zákona č. 385/2025 Z. z. Rovnaký termín platí aj pre faktúry voči štátnym organizáciám.</p></li>
+        <li class="zjav" style="--i:1"><b>Nemecko<span>od 1. januára 2025</span></b><p>Firmy v Nemecku musia vedieť e-faktúru prijať. Posielať ju musia firmy s obratom nad 800 000 eur od roku 2027 a všetci od roku 2028. Nemecký profil XRechnung 3.x tu skontrolujete aj vytvoríte, vrátane poľa pre Leitweg-ID.</p></li>
+        <li class="zjav" style="--i:2"><b>Sieť Peppol<span>Peppol BIS Billing 3.0</span></b><p>Faktúru odovzdáte svojmu poskytovateľovi doručovacej služby a ten ju doručí odberateľovi. Tu si ju pred odoslaním skontrolujete alebo vytvoríte v profile Peppol BIS Billing 3.0. Samotné doručenie do siete Peppol súčasťou nástroja nie je.</p></li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="ef-sek" id="udaje">
+    <div class="wrap">
+      <div class="ef-hlava"><h2 class="ef-odkryv"><span style="--n:0">Súbor</span> <span style="--n:1">faktúry</span> <span style="--n:2">sa</span> <span style="--n:3">číta,</span> <span style="--n:4">kontroluje</span> <span style="--n:5">a</span> <span style="--n:6">vykresľuje</span> <span style="--n:7">vo</span> <span style="--n:8">vašom</span> <span style="--n:9">prehliadači.</span> <span style="--n:10">Na</span> <span style="--n:11">náš</span> <span style="--n:12">server</span> <span style="--n:13">sa</span> <span style="--n:14">neposiela.</span></h2></div>
+      <div class="ef-udaje">
+        <div class="zjav"><h3>Ostáva v prehliadači</h3><ul><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><b>Čítanie súboru.</b> XML sa načíta priamo v prehliadači, nikam sa nenahráva.</li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><b>Kontrola pravidiel a náhľad.</b> Všetkých 332 kódov pravidiel aj vykreslenie dokladu beží u vás.</li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><b>Tvorba XML a PDF.</b> XML vzniká z formulára v prehliadači, PDF ukladá tlač vášho prehliadača.</li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><b>Adresár a rozpracovaná faktúra.</b> Sú uložené len v tomto prehliadači a vymažete ich tlačidlom vo formulári.</li></ul></div>
+        <div class="ef-server zjav" style="--i:1"><h3>Ide na server</h3><ul><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg><b>Overenie platby.</b> Po návrate zo Stripe sa naša stránka podľa čísla platobnej relácie opýta nášho servera, či je zaplatené. Faktúra sa pri tom neposiela.</li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg><b>Platba.</b> Prebieha na stránke Stripe, ktorý je predajcom (merchant of record).</li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg><b>Dobrovoľný dopyt.</b> Odošle len údaje, ktoré doň sami napíšete.</li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg><b>Návštevnosť.</b> Vlastné Umami počíta návštevy a udalosti, napríklad že kontrola prebehla a s akým výsledkom. Obsah faktúry do merania nejde.</li></ul></div>
+      </div>
+      <div class="ef-sukromie zjav">
+        <p data-efaktura-privacy>Súbor faktúry a údaje formulára na jej vytvorenie zostávajú vo vašom prehliadači. Adresár dodávateľa a odberateľov je v localStorage a môžete ho vymazať tlačidlom vo formulári. Po platbe overujeme jej stav na serveri. Samostatný dobrovoľný dopyt odošle ARLing len údaje, ktoré v ňom vyplníte; faktúra sa k nemu automaticky neprikladá. Návštevnosť meriame vlastným Umami.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="ef-sek ef-tepla" id="cennik">
+    <div class="wrap">
+      <div class="ef-hlava zjav"><h2>Platíte až za hotové XML.</h2></div>
+      <ul class="ef-cennik zjav">
+      <li class="ef-r-zadarmo"><div><h3>Kontrola a náhľad</h3><p>Bez registrácie a bez limitu, vrátane protokolu kontroly a uloženia dokladu do PDF.</p></div><p class="ef-suma">0 €</p><a class="ef-riadok-btn" href="#kontrola" data-umami-event="efaktura_cena_klik" data-umami-event-miesto="cennik" data-umami-event-riadok="zadarmo">Skontrolovať súbor<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></li>
+      <li class="ef-r-jedna"><div><h3>XML jednej faktúry</h3><p>Stiahnutie je v tomto prehliadači odomknuté 24 hodín, aby ste faktúru stihli opraviť a stiahnuť znova.</p></div><p class="ef-suma">2,90 € bez DPH</p><a class="ef-riadok-btn" href="#vytvorit" data-umami-event="efaktura_cena_klik" data-umami-event-miesto="cennik" data-umami-event-riadok="jedna">Vytvoriť faktúru<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></li>
+      <li class="ef-r-30dni"><div><h3>30 dní bez obmedzenia</h3><p>Ľubovoľný počet faktúr vrátane dávky z CSV do jedného ZIP. Jednorazová platba, bez predplatného.</p></div><p class="ef-suma">9,90 € bez DPH</p><a class="ef-riadok-btn" href="#vytvorit" data-umami-event="efaktura_cena_klik" data-umami-event-miesto="cennik" data-umami-event-riadok="30dni">Viac faktúr z CSV<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></li>
+      </ul>
+      <div class="ef-cennik-pozn">
+        <p class="pomoc dan-platby">Ceny sú bez DPH. Stripe pripočíta príslušnú daň podľa údajov zákazníka a konečnú sumu ukáže pred zaplatením.</p>
+        <p class="pomoc">Predávajúci: ARLing s. r. o., IČO 56583486, Bratislava. Platbu spracuje Stripe.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="co-kontrolujeme" class="deep ef-sek">
+    <div class="wrap">
+      <div class="ef-hlava zjav"><h2>Poctivý zoznam, nie sľub úplnosti.</h2></div>
+      <div class="ef-dva">
+        <div class="prose">
         <p>Kontrolujeme 332 kódov pravidiel (<a href="https://arling.sk/efaktura/pravidla/">zoznam všetkých pravidiel s vysvetlením</a>). Patria sem základné pravidlá EN 16931 (BR-01 až BR-65), krížové súčtové pravidlá BR-CO, desatinné miesta BR-DEC, kódovníky BR-CL, pravidlá podľa kategórie DPH (S, Z, E, AE, K, G, O, L, M), pravidlá Peppol BIS Billing 3.0 vrátane kontrolných číslic národných identifikátorov, pravidlá nemeckého XRechnung 3.x (BR-DE-1 až BR-DE-31) a trinásť našich vlastných kontrol: IBAN podľa mod 97, tvar slovenského IČ DPH a DIČ aj nemeckého USt-IdNr., formát Leitweg-ID, poradie dátumov a kód meny.</p>
         <p>Nekontrolujeme XSD schému UBL 2.1, teda poradie prvkov ani dátové typy. Nekontrolujeme 755 pravidiel skupín UBL-CR, UBL-SR a UBL-DT, ktoré väčšinou upozorňujú na prvky navyše. Pravidlá nespúšťame nad syntaxou CII: taký súbor rozpoznáme a povieme vám to. Prechod našou kontrolou preto nezaručuje, že faktúru prijme odberateľ, jeho fakturačný systém alebo sieť Peppol. Je to dobrá prvá kontrola, nie posledné slovo.</p>
         <p>Znenia pravidiel pochádzajú z oficiálnych schematronov: EN 16931 od ConnectingEurope, Peppol BIS Billing 3.0 od OpenPEPPOL a XRechnung od KoSIT. Kódy a texty pravidiel sú normatívne a uvádzame ich ako citáciu spolu s kódom pravidla.</p>
       </div>
-      <div class="rule"></div>
-      <ul class="zdroje r d2">
+        <ul class="zdroje">
         <li>Zákon č. 385/2025 Z. z., ktorým sa mení zákon č. 222/2004 Z. z. o DPH (nový § 76a, účinnosť 1. 1. 2027): <a href="https://www.slov-lex.sk/ezbierky/pravne-predpisy/SK/ZZ/2025/385/">slov-lex.sk</a></li>
         <li>Finančná správa SR, otázky a odpovede k eFaktúre (dokument 9/DPH/2025/IM): <a href="https://www.financnasprava.sk/">financnasprava.sk</a></li>
         <li>Norma EN 16931 a jej schematron: <a href="https://github.com/ConnectingEurope/eInvoicing-EN16931">github.com/ConnectingEurope/eInvoicing-EN16931</a></li>
@@ -515,14 +418,14 @@
         <li>XRechnung (KoSIT, nemecká CIUS): <a href="https://xeinkauf.de/xrechnung/">xeinkauf.de</a></li>
         <li>Nemecké ministerstvo financií, e-faktúra od 1. 1. 2025: <a href="https://www.bundesfinanzministerium.de/Content/DE/FAQ/e-rechnung.html">bundesfinanzministerium.de</a></li>
       </ul>
+      </div>
     </div>
   </section>
 
-  <section id="otazky" class="deep">
-    <div class="wrap">
-      <p class="kicker">Otázky</p>
-      <h2 class="r">Čo sa ľudia pýtajú.</h2>
-      <div class="rule"></div>
+  <section id="otazky" class="deep ef-sek">
+    <div class="wrap ef-otazky">
+      <div class="ef-otazky-hlava zjav"><h2>Čo sa ľudia pýtajú.</h2><p class="ef-otazky-p">Nenašli ste odpoveď? Napíšte na <a href="mailto:andrej@arling.sk">andrej@arling.sk</a>.</p></div>
+      <div class="ef-otazky-zoznam">
       <details class="otazka"><summary>Čo je e-faktúra?</summary><p>E-faktúra je faktúra vyhotovená, zaslaná a prijatá v štruktúrovanom formáte, ktorý vie počítač spracovať bez prepisovania. PDF poslané e-mailom e-faktúra nie je. Formát určuje európska norma EN 16931 a jej dve syntaxe: UBL 2.1 a UN/CEFACT CII.</p></details>
       <details class="otazka"><summary>Koho sa to týka a odkedy?</summary><p>Na Slovensku platí povinná elektronická fakturácia pre tuzemské B2B obchody platiteľov DPH od 1. januára 2027, na základe zákona č. 385/2025 Z. z., ktorý dopĺňa zákon č. 222/2004 Z. z. o DPH o § 76a. Rovnaký termín platí aj pre faktúry voči štátnym organizáciám, skorší termín pre B2G neexistuje. V Nemecku platí povinnosť e-faktúru prijať už od 1. januára 2025, posielať ju musia firmy s obratom nad 800 000 eur od roku 2027 a všetci od roku 2028. V Česku podľa prehľadu Európskej komisie k septembru 2026 žiadna všeobecná povinnosť pre firmy neplatí, priamo na českom vládnom zdroji sme si to neoverovali.</p></details>
       <details class="otazka"><summary>UBL alebo CII, čo si mám vybrať?</summary><p>Obe syntaxe sú podľa EN 16931 rovnocenné. V sieti Peppol sa v praxi posiela UBL 2.1, preto ho generujeme aj my. CII sa používa najmä v Nemecku, aj vo vnútri hybridného PDF formátu ZUGFeRD. Náš validátor zatiaľ kontroluje pravidlá len nad UBL; súbor v CII rozpoznáme a povieme vám to, ale pravidlá naň nespúšťame.</p></details>
@@ -531,33 +434,33 @@
       <details class="otazka"><summary>Prečo validátor hlási BR-CO-15?</summary><p>BR-CO-15 hovorí, že suma s DPH (BT-112) sa musí rovnať sume bez DPH (BT-109) plus celková DPH (BT-110). Býva to o jeden cent, keď účtovný program počíta DPH z každého riadku zvlášť a zaokrúhľuje, zatiaľ čo norma chce jednu daň na jednu sadzbu z celého základu. Opravte súčet v hlavičke, nie jednotlivé riadky.</p></details>
       <details class="otazka"><summary>Ako dostanem doklad za platbu?</summary><p>Platbu spracúva Stripe ako merchant of record. Po zaplatení vám Stripe pošle e-mailom potvrdenie a faktúru s DPH. Ak nakupujete na firmu, zadajte v pokladni IČ DPH a doklad bude na firmu.</p></details>
       <details class="otazka"><summary>Dajú sa peniaze vrátiť?</summary><p>Kliknutím na zaplatenie súhlasíte s okamžitým dodaním digitálneho obsahu a beriete na vedomie, že tým strácate právo na odstúpenie od zmluvy podľa § 19 ods. 1 písm. m) zákona č. 108/2024 Z. z. Ak vám nástroj nefunguje alebo niečo nesedí, napíšte na andrej@arling.sk. Odpíšem osobne, väčšinou do 24 hodín.</p></details>
-    </div>
-  </section>
-
-  <section id="poctivo" class="deep">
-    <div class="wrap">
-      <p class="kicker">Čo to je a čo to nie je</p>
-      <h2 class="r">Vzor a kontrola, nie daňové poradenstvo.</h2>
-      <div class="rule"></div>
-      <div class="prose r d1">
-        <p>Tento nástroj kontroluje tvar súboru a skladá z vašich údajov vzorovú faktúru v UBL 2.1. Neposudzuje, či máte fakturovať s DPH alebo bez nej, akú sadzbu má daná služba, či ide o prenesenie daňovej povinnosti a či je obchod vôbec zdaniteľný. To je daňové poradenstvo a na to je účtovník alebo daňový poradca. Za správnosť faktúry zodpovedá ten, kto ju vystavil.</p>
-        <p data-efaktura-privacy>Súbor faktúry a údaje formulára na jej vytvorenie zostávajú vo vašom prehliadači. Adresár dodávateľa a odberateľov je v localStorage a môžete ho vymazať tlačidlom vo formulári. Po platbe overujeme jej stav na serveri. Samostatný dobrovoľný dopyt odošle ARLing len údaje, ktoré v ňom vyplníte; faktúra sa k nemu automaticky neprikladá. Návštevnosť meriame vlastným Umami.</p>
-        <p>Keď sa zmení zákon, schematron alebo verzia špecifikácie, pravidlá upravíme a napíšeme to sem s dátumom. Fakty na tejto stránke sme overovali 11. 9. 2026 na oficiálnych zdrojoch uvedených vyššie.</p>
       </div>
     </div>
   </section>
-  <section id="suvisiace" class="deep">
-    <div class="wrap">
-      <p class="kicker">Súvisiace</p>
-      <h2 class="r">Ďalšie nástroje a poznámky.</h2>
-      <div class="rule"></div>
-      <div class="prose r d1">
+
+  <div class="ef-dvojica">
+    <div class="wrap ef-dvojica-mriezka">
+      <section id="poctivo" class="deep zjav">
+        <h2>Vzor a kontrola, nie daňové poradenstvo.</h2>
+        <div class="prose">
+        <p>Tento nástroj kontroluje tvar súboru a skladá z vašich údajov vzorovú faktúru v UBL 2.1. Neposudzuje, či máte fakturovať s DPH alebo bez nej, akú sadzbu má daná služba, či ide o prenesenie daňovej povinnosti a či je obchod vôbec zdaniteľný. To je daňové poradenstvo a na to je účtovník alebo daňový poradca. Za správnosť faktúry zodpovedá ten, kto ju vystavil.</p>
+        <p>Keď sa zmení zákon, schematron alebo verzia špecifikácie, pravidlá upravíme a napíšeme to sem s dátumom. Fakty na tejto stránke sme overovali 11. 9. 2026 na oficiálnych zdrojoch uvedených vyššie.</p>
+      </div>
+      </section>
+      <section id="suvisiace" class="deep ef-suvisiace zjav" style="--i:1">
+        <h2>Ďalšie nástroje a poznámky.</h2>
+        <div class="prose r d1">
         <p class="csv-odkaz"><a href="#vytvorit">Viac faktúr z tabuľky: dávka CSV do XML</a>.</p>
         <p>Kontrolu SEPA platobného súboru pred termínom 15. novembra ponúka stránka <a href="https://arling.sk/kontrola-suboru/">Kontrola SEPA súboru</a>.</p>
         <p>GDPR dokumenty pre firmu, živnostníka a e-shop nájdete na stránke <a href="https://arling.sk/gdpr-dokumenty/">GDPR dokumenty</a>.</p>
         <p>Najčastejšie chyby e-faktúry podľa pravidiel EN 16931 rozoberá poznámka <a href="https://arling.sk/notes/najcastejsie-chyby-e-faktury/">Najčastejšie chyby e-faktúry</a>.</p>
       </div>
+      </section>
     </div>
+  </div>
+
+  <section class="ef-zaver">
+    <div class="wrap"><div class="ef-zaver-karta"><div class="ef-zaver-vnutro"><h2 class="zjav">Máte XML po ruke? Výsledok uvidíte za pár sekúnd.</h2><p class="zjav" style="--i:1">Zadarmo, bez registrácie, súbor ostáva vo vašom prehliadači.</p><div class="ef-zaver-akcia zjav" style="--i:2"><a class="ef-cta" href="#kontrola" data-umami-event="efaktura_zaver_cta">Skontrolovať faktúru zadarmo<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></div></div></div></div>
   </section>
 </main>
 

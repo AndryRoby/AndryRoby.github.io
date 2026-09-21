@@ -1,0 +1,504 @@
+/* E-faktúra v4 (Fable, 21. 9. 2026): ten istý svet ako úvod v4 a obchod v4, „Lampa na stole“.
+   Na stole neleží obrázok nástroja, ale nástroj sám: vľavo vstup, vpravo rám s výsledkom,
+   pod rámom jedno svetlo. Hlavičku a pätu kreslí paper.css, tento súbor sa stará len o <main>
+   a o tlač dokladu. Všetko je pod body.efv4, aby sa neprebíjalo s rámom stránky.
+   Magic UI efekty prenesené do CSS: Border Beam (rám výsledku), Magic Card (tri kroky),
+   Marquee (normy), Number Ticker (počet pravidiel, efaktura-v4.js), Text Reveal (údaje),
+   Shine Border (záver). Hýbe sa len transform, opacity a dráha lúča.
+   Triedy a id, ktoré číta app.js, davka-ui.js, nahlad.js a dopyt-opakovanie.js, sa nemenia. */
+
+html{scrollbar-color:#332a26 #0a0908}
+body.efv4{
+  --noc:#0a0908;--noc-2:#100e0c;--ink:#fafafa;--telo:#a8a4a0;--tichy:#8d8884;
+  --linka:rgba(255,255,255,.10);--linka-2:rgba(255,255,255,.16);
+  --med:#f2643c;--med-tma:#e05630;--med-tma-2:#c9421c;--zhaslo:#ffb59d;--dobre:#5ecf9a;
+  --plocha:#15110f;--plocha-2:#1b1714;
+  --pero:cubic-bezier(.16,1,.3,1);--tik:cubic-bezier(.2,.7,.2,1);
+  --sek:clamp(64px,6.6vw,112px);
+  background:var(--noc);color:var(--telo);
+  font:400 17px/1.6 var(--ui);letter-spacing:-.004em;-webkit-font-smoothing:antialiased}
+body.efv4 .wash{display:none}
+body.efv4 [hidden]{display:none !important}
+
+/* Paper má holé pravidlá pre section, p, h1 až h3 a odkazy. Tu sa vracajú na nulu. */
+body.efv4 main{overflow-x:clip}
+body.efv4 main section{position:relative;padding:0;border-top:0;background:none}
+body.efv4 main section[id],body.efv4 #nastroj{scroll-margin-top:calc(var(--hlavicka) + 12px)}
+body.efv4 main h1,body.efv4 main h2,body.efv4 main h3{margin:0;font-family:var(--ui);font-weight:700;color:var(--ink)}
+body.efv4 main h1{font-size:clamp(30px,3.5vw,50px);line-height:1.06;letter-spacing:-.032em;text-wrap:balance}
+body.efv4 main h2{font-size:clamp(27px,3vw,42px);line-height:1.08;letter-spacing:-.026em;text-wrap:balance}
+body.efv4 main h3{font-size:20px;line-height:1.28;letter-spacing:-.02em}
+body.efv4 main p{margin:0;max-width:none;color:inherit;text-wrap:pretty}
+body.efv4 main ul,body.efv4 main ol{margin:0;padding:0;list-style:none}
+body.efv4 main a{color:var(--ink);text-decoration:underline;text-decoration-color:var(--linka-2);text-decoration-thickness:1px;text-underline-offset:4px;transition:color .2s var(--tik),text-decoration-color .2s var(--tik)}
+body.efv4 main a:hover{color:var(--ink);text-decoration-color:var(--med)}
+body.efv4 main :focus-visible{outline:2px solid var(--zhaslo);outline-offset:3px;border-radius:6px}
+body.efv4 main ::selection{background:rgba(242,100,60,.34);color:#fff}
+body.efv4 main textarea,body.efv4 main input{caret-color:var(--med)}
+body.efv4 main code{font-family:var(--mono);font-size:.92em;background:rgba(255,255,255,.06);border-radius:5px;padding:2px 5px;color:#e8c9bd}
+.efv4 .ef-sr{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+
+/* Tlačidlá: plná meď s tmavým textom je hlavná akcia, sklo je vedľajšia. Odozva hneď pri stlačení. */
+body.efv4 main .btn,.efv4 .ef-cta{display:inline-flex;align-items:center;justify-content:center;gap:9px;height:auto;min-height:46px;padding:0 20px;border:1px solid transparent;border-radius:999px;font:600 15px/1.2 var(--ui);letter-spacing:-.012em;text-decoration:none;white-space:normal;cursor:pointer;transition:transform .16s var(--tik),background-color .16s var(--tik),border-color .16s var(--tik),box-shadow .16s var(--tik),color .16s var(--tik)}
+body.efv4 main .btn-solid,.efv4 .ef-cta{background:var(--med);color:#1b0e08;box-shadow:0 6px 16px -6px rgba(0,0,0,.8)}
+body.efv4 main .btn-solid:hover,.efv4 .ef-cta:hover{background:var(--med-tma);color:#1b0e08;transform:translateY(-1px);box-shadow:0 9px 20px -7px rgba(0,0,0,.85)}
+body.efv4 main .btn-solid:active,.efv4 .ef-cta:active{transform:scale(.97);background:var(--med-tma-2);box-shadow:0 3px 9px -5px rgba(0,0,0,.85);transition-duration:.1s}
+body.efv4 main .btn-line{background:rgba(255,255,255,.04);border-color:var(--linka-2);color:var(--ink)}
+body.efv4 main .btn-line:hover{background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.3);color:var(--ink)}
+body.efv4 main .btn-line:active{transform:scale(.97);transition-duration:.1s}
+body.efv4 main .btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.efv4 .ef-cta{min-height:54px;padding:0 28px;font-size:16.5px}
+.efv4 .ef-cta svg,.efv4 .ef-riadok-btn svg{width:17px;height:17px;flex:none;transition:transform .3s var(--tik)}
+.efv4 .ef-cta:hover svg,.efv4 .ef-riadok-btn:hover svg{transform:translateX(3px)}
+body.efv4 main .cta{display:flex;flex-wrap:wrap;gap:10px}
+.efv4 .pomoc{font-size:13.5px;line-height:1.55;color:var(--tichy)}
+.efv4 .poznamka{font-size:15px;color:var(--tichy)}
+
+/* ── Hero: veta, čo to vyrieši, a hneď pod ňou nástroj. ─────────────────── */
+.efv4 .ef-hero{isolation:isolate;padding:clamp(22px,2.6vw,40px) 0 0}
+.efv4 .ef-hero::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(54% 50% at 82% 34%,rgba(150,72,40,.30) 0%,transparent 64%),radial-gradient(70% 60% at 64% 96%,rgba(112,54,30,.26) 0%,transparent 70%)}
+.efv4 .ef-hero-text{max-width:1040px}
+.efv4 .ef-hero h1 .l{display:block}
+body.efv4 .ef-hero .lead{margin:clamp(14px,1.3vw,20px) 0 0;max-width:66ch;font:400 clamp(16.5px,1.22vw,18.5px)/1.55 var(--ui);color:var(--telo)}
+body.efv4 .ef-hero .lead::before,body.efv4 .ef-hero .lead::after{display:none}
+.efv4 .cena-hore{margin-top:12px;max-width:66ch;font-size:15.5px;color:#cfc9c3}
+.efv4 .start-nastroj{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+
+.efv4 .ef-mriezka{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);grid-template-areas:"zalozky ramec" "lavy ramec" "ceny ceny";grid-template-rows:auto 1fr auto;column-gap:clamp(28px,3.4vw,60px);margin-top:clamp(20px,2.2vw,32px)}
+.efv4 .ef-mriezka>noscript{grid-column:1/-1}
+.efv4 .ef-mriezka .panel{display:contents}
+.efv4 .ef-lavy{grid-area:lavy;min-width:0}
+.efv4 .ef-pravy{grid-area:ramec;min-width:0;position:relative;display:flex;flex-direction:column;scroll-margin-top:calc(var(--hlavicka) + 12px)}
+.efv4 .ef-hero[data-tab="vytvorit"] .ef-mriezka{grid-template-columns:minmax(0,1fr);grid-template-areas:"zalozky" "lavy" "ceny"}
+.efv4 .ef-mriezka #panel-vytvorit:not([hidden]){display:block;grid-area:lavy;min-width:0}
+
+/* Záložky ako jeden prepínač. */
+.efv4 .ef-prepinac{grid-area:zalozky;display:flex;flex-wrap:wrap;align-items:center;gap:8px 20px;margin:0 0 14px;min-width:0}
+body.efv4 main .ef-dalej{font-size:14.5px;color:var(--telo)}
+body.efv4 main .ef-dalej:hover{color:var(--ink)}
+.efv4 .ef-hero[data-tab="vytvorit"] .ef-dalej{display:none}
+.efv4 .zalozky{display:inline-flex;flex-wrap:wrap;gap:4px;padding:4px;border:1px solid var(--linka);border-radius:999px;background:rgba(255,255,255,.03)}
+.efv4 .zalozka{min-height:40px;padding:0 18px;border:0;border-radius:999px;background:transparent;color:var(--telo);font:500 14.5px/1 var(--ui);letter-spacing:-.008em;cursor:pointer;transition:color .16s var(--tik),background-color .16s var(--tik),transform .16s var(--tik)}
+.efv4 .zalozka:hover{color:var(--ink)}
+.efv4 .zalozka:active{transform:scale(.97);transition-duration:.1s}
+.efv4 .zalozka.aktivna{background:rgba(255,255,255,.10);color:var(--ink);box-shadow:0 1px 0 rgba(255,255,255,.10) inset}
+.efv4 .panel .sub{margin:0 0 14px;max-width:62ch;font-size:15.5px;line-height:1.58;color:var(--telo)}
+
+/* Vstup: pretiahnutie, výber súboru, vložené XML. */
+.efv4 .vstup{border:1px solid var(--linka-2);border-radius:18px;background:linear-gradient(180deg,rgba(30,25,22,.82),rgba(18,15,13,.86));padding:clamp(14px,1.3vw,18px);box-shadow:0 1px 0 rgba(255,255,255,.07) inset,0 30px 60px -36px rgba(0,0,0,.95)}
+.efv4 .dropzone{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:clamp(78px,8.4vh,104px);padding:12px 16px;border:1.5px dashed rgba(255,255,255,.22);border-radius:13px;text-align:center;cursor:pointer;font-size:14.5px;line-height:1.4;color:var(--telo);transition:border-color .16s var(--tik),background-color .16s var(--tik),transform .16s var(--tik),color .16s var(--tik)}
+.efv4 .dropzone b{display:flex;align-items:center;gap:9px;color:var(--ink);font-weight:600;font-size:16px;letter-spacing:-.012em}
+.efv4 .dropzone svg{width:19px;height:19px;flex:none;color:var(--zhaslo)}
+.efv4 .dropzone br{display:none}
+.efv4 .dropzone:hover,.efv4 .dropzone.nad{border-color:var(--med);background:rgba(242,100,60,.07);color:var(--ink)}
+.efv4 .dropzone.nad{transform:scale(1.01)}
+.efv4 .dropzone:active{transform:scale(.985);transition-duration:.1s}
+.efv4 .vstup-akcie{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 0}
+.efv4 .vstup-akcie .btn{flex:1 1 auto;min-height:44px;font-size:14.5px}
+.efv4 .ef-xml-label{display:block;margin:12px 0 6px}
+body.efv4 .vstup textarea{display:block;width:100%;box-sizing:border-box;min-height:clamp(58px,8vh,88px);margin:0;padding:9px 12px;border:1px solid var(--linka);border-radius:10px;background:rgba(0,0,0,.34);color:var(--ink);font:12.5px/1.5 var(--mono);resize:vertical}
+body.efv4 .vstup textarea::placeholder{color:#8a8580}
+body.efv4 .vstup textarea:focus{outline:none;border-color:var(--med);box-shadow:0 0 0 3px rgba(242,100,60,.18)}
+.efv4 .ef-vlozene{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;margin-top:10px}
+.efv4 .ef-vlozene .btn{min-height:40px;padding:0 16px;font-size:14px}
+.efv4 .vstup-stav:empty{min-height:0}
+.efv4 .vstup-stav{flex:1 1 180px;min-height:1.3em;font-size:13.5px;line-height:1.45;color:var(--zhaslo)}
+
+/* Rám výsledku so svetlom: skutočný výstup kontroly, najprv ukážka, potom váš súbor. */
+.efv4 .ef-lampa{position:absolute;left:-6%;bottom:-54px;width:112%;height:46%;z-index:0;pointer-events:none;background:radial-gradient(46% 56% at 50% 100%,rgba(255,152,108,.40) 0%,rgba(242,100,60,.17) 38%,transparent 70%),radial-gradient(72% 70% at 50% 98%,rgba(242,100,60,.15) 0%,transparent 70%);filter:blur(26px)}
+.efv4 .ef-ramec{position:relative;z-index:1;flex:1 1 auto;display:flex;flex-direction:column;min-height:0;border-radius:16px;background:linear-gradient(180deg,#221d1a 0%,#14110f 100%);border:1px solid rgba(255,255,255,.13);box-shadow:0 2px 0 rgba(255,255,255,.07) inset,0 46px 90px -34px rgba(0,0,0,.92)}
+.efv4 .ef-ramec-pas{display:flex;align-items:center;gap:8px;min-height:42px;padding:0 15px;border-bottom:1px solid rgba(255,255,255,.08)}
+.efv4 .ef-bodka{width:9px;height:9px;border-radius:50%;background:#3a322e;flex:none}
+body.efv4 .ef-ramec-pas h2{margin:0 0 0 10px;font:600 13.5px/1.3 var(--ui);letter-spacing:-.004em;color:#cfc9c3;text-wrap:nowrap;overflow:hidden;text-overflow:ellipsis}
+body.efv4 .ef-ramec-pas h2::before,body.efv4 .ef-ramec-pas h2::after{display:none}
+.efv4 .ef-stitok{margin-left:auto;flex:none;padding:4px 10px;border:1px solid var(--linka-2);border-radius:999px;font-size:12px;line-height:1.2;color:var(--zhaslo)}
+.efv4 .ef-ramec-telo{position:relative;flex:1 1 auto;min-height:0;padding:clamp(16px,1.5vw,22px) clamp(16px,1.6vw,24px) clamp(18px,1.6vw,24px)}
+.efv4 .ef-beam{position:absolute;inset:-1px;z-index:5;border-radius:inherit;pointer-events:none;border:1.5px solid transparent;-webkit-mask:linear-gradient(#fff 0 0) padding-box,linear-gradient(#fff 0 0);mask:linear-gradient(#fff 0 0) padding-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude}
+.efv4 .ef-beam::after{content:"";position:absolute;width:84px;aspect-ratio:1;offset-path:rect(0 auto auto 0 round 16px);offset-anchor:50% 50%;background:linear-gradient(to left,#ffb59d,#f2643c,transparent);animation:ef-beam 9s linear infinite}
+@keyframes ef-beam{from{offset-distance:0%}to{offset-distance:100%}}
+@supports not (offset-path:rect(0 auto auto 0)){.efv4 .ef-beam{display:none}}
+.efv4 .ef-podpis{position:relative;z-index:1;margin-top:12px;font-size:13px;line-height:1.5;color:var(--tichy);max-width:64ch}
+/* Ukážka je vysoká podľa ľavého stĺpca a dole sa stráca; váš výsledok rám roztiahne na celú dĺžku. */
+.efv4 .ef-hero[data-vysledok="0"] #panel-kontrola .ef-ramec-telo{overflow:hidden;-webkit-mask:linear-gradient(180deg,#000 calc(100% - 64px),transparent);mask:linear-gradient(180deg,#000 calc(100% - 64px),transparent)}
+.efv4 .ef-hero[data-vysledok="0"] #sumar{display:none}
+.efv4 .ef-hero[data-vysledok="1"] .ef-ukazka,.efv4 .ef-hero[data-vysledok="1"] .ef-len-ukazka{display:none}
+.efv4 .ef-hero[data-vysledok="1"] #panel-kontrola .ef-beam{display:none}
+@media (min-width:1081px){
+  .efv4 .ef-hero[data-vysledok="0"] #panel-kontrola .ef-ukazka{position:absolute;inset:clamp(16px,1.5vw,22px) clamp(16px,1.6vw,24px) 0}
+  .efv4 .ef-hero[data-vysledok="0"] #panel-kontrola .ef-ramec{min-height:340px}
+}
+
+/* Nálezy (kreslí ich app.js, ukážka má tie isté triedy). */
+.efv4 .sumar-stav{margin:0 0 8px;font:600 clamp(17px,1.35vw,20px)/1.35 var(--ui);letter-spacing:-.016em}
+.efv4 .sumar-stav.je-ok{color:var(--dobre)}
+.efv4 .sumar-stav.je-chyba{color:var(--zhaslo)}
+.efv4 .sumar-meta{display:flex;flex-wrap:wrap;gap:4px 18px;margin:0 0 4px;font-size:13px;color:var(--tichy)}
+.efv4 .akcie{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 6px}
+.efv4 .akcie .btn{min-height:40px;padding:0 16px;font-size:14px}
+.efv4 #nalezy,.efv4 .ef-ukazka-nalezy{margin-top:12px}
+.efv4 .nalez{border-top:1px solid var(--linka);padding:14px 0}
+.efv4 .nalez-hlava{display:flex;align-items:center;gap:10px;margin:0 0 6px}
+.efv4 .nalez-znacka{padding:4px 9px;border:1px solid var(--linka-2);border-radius:999px;font:600 11.5px/1 var(--ui);letter-spacing:.02em;color:var(--tichy)}
+.efv4 .nalez-chyba .nalez-znacka{color:var(--zhaslo);border-color:rgba(242,100,60,.6)}
+.efv4 .nalez-varovanie .nalez-znacka{color:#e8c07a;border-color:rgba(232,192,122,.5)}
+.efv4 .nalez-informacia .nalez-znacka{color:var(--dobre);border-color:rgba(94,207,154,.5)}
+body.efv4 main .nalez-kod{padding:0;background:none;font:600 13px/1 var(--mono);color:var(--ink)}
+.efv4 .nalez-veta{margin:0 0 7px;max-width:76ch;font-size:15px;line-height:1.55;color:#d6d1cc}
+.efv4 .nalez-meta{margin:0 0 3px;font-size:12.5px;line-height:1.5;color:var(--tichy);overflow-wrap:anywhere}
+body.efv4 main .nalez-meta code{padding:0;background:none;font:12px/1.5 var(--mono);color:var(--telo)}
+.efv4 .nalez-original{padding:6px 0 0}
+.efv4 .nalez-original summary{cursor:pointer;font-size:13px;color:var(--tichy);transition:color .2s var(--tik)}
+.efv4 .nalez-original summary:hover{color:var(--ink)}
+.efv4 .nalez-original p{margin:8px 0 0;max-width:80ch;font:13px/1.55 var(--mono);color:var(--telo)}
+.efv4 .kupa-vysledok{margin:14px 0 4px;padding:16px 18px;border:1px solid var(--linka-2);border-radius:14px;background:rgba(255,255,255,.035);box-shadow:0 1px 0 rgba(255,255,255,.06) inset}
+.efv4 .kupa-vysledok .cta{margin-top:12px}
+body.efv4 .ef-opak{margin:18px 0 6px;padding:20px 0;border-color:var(--linka)}
+
+/* Ceny z registra hneď pod nástrojom, ako na úvode. */
+.efv4 .ef-ceny{grid-area:ceny;position:relative;z-index:2;display:flex;flex-wrap:wrap;align-items:center;gap:8px 28px;margin-top:clamp(22px,2.4vw,34px);padding:18px 0 20px;border-top:1px solid var(--linka-2)}
+.efv4 .ef-ceny ul{display:flex;flex-wrap:wrap;align-items:center;gap:8px 0;font-size:15px;color:#cfc9c3}
+.efv4 .ef-ceny li{display:flex;align-items:baseline;gap:7px}
+.efv4 .ef-ceny li+li::before{content:"";align-self:center;width:3px;height:3px;flex:none;margin:0 16px;border-radius:50%;background:var(--med)}
+.efv4 .ef-ceny b{color:var(--ink);font-weight:600;letter-spacing:-.012em;white-space:nowrap}
+body.efv4 main .ef-ceny a{margin-left:auto;font-size:14.5px;color:var(--telo)}
+body.efv4 main .ef-ceny a:hover{color:var(--ink)}
+
+/* Normy ako marquee. */
+.efv4 .ef-normy{border-block:1px solid var(--linka);background:linear-gradient(180deg,#0d0b0a,#0a0908)}
+.efv4 .ef-normy .wrap{display:flex;align-items:center;gap:clamp(20px,3vw,46px);padding:20px 0}
+.efv4 .ef-normy p{flex:none;max-width:24ch;font-size:14px;line-height:1.45;color:var(--tichy)}
+.efv4 .ef-normy p b{color:var(--ink);font-weight:600}
+.efv4 .ef-pas{flex:1;min-width:0;overflow:hidden;-webkit-mask:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);mask:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
+.efv4 .ef-bez{display:flex;width:max-content;animation:ef-bez 46s linear infinite}
+.efv4 .ef-pas:hover .ef-bez{animation-play-state:paused}
+.efv4 .ef-bez ul{display:flex}
+.efv4 .ef-bez li{padding:2px 22px;border-left:1px solid var(--linka);font-size:14px;letter-spacing:-.012em;color:var(--ink);white-space:nowrap}
+@keyframes ef-bez{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+/* Sekcie. */
+.efv4 .ef-sek{padding:var(--sek) 0}
+.efv4 .ef-sek+.ef-sek,.efv4 .ef-linka{border-top:1px solid var(--linka)}
+.efv4 .ef-tepla{background:radial-gradient(70% 56% at 84% 0%,rgba(96,46,26,.24) 0%,transparent 62%),var(--noc)}
+.efv4 .ef-hlava{max-width:60ch;margin-bottom:clamp(32px,3.4vw,52px)}
+.efv4 .ef-hlava p{margin-top:16px;max-width:58ch;color:var(--telo)}
+
+/* Kontext pristávacej stránky (vkladá ops/efaktura/pristavne.mjs): zvyšok úvodného odseku a tri fakty. */
+.efv4 .ef-kontext-mriezka{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:clamp(28px,4vw,80px);align-items:start}
+.efv4 .ef-kontext-lead{max-width:62ch;font-size:clamp(18px,1.45vw,21px);line-height:1.56;letter-spacing:-.008em;color:#d6d1cc}
+.efv4 .ef-kontext .sub{margin-top:18px;max-width:70ch;font-size:16px;line-height:1.65;color:var(--telo)}
+.efv4 .ef-kontext b{color:var(--ink);font-weight:600}
+body.efv4 main .facts{margin:0;border-top:1px solid var(--linka-2);font-size:16px;color:var(--telo)}
+.efv4 .facts li{position:relative;padding:14px 0 14px 30px;border-bottom:1px solid var(--linka);line-height:1.55}
+.efv4 .facts li::before{content:"";position:absolute;left:3px;top:21px;width:11px;height:6px;border-left:2px solid var(--dobre);border-bottom:2px solid var(--dobre);transform:rotate(-45deg)}
+.efv4 .facts b{color:var(--ink);font-weight:600}
+
+/* Tri kroky: Magic Card, okraj aj svit sledujú kurzor (--mx, --my píše efaktura-v4.js). */
+.efv4 .ef-kroky{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:clamp(16px,1.5vw,22px);counter-reset:krok}
+.efv4 .ef-dl{--mx:50%;--my:-600px;position:relative;isolation:isolate;display:flex;flex-direction:column;min-width:0;border:1px solid transparent;border-radius:18px;overflow:hidden;background:linear-gradient(180deg,#1b1714,#12100e) padding-box,radial-gradient(280px circle at var(--mx) var(--my),rgba(242,100,60,.6),rgba(255,181,157,.24),rgba(255,255,255,.10) 100%) border-box;counter-increment:krok}
+.efv4 .ef-dl::before{content:"";position:absolute;inset:0;z-index:3;pointer-events:none;opacity:0;background:radial-gradient(340px circle at var(--mx) var(--my),rgba(242,100,60,.12),transparent 100%);transition:opacity .3s var(--tik)}
+.efv4 .ef-k1{grid-column:span 5}
+.efv4 .ef-k2{grid-column:span 7}
+.efv4 .ef-k3{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr)}
+.efv4 .ef-dl-text{position:relative;z-index:2;display:flex;flex-direction:column;gap:10px;padding:24px 26px 26px}
+.efv4 .ef-dl-text h3::before{content:counter(krok);display:inline-block;margin:0 12px 0 0;color:var(--zhaslo);font-weight:600}
+body.efv4 main .ef-dl-text h3::after{display:none}
+.efv4 .ef-dl-text p{font-size:16px;line-height:1.58;color:var(--telo);max-width:58ch}
+.efv4 .ef-k3 .ef-dl-text{justify-content:center;padding:clamp(26px,3vw,48px)}
+.efv4 .ef-vyrez{position:relative;order:-1;overflow:hidden;height:clamp(210px,19vw,260px);background:radial-gradient(64% 76% at 50% 118%,rgba(255,152,108,.26) 0%,rgba(242,100,60,.11) 40%,transparent 72%),linear-gradient(180deg,#15110f 0%,#0c0a09 100%)}
+.efv4 .ef-vyrez::after{content:"";position:absolute;inset:auto 0 0;height:30%;z-index:4;pointer-events:none;background:linear-gradient(180deg,transparent,rgba(14,12,10,.92))}
+.efv4 .ef-k3 .ef-vyrez{order:2;height:auto;min-height:clamp(300px,26vw,380px)}
+.efv4 .ef-xml{margin:0;padding:22px 26px;font:12.5px/1.7 var(--mono);color:#b9b3ad;white-space:pre;tab-size:2}
+.efv4 .ef-xml b{color:var(--zhaslo);font-weight:400}
+.efv4 .ef-xml i{color:var(--ink);font-style:normal}
+.efv4 .ef-vyrez-nalez{height:auto;min-height:clamp(210px,19vw,260px);padding:6px 26px 16px}
+.efv4 .ef-vyrez-nalez::after{display:none}
+.efv4 .ef-vyrez-nalez .nalez{border-top:0}
+.efv4 .ef-vyrez-papier .efa-t2{font:700 21px/1.2 var(--ui);color:#111;margin:0 0 10px;letter-spacing:-.01em}
+.efv4 .ef-vyrez-papier .efa-t3{font:600 13px/1.3 var(--ui);color:#111;margin:18px 0 6px;text-transform:uppercase;letter-spacing:.06em}
+.efv4 .ef-vyrez-papier{position:absolute;left:50%;top:26px;width:min(86%,620px);translate:-50% 0;rotate:-1.2deg;padding:26px 30px 40px;border-radius:6px;background:#f6f4ef;color:#1b1a17;box-shadow:0 30px 50px -22px rgba(0,0,0,.9),0 8px 18px -8px rgba(0,0,0,.65);transition:translate .6s var(--pero),rotate .6s var(--pero)}
+
+/* Pre koho: tri riadky s dátumom, nie tri karty. */
+.efv4 .ef-komu{border-top:1px solid var(--linka-2)}
+.efv4 .ef-komu li{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,9fr);gap:8px clamp(24px,4vw,72px);padding:26px 0;border-bottom:1px solid var(--linka)}
+.efv4 .ef-komu b{color:var(--ink);font:600 clamp(19px,1.7vw,24px)/1.25 var(--ui);letter-spacing:-.02em}
+.efv4 .ef-komu b span{display:block;margin-top:6px;font:400 14.5px/1.45 var(--ui);letter-spacing:0;color:var(--zhaslo)}
+.efv4 .ef-komu p{font-size:16.5px;line-height:1.62;color:var(--telo);max-width:68ch}
+
+/* Údaje: čo ostáva v prehliadači a čo ide na server. */
+.efv4 .ef-odkryv{max-width:34ch;font-size:clamp(21px,2vw,29px);line-height:1.36;letter-spacing:-.018em;color:var(--ink)}
+@supports (animation-timeline:view()){
+  .efv4 .ef-odkryv span{opacity:.26;animation:ef-odkry linear both;animation-timeline:view();animation-range:entry 35% cover 42%;animation-delay:calc(var(--n)*6ms)}
+  @keyframes ef-odkry{to{opacity:1}}
+}
+.efv4 .ef-udaje{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(28px,4vw,72px)}
+.efv4 .ef-udaje>div{border-top:1px solid var(--linka-2);padding-top:22px}
+.efv4 .ef-udaje h3{margin-bottom:14px}
+.efv4 .ef-udaje li{position:relative;padding:11px 0 11px 28px;border-top:1px solid var(--linka);font-size:16px;line-height:1.55;color:var(--telo)}
+.efv4 .ef-udaje li:first-child{border-top:0}
+.efv4 .ef-udaje li svg{position:absolute;left:0;top:15px;width:17px;height:17px;color:var(--dobre)}
+.efv4 .ef-udaje .ef-server li svg{color:var(--zhaslo)}
+.efv4 .ef-udaje li b{color:var(--ink);font-weight:600}
+.efv4 .ef-sukromie{margin-top:clamp(28px,3vw,44px);max-width:86ch;font-size:15px;line-height:1.65;color:var(--tichy)}
+
+/* Cenník: pokojná tabuľka, jedno tlačidlo na riadok. */
+.efv4 .ef-cennik{border-top:1px solid var(--linka-2)}
+.efv4 .ef-cennik li{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,.62fr) auto;align-items:center;gap:10px clamp(20px,3vw,56px);padding:24px 0;border-bottom:1px solid var(--linka)}
+.efv4 .ef-cennik h3{margin-bottom:6px}
+.efv4 .ef-cennik p{font-size:15.5px;line-height:1.55;color:var(--telo);max-width:60ch}
+.efv4 .ef-cennik p.ef-suma{font:600 clamp(24px,2.2vw,32px)/1.1 var(--ui);letter-spacing:-.03em;color:var(--ink);white-space:nowrap}
+.efv4 .ef-riadok-btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;min-width:230px;min-height:46px;padding:0 20px;border:1px solid var(--linka-2);border-radius:999px;background:rgba(255,255,255,.04);font:600 15px/1.2 var(--ui);letter-spacing:-.012em;white-space:nowrap;transition:transform .16s var(--tik),background-color .2s var(--tik),border-color .2s var(--tik),color .2s var(--tik)}
+body.efv4 main a.ef-riadok-btn{color:var(--ink);text-decoration:none}
+body.efv4 main a.ef-riadok-btn:hover{background:var(--med);border-color:var(--med);color:#1b0e08}
+body.efv4 main a.ef-riadok-btn:active{transform:scale(.97);background:var(--med-tma-2);border-color:var(--med-tma-2);color:#1b0e08;transition-duration:.1s}
+.efv4 .ef-cennik-pozn{display:grid;gap:8px;margin-top:22px;max-width:86ch}
+.efv4 .rozsah-platby{color:var(--telo)}
+
+/* Čo kontrolujeme, poctivo, súvisiace: pokojný text. */
+.efv4 .ef-dva{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:clamp(28px,4vw,80px);align-items:start}
+.efv4 .prose p,.efv4 .ef-text p{font-size:16.5px;line-height:1.68;color:var(--telo);max-width:70ch}
+.efv4 .prose p+p,.efv4 .ef-text p+p{margin-top:16px}
+.efv4 .zdroje{border-top:1px solid var(--linka-2);padding-top:6px}
+.efv4 .zdroje li{padding:12px 0;border-bottom:1px solid var(--linka);font-size:14.5px;line-height:1.55;color:var(--tichy);overflow-wrap:anywhere}
+.efv4 .ef-suvisiace .prose p{padding:14px 0;border-bottom:1px solid var(--linka);margin:0;font-size:16px;line-height:1.55}
+.efv4 .ef-suvisiace .prose{border-top:1px solid var(--linka-2)}
+.efv4 .ef-dvojica{padding:var(--sek) 0;border-top:1px solid var(--linka)}
+.efv4 .ef-dvojica-mriezka{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:clamp(36px,4vw,80px);align-items:start}
+body.efv4 main .ef-dvojica h2{font-size:clamp(22px,2vw,28px);letter-spacing:-.022em;margin-bottom:22px}
+
+/* Otázky. */
+.efv4 .ef-otazky{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.7fr);gap:24px clamp(32px,5vw,96px)}
+.efv4 .ef-otazky-hlava p{margin-top:18px;max-width:40ch;font-size:16px;color:var(--telo)}
+.efv4 .ef-otazky-zoznam details{border-bottom:1px solid var(--linka)}
+.efv4 .ef-otazky-zoznam details:first-child{border-top:1px solid var(--linka)}
+.efv4 details.otazka summary{position:relative;display:flex;align-items:center;min-height:60px;padding:10px 44px 10px 0;list-style:none;cursor:pointer;font:500 17.5px/1.4 var(--ui);letter-spacing:-.012em;color:var(--ink);transition:color .2s var(--tik)}
+.efv4 details.otazka summary::-webkit-details-marker{display:none}
+.efv4 details.otazka summary:hover{color:var(--zhaslo)}
+.efv4 details.otazka summary::before,.efv4 details.otazka summary::after{content:"";position:absolute;right:6px;top:50%;width:14px;height:1.5px;margin-top:-.75px;border-radius:2px;background:currentColor;transition:transform .3s var(--pero),opacity .3s var(--pero)}
+.efv4 details.otazka summary::after{transform:rotate(90deg)}
+.efv4 details.otazka[open] summary::after{transform:rotate(0deg);opacity:0}
+.efv4 details.otazka p{padding:0 44px 22px 0;max-width:70ch;font-size:16px;line-height:1.65;color:var(--telo);overflow-wrap:anywhere}
+
+/* Záver: karta so Shine Border. Lesk je kužeľový prechod, ktorý sa pod okrajom len otáča. */
+.efv4 .ef-zaver{overflow:hidden;border-top:1px solid var(--linka);padding:clamp(72px,8vw,124px) 0}
+.efv4 .ef-zaver::before{content:"";position:absolute;left:50%;bottom:-58%;translate:-50% 0;width:min(1100px,110vw);height:100%;pointer-events:none;background:radial-gradient(50% 50% at 50% 50%,rgba(242,100,60,.28) 0%,transparent 70%);filter:blur(36px)}
+.efv4 .ef-zaver .wrap{position:relative}
+.efv4 .ef-zaver-karta{position:relative;overflow:hidden;isolation:isolate;border-radius:22px;padding:1px;background:var(--linka)}
+.efv4 .ef-zaver-karta::before{content:"";position:absolute;left:50%;top:50%;z-index:-1;width:max(140%,900px);aspect-ratio:1;translate:-50% -50%;background:conic-gradient(from 0deg,transparent 0 64%,rgba(242,100,60,.9) 78%,#ffb59d 84%,transparent 94%);animation:ef-toc 14s linear infinite}
+@keyframes ef-toc{to{transform:rotate(1turn)}}
+.efv4 .ef-zaver-vnutro{border-radius:21px;padding:clamp(40px,5vw,72px) clamp(22px,4vw,64px);text-align:center;background:linear-gradient(180deg,#181412,#0e0c0a)}
+.efv4 .ef-zaver h2{max-width:22ch;margin-inline:auto}
+.efv4 .ef-zaver-vnutro>p{margin:18px auto 0;max-width:52ch;color:var(--telo)}
+.efv4 .ef-zaver-akcia{display:flex;justify-content:center;margin-top:32px}
+
+/* ── Náhľad dokladu ako papier (kreslí nahlad.js). ───────────────────────── */
+.efv4 .nahlad-hlava{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin:0 0 12px;font-size:13.5px;color:var(--tichy)}
+.efv4 .nahlad-hlava .btn{min-height:40px;padding:0 16px;font-size:14px}
+.efv4 .doklad-obal{background:#f6f4ef;color:#1b1a17;border-radius:8px;padding:clamp(20px,2.6vw,36px);box-shadow:0 30px 60px -28px rgba(0,0,0,.9);overflow-x:auto}
+.efv4 .doklad-obal:empty{display:none}
+.efv4 .efa-doklad{font:15px/1.55 Georgia,"Times New Roman",serif}
+body.efv4 .efa-doklad h2{font:700 23px/1.2 var(--ui);color:#111;margin:0 0 12px;letter-spacing:-.01em}
+body.efv4 .efa-doklad h3{font:600 15px/1.3 var(--ui);color:#111;margin:22px 0 8px;text-transform:uppercase;letter-spacing:.06em}
+body.efv4 .efa-doklad h2::before,body.efv4 .efa-doklad h2::after,body.efv4 .efa-doklad h3::before,body.efv4 .efa-doklad h3::after{display:none}
+body.efv4 .efa-doklad p,body.efv4 .efa-doklad td,body.efv4 .efa-doklad li{color:#1b1a17}
+body.efv4 .efa-doklad th,body.efv4 .efa-doklad b,body.efv4 .efa-doklad strong{color:#111}
+body.efv4 .efa-doklad p{margin:0 0 5px;max-width:none}
+.efv4 .efa-udaj{display:flex;flex-wrap:wrap;gap:2px 10px;font-size:14px}
+.efv4 .efa-udaj .efa-popis{color:#57534a;min-width:132px;flex:0 0 auto}
+.efv4 .efa-udaj .efa-hodnota{min-width:0;overflow-wrap:anywhere;word-break:break-word}
+.efv4 .efa-strany{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(240px,100%),1fr));gap:18px 30px;margin:20px 0 0}
+.efv4 .efa-nazov{font-weight:700}
+body.efv4 .efa-tabulka{width:100%;border-collapse:collapse;font-size:13.5px;margin:6px 0 10px}
+body.efv4 .efa-tabulka th,body.efv4 .efa-tabulka td{border:1px solid #bbb6aa;padding:6px 8px;text-align:left;vertical-align:top}
+body.efv4 .efa-tabulka th{background:#e9e5dc;font:600 12px/1.3 var(--ui);letter-spacing:.03em;text-transform:none}
+body.efv4 .efa-tabulka tbody tr,body.efv4 .efa-tabulka tbody tr:hover{background:transparent}
+/* Doklad je dokument, nie responzívna tabuľka: pod 600 px ju paper.css mení na bloky s popiskom
+   z data-th, ktorý náhľad nemá. Vraciame ju na tabuľku, ktorá scrolluje vo vnútri .doklad-obal. */
+@media (max-width:600px){
+  .efa-doklad .efa-tabulka{display:table;width:100%;min-width:520px}
+  .efa-doklad .efa-tabulka thead{display:table-header-group}
+  .efa-doklad .efa-tabulka tbody{display:table-row-group}
+  .efa-doklad .efa-tabulka tr{display:table-row;background:transparent;border:0;border-radius:0;margin:0;padding:0}
+  .efa-doklad .efa-tabulka th,.efa-doklad .efa-tabulka td{display:table-cell;width:auto;border:1px solid #bbb6aa;padding:6px 8px}
+  .efa-doklad .efa-tabulka td::before{content:none;display:none}
+}
+.efv4 .efa-uhrada{display:flex;gap:10px;font-size:17px;margin-top:8px}
+.efv4 .efa-uhrada .efa-popis{min-width:132px;color:#57534a}
+:lang(de) .efa-udaj .efa-popis,:lang(en) .efa-udaj .efa-popis,:lang(de) .efa-uhrada .efa-popis,:lang(en) .efa-uhrada .efa-popis,:lang(de) .efa-pata .efa-popis,:lang(en) .efa-pata .efa-popis{min-width:150px}
+/* Doklad je samostatný dokument vo vnútri stránky: pravidlá pre header, footer a section sa naň nevzťahujú. */
+body.efv4 .efa-doklad section{padding:0;border-top:none;position:static}
+body.efv4 .efa-doklad h3+p,body.efv4 .efa-doklad h3+div{margin-top:6px}
+body.efv4 .efa-doklad .efa-hlavicka{position:static;z-index:auto;background:transparent;backdrop-filter:none;box-shadow:none;border-bottom:1px solid #ddd8cc;padding:0 0 14px;margin:0 0 6px}
+body.efv4 .efa-doklad .efa-pata{position:static;background:transparent;border-top:1px solid #ddd8cc;padding:12px 0 0;margin:22px 0 0;color:#666;font-family:var(--ui);font-size:12px}
+.efv4 .efa-doklad .efa-polozky,.efv4 .efa-doklad .efa-rozpis,.efv4 .efa-doklad .efa-sucty,.efv4 .efa-doklad .efa-platba,.efv4 .efa-doklad .efa-poznamky,.efv4 .efa-doklad .efa-prilohy,.efv4 .efa-doklad .efa-miesto{margin:22px 0 0}
+.efv4 .efa-pata .efa-popis{min-width:132px}
+.efv4 .efa-chyba{color:#8f2e17}
+
+/* ── Dielňa generátora. ──────────────────────────────────────────────────── */
+body.efv4 #panel-vytvorit>h2{font-size:clamp(22px,2vw,28px);letter-spacing:-.022em;margin:6px 0 16px}
+.efv4 #panel-vytvorit>.sub{margin-bottom:20px;max-width:74ch}
+.efv4 .pred-formularom{margin:0 0 18px;padding:12px 16px;border:1px solid var(--linka-2);border-radius:12px;background:rgba(255,255,255,.035);max-width:70ch;font-size:15px;line-height:1.55;color:var(--telo)}
+.efv4 .pred-formularom b{color:var(--ink)}
+.efv4 .dielna{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:32px clamp(28px,3.4vw,60px);align-items:start}
+.efv4 #nahlad-zivy{scroll-margin-top:calc(var(--hlavicka) + 12px)}
+/* Celý pravý stĺpec (súčty, tlačidlo PDF, náhľad, platba) je od 900 px sticky a scrolluje vo vlastnom ráme (Andrej 11. 9.). */
+@media (min-width:900px){
+  .efv4 .dielna>.stlpec-nahlad{position:sticky;top:calc(var(--hlavicka) + 12px);max-height:calc(100vh - var(--hlavicka) - 24px);overflow:auto;overscroll-behavior:contain;padding-right:4px;scrollbar-width:thin;scrollbar-color:#332a26 transparent}
+}
+body.efv4 main .zobrazit-nahlad{display:none;margin:0 0 16px}
+body.efv4 main fieldset{border:1px solid var(--linka);border-radius:14px;padding:16px 18px 12px;margin:0 0 14px;min-width:0;background:rgba(255,255,255,.02)}
+body.efv4 main legend{padding:0 8px;font:600 14px/1 var(--ui);letter-spacing:-.008em;color:var(--zhaslo)}
+.efv4 .pole{display:grid;grid-template-columns:minmax(0,160px) minmax(0,1fr);gap:6px 12px;align-items:center;margin:0 0 8px;font-size:14px;color:var(--telo)}
+:lang(de) .pole,:lang(en) .pole{grid-template-columns:minmax(0,170px) minmax(0,1fr)}
+.efv4 .pole-napoveda{grid-column:1/-1;color:var(--tichy);font-size:12.5px;line-height:1.45;margin:2px 0 0}
+.efv4 .poznamka-sadzba{color:var(--tichy);font-size:12.5px;line-height:1.5;margin:6px 0 0;max-width:60ch}
+body.efv4 .pole input,body.efv4 .pole select{width:100%;box-sizing:border-box;min-height:40px;font:14.5px/1.4 var(--ui);color:var(--ink);background-color:rgba(0,0,0,.30);border:1px solid var(--linka);border-radius:9px;padding:8px 10px}
+body.efv4 .pole input:focus,body.efv4 .pole select:focus{outline:none;border-color:var(--med);box-shadow:0 0 0 3px rgba(242,100,60,.18)}
+.efv4 .formular-pata{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0 4px}
+.efv4 .formular-pata .btn{min-height:40px;padding:0 15px;font-size:13.5px}
+.efv4 .polozka{border-top:1px solid var(--linka);padding:12px 0 4px;position:relative}
+.efv4 .polozka:first-child{border-top:none;padding-top:2px}
+.efv4 .polozka-cislo{font:600 12.5px/1 var(--ui);color:var(--zhaslo);margin:0 0 8px}
+body.efv4 main .polozka-zmazat{min-height:36px;padding:0 13px;font-size:13px;margin:2px 0 8px}
+.efv4 .sucty{display:flex;flex-wrap:wrap;gap:6px 22px;font-size:14.5px;color:var(--ink);margin:0 0 14px}
+.efv4 .sucty b{color:var(--tichy);font-weight:500}
+.efv4 .brana{margin:22px 0 0;padding:clamp(18px,2vw,26px);border:1px solid var(--linka-2);border-radius:16px;background:linear-gradient(180deg,rgba(30,25,22,.82),rgba(18,15,13,.86));box-shadow:0 1px 0 rgba(255,255,255,.07) inset}
+.efv4 .brana h3{margin-bottom:8px}
+.efv4 .brana .pomoc{color:var(--telo);font-size:14px;max-width:68ch}
+.efv4 .brana .pomoc+.pomoc{margin-top:10px}
+.efv4 .brana .cta{margin:16px 0 0}
+.efv4 .brana .cta+.pomoc,.efv4 .odkazy-pravne{margin-top:14px;color:var(--tichy);font-size:13px}
+.efv4 details.pravne{margin:6px 0 0}
+.efv4 details.pravne summary{cursor:pointer;font-size:13px;line-height:1.5;color:var(--tichy)}
+.efv4 details.pravne summary:hover{color:var(--ink)}
+.efv4 details.pravne .pomoc{margin:8px 0 0;color:var(--tichy);font-size:13px}
+.efv4 .odomknute{margin:20px 0 0;padding:12px 15px;border:1px solid rgba(94,207,154,.5);border-radius:12px;background:rgba(94,207,154,.08);font-size:14px;color:var(--ink)}
+.efv4 .stav-platby{min-height:1.4em;margin:12px 0 0;max-width:70ch;font-size:14.5px;color:var(--telo)}
+.efv4 .stav-platby b{color:var(--dobre)}
+body.efv4 main .stav-platby .btn{min-height:36px;padding:0 13px;font-size:13px;margin-left:8px;vertical-align:middle}
+.efv4 .chyby-generatora{margin:18px 0 0}
+.efv4 .chyby-generatora .poznamka{font-size:14.5px;color:var(--zhaslo);margin:0 0 10px}
+.efv4 .chyby-generatora .poznamka.je-ok{color:var(--dobre)}
+body.efv4 .davka{border-color:var(--linka-2);border-radius:16px;background:rgba(255,255,255,.02)}
+body.efv4 .davka>summary{color:var(--ink);font-size:17px;letter-spacing:-.014em}
+body.efv4 .davka p{font-size:15px;color:var(--telo)}
+body.efv4 .davka p+p{margin-top:10px}
+body.efv4 .davka textarea{border-radius:10px;border-color:var(--linka);background:rgba(0,0,0,.34)}
+.efv4 noscript p{color:var(--zhaslo)}
+
+/* Príchod: hero hneď po načítaní (čisté CSS), ostatné pri rolovaní (triedy z efaktura-v4.js).
+   Skrýva sa len to, čo je pri načítaní pod okrajom okna, a skrýva to až skript. */
+@keyframes ef-hore{from{opacity:0;transform:translateY(14px)}}
+@keyframes ef-svit{from{opacity:0}}
+body.efv4 main .r{animation:none}
+body.efv4 main .ef-hero-text>*{animation:ef-hore .6s var(--pero) backwards}
+body.efv4 main .ef-hero-text .lead{animation-delay:.07s}
+.efv4 .ef-hero .zalozky,.efv4 .ef-hero .ef-lavy{animation:ef-hore .6s var(--pero) .14s backwards}
+.efv4 .ef-hero .ef-ramec,.efv4 .ef-hero .ef-podpis{animation:ef-hore .7s var(--pero) .2s backwards}
+.efv4 .ef-hero .ef-lampa{animation:ef-svit 1.2s var(--pero) .1s backwards}
+.efv4 .ef-hero .ef-ceny{animation:ef-hore .6s var(--pero) .28s backwards}
+.efv4 .zjav.caka{opacity:0}
+.efv4 .zjav.je{animation:ef-hore .6s var(--pero) backwards;animation-delay:calc(var(--i,0)*80ms)}
+
+@media (hover:hover) and (pointer:fine){
+  .efv4 .ef-dl{transition:transform .4s var(--pero),box-shadow .4s var(--pero)}
+  .efv4 .ef-dl:hover{transform:translateY(-4px);box-shadow:0 30px 60px -32px rgba(0,0,0,.95)}
+  .efv4 .ef-dl:hover::before{opacity:1}
+  .efv4 .ef-k3:hover .ef-vyrez-papier{translate:-50% -8px;rotate:-.4deg}
+}
+
+@media (prefers-reduced-motion:reduce){
+  body.efv4 main *,body.efv4 main *::before,body.efv4 main *::after{animation:none !important;transition-duration:.001ms !important;transition-delay:0s !important}
+  .efv4 .ef-beam{display:none}
+  .efv4 .zjav.caka{opacity:1}
+  .efv4 .ef-odkryv span{opacity:1}
+}
+@media (prefers-reduced-transparency:reduce){
+  .efv4 .vstup,.efv4 .brana{background:var(--plocha)}
+  .efv4 .zalozky,.efv4 .kupa-vysledok,.efv4 .pred-formularom,body.efv4 main .btn-line,.efv4 .ef-riadok-btn{background:var(--plocha-2)}
+}
+@media (prefers-contrast:more){
+  body.efv4{--telo:#d2cdc8;--tichy:#bdb7b1;--linka:rgba(255,255,255,.3);--linka-2:rgba(255,255,255,.45)}
+}
+
+/* Pod 1080 px jeden stĺpec: veta, prepínač, vstup, ceny, rám. Po kontrole ide rám hneď pod vstup. */
+@media (max-width:1080px){
+  .efv4 .ef-mriezka{grid-template-columns:minmax(0,1fr);grid-template-areas:none;grid-template-rows:none}
+  .efv4 .ef-prepinac,.efv4 .ef-lavy,.efv4 .ef-pravy,.efv4 .ef-ceny,.efv4 .ef-mriezka #panel-vytvorit:not([hidden]){grid-area:auto}
+  .efv4 .ef-prepinac{order:1}.efv4 .ef-lavy{order:2}.efv4 .ef-ceny{order:3}.efv4 .ef-pravy{order:4;margin-top:clamp(24px,4vw,36px)}
+  .efv4 .ef-mriezka #panel-vytvorit:not([hidden]){order:2}
+  .efv4 .ef-hero[data-vysledok="1"] .ef-pravy,.efv4 .ef-hero[data-tab="nahlad"] .ef-pravy{order:3;margin-top:20px}
+  .efv4 .ef-hero[data-vysledok="1"] .ef-ceny,.efv4 .ef-hero[data-tab="nahlad"] .ef-ceny{order:4}
+  .efv4 .ef-hero[data-vysledok="0"] #panel-kontrola .ef-ramec-telo{max-height:420px}
+  .efv4 .ef-lampa{bottom:-30px}
+  .efv4 .ef-hero{padding-bottom:clamp(30px,5vw,48px)}
+  .efv4 .ef-k1,.efv4 .ef-k2{grid-column:1/-1}
+  .efv4 .ef-dva,.efv4 .ef-dvojica-mriezka,.efv4 .ef-kontext-mriezka{grid-template-columns:minmax(0,1fr)}
+  .efv4 .ef-otazky{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:899px){
+  .efv4 .dielna{grid-template-columns:minmax(0,1fr)}
+  body.efv4 main .zobrazit-nahlad{display:inline-flex}
+  .efv4 .ef-udaje{grid-template-columns:minmax(0,1fr)}
+  .efv4 .ef-cennik li{grid-template-columns:minmax(0,1fr) auto;align-items:start}
+  .efv4 .ef-cennik li>.ef-riadok-btn{grid-column:1/-1;justify-self:start}
+  .efv4 .ef-ceny{gap:6px}
+  .efv4 .ef-ceny ul{display:grid;gap:3px;font-size:14.5px;line-height:1.45}
+  .efv4 .ef-ceny li+li::before{display:none}
+  body.efv4 main .ef-ceny a{margin-left:0;min-height:44px;display:inline-flex;align-items:center}
+  .efv4 .ef-normy .wrap{flex-wrap:wrap;gap:12px}
+  .efv4 .ef-normy p{max-width:none;width:100%}
+}
+@media (max-width:760px){
+  .efv4 .ef-k3{display:flex;flex-direction:column}
+  .efv4 .ef-k3 .ef-vyrez{order:-1;min-height:0;height:250px}
+  .efv4 .ef-komu li{grid-template-columns:minmax(0,1fr);padding:22px 0}
+}
+@media (max-width:600px){
+  body.efv4{font-size:16.5px}
+  .efv4 .ef-hero{padding-top:16px}
+  body.efv4 main h1{font-size:clamp(26px,7.2vw,30px);line-height:1.1}
+  .efv4 .ef-hero h1 .l{display:inline}
+  body.efv4 .ef-hero .lead{font-size:16px;line-height:1.5;margin-top:12px}
+  .efv4 .ef-mriezka{margin-top:14px}
+  .efv4 .ef-prepinac{margin-bottom:10px}
+  .efv4 .ef-dalej{display:none}
+  .efv4 .zalozky{display:flex;flex:1 1 100%}
+  .efv4 .zalozka{flex:1 1 0;min-height:44px;padding:0 8px}
+  .efv4 .vstup{padding:12px;border-radius:16px}
+  .efv4 .dropzone{min-height:64px;padding:10px 12px}
+  .efv4 .dropzone span{display:none}
+  .efv4 .vstup-akcie .btn{flex:1 1 0;padding:0 12px}
+  .efv4 .ef-xml-label{margin-top:10px}
+  body.efv4 .vstup textarea{min-height:52px;font-size:16px}
+  .efv4 .ef-vlozene .btn{width:100%}
+  .efv4 .ef-ceny{margin-top:16px;padding:14px 0 4px}
+  .efv4 .ef-bez li{padding:2px 14px}
+  .efv4 .ef-dl-text{padding:20px 20px 22px}
+  .efv4 .ef-xml{padding:18px 20px;font-size:11.5px}
+  .efv4 .ef-vyrez-nalez{padding:4px 20px 0}
+  .efv4 .ef-vyrez-papier{width:92%;padding:20px 20px 30px}
+  .efv4 .ef-cennik li{grid-template-columns:minmax(0,1fr)}
+  .efv4 .ef-riadok-btn{width:100%;min-width:0}
+  .efv4 .pole{grid-template-columns:minmax(0,1fr)}
+  body.efv4 .pole input,body.efv4 .pole select{font-size:16px;min-height:44px}
+  .efv4 details.otazka summary{font-size:16.5px}
+  .efv4 .ef-zaver-vnutro{padding:38px 20px}
+  .efv4 .ef-zaver .ef-cta{width:100%}
+  .efv4 .brana .cta .btn{width:100%}
+}
+
+/* Tlač: na papier ide len doklad, formát A4. */
+#tlac{display:none}
+@media print{
+  @page{size:A4;margin:14mm}
+  body{background:#fff}
+  body.tlaci>*:not(#tlac){display:none !important}
+  body.tlaci #tlac{display:block !important;background:#fff;color:#000}
+  body.tlaci #tlac .efa-doklad{font:11.5pt/1.45 Georgia,"Times New Roman",serif;color:#000}
+  body.tlaci #tlac h2{font-size:17pt;color:#000}
+  body.tlaci #tlac h3{font-size:11pt;color:#000;text-transform:uppercase;letter-spacing:.05em;margin:14pt 0 5pt}
+  body.tlaci #tlac .efa-tabulka{font-size:9.5pt;page-break-inside:auto}
+  body.tlaci #tlac .efa-tabulka th{background:#eee}
+  body.tlaci #tlac .efa-strany{display:grid;grid-template-columns:1fr 1fr;gap:10mm}
+  body.tlaci #tlac section{page-break-inside:avoid}
+}

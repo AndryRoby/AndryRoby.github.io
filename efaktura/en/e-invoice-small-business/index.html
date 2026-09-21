@@ -36,6 +36,7 @@
 <link rel="stylesheet" href="/style/paper.css?v=9731ac14">
 <script src="/style/prepinac.js?v=668e98c9" defer></script>
 <script type="module" src="/efaktura/app.js?v=fa99a4d5"></script>
+<script src="/efaktura/efaktura-v4.js?v=3d58adc9" defer></script>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -140,187 +141,15 @@
   ]
 }
 </script>
-<style>
-  section[id] { scroll-margin-top:14px; }
-  [hidden] { display:none !important; }
-  .hero { grid-template-columns:minmax(0,7fr) minmax(0,5fr); align-items:center; padding-block:clamp(30px,5vh,64px); }
-  @media (max-width:960px) { .hero { grid-template-columns:minmax(0,1fr); } }
-  .hero .lead { max-width:56ch; }
-  /* Pri 1280 sa nadpis lamal v strede slova; mensi stupen ho zlomi medzi slovami. */
-  body.noc .hero h1, .hero h1 { font-size:clamp(34px,3.6vw,50px); line-height:1.08; }
-  .cena { border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:var(--radius); background:var(--card); padding:clamp(20px,2vw,30px); min-width:0; }
-  .cena .suma { font:700 clamp(34px,3.4vw,46px)/1 var(--display); color:var(--ink); letter-spacing:-.02em; display:block; }
-  .cena .zaco { font-family:var(--ui); font-size:14px; color:var(--body); margin:8px 0 16px; }
-  .cena ul { list-style:none; margin:0 0 18px; padding:0; display:flex; flex-direction:column; gap:9px; font-family:var(--ui); font-size:14px; color:var(--body); }
-  .cena li { display:flex; gap:10px; }
-  .cena li::before { content:""; width:6px; height:6px; border-radius:50%; background:var(--accent); flex:none; margin-top:8px; }
-  .cena .btn { width:100%; justify-content:center; }
-  .cena .pomoc { margin-top:14px; }
-  .pomoc { font-family:var(--ui); font-size:12.5px; color:var(--muted); margin:2px 0 8px; line-height:1.5; max-width:62ch; }
-  .sub { color:var(--body); max-width:68ch; margin:0 0 24px; }
-
-  .zalozky { display:flex; flex-wrap:wrap; gap:6px; margin:0 0 20px; }
-  .zalozka { font:500 13.5px/1.2 var(--ui); color:var(--muted); background:transparent; border:1px solid var(--line); border-radius:999px; padding:9px 15px; cursor:pointer; }
-  .zalozka:hover { color:var(--ink); border-color:var(--ink); }
-  .zalozka.aktivna { color:var(--ink); border-color:var(--accent); background:rgba(242,100,60,.10); }
-  .panel h2 { margin-bottom:8px; }
-  .panel > .sub { margin-bottom:20px; }
-
-  .vstup { border:1px solid var(--line); border-radius:var(--radius); background:var(--card); padding:clamp(16px,1.8vw,24px); margin:0 0 22px; }
-  .dropzone { border:1px dashed var(--line); border-radius:12px; padding:26px 18px; text-align:center; cursor:pointer; font-family:var(--ui); font-size:14.5px; color:var(--body); }
-  .dropzone:hover, .dropzone.nad { border-color:var(--accent); color:var(--ink); background:rgba(242,100,60,.06); }
-  .dropzone b { color:var(--ink); }
-  .vstup-akcie { display:flex; flex-wrap:wrap; gap:10px; margin:14px 0 0; }
-  .vstup .btn { height:38px; padding:0 15px; font-size:13.5px; }
-  .vstup textarea { width:100%; box-sizing:border-box; min-height:110px; margin:14px 0 0; font:13px/1.5 var(--mono); color:var(--ink); background:var(--card-plna,#161311); border:1px solid var(--line); border-radius:10px; padding:10px 12px; resize:vertical; }
-  .vstup textarea:focus { outline:2px solid var(--accent); outline-offset:-1px; }
-  .vstup-stav { font-family:var(--ui); font-size:13px; color:var(--muted); margin:12px 0 0; min-height:1.3em; }
-
-  .sumar-stav { font:600 clamp(17px,1.4vw,20px)/1.35 var(--display); margin:0 0 10px; }
-  .sumar-stav.je-ok { color:var(--ok); }
-  .sumar-stav.je-chyba { color:var(--accent-light); }
-  .sumar-meta { display:flex; flex-wrap:wrap; gap:8px 20px; font-family:var(--ui); font-size:13px; color:var(--muted); margin:0 0 6px; }
-  .akcie { display:flex; gap:10px; flex-wrap:wrap; margin:14px 0 22px; }
-  .akcie .btn { height:38px; padding:0 15px; font-size:13.5px; }
-  .nalez { border-top:1px solid var(--line); padding:16px 0; }
-  .nalez:last-child { border-bottom:1px solid var(--line); }
-  .nalez-hlava { display:flex; align-items:center; gap:10px; margin:0 0 6px; }
-  .nalez-znacka { font:600 11px/1 var(--ui); letter-spacing:.10em; text-transform:uppercase; padding:5px 9px; border-radius:999px; border:1px solid var(--line); color:var(--muted); }
-  .nalez-chyba .nalez-znacka { color:var(--accent-light); border-color:var(--accent); }
-  .nalez-varovanie .nalez-znacka { color:#e8c07a; border-color:rgba(232,192,122,.5); }
-  .nalez-informacia .nalez-znacka { color:var(--ok); border-color:rgba(94,207,154,.5); }
-  .nalez-kod { font:600 13px/1 var(--mono); color:var(--ink); }
-  .nalez-veta { margin:0 0 8px; max-width:76ch; font-size:15px; }
-  .nalez-meta { font-family:var(--ui); font-size:12.5px; color:var(--muted); margin:0 0 3px; max-width:none; overflow-wrap:anywhere; }
-  .nalez-meta code { font:12px/1.5 var(--mono); color:var(--body); }
-  .nalez-original { border:none; padding:8px 0 0; }
-  .nalez-original summary { font:500 13px/1.3 var(--ui); color:var(--muted); }
-  .nalez-original summary:hover { color:var(--ink); }
-  .nalez-original p { font:13px/1.55 var(--mono); color:var(--body); margin:8px 0 0; max-width:80ch; }
-
-  .doklad-obal { background:#f6f4ef; color:#1b1a17; border-radius:var(--radius); padding:clamp(20px,2.6vw,36px); box-shadow:0 20px 60px rgba(0,0,0,.35); overflow-x:auto; }
-  .doklad-obal:empty { display:none; }
-  .efa-doklad { font:15px/1.55 Georgia,"Times New Roman",serif; }
-  body.noc .efa-doklad h2 { font:700 23px/1.2 var(--display); color:#111; margin:0 0 12px; letter-spacing:-.01em; }
-  body.noc .efa-doklad h3 { font:600 15px/1.3 var(--display); color:#111; margin:22px 0 8px; text-transform:uppercase; letter-spacing:.06em; }
-  body.noc .efa-doklad h2::before, body.noc .efa-doklad h2::after, body.noc .efa-doklad h3::before, body.noc .efa-doklad h3::after { display:none; }
-  body.noc .efa-doklad p, body.noc .efa-doklad td, body.noc .efa-doklad li { color:#1b1a17; }
-  body.noc .efa-doklad th { color:#111; }
-  body.noc .efa-doklad b, body.noc .efa-doklad strong { color:#111; }
-  body.noc .efa-doklad p, .efa-doklad p { margin:0 0 5px; max-width:none; }
-  .efa-udaj { display:flex; flex-wrap:wrap; gap:2px 10px; font-size:14px; }
-  .efa-udaj .efa-popis { color:#57534a; min-width:150px; flex:0 0 auto; }
-  .efa-udaj .efa-hodnota { min-width:0; overflow-wrap:anywhere; word-break:break-word; }
-  .efa-strany { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(240px,100%),1fr)); gap:18px 30px; margin:20px 0 0; }
-  .efa-nazov { font-weight:700; }
-  .efa-tabulka { width:100%; border-collapse:collapse; font-size:13.5px; margin:6px 0 10px; }
-  .efa-tabulka th, .efa-tabulka td { border:1px solid #bbb6aa; padding:6px 8px; text-align:left; vertical-align:top; }
-  .efa-tabulka th { background:#e9e5dc; font:600 12px/1.3 var(--ui); letter-spacing:.03em; text-transform:none; }
-  /* Doklad je dokument, nie responzivna tabulka. Paper.css pod 600 px meni bunky
-     na bloky s popiskom z data-th; nahlad faktury taky popisok nema, takze by
-     z tabulky ostali holé cisla. Vraciame ju na tabulku, ktora scrolluje vo
-     vnutri .doklad-obal (ten ma overflow-x:auto). */
-  @media (max-width:600px) {
-    .efa-doklad .efa-tabulka { display:table; width:100%; min-width:520px; }
-    .efa-doklad .efa-tabulka thead { display:table-header-group; }
-    .efa-doklad .efa-tabulka tbody { display:table-row-group; }
-    .efa-doklad .efa-tabulka tr { display:table-row; background:transparent; border:0; border-radius:0; margin:0; padding:0; }
-    .efa-doklad .efa-tabulka th, .efa-doklad .efa-tabulka td { display:table-cell; width:auto; border:1px solid #bbb6aa; padding:6px 8px; }
-    .efa-doklad .efa-tabulka td::before { content:none; display:none; }
-  }
-  .efa-uhrada { display:flex; gap:10px; font-size:17px; margin-top:8px; }
-  .efa-uhrada .efa-popis { min-width:150px; color:#57534a; }
-  /* Doklad je samostatny dokument vo vnutri stranky: globalne pravidla pre
-     header, footer a section sa nan nesmu vztahovat. */
-  body.noc .efa-doklad section, .efa-doklad section { padding:0; border-top:none; position:static; }
-  body.noc .efa-doklad h3 + p, body.noc .efa-doklad h3 + div { margin-top:6px; }
-  body.noc .efa-doklad .efa-hlavicka { position:static; z-index:auto; background:transparent; backdrop-filter:none; border-bottom:1px solid #ddd8cc; padding:0 0 14px; margin:0 0 6px; }
-  .efa-doklad .efa-pata { position:static; background:transparent; border-top:1px solid #ddd8cc; padding:12px 0 0; margin:22px 0 0; color:#666; font-family:var(--ui); font-size:12px; }
-  .efa-doklad .efa-polozky, .efa-doklad .efa-rozpis, .efa-doklad .efa-sucty,
-  .efa-doklad .efa-platba, .efa-doklad .efa-poznamky, .efa-doklad .efa-prilohy,
-  .efa-doklad .efa-miesto { margin:22px 0 0; }
-  .efa-pata .efa-popis { min-width:150px; }
-  .efa-chyba { color:#8f2e17; }
-  .nahlad-hlava { display:flex; justify-content:space-between; gap:12px; align-items:center; flex-wrap:wrap; margin:0 0 12px; font-family:var(--ui); font-size:13px; color:var(--muted); }
-  .nahlad-hlava .btn { height:38px; padding:0 15px; font-size:13.5px; }
-
-  .dielna { display:grid; grid-template-columns:minmax(0,5fr) minmax(0,7fr); gap:32px var(--gap); align-items:start; }
-  @media (max-width:899px) { .dielna { grid-template-columns:minmax(0,1fr); } }
-  #nahlad-zivy { scroll-margin-top:calc(var(--hlavicka) + 12px); }
-  @media (min-width:900px) {
-    /* Cely pravy stlpec (sucty, tlacidlo PDF, nahlad, platba) je sticky a scrolluje vo vlastnom ramci (Andrej 11. 9.). */
-    .dielna > .stlpec-nahlad { position:sticky; top:calc(var(--hlavicka) + 12px); max-height:calc(100vh - var(--hlavicka) - 24px); overflow:auto; overscroll-behavior:contain; padding-right:4px; }
-  }
-  .zobrazit-nahlad { display:none; margin:0 0 16px; }
-  @media (max-width:899px) { .zobrazit-nahlad { display:inline-flex; } }
-  fieldset { border:1px solid var(--line); border-radius:var(--radius); padding:14px 16px 10px; margin:0 0 14px; min-width:0; }
-  legend { font:600 12px/1 var(--ui); letter-spacing:.09em; text-transform:uppercase; color:var(--accent); padding:0 6px; }
-  .pole { display:grid; grid-template-columns:minmax(0,170px) minmax(0,1fr); gap:6px 12px; align-items:center; margin:0 0 8px; font-family:var(--ui); font-size:13.5px; color:var(--body); }
-  @media (max-width:560px) { .pole { grid-template-columns:minmax(0,1fr); } }
-  .pole-napoveda { grid-column:1/-1; color:var(--muted); font-size:12px; line-height:1.45; margin:2px 0 0; }
-  .poznamka-sadzba { color:var(--muted); font-family:var(--ui); font-size:12.5px; line-height:1.5; margin:6px 0 0; max-width:60ch; }
-  .pole input, .pole select { width:100%; box-sizing:border-box; font:14px/1.4 var(--ui); color:var(--ink); background:var(--card-plna,#161311); border:1px solid var(--line); border-radius:8px; padding:8px 10px; }
-  .pole input:focus, .pole select:focus { outline:2px solid var(--accent); outline-offset:-1px; }
-  .formular-pata { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin:10px 0 4px; }
-  .formular-pata .btn { height:34px; padding:0 13px; font-size:12.5px; }
-  .polozka { border-top:1px solid var(--line); padding:12px 0 4px; position:relative; }
-  .polozka:first-child { border-top:none; padding-top:2px; }
-  .polozka-cislo { font:500 11px/1 var(--ui); letter-spacing:.12em; color:var(--accent); margin:0 0 8px; }
-  .polozka-zmazat { height:30px; padding:0 11px; font-size:12px; margin:2px 0 8px; }
-  .sucty { display:flex; flex-wrap:wrap; gap:6px 22px; font-family:var(--ui); font-size:14px; color:var(--body); margin:0 0 14px; }
-  .sucty b { color:var(--muted); font-weight:500; }
-  .brana { border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:var(--radius); background:var(--card); padding:clamp(18px,2vw,26px); margin:22px 0 0; }
-  .brana h3 { margin-bottom:6px; }
-  .brana .cta { margin:16px 0 0; }
-  .brana .btn { height:42px; }
-  .odomknute { border:1px solid var(--ok); border-radius:12px; background:rgba(94,207,154,.10); padding:12px 15px; margin:20px 0 0; font-family:var(--ui); font-size:13.5px; color:var(--body); }
-  .stav-platby { font-family:var(--ui); font-size:14px; color:var(--body); min-height:1.4em; margin:12px 0 0; max-width:70ch; }
-  .stav-platby b { color:var(--ok); }
-  .stav-platby .btn { height:32px; padding:0 12px; font-size:12.5px; margin-left:8px; vertical-align:middle; }
-  .chyby-generatora { margin:18px 0 0; }
-  .chyby-generatora .poznamka { font-family:var(--ui); font-size:14px; color:var(--accent-light); margin:0 0 10px; }
-  .chyby-generatora .poznamka.je-ok { color:var(--ok); }
-  .poznamka { font-family:var(--ui); font-size:14px; color:var(--muted); }
-
-  details.otazka { border-top:1px solid var(--line); padding:16px 0; }
-  details.otazka:last-of-type { border-bottom:1px solid var(--line); }
-  details.otazka summary { cursor:pointer; font:600 clamp(16.5px,1.3vw,19px)/1.35 var(--display); color:var(--ink); list-style:none; display:block; position:relative; padding-right:26px; }
-  details.otazka summary::-webkit-details-marker { display:none; }
-  details.otazka summary::after { content:"+"; color:var(--accent); font-family:var(--ui); position:absolute; right:0; top:0; }
-  details.otazka[open] summary::after { content:"\2013"; }
-  details.otazka p { margin:10px 0 0; max-width:72ch; }
-  .zdroje { font-family:var(--ui); font-size:13.5px; color:var(--body); line-height:1.6; }
-  .zdroje li { margin:0 0 6px; }
-  noscript p { font-family:var(--ui); color:var(--accent-light); }
-
-  #tlac { display:none; }
-  @media print {
-    @page { size:A4; margin:14mm; }
-    body { background:#fff; }
-    body.tlaci > *:not(#tlac) { display:none !important; }
-    body.tlaci #tlac { display:block !important; background:#fff; color:#000; }
-    body.tlaci #tlac .efa-doklad { font:11.5pt/1.45 Georgia,"Times New Roman",serif; color:#000; }
-    body.tlaci #tlac h2 { font-size:17pt; color:#000; }
-    body.tlaci #tlac h3 { font-size:11pt; color:#000; text-transform:uppercase; letter-spacing:.05em; margin:14pt 0 5pt; }
-    body.tlaci #tlac .efa-tabulka { font-size:9.5pt; page-break-inside:auto; }
-    body.tlaci #tlac .efa-tabulka th { background:#eee; }
-    body.tlaci #tlac .efa-strany { display:grid; grid-template-columns:1fr 1fr; gap:10mm; }
-    body.tlaci #tlac section { page-break-inside:avoid; }
-  }
-  .cena-hore { font-family:var(--ui); font-size:15px; color:var(--body); margin:14px 0 16px; max-width:52ch; }
-  .start-nastroj { display:flex; flex-wrap:wrap; gap:10px; margin:0 0 26px; }
-  .start-nastroj .btn { height:42px; }
-  .pred-formularom { font-family:var(--ui); font-size:14.5px; line-height:1.55; color:var(--body); border-left:3px solid var(--accent); padding:2px 0 2px 14px; margin:0 0 18px; max-width:68ch; }
-  .pred-formularom b { color:var(--ink); }
-</style>
 <noscript><style>
   .r, .w { opacity:1 !important; transform:none !important; filter:none !important; }
   .rule { transform:scaleX(1) !important; }
 </style></noscript>
 <link rel="stylesheet" href="/efaktura/davka.css?v=dad7031a">
 <link rel="stylesheet" href="/efaktura/dopyt-opakovanie.css?v=9292da89">
+<link rel="stylesheet" href="/efaktura/efaktura-v4.css?v=3e8b6794">
 </head>
-<body class="noc">
+<body class="noc efv4">
 <div class="wash" aria-hidden="true"><i></i><i></i></div>
 <a class="skip site-skip" href="#arling-obsah" data-site-label="skip">Skip to content</a>
 <header class="site-header">
@@ -339,50 +168,60 @@
 </header>
 
 <main id="arling-obsah" tabindex="-1">
-  <div class="wrap hero" id="hero">
-    <div>
-      <p class="kicker">E-invoicing under EN 16931</p>
-      <h1><span class="l">E-invoice for small business.</span><span class="l">Free to fill in and preview.</span></h1>
-      <p class="cena-hore">Fill in the form, watch the invoice build and let our check run, all free; you pay 2.90 € excl. VAT only when you download the finished XML.</p>
-      <div class="start-nastroj">
-        <a class="btn btn-solid" id="hero-vytvorit" href="#vytvorit">Create an invoice, free preview</a>
-      </div>
-      <p class="lead r d3">Fill in seller, buyer, numbers and lines in your browser, watch the document build next to the form, and download the finished XML in UBL 2.1, either as Peppol BIS Billing 3.0 or as the German XRechnung, without accounting software.</p>
-      <ul class="facts proof r d5">
-        <li>free: the form, the <b>live preview</b> and our check of 332 rule codes</li>
-        <li>paid: the XML download, <b>2.90 € excl. VAT</b> for one invoice or 9.90 € excl. VAT for 30 days</li>
-        <li>no software to install, no subscription, <b>no account</b></li>
-      </ul>
-    </div>
-    <div class="cena r d2">
-      <span class="suma">2.90 € excl. VAT</span>
-      <p class="zaco">for the XML download of one invoice, or 9.90 € excl. VAT for 30 days with no limit on the number of invoices. Check and preview are free.</p>
-      <p class="pomoc dan-platby">Prices exclude applicable tax. Stripe calculates tax from the customer details and shows the final total before payment.</p>
-      <ul>
-        <li>fill in the form and watch the document build itself</li>
-        <li>the XML is made in your browser, nothing goes to a server</li>
-        <li>our own check runs over it before you download</li>
-      </ul>
-      <a class="btn btn-solid" href="#vytvorit">Create an invoice, free preview</a>
-      <p class="pomoc">Seller: ARLing s. r. o., company ID 56583486, Bratislava, Slovakia. Stripe handles the payment.</p>
-    </div>
-  </div>
-
-  <section id="nastroj" class="deep">
+  <section class="ef-hero" id="hero" data-tab="kontrola" data-vysledok="0">
     <div class="wrap">
-      <p class="kicker">The tool</p>
-      <div class="zalozky" role="tablist" id="zalozky">
+      <div class="ef-hero-text">
+        <h1><span class="l">E-invoice for small business.</span> <span class="l">Free to fill in and preview.</span></h1>
+        <p class="lead r d3">Fill in the form, watch the invoice build and let our check run, all free; you pay 2.90 € excl. VAT only when you download the finished XML.</p>
+        <div class="start-nastroj">
+          <a class="btn btn-solid" id="hero-vytvorit" href="#vytvorit">Create an invoice, free preview</a>
+        </div>
+      </div>
+
+      <div class="ef-mriezka" id="nastroj">
+        <div class="ef-prepinac">
+          <div class="zalozky" role="tablist" id="zalozky">
         <button type="button" class="zalozka aktivna" data-tab="kontrola" role="tab" aria-selected="true">Check</button>
         <button type="button" class="zalozka" data-tab="nahlad" role="tab" aria-selected="false">Preview</button>
         <button type="button" class="zalozka" data-tab="vytvorit" role="tab" aria-selected="false">Create</button>
       </div>
-      <noscript><p>The tool needs JavaScript: the file is read and checked in your own browser, not on a server.</p></noscript>
+        </div>
+        <noscript><p>The tool needs JavaScript: the file is read and checked in your own browser, not on a server.</p></noscript>
 
-      <section class="panel" id="panel-kontrola">
-        <h2 class="r">Check an e-invoice</h2>
-        <p class="sub r d1">Load a UBL 2.1 file (Invoice or CreditNote) and we tell you what is wrong with it. Every finding carries the rule code, a sentence in plain English explaining what to fix, the path to the element, and the original wording of the rule under a disclosure link. We read the CustomizationID field and pick the rule set ourselves: EN 16931, Peppol BIS Billing 3.0 or XRechnung.</p>
-        <div class="vstup-slot"></div>
-        <div id="sumar"></div>
+        <section class="panel" id="panel-kontrola">
+          <div class="ef-lavy">
+            <div class="vstup-slot">
+              <!-- One input block for the check and the preview; the script moves it into the active tab. -->
+              <div class="vstup" id="vstup">
+                <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Drop the XML file here, or click to pick one" data-umami-event="efaktura_hero_vstup" data-umami-event-sposob="dropzone">
+                  <b><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M5 20h14"/></svg>Drop the XML file here</b><span>or click and pick it from your computer</span>
+                </div>
+                <input type="file" id="subor" accept=".xml,text/xml,application/xml" hidden>
+                <div class="vstup-akcie">
+                  <button type="button" class="btn btn-solid" id="vybrat" data-umami-event="efaktura_hero_vstup" data-umami-event-sposob="subor">Choose a file</button>
+                  <button type="button" class="btn btn-line" id="vzor" data-umami-event="efaktura_hero_vstup" data-umami-event-sposob="vzor">Load sample</button>
+                </div>
+                <label class="pomoc ef-xml-label" for="xml">Or paste the XML here:</label>
+                <textarea id="xml" spellcheck="false" placeholder="&lt;Invoice xmlns=&quot;urn:oasis:names:specification:ubl:schema:xsd:Invoice-2&quot;&gt; ..."></textarea>
+                <div class="ef-vlozene">
+                  <button type="button" class="btn btn-line" id="spustit" data-umami-event="efaktura_hero_vstup" data-umami-event-sposob="vlozene">Check the pasted XML</button>
+                  <p class="vstup-stav" id="vstup-stav" aria-live="polite"></p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="ef-pravy">
+            <div class="ef-lampa" aria-hidden="true"></div>
+            <div class="ef-ramec">
+              <div class="ef-ramec-pas"><i class="ef-bodka"></i><i class="ef-bodka"></i><i class="ef-bodka"></i><h2>Check an e-invoice</h2><span class="ef-stitok ef-len-ukazka">Example</span></div>
+              <div class="ef-ramec-telo">
+                <div class="ef-ukazka" role="group" aria-label="Example of a check result">
+            <p class="sumar-stav je-chyba">We found 2 errors. Fix them and check again.</p>
+            <p class="sumar-meta"><span>Profile: Peppol BIS Billing 3.0</span><span>Document type: Invoice</span><span>2 errors</span><span>0 warnings</span><span>0 notes</span></p>
+            <p class="sumar-meta sumar-pravidla">For this profile we evaluated 289 rules.</p>
+            <div class="ef-ukazka-nalezy"><article class="nalez nalez-chyba"><p class="nalez-hlava"><span class="nalez-znacka">Error</span><code class="nalez-kod">BR-CO-15</code></p><p class="nalez-veta">The invoice total with VAT (BT-112) should be the total without VAT 1500.00 plus the VAT 0.00, that is 1500.00. The file says 1500.01. Correct the total in the invoice header, not the individual lines.</p><p class="nalez-meta"><span class="nalez-popis">Value in the file: </span><code>1500.01</code></p><p class="nalez-meta"><span class="nalez-popis">Path to the element: </span><code>/Invoice/cac:LegalMonetaryTotal/cbc:TaxInclusiveAmount</code></p></article><article class="nalez nalez-chyba"><p class="nalez-hlava"><span class="nalez-znacka">Error</span><code class="nalez-kod">ARL-IBAN</code></p><p class="nalez-veta">The IBAN "IE29AIBK93115212345671" fails the mod 97 check under ISO 13616. Check the account number for a typo.</p><p class="nalez-meta"><span class="nalez-popis">Value in the file: </span><code>IE29AIBK93115212345671</code></p><p class="nalez-meta"><span class="nalez-popis">Path to the element: </span><code>/Invoice/cac:PaymentMeans/cac:PayeeFinancialAccount/cbc:ID</code></p></article></div>
+                </div>
+                <div id="sumar"></div>
 <!-- A096-DOPYT-START -->
 <aside class="ef-opak" id="opakovanie-cta" aria-labelledby="opakovanie-title" hidden>
   <h3 id="opakovanie-title">Do you check these files regularly?</h3><p>If the same work keeps coming back, tell us about your process. We will assess whether we can offer a specific solution for your software.</p>
@@ -403,25 +242,39 @@
   </div>
 </aside>
 <!-- A096-DOPYT-END -->
-        <div class="akcie" id="akcie" hidden>
+                <div class="akcie" id="akcie" hidden>
           <button type="button" class="btn btn-line" id="protokol">Download the report</button>
           <button type="button" class="btn btn-line" id="kopirovat">Copy</button>
         </div>
-        <div id="nalezy"></div>
-      </section>
+                <div id="nalezy"></div>
+              </div>
+              <span class="ef-beam" aria-hidden="true"></span>
+            </div>
+            <p class="ef-podpis ef-len-ukazka">Example: our sample invoice with two errors we put in on purpose. Load a file and your own result appears here.</p>
+          </div>
+        </section>
 
-      <section class="panel" id="panel-nahlad" hidden>
-        <h2 class="r">Preview an e-invoice as a document</h2>
-        <p class="sub r d1">The same XML file, read as an ordinary invoice: who billed whom, for what, when, how much and where to pay. Useful when a file arrives from a supplier and you have to read it without accounting software. The button below saves it as a PDF in A4.</p>
-        <div class="vstup-slot"></div>
-        <div class="nahlad-hlava">
+        <section class="panel" id="panel-nahlad" hidden>
+          <div class="ef-lavy">
+            <p class="sub r d1">The same XML file, read as an ordinary invoice: who billed whom, for what, when, how much and where to pay. Useful when a file arrives from a supplier and you have to read it without accounting software. The button below saves it as a PDF in A4.</p>
+            <div class="vstup-slot"></div>
+          </div>
+          <div class="ef-pravy">
+            <div class="ef-lampa" aria-hidden="true"></div>
+            <div class="ef-ramec">
+              <div class="ef-ramec-pas"><i class="ef-bodka"></i><i class="ef-bodka"></i><i class="ef-bodka"></i><h2>Preview an e-invoice as a document</h2></div>
+              <div class="ef-ramec-telo">
+                <div class="nahlad-hlava">
           <span id="nahlad-stav">Load a file and the document will be drawn here.</span>
           <button type="button" class="btn btn-line" id="pdf" hidden>Save as PDF</button>
         </div>
-        <div class="doklad-obal" id="doklad"></div>
-      </section>
+                <div class="doklad-obal" id="doklad"></div>
+              </div>
+            </div>
+          </div>
+        </section>
 
-      <section class="panel" id="panel-vytvorit" hidden>
+        <section class="panel" id="panel-vytvorit" hidden>
         <h2 class="r">Create an e-invoice without accounting software</h2>
         <p class="sub r d1">Fill in the seller, the buyer, the numbers and the lines. On the right the document builds itself, and the UBL 2.1 XML with it. Seller and buyer can be kept in an address book that never leaves your browser. Before the download we run the same check over the generated XML as in the first tab; if it has an error, we do not hand it to you.</p>
         <a class="btn btn-line zobrazit-nahlad" href="#nahlad-zivy">Show preview</a>
@@ -455,85 +308,155 @@
         </div>
       </section>
 
-      <!-- One input block for the check and the preview; the script moves it into the active tab. -->
-      <div class="vstup" id="vstup">
-        <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Drop the XML file here, or click to pick one">
-          <b>Drop the XML file here</b><br>or click and pick it from your computer
+        <div class="ef-ceny">
+          <ul aria-label="Prices"><li class="ef-c-zadarmo"><b>0 €</b> check and preview, no account</li><li class="ef-c-jedna"><b>2.90 € excl. VAT</b> the XML of one invoice</li><li class="ef-c-30dni"><b>9.90 € excl. VAT</b> 30 days, no limit</li></ul>
+          <a href="#cennik" data-umami-event="efaktura_cena_klik" data-umami-event-miesto="hero">Pricing in detail</a>
         </div>
-        <input type="file" id="subor" accept=".xml,text/xml,application/xml" hidden>
-        <div class="vstup-akcie">
-          <button type="button" class="btn btn-line" id="vybrat">Choose a file</button>
-          <button type="button" class="btn btn-line" id="vzor">Load sample</button>
-          <button type="button" class="btn btn-solid" id="spustit">Check the pasted XML</button>
-        </div>
-        <label class="pomoc" for="xml" style="display:block;margin-top:14px">Or paste the XML here:</label>
-        <textarea id="xml" spellcheck="false" placeholder="&lt;Invoice xmlns=&quot;urn:oasis:names:specification:ubl:schema:xsd:Invoice-2&quot;&gt; ..."></textarea>
-        <p class="vstup-stav" id="vstup-stav" aria-live="polite"></p>
       </div>
     </div>
   </section>
 
-  <section id="co-kontrolujeme" class="deep">
+  <section class="ef-normy" aria-label="Standards and rules we check">
     <div class="wrap">
-      <p class="kicker">What we check and what we do not</p>
-      <h2 class="r">An honest list, not a promise of completeness.</h2>
-      <div class="rule"></div>
-      <div class="prose r d1">
+      <p><b data-do="332">332</b> rule codes from the official schematron files</p>
+      <p class="ef-sr">EN 16931, XRechnung 3.0, Peppol BIS Billing 3.0, UBL 2.1, Invoice, CreditNote, BR-01 to BR-65, BR-CO, BR-DEC, BR-CL, BR-DE-1 to BR-DE-31, Leitweg-ID, IBAN mod 97, CustomizationID</p>
+      <div class="ef-pas" aria-hidden="true"><div class="ef-bez"><ul><li>EN 16931</li><li>XRechnung 3.0</li><li>Peppol BIS Billing 3.0</li><li>UBL 2.1</li><li>Invoice</li><li>CreditNote</li><li>BR-01 to BR-65</li><li>BR-CO</li><li>BR-DEC</li><li>BR-CL</li><li>BR-DE-1 to BR-DE-31</li><li>Leitweg-ID</li><li>IBAN mod 97</li><li>CustomizationID</li></ul><ul><li>EN 16931</li><li>XRechnung 3.0</li><li>Peppol BIS Billing 3.0</li><li>UBL 2.1</li><li>Invoice</li><li>CreditNote</li><li>BR-01 to BR-65</li><li>BR-CO</li><li>BR-DEC</li><li>BR-CL</li><li>BR-DE-1 to BR-DE-31</li><li>Leitweg-ID</li><li>IBAN mod 97</li><li>CustomizationID</li></ul></div></div>
+    </div>
+  </section>
+
+  <section class="ef-sek ef-kontext" id="kontext" aria-label="E-invoice for small business.">
+    <div class="wrap ef-kontext-mriezka">
+      <div class="ef-kontext-text">
+          <p class="ef-kontext-lead">Fill in seller, buyer, numbers and lines in your browser, watch the document build next to the form, and download the finished XML in UBL 2.1, either as Peppol BIS Billing 3.0 or as the German XRechnung, without accounting software.</p>
+      </div>
+      <ul class="facts proof">
+          <li>free: the form, the <b>live preview</b> and our check of 332 rule codes</li>
+          <li>paid: the XML download, <b>2.90 € excl. VAT</b> for one invoice or 9.90 € excl. VAT for 30 days</li>
+          <li>no software to install, no subscription, <b>no account</b></li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="ef-sek" id="ako">
+    <div class="wrap">
+      <div class="ef-hlava zjav"><h2>Three steps, nothing to install.</h2></div>
+      <ol class="ef-kroky">
+        <li class="ef-dl ef-k1 zjav"><div class="ef-dl-text"><h3>Load the file</h3><p>Drop the XML from your invoicing software, pick it from your computer or paste the text. We read UBL 2.1, invoices and credit notes alike. A CII file we recognise and tell you so, but we do not run the rules on it.</p></div><div class="ef-vyrez" role="img" aria-label="Excerpt from the sample XML"><pre class="ef-xml" aria-hidden="true"><b>&lt;Invoice xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2" xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2" xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2"&gt;</b>
+  <b>&lt;cbc:CustomizationID&gt;</b><i>urn:cen.eu:en16931:2017#compliant#urn:fdc:peppol.eu:2017:poacc:billing:3.0</i><b>&lt;/cbc:CustomizationID&gt;</b>
+  <b>&lt;cbc:ProfileID&gt;</b><i>urn:fdc:peppol.eu:2017:poacc:billing:01:1.0</i><b>&lt;/cbc:ProfileID&gt;</b>
+  <b>&lt;cbc:ID&gt;</b><i>2026-0142</i><b>&lt;/cbc:ID&gt;</b>
+  <b>&lt;cbc:IssueDate&gt;</b><i>2026-09-11</i><b>&lt;/cbc:IssueDate&gt;</b>
+  <b>&lt;cbc:DueDate&gt;</b><i>2026-09-25</i><b>&lt;/cbc:DueDate&gt;</b>
+  <b>&lt;cbc:InvoiceTypeCode&gt;</b><i>380</i><b>&lt;/cbc:InvoiceTypeCode&gt;</b>
+  <b>&lt;cbc:Note&gt;</b><i>Sample invoice from arling.sk/efaktura/. All data is made up.</i><b>&lt;/cbc:Note&gt;</b>
+  <b>&lt;cbc:DocumentCurrencyCode&gt;</b><i>EUR</i><b>&lt;/cbc:DocumentCurrencyCode&gt;</b>
+  <b>&lt;cbc:BuyerReference&gt;</b><i>PO-2026-77</i><b>&lt;/cbc:BuyerReference&gt;</b>
+  <b>&lt;cac:AccountingSupplierParty&gt;</b>
+    <b>&lt;cac:Party&gt;</b></pre></div></li>
+        <li class="ef-dl ef-k2 zjav" style="--i:1"><div class="ef-dl-text"><h3>Read the errors, explained</h3><p>Every finding gives you the rule code, a sentence in plain English, the value from the file, the path to the element and the original wording of the rule. The CustomizationID field tells us whether EN 16931, Peppol BIS Billing 3.0 or XRechnung applies.</p></div><div class="ef-vyrez ef-vyrez-nalez" role="group" aria-label="A real finding from the check, with the original wording of the rule"><article class="nalez nalez-chyba"><p class="nalez-hlava"><span class="nalez-znacka">Error</span><code class="nalez-kod">BR-CO-15</code></p><p class="nalez-veta">The invoice total with VAT (BT-112) should be the total without VAT 1500.00 plus the VAT 0.00, that is 1500.00. The file says 1500.01. Correct the total in the invoice header, not the individual lines.</p><p class="nalez-meta"><span class="nalez-popis">Value in the file: </span><code>1500.01</code></p><p class="nalez-meta"><span class="nalez-popis">Path to the element: </span><code>/Invoice/cac:LegalMonetaryTotal/cbc:TaxInclusiveAmount</code></p><details class="nalez-original" open><summary>Original wording of the rule</summary><p>[BR-CO-15]-Invoice total amount with VAT (BT-112) = Invoice total amount without VAT (BT-109) + Invoice total VAT amount (BT-110).</p></details></article></div></li>
+        <li class="ef-dl ef-k3 zjav"><div class="ef-dl-text"><h3>Save the report or buy the XML</h3><p>The check report and the document preview, PDF included, are free. You pay only for the XML of an invoice you build in the form here: 2.90 € excl. VAT for one, or 9.90 € excl. VAT for 30 days. The same check runs over it before the download.</p></div><div class="ef-vyrez" role="img" aria-label="Excerpt from the preview of the sample invoice"><div class="ef-vyrez-papier" aria-hidden="true"><div class="efa-doklad"><div class="efa-hlavicka"><p class="efa-t2">Commercial invoice 2026-0142</p><div class="efa-udaj"><span class="efa-popis">Issue date</span><span class="efa-hodnota">2026-09-11</span></div><div class="efa-udaj"><span class="efa-popis">Delivery date</span><span class="efa-hodnota">2026-09-10</span></div><div class="efa-udaj"><span class="efa-popis">Due date</span><span class="efa-hodnota">2026-09-25</span></div><div class="efa-udaj"><span class="efa-popis">Buyer reference</span><span class="efa-hodnota">PO-2026-77</span></div></div><div class="efa-strany"><div class="efa-strana"><p class="efa-t3">Seller</p><p class="efa-nazov">Sample Workshop Limited</p><p class="efa-adresa">12 Sample Quay</p><p class="efa-adresa">D02 XY45 Dublin</p><p class="efa-adresa">IE</p><div class="efa-udaj"><span class="efa-popis">Registration number</span><span class="efa-hodnota">512345</span></div><div class="efa-udaj"><span class="efa-popis">VAT number</span><span class="efa-hodnota">IE1234567FA</span></div><div class="efa-udaj"><span class="efa-popis">Contact</span><span class="efa-hodnota">Jane Sample</span></div><div class="efa-udaj"><span class="efa-popis">Phone</span><span class="efa-hodnota">+353 1 000 0000</span></div><div class="efa-udaj"><span class="efa-popis">E-mail</span><span class="efa-hodnota">billing@sampleworkshop.example</span></div><div class="efa-udaj"><span class="efa-popis">Electronic address</span><span class="efa-hodnota">5390000000014 (0088)</span></div></div><div class="efa-strana"><p class="efa-t3">Buyer</p><p class="efa-nazov">Sample Buyer B.V.</p><p class="efa-adresa">Voorbeeldstraat 8</p><p class="efa-adresa">1011 AB Amsterdam</p><p class="efa-adresa">NL</p><div class="efa-udaj"><span class="efa-popis">Registration number</span><span class="efa-hodnota">34000002</span></div><div class="efa-udaj"><span class="efa-popis">VAT number</span><span class="efa-hodnota">NL123456789B01</span></div><div class="efa-udaj"><span class="efa-popis">Electronic address</span><span class="efa-hodnota">8710000000017 (0088)</span></div></div></div><div class="efa-polozky"><p class="efa-t3">Lines</p><table class="efa-tabulka"><thead><tr><th>No.</th><th>Description</th><th>Quantity</th><th>Unit</th><th>Unit price</th><th>VAT</th><th>Net amount</th></tr></thead><tbody><tr><td>1</td><td>Machine servicing, on site</td><td>12</td><td>hour</td><td>90.00 EUR</td><td>0.00 % AE</td><td>1080.00 EUR</td></tr><tr><td>2</td><td>Spare bearings, set</td><td>1</td><td>one (piece)</td><td>420.00 EUR</td><td>0.00 % AE</td><td>420.00 EUR</td></tr></tbody></table></div></div></div></div></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="ef-sek ef-tepla" id="pre-koho">
+    <div class="wrap">
+      <div class="ef-hlava zjav"><h2>Who it is for, and from when.</h2></div>
+      <ul class="ef-komu">
+        <li class="zjav" style="--i:0"><b>Germany<span>since 1 January 2025</span></b><p>Businesses must be able to receive B2B e-invoices. Sending is staged: companies with a previous year turnover of up to 800 000 euro have until 31 December 2027, and everyone must send from 1 January 2028. You can check and build XRechnung 3.x here, Leitweg-ID field included.</p></li>
+        <li class="zjav" style="--i:1"><b>Peppol<span>Peppol BIS Billing 3.0</span></b><p>You hand the invoice to your access point provider, who delivers it to the buyer. Here you check it first, or build it, in the Peppol BIS Billing 3.0 profile. Delivery into the Peppol network is not included.</p></li>
+        <li class="zjav" style="--i:2"><b>Slovakia<span>from 1 January 2027</span></b><p>E-invoicing over Peppol becomes mandatory for domestic business-to-business supplies between VAT payers, under Act 385/2025 Coll. Slovak companies are identified there by schemeID 0245 and their tax number DIC.</p></li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="ef-sek" id="udaje">
+    <div class="wrap">
+      <div class="ef-hlava"><h2 class="ef-odkryv"><span style="--n:0">The</span> <span style="--n:1">invoice</span> <span style="--n:2">file</span> <span style="--n:3">is</span> <span style="--n:4">read,</span> <span style="--n:5">checked</span> <span style="--n:6">and</span> <span style="--n:7">drawn</span> <span style="--n:8">in</span> <span style="--n:9">your</span> <span style="--n:10">browser.</span> <span style="--n:11">It</span> <span style="--n:12">is</span> <span style="--n:13">never</span> <span style="--n:14">sent</span> <span style="--n:15">to</span> <span style="--n:16">our</span> <span style="--n:17">server.</span></h2></div>
+      <div class="ef-udaje">
+        <div class="zjav"><h3>Stays in your browser</h3><ul><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><b>Reading the file.</b> The XML opens right in the browser and is never uploaded.</li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><b>Rule check and preview.</b> All 332 rule codes and the drawing of the document run on your machine.</li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><b>Building XML and PDF.</b> The XML is made from the form in your browser; the PDF is saved by the print function of your browser.</li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><b>Address book and draft.</b> Kept only in this browser; one button in the form erases them.</li></ul></div>
+        <div class="ef-server zjav" style="--i:1"><h3>Goes to a server</h3><ul><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg><b>Payment check.</b> When you come back from Stripe, the page asks our server, by the checkout session number, whether the payment went through. The invoice is not sent along.</li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg><b>Payment.</b> Happens on the Stripe page; Stripe sells as merchant of record.</li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg><b>Optional enquiry.</b> Sends only what you type into it.</li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg><b>Visit counting.</b> Our own Umami counts visits and events, for example that a check ran and how it ended. The contents of the invoice never go into it.</li></ul></div>
+      </div>
+      <div class="ef-sukromie zjav">
+        <p data-efaktura-privacy>The invoice file and the details in the invoice creation form stay in your browser. The address book for sellers and buyers sits in localStorage and can be cleared with the button in that form. After a payment, we check its status on the server. A separate optional enquiry sends ARLing only what you enter in it; the invoice is not automatically attached. We measure visits with our own Umami.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="ef-sek ef-tepla" id="cennik">
+    <div class="wrap">
+      <div class="ef-hlava zjav"><h2>You pay only for the finished XML.</h2></div>
+      <ul class="ef-cennik zjav">
+      <li class="ef-r-zadarmo"><div><h3>Check and preview</h3><p>No account, no limit, with the check report and the document as a PDF.</p></div><p class="ef-suma">0 €</p><a class="ef-riadok-btn" href="#kontrola" data-umami-event="efaktura_cena_klik" data-umami-event-miesto="cennik" data-umami-event-riadok="zadarmo">Check a file<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></li>
+      <li class="ef-r-jedna"><div><h3>XML of one invoice</h3><p>The download stays unlocked in this browser for 24 hours, so you can correct the invoice and download it again.</p></div><p class="ef-suma">2.90 € excl. VAT</p><a class="ef-riadok-btn" href="#vytvorit" data-umami-event="efaktura_cena_klik" data-umami-event-miesto="cennik" data-umami-event-riadok="jedna">Create an invoice<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></li>
+      <li class="ef-r-30dni"><div><h3>30 days, no limit</h3><p>Any number of invoices, including a CSV batch in one ZIP. One-time payment, no subscription.</p></div><p class="ef-suma">9.90 € excl. VAT</p><a class="ef-riadok-btn" href="/efaktura/en/csv-to-invoice/" data-umami-event="efaktura_cena_klik" data-umami-event-miesto="cennik" data-umami-event-riadok="30dni">Batch from CSV<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></li>
+      </ul>
+      <div class="ef-cennik-pozn">
+        <p class="pomoc dan-platby">Prices exclude applicable tax. Stripe calculates tax from the customer details and shows the final total before payment.</p>
+        <p class="pomoc">Seller: ARLing s. r. o., company ID 56583486, Bratislava, Slovakia. Stripe handles the payment.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="co-kontrolujeme" class="deep ef-sek">
+    <div class="wrap">
+      <div class="ef-hlava zjav"><h2>An honest list, not a promise of completeness.</h2></div>
+      <div class="ef-dva">
+        <div class="prose">
         <p>We check 332 rule codes. That covers the core rules of EN 16931 (BR-01 to BR-65), the total rules BR-CO, the decimal rules BR-DEC, the code list rules BR-CL, the rules per VAT category (S, Z, E, AE, K, G, O, L, M), the rules of Peppol BIS Billing 3.0 including the check digits of national identifiers, the rules of XRechnung 3.x (BR-DE-1 to BR-DE-31), and thirteen checks of our own: IBAN by mod 97, the shape of German, Slovak, Czech and Austrian VAT numbers, the format of the German Leitweg-ID, the order of dates and the currency code.</p>
         <p>We do not check the UBL 2.1 XSD schema, so neither element order nor data types. We do not check the 755 rules in the UBL-CR, UBL-SR and UBL-DT groups, which mostly point at elements that should not be there. We apply no rules over the CII syntax: such a file we recognise and say so. Passing our check therefore does not guarantee that the buyer, the buyer invoicing system or the Peppol network will accept the invoice. It is a good first check, not the last word.</p>
         <p>The rule wordings come from the official schematron files: EN 16931 from ConnectingEurope, Peppol BIS Billing 3.0 from OpenPEPPOL and XRechnung from KoSIT. Rule codes and rule texts are normative, so we quote them alongside the rule code and write our own explanation of what to fix.</p>
       </div>
-      <div class="rule"></div>
-      <ul class="zdroje r d2">
+        <ul class="zdroje">
         <li>EN 16931 and its schematron: <a href="https://github.com/ConnectingEurope/eInvoicing-EN16931">github.com/ConnectingEurope/eInvoicing-EN16931</a></li>
         <li>Peppol BIS Billing 3.0, including the EAS and ICD code lists: <a href="https://docs.peppol.eu/poacc/billing/3.0/">docs.peppol.eu</a></li>
         <li>XRechnung, the German CIUS, by KoSIT: <a href="https://xeinkauf.de/xrechnung/">xeinkauf.de</a></li>
         <li>Germany, the federal finance ministry on e-invoicing from 1 January 2025: <a href="https://www.bundesfinanzministerium.de/Content/DE/FAQ/e-rechnung.html">bundesfinanzministerium.de</a></li>
         <li>Slovakia, Act 385/2025 Coll. (new section 76a, in force from 1 January 2027): <a href="https://www.slov-lex.sk/ezbierky/pravne-predpisy/SK/ZZ/2025/385/">slov-lex.sk</a></li>
       </ul>
+      </div>
     </div>
   </section>
 
-  <section id="otazky" class="deep">
-    <div class="wrap">
-      <p class="kicker">Questions</p>
-      <h2 class="r">What people ask.</h2>
-      <div class="rule"></div>
+  <section id="otazky" class="deep ef-sek">
+    <div class="wrap ef-otazky">
+      <div class="ef-otazky-hlava zjav"><h2>What people ask.</h2><p class="ef-otazky-p">No answer here? Write to <a href="mailto:andrej@arling.sk">andrej@arling.sk</a>.</p></div>
+      <div class="ef-otazky-zoznam">
       <details class="otazka"><summary>Do I need accounting software to send an e-invoice?</summary><p>No. An e-invoice is a file in a structured format, and this page builds that file from a form in your browser. You fill in seller, buyer, numbers, dates and lines, see the document as you type and download the XML. What you still need is a way to deliver it: an e-mail where that is accepted, or a Peppol access point where the network is required.</p></details>
       <details class="otazka"><summary>What exactly counts as an e-invoice?</summary><p>An invoice issued, sent and received in a structured format that a computer can process without anyone retyping it. A PDF sent by e-mail does not count. The format is set by the European standard EN 16931 and its two syntaxes, OASIS UBL 2.1 and UN/CEFACT CII; we generate UBL 2.1.</p></details>
       <details class="otazka"><summary>From when does this apply to me?</summary><p>It depends on your country. In Germany, businesses have had to be able to receive B2B e-invoices since 1 January 2025; sending is staged, with companies whose previous year turnover was up to 800 000 euro getting until 31 December 2027 and everyone having to send from 1 January 2028. In Slovakia the duty starts on 1 January 2027 for domestic B2B supplies between VAT payers. Elsewhere the dates differ, so check your own country.</p></details>
       <details class="otazka"><summary>Is my invoice data sent anywhere?</summary><p>No. The form, the preview and the XML live in your browser, and the address book for sellers and buyers sits in localStorage with a button to erase it. Exactly one thing goes to a server: after you come back from the payment, we ask whether that payment went through.</p></details>
       <details class="otazka"><summary>What does it cost for a small business?</summary><p>The form, the preview and the check are free. The download of the finished XML costs 2.90 € excl. VAT for one invoice, unlocked in this browser for 24 hours so you can correct it and download again, or 9.90 € excl. VAT for 30 days with no limit on the number of invoices. There is no subscription and no account; Stripe handles the sale and sends you a VAT receipt.</p></details>
       <details class="otazka"><summary>Which profile should I pick, Peppol or XRechnung?</summary><p>Ask your customer. Peppol BIS Billing 3.0 is the common profile across the network and the safe default. XRechnung is the German national specification and is what German public bodies ask for; it adds a few mandatory fields, above all the buyer reference BT-10, which for an authority is the Leitweg-ID.</p></details>
-    </div>
-  </section>
-
-  <section id="poctivo" class="deep">
-    <div class="wrap">
-      <p class="kicker">What this is and what it is not</p>
-      <h2 class="r">A template and a check, not tax advice.</h2>
-      <div class="rule"></div>
-      <div class="prose r d1">
-        <p>This tool checks the shape of the file and assembles a UBL 2.1 invoice from what you type. It does not judge whether you should charge VAT, which rate applies to a supply, whether the reverse charge applies, or whether the supply is taxable at all. That is tax advice, and that is what an accountant or a tax adviser is for. Whoever issues the invoice is responsible for it being right.</p>
-        <p data-efaktura-privacy>The invoice file and the details in the invoice creation form stay in your browser. The address book for sellers and buyers sits in localStorage and can be cleared with the button in that form. After a payment, we check its status on the server. A separate optional enquiry sends ARLing only what you enter in it; the invoice is not automatically attached. We measure visits with our own Umami.</p>
-        <p>We offer VAT rates only for the countries we verified at an official source. For any other country the generator asks you to type the rate yourself rather than guessing it for you.</p>
-        <p>When a law, a schematron or a version of the specification changes, we adjust the rules and write it here with a date. The facts on this page we verified at the official sources listed above on 11 September 2026.</p>
       </div>
     </div>
   </section>
-  <section id="related" class="deep">
-    <div class="wrap">
-      <p class="kicker">Related</p>
-      <h2 class="r">More tools and notes.</h2>
-      <div class="rule"></div>
-      <div class="prose r d1">
+
+  <div class="ef-dvojica">
+    <div class="wrap ef-dvojica-mriezka">
+      <section id="poctivo" class="deep zjav">
+        <h2>A template and a check, not tax advice.</h2>
+        <div class="prose">
+        <p>This tool checks the shape of the file and assembles a UBL 2.1 invoice from what you type. It does not judge whether you should charge VAT, which rate applies to a supply, whether the reverse charge applies, or whether the supply is taxable at all. That is tax advice, and that is what an accountant or a tax adviser is for. Whoever issues the invoice is responsible for it being right.</p>
+        <p>We offer VAT rates only for the countries we verified at an official source. For any other country the generator asks you to type the rate yourself rather than guessing it for you.</p>
+        <p>When a law, a schematron or a version of the specification changes, we adjust the rules and write it here with a date. The facts on this page we verified at the official sources listed above on 11 September 2026.</p>
+      </div>
+      </section>
+      <section id="related" class="deep ef-suvisiace zjav" style="--i:1">
+        <h2>More tools and notes.</h2>
+        <div class="prose r d1">
         <p>All three tools on one page, check, preview and generator: <a href="https://arling.sk/efaktura/en/">E-invoice check, preview and generator</a>.</p>
         <p class="csv-odkaz"><a href="/efaktura/en/csv-to-invoice/">CSV to invoice XML: create a batch and download a ZIP</a>.</p>
         <p>A SEPA payment file check ahead of the 15 November deadline is offered by <a href="https://arling.sk/kontrola-suboru/en/">SEPA file check</a>.</p>
         <p>GDPR document packages for Slovak and German companies are ready at <a href="https://arling.sk/gdpr-dokumenty/">GDPR documents</a>.</p>
         <p>Why BR-CO-15 and other totals errors happen is explained in the note <a href="https://arling.sk/notes/br-co-15-and-totals-errors/">BR-CO-15 and the other reasons invoice totals do not match</a>.</p>
       </div>
+      </section>
     </div>
+  </div>
+
+  <section class="ef-zaver">
+    <div class="wrap"><div class="ef-zaver-karta"><div class="ef-zaver-vnutro"><h2 class="zjav">Got the XML at hand? You will see the result in seconds.</h2><p class="zjav" style="--i:1">Free, no account, and the file stays in your browser.</p><div class="ef-zaver-akcia zjav" style="--i:2"><a class="ef-cta" href="#vytvorit" data-umami-event="efaktura_zaver_cta">Create an invoice, free preview<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></div></div></div></div>
   </section>
 </main>
 
@@ -551,7 +474,7 @@
 <script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="1de7b607-7a25-4214-a8f6-b80957f520a7"></script>
 <script defer src="/dopyt.js?v=d7e58bf8"></script>
 <!-- Konverzia Google Ads. Znacka sa nacita az vtedy, ked si stranka u Stripu overila
-     zaplatenu objednavku (udalost "arling:platba-overena" z /efaktura/app.js), nikdy pri
+     zaplatenu objednavku (udalost "arling:platba-overena" z /efaktura/app.js?v=fa99a4d5), nikdy pri
      obycajnom otvoreni stranky. Kym su v ADS zastupne hodnoty, cely blok nerobi nic:
      nenacita sa ziadny skript Googlu a neodide ziadny poziadavok.
      Kde vziat ID a stitok a kam ich vlozit: ops/ads/konverzie-navod.md -->
