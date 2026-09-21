@@ -1,0 +1,502 @@
+/* The World in Squares. Vzhľad prehliadača mapy.
+   Zdroj: ops/svet/svet.css, do hubu ho kopíruje ops/svet/postav.mjs. Neupravovať v produkte.
+
+   Jedno rozhodnutie drží celú stránku: mapa je hrdina, všetko ostatné sa jej klania.
+   Preto tu nie sú karty, nie sú tu odznaky a nie je tu druhá farba. Je tu mapa,
+   jeden plávajúci list s vybranou bunkou a pod mapou krátky text.
+
+   Farby a písma sú z /style/paper.css (nočná plocha hubu). Tento súbor pridáva len
+   to, čo mapa naozaj potrebuje. */
+
+/* Sivá na metadáta má v nočnom hube proti #0a0908 kontrast 4,1 : 1, čo je pod
+   hranicou 4,5 : 1 pre malé písmo. Na týchto stránkach je v tom tóne celý cenník,
+   popisy pod položkami aj pätička, takže to nie je kozmetika. Zosvetlené na
+   4,66 : 1. Špecifickosť musí byť vyššia než body.noc, inak by token neprešiel.
+   Mimo /world/ a /svet/ sa nemení nič. */
+body.noc.svet { --muted: #7d7a77; }
+
+.svet {
+  --more: #0a0908;          /* rovnaké ako pozadie stránky: mapa nemá rám */
+  --list: rgba(18, 15, 13, .82);
+  --list-line: rgba(255, 255, 255, .12);
+  --mriezka: rgba(255, 255, 255, .085);
+  --vyber: #ffd9c9;
+  --medena: #f2643c;
+  --volne: rgba(242, 100, 60, .16);
+}
+
+/* Len pre čítačky obrazovky. Mapa sa nedá prečítať, ale dá sa ohlásiť. */
+.skryte { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; border: 0; }
+
+/* ── Hrdina: úvodný pás a mapa spolu presne na výšku okna. ────────────────
+   Bez tohto mapa pretiekla pod okraj, list s vybranou bunkou ostal pod ohybom
+   a prvá vec, ktorú človek uvidel, bol nadpis a prázdno. */
+.svet-hrdina { display: flex; flex-direction: column; min-height: calc(100svh - 74px); }
+body.noc .svet-uvod { flex: 0 0 auto; padding: clamp(18px, 2.4vw, 30px) 0 clamp(14px, 1.8vw, 22px); border-top: 0; }
+/* paper.css orezava nadpisy na vysku verzalok, takze spodny okraj je vzdialenost od
+   ucariaka po dalsi riadok; pri 10 px sa dlzky pismen q a g dotykali textu pod nimi. */
+body.noc .svet-uvod h1 { font-size: clamp(28px, 3.6vw, 46px); margin: 0 0 clamp(15px, 1.5vw, 20px); }
+body.noc .svet-uvod .lead { max-width: 56ch; margin: 0; font-size: clamp(15.5px, 1.2vw, 18px); }
+
+/* ── Plocha mapy ─────────────────────────────────────────────────────────── */
+/* Celá šírka okna, nie .wrap: orámovaná mapa je obrázok, neorámovaná je miesto. */
+body.noc .mapa {
+  position: relative;
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 340px;
+  padding: 0;
+  background: var(--more);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  padding: 0;
+  overflow: hidden;
+  contain: strict;
+}
+
+.mapa canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;          /* gestá si berieme sami, inak ich zoberie prehliadač */
+  cursor: grab;
+  outline-offset: -3px;
+}
+.mapa canvas:active { cursor: grabbing; }
+.mapa canvas.presuva { cursor: grabbing; }
+
+/* ── Horný pás mapy: hľadanie vľavo, počítadlo vpravo ────────────────────── */
+.mapa-hore {
+  position: absolute;
+  inset: 0 0 auto 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px;
+  pointer-events: none;
+}
+.mapa-hore > * { pointer-events: auto; }
+
+.hladanie-riadok { display: flex; align-items: flex-start; gap: 8px; width: min(384px, 70vw); }
+.hladanie { position: relative; flex: 1 1 auto; min-width: 0; }
+/* Skok na moju polohu. Jedno tlačidlo vedľa hľadania; poloha sa pýta až po kliknutí. */
+.poloha {
+  flex: none; display: grid; place-items: center;
+  width: 42px; height: 42px; padding: 0;
+  color: var(--ink); cursor: pointer;
+  background: var(--list);
+  border: 1px solid var(--list-line);
+  border-radius: 12px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.poloha[hidden] { display: none; }
+.poloha svg { width: 17px; height: 17px; }
+.poloha:hover { border-color: rgba(242, 100, 60, .55); }
+.poloha:focus-visible { border-color: var(--medena); outline: none; box-shadow: 0 0 0 3px rgba(242, 100, 60, .22); }
+.hladanie input {
+  width: 100%;
+  height: 42px;
+  padding: 0 14px 0 38px;
+  font: 500 15px/1 var(--ui);
+  color: var(--ink);
+  caret-color: var(--medena);
+  background: var(--list);
+  border: 1px solid var(--list-line);
+  border-radius: 12px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.hladanie input::placeholder { color: var(--muted); }
+.hladanie input:focus-visible { border-color: var(--medena); outline: none; box-shadow: 0 0 0 3px rgba(242, 100, 60, .22); }
+.hladanie svg { position: absolute; z-index: 1; left: 13px; top: 13px; width: 16px; height: 16px; color: var(--muted); pointer-events: none; }
+
+.navrhy {
+  position: absolute;
+  left: 0; right: 0; top: calc(100% + 6px);
+  max-height: min(46svh, 360px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  margin: 0; padding: 5px;
+  list-style: none;
+  background: var(--list);
+  border: 1px solid var(--list-line);
+  border-radius: 12px;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, .55);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(242, 100, 60, .5) transparent;
+}
+.navrhy:empty, .navrhy[hidden] { display: none; }
+.navrhy li { margin: 0; }
+.navrhy button {
+  display: flex; align-items: baseline; gap: 8px;
+  width: 100%; padding: 8px 10px;
+  font: 500 15px/1.3 var(--ui); color: var(--ink);
+  text-align: left; background: none; border: 0; border-radius: 8px; cursor: pointer;
+}
+.navrhy button span { color: var(--muted); font-size: 13px; font-weight: 400; }
+.navrhy button:hover, .navrhy button[aria-selected="true"] { background: rgba(242, 100, 60, .14); }
+
+.pocitadlo {
+  display: flex; flex-direction: column; align-items: flex-end; gap: 2px;
+  padding: 9px 14px;
+  font: 500 13px/1.25 var(--ui); color: var(--body);
+  text-align: right;
+  background: var(--list);
+  border: 1px solid var(--list-line);
+  border-radius: 12px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.pocitadlo b { font-size: 17px; color: var(--ink); font-variant-numeric: tabular-nums; }
+
+/* ── Úprimný pás. Keď služba nebeží, napíše sa to, nekrúti sa kolečko. ───── */
+.mapa-stav {
+  position: absolute;
+  left: 50%; top: 14px;
+  transform: translateX(-50%);
+  max-width: min(520px, 86vw);
+  padding: 8px 14px;
+  font: 500 13px/1.4 var(--ui); color: var(--ink);
+  text-align: center;
+  background: rgba(60, 26, 14, .88);
+  border: 1px solid rgba(242, 100, 60, .4);
+  border-radius: 999px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.mapa-stav[hidden] { display: none; }
+
+/* ── List vybranej bunky. Zápis v registri, nie karta produktu. ──────────── */
+.list {
+  position: absolute;
+  left: 14px; bottom: 14px;
+  width: min(352px, calc(100vw - 28px));
+  max-height: calc(100% - 92px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 16px 18px 18px;
+  background: var(--list);
+  border: 1px solid var(--list-line);
+  border-radius: 16px;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 22px 60px rgba(0, 0, 0, .58);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(242, 100, 60, .5) transparent;
+}
+.list[hidden] { display: none; }
+@media (prefers-reduced-motion: no-preference) {
+  .list.prichadza { animation: listHore .22s cubic-bezier(.16, 1, .3, 1) both; }
+}
+@keyframes listHore { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+
+/* Bez tabuľkových číslic: tie v tomto písme roztiahnu aj bodku, takže z „no. 651“
+   bolo „no . 651“. Číslo štvorca sa pod nič nezarovnáva. Selektor s .svet, aby
+   pravidlo platilo aj na stránke štvorca, kde ho inak prebije .pravne p. */
+.svet .list-cislo {
+  margin: 0 0 2px;
+  font: 700 clamp(25px, 3vw, 31px)/1.05 var(--display);
+  color: var(--ink);
+  letter-spacing: -.02em;
+}
+.svet .list-miesto { margin: 0 0 14px; font: 500 15px/1.35 var(--ui); color: var(--body); }
+.svet .list-miesto b { color: var(--ink); font-weight: 600; }
+
+.list-udaje { margin: 0 0 15px; font-family: var(--ui); font-size: 13.5px; }
+.list-udaje div {
+  display: flex; justify-content: space-between; gap: 14px;
+  padding: 6px 0;
+  border-top: 1px solid rgba(255, 255, 255, .07);
+}
+.list-udaje div:first-child { border-top: 0; }
+.list-udaje dt { color: var(--muted); }
+/* Tabuľkové číslice len tam, kde sa čísla naozaj radia pod seba. V cene
+   „5,00 €“ z nich font spraví medzeru okolo desatinnej čiarky. */
+.list-udaje dd { margin: 0; color: var(--ink); text-align: right; }
+
+.list .btn { width: 100%; justify-content: center; }
+.list .btn + .btn { margin-top: 8px; }
+.list .btn[disabled] { opacity: .55; pointer-events: none; }
+
+.list-pravne {
+  margin: 12px 0 0;
+  font: 400 12.5px/1.5 var(--ui);
+  color: var(--muted);
+}
+.list-pravne a { color: var(--accent-light); }
+
+/* Súhlasy v pokladni. Nezaškrtnuté, veľký klikací cieľ, presné znenie. */
+.suhlas { display: flex; gap: 9px; margin: 12px 0 0; font: 400 12.5px/1.45 var(--ui); color: var(--body); cursor: pointer; }
+.suhlas input { flex: none; width: 17px; height: 17px; margin: 1px 0 0; accent-color: var(--medena); }
+.suhlas:hover { color: var(--ink); }
+.suhlas-mail { align-items: center; }
+.suhlas-mail input {
+  flex: 1; height: 38px; padding: 0 10px;
+  font: 500 14px/1 var(--ui); color: var(--ink); caret-color: var(--medena);
+  background: rgba(255, 255, 255, .04); border: 1px solid var(--list-line); border-radius: 9px;
+}
+.suhlas-mail input:focus-visible { border-color: var(--medena); outline: none; box-shadow: 0 0 0 3px rgba(242, 100, 60, .22); }
+/* iOS pri poli s písmom pod 16 px stránku po ťuknutí samo priblíži a mapa pod
+   listom odskočí. Na dotykových šírkach má preto pole 16 px. */
+@media (max-width: 700px) { .suhlas-mail input { font-size: 16px; height: 44px; } }
+
+/* Balík: tichá textová voľba pod hlavnými tlačidlami, nie tretie veľké tlačidlo. */
+.list-balik {
+  display: block; width: 100%; margin: 10px 0 0; padding: 8px 0; min-height: 40px;
+  font: 500 13.5px/1.4 var(--ui); color: var(--accent-light); text-align: center;
+  background: none; border: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 3px;
+}
+.list-balik:hover { color: var(--ink); }
+.list-balik:focus-visible { outline: 2px solid var(--vyber); outline-offset: 2px; border-radius: 6px; }
+.vyber-balika { margin: 0 0 12px; padding: 0; border: 0; }
+.vyber-balika .suhlas { font-size: 14px; color: var(--ink); align-items: center; }
+.list-test {
+  margin: 0 0 12px; padding: 8px 10px;
+  font: 600 12.5px/1.45 var(--ui); color: var(--ink);
+  border: 1px dashed var(--medena); border-radius: 8px;
+}
+
+/* ── Kreslenie 32 × 32 ───────────────────────────────────────────────────── */
+.kreslenie { margin-top: 14px; }
+.kreslenie canvas {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  image-rendering: pixelated;
+  background: #17120f;
+  border: 1px solid var(--list-line);
+  border-radius: 10px;
+  touch-action: none;
+  cursor: crosshair;
+}
+.paleta { display: grid; grid-template-columns: repeat(8, 1fr); gap: 5px; margin-top: 9px; }
+.paleta button {
+  aspect-ratio: 1; border: 1px solid rgba(255, 255, 255, .16); border-radius: 6px; cursor: pointer; padding: 0;
+}
+.paleta button[aria-pressed="true"] { border-color: var(--ink); box-shadow: 0 0 0 2px rgba(255, 255, 255, .28); }
+.kreslenie-ovladanie { display: flex; gap: 8px; margin-top: 9px; }
+.kreslenie-ovladanie button {
+  flex: 1; height: 34px; font: 500 13px/1 var(--ui); color: var(--ink);
+  background: rgba(255, 255, 255, .05); border: 1px solid var(--list-line); border-radius: 9px; cursor: pointer;
+}
+.kreslenie-ovladanie button:hover { background: rgba(255, 255, 255, .1); }
+
+/* ── Kresba vlastníka a jeho odkaz v liste ──────────────────────────────── */
+.list-kresba {
+  display: block; width: 88px; height: 88px; margin: 0 0 12px;
+  image-rendering: pixelated;
+  border: 1px solid var(--list-line); border-radius: 10px; background: #17120f;
+}
+
+/* ── Pôvod dát. Public domain nepotrebuje atribúciu, aj tak ju uvedieme. ─── */
+.svet-hrdina { position: relative; }
+.mapa-zdroj {
+  position: absolute;
+  right: 12px; bottom: 10px;
+  margin: 0;
+  z-index: 1;
+  font: 400 11px/1.3 var(--ui);
+  color: var(--muted);      /* nie priesvitná sivá: pri 11 px musí kontrast sedieť */
+  text-align: right;
+  pointer-events: auto;
+}
+.mapa-zdroj a { color: inherit; text-decoration-color: rgba(255, 255, 255, .22); }
+.mapa-zdroj a:hover { color: var(--ink); }
+
+/* ── Telefón: list je spodný hárok cez celú šírku ───────────────────────── */
+@media (max-width: 720px) {
+  .svet-hrdina { min-height: calc(100svh - 64px); }
+  .mapa { min-height: 62svh; }
+  .mapa-hore { padding: 10px; }
+  .hladanie-riadok { width: 100%; }
+  .hladanie input, .poloha { height: 44px; }
+  .poloha { width: 44px; }
+  .hladanie svg { top: 14px; }
+  .pocitadlo { display: none; }           /* počítadlo je aj pod mapou, hore by zožralo hľadanie */
+  .mapa-stav { top: 62px; left: 10px; right: 10px; transform: none; max-width: none; }
+  .svet .list-cislo { font-size: 23px; }
+  .list { padding: 14px 16px 16px; }
+  .list {
+    left: 0; right: 0; bottom: 0;
+    width: auto;
+    max-height: 60%;          /* 56 % nestačilo: s voľbou balíka by veta o licencii skončila pod okrajom hárka */
+    border-radius: 16px 16px 0 0;
+    border-bottom: 0;
+    padding-bottom: max(18px, env(safe-area-inset-bottom));
+  }
+  .list-balik { margin-top: 4px; padding: 6px 0; }
+  .list .list-balik + .list-pravne { margin-top: 6px; }
+  .mapa-zdroj { position: static; padding: 7px 16px 0; text-align: left; }
+  body.noc .svet-uvod { padding: 14px 0 12px; }
+  body.noc .svet-uvod .lead { font-size: 15px; line-height: 1.45; }
+}
+
+/* ── Text pod mapou. Úzka miera, vlasové linky, žiadne karty. ───────────── */
+body.noc .svet-text { padding: clamp(40px, 5vw, 76px) 0; }
+.svet-text > .wrap { display: grid; gap: clamp(30px, 4vw, 54px); }
+@media (min-width: 900px) {
+  .svet-text > .wrap { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; }
+  .svet-text .cez { grid-column: 1 / -1; }
+}
+.svet-text h2 { margin-bottom: 10px; }
+.svet-text p { max-width: 62ch; }
+
+.riadky { margin: 14px 0 0; padding: 0; list-style: none; font-family: var(--ui); font-size: 15px; }
+.riadky li {
+  display: grid; grid-template-columns: 1fr auto; gap: 8px 18px;
+  padding: 11px 0;
+  border-top: 1px solid var(--line);
+  color: var(--body);
+}
+.riadky li b { color: var(--ink); font-weight: 600; }
+/* V cenníku je v pravom stĺpci cena. Cena je fakt, po ktorom človek prišiel,
+   nie metadáta, preto sa číta rovnako silno ako názov položky. */
+.riadky li span { color: var(--ink); text-align: right; white-space: nowrap; }
+.riadky li p { grid-column: 1 / -1; margin: 3px 0 0; font-size: 13.5px; color: var(--muted); }
+
+/* Čo to nie je. Jediné miesto na stránke, kde je text v ráme, lebo je to sľub. */
+.slub {
+  margin: 0;
+  padding: clamp(18px, 2vw, 26px);
+  border: 1px solid rgba(242, 100, 60, .28);
+  border-radius: 14px;
+  background: rgba(242, 100, 60, .05);
+}
+.slub h2 { font-size: clamp(20px, 2vw, 25px); }
+.slub ul { margin: 12px 0 0; padding-left: 18px; font-family: var(--ui); font-size: 14.5px; color: var(--body); }
+.slub li { margin: 0 0 7px; }
+
+.svet-text .btn { margin-top: 18px; }
+.svet-text details { border-top: 1px solid var(--line); padding: 13px 0; }
+.svet-text details summary { font: 600 16px/1.4 var(--ui); color: var(--ink); cursor: pointer; }
+.svet-text details[open] summary { margin-bottom: 8px; }
+.svet-text details p { font-family: var(--ui); font-size: 15px; }
+
+/* ── Právne a textové podstránky ────────────────────────────────────────── */
+body.noc .pravne { padding: clamp(34px, 4vw, 64px) 0 clamp(50px, 6vw, 90px); }
+/* Jeden stĺpec, ktorý sa naozaj číta: miera okolo sedemdesiatich znakov.
+   Bez toho by text ležal v ľavej tretine 1432 px širokej plochy hubu. */
+.pravne .wrap { width: min(620px, 89vw); margin-inline: auto; }
+body.noc .pravne h1 { font-size: clamp(32px, 4.4vw, 52px); }
+body.noc .pravne h2 { margin-top: clamp(28px, 3vw, 44px); font-size: clamp(20px, 1.8vw, 25px); }
+body.noc .pravne h3 { margin-top: 22px; font-size: 17px; }
+body.noc .pravne .lead { font-size: 17px; max-width: none; }
+.pravne p, .pravne li { font-family: var(--ui); font-size: 15.5px; line-height: 1.62; color: var(--body); max-width: none; }
+.pravne li { margin: 0 0 8px; }
+.pravne strong { color: var(--ink); font-weight: 600; }
+.pravne .datum { font-family: var(--ui); font-size: 13.5px; color: var(--muted); }
+.pravne details { border-top: 1px solid var(--line); padding: 14px 0; }
+.pravne details summary { font: 600 16px/1.4 var(--ui); color: var(--ink); cursor: pointer; }
+.pravne details[open] summary { margin-bottom: 8px; }
+.pravne .vzor {
+  margin: 16px 0 0; padding: 18px;
+  border: 1px dashed var(--list-line); border-radius: 12px;
+  font-family: var(--ui); font-size: 14.5px; color: var(--body); white-space: pre-wrap;
+}
+
+/* ── Rebríček ───────────────────────────────────────────────────────────── */
+.rebricek { width: 100%; border-collapse: collapse; margin-top: 18px; font-family: var(--ui); font-size: 15px; }
+.rebricek th, .rebricek td { padding: 11px 10px; border-bottom: 1px solid var(--line); text-align: left; }
+.rebricek th { font-weight: 600; color: var(--muted); font-size: 13px; }
+.rebricek td:last-child, .rebricek th:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+.prazdno { margin-top: 18px; padding: 22px; border: 1px solid var(--line); border-radius: 12px; color: var(--muted); font-family: var(--ui); font-size: 15px; }
+
+/* ── Stránka jednej parcely ─────────────────────────────────────────────── */
+[data-parcela] { margin-top: clamp(24px, 3vw, 36px); }
+.parcela-hlava { display: flex; gap: clamp(16px, 2.5vw, 30px); align-items: flex-start; flex-wrap: wrap; margin-bottom: 18px; }
+.pravne p > .btn { margin-top: 12px; }
+.parcela-hlava img, .parcela-hlava canvas {
+  width: 128px; height: 128px; flex: none;
+  image-rendering: pixelated; border: 1px solid var(--list-line); border-radius: 14px; background: #17120f;
+}
+
+/* ── Panel majiteľa ─────────────────────────────────────────────────────────
+   Zápisy v registri pod sebou, oddelené vlasovou linkou. Žiadne karty: jeden
+   štvorec je jeden zápis, vľavo meno a odkaz, vpravo kresba. Na telefóne to isté
+   pod sebou v tom istom poradí a plátno cez celú šírku, aby sa dalo kresliť prstom. */
+.pravne.majitel .wrap { width: min(1000px, calc(100vw - 32px)); }
+.majitel h1, body.noc .majitel .lead, .majitel .majitel-sukromie { max-width: 620px; }
+.majitel-obsah { margin-top: clamp(22px, 3vw, 36px); min-height: 180px; }
+.majitel .majitel-ucet { margin: 0 0 6px; font-size: 14px; color: var(--muted); overflow-wrap: anywhere; }
+.majitel .majitel-ucet b { color: var(--ink); font-weight: 600; }
+body.noc .majitel .majitel-nadpis { margin-top: clamp(26px, 3vw, 40px); }
+.majitel-hlaska { max-width: 620px; padding: 22px 0 6px; border-top: 1px solid var(--line); }
+body.noc .majitel .majitel-hlaska h2 { margin-top: 0; }
+.majitel-kredit { max-width: 620px; padding: 20px 0 8px; border-top: 1px solid var(--line); }
+body.noc .majitel .majitel-kredit h2 { margin-top: 0; }
+.majitel-pocet { font: 700 26px/1 var(--display); color: var(--ink); font-variant-numeric: tabular-nums; }
+.majitel .majitel-sukromie { margin-top: clamp(30px, 4vw, 52px); padding-top: 16px; border-top: 1px solid var(--line); font-size: 13.5px; color: var(--muted); }
+
+.stvorec { padding: clamp(20px, 2.6vw, 30px) 0 clamp(24px, 3vw, 36px); border-top: 1px solid var(--line); }
+.stvorec-hlava { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 14px 24px; }
+body.noc .majitel .stvorec-cislo { margin: 0 0 12px; font: 700 clamp(24px, 2.6vw, 31px)/1.05 var(--display); letter-spacing: -.02em; color: var(--ink); }
+.majitel .stvorec-miesto { margin: 0; color: var(--body); }
+.majitel .stvorec-miesto b { color: var(--ink); font-weight: 600; }
+.majitel .stvorec-meta { margin: 5px 0 0; font-size: 13.5px; color: var(--muted); }
+.stvorec-akcie { display: flex; flex-wrap: wrap; gap: 8px; }
+/* minmax(0, 1fr) aj pri jednom stĺpci: bez neho si stĺpec vypýta šírku podľa
+   najdlhšieho riadku a na telefóne pretiekol o dvadsať pixelov za okraj. */
+.stvorec-telo { display: grid; grid-template-columns: minmax(0, 1fr); gap: 26px clamp(28px, 4vw, 56px); margin-top: 22px; }
+@media (min-width: 820px) {
+  .stvorec-telo { grid-template-columns: minmax(0, 1fr) minmax(0, 384px); align-items: start; }
+}
+body.noc .majitel h4 { margin: 0 0 8px; font: 600 15px/1.3 var(--ui); color: var(--ink); letter-spacing: 0; }
+.majitel .pole + .pole { margin-top: 26px; }
+.majitel .pole input {
+  width: 100%; height: 46px; padding: 0 13px;
+  font: 500 16px/1 var(--ui); color: var(--ink); caret-color: var(--medena);
+  background: rgba(255, 255, 255, .04); border: 1px solid var(--list-line); border-radius: 10px;
+}
+.majitel .pole input::placeholder { color: var(--muted); }
+.majitel .pole input:focus-visible { border-color: var(--medena); outline: none; box-shadow: 0 0 0 3px rgba(242, 100, 60, .22); }
+.majitel .pole-popis { margin: 7px 0 0; font-size: 13px; line-height: 1.5; color: var(--muted); }
+.pole-akcie { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.majitel .btn[disabled] { opacity: .55; pointer-events: none; }
+
+/* Stav poľa. Štvorček pred vetou: plný medený je verejné, prázdny je čaká,
+   svetlý je skryté alebo chyba. Tvar nesie význam, farba ho len podporuje. */
+.majitel .stav { position: relative; margin: 12px 0 0; padding-left: 18px; font-size: 13.5px; line-height: 1.5; color: var(--body); }
+.majitel .stav[hidden] { display: none; }
+.majitel .stav::before { content: ""; position: absolute; left: 0; top: .42em; width: 9px; height: 9px; border: 1.5px solid var(--muted); border-radius: 2px; }
+.majitel .stav-verejne::before { background: var(--medena); border-color: var(--medena); }
+.majitel .stav-caka::before { border-color: var(--medena); }
+.majitel .stav-skryte { color: var(--ink); }
+.majitel .stav-skryte::before { background: var(--ink); border-color: var(--ink); }
+.majitel .stav b { color: var(--ink); font-weight: 600; }
+
+/* Plátno s jemnou mriežkou nad ním, aby bolo vidno, kam bod padne. */
+.platno { position: relative; margin-top: 10px; border: 1px solid var(--list-line); border-radius: 10px; overflow: hidden; background: #17120f; }
+.platno canvas { display: block; width: 100%; aspect-ratio: 1; image-rendering: pixelated; touch-action: none; cursor: crosshair; }
+.platno::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background-image: linear-gradient(to right, rgba(255, 255, 255, .055) 1px, transparent 1px), linear-gradient(to bottom, rgba(255, 255, 255, .055) 1px, transparent 1px);
+  background-size: calc(100% / 32) calc(100% / 32);
+}
+/* Pevna vyska namiesto pomeru stran: stvorcove policko s min-height 44 px si cez
+   pomer stran vypytalo aj sirku 44 px a osem policok sa na telefon nezmestilo. */
+.majitel .paleta { grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 6px; margin-top: 12px; }
+.majitel .paleta button { aspect-ratio: auto; height: 40px; min-width: 0; }
+.majitel .paleta button:focus-visible, .majitel .kreslenie-ovladanie button:focus-visible { outline: 2px solid var(--vyber); outline-offset: 2px; }
+.majitel .kreslenie-ovladanie { margin-top: 10px; }
+.majitel .kreslenie-ovladanie button { height: 44px; font-size: 14px; }
+.majitel .kreslenie-ovladanie button[aria-pressed="true"] { border-color: var(--ink); background: rgba(255, 255, 255, .1); }
+.stvorec-kresba > .btn { width: 100%; justify-content: center; margin-top: 12px; }
+
+.majitel-predplatne { max-width: 620px; margin-top: clamp(26px, 3vw, 40px); padding-top: 20px; border-top: 1px solid var(--line); }
+body.noc .majitel .majitel-predplatne h2 { margin-top: 0; }
+.predplatne + .predplatne { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--line); }
+
+@media (max-width: 720px) {
+  .stvorec-akcie { width: 100%; }
+  .stvorec-akcie .btn, .pole-akcie .btn, .majitel-kredit .btn { flex: 1 1 100%; justify-content: center; min-height: 48px; }
+  .majitel .paleta button { height: 44px; }
+}
+
+/* ── Bez JavaScriptu mapa nie je. Povedzme to rovno. ─────────────────────── */
+.bez-js { margin: 0; padding: 22px; border: 1px solid var(--line); border-radius: 12px; font-family: var(--ui); color: var(--body); }
