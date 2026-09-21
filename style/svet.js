@@ -1597,6 +1597,14 @@
 
   // ── Hľadanie miesta ──────────────────────────────────────────────────────
   var hladaciePole = koren.querySelector('[data-hladanie]');
+  // Tlačidlo „Pick a square“ v hlavičke vedie na túto stránku. Keď už na nej človek je,
+  // nemá sa stránka načítať znova: vráti sa hore a kurzor skočí do hľadania miesta.
+  var ctaHlavicky = document.querySelector('[data-site-cta]');
+  if (ctaHlavicky && hladaciePole) ctaHlavicky.addEventListener('click', function (e) {
+    e.preventDefault();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    hladaciePole.focus({ preventScroll: true });
+  });
   var navrhy = koren.querySelector('[data-navrhy]');
   var index = null, indexSa = false;
   function bezDiakritiky(s) { return s.normalize ? s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase() : s.toLowerCase(); }
