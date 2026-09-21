@@ -79,6 +79,15 @@ export const DICT = {
   'hero.fact.free': { sk: '<b>100</b> rozhovorov/mesiac zadarmo', en: '<b>100</b> conversations/month free' },
   'hero.fact.langs': { sk: 'SK · CS · EN · DE', en: 'SK · CS · EN · DE' },
   'hero.fact.infra': { sk: 'beží na Cloudflare Workers', en: 'runs on Cloudflare Workers' },
+  // ilustrácia nad prvou veľkou sekciou (vyrobená generátorom obrázkov podľa nášho zadania)
+  'ilu.alt': {
+    sk: 'Malý grafitový stolový zvonček s medeným lemom pri podstavci, vedľa neho stojí zložená biela kartička ako strieška.',
+    en: 'A small graphite desk bell with a copper rim around its base, next to a folded white card standing like a tent.',
+  },
+  'ilu.caption': {
+    sk: 'Niekto pri pulte, aj keď vy práve nemôžete.',
+    en: 'Someone at the counter, even when you cannot be.',
+  },
 
   // ── section 01: how it works ────────────────────────────────────────
   's1.h2': { sk: 'Ako to funguje', en: 'How it works' },

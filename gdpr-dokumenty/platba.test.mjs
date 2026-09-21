@@ -17,7 +17,9 @@ import { dirname, resolve } from 'node:path';
 
 const TU = dirname(fileURLToPath(import.meta.url));
 const APP = readFileSync(resolve(TU, 'app.js'), 'utf8');
-const CENA_CENTY = 3900;
+/* Zoznam súm, ktoré balík odomykajú, sa číta zo zdroja app.js, nie sa sem
+   prepisuje ručne: test má byť zrkadlo kódu, nie druhý názor. */
+const CENY_CENTY = JSON.parse((APP.match(/const CENY_CENTY = (\[[^\]]*\]);/) || [, 'null'])[1]);
 
 /** Zdroj jednej pomenovanej funkcie z app.js aj s telom. */
 function zdrojFunkcie(meno) {
@@ -39,21 +41,28 @@ const PODMIENKA = (() => {
   const koniec = APP.indexOf(') {', od);
   return APP.slice(od + 4, koniec);
 })();
-const brana = new Function('st', 'testRezim', 'CENA_CENTY', `
+const brana = new Function('st', 'testRezim', 'CENY_CENTY', `
   const zaklad = st && typeof st.amount_subtotal === 'number' ? st.amount_subtotal : st && st.amount_total;
   return !!(${PODMIENKA});
 `);
-const prijme = (st, jeTest = false) => brana(st, () => jeTest, CENA_CENTY);
+const prijme = (st, jeTest = false) => brana(st, () => jeTest, CENY_CENTY);
 
-test('cena v app.js je presne tá z registra ops/stripe/gdpr-39-odkazy.json', () => {
-  assert.ok(APP.includes('const CENA_CENTY = 3900;'), 'cena balíka sa zmenila');
+/* Zoznam smie obsahovať len cenu, ktorá je dnes na stránke (39 € z registra
+   ops/stripe/gdpr-39-odkazy.json), a cenu 49 €, ktorá je pripravená na zmenu
+   z 22. 9. 2026 (ops/stripe/zmena-cien-2026-09-22.md). Každé ďalšie číslo by
+   znamenalo, že balík odomyká niečo, čo nie je tento balík. */
+test('zoznam cien v app.js drží cenu z registra a nepúšťa nič navyše', () => {
+  assert.deepEqual(CENY_CENTY, [3900, 4900], 'zoznam cien balíka sa zmenil');
+  assert.ok(APP.includes('const CENA_CENTY = CENY_CENTY[0];'), 'cena pre meranie nie je prvá zo zoznamu');
 });
 
-test('živá platba na presných 39 € odomkne, iná suma nie', () => {
+test('živá platba na cenu zo zoznamu odomkne, iná suma nie', () => {
   const ziva = (suma) => prijme({ paid: true, livemode: true, currency: 'eur', amount_subtotal: suma });
   assert.equal(ziva(3900), true);
+  assert.equal(ziva(4900), true, 'pripravená cena 49 € musí odomknúť hneď, ako ju Stripe vydá');
   assert.equal(ziva(3899), false);
   assert.equal(ziva(3901), false);
+  assert.equal(ziva(4901), false);
   // Vedľajší účinok starého ">=": zaplatená kontrola za 149 € odomkla aj GDPR.
   assert.equal(ziva(14900), false);
   assert.equal(ziva(2900), false, 'oprava pain.001 nie je GDPR balík');
