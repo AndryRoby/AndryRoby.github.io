@@ -39,6 +39,7 @@
 <link rel="stylesheet" href="/style/paper.css?v=9731ac14">
 <script src="/style/prepinac.js?v=668e98c9" defer></script>
 <script type="module" src="/efaktura/app.js?v=fa99a4d5"></script>
+<script src="/efaktura/efaktura-v4.js?v=3d58adc9" defer></script>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -159,199 +160,15 @@
   ]
 }
 </script>
-<style>
-  section[id] { scroll-margin-top:14px; }
-  [hidden] { display:none !important; }
-  .hero { grid-template-columns:minmax(0,7fr) minmax(0,5fr); align-items:center; padding-block:clamp(30px,5vh,64px); }
-  @media (max-width:960px) { .hero { grid-template-columns:minmax(0,1fr); } }
-  .hero .lead { max-width:56ch; }
-  /* Pri 1280 sa nadpis lamal v strede slova; mensi stupen ho zlomi medzi slovami. */
-  body.noc .hero h1, .hero h1 { font-size:clamp(34px,3.6vw,50px); line-height:1.08; }
-  /* Cena a spustenie nastroja nad zahybom: na 390 px bol vstup nastroja az na
-     y=1824 pri okne 844 px, teda dve obrazovky pod cenou. Preto je tu kratky
-     riadok s cenou a tri tlacidla, ktore spustaju ten isty nastroj nizsie. */
-  .cena-hore { font-family:var(--ui); font-size:15px; color:var(--body); margin:14px 0 16px; max-width:52ch; }
-  .start-nastroj { display:flex; flex-wrap:wrap; gap:10px; margin:0 0 26px; }
-  .start-nastroj .btn { height:42px; }
-  .cena { border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:var(--radius); background:var(--card); padding:clamp(20px,2vw,30px); min-width:0; }
-  .cena .suma { font:700 clamp(34px,3.4vw,46px)/1 var(--display); color:var(--ink); letter-spacing:-.02em; display:block; }
-  .cena .zaco { font-family:var(--ui); font-size:14px; color:var(--body); margin:8px 0 16px; }
-  .cena ul { list-style:none; margin:0 0 18px; padding:0; display:flex; flex-direction:column; gap:9px; font-family:var(--ui); font-size:14px; color:var(--body); }
-  .cena li { display:flex; gap:10px; }
-  .cena li::before { content:""; width:6px; height:6px; border-radius:50%; background:var(--accent); flex:none; margin-top:8px; }
-  .cena .btn { width:100%; justify-content:center; }
-  .cena .pomoc { margin-top:14px; }
-  .pomoc { font-family:var(--ui); font-size:12.5px; color:var(--muted); margin:2px 0 8px; line-height:1.5; max-width:62ch; }
-  .sub { color:var(--body); max-width:68ch; margin:0 0 24px; }
-
-  .zalozky { display:flex; flex-wrap:wrap; gap:6px; margin:0 0 20px; }
-  .zalozka { font:500 13.5px/1.2 var(--ui); color:var(--muted); background:transparent; border:1px solid var(--line); border-radius:999px; padding:9px 15px; cursor:pointer; }
-  .zalozka:hover { color:var(--ink); border-color:var(--ink); }
-  .zalozka.aktivna { color:var(--ink); border-color:var(--accent); background:rgba(242,100,60,.10); }
-  .panel h2 { margin-bottom:8px; }
-  .panel > .sub { margin-bottom:20px; }
-
-  .vstup { border:1px solid var(--line); border-radius:var(--radius); background:var(--card); padding:clamp(16px,1.8vw,24px); margin:0 0 22px; }
-  .dropzone { border:1px dashed var(--line); border-radius:12px; padding:26px 18px; text-align:center; cursor:pointer; font-family:var(--ui); font-size:14.5px; color:var(--body); }
-  .dropzone:hover, .dropzone.nad { border-color:var(--accent); color:var(--ink); background:rgba(242,100,60,.06); }
-  .dropzone b { color:var(--ink); }
-  .vstup-akcie { display:flex; flex-wrap:wrap; gap:10px; margin:14px 0 0; }
-  .vstup .btn { height:38px; padding:0 15px; font-size:13.5px; }
-  .vstup textarea { width:100%; box-sizing:border-box; min-height:110px; margin:14px 0 0; font:13px/1.5 var(--mono); color:var(--ink); background:var(--card-plna,#161311); border:1px solid var(--line); border-radius:10px; padding:10px 12px; resize:vertical; }
-  .vstup textarea:focus { outline:2px solid var(--accent); outline-offset:-1px; }
-  .vstup-stav { font-family:var(--ui); font-size:13px; color:var(--muted); margin:12px 0 0; min-height:1.3em; }
-
-  .sumar-stav { font:600 clamp(17px,1.4vw,20px)/1.35 var(--display); margin:0 0 10px; }
-  .sumar-stav.je-ok { color:var(--ok); }
-  .sumar-stav.je-chyba { color:var(--accent-light); }
-  .sumar-meta { display:flex; flex-wrap:wrap; gap:8px 20px; font-family:var(--ui); font-size:13px; color:var(--muted); margin:0 0 6px; }
-  .akcie { display:flex; gap:10px; flex-wrap:wrap; margin:14px 0 22px; }
-  .akcie .btn { height:38px; padding:0 15px; font-size:13.5px; }
-  .nalez { border-top:1px solid var(--line); padding:16px 0; }
-  .nalez:last-child { border-bottom:1px solid var(--line); }
-  .nalez-hlava { display:flex; align-items:center; gap:10px; margin:0 0 6px; }
-  .nalez-znacka { font:600 11px/1 var(--ui); letter-spacing:.10em; text-transform:uppercase; padding:5px 9px; border-radius:999px; border:1px solid var(--line); color:var(--muted); }
-  .nalez-chyba .nalez-znacka { color:var(--accent-light); border-color:var(--accent); }
-  .nalez-varovanie .nalez-znacka { color:#e8c07a; border-color:rgba(232,192,122,.5); }
-  .nalez-informacia .nalez-znacka { color:var(--ok); border-color:rgba(94,207,154,.5); }
-  .nalez-kod { font:600 13px/1 var(--mono); color:var(--ink); }
-  .nalez-veta { margin:0 0 8px; max-width:76ch; font-size:15px; }
-  .nalez-meta { font-family:var(--ui); font-size:12.5px; color:var(--muted); margin:0 0 3px; max-width:none; overflow-wrap:anywhere; }
-  .nalez-meta code { font:12px/1.5 var(--mono); color:var(--body); }
-  .nalez-original { border:none; padding:8px 0 0; }
-  .nalez-original summary { font:500 13px/1.3 var(--ui); color:var(--muted); }
-  .nalez-original summary:hover { color:var(--ink); }
-  .nalez-original p { font:13px/1.55 var(--mono); color:var(--body); margin:8px 0 0; max-width:80ch; }
-
-  .doklad-obal { background:#f6f4ef; color:#1b1a17; border-radius:var(--radius); padding:clamp(20px,2.6vw,36px); box-shadow:0 20px 60px rgba(0,0,0,.35); overflow-x:auto; }
-  .doklad-obal:empty { display:none; }
-  .efa-doklad { font:15px/1.55 Georgia,"Times New Roman",serif; }
-  body.noc .efa-doklad h2 { font:700 23px/1.2 var(--display); color:#111; margin:0 0 12px; letter-spacing:-.01em; }
-  body.noc .efa-doklad h3 { font:600 15px/1.3 var(--display); color:#111; margin:22px 0 8px; text-transform:uppercase; letter-spacing:.06em; }
-  body.noc .efa-doklad h2::before, body.noc .efa-doklad h2::after, body.noc .efa-doklad h3::before, body.noc .efa-doklad h3::after { display:none; }
-  body.noc .efa-doklad p, body.noc .efa-doklad td, body.noc .efa-doklad li { color:#1b1a17; }
-  body.noc .efa-doklad th { color:#111; }
-  body.noc .efa-doklad b, body.noc .efa-doklad strong { color:#111; }
-  body.noc .efa-doklad p, .efa-doklad p { margin:0 0 5px; max-width:none; }
-  .efa-udaj { display:flex; flex-wrap:wrap; gap:2px 10px; font-size:14px; }
-  .efa-udaj .efa-popis { color:#57534a; min-width:150px; flex:0 0 auto; }
-  .efa-udaj .efa-hodnota { min-width:0; overflow-wrap:anywhere; word-break:break-word; }
-  .efa-strany { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(240px,100%),1fr)); gap:18px 30px; margin:20px 0 0; }
-  .efa-nazov { font-weight:700; }
-  .efa-tabulka { width:100%; border-collapse:collapse; font-size:13.5px; margin:6px 0 10px; }
-  .efa-tabulka th, .efa-tabulka td { border:1px solid #bbb6aa; padding:6px 8px; text-align:left; vertical-align:top; }
-  .efa-tabulka th { background:#e9e5dc; font:600 12px/1.3 var(--ui); letter-spacing:.03em; text-transform:none; }
-  /* Doklad je dokument, nie responzivna tabulka. Paper.css pod 600 px meni bunky
-     na bloky s popiskom z data-th; nahlad faktury taky popisok nema, takze by
-     z tabulky ostali holé cisla. Vraciame ju na tabulku, ktora scrolluje vo
-     vnutri .doklad-obal (ten ma overflow-x:auto). */
-  @media (max-width:600px) {
-    .efa-doklad .efa-tabulka { display:table; width:100%; min-width:520px; }
-    .efa-doklad .efa-tabulka thead { display:table-header-group; }
-    .efa-doklad .efa-tabulka tbody { display:table-row-group; }
-    .efa-doklad .efa-tabulka tr { display:table-row; background:transparent; border:0; border-radius:0; margin:0; padding:0; }
-    .efa-doklad .efa-tabulka th, .efa-doklad .efa-tabulka td { display:table-cell; width:auto; border:1px solid #bbb6aa; padding:6px 8px; }
-    .efa-doklad .efa-tabulka td::before { content:none; display:none; }
-  }
-  .efa-uhrada { display:flex; gap:10px; font-size:17px; margin-top:8px; }
-  .efa-uhrada .efa-popis { min-width:150px; color:#57534a; }
-  /* Doklad je samostatny dokument vo vnutri stranky: globalne pravidla pre
-     header, footer a section sa nan nesmu vztahovat. */
-  body.noc .efa-doklad section, .efa-doklad section { padding:0; border-top:none; position:static; }
-  body.noc .efa-doklad h3 + p, body.noc .efa-doklad h3 + div { margin-top:6px; }
-  body.noc .efa-doklad .efa-hlavicka { position:static; z-index:auto; background:transparent; backdrop-filter:none; border-bottom:1px solid #ddd8cc; padding:0 0 14px; margin:0 0 6px; }
-  .efa-doklad .efa-pata { position:static; background:transparent; border-top:1px solid #ddd8cc; padding:12px 0 0; margin:22px 0 0; color:#666; font-family:var(--ui); font-size:12px; }
-  .efa-doklad .efa-polozky, .efa-doklad .efa-rozpis, .efa-doklad .efa-sucty,
-  .efa-doklad .efa-platba, .efa-doklad .efa-poznamky, .efa-doklad .efa-prilohy,
-  .efa-doklad .efa-miesto { margin:22px 0 0; }
-  .efa-pata .efa-popis { min-width:150px; }
-  .efa-chyba { color:#8f2e17; }
-  .nahlad-hlava { display:flex; justify-content:space-between; gap:12px; align-items:center; flex-wrap:wrap; margin:0 0 12px; font-family:var(--ui); font-size:13px; color:var(--muted); }
-  .nahlad-hlava .btn { height:38px; padding:0 15px; font-size:13.5px; }
-
-  .dielna { display:grid; grid-template-columns:minmax(0,5fr) minmax(0,7fr); gap:32px var(--gap); align-items:start; }
-  @media (max-width:899px) { .dielna { grid-template-columns:minmax(0,1fr); } }
-  #nahlad-zivy { scroll-margin-top:calc(var(--hlavicka) + 12px); }
-  @media (min-width:900px) {
-    /* Cely pravy stlpec (sucty, tlacidlo PDF, nahlad, platba) je sticky a scrolluje vo vlastnom ramci (Andrej 11. 9.). */
-    .dielna > .stlpec-nahlad { position:sticky; top:calc(var(--hlavicka) + 12px); max-height:calc(100vh - var(--hlavicka) - 24px); overflow:auto; overscroll-behavior:contain; padding-right:4px; }
-  }
-  .zobrazit-nahlad { display:none; margin:0 0 16px; }
-  @media (max-width:899px) { .zobrazit-nahlad { display:inline-flex; } }
-  fieldset { border:1px solid var(--line); border-radius:var(--radius); padding:14px 16px 10px; margin:0 0 14px; min-width:0; }
-  legend { font:600 12px/1 var(--ui); letter-spacing:.09em; text-transform:uppercase; color:var(--accent); padding:0 6px; }
-  .pole { display:grid; grid-template-columns:minmax(0,170px) minmax(0,1fr); gap:6px 12px; align-items:center; margin:0 0 8px; font-family:var(--ui); font-size:13.5px; color:var(--body); }
-  @media (max-width:560px) { .pole { grid-template-columns:minmax(0,1fr); } }
-  .pole-napoveda { grid-column:1/-1; color:var(--muted); font-size:12px; line-height:1.45; margin:2px 0 0; }
-  .poznamka-sadzba { color:var(--muted); font-family:var(--ui); font-size:12.5px; line-height:1.5; margin:6px 0 0; max-width:60ch; }
-  .pole input, .pole select { width:100%; box-sizing:border-box; font:14px/1.4 var(--ui); color:var(--ink); background:var(--card-plna,#161311); border:1px solid var(--line); border-radius:8px; padding:8px 10px; }
-  .pole input:focus, .pole select:focus { outline:2px solid var(--accent); outline-offset:-1px; }
-  .formular-pata { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin:10px 0 4px; }
-  .formular-pata .btn { height:34px; padding:0 13px; font-size:12.5px; }
-  .polozka { border-top:1px solid var(--line); padding:12px 0 4px; position:relative; }
-  .polozka:first-child { border-top:none; padding-top:2px; }
-  .polozka-cislo { font:500 11px/1 var(--ui); letter-spacing:.12em; color:var(--accent); margin:0 0 8px; }
-  .polozka-zmazat { height:30px; padding:0 11px; font-size:12px; margin:2px 0 8px; }
-  .sucty { display:flex; flex-wrap:wrap; gap:6px 22px; font-family:var(--ui); font-size:14px; color:var(--body); margin:0 0 14px; }
-  .sucty b { color:var(--muted); font-weight:500; }
-  .brana { border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:var(--radius); background:var(--card); padding:clamp(18px,2vw,26px); margin:22px 0 0; }
-  .brana h3 { margin-bottom:6px; }
-  /* Kupa hned pod vysledkom bezplatnej kontroly: to iste tlacidlo ako dole,
-     len s vlastnou udalostou kupa_click_vysledok, aby bolo vidiet, kde sa klika. */
-  .kupa-vysledok { border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:var(--radius); background:var(--card); padding:16px 18px; margin:0 0 18px; }
-  .kupa-vysledok .pomoc { margin:0 0 4px; }
-  .kupa-vysledok .cta { margin:12px 0 0; }
-  .odkazy-pravne { margin-top:14px; }
-  /* Dlhy odsek o predajcovi a odstupeni je pod tlacidlami zabaleny; odkazy AGB a Widerruf ostavaju nad nim. */
-  details.pravne { margin:2px 0 0; }
-  details.pravne summary { cursor:pointer; font:500 12.5px/1.5 var(--ui); color:var(--muted); }
-  details.pravne summary:hover { color:var(--ink); }
-  details.pravne .pomoc { margin:8px 0 0; }
-  .brana .cta { margin:16px 0 0; }
-  .brana .btn { height:42px; }
-  .odomknute { border:1px solid var(--ok); border-radius:12px; background:rgba(94,207,154,.10); padding:12px 15px; margin:20px 0 0; font-family:var(--ui); font-size:13.5px; color:var(--body); }
-  .stav-platby { font-family:var(--ui); font-size:14px; color:var(--body); min-height:1.4em; margin:12px 0 0; max-width:70ch; }
-  .stav-platby b { color:var(--ok); }
-  .stav-platby .btn { height:32px; padding:0 12px; font-size:12.5px; margin-left:8px; vertical-align:middle; }
-  .chyby-generatora { margin:18px 0 0; }
-  .chyby-generatora .poznamka { font-family:var(--ui); font-size:14px; color:var(--accent-light); margin:0 0 10px; }
-  .chyby-generatora .poznamka.je-ok { color:var(--ok); }
-  .poznamka { font-family:var(--ui); font-size:14px; color:var(--muted); }
-
-  details.otazka { border-top:1px solid var(--line); padding:16px 0; }
-  details.otazka:last-of-type { border-bottom:1px solid var(--line); }
-  details.otazka summary { cursor:pointer; font:600 clamp(16.5px,1.3vw,19px)/1.35 var(--display); color:var(--ink); list-style:none; display:block; position:relative; padding-right:26px; }
-  details.otazka summary::-webkit-details-marker { display:none; }
-  details.otazka summary::after { content:"+"; color:var(--accent); font-family:var(--ui); position:absolute; right:0; top:0; }
-  details.otazka[open] summary::after { content:"\2013"; }
-  details.otazka p { margin:10px 0 0; max-width:72ch; }
-  .zdroje { font-family:var(--ui); font-size:13.5px; color:var(--body); line-height:1.6; }
-  .zdroje li { margin:0 0 6px; }
-  noscript p { font-family:var(--ui); color:var(--accent-light); }
-
-  #tlac { display:none; }
-  @media print {
-    @page { size:A4; margin:14mm; }
-    body { background:#fff; }
-    body.tlaci > *:not(#tlac) { display:none !important; }
-    body.tlaci #tlac { display:block !important; background:#fff; color:#000; }
-    body.tlaci #tlac .efa-doklad { font:11.5pt/1.45 Georgia,"Times New Roman",serif; color:#000; }
-    body.tlaci #tlac h2 { font-size:17pt; color:#000; }
-    body.tlaci #tlac h3 { font-size:11pt; color:#000; text-transform:uppercase; letter-spacing:.05em; margin:14pt 0 5pt; }
-    body.tlaci #tlac .efa-tabulka { font-size:9.5pt; page-break-inside:auto; }
-    body.tlaci #tlac .efa-tabulka th { background:#eee; }
-    body.tlaci #tlac .efa-strany { display:grid; grid-template-columns:1fr 1fr; gap:10mm; }
-    body.tlaci #tlac section { page-break-inside:avoid; }
-  }
-</style>
 <noscript><style>
   .r, .w { opacity:1 !important; transform:none !important; filter:none !important; }
   .rule { transform:scaleX(1) !important; }
 </style></noscript>
 <link rel="stylesheet" href="/efaktura/davka.css?v=dad7031a">
 <link rel="stylesheet" href="/efaktura/dopyt-opakovanie.css?v=9292da89">
+<link rel="stylesheet" href="/efaktura/efaktura-v4.css?v=3e8b6794">
 </head>
-<body class="noc">
+<body class="noc efv4">
 <div class="wash" aria-hidden="true"><i></i><i></i></div>
 <a class="skip site-skip" href="#arling-obsah" data-site-label="skip">Zum Inhalt springen</a>
 <header class="site-header">
@@ -370,52 +187,58 @@
 </header>
 
 <main id="arling-obsah" tabindex="-1">
-  <div class="wrap hero" id="hero">
-    <div>
-      <p class="kicker">XRechnung nach EN 16931</p>
-      <h1><span class="l">XRechnung erstellen und prüfen.</span><span class="l">Im Browser, ohne Software.</span></h1>
-      <p class="cena-hore">2,90 € zzgl. MwSt. für das XML einer Rechnung, 9,90 € zzgl. MwSt. für 30 Tage ohne Begrenzung der Anzahl. Prüfung und Vorschau kostenlos, ohne Konto.</p>
-      <div class="start-nastroj">
-        <button type="button" class="btn btn-solid" id="hero-vzor">Beispiel laden und prüfen</button>
-        <button type="button" class="btn btn-line" id="hero-subor">Eigene Datei prüfen</button>
-        <a class="btn btn-line" id="hero-vytvorit" href="#vytvorit">XRechnung erstellen</a>
-      </div>
-      <p class="lead r d3">Seit dem 1. Januar 2025 müssen Unternehmen in Deutschland E-Rechnungen im B2B empfangen können, ab 2028 müssen alle sie auch versenden. Hier prüfen Sie eine Datei nach EN 16931, Peppol BIS Billing 3.0 und XRechnung, sehen sie als gewöhnlichen Beleg und erstellen eine neue ohne Buchhaltungssoftware. Die Datei wird in Ihrem Browser gelesen und nirgendwo hochgeladen.</p>
-      <ul class="facts proof r d5">
-        <li>Prüfung und Vorschau <b>kostenlos</b>, ohne Konto, ohne Limit</li>
-        <li>Regeln aus EN 16931, Peppol und <b>XRechnung 3.x</b></li>
-        <li>eigene Meldungen auf Deutsch, mit <b>Pfad zum Element</b></li>
-      </ul>
-    </div>
-    <div class="cena r d2">
-      <span class="suma">2,90 € zzgl. MwSt.</span>
-      <p class="zaco">für den XML-Download einer Rechnung, oder 9,90 € zzgl. MwSt. für 30 Tage ohne Begrenzung der Rechnungsanzahl. Prüfung und Vorschau sind kostenlos.</p>
-      <p class="pomoc dan-platby">Preise zuzüglich gegebenenfalls anfallender Steuern. Stripe berechnet die Steuer anhand der Kundendaten und zeigt den Gesamtbetrag vor der Zahlung.</p>
-      <ul>
-        <li>Formular ausfüllen und den Beleg live sehen</li>
-        <li>das XML entsteht im Browser, nichts geht an einen Server</li>
-        <li>vor dem Download läuft unsere eigene Prüfung</li>
-      </ul>
-      <a class="btn btn-solid" href="#vytvorit">Zur Rechnungserstellung</a>
-      <p class="pomoc">Verkäufer: ARLing s. r. o., Handelsregister-Nr. 56583486, Bratislava. Die Zahlung wickelt Stripe ab.</p>
-    </div>
-  </div>
-
-  <section id="nastroj" class="deep">
+  <section class="ef-hero" id="hero" data-tab="kontrola" data-vysledok="0">
     <div class="wrap">
-      <p class="kicker">Werkzeug</p>
-      <div class="zalozky" role="tablist" id="zalozky">
+      <div class="ef-hero-text">
+        <h1><span class="l">XRechnung prüfen und erstellen.</span> <span class="l">Fehler finden, bevor es der Empfänger tut.</span></h1>
+        <p class="lead r d3">XML-Datei hineinziehen und sofort sehen, welche Regel aus EN 16931, XRechnung oder Peppol verletzt ist und an welcher Stelle. Kostenlos, ohne Konto, die Datei verlässt Ihren Browser nicht.</p>
+      </div>
+
+      <div class="ef-mriezka" id="nastroj">
+        <div class="ef-prepinac">
+          <div class="zalozky" role="tablist" id="zalozky">
         <button type="button" class="zalozka aktivna" data-tab="kontrola" role="tab" aria-selected="true">Prüfung</button>
         <button type="button" class="zalozka" data-tab="nahlad" role="tab" aria-selected="false">Vorschau</button>
         <button type="button" class="zalozka" data-tab="vytvorit" role="tab" aria-selected="false">Erstellen</button>
       </div>
-      <noscript><p>Das Werkzeug braucht JavaScript: die Datei wird direkt in Ihrem Browser gelesen und geprüft, nicht auf einem Server.</p></noscript>
+          <a class="ef-dalej" id="hero-vytvorit" href="#vytvorit" data-umami-event="efaktura_hero_vytvorit">Noch keine Datei? Rechnung im Formular erstellen</a>
+        </div>
+        <noscript><p>Das Werkzeug braucht JavaScript: die Datei wird direkt in Ihrem Browser gelesen und geprüft, nicht auf einem Server.</p></noscript>
 
-      <section class="panel" id="panel-kontrola">
-        <h2 class="r">E-Rechnung prüfen</h2>
-        <p class="sub r d1">Laden Sie eine UBL-2.1-Datei (Invoice oder CreditNote) und wir sagen Ihnen, was daran nicht stimmt. Zu jedem Befund sehen Sie den Regelcode, einen Satz auf Deutsch, den Pfad zum Element und unter einem Aufklapp-Link den englischen Originalwortlaut der Regel. Anhand des Feldes CustomizationID wählen wir selbst aus, ob die Regeln von EN 16931, Peppol BIS Billing 3.0 oder XRechnung gelten.</p>
-        <div class="vstup-slot"></div>
-        <div id="sumar"></div>
+        <section class="panel" id="panel-kontrola">
+          <div class="ef-lavy">
+            <div class="vstup-slot">
+              <!-- Ein Eingabeblock für Prüfung und Vorschau; das Skript verschiebt ihn in den aktiven Tab. -->
+              <div class="vstup" id="vstup">
+                <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Ziehen Sie die XML-Datei hierher oder klicken Sie, um sie auszuwählen" data-umami-event="efaktura_hero_vstup" data-umami-event-sposob="dropzone">
+                  <b><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M5 20h14"/></svg>Ziehen Sie die XML-Datei hierher</b><span>oder klicken Sie und wählen Sie sie vom Rechner</span>
+                </div>
+                <input type="file" id="subor" accept=".xml,text/xml,application/xml" hidden>
+                <div class="vstup-akcie">
+                  <button type="button" class="btn btn-solid" id="vybrat" data-umami-event="efaktura_hero_vstup" data-umami-event-sposob="subor">Datei wählen</button>
+                  <button type="button" class="btn btn-line" id="vzor" data-umami-event="efaktura_hero_vstup" data-umami-event-sposob="vzor">Beispiel laden</button>
+                </div>
+                <label class="pomoc ef-xml-label" for="xml">Oder fügen Sie hier XML ein:</label>
+                <textarea id="xml" spellcheck="false" placeholder="&lt;Invoice xmlns=&quot;urn:oasis:names:specification:ubl:schema:xsd:Invoice-2&quot;&gt; ..."></textarea>
+                <div class="ef-vlozene">
+                  <button type="button" class="btn btn-line" id="spustit" data-umami-event="efaktura_hero_vstup" data-umami-event-sposob="vlozene">Eingefügtes XML prüfen</button>
+                  <p class="vstup-stav" id="vstup-stav" aria-live="polite"></p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="ef-pravy">
+            <div class="ef-lampa" aria-hidden="true"></div>
+            <div class="ef-ramec">
+              <div class="ef-ramec-pas"><i class="ef-bodka"></i><i class="ef-bodka"></i><i class="ef-bodka"></i><h2>E-Rechnung prüfen</h2><span class="ef-stitok ef-len-ukazka">Beispiel</span></div>
+              <div class="ef-ramec-telo">
+                <div class="ef-ukazka" role="group" aria-label="Beispiel für ein Prüfergebnis">
+            <p class="sumar-stav je-chyba">Wir haben 2 Fehler gefunden. Bitte beheben Sie sie und prüfen Sie erneut.</p>
+            <p class="sumar-meta"><span>Profil: Peppol BIS Billing 3.0</span><span>Belegart: Invoice</span><span>2 Fehler</span><span>0 Warnungen</span><span>0 Hinweise</span></p>
+            <p class="sumar-meta sumar-pravidla">Für dieses Profil haben wir 289 Regeln ausgewertet.</p>
+            <div class="ef-ukazka-nalezy"><article class="nalez nalez-chyba"><p class="nalez-hlava"><span class="nalez-znacka">Fehler</span><code class="nalez-kod">BR-CO-15</code></p><p class="nalez-veta">Der Gesamtbetrag mit Umsatzsteuer (BT-112) soll 450.00 plus 103.50 sein, also 553.50. In der Datei steht 553.51.</p><p class="nalez-meta"><span class="nalez-popis">Wert in der Datei: </span><code>553.51</code></p><p class="nalez-meta"><span class="nalez-popis">Pfad zum Element: </span><code>/Invoice/cac:LegalMonetaryTotal/cbc:TaxInclusiveAmount</code></p></article><article class="nalez nalez-chyba"><p class="nalez-hlava"><span class="nalez-znacka">Fehler</span><code class="nalez-kod">ARL-IBAN</code></p><p class="nalez-veta">Die IBAN "SK3112000000198742637542" besteht die Modulo-97-Prüfung nach ISO 13616 nicht. Prüfen Sie die Kontonummer auf Tippfehler.</p><p class="nalez-meta"><span class="nalez-popis">Wert in der Datei: </span><code>SK3112000000198742637542</code></p><p class="nalez-meta"><span class="nalez-popis">Pfad zum Element: </span><code>/Invoice/cac:PaymentMeans/cac:PayeeFinancialAccount/cbc:ID</code></p></article></div>
+                </div>
+                <div id="sumar"></div>
 <!-- A096-DOPYT-START -->
 <aside class="ef-opak" id="opakovanie-cta" aria-labelledby="opakovanie-title" hidden>
   <h3 id="opakovanie-title">Prüfen Sie solche Dateien regelmäßig?</h3><p>Wenn sich dieselbe Arbeit wiederholt, beschreiben Sie Ihren Ablauf. Wir prüfen, ob wir eine konkrete Lösung für Ihre Software anbieten können.</p>
@@ -436,31 +259,45 @@
   </div>
 </aside>
 <!-- A096-DOPYT-END -->
-        <div class="kupa-vysledok" id="kupa-vysledok-blok" hidden>
+                <div class="kupa-vysledok" id="kupa-vysledok-blok" hidden>
           <p class="pomoc">Prüfung und Vorschau bleiben kostenlos. Bezahlt wird nur der XML-Download einer Rechnung, die Sie hier im Formular erstellen.</p>
           <div class="cta">
             <button type="button" class="btn btn-solid" id="kupa-vysledok" data-link="https://buy.stripe.com/9B65kx1fA8C7aoW7C54ko0m" data-link-test="https://buy.stripe.com/test_fZueV75vQ8C740y8G94ko0e">Eine Rechnung für 2,90 € zzgl. MwSt. kaufen</button>
           </div>
         </div>
-        <div class="akcie" id="akcie" hidden>
+                <div class="akcie" id="akcie" hidden>
           <button type="button" class="btn btn-line" id="protokol">Protokoll herunterladen</button>
           <button type="button" class="btn btn-line" id="kopirovat">Kopieren</button>
         </div>
-        <div id="nalezy"></div>
-      </section>
+                <div id="nalezy"></div>
+              </div>
+              <span class="ef-beam" aria-hidden="true"></span>
+            </div>
+            <p class="ef-podpis ef-len-ukazka">Beispiel: unsere Musterrechnung mit zwei Fehlern, die wir absichtlich eingebaut haben. Sobald Sie eine Datei laden, steht hier Ihr Ergebnis.</p>
+          </div>
+        </section>
 
-      <section class="panel" id="panel-nahlad" hidden>
-        <h2 class="r">Vorschau der E-Rechnung als Beleg</h2>
-        <p class="sub r d1">Dieselbe XML-Datei sehen Sie als gewöhnliche Rechnung: wer an wen, wofür, wann, wie viel und wohin zu zahlen. Nützlich, wenn eine Datei vom Lieferanten kommt und Sie sie ohne Buchhaltungssoftware lesen müssen. Mit der Schaltfläche unten speichern Sie sie als PDF im Format A4.</p>
-        <div class="vstup-slot"></div>
-        <div class="nahlad-hlava">
+        <section class="panel" id="panel-nahlad" hidden>
+          <div class="ef-lavy">
+            <p class="sub r d1">Dieselbe XML-Datei sehen Sie als gewöhnliche Rechnung: wer an wen, wofür, wann, wie viel und wohin zu zahlen. Nützlich, wenn eine Datei vom Lieferanten kommt und Sie sie ohne Buchhaltungssoftware lesen müssen. Mit der Schaltfläche unten speichern Sie sie als PDF im Format A4.</p>
+            <div class="vstup-slot"></div>
+          </div>
+          <div class="ef-pravy">
+            <div class="ef-lampa" aria-hidden="true"></div>
+            <div class="ef-ramec">
+              <div class="ef-ramec-pas"><i class="ef-bodka"></i><i class="ef-bodka"></i><i class="ef-bodka"></i><h2>Vorschau der E-Rechnung als Beleg</h2></div>
+              <div class="ef-ramec-telo">
+                <div class="nahlad-hlava">
           <span id="nahlad-stav">Laden Sie eine Datei, dann erscheint der Beleg hier.</span>
           <button type="button" class="btn btn-line" id="pdf" hidden>Als PDF speichern</button>
         </div>
-        <div class="doklad-obal" id="doklad"></div>
-      </section>
+                <div class="doklad-obal" id="doklad"></div>
+              </div>
+            </div>
+          </div>
+        </section>
 
-      <section class="panel" id="panel-vytvorit" hidden>
+        <section class="panel" id="panel-vytvorit" hidden>
         <h2 class="r">E-Rechnung ohne Buchhaltungssoftware erstellen</h2>
         <p class="sub r d1">Tragen Sie Verkäufer, Käufer, Nummern und Positionen ein. Rechts entsteht laufend der Beleg und daraus das XML in UBL 2.1. Verkäufer und Käufer können Sie in einem Adressbuch speichern, das nur in Ihrem Browser bleibt. Vor dem Download läuft über das erzeugte XML dieselbe Prüfung wie im ersten Tab; hat es einen Fehler, laden wir es nicht herunter.</p>
         <a class="btn btn-line zobrazit-nahlad" href="#nahlad-zivy">Vorschau anzeigen</a>
@@ -498,50 +335,107 @@
         </div>
       </section>
 
-      <!-- Ein Eingabeblock für Prüfung und Vorschau; das Skript verschiebt ihn in den aktiven Tab. -->
-      <div class="vstup" id="vstup">
-        <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Ziehen Sie die XML-Datei hierher oder klicken Sie, um sie auszuwählen">
-          <b>Ziehen Sie die XML-Datei hierher</b><br>oder klicken Sie und wählen Sie sie vom Rechner
+        <div class="ef-ceny">
+          <ul aria-label="Preise"><li class="ef-c-zadarmo"><b>0 €</b> Prüfung und Vorschau, ohne Konto</li><li class="ef-c-jedna"><b>2,90 € zzgl. MwSt.</b> XML einer Rechnung</li><li class="ef-c-30dni"><b>9,90 € zzgl. MwSt.</b> 30 Tage unbegrenzt</li></ul>
+          <a href="#cennik" data-umami-event="efaktura_cena_klik" data-umami-event-miesto="hero">Preise im Detail</a>
         </div>
-        <input type="file" id="subor" accept=".xml,text/xml,application/xml" hidden>
-        <div class="vstup-akcie">
-          <button type="button" class="btn btn-line" id="vybrat">Datei wählen</button>
-          <button type="button" class="btn btn-line" id="vzor">Beispiel laden</button>
-          <button type="button" class="btn btn-solid" id="spustit">Eingefügtes XML prüfen</button>
-        </div>
-        <label class="pomoc" for="xml" style="display:block;margin-top:14px">Oder fügen Sie hier XML ein:</label>
-        <textarea id="xml" spellcheck="false" placeholder="&lt;Invoice xmlns=&quot;urn:oasis:names:specification:ubl:schema:xsd:Invoice-2&quot;&gt; ..."></textarea>
-        <p class="vstup-stav" id="vstup-stav" aria-live="polite"></p>
       </div>
     </div>
   </section>
 
-  <section id="co-kontrolujeme" class="deep">
+  <section class="ef-normy" aria-label="Normen und Regeln, die wir prüfen">
     <div class="wrap">
-      <p class="kicker">Was wir prüfen und was nicht</p>
-      <h2 class="r">Eine ehrliche Liste, kein Versprechen auf Vollständigkeit.</h2>
-      <div class="rule"></div>
-      <div class="prose r d1">
+      <p><b data-do="332">332</b> Regelcodes aus den offiziellen Schematron-Dateien</p>
+      <p class="ef-sr">EN 16931, XRechnung 3.0, Peppol BIS Billing 3.0, UBL 2.1, Invoice, CreditNote, BR-01 bis BR-65, BR-CO, BR-DEC, BR-CL, BR-DE-1 bis BR-DE-31, Leitweg-ID, IBAN mod 97, CustomizationID</p>
+      <div class="ef-pas" aria-hidden="true"><div class="ef-bez"><ul><li>EN 16931</li><li>XRechnung 3.0</li><li>Peppol BIS Billing 3.0</li><li>UBL 2.1</li><li>Invoice</li><li>CreditNote</li><li>BR-01 bis BR-65</li><li>BR-CO</li><li>BR-DEC</li><li>BR-CL</li><li>BR-DE-1 bis BR-DE-31</li><li>Leitweg-ID</li><li>IBAN mod 97</li><li>CustomizationID</li></ul><ul><li>EN 16931</li><li>XRechnung 3.0</li><li>Peppol BIS Billing 3.0</li><li>UBL 2.1</li><li>Invoice</li><li>CreditNote</li><li>BR-01 bis BR-65</li><li>BR-CO</li><li>BR-DEC</li><li>BR-CL</li><li>BR-DE-1 bis BR-DE-31</li><li>Leitweg-ID</li><li>IBAN mod 97</li><li>CustomizationID</li></ul></div></div>
+    </div>
+  </section>
+
+  <section class="ef-sek" id="ako">
+    <div class="wrap">
+      <div class="ef-hlava zjav"><h2>Drei Schritte, nichts zu installieren.</h2></div>
+      <ol class="ef-kroky">
+        <li class="ef-dl ef-k1 zjav"><div class="ef-dl-text"><h3>Datei laden</h3><p>Ziehen Sie das XML aus Ihrer Rechnungssoftware hierher, wählen Sie es vom Rechner oder fügen Sie den Text ein. Gelesen wird UBL 2.1, Rechnung wie Gutschrift. Eine CII-Datei erkennen wir und sagen es Ihnen, Regeln wenden wir darauf nicht an.</p></div><div class="ef-vyrez" role="img" aria-label="Ausschnitt aus dem Beispiel-XML"><pre class="ef-xml" aria-hidden="true"><b>&lt;Invoice xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2" xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2" xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2"&gt;</b>
+  <b>&lt;cbc:CustomizationID&gt;</b><i>urn:cen.eu:en16931:2017#compliant#urn:fdc:peppol.eu:2017:poacc:billing:3.0</i><b>&lt;/cbc:CustomizationID&gt;</b>
+  <b>&lt;cbc:ProfileID&gt;</b><i>urn:fdc:peppol.eu:2017:poacc:billing:01:1.0</i><b>&lt;/cbc:ProfileID&gt;</b>
+  <b>&lt;cbc:ID&gt;</b><i>2026-0142</i><b>&lt;/cbc:ID&gt;</b>
+  <b>&lt;cbc:IssueDate&gt;</b><i>2026-09-11</i><b>&lt;/cbc:IssueDate&gt;</b>
+  <b>&lt;cbc:DueDate&gt;</b><i>2026-09-25</i><b>&lt;/cbc:DueDate&gt;</b>
+  <b>&lt;cbc:InvoiceTypeCode&gt;</b><i>380</i><b>&lt;/cbc:InvoiceTypeCode&gt;</b>
+  <b>&lt;cbc:Note&gt;</b><i>Vzorová faktúra z arling.sk/efaktura/. Údaje sú vymyslené.</i><b>&lt;/cbc:Note&gt;</b>
+  <b>&lt;cbc:DocumentCurrencyCode&gt;</b><i>EUR</i><b>&lt;/cbc:DocumentCurrencyCode&gt;</b>
+  <b>&lt;cbc:BuyerReference&gt;</b><i>OBJ-2026-77</i><b>&lt;/cbc:BuyerReference&gt;</b>
+  <b>&lt;cac:AccountingSupplierParty&gt;</b>
+    <b>&lt;cac:Party&gt;</b></pre></div></li>
+        <li class="ef-dl ef-k2 zjav" style="--i:1"><div class="ef-dl-text"><h3>Fehler mit Erklärung lesen</h3><p>Zu jedem Befund sehen Sie den Regelcode, einen Satz auf Deutsch, den Wert aus der Datei, den Pfad zum Element und den englischen Originalwortlaut der Regel. Anhand der CustomizationID wählen wir selbst aus, ob EN 16931, Peppol BIS Billing 3.0 oder XRechnung gilt.</p></div><div class="ef-vyrez ef-vyrez-nalez" role="group" aria-label="Echter Befund der Prüfung mit dem Originalwortlaut der Regel"><article class="nalez nalez-chyba"><p class="nalez-hlava"><span class="nalez-znacka">Fehler</span><code class="nalez-kod">BR-CO-15</code></p><p class="nalez-veta">Der Gesamtbetrag mit Umsatzsteuer (BT-112) soll 450.00 plus 103.50 sein, also 553.50. In der Datei steht 553.51.</p><p class="nalez-meta"><span class="nalez-popis">Wert in der Datei: </span><code>553.51</code></p><p class="nalez-meta"><span class="nalez-popis">Pfad zum Element: </span><code>/Invoice/cac:LegalMonetaryTotal/cbc:TaxInclusiveAmount</code></p><details class="nalez-original" open><summary>Originalwortlaut der Regel (englisch)</summary><p>[BR-CO-15]-Invoice total amount with VAT (BT-112) = Invoice total amount without VAT (BT-109) + Invoice total VAT amount (BT-110).</p></details></article></div></li>
+        <li class="ef-dl ef-k3 zjav"><div class="ef-dl-text"><h3>Protokoll speichern oder XML kaufen</h3><p>Prüfprotokoll und Belegvorschau samt PDF sind kostenlos. Bezahlt wird nur das XML einer Rechnung, die Sie hier im Formular erstellen: 2,90 € zzgl. MwSt. für eine, 9,90 € zzgl. MwSt. für 30 Tage. Vor dem Download läuft dieselbe Prüfung darüber.</p></div><div class="ef-vyrez" role="img" aria-label="Ausschnitt aus der Vorschau der Musterrechnung"><div class="ef-vyrez-papier" aria-hidden="true"><div class="efa-doklad"><div class="efa-hlavicka"><p class="efa-t2">Rechnung 2026-0142</p><div class="efa-udaj"><span class="efa-popis">Rechnungsdatum</span><span class="efa-hodnota">2026-09-11</span></div><div class="efa-udaj"><span class="efa-popis">Lieferdatum</span><span class="efa-hodnota">2026-09-10</span></div><div class="efa-udaj"><span class="efa-popis">Fällig am</span><span class="efa-hodnota">2026-09-25</span></div><div class="efa-udaj"><span class="efa-popis">Leitweg- oder Käuferreferenz</span><span class="efa-hodnota">OBJ-2026-77</span></div></div><div class="efa-strany"><div class="efa-strana"><p class="efa-t3">Verkäufer</p><p class="efa-nazov">Vzorová dielna s. r. o.</p><p class="efa-adresa">Krivánska 4</p><p class="efa-adresa">97401 Banská Bystrica</p><p class="efa-adresa">SK</p><div class="efa-udaj"><span class="efa-popis">Registernummer</span><span class="efa-hodnota">51234567</span></div><div class="efa-udaj"><span class="efa-popis">USt-IdNr.</span><span class="efa-hodnota">SK2120000001</span></div><div class="efa-udaj"><span class="efa-popis">Ansprechpartner</span><span class="efa-hodnota">Jana Vzorová</span></div><div class="efa-udaj"><span class="efa-popis">Telefon</span><span class="efa-hodnota">+421 900 000 000</span></div><div class="efa-udaj"><span class="efa-popis">E-Mail</span><span class="efa-hodnota">fakturacia@vzorovadielna.sk</span></div><div class="efa-udaj"><span class="efa-popis">Elektronische Adresse</span><span class="efa-hodnota">2120000001 (0245)</span></div></div><div class="efa-strana"><p class="efa-t3">Käufer</p><p class="efa-nazov">Odberateľ Východ a. s.</p><p class="efa-adresa">Námestie 12</p><p class="efa-adresa">04001 Košice</p><p class="efa-adresa">SK</p><div class="efa-udaj"><span class="efa-popis">Registernummer</span><span class="efa-hodnota">36000002</span></div><div class="efa-udaj"><span class="efa-popis">USt-IdNr.</span><span class="efa-hodnota">SK2130000002</span></div><div class="efa-udaj"><span class="efa-popis">Elektronische Adresse</span><span class="efa-hodnota">2130000002 (0245)</span></div></div></div><div class="efa-polozky"><p class="efa-t3">Positionen</p><table class="efa-tabulka"><thead><tr><th>Nr.</th><th>Bezeichnung</th><th>Menge</th><th>Einheit</th><th>Einzelpreis</th><th>USt.</th><th>Nettobetrag</th></tr></thead><tbody><tr><td>1</td><td>Servis obrábacieho stroja</td><td>6</td><td>Stunde</td><td>45.00 EUR</td><td>23.00 % S</td><td>270.00 EUR</td></tr><tr><td>2</td><td>Náhradné ložiská</td><td>4</td><td>Stück</td><td>45.00 EUR</td><td>23.00 % S</td><td>180.00 EUR</td></tr></tbody></table></div></div></div></div></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="ef-sek ef-tepla" id="pre-koho">
+    <div class="wrap">
+      <div class="ef-hlava zjav"><h2>Für wen das ist und ab wann es gilt.</h2></div>
+      <ul class="ef-komu">
+        <li class="zjav" style="--i:0"><b>Deutschland<span>seit 1. Januar 2025</span></b><p>Unternehmen müssen E-Rechnungen im B2B empfangen können. Für das Versenden gilt eine Staffelung: Unternehmen mit einem Vorjahresumsatz bis 800 000 Euro haben Zeit bis 31.12.2027, ab dem 1. Januar 2028 müssen alle E-Rechnungen versenden. XRechnung 3.x prüfen und erstellen Sie hier, samt Feld für die Leitweg-ID.</p></li>
+        <li class="zjav" style="--i:1"><b>Peppol<span>Peppol BIS Billing 3.0</span></b><p>Sie übergeben die Rechnung Ihrem Zugangsdienstleister, der sie dem Empfänger zustellt. Hier prüfen oder erstellen Sie sie vorher im Profil Peppol BIS Billing 3.0. Der Versand ins Peppol-Netz ist nicht enthalten.</p></li>
+        <li class="zjav" style="--i:2"><b>Slowakei<span>ab 1. Januar 2027</span></b><p>Für inländische B2B-Umsätze von Umsatzsteuerpflichtigen wird die E-Rechnung über das Peppol-Netz Pflicht (Gesetz Nr. 385/2025 Z. z.). Slowakische Unternehmen identifizieren sich dort mit schemeID 0245 und ihrer Steuernummer DIČ.</p></li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="ef-sek" id="udaje">
+    <div class="wrap">
+      <div class="ef-hlava"><h2 class="ef-odkryv"><span style="--n:0">Die</span> <span style="--n:1">Rechnungsdatei</span> <span style="--n:2">wird</span> <span style="--n:3">in</span> <span style="--n:4">Ihrem</span> <span style="--n:5">Browser</span> <span style="--n:6">gelesen,</span> <span style="--n:7">geprüft</span> <span style="--n:8">und</span> <span style="--n:9">dargestellt.</span> <span style="--n:10">An</span> <span style="--n:11">unseren</span> <span style="--n:12">Server</span> <span style="--n:13">wird</span> <span style="--n:14">sie</span> <span style="--n:15">nicht</span> <span style="--n:16">gesendet.</span></h2></div>
+      <div class="ef-udaje">
+        <div class="zjav"><h3>Bleibt im Browser</h3><ul><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><b>Datei lesen.</b> Das XML wird direkt im Browser geöffnet und nirgendwo hochgeladen.</li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><b>Regelprüfung und Vorschau.</b> Alle 332 Regelcodes und die Darstellung des Belegs laufen bei Ihnen.</li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><b>XML und PDF erzeugen.</b> Das XML entsteht aus dem Formular im Browser, das PDF speichert die Druckfunktion Ihres Browsers.</li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><b>Adressbuch und Entwurf.</b> Liegen nur in diesem Browser und lassen sich über eine Schaltfläche im Formular löschen.</li></ul></div>
+        <div class="ef-server zjav" style="--i:1"><h3>Geht an einen Server</h3><ul><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg><b>Zahlungsprüfung.</b> Nach der Rückkehr von Stripe fragt unsere Seite anhand der Nummer der Zahlungssitzung bei unserem Server nach, ob bezahlt ist. Die Rechnung wird dabei nicht gesendet.</li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg><b>Zahlung.</b> Läuft auf der Seite von Stripe, das als Merchant of Record verkauft.</li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg><b>Freiwillige Anfrage.</b> Sendet nur, was Sie selbst hineinschreiben.</li><li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg><b>Besuchsmessung.</b> Unser eigenes Umami zählt Besuche und Ereignisse, etwa dass eine Prüfung lief und mit welchem Ergebnis. Der Inhalt der Rechnung geht nicht in die Messung.</li></ul></div>
+      </div>
+      <div class="ef-sukromie zjav">
+        <p data-efaktura-privacy>Die Rechnungsdatei und die Angaben im Rechnungsformular bleiben in Ihrem Browser. Das Adressbuch für Verkäufer und Käufer liegt im localStorage und lässt sich über eine Schaltfläche im Formular löschen. Nach einer Zahlung prüfen wir deren Status auf dem Server. Eine separate freiwillige Anfrage sendet ARLing nur die dort eingegebenen Angaben; die Rechnung wird nicht automatisch angehängt. Besuche messen wir mit unserem eigenen Umami.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="ef-sek ef-tepla" id="cennik">
+    <div class="wrap">
+      <div class="ef-hlava zjav"><h2>Sie zahlen erst für das fertige XML.</h2></div>
+      <ul class="ef-cennik zjav">
+      <li class="ef-r-zadarmo"><div><h3>Prüfung und Vorschau</h3><p>Ohne Konto und ohne Limit, samt Prüfprotokoll und Beleg als PDF.</p></div><p class="ef-suma">0 €</p><a class="ef-riadok-btn" href="#kontrola" data-umami-event="efaktura_cena_klik" data-umami-event-miesto="cennik" data-umami-event-riadok="zadarmo">Datei prüfen<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></li>
+      <li class="ef-r-jedna"><div><h3>XML einer Rechnung</h3><p>Der Download ist in diesem Browser 24 Stunden freigeschaltet, damit Sie die Rechnung korrigieren und erneut herunterladen können.</p></div><p class="ef-suma">2,90 € zzgl. MwSt.</p><a class="ef-riadok-btn" href="#vytvorit" data-umami-event="efaktura_cena_klik" data-umami-event-miesto="cennik" data-umami-event-riadok="jedna">Rechnung erstellen<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></li>
+      <li class="ef-r-30dni"><div><h3>30 Tage ohne Begrenzung</h3><p>Beliebig viele Rechnungen, auch als Stapel aus CSV in einer ZIP-Datei. Einmalige Zahlung, kein Abo.</p></div><p class="ef-suma">9,90 € zzgl. MwSt.</p><a class="ef-riadok-btn" href="/efaktura/de/csv-xrechnung/" data-umami-event="efaktura_cena_klik" data-umami-event-miesto="cennik" data-umami-event-riadok="30dni">Stapel aus CSV<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></li>
+      </ul>
+      <div class="ef-cennik-pozn">
+        <p class="pomoc dan-platby">Preise zuzüglich gegebenenfalls anfallender Steuern. Stripe berechnet die Steuer anhand der Kundendaten und zeigt den Gesamtbetrag vor der Zahlung.</p>
+        <p class="pomoc">Verkäufer: ARLing s. r. o., Handelsregister-Nr. 56583486, Bratislava. Die Zahlung wickelt Stripe ab.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="co-kontrolujeme" class="deep ef-sek">
+    <div class="wrap">
+      <div class="ef-hlava zjav"><h2>Eine ehrliche Liste, kein Versprechen auf Vollständigkeit.</h2></div>
+      <div class="ef-dva">
+        <div class="prose">
         <p>Wir prüfen 332 Regelcodes. Dazu gehören die Kernregeln der EN 16931 (BR-01 bis BR-65), die Summenregeln BR-CO, die Nachkommastellen BR-DEC, die Codelisten BR-CL, die Regeln je Steuerkategorie (S, Z, E, AE, K, G, O, L, M), die Regeln von Peppol BIS Billing 3.0 samt Prüfziffern nationaler Kennungen, die Regeln der XRechnung 3.x (BR-DE-1 bis BR-DE-31) und dreizehn eigene Prüfungen: IBAN nach mod 97, Form der deutschen USt-IdNr. sowie der slowakischen USt-IdNr. und Steuernummer, Format der Leitweg-ID, Reihenfolge der Daten und Währungscode.</p>
         <p>Wir prüfen nicht das UBL-2.1-XSD-Schema, also weder Reihenfolge der Elemente noch Datentypen. Wir prüfen nicht die 755 Regeln der Gruppen UBL-CR, UBL-SR und UBL-DT, die meist auf überzählige Elemente hinweisen. Über die CII-Syntax wenden wir keine Regeln an: eine solche Datei erkennen wir und sagen es Ihnen. Ein Bestehen unserer Prüfung garantiert daher nicht, dass die Rechnung vom Empfänger, seinem Rechnungssystem oder vom Peppol-Netz angenommen wird. Es ist eine gute erste Prüfung, nicht das letzte Wort.</p>
         <p>Die Regeltexte stammen aus den offiziellen Schematron-Dateien: EN 16931 von ConnectingEurope, Peppol BIS Billing 3.0 von OpenPEPPOL und XRechnung von der KoSIT. Regelcodes und Regeltexte sind normativ, wir geben sie als Zitat zusammen mit dem Regelcode wieder.</p>
       </div>
-      <div class="rule"></div>
-      <ul class="zdroje r d2">
+        <ul class="zdroje">
         <li>Bundesfinanzministerium, Fragen und Antworten zur E-Rechnung ab 1. 1. 2025: <a href="https://www.bundesfinanzministerium.de/Content/DE/FAQ/e-rechnung.html">bundesfinanzministerium.de</a></li>
         <li>XRechnung (KoSIT, deutsche CIUS): <a href="https://xeinkauf.de/xrechnung/">xeinkauf.de</a></li>
         <li>Norm EN 16931 und ihr Schematron: <a href="https://github.com/ConnectingEurope/eInvoicing-EN16931">github.com/ConnectingEurope/eInvoicing-EN16931</a></li>
         <li>Peppol BIS Billing 3.0: <a href="https://docs.peppol.eu/poacc/billing/3.0/">docs.peppol.eu</a></li>
         <li>Slowakei, Gesetz Nr. 385/2025 Z. z. (neuer § 76a, gültig ab 1. 1. 2027): <a href="https://www.slov-lex.sk/ezbierky/pravne-predpisy/SK/ZZ/2025/385/">slov-lex.sk</a></li>
       </ul>
+      </div>
     </div>
   </section>
 
-  <section id="otazky" class="deep">
-    <div class="wrap">
-      <p class="kicker">Fragen</p>
-      <h2 class="r">Was Leute fragen.</h2>
-      <div class="rule"></div>
+  <section id="otazky" class="deep ef-sek">
+    <div class="wrap ef-otazky">
+      <div class="ef-otazky-hlava zjav"><h2>Was Leute fragen.</h2><p class="ef-otazky-p">Keine Antwort gefunden? Schreiben Sie an <a href="mailto:andrej@arling.sk">andrej@arling.sk</a>.</p></div>
+      <div class="ef-otazky-zoznam">
       <details class="otazka"><summary>Was ist eine E-Rechnung?</summary><p>Eine E-Rechnung ist eine Rechnung, die in einem strukturierten Format ausgestellt, übermittelt und empfangen wird, das ein Computer ohne Abtippen verarbeiten kann. Ein per E-Mail verschicktes PDF ist keine E-Rechnung. Das Format regelt die europäische Norm EN 16931 mit ihren zwei Syntaxen: UBL 2.1 und UN/CEFACT CII.</p></details>
       <details class="otazka"><summary>Wen betrifft das und ab wann?</summary><p>In Deutschland müssen Unternehmen E-Rechnungen im B2B seit dem 1. Januar 2025 empfangen können. Für das Versenden gilt eine Staffelung: bis 31.12.2026 dürfen alle noch andere Formate verwenden, Unternehmen mit einem Vorjahresumsatz bis 800 000 Euro bis 31.12.2027, ab dem 1. Januar 2028 müssen alle E-Rechnungen versenden. In der Slowakei gilt die Pflicht für inländische B2B-Umsätze von Umsatzsteuerpflichtigen ab dem 1. Januar 2027.</p></details>
       <details class="otazka"><summary>UBL oder CII, was soll ich wählen?</summary><p>Beide Syntaxen sind nach EN 16931 gleichwertig. Im Peppol-Netz wird in der Praxis UBL 2.1 versendet, deshalb erzeugen wir es auch. CII wird vor allem in Deutschland genutzt, auch im Inneren des hybriden PDF-Formats ZUGFeRD. Unser Prüfer prüft die Regeln bisher nur über UBL; eine CII-Datei erkennen wir und sagen es Ihnen, die Regeln wenden wir darauf nicht an.</p></details>
@@ -550,33 +444,33 @@
       <details class="otazka"><summary>Warum meldet der Prüfer BR-CO-15?</summary><p>BR-CO-15 verlangt, dass der Bruttobetrag (BT-112) gleich dem Nettobetrag (BT-109) plus der Gesamtsteuer (BT-110) ist. Meist geht es um einen Cent: die Software rechnet die Steuer je Zeile und rundet, die Norm will eine Steuer je Steuersatz aus der gesamten Bemessungsgrundlage. Korrigieren Sie die Summe im Kopf der Rechnung, nicht die einzelnen Zeilen.</p></details>
       <details class="otazka"><summary>Wie bekomme ich einen Beleg für die Zahlung?</summary><p>Die Zahlung wickelt Stripe als Merchant of Record ab. Nach der Zahlung sendet Ihnen Stripe per E-Mail eine Bestätigung und eine Rechnung mit Umsatzsteuer. Beim Kauf auf die Firma geben Sie an der Kasse die USt-IdNr. an, dann läuft der Beleg auf die Firma.</p></details>
       <details class="otazka"><summary>Gibt es eine Rückerstattung?</summary><p>Mit dem Klick auf Bezahlen stimmen Sie der sofortigen Bereitstellung digitaler Inhalte zu und nehmen zur Kenntnis, dass Sie damit Ihr Widerrufsrecht verlieren (§ 356 Abs. 5 BGB; nach slowakischem Recht, dem Sitzstaat von ARLing, § 19 Abs. 1 Buchst. m) des Gesetzes Nr. 108/2024 Z. z.). Falls das Werkzeug bei Ihnen nicht funktioniert oder etwas nicht stimmt, schreiben Sie an andrej@arling.sk. Ich antworte persönlich, meist innerhalb von 24 Stunden.</p></details>
-    </div>
-  </section>
-
-  <section id="poctivo" class="deep">
-    <div class="wrap">
-      <p class="kicker">Was es ist und was nicht</p>
-      <h2 class="r">Vorlage und Prüfung, keine Steuerberatung.</h2>
-      <div class="rule"></div>
-      <div class="prose r d1">
-        <p>Dieses Werkzeug prüft die Form der Datei und setzt aus Ihren Angaben eine Musterrechnung in UBL 2.1 zusammen. Es beurteilt nicht, ob Sie mit oder ohne Umsatzsteuer abrechnen müssen, welcher Satz für eine Leistung gilt, ob die Steuerschuld übergeht und ob der Umsatz überhaupt steuerbar ist. Das ist Steuerberatung, dafür sind Steuerberaterin oder Steuerberater da. Für die Richtigkeit der Rechnung haftet, wer sie ausstellt.</p>
-        <p data-efaktura-privacy>Die Rechnungsdatei und die Angaben im Rechnungsformular bleiben in Ihrem Browser. Das Adressbuch für Verkäufer und Käufer liegt im localStorage und lässt sich über eine Schaltfläche im Formular löschen. Nach einer Zahlung prüfen wir deren Status auf dem Server. Eine separate freiwillige Anfrage sendet ARLing nur die dort eingegebenen Angaben; die Rechnung wird nicht automatisch angehängt. Besuche messen wir mit unserem eigenen Umami.</p>
-        <p>Wenn sich Gesetz, Schematron oder Version der Spezifikation ändern, passen wir die Regeln an und schreiben es hier mit Datum. Die Fakten auf dieser Seite haben wir am 11. 9. 2026 an den oben genannten offiziellen Quellen geprüft.</p>
       </div>
     </div>
   </section>
-  <section id="verwandt" class="deep">
-    <div class="wrap">
-      <p class="kicker">Verwandt</p>
-      <h2 class="r">Weitere Werkzeuge und Notizen.</h2>
-      <div class="rule"></div>
-      <div class="prose r d1">
+
+  <div class="ef-dvojica">
+    <div class="wrap ef-dvojica-mriezka">
+      <section id="poctivo" class="deep zjav">
+        <h2>Vorlage und Prüfung, keine Steuerberatung.</h2>
+        <div class="prose">
+        <p>Dieses Werkzeug prüft die Form der Datei und setzt aus Ihren Angaben eine Musterrechnung in UBL 2.1 zusammen. Es beurteilt nicht, ob Sie mit oder ohne Umsatzsteuer abrechnen müssen, welcher Satz für eine Leistung gilt, ob die Steuerschuld übergeht und ob der Umsatz überhaupt steuerbar ist. Das ist Steuerberatung, dafür sind Steuerberaterin oder Steuerberater da. Für die Richtigkeit der Rechnung haftet, wer sie ausstellt.</p>
+        <p>Wenn sich Gesetz, Schematron oder Version der Spezifikation ändern, passen wir die Regeln an und schreiben es hier mit Datum. Die Fakten auf dieser Seite haben wir am 11. 9. 2026 an den oben genannten offiziellen Quellen geprüft.</p>
+      </div>
+      </section>
+      <section id="verwandt" class="deep ef-suvisiace zjav" style="--i:1">
+        <h2>Weitere Werkzeuge und Notizen.</h2>
+        <div class="prose r d1">
         <p class="csv-odkaz"><a href="/efaktura/de/csv-xrechnung/">CSV zu XRechnung: mehrere Rechnungen als ZIP</a>.</p>
         <p>Die Prüfung der SEPA-Zahlungsdatei vor dem 15. November bietet die Seite <a href="https://arling.sk/kontrola-suboru/de/">SEPA-Datei prüfen lassen</a>.</p>
         <p>DSGVO-Dokumente für Unternehmen, Einzelunternehmer und Onlineshop finden Sie auf der Seite <a href="https://arling.sk/gdpr-dokumenty/de/">DSGVO-Dokumente</a>.</p>
         <p>Die häufigsten Fehler beim Prüfen einer XRechnung erklärt die Notiz <a href="https://arling.sk/notes/xrechnung-pruefen-die-haeufigsten-fehler/">XRechnung prüfen</a>.</p>
       </div>
+      </section>
     </div>
+  </div>
+
+  <section class="ef-zaver">
+    <div class="wrap"><div class="ef-zaver-karta"><div class="ef-zaver-vnutro"><h2 class="zjav">XML zur Hand? Das Ergebnis sehen Sie in Sekunden.</h2><p class="zjav" style="--i:1">Kostenlos, ohne Konto, die Datei bleibt in Ihrem Browser.</p><div class="ef-zaver-akcia zjav" style="--i:2"><a class="ef-cta" href="#kontrola" data-umami-event="efaktura_zaver_cta">Rechnung kostenlos prüfen<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></div></div></div></div>
   </section>
 </main>
 
