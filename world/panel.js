@@ -29,6 +29,9 @@
   var JAZYK = telo.getAttribute('data-jazyk') || 'en';
   var NBSP = String.fromCharCode(160);   // pevna medzera v cislach, zapisana kodom, nie neviditelnym znakom
   var VELKOST = 32, BODOV = VELKOST * VELKOST, POZADIE = 0;
+  // Nástroje, ktoré sa navzájom vylučujú. Zrkadlenie a mriežka nie sú nástroje,
+  // sú to prepínače, a preto tu nie sú.
+  var NASTROJE = ['ceruzka', 'vypln', 'kvapkadlo'];
 
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (x) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[x]; }); }
   function cisloText(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, NBSP); }
@@ -261,11 +264,25 @@
     h += '<div class="stvorec-telo">';
     var k = '<div class="stvorec-kresba"><h4>' + esc(T.kresbaNadpis) + '</h4>';
     k += '<p class="pole-popis" id="kp-' + id + '">' + esc(T.kresbaPopis) + '</p>';
-    k += '<div class="platno"><canvas width="' + VELKOST + '" height="' + VELKOST + '" data-platno aria-describedby="kp-' + id + '" aria-label="' + esc(T.kresbaNadpis) + '"></canvas></div>';
+    k += '<div class="platno" data-obal><div class="platno-vnutro"><canvas width="' + VELKOST + '" height="' + VELKOST + '" tabindex="0" data-platno aria-describedby="kp-' + id + '" aria-label="' + esc(T.kresbaNadpis) + '"></canvas></div></div>';
     k += '<div class="paleta" role="group" aria-label="' + esc(T.farba) + '">';
     for (var i = 0; i < PALETA.length; i++) k += '<button type="button" data-farba="' + i + '" aria-label="' + esc(T.farba) + ' ' + (i + 1) + '" aria-pressed="' + (i === 5) + '"></button>';
     k += '</div>';
-    k += '<div class="kreslenie-ovladanie"><button type="button" data-kres="pozadie" aria-pressed="false">' + esc(T.pozadie) + '</button><button type="button" data-kres="vymazat">' + esc(T.vymazat) + '</button></div>';
+    // Náradie veľkej obrazovky. Na telefóne ho CSS schová a ostane jednoduchý
+    // režim, ktorý funguje prstom: paleta, Erase a Clear all.
+    k += '<div class="naradie" role="group" aria-label="' + esc(T.naradie) + '">';
+    k += naradieTlacidlo('ceruzka', T.nastrojCeruzka, T.nastrojCeruzkaPopis, true);
+    k += naradieTlacidlo('vypln', T.nastrojVypln, T.nastrojVyplnPopis, false);
+    k += naradieTlacidlo('kvapkadlo', T.nastrojKvapkadlo, T.nastrojKvapkadloPopis, false);
+    k += naradieTlacidlo('zrkadlo', T.zrkadloPrepinac, T.zrkadloPopis, false);
+    k += naradieTlacidlo('mriezka', T.mriezkaPrepinac, T.mriezkaPopis, true);
+    k += '<button type="button" data-kres="spat" title="' + esc(T.krokSpatPopis) + '" aria-label="' + esc(T.krokSpatPopis) + '" disabled>' + esc(T.krokSpat) + '</button>';
+    k += '<button type="button" data-kres="vpred" title="' + esc(T.krokVpredPopis) + '" aria-label="' + esc(T.krokVpredPopis) + '" disabled>' + esc(T.krokVpred) + '</button>';
+    k += '<button type="button" data-kres="oddialit" title="' + esc(T.oddialit) + '" aria-label="' + esc(T.oddialit) + '" disabled>&minus;</button>';
+    k += '<button type="button" data-kres="priblizit" title="' + esc(T.priblizit) + '" aria-label="' + esc(T.priblizit) + '">+</button>';
+    k += '</div>';
+    k += '<p class="pole-popis naradie-popis">' + esc(T.naradiePopis) + '</p>';
+    k += '<div class="kreslenie-ovladanie"><button type="button" data-kres="pozadie" title="' + esc(T.gumaPopis) + '" aria-pressed="false">' + esc(T.pozadie) + '</button><button type="button" data-kres="vymazat">' + esc(T.vymazat) + '</button></div>';
     k += '<button class="btn btn-solid" type="button" data-uloz="art">' + esc(T.ulozitKresbu) + '</button>';
     k += '<p class="stav" data-stav="art" role="status"></p></div>';
 
@@ -283,6 +300,12 @@
     h += '<p class="stav" data-stav="link" role="status"></p></div>';
     h += '</div>' + k + '</div></article>';
     return h;
+  }
+
+  /** Prepínacie tlačidlo náradia: krátky nápis, celá veta v title aj pre čítačku. */
+  function naradieTlacidlo(meno, nazov, popis, zapnute) {
+    return '<button type="button" data-kres="' + meno + '" title="' + esc(popis) + '" aria-label="' + esc(popis)
+      + '" aria-pressed="' + (zapnute ? 'true' : 'false') + '">' + esc(nazov) + '</button>';
   }
 
   function ozivStvorec(p, limit) {
@@ -402,6 +425,18 @@
     for (i = 0; i < svatky.length; i++) svatky[i].style.background = PALETA[i];
     var gumaEl = el.querySelector('[data-kres="pozadie"]');
     var farba = 5;
+    // ── Náradie veľkej obrazovky ────────────────────────────────────────────
+    // Na telefóne je celý pás schovaný (CSS .naradie), takže tam ostáva presne
+    // to, čo tu bolo: paleta, Erase, Clear all a ťah prstom. Nič z tohto sa tam
+    // nepoužije a nič sa tým nerozbije. Paleta ostáva šestnásť farieb, štyri
+    // bity na bod: náradie mení spôsob kreslenia, nie formát.
+    var obal = el.querySelector('[data-obal]');
+    var nastroj = 'ceruzka', zrkadlo = false, mriezkaVidno = true, zoom = 1;
+    var spatEl = el.querySelector('[data-kres="spat"]'), vpredEl = el.querySelector('[data-kres="vpred"]');
+    var blizEl = el.querySelector('[data-kres="priblizit"]'), dalejEl = el.querySelector('[data-kres="oddialit"]');
+    // História pre krok späť. Držíme celé stavy: kresba má 1024 bajtov, takže
+    // tridsať krokov je tridsať kilobajtov a nie je to na čom šetriť.
+    var HISTORIA = 30, historia = [], krok = 0;
 
     function prekresli() {
       for (var j = 0; j < BODOV; j++) {
@@ -413,15 +448,38 @@
       if (neulozene) ukazSpravu(stavEl, 'caka', T.neulozene);
       else ukazStav(stavEl, stavPola('art', p));
     }
-    function zmenene() {
+    /** Rozkreslená kresba do úložiska. Krok späť ju tiež ukladá, len si o ňom nepíše. */
+    function ulozRozpis() {
       neulozene = true;
       var s = '';
       for (var j = 0; j < BODOV; j++) s += body[j].toString(16);
       try { localStorage.setItem(kluc, s); } catch (e) {}
       oznacStav();
     }
+    function obnovKroky() {
+      if (spatEl) spatEl.disabled = krok <= 0;
+      if (vpredEl) vpredEl.disabled = krok >= historia.length - 1;
+    }
+    function zmenene() {
+      ulozRozpis();
+      historia = historia.slice(0, krok + 1);
+      historia.push(body.slice(0));
+      if (historia.length > HISTORIA) historia.shift();
+      krok = historia.length - 1;
+      obnovKroky();
+    }
+    function zHistorie(kam) {
+      if (kam < 0 || kam >= historia.length) return;
+      krok = kam;
+      body.set(historia[krok]);
+      prekresli();
+      ulozRozpis();
+      obnovKroky();
+    }
     prekresli();
     oznacStav();
+    historia = [body.slice(0)];
+    obnovKroky();
 
     function bod(e) {
       var r = platno.getBoundingClientRect();
@@ -430,10 +488,32 @@
         y: Math.min(VELKOST - 1, Math.max(0, Math.floor(((e.clientY - r.top) / r.height) * VELKOST))),
       };
     }
-    function nanes(x, y) {
+    function polozBod(x, y) {
       body[y * VELKOST + x] = farba;
       ctx.fillStyle = PALETA[farba];
       ctx.fillRect(x, y, 1, 1);
+    }
+    /** Jeden bod, a pri zapnutom zrkadlení aj jeho dvojička na druhej polovici. */
+    function nanes(x, y) {
+      polozBod(x, y);
+      if (zrkadlo) polozBod(VELKOST - 1 - x, y);
+    }
+    /** Vyplnenie súvislej plochy. Štyri susedia, zásobník, žiadna rekurzia. */
+    function vypln(x, y) {
+      var ciel = body[y * VELKOST + x];
+      if (ciel === farba) return false;
+      var zasoba = [y * VELKOST + x];
+      while (zasoba.length) {
+        var j = zasoba.pop();
+        if (body[j] !== ciel) continue;
+        body[j] = farba;
+        var jx = j % VELKOST;
+        if (jx > 0) zasoba.push(j - 1);
+        if (jx < VELKOST - 1) zasoba.push(j + 1);
+        if (j >= VELKOST) zasoba.push(j - VELKOST);
+        if (j < BODOV - VELKOST) zasoba.push(j + VELKOST);
+      }
+      return true;
     }
     // Prst aj myš posielajú pri rýchlom ťahu body ďaleko od seba. Čiara medzi
     // nimi sa dokreslí, inak by ťah ostal bodkovaný.
@@ -453,7 +533,22 @@
       if (e.button) return;
       e.preventDefault();
       try { platno.setPointerCapture(e.pointerId); } catch (err) {}
-      posledny = bod(e);
+      // Plátno má tabindex, takže po kliknutí počúva klávesnicu (Ctrl+Z).
+      try { platno.focus({ preventScroll: true }); } catch (err) {}
+      var b = bod(e);
+      if (nastroj === 'kvapkadlo') {
+        var v = body[b.y * VELKOST + b.x];
+        vyberFarbu(v, v === POZADIE);
+        nastavNastroj('ceruzka');
+        return;
+      }
+      if (nastroj === 'vypln') {
+        var zmena = vypln(b.x, b.y);
+        if (zrkadlo && vypln(VELKOST - 1 - b.x, b.y)) zmena = true;
+        if (zmena) { prekresli(); zmenene(); }
+        return;
+      }
+      posledny = b;
       nanes(posledny.x, posledny.y);
     });
     platno.addEventListener('pointermove', function (e) {
@@ -476,11 +571,50 @@
       var b = e.target.closest('[data-farba]');
       if (b) vyberFarbu(Number(b.getAttribute('data-farba')), false);
     });
-    gumaEl.addEventListener('click', function () { vyberFarbu(POZADIE, true); });
+    gumaEl.addEventListener('click', function () { vyberFarbu(POZADIE, true); nastavNastroj('ceruzka'); });
     el.querySelector('[data-kres="vymazat"]').addEventListener('click', function () {
       for (var j = 0; j < BODOV; j++) body[j] = POZADIE;
       prekresli();
       zmenene();
+    });
+
+    // ── Prepínače náradia ───────────────────────────────────────────────────
+    function nastavNastroj(m) {
+      nastroj = m;
+      for (var n = 0; n < NASTROJE.length; n++) {
+        var b = el.querySelector('[data-kres="' + NASTROJE[n] + '"]');
+        if (b) b.setAttribute('aria-pressed', String(NASTROJE[n] === m));
+      }
+    }
+    function nastavZoom(z) {
+      zoom = z < 1 ? 1 : z > 4 ? 4 : z;
+      if (obal) obal.style.setProperty('--zoom', String(zoom));
+      if (dalejEl) dalejEl.disabled = zoom <= 1;
+      if (blizEl) blizEl.disabled = zoom >= 4;
+    }
+    var naradieEl = el.querySelector('.naradie');
+    if (naradieEl) naradieEl.addEventListener('click', function (e) {
+      var b = e.target.closest ? e.target.closest('[data-kres]') : null;
+      if (!b) return;
+      var a = b.getAttribute('data-kres');
+      if (a === 'ceruzka' || a === 'vypln' || a === 'kvapkadlo') nastavNastroj(a);
+      else if (a === 'zrkadlo') { zrkadlo = !zrkadlo; b.setAttribute('aria-pressed', String(zrkadlo)); }
+      else if (a === 'mriezka') {
+        mriezkaVidno = !mriezkaVidno;
+        b.setAttribute('aria-pressed', String(mriezkaVidno));
+        if (obal) obal.classList[mriezkaVidno ? 'remove' : 'add']('bez-mriezky');
+      } else if (a === 'spat') zHistorie(krok - 1);
+      else if (a === 'vpred') zHistorie(krok + 1);
+      else if (a === 'priblizit') nastavZoom(zoom + 1);
+      else if (a === 'oddialit') nastavZoom(zoom - 1);
+    });
+    // Ctrl+Z a Ctrl+Shift+Z (aj Ctrl+Y) nad plátnom. Nie nad celým dokumentom:
+    // na stránke môže byť štvorcov viac a každý má vlastnú históriu.
+    platno.addEventListener('keydown', function (e) {
+      if (!(e.ctrlKey || e.metaKey)) return;
+      var k = (e.key || '').toLowerCase();
+      if (k === 'z' && !e.shiftKey) { e.preventDefault(); zHistorie(krok - 1); }
+      else if ((k === 'z' && e.shiftKey) || k === 'y') { e.preventDefault(); zHistorie(krok + 1); }
     });
 
     var ulozTlacidlo = el.querySelector('[data-uloz="art"]');
