@@ -603,13 +603,38 @@ body.noc .majitel h4 { margin: 0 0 8px; font: 600 15px/1.3 var(--ui); color: var
 .majitel .stav-skryte::before { background: var(--ink); border-color: var(--ink); }
 .majitel .stav b { color: var(--ink); font-weight: 600; }
 
-/* Plátno s jemnou mriežkou nad ním, aby bolo vidno, kam bod padne. */
-.platno { position: relative; margin-top: 10px; border: 1px solid var(--list-line); border-radius: 10px; overflow: hidden; background: #17120f; }
+/* Plátno s jemnou mriežkou nad ním, aby bolo vidno, kam bod padne.
+   Priblíženie mení šírku vnútra, nie plátna: mriežka tak ostane presne na
+   bodoch aj pri štvornásobku a ráme ostane rám. Bez priblíženia (--zoom 1,
+   teda vždy na telefóne) vyzerá všetko presne ako predtým. */
+.platno { position: relative; margin-top: 10px; border: 1px solid var(--list-line); border-radius: 10px; overflow: auto; background: #17120f; scrollbar-width: thin; }
+.platno-vnutro { position: relative; width: calc(100% * var(--zoom, 1)); }
 .platno canvas { display: block; width: 100%; aspect-ratio: 1; image-rendering: pixelated; touch-action: none; cursor: crosshair; }
-.platno::after {
+.platno canvas:focus-visible { outline: 2px solid var(--vyber); outline-offset: -2px; }
+.platno-vnutro::after {
   content: ""; position: absolute; inset: 0; pointer-events: none;
   background-image: linear-gradient(to right, rgba(255, 255, 255, .055) 1px, transparent 1px), linear-gradient(to bottom, rgba(255, 255, 255, .055) 1px, transparent 1px);
   background-size: calc(100% / 32) calc(100% / 32);
+}
+.platno.bez-mriezky .platno-vnutro::after { display: none; }
+
+/* ── Náradie editora: len na veľkej obrazovke ─────────────────────────────
+   Majiteľ chcel na počítači editor ako Paint. Na telefóne sa celý pás schová a
+   ostane jednoduchý režim, ktorý tam funguje prstom; preto je tu min-width a
+   nie max-width, teda na úzkom displeji sa nič nezobrazí. */
+.naradie, .naradie-popis { display: none; }
+@media (min-width: 820px) {
+  .naradie { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .naradie button {
+    flex: 0 0 auto; min-width: 44px; height: 34px; padding: 0 10px;
+    font: 500 13px/1 var(--ui); color: var(--ink);
+    background: rgba(255, 255, 255, .05); border: 1px solid var(--list-line); border-radius: 9px; cursor: pointer;
+  }
+  .naradie button:hover { background: rgba(255, 255, 255, .1); }
+  .naradie button[aria-pressed="true"] { border-color: var(--ink); background: rgba(255, 255, 255, .12); }
+  .naradie button[disabled] { opacity: .4; cursor: default; }
+  .naradie button:focus-visible { outline: 2px solid var(--vyber); outline-offset: 2px; }
+  .naradie-popis { display: block; }
 }
 /* Pevna vyska namiesto pomeru stran: stvorcove policko s min-height 44 px si cez
    pomer stran vypytalo aj sirku 44 px a osem policok sa na telefon nezmestilo. */

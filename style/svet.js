@@ -7,6 +7,9 @@
      · podklad je vektor z Natural Earth v troch úrovniach podrobnosti; sťahujú sa
        len dlaždice vo výreze a každá sa raz prevedie na Path2D, ktoré sa potom
        len posúva a škáluje transformáciou plátna,
+     · pobrežie a hranice štátov sa kreslia AŽ NAD predanými štvorcami, ako svetlé
+       jadro s tmavým lemom: mapa sa dá čítať aj vtedy, keď je predaný celý svet
+       (čísla kontrastu voči všetkým šestnástim farbám sú v ops/svet/hranice.md),
      · jedna slučka requestAnimationFrame s dirty príznakom, nekreslí sa do prázdna;
        zotrvačnosť, plynulé priblíženie aj prelet bežia v tej istej slučke,
      · kreslí sa v zariadeniových pixeloch, devicePixelRatio zastropovaný na 2,
@@ -198,15 +201,39 @@
     sleduj(navratZPokladne === 'paid' ? 'svet_navrat_z_pokladne' : 'svet_pokladna_zrusena');
   }
 
-  // Paleta webu: more je presne pozadie stránky, súš o stupeň svetlejšia, pobrežie
-  // tenká tlmená meď, hranice teplá sivá. Čiary sú nepriehľadné farby, nie alfa:
-  // kde sa na okraji dlaždíc stretnú dva konce, nevznikne svetlejšia bodka.
+  // Paleta webu: more je presne pozadie stránky, súš o stupeň svetlejšia.
+  //
+  // POBREŽIE A HRANICE SÚ SVETLÉ A MAJÚ TMAVÝ LEM. Nie je to móda. Tieto tri
+  // čiary sa kreslia NAD predanými štvorcami (kresliHranice) a pod nimi môže
+  // ležať ktorákoľvek zo šestnástich farieb kresby, od takmer čiernej #10100e po
+  // takmer bielu #f2ece2. Jedna farba čiary sa na oboch naraz stratiť musí, dve
+  // nie: na tmavom pozadí nesie čitateľnosť svetlé jadro, na svetlom tmavý lem.
+  // Čísla sú spočítané v ops/svet/hranice.md a stráži ich test (najhoršia
+  // šestnástina má kontrast 3,4 : 1, hranica WCAG 1.4.11 je 3 : 1).
+  //
+  // Čiary sú nepriehľadné farby, nie alfa: kde sa na okraji dlaždíc stretnú dva
+  // konce, nevznikne svetlejšia bodka.
   var FARBY = {
-    more: '#0a0908', sus: '#1b1714', pobrezie: '#94452c', breh: '#4e2c20', hranica: '#6b6057', kraj: '#332c27',
+    more: '#0a0908', sus: '#1b1714', kraj: '#332c27',
+    lem: '#070606', pobrezie: '#e9c9a8', breh: '#c3ccd2', hranica: '#cfc6bd',
     stat: '#978f86', mesto: '#ddd7d0', bod: '#f2643c', voda: '#6f675f',
     mriezka: 'rgba(255,255,255,', vyber: '#ffd9c9',
     predane: 'rgba(242,100,60,.85)', rezervovane: 'rgba(242,100,60,.32)', moje: 'rgba(255,217,201,.92)',
   };
+  /**
+   * Čiary, ktoré sa kreslia nad vlastníctvom: [kľúč cesty, jadro, šírka pri
+   * celom svete, šírka po priblížení, čiarkovaná]. Poradie je poradie kreslenia,
+   * takže pobrežie je navrchu.
+   */
+  var HRANICE = [
+    ['j', 'breh', 0.8, 0.8, false],
+    ['d', 'hranica', 0.9, 0.9, true],
+    ['b', 'hranica', 0.8, 1.1, false],
+    ['c', 'pobrezie', 0.95, 1.15, false],
+  ];
+  // O koľko je lem širší než jadro (v CSS pixeloch, teda pol toho na každú
+  // stranu). Pri celom svete je tenší, inak by z pobrežia bol pás.
+  var LEM = 1.6, LEM_SVET = 1;
   // Stavy bunky v /api/chunk, jeden bajt na bunku. Tie isté čísla ako ST_* v
   // products/svet/mriezka.py: 0 zatvorené (pri predaji celého sveta sa nevyskytuje),
   // 1 voľné, 2 práve v pokladni, 3 až 7 zaplatené.
@@ -351,17 +378,42 @@
   }
 
   var pismoNacitane = false;
+  /**
+   * Plochy podkladu: súš, vnútorné vody a kraje. Len toto ide POD vlastníctvo,
+   * a len toto sa preto smie odložiť do zásobného plátna. Kraje (admin 1) sú
+   * ozdoba, nie geografia: pri plnej mape sa pod štvorcami stratia a je to tak
+   * správne, lebo inak by hranice štátov nemali čím vyniknúť.
+   */
   function kresliPodklad(c, V) {
     var z = urovenPre(V.s), kusy = kusyPre(V, z);
     vrstva(c, kusy, 'l', FARBY.sus, 0);
     vrstva(c, kusy, 'k', FARBY.more, 0);
     if (z > 0) vrstva(c, kusy, 'a', FARBY.kraj, z > 1 ? 0.8 : 0.6);
-    vrstva(c, kusy, 'j', FARBY.breh, 0.8);
-    vrstva(c, kusy, 'd', FARBY.hranica, 0.9, true);
-    vrstva(c, kusy, 'b', FARBY.hranica, z ? 1.1 : 0.8);
-    vrstva(c, kusy, 'c', FARBY.pobrezie, z ? 1.15 : 0.95);
     c.setTransform(1, 0, 0, 1, 0, 0);
     return kusy;
+  }
+
+  /**
+   * Pobrežie, brehy vnútorných vôd a hranice štátov. KRESLÍ SA AŽ NAD PREDANÝMI
+   * ŠTVORCAMI, aby sa mapa dala čítať aj vtedy, keď je predaných sto percent.
+   * Predtým sa kreslili v podklade a stačilo pár tisíc predaných štvorcov, aby
+   * pod nimi zmizlo pobrežie; majiteľ sa 22. 9. 2026 pýtal presne na to.
+   *
+   * Každá čiara má dva ťahy: najprv o 1,6 px širší tmavý lem, potom svetlé
+   * jadro. Nie je to obrys navrchu, ktorý by prekryl kresby ľudí: lem aj jadro
+   * sú tenké a spolu majú necelé tri pixely, takže kresba 32 × 32 ostane celá
+   * čitateľná a mapa pod ňou tiež.
+   */
+  function kresliHranice(c, V, kusy) {
+    if (!kusy || !kusy.length) return;
+    var z = urovenPre(V.s), lem = z ? LEM : LEM_SVET, i, h, sirka;
+    for (i = 0; i < HRANICE.length; i++) {
+      h = HRANICE[i];
+      sirka = z ? h[3] : h[2];
+      vrstva(c, kusy, h[0], FARBY.lem, sirka + lem, h[4]);
+      vrstva(c, kusy, h[0], FARBY[h[1]], sirka, h[4]);
+    }
+    c.setTransform(1, 0, 0, 1, 0, 0);
   }
 
   // ── Menovky: štáty, moria a mestá ────────────────────────────────────────
@@ -463,6 +515,11 @@
   // snímky pri pohybe meškajú. Vtedy sa podklad vykreslí raz, väčší o okraj, a pri
   // posune sa len prekladá; pri priblížení sa krátko škáluje a po dobehnutí sa
   // vykreslí načisto. Na rýchlom počítači sa toto nikdy nezapne.
+  //
+  // Od 22. 9. 2026 sú v zásobnom plátne len PLOCHY. Pobrežie a hranice musia byť
+  // nad vlastníctvom, takže sa kreslia až na mapu a zásobné plátno ich mať
+  // nemôže. Zásoba tak šetrí menej než predtým; je to cena za mapu, ktorá sa dá
+  // čítať aj pri sto percentách predaných štvorcov, a tá je vyššia.
   var kes = { platno: null, c: null, V: null, plati: false, zapnute: parametre.get('kes') === '1', uroven: -1 }, usadenie = 0;
   function pohlad() { return { lon: S.lon, my: S.my, s: S.s, cx: S.stredX, cy: S.stredY, w: S.w, h: S.h }; }
   /** Nakreslí plochy a čiary podkladu a vráti dlaždice aktuálneho pohľadu, z ktorých sa potom píšu mená. */
@@ -533,6 +590,8 @@
     ctx.fillRect(0, 0, S.w, S.h);
     var kusy = podklad();
     kresliPredane();
+    // Geografia nad vlastníctvom. Bez tohto poradia zmizne pri plnej mape mapa.
+    if (kusy) kresliHranice(ctx, pohlad(), kusy);
     kresliMriezku();
     kresliVyber(t);
     // Mená idú navrch: inak by meno mesta zmizlo pod predaným štvorcom, ktorý na ňom leží.
@@ -768,7 +827,29 @@
     ctx.stroke();
   }
 
+  /** Štvorce v košíku a obdĺžnik, ktorý sa práve ťahá so Shiftom. */
+  function kresliKosik() {
+    if (kosik.length) {
+      ctx.beginPath();
+      for (var i = 0; i < kosik.length; i++) obdlznikBunky(kosik[i].r, kosik[i].c);
+      ctx.fillStyle = 'rgba(255,217,201,.30)';
+      ctx.fill();
+      ctx.strokeStyle = FARBY.vyber;
+      ctx.lineWidth = Math.max(1, 1.5 * dpr);
+      ctx.stroke();
+    }
+    if (!ram) return;
+    ctx.fillStyle = 'rgba(255,217,201,.12)';
+    ctx.fillRect(Math.min(ram.x0, ram.x), Math.min(ram.y0, ram.y), Math.abs(ram.x - ram.x0), Math.abs(ram.y - ram.y0));
+    ctx.strokeStyle = FARBY.vyber;
+    ctx.lineWidth = Math.max(1, dpr);
+    ctx.setLineDash([4 * dpr, 3 * dpr]);
+    ctx.strokeRect(Math.min(ram.x0, ram.x) + 0.5, Math.min(ram.y0, ram.y) + 0.5, Math.abs(ram.x - ram.x0), Math.abs(ram.y - ram.y0));
+    ctx.setLineDash([]);
+  }
+
   function kresliVyber(t) {
+    kresliKosik();
     if (S.podKurzorom && (!S.vybrana || S.podKurzorom.id !== S.vybrana.id)) {
       var bunkaPx = (360 / STL[S.podKurzorom.r]) * S.s;
       if (bunkaPx >= 6 * dpr) {
@@ -940,6 +1021,8 @@
     var k = Object.keys(prsty);
     if (k.length === 1) {
       var p = prsty[e.pointerId];
+      // Shift a ťah = obdĺžnik do košíka. Bez Shiftu sa mapa posúva ako doteraz.
+      if (e.shiftKey && kosikZapnuty()) { ram = { x0: p.x, y0: p.y, x: p.x, y: p.y }; tahanie = null; ziadaj(); return; }
       tahanie = { x: p.x, y: p.y, lon: S.lon, my: S.my, pohol: false, stopa: [] };
     } else {
       tahanie = null;
@@ -953,6 +1036,7 @@
   platno.addEventListener('pointermove', function (e) {
     var p = bod(e);
     if (prsty[e.pointerId]) prsty[e.pointerId] = p;
+    if (ram) { ram.x = p.x; ram.y = p.y; ziadaj(); return; }
     var k = Object.keys(prsty);
     if (k.length >= 2 && stipka) {
       var a = prsty[k[0]], b = prsty[k[1]], m = medze();
@@ -986,6 +1070,21 @@
   function koniecTahu(e) {
     delete prsty[e.pointerId];
     if (Object.keys(prsty).length < 2) stipka = null;
+    if (ram) {
+      var r0 = ram;
+      ram = null;
+      dotyk();
+      // Ťuknutie so Shiftom (obdĺžnik bez plochy) je jeden štvorec.
+      if (Math.abs(r0.x - r0.x0) + Math.abs(r0.y - r0.y0) < 4 * dpr) {
+        var b0 = bunkaNa(r0.x0, r0.y0);
+        if (b0) prepniVKosiku(b0.r, b0.c);
+      } else {
+        doKosikaZRamu(r0);
+      }
+      sleduj('svet_kosik_vyber');
+      ziadaj();
+      return;
+    }
     if (!tahanie) return;
     platno.classList.remove('presuva');
     var p = bod(e);
@@ -998,7 +1097,9 @@
       } else {
         poslednyTuk = { x: p.x, y: p.y, t: teraz };
         var b = bunkaNa(p.x, p.y);
-        if (b) vyber(b.r, b.c, false);
+        // V režime košíka ťuknutie štvorec pridáva a odoberá, nie otvára.
+        if (b && kosikRezim) prepniVKosiku(b.r, b.c);
+        else if (b) vyber(b.r, b.c, false);
       }
     } else if (!POKOJ) {
       var st = tahanie.stopa, prva = st[0], posl = st[st.length - 1];
@@ -1049,6 +1150,62 @@
     if (k === 'svet') celySvet();
     else priblizPlynule(S.stredX, S.stredY, k === '+' ? 2 : 0.5);
   });
+
+  // ── Košík: viac štvorcov naraz ────────────────────────────────────────────
+  // Na počítači sa ťahá obdĺžnik so Shiftom (bez Shiftu sa mapa ďalej posúva,
+  // to sa meniť nesmie), na telefóne sa ťuká na štvorce. Všetko ide do jednej
+  // pokladne ako jedna platba za N štvorcov.
+  //
+  // Kým je T.kosikZapnuty false, z tohto nie je na stránke vidieť nič: služba
+  // s cestou /api/reserve-many ešte nie je nasadená a ponúkať kúpu, ktorá
+  // spadne, je horšie než ju neponúknuť.
+  var KOSIK_STROP = 10;
+  var kosik = [], kosikRezim = false, ram = null;
+  function kosikZapnuty() { return !!T.kosikZapnuty; }
+  function vKosiku(id) {
+    for (var i = 0; i < kosik.length; i++) if (kosik[i].id === id) return i;
+    return -1;
+  }
+  /** Do košíka ide len to, o čom stránka nevie, že je obsadené. Zvyšok odmietne služba. */
+  function daSaPridat(r, c) {
+    var st = stavBunky(r, c, parcely[cislo(r, c)]);
+    return st === 'volna' || st === 'neznamy';
+  }
+  function prepniVKosiku(r, c) {
+    var id = cislo(r, c), i = vKosiku(id);
+    if (i >= 0) kosik.splice(i, 1);
+    else if (kosik.length >= KOSIK_STROP) { pas(T.kosikStrop); return; }
+    else if (daSaPridat(r, c)) kosik.push({ id: id, r: r, c: c });
+    else return;
+    ziadaj();
+    ukazKosik();
+  }
+  /** Obdĺžnik na obrazovke na štvorce. Riadky majú rôzny počet stĺpcov, tak sa pýta každý zvlášť. */
+  function doKosikaZRamu(r0) {
+    var x0 = Math.min(r0.x0, r0.x), x1 = Math.max(r0.x0, r0.x);
+    var y0 = Math.min(r0.y0, r0.y), y1 = Math.max(r0.y0, r0.y);
+    var rHore = riadokZoSirky(zY(naSvete(zYObr(y0)))), rDole = riadokZoSirky(zY(naSvete(zYObr(y1))));
+    for (var r = rHore; r <= rDole && kosik.length < KOSIK_STROP; r++) {
+      var cOd = stlpecZDlzky(r, zX(x0)), cDo = stlpecZDlzky(r, zX(x1));
+      if (cDo < cOd) cDo = STL[r] - 1;                 // výrez cez 180. poludník: po koniec riadku
+      for (var c = cOd; c <= cDo && kosik.length < KOSIK_STROP; c++) {
+        if (vKosiku(cislo(r, c)) < 0 && daSaPridat(r, c)) kosik.push({ id: cislo(r, c), r: r, c: c });
+      }
+    }
+    if (kosik.length >= KOSIK_STROP) pas(T.kosikStrop);
+    ziadaj();
+    ukazKosik();
+  }
+  function zahodKosik() {
+    kosik = [];
+    kosikRezim = false;
+    listRezim = 'prehlad';
+    ziadaj();
+    // Bez vybraného štvorca nie je čo ukázať: list sa zavrie, nech na mape
+    // neostane visieť prázdny košík.
+    if (S.vybrana) ukazList();
+    else { list.hidden = true; prepocitajStred(); }
+  }
 
   function bunkaNa(x, y) {
     var my = zYObr(y);
@@ -1164,6 +1321,7 @@
       h += '<button class="btn ' + (maKredit ? 'btn-line' : 'btn-solid') + '" type="button" data-akcia="kupit">' + esc(T.kupit) + '</button>';
       h += '<button class="btn btn-line" type="button" data-akcia="kreslit">' + esc(T.skusKreslit) + '</button>';
       // Cenník sľubuje balíky 3 a 10, tak sa musia dať kúpiť aj odtiaľto.
+      if (kosikZapnuty()) h += '<button class="list-balik" type="button" data-akcia="kosik">' + esc(T.kosikTlacidlo) + '</button>';
       h += '<button class="list-balik" type="button" data-akcia="balik">' + esc(T.balikTlacidlo) + '</button>';
       h += '<p class="list-pravne">' + esc(T.licenciaVeta) + ' <a href="' + esc(T.cestaPodmienky) + '">' + esc(T.podmienkyOdkaz) + '</a></p>';
     }
@@ -1201,11 +1359,46 @@
     var a = b.getAttribute('data-akcia');
     if (a === 'kupit') pokladna(false);
     else if (a === 'balik') pokladna(true);
+    else if (a === 'kosik') { sleduj('svet_kosik_otvoreny'); ukazKosik(); }
+    else if (a === 'kosik-zavri') zahodKosik();
+    else if (a === 'kosik-kupit') pokladna(false, true);
     else if (a === 'kreslit') kresliacePlatno();
     else if (a === 'nahlasit') nahlasit();
     else if (a === 'kredit') vezmiZKreditu(b);
     else if (a === 'zavri') zavriList();
   });
+  /**
+   * List košíka. Kým je človek v tomto režime, ťuknutie na mapu štvorce pridáva
+   * a odoberá; odpovede služby tento list neprekreslia (listRezim), takže sa
+   * výber nestratí uprostred kroku.
+   */
+  function ukazKosik() {
+    if (!kosikZapnuty()) return;
+    kosikRezim = true;
+    listRezim = 'kosik';
+    list.classList.remove('list-kresli');
+    var cena = Number(T.kosikCenaEur) || 5;
+    var h = '<button class="list-zavri" type="button" data-akcia="kosik-zavri" aria-label="' + esc(T.zavriet) + '">×</button>';
+    h += '<p class="list-cislo">' + esc(T.kosikNadpis) + '</p>';
+    if (!kosik.length) {
+      h += '<p class="list-miesto">' + esc(T.kosikPrazdny) + '</p>';
+    } else {
+      h += '<p class="list-miesto">' + kosik.length + ' ' + esc(kosik.length === 1 ? T.kosikJeden : T.kosikViac) + '</p>';
+      h += '<dl class="list-udaje">';
+      for (var i = 0; i < kosik.length; i++) {
+        h += '<div><dt>' + esc(T.cislo) + ' ' + cisloText(kosik[i].id) + '</dt><dd>'
+          + km(sirkaKm(kosik[i].r)) + ' × ' + km(vyskaKm(kosik[i].r)) + ' km</dd></div>';
+      }
+      h += '<div><dt>' + esc(T.kosikSpolu) + '</dt><dd>€' + (kosik.length * cena).toFixed(2) + '</dd></div></dl>';
+      h += '<button class="btn btn-solid" type="button" data-akcia="kosik-kupit">' + esc(T.kosikKupit) + '</button>';
+    }
+    h += '<button class="btn btn-line" type="button" data-akcia="kosik-zavri">' + esc(kosik.length ? T.kosikVycisti : T.kosikHotovo) + '</button>';
+    h += '<p class="list-pravne">' + esc(T.kosikPravne) + ' <a href="' + esc(T.cestaPodmienky) + '">' + esc(T.podmienkyOdkaz) + '</a></p>';
+    list.innerHTML = h;
+    list.hidden = false;
+    prepocitajStred();
+  }
+
   function zavriList() {
     S.vybrana = null;
     list.hidden = true;
@@ -1471,13 +1664,15 @@
    * S balíkom: kredit na 3 alebo 10 štvorcov, bez rezervácie a bez čísla štvorca;
    * štvorce si majiteľ vyberá až potom, z panela majiteľa na tejto mape.
    */
-  function pokladna(balik) {
-    if (!S.vybrana) return;
-    sleduj(balik ? 'svet_otvorena_pokladna_balik' : 'svet_otvorena_pokladna');
+  function pokladna(balik, jeKosik) {
+    if (jeKosik && !kosik.length) return;
+    if (!jeKosik && !S.vybrana) return;
+    sleduj(jeKosik ? 'svet_otvorena_pokladna_kosik' : balik ? 'svet_otvorena_pokladna_balik' : 'svet_otvorena_pokladna');
     listRezim = 'pokladna';
     list.classList.remove('list-kresli');
-    var id = S.vybrana.id;
-    var h = '<p class="list-cislo">' + (balik ? esc(T.balikNadpis) : esc(T.cislo) + ' ' + cisloText(id)) + '</p>';
+    var id = S.vybrana ? S.vybrana.id : 0;
+    var h = '<p class="list-cislo">' + (jeKosik ? esc(T.kosikNadpis) + ' (' + kosik.length + ')'
+      : balik ? esc(T.balikNadpis) : esc(T.cislo) + ' ' + cisloText(id)) + '</p>';
     if (TEST) h += '<p class="list-test" role="note">' + esc(T.testRezim) + '</p>';
     if (balik) {
       h += '<p class="list-miesto">' + esc(T.balikUvod) + '</p>';
@@ -1490,7 +1685,7 @@
     h += '<label class="suhlas"><input type="checkbox" data-suhlas="vek"><span>' + esc(T.suhlasVek) + '</span></label>';
     h += '<label class="suhlas suhlas-mail"><span class="skryte">' + esc(T.email) + '</span><input type="email" data-email autocomplete="email" placeholder="' + esc(T.email) + '" required></label>';
     // Darček je v cenníku: meno obdarovaného ide na certifikát. Nikde inde sa neukazuje.
-    if (!balik) h += '<label class="suhlas suhlas-mail"><span class="skryte">' + esc(T.darcek) + '</span><input type="text" data-darcek maxlength="60" autocomplete="off" placeholder="' + esc(T.darcek) + '"></label>';
+    if (!balik && !jeKosik) h += '<label class="suhlas suhlas-mail"><span class="skryte">' + esc(T.darcek) + '</span><input type="text" data-darcek maxlength="60" autocomplete="off" placeholder="' + esc(T.darcek) + '"></label>';
     h += '<button class="btn btn-solid" type="button" data-akcia="zaplatit" disabled>' + esc(T.pokracovatNaPlatbu) + '</button>';
     h += '<button class="btn btn-line" type="button" data-akcia="spat">' + esc(T.spat) + '</button>';
     h += '<p class="list-pravne">' + esc(T.pokladnaPravne) + ' <a href="' + esc(T.cestaOdstupenie) + '">' + esc(T.odstupenieOdkaz) + '</a></p>';
@@ -1510,7 +1705,17 @@
       var objednavka = { locale: JAZYK, email: mail.value.trim(), consent_delivery: true, consent_age: true };
       if (TEST) objednavka.test = true;
       var krok;
-      if (balik) {
+      if (jeKosik) {
+        // Najprv sa rezervujú všetky naraz (buď všetky, alebo ani jeden), až
+        // potom sa otvorí jedna pokladňa na N štvorcov.
+        objednavka.product = 'basket';
+        krok = api('/api/reserve-many', { cells: kosik.map(function (x) { return { row: x.r, col: x.c }; }) })
+          .then(function (r) {
+            objednavka.cells = ((r && r.cells) || []).map(function (x) { return { parcel_id: x.parcel_id, hold: x.hold }; });
+            if (!objednavka.cells.length) throw new Error('bez rezervacie');
+            return api('/api/checkout', objednavka);
+          });
+      } else if (balik) {
         var zvoleny = list.querySelector('input[name="svet-balik"]:checked');
         objednavka.product = zvoleny ? zvoleny.value : 'pack3';
         krok = api('/api/checkout', objednavka);
@@ -1535,8 +1740,17 @@
           // 409: bunku medzitým niekto zarezervoval alebo kúpil. To nie je
           // porucha pokladne a „skúste znova“ by človeka poslalo do slučky.
           var testVypnuty = chyba && chyba.dovod === 'test-disabled';
+          // Košík je všetko alebo nič: keď jeden štvorec medzitým padol, výber sa
+          // zahodí celý a človek si vyberie znova. Polovičný nákup nevznikne.
+          if (jeKosik && (kod === 409 || kod === 403) && !testVypnuty) {
+            pas(T.kosikObsadene);
+            kosik.forEach(function (x) { delete parcely[x.id]; delete bloky[(x.r >> 6) + ',' + (x.c >> 6)]; });
+            zahodKosik();
+            naplanujBloky();
+            return;
+          }
           // 403 wrong-hold: držiak už neplatí (rezerváciu medzitým získal niekto iný).
-          if (!balik && (kod === 409 || (kod === 403 && !testVypnuty))) {
+          if (!balik && !jeKosik && (kod === 409 || (kod === 403 && !testVypnuty))) {
             ulozDrziak(id, '');
             delete parcely[id];
             delete bloky[(S.vybrana.r >> 6) + ',' + (S.vybrana.c >> 6)];
@@ -1550,7 +1764,7 @@
           tlacidlo.disabled = kod === 429 || testVypnuty;
         });
     });
-    list.querySelector('[data-akcia="spat"]').addEventListener('click', ukazList);
+    list.querySelector('[data-akcia="spat"]').addEventListener('click', jeKosik ? ukazKosik : ukazList);
   }
 
   /** Kresba uložená pred platbou ako 1024 čísel 0 až 15, alebo null. */
