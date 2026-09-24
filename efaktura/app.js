@@ -12,12 +12,15 @@
  *
  * Udalosti do Umami (ak bezi): efaktura_kontrola, efaktura_nahlad,
  * efaktura_vytvorit_nahlad, efaktura_kupa_click, efaktura_zaplatene,
- * efaktura_stiahnute, kupa_click_vysledok, plus spolocne nastroj_pouzity a cena_videna.
+ * efaktura_stiahnute, kupa_click_vysledok, efaktura_do_formulara (prenos
+ * skontrolovaneho XML do formulara, vlastnost chyby = pocet chyb v subore),
+ * plus spolocne nastroj_pouzity a cena_videna.
  */
 import { skontroluj, protokol, IMPLEMENTOVANE } from './pravidla.mjs';
 import * as K from './kodovniky.mjs';
 import { parsujXml } from './parser.mjs';
 import { vytvorUbl, prepocitaj, prazdnaFaktura, zCentov } from './ubl.js';
+import { zUbl, skrat } from './z-ubl.mjs';
 import { vykresliNahlad } from './nahlad.js';
 import { zapojDavku } from './davka-ui.js';
 import { zobrazOpakovanie } from './dopyt-opakovanie.js';
@@ -75,6 +78,8 @@ const T = {
     prilisVelky: (mb) => 'Súbor má viac ako ' + mb + ' MB. Taká e-faktúra sa v praxi nevyskytuje; ak ju naozaj máte, napíšte na andrej@arling.sk.',
     nacitane: (n, kb) => 'Načítané: ' + n + ' (' + kb + ' kB).',
     vzorNacitany: 'Načítali sme vzorovú faktúru. Je vymyslená, ale prejde kontrolou.',
+    vzorSChybami: 'Pozrieť vzor s 2 chybami',
+    vzorSChybamiNacitany: 'Načítali sme vzor s dvoma zámernými chybami: suma s DPH je o cent vyššia a IBAN má preklep. Skúste ich opraviť vo formulári.',
     skopirovane: 'Skopírované.',
     kopirovanieZlyhalo: 'Kopírovanie sa nepodarilo, označte text myšou.',
     prazdnyNahlad: 'Načítajte súbor a doklad sa vykreslí tu.',
@@ -98,6 +103,25 @@ const T = {
     ulozitPdf: 'Uložiť ako PDF',
     generatorChyby: 'XML sme vytvorili, ale neprešlo našou vlastnou kontrolou. Nesťahujeme ho, aby ste neposlali chybnú faktúru. Opravte toto:',
     generatorOk: 'XML prešlo našou kontrolou bez chýb.',
+    // prenos skontrolovaneho XML do formulara (z-ubl.mjs)
+    doFormulara: 'Otvoriť vo formulári a opraviť',
+    doFormularaBezChyb: 'Upraviť vo formulári',
+    doFormularaPomoc: 'Úprava vo formulári je zadarmo. Platí sa až stiahnutie XML: 2,90 € bez DPH za jednu faktúru.',
+    prepisatNavrh: 'Vo formulári máte rozpísanú inú faktúru. Nahradiť ju údajmi z tohto súboru?',
+    prenosNejde: 'Súbor sa do formulára preniesť nedá.',
+    prenosNadpis: 'Faktúra zo súboru je vo formulári.',
+    prenosPrenieslo: (n) => 'Preniesli sme dodávateľa, odberateľa, údaje faktúry a ' + n + ' ' + tvar3(n, 'položku', 'položky', 'položiek') + '.',
+    prenosVsetko: 'Pri prenose sa zo súboru nič nestratilo.',
+    prenosNeprenieslo: 'Toto formulár nevie a v novom XML to nebude:',
+    prenosRozdiely: 'Toto formulár zapíše inak ako súbor:',
+    prenosVSubore: (a, b) => 'v súbore ' + a + ', formulár zapíše ' + b,
+    prenosDoplni: (b) => 'v súbore chýba, formulár zapíše ' + b,
+    prenosDalsie: (n) => 'a ďalšie (' + n + ')',
+    prenosSkryte: 'Formulár tieto údaje nezobrazuje, v XML však ostanú:',
+    prenosPrazdne: 'Čo v súbore chýbalo, ostalo prázdne. Doplňte to vo formulári.',
+    prenosKontrola: 'Pod náhľadom priebežne ukazujeme, čo ešte neprejde kontrolou.',
+    prenosCena: (opravene) => 'Formulár aj kontrola sú zadarmo. Stiahnutie ' + (opravene ? 'opraveného' : 'upraveného') + ' XML stojí 2,90 € bez DPH za jednu faktúru alebo 9,90 € bez DPH na 30 dní.',
+    opravaZostava: 'Toto ešte treba opraviť, inak XML neprejde kontrolou:',
     // platba
     kupaJedna: 'Kúpiť jednu faktúru za 2,90 € bez DPH',
     kupa30: 'Odomknúť na 30 dní za 9,90 € bez DPH',
@@ -144,6 +168,8 @@ const T = {
     prilisVelky: (mb) => 'Soubor má víc než ' + mb + ' MB. Taková e-faktura se v praxi nevyskytuje; pokud ji opravdu máte, napište na andrej@arling.sk.',
     nacitane: (n, kb) => 'Načteno: ' + n + ' (' + kb + ' kB).',
     vzorNacitany: 'Načetli jsme vzorovou fakturu. Je vymyšlená, ale projde kontrolou.',
+    vzorSChybami: 'Zobrazit vzor se 2 chybami',
+    vzorSChybamiNacitany: 'Načetli jsme vzor se dvěma záměrnými chybami: částka s DPH je o cent vyšší a IBAN má překlep. Zkuste je opravit ve formuláři.',
     skopirovane: 'Zkopírováno.',
     kopirovanieZlyhalo: 'Kopírování se nepodařilo, označte text myší.',
     prazdnyNahlad: 'Načtěte soubor a doklad se vykreslí tady.',
@@ -166,6 +192,24 @@ const T = {
     ulozitPdf: 'Uložit jako PDF',
     generatorChyby: 'XML jsme vytvořili, ale neprošlo naší vlastní kontrolou. Nestahujeme ho, abyste neposlali chybnou fakturu. Opravte toto:',
     generatorOk: 'XML prošlo naší kontrolou bez chyb.',
+    doFormulara: 'Otevřít ve formuláři a opravit',
+    doFormularaBezChyb: 'Upravit ve formuláři',
+    doFormularaPomoc: 'Úprava ve formuláři je zdarma. Platí se až stažení XML: 2,90 € bez DPH za jednu fakturu.',
+    prepisatNavrh: 'Ve formuláři máte rozepsanou jinou fakturu. Nahradit ji údaji z tohoto souboru?',
+    prenosNejde: 'Soubor nejde přenést do formuláře.',
+    prenosNadpis: 'Faktura ze souboru je ve formuláři.',
+    prenosPrenieslo: (n) => 'Přenesli jsme dodavatele, odběratele, údaje faktury a ' + n + ' ' + tvar3(n, 'položku', 'položky', 'položek') + '.',
+    prenosVsetko: 'Při přenosu se ze souboru nic neztratilo.',
+    prenosNeprenieslo: 'Tohle formulář neumí a v novém XML to nebude:',
+    prenosRozdiely: 'Tohle formulář zapíše jinak než soubor:',
+    prenosVSubore: (a, b) => 'v souboru ' + a + ', formulář zapíše ' + b,
+    prenosDoplni: (b) => 'v souboru chybí, formulář zapíše ' + b,
+    prenosDalsie: (n) => 'a další (' + n + ')',
+    prenosSkryte: 'Tyto údaje formulář nezobrazuje, v XML však zůstanou:',
+    prenosPrazdne: 'Co v souboru chybělo, zůstalo prázdné. Doplňte to ve formuláři.',
+    prenosKontrola: 'Pod náhledem průběžně ukazujeme, co ještě neprojde kontrolou.',
+    prenosCena: (opravene) => 'Formulář i kontrola jsou zdarma. Stažení ' + (opravene ? 'opraveného' : 'upraveného') + ' XML stojí 2,90 € bez DPH za jednu fakturu nebo 9,90 € bez DPH na 30 dní.',
+    opravaZostava: 'Tohle je ještě potřeba opravit, jinak XML neprojde kontrolou:',
     kupaJedna: 'Koupit jednu fakturu za 2,90 € bez DPH',
     kupa30: 'Odemknout na 30 dní za 9,90 € bez DPH',
     zapina: 'Platba se právě zapíná. Napište na andrej@arling.sk a pošlu vám XML e-mailem.',
@@ -213,6 +257,8 @@ const T = {
     prilisVelky: (mb) => 'Die Datei ist größer als ' + mb + ' MB. So große E-Rechnungen kommen in der Praxis nicht vor; falls doch, schreiben Sie an andrej@arling.sk.',
     nacitane: (n, kb) => 'Geladen: ' + n + ' (' + kb + ' kB).',
     vzorNacitany: 'Wir haben eine Beispielrechnung geladen. Sie ist erfunden, besteht aber die Prüfung.',
+    vzorSChybami: 'Beispiel mit 2 Fehlern ansehen',
+    vzorSChybamiNacitany: 'Wir haben das Beispiel mit zwei absichtlichen Fehlern geladen: Der Betrag mit Umsatzsteuer ist einen Cent zu hoch und die IBAN hat einen Tippfehler. Korrigieren Sie sie im Formular.',
     skopirovane: 'Kopiert.',
     kopirovanieZlyhalo: 'Das Kopieren ist fehlgeschlagen, markieren Sie den Text mit der Maus.',
     prazdnyNahlad: 'Laden Sie eine Datei, dann erscheint der Beleg hier.',
@@ -235,6 +281,24 @@ const T = {
     ulozitPdf: 'Als PDF speichern',
     generatorChyby: 'Wir haben das XML erzeugt, aber es hat unsere eigene Prüfung nicht bestanden. Wir laden es nicht herunter, damit Sie keine fehlerhafte Rechnung versenden. Bitte beheben Sie das:',
     generatorOk: 'Das XML hat unsere Prüfung ohne Fehler bestanden.',
+    doFormulara: 'Im Formular öffnen und korrigieren',
+    doFormularaBezChyb: 'Im Formular bearbeiten',
+    doFormularaPomoc: 'Das Bearbeiten im Formular ist kostenlos. Bezahlt wird erst der XML-Download: 2,90 € zzgl. MwSt. pro Rechnung.',
+    prepisatNavrh: 'Im Formular steht bereits eine andere Rechnung. Soll sie durch die Daten aus dieser Datei ersetzt werden?',
+    prenosNejde: 'Diese Datei lässt sich nicht ins Formular übernehmen.',
+    prenosNadpis: 'Die Rechnung aus der Datei steht jetzt im Formular.',
+    prenosPrenieslo: (n) => 'Übernommen haben wir Verkäufer, Käufer, Rechnungsdaten und ' + n + ' ' + tvar2(n, 'Position', 'Positionen') + '.',
+    prenosVsetko: 'Beim Übernehmen ist nichts aus der Datei verloren gegangen.',
+    prenosNeprenieslo: 'Das kann das Formular nicht, im neuen XML fehlt es:',
+    prenosRozdiely: 'Das schreibt das Formular anders als die Datei:',
+    prenosVSubore: (a, b) => 'in der Datei ' + a + ', das Formular schreibt ' + b,
+    prenosDoplni: (b) => 'fehlt in der Datei, das Formular schreibt ' + b,
+    prenosDalsie: (n) => 'und ' + n + ' weitere',
+    prenosSkryte: 'Diese Angaben zeigt das Formular nicht an, im XML bleiben sie erhalten:',
+    prenosPrazdne: 'Was in der Datei fehlte, bleibt leer. Bitte ergänzen Sie es im Formular.',
+    prenosKontrola: 'Unter der Vorschau zeigen wir laufend, was die Prüfung noch nicht besteht.',
+    prenosCena: (opravene) => 'Formular und Prüfung sind kostenlos. Der Download des ' + (opravene ? 'korrigierten' : 'bearbeiteten') + ' XML kostet 2,90 € zzgl. MwSt. pro Rechnung oder 9,90 € zzgl. MwSt. für 30 Tage.',
+    opravaZostava: 'Das muss noch korrigiert werden, sonst besteht das XML die Prüfung nicht:',
     kupaJedna: 'Eine Rechnung für 2,90 € zzgl. MwSt. kaufen',
     kupa30: 'Für 30 Tage freischalten, 9,90 € zzgl. MwSt.',
     zapina: 'Die Zahlung wird gerade aktiviert. Schreiben Sie an andrej@arling.sk, dann sende ich Ihnen das XML per E-Mail.',
@@ -282,6 +346,8 @@ const T = {
     prilisVelky: (mb) => 'The file is larger than ' + mb + ' MB. E-invoices that big do not occur in practice; if you really have one, write to andrej@arling.sk.',
     nacitane: (n, kb) => 'Loaded: ' + n + ' (' + kb + ' kB).',
     vzorNacitany: 'We loaded a sample invoice. The data is made up, but it passes the check.',
+    vzorSChybami: 'See the sample with 2 errors',
+    vzorSChybamiNacitany: 'We loaded the sample with two deliberate errors: the total with VAT is one cent too high and the IBAN has a typo. Try fixing them in the form.',
     skopirovane: 'Copied.',
     kopirovanieZlyhalo: 'Copying failed, select the text with the mouse instead.',
     prazdnyNahlad: 'Load a file and the document will be drawn here.',
@@ -305,6 +371,25 @@ const T = {
     ulozitPdf: 'Save as PDF',
     generatorChyby: 'We built the XML, but it did not pass our own check. We are not downloading it, so that you do not send a broken invoice. Fix this:',
     generatorOk: 'The XML passed our check with no errors.',
+    // moving the checked XML into the form (z-ubl.mjs)
+    doFormulara: 'Open in the form and fix',
+    doFormularaBezChyb: 'Edit in the form',
+    doFormularaPomoc: 'Editing in the form is free. You only pay for the XML download: 2.90 € excl. VAT for one invoice.',
+    prepisatNavrh: 'The form already holds a different invoice. Replace it with the data from this file?',
+    prenosNejde: 'This file cannot be moved into the form.',
+    prenosNadpis: 'The invoice from the file is now in the form.',
+    prenosPrenieslo: (n) => 'We carried over the seller, the buyer, the invoice details and ' + n + ' ' + tvar2(n, 'line', 'lines') + '.',
+    prenosVsetko: 'Nothing from the file was lost on the way.',
+    prenosNeprenieslo: 'The form cannot hold this, so the new XML will not have it:',
+    prenosRozdiely: 'The form writes this differently from the file:',
+    prenosVSubore: (a, b) => 'the file has ' + a + ', the form writes ' + b,
+    prenosDoplni: (b) => 'missing in the file, the form writes ' + b,
+    prenosDalsie: (n) => 'and ' + n + ' more',
+    prenosSkryte: 'The form does not show these, but they stay in the XML:',
+    prenosPrazdne: 'Whatever was missing in the file stays empty. Fill it in in the form.',
+    prenosKontrola: 'Below the preview we keep showing what still fails the check.',
+    prenosCena: (opravene) => 'The form and the check are free. Downloading the ' + (opravene ? 'fixed' : 'edited') + ' XML costs 2.90 € excl. VAT for one invoice, or 9.90 € excl. VAT for 30 days.',
+    opravaZostava: 'Fix this too, or the XML will not pass the check:',
     // platba
     kupaJedna: 'Buy one invoice for 2.90 € excl. VAT',
     kupa30: 'Unlock for 30 days, 9.90 € excl. VAT',
@@ -694,6 +779,37 @@ const VZOR_XML_EN = `<?xml version="1.0" encoding="UTF-8"?>
 `;
 
 const VZOR = LANG === 'en' ? VZOR_XML_EN : VZOR_XML;
+/* Vzor s dvoma zámernými chybami (25. 9. 2026): tá istá faktúra ako na obrázku vedľa nástroja,
+   suma s DPH a suma na úhradu o cent vyššia (BR-CO-15) a preklep v poslednej číslici IBAN (ARL-IBAN).
+   Návštevník si tak vyskúša aj cestu chyba -> formulár -> oprava, nielen čistý vzor. */
+function vzorSChybami(x) {
+  let n = 0;
+  const y = x
+    .replace(/(<cbc:(?:TaxInclusiveAmount|PayableAmount)[^>]*>)(\d+)\.(\d{2})(<)/g, (m, a, e, c, z) => {
+      n++;
+      const centy = Number(e) * 100 + Number(c) + 1;
+      return a + Math.floor(centy / 100) + '.' + String(centy % 100).padStart(2, '0') + z;
+    })
+    .replace(/(<cac:PayeeFinancialAccount>\s*<cbc:ID>[A-Z]{2}[0-9A-Z]*?)(\d)(<\/cbc:ID>)/, (m, a, d, z) => { n++; return a + ((Number(d) + 1) % 10) + z; });
+  return n === 3 ? y : null;
+}
+const VZOR_CHYBY = vzorSChybami(VZOR);
+function nacitajVzor(sChybami) {
+  const text = sChybami && VZOR_CHYBY ? VZOR_CHYBY : VZOR;
+  const meno = sChybami && VZOR_CHYBY ? (LANG === 'en' ? 'sample-with-errors.xml' : 'vzor-s-chybami.xml') : (LANG === 'en' ? 'sample-e-invoice.xml' : 'vzor-efaktura.xml');
+  prijmiText(text, meno, true);
+  const s = $('vstup-stav');
+  if (!s) return;
+  s.textContent = sChybami && VZOR_CHYBY ? T.vzorSChybamiNacitany : T.vzorNacitany;
+  if (!sChybami && VZOR_CHYBY) {
+    const a = document.createElement('button');
+    a.type = 'button';
+    a.className = 'vzor-chyby-odkaz';
+    a.textContent = T.vzorSChybami;
+    a.addEventListener('click', () => { track('efaktura_vzor_chyby', { jazyk: LANG }); nacitajVzor(true); });
+    s.append(' ', a);
+  }
+}
 
 /* ── Zalozky ────────────────────────────────────────────────────────────── */
 const PANELY = ['kontrola', 'nahlad', 'vytvorit'];
@@ -767,7 +883,7 @@ if (vstupBlok) {
   const vybrat = $('vybrat');
   if (vybrat) vybrat.addEventListener('click', () => subor && subor.click());
   const vzor = $('vzor');
-  if (vzor) vzor.addEventListener('click', () => { prijmiText(VZOR, LANG === 'en' ? 'sample-e-invoice.xml' : 'vzor-efaktura.xml', true); stavVstupu(T.vzorNacitany); });
+  if (vzor) vzor.addEventListener('click', () => nacitajVzor(false));
   const spustit = $('spustit');
   if (spustit) spustit.addEventListener('click', () => {
     const ta = $('xml');
@@ -787,8 +903,7 @@ function kNastroju() {
 const heroVzor = $('hero-vzor');
 if (heroVzor) heroVzor.addEventListener('click', () => {
   prepni('kontrola', true);
-  prijmiText(VZOR, LANG === 'en' ? 'sample-e-invoice.xml' : 'vzor-efaktura.xml', true);
-  stavVstupu(T.vzorNacitany);
+  nacitajVzor(false);
   kNastroju();
 });
 const heroSubor = $('hero-subor');
@@ -875,6 +990,9 @@ function spustiKontrolu() {
   const bezaliPravidla = v.typ === 'Invoice' || v.typ === 'CreditNote';
   // Kolko pravidiel na tento subor naozaj beralo; cislo je z pravidla.mjs, nie natvrdo.
   if (bezaliPravidla) cielSumar.appendChild(el('p', 'sumar-meta sumar-pravidla', T.sumarPravidla(pocetPravidiel(v.profil))));
+  // Cesta od vysledku k opravenemu XML: prenos do formulara, pri chybach aj bez nich.
+  // CII a poskodene XML formular nevie, preto tam tlacidlo nie je (z-ubl.mjs by vratil chybu).
+  if (bezaliPravidla) cielSumar.appendChild(tlacidloDoFormulara(s.chyby, xmlText));
   vycisti(cielNalezy);
   for (const n of v.nalezy) cielNalezy.appendChild(riadokNalezu(n));
   if (akcie) akcie.hidden = false;
@@ -984,6 +1102,19 @@ if (!Array.isArray(faktura.polozky) || !faktura.polozky.length) faktura = novaFa
 const ulozenyDodavatel = nacitaj(KLUC_DODAVATEL);
 if (ulozenyDodavatel && !faktura.dodavatel.nazov) faktura.dodavatel = Object.assign({}, faktura.dodavatel, ulozenyDodavatel);
 
+/* Hodnota, ktoru zoznam nepozna (sadzba 20 % zo suboru, krajina XX, prazdna mena), sa ukaze
+ * tak, ako je, a zoznam potichu nevyberie svoju prvu moznost. Inak by formular ukazoval
+ * nieco ine, nez z coho generator naozaj sklada XML. Prazdna hodnota sa ukaze ako "-". */
+function doplnNeznamu(sel, hodnota, popis) {
+  const h = hodnota === undefined || hodnota === null ? '' : String(hodnota);
+  if (Array.prototype.some.call(sel.options, (o) => o.value === h)) return;
+  const o = document.createElement('option');
+  o.value = h;
+  o.textContent = h === '' ? '-' : (popis ? popis(h) : h);
+  o.selected = true;
+  sel.insertBefore(o, sel.firstChild);
+}
+
 function polePodla(meno, hodnota, onZmena) {
   const l = el('label', 'pole');
   l.appendChild(el('span', null, MENOVKY[meno] || meno));
@@ -1003,10 +1134,15 @@ function polePodla(meno, hodnota, onZmena) {
       if (String(hodnota) === k) o.selected = true;
       vstup.appendChild(o);
     }
+    // Profil bez hodnoty generator berie ako Peppol, preto tam ostava prva moznost.
+    if (meno !== 'profil') doplnNeznamu(vstup, hodnota);
   } else {
     vstup = document.createElement('input');
-    vstup.type = meno.startsWith('datum') ? 'date' : meno === 'email' ? 'email' : 'text';
-    vstup.value = hodnota === undefined || hodnota === null ? '' : String(hodnota);
+    // Datum v inom tvare nez RRRR-MM-DD (napriklad zo suboru) by pole typu date potichu
+    // vyprazdnilo, hoci generator ho zapise. Taku hodnotu ukazeme ako text, aby bola vidiet.
+    const h = hodnota === undefined || hodnota === null ? '' : String(hodnota);
+    vstup.type = meno.startsWith('datum') ? (h === '' || /^\d{4}-\d{2}-\d{2}$/.test(h) ? 'date' : 'text') : meno === 'email' ? 'email' : 'text';
+    vstup.value = h;
   }
   vstup.addEventListener('input', () => onZmena(vstup.value));
   vstup.addEventListener('change', () => onZmena(vstup.value));
@@ -1107,6 +1243,7 @@ function postavFormular() {
   bZ.addEventListener('click', () => {
     if (!window.confirm(T.vymazatOtazka)) return;
     zmaz(KLUC_NAVRH); zmaz(KLUC_DODAVATEL); zmaz(KLUC_ODBERATELIA);
+    zrusPrenos();
     faktura = novaFaktura();
     postavFormular();
     prekresliGenerator();
@@ -1140,6 +1277,7 @@ function postavPolozky() {
           if (String(hodnota) === String(k)) o.selected = true;
           v.appendChild(o);
         }
+        doplnNeznamu(v, hodnota, typ === 'cislo' ? (s) => s + ' %' : null);
       } else {
         v = document.createElement('input');
         v.type = typ === 'cislo' ? 'text' : 'text';
@@ -1184,6 +1322,10 @@ function stavGeneratora(text) { const s = $('generator-stav'); if (s) s.textCont
 
 let posledneXml = '';
 let generatorPouzity = false;
+// Prenos XML do formulara: po prenose sa formular priebezne kontroluje (nizsie, cast Prenos).
+let opravaAktivna = false;
+let poslednyPrenos = '';
+let casovacKontroly = null;
 
 function prekresliGenerator() {
   const ciel = $('nahlad-zivy');
@@ -1196,6 +1338,7 @@ function prekresliGenerator() {
     return;
   }
   posledneXml = xml;
+  if (opravaAktivna) naplanujKontroluFormulara();
   const p = parsujXml(xml);
   if (p.ok) vykresliNahlad(p.koren, ciel, LANG);
 
@@ -1221,6 +1364,139 @@ function prekresliGenerator() {
 
 const btnPdf2 = $('pdf-generator');
 if (btnPdf2) btnPdf2.addEventListener('click', () => tlac($('nahlad-zivy').firstElementChild));
+
+/* ── Prenos XML do formulara ────────────────────────────────────────────────
+ * Cesta od chybneho suboru k opravenemu XML: kontrola, tlacidlo pod vysledkom,
+ * z-ubl.mjs urobi z XML objekt faktury a formular sa naplni tym istym mechanizmom
+ * ako pri rucnom vyplnani (faktura, ulozNavrh, postavFormular). Clovek opravi, co
+ * ukaze kontrola pod nahladom, a stiahne XML za existujucu cenu v brane nizsie.
+ * Vsetko v prehliadaci, nic sa neposiela. Poznamka nad formularom hovori, co sa
+ * prenieslo a co nie; pise sa len cez el() a textContent, nikdy ako HTML, lebo
+ * obsahuje text z cudzieho suboru. Testy: z-ubl.test.mjs. */
+function tlacidloDoFormulara(pocetChyb, text) {
+  const obal = el('div', 'do-formulara');
+  const b = el('button', 'btn ' + (pocetChyb ? 'btn-solid' : 'btn-line'), pocetChyb ? T.doFormulara : T.doFormularaBezChyb);
+  b.type = 'button';
+  b.id = 'do-formulara';
+  b.addEventListener('click', () => doFormulara(text, pocetChyb));
+  obal.appendChild(b);
+  obal.appendChild(el('p', 'pomoc', T.doFormularaPomoc));
+  return obal;
+}
+
+/* Rozpisana faktura, ktoru by prenos prepisal? Nie, ak je vo formulari este nezmeneny predosly prenos. */
+function navrhJeRozpisany() {
+  if (poslednyPrenos && JSON.stringify(faktura) === poslednyPrenos) return false;
+  const f = faktura || {};
+  return !!(f.cislo || (f.odberatel && f.odberatel.nazov) || (Array.isArray(f.polozky) && f.polozky.some((p) => p && p.nazov)));
+}
+
+function doFormulara(text, pocetChyb) {
+  const v = zUbl(text, { jazyk: LANG });
+  if (!v.ok) {
+    const s = $('sumar');
+    if (s) s.appendChild(el('p', 'poznamka', T.prenosNejde + ' ' + v.chyba.text));
+    return;
+  }
+  if (navrhJeRozpisany() && !window.confirm(T.prepisatNavrh)) return;
+  const pocetPoloziek = v.faktura.polozky.length;
+  // Bez riadku by formular nemal kam pisat a po obnoveni stranky by sa navrh zahodil (novaFaktura).
+  if (!pocetPoloziek) v.faktura.polozky.push({ nazov: '', mnozstvo: '', jednotka: '', cena: '', sadzba: '', kategoria: '' });
+  faktura = v.faktura;
+  ulozNavrh();
+  poslednyPrenos = JSON.stringify(faktura);
+  opravaAktivna = true;
+  postavFormular();
+  prepni('vytvorit', true);
+  const poz = ukazPrenos(v, pocetPoloziek, pocetChyb > 0);
+  kontrolaFormulara();
+  if (poz) {
+    const ticho = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    try { poz.scrollIntoView({ behavior: ticho ? 'auto' : 'smooth', block: 'start' }); } catch (e) { poz.scrollIntoView(); }
+    try { poz.focus({ preventScroll: true }); } catch (e) { /* nic */ }
+  }
+  track('efaktura_do_formulara', { chyby: pocetChyb, vzor: vstupJeUkazka, produkt: 'efaktura', jazyk: LANG });
+}
+
+/* Poznamka stoji tesne nad formularom a nahladom (pred .dielna, teda aj pod blokom CSV davky,
+ * ktory tam vklada davka-ui.js), vytvorena tu, aby nebolo treba menit HTML ~24 stranok. */
+function ukazPrenos(v, pocetPoloziek, opravene) {
+  const form = $('formular');
+  if (!form || !form.parentNode) return null;
+  let poz = $('prenos');
+  if (!poz) {
+    poz = el('div', 'prenos');
+    poz.id = 'prenos';
+    poz.tabIndex = -1;
+    poz.setAttribute('role', 'region');
+    poz.setAttribute('aria-labelledby', 'prenos-nadpis');
+    const miesto = (form.closest && form.closest('.dielna')) || form;
+    miesto.parentNode.insertBefore(poz, miesto);
+  }
+  vycisti(poz);
+  poz.hidden = false;
+  postavPoznamkuPrenosu(poz, v, pocetPoloziek, opravene);
+  return poz;
+}
+
+function postavPoznamkuPrenosu(poz, v, pocetPoloziek, opravene) {
+  const MAX = 8;
+  const krat = (x) => (x.pocet > 1 ? x.pocet + '× ' : '');
+  const zoznam = (polozky, riadok) => {
+    const ul = el('ul', 'prenos-zoznam');
+    for (const x of polozky.slice(0, MAX)) ul.appendChild(el('li', null, riadok(x)));
+    if (polozky.length > MAX) ul.appendChild(el('li', null, T.prenosDalsie(polozky.length - MAX)));
+    return ul;
+  };
+  const h = el('h3', null, T.prenosNadpis);
+  h.id = 'prenos-nadpis';
+  poz.appendChild(h);
+  poz.appendChild(el('p', null, T.prenosPrenieslo(pocetPoloziek)));
+  if (v.neprenesene.length) {
+    poz.appendChild(el('p', 'prenos-pozor', T.prenosNeprenieslo));
+    poz.appendChild(zoznam(v.neprenesene, (x) => krat(x) + x.text + (x.priklad ? ': ' + skrat(x.priklad) : '')));
+  } else {
+    poz.appendChild(el('p', null, T.prenosVsetko));
+  }
+  if (v.rozdiely.length) {
+    poz.appendChild(el('p', 'prenos-pozor', T.prenosRozdiely));
+    poz.appendChild(zoznam(v.rozdiely, (x) => (x.druh === 'veta' ? x.veta
+      : krat(x) + x.text + ': ' + (x.druh === 'doplnene' ? T.prenosDoplni(skrat(x.formular)) : T.prenosVSubore(skrat(x.vSubore), skrat(x.formular))))));
+  }
+  if (v.skryte.length) poz.appendChild(el('p', null, T.prenosSkryte + ' ' + v.skryte.map((x) => x.text).join(', ') + '.'));
+  poz.appendChild(el('p', null, T.prenosPrazdne + ' ' + T.prenosKontrola));
+  poz.appendChild(el('p', 'prenos-cena', T.prenosCena(opravene)));
+}
+
+/* Po prenose sa kazda zmena formulara prezenie tou istou kontrolou ako stiahnutie
+ * (skontroluj nad vygenerovanym XML), s oneskorenim, aby sa nekontrolovalo po kazdom znaku. */
+function naplanujKontroluFormulara() {
+  clearTimeout(casovacKontroly);
+  casovacKontroly = setTimeout(kontrolaFormulara, 400);
+}
+
+function kontrolaFormulara() {
+  clearTimeout(casovacKontroly);
+  if (!opravaAktivna || !blokChyb || !posledneXml) return;
+  const v = skontroluj(posledneXml);
+  vycisti(blokChyb);
+  blokChyb.hidden = false;
+  if (v.sumar.chyby > 0) {
+    blokChyb.appendChild(el('p', 'poznamka', T.opravaZostava));
+    for (const n of v.nalezy.filter((x) => x.zavaznost === 'chyba')) blokChyb.appendChild(riadokNalezu(n));
+  } else {
+    blokChyb.appendChild(el('p', 'poznamka je-ok', T.generatorOk));
+  }
+}
+
+function zrusPrenos() {
+  opravaAktivna = false;
+  poslednyPrenos = '';
+  clearTimeout(casovacKontroly);
+  const poz = $('prenos');
+  if (poz) { vycisti(poz); poz.hidden = true; }
+  if (blokChyb) { vycisti(blokChyb); blokChyb.hidden = true; }
+}
 
 /* ── Platba ─────────────────────────────────────────────────────────────── */
 function testRezim() {
