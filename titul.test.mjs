@@ -6,10 +6,11 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import * as titul from './titul.js';
 import {
-  zakladnaSuma, posudPlatbu, stavZoZaznamu, cestaSuboru, platnyOdkaz, titulZDotazu,
-  cisloObjednavky, velkostSuboru, platnaAdresaSuboru, suboryZoSluzby, suboryZoStranky,
-  odkazyZoSluzby, zdrojSuborov, vykresliPanel, LICENCIE, PANEL,
+  zakladnaSuma, posudPlatbu, stavZoZaznamu, platnyOdkaz, titulZDotazu,
+  cisloObjednavky, velkostSuboru, platnaAdresaSuboru, suboryZoSluzby,
+  odkazyZoSluzby, zdrojSuborov, vykresliPanel, ukazPoPlatbe, LICENCIE, PANEL,
 } from './titul.js';
 
 test('zakladna suma je suma pred zlavovym kodom', () => {
@@ -48,12 +49,11 @@ test('session sa pamata len k odomknutemu titulu', () => {
   assert.deepEqual(stavZoZaznamu({ tituly: { 'ben-hur': true }, sessions: { 'ben-hur': 7 } }).sessions, {});
 });
 
-test('cesta k suboru je prazdna, kym nie je dosadena tajna cesta', () => {
-  assert.equal(cestaSuboru({ cesta: '' }, 'Ben-Hur-eink.pdf'), '');
-  assert.equal(cestaSuboru({}, 'Ben-Hur-eink.pdf'), '');
-  assert.equal(cestaSuboru({ cesta: 'files/abcdefgh12345678' }, 'Ben-Hur-eink.pdf'), 'files/abcdefgh12345678/Ben-Hur-eink.pdf');
-  assert.equal(cestaSuboru({ cesta: 'files/abcdefgh12345678/' }, 'Ben-Hur-eink.pdf'), 'files/abcdefgh12345678/Ben-Hur-eink.pdf');
-  assert.equal(cestaSuboru({ cesta: 'files/abcdefgh12345678/' }, ''), '');
+/* 24. 9. 2026: platene subory lezali verejne a cesta k nim stala v bloku titul-data.
+   Stranka uz z bloku ziadny odkaz nevyraba; tieto funkcie zmizli a vratit sa nemaju. */
+test('stranka uz nevie vyrobit odkaz na subor z bloku titul-data', () => {
+  assert.equal('cestaSuboru' in titul, false);
+  assert.equal('suboryZoStranky' in titul, false);
 });
 
 test('na Stripe sa ide len cez odkaz Stripe', () => {
@@ -120,25 +120,15 @@ test('subory z odpovede sluzby: len ok:true a len pouzitelne odkazy', () => {
   assert.deepEqual(suboryZoSluzby(null), []);
 });
 
-test('subory zo stranky si velkost vytiahnu z popisu', () => {
-  const data = { cesta: 'files/abcdefgh12345678/', subory: [
-    { file: 'Ben-Hur-eink.pdf', format: 'eink', nazov: 'e-ink PDF, 157 x 210 mm', popis: '953 pages, 5.35 MB' },
-  ] };
-  const s = suboryZoStranky(data);
-  assert.equal(s.length, 1);
-  assert.equal(s[0].href, 'files/abcdefgh12345678/Ben-Hur-eink.pdf');
-  assert.equal(s[0].velkost, '5.35 MB');
-  assert.equal(s[0].popis, '953 pages');
-  assert.equal(suboryZoStranky({ cesta: '', subory: [{ file: 'x.pdf' }] })[0].href, '', 'bez tajnej cesty nie je odkaz');
-  assert.deepEqual(suboryZoStranky(null), []);
-});
+/* ── Odkazy len zo sluzby ──────────────────────────────────────────────── */
 
-/* ── Najprv sluzba, potom stranka ──────────────────────────────────────── */
-
+/* Stary tvar bloku so starou tajnou cestou: ani ked ho stranka este nesie,
+   nesmie z neho vzniknut odkaz. */
 const DATA = { titul: 'ben-hur', cesta: 'files/abcdefgh12345678/', subory: [
   { file: 'Ben-Hur-eink.pdf', format: 'eink', nazov: 'e-ink PDF, 157 x 210 mm', popis: '953 pages, 5.35 MB' },
   { file: 'Ben-Hur-A4.pdf', format: 'a4', nazov: 'A4 PDF', popis: '953 pages, 5.36 MB' },
 ] };
+const PODPISANY = 'https://homelab.tailbf8f27.ts.net/licence/api/download?p=ben-hur&f=Ben-Hur-eink.pdf&exp=1790208000&sig=' + 'a'.repeat(64);
 
 function fetchDvojnik(odpoved, { ok = true, hodVynimku = false } = {}) {
   const volania = [];
@@ -171,28 +161,29 @@ test('emailed zo sluzby prejde az po stranku, a to len ako true', async () => {
   assert.equal(nie.emailed, false, 'retazec "true" nie je potvrdenie');
 });
 
-test('najprv sluzba: ked odpovie, subory su jej', async () => {
+test('sluzba odpovie: subory su jej podpisane odkazy', async () => {
   const f = fetchDvojnik({ ok: true, email: 'kto@example.com',
-    files: [{ label: 'e-ink PDF', url: 'https://homelab.tailbf8f27.ts.net/licence/api/file/1', bytes: 5609062 }] });
-  const z = await zdrojSuborov('cs_1', DATA, { fetch: f });
+    files: [{ label: 'e-ink PDF', url: PODPISANY, bytes: 5609062 }] });
+  const z = await zdrojSuborov('cs_1', { fetch: f });
   assert.equal(z.zdroj, 'sluzba');
   assert.equal(z.subory.length, 1);
+  assert.equal(z.subory[0].href, PODPISANY);
   assert.equal(z.email, 'kto@example.com');
   assert.equal(z.emailed, false);
 });
 
-test('potom stranka: ok:false, chyba HTTP, vynimka aj chybajuci fetch koncia na bloku titul-data', async () => {
+test('sluzba neodpovie: ziadne odkazy, ani zo starej cesty na stranke', async () => {
   const pady = [
-    await zdrojSuborov('cs_1', DATA, { fetch: fetchDvojnik({ ok: false, reason: 'test-disabled' }) }),
-    await zdrojSuborov('cs_1', DATA, { fetch: fetchDvojnik({ ok: true, files: [] }, { ok: false }) }),
-    await zdrojSuborov('cs_1', DATA, { fetch: fetchDvojnik(null, { hodVynimku: true }) }),
-    await zdrojSuborov('cs_1', DATA, { fetch: null }),
-    await zdrojSuborov('', DATA, { fetch: fetchDvojnik({ ok: true, files: [] }) }),
+    await zdrojSuborov('cs_1', { fetch: fetchDvojnik({ ok: false, reason: 'downloads-off' }, { ok: false }) }),
+    await zdrojSuborov('cs_1', { fetch: fetchDvojnik({ ok: false, reason: 'test-disabled' }) }),
+    await zdrojSuborov('cs_1', { fetch: fetchDvojnik({ ok: true, files: [] }, { ok: false }) }),
+    await zdrojSuborov('cs_1', { fetch: fetchDvojnik(null, { hodVynimku: true }) }),
+    await zdrojSuborov('cs_1', { fetch: null }),
+    await zdrojSuborov('', { fetch: fetchDvojnik({ ok: true, files: [] }) }),
   ];
   for (const z of pady) {
-    assert.equal(z.zdroj, 'stranka');
-    assert.equal(z.subory.length, 2);
-    assert.equal(z.subory[0].href, 'files/abcdefgh12345678/Ben-Hur-eink.pdf');
+    assert.equal(z.zdroj, 'caka');
+    assert.deepEqual(z.subory, [], 'ziadny nahradny odkaz');
     assert.equal(z.email, '', 'e-mail pozna len sluzba');
     assert.equal(z.emailed, false, 'ked sluzba neodpovedala, o e-maile nevieme nic');
   }
@@ -201,12 +192,22 @@ test('potom stranka: ok:false, chyba HTTP, vynimka aj chybajuci fetch koncia na 
 /* ── Panel po zaplateni ────────────────────────────────────────────────── */
 
 function fakeDom() {
-  const novy = (tag) => ({
-    tag, deti: [], atr: {}, dataset: {}, className: '', textContent: '', hidden: true,
-    setAttribute(k, v) { this.atr[k] = String(v); },
-    removeAttribute(k) { delete this.atr[k]; },
-    appendChild(d) { this.deti.push(d); return d; },
-  });
+  const novy = (tag) => {
+    const el = {
+      tag, deti: [], atr: {}, dataset: {}, className: '', hidden: true, disabled: false, pocuva: {}, text_: '',
+      setAttribute(k, v) { this.atr[k] = String(v); },
+      removeAttribute(k) { delete this.atr[k]; },
+      appendChild(d) { this.deti.push(d); return d; },
+      addEventListener(meno, fn) { this.pocuva[meno] = fn; },
+    };
+    // Ako v skutocnom DOM: priradenie textContent zmaze vsetky deti (panel sa tak prekresluje).
+    Object.defineProperty(el, 'textContent', {
+      get() { return this.text_; },
+      set(v) { this.text_ = String(v); this.deti = []; },
+      enumerable: true,
+    });
+    return el;
+  };
   globalThis.document = { createElement: novy, createTextNode: (t) => ({ tag: '#text', deti: [], textContent: String(t) }) };
   return { novy };
 }
@@ -300,11 +301,66 @@ test('panel v testovom rezime ma poznamku o teste a vlastny nadpis', () => {
   delete globalThis.document;
 });
 
-test('bez tajnej cesty sa odkaz nevyrobi a panel povie, co robit', () => {
+test('sluzba neodpovedala: pokojna veta, Try again, cele cislo platby a kontakt, ziadny odkaz', () => {
   const { novy } = fakeDom();
   const koren = novy('div');
-  vykresliPanel(koren, { subory: suboryZoStranky({ cesta: '', subory: [{ file: 'Ben-Hur-eink.pdf', nazov: 'e-ink PDF' }] }), session: 'cs_1234567890' });
-  assert.equal(najdi(koren, 'hotovo-subory'), null, 'ziadny mrtvy odkaz');
-  assert.equal(text(najdi(koren, 'hotovo-riadok')), PANEL.bezCesty);
+  let znova = 0;
+  vykresliPanel(koren, { subory: [], session: 'cs_live_a1b2c3d4e5f6g7h8', znova: () => { znova += 1; } });
+  assert.equal(koren.hidden, false);
+  assert.equal(najdi(koren, 'hotovo-subory'), null, 'ziadny odkaz, ani mrtvy');
+  const riadky = koren.deti.filter((d) => d.className === 'hotovo-riadok').map(text);
+  assert.deepEqual(riadky, [PANEL.cakame, PANEL.cakamePomoc]);
+  assert.ok(riadky.join(' ').includes('andrej@arling.sk'));
+  const tlacidlo = najdi(koren, 'hotovo-znova').deti[0];
+  assert.equal(tlacidlo.tag, 'button');
+  assert.equal(tlacidlo.atr.type, 'button');
+  assert.equal(text(tlacidlo), 'Try again');
+  tlacidlo.pocuva.click();
+  assert.equal(znova, 1, 'Try again zavola novy pokus');
+  assert.equal(tlacidlo.disabled, true, 'dvojklik neposle dva pokusy naraz');
+  assert.equal(text(najdi(koren, 'hotovo-cislo')), 'Payment reference cs_live_a1b2c3d4e5f6g7h8', 'cele session id');
+  assert.equal(najdi(koren, 'hotovo-mail'), null, 'bez odkazov sa o e-maile nic netvrdi');
+  delete globalThis.document;
+});
+
+test('texty cakania nic nesluby a nemaju pomlcky', () => {
+  for (const k of ['cakame', 'cakamePomoc', 'cakamePomocBez', 'znova', 'referencia', 'mailNeisty']) {
+    assert.ok(!/[–—]/.test(PANEL[k]), k + ' bez pomlcky');
+    assert.ok(!/guarantee|always|instantly|within \d+ (minutes|hours)/i.test(PANEL[k]), k + ' bez slubu');
+  }
+});
+
+test('bez cisla platby povie, z akej adresy napisat', () => {
+  const { novy } = fakeDom();
+  const koren = novy('div');
+  vykresliPanel(koren, { subory: [], session: '' });
+  const riadky = koren.deti.filter((d) => d.className === 'hotovo-riadok').map(text);
+  assert.deepEqual(riadky, [PANEL.cakame, PANEL.cakamePomocBez]);
+  assert.equal(najdi(koren, 'hotovo-cislo'), null);
+  assert.equal(najdi(koren, 'hotovo-znova'), null, 'bez funkcie znova ziadne tlacidlo');
+  delete globalThis.document;
+});
+
+test('po platbe: sluzba neodpovie, Try again sa spyta znova a az potom ukaze subory', async () => {
+  const { novy } = fakeDom();
+  const koren = novy('div');
+  let pokus = 0;
+  const f = async () => {
+    pokus += 1;
+    if (pokus === 1) return { ok: false, json: async () => ({ ok: false, reason: 'downloads-off' }) };
+    return { ok: true, json: async () => ({ ok: true, files: [{ label: 'e-ink PDF', url: PODPISANY, bytes: 5609062 }] }) };
+  };
+  const z1 = await ukazPoPlatbe({ blok: koren, sid: 'cs_live_a1b2c3d4e5f6g7h8', ukazka: null, fetch: f, data: DATA });
+  assert.equal(z1.zdroj, 'caka');
+  assert.equal(najdi(koren, 'hotovo-subory'), null, 'stary blok titul-data s cestou sa nepouzije');
+  const tlacidlo = najdi(koren, 'hotovo-znova').deti[0];
+  await tlacidlo.pocuva.click();
+  // click vola ukazPoPlatbe, ktore je async; pockame, kym dobehne
+  await new Promise((r) => setTimeout(r, 0));
+  assert.equal(pokus, 2);
+  const zoznam = najdi(koren, 'hotovo-subory');
+  assert.ok(zoznam, 'po druhom pokuse su subory');
+  assert.equal(zoznam.deti[0].deti[0].atr.href, PODPISANY);
+  assert.equal(najdi(koren, 'hotovo-znova'), null);
   delete globalThis.document;
 });
