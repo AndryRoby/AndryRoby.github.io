@@ -449,3 +449,17 @@ export function prazdnaFaktura(krajina = 'SK') {
     polozky: [{ nazov: '', mnozstvo: 1, jednotka: 'C62', cena: 0, sadzba: (K.SADZBY_DPH[krajina] || [0])[0], kategoria: 'S' }]
   };
 }
+
+// ---------------------------------------------------------------- predvolby pre opacny smer (z-ubl.mjs)
+
+/**
+ * Kody a texty dovodu oslobodenia, ktore generator doplni sam, ked ich pouzivatel nevyplni.
+ * Pridane 25. 9. 2026 len ako export (generator sa nemeni): z-ubl.mjs podla nich pri prenose
+ * XML do formulara spozna text, ktory napisal nas generator, a necha pole prazdne, aby sa
+ * pri zmene kategorie DPH nedrzal stary text. Kopia, aby ich nikto zvonka nezmenil.
+ */
+export const PREDVOLENE_OSLOBODENIE = Object.freeze({
+  kategorie: Object.freeze([...KATEGORIE_S_DOVODOM]),
+  kody: Object.freeze({ ...PREDVOLENY_KOD_OSLOBODENIA }),
+  texty: Object.freeze({ ...PREDVOLENY_TEXT_OSLOBODENIA })
+});
