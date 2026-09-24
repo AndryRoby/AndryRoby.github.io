@@ -1,66 +1,212 @@
-/* The API page. Everything general is in /style/paper.css; this file only adds
-   what a reference page needs and the hub does not have: a narrow reading
-   column, a field table, the snippet builder and a frame for the live widget.
-   No card grid: the page is read top to bottom like documentation. */
+/* The API page. Everything general is in /style/paper.css and /style/hub.css
+   (body.noc.predaj); this file only adds what a reference page with live
+   samples needs: the three ways, the puzzle explorer, the code tabs with
+   their Run output, and the credit line.
 
-.uzke { width: min(760px, var(--wrap)); }  /* nie 100 %: na mobile by text nemal okraj */
-.siroke { width: min(1040px, 100%); }
+   No card grid: the page is read top to bottom like documentation. Motion is
+   only opacity and transform, and it stops under prefers-reduced-motion.
 
+   Prekrytia pravidiel z paper.css majú navyše .predaj: `body.noc code` a
+   `body.noc pre` sú (0,1,2) a obyčajná trieda (0,1,0) by ich neprebila. */
+
+/* Prvok s atribútom hidden musí ostať skrytý aj vtedy, keď mu trieda dáva
+   display (tlačidlá .tl, zoznam kariet, výstup). Bez toho by sa tlačidlá,
+   ktoré bez JavaScriptu nič nerobia, ukázali aj bez neho. */
+main [hidden] { display: none !important; }
+
+.uzke { width: min(760px, var(--wrap)); }
+/* var(--wrap), nie 100 %: na telefóne by text nemal okraj. */
+.siroke { width: min(1120px, var(--wrap)); }
+
+/* ── Úvod ─────────────────────────────────────────────────────────────── */
 /* min-width: 0 na stĺpcoch je nutnosť, nie kozmetika: bez neho berie stĺpec
-   mriežky najmenšiu šírku svojho obsahu, a jedna položka v <select> („Hares,
-   Anti-knight Sudoku") roztiahla celú stránku na 772 bodov pri šírke okna
-   390. Zmerané snímkou a kontrolou pretečenia. */
-.api-hero { display: grid; grid-template-columns: 7fr 5fr; gap: var(--gap); align-items: start; }
-.api-hero > *, .stavebnica > * { min-width: 0 }
-@media (max-width: 900px) { .api-hero { grid-template-columns: 1fr } }
-
-.fakty { font-family: var(--ui); font-size: 14px; color: var(--muted); margin: 22px 0 0; padding: 0; list-style: none; }
-.fakty li { padding: 7px 0; border-top: 1px solid var(--line); display: flex; gap: 12px; justify-content: space-between; }
-.fakty b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
-
-.polia { margin: 18px 0 0 }
-.polia div { display: grid; grid-template-columns: 170px 1fr; gap: 14px; padding: 10px 0; border-top: 1px solid var(--line); }
-.polia dt { font-family: var(--mono); font-size: 14px; color: var(--ink); }
-.polia dd { margin: 0; font-size: 16px; }
-@media (max-width: 620px) { .polia div { grid-template-columns: 1fr; gap: 3px } }
-
-/* 1.6em, nie 1.2: pri 390 bodoch orezáva užší odsadenie číslo položky. */
-.kroky { font-size: 16px; padding-left: 1.6em; }
-.kroky li { margin: 0 0 9px }
-
-/* Úryvky sa zalamujú, nescrollujú. Vodorovný posuvník v kóde, ktorý si má
-   niekto skopírovať, len skrýva jeho koniec; zalomenie do textu nič nepridá,
-   lebo sa kopíruje textContent, nie to, čo nakreslil prehliadač. */
-pre.kod { margin: 14px 0; min-width: 0; max-width: 100%; white-space: pre-wrap; overflow-wrap: anywhere }
-pre.kod b { color: var(--accent); font-weight: 400; }
-
-.stavebnica { display: grid; grid-template-columns: 5fr 7fr; gap: var(--gap); align-items: start; }
-@media (max-width: 900px) { .stavebnica { grid-template-columns: 1fr } }
-.volby { display: flex; flex-direction: column; gap: 14px; }
-.volby label { font-family: var(--ui); font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); display: block; margin-bottom: 5px; }
-.volby select, .volby input {
-  font: inherit; font-size: 16px; width: 100%; min-width: 0; max-width: 100%; padding: 9px 11px; border-radius: 10px;
-  border: 1px solid var(--line); background: var(--card); color: var(--ink);
+   mriežky najmenšiu šírku svojho obsahu a dlhá položka v <select> roztiahla
+   celú stránku na 772 bodov pri šírke okna 390. */
+.api-hero { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: var(--gap); align-items: start; }
+.api-hero > * { min-width: 0; }
+@media (max-width: 900px) { .api-hero { grid-template-columns: minmax(0, 1fr); } }
+.api-hero .cta { align-items: center; gap: 8px 22px; }
+@media (max-width: 520px) {
+  .api-hero .cta .btn { width: 100%; justify-content: center; }
 }
-.volby select:focus-visible, .volby input:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px }
+
+.fakty { font-family: var(--ui); font-size: 14px; color: var(--muted); margin: 26px 0 0; padding: 0; list-style: none; }
+.fakty li { padding: 8px 0; border-top: 1px solid var(--line); display: flex; gap: 12px; justify-content: space-between; }
+.fakty b { color: var(--ink); font-weight: 600; text-align: right; }
 
 .ramcek { border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); overflow: hidden; }
 .ramcek iframe { display: block; width: 100%; height: 620px; border: 0; }
-.ramcek .popisok { font-family: var(--ui); font-size: 13px; color: var(--muted); padding: 9px 13px; border-top: 1px solid var(--line); }
+.ramcek .popisok { font-family: var(--ui); font-size: 13px; color: var(--muted); padding: 10px 14px; border-top: 1px solid var(--line); margin: 0; max-width: none; }
 
-.kopiruj { display: flex; align-items: center; gap: 12px; margin-top: 8px; }
-.kopiruj button {
-  font-family: var(--ui); font-size: 14px; padding: 7px 14px; border-radius: 9px;
-  border: 1px solid var(--ink); background: transparent; color: var(--ink); cursor: pointer;
+/* ── Tri cesty ─────────────────────────────────────────────────────────── */
+.cesty { display: grid; grid-template-columns: minmax(0, 1fr); gap: clamp(32px, 3.4vw, 48px);
+         margin: clamp(24px, 3vw, 40px) 0 0; }
+@media (min-width: 860px) { .cesty { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.cesta { display: flex; flex-direction: column; min-width: 0; border-top: 1px solid var(--rule-strong, var(--line)); padding-top: 20px; }
+.cesta h3 { margin: 0 0 6px; }
+.predaj .pre-koho { font: 400 15px/1.5 var(--ui); color: var(--muted); margin: 0 0 16px; }
+.tri-kroky { list-style: none; counter-reset: krok; margin: 0 0 18px; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.tri-kroky li { counter-increment: krok; position: relative; padding-left: 36px; font: 400 15.5px/1.5 var(--ui); color: var(--body); min-height: 24px; }
+.tri-kroky li::before { content: counter(krok); position: absolute; left: 0; top: 0; width: 24px; height: 24px; border-radius: 50%;
+                        border: 1px solid rgba(255, 255, 255, .24); display: flex; align-items: center; justify-content: center;
+                        font: 600 12px/1 var(--ui); color: var(--ink); font-variant-numeric: tabular-nums; }
+/* Výsledok je v každom stĺpci na rovnakej výške: stĺpce mriežky majú rovnakú
+   výšku a auto okraj ho odtlačí na spodok. */
+.predaj .vysledok { margin: auto 0 0; padding: 14px 16px; border: 1px solid var(--line); border-radius: 12px;
+                    background: rgba(255, 255, 255, .03); font: 400 15px/1.5 var(--ui); color: var(--body); max-width: none; }
+.vysledok b { display: block; color: var(--accent-light); font-weight: 600; margin: 0 0 3px; }
+.cesta .go { margin-top: 10px; min-height: 44px; align-self: flex-start; }
+
+/* ── Tlačidlá stránky ────────────────────────────────────────────────────
+   Menšia sestra .btn z paper.css: rovnaký polomer 12 px, výška 44 px, aby
+   sa zmestila do riadku pod úryvkom. Farby sa menia bez prechodu. */
+.tl { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 16px;
+      border-radius: 12px; border: 1px solid rgba(255, 255, 255, .18); background: rgba(255, 255, 255, .03);
+      color: var(--ink); font: 600 14px/1.2 var(--ui); text-decoration: none; cursor: pointer; white-space: nowrap; }
+.tl:hover { background: rgba(255, 255, 255, .08); border-color: rgba(255, 255, 255, .3); color: var(--ink); }
+.tl:active { transform: translateY(1px); }
+.tl:focus-visible { outline: 2px solid var(--accent-light); outline-offset: 2px; }
+.tl svg { width: 18px; height: 18px; flex: none; }
+.tl-hlavne { background: var(--accent); border-color: var(--accent); color: #1a0d07; }
+.tl-hlavne:hover { background: #ff7a55; border-color: #ff7a55; color: #1a0d07; }
+.tl.ikona { width: 48px; min-height: 48px; padding: 0; flex: none; }
+
+.akcie-kodu { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; margin: 12px 0 0; }
+.hlaska { font: 500 13px/1.3 var(--ui); color: var(--ok); opacity: 0; transition: opacity .2s var(--ease); }
+.hlaska.vidno { opacity: 1; }
+
+/* ── Prieskumník ──────────────────────────────────────────────────────── */
+.ovladace { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px 18px; margin: clamp(24px, 3vw, 36px) 0 0; align-items: end; }
+@media (min-width: 640px) { .ovladace { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1000px) { .ovladace { grid-template-columns: minmax(0, 1.35fr) minmax(0, 1.2fr) minmax(0, 1fr) auto; } }
+.ovladac { min-width: 0; margin: 0; padding: 0; border: 0; }
+.ovladac > label, .ovladac > legend { display: block; font: 500 13px/1.3 var(--ui); color: var(--muted); letter-spacing: .02em; margin: 0 0 7px; padding: 0; }
+/* legenda v fieldsete sa inak kreslí do rámu; float ju vráti do toku */
+.segment > legend { float: left; width: 100%; }
+.segment-rad { clear: both; }
+.ovladace select, .ovladace input[type="number"] {
+  font: 500 16px/1.2 var(--ui); height: 48px; width: 100%; min-width: 0; padding: 0 12px; border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, .18); background: #161311; color: var(--ink); }
+.ovladace select:focus-visible, .ovladace input:focus-visible { outline: 2px solid var(--accent-light); outline-offset: 2px; }
+
+.segment-rad { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); height: 48px; border: 1px solid rgba(255, 255, 255, .18);
+               border-radius: 12px; overflow: hidden; background: #161311; }
+.segment-rad label { position: relative; display: block; margin: 0; cursor: pointer; }
+.segment-rad label + label { border-left: 1px solid rgba(255, 255, 255, .12); }
+.segment-rad input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.segment-rad span { display: flex; align-items: center; justify-content: center; height: 100%; font: 600 14px/1 var(--ui); color: var(--body); pointer-events: none; }
+.segment-rad label:hover span { color: var(--ink); }
+.segment-rad input:checked + span { background: rgba(242, 100, 60, .16); color: var(--ink); box-shadow: inset 0 -2px 0 var(--accent); }
+.segment-rad input:focus-visible + span { outline: 2px solid var(--accent-light); outline-offset: -4px; border-radius: 9px; }
+
+.krokovac { display: flex; gap: 6px; }
+.krokovac input { flex: 1 1 auto; text-align: center; font-variant-numeric: tabular-nums; -moz-appearance: textfield; appearance: textfield; }
+.krokovac input::-webkit-inner-spin-button, .krokovac input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.ovladac-nahoda .tl { min-height: 48px; width: 100%; }
+
+.predaj .stav-vyberu { font: 500 14px/1.5 var(--ui); color: var(--body); margin: 14px 0 0; min-height: 1.5em; max-width: none; }
+
+/* Dve kresby vedľa seba aj na telefóne: porovnanie zadania s riešením je
+   dôvod, prečo tu sú. Biely papier pod nimi, lebo čiary sú čierne. */
+.nahlady { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(12px, 2.4vw, 28px); margin: 18px 0 0; max-width: 820px; }
+.nahlady figure { margin: 0; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.list { aspect-ratio: 1 / 1; background: #fff; border-radius: 12px; padding: clamp(8px, 2vw, 22px);
+        display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.list img { display: block; width: 100%; height: 100%; object-fit: contain; transition: opacity .2s var(--ease); }
+.list img.nacita { opacity: .3; }
+.nahlady figcaption { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 2px 10px;
+                      font: 500 13px/1.4 var(--ui); color: var(--muted); max-width: none; }
+.predaj .nahlady figcaption code { background: none; padding: 0; color: var(--body); font-size: 12.5px; overflow-wrap: anywhere; }
+/* Pri 320 bodoch je stĺpec užší než tlačidlo v jednom riadku: radšej dva
+   riadky textu než tlačidlo, ktoré pretečie z okna. */
+.nahlady .tl { width: 100%; white-space: normal; text-align: center; padding: 6px 10px; }
+.nahlady + .small { margin: 14px 0 0; max-width: 64ch; }
+
+.pravidla { max-width: 820px; margin-top: 24px; }
+.pravidla ol { margin: 12px 0 0; padding-left: 1.4em; font: 400 15.5px/1.55 var(--ui); color: var(--body); max-width: 70ch; }
+.pravidla li { margin: 0 0 8px; }
+
+.adresa { margin: 28px 0 0; padding: 16px 18px; border: 1px solid var(--line); border-radius: 14px; background: rgba(255, 255, 255, .03); }
+.predaj .adresa-popis { font: 500 13px/1.4 var(--ui); color: var(--muted); margin: 0 0 8px; max-width: none; }
+.predaj .adresa > code { display: block; background: none; padding: 0; border-radius: 0; font-size: 15px; line-height: 1.5; color: var(--ink); overflow-wrap: anywhere; }
+.adresa .small { margin: 14px 0 0; }
+
+.subor { display: grid; grid-template-columns: minmax(0, 1fr); gap: clamp(24px, 3vw, 44px); margin: 32px 0 0; align-items: start; }
+@media (min-width: 980px) { .subor { grid-template-columns: minmax(0, 11fr) minmax(0, 9fr); } }
+.subor > * { min-width: 0; }
+.predaj pre.json { margin: 0; font-size: 13px; line-height: 1.6; }
+.json .jk { border-radius: 4px; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+.json .jk.svieti { background: rgba(242, 100, 60, .2); box-shadow: 0 0 0 2px rgba(242, 100, 60, .2); color: var(--ink); }
+
+.polia { margin: 0; }
+.polia > div { padding: 11px 0; border-top: 1px solid var(--line); }
+.polia > div:last-child { border-bottom: 1px solid var(--line); }
+.polia > div:hover { background: rgba(255, 255, 255, .025); }
+.polia dt { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 12px; }
+.predaj .polia dt code { background: none; padding: 0; font: 600 14px/1.4 var(--mono); color: var(--ink); }
+.polia .hodnota { font: 400 13px/1.4 var(--mono); color: var(--accent-light); overflow-wrap: anywhere; min-width: 0; }
+.polia dd { margin: 4px 0 0; font: 400 15px/1.5 var(--ui); color: var(--body); }
+.subor-polia > .small { margin: 14px 0 0; }
+
+/* ── Úryvky kódu ─────────────────────────────────────────────────────────
+   Úryvky sa zalamujú, nescrollujú. Vodorovný posuvník v kóde, ktorý si má
+   niekto skopírovať, len skrýva jeho koniec; kopíruje sa textContent, nie to,
+   čo nakreslil prehliadač, takže zalomenie nič nepridá. */
+.predaj pre.kod { margin: 14px 0 0; min-width: 0; max-width: 100%; white-space: pre-wrap; overflow-wrap: anywhere;
+                  font-size: 13px; line-height: 1.6; color: var(--ink); }
+@media (min-width: 760px) { .predaj pre.kod:not(.json) { font-size: 13.5px; } }
+
+.karty { margin: clamp(24px, 3vw, 36px) 0 0; }
+.karty-zoznam { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin: 0 0 20px; }
+@media (min-width: 760px) { .karty-zoznam { display: flex; flex-wrap: wrap; } }
+.karty-zoznam [role="tab"] { min-height: 44px; padding: 0 16px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, .14);
+                             background: transparent; color: var(--body); font: 600 14px/1.2 var(--ui); cursor: pointer; }
+.karty-zoznam [role="tab"]:hover { color: var(--ink); border-color: rgba(255, 255, 255, .3); }
+.karty-zoznam [role="tab"][aria-selected="true"] { color: var(--ink); border-color: var(--accent); background: rgba(242, 100, 60, .14); }
+.karty-zoznam [role="tab"]:focus-visible { outline: 2px solid var(--accent-light); outline-offset: 2px; }
+@media (max-width: 759px) { .karty-zoznam [role="tab"] { padding: 0 6px; } }
+.karta-kod { min-width: 0; }
+.karta-kod + .karta-kod { margin-top: 40px; }            /* bez JavaScriptu sú panely pod sebou */
+.karty.aktivne .karta-kod + .karta-kod { margin-top: 0; }
+.karta-kod h3 { margin: 0 0 6px; }
+.karta-kod > p { font-size: 15.5px; }
+.karty + .small { margin: 22px 0 0; }
+
+.vystup { margin: 14px 0 0; padding: 14px; border: 1px solid var(--line); border-radius: 14px; background: rgba(0, 0, 0, .28); }
+.vystup.ukaz { animation: api-objav .24s var(--ease); }
+@keyframes api-objav { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.vystup-hlava { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin: 0 0 10px;
+                font: 500 13px/1.4 var(--ui); color: var(--muted); max-width: none; }
+.vystup-hlava .tl { min-height: 36px; padding: 0 12px; font-size: 13px; }
+.vystup iframe { display: block; width: 100%; height: 620px; border: 0; border-radius: 10px; background: var(--paper); }
+.vystup figure { margin: 0; }
+.vystup figcaption { font: 500 13px/1.4 var(--ui); color: var(--body); margin: 8px 0 0; }
+.vystup .konzola { margin: 10px 0 0; }
+.vystup-hlava + .konzola { margin-top: 0; }
+
+.konzola { list-style: none; margin: 0; padding: 0; font: 400 13px/1.55 var(--mono); color: var(--ink); }
+.konzola li { padding: 6px 0; border-top: 1px solid rgba(255, 255, 255, .07); white-space: pre-wrap; overflow-wrap: anywhere; max-width: none; }
+.konzola li:first-child { border-top: 0; }
+.konzola .prazdne, .konzola .meta { color: var(--muted); font-family: var(--ui); }
+.konzola .meta { font-size: 12.5px; }
+.konzola .chyba { color: var(--accent-light); font-family: var(--ui); }
+
+.spravy { margin: clamp(40px, 4.4vw, 64px) 0 0; padding-top: clamp(28px, 3vw, 40px); border-top: 1px solid var(--line); }
+.spravy > p { font-size: 15.5px; }
+.spravy .adresa-popis { margin-top: 20px; }
+.spravy > .konzola { border: 1px solid var(--line); border-radius: 14px; padding: 6px 14px; background: rgba(0, 0, 0, .28); }
+
+/* ── Adresy a licencia ────────────────────────────────────────────────── */
+.tablewrap { margin: 18px 0; }
+.predaj .tablewrap code { overflow-wrap: anywhere; }
+
+.kredit { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; margin: 16px 0 20px; padding: 14px 16px;
+          border: 1px solid var(--line); border-radius: 12px; background: rgba(255, 255, 255, .03); }
+.predaj .kredit code { background: none; padding: 0; font: 600 16px/1.4 var(--mono); color: var(--ink); }
+.kredit .akcie-kodu { margin: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  .list img, .hlaska { transition: none; }
+  .vystup.ukaz { animation: none; }
+  .tl:active { transform: none; }
 }
-.kopiruj button:hover { background: var(--ink); color: var(--paper) }
-.kopiruj span { font-family: var(--ui); font-size: 13px; color: var(--ok) }
-
-details { border-top: 1px solid var(--line); padding: 14px 0 }
-details summary { cursor: pointer; font-family: var(--display); font-weight: 600; font-size: 18px; color: var(--ink) }
-details p { margin: 10px 0 0 }
-
-.ukazky { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr)); gap: 16px; margin: 22px 0 0; }
-.ukazky figure { margin: 0 }
-.ukazky img { display: block; width: 100%; height: auto; background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 8px }
-.ukazky figcaption { font-family: var(--ui); font-size: 12px; color: var(--muted); margin-top: 6px; text-align: center }
