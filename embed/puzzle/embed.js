@@ -9,7 +9,8 @@
  * address of the page.
  *
  * Attributes the script uses itself:
- *   data-height   the iframe height in pixels, 620 by default
+ *   data-height   the starting iframe height in pixels, 620 by default; the
+ *                 iframe then follows the puzzle's own height
  *   data-width    a CSS width, 100% by default
  *   data-title    the iframe title for screen readers
  *   data-target   the id of the element to put the iframe in; without it the
@@ -53,6 +54,18 @@
   ram.style.border = '0';
   ram.style.maxWidth = '100%';
   ram.style.colorScheme = 'light dark';
+
+  /* Hlavolam hlási svoju výšku (správa "size"), iframe sa jej prispôsobí,
+     takže v ňom nie je vlastný scrollbar. data-height je len začiatočná výška. */
+  window.addEventListener('message', function (e) {
+    var m = e.data;
+    if (e.source !== ram.contentWindow || !m || m.type !== 'arling-puzzle' || m.event !== 'size') return;
+    if (typeof m.height === 'number' && isFinite(m.height)) ram.style.height = Math.min(Math.max(Math.round(m.height), 240), 2400) + 'px';
+  });
+
+  ram.addEventListener('load', function () {
+    try { ram.contentWindow.postMessage({ type: 'arling-puzzle-host', event: 'auto-height' }, '*'); } catch (x) { /* nic */ }
+  });
 
   var kam = d.target ? document.getElementById(d.target) : null;
   if (kam) kam.appendChild(ram);
