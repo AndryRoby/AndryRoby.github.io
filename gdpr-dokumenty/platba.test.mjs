@@ -100,6 +100,15 @@ test('testovacia platba označí dokumenty ako testovacie', () => {
   assert.ok(APP.includes("stiahni((testovyNakup() ? 'TEST-' : '') + 'gdpr-dokumenty-'"), 'názov ZIP nezačína na TEST-');
 });
 
+/* Od 21. 9. worker testovaciu platbu cudzej adresy odmieta (paid false,
+   reason test_disabled). Stránka to predtým brala ako oneskorenie Stripe a
+   osemkrát overovala s vetou „ak ste zaplatili, dokumenty sa odomknú“. */
+test('testovaciu platbu, ktorú worker odmietol (test_disabled), stránka neopakuje a povie to', () => {
+  assert.ok(APP.includes("if (st && st.reason === 'test_disabled') {"), 'odmietnutý test by sa overoval dookola');
+  assert.ok(APP.indexOf("st.reason === 'test_disabled'") < APP.indexOf('if (st && !st.paid && !siet)'), 'kontrola dôvodu musí byť pred opakovaním');
+  assert.equal((APP.match(/testZakazany: '/g) || []).length, 3, 'veta testZakazany nie je vo všetkých troch jazykoch');
+});
+
 test('veta o testovacom výtlačku je vo všetkých troch jazykoch', () => {
   assert.equal((APP.match(/testVodoznak:/g) || []).length, 3);
   for (const kus of ['TESTOVACÍ VÝTLAČOK', 'TESTOVACÍ VÝTISK', 'TESTAUSDRUCK']) {

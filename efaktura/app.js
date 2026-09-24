@@ -114,6 +114,8 @@ const T = {
     testVodoznakXml: 'TESTOVACIA FAKTURA: odomknuta platbou v Stripe test mode, ziadne peniaze neprisli. Nepouzivajte tento subor ako skutocny doklad.',
     testStiahnutie: 'V testovacom režime sa sťahuje výslovne označené testovacie XML: názov súboru začína na TEST- a v poznámke dokladu stojí veta o testovacej faktúre. Ostré XML vydáva len zaplatená živá platba.',
     odomknuteDo: (d) => 'Odomknuté do ' + d + '.',
+    platnostSkoncila: (d) => 'Platba je overená, ale jej platnosť skončila ' + d + '. Odkaz odomyká sťahovanie len počas zaplatenej doby (24 hodín alebo 30 dní od platby). Na ďalšie XML si kúpte nové odomknutie; ak si myslíte, že ide o chybu, napíšte na andrej@arling.sk s číslom objednávky.',
+    testZakazany: 'Testovacie platby odomykajú len skúšky prevádzkovateľa stránky. Táto testovacia platba nič neodomkne a žiadne peniaze neprišli.',
     odkazNadpis: 'Uložte si tento odkaz.',
     odkazText: 'Týmto odkazom sa k zaplatenému sťahovaniu dostanete aj v inom prehliadači alebo na inom počítači, kým platnosť trvá. Stránka si platbu overí znova priamo u Stripe, takže odkaz sa dá použiť opakovane.',
     odkazMail: 'Poslať mi odkaz e-mailom',
@@ -179,6 +181,8 @@ const T = {
     testVodoznakXml: 'TESTOVACI FAKTURA: odemcena platbou ve Stripe test modu, zadne penize neprisly. Nepouzivejte tento soubor jako skutecny doklad.',
     testStiahnutie: 'V testovacím režimu se stahuje výslovně označené testovací XML: název souboru začíná na TEST- a v poznámce dokladu stojí věta o testovací faktuře. Ostré XML vydá jen zaplacená živá platba.',
     odomknuteDo: (d) => 'Odemčeno do ' + d + '.',
+    platnostSkoncila: (d) => 'Platba je ověřená, ale její platnost skončila ' + d + '. Odkaz odemyká stahování jen po zaplacenou dobu (24 hodin nebo 30 dní od platby). Na další XML si kupte nové odemčení; pokud jde podle vás o chybu, napište na andrej@arling.sk s číslem objednávky.',
+    testZakazany: 'Testovací platby odemykají jen zkoušky provozovatele stránky. Tato testovací platba nic neodemkne a žádné peníze nepřišly.',
     odkazNadpis: 'Uložte si tento odkaz.',
     odkazText: 'Tímto odkazem se k zaplacenému stahování dostanete i v jiném prohlížeči nebo na jiném počítači, dokud platnost trvá. Stránka si platbu ověří znovu přímo u Stripe, takže odkaz lze použít opakovaně.',
     odkazMail: 'Poslat mi odkaz e-mailem',
@@ -246,6 +250,8 @@ const T = {
     testVodoznakXml: 'TESTRECHNUNG: durch eine Zahlung im Stripe-Testmodus freigeschaltet, es wurde kein Geld ueberwiesen. Verwenden Sie diese Datei nicht als echten Beleg.',
     testStiahnutie: 'Im Testmodus wird ausdrücklich gekennzeichnetes Test-XML heruntergeladen: der Dateiname beginnt mit TEST- und im Hinweis des Belegs steht der Satz über die Testrechnung. Echtes XML gibt nur eine bezahlte Livezahlung frei.',
     odomknuteDo: (d) => 'Freigeschaltet bis ' + d + '.',
+    platnostSkoncila: (d) => 'Die Zahlung ist bestätigt, ihr Zeitraum endete aber am ' + d + '. Der Link schaltet den Download nur für den bezahlten Zeitraum frei (24 Stunden oder 30 Tage ab Zahlung). Für weitere XML-Dateien kaufen Sie eine neue Freischaltung; falls Sie einen Fehler vermuten, schreiben Sie an andrej@arling.sk mit Ihrer Bestellnummer.',
+    testZakazany: 'Testzahlungen schalten nur Tests des Seitenbetreibers frei. Diese Testzahlung schaltet nichts frei, es wurde kein Geld überwiesen.',
     odkazNadpis: 'Bewahren Sie diesen Link auf.',
     odkazText: 'Mit diesem Link kommen Sie auch in einem anderen Browser oder an einem anderen Rechner an den bezahlten Download, solange die Freischaltung gilt. Die Seite prüft die Zahlung erneut direkt bei Stripe, der Link lässt sich also mehrfach verwenden.',
     odkazMail: 'Link per E-Mail an mich senden',
@@ -315,6 +321,8 @@ const T = {
     testVodoznakXml: 'TEST INVOICE: unlocked by a payment in Stripe test mode, no money changed hands. Do not use this file as a real document.',
     testStiahnutie: 'In test mode the download is an explicitly marked test XML: the file name starts with TEST- and the document note carries the sentence about a test invoice. Only a paid live payment produces the real XML.',
     odomknuteDo: (d) => 'Unlocked until ' + d + '.',
+    platnostSkoncila: (d) => 'The payment is confirmed, but its period ended on ' + d + '. The link unlocks the download only for the paid period (24 hours or 30 days from payment). For more XML files, buy a new unlock; if you think this is a mistake, write to andrej@arling.sk with your order number.',
+    testZakazany: 'Test payments only unlock the site owner\'s own rehearsals. This test payment unlocks nothing, and no money changed hands.',
     odkazNadpis: 'Save this link.',
     odkazText: 'This link takes you back to the paid download in another browser or on another computer, for as long as the unlock lasts. The page checks the payment again straight with Stripe, so the link works more than once.',
     odkazMail: 'E-mail the link to me',
@@ -1272,6 +1280,21 @@ function jeNasaPlatba(st, jeTest) {
   if (zaklad === CENA_JEDNA) return 'jedna';
   return null;
 }
+/* Od kedy plati odomknutie, v milisekundach. Worker vracia created zo Stripe
+ * session (sekundy od 1970, okamih otvorenia pokladne, platba nasleduje o par
+ * minut). Do 24. 9. 2026 sa tu bral okamih OVERENIA (Date.now()), takze kazde
+ * otvorenie navratoveho odkazu spustilo 24 hodin alebo 30 dni odznova a jedna
+ * platba 2,90 EUR bola trvala licencia (ops/stripe/zmena-cien-2026-09-22.md,
+ * cast 6, "Netesniaca brana"). Cas z buducnosti platnost nepredlzi. Chybajuci
+ * created znamena starsi worker: vtedy ostava okamih overenia, preto sa worker
+ * nasadzuje pred touto strankou. Ciste, testuje platba.test.mjs. */
+function zaciatokPlatnosti(st, teraz) {
+  const c = st && typeof st.created === 'number' && Number.isFinite(st.created) && st.created > 0 ? st.created * 1000 : null;
+  return c === null ? teraz : Math.min(c, teraz);
+}
+function platnostDo(t, typ) {
+  return t + (PLATNOST[typ] || 0);
+}
 /* Navrat k nakupu bez e-mailu (nalez N5 auditu). Ten isty koncovy bod, ktory
  * stranka vola po platbe (GET /v1/kontrola/status), je len citanie session
  * v Stripe a da sa volat opakovane, takze tento odkaz odomkne stahovanie aj
@@ -1405,8 +1428,18 @@ async function overPlatbu(sid, pokus) {
   const zaklad = st && typeof st.amount_subtotal === 'number' ? st.amount_subtotal : st && st.amount_total;
   const typ = jeNasaPlatba(st, testRezim());
   if (typ) {
-    uloz('efaktura:zaplatene', { session: sid, t: Date.now(), typ, test: st.livemode === false });
+    const teraz = Date.now();
+    const t = zaciatokPlatnosti(st, teraz);
     zmaz(CAKAJUCA);
+    if (teraz >= platnostDo(t, typ)) {
+      // Zaplatene, ale platnost uz skoncila: odkaz sa neda pouzit donekonecna.
+      const skoncila = new Date(platnostDo(t, typ));
+      stavPlatby.textContent = T.platnostSkoncila(skoncila.toLocaleDateString(T.locale) + ' ' + skoncila.toLocaleTimeString(T.locale, { hour: '2-digit', minute: '2-digit' }));
+      track('efaktura_platnost_skoncila', { typ, test: st.livemode === false, produkt: 'efaktura', jazyk: LANG });
+      ukazPlatbu();
+      return false;
+    }
+    uloz('efaktura:zaplatene', { session: sid, t, typ, test: st.livemode === false });
     stavPlatby.innerHTML = (typ === '30dni' ? T.zaplatene30 : T.zaplateneJedna) + (st.livemode === false ? ' ' + T.testPoznamka : '');
     track('efaktura_zaplatene', { typ, test: st.livemode === false, produkt: 'efaktura', jazyk: LANG });
     /* Jediny oznam von: platba je overena u Stripu. Meranie konverzii Google Ads
@@ -1425,6 +1458,13 @@ async function overPlatbu(sid, pokus) {
   if (st && st.paid) {
     zmaz(CAKAJUCA);
     stavPlatby.textContent = T.inaSuma;
+    return false;
+  }
+  if (st && st.reason === 'test_disabled') {
+    // Worker testovaciu platbu cudzej adresy odmietol (TEST_EMAILS, nalez N1):
+    // to je jasne nie, nie oneskorenie, preto sa neopakuje.
+    zmaz(CAKAJUCA);
+    stavPlatby.textContent = T.testZakazany;
     return false;
   }
   if (st && !st.paid && !siet) siet = true;
@@ -1474,6 +1514,6 @@ spustiKontrolu();
 prekresliGenerator();
 ukazPlatbu();
 davkaUI = zapojDavku({ jazyk: LANG, zaklad: () => faktura, platba: () => nacitaj('efaktura:zaplatene'),
-  testRezim, cena: CENA_30DNI, track, kupit: () => klikNaKupu(btnTrid, '30dni', CENA_30DNI, 'davka') });
+  testRezim, cena: CENA_30DNI, track, testVeta: T.testVodoznakXml, kupit: () => klikNaKupu(btnTrid, '30dni', CENA_30DNI, 'davka') });
 poNavrate();
 sledujCenuVidenu();

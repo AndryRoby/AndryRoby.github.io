@@ -142,6 +142,24 @@ export function davkaJePripravena(v) {
   return !!v && v.chyby.length === 0 && v.faktury.length > 0 && v.faktury.every(f => f.kontrola.sumar.chyby === 0);
 }
 
+/* Subory do ZIP davky. V testovacom rezime (odomknutom platbou v Stripe test
+ * mode) sa kazde XML vytvori znova s vetou o teste pred poznamkou dokladu
+ * (cbc:Note) a mena suborov aj ZIP zacinaju na TEST-, rovnako ako pri jednom
+ * XML v app.js. Nalez N1 auditu z 21. 9. 2026: davka v teste vydavala ostre XML.
+ * Ostra davka sa nemeni. Povodne faktury sa nemenia (kopia cez Object.assign). */
+export function suboryDavky(faktury, { test = false, veta = '', jazyk = 'en' } = {}) {
+  const pred = test ? 'TEST-' : '';
+  const subory = faktury.map((f, i) => {
+    let text = f.xml;
+    if (test) {
+      const p = String((f.faktura && f.faktura.poznamka) || '').trim();
+      text = vytvorUbl(Object.assign({}, f.faktura, { poznamka: p ? veta + ' ' + p : veta }), { jazyk });
+    }
+    return { meno: `${pred}${String(i + 1).padStart(3, '0')}-${String(f.faktura.cislo).replace(/[^A-Za-z0-9._-]+/g, '-').slice(0, 80)}.xml`, text };
+  });
+  return { nazovZip: pred + 'arling-invoices.zip', subory };
+}
+
 export function davkaJeOdomknuta(z, test, teraz = Date.now()) {
   if (!z || z.typ !== '30dni' || !Number.isFinite(z.t) || z.t > teraz || z.t + 30 * 86400000 <= teraz) return false;
   if (typeof z.session !== 'string' || !/^cs_(test|live)_[a-zA-Z0-9]+$/.test(z.session)) return false;

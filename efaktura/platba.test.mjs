@@ -119,6 +119,63 @@ test('testovací nákup je len ten, ktorý odomkol testovací režim', () => {
     'odomknutie už neviaže session na režim prehliadača');
 });
 
+/* Netesniaca brána (ops/stripe/zmena-cien-2026-09-22.md, časť 6). Do 24. 9.
+ * sa odomknutie ukladalo s t: Date.now() v okamihu OVERENIA, takže každé
+ * otvorenie návratového odkazu (stránka ho sama ponúka aj s mailto) spustilo
+ * 24 hodín alebo 30 dní odznova: jedna platba 2,90 € bola trvalá licencia.
+ * Platnosť sa odteraz počíta od created zo Stripe session, ktoré vracia worker. */
+const PLATNOST = { jedna: 24 * 3600 * 1000, '30dni': 30 * 86400 * 1000 };
+const zaciatokPlatnosti = new Function(
+  zdrojFunkcie('zaciatokPlatnosti') + '\nreturn zaciatokPlatnosti;')();
+const platnostDo = new Function('PLATNOST',
+  zdrojFunkcie('platnostDo') + '\nreturn platnostDo;')(PLATNOST);
+
+test('platnosť začína časom platby zo Stripe (created), nie okamihom overenia', () => {
+  const zaplatene = Date.UTC(2026, 8, 20, 10, 0, 0);
+  const teraz = Date.UTC(2026, 8, 24, 10, 0, 0);
+  assert.equal(zaciatokPlatnosti({ created: zaplatene / 1000 }, teraz), zaplatene);
+});
+
+test('návratový odkaz otvorený po 25 hodinách už 24-hodinové odomknutie neobnoví', () => {
+  const zaplatene = Date.UTC(2026, 8, 20, 10, 0, 0);
+  const teraz = zaplatene + 25 * 3600 * 1000;
+  const t = zaciatokPlatnosti({ created: zaplatene / 1000 }, teraz);
+  assert.ok(platnostDo(t, 'jedna') < teraz, 'jedna platba 2,90 € sa znova odomkla na ďalších 24 hodín');
+  // Počas platnosti sa odomkne normálne, v inom prehliadači tiež.
+  const skoro = zaplatene + 23 * 3600 * 1000;
+  assert.ok(platnostDo(zaciatokPlatnosti({ created: zaplatene / 1000 }, skoro), 'jedna') > skoro);
+});
+
+test('30 dní platí od platby: na 31. deň odkaz neodomkne, na 29. áno', () => {
+  const zaplatene = Date.UTC(2026, 8, 1, 8, 0, 0);
+  const st = { created: zaplatene / 1000 };
+  const den = 86400 * 1000;
+  assert.ok(platnostDo(zaciatokPlatnosti(st, zaplatene + 31 * den), '30dni') < zaplatene + 31 * den);
+  assert.ok(platnostDo(zaciatokPlatnosti(st, zaplatene + 29 * den), '30dni') > zaplatene + 29 * den);
+});
+
+test('čas z budúcnosti platnosť nepredĺži, chýbajúci created (starší worker) berie okamih overenia', () => {
+  const teraz = Date.UTC(2026, 8, 24, 12, 0, 0);
+  assert.equal(zaciatokPlatnosti({ created: teraz / 1000 + 86400 }, teraz), teraz, 'created v budúcnosti');
+  assert.equal(zaciatokPlatnosti({}, teraz), teraz);
+  assert.equal(zaciatokPlatnosti({ created: null }, teraz), teraz);
+  assert.equal(zaciatokPlatnosti({ created: 'x' }, teraz), teraz);
+  assert.equal(zaciatokPlatnosti(null, teraz), teraz);
+});
+
+test('app.js ukladá odomknutie s časom platby a po skončení platnosti nič neuloží', () => {
+  assert.ok(!APP.includes("uloz('efaktura:zaplatene', { session: sid, t: Date.now()"),
+    'odomknutie sa stále ukladá s časom overenia, odkaz ho obnovuje donekonečna');
+  assert.ok(APP.includes('const t = zaciatokPlatnosti(st, teraz);'), 'overPlatbu nepočíta začiatok platnosti z platby');
+  assert.ok(APP.includes('if (teraz >= platnostDo(t, typ))'), 'overPlatbu nekontroluje, či platnosť už skončila');
+  assert.equal((APP.match(/platnostSkoncila: \(d\) =>/g) || []).length, 4, 'veta o skončenej platnosti nie je vo všetkých štyroch jazykoch');
+});
+
+test('testovaciu platbu, ktorú worker odmietol (test_disabled), stránka neopakuje a povie to', () => {
+  assert.ok(APP.includes("if (st && st.reason === 'test_disabled') {"), 'odmietnutý test by sa overoval dookola ako oneskorená platba');
+  assert.equal((APP.match(/testZakazany: '/g) || []).length, 4, 'veta testZakazany nie je vo všetkých štyroch jazykoch');
+});
+
 test('odkaz na návrat k nákupu nesie session id a v teste aj test=1', () => {
   const odkazNaNakup = new Function('nacitaj', 'location', 'URL',
     zdrojFunkcie('odkazNaNakup') + '\nreturn odkazNaNakup;');

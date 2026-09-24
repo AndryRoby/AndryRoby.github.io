@@ -1,11 +1,11 @@
-import { zostavDavku, davkaJePripravena, davkaJeOdomknuta, VZOR_CSV, POVINNE, VOLITELNE, LIMIT } from './davka.mjs';
+import { zostavDavku, davkaJePripravena, davkaJeOdomknuta, suboryDavky, VZOR_CSV, POVINNE, VOLITELNE, LIMIT } from './davka.mjs';
 import { vytvorZip } from './davka-zip.mjs';
 import { TEXTY_DAVKY } from './davka-texty.mjs';
 import { parsujXml } from './parser.mjs';
 import { vykresliNahlad } from './nahlad.js';
 import { zCentov } from './ubl.js';
 
-export function zapojDavku({ jazyk, zaklad, platba, testRezim, kupit, cena, track }) {
+export function zapojDavku({ jazyk, zaklad, platba, testRezim, kupit, cena, track, testVeta }) {
   const panel = document.getElementById('panel-vytvorit');
   if (!panel) return null;
   const T = TEXTY_DAVKY[jazyk] || TEXTY_DAVKY.en;
@@ -116,10 +116,9 @@ export function zapojDavku({ jazyk, zaklad, platba, testRezim, kupit, cena, trac
   zip.addEventListener('click', () => {
     // Kontrola aj v obsluhe: zmena DOM alebo expirovany pristup neobidu podmienky.
     if (!aktualne() || !davkaJeOdomknuta(platba(), testRezim())) { obnovPlatbu(); return; }
-    const subory = vysledok.faktury.map((f, i) => ({
-      meno: `${String(i + 1).padStart(3, '0')}-${f.faktura.cislo.replace(/[^A-Za-z0-9._-]+/g, '-').slice(0, 80)}.xml`, text: f.xml
-    }));
-    try { stiahnut('arling-invoices.zip', vytvorZip(subory), 'application/zip'); send('efaktura_davka_stiahnute', { pocet: subory.length }); }
+    // Testovaci rezim vydava len oznacene XML a subory TEST-..., nikdy ostre (nalez N1).
+    const { nazovZip, subory } = suboryDavky(vysledok.faktury, { test: testRezim(), veta: testVeta || '', jazyk });
+    try { stiahnut(nazovZip, vytvorZip(subory), 'application/zip'); send('efaktura_davka_stiahnute', { pocet: subory.length }); }
     catch { stav.textContent = T.failure; }
   });
   try {
