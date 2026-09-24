@@ -87,4 +87,14 @@
   }
 
   prepis();
+
+  /* Náhľad sa prispôsobí výške hlavolamu (správa "size" z widgetu), bez scrollbaru v iframe. */
+  if (ram) ram.addEventListener('load', function () {
+    try { ram.contentWindow.postMessage({ type: 'arling-puzzle-host', event: 'auto-height' }, '*'); } catch (x) { /* nic */ }
+  });
+  window.addEventListener('message', function (e) {
+    var m = e.data;
+    if (!ram || e.source !== ram.contentWindow || !m || m.type !== 'arling-puzzle' || m.event !== 'size') return;
+    if (typeof m.height === 'number' && isFinite(m.height)) ram.style.height = Math.min(Math.max(Math.round(m.height), 240), 2400) + 'px';
+  });
 })();

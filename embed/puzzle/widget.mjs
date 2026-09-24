@@ -56,6 +56,37 @@ function posli(event) {
   try { window.dispatchEvent(new CustomEvent('arling-puzzle', { detail: sprava })); } catch { /* starý prehliadač */ }
 }
 
+/* Výška obsahu pre rodičovskú stránku: embed.js a /api/ podľa nej nastavia
+   iframe, aby v ňom nikdy nebol vlastný scrollbar (Andrej 24. 9. 2026). Posiela
+   sa len pri zmene, cez jeden requestAnimationFrame, žiadna slučka. */
+let poslednaVyska = 0, cakaVyska = false;
+/* Režim prirodzenej výšky zapne len rodič, ktorý výšku naozaj počúva (embed.js,
+   /api/): pošle { type: 'arling-puzzle-host', event: 'auto-height' }. Obyčajný
+   iframe s pevnou výškou ostane pri vyplnení celého rámu. */
+window.addEventListener('message', (e) => {
+  const m = e.data;
+  if (e.source !== window.parent || !m || m.type !== 'arling-puzzle-host' || m.event !== 'auto-height') return;
+  document.documentElement.classList.add('auto-vyska');
+  hlasVysku();
+});
+function hlasVysku() {
+  if (!(window.parent && window.parent !== window)) return;
+  const posliVysku = () => {
+    cakaVyska = false;
+    // Výška obsahu (body), nie dokumentu: scrollHeight koreňa nikdy neklesne pod výšku rámu.
+    const h = Math.ceil(document.body.getBoundingClientRect().height);
+    if (!h || h === poslednaVyska) return;
+    poslednaVyska = h;
+    try { window.parent.postMessage({ type: 'arling-puzzle', event: 'size', height: h, id: stav.id }, '*'); } catch { /* cross origin */ }
+  };
+  const naplanuj = () => { if (!cakaVyska) { cakaVyska = true; requestAnimationFrame(posliVysku); } };
+  naplanuj();
+  if (typeof ResizeObserver === 'function' && !hlasVysku.pozor) {
+    hlasVysku.pozor = new ResizeObserver(naplanuj);
+    hlasVysku.pozor.observe(document.body);
+  }
+}
+
 /* ── Odkiaľ sa berie hlavolam ───────────────────────────────────────────── */
 
 const API = '/api/puzzles/v1/';
