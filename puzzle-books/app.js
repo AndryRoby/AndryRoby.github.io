@@ -1,59 +1,60 @@
 /* Puzzle books: predaj desiatich kníh hlavolamov ako PDF.
  *
- * Na server neodchádza nič okrem overenia platby. Po návrate zo Stripe
- * (?session_id=...&book=<hra>) sa worker spýta, či je session zaplatená a na
- * akú sumu (GET /v1/kontrola/status, vracia paid, amount_subtotal a
- * livemode; žiadne osobné údaje). Odomknutie sa uloží do localStorage ako
- * books:zaplatene, aby sa knihy dali stiahnuť aj neskôr z toho istého
- * prehliadača.
+ * Po návrate zo Stripe (?session_id=...&book=<hra>) sa worker spýta, či je
+ * session zaplatená a na akú sumu (GET /v1/kontrola/status, vracia paid,
+ * amount_subtotal a livemode; žiadne osobné údaje). Po kladnej odpovedi si
+ * prehliadač zapamätá len číslo platby (localStorage books:relacie) a odkazy
+ * na PDF si vypýta od licenčnej služby (GET /licence/api/purchase/links),
+ * ktorá platbu overí v Stripe znova, podľa price id vie, ktorú knihu (alebo
+ * všetkých desať) človek kúpil, a vráti podpísané odkazy s platnosťou 7 dní.
+ * Pri každom ďalšom otvorení stránky sa pýta znova, takže odkazy sú čerstvé.
+ * E-mail sa neposiela (tak to hovorí stránka aj obchod).
  *
- * Vedomé zjednodušenie bez servera: PDF sú statické súbory na GitHub Pages
- * a chráni ich len neuhádnuteľný názov (16 znakov náhody z
- * ops/puzzle-books/tajne-cesty.json, mapa je nižšie ako CESTY). Odomknutie
- * ten odkaz len ukáže, nevyrobí ho. Kto si odkaz odloží alebo prečíta tento
- * súbor, dostane sa k PDF aj bez platby. Je to napísané aj v otázkach na
- * stránke, aby to nikoho neprekvapilo.
+ * Zlá správa prvá (25. 9. 2026): do vtedy tu stála mapa CESTY so 16-znakovými
+ * kľúčikmi všetkých desiatich kníh a odkaz na PDF na GitHub Pages si stránka
+ * skladala sama. Kto si otvoril tento súbor, stiahol si každú knihu bez platby.
+ * Stránka odvtedy žiadnu cestu k PDF nepozná a náhradný odkaz nemá: keď služba
+ * neodpovie, karta knihy povie, že odkazy sa nenačítali, dá tlačidlo Try again,
+ * celé číslo platby a andrej@arling.sk. Čisté funkcie sú v knihy.js.
  *
  * Udalosti do Umami (ak beží) podľa ops/spec-puzzle-books.md: books_ukazka,
  * books_kupa_click, books_zaplatene, books_stiahnute; plus cena_videna, ktoré
  * majú spoločné meno s ostatnými produktmi kvôli reportu EUR na 100 návštev.
  */
 
-const API = 'https://arling-asistent.arling.workers.dev';
+import { API } from '../titul.js';
+import {
+  KNIHY, VSETKY, KLUC_RELACIE, KLUC_STARE, jeKniha, relacieZoZaznamu, pridajRelaciu,
+  poradieRelacii, pokryta, stavKnihy, odkazyPlatby,
+} from './knihy.js';
+
 const CENA_KNIHA = 490;   // centy, jedna kniha
 const CENA_VSETKY = 1990; // centy, všetkých desať
 
-/* Kópia ops/puzzle-books/tajne-cesty.json. Keď sa tam kľúče pregenerujú,
-   treba ich prepísať aj tu, inak odkazy po zaplatení skončia na 404. */
-const CESTY = {
-  hedgehogs: 'awofzgxvhnmpe6er',
-  magpies: 'ctgcdypfy7yjvi4z',
-  otters: 'po2uoukvnwpzhofc',
-  squirrels: 'rh04ihdltoe16t3p',
-  cranes: '7mspsg4tyujtueib',
-  swans: 'puvldxxrwrawatdf',
-  voles: 'm4fliz722eczg9xs',
-  badgers: 'kegarxuyqg8ftyx1',
-  herons: 'bw9aautuf06mew6s',
-  hares: 'txupryy9unfraopa',
-};
-const KNIHY = Object.keys(CESTY);
-
-const KLUC = 'books:zaplatene';
 const CAKAJUCA = 'books:cakajuca';
 
 const T = {
   overujem: 'Checking the payment',
   zaplateneJedna: (n) => '<b>Paid, thank you.</b> ' + n + ' is unlocked in this browser and the download links are on its card below.',
   zaplateneVsetky: '<b>Paid, thank you.</b> All ten books are unlocked in this browser and the download links are on their cards below.',
+  zaplateneBezOdkazov: '<b>Paid, thank you.</b> The download links did not load just now. The card of the book below has a Try again button and the payment reference.',
   inaSuma: 'The payment went through, but not for an amount we recognise. Write to andrej@arling.sk and we will sort it out by hand.',
-  nevieme: 'The payment went through, but we cannot tell which book it was for. Write to andrej@arling.sk with the order number from the Stripe e-mail and we will unlock it.',
+  nevieme: 'The payment went through, but the download links did not load just now, so this page cannot tell yet which book it was for. Wait a minute and press Try again. If nothing changes, write to andrej@arling.sk with the payment reference ',
   nepotvrdene: 'We have not been able to confirm the payment yet. We keep trying; if you paid, the books unlock as soon as Stripe answers. If it takes longer than a few minutes, write to andrej@arling.sk with the order number from the Stripe e-mail.',
   overZnova: 'Check again',
   zapina: 'Payment is still being switched on for this book. Write to andrej@arling.sk and we will send you the file.',
   testChyba: 'Test mode is on, but this book has no test link yet. Run ops/stripe/puzzle-books-test.mjs --zapis, or open this page without ?test=1 to buy it for real.',
   testCudzi: 'This is a payment from Stripe test mode. It unlocks books only in the browser that started the test with ?test=1.',
   testPoznamka: '(Test mode: the payment was made in Stripe test mode, no money changed hands.)',
+  /* Karta knihy po zaplatení, kým nie sú odkazy. Nič sa nesľubuje okrem toho, čo vieme splniť. */
+  zaplatene: 'Paid.',
+  nacitavam: 'Loading your download links.',
+  nenacitane: 'The download links did not load just now. Wait a minute and press Try again.',
+  pomoc: 'If they still do not appear, write to andrej@arling.sk with the payment reference ',
+  pomocKoniec: ' and we will send you the files.',
+  znova: 'Try again',
+  stareZnacka: 'Unlocked in this browser.',
+  stare: 'The payment reference was not kept here, so this page cannot ask for the download links. Write to andrej@arling.sk with the order number from the Stripe e-mail and we will send you the files.',
 };
 
 function $(id) { return document.getElementById(id); }
@@ -66,46 +67,93 @@ const stavPlatby = $('stav-platby');
 const nazvy = {};
 for (const li of document.querySelectorAll('li[data-kniha]')) nazvy[li.dataset.kniha] = li.dataset.nazov || li.dataset.kniha;
 
-/* Stav odomknutia: { vsetky: bool, knihy: { hedgehogs: true, ... } } */
-function stav() {
-  const s = nacitaj(KLUC);
-  if (!s || typeof s !== 'object') return { vsetky: false, knihy: {} };
-  return { vsetky: !!s.vsetky, knihy: (s.knihy && typeof s.knihy === 'object') ? s.knihy : {}, test: !!s.test };
-}
-function odomknuta(kluc) { const s = stav(); return s.vsetky || !!s.knihy[kluc]; }
-function odomkni(kluc, data) {
-  const s = stav();
-  if (kluc === 'all') s.vsetky = true; else s.knihy[kluc] = true;
-  s.t = Date.now();
-  if (data && data.test) s.test = true;
-  uloz(KLUC, s);
+/* Pôvodný obsah bloku .stiahnut každej karty (veta a dva odkazy bez adresy).
+   Adresy doň dosadí až odpoveď licenčnej služby. */
+const sablony = {};
+for (const li of document.querySelectorAll('li[data-kniha]')) {
+  const blok = li.querySelector('.stiahnut');
+  if (blok) sablony[li.dataset.kniha] = blok.cloneNode(true);
 }
 
-function pdfOdkaz(kluc, format) { return 'pdf/' + kluc + '-' + format + '-' + CESTY[kluc] + '.pdf'; }
+let relacie = relacieZoZaznamu(nacitaj(KLUC_RELACIE));
+const vysledky = {};
 
-/* Odkazy na PDF sa stavajú až tu, nie v HTML: kým kniha nie je odomknutá,
-   neuhádnuteľný názov na stránke nikde nestojí. */
-function prekresli() {
-  for (const li of document.querySelectorAll('li[data-kniha]')) {
-    const kluc = li.dataset.kniha;
-    const hotovo = odomknuta(kluc);
-    const kup = li.querySelector('.kupit');
-    const blok = li.querySelector('.stiahnut');
-    if (kup) kup.hidden = hotovo;
-    if (!blok) continue;
-    blok.hidden = !hotovo;
-    if (!hotovo) continue;
+function stavy() {
+  const stare = nacitaj(KLUC_STARE);
+  const von = {};
+  for (const k of KNIHY) von[k] = stavKnihy(k, { relacie, vysledky, stare });
+  return von;
+}
+
+function tucne(text) { const b = document.createElement('b'); b.textContent = text; return b; }
+
+function tlacidloZnova(sids) {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'btn btn-line';
+  b.textContent = T.znova;
+  b.addEventListener('click', () => { b.disabled = true; nacitajOdkazy(sids); });
+  return b;
+}
+
+/* Blok .stiahnut jednej karty podľa stavu z knihy.js. */
+function vykresliKnihu(li, st) {
+  const kniha = li.dataset.kniha;
+  const blok = li.querySelector('.stiahnut');
+  const kup = li.querySelector('[data-link]');
+  const zamknuta = st.stav === 'zamknuta';
+  if (kup) kup.hidden = !zamknuta;
+  if (!blok) return;
+  blok.hidden = zamknuta;
+  if (zamknuta) return;
+  blok.textContent = '';
+  if (st.stav === 'odkazy') {
+    const vzor = sablony[kniha];
+    if (vzor) for (const uzol of Array.from(vzor.childNodes)) blok.appendChild(uzol.cloneNode(true));
     for (const a of blok.querySelectorAll('a[data-format]')) {
-      const f = a.dataset.format;
-      if (a.getAttribute('href') !== pdfOdkaz(kluc, f)) a.setAttribute('href', pdfOdkaz(kluc, f));
+      const s = st.subory[a.dataset.format];
+      if (s) { a.setAttribute('href', s.href); a.hidden = false; } else { a.removeAttribute('href'); a.hidden = true; }
     }
+    return;
   }
-  const s = stav();
+  if (st.stav === 'caka') { blok.append(tucne(T.zaplatene), ' ' + T.nacitavam); return; }
+  if (st.stav === 'chyba') {
+    blok.append(tucne(T.zaplatene), ' ' + T.nenacitane + ' ', tlacidloZnova(st.relacie), ' ' + T.pomoc, tucne(st.relacie[0]), T.pomocKoniec);
+    return;
+  }
+  blok.append(tucne(T.stareZnacka), ' ' + T.stare);
+}
+
+function prekresli() {
+  const s = stavy();
+  for (const li of document.querySelectorAll('li[data-kniha]')) vykresliKnihu(li, s[li.dataset.kniha] || { stav: 'zamknuta' });
+  const vsetkyHotovo = KNIHY.every((k) => s[k].stav !== 'zamknuta');
   const vsetkyBtn = $('kupit-vsetky');
-  const vsetkyHotovo = s.vsetky || KNIHY.every((k) => s.knihy[k]);
   if (vsetkyBtn) vsetkyBtn.hidden = vsetkyHotovo;
+  // Hláška hovorí, že odkazy sú pri každej knihe, takže sa ukáže, až keď tam naozaj sú.
   const hlaska = $('cena-hotovo');
-  if (hlaska) hlaska.hidden = !vsetkyHotovo;
+  if (hlaska) hlaska.hidden = !KNIHY.every((k) => s[k].stav === 'odkazy');
+}
+
+/* Odkazy od licenčnej služby pre platby v tomto prehliadači, jedna po druhej
+   (služba má limit 10 dopytov za minútu na adresu). Balík všetkých ide prvý;
+   platba, ktorej knihy už pokryla iná odpoveď, sa nepýta. `len` obmedzí dopyt
+   na vymenované platby (tlačidlo Try again). Volania idú v rade za sebou. */
+let bezi = null;
+async function nacitajOdkazy(len = null) {
+  while (bezi) { try { await bezi; } catch (e) { /* ďalej */ } }
+  bezi = (async () => {
+    for (const sid of poradieRelacii(relacie)) {
+      if (len && !len.includes(sid)) continue;
+      if (vysledky[sid] && vysledky[sid].ok) continue;
+      if (pokryta(relacie[sid], vysledky)) continue;
+      delete vysledky[sid];
+      prekresli();
+      vysledky[sid] = await odkazyPlatby(sid);
+      prekresli();
+    }
+  })();
+  try { await bezi; } finally { bezi = null; }
 }
 
 /* Test mód: ?test=1 prepne tento prehliadač na Stripe test mód (nácvik,
@@ -132,8 +180,8 @@ ukazTestOdznak();
 
 for (const btn of document.querySelectorAll('[data-link]')) {
   btn.addEventListener('click', () => {
-    const kniha = btn.dataset.kniha || 'all';
-    track('books_kupa_click', { kniha: kniha, cena: kniha === 'all' ? CENA_VSETKY : CENA_KNIHA, produkt: 'books' });
+    const kniha = btn.dataset.kniha || VSETKY;
+    track('books_kupa_click', { kniha: kniha, cena: kniha === VSETKY ? CENA_VSETKY : CENA_KNIHA, produkt: 'books' });
     const u = odkazNaKupu(btn);
     if (!u) { stavPlatby.textContent = testRezim() ? T.testChyba : T.zapina; stavPlatby.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
     location.href = u;
@@ -142,8 +190,13 @@ for (const btn of document.querySelectorAll('[data-link]')) {
 for (const a of document.querySelectorAll('a[data-ukazka]')) {
   a.addEventListener('click', () => track('books_ukazka', { kniha: a.dataset.ukazka, produkt: 'books' }));
 }
-for (const a of document.querySelectorAll('a[data-format]')) {
-  a.addEventListener('click', () => {
+/* Odkazy na PDF sa vykresľujú znova pri každej odpovedi služby, preto jeden
+   poslucháč na celom zozname namiesto poslucháča na každom odkaze. */
+const zoznamKnih = $('knihy');
+if (zoznamKnih) {
+  zoznamKnih.addEventListener('click', (e) => {
+    const a = e.target && typeof e.target.closest === 'function' ? e.target.closest('a[data-format]') : null;
+    if (!a || !a.getAttribute('href')) return;
     const li = a.closest('li[data-kniha]');
     track('books_stiahnute', { kniha: li ? li.dataset.kniha : '', format: a.dataset.format, produkt: 'books' });
   });
@@ -159,9 +212,35 @@ for (const a of document.querySelectorAll('a[data-format]')) {
   io.observe(el);
 })();
 
+/* Riadok stavu po zaplatení podľa toho, čo naozaj povedala služba. */
+function hlaskaPoZaplateni(sid, jeTest) {
+  const v = vysledky[sid];
+  const poznamka = jeTest ? ' ' + T.testPoznamka : '';
+  if (v && v.ok) {
+    const knihy = KNIHY.filter((k) => v.knihy[k]);
+    stavPlatby.innerHTML = (knihy.length === KNIHY.length ? T.zaplateneVsetky : T.zaplateneJedna(knihy.map((k) => nazvy[k] || k).join(', '))) + poznamka;
+    return knihy;
+  }
+  if (relacie[sid] && relacie[sid].kniha) {
+    stavPlatby.innerHTML = T.zaplateneBezOdkazov + poznamka;
+    return relacie[sid].kniha === VSETKY ? [...KNIHY] : [relacie[sid].kniha];
+  }
+  // Kniha z návratovej adresy chýba a služba neodpovedala: tlačidlo a číslo platby sem.
+  stavPlatby.textContent = '';
+  stavPlatby.append(T.nevieme, tucne(sid), '. ');
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'btn btn-line';
+  b.textContent = T.znova;
+  b.addEventListener('click', async () => { b.disabled = true; await nacitajOdkazy([sid]); hlaskaPoZaplateni(sid, jeTest); });
+  stavPlatby.append(b);
+  return [];
+}
+
 /* Po návrate zo Stripe: session_id hovorí, ktorá platba, book hovorí, čo sa
-   kupovalo. Kým odpoveď nie je jasné áno alebo jasné nie, session ostáva v
-   localStorage, aby sa pri výpadku siete alebo obnovení stránky nestratila. */
+   kupovalo. Kým odpoveď workera nie je jasné áno alebo jasné nie, session
+   ostáva v localStorage, aby sa pri výpadku siete alebo obnovení stránky
+   nestratila. Ktoré knihy sa odomknú, rozhoduje nakoniec licenčná služba. */
 let overovanie = null;
 async function overPlatbu(sid, kniha, test, pokus) {
   stavPlatby.textContent = T.overujem + (pokus > 1 ? ' (' + pokus + ')' : '');
@@ -173,25 +252,22 @@ async function overPlatbu(sid, kniha, test, pokus) {
   } catch (e) { siet = true; }
   // Suma pred zľavovým kódom; starší worker ju neposiela, vtedy platí amount_total.
   const zaklad = st && typeof st.amount_subtotal === 'number' ? st.amount_subtotal : st && st.amount_total;
-  if (st && st.paid && typeof zaklad === 'number') {
+  if (st && st.paid && typeof zaklad === 'number' && zaklad >= CENA_KNIHA) {
     const jeTest = st.livemode === false;
     let ciel = kniha;
-    // Bez parametra book sa dá spoľahlivo poznať len balík podľa sumy.
-    if (!ciel && zaklad >= CENA_VSETKY) ciel = 'all';
-    const treba = ciel === 'all' ? CENA_VSETKY : CENA_KNIHA;
-    if (ciel && zaklad >= treba) {
-      odomkni(ciel, { test: jeTest });
-      zabudni(CAKAJUCA);
-      stavPlatby.innerHTML = (ciel === 'all' ? T.zaplateneVsetky : T.zaplateneJedna(nazvy[ciel] || ciel)) + (jeTest ? ' ' + T.testPoznamka : '');
-      track('books_zaplatene', { kniha: ciel, test: jeTest, produkt: 'books' });
-      prekresli();
-      const li = ciel === 'all' ? document.getElementById('knihy') : document.querySelector('li[data-kniha="' + ciel + '"]');
-      if (li) li.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      return true;
-    }
+    // Bez parametra book sa dá spoľahlivo poznať len balík podľa sumy; inak povie služba.
+    if (!ciel && zaklad >= CENA_VSETKY) ciel = VSETKY;
+    if (ciel === VSETKY && zaklad < CENA_VSETKY) ciel = '';
+    relacie = pridajRelaciu(relacie, sid, ciel, jeTest);
+    uloz(KLUC_RELACIE, relacie);
     zabudni(CAKAJUCA);
-    stavPlatby.textContent = ciel ? T.inaSuma : T.nevieme;
-    return false;
+    track('books_zaplatene', { kniha: ciel || '?', test: jeTest, produkt: 'books' });
+    prekresli();
+    await nacitajOdkazy([sid]);
+    const knihy = hlaskaPoZaplateni(sid, jeTest);
+    const li = knihy.length > 1 ? $('knihy') : (knihy.length ? document.querySelector('li[data-kniha="' + knihy[0] + '"]') : null);
+    if (li) li.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    return true;
   }
   if (st && st.paid) { zabudni(CAKAJUCA); stavPlatby.textContent = T.inaSuma; return false; }
   if (st && !st.paid && !siet) {
@@ -215,7 +291,7 @@ async function poNavrate() {
     sid = q.get('session_id') || '';
     kniha = q.get('book') || '';
   } catch (e) { /* nič */ }
-  if (kniha !== 'all' && !CESTY[kniha]) kniha = ''; // cudzí alebo chýbajúci parameter book
+  if (kniha !== VSETKY && !jeKniha(kniha)) kniha = ''; // cudzí alebo chýbajúci parameter book
   const test = testRezim(); // pred zahodením dotazu: ?test=1 môže stáť vedľa session_id
   if (sid) history.replaceState(null, '', location.pathname);
   if (!sid) {
@@ -224,7 +300,7 @@ async function poNavrate() {
       sid = c.session;
       kniha = c.kniha || '';
       if (c.test) { try { sessionStorage.setItem('books:test', '1'); } catch (e) { /* nič */ } }
-      if (kniha && odomknuta(kniha)) return;
+      if (relacie[sid]) { zabudni(CAKAJUCA); return; }
     }
   }
   if (!sid) return;
@@ -233,4 +309,13 @@ async function poNavrate() {
 }
 
 prekresli();
+nacitajOdkazy().then(() => {
+  // Platba bez známej knihy (návrat bez parametra book), na ktorú služba zatiaľ
+  // neodpovedala, nemá kartu, kde by sa ukázala. Povie sa to v riadku stavu,
+  // ak ho práve nepíše overovanie návratu zo Stripe.
+  if (stavPlatby.textContent) return;
+  for (const [sid, z] of Object.entries(relacie)) {
+    if (!z.kniha && vysledky[sid] && !vysledky[sid].ok) { hlaskaPoZaplateni(sid, z.test); break; }
+  }
+});
 poNavrate();
