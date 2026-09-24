@@ -201,7 +201,7 @@
     tlacidlo.disabled = true;
     tlacidlo.textContent = 'Kontrolujem…';
     form.setAttribute('aria-busy', 'true');
-    nastavStav('Načítavame úvodnú stránku a najviac dve ďalšie. Zvyčajne to trvá do 10 sekúnd.', false);
+    nastavStav('Načítavame úvodnú stránku a najviac tri ďalšie. Zvyčajne to trvá do 10 sekúnd.', false);
     track('eshop_kontrola_spustena', {});
 
     var ac = typeof AbortController === 'function' ? new AbortController() : null;
