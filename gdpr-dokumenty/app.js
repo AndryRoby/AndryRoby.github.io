@@ -45,6 +45,7 @@ const T = {
     vymazat: 'Vymazať vyplnené údaje z tohto prehliadača?',
     testCudzi: 'Toto je testovacia platba zo Stripe test módu. Odomkne dokumenty len v prehliadači, ktorý test spustil cez ?test=1.',
     testPoznamka: '(Testovací režim: platba bola v Stripe test móde, žiadne peniaze neprišli.)',
+    testZakazany: 'Testovacie platby odomykajú len skúšky prevádzkovateľa stránky. Táto testovacia platba nič neodomkne a žiadne peniaze neprišli.',
     testVodoznak: 'TESTOVACÍ VÝTLAČOK. Tento dokument odomkla platba v Stripe test móde, žiadne peniaze neprišli. Nepoužívajte ho ako skutočný dokument firmy.',
     odkazNadpis: 'Uložte si tento odkaz.',
     odkazText: 'Týmto odkazom sa k zaplatenému balíku dostanete aj v inom prehliadači alebo na inom počítači. Stránka si platbu overí znova priamo u Stripe, takže odkaz sa dá použiť opakovane.',
@@ -90,6 +91,7 @@ const T = {
     vymazat: 'Smazat vyplněné údaje z tohoto prohlížeče?',
     testCudzi: 'Toto je testovací platba ze Stripe test módu. Odemkne dokumenty jen v prohlížeči, který test spustil přes ?test=1.',
     testPoznamka: '(Testovací režim: platba byla ve Stripe test módu, žádné peníze nepřišly.)',
+    testZakazany: 'Testovací platby odemykají jen zkoušky provozovatele stránky. Tato testovací platba nic neodemkne a žádné peníze nepřišly.',
     testVodoznak: 'TESTOVACÍ VÝTISK. Tento dokument odemkla platba ve Stripe test módu, žádné peníze nepřišly. Nepoužívejte ho jako skutečný dokument firmy.',
     odkazNadpis: 'Uložte si tento odkaz.',
     odkazText: 'Tímto odkazem se k zaplacenému balíčku dostanete i v jiném prohlížeči nebo na jiném počítači. Stránka si platbu ověří znovu přímo u Stripe, takže odkaz lze použít opakovaně.',
@@ -135,6 +137,7 @@ const T = {
     vymazat: 'Eingegebene Daten aus diesem Browser löschen?',
     testCudzi: 'Dies ist eine Testzahlung aus dem Stripe-Testmodus. Sie schaltet Dokumente nur in dem Browser frei, der den Test über ?test=1 gestartet hat.',
     testPoznamka: '(Testmodus: die Zahlung erfolgte im Stripe-Testmodus, es wurde kein Geld überwiesen.)',
+    testZakazany: 'Testzahlungen schalten nur Tests des Seitenbetreibers frei. Diese Testzahlung schaltet nichts frei, es wurde kein Geld überwiesen.',
     testVodoznak: 'TESTAUSDRUCK. Dieses Dokument wurde durch eine Zahlung im Stripe-Testmodus freigeschaltet, es wurde kein Geld überwiesen. Verwenden Sie es nicht als echtes Unternehmensdokument.',
     odkazNadpis: 'Bewahren Sie diesen Link auf.',
     odkazText: 'Mit diesem Link kommen Sie auch in einem anderen Browser oder an einem anderen Rechner an das bezahlte Paket. Die Seite prüft die Zahlung erneut direkt bei Stripe, der Link lässt sich also mehrfach verwenden.',
@@ -565,6 +568,13 @@ async function overPlatbu(sid, test, pokus) {
     // paid, but not this product: keep nothing, say so
     try { localStorage.removeItem(CAKAJUCA); } catch (e) { /* nič */ }
     stavPlatby.textContent = T.inaSuma;
+    return false;
+  }
+  if (st && st.reason === 'test_disabled') {
+    // Worker testovaciu platbu cudzej adresy odmietol (TEST_EMAILS, nález N1):
+    // to je jasné nie, nie oneskorenie, preto sa neopakuje.
+    try { localStorage.removeItem(CAKAJUCA); } catch (e) { /* nič */ }
+    stavPlatby.textContent = T.testZakazany;
     return false;
   }
   if (st && !st.paid && !siet) {

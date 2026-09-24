@@ -633,7 +633,9 @@ async function poNavrate() {
     stav.kredit = false; $('kredit').checked = false;
     $('stav-platby').innerHTML = '<b>Paid, and the licence is on.</b> It is stored in this browser. '
       + 'On another computer, open this page from the Stripe receipt link, or paste the key below.';
-    track('zaplatene', { plan: r.plan, produkt: 'puzzle-studio', test: sid.indexOf('cs_test_') === 0 });
+    /* Nie je to platba: len to, ze tento prehliadac prevzal licenciu k relacii
+       (aj v test mode). Platby pocita brief zo Stripe, nie z Umami. */
+    track('studio_licencia_v_prehliadaci', { plan: r.plan, produkt: 'puzzle-studio', test: sid.indexOf('cs_test_') === 0 });
     await nacitajLicenciu();
     return;
   }

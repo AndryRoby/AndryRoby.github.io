@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { citajCsv, zostavDavku, davkaJePripravena, davkaJeOdomknuta, VZOR_CSV, POVINNE, VOLITELNE } from './davka.mjs';
+import { citajCsv, zostavDavku, davkaJePripravena, davkaJeOdomknuta, suboryDavky, VZOR_CSV, POVINNE, VOLITELNE } from './davka.mjs';
 import { vytvorZip, crc32 } from './davka-zip.mjs';
 import { TEXTY_DAVKY } from './davka-texty.mjs';
 import { parsujXml, txt } from './parser.mjs';
@@ -132,4 +132,37 @@ test('styri jazyky maju vsetky spravy aj chybove kody; cenu nevkladaju rucne', (
 test('kratky ucet pri SEPA sa zablokuje aj ked ho vseobecny XML checker nepovazuje za IBAN', () => {
   const f=kopia();f.dodavatel.iban='DE123';const v=zostavDavku(VZOR_CSV,f);
   assert.ok(kody(v).includes('iban'));assert.equal(davkaJePripravena(v),false);
+});
+
+/* Nalez N1 auditu po platbe (ops/stripe/audit-po-platbe-2026-09-21.md) a
+ * STATE.md: jedno XML v testovacom rezime bolo oznacene uz 21. 9., ale ZIP davky
+ * v testovacom rezime vydal ostre, neoznacene XML. */
+test('testovaci rezim: ZIP davky nesie TEST- v nazvoch a vetu o teste v kazdom XML, ostry nie', () => {
+  const veta = 'TEST INVOICE: unlocked by a payment in Stripe test mode, no money changed hands.';
+  const v = zostavDavku(VZOR_CSV, kopia(), 'en');
+  const ostre = suboryDavky(v.faktury, { test: false, veta });
+  assert.equal(ostre.nazovZip, 'arling-invoices.zip');
+  assert.deepEqual(ostre.subory.map(s => s.text), v.faktury.map(f => f.xml), 'ostra davka sa nesmie zmenit');
+  assert.ok(ostre.subory.every(s => !s.text.includes('TEST INVOICE') && !s.meno.startsWith('TEST-')));
+  const testove = suboryDavky(v.faktury, { test: true, veta });
+  assert.equal(testove.nazovZip, 'TEST-arling-invoices.zip');
+  assert.equal(testove.subory.length, v.faktury.length);
+  for (const s of testove.subory) {
+    assert.ok(s.meno.startsWith('TEST-'), s.meno);
+    assert.ok(s.text.includes('<cbc:Note>' + veta + '</cbc:Note>'), 'XML v testovacom ZIP nie je oznacene');
+    assert.equal(parsujXml(s.text).ok, true, 'oznacene XML musi ostat platne');
+  }
+  // Mena suborov prejdu kontrolou ZIP (bez priecinkov, bez kolizie).
+  assert.ok(vytvorZip(testove.subory).length > 0);
+  // Povodne faktury sa neoznacia (nahlad na obrazovke ostava bez vety).
+  assert.ok(v.faktury.every(f => !String(f.faktura.poznamka || '').includes('TEST INVOICE')));
+});
+
+test('tlacidlo ZIP pouziva suboryDavky s rezimom prehliadaca a app.js posiela vetu o teste', async () => {
+  const { readFileSync } = await import('node:fs');
+  const ui = readFileSync(new URL('./davka-ui.js', import.meta.url), 'utf8');
+  const app = readFileSync(new URL('./app.js', import.meta.url), 'utf8');
+  assert.ok(ui.includes("suboryDavky(vysledok.faktury, { test: testRezim(), veta: testVeta || '', jazyk })"), 'ZIP obchadza oznacenie testu');
+  assert.ok(ui.includes('stiahnut(nazovZip, vytvorZip(subory)'), 'ZIP sa nevola menom zo suboryDavky');
+  assert.ok(app.includes('testVeta: T.testVodoznakXml'), 'app.js neposiela davke vetu o teste');
 });
