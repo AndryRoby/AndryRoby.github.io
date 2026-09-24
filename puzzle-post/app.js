@@ -26,24 +26,20 @@ import { posudPlatbu, platnyOdkaz, jeOdomknuty, odomknute, odomkni, sessionTitul
 
 const API = 'https://arling-asistent.arling.workers.dev';
 
-/* Jedno cislo bez predplatneho (4,90 EUR). Kupuje sa tym istym vzorom ako
-   knihy hlavolamov: platobny odkaz Stripe, navrat s ?titul=...&session_id=...,
-   overenie cez workera a potom odkazy na PDF pod neuhadnutelnym nazvom.
+/* Jedno cislo bez predplatneho (4,90 EUR): platobny odkaz Stripe, navrat s
+   ?titul=...&session_id=..., overenie cez workera a potom panel so subormi.
+   Odkazy na PDF da len licencna sluzba (GET /licence/api/purchase/links,
+   podpisane, 7 dni; titul.js, ukazPoPlatbe). Stranka ziadne meno ani cestu
+   suboru cisla nepozna.
 
-   Nazvy suborov su kopia ops/puzzlepost/tajne-cesty.json. Ked sa tam kluciky
-   pregeneruju alebo pribudne dalsie cislo, musia sa prepisat aj tu, inak odkazy
-   po zaplateni skoncia na 404. Kontroluje to test
-   products/arling-sk/puzzle-post/cislo.test.mjs. */
+   Zla sprava prva (25. 9. 2026): do vtedy tu stala mapa CISLO s menami PDF
+   vratane 16-znakovych klucikov (kopia ops/puzzlepost/tajne-cesty.json) a
+   subory lezali verejne na GitHub Pages, takze sa cislo dalo stiahnut bez
+   platby. Test products/arling-sk/puzzle-post/cislo.test.mjs
+   strazi, aby sa do zdroja stranky ziadna cesta k platenemu suboru nevratila.
+   CISLO_ID je "product" v products/licence-service/tituly.json. */
 const CISLO_ID = 'puzzle-post-2026-10';
 const CENA_CISLA = 490;
-const CISLO = {
-  cesta: 'issues/',
-  subory: [
-    { file: 'puzzle-post-2026-10-eink-tzezxnaxbisjlg3o.pdf', format: 'eink', nazov: 'e-ink PDF, 157 x 210 mm', popis: '145 pages, 4.05 MB' },
-    { file: 'puzzle-post-2026-10-a4-gijwli2vtjd4halo.pdf', format: 'a4', nazov: 'A4 PDF', popis: '145 pages, 4.19 MB' },
-    { file: 'puzzle-post-2026-10-letter-qmycwomoyvectuir.pdf', format: 'letter', nazov: 'US Letter PDF', popis: '145 pages, 4.13 MB' },
-  ],
-};
 
 /* Centy pred zlavovym kodom. Musia sediet s ops/stripe/puzzle-post.mjs. */
 const CENY = { mesacne: 390, rocne: 2900 };
@@ -172,12 +168,13 @@ const stavCisla = $('stav-cisla');
 const blokCisla = $('cislo-hotovo');
 
 /* Panel po zaplateni je spolocny s ostatnymi jednorazovymi titulmi (titul.js,
-   funkcia ukazPoPlatbe): najprv sa opyta licencnej sluzby na odkazy a e-mail,
-   a ked nebezi, postavi odkazy z mapy CISLO vyssie. */
+   funkcia ukazPoPlatbe): odkazy da len licencna sluzba. Ked nebezi, panel
+   povie, ze sa odkazy nenacitali, a da tlacidlo Try again a cislo platby;
+   nahradny odkaz zo stranky neexistuje. */
 let panelHotovy = false;
 function panelCisla(sid, jeTest) {
   panelHotovy = true;
-  return ukazPoPlatbe({ blok: blokCisla, data: CISLO, titul: CISLO_ID, sid, test: jeTest });
+  return ukazPoPlatbe({ blok: blokCisla, titul: CISLO_ID, sid, test: jeTest });
 }
 
 function prekresliCislo() {
