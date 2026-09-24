@@ -12,22 +12,23 @@
  *   4. po kladnej odpovedi sa odomknutie ulozi do localStorage a na mieste
  *      tlacidla sa vykresli panel so subormi (vykresliPanel nizsie).
  *
- * Odkial su subory (od 24. 9. 2026 len jeden zdroj):
- *   licencna sluzba na homelabe,
- *   GET /licence/api/purchase/links?session_id=cs_... -> { ok:true,
- *   product, title, files:[{label, url, bytes}], email, week }. Kazdy url je
- *   podpisany odkaz na /licence/api/download s platnostou 7 dni; subor posle
- *   sluzba zo svojho disku az po overenej platbe. Pri kazdom otvoreni stranky sa
- *   pyta znova, takze odkazy su vzdy cerstve.
- *   Ked sluzba neodpovie (vypadok, 503 "downloads-off", siet), panel povie
- *   pokojne, ze odkazy sa nenacitali, da tlacidlo "Try again", cislo platby
- *   (session id) a adresu andrej@arling.sk. Ziadny nahradny odkaz neexistuje.
+ * Odkial su subory (18. 9. 2026, A-078):
+ *   a) najprv licencna sluzba na homelabe,
+ *      GET /licence/api/purchase/links?session_id=cs_... -> { ok:true,
+ *      product, title, files:[{label, url, bytes}], email, week }. Ta pozna aj
+ *      e-mail, na ktory sa subory poslali, a pri predplatnom aj tyzden.
+ *   b) ked sluzba neodpovie, nie je nasadena alebo odpovie { ok:false }, plati
+ *      presne to, co doteraz: subory z bloku <script type="application/json"
+ *      id="titul-data"> na stranke.
+ * Stranka teda funguje aj bez sluzby, len bez e-mailu v texte.
  *
- * Preco uz nie blok titul-data: do 24. 9. 2026 lezali platene subory verejne na
- * GitHub Pages v priecinku files/<16 znakov> a presna cesta stala v bloku
- * <script type="application/json" id="titul-data"> (pole "cesta"). Kto si
- * otvoril zdroj stranky, stiahol si tovar bez platby. Blok dnes nesie len
- * identitu titulu a nazvy suborov, nie cestu; stranka z neho odkaz nevyraba.
+ * Vedome zjednodusenie bez servera: subory su staticke na GitHub Pages a chrani
+ * ich len neuhadnutelny nazov priecinka (16 znakov nahody z
+ * ops/design/tajne-cesty-tituly.json, do stranky ich dosadi
+ * ops/design/tajne-cesty-titul.mjs do bloku titul-data). Odomknutie ten odkaz
+ * len ukaze, nevyrobi ho. Kto si odkaz odlozi alebo si precita zdroj stranky,
+ * dostane sa k suborom aj bez platby. Je to napisane aj v otazkach na stranke,
+ * aby to nikoho neprekvapilo.
  *
  * Preco panel a nie odrazky: 17. 9. 2026 Andrej zaplatil trikrat v test mode a
  * stranka po platbe vyzerala takmer rovnako ako pred nou. Riadok "Paid, thank
@@ -73,16 +74,10 @@ export const PANEL = {
   mailPred: 'These links stay in this browser and were also sent to ',
   mailBez: 'the e-mail address you paid with',
   mailPo: '.',
-  mailNeisty: 'Download the files now: these buttons stay in this browser only, and each link works for 7 days. We cannot confirm here whether the e-mail with the links has gone out, so if nothing arrives within a few minutes, write to andrej@arling.sk with the order number below and we will send the files by hand.',
+  mailNeisty: 'Save these links now: they stay in this browser only. We cannot confirm here whether the e-mail with them has gone out, so if nothing arrives within a few minutes, write to andrej@arling.sk with the order number below and we will send the files by hand.',
   objednavka: 'Order ',
   test: 'Test mode: the payment was made in Stripe test mode, no money is taken; the files below are the real ones.',
-  /* Licencna sluzba neodpovedala. Nic sa neslubuje okrem toho, co vieme splnit:
-     skusit znova a napisat nam. Ziadny nahradny odkaz, ten by viedol na verejny subor. */
-  cakame: 'Your payment is confirmed, but the download links did not load just now. Wait a minute and press Try again.',
-  cakamePomoc: 'If they still do not appear, write to andrej@arling.sk with the payment reference below and we will send you the files.',
-  cakamePomocBez: 'If they still do not appear, write to andrej@arling.sk from the e-mail address you paid with and we will send you the files.',
-  znova: 'Try again',
-  referencia: 'Payment reference ',
+  bezCesty: 'The payment is confirmed, but the download is not switched on yet. Write to andrej@arling.sk with the order number below and we will send you the files today.',
 };
 
 /* ── Ciste funkcie (testovane v Node) ──────────────────────────────────── */
@@ -118,6 +113,13 @@ export function stavZoZaznamu(raw) {
   // ostane bez cisla objednavky, nic sa tym nerozbije.
   for (const k of Object.keys(sessions)) if (von[k] && typeof sessions[k] === 'string' && sessions[k]) relacie[k] = sessions[k];
   return { tituly: von, sessions: relacie, test: !!s.test };
+}
+
+/** Cesta k platenemu suboru. Prazdny retazec, kym tajna cesta nie je dosadena. */
+export function cestaSuboru(data, file) {
+  const cesta = data && typeof data.cesta === 'string' ? data.cesta : '';
+  if (!cesta || !file) return '';
+  return cesta.replace(/\/*$/, '/') + encodeURIComponent(file);
 }
 
 /** Na Stripe sa ide len cez odkaz Stripe. Prazdna alebo cudzia hodnota nikam nevedie. */
@@ -161,7 +163,7 @@ export function platnaAdresaSuboru(url) {
 
 /**
  * Subory z odpovede licencnej sluzby. Prazdne pole znamena "odpoved sa neda
- * pouzit" a panel vtedy povie, ze odkazy sa nenacitali (ziadny nahradny zdroj).
+ * pouzit" a volajuci vtedy spadne na blok titul-data na stranke.
  * Produkt sa nekontroluje zamerne: odkazy viaze session id, nie meno produktu,
  * a mena sa medzi sluzbou a strankou casom rozidu.
  */
@@ -178,13 +180,35 @@ export function suboryZoSluzby(odpoved) {
   return von;
 }
 
-/* ── Odkazy len zo sluzby ──────────────────────────────────────────────── */
+/**
+ * Subory z bloku titul-data na stranke. Velkost stoji v popise ("953 pages,
+ * 5.35 MB"), takze sa z neho vytiahne, aby tlacidlo vyzeralo rovnako ako pri
+ * odpovedi sluzby.
+ */
+export function suboryZoStranky(data) {
+  const zoznam = (data && Array.isArray(data.subory)) ? data.subory : [];
+  const von = [];
+  for (const s of zoznam) {
+    if (!s) continue;
+    const popis = String(s.popis || '');
+    const m = popis.match(/(\d+(?:[.,]\d+)?\s?(?:KB|MB|GB))/i);
+    von.push({
+      nazov: String(s.nazov || s.file || ''),
+      href: cestaSuboru(data, s.file),
+      velkost: m ? m[1] : '',
+      popis: m ? popis.replace(m[0], '').replace(/[,;]\s*$/, '').trim() : popis,
+      format: s.format || '',
+    });
+  }
+  return von;
+}
+
+/* ── Sluzba, potom stranka ─────────────────────────────────────────────── */
 
 /**
  * Odkazy z licencnej sluzby, alebo null. Nikdy nevyhodi vynimku: ked sluzba
- * nebezi, nie je nasadena alebo odpovie ok:false, volajuci ukaze vetu o
- * cakani s tlacidlom Try again. fetch sa da podstrcit (volby.fetch), aby sa to
- * dalo testovat.
+ * nebezi, nie je nasadena alebo odpovie ok:false, volajuci ma spadnut na blok
+ * titul-data. fetch sa da podstrcit (volby.fetch), aby sa to dalo testovat.
  */
 export async function odkazyZoSluzby(sid, volby = {}) {
   // Podstrceny fetch plati aj ked je null: test tym overi stav "prehliadac
@@ -211,24 +235,19 @@ export async function odkazyZoSluzby(sid, volby = {}) {
   };
 }
 
-/**
- * Subory len zo sluzby. Vracia vzdy ten isty tvar; zdroj "caka" znamena, ze
- * sluzba neodpovedala a odkazy nie su (ziadne nahradne zo stranky, tie viedli
- * na verejny subor, ktory si mohol stiahnut ktokolvek).
- */
-export async function zdrojSuborov(sid, volby = {}) {
+/** Najprv sluzba, potom blok titul-data. Vracia vzdy pouzitelny tvar. */
+export async function zdrojSuborov(sid, data, volby = {}) {
   const zo = await odkazyZoSluzby(sid, volby);
   if (zo) return { zdroj: 'sluzba', subory: zo.subory, email: zo.email, emailed: zo.emailed, tyzden: zo.tyzden, nazov: zo.nazov };
-  return { zdroj: 'caka', subory: [], email: '', emailed: false, tyzden: '', nazov: '' };
+  // Zdroj "stranka" znamena, ze sluzba neodpovedala, takze o e-maile nevieme nic.
+  return { zdroj: 'stranka', subory: suboryZoStranky(data), email: '', emailed: false, tyzden: '', nazov: '' };
 }
 
 /* ── Panel po zaplateni ────────────────────────────────────────────────── */
 
 /**
  * Vykresli panel so subormi do daneho prvku. Stav:
- *   { subory, email, session, test, nadpis, znacka, ukazka:{href,text}, znova }
- * Bez suborov (sluzba neodpovedala) povie, ze odkazy sa nenacitali, ukaze
- * cele cislo platby a tlacidlo Try again, ktore zavola stav.znova().
+ *   { subory, email, session, test, nadpis, znacka, ukazka:{href,text} }
  * Nic nefarbi ani nepozicuje, vzhlad je v hub.css casti 9.
  */
 export function vykresliPanel(koren, stav = {}) {
@@ -266,28 +285,9 @@ export function vykresliPanel(koren, stav = {}) {
     }
     koren.appendChild(ul);
   } else {
-    // Zaplatene je, ale licencna sluzba odkazy nedala (vypadok, vypnute stahovanie,
-    // siet). Ziadny nahradny odkaz: povieme pokojne, co robit, a dame skusit znova.
-    koren.appendChild(prvok('p', 'hotovo-riadok', PANEL.cakame));
-    if (typeof stav.znova === 'function') {
-      const p = prvok('p', 'hotovo-znova');
-      const b = prvok('button', 'btn btn-line', PANEL.znova);
-      b.setAttribute('type', 'button');
-      b.addEventListener('click', () => { b.disabled = true; stav.znova(); });
-      p.appendChild(b);
-      koren.appendChild(p);
-    }
-    koren.appendChild(prvok('p', 'hotovo-riadok', stav.session ? PANEL.cakamePomoc : PANEL.cakamePomocBez));
-    if (stav.session) {
-      // Cele session id, nie len chvost: podla neho sa da platba najst v Stripe a
-      // subory doposlat (python tituly.py --session ...). Je to kupujuceho vlastna platba.
-      const p = prvok('p', 'hotovo-cislo');
-      p.appendChild(d.createTextNode(PANEL.referencia));
-      const b = d.createElement('b');
-      b.textContent = String(stav.session);
-      p.appendChild(b);
-      koren.appendChild(p);
-    }
+    // Zaplatene je, ale tajna cesta na stranke chyba (alebo sluzba nema subor).
+    // Nevyrabame mrtvy odkaz, povieme, co ma clovek urobit.
+    koren.appendChild(prvok('p', 'hotovo-riadok', PANEL.bezCesty));
   }
 
   if (stav.ukazka && stav.ukazka.href) {
@@ -297,13 +297,6 @@ export function vykresliPanel(koren, stav = {}) {
     a.textContent = stav.ukazka.text || PANEL.ukazka;
     p.appendChild(a);
     koren.appendChild(p);
-  }
-
-  // Bez odkazov nie je co ulozit ani o com hovorit v suvislosti s e-mailom; cislo
-  // platby uz stoji cele vyssie.
-  if (!subory.length) {
-    koren.hidden = false;
-    return koren;
   }
 
   /* O e-maile sa hovori len to, co je dokazane. emailed === true prichadza
@@ -404,15 +397,14 @@ export function skryNakup(titul, doc) {
 }
 
 /**
- * Cely stav po zaplateni: subory zo sluzby, panel na mieste tlacidla a
- * schovany riadok kupy. Pouzivaju to vsetky stranky s jednorazovym titulom aj
- * cislo Puzzle Post. Ked sluzba neodpovie, panel ma tlacidlo Try again, ktore
- * spusti presne toto iste volanie znova.
- * volby: { blok, titul, sid, test, nadpis, ukazka, fetch } (data sa uz nepouziva)
+ * Cely stav po zaplateni: subory zo sluzby alebo zo stranky, panel na mieste
+ * tlacidla a schovany riadok kupy. Pouzivaju to vsetky stranky s jednorazovym
+ * titulom aj cislo Puzzle Post.
+ * volby: { blok, data, titul, sid, test, nadpis, ukazka, fetch }
  */
 export async function ukazPoPlatbe(volby = {}) {
   const ukazka = volby.ukazka === null ? null : (volby.ukazka || ukazkaZoStranky(volby.titul));
-  const zdroj = await zdrojSuborov(volby.sid, volby);
+  const zdroj = await zdrojSuborov(volby.sid, volby.data, volby);
   vykresliPanel(volby.blok, {
     subory: zdroj.subory,
     email: zdroj.email,
@@ -423,7 +415,6 @@ export async function ukazPoPlatbe(volby = {}) {
     znacka: volby.znacka,
     poznamka: volby.poznamka,
     ukazka,
-    znova: zdroj.subory.length ? null : () => ukazPoPlatbe(volby),
   });
   skryNakup(volby.titul, volby.doc);
   return zdroj;
