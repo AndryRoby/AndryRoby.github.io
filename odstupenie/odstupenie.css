@@ -1,0 +1,51 @@
+/* Funkcia na odstúpenie od zmluvy (24. 9. 2026). Len pre /odstupenie/ a jeho EN, DE.
+   Polia preberajú vzhľad prihlásenia z pravne.css (.prihlasenie input), aby formulár
+   vyzeral ako zvyšok právnych stránok. Nič sa tu neanimuje okrem farby rámika. */
+
+.pravne .odst{margin:24px 0 0;padding:0;border-top:1px solid var(--linka-silna)}
+.pravne .odst-pole{display:flex;flex-direction:column;gap:7px;padding:16px 0 18px;border-bottom:1px solid var(--line);min-width:0}
+.pravne .odst-pole label{font:600 13px/1.3 var(--ui);color:var(--body);letter-spacing:.01em}
+.pravne .odst-pole input{width:100%;box-sizing:border-box;min-height:48px;font:16px/1.4 var(--ui);color:var(--ink);
+  background:var(--card-plna);border:1px solid var(--line);border-radius:10px;padding:12px 13px;caret-color:var(--accent);
+  transition:border-color .18s var(--ease)}
+.pravne .odst-pole input:hover{border-color:rgba(255,255,255,.3)}
+.pravne .odst-pole input:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-color:var(--ink)}
+.pravne .odst-pole input[aria-invalid="true"]{border-color:var(--accent-light)}
+.pravne .doc .odst-pomoc{margin:0;font:500 13.5px/1.5 var(--ui);color:var(--muted);max-width:52ch}
+.pravne .doc .odst-chyba{margin:0;font:600 13.5px/1.5 var(--ui);color:var(--accent-light);max-width:52ch}
+.pravne .odst-chyba::before{content:"! ";font-weight:700}
+
+/* Pasca na roboty: mimo obrazovky, nie display:none (to niektoré roboty preskočia). */
+.pravne .odst-hp{position:absolute;left:-10000px;top:auto;width:1px;height:1px;overflow:hidden}
+
+.pravne .doc .odst-vyhlasenie{margin:20px 0 0;font-size:16px;line-height:1.55;color:var(--body);max-width:52ch}
+body.noc.pravne .odst-vyhlasenie q{color:var(--ink)}
+.pravne .odst-akcia{display:flex;flex-wrap:wrap;align-items:center;gap:12px 22px;margin:18px 0 0}
+body.noc.pravne .odst .btn{min-width:min(100%,300px);justify-content:center}
+body.noc.pravne .odst .btn[disabled]{opacity:.6;cursor:progress}
+.pravne .doc .odst .hlaska{margin:14px 0 0}
+
+/* Potvrdenie o prijatí: list, ktorý sa dá vytlačiť alebo uložiť ako PDF. */
+.pravne .odst-potvrdenie{margin:24px 0 0;padding:clamp(18px,2.4vw,28px);border:1px solid var(--linka-silna);
+  border-radius:14px;background:var(--card-plna);outline:none}
+.pravne .odst-potvrdenie:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+body.noc.pravne .odst-potvrdenie h3{margin:0 0 6px;font:600 clamp(20px,1.8vw,24px)/1.2 var(--display);color:var(--ink);letter-spacing:-.015em}
+.pravne .doc .odst-potvrdenie > p{margin:0 0 16px;font-size:16px;line-height:1.55}
+.pravne .doc .odst-potvrdenie dl{margin:0 0 16px}
+.pravne .odst-potvrdenie dd{overflow-wrap:anywhere}
+body.noc.pravne .odst-potvrdenie #odst-p-cislo{font:600 17px/1.3 var(--ui);color:var(--ink);letter-spacing:.04em;font-variant-numeric:tabular-nums}
+.pravne .odst-potvrdenie .odst-akcia{margin-top:6px}
+
+.pravne .doc .odst-alebo{margin:26px 0 0;font:500 14px/1.55 var(--ui);color:var(--muted);max-width:52ch}
+
+@media(max-width:680px){
+  body.noc.pravne .odst .btn,body.noc.pravne .odst-potvrdenie .btn{width:100%}
+}
+@media(prefers-reduced-motion:reduce){
+  .pravne .odst-pole input{transition:none}
+}
+@media print{
+  .site-header,.site-footer,.site-skip,.uv-lead,.uv-colophon,#doc-a,#doc-b,#kontakt,.odst-alebo,.odst-akcia,.odst-intro,.odst-sukromie{display:none!important}
+  body.noc.pravne,body.noc.pravne .odst-potvrdenie,body.noc.pravne .odst-potvrdenie *{background:#fff!important;color:#000!important;box-shadow:none!important}
+  .pravne .odst-potvrdenie{border:1px solid #000}
+}
