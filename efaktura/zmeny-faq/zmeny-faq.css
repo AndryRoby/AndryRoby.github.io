@@ -1,0 +1,93 @@
+/* Zmeny FAQ k e-faktúre (/efaktura/zmeny-faq/). Tmavý papier (body.noc) z paper.css, tu len rozloženie
+   tejto stránky. Farby a písma z premenných paper.css; nič nové do spoločných súborov. */
+section[id], li[id] { scroll-margin-top:calc(var(--hlavicka, 64px) + 14px); }
+[hidden] { display:none !important; }
+.vh { position:absolute !important; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+
+/* Úvod: text vľavo, odber vpravo; pod 960 px pod sebou. */
+.faq-hero { display:grid; grid-template-columns:minmax(0,7fr) minmax(0,5fr); gap:var(--gap); align-items:start; padding-block:clamp(30px,5vh,64px); }
+@media (max-width:960px) { .faq-hero { grid-template-columns:minmax(0,1fr); } }
+body.noc .faq-hero h1 { font-size:clamp(32px,3.5vw,50px); line-height:1.08; }
+.faq-hero .lead { max-width:58ch; }
+.faq-hero .facts { margin-top:22px; }
+
+.faq-odber { border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:var(--radius); background:var(--card); padding:clamp(20px,2vw,30px); min-width:0; }
+body.noc .faq-odber h2 { font-size:clamp(22px,1.9vw,28px); line-height:1.2; margin:0 0 10px; }
+.faq-odber > p { color:var(--body); font-size:15px; line-height:1.65; margin:0 0 16px; max-width:52ch; }
+.faq-form label { display:block; font:500 14px/1.5 var(--ui); color:var(--ink); margin:0 0 7px; }
+.faq-riadok { display:flex; flex-wrap:wrap; gap:10px; }
+.faq-riadok input { flex:1 1 220px; min-width:0; min-height:46px; box-sizing:border-box; border:1px solid #796b57; background:var(--card-plna,#161311); color:var(--ink); border-radius:10px; padding:11px 13px; font:400 16px/1.4 var(--ui); }
+.faq-riadok input::placeholder { color:#9d968d; }
+.faq-riadok input:focus-visible, .faq-odber .btn:focus-visible, .faq-akcia .btn:focus-visible { outline:2px solid #ff9674; outline-offset:3px; }
+.faq-riadok .btn { flex:none; min-height:46px; }
+@media (max-width:480px) { .faq-riadok input, .faq-riadok .btn { flex:1 1 100%; width:100%; justify-content:center; } }
+.faq-trap { position:absolute !important; left:-9999px !important; width:1px !important; height:1px !important; overflow:hidden !important; }
+.faq-drobne { font-family:var(--ui); font-size:13px; line-height:1.6; color:var(--body); margin:12px 0 0; max-width:62ch; }
+.faq-drobne a, .faq-odber a { color:var(--accent-light); }
+.faq-ok { border-left:2px solid var(--ok); color:#dce9c7; padding-left:14px; margin:14px 0 0; font-family:var(--ui); font-size:15px; line-height:1.6; }
+.faq-chyba { color:#ffb497; margin:14px 0 0; font-family:var(--ui); font-size:15px; line-height:1.6; }
+.faq-chyba a { color:#ffb497; }
+.faq-caka { font-family:var(--ui); color:var(--body); }
+
+/* História verzií: jeden stĺpec, čiara vľavo ako časová os. */
+.faq-navod { font-family:var(--ui); font-size:14.5px; line-height:1.65; color:var(--body); max-width:78ch; margin:0 0 26px; }
+.faq-verzie { list-style:none; margin:0; padding:0; border-left:1px solid var(--line); }
+.faq-verzia { position:relative; padding:0 0 34px clamp(18px,2.2vw,30px); }
+.faq-verzia::before { content:""; position:absolute; left:-5px; top:9px; width:9px; height:9px; border-radius:50%; background:var(--accent); }
+.faq-verzia:last-child { padding-bottom:4px; }
+body.noc .faq-verzia h3 { font:600 clamp(19px,1.5vw,23px)/1.3 var(--display); color:var(--ink); margin:0 0 6px; }
+.faq-meta { display:flex; flex-wrap:wrap; gap:6px 18px; font-family:var(--ui); font-size:13.5px; color:var(--body); margin:0 0 6px; }
+.faq-meta a { color:var(--accent-light); }
+.faq-zhrnutie { font-family:var(--ui); font-size:15px; color:var(--ink); margin:0 0 14px; }
+.faq-zmeny { display:flex; flex-direction:column; max-width:960px; }
+.faq-zmena { border-top:1px solid var(--line); }
+.faq-zmena:last-of-type { border-bottom:1px solid var(--line); }
+.faq-zmena summary { list-style:none; cursor:pointer; display:grid; grid-template-columns:auto auto minmax(0,1fr) 18px; gap:4px 12px; align-items:baseline; padding:13px 0; min-height:44px; box-sizing:border-box; }
+.faq-zmena summary::-webkit-details-marker { display:none; }
+.faq-zmena summary::after { content:"+"; color:var(--accent); font-family:var(--ui); font-size:18px; line-height:1; justify-self:end; }
+.faq-zmena[open] summary::after { content:"\2212"; }
+.faq-zmena summary:hover .faq-otazka { color:var(--ink); }
+.faq-zmena summary:focus-visible { outline:2px solid #ff9674; outline-offset:2px; }
+.faq-znacka { font:600 11px/1 var(--ui); letter-spacing:.08em; text-transform:uppercase; padding:5px 9px; border-radius:999px; border:1px solid var(--line); color:var(--body); white-space:nowrap; }
+.faq-nova .faq-znacka { color:#bfe9d3; border-color:rgba(94,207,154,.55); }
+.faq-zmenena .faq-znacka { color:#f1d49b; border-color:rgba(232,192,122,.55); }
+.faq-odstranena .faq-znacka { color:#ffc4ae; border-color:rgba(242,100,60,.6); }
+.faq-cislo { font:600 13px/1.3 var(--mono); color:var(--ink); white-space:nowrap; }
+.faq-otazka { font:500 15px/1.5 var(--ui); color:#d9d4cd; min-width:0; overflow-wrap:anywhere; }
+@media (max-width:600px) {
+  .faq-zmena summary { grid-template-columns:auto minmax(0,1fr) 18px; }
+  .faq-otazka { grid-column:1 / 3; grid-row:2; }
+  .faq-zmena summary::after { grid-column:3; grid-row:1; }
+}
+.faq-telo { padding:2px 0 18px; max-width:80ch; }
+.faq-telo p, .faq-telo li { font-size:15px; line-height:1.7; color:#cfc9c1; margin:0 0 10px; overflow-wrap:anywhere; }
+.faq-telo ul { margin:0 0 10px; padding-left:20px; }
+.faq-cast { font:600 12px/1.3 var(--ui) !important; letter-spacing:.09em; text-transform:uppercase; color:var(--accent-light) !important; margin:12px 0 8px !important; }
+.faq-poznamka { font-family:var(--ui); font-size:13.5px !important; color:var(--body) !important; }
+.faq-cela-otazka b { color:var(--ink); }
+.faq-rozdiel del { text-decoration:line-through; text-decoration-thickness:1.5px; color:#ffb59d; background:rgba(242,100,60,.12); border-radius:3px; padding:0 2px; }
+.faq-rozdiel ins { text-decoration:underline; text-decoration-thickness:1.5px; text-underline-offset:3px; color:#e4f6ea; background:rgba(94,207,154,.14); border-radius:3px; padding:0 2px; }
+.faq-navod del { text-decoration:line-through; color:#ffb59d; background:rgba(242,100,60,.12); padding:0 2px; border-radius:3px; }
+.faq-navod ins { text-decoration:underline; text-underline-offset:3px; color:#e4f6ea; background:rgba(94,207,154,.14); padding:0 2px; border-radius:3px; }
+
+.faq-dalej { margin:26px 0 0; }
+details.otazka { border-top:1px solid var(--line); padding:16px 0; }
+details.otazka:last-of-type { border-bottom:1px solid var(--line); }
+details.otazka summary { cursor:pointer; font:600 clamp(16.5px,1.3vw,19px)/1.35 var(--display); color:var(--ink); list-style:none; display:block; position:relative; padding-right:26px; }
+details.otazka summary::-webkit-details-marker { display:none; }
+details.otazka summary::after { content:"+"; color:var(--accent); font-family:var(--ui); position:absolute; right:0; top:0; }
+details.otazka[open] summary::after { content:"\2212"; }
+details.otazka p { margin:10px 0 0; max-width:72ch; }
+.zdroje { font-family:var(--ui); font-size:13.5px; color:var(--body); line-height:1.6; padding-left:18px; }
+.zdroje li { margin:0 0 6px; overflow-wrap:anywhere; }
+.zdroje a { color:var(--accent-light); }
+
+/* Potvrdenie a odhlásenie. */
+.faq-akcia { max-width:640px; padding-block:clamp(40px,8vh,96px); }
+body.noc .faq-akcia h1 { font-size:clamp(32px,3.4vw,46px); line-height:1.1; margin:0 0 16px; }
+.faq-akcia p { color:var(--body); font-size:16px; line-height:1.7; }
+.faq-akcia a { color:var(--accent-light); }
+.faq-akcia .btn { min-height:46px; }
+
+@media (prefers-reduced-motion:reduce) { .faq-zmena summary::after { transition:none; } }
+@media print { .faq-odber, .site-header, .site-footer { display:none !important; } .faq-zmena { break-inside:avoid; } }
