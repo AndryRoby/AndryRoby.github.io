@@ -1,0 +1,108 @@
+/* Puzzle video maker. Všetko všeobecné je v /style/paper.css a /style/hub.css (nočná plocha .noc,
+   predajná stránka .predaj). Tu je len nástroj: voľby vľavo, živý náhľad 9:16 vpravo, hotové video,
+   TikTok krok a tabuľka o dátach. Žiadna mriežka kariet: stránka sa číta zhora nadol. */
+
+.uzke { width: min(760px, var(--wrap)); }
+.siroke { width: min(1120px, var(--wrap)); }
+
+/* min-width: 0 na stĺpcoch: bez neho by dlhá položka v <select> roztiahla mriežku na mobile
+   (rovnaká skúsenosť ako na /api/, zmeraná pri 390 bodoch). */
+.pv-nastroj { display: grid; grid-template-columns: minmax(0, 6fr) minmax(0, 5fr); gap: var(--gap); align-items: start; margin-top: clamp(22px, 3vw, 36px); }
+.pv-nastroj > * { min-width: 0; }
+@media (max-width: 900px) { .pv-nastroj { grid-template-columns: minmax(0, 1fr); } }
+
+.pv-volby { display: flex; flex-direction: column; gap: 16px; }
+.pv-volby label, .pv-volby legend, .pv-pole > span {
+  font-family: var(--ui); font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted);
+  display: block; margin-bottom: 6px; padding: 0;
+}
+.pv-volby select, .pv-volby input[type="number"] {
+  font: inherit; font-family: var(--ui); font-size: 16px; width: 100%; min-width: 0; max-width: 100%;
+  padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--card-plna, var(--card)); color: var(--ink);
+}
+.pv-volby select:focus-visible, .pv-volby input:focus-visible, .pv-volby button:focus-visible { outline: 2px solid var(--accent-light); outline-offset: 2px; }
+.pv-riadok { display: flex; gap: 10px; align-items: end; }
+.pv-riadok > div { flex: 1; min-width: 0; }
+.pv-volby fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+.pv-prepinac { display: flex; gap: 8px; flex-wrap: wrap; }
+.pv-prepinac label {
+  text-transform: none; letter-spacing: 0; font-size: 15px; color: var(--ink); margin: 0;
+  display: inline-flex; align-items: center; gap: 8px; padding: 9px 14px; border: 1px solid var(--line); border-radius: 10px; cursor: pointer;
+}
+.pv-prepinac label:has(input:checked) { border-color: var(--accent); background: rgba(242, 100, 60, .10); }
+.pv-zaskrt { display: flex; gap: 10px; align-items: flex-start; font-family: var(--ui); font-size: 15px; color: var(--body); line-height: 1.45; }
+.pv-volby .pv-zaskrt { text-transform: none; letter-spacing: 0; font-size: 15px; color: var(--body); display: flex; margin: 0; }
+/* .btn a iné majú vlastné display, ktoré by atribút hidden prebili. */
+section[hidden], main [hidden] { display: none !important; }
+.pv-zaskrt input { margin-top: 3px; flex: none; width: 18px; height: 18px; }
+
+.pv-odstup { margin-top: 18px; }
+.pv-tlacidla[hidden] { display: none; }
+.pv-tlacidla { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+.pv-tlacidla .btn[disabled], .pv-tlacidla .btn[aria-disabled="true"] { opacity: .45; cursor: not-allowed; transform: none; }
+button.btn { font: inherit; font-family: var(--ui); cursor: pointer; }
+.btn-maly { height: 42px; padding: 0 14px; font-size: 14px; border-radius: 10px; border: 1px solid var(--line); background: transparent; color: var(--ink); cursor: pointer; font-family: var(--ui); }
+.btn-maly:hover { border-color: var(--ink); }
+
+.pv-pokrok { font-family: var(--ui); font-size: 14px; color: var(--muted); display: grid; gap: 8px; }
+.pv-pokrok[hidden] { display: none; }
+.pv-pokrok progress { width: 100%; height: 8px; appearance: none; border: 0; border-radius: 4px; background: var(--line); overflow: hidden; }
+.pv-pokrok progress::-webkit-progress-bar { background: var(--line); }
+.pv-pokrok progress::-webkit-progress-value { background: var(--accent); }
+.pv-pokrok progress::-moz-progress-bar { background: var(--accent); }
+
+.pv-sprava { font-family: var(--ui); font-size: 15px; line-height: 1.5; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--line); color: var(--ink); margin: 0; }
+.pv-sprava[hidden] { display: none; }
+.pv-sprava.chyba { border-color: rgba(242, 100, 60, .55); }
+.pv-sprava.ok { border-color: rgba(94, 207, 154, .55); }
+.pv-sprava.pozor { border-color: rgba(255, 181, 157, .6); background: rgba(242, 100, 60, .06); }
+
+/* Náhľad: canvas 1080x1920 zmenšený na stĺpec, pomer 9:16 drží CSS. */
+.pv-nahlad { margin: 0; }
+.pv-ram { position: relative; width: min(100%, 380px); margin: 0 auto; aspect-ratio: 9 / 16; border-radius: 22px; overflow: hidden; border: 1px solid var(--line); background: #0f0e0c; }
+.pv-ram canvas, .pv-ram video { display: block; width: 100%; height: 100%; }
+.pv-zony { position: absolute; inset: 0; pointer-events: none; }
+.pv-zony[hidden] { display: none; }
+/* Pravý pás od y 1000 (52 %) a spodný pás od y 1480 (77 %) z 1920, šírka pásu 180 z 1080 (16,7 %). */
+.pv-zony i { position: absolute; background: repeating-linear-gradient(135deg, rgba(242, 100, 60, .22) 0 6px, transparent 6px 12px); outline: 1px dashed rgba(242, 100, 60, .7); }
+.pv-zony i:nth-child(1) { right: 0; top: 52.08%; width: 16.67%; bottom: 22.92%; }
+.pv-zony i:nth-child(2) { left: 0; right: 0; top: 77.08%; bottom: 0; }
+.pv-nahlad figcaption { font-family: var(--ui); font-size: 13px; color: var(--muted); margin: 10px auto 0; width: min(100%, 380px); display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; justify-content: space-between; }
+.pv-nahlad figcaption label { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
+
+.pv-hotove { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: var(--gap); align-items: start; }
+.pv-hotove > * { min-width: 0; }
+@media (max-width: 900px) { .pv-hotove { grid-template-columns: minmax(0, 1fr); } }
+.pv-fakty { font-family: var(--ui); font-size: 14px; color: var(--muted); margin: 18px 0; padding: 0; list-style: none; }
+.pv-fakty li { padding: 7px 0; border-top: 1px solid var(--line); display: flex; gap: 12px; justify-content: space-between; }
+.pv-fakty b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; text-align: right; overflow-wrap: anywhere; }
+
+.pv-kroky { font-size: 16px; padding-left: 1.6em; margin: 16px 0 22px; }
+.pv-kroky li { margin: 0 0 9px; }
+
+/* Náhľad kópie pre TikTok: presne súbor, ktorý by išiel do TikToku, pred súhlasom. */
+.pv-kopia { margin-top: 18px; }
+.pv-kopia .pv-ram { margin: 0; }
+.pv-kopia figcaption { margin-left: 0; justify-content: flex-start; }
+#kopiruj-popis { height: 32px; margin-left: 4px; vertical-align: middle; }
+
+.pv-potvrd { border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; margin: 18px 0 0; display: grid; gap: 14px; }
+.pv-potvrd[hidden] { display: none; }
+.pv-potvrd p { margin: 0; }
+.pv-ucet { font-family: var(--ui); font-size: 17px; color: var(--ink); overflow-wrap: anywhere; }
+
+.pv-data { margin: 18px 0 0; }
+.pv-data div { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 14px; padding: 12px 0; border-top: 1px solid var(--line); }
+.pv-data dt { font-family: var(--ui); font-weight: 600; font-size: 15px; color: var(--ink); }
+.pv-data dd { margin: 0; font-size: 16px; }
+@media (max-width: 620px) { .pv-data div { grid-template-columns: minmax(0, 1fr); gap: 4px; } }
+
+details { border-top: 1px solid var(--line); padding: 14px 0; }
+details summary { cursor: pointer; font-family: var(--display); font-weight: 600; font-size: 18px; color: var(--ink); }
+details p { margin: 10px 0 0; }
+
+code { overflow-wrap: anywhere; }
+
+@media (prefers-reduced-motion: reduce) {
+  .btn, .btn-maly { transition: none; }
+}
