@@ -486,12 +486,12 @@ body.predaj { font-size:16.5px; line-height:1.55; }
                                 padding:clamp(20px,2vw,30px); min-width:0; }
 .predaj .jedno { max-width:640px; padding:clamp(20px,2vw,28px); }
 .predaj .cena .suma, .predaj .jedno .suma {
-  display:block; margin:0; font:600 clamp(34px,3.6vw,46px)/1 var(--display);
+  display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 10px; margin:0; font:600 clamp(34px,3.6vw,46px)/1 var(--display);
   color:var(--ink); letter-spacing:-.024em; font-variant-numeric:proportional-nums; }
 .predaj .jedno .suma { margin:0 0 16px; }
 .predaj .cena .suma i, .predaj .jedno .suma i {
   font-style:normal; font-family:var(--ui); font-size:15px; font-weight:500;
-  color:var(--muted); letter-spacing:0; margin-left:10px; }
+  color:var(--muted); letter-spacing:0; line-height:1.35; margin:0; }
 .predaj .cena .zaco { font-family:var(--ui); font-size:14px; color:var(--body); margin:10px 0 18px; }
 .predaj .cena .btn, .predaj .jedno .btn { width:100%; justify-content:center; }
 .predaj .cena .akcie, .predaj .jedno .akcie { display:flex; flex-direction:column; gap:10px; margin:0 0 4px; }
@@ -501,9 +501,11 @@ body.predaj { font-size:16.5px; line-height:1.55; }
 .predaj .cena .pomoc a { color:var(--body); }
 .predaj .cena ul { list-style:none; margin:18px 0 0; padding:0; display:flex; flex-direction:column;
                    gap:9px; font-family:var(--ui); font-size:14px; color:var(--body); }
-.predaj .cena li { display:flex; gap:10px; max-width:58ch; }
-.predaj .cena li::before { content:""; width:6px; height:6px; border-radius:50%;
-                           background:var(--accent); flex:none; margin-top:8px; }
+/* Blok, nie flex: pri flexe sa text s cenou v <span> rozpadol na samostatné
+   stĺpce („4.90 each ... 49“, e-ink balík 24. 9. 2026). */
+.predaj .cena li { display:block; position:relative; padding-left:16px; max-width:58ch; }
+.predaj .cena li::before { content:""; position:absolute; left:0; top:8px; width:6px; height:6px;
+                           margin:0; border-radius:50%; background:var(--accent); }
 
 /* Viditeľné označenie testu: keď stránka beží s ?test=1, tlačidlá vedú do
    Stripe test módu a nikto nesmie čakať, že zaplatil. */
