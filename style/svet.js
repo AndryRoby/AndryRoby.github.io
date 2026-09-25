@@ -89,9 +89,16 @@
       return o.json().catch(function () { return {}; }).then(function (d) {
         var chyba = new Error('stav ' + o.status);
         chyba.dovod = (d && d.reason) || '';
+        chyba.obsadene = (d && Array.isArray(d.parcel_ids)) ? d.parcel_ids.map(Number) : null;
         throw chyba;
       });
     });
+  }
+  function kodChyby(chyba) { var k = chyba && /stav (\d+)/.exec(chyba.message || ''); return k ? Number(k[1]) : 0; }
+  /** Vlastný držiak neplatí. To nie je „niekto bol rýchlejší“; či áno, ukáže až nová rezervácia. */
+  function vlastnyDrziakNeplati(chyba) {
+    var kod = kodChyby(chyba), d = chyba && chyba.dovod;
+    return (kod === 409 && (d === 'expired' || d === 'not-reserved')) || (kod === 403 && d === 'wrong-hold');
   }
 
   // ── Mriežka. Tie isté čísla ako ops/svet/mriezka.mjs. ────────────────────
@@ -163,23 +170,23 @@
   // tvrdiť, že nejaký štvorec čaká alebo že je váš.
   var navratBezStvorca = !Number(parametre.get('p'));
   var navratZPokladne = parametre.get('paid') ? 'paid' : parametre.get('cancelled') ? 'cancelled' : '';
+  // Košík sa z pokladne vracia s &kosik=N (app.py). Bez toho by mapa po kúpe
+  // štyroch štvorcov hovorila „this square“ o jednom z nich.
+  var kosikNavrat = Math.max(0, Math.min(10, Math.floor(Number(parametre.get('kosik')) || 0)));
 
   // ── Kreslenie hneď po platbe ─────────────────────────────────────────────
-  // Stripe vracia človeka s ?p=ID&paid=1&session_id=cs_…. Odkaz do panela
-  // majiteľa (jediný kľúč k menu, odkazu a kresbe) chodil doteraz len e-mailom,
-  // takže kto ho hneď nedostal, nemal po platbe čo robiť. Číslo platobnej
-  // relácie má len ten, kto práve zaplatil, a služba z neho vie vydať nový kľúč
-  // (/api/owner/session-link).
-  //
-  // KDE TO ČÍSLO ŽIJE. V sessionStorage tejto karty a v pamäti stránky, nikde
-  // inde. Nie v adrese (tú si zapisuje Umami a história prehliadača) a nie v
-  // localStorage (prežilo by zavretie karty). Odloží sa TU, ešte pred
-  // vyčistením adresy o pár riadkov nižšie.
-  var poPlatbe = { session: '', panel: '', stvorec: 0 };
+  // Z čísla platobnej relácie (?session_id=) vydá služba kľúč do panela
+  // (/api/owner/session-link), bez čakania na e-mail. Číslo žije LEN v
+  // sessionStorage tejto karty: nie v adrese (Umami, história), nie v
+  // localStorage. ids: štvorce z ?p= a košíka, potvrdí ich služba (potvrdPlatbu).
+  var poPlatbe = { session: '', panel: '', stvorec: 0, kusov: 0, ids: [] };
   function ulozPoPlatbe() {
     try {
-      sessionStorage.setItem('svet-po-platbe', JSON.stringify({ s: poPlatbe.session, u: poPlatbe.panel, p: poPlatbe.stvorec }));
+      sessionStorage.setItem('svet-po-platbe', JSON.stringify({ s: poPlatbe.session, u: poPlatbe.panel, p: poPlatbe.stvorec, n: poPlatbe.kusov, i: poPlatbe.ids }));
     } catch (e) {}
+  }
+  function cislaZoZoznamu(z) {
+    return (Array.isArray(z) ? z : []).map(Number).filter(function (x) { return x > 0; }).slice(0, 10);
   }
   try {
     var ulozenaPlatba = JSON.parse(sessionStorage.getItem('svet-po-platbe') || 'null');
@@ -187,16 +194,22 @@
       poPlatbe.session = String(ulozenaPlatba.s || '');
       poPlatbe.panel = String(ulozenaPlatba.u || '');
       poPlatbe.stvorec = Number(ulozenaPlatba.p) || 0;
+      poPlatbe.kusov = Number(ulozenaPlatba.n) || 0;
+      poPlatbe.ids = cislaZoZoznamu(ulozenaPlatba.i);
     }
   } catch (e) {}
   if (navratZPokladne === 'paid' && parametre.get('session_id')) {
-    poPlatbe = { session: String(parametre.get('session_id')), panel: '', stvorec: Number(parametre.get('p')) || 0 };
+    var kandidati = [];
+    try { if (kosikNavrat > 1) kandidati = cislaZoZoznamu(JSON.parse(sessionStorage.getItem('svet-kosik-ids') || '[]')); } catch (e) {}
+    var zAdresy = Number(parametre.get('p')) || 0;
+    if (zAdresy && kandidati.indexOf(zAdresy) < 0) kandidati.unshift(zAdresy);
+    poPlatbe = { session: String(parametre.get('session_id')), panel: '', stvorec: zAdresy, kusov: kosikNavrat, ids: kandidati.slice(0, 10) };
     ulozPoPlatbe();
   }
 
   if (navratZPokladne || parametre.get('session_id')) {
     var cista = new URL(location.href);
-    ['paid', 'cancelled', 'session_id'].forEach(function (k) { cista.searchParams.delete(k); });
+    ['paid', 'cancelled', 'session_id', 'kosik'].forEach(function (k) { cista.searchParams.delete(k); });
     history.replaceState(null, '', cista);
     sleduj(navratZPokladne === 'paid' ? 'svet_navrat_z_pokladne' : 'svet_pokladna_zrusena');
   }
@@ -511,15 +524,9 @@
   }
 
   // ── Zásobné plátno podkladu ──────────────────────────────────────────────
-  // Čas rastrovania ciest v prehliadači z JavaScriptu nevidno, vidno len to, že
-  // snímky pri pohybe meškajú. Vtedy sa podklad vykreslí raz, väčší o okraj, a pri
-  // posune sa len prekladá; pri priblížení sa krátko škáluje a po dobehnutí sa
-  // vykreslí načisto. Na rýchlom počítači sa toto nikdy nezapne.
-  //
-  // Od 22. 9. 2026 sú v zásobnom plátne len PLOCHY. Pobrežie a hranice musia byť
-  // nad vlastníctvom, takže sa kreslia až na mapu a zásobné plátno ich mať
-  // nemôže. Zásoba tak šetrí menej než predtým; je to cena za mapu, ktorá sa dá
-  // čítať aj pri sto percentách predaných štvorcov, a tá je vyššia.
+  // Keď snímky pri pohybe meškajú, podklad sa vykreslí raz, väčší o okraj, a pri
+  // posune sa len prekladá. Na rýchlom počítači sa nezapne. Od 22. 9. 2026 sú v
+  // ňom len PLOCHY: pobrežie a hranice sú nad vlastníctvom, kreslia sa na mapu.
   var kes = { platno: null, c: null, V: null, plati: false, zapnute: parametre.get('kes') === '1', uroven: -1 }, usadenie = 0;
   function pohlad() { return { lon: S.lon, my: S.my, s: S.s, cx: S.stredX, cy: S.stredY, w: S.w, h: S.h }; }
   /** Nakreslí plochy a čiary podkladu a vráti dlaždice aktuálneho pohľadu, z ktorých sa potom píšu mená. */
@@ -839,8 +846,19 @@
       ctx.stroke();
     }
     if (!ram) return;
-    ctx.fillStyle = 'rgba(255,217,201,.12)';
+    ctx.fillStyle = 'rgba(255,217,201,.08)';
     ctx.fillRect(Math.min(ram.x0, ram.x), Math.min(ram.y0, ram.y), Math.abs(ram.x - ram.x0), Math.abs(ram.y - ram.y0));
+    // Presne tie štvorce, ktoré sa po pustení pridajú (bunkyVRame).
+    var nahlad = bunkyVRame(ram);
+    if (nahlad.length) {
+      ctx.beginPath();
+      for (var j = 0; j < nahlad.length; j++) obdlznikBunky(nahlad[j].r, nahlad[j].c);
+      ctx.fillStyle = 'rgba(255,217,201,.22)';
+      ctx.fill();
+      ctx.strokeStyle = FARBY.vyber;
+      ctx.lineWidth = Math.max(1, dpr);
+      ctx.stroke();
+    }
     ctx.strokeStyle = FARBY.vyber;
     ctx.lineWidth = Math.max(1, dpr);
     ctx.setLineDash([4 * dpr, 3 * dpr]);
@@ -850,7 +868,13 @@
 
   function kresliVyber(t) {
     kresliKosik();
-    if (S.podKurzorom && (!S.vybrana || S.podKurzorom.id !== S.vybrana.id)) {
+    // V režime košíka je zvýraznené len to, čo v košíku naozaj je. Štvorec
+    // vybraný pred otvorením košíka sa predtým kreslil ďalej ako vybraný, hoci
+    // v košíku nebol (Andrej 25. 9. 2026: „máš ako keby označený aj ten
+    // predtým, ale iba vizuálne“). Pri otvorení košíka tlačidlom sa preto do
+    // košíka pridá (otvorKosik) a kým košík beží, samostatne sa nekreslí.
+    var vybrana = kosikRezim ? null : S.vybrana;
+    if (S.podKurzorom && (!vybrana || S.podKurzorom.id !== vybrana.id)) {
       var bunkaPx = (360 / STL[S.podKurzorom.r]) * S.s;
       if (bunkaPx >= 6 * dpr) {
         ctx.beginPath();
@@ -859,9 +883,9 @@
         ctx.fill();
       }
     }
-    if (!S.vybrana) return;
+    if (!vybrana) return;
     ctx.beginPath();
-    var g = obdlznikBunky(S.vybrana.r, S.vybrana.c);
+    var g = obdlznikBunky(vybrana.r, vybrana.c);
     ctx.fillStyle = 'rgba(242,100,60,.18)';
     ctx.fill();
     ctx.strokeStyle = FARBY.vyber;
@@ -1036,7 +1060,10 @@
   platno.addEventListener('pointermove', function (e) {
     var p = bod(e);
     if (prsty[e.pointerId]) prsty[e.pointerId] = p;
-    if (ram) { ram.x = p.x; ram.y = p.y; ziadaj(); return; }
+    // Počas ťahu so Shiftom sa zvýraznenie pod kurzorom nekreslí: ostalo sivé na
+    // štvorci, kde ťah začal, a vyzeralo ako napoly vybraný štvorec (Andrejova
+    // snímka 25. 9. 2026). Po pustení sa znova berie z polohy myši.
+    if (ram) { ram.x = p.x; ram.y = p.y; S.podKurzorom = null; ziadaj(); return; }
     var k = Object.keys(prsty);
     if (k.length >= 2 && stipka) {
       var a = prsty[k[0]], b = prsty[k[1]], m = medze();
@@ -1082,6 +1109,7 @@
         doKosikaZRamu(r0);
       }
       sleduj('svet_kosik_vyber');
+      if (e.pointerType === 'mouse') S.podKurzorom = bunkaNa(r0.x, r0.y);
       ziadaj();
       return;
     }
@@ -1135,7 +1163,11 @@
     else if (e.key === '+' || e.key === '=') priblizPlynule(S.stredX, S.stredY, 1.6);
     else if (e.key === '-' || e.key === '_') priblizPlynule(S.stredX, S.stredY, 1 / 1.6);
     else if (e.key === '0' || e.key === 'Home') celySvet();
-    else if (e.key === 'Enter' || e.key === ' ') { var b = bunkaNa(S.stredX, S.stredY); if (b) vyber(b.r, b.c, false); }
+    else if (e.key === 'Enter' || e.key === ' ') {
+      // V košíku robí Enter to isté čo ťuknutie: štvorec pridá alebo odoberie.
+      var b = bunkaNa(S.stredX, S.stredY);
+      if (b && kosikRezim) prepniVKosiku(b.r, b.c); else if (b) vyber(b.r, b.c, false);
+    }
     else spracovane = false;
     if (spracovane) { e.preventDefault(); dotyk(); zastavPohybOkremZoomu(); uprav(); ziadaj(); }
   });
@@ -1154,11 +1186,7 @@
   // ── Košík: viac štvorcov naraz ────────────────────────────────────────────
   // Na počítači sa ťahá obdĺžnik so Shiftom (bez Shiftu sa mapa ďalej posúva,
   // to sa meniť nesmie), na telefóne sa ťuká na štvorce. Všetko ide do jednej
-  // pokladne ako jedna platba za N štvorcov.
-  //
-  // Kým je T.kosikZapnuty false, z tohto nie je na stránke vidieť nič: služba
-  // s cestou /api/reserve-many ešte nie je nasadená a ponúkať kúpu, ktorá
-  // spadne, je horšie než ju neponúknuť.
+  // pokladne ako jedna platba za N štvorcov. T.kosikZapnuty je vypínač (zapnutý od 22. 9. 2026).
   var KOSIK_STROP = 10;
   var kosik = [], kosikRezim = false, ram = null;
   function kosikZapnuty() { return !!T.kosikZapnuty; }
@@ -1166,37 +1194,186 @@
     for (var i = 0; i < kosik.length; i++) if (kosik[i].id === id) return i;
     return -1;
   }
-  /** Do košíka ide len to, o čom stránka nevie, že je obsadené. Zvyšok odmietne služba. */
+  /**
+   * Do košíka ide len to, o čom stránka nevie, že je obsadené. Zvyšok odmietne
+   * služba. Štvorec, ktorý drží tento prehliadač (návrat z pokladne cez „späť“),
+   * nie je cudzí: bez tejto výnimky by si človek vlastné štvorce nemohol dať
+   * znova do košíka, kým rezervácia nevyprší.
+   */
   function daSaPridat(r, c) {
-    var st = stavBunky(r, c, parcely[cislo(r, c)]);
-    return st === 'volna' || st === 'neznamy';
+    var id = cislo(r, c), st = stavBunky(r, c, parcely[id]);
+    if (cakaNaPotvrdenie(id)) return false;
+    return st === 'volna' || st === 'neznamy' || (st === 'rezervovana' && jeMojaRezervacia(id));
   }
-  function prepniVKosiku(r, c) {
-    var id = cislo(r, c), i = vKosiku(id);
-    if (i >= 0) kosik.splice(i, 1);
-    else if (kosik.length >= KOSIK_STROP) { pas(T.kosikStrop); return; }
-    else if (daSaPridat(r, c)) kosik.push({ id: id, r: r, c: c });
-    else return;
+
+  // ── Cena košíka: najlacnejšia kombinácia balíkov ─────────────────────────
+  // Andrej 25. 9. 2026: kto si na mape označí štvorce a chce cenu balíka, má
+  // dostať presne tie štvorce. Košík preto platí cenami existujúcich produktov:
+  // 3 štvorce 12 €, 4 štvorce 12 + 5 €, 6 štvorcov 2 × 12 €, 10 štvorcov 35 €.
+  // Najlacnejšia kombinácia, ktorá štvorce POKRYJE: 9 štvorcov zaplatí balík
+  // desiatich (35 €). Rozhoduje služba (app.py, kombinacia_kosika), tu sa len
+  // ukazuje. Cenník z textov (kosikCeny), kým nepríde živý (nacitajStav).
+  var CENNIK_KOSIKA = (Array.isArray(T.kosikCeny) && T.kosikCeny.length) ? T.kosikCeny
+    : [['pack10', 10, 35], ['pack3', 3, 12], ['single', 1, Number(T.kosikCenaEur) || 5]];
+  function eurText(centov) { return '€' + (centov / 100).toFixed(2); }
+  /** {polozky: [[kľúč, štvorcov, centov za kus, množstvo]], centov, plna, kapacita} alebo null. */
+  function cenaKosika(n) {
+    if (!(n >= 1) || n > KOSIK_STROP) return null;
+    var ponuka = CENNIK_KOSIKA.map(function (x) { return [String(x[0]), Number(x[1]), Math.round(Number(x[2]) * 100)]; })
+      .filter(function (x) { return x[1] >= 1 && x[1] <= KOSIK_STROP && x[2] >= 0; })
+      .sort(function (a, b) { return b[1] - a[1] || (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0); });
+    if (!ponuka.length) return null;
+    var jeden = ponuka.filter(function (x) { return x[1] === 1; })[0];
+    var strop = n + ponuka[0][1] - 1;
+    var najlepsie = [{ centov: 0, kusov: 0, zoznam: [] }];
+    for (var k = 1; k <= strop; k++) {
+      najlepsie[k] = null;
+      for (var i = 0; i < ponuka.length; i++) {
+        var p = ponuka[i], pred = najlepsie[k - p[1]];
+        if (p[1] > k || !pred) continue;
+        var kand = { centov: pred.centov + p[2], kusov: pred.kusov + 1, zoznam: pred.zoznam.concat([i]) };
+        var teraz = najlepsie[k];
+        if (!teraz || kand.centov < teraz.centov || (kand.centov === teraz.centov && kand.kusov < teraz.kusov)) najlepsie[k] = kand;
+      }
+    }
+    // Pri rovnakej sume vyhrá menšie pokrytie.
+    var v = null, kapacita = 0;
+    for (var m = n; m <= strop; m++) {
+      if (najlepsie[m] && (!v || najlepsie[m].centov < v.centov)) { v = najlepsie[m]; kapacita = m; }
+    }
+    if (!v) return null;
+    var polozky = [];
+    ponuka.forEach(function (p, i) {
+      var q = v.zoznam.filter(function (x) { return x === i; }).length;
+      if (q) polozky.push([p[0], p[1], p[2], q]);
+    });
+    return { polozky: polozky, centov: v.centov, plna: jeden ? jeden[2] * n : v.centov, kapacita: kapacita };
+  }
+  function vetaSCislami(veta, cisla) {
+    return String(veta || '').replace(/\{(\w+)\}/g, function (m, k) { return cisla[k] !== undefined ? cisla[k] : m; });
+  }
+
+  /**
+   * Košík z tlačidla v liste štvorca. Štvorec, z ktorého človek košík otvoril,
+   * je prvý v košíku: bol zvýraznený a tlačidlo stálo v jeho liste, takže ho tam
+   * každý čaká. Predtým ostal len nakreslený ako vybraný, v košíku nebol a
+   * zaplatil by sa bez neho.
+   */
+  function pridajVybranu(lenVidno) {
+    var v = S.vybrana, g = v && geometriaBunky(v.r, v.c);
+    if (v && (!lenVidno || (g.x + g.w > 0 && g.x < S.w && g.y + g.h > 0 && g.y < S.h))
+      && vKosiku(v.id) < 0 && kosik.length < KOSIK_STROP && daSaPridat(v.r, v.c)) kosik.push({ id: v.id, r: v.r, c: v.c });
+  }
+  function otvorKosik() {
+    pridajVybranu();
     ziadaj();
     ukazKosik();
   }
-  /** Obdĺžnik na obrazovke na štvorce. Riadky majú rôzny počet stĺpcov, tak sa pýta každý zvlášť. */
-  function doKosikaZRamu(r0) {
+  /** Shift z prehľadu: vybraný štvorec ide prvý, ale len keď je na mape vidno (list ukazuje len čísla). */
+  function vstupDoKosika() {
+    if (kosikRezim) return false;
+    pridajVybranu(1);
+    return true;
+  }
+  function prepniVKosiku(r, c) {
+    // Počas vypĺňania pokladne sa košík nemení: ťuk na mapu by inak zmazal
+    // rozpísaný e-mail a zaplatilo by sa niečo iné, než čo pokladňa ukazuje.
+    if (listRezim === 'pokladna') return;
+    var id = cislo(r, c);
+    var otvoril = vstupDoKosika();
+    // Shift a klik na ten istý štvorec, ktorý bol vybraný: košík sa ním otvára,
+    // nie ho hneď vyhadzuje.
+    var praveVybrany = otvoril && !!S.vybrana && S.vybrana.id === id;
+    var i = vKosiku(id);
+    if (i >= 0) {
+      if (!praveVybrany) { kosik.splice(i, 1); zahodDrziak(id); }
+    } else if (kosik.length >= KOSIK_STROP) {
+      pas(T.kosikStrop);
+      if (!otvoril) return;
+    } else if (daSaPridat(r, c)) {
+      kosik.push({ id: id, r: r, c: c });
+    } else if (!otvoril) {
+      return;
+    }
+    ziadaj();
+    ukazKosik();
+  }
+  /**
+   * Štvorce, ktoré obdĺžnik naozaj pridá: tie, ktorých STRED leží v obdĺžniku,
+   * najviac toľko, koľko sa ešte zmestí do košíka, zhora zľava. Riadky sú voči
+   * sebe posunuté (každý má iný počet stĺpcov), takže pravidlo „čoho sa dotkne“
+   * bralo aj štvorce trčiace z obdĺžnika a výber vyšiel zubatý a iný, než človek
+   * nakreslil (Andrej 25. 9. 2026: „ten výber viacerých je stále problém“). To
+   * isté sa kreslí počas ťahu, takže človek vidí presne, čo dostane.
+   */
+  function bunkyVRame(r0) {
     var x0 = Math.min(r0.x0, r0.x), x1 = Math.max(r0.x0, r0.x);
     var y0 = Math.min(r0.y0, r0.y), y1 = Math.max(r0.y0, r0.y);
+    var vyber = [], videne = {}, volne = KOSIK_STROP - kosik.length, krokov = 0;
+    if (volne <= 0) return vyber;
+    function pridaj(r, c) {
+      var id = cislo(r, c);
+      if (videne[id]) return;
+      videne[id] = 1;
+      if (vKosiku(id) < 0 && daSaPridat(r, c)) vyber.push({ id: id, r: r, c: c });
+    }
+    // Štvorce pod začiatkom a koncom ťahu patria do výberu vždy: na tie človek ukázal.
+    var b0 = bunkaNa(r0.x0, r0.y0), b1 = bunkaNa(r0.x, r0.y);
+    if (b0) pridaj(b0.r, b0.c);
+    if (b1) pridaj(b1.r, b1.c);
     var rHore = riadokZoSirky(zY(naSvete(zYObr(y0)))), rDole = riadokZoSirky(zY(naSvete(zYObr(y1))));
-    for (var r = rHore; r <= rDole && kosik.length < KOSIK_STROP; r++) {
-      var cOd = stlpecZDlzky(r, zX(x0)), cDo = stlpecZDlzky(r, zX(x1));
-      if (cDo < cOd) cDo = STL[r] - 1;                 // výrez cez 180. poludník: po koniec riadku
-      for (var c = cOd; c <= cDo && kosik.length < KOSIK_STROP; c++) {
-        if (vKosiku(cislo(r, c)) < 0 && daSaPridat(r, c)) kosik.push({ id: cislo(r, c), r: r, c: c });
+    for (var r = rHore; r <= rDole && vyber.length < volne + 2; r++) {
+      var stredY = naY(doY(stredRiadku(r)));
+      if (stredY < y0 || stredY > y1) continue;
+      var sirkaDeg = 360 / STL[r];
+      var cOd = Math.ceil((zX(x0) + 180) / sirkaDeg - 0.5), cDo = Math.floor((zX(x1) + 180) / sirkaDeg - 0.5);
+      for (var c = cOd; c <= cDo && vyber.length < volne + 2; c++) {
+        if (++krokov > 20000) { r = rDole; break; }     // oddialená mapa: obdĺžnik cez tisíce štvorcov
+        pridaj(r, ((c % STL[r]) + STL[r]) % STL[r]);     // cez 180. poludník
       }
     }
+    // Poradie ako pri čítaní (zhora, zľava), strop košíka odreže až koniec.
+    vyber.sort(function (a, b) { return a.r - b.r || a.c - b.c; });
+    return vyber.slice(0, volne);
+  }
+  function doKosikaZRamu(r0) {
+    if (listRezim === 'pokladna') return;
+    vstupDoKosika();
+    var nove = bunkyVRame(r0);
+    // Obdĺžnik bez jediného stredu (krátky ťah vnútri štvorca) berie štvorec pod začiatkom ťahu.
+    if (!nove.length && kosik.length < KOSIK_STROP) {
+      var b0 = bunkaNa(r0.x0, r0.y0);
+      if (b0 && vKosiku(b0.id) < 0 && daSaPridat(b0.r, b0.c)) nove.push(b0);
+    }
+    kosik = kosik.concat(nove);
     if (kosik.length >= KOSIK_STROP) pas(T.kosikStrop);
     ziadaj();
     ukazKosik();
   }
+  /** Krížik na čísle v liste košíka: ten istý účinok ako ťuk na štvorec v mape. */
+  function odoberZKosika(id) {
+    if (listRezim === 'pokladna') return;
+    var i = vKosiku(id);
+    if (i < 0) return;
+    var a = document.activeElement;
+    var malFokus = !!(a && a.getAttribute && a.getAttribute('data-akcia') === 'kosik-odober');
+    kosik.splice(i, 1);
+    zahodDrziak(id);
+    ziadaj();
+    ukazKosik();
+    // Len keď bol fokus na zmazanom čísle (klávesnica): ide na susedné, nech
+    // neskočí na začiatok stránky. Inak sa fokus nehýbe.
+    if (!malFokus) return;
+    var cipy = list.querySelectorAll('[data-akcia="kosik-odober"]');
+    var ciel = cipy[Math.min(i, cipy.length - 1)] || list.querySelector('.list-zavri');
+    if (ciel) ciel.focus();
+  }
+  /** Myš alebo touchpad: vtedy má zmysel ponúknuť Shift a ťah. */
+  function jemnyUkazovatel() {
+    try { return window.matchMedia('(hover: hover) and (pointer: fine)').matches; } catch (e) { return false; }
+  }
   function zahodKosik() {
+    kosik.forEach(function (x) { zahodDrziak(x.id); });
     kosik = [];
     kosikRezim = false;
     listRezim = 'prehlad';
@@ -1232,22 +1409,68 @@
   }
 
   var parcely = {};
-  // Držiak rezervácie (hold) podľa čísla štvorca. Žije v sessionStorage, aby
-  // prežil odchod do pokladne Stripe a návrat z nej v tej istej karte: inak by
-  // človek po „späť“ z pokladne videl vlastnú rezerváciu ako cudziu a štvorec,
-  // ktorý mu držíme, by si nemal ako kúpiť.
-  var drziaky = {};
-  function citajDrziak(id) {
-    if (drziaky[id]) return drziaky[id];
-    try { return sessionStorage.getItem('svet-hold-' + id) || ''; } catch (e) { return ''; }
-  }
-  function ulozDrziak(id, hodnota) {
-    if (hodnota) drziaky[id] = hodnota; else delete drziaky[id];
+  // Držiak rezervácie (hold) podľa čísla štvorca, v sessionStorage, aby prežil
+  // cestu do pokladne a späť. S platnosťou (reserved_until); po nej ide do
+  // naPustenie a služba ho pri ďalšej rezervácii pustí.
+  var drziaky = {}, naPustenie = {};
+  try {
+    var ulozenePustenie = JSON.parse(sessionStorage.getItem('svet-pustit') || '{}');
+    if (ulozenePustenie && typeof ulozenePustenie === 'object') naPustenie = ulozenePustenie;
+  } catch (e) {}
+  function ulozNaPustenie() {
     try {
-      if (hodnota) sessionStorage.setItem('svet-hold-' + id, hodnota);
+      var k = Object.keys(naPustenie);
+      if (k.length) sessionStorage.setItem('svet-pustit', JSON.stringify(naPustenie));
+      else sessionStorage.removeItem('svet-pustit');
+    } catch (e) {}
+  }
+  // Po platbe sa držiaky zaplatených štvorcov zahodia BEZ pustenia: list by inak
+  // ponúkal kúpu vlastného štvorca a služba by pustila štvorce na kontrole.
+  if (navratZPokladne === 'paid') { poPlatbe.ids.forEach(function (x) { delete naPustenie[x]; ulozDrziak(x, ''); }); ulozNaPustenie(); }
+  function casZIso(iso) { var t = Date.parse(iso || ''); return isFinite(t) ? t : 0; }
+  function citajDrziak(id) {
+    var z = drziaky[id];
+    if (!z) {
+      try {
+        var surove = sessionStorage.getItem('svet-hold-' + id) || '';
+        // Starší zápis (do 25. 9. 2026) je holý reťazec bez platnosti.
+        if (surove.charAt(0) === '{') { var j = JSON.parse(surove); z = { h: String(j.h || ''), d: Number(j.d) || 0 }; }
+        else if (surove) z = { h: surove, d: 0 };
+      } catch (e) { z = null; }
+    }
+    if (!z || !z.h) return '';
+    if (z.d && Date.now() > z.d) { zahodDrziak(id, z.h); return ''; }
+    drziaky[id] = z;
+    return z.h;
+  }
+  function ulozDrziak(id, hodnota, platnost) {
+    if (hodnota) {
+      drziaky[id] = { h: hodnota, d: casZIso(platnost) };
+      if (naPustenie[id]) { delete naPustenie[id]; ulozNaPustenie(); }
+    } else delete drziaky[id];
+    try {
+      if (hodnota) sessionStorage.setItem('svet-hold-' + id, JSON.stringify(drziaky[id]));
       else sessionStorage.removeItem('svet-hold-' + id);
     } catch (e) {}
   }
+  /** Držiak sa už nepoužije, ale pri najbližšej rezervácii ho služba pustí. */
+  function zahodDrziak(id, h) {
+    h = h || (drziaky[id] && drziaky[id].h) || '';
+    if (!h) { try { h = sessionStorage.getItem('svet-hold-' + id) || ''; if (h.charAt(0) === '{') h = String(JSON.parse(h).h || ''); } catch (e) { h = ''; } }
+    if (h) { naPustenie[id] = h; ulozNaPustenie(); }
+    ulozDrziak(id, '');
+  }
+  function predlzDrziak(id, platnost) { var h = citajDrziak(id); if (h && casZIso(platnost)) ulozDrziak(id, h, platnost); }
+  /** Zoznam na pustenie pre službu; odoslaním sa vyprázdni (služba ho spracuje hneď). */
+  function pustitDrziaky() {
+    var von = [];
+    for (var k in naPustenie) von.push({ parcel_id: Number(k), hold: String(naPustenie[k]) });
+    naPustenie = {};
+    ulozNaPustenie();
+    return von.slice(0, 20);
+  }
+  /** Je tento štvorec rezervovaný práve týmto prehliadačom? */
+  function jeMojaRezervacia(id) { return !!citajDrziak(id) || !!naPustenie[id]; }
   // Čo je práve v liste. Odpoveď služby smie prekresliť len prehľad bunky: keby
   // prekreslila aj pokladňu alebo kreslenie, zmazala by človeku rozpísaný e-mail
   // a zaškrtnuté súhlasy v polovici kroku.
@@ -1262,7 +1485,8 @@
     var p = parcely[id];
     var stav = stavBunky(r, c, p);
     // Rezervácia, ktorú drží tento prehliadač, nie je „niekto iný práve platí“.
-    if (stav === 'rezervovana' && citajDrziak(id)) stav = 'volna';
+    if (stav === 'rezervovana' && jeMojaRezervacia(id)) stav = 'volna';
+    var cakam = cakaNaPotvrdenie(id) && stav !== 'predana' && stav !== 'zatvorena';
     var h = '<button class="list-zavri" type="button" data-akcia="zavri" aria-label="' + esc(T.zavriet) + '">×</button>';
     h += '<p class="list-cislo">' + esc(T.cislo) + ' ' + cisloText(id) + '</p>';
     // Každý stav má vlastnú vetu. More má meno mora, územie bez krajiny meno územia
@@ -1283,16 +1507,9 @@
     if (p && p.founder_no) h += '<div><dt>' + esc(T.zakladatel) + '</dt><dd>' + esc(String(p.founder_no)) + ' / 100</dd></div>';
     h += '</dl>';
 
-    // Štvorec z platby, za ktorú práve prišiel kľúč do panela. Kým sa stav v
-    // blokoch prekreslí, vie o ňom len táto karta, a tlačidlo na kreslenie má
-    // byť hlavné: to je presne to, čo po platbe chýbalo.
-    //
-    // ČÍSLO ŠTVORCA JE Z ADRESY, A TÚ SI PÍŠE KTOKOĽVEK. Kľúč do panela vydá
-    // služba len tomu, kto naozaj zaplatil, ale to, KTORÝ štvorec sa kúpil,
-    // stránka z neho nevyčíta: berie ho z ?p=. Keď služba o tomto štvorci už
-    // odpovedala a hovorí, že zaplatený nie je, veta „This square is yours“ ani
-    // tlačidlo sa neukážu. Kým neodpovedala (p je prázdne hneď po platbe, lebo
-    // si ho pýtame nanovo), tlačidlo tam je: vtedy stránka nemá čo vyvracať.
+    // Štvorec z platby, za ktorú práve prišiel kľúč do panela: tlačidlo na
+    // kreslenie je hlavné. Číslo je z ?p= (píše ho ktokoľvek), preto keď služba
+    // povie, že štvorec zaplatený nie je, „yours“ ani tlačidlo sa neukážu.
     var mojPoPlatbe = !!(poPlatbe.panel && poPlatbe.stvorec === id
       && (!p || p.status === 'paid' || p.status === 'hidden'));
     if (stav === 'predana' || mojPoPlatbe) {
@@ -1304,6 +1521,8 @@
       h += '<p class="list-pravne">' + esc(T.predaneVysvetlenie) + '</p>';
     } else if (stav === 'zatvorena') {
       h += '<p class="list-pravne">' + esc(T.nepredajneVysvetlenie) + '</p>';
+    } else if (cakam) {
+      h += '<p class="list-pravne">' + esc(T.cakamNaPlatbu) + '</p>';
     } else if (stav === 'rezervovana') {
       h += '<p class="list-pravne">' + esc(T.rezervovane) + '</p>';
     } else if (stav === 'neznamy') {
@@ -1320,10 +1539,10 @@
       }
       h += '<button class="btn ' + (maKredit ? 'btn-line' : 'btn-solid') + '" type="button" data-akcia="kupit">' + esc(T.kupit) + '</button>';
       h += '<button class="btn btn-line" type="button" data-akcia="kreslit">' + esc(T.skusKreslit) + '</button>';
-      // Cenník sľubuje balíky 3 a 10, tak sa musia dať kúpiť aj odtiaľto.
+      // Cena balíkov len pri košíku; kredit je iný tovar, až za právnou vetou a bez ceny.
       if (kosikZapnuty()) h += '<button class="list-balik" type="button" data-akcia="kosik">' + esc(T.kosikTlacidlo) + '</button>';
-      h += '<button class="list-balik" type="button" data-akcia="balik">' + esc(T.balikTlacidlo) + '</button>';
       h += '<p class="list-pravne">' + esc(T.licenciaVeta) + ' <a href="' + esc(T.cestaPodmienky) + '">' + esc(T.podmienkyOdkaz) + '</a></p>';
+      h += '<button class="list-balik" type="button" data-akcia="balik">' + esc(T.balikTlacidlo) + '</button>';
     }
     list.innerHTML = h;
     list.hidden = false;
@@ -1359,8 +1578,9 @@
     var a = b.getAttribute('data-akcia');
     if (a === 'kupit') pokladna(false);
     else if (a === 'balik') pokladna(true);
-    else if (a === 'kosik') { sleduj('svet_kosik_otvoreny'); ukazKosik(); }
+    else if (a === 'kosik') { sleduj('svet_kosik_otvoreny'); otvorKosik(); }
     else if (a === 'kosik-zavri') zahodKosik();
+    else if (a === 'kosik-odober') odoberZKosika(Number(b.getAttribute('data-id')));
     else if (a === 'kosik-kupit') pokladna(false, true);
     else if (a === 'kreslit') kresliacePlatno();
     else if (a === 'nahlasit') nahlasit();
@@ -1377,23 +1597,57 @@
     kosikRezim = true;
     listRezim = 'kosik';
     list.classList.remove('list-kresli');
-    var cena = Number(T.kosikCenaEur) || 5;
     var h = '<button class="list-zavri" type="button" data-akcia="kosik-zavri" aria-label="' + esc(T.zavriet) + '">×</button>';
-    h += '<p class="list-cislo">' + esc(T.kosikNadpis) + '</p>';
-    if (!kosik.length) {
+    h += '<p class="list-cislo">' + esc(kosik.length === 1 ? T.kosikNadpisJeden : T.kosikNadpis) + '</p>';
+    var c = cenaKosika(kosik.length);
+    if (!kosik.length || !c) {
       h += '<p class="list-miesto">' + esc(T.kosikPrazdny) + '</p>';
     } else {
       h += '<p class="list-miesto">' + kosik.length + ' ' + esc(kosik.length === 1 ? T.kosikJeden : T.kosikViac) + '</p>';
-      h += '<dl class="list-udaje">';
-      for (var i = 0; i < kosik.length; i++) {
-        h += '<div><dt>' + esc(T.cislo) + ' ' + cisloText(kosik[i].id) + '</dt><dd>'
-          + km(sirkaKm(kosik[i].r)) + ' × ' + km(vyskaKm(kosik[i].r)) + ' km</dd></div>';
+      // Návod, ako pridať ďalšie: po otvorení košíka tlačidlom ho človek inak
+      // nemal odkiaľ vedieť (tretia kontrola 25. 9. 2026). Shift len pri myši.
+      if (kosik.length < KOSIK_STROP) {
+        h += '<p class="list-navod">' + esc(T.kosikPridajDalsie)
+          + (jemnyUkazovatel() ? ' ' + esc(T.kosikShift) : '') + '</p>';
       }
-      h += '<div><dt>' + esc(T.kosikSpolu) + '</dt><dd>€' + (kosik.length * cena).toFixed(2) + '</dd></div></dl>';
-      h += '<button class="btn btn-solid" type="button" data-akcia="kosik-kupit">' + esc(T.kosikKupit) + '</button>';
+      // Čísla ako čipy s krížikom: desať riadkov s rozmerom zatlačilo tlačidlo
+      // kúpy pod okraj listu. Rozmer je pri každom štvorci takmer rovnaký.
+      h += '<ul class="kosik-cisla" aria-label="' + esc(T.kosikNadpis) + '">';
+      for (var i = 0; i < kosik.length; i++) {
+        h += '<li><button type="button" data-akcia="kosik-odober" data-id="' + kosik[i].id + '" aria-label="'
+          + esc(vetaSCislami(T.kosikOdober, { cislo: cisloText(kosik[i].id) })) + '">'
+          + cisloText(kosik[i].id) + '<span aria-hidden="true">×</span></button></li>';
+      }
+      h += '</ul>';
+      h += '<p class="list-pravne kosik-rozmer">' + esc(T.kosikRozmer) + '</p>';
+      h += '<dl class="list-udaje">';
+      // Rozpis ceny len vtedy, keď je v ňom balík: pri jednom a dvoch štvorcoch
+      // je to N × 5 € a riadok navyše by nič nepovedal.
+      var sBalikom = c.polozky.some(function (p) { return p[1] > 1; });
+      if (sBalikom) {
+        c.polozky.forEach(function (p) {
+          var nazov = p[1] > 1 ? vetaSCislami(T.kosikRiadokBalik, { n: p[1] }) : T.kosikRiadokJeden;
+          h += '<div><dt>' + p[3] + ' × ' + esc(nazov) + '</dt><dd>' + eurText(p[2] * p[3]) + '</dd></div>';
+        });
+      }
+      h += '<div><dt>' + esc(T.kosikSpolu) + '</dt><dd>' + eurText(c.centov) + '</dd></div></dl>';
+      if (c.centov < c.plna) h += '<p class="list-moje">' + esc(vetaSCislami(T.kosikBalikPouzity, { spolu: eurText(c.centov), plna: eurText(c.plna) })) + '</p>';
+      // Dnes len pri deviatich (balík desiatich): desiaty štvorec je zadarmo.
+      var volne = Math.min(c.kapacita, KOSIK_STROP) - kosik.length;
+      if (volne > 0) h += '<p class="list-pravne">' + esc(vetaSCislami(volne === 1 ? T.kosikVolnyJeden : T.kosikVolne, { k: c.kapacita, n: kosik.length, volne: volne })) + '</p>';
+      h += '<p class="list-pravne">' + esc(T.kosikPravne) + ' <a href="' + esc(T.cestaPodmienky) + '">' + esc(T.podmienkyOdkaz) + '</a></p>';
+      // Tlačidlá sú prilepené na spodku listu: pri desiatich štvorcoch na nízkej
+      // obrazovke inak kúpa zmizla pod okraj a list sa musel posúvať.
+      h += '<div class="kosik-akcie">';
+      // Suma priamo v tlačidle: rozpis nad ním sa pri desiatich štvorcoch odroluje.
+      h += '<button class="btn btn-solid" type="button" data-akcia="kosik-kupit">' + esc(kosik.length === 1 ? T.kosikKupitJeden : T.kosikKupit) + ', ' + (c.centov % 100 ? eurText(c.centov) : '€' + c.centov / 100) + '</button>';
+      h += '<button class="btn btn-line" type="button" data-akcia="kosik-zavri">' + esc(T.kosikVycisti) + '</button>';
+      h += '</div>';
     }
-    h += '<button class="btn btn-line" type="button" data-akcia="kosik-zavri">' + esc(kosik.length ? T.kosikVycisti : T.kosikHotovo) + '</button>';
-    h += '<p class="list-pravne">' + esc(T.kosikPravne) + ' <a href="' + esc(T.cestaPodmienky) + '">' + esc(T.podmienkyOdkaz) + '</a></p>';
+    if (!kosik.length || !c) {
+      h += '<button class="btn btn-line" type="button" data-akcia="kosik-zavri">' + esc(T.kosikHotovo) + '</button>';
+      h += '<p class="list-pravne">' + esc(T.kosikPravne) + ' <a href="' + esc(T.cestaPodmienky) + '">' + esc(T.podmienkyOdkaz) + '</a></p>';
+    }
     list.innerHTML = h;
     list.hidden = false;
     prepocitajStred();
@@ -1428,10 +1682,27 @@
   // zapamätá pri návrate z pokladne) a štvorce majiteľa, ktorý prišiel z panela.
   // Farbu dostanú až vtedy, keď ich služba naozaj vedie ako zaplatené.
   function pridajMoje(id) { if (id > 0 && !moje[id]) { moje[id] = 1; mojePocet++; } }
-  try { JSON.parse(localStorage.getItem('svet-moje') || '[]').forEach(function (x) { pridajMoje(Number(x)); }); } catch (e) {}
-  if (navratZPokladne === 'paid' && !navratBezStvorca) {
-    pridajMoje(Number(parametre.get('p')));
+  function odoberMoje(id) { if (moje[id]) { delete moje[id]; mojePocet--; } }
+  function ulozMoje() {
     try { localStorage.setItem('svet-moje', JSON.stringify(Object.keys(moje).map(Number).slice(-200))); } catch (e) {}
+  }
+  try { JSON.parse(localStorage.getItem('svet-moje') || '[]').forEach(function (x) { pridajMoje(Number(x)); }); } catch (e) {}
+  // „Yours“ po platbe až z potvrdenia služby (potvrdPlatbu), nie hneď: štvorec,
+  // ktorý platba nedostala, ostal inak v tomto prehliadači „yours“ navždy.
+  if (navratZPokladne === 'paid') { try { sessionStorage.removeItem('svet-kosik-ids'); } catch (e) {} }
+  /** Štvorec, ktorý táto karta zaplatila a služba to ešte nepotvrdila: nie druhá kúpa ani košík. */
+  function cakaNaPotvrdenie(id) { return !!(poPlatbe.session && !poPlatbe.panel && poPlatbe.ids.indexOf(id) >= 0); }
+  /** Štvorce, ktoré platba naozaj priradila (parcel_ids): štvorec, ktorý kúpil iný, nie je „yours“. */
+  function potvrdPlatbu(zoznam) {
+    zoznam = cislaZoZoznamu(zoznam);
+    if (!zoznam.length) return;
+    poPlatbe.ids.forEach(function (id) { if (zoznam.indexOf(id) < 0) odoberMoje(id); });
+    zoznam.forEach(pridajMoje);
+    if (poPlatbe.stvorec && zoznam.indexOf(poPlatbe.stvorec) < 0) poPlatbe.stvorec = zoznam[0];
+    if (poPlatbe.stvorec) poPlatbe.kusov = zoznam.length;
+    poPlatbe.ids = zoznam;
+    ulozPoPlatbe();
+    ulozMoje();
   }
   function nacitajMoje() {
     if (!majitel || !API) return;
@@ -1507,18 +1778,16 @@
   function skryPas() { if (pasEl) pasEl.hidden = true; }
 
   // ── Odkaz do panela hneď po platbe ───────────────────────────────────────
-  // Mapa sa pýta služby každé 3 sekundy najviac 40 sekúnd. Kým platba nedorazí,
-  // služba odpovedá {"ok":false,"reason":"pending"} a v páse ostáva dnešná veta
-  // o e-maile; keď dorazí, vráti odkaz do panela a pás aj list štvorca dostanú
-  // tlačidlo „Name it and draw“. E-mail s odkazom sa posiela ďalej ako doteraz.
+  // Každé 3 s najviac 40 s. Kým služba hovorí "pending", ostáva veta o e-maile;
+  // potom pás aj list dostanú tlačidlo „Name it and draw“. E-mail ide tak či tak.
   var PYTANIE_MS = 3000, PYTANIE_NAJDLHSIE_MS = 40000;
   function ukazOdkazDoPanela() {
     if (!poPlatbe.panel) return;
     // Balík sa kupuje bez štvorca. Vtedy sa nesmie napísať „the square is
     // yours“: kúpil sa kredit a štvorce si človek vyberie až na mape.
-    var jeStvorec = poPlatbe.stvorec > 0;
-    pasSTlacidlom(jeStvorec ? T.poPlatbeHotovo : T.poPlatbeHotovoBalik,
-      jeStvorec ? T.poPlatbeTlacidlo : T.poPlatbeTlacidloBalik, poPlatbe.panel);
+    var jeStvorec = poPlatbe.stvorec > 0, jeKosik = jeStvorec && poPlatbe.kusov > 1;
+    pasSTlacidlom(jeKosik ? T.poPlatbeHotovoKosik : jeStvorec ? T.poPlatbeHotovo : T.poPlatbeHotovoBalik,
+      jeKosik ? T.poPlatbeTlacidloKosik : jeStvorec ? T.poPlatbeTlacidlo : T.poPlatbeTlacidloBalik, poPlatbe.panel);
   }
   function pytajOdkazDoPanela() {
     if (!API || !poPlatbe.session) return;
@@ -1536,6 +1805,9 @@
           if (!d || !d.ok || !d.owner_url) { znova(); return; }
           poPlatbe.panel = String(d.owner_url);
           ulozPoPlatbe();
+          // Služba spred 25. 9. 2026 zoznam neposiela: vtedy štvorce z adresy a košíka.
+          potvrdPlatbu(Array.isArray(d.parcel_ids) ? d.parcel_ids : poPlatbe.ids);
+          ziadaj();
           sleduj('svet_panel_hned_po_platbe');
           ukazOdkazDoPanela();
           // Štvorec už je zaplatený; nech to list aj mapa ukážu bez obnovenia.
@@ -1553,6 +1825,13 @@
   function nacitajStav() {
     api('/api/state.json').then(function (d) {
       S.stav = d;
+      // Cenník košíka zo služby (kombinacia_kosika): list ukáže sumu, ktorú Stripe zaúčtuje.
+      // Služba bez neho (staršia než 25. 9. 2026) účtuje N × 5 €, tak to list povie.
+      var ceny = d && d.kosik && d.kosik.ceny;
+      CENNIK_KOSIKA = Array.isArray(ceny) && ceny.length && ceny.every(function (x) {
+        return Array.isArray(x) && typeof x[0] === 'string' && x[1] >= 1 && x[1] <= KOSIK_STROP && Number(x[2]) >= 0;
+      }) ? ceny : [['single', 1, Number(T.kosikCenaEur) || 5]];
+      if (listRezim === 'kosik') ukazKosik();
       // Tvar odpovede je {"etapa":{"buniek":…,"predanych":…}}. Počítadlo je pod
       // mapou, v páse čísel, a ukazuje len to, čo služba naozaj vedie ako obsadené.
       var el = document.querySelector('[data-pocitadlo]');
@@ -1663,6 +1942,8 @@
    * Pokladňa v liste. Bez balíka: jeden štvorec, najprv rezervácia, potom Stripe.
    * S balíkom: kredit na 3 alebo 10 štvorcov, bez rezervácie a bez čísla štvorca;
    * štvorce si majiteľ vyberá až potom, z panela majiteľa na tejto mape.
+   * S košíkom: presne označené štvorce za najlacnejšiu kombináciu balíkov
+   * (cenaKosika, v službe kombinacia_kosika).
    */
   function pokladna(balik, jeKosik) {
     if (jeKosik && !kosik.length) return;
@@ -1671,9 +1952,13 @@
     listRezim = 'pokladna';
     list.classList.remove('list-kresli');
     var id = S.vybrana ? S.vybrana.id : 0;
-    var h = '<p class="list-cislo">' + (jeKosik ? esc(T.kosikNadpis) + ' (' + kosik.length + ')'
+    var n = kosik.length;
+    var h = '<p class="list-cislo">' + (jeKosik ? esc(n === 1 ? T.kosikNadpisJeden : T.kosikNadpis + ' (' + n + ')')
       : balik ? esc(T.balikNadpis) : esc(T.cislo) + ' ' + cisloText(id)) + '</p>';
     if (TEST) h += '<p class="list-test" role="note">' + esc(T.testRezim) + '</p>';
+    // Suma košíka aj tu, pri súhlasoch: pokladňa Stripe ju potom ukáže tú istú.
+    var cenaTu = jeKosik ? cenaKosika(n) : null;
+    if (cenaTu) h += '<p class="list-miesto">' + esc(vetaSCislami(n === 1 ? T.kosikPokladnaSumaJeden : T.kosikPokladnaSuma, { n: n, spolu: eurText(cenaTu.centov) })) + '</p>';
     if (balik) {
       h += '<p class="list-miesto">' + esc(T.balikUvod) + '</p>';
       h += '<fieldset class="vyber-balika"><legend class="skryte">' + esc(T.balikNadpis) + '</legend>';
@@ -1681,7 +1966,9 @@
       h += '<label class="suhlas"><input type="radio" name="svet-balik" value="pack10"><span>' + esc(T.balik10) + '</span></label></fieldset>';
     }
     h += '<p class="list-miesto">' + esc(T.pokladnaUvod) + '</p>';
-    h += '<label class="suhlas"><input type="checkbox" data-suhlas="dodanie"><span>' + esc(T.suhlasDodanie) + '</span></label>';
+    // Kredit a košík viacerých štvorcov majú vlastnú vetu súhlasu.
+    var suhlas = balik ? T.suhlasKredit : (jeKosik && n > 1 && T.suhlasDodanieKosik) ? T.suhlasDodanieKosik : T.suhlasDodanie;
+    h += '<label class="suhlas"><input type="checkbox" data-suhlas="dodanie"><span>' + esc(suhlas) + '</span></label>';
     h += '<label class="suhlas"><input type="checkbox" data-suhlas="vek"><span>' + esc(T.suhlasVek) + '</span></label>';
     h += '<label class="suhlas suhlas-mail"><span class="skryte">' + esc(T.email) + '</span><input type="email" data-email autocomplete="email" placeholder="' + esc(T.email) + '" required></label>';
     // Darček je v cenníku: meno obdarovaného ide na certifikát. Nikde inde sa neukazuje.
@@ -1704,17 +1991,31 @@
       // Mená polí sú presne tie, ktoré číta app.py, teda consent_delivery.
       var objednavka = { locale: JAZYK, email: mail.value.trim(), consent_delivery: true, consent_age: true };
       if (TEST) objednavka.test = true;
-      var krok;
+      var krok, idcka = [];
       if (jeKosik) {
-        // Najprv sa rezervujú všetky naraz (buď všetky, alebo ani jeden), až
-        // potom sa otvorí jedna pokladňa na N štvorcov.
+        // Najprv sa rezervujú všetky naraz (všetky, alebo ani jeden), potom jedna
+        // pokladňa na N štvorcov. Platne držané štvorce sa nerezervujú znova.
         objednavka.product = 'basket';
-        krok = api('/api/reserve-many', { cells: kosik.map(function (x) { return { row: x.r, col: x.c }; }) })
-          .then(function (r) {
-            objednavka.cells = ((r && r.cells) || []).map(function (x) { return { parcel_id: x.parcel_id, hold: x.hold }; });
-            if (!objednavka.cells.length) throw new Error('bez rezervacie');
-            return api('/api/checkout', objednavka);
-          });
+        idcka = kosik.map(function (x) { return x.id; });
+        var rezervujKosik = function () {
+          var bez = kosik.filter(function (x) { return !citajDrziak(x.id); });
+          if (!bez.length) return Promise.resolve();
+          // Kresba spravená pred platbou ide so štvorcom, ako pri jednom štvorci.
+          return api('/api/reserve-many', { cells: bez.map(function (x) { return { row: x.r, col: x.c, pixels: kresbaNaOdoslanie(x.id) }; }), release: pustitDrziaky() })
+            .then(function (r) { ((r && r.cells) || []).forEach(function (x) { ulozDrziak(x.parcel_id, x.hold, r.reserved_until); }); });
+        };
+        var zaplatKosik = function () {
+          objednavka.cells = kosik.map(function (x) { return { parcel_id: x.id, hold: citajDrziak(x.id) }; });
+          if (!objednavka.cells.length || objednavka.cells.some(function (x) { return !x.hold; })) throw new Error('bez rezervacie');
+          // Po návrate z platby sa všetky štvorce košíka ukážu ako „yours“, nie len prvý.
+          try { sessionStorage.setItem('svet-kosik-ids', JSON.stringify(idcka)); } catch (e) {}
+          return api('/api/checkout', objednavka);
+        };
+        krok = rezervujKosik().then(zaplatKosik).catch(function (chyba) {
+          if (!vlastnyDrziakNeplati(chyba)) throw chyba;
+          kosik.forEach(function (x) { zahodDrziak(x.id); });
+          return rezervujKosik().then(zaplatKosik);
+        });
       } else if (balik) {
         var zvoleny = list.querySelector('input[name="svet-balik"]:checked');
         objednavka.product = zvoleny ? zvoleny.value : 'pack3';
@@ -1723,37 +2024,69 @@
         var darcek = list.querySelector('[data-darcek]');
         objednavka.product = 'single';
         objednavka.parcel_id = id;
+        idcka = [id];
         if (darcek && darcek.value.trim()) objednavka.gift_name = darcek.value.trim();
-        // Kto už tento štvorec drží (pokladňa sa predtým neotvorila, alebo sa z nej
-        // vrátil späť), nerezervuje druhý raz: služba by mu na vlastnú rezerváciu
-        // odpovedala 409 a stránka by mu tvrdila, že bol niekto rýchlejší.
-        var uzDrzim = citajDrziak(id);
-        krok = (uzDrzim ? Promise.resolve({ hold: uzDrzim })
-          : api('/api/reserve', { row: S.vybrana.r, col: S.vybrana.c, pixels: kresbaNaOdoslanie(id) }))
-          .then(function (r) { objednavka.hold = r && r.hold; ulozDrziak(id, objednavka.hold); return api('/api/checkout', objednavka); });
+        var vybrana = S.vybrana;
+        var rezervujJeden = function () {
+          return api('/api/reserve', { row: vybrana.r, col: vybrana.c, pixels: kresbaNaOdoslanie(id), release: pustitDrziaky() })
+            .then(function (r) { ulozDrziak(id, r && r.hold, r && r.reserved_until); });
+        };
+        var zaplatJeden = function () {
+          objednavka.hold = citajDrziak(id);
+          if (!objednavka.hold) throw new Error('bez rezervacie');
+          return api('/api/checkout', objednavka);
+        };
+        // Kto už tento štvorec platne drží (pokladňa sa predtým neotvorila, alebo
+        // sa z nej vrátil späť), nerezervuje druhý raz.
+        krok = (citajDrziak(id) ? Promise.resolve() : rezervujJeden()).then(zaplatJeden).catch(function (chyba) {
+          if (!vlastnyDrziakNeplati(chyba)) throw chyba;
+          zahodDrziak(id);
+          return rezervujJeden().then(zaplatJeden);
+        });
       }
       krok
-        .then(function (d) { if (d && d.url) { sleduj('svet_odchod_do_stripe'); location.href = d.url; } else throw new Error('bez adresy'); })
+        .then(function (d) {
+          if (!d || !d.url) throw new Error('bez adresy');
+          idcka.forEach(function (x) { predlzDrziak(x, d.reserved_until); });
+          sleduj('svet_odchod_do_stripe');
+          location.href = d.url;
+        })
         .catch(function (chyba) {
-          var kod = chyba && /stav (\d+)/.exec(chyba.message || '');
-          kod = kod ? Number(kod[1]) : 0;
-          // 409: bunku medzitým niekto zarezervoval alebo kúpil. To nie je
-          // porucha pokladne a „skúste znova“ by človeka poslalo do slučky.
+          var kod = kodChyby(chyba);
+          // 409: bunku medzitým niekto zarezervoval alebo kúpil (vlastný neplatný
+          // držiak sa sem nedostane, ten sa vyššie obnoví). „Skúste znova“ by
+          // človeka poslalo do slučky.
           var testVypnuty = chyba && chyba.dovod === 'test-disabled';
-          // Košík je všetko alebo nič: keď jeden štvorec medzitým padol, výber sa
-          // zahodí celý a človek si vyberie znova. Polovičný nákup nevznikne.
           if (jeKosik && (kod === 409 || kod === 403) && !testVypnuty) {
+            // Obsadené štvorce (služba povie ktoré) z výberu vypadnú, ostatné ostanú.
+            var obsadene = (chyba.obsadene || []).filter(function (x) { return vKosiku(x) >= 0; });
+            if (chyba.dovod === 'taken' && obsadene.length) {
+              obsadene.forEach(function (x) {
+                var b = kosik[vKosiku(x)];
+                kosik.splice(vKosiku(x), 1);
+                ulozDrziak(x, '');
+                delete parcely[x];
+                delete bloky[(b.r >> 6) + ',' + (b.c >> 6)];
+              });
+              naplanujBloky();
+              var veta = vetaSCislami(obsadene.length === 1 ? T.kosikObsadenyJeden : T.kosikObsadeneViac,
+                { cisla: obsadene.map(cisloText).join(', ') });
+              if (kosik.length) ukazKosik(); else zahodKosik();
+              pas(veta + ' ' + (kosik.length ? T.kosikZvysok : T.kosikVyberInde));
+              ziadaj();
+              return;
+            }
+            // Bez zoznamu (staršia služba): výber sa zahodí.
+            kosik.forEach(function (x) { zahodDrziak(x.id); delete parcely[x.id]; delete bloky[(x.r >> 6) + ',' + (x.c >> 6)]; });
             pas(T.kosikObsadene);
-            kosik.forEach(function (x) { delete parcely[x.id]; delete bloky[(x.r >> 6) + ',' + (x.c >> 6)]; });
             zahodKosik();
             naplanujBloky();
             return;
           }
-          // 403 wrong-hold: držiak už neplatí (rezerváciu medzitým získal niekto iný).
           if (!balik && !jeKosik && (kod === 409 || (kod === 403 && !testVypnuty))) {
-            ulozDrziak(id, '');
+            zahodDrziak(id);
             delete parcely[id];
-            delete bloky[(S.vybrana.r >> 6) + ',' + (S.vybrana.c >> 6)];
+            if (S.vybrana) delete bloky[(S.vybrana.r >> 6) + ',' + (S.vybrana.c >> 6)];
             pas(T.uzObsadene);
             ukazList();
             nacitajParcelu(id);
@@ -2011,7 +2344,9 @@
   function letNaBunku(lat, lon) {
     dotyk();
     var r = riadokZoSirky(lat), c = stlpecZDlzky(r, lon);
-    letNa(lat, lon, Math.min(220 / (360 / STL[r]), (72 * dpr) / (360 / STL[r])), function () { vyber(r, c, true); });
+    // Počas výberu do košíka hľadanie len preletí na miesto. Otvoriť list
+    // jedného štvorca by košík skryl a ťuky by ho ďalej potichu menili.
+    letNa(lat, lon, Math.min(220 / (360 / STL[r]), (72 * dpr) / (360 / STL[r])), function () { if (!kosikRezim) vyber(r, c, true); });
   }
 
   // ── Štart ────────────────────────────────────────────────────────────────
@@ -2045,8 +2380,21 @@
         uprav();
       }
       if (navratZPokladne) {
-        pas(navratZPokladne === 'paid' ? (navratBezStvorca ? T.poPlatbeBalik : T.poPlatbe)
-          : (navratBezStvorca ? T.poZruseniBalik : T.poZruseni));
+        var zKosika = !navratBezStvorca && kosikNavrat > 1;
+        // Zrušená pokladňa košíka vráti košík so štvorcami, ktoré tento prehliadač
+        // ešte platne drží; veta „stay held“ padne, len keď naozaj niečo drží.
+        if (navratZPokladne === 'cancelled' && zKosika && kosikZapnuty()) {
+          try {
+            JSON.parse(sessionStorage.getItem('svet-kosik-ids') || '[]').slice(0, KOSIK_STROP).forEach(function (x) {
+              var k = zCisla(Number(x));
+              if (k && citajDrziak(Number(x)) && vKosiku(Number(x)) < 0) kosik.push({ id: Number(x), r: k.r, c: k.c });
+            });
+          } catch (e) {}
+          if (kosik.length) ukazKosik();
+        }
+        var drzi = zKosika ? kosik.length : citajDrziak(id);
+        pas(navratZPokladne === 'paid' ? (navratBezStvorca ? T.poPlatbeBalik : zKosika ? T.poPlatbeKosik : T.poPlatbe)
+          : (navratBezStvorca || !drzi ? T.poZruseniBalik : zKosika ? T.poZruseniKosik : T.poZruseni));
       }
       ziadaj();
       skusSluzbu();
