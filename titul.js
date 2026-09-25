@@ -57,7 +57,21 @@ export const T = {
   zapina: 'Buying this title here is still being switched on. It is on sale on Etsy today, or write to andrej@arling.sk and we will send you the files.',
   testChyba: 'Test mode is on, but this title has no test link yet. Run ops/stripe/tituly.mjs --test --zapis, or open this page without ?test=1 to buy it for real.',
   testCudzi: 'This is a payment from Stripe test mode. It unlocks files only in the browser that started the test with ?test=1.',
+  /* Text odznaku testu. V HTML je od 25. 9. 2026 len prazdny skryty prvok
+     #test-odznak: skryta veta o test mode a karte 4242 citali nastroje AI ako
+     fakt o stranke (audit ops/audit/2026-09-25-celkovy/00-AUDIT.md, akcia 5).
+     Vlozi ju az naplnOdznak() v testovom rezime. */
+  odznak: 'The buy button leads to Stripe test mode. Use the card 4242 4242 4242 4242, any future date and any CVC. No money is taken; the files below are the real ones.',
 };
+
+/** Naplni prazdny odznak testu: nadpis "Test mode" a veta. Len raz, bez innerHTML. */
+export function naplnOdznak(el, veta) {
+  const d = el && el.ownerDocument;
+  if (!d || el.firstChild) return;
+  const b = d.createElement('b');
+  b.textContent = 'Test mode';
+  el.append(b, veta);
+}
 
 /* Texty panela po zaplateni. Jazyk trhu je anglictina, rovnako ako stranky. */
 export const PANEL = {
@@ -442,7 +456,10 @@ export function nastav(volby = {}) {
   const test = testRezim();
 
   const odznak = document.getElementById('test-odznak');
-  if (odznak) odznak.hidden = !test;
+  if (odznak) {
+    odznak.hidden = !test;
+    if (test) naplnOdznak(odznak, T.odznak);
+  }
 
   let panelHotovy = false;
   function panel(sid, jeTest) {
