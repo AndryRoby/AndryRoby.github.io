@@ -38,6 +38,14 @@
       working: 'Sťahujeme a spracúvame váš feed produktov...',
       createFailed: 'Nepodarilo sa vytvoriť skúšobný účet: ',
       createFailedNet: 'Nepodarilo sa vytvoriť skúšobný účet. Skontrolujte internetové pripojenie a skúste znova.',
+      verifyIntro: 'Na {email} sme poslali 6-miestny kód. Zadajte ho, aby sme vám mohli poslať návod na zapojenie. Bez overenia vám na túto adresu nepošleme nič.',
+      verifyLabel: 'Kód z e-mailu',
+      verifyButton: 'Overiť adresu',
+      verifyOk: 'Adresa je overená. Návod na zapojenie vám príde e-mailom, keď budú produkty načítané.',
+      verifyBad: 'Kód nesedí. Skontrolujte ho a skúste znova.',
+      verifyExpired: 'Kód už neplatí. Odošlite formulár znova, pošleme nový.',
+      verifyFailed: 'Adresu sa nepodarilo overiť. Asistent funguje aj tak, kód na vloženie nájdete nižšie.',
+      codeFailed: 'Kód na overenie adresy sa nepodarilo poslať. Asistent funguje aj tak, kód na vloženie nájdete nižšie; ak chcete návod e-mailom, napíšte na andrej@arling.sk.',
     },
     en: {
       slow: 'Processing your feed is taking longer than usual. Reload the page in a moment, or write to andrej@arling.sk.',
@@ -48,6 +56,14 @@
       working: 'Downloading and processing your product feed...',
       createFailed: 'Could not create the trial account: ',
       createFailedNet: 'Could not create the trial account. Check your internet connection and try again.',
+      verifyIntro: 'We sent a 6-digit code to {email}. Enter it so we can e-mail you the setup instructions. Without it we send nothing to this address.',
+      verifyLabel: 'Code from the e-mail',
+      verifyButton: 'Verify address',
+      verifyOk: 'Your address is verified. The setup instructions will arrive by e-mail once the products are loaded.',
+      verifyBad: 'That code does not match. Check it and try again.',
+      verifyExpired: 'The code has expired. Submit the form again and we will send a new one.',
+      verifyFailed: 'We could not verify the address. The assistant works anyway; the embed code is below.',
+      codeFailed: 'We could not send the verification code. The assistant works anyway and the embed code is below; if you want the instructions by e-mail, write to andrej@arling.sk.',
     },
     de: {
       slow: 'Die Verarbeitung des Feeds dauert länger als üblich. Laden Sie die Seite gleich neu oder schreiben Sie an andrej@arling.sk.',
@@ -58,6 +74,14 @@
       working: 'Ihr Produktfeed wird geladen und verarbeitet...',
       createFailed: 'Das Testkonto konnte nicht erstellt werden: ',
       createFailedNet: 'Das Testkonto konnte nicht erstellt werden. Prüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.',
+      verifyIntro: 'Wir haben einen 6-stelligen Code an {email} geschickt. Geben Sie ihn ein, damit wir Ihnen die Anleitung per E-Mail senden können. Ohne Bestätigung senden wir an diese Adresse nichts.',
+      verifyLabel: 'Code aus der E-Mail',
+      verifyButton: 'Adresse bestätigen',
+      verifyOk: 'Ihre Adresse ist bestätigt. Die Anleitung kommt per E-Mail, sobald die Produkte geladen sind.',
+      verifyBad: 'Der Code stimmt nicht. Prüfen Sie ihn und versuchen Sie es erneut.',
+      verifyExpired: 'Der Code ist abgelaufen. Senden Sie das Formular erneut ab, wir schicken einen neuen.',
+      verifyFailed: 'Die Adresse konnte nicht bestätigt werden. Der Assistent funktioniert trotzdem, den Einbindungscode finden Sie unten.',
+      codeFailed: 'Der Bestätigungscode konnte nicht gesendet werden. Der Assistent funktioniert trotzdem, den Einbindungscode finden Sie unten; wenn Sie die Anleitung per E-Mail möchten, schreiben Sie an andrej@arling.sk.',
     },
   };
   function T(key) {
@@ -104,6 +128,21 @@
   var submitBtn = document.getElementById('trial-submit');
   var statusEl = document.getElementById('trial-status');
   var widgetMount = document.getElementById('trial-widget-note');
+
+  // Jazyk Asistenta a našich e-mailov. Predvolený je jazyk stránky (en/ -> en,
+  // koreň -> sk), nie prvá možnosť zoznamu: do 25. 9. 2026 mala aj anglická
+  // stránka predvolenú slovenčinu a worker jazyk vôbec nedostal. Kým ho
+  // návštevník sám nezmení, drží sa jazyka stránky aj po prepnutí jazyka.
+  var JAZYKY = ['sk', 'cs', 'en', 'de'];
+  var langTouched = false;
+  function pageLang() {
+    var l = String(document.documentElement.getAttribute('lang') || 'sk').slice(0, 2).toLowerCase();
+    return JAZYKY.indexOf(l) >= 0 ? l : 'en';
+  }
+  if (langSelect) {
+    langSelect.value = pageLang();
+    langSelect.addEventListener('change', function () { langTouched = true; });
+  }
 
   // ── ?feed= prefill: handoff from Product Feed Doctor ─────────────────
   // arling.sk/feed-doctor/ links here as ?feed=<encoded url>#playground
@@ -290,12 +329,167 @@
       });
   }
 
+  // ── Overenie e-mailovej adresy 6-miestnym kódom ──────────────────────
+  // Worker pošle automatický e-mail (návod, chyba katalógu) len adrese, ktorú
+  // majiteľ potvrdil kódom (products/arling-asistent/worker/src/zivotny-cyklus.js,
+  // adverzárna kontrola 25. 9. 2026: formulár dovolil zadať cudziu adresu).
+  // Kód posiela tá istá cesta ako prihlásenie na arling.sk/ucet (POST
+  // /v1/ucet/kod a /v1/ucet/over). Token sa pamätá len v tomto prehliadači,
+  // aby ďalší obchod s tou istou adresou nepýtal kód znova. Chat na tejto
+  // stránke funguje aj bez overenia.
+  var TOKEN_KEY = 'arling_asistent_overenie';
+
+  function ulozenyToken(email) {
+    try {
+      var z = JSON.parse(window.localStorage.getItem(TOKEN_KEY) || 'null');
+      return z && z.email === email && z.token ? z.token : '';
+    } catch (e) {
+      return '';
+    }
+  }
+
+  function ulozToken(email, token) {
+    try { window.localStorage.setItem(TOKEN_KEY, JSON.stringify({ email: email, token: token })); } catch (e) { /* súkromné okno */ }
+  }
+
+  function zabudniToken() {
+    try { window.localStorage.removeItem(TOKEN_KEY); } catch (e) { /* nič */ }
+  }
+
+  var verifyBox = null;
+
+  function odstranOverenie() {
+    if (verifyBox && verifyBox.parentNode) verifyBox.parentNode.removeChild(verifyBox);
+    verifyBox = null;
+  }
+
+  function overenieSprava(text, tone) {
+    if (!verifyBox) return;
+    var p = verifyBox.querySelector('.trial-verify-msg');
+    p.textContent = text;
+    p.className = 'trial-verify-msg trial-status' + (tone ? ' trial-status-' + tone : '');
+    p.hidden = !text;
+  }
+
+  function potvrdVerejne(tenantId, email, token) {
+    return fetch(ENDPOINT + '/v1/tenants/' + encodeURIComponent(tenantId) + '/overenie', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + token },
+    }).then(function (res) {
+      if (res.status === 401) zabudniToken();
+      return res.ok;
+    });
+  }
+
+  function zobrazOverenie(tenantId, email, lang) {
+    odstranOverenie();
+    verifyBox = document.createElement('div');
+    verifyBox.className = 'trial-verify';
+    var intro = document.createElement('p');
+    intro.textContent = T('verifyIntro').replace('{email}', email);
+    var f = document.createElement('form');
+    f.setAttribute('novalidate', '');
+    f.className = 'trial-verify-form';
+    var wrap = document.createElement('div');
+    wrap.className = 'field';
+    var label = document.createElement('label');
+    label.setAttribute('for', 'trial-verify-code');
+    label.textContent = T('verifyLabel');
+    var input = document.createElement('input');
+    input.id = 'trial-verify-code';
+    input.type = 'text';
+    input.inputMode = 'numeric';
+    input.autocomplete = 'one-time-code';
+    input.pattern = '[0-9]{6}';
+    input.maxLength = 6;
+    input.required = true;
+    wrap.appendChild(label);
+    wrap.appendChild(input);
+    var btn = document.createElement('button');
+    btn.type = 'submit';
+    btn.className = 'btn btn-solid';
+    btn.textContent = T('verifyButton');
+    f.appendChild(wrap);
+    f.appendChild(btn);
+    var msg = document.createElement('p');
+    msg.className = 'trial-verify-msg';
+    msg.setAttribute('role', 'status');
+    msg.hidden = true;
+    verifyBox.appendChild(intro);
+    verifyBox.appendChild(f);
+    verifyBox.appendChild(msg);
+    statusEl.parentNode.insertBefore(verifyBox, statusEl.nextSibling);
+
+    f.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var kod = input.value.replace(/\D/g, '');
+      if (kod.length !== 6) { input.focus(); return; }
+      btn.disabled = true;
+      fetch(ENDPOINT + '/v1/ucet/over', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email, kod: kod }),
+      })
+        .then(function (res) { return res.json().then(function (body) { return { ok: res.ok, body: body }; }); })
+        .then(function (r) {
+          if (!r.ok || !r.body || !r.body.token) {
+            var chyba = r.body && r.body.error;
+            overenieSprava(T(chyba === 'no_code' || (chyba === 'bad_code' && r.body.remaining === 0) ? 'verifyExpired' : 'verifyBad'), 'error');
+            btn.disabled = false;
+            return null;
+          }
+          ulozToken(email, r.body.token);
+          return potvrdVerejne(tenantId, email, r.body.token).then(function (ok) {
+            if (ok) {
+              f.hidden = true;
+              overenieSprava(T('verifyOk'), 'ok');
+              track('trial_verified', { lang: lang });
+            } else {
+              overenieSprava(T('verifyFailed'), 'warn');
+              btn.disabled = false;
+            }
+          });
+        })
+        .catch(function () {
+          overenieSprava(T('verifyFailed'), 'warn');
+          btn.disabled = false;
+        });
+    });
+  }
+
+  /** Po vytvorení účtu: ak worker adresu už overil (platný uložený token), nič; inak pošle kód a ukáže pole na jeho zadanie. */
+  function overAdresu(tenantId, email, lang, uzOvereny) {
+    if (uzOvereny) return;
+    fetch(ENDPOINT + '/v1/ucet/kod', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email, jazyk: lang }),
+    })
+      .then(function (res) {
+        if (!res.ok) throw new Error('kod_' + res.status);
+        zobrazOverenie(tenantId, email, lang);
+        track('trial_code_sent', { lang: lang });
+      })
+      .catch(function () {
+        odstranOverenie();
+        verifyBox = document.createElement('div');
+        verifyBox.className = 'trial-verify';
+        var msg = document.createElement('p');
+        msg.className = 'trial-verify-msg';
+        msg.setAttribute('role', 'status');
+        verifyBox.appendChild(msg);
+        statusEl.parentNode.insertBefore(verifyBox, statusEl.nextSibling);
+        overenieSprava(T('codeFailed'), 'warn');
+      });
+  }
+
   form.addEventListener('submit', function (evt) {
     evt.preventDefault();
 
     var feedUrl = feedInput.value.trim();
     var email = emailInput.value.trim();
-    var lang = langSelect ? langSelect.value : 'sk';
+    if (langSelect && !langTouched) langSelect.value = pageLang();
+    var lang = langSelect ? langSelect.value : pageLang();
     var domain = domainFromFeedUrl(feedUrl);
 
     if (!feedInput.checkValidity()) { feedInput.reportValidity(); return; }
@@ -308,11 +502,19 @@
     submitBtn.disabled = true;
     setStatus(T('working'), 'pending');
     track('trial_start', { lang: lang });
+    odstranOverenie();
+
+    var emailNorm = email.toLowerCase();
+    var token = ulozenyToken(emailNorm);
+    var hlavicky = { 'Content-Type': 'application/json' };
+    if (token) hlavicky.Authorization = 'Bearer ' + token;
 
     fetch(ENDPOINT + '/v1/tenants', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ feed_url: feedUrl, domain: domain, email: email }),
+      headers: hlavicky,
+      // lang: jazyk e-mailov od ARLingu, zdroj: odkiaľ účet vznikol
+      // (worker/src/zivotny-cyklus.js v products/arling-asistent).
+      body: JSON.stringify({ feed_url: feedUrl, domain: domain, email: email, lang: lang, zdroj: 'formular' }),
     })
       .then(function (res) {
         if (!res.ok) return res.json().then(function (body) { throw body; });
@@ -320,6 +522,10 @@
       })
       .then(function (tenant) {
         poll(tenant.id, lang, POLL_MAX_TRIES);
+        // Uložený token mohol medzitým prestať platiť (odhlásenie všade): worker
+        // vtedy vráti overeny: false a pýtame kód znova.
+        if (token && tenant.overeny !== true) zabudniToken();
+        overAdresu(tenant.id, emailNorm, lang, tenant.overeny === true);
       })
       .catch(function (err) {
         var detail = describeTenantError(err);
