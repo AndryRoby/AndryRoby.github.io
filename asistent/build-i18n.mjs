@@ -63,6 +63,8 @@ const I18N_ATTRS = {
   'data-i18n-alt': 'alt',
   'data-i18n-aria-label': 'aria-label',
   'data-i18n-title': 'title',
+  // Popis stĺpca v tabuľke cenníka, na mobile sa ukazuje pred bunkou (td::before).
+  'data-i18n-th': 'data-th',
 };
 const VOID = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr']);
 const RAW = new Set(['script', 'style']);
@@ -178,7 +180,7 @@ function removeAttr(attrs, name) {
 
 function collectI18n(attrs) {
   const out = [];
-  const re = /\s(data-i18n(?:-html|-placeholder|-alt|-aria-label|-title)?)\s*=\s*"([^"]*)"/g;
+  const re = /\s(data-i18n(?:-html|-placeholder|-alt|-aria-label|-title|-th)?)\s*=\s*"([^"]*)"/g;
   let m;
   while ((m = re.exec(attrs))) out.push({ attr: m[1], key: m[2] });
   return out;
