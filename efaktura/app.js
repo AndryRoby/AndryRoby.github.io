@@ -57,6 +57,17 @@ const pocetPravidiel = (profil) => POCET_PRAVIDIEL.jadro
   + (profil === 'peppol' ? POCET_PRAVIDIEL.peppol : 0)
   + (profil === 'xrechnung' ? POCET_PRAVIDIEL.xrechnung : 0);
 
+/* Nazov profilu v suhrne. pravidla.mjs vracia profilNazov po slovensky ("XRechnung 3.x (Nemecko)")
+ * a profilNazovEn po anglicky; ceska a nemecka stranka ukazovali slovensky nazov krajiny.
+ * Ostatne profily (Peppol BIS Billing 3.0, EN 16931) su vlastne mena a ostavaju. */
+const NAZOV_PROFILU = {
+  cs: { xrechnung: 'XRechnung 3.x (Německo)', neznamy: 'neznámý profil' },
+  de: { xrechnung: 'XRechnung 3.x (Deutschland)', neznamy: 'unbekanntes Profil' },
+};
+const nazovProfilu = (v) => (LANG === 'en'
+  ? (v.profilNazovEn || v.profilNazov)
+  : ((NAZOV_PROFILU[LANG] || {})[v.profil] || v.profilNazov));
+
 /* ── Texty obrazovky ────────────────────────────────────────────────────── */
 const T = {
   sk: {
@@ -169,7 +180,7 @@ const T = {
     nacitane: (n, kb) => 'Načteno: ' + n + ' (' + kb + ' kB).',
     vzorNacitany: 'Načetli jsme vzorovou fakturu. Je vymyšlená, ale projde kontrolou.',
     vzorSChybami: 'Zobrazit vzor se 2 chybami',
-    vzorSChybamiNacitany: 'Načetli jsme vzor se dvěma záměrnými chybami: částka s DPH je o cent vyšší a IBAN má překlep. Zkuste je opravit ve formuláři.',
+    vzorSChybamiNacitany: 'Načetli jsme vzor se dvěma záměrnými chybami: částka s DPH je o haléř vyšší a IBAN má překlep. Zkuste je opravit ve formuláři.',
     skopirovane: 'Zkopírováno.',
     kopirovanieZlyhalo: 'Kopírování se nepodařilo, označte text myší.',
     prazdnyNahlad: 'Načtěte soubor a doklad se vykreslí tady.',
@@ -496,6 +507,7 @@ function stiahni(nazov, obsah, typ) {
 
 /* ── Vzorova faktura ─────────────────────────────────────────────────────
  * Vlastny vzor, nic prevzate. Vymyslena firma, dve polozky, sadzba 23 %.
+ * Ceska a nemecka stranka maju vlastne vzory nizsie (VZOR_XML_CS, VZOR_XML_DE).
  * Anglicka stranka ma vlastny vzor nizsie (VZOR_XML_EN): cezhranicna sluzba
  * z Irska do Holandska s prenesenim danovej povinnosti, aby sme nikde
  * netvrdili narodnu sadzbu DPH, ktoru nemame overenu na oficialnom zdroji.
@@ -778,7 +790,294 @@ const VZOR_XML_EN = `<?xml version="1.0" encoding="UTF-8"?>
 </Invoice>
 `;
 
-const VZOR = LANG === 'en' ? VZOR_XML_EN : VZOR_XML;
+/* Nemecky vzor (25. 9. 2026): XRechnung 3.0 v syntaxi UBL, nemecky dodavatel a verejny
+ * odberatel. Leitweg-ID 991-33333TEST-33 je testovacia adresa zo specifikacie Leitweg-ID
+ * (KoSIT), rovnaka ako v tests.mjs, nie ziva adresa uradu. Sadzba 19 % (S), SEPA prevod (58)
+ * s prikladovym IBAN z registra IBAN (mod 97 sedi). Elektronicke adresy: 9930 (USt-IdNr.)
+ * a 0204 (Leitweg-ID), oba kody su v kodovniky.mjs (EAS) aj v ops/efaktura/fakty.md 2.5.
+ * Kontakt dodavatela ma meno, telefon aj e-mail (BR-DE-2, BR-DE-5 az BR-DE-7).
+ * Rovnaky tvar ako slovensky vzor: dve polozky, zaklad 450.00. Vsetky udaje su vymyslene. */
+const VZOR_XML_DE = `<?xml version="1.0" encoding="UTF-8"?>
+<Invoice xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2" xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2" xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2">
+  <cbc:CustomizationID>urn:cen.eu:en16931:2017#compliant#urn:xeinkauf.de:kosit:xrechnung_3.0</cbc:CustomizationID>
+  <cbc:ProfileID>urn:fdc:peppol.eu:2017:poacc:billing:01:1.0</cbc:ProfileID>
+  <cbc:ID>2026-0142</cbc:ID>
+  <cbc:IssueDate>2026-09-11</cbc:IssueDate>
+  <cbc:DueDate>2026-09-25</cbc:DueDate>
+  <cbc:InvoiceTypeCode>380</cbc:InvoiceTypeCode>
+  <cbc:Note>Musterrechnung von arling.sk/efaktura/de/. Alle Daten sind erfunden.</cbc:Note>
+  <cbc:DocumentCurrencyCode>EUR</cbc:DocumentCurrencyCode>
+  <cbc:BuyerReference>991-33333TEST-33</cbc:BuyerReference>
+  <cac:AccountingSupplierParty>
+    <cac:Party>
+      <cbc:EndpointID schemeID="9930">DE123456789</cbc:EndpointID>
+      <cac:PostalAddress>
+        <cbc:StreetName>Beispielweg 4</cbc:StreetName>
+        <cbc:CityName>Leipzig</cbc:CityName>
+        <cbc:PostalZone>04109</cbc:PostalZone>
+        <cac:Country>
+          <cbc:IdentificationCode>DE</cbc:IdentificationCode>
+        </cac:Country>
+      </cac:PostalAddress>
+      <cac:PartyTaxScheme>
+        <cbc:CompanyID>DE123456789</cbc:CompanyID>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:PartyTaxScheme>
+      <cac:PartyLegalEntity>
+        <cbc:RegistrationName>Musterwerkstatt GmbH</cbc:RegistrationName>
+        <cbc:CompanyID>HRB 12345</cbc:CompanyID>
+      </cac:PartyLegalEntity>
+      <cac:Contact>
+        <cbc:Name>Erika Mustermann</cbc:Name>
+        <cbc:Telephone>+49 341 0000000</cbc:Telephone>
+        <cbc:ElectronicMail>rechnung@musterwerkstatt.example</cbc:ElectronicMail>
+      </cac:Contact>
+    </cac:Party>
+  </cac:AccountingSupplierParty>
+  <cac:AccountingCustomerParty>
+    <cac:Party>
+      <cbc:EndpointID schemeID="0204">991-33333TEST-33</cbc:EndpointID>
+      <cac:PostalAddress>
+        <cbc:StreetName>Rathausplatz 1</cbc:StreetName>
+        <cbc:CityName>Musterstadt</cbc:CityName>
+        <cbc:PostalZone>12345</cbc:PostalZone>
+        <cac:Country>
+          <cbc:IdentificationCode>DE</cbc:IdentificationCode>
+        </cac:Country>
+      </cac:PostalAddress>
+      <cac:PartyLegalEntity>
+        <cbc:RegistrationName>Stadtverwaltung Musterstadt</cbc:RegistrationName>
+      </cac:PartyLegalEntity>
+    </cac:Party>
+  </cac:AccountingCustomerParty>
+  <cac:Delivery>
+    <cbc:ActualDeliveryDate>2026-09-10</cbc:ActualDeliveryDate>
+  </cac:Delivery>
+  <cac:PaymentMeans>
+    <cbc:PaymentMeansCode>58</cbc:PaymentMeansCode>
+    <cbc:PaymentID>2026-0142</cbc:PaymentID>
+    <cac:PayeeFinancialAccount>
+      <cbc:ID>DE89370400440532013000</cbc:ID>
+      <cbc:Name>Musterwerkstatt GmbH</cbc:Name>
+    </cac:PayeeFinancialAccount>
+  </cac:PaymentMeans>
+  <cac:PaymentTerms>
+    <cbc:Note>Zahlbar innerhalb von 14 Tagen ohne Abzug.</cbc:Note>
+  </cac:PaymentTerms>
+  <cac:TaxTotal>
+    <cbc:TaxAmount currencyID="EUR">85.50</cbc:TaxAmount>
+    <cac:TaxSubtotal>
+      <cbc:TaxableAmount currencyID="EUR">450.00</cbc:TaxableAmount>
+      <cbc:TaxAmount currencyID="EUR">85.50</cbc:TaxAmount>
+      <cac:TaxCategory>
+        <cbc:ID>S</cbc:ID>
+        <cbc:Percent>19.00</cbc:Percent>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:TaxCategory>
+    </cac:TaxSubtotal>
+  </cac:TaxTotal>
+  <cac:LegalMonetaryTotal>
+    <cbc:LineExtensionAmount currencyID="EUR">450.00</cbc:LineExtensionAmount>
+    <cbc:TaxExclusiveAmount currencyID="EUR">450.00</cbc:TaxExclusiveAmount>
+    <cbc:TaxInclusiveAmount currencyID="EUR">535.50</cbc:TaxInclusiveAmount>
+    <cbc:PayableAmount currencyID="EUR">535.50</cbc:PayableAmount>
+  </cac:LegalMonetaryTotal>
+  <cac:InvoiceLine>
+    <cbc:ID>1</cbc:ID>
+    <cbc:InvoicedQuantity unitCode="HUR">6</cbc:InvoicedQuantity>
+    <cbc:LineExtensionAmount currencyID="EUR">270.00</cbc:LineExtensionAmount>
+    <cac:Item>
+      <cbc:Name>Wartung der Werkzeugmaschine</cbc:Name>
+      <cac:ClassifiedTaxCategory>
+        <cbc:ID>S</cbc:ID>
+        <cbc:Percent>19.00</cbc:Percent>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:ClassifiedTaxCategory>
+    </cac:Item>
+    <cac:Price>
+      <cbc:PriceAmount currencyID="EUR">45.00</cbc:PriceAmount>
+    </cac:Price>
+  </cac:InvoiceLine>
+  <cac:InvoiceLine>
+    <cbc:ID>2</cbc:ID>
+    <cbc:InvoicedQuantity unitCode="C62">4</cbc:InvoicedQuantity>
+    <cbc:LineExtensionAmount currencyID="EUR">180.00</cbc:LineExtensionAmount>
+    <cac:Item>
+      <cbc:Name>Ersatzkugellager</cbc:Name>
+      <cac:ClassifiedTaxCategory>
+        <cbc:ID>S</cbc:ID>
+        <cbc:Percent>19.00</cbc:Percent>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:ClassifiedTaxCategory>
+    </cac:Item>
+    <cac:Price>
+      <cbc:PriceAmount currencyID="EUR">45.00</cbc:PriceAmount>
+    </cac:Price>
+  </cac:InvoiceLine>
+</Invoice>
+`;
+
+/* Cesky vzor (25. 9. 2026): Peppol BIS Billing 3.0 ako slovensky vzor, cesky dodavatel aj
+ * odberatel, v korunach (CZK prejde vsetkymi nasimi pravidlami a cesky formular ma CZK aj
+ * ako predvolbu). Sadzba 21 % (S). Platba je bezny bankovy prevod (30), nie SEPA (58),
+ * lebo SEPA je len v eurach. IBAN je prikladovy cesky IBAN z registra IBAN (mod 97 sedi).
+ * Elektronicke adresy su GLN so schemeID 0088 s ceskou predponou 859 a spravnou kontrolnou
+ * cislicou (PEPPOL-COMMON-R040), rovnako ako v anglickom vzore: cesky kod schemy v sieti
+ * Peppol nemame overeny v ops/efaktura/fakty.md, preto ho nehadame.
+ * Dve polozky ako v slovenskom vzore, zaklad 9000.00 CZK. Vsetky udaje su vymyslene. */
+const VZOR_XML_CS = `<?xml version="1.0" encoding="UTF-8"?>
+<Invoice xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2" xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2" xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2">
+  <cbc:CustomizationID>urn:cen.eu:en16931:2017#compliant#urn:fdc:peppol.eu:2017:poacc:billing:3.0</cbc:CustomizationID>
+  <cbc:ProfileID>urn:fdc:peppol.eu:2017:poacc:billing:01:1.0</cbc:ProfileID>
+  <cbc:ID>2026-0142</cbc:ID>
+  <cbc:IssueDate>2026-09-11</cbc:IssueDate>
+  <cbc:DueDate>2026-09-25</cbc:DueDate>
+  <cbc:InvoiceTypeCode>380</cbc:InvoiceTypeCode>
+  <cbc:Note>Vzorová faktura z arling.sk/efaktura/cs/. Údaje jsou vymyšlené.</cbc:Note>
+  <cbc:DocumentCurrencyCode>CZK</cbc:DocumentCurrencyCode>
+  <cbc:BuyerReference>OBJ-2026-77</cbc:BuyerReference>
+  <cac:AccountingSupplierParty>
+    <cac:Party>
+      <cbc:EndpointID schemeID="0088">8590000000015</cbc:EndpointID>
+      <cac:PostalAddress>
+        <cbc:StreetName>Nádražní 12</cbc:StreetName>
+        <cbc:CityName>Brno</cbc:CityName>
+        <cbc:PostalZone>602 00</cbc:PostalZone>
+        <cac:Country>
+          <cbc:IdentificationCode>CZ</cbc:IdentificationCode>
+        </cac:Country>
+      </cac:PostalAddress>
+      <cac:PartyTaxScheme>
+        <cbc:CompanyID>CZ12345678</cbc:CompanyID>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:PartyTaxScheme>
+      <cac:PartyLegalEntity>
+        <cbc:RegistrationName>Vzorová dílna s.r.o.</cbc:RegistrationName>
+        <cbc:CompanyID>12345678</cbc:CompanyID>
+      </cac:PartyLegalEntity>
+      <cac:Contact>
+        <cbc:Name>Jana Vzorová</cbc:Name>
+        <cbc:Telephone>+420 600 000 000</cbc:Telephone>
+        <cbc:ElectronicMail>fakturace@vzorovadilna.example</cbc:ElectronicMail>
+      </cac:Contact>
+    </cac:Party>
+  </cac:AccountingSupplierParty>
+  <cac:AccountingCustomerParty>
+    <cac:Party>
+      <cbc:EndpointID schemeID="0088">8590000000022</cbc:EndpointID>
+      <cac:PostalAddress>
+        <cbc:StreetName>Hlavní 8</cbc:StreetName>
+        <cbc:CityName>Ostrava</cbc:CityName>
+        <cbc:PostalZone>702 00</cbc:PostalZone>
+        <cac:Country>
+          <cbc:IdentificationCode>CZ</cbc:IdentificationCode>
+        </cac:Country>
+      </cac:PostalAddress>
+      <cac:PartyTaxScheme>
+        <cbc:CompanyID>CZ87654321</cbc:CompanyID>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:PartyTaxScheme>
+      <cac:PartyLegalEntity>
+        <cbc:RegistrationName>Odběratel Morava a.s.</cbc:RegistrationName>
+        <cbc:CompanyID>87654321</cbc:CompanyID>
+      </cac:PartyLegalEntity>
+    </cac:Party>
+  </cac:AccountingCustomerParty>
+  <cac:Delivery>
+    <cbc:ActualDeliveryDate>2026-09-10</cbc:ActualDeliveryDate>
+  </cac:Delivery>
+  <cac:PaymentMeans>
+    <cbc:PaymentMeansCode>30</cbc:PaymentMeansCode>
+    <cbc:PaymentID>20260142</cbc:PaymentID>
+    <cac:PayeeFinancialAccount>
+      <cbc:ID>CZ6508000000192000145399</cbc:ID>
+      <cbc:Name>Vzorová dílna s.r.o.</cbc:Name>
+    </cac:PayeeFinancialAccount>
+  </cac:PaymentMeans>
+  <cac:PaymentTerms>
+    <cbc:Note>Splatnost 14 dní od data vystavení.</cbc:Note>
+  </cac:PaymentTerms>
+  <cac:TaxTotal>
+    <cbc:TaxAmount currencyID="CZK">1890.00</cbc:TaxAmount>
+    <cac:TaxSubtotal>
+      <cbc:TaxableAmount currencyID="CZK">9000.00</cbc:TaxableAmount>
+      <cbc:TaxAmount currencyID="CZK">1890.00</cbc:TaxAmount>
+      <cac:TaxCategory>
+        <cbc:ID>S</cbc:ID>
+        <cbc:Percent>21.00</cbc:Percent>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:TaxCategory>
+    </cac:TaxSubtotal>
+  </cac:TaxTotal>
+  <cac:LegalMonetaryTotal>
+    <cbc:LineExtensionAmount currencyID="CZK">9000.00</cbc:LineExtensionAmount>
+    <cbc:TaxExclusiveAmount currencyID="CZK">9000.00</cbc:TaxExclusiveAmount>
+    <cbc:TaxInclusiveAmount currencyID="CZK">10890.00</cbc:TaxInclusiveAmount>
+    <cbc:PayableAmount currencyID="CZK">10890.00</cbc:PayableAmount>
+  </cac:LegalMonetaryTotal>
+  <cac:InvoiceLine>
+    <cbc:ID>1</cbc:ID>
+    <cbc:InvoicedQuantity unitCode="HUR">6</cbc:InvoicedQuantity>
+    <cbc:LineExtensionAmount currencyID="CZK">6900.00</cbc:LineExtensionAmount>
+    <cac:Item>
+      <cbc:Name>Servis obráběcího stroje</cbc:Name>
+      <cac:ClassifiedTaxCategory>
+        <cbc:ID>S</cbc:ID>
+        <cbc:Percent>21.00</cbc:Percent>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:ClassifiedTaxCategory>
+    </cac:Item>
+    <cac:Price>
+      <cbc:PriceAmount currencyID="CZK">1150.00</cbc:PriceAmount>
+    </cac:Price>
+  </cac:InvoiceLine>
+  <cac:InvoiceLine>
+    <cbc:ID>2</cbc:ID>
+    <cbc:InvoicedQuantity unitCode="C62">4</cbc:InvoicedQuantity>
+    <cbc:LineExtensionAmount currencyID="CZK">2100.00</cbc:LineExtensionAmount>
+    <cac:Item>
+      <cbc:Name>Náhradní ložiska</cbc:Name>
+      <cac:ClassifiedTaxCategory>
+        <cbc:ID>S</cbc:ID>
+        <cbc:Percent>21.00</cbc:Percent>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:ClassifiedTaxCategory>
+    </cac:Item>
+    <cac:Price>
+      <cbc:PriceAmount currencyID="CZK">525.00</cbc:PriceAmount>
+    </cac:Price>
+  </cac:InvoiceLine>
+</Invoice>
+`;
+
+/* Vzor podla jazyka stranky. Do 25. 9. 2026 dostala ceska aj nemecka stranka slovensky vzor. */
+const VZORY = { sk: VZOR_XML, cs: VZOR_XML_CS, de: VZOR_XML_DE, en: VZOR_XML_EN };
+const VZOR = VZORY[LANG] || VZOR_XML;
+/* Nazvy stiahnuteho vzoru podla jazyka: [cisty vzor, vzor s chybami]. */
+const MENA_VZORU = {
+  sk: ['vzor-efaktura.xml', 'vzor-s-chybami.xml'],
+  cs: ['vzorova-faktura.xml', 'vzorova-faktura-s-chybami.xml'],
+  de: ['beispielrechnung.xml', 'beispielrechnung-mit-fehlern.xml'],
+  en: ['sample-e-invoice.xml', 'sample-with-errors.xml'],
+}[LANG] || ['vzor-efaktura.xml', 'vzor-s-chybami.xml'];
 /* Vzor s dvoma zámernými chybami (25. 9. 2026): tá istá faktúra ako na obrázku vedľa nástroja,
    suma s DPH a suma na úhradu o cent vyššia (BR-CO-15) a preklep v poslednej číslici IBAN (ARL-IBAN).
    Návštevník si tak vyskúša aj cestu chyba -> formulár -> oprava, nielen čistý vzor. */
@@ -796,7 +1095,7 @@ function vzorSChybami(x) {
 const VZOR_CHYBY = vzorSChybami(VZOR);
 function nacitajVzor(sChybami) {
   const text = sChybami && VZOR_CHYBY ? VZOR_CHYBY : VZOR;
-  const meno = sChybami && VZOR_CHYBY ? (LANG === 'en' ? 'sample-with-errors.xml' : 'vzor-s-chybami.xml') : (LANG === 'en' ? 'sample-e-invoice.xml' : 'vzor-efaktura.xml');
+  const meno = sChybami && VZOR_CHYBY ? MENA_VZORU[1] : MENA_VZORU[0];
   prijmiText(text, meno, true);
   const s = $('vstup-stav');
   if (!s) return;
@@ -980,7 +1279,7 @@ function spustiKontrolu() {
   const stav = el('p', 'sumar-stav ' + (s.chyby ? 'je-chyba' : 'je-ok'), s.chyby ? T.maChyby(s.chyby) : T.bezChyb);
   cielSumar.appendChild(stav);
   const meta = el('p', 'sumar-meta');
-  meta.appendChild(el('span', null, T.sumarProfil + ': ' + (LANG === 'en' ? (v.profilNazovEn || v.profilNazov) : v.profilNazov)));
+  meta.appendChild(el('span', null, T.sumarProfil + ': ' + nazovProfilu(v)));
   meta.appendChild(el('span', null, T.sumarTyp + ': ' + v.typ));
   meta.appendChild(el('span', null, s.chyby + ' ' + T.sumarChyby(s.chyby)));
   meta.appendChild(el('span', null, s.varovania + ' ' + T.sumarVarovania(s.varovania)));
@@ -1002,15 +1301,21 @@ function spustiKontrolu() {
   track('efaktura_kontrola', { vysledok: s.chyby ? 'chyby' : 'ok', profil: v.profil, produkt: 'efaktura', jazyk: LANG });
 }
 
+/* Protokol (Stiahnut aj Kopirovat) s nazvom profilu v jazyku stranky. pravidla.mjs by pri
+ * XRechnung napisal slovensky "XRechnung 3.x (Nemecko)" aj do nemeckeho a ceskeho protokolu. */
+function protokolStranky(v) {
+  return protokol(Object.assign({}, v, { profilNazov: nazovProfilu(v) }), LANG, nazovSuboru);
+}
+
 const btnProtokol = $('protokol');
 if (btnProtokol) btnProtokol.addEventListener('click', () => {
   if (!poslednyVysledok) return;
-  stiahni('protokol-efaktura.txt', protokol(poslednyVysledok, LANG, nazovSuboru));
+  stiahni('protokol-efaktura.txt', protokolStranky(poslednyVysledok));
 });
 const btnKopirovat = $('kopirovat');
 if (btnKopirovat) btnKopirovat.addEventListener('click', async () => {
   if (!poslednyVysledok) return;
-  const text = protokol(poslednyVysledok, LANG, nazovSuboru);
+  const text = protokolStranky(poslednyVysledok);
   try {
     await navigator.clipboard.writeText(text);
     stavVstupu(T.skopirovane);
