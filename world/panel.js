@@ -161,9 +161,12 @@
 
   // Kredit balíka sa míňa na mape. Tá si kľúč prečíta zo sessionStorage v tej
   // istej karte; do jej adresy ho nedávame, lebo na mape beží Umami.
+  // Od 25. 9. 2026 aj bez kreditu: mapa podľa kľúča spozná majiteľove štvorce.
+  // Predtým majiteľ, ktorý prišiel z panela na inom zariadení než platil, videl
+  // pri vlastnom štvorci „Report this square“ namiesto „This square is yours“.
   function odovzdajMape() {
     try {
-      if (MAJITEL && MAJITEL.credit > 0) sessionStorage.setItem('svet-majitel', JSON.stringify({ t: KLUC, k: MAJITEL.credit }));
+      if (MAJITEL) sessionStorage.setItem('svet-majitel', JSON.stringify({ t: KLUC, k: MAJITEL.credit || 0 }));
       else sessionStorage.removeItem('svet-majitel');
     } catch (e) {}
   }
