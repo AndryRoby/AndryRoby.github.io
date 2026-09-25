@@ -697,8 +697,18 @@ function pripoj() {
       location.href = u;
     });
   }
+  /* V HTML je od 25. 9. 2026 len prazdny skryty #test-odznak: skrytu vetu o test
+     mode a karte 4242 citali nastroje AI ako fakt o stranke (audit
+     ops/audit/2026-09-25-celkovy/00-AUDIT.md, akcia 5). Text sa vlozi az tu. */
   const odznak = $('test-odznak');
-  if (odznak) odznak.hidden = !testRezim();
+  if (odznak) {
+    odznak.hidden = !testRezim();
+    if (!odznak.hidden && !odznak.firstChild) {
+      const b = document.createElement('b');
+      b.textContent = 'Test mode';
+      odznak.append(b, 'Every button here leads to Stripe test mode. Use the card 4242 4242 4242 4242, any future date and any CVC. No money is taken.');
+    }
+  }
 
   /* Price seen, the same event name the other products use, so one report
      can put euros against a hundred visits across all of them. */

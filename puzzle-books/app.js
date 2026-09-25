@@ -172,9 +172,22 @@ function odkazNaKupu(btn) {
 
 /* Odznak sa ukáže len v testovom režime, aby nikto nepovažoval testovú
    platbu za skutočnú. V živom režime ostáva schovaný. */
+const VETA_ODZNAKU = 'Every buy button leads to Stripe test mode. Use the card 4242 4242 4242 4242, any future date and any CVC. No money is taken and nothing is ordered.';
+/* V HTML je od 25. 9. 2026 len prázdny skrytý #test-odznak: skrytú vetu o test
+   mode a karte 4242 čítali nástroje AI ako fakt o stránke (audit
+   ops/audit/2026-09-25-celkovy/00-AUDIT.md, akcia 5). Text sa vloží až tu. */
+function naplnOdznak(el, veta) {
+  const d = el.ownerDocument;
+  if (!d || el.firstChild) return;
+  const b = d.createElement('b');
+  b.textContent = 'Test mode';
+  el.append(b, veta);
+}
 function ukazTestOdznak() {
   const el = $('test-odznak');
-  if (el) el.hidden = !testRezim();
+  if (!el) return;
+  el.hidden = !testRezim();
+  if (!el.hidden) naplnOdznak(el, VETA_ODZNAKU);
 }
 ukazTestOdznak();
 

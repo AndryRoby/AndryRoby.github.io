@@ -1,0 +1,341 @@
+/* Grandpa's Lighthouse: styles for this page only.
+   Tokens, type scale, buttons and the page frame come from /style/paper.css,
+   /style/obsah.css and /style/hra.css like on every other game; this file adds the
+   room (the stage), the close-ups and the six small puzzles. Colours inside the room
+   are the room's own (wood, brass, paper, sea); the chrome around it stays ARLing. */
+
+/* ── Page layout: a narrower text column, a wider room ─────────────────── */
+@media (min-width:1100px){
+  body.noc.hra .hero.escape-hero{grid-template-columns:minmax(0,4fr) minmax(0,8fr)}
+  body.noc.hra .hero .hra.escape{width:100%;max-width:780px;margin-left:auto;margin-right:0}
+}
+@media (max-width:1099px){
+  body.noc.hra .hero .hra.escape{width:min(780px,100%);max-width:min(780px,100%)}
+}
+@media (max-width:860px){ .escape-text .navod{display:none} }
+body.noc.obsah .escape-text h1{margin-bottom:28px}
+body.noc .escape-text .proof{margin-top:22px}
+
+.escape .horna{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:4px 14px;margin:0 0 10px;
+  font-family:var(--ui);font-size:14px;color:var(--muted)}
+.escape .horna>span{white-space:nowrap}
+.escape #cas-blok[hidden],.escape .pauza-btn[hidden]{display:none}
+
+/* ── The frame: the stage on top, the bar with Hint and the message under it ──
+   The frame itself does not clip, so the bar can stick to the bottom of the screen
+   while any part of the stage is on it: a hint or a wrong try is never off screen. */
+.ram{position:relative;border-radius:14px;background:#0d0907;
+  border:1px solid rgba(255,255,255,.12);box-shadow:0 26px 60px -24px rgba(0,0,0,.85),0 0 90px -40px rgba(255,170,100,.18)}
+.lista{position:sticky;bottom:0;z-index:7;display:flex;align-items:center;gap:12px;min-height:62px;padding:9px 12px;
+  border-top:1px solid rgba(255,255,255,.1);border-radius:0 0 13px 13px;
+  background:rgba(20,15,12,.96);box-shadow:0 -10px 24px -14px rgba(0,0,0,.9)}
+@supports (backdrop-filter:blur(8px)){ .lista{background:rgba(20,15,12,.86);backdrop-filter:blur(10px) saturate(1.1);-webkit-backdrop-filter:blur(10px) saturate(1.1)} }
+.escape .lista .btn{flex:none;height:42px;padding:0 16px;font-size:14.5px}
+.escape .lista .btn:disabled{opacity:.4;cursor:default}
+body.noc .escape .lista .stav{flex:1;min-width:0;margin:0;min-height:0;font-size:14.5px;line-height:1.42;color:var(--body);max-width:none}
+body.noc .escape .lista .stav:empty::before{content:attr(data-klud);color:var(--muted)}
+body.noc .escape .lista .stav.ok{color:var(--ok)}
+body.noc .escape .lista .stav.zle{color:#f2c3a6}
+
+/* ── The stage: the room and, over it, one close-up at a time ──────────── */
+.scena-ram{position:relative;display:grid;border-radius:13px 13px 0 0;overflow:hidden;background:#0d0907}
+.scena-ram>.scena,.scena-ram>.panel{grid-area:1/1}
+.scena{display:block;width:100%;height:auto;aspect-ratio:4/3;align-self:start;
+  transform-origin:var(--ox,50%) var(--oy,50%);transition:transform .45s var(--spring),opacity .3s var(--ease)}
+.scena:focus{outline:none}
+.scena-ram.s-panelom .scena{transform:scale(1.14);opacity:0}
+.panel{position:relative;z-index:2;align-self:stretch;min-width:0;display:flex;flex-direction:column;
+  background:radial-gradient(120% 80% at 50% 0%,#1d1612 0%,#120e0b 70%);
+  opacity:0;transform:scale(.94);transform-origin:var(--ox,50%) var(--oy,50%);pointer-events:none;
+  transition:opacity .28s var(--ease),transform .4s var(--spring)}
+.panel[hidden]{display:none}
+.scena-ram.s-panelom .panel{opacity:1;transform:none;pointer-events:auto}
+.scena-ram.pauza .scena,.scena-ram.pauza .panel{visibility:hidden}
+.pauza-blok{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+  background:rgba(10,9,8,.94);text-align:center;font-family:var(--ui);padding:20px;z-index:6}
+.bez-js{margin:0;padding:24px 20px;font-family:var(--ui)}
+
+/* Hover and keyboard focus on the things in the room. */
+.scena .hs{cursor:pointer;outline:none;transition:filter .18s var(--ease)}
+.scena .hs .hit{fill:transparent;stroke:transparent;stroke-width:3}
+.scena .hs:hover{filter:brightness(1.3) drop-shadow(0 0 9px rgba(255,196,130,.5))}
+.scena .hs:focus-visible{filter:brightness(1.18)}
+.scena .hs:focus-visible .hit{stroke:#ffb59d;stroke-dasharray:9 6}
+.scena .hs.zvyraznene .hit{stroke:#facc15;stroke-width:4;animation:hs-pulz 1s ease-in-out infinite alternate}
+@keyframes hs-pulz{from{stroke-opacity:.3}to{stroke-opacity:1}}
+.scena-popis{position:absolute;left:12px;bottom:10px;z-index:3;margin:0;padding:6px 10px;border-radius:8px;max-width:calc(100% - 24px);
+  background:rgba(10,8,6,.82);color:#f1e6d2;font:500 13px/1.25 var(--ui);opacity:0;transform:translateY(4px);
+  transition:opacity .18s var(--ease),transform .18s var(--ease);pointer-events:none}
+.scena-popis.vid{opacity:1;transform:none}
+.scena-ram.s-panelom .scena-popis{display:none}
+@media (hover:none){ .scena-popis{display:none} }
+
+/* Closed and open states of the room, switched by classes on the stage. */
+.scena .truhla-otv,.scena .dennik-otv,.scena .skrina-otv,.scena .dvere-otv{display:none}
+.scena-ram.o-truhla .truhla-zatv,.scena-ram.o-dennik .dennik-zatv,.scena-ram.o-skrina .skrina-zatv,.scena-ram.o-dvere .dvere-zatv{display:none}
+.scena-ram.o-truhla .truhla-otv,.scena-ram.o-dennik .dennik-otv,.scena-ram.o-skrina .skrina-otv,.scena-ram.o-dvere .dvere-otv{display:inline}
+.scena-ram.o-lampa .dvere-otv{filter:brightness(1.35)}
+
+/* Small life in the room: the boat rides the swell, the flame breathes. */
+.lodka{animation:lodka 5.5s ease-in-out infinite}
+@keyframes lodka{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(1.6px) rotate(-1.2deg)}}
+.plamen{transform-box:fill-box;transform-origin:50% 90%;animation:plamen 2.8s ease-in-out infinite}
+@keyframes plamen{0%,100%{transform:scale(1,1)}30%{transform:scale(.94,1.06)}60%{transform:scale(1.04,.95)}}
+
+/* ── Close-up frame ────────────────────────────────────────────────────── */
+.panel-hlava{display:flex;align-items:center;gap:12px;padding:12px 14px 10px;border-bottom:1px solid var(--line)}
+body.noc.obsah .escape .panel-hlava h2{margin:0;font-size:clamp(17px,1.7vw,21px);font-weight:650;line-height:1.2;letter-spacing:-.01em}
+body.noc.obsah .escape .panel-hlava h2::before,body.noc.obsah .escape .panel-hlava h2::after{display:none}
+.panel-hlava h2:focus{outline:none}
+.spat{display:inline-flex;align-items:center;gap:4px;height:40px;padding:0 14px 0 8px;flex:none;border-radius:999px;cursor:pointer;
+  border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.04);color:var(--ink);font:600 14px/1 var(--ui)}
+.spat:hover{background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.3)}
+.spat svg{width:18px;height:18px}
+/* A short close-up sits in the middle of the stage instead of leaving a dark gap under it. */
+.panel-telo{flex:1 0 auto;padding:14px clamp(14px,2.4vw,24px) 20px;display:flex;flex-direction:column;justify-content:center;gap:12px;min-width:0}
+body.noc .panel-telo p{margin:0;max-width:none}
+.panel-uvod{font-family:var(--ui);font-size:15px;line-height:1.5}
+body.noc .panel-uvod.zamknute{color:#ecd3c2;border-left:3px solid var(--accent);padding-left:12px}
+body.noc .panel-pomoc{font-family:var(--ui);font-size:13px;line-height:1.45;color:var(--muted)}
+.panel-pomoc kbd{font-size:11.5px}
+.panel-akcie{display:flex;gap:10px;flex-wrap:wrap}
+body.noc .escape .panel-akcie .btn-line{height:40px;padding:0 14px;font-size:14px}
+.escape .panel-akcie .btn:disabled{opacity:.38;cursor:default}
+.blizko{display:block;width:100%;height:auto;max-height:min(40vh,300px);border-radius:10px}
+@media (min-width:1100px){
+  .panel[data-panel="polica"] .blizko,.panel[data-panel="truhla"] .truhla-blizko,.panel[data-panel="obraz"] .blizko{max-height:min(48vh,380px)}
+}
+
+/* Paper: Grandpa's letter, the rhyme card, the logbook page. */
+.papier{background:#efe6d2;border-radius:4px;padding:18px 20px;max-width:560px;align-self:center;width:100%;
+  box-shadow:0 12px 30px -12px rgba(0,0,0,.75);transform:rotate(-.5deg);
+  font:italic 400 17px/1.55 "ARLing Serif",Georgia,serif}
+body.noc .papier p,.papier li{color:#2e241b;margin:0 0 10px;max-width:none}
+body.noc .papier p:last-child{margin-bottom:0}
+body.noc .papier b{color:#1d1610;font-style:normal;font-family:var(--ui);font-size:15px}
+.list-papier{transform:rotate(.6deg)}
+.basen{transform:rotate(.4deg);align-self:stretch}
+.basen ol{margin:8px 0 0;padding-left:22px}
+.basen li{margin:5px 0}
+body.noc .papier .velke-cislo{font:700 56px/1 var(--ui);text-align:center;color:#2e241b;margin-top:8px}
+
+/* ── Lock 1: the picture grid ──────────────────────────────────────────── */
+.nono-obal{display:flex;justify-content:center}
+.nono{--b:clamp(40px,10.4vw,52px);display:grid;grid-template-columns:auto repeat(5,var(--b));
+  padding:8px 10px 10px 8px;border-radius:12px;background:linear-gradient(#45301f,#34231a);
+  border:3px solid #b8863c;box-shadow:inset 0 0 0 1px rgba(0,0,0,.4),0 12px 26px -14px rgba(0,0,0,.8);
+  touch-action:manipulation;user-select:none;-webkit-user-select:none}
+.nono-riadok{display:contents}
+.nono-h{display:flex;align-items:center;justify-content:center;gap:7px;font:600 15px/1.15 var(--ui);color:#f1dcb4;font-variant-numeric:tabular-nums}
+.nono-h.stlpec{flex-direction:column;justify-content:flex-end;gap:1px;padding-bottom:6px}
+.nono-h.riadok{justify-content:flex-end;padding-right:10px}
+.nono-b{appearance:none;-webkit-appearance:none;border:0;margin:2px;padding:0;width:calc(var(--b) - 4px);height:calc(var(--b) - 4px);
+  border-radius:6px;background:#241810;box-shadow:inset 0 2px 5px rgba(0,0,0,.6);cursor:pointer;position:relative;
+  transition:background .15s var(--ease),transform .15s var(--spring)}
+.nono-b:hover{background:#2f2016}
+.nono-b[data-v="1"]{background:linear-gradient(#f2c870,#c38b36);box-shadow:inset 0 -2px 0 rgba(0,0,0,.22),0 0 12px rgba(240,190,100,.22)}
+.nono-b[data-v="2"]::after{content:"\00d7";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:600 22px/1 var(--ui);color:#8c7458}
+.nono-b:active{transform:scale(.94)}
+.nono-b:focus-visible{outline:2px solid #ffb59d;outline-offset:1px;z-index:1}
+.nono.hotovo{border-color:var(--ok);box-shadow:0 0 0 4px rgba(94,207,154,.16)}
+.nono.hotovo .nono-b[data-v="1"]{background:linear-gradient(#f5a18a,#d9543a)}
+
+/* The open chest: the lid swings up. */
+.truhla-blizko .veko{transform-box:fill-box;transform-origin:50% 100%;animation:veko .9s var(--spring) both}
+@keyframes veko{from{transform:scaleY(.15);opacity:.3}to{transform:none;opacity:1}}
+
+/* ── Lock 2: the signal line ───────────────────────────────────────────── */
+.okno-pohlad .lucerna-svit{transform-box:fill-box;transform-origin:center}
+.okno-pohlad.blik .lucerna-svit{animation:blik .5s ease-out}
+.okno-pohlad.blik .lucerna{animation:blik-jadro .5s ease-out}
+@keyframes blik{0%{transform:scale(1);opacity:.2}22%{transform:scale(2.6);opacity:.95}100%{transform:scale(1);opacity:.2}}
+@keyframes blik-jadro{0%,100%{fill:#ffd27a}22%{fill:#fffbe8}}
+.okno-pohlad.vztycuje .vztyk{animation:vztyk 1s var(--spring) both;animation-delay:var(--d,0ms)}
+@keyframes vztyk{from{transform:translate(-4px,70px) scale(.5);opacity:0}to{transform:translate(-4px,3px);opacity:1}}
+.vlajky-hra{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:14px 18px;align-items:start;transition:opacity .4s var(--ease)}
+@media (max-width:700px){ .vlajky-hra{grid-template-columns:minmax(0,1fr)} }
+.sloty{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin:10px 0 12px}
+.slot{appearance:none;-webkit-appearance:none;margin:0;min-width:0;min-height:86px;padding:7px 2px;border-radius:10px;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;justify-content:space-between;gap:4px;
+  border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.04);color:var(--body);font:500 11.5px/1.15 var(--ui);
+  transition:transform .2s var(--spring),border-color .2s var(--ease),background .2s var(--ease)}
+.slot:hover{border-color:rgba(255,255,255,.3);background:rgba(255,255,255,.07)}
+.slot svg{width:min(44px,86%);height:auto;filter:drop-shadow(0 2px 2px rgba(0,0,0,.5))}
+.slot-c{font:600 11px/1 var(--ui);color:var(--muted)}
+.slot-n{color:var(--ink);overflow-wrap:anywhere;text-align:center}
+.slot.vybrata{border-color:#facc15;background:rgba(250,204,21,.1);transform:translateY(-6px);box-shadow:0 10px 18px -10px rgba(0,0,0,.9)}
+.slot:focus-visible{outline:2px solid #ffb59d;outline-offset:2px}
+.vlajky-rad{display:flex;flex-wrap:wrap;gap:10px 16px;justify-content:center}
+.vlajka-mala{display:inline-flex;flex-direction:column;align-items:center;gap:4px;font:500 12px/1 var(--ui);color:var(--body)}
+.vlajka-mala svg{width:44px;height:auto}
+
+/* ── Wheels and dials (logbook, cabinet) ───────────────────────────────── */
+.abeceda{display:flex;flex-wrap:wrap;justify-content:center;gap:3px}
+.abeceda span{width:21px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:4px;
+  background:rgba(255,255,255,.05);font:600 12.5px/1 var(--ui);color:#ead6b0}
+.zamok-kolies{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:14px 20px;padding:14px;border-radius:12px;
+  background:linear-gradient(#3b2a1d,#281c14);border:1px solid rgba(255,255,255,.08);transition:box-shadow .4s var(--ease),border-color .4s var(--ease)}
+.zamok-kolies.hotovo{border-color:var(--ok);box-shadow:0 0 0 4px rgba(94,207,154,.16)}
+.kolieska{display:flex;gap:8px}
+.koliesko{display:flex;flex-direction:column;align-items:center;gap:3px}
+.k-sip{width:48px;height:34px;padding:0;border-radius:8px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.05);
+  color:#f1dcb4;display:flex;align-items:center;justify-content:center;cursor:pointer;touch-action:manipulation}
+.k-sip:hover:not(:disabled){background:rgba(255,255,255,.1)}
+.k-sip:disabled{opacity:.3;cursor:default}
+.k-sip svg{width:18px;height:11px}
+.k-okno{position:relative;width:48px;height:56px;overflow:hidden;border-radius:7px;cursor:ns-resize;
+  background:linear-gradient(#5b4429 0%,#e7d4ac 26%,#f6ebd2 50%,#e7d4ac 74%,#5b4429 100%);
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.35),0 2px 6px rgba(0,0,0,.5)}
+.k-okno[aria-disabled="true"]{filter:saturate(.4) brightness(.6);cursor:default}
+.k-okno:focus-visible{outline:2px solid #ffb59d;outline-offset:2px}
+.k-pas{position:absolute;left:0;right:0;top:-56px}
+.k-pas span{display:flex;align-items:center;justify-content:center;height:56px;font:700 27px/1 var(--ui);color:#2b1f15;font-variant-numeric:tabular-nums}
+.mosadz .k-okno{background:linear-gradient(#6b4d1f 0%,#e9c47a 26%,#f8e1a8 50%,#e9c47a 74%,#6b4d1f 100%)}
+
+/* The cabinet doors swing open. */
+.skrina-blizko .dvierko{transform-box:fill-box;transition:transform 1s var(--spring),filter 1s var(--ease)}
+.skrina-blizko .dvierko.l{transform-origin:0 50%}
+.skrina-blizko .dvierko.p{transform-origin:100% 50%}
+.skrina-blizko.otv .dvierko{transform:scaleX(.07);filter:brightness(.7)}
+/* The brass plate with the three dials rides on the doors: it fades as they swing. */
+.skrina-blizko .platna{transition:opacity .35s var(--ease)}
+.skrina-blizko.otv .platna{opacity:0}
+/* The oil can leaves the shelf for your pocket once the doors are open. */
+.skrina-blizko .olej-blizko{transition:opacity .5s var(--ease) 1.1s,transform .5s var(--ease) 1.1s}
+.skrina-blizko.otv .olej-blizko{opacity:0;transform:translateY(-12px)}
+
+/* ── The shell shelf ───────────────────────────────────────────────────── */
+.legenda{display:flex;flex-wrap:wrap;justify-content:center;gap:8px 20px;font:500 13.5px/1.2 var(--ui);color:var(--body)}
+.legenda span{display:inline-flex;align-items:center;gap:6px}
+.legenda svg{width:26px;height:30px}
+.legenda.platne i{display:inline-block;width:16px;height:16px;border-radius:4px;border:1px solid rgba(0,0,0,.4)}
+
+/* ── Lock 5: the pebble board ──────────────────────────────────────────── */
+.kamene-obal{display:flex;justify-content:center}
+.kamene{--k:clamp(46px,12.4vw,60px);--hrana:3px;--tenka:.5px;display:grid;grid-template-columns:repeat(5,var(--k));
+  padding:10px;border-radius:12px;background:linear-gradient(#654329,#4e3321);border:2px solid #2f1f14;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 12px 26px -14px rgba(0,0,0,.8);touch-action:manipulation;user-select:none;-webkit-user-select:none}
+.doska-riadok{display:contents}
+.kb{appearance:none;-webkit-appearance:none;margin:0;padding:0;width:var(--k);height:var(--k);border-style:solid;border-color:#1f140d;
+  cursor:pointer;position:relative;background-color:#777}
+.kb:disabled{cursor:default}
+.kb.p0,.legenda.platne i.p0{background-color:#b8604a;background-image:radial-gradient(rgba(0,0,0,.16) 1.3px,transparent 1.8px);background-size:8px 8px}
+.kb.p1,.legenda.platne i.p1{background-color:#c49a3f;background-image:repeating-linear-gradient(45deg,rgba(0,0,0,.12) 0 2px,transparent 2px 7px)}
+.kb.p2,.legenda.platne i.p2{background-color:#4c7aa6;background-image:repeating-linear-gradient(0deg,rgba(255,255,255,.13) 0 2px,transparent 2px 7px)}
+.kb.p3,.legenda.platne i.p3{background-color:#648f5b;background-image:repeating-linear-gradient(-45deg,rgba(0,0,0,.13) 0 2px,transparent 2px 7px)}
+.kb.p4,.legenda.platne i.p4{background-color:#857d70;background-image:linear-gradient(90deg,rgba(255,255,255,.12) 1px,transparent 1px),linear-gradient(0deg,rgba(255,255,255,.12) 1px,transparent 1px);background-size:7px 7px}
+.kb:hover:not(:disabled){filter:brightness(1.12)}
+.kb[data-v="1"]::after{content:"";position:absolute;inset:17%;border-radius:50%;
+  background:radial-gradient(circle at 34% 30%,#fbf8f1 0%,#b9b2a7 50%,#6d675f 100%);box-shadow:0 3px 6px rgba(0,0,0,.55);
+  animation:kamen .22s var(--spring)}
+@keyframes kamen{from{transform:scale(.4)}to{transform:none}}
+.kb[data-v="2"]::after{content:"";position:absolute;left:50%;top:50%;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;border-radius:50%;background:rgba(20,12,8,.72)}
+.kb:focus-visible{outline:3px solid #fff5dc;outline-offset:-5px;z-index:1}
+.kamene.hotovo{border-color:var(--ok);box-shadow:0 0 0 4px rgba(94,207,154,.16)}
+
+/* ── Lock 6: the sum plate ─────────────────────────────────────────────── */
+.dvere-blizko .kryt,.dvere-blizko .kridlo{transform-box:fill-box}
+.dvere-blizko .kryt{transform-origin:50% 0}
+.dvere-blizko .kridlo{transform-origin:0 50%}
+.dvere-blizko.kryt .kryt{animation:kryt .7s var(--spring) .15s both}
+@keyframes kryt{to{transform:scaleY(.08)}}
+.dvere-blizko.otvorene .kryt{transform:scaleY(.08)}
+.dvere-blizko.otvorene .kridlo{animation:kridlo 1.1s var(--spring) both}
+@keyframes kridlo{to{transform:scaleX(.1);filter:brightness(.6)}}
+.suma-obal{display:flex;flex-wrap:wrap;gap:16px 24px;justify-content:center;align-items:center}
+.suma{--s:clamp(50px,13.6vw,62px);display:grid;grid-template-columns:repeat(4,var(--s));gap:4px;padding:8px;border-radius:12px;
+  background:linear-gradient(#ebc674,#a8762f);box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 12px 26px -14px rgba(0,0,0,.85)}
+.suma-riadok{display:contents}
+.suma-h{display:flex;align-items:center;justify-content:center;height:var(--s);border-radius:7px;
+  font:700 18px/1 var(--ui);color:#3a2610;background:rgba(58,38,16,.1);font-variant-numeric:tabular-nums}
+.suma-h.stlpec{border-bottom:3px solid rgba(58,38,16,.45)}
+.suma-h.riadok{border-right:3px solid rgba(58,38,16,.45)}
+.suma-b{appearance:none;-webkit-appearance:none;margin:0;padding:0;width:var(--s);height:var(--s);border:0;border-radius:8px;cursor:pointer;
+  background:#2a1d14;color:#f6e7c6;font:700 28px/1 var(--ui);box-shadow:inset 0 2px 6px rgba(0,0,0,.65);font-variant-numeric:tabular-nums}
+.suma-b.vybrata{outline:3px solid #fff3d0;outline-offset:-3px}
+.suma-b:focus-visible{outline:3px solid #fff3d0;outline-offset:-3px}
+.suma.hotovo{box-shadow:0 0 0 4px rgba(94,207,154,.25)}
+.suma.hotovo .suma-b{color:#bff2d6}
+.klavesnica{display:grid;grid-template-columns:repeat(5,48px);gap:6px}
+.kl{height:48px;padding:0;border-radius:10px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.05);color:var(--ink);
+  font:600 18px/1 var(--ui);cursor:pointer;touch-action:manipulation}
+.kl:hover{background:rgba(255,255,255,.1)}
+.kl.zmaz{font-size:12.5px}
+
+/* ── The lamp ──────────────────────────────────────────────────────────── */
+.lampa-blizko .lesk{opacity:0;transition:opacity 1.4s var(--ease)}
+.lampa-blizko .luc{opacity:0;transition:opacity 1s var(--ease) .6s;transform-origin:300px 150px}
+.lampa-blizko .knot{transition:fill 1s var(--ease)}
+.lampa-blizko .lodka-domov{transform:translate(500px,262px);transition:transform 6s cubic-bezier(.45,.05,.3,1)}
+.lampa-blizko.svieti .lesk{opacity:1}
+.lampa-blizko.svieti .knot{fill:#ffe39a}
+.lampa-blizko.svieti .luc{opacity:1;animation:luc 5s ease-in-out infinite}
+@keyframes luc{0%{transform:scaleX(1)}25%{transform:scaleX(.04)}50%{transform:scaleX(-1)}75%{transform:scaleX(-.04)}100%{transform:scaleX(1)}}
+.lampa-blizko.doma .lodka-domov{transform:translate(150px,296px)}
+.lampa-blizko.doma .dedo{animation:dedo 1.1s ease-in-out 5s infinite alternate}
+@keyframes dedo{from{opacity:1}to{opacity:.2}}
+.vysledok{border-top:1px solid var(--line);padding-top:14px;display:flex;flex-direction:column;gap:12px;scroll-margin-top:90px}
+.vysledok:focus{outline:none}
+body.noc .vysledok p{font:500 16px/1.5 var(--ui);color:var(--body)}
+.vysledok b{color:var(--ok)}
+.zamky-rad{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px 16px;font:500 13.5px/1.3 var(--ui);color:var(--body)}
+.zamky-rad li::before,.vysledok-legenda span::before{content:"\25cf";margin-right:6px;color:var(--ok)}
+.zamky-rad li.s-napovedou::before,.vysledok-legenda span.s-napovedou::before{content:"\25cb";color:#e5b865}
+body.noc .vysledok .vysledok-legenda{display:flex;flex-wrap:wrap;gap:4px 16px;font:400 12.5px/1.3 var(--ui);color:var(--muted);
+  padding-top:8px;border-top:1px dashed rgba(255,255,255,.1)}
+.vysledok-akcie{display:flex;flex-wrap:wrap;gap:10px}
+body.noc .escape .vysledok-akcie .btn{height:44px;padding:0 18px;font-size:14.5px}
+body.noc .vysledok .zdielanie-stav{font:400 13px/1.45 var(--ui);color:var(--muted)}
+.zdielanie-text{width:100%;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--body);font:12px/1.5 var(--ui);padding:8px 10px;resize:vertical}
+.zdielanie-text[hidden]{display:none}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}
+
+/* The photograph */
+.fotka{margin:0;display:flex;flex-wrap:wrap;gap:16px 22px;align-items:center;justify-content:center}
+.fotka .blizko{width:min(230px,70%);transform:rotate(-2deg);box-shadow:0 14px 30px -12px rgba(0,0,0,.8)}
+.fotka figcaption{flex:1 1 220px;font:italic 400 17px/1.55 "ARLing Serif",Georgia,serif;color:var(--body)}
+
+/* ── Under the stage: pocket, hint, share, settings ────────────────────── */
+.vrecko{display:flex;align-items:center;gap:10px 12px;flex-wrap:wrap;margin-top:12px;padding:8px 12px;min-height:62px;
+  border:1px solid var(--line);border-radius:12px;background:var(--card)}
+.vrecko-nazov{font:600 11.5px/1 var(--ui);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.veci{display:flex;flex-wrap:wrap;gap:8px;min-width:0}
+.veci .prazdne{font:400 13.5px/1.4 var(--ui);color:var(--muted)}
+.vec{display:inline-flex;align-items:center;gap:6px;height:44px;padding:0 12px 0 6px;border-radius:10px;cursor:pointer;
+  border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.04);color:var(--ink);font:500 13px/1.2 var(--ui)}
+.vec:hover{background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.28)}
+.vec svg{width:34px;height:28px;flex:none}
+.vec.nova{animation:nova 1.1s var(--spring) .35s both}
+@keyframes nova{0%{transform:scale(.6);opacity:0;box-shadow:0 0 0 0 rgba(250,204,21,.55)}45%{transform:scale(1.06);opacity:1}100%{transform:none;opacity:1;box-shadow:0 0 0 12px rgba(250,204,21,0)}}
+.znova-riadok{padding:4px 0 2px}
+.znova-riadok .btn{height:40px;padding:0 16px;font-size:14px}
+
+/* ── Phones ────────────────────────────────────────────────────────────── */
+@media (max-width:480px){
+  body.noc.hra .escape .ram{margin-inline:calc((100% - 100vw) / 2 + 16px)}
+  .lista{gap:10px;padding:8px 10px}
+  .escape .lista .btn{padding:0 13px}
+  body.noc .escape .lista .stav{font-size:14px;line-height:1.4}
+  .panel-telo{padding:12px 12px 18px}
+  .papier{padding:16px;font-size:16px}
+  .sloty{gap:4px}
+  .slot{min-height:80px;font-size:11px}
+  .kolieska{gap:6px}
+  .k-sip,.k-okno{width:44px}
+}
+@media (max-width:360px){
+  .k-sip,.k-okno{width:40px}
+  .klavesnica{grid-template-columns:repeat(5,44px)}
+}
+
+/* ── Less motion ───────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion:reduce){
+  .scena,.panel{transition:opacity .2s linear}
+  .scena-ram.s-panelom .scena,.panel{transform:none}
+  .lodka,.plamen,.lampa-blizko.svieti .luc,.lampa-blizko.doma .dedo,.scena .hs.zvyraznene .hit{animation:none}
+  .truhla-blizko .veko,.okno-pohlad.vztycuje .vztyk,.vec.nova,.kb[data-v="1"]::after{animation:none}
+  .dvere-blizko.kryt .kryt{animation:none;transform:scaleY(.08)}
+  .dvere-blizko.otvorene .kridlo{animation:none;transform:scaleX(.1)}
+  .skrina-blizko .dvierko,.skrina-blizko .platna,.lampa-blizko .lodka-domov{transition:none}
+  .slot{transition:none}
+}
