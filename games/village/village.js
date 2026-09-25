@@ -7,19 +7,33 @@
       a clean copy of the tiles under them. Nothing else is touched.
    3. Two loops. The hand loop runs at the screen's rate only while the view
       moves (drag, zoom, the camera gliding to a house, a house opening). The
-      life loop (breathing, blinking, ripples, smoke) runs at 24 frames a second
-      at most, 12 on a slow device, drops to 12 after ten quiet seconds and stops
-      after forty, like a print. Hidden tab or village scrolled away: nothing.
+      life loop (breathing, blinking, ripples, smoke, the walkers) runs on every
+      n-th frame of the screen, 30 to 38 frames a second and evenly spaced, and
+      stops after forty quiet seconds, like a print. Hidden tab or village
+      scrolled away: nothing.
    4. Reduced motion prints one still frame and never starts a loop.
    All module URLs carry the same ?v= so a new engine never meets old drawings;
    bump it in every import and in index.html together. */
-import { Pen } from './riso.js?v=2';
-import { build, drawStatic } from './svet.js?v=2';
-import { PLACES, ambient, ACT } from './miesta.js?v=2';
+import { Pen, OPT, inksLost } from './riso.js?v=3';
+import { build, drawStatic } from './svet.js?v=3';
+import { PLACES, ambient, ACT } from './miesta.js?v=3';
 
 const $ = s => document.querySelector(s);
 const stage = $('#vl-stage'), cv = $('#vl-canvas');
 if (stage && cv && cv.getContext) start();
+
+/* 25 Sep 2026, Firefox 156 in a real window. Two kinds of drawing leave its fast GPU
+   path: a line inked with a pattern (the grain) and letters filled with one. A line costs
+   about 60 µs, and either one, once on a plate, moves that whole plate to the processor
+   for good: every later copy of a tile onto it cost 7 ms instead of 0.1. Tiles took 13 to
+   110 ms to print, a frame 12 to 24 ms, zooming stalled up to 107 ms. So in Gecko lines
+   are printed as the filled shapes they cover, letters go through a scratch plate
+   (riso.js) and the water and path unions are one nonzero fill instead of a mask
+   (svet.js): the same pixels up to edge antialiasing (mean difference under 0.2 of 255).
+   A test print at start could not tell the two ways apart (the cost only shows next to
+   the busy main plate), so the engine is recognised by its user agent; Chrome and Safari
+   keep their strokes, pixel for pixel as before. */
+function isGecko() { return /\bGecko\/\d/.test(navigator.userAgent); }
 
 function start() {
   const ctx = cv.getContext('2d', { alpha: false });
@@ -27,14 +41,16 @@ function start() {
   let reduce = mqReduce.matches;
   let weak = (navigator.hardwareConcurrency || 8) <= 4 || (navigator.deviceMemory || 8) <= 4;
   let DPR = Math.min(window.devicePixelRatio || 1, weak ? 1.5 : 2);
-  // Tile size in device pixels. 25 Sep 2026: in Firefox one 512 px tile took 33 ms on average and
-  // up to 110 ms, and the view froze after every zoom; 256 px tiles take under 8 ms there. Chrome
-  // prints 512 px tiles fast and composes fewer of them, so the size is chosen by measurement.
-  let T = 512;
-  let MAX_TILES = weak ? 40 : 72;
-  let slowTileSeen = 0;
+  // Tile size in device pixels. Chrome prints 512 px tiles fast and composes fewer of them;
+  // Gecko starts with 256 px (below); any browser that prints a 512 px tile slower than 24 ms
+  // twice switches to 256 px, so the size is chosen by measurement.
+  // window.__vlTile = 256 or 512 before load fixes the size (tests comparing snapshots)
+  const T_FIXED = window.__vlTile === 256 || window.__vlTile === 512 ? window.__vlTile : 0;
+  let T = T_FIXED || 512;
+  // a phone, a touch screen or a small screen keeps fewer tiles (see trim below)
+  const mobile = (navigator.maxTouchPoints || 0) > 0 || matchMedia('(pointer: coarse)').matches || Math.min(screen.width, screen.height) < 700;
+  let slowTileSeen = 0, calmUntil = 0;
   const REST_MS = 40000;                   // quiet this long: the village holds still
-  const CALM_MS = 10000;                   // quiet this long: the life loop halves
 
   /* ── World ─────────────────────────────────────────────────────────── */
   const W = build(PLACES);
@@ -51,6 +67,11 @@ function start() {
     for (const s of sprites) { s.k = null; s.bx = null; }
   }
   makeSprites();
+  // window.__vlFill = 0 or 1 before load forces either way (for tests that compare the two)
+  OPT.fillStrokes = window.__vlFill != null ? !!window.__vlFill : isGecko();
+  // there a fresh 512 px tile still takes 15 to 35 ms the first time a zoom level is
+  // printed, a 256 px one 3 to 8: small tiles from the start, not after the first stall
+  if (OPT.fillStrokes && !T_FIXED) T = 256;
 
   /* ── Camera ────────────────────────────────────────────────────────── */
   let cssW = 0, cssH = 0;
@@ -82,15 +103,60 @@ function start() {
   let lvl = 1, lvl0 = 0.5, prevLvl = 0;
   const levelFor = s => Math.pow(2, Math.max(-4, Math.min(6, Math.ceil(Math.log2(s) * 2 - 0.25))) / 2);
   const tkey = (L, tx, ty) => `${L}|${tx}|${ty}|${eve ? 1 : 0}`;
+  /* 26 Sep 2026: on a Galaxy Z Fold 7 (Adreno) the village came up with bands of noise and
+     tiles shifted against their neighbours, every edge on a 512 px tile edge. Whatever the
+     GPU does to a canvas (it loses its context and hands it back empty, or a canvas kept
+     for the background comes back spoilt), a still tile is never printed again by itself.
+     So: every lost context (main canvas, tiles, inks) prints everything again; a page that
+     comes back from hiding, from the back button or onto another screen prints its tiles
+     again quietly while the old ones still show (a new print generation); a plate is never
+     reused while a live tile or a bitmap in the making points to it; and on a phone all
+     tiles together keep to a budget in bytes. The picture itself is not changed. */
+  let gen = 0;                              // tiles of an older generation show, but are printed again
+  let plateGen = 0;                         // a plate made before a lost context is never reused
+  // a finished tile is kept as an ImageBitmap only in Firefox: copying it to the plate there
+  // costs half what copying its canvas does (25 Sep 2026); elsewhere it gained nothing, and a
+  // canvas at least reports a lost context itself
+  const useBitmaps = isGecko() && !!window.createImageBitmap;
+  function free(c) {
+    c.removeEventListener('contextlost', gpuLost); c.removeEventListener('contextrestored', gpuLost);
+    c.pen = null; c.width = c.height = 0;   // gives its memory back now, not at the next collection
+  }
+  function pool(c) { if (c.width === T && c.gen === plateGen && spare.length < spareMax()) spare.push(c); else free(c); }
+  // a tile taken out of the map: its bitmap is closed, its plate goes back (unless a bitmap is
+  // still being made from it: then it goes back when that is done)
+  function drop(rec) {
+    const c = rec.c; rec.c = null;
+    if (!c) return;
+    if (c.close) c.close();
+    else if (!rec.busy) pool(c);
+  }
+  function dropAll() { for (const v of tiles.values()) drop(v); tiles.clear(); queue = []; }
   function renderTile(L, tx, ty) {
     const span = T / L, wx = tx * span, wy = ty * span;
-    const c = document.createElement('canvas'); c.width = c.height = T;
-    const g = c.getContext('2d', { alpha: false });
+    // a plate whose tile is already kept as a bitmap is printed over again (drawStatic
+    // covers it edge to edge with paper first); making a canvas, its context and a pen
+    // with twelve inks for every tile cost Firefox a stall now and then
+    let c = spare.pop();
+    while (c && (c.width !== T || c.gen !== plateGen)) { free(c); c = spare.pop(); }
+    if (!c) {
+      c = document.createElement('canvas'); c.width = c.height = T; c.gen = plateGen;
+      c.pen = new Pen(c.getContext('2d', { alpha: false }));
+      c.addEventListener('contextlost', gpuLost); c.addEventListener('contextrestored', gpuLost);
+    }
+    const p = c.pen, g = p.c;
+    // back to a fresh context's state: the print reads some of it (line caps, joins)
+    if (g.reset) g.reset();
+    else {
+      g.globalAlpha = 1; g.globalCompositeOperation = 'source-over'; g.lineWidth = 1; g.lineCap = 'butt'; g.lineJoin = 'miter';
+      g.miterLimit = 10; g.setLineDash([]); g.lineDashOffset = 0; g.font = '10px sans-serif'; g.textAlign = 'start'; g.textBaseline = 'alphabetic';
+    }
     g.setTransform(L, 0, 0, L, -wx * L, -wy * L);
-    const p = new Pen(g); p.scale(L);
+    p.scale(L);
     drawStatic(p, W, [wx, wy, wx + span, wy + span], eve);
     return c;
   }
+  const spare = [];
   function visibleTiles(L, rect) {
     const span = T / L, out = [];
     const r = rect || viewRect(0);
@@ -104,13 +170,17 @@ function start() {
     // while a zoom is under way the current tiles are only stretched; the
     // sharp ones for the new size are printed once the hand stops
     const zooming = performance.now() < zoomingUntil || (goal && Math.abs(Math.log(goal.z / cam.z)) > 0.01);
-    if (!zooming && levelFor(Z()) !== lvl) { prevLvl = lvl; lvl = levelFor(Z()); }
+    // a new level lays the whole picture again: its tiles may all be kept already, and then
+    // no print would ask for it (the old level stayed stretched after zooming out)
+    if (!zooming && levelFor(Z()) !== lvl) { prevLvl = lvl; lvl = levelFor(Z()); full = true; }
     const want = [];
     for (const [tx, ty] of visibleTiles(lvl0, viewRect(40))) want.push([lvl0, tx, ty, 0]);
     if (lvl !== lvl0 && !zooming) for (const [tx, ty] of visibleTiles(lvl, viewRect(60))) want.push([lvl, tx, ty, 1]);
     // when nothing else is waiting, print the low tiles of the whole map ahead
     if (!want.some(w => !tiles.has(tkey(w[0], w[1], w[2])))) for (const [tx, ty] of visibleTiles(lvl0, [BOUND.x0, BOUND.y0, BOUND.x1, BOUND.y1])) want.push([lvl0, tx, ty, 2]);
-    queue = want.filter(w => !tiles.has(tkey(w[0], w[1], w[2])));
+    // missing tiles first; kept ones of an older generation after them, printed over again
+    queue = [];
+    for (const w of want) { const r = tiles.get(tkey(w[0], w[1], w[2])); if (!r) queue.push(w); else if (r.g !== gen) queue.push([w[0], w[1], w[2], w[3] + 3]); }
     const span = T / lvl;
     queue.sort((a, b) => a[3] - b[3] || (Math.hypot((a[1] + 0.5) * span - cam.x, (a[2] + 0.5) * span - cam.y) - Math.hypot((b[1] + 0.5) * span - cam.x, (b[2] + 0.5) * span - cam.y)));
   }
@@ -120,22 +190,51 @@ function start() {
     let n = 0;
     while (queue.length && performance.now() - t0 < budget && !(n && budget < 8)) {
       const [L, tx, ty] = queue.shift();
-      const k = tkey(L, tx, ty);
-      if (tiles.has(k)) continue;
+      const k = tkey(L, tx, ty), old = tiles.get(k);
+      if (old && old.g === gen) continue;
       const tt = performance.now();
-      tiles.set(k, { c: renderTile(L, tx, ty), L, tx, ty, u: ++tick });
+      const rec = { c: renderTile(L, tx, ty), L, tx, ty, u: ++tick, g: gen, busy: false };
+      tiles.set(k, rec);
+      if (old) drop(old);                    // the old print showed until this very moment
+      if (useBitmaps) {
+        const plate = rec.c;
+        rec.busy = true;
+        createImageBitmap(plate).then(bm => {
+          rec.busy = false;
+          if (tiles.get(k) === rec && rec.c === plate) rec.c = bm; else bm.close();
+          if (rec.c !== plate) pool(plate);
+        }, () => { rec.busy = false; if (rec.c !== plate) pool(plate); });
+      }
       const dtt = performance.now() - tt; stats.tileN++; stats.tileMs += dtt; stats.tileMax = Math.max(stats.tileMax, dtt);
-      if (T === 512 && dtt > 24 && ++slowTileSeen >= 2) { smallTiles(); return n; }
+      // a print over an old one, or right after a lost context, says nothing about this device
+      if (T === 512 && !T_FIXED && dtt > 24 && !old && tt > calmUntil && ++slowTileSeen >= 2) { smallTiles(); return n; }
       n++;
     }
-    if (tiles.size > MAX_TILES) {
-      const old = [...tiles.entries()].filter(([, v]) => v.L !== lvl0 && v.L !== lvl && v.L !== prevLvl).sort((a, b) => a[1].u - b[1].u);
-      for (const [k] of old.slice(0, tiles.size - MAX_TILES)) tiles.delete(k);
-    }
+    trim();
     return n;
   }
+  /* Memory. A desktop keeps 72 MiB of tiles (72 of 512 px, 288 of 256), as before; a phone,
+     a touch screen or a weak device 48 MiB (40 on a weak one) and a smaller spare pool, a
+     third less than before and without a bitmap next to each plate. Levels no longer in use go
+     first, oldest first; only if the levels in use alone are over, the one zoomed away from and
+     the sharp tiles out of view follow. Never a tile on screen, so the picture never changes. */
+  const TB = () => T * T * 4;
+  const tileBudget = () => (weak ? 40 : mobile ? 48 : 72) * 1048576;
+  const spareMax = () => (weak || mobile ? 4 : 6);
+  function trim() {
+    const cap = Math.floor(tileBudget() / TB());
+    if (tiles.size <= cap) return;
+    const all = [...tiles.entries()].sort((a, b) => a[1].u - b[1].u);
+    let out = all.filter(([, v]) => v.L !== lvl0 && v.L !== lvl && v.L !== prevLvl);
+    if (tiles.size - out.length > cap) {
+      const seen = new Set(visibleTiles(lvl, viewRect(60)).map(([tx, ty]) => tkey(lvl, tx, ty)));
+      out = out.concat(all.filter(([k, v]) => v.L !== lvl0 && ((v.L === prevLvl && v.L !== lvl) || (v.L === lvl && !seen.has(k)))));
+    }
+    for (const [k, v] of out.slice(0, tiles.size - cap)) { tiles.delete(k); drop(v); }
+  }
   // this browser prints a big tile too slowly: from now on the island is printed in small ones
-  function smallTiles() { T = 256; MAX_TILES = weak ? 160 : 288; tiles.clear(); queue = []; stats.tileSize = T; full = true; }
+  // (the queue is refilled at once: nothing else would ask for the tiles until the next touch)
+  function smallTiles() { T = 256; dropAll(); stats.tileSize = T; full = true; need(); }
   function drawLevel(L, r, strict) {
     const z = Z(), ox = OX(), oy = OY(), span = T / L;
     let missing = false;
@@ -162,7 +261,7 @@ function start() {
   }
 
   /* ── Sprites ───────────────────────────────────────────────────────── */
-  const pen = new Pen(ctx);
+  let pen = new Pen(ctx);                   // made again after a lost context
   const boxOf = (s, t) => (typeof s.box === 'function' ? s.box(t) : s.box);
   let quant = 2;                              // key steps per device pixel
   function keyOf(s, t, z) { const st = s.st(t); let k = ''; for (const v of st) k += Math.round(v * z * quant) + ','; return k; }
@@ -182,7 +281,7 @@ function start() {
   let lastInput = performance.now();
   let tFrozen = 12.3;                       // reduced motion: one moment, kept
   const clock = now => (reduce ? tFrozen : now / 1000);
-  const stats = { frames: 0, fulls: 0, partial: 0, rects: 0, tiles: 0, work: 0, tileN: 0, tileMs: 0, tileMax: 0, hz: 0 };
+  const stats = { frames: 0, fulls: 0, partial: 0, rects: 0, tiles: 0, work: 0, tileN: 0, tileMs: 0, tileMax: 0, hz: 0, tileSize: T, fillStrokes: OPT.fillStrokes };
   window.__village = stats;
   // a house that has just opened plays its little scene on the hand loop
   const acting = now => !!ACT.k && !reduce && clock(now) - ACT.t0 < 2.8;
@@ -228,8 +327,31 @@ function start() {
     return rects.length;
   }
 
+  /* A lost GPU context: the browser hands every 2D canvas back empty (on a desktop the
+     village went black for good, on a Fold it showed noise and shifted tiles). Any canvas
+     of ours that reports it, lost or restored, and the next frame throws every tile, plate
+     and ink away and prints them all again; the main canvas is laid again whole. */
+  let lostN = 0, doneN = 0;
+  function gpuLost() { lostN++; full = true; if (!raf && !timer) wake(true); }
+  OPT.lost = gpuLost;
+  cv.addEventListener('contextlost', gpuLost);
+  cv.addEventListener('contextrestored', gpuLost);
+  function recover() {
+    doneN = lostN;
+    plateGen++; gen++;
+    dropAll();
+    while (spare.length) free(spare.pop());
+    inksLost(); pen = new Pen(ctx);
+    calmUntil = performance.now() + 3000;
+    stats.recovered = (stats.recovered || 0) + 1;
+    full = true; need();
+  }
+  // print every tile again, quietly: the old ones show until the new ones replace them
+  function reprint() { gen++; full = true; }
+  let settleDue = true;
   function frame(now) {
     raf = 0;
+    if (lostN !== doneN) recover();
     const dt = Math.min(64, lastFrame ? now - lastFrame : 16);
     lastFrame = now;
     const w0 = performance.now();
@@ -252,10 +374,17 @@ function start() {
     const slowTiles = stats.tileN > 2 && stats.tileMs / stats.tileN > 6;
     // right after the view settles, one tile a frame, so the hand never feels a stall
     if (moving || dragging || now < zoomingUntil) settledAt = now;
-    if (queue.length && !((moving || dragging) && slowTiles && queue[0][3] !== 0)) { if (work(moving || dragging || now - settledAt < 600 ? 6 : 10)) full = true; }
+    // a tile printed over again waits until the view has been still for a moment
+    const again = queue.length && queue[0][3] >= 3 && (moving || dragging || now - settledAt < 600);
+    if (queue.length && !again && !((moving || dragging) && slowTiles && queue[0][3] !== 0)) { if (work(moving || dragging || now - settledAt < 600 ? 6 : 10)) full = true; }
     const t = clock(now);
+    const wasFull = full;
     if (full) { renderFull(t); full = false; if (!moving && !dragging || layer.contains(document.activeElement)) placeButtons(); else placeFloat(); }
     else if (!reduce) renderDirty(t);
+    // once the view is still and every tile printed, the picture is laid once more from the
+    // tiles (a copy, cheap): nothing the pieces left behind can stay on the plate
+    if (moving || dragging || goal || vel || queue.length || now < zoomingUntil) settleDue = true;
+    else if (settleDue) { settleDue = false; if (!wasFull) full = true; }
     if (!shown && !queue.some(q => q[3] === 0)) { shown = true; stage.classList.add('vl-ready'); }
     if (wasMoving && !moving && !dragging) placeButtons();
     wasMoving = moving || dragging;
@@ -267,22 +396,41 @@ function start() {
     schedule(moving);
   }
   const slow = [];
+  // the screen's own frame, from two animation frames in a row (median of the last few)
+  const ivs = [];
+  let vsync = 1000 / 60, lastRaf = 0, lifeN = 0, every = 2;
+  function seen(now) {
+    if (lastRaf) {
+      const d = now - lastRaf;
+      if (d > 3 && d < 60) { ivs.push(d); if (ivs.length > 15) ivs.shift(); const s = ivs.slice().sort((a, b) => a - b); vsync = s[s.length >> 1]; }
+    }
+    lastRaf = now;
+  }
+  const onRaf = now => { raf = 0; seen(now); frame(now); };
+  function lifeTick(now) {
+    raf = 0; seen(now);
+    // a touch, a camera on its way or tiles to print go to the hand loop at once
+    if (full || dragging || goal || vel || queue.length || ++lifeN >= every) { lifeN = 0; frame(now); return; }
+    raf = requestAnimationFrame(lifeTick);
+  }
   function schedule(moving) {
     if (raf || timer) return;
-    if (!inView || document.hidden) return;
+    if (!inView || document.hidden) { lastRaf = 0; return; }
     const now = performance.now();
     // the hand loop: at the screen's rate, only while the view moves
-    if (moving || queue.length || dragging || full || now < zoomingUntil + 60 || acting(now)) { quant = 2; stats.hz = 60; raf = requestAnimationFrame(frame); return; }
-    if (reduce) return;
-    // the life loop: breathing and ripples read the same at 24 frames a second
-    // as at 60 and cost a third; after ten quiet seconds 12, after forty it rests
+    if (moving || queue.length || dragging || full || now < zoomingUntil + 60 || acting(now)) { quant = 2; stats.hz = Math.round(1000 / vsync); raf = requestAnimationFrame(onRaf); return; }
+    if (reduce) { lastRaf = 0; return; }
+    // the life loop: breathing, blinking and the walkers on every n-th frame of the
+    // screen, n picked so they move at 30 frames a second or a little more, evenly
+    // spaced (25 Sep 2026: a timer at 24, later 12 a second met a 60 or 75 Hz screen
+    // unevenly and the animals visibly stuttered); after forty quiet seconds it rests
     const quiet = now - lastInput;
-    if (quiet > REST_MS) { sleep(); return; }
-    const calm = quiet > CALM_MS;
-    const hz = weak ? (calm ? 8 : 12) : (calm ? 12 : 24);
-    quant = weak || calm ? 0.5 : 1;
-    stats.hz = hz;
-    timer = setTimeout(() => { timer = 0; raf = requestAnimationFrame(frame); }, 1000 / hz - 3);
+    if (quiet > REST_MS) { lastRaf = 0; sleep(); return; }
+    every = Math.max(1, Math.floor(1000 / vsync / 30 + 0.05));
+    quant = weak ? 1 : 2;
+    stats.hz = Math.round(1000 / vsync / every);
+    lifeN = 0;
+    raf = requestAnimationFrame(lifeTick);
   }
   /* after forty quiet seconds the village holds still, like the print it is,
      in a calm moment (no hare in mid air); it costs nothing until a touch */
@@ -307,11 +455,19 @@ function start() {
   }
 
   /* ── Size ──────────────────────────────────────────────────────────── */
+  // a new size or pixel density lays the whole picture again; another screen (a phone
+  // folded or unfolded, a window moved to another monitor) prints its tiles again as well
+  let scr = '';
   function resize() {
     const r = stage.getBoundingClientRect();
     const w = Math.round(r.width), h = Math.round(r.height);
-    if (w === cssW && h === cssH) return;
+    const d = Math.min(window.devicePixelRatio || 1, weak ? 1.5 : 2);
+    const sc = screen.width + 'x' + screen.height;
+    if (w === cssW && h === cssH && d === DPR) return;
     const first = !cssW;
+    if (d !== DPR) { DPR = d; dropAll(); prevLvl = 0; }
+    else if (!first && sc !== scr) reprint();
+    scr = sc;
     cssW = w; cssH = h;
     cv.width = Math.round(w * DPR); cv.height = Math.round(h * DPR);
     cv.style.width = w + 'px'; cv.style.height = h + 'px';
@@ -324,6 +480,7 @@ function start() {
     wake(true);
   }
   new ResizeObserver(resize).observe(stage);
+  window.addEventListener('resize', () => { if (cssW) resize(); });
 
   /* ── Place buttons: real, focusable, over each open house ──────────── */
   const layer = $('#vl-places');
@@ -342,7 +499,7 @@ function start() {
   function hitCenter(pl) { return [pl.x + pl.hit[0], pl.y + pl.hit[1]]; }
   function placeFloat() { if (openPl) placeCard(); if (hoverPl) placeTip(hoverPl); placeLabels(false); }
   function setDpr(d) {
-    DPR = d; tiles.clear(); queue = [];
+    DPR = d; dropAll();
     cv.width = Math.round(cssW * DPR); cv.height = Math.round(cssH * DPR);
     lvl0 = levelFor(Math.min(1, Math.max(0.35, fitZ() * DPR))); prevLvl = 0; full = true;
   }
@@ -634,9 +791,20 @@ function start() {
   }
 
   /* ── Stop when unseen ──────────────────────────────────────────────── */
-  const halt = () => { if (raf) cancelAnimationFrame(raf); if (timer) clearTimeout(timer); raf = timer = 0; };
+  const halt = () => { if (raf) cancelAnimationFrame(raf); if (timer) clearTimeout(timer); raf = timer = 0; lastRaf = 0; };
   new IntersectionObserver(es => { inView = es[0].isIntersecting; if (inView) wake(false); else halt(); }).observe(stage);
-  document.addEventListener('visibilitychange', () => { if (document.hidden) halt(); else { lastFrame = 0; wake(false); } });
+  /* Back on screen: the picture is laid again whole. A page that was hidden a while (a
+     phone keeps a hidden page's canvases off the GPU and may hand them back spoilt), or
+     that comes back from the back button, prints its tiles again, quietly. */
+  let hiddenAt = 0;
+  function back(again) { lastFrame = 0; if (again) reprint(); wake(true); }
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) { hiddenAt = performance.now(); halt(); }
+    else { back(hiddenAt > 0 && performance.now() - hiddenAt > 1000); hiddenAt = 0; }
+  });
+  window.addEventListener('pageshow', e => { if (e.persisted) back(true); });
+  document.addEventListener('resume', () => back(true));
+  window.addEventListener('focus', () => { if (cssW && !document.hidden) back(false); });
   mqReduce.addEventListener && mqReduce.addEventListener('change', e => { reduce = e.matches; wake(true); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && openPl) close(true); });
 
