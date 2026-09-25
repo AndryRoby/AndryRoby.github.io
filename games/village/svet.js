@@ -1,7 +1,7 @@
 /* Puzzle Village: the island, its water, paths and trees.
    Built once from fixed numbers, so the village is the same for everyone. */
-import { iso, RX, RY, tree, bush, flowers, stone, signpost } from './iso.js?v=2';
-import { hash, DUSK } from './riso.js?v=2';
+import { iso, RX, RY, tree, bush, flowers, stone, signpost } from './iso.js?v=3';
+import { hash, DUSK, OPT } from './riso.js?v=3';
 
 export const C0 = [14.5, 14.5];
 export const DEPTH = 74;
@@ -319,17 +319,17 @@ export function drawStatic(p, W, rect, eve = false) {
     cc.lineCap = 'round'; cc.lineJoin = 'round';
     cc.lineWidth = 66; cc.beginPath(); curve(cc, riv, 0, 0); cc.stroke();
     for (const q of POOLS) { const [x, y] = iso(q.i, q.j); cc.beginPath(); cc.ellipse(x, y, q.r * RX + 8, q.r * RY + 4, 0, 0, 6.2832); cc.fill(); }
-  }, [['paper', 1], ['sun', 0.5], ['orange', 0.12]]);
+  }, [['paper', 1], ['sun', 0.5], ['orange', 0.12]], 'bank');
   unionPaint(p, (cc) => {
     cc.lineCap = 'round'; cc.lineJoin = 'round';
     cc.lineWidth = 50; cc.beginPath(); curve(cc, riv, 0, 0); cc.stroke();
     for (const q of POOLS) { const [x, y] = iso(q.i, q.j); cc.beginPath(); cc.ellipse(x, y, q.r * RX, q.r * RY, 0, 0, 6.2832); cc.fill(); }
-  }, [['paper', 1], ['blue', 0.6], ['teal', 0.14]]);
+  }, [['paper', 1], ['blue', 0.6], ['teal', 0.14]], 'water');
   unionPaint(p, (cc) => {
     cc.lineCap = 'round'; cc.lineJoin = 'round';
     cc.lineWidth = 22; cc.beginPath(); curve(cc, riv, 0, 0); cc.stroke();
     for (const q of POOLS) { const [x, y] = iso(q.i, q.j); cc.beginPath(); cc.ellipse(x, y, q.r * RX - 20, q.r * RY - 10, 0, 0, 6.2832); cc.fill(); }
-  }, [['blue', 0.22]]);
+  }, [['blue', 0.22]], 'deep');
   }
   c.restore();
 
@@ -338,7 +338,7 @@ export function drawStatic(p, W, rect, eve = false) {
     unionPaint(p, (cc) => {
       cc.lineCap = 'round'; cc.lineJoin = 'round'; cc.lineWidth = w;
       for (const P of W.paths) { cc.beginPath(); curve(cc, P, 0, 0); cc.stroke(); }
-    }, [[ink, a]]);
+    }, [[ink, a]], 'path' + w);
   }
   c.restore();
 
@@ -376,19 +376,28 @@ function dusk(p, W, rect) {
 /* Paint a union of overlapping shapes in one ink pass, so a riso ink never
    prints twice over itself: the shapes go to a mask, the mask is inked once. */
 let MASK = null;
-function unionPaint(p, shape, inks) {
+const UNIONS = new Map();                  // key|scale -> the union, flattened once per zoom level
+function unionPaint(p, shape, inks, key) {
   const c = p.c;
   if (p.fs) {
     // where a mask is slow (see riso.js, strokes as fills), the union is one nonzero shape
-    // inked directly: every piece winds the same way, so no pixel gets the ink twice
-    const at = p.union(shape);
+    // inked directly: every piece winds the same way, so no pixel gets the ink twice.
+    // The shapes never change, so each level of zoom builds them once for all its tiles.
+    const k = key + '|' + p.s;
+    let at = UNIONS.get(k);
+    if (!at) { at = p.union(shape); UNIONS.set(k, at); }
     for (const [ink, a] of inks) { p.ink(ink, a); c.fill(at(p.ox, p.oy)); }
     p.ink(inks[inks.length - 1][0], 1);
     return;
   }
   const t = c.getTransform();
   const w = c.canvas.width, h = c.canvas.height;
-  if (!MASK) MASK = document.createElement('canvas');
+  if (!MASK) {
+    MASK = document.createElement('canvas');
+    // a mask emptied by a lost GPU context mid print spoils that tile: the engine prints again
+    const f = () => { if (OPT.lost) OPT.lost(); };
+    MASK.addEventListener('contextlost', f); MASK.addEventListener('contextrestored', f);
+  }
   if (MASK.width !== w || MASK.height !== h) { MASK.width = w; MASK.height = h; }
   const m = MASK.getContext('2d');
   for (const [ink, a] of inks) {
@@ -415,6 +424,10 @@ function unionPaint(p, shape, inks) {
   }
 }
 
+/* letters in the current ink; where a pattern-filled text is slow (riso.js) they go
+   through the pen's scratch plate, with the same pixels */
+function say(p, str, x, y) { if (p.fs) p.textAside(str, x, y); else p.c.fillText(str, x, y); }
+
 function boxHit(r, b) { return !(b[2] < r[0] || b[0] > r[2] || b[3] < r[1] || b[1] > r[3]); }
 
 function marks(p, rect, W) {
@@ -435,21 +448,21 @@ function marks(p, rect, W) {
       const c = p.ink(ink, a);
       c.font = '700 54px "ARLing Sans", system-ui, sans-serif';
       c.textAlign = 'left'; c.textBaseline = 'alphabetic';
-      c.fillText('Puzzle Village', tx + dx, ty + dy);
+      say(p, 'Puzzle Village', tx + dx, ty + dy);
     }
     const c = p.ink('night', 0.72);
     c.font = '600 13px "ARLing Sans", system-ui, sans-serif';
-    c.fillText('A NEW PUZZLE IN EVERY OPEN HOUSE, EVERY DAY', tx + 2, ty + 28);
+    say(p, 'A NEW PUZZLE IN EVERY OPEN HOUSE, EVERY DAY', tx + 2, ty + 28);
   }
   const by = F.y1 - 52;
   if (boxHit(rect, [F.x0, by - 30, F.x1, by + 30])) {
     const c = p.ink('night', 0.75);
     c.font = '600 15px "ARLing Sans", system-ui, sans-serif';
     c.textAlign = 'left'; c.textBaseline = 'alphabetic';
-    c.fillText('ARLing Puzzle Village', F.x0 + 60, by);
+    say(p, 'ARLing Puzzle Village', F.x0 + 60, by);
     p.ink('night', 0.5);
     c.font = '500 12px "ARLing Sans", system-ui, sans-serif';
-    c.fillText('Free daily puzzles, nine inks, all drawn in code. arling.sk/games', F.x0 + 60, by + 18);
+    say(p, 'Free daily puzzles, nine inks, all drawn in code. arling.sk/games', F.x0 + 60, by + 18);
     const inks = ['blue', 'pink', 'orange', 'sun', 'green', 'teal', 'plum', 'night'];
     inks.forEach((k, n) => { p.ink(k, 0.9); c.fillRect(F.x1 - 60 - (inks.length - n) * 18, by - 4, 14, 14); });
   }

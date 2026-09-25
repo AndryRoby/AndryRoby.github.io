@@ -102,6 +102,17 @@ function paperTile() {
 export const DUSK = [['plum', 0.3], ['blue', 0.3]];
 
 let TILES = null;
+/* When the GPU loses its context (its process restarts: a phone folding or unfolding,
+   coming back from the background, memory pressure, a driver fault) the browser gives
+   every 2D canvas back empty, the 128 px ink tiles too, and a pattern made from an
+   emptied tile prints black or garbage. inksLost() forgets them, so the next Pen prints
+   them again; OPT.lost is the engine's call when a canvas of this module lost its pixels. */
+export function inksLost() { TILES = null; SCR = null; }
+function watch(cv) {
+  const f = () => { if (OPT.lost) OPT.lost(); };
+  cv.addEventListener('contextlost', f); cv.addEventListener('contextrestored', f);
+  return cv;
+}
 function tiles() {
   if (TILES) return TILES;
   TILES = {};
@@ -119,66 +130,99 @@ function tiles() {
   TILES.dots = inkTile(INK.blue, 99, true);
   TILES.nightdots = inkTile(INK.night, 98, true);
   TILES.pinkdots = inkTile(INK.pink, 97, true);
+  for (const k in TILES) watch(TILES[k]);
   return TILES;
 }
 
 export function rgbStr(rgb, a = 1) { return `rgba(${rgb[0]},${rgb[1]},${rgb[2]},${a})`; }
 
 /* Strokes as fills. 25 Sep 2026: Firefox inks a stroke with a pattern about a hundred
-   times slower than a fill (60 µs a line; a fill, or a line in a plain colour, well under
-   one), because such a stroke leaves its fast GPU path. Where the village's start-up probe
-   finds that, every line is printed as the very shape the stroke would cover: a band
-   along each segment, a disc at each round join and cap, and the union goes to the
-   plate in one nonzero fill. The same area, the same grain, one fast fill. */
+   times slower than a fill (60 µs a line), and one such stroke moves the whole plate off
+   the GPU for good (see village.js). There (OPT.fillStrokes) every line is printed as the
+   very shape the stroke would cover: its outline, both edges with round (or mitred)
+   corners and caps, curves flattened to 0.08 device px, dashes cut as the canvas cuts
+   them, all in one nonzero fill. The same area, the same grain, one fast fill.
+   Checked against the distance-to-line definition on 449 000 random points: no miss. */
 export const OPT = { fillStrokes: false };
+let SCR = null;                            // the scratch plate for letters (Pen.textAside)
 const TAU_ = 6.283185307179586;
 const TOL = 0.08;                          // how far a flattened curve may stray, in device px
 
+/* A piece is one closed contour as a flat list of ops: 0 x y = move, 1 x y = line,
+   2 cx cy r a0 a1 ccw = arc, 3 = close. Every piece winds the positive way (the way
+   arc(0, 2π) runs), so a nonzero fill of all of them is exactly their union. */
 function polyPiece(out, q) {
-  // every piece winds the same way, so a nonzero fill is their union
   let a = 0; const n = q.length;
   for (let i = 0; i < n; i += 2) { const j = (i + 2) % n; a += q[i] * q[j + 1] - q[j] * q[i + 1]; }
-  if (a < 0) { const r = []; for (let i = n - 2; i >= 0; i -= 2) r.push(q[i], q[i + 1]); q = r; }
-  out.push(q);
+  const r = [];
+  if (a >= 0) for (let i = 0; i < n; i += 2) r.push(i ? 1 : 0, q[i], q[i + 1]);
+  else for (let i = n - 2, f = 1; i >= 0; i -= 2, f = 0) r.push(f ? 0 : 1, q[i], q[i + 1]);
+  r.push(3); out.push(r);
 }
-function outlineLine(out, P, closed, h, cap, join, miter, tol) {
-  const n = P.length;
-  const segs = closed ? n : n - 1;
-  for (let i = 0; i < segs; i++) {
-    const a = P[i], b = P[(i + 1) % n];
-    const dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy);
-    const nx = -dy / L * h, ny = dx / L * h;
-    let ax = a[0], ay = a[1], bx = b[0], by = b[1];
-    if (!closed && cap === 'square') {
-      if (i === 0) { ax -= dx / L * h; ay -= dy / L * h; }
-      if (i === segs - 1) { bx += dx / L * h; by += dy / L * h; }
-    }
-    polyPiece(out, [ax + nx, ay + ny, bx + nx, by + ny, bx - nx, by - ny, ax - nx, ay - ny]);
-  }
+function diskPiece(out, x, y, h) { out.push([0, x + h, y, 2, x, y, h, 0, TAU_, 0, 3]); }
+
+/* One side of a stroked polyline, walked forward: the edge at the right-hand normal
+   (dy, -dx) of every segment, joined at every corner. On the outer side of a turn the
+   join is the round (or mitred, or bevelled) corner; on the inner side the edge goes
+   through the corner point itself, the way Skia's own stroker does it, so the overlap
+   there keeps the same winding. Emits from the first segment's start to the last one's end. */
+function side(ops, P, closed, h, join, miter, start) {
+  const n = P.length, segs = closed ? n : n - 1;
+  const d = [];
+  for (let i = 0; i < segs; i++) { const a = P[i], b = P[(i + 1) % n]; const L = Math.hypot(b[0] - a[0], b[1] - a[1]); d.push([(b[0] - a[0]) / L, (b[1] - a[1]) / L]); }
+  const nx = i => d[i][1] * h, ny = i => -d[i][0] * h;
+  const pt = (op, x, y) => ops.push(op, x, y);
+  if (!closed) pt(start ? 0 : 1, P[0][0] + nx(0), P[0][1] + ny(0));
+  let first = closed;
   for (let i = closed ? 0 : 1; i < (closed ? n : n - 1); i++) {
-    const v = P[i], a = P[(i - 1 + n) % n], b = P[(i + 1) % n];
-    let d1x = v[0] - a[0], d1y = v[1] - a[1], d2x = b[0] - v[0], d2y = b[1] - v[1];
-    const l1 = Math.hypot(d1x, d1y), l2 = Math.hypot(d2x, d2y);
-    d1x /= l1; d1y /= l1; d2x /= l2; d2y /= l2;
-    const cr = d1x * d2y - d1y * d2x, dt = d1x * d2x + d1y * d2y;
-    if (Math.abs(cr) < 1e-12 && dt > 0) continue;
-    const s = cr > 0 ? -h : h;             // towards the outer side of the turn
-    const n1x = -d1y * s, n1y = d1x * s, n2x = -d2y * s, n2y = d2x * s;
-    const half = Math.atan2(Math.abs(cr), dt) / 2;
-    if (join === 'round') {
-      // a wedge where the arc it stands for is within the tolerance, else the disc
-      if (h * (1 - Math.cos(half)) < tol) polyPiece(out, [v[0], v[1], v[0] + n1x, v[1] + n1y, v[0] + n2x, v[1] + n2y]);
-      else out.push([v[0], v[1], h]);
-    } else {
-      polyPiece(out, [v[0], v[1], v[0] + n1x, v[1] + n1y, v[0] + n2x, v[1] + n2y]);
-      const c = Math.cos(half);
-      if (join === 'miter' && c > 1e-9 && 1 / c <= miter) {
-        const mx = n1x + n2x, my = n1y + n2y, ml = Math.hypot(mx, my);
-        if (ml > 1e-12) polyPiece(out, [v[0] + n1x, v[1] + n1y, v[0] + mx / ml * h / c, v[1] + my / ml * h / c, v[0] + n2x, v[1] + n2y, v[0], v[1]]);
-      }
+    const v = P[i], i1 = (i - 1 + segs) % segs, i2 = i % segs;
+    const cr = d[i1][0] * d[i2][1] - d[i1][1] * d[i2][0], dt = d[i1][0] * d[i2][0] + d[i1][1] * d[i2][1];
+    const ax = v[0] + nx(i1), ay = v[1] + ny(i1), bx = v[0] + nx(i2), by = v[1] + ny(i2);
+    pt(first ? 0 : 1, ax, ay); first = false;
+    if (Math.abs(cr) < 1e-12 && dt > 0) continue;        // straight on
+    if (cr < 0 || (Math.abs(cr) < 1e-12 && dt < 0 && join !== 'round')) {
+      // inner side of the turn (or a full reversal with a flat join): through the corner
+      pt(1, v[0], v[1]); pt(1, bx, by); continue;
     }
+    if (join === 'round') {
+      const a0 = Math.atan2(ny(i1), nx(i1));
+      // the outer arc spans the turn; a full reversal goes round the front of the line
+      const sw = Math.abs(cr) < 1e-12 ? Math.PI : Math.atan2(cr, dt);
+      ops.push(2, v[0], v[1], h, a0, a0 + sw, 0);
+    } else if (join === 'miter') {
+      const c = Math.cos(Math.atan2(Math.abs(cr), dt) / 2);
+      if (c > 1e-9 && 1 / c <= miter) { const mx = nx(i1) + nx(i2), my = ny(i1) + ny(i2), ml = Math.hypot(mx, my); pt(1, v[0] + mx / ml * h / c, v[1] + my / ml * h / c); }
+    }
+    pt(1, bx, by);
   }
-  if (!closed && cap === 'round') { out.push([P[0][0], P[0][1], h]); out.push([P[n - 1][0], P[n - 1][1], h]); }
+  if (!closed) { const e = P[n - 1], k = segs - 1; pt(1, e[0] + nx(k), e[1] + ny(k)); }
+  return d;
+}
+function capAt(ops, e, dx, dy, h, cap) {
+  // from the right-hand edge of a line ending at e (heading dx, dy) round its end to the other edge
+  if (cap === 'round') { const a0 = Math.atan2(-dx * h, dy * h); ops.push(2, e[0], e[1], h, a0, a0 + Math.PI, 0); }
+  else if (cap === 'square') { ops.push(1, e[0] + dy * h + dx * h, e[1] - dx * h + dy * h, 1, e[0] - dy * h + dx * h, e[1] + dx * h + dy * h); }
+}
+function outlineLine(out, P, closed, h, cap, join, miter) {
+  if (closed) {
+    // a ring: the outer edge one way round, the inner edge the other way, so the hole
+    // stays empty; the line is first turned so its outer edge winds the positive way
+    let a = 0; const n = P.length;
+    for (let i = 0; i < n; i++) { const p = P[i], q = P[(i + 1) % n]; a += p[0] * q[1] - q[0] * p[1]; }
+    const F = a >= 0 ? P : P.slice().reverse();
+    const o1 = []; side(o1, F, true, h, join, miter, true); o1.push(3); out.push(o1);
+    const o2 = []; side(o2, F.slice().reverse(), true, h, join, miter, true); o2.push(3); out.push(o2);
+    return;
+  }
+  const ops = [];
+  const d = side(ops, P, false, h, join, miter, true);
+  const n = P.length, dl = d[d.length - 1];
+  capAt(ops, P[n - 1], dl[0], dl[1], h, cap);
+  const R = P.slice().reverse();
+  side(ops, R, false, h, join, miter, false);
+  capAt(ops, P[0], -d[0][0], -d[0][1], h, cap);
+  ops.push(3);
+  out.push(ops);
 }
 /* split a polyline into its dashes, the pattern starting again on every subpath */
 function dashes(P, closed, D, off) {
@@ -215,7 +259,7 @@ function outlineStroke(out, subs, w, cap, join, miter, dash, dashOff, tol) {
     if (sp.closed && P.length > 1) { const f = P[0], l = P[P.length - 1]; if (Math.abs(f[0] - l[0]) <= 1e-9 && Math.abs(f[1] - l[1]) <= 1e-9) P.pop(); }
     if (P.length < 2) {
       // a line of no length still shows its round caps, as a dot
-      if (P.length === 1 && sp.pts.length > 1 && !sp.closed && cap === 'round' && !D) out.push([P[0][0], P[0][1], h]);
+      if (P.length === 1 && sp.pts.length > 1 && !sp.closed && cap === 'round' && !D) diskPiece(out, P[0][0], P[0][1], h);
       continue;
     }
     const closed = sp.closed && P.length > 2;
@@ -231,10 +275,13 @@ function outlineStroke(out, subs, w, cap, join, miter, dash, dashOff, tol) {
 }
 function emitPieces(d, pieces, ox = 0, oy = 0) {
   for (const q of pieces) {
-    if (q.length === 3) { d.moveTo(q[0] + ox + q[2], q[1] + oy); d.arc(q[0] + ox, q[1] + oy, q[2], 0, TAU_); d.closePath(); continue; }
-    d.moveTo(q[0] + ox, q[1] + oy);
-    for (let i = 2; i < q.length; i += 2) d.lineTo(q[i] + ox, q[i + 1] + oy);
-    d.closePath();
+    for (let i = 0; i < q.length;) {
+      const op = q[i];
+      if (op === 0) { d.moveTo(q[i + 1] + ox, q[i + 2] + oy); i += 3; }
+      else if (op === 1) { d.lineTo(q[i + 1] + ox, q[i + 2] + oy); i += 3; }
+      else if (op === 2) { d.arc(q[i + 1] + ox, q[i + 2] + oy, q[i + 3], q[i + 4], q[i + 5], !!q[i + 6]); i += 7; }
+      else { d.closePath(); i += 1; }
+    }
   }
 }
 /* A stand-in for the canvas while a path is built: it keeps the path as flattened
@@ -381,7 +428,43 @@ export class Pen {
     const c = this.ink(name, a);
     c.font = `${weight} ${size}px "ARLing Sans", system-ui, sans-serif`;
     c.textAlign = 'center'; c.textBaseline = 'middle';
+    if (OPT.fillStrokes) { this.textAside(str, x + this.ox, y + this.oy); return; }
     c.fillText(str, x + this.ox, y + this.oy);
+  }
+  /* Firefox (25 Sep 2026): a single text filled with a pattern moves the whole plate off
+     the GPU for good (every later copy of a tile then costs 7 ms instead of 0.1). So the
+     letters are inked on a small opaque scratch plate, in the same place to the device
+     pixel (opaque like the real plate, so they keep the same antialiasing), and laid on:
+     an ink printed with multiply over white is exactly the factor it multiplies the plate
+     by; paper (printed over) is a factor, 1 - alpha, and an added part, alpha x paper. */
+  textAside(str, x, y) {
+    const c = this.c, m = c.measureText(str), T = c.getTransform();
+    const xs = [x - m.actualBoundingBoxLeft, x + m.actualBoundingBoxRight], ys = [y - m.actualBoundingBoxAscent, y + m.actualBoundingBoxDescent];
+    let X0 = Infinity, Y0 = Infinity, X1 = -Infinity, Y1 = -Infinity;
+    for (const u of xs) for (const v of ys) {
+      const px = T.a * u + T.c * v + T.e, py = T.b * u + T.d * v + T.f;
+      X0 = Math.min(X0, px); X1 = Math.max(X1, px); Y0 = Math.min(Y0, py); Y1 = Math.max(Y1, py);
+    }
+    X0 = Math.floor(X0) - 3; Y0 = Math.floor(Y0) - 3; X1 = Math.ceil(X1) + 3; Y1 = Math.ceil(Y1) + 3;
+    const w = X1 - X0, h = Y1 - Y0;
+    if (!(w > 0 && h > 0) || w > 4096 || h > 4096) return;
+    if (!SCR) SCR = watch(document.createElement('canvas'));
+    if (SCR.width < w || SCR.height < h) { SCR.width = Math.max(SCR.width, w); SCR.height = Math.max(SCR.height, h); }
+    const g = SCR.getContext('2d', { alpha: false });
+    const a = c.globalAlpha, mult = c.globalCompositeOperation === 'multiply', ink = c.fillStyle;
+    const pass = (ground, style, op, onto) => {
+      g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
+      g.fillStyle = ground; g.fillRect(0, 0, w, h);
+      g.setTransform(T.a, T.b, T.c, T.d, T.e - X0, T.f - Y0);
+      g.font = c.font; g.textAlign = c.textAlign; g.textBaseline = c.textBaseline;
+      g.globalAlpha = a; g.globalCompositeOperation = op; g.fillStyle = style;
+      g.fillText(str, x, y);
+      c.save(); c.setTransform(1, 0, 0, 1, 0, 0); c.globalAlpha = 1; c.globalCompositeOperation = onto;
+      c.drawImage(SCR, 0, 0, w, h, X0, Y0, w, h);
+      c.restore();
+    };
+    if (mult) pass('#fff', ink, 'multiply', 'multiply');
+    else { pass('#fff', '#000', 'source-over', 'multiply'); pass('#000', ink, 'source-over', 'lighter'); }
   }
   reset() { const c = this.c; c.globalAlpha = 1; c.globalCompositeOperation = 'source-over'; }
   get fs() { return OPT.fillStrokes; }
@@ -404,7 +487,12 @@ export class Pen {
      maker that places the union at a register offset */
   union(shape) {
     const r = new Rec(this.c, this.s); shape(r);
-    const pieces = r.pieces;
-    return (ox, oy) => { const d = new Path2D(); emitPieces(d, pieces, ox, oy); return d; };
+    const pieces = r.pieces, made = new Map();
+    return (ox, oy) => {
+      const k = ox + ',' + oy;
+      let d = made.get(k);
+      if (!d) { d = new Path2D(); emitPieces(d, pieces, ox, oy); made.set(k, d); }
+      return d;
+    };
   }
 }

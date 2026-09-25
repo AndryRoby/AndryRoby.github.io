@@ -6,13 +6,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://homelab.tailbf8f27.ts.net; connect-src 'self' https://homelab.tailbf8f27.ts.net; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
 <meta name="color-scheme" content="dark">
-<meta name="robots" content="index, follow">
-<link rel="manifest" href="/games/hedgehogs/manifest.json">
+<meta name="robots" content="noindex, follow">
+<link rel="manifest" href="/games/cranes/manifest.json">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Hedgehogs">
+<meta name="apple-mobile-web-app-title" content="Cranes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
-<meta property="og:image" content="https://arling.sk/games/hedgehogs/og.png">
+<meta property="og:image" content="https://arling.sk/games/cranes/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
@@ -21,14 +21,13 @@
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon.ico" sizes="48x48">
 <link rel="apple-touch-icon" href="/icon-180.png">
-<title>Hedgehogs for Saturday 27 June 2026 · ARLing</title>
-<meta name="description" content="The Hedgehogs garden for Saturday 27 June 2026: hard, ten by ten. Two hedgehogs in every row, column and flowerbed, none touching. Free, with hints and Check, in your browser.">
-<link rel="canonical" href="https://arling.sk/games/hedgehogs/2026-06-27/">
-<link rel="prev" href="https://arling.sk/games/hedgehogs/archive/">
-<link rel="next" href="https://arling.sk/games/hedgehogs/2026-06-28/">
-<meta property="og:title" content="Hedgehogs for Saturday 27 June 2026 · ARLing">
-<meta property="og:description" content="The Hedgehogs garden for Saturday 27 June 2026: hard, ten by ten. Two hedgehogs in every row, column and flowerbed, none touching. Free, with hints and Check, in your browser.">
-<meta property="og:url" content="https://arling.sk/games/hedgehogs/2026-06-27/">
+<title>Cranes for Monday 27 September 2027 · ARLing</title>
+<meta name="description" content="The Cranes water for Monday 27 September 2027: easy, seven by seven. Join the sandbanks with straight walkways so every number matches, at most two between the same pair, no crossings, all in one piece. Free, with hints and Check, in your browser.">
+<link rel="canonical" href="https://arling.sk/games/cranes/2027-09-27/">
+<link rel="prev" href="https://arling.sk/games/cranes/2027-09-26/">
+<meta property="og:title" content="Cranes for Monday 27 September 2027 · ARLing">
+<meta property="og:description" content="The Cranes water for Monday 27 September 2027: easy, seven by seven. Join the sandbanks with straight walkways so every number matches, at most two between the same pair, no crossings, all in one piece. Free, with hints and Check, in your browser.">
+<meta property="og:url" content="https://arling.sk/games/cranes/2027-09-27/">
 <meta property="og:type" content="website">
 
 
@@ -39,93 +38,107 @@
 <link rel="stylesheet" href="/style/obsah.css">
 <link rel="stylesheet" href="/style/hra.css">
 <script src="/style/prepinac.js?v=668e98c9" defer></script>
-<script type="module" src="/games/hedgehogs/game.js?v=9"></script>
+<script type="module" src="/games/cranes/game.js?v=5"></script>
 <style>
-  /* Only this page: the board, its cells, the control row and the rules block. */
+  /* Only this page: the water, the control row and the rules block. */
   .hero{align-items:start}
-  .hra{max-width:calc(var(--n,9) * 56px);margin:0 auto}
-  /* Phones and folds: the garden sits in the middle and uses the whole width (cells up to 64 px). */
-  @media (max-width:860px){ .hra{margin:0 auto;max-width:min(100%,calc(var(--n,9) * 64px))} }
-  /* Narrow phones: the garden takes the whole screen width (cells at least 40 px on 390 px screens). */
-  @media (max-width:480px){ .doska-obal{margin:0 calc(-1 * var(--pad, 22px))} .doska{border-radius:0;border-left:0;border-right:0} }
+  .hra{max-width:calc(var(--n,9) * 42px + 60px);margin:0 auto}
+  /* Phones and folds: the water sits in the middle and uses the whole width. */
+  @media (max-width:860px){ .hra{margin:0 auto;max-width:min(100%,calc(var(--n,9) * 46px + 60px))} }
+  /* Narrow phones: the board takes the whole screen width, exactly, so the
+     page never scrolls sideways (the wrap gutter is a percentage, so a fixed
+     negative margin would overshoot it by a pixel). */
+  @media (max-width:480px){ .doska-obal{margin-inline:calc((100% - 100vw) / 2)} }
 
   .horna{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:0 0 10px;
          font-family:var(--ui);font-size:14px;color:var(--muted)}
 
-  .horna #cas-blok{white-space:nowrap}
+  .horna #cas-blok,.horna #datum{white-space:nowrap}
   @media (max-width:480px){ .horna .uroven{display:block;margin:2px 0 0} }
 
-  .doska-obal{position:relative}
+  .doska-obal{position:relative;touch-action:pan-y}
   .pauza-blok{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
      background:rgba(10,9,8,.9);border:2px solid var(--line);border-radius:8px;text-align:center;font-family:var(--ui);padding:20px;z-index:2}
 
-  .doska.pauza .b{visibility:hidden}
-  .doska{display:grid;grid-template-columns:repeat(var(--n,8),minmax(0,1fr));
-         border:2px solid var(--ink);border-radius:8px;overflow:hidden;
-         background:var(--card-plna);touch-action:none;user-select:none;-webkit-user-select:none;
-         --tenka:rgba(255,255,255,.11);--hruba:var(--ink);
-         --hviezda:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpolygon points='3.4,14.0 1.2,12.3 3.9,11.4 2.3,9.0 5.2,9.1 4.6,6.3 7.2,7.4 7.6,4.6 9.7,6.5 11.0,4.0 12.3,6.5 14.4,4.6 14.8,7.4 17.4,6.3 16.8,9.1 19.7,9.0 18.1,11.4 20.8,12.3 18.6,14.0 20.8,13.4 23.2,15.2 21.6,17.6 19.4,19.5 3.2,19.5 1.4,17.4'/%3E%3Ccircle cx='18.6' cy='15.9' r='1.15' fill='%230a0908'/%3E%3Ccircle cx='22.6' cy='15.6' r='0.9'/%3E%3C/svg%3E")}
-  .riadok{display:contents}
+  /* ── The water ──────────────────────────────────────────────────────────
+     One SVG, drawn by game.js: the faint grid of places a sandbank could
+     stand, one group per pair of sandbanks that stand in line (the walkways,
+     the note that says they are never joined, and a ring for a hint or a
+     mistake), and on top of that the sandbanks themselves with their numbers.
+     Which pair a tap means is worked out from the distance to the line, not
+     from the shapes, so a tap always lands on the nearest stretch of water
+     even where two pairs cross. */
+  .doska{display:block;width:100%;height:auto;background:var(--card-plna);border:2px solid var(--ink);border-radius:8px;
+         touch-action:none;user-select:none;-webkit-user-select:none;outline:none;cursor:pointer}
+  /* An SVG is not an HTML element, so the browser's own rule for [hidden]
+     does not reach it: a future day hides the water with this one. */
+  .doska[hidden]{display:none}
+  /* After the rule above, so that it wins: on a narrow phone the water runs
+     from edge to edge and has no side border to cut it off. */
+  @media (max-width:480px){ .doska{border-radius:0;border-left:0;border-right:0} }
 
-  .b{appearance:none;-webkit-appearance:none;border:0;margin:0;padding:0;background:transparent;
-     aspect-ratio:1;width:100%;display:block;position:relative;cursor:pointer;color:var(--ink);
-     box-shadow:inset 1px 0 0 var(--tenka),inset 0 1px 0 var(--tenka);border-radius:0}
-  .b.c0{box-shadow:inset 0 1px 0 var(--tenka)}
-  .b.r0{box-shadow:inset 1px 0 0 var(--tenka)}
-  .b.r0.c0{box-shadow:none}
-  .b.bl{box-shadow:inset 2px 0 0 var(--hruba),inset 0 1px 0 var(--tenka)}
-  .b.bt{box-shadow:inset 1px 0 0 var(--tenka),inset 0 2px 0 var(--hruba)}
-  .b.bl.bt{box-shadow:inset 2px 0 0 var(--hruba),inset 0 2px 0 var(--hruba)}
-  .b.bl.r0{box-shadow:inset 2px 0 0 var(--hruba)}
-  .b.bt.c0{box-shadow:inset 0 2px 0 var(--hruba)}
-  /* Each region gets its own faint tint so the eye reads the shapes at a
-     glance; the borders still carry the exact boundary. */
-  .b[data-reg="0"]{background:rgba(242,100,60,.10)}
-  .b[data-reg="1"]{background:rgba(94,207,154,.10)}
-  .b[data-reg="2"]{background:rgba(96,165,250,.11)}
-  .b[data-reg="3"]{background:rgba(250,204,21,.09)}
-  .b[data-reg="4"]{background:rgba(192,132,252,.11)}
-  .b[data-reg="5"]{background:rgba(244,114,182,.10)}
-  .b[data-reg="6"]{background:rgba(45,212,191,.10)}
-  .b[data-reg="7"]{background:rgba(251,146,60,.10)}
-  .b[data-reg="8"]{background:rgba(163,230,53,.09)}
-  .b[data-reg="9"]{background:rgba(129,140,248,.11)}
-  .b:hover{filter:brightness(1.25)}
-  .b:focus-visible{outline:2px solid var(--accent);outline-offset:-3px;z-index:1}
-  .b::after{content:"";position:absolute;inset:0;margin:auto;width:0;height:0}
-  .b[data-v="1"]::after{width:14%;height:14%;border-radius:50%;background:var(--muted);opacity:.75}
-  .b[data-v="2"]::after{width:62%;height:62%;background:var(--accent);filter:drop-shadow(0 0 6px rgba(242,100,60,.45));
-     -webkit-mask:var(--hviezda) center/contain no-repeat;mask:var(--hviezda) center/contain no-repeat}
-  .b.tip-jednotka{outline:2px dashed rgba(250,204,21,.75);outline-offset:-3px;z-index:1}
-  .b.tip{background:rgba(250,204,21,.26) !important;z-index:1}
-  .b.tip::before{content:"";position:absolute;inset:16%;border-radius:50%;border:2px solid #facc15;animation:tip-pulz .9s ease-in-out infinite alternate}
-  @keyframes tip-pulz{from{transform:scale(.85);opacity:.5}to{transform:scale(1);opacity:1}}
-  .b.chyba{background:rgba(255,92,92,.30) !important}
-  .b.chyba::before{content:"";position:absolute;inset:0;border:2px solid #ff7b7b}
-  .b.zle{background:rgba(255,92,92,.14)}
-  .b.zle[data-v="2"]::after{background:#ff7b7b}
-  .hotovo .b[data-v="2"]::after{background:var(--ok)}
-  .hotovo .b{cursor:default}
-  .ovladanie{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:14px}
-  .ovladanie .btn{height:40px;padding:0 16px;font-size:14px}
+  .doska.hotovo,.doska.pauza{cursor:default}
+  .doska.pauza .plocha{visibility:hidden}
+  .mriezka circle{fill:rgba(255,255,255,.10)}
+  .h line{display:none;stroke:var(--accent);stroke-width:4.5;stroke-linecap:round}
+  .h[data-v="1"] .l0{display:inline}
+  .h[data-v="2"] .l1,.h[data-v="2"] .l2{display:inline}
+  /* The faint line under the pointer: what one tap would lay down. */
+  .h.pod[data-v="0"] .nahlad{display:inline;stroke:var(--accent);opacity:.22}
+  /* The player's own note that no walkway will ever run here. It is never
+     checked and never required, so it disappears the moment a walkway
+     is laid on that pair. */
+  .h .krizik{display:none;stroke:var(--muted);stroke-width:2.5;stroke-linecap:round;opacity:.85}
+  .h[data-x="1"][data-v="0"] .krizik{display:inline}
+  .h .znak{display:none;fill:none;stroke-width:2.5;transform-box:fill-box;transform-origin:center}
+  .h.tip .znak{display:inline;stroke:#facc15;animation:tip-pulz .9s ease-in-out infinite alternate}
+  /* A mistake is a shape and an icon, not only a colour: a ring across the
+     stretch of water, and the walkway itself drawn broken. */
+  .h.chyba .znak{display:inline;stroke:#ff7b7b}
+  .h.chyba line{stroke:#ff7b7b;stroke-dasharray:7 5}
+  .hotovo .h line{stroke:var(--ok)}
+  .ostrov .kruh{fill:var(--card-plna);stroke:var(--muted);stroke-width:2}
+  .ostrov .kruh:focus-visible{outline:none;stroke:var(--accent);stroke-width:3}
+  .ostrov .cislo{fill:var(--ink);font-family:var(--ui);font-weight:600;font-size:19px;text-anchor:middle;dominant-baseline:central;pointer-events:none}
+  /* A sandbank whose number is used up goes quiet. It says nothing about
+     whether the walkways are the RIGHT ones: only Check judges that. */
+  /* Only the outline goes quiet, never the fill: the walkways run UNDER the
+     sandbanks, so a see-through circle would let them cross the number. */
+  .ostrov.splnene .kruh{stroke:var(--muted);stroke-opacity:.5}
+  .ostrov.splnene .cislo{fill:var(--muted);opacity:.6}
+  .ostrov .prstenec{display:none;fill:none;stroke-width:2.5}
+  .ostrov.tip .prstenec{display:inline;stroke:#facc15;animation:tip-pulz .9s ease-in-out infinite alternate}
+  .ostrov.chyba .prstenec{display:inline;stroke:#ff7b7b;stroke-dasharray:5 4}
+  .ostrov.chyba .kruh{stroke:#ff7b7b}
+  .hotovo .ostrov .kruh{stroke:var(--ok);stroke-opacity:1}
+  .hotovo .ostrov .cislo{fill:var(--ok);opacity:1}
+  .hotovo .ostrov.splnene .cislo{fill:var(--ok);opacity:1}
+  .kurzor{fill:none;stroke:var(--accent);stroke-width:2.5;opacity:0}
+  .doska:focus-within .kurzor{opacity:1}
+  @keyframes tip-pulz{from{transform:scale(.86);opacity:.5}to{transform:scale(1.04);opacity:1}}
+  @media (prefers-reduced-motion:reduce){ .h.tip .znak,.ostrov.tip .prstenec{animation:none} }
+  .skryte{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
+  .ovladanie{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:14px}
+  .ovladanie .btn{height:40px;padding:0 13px;font-size:14px}
+  /* paper.css sets .btn{display:inline-flex}, and an author rule always beats
+     the browser's own [hidden]{display:none}: Share would show before the day
+     is finished. The same fix as .pauza-blok[hidden] and .doska[hidden]. */
+  .ovladanie .btn[hidden]{display:none}
+  /* Five buttons, one more than Magpies has, need 357 px of the 347 a 390 px
+     phone leaves: a little less air around the words keeps them in one row. */
+  @media (max-width:480px){ .ovladanie{gap:6px} .ovladanie .btn{padding:0 10px} }
 
   .stav.ok b{color:var(--ok);display:block;font:700 clamp(22px,3.2vw,30px)/1.15 var(--display);letter-spacing:-.01em;margin:0 0 6px}
-
-  /* Share, only after the garden is finished (ops/spec-hry-ux.md, part 8).
-     The textarea is the way out when the browser refuses the clipboard. */
-  .zdielanie{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px;
-             font-family:var(--ui);font-size:13px;line-height:1.45;color:var(--muted)}
-  .zdielanie[hidden]{display:none}
-  .zdielanie .btn{height:38px;padding:0 14px;font-size:13.5px;flex:none}
-  .zdielanie span{flex:1;min-width:180px}
-  .zdielanie textarea{width:100%;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--body);
-                      font:12px/1.5 var(--ui);padding:8px 10px;resize:vertical}
 
   .den{flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;padding:6px 0 5px;border:1px solid var(--line);border-radius:10px;
        text-decoration:none;color:var(--muted);font-family:var(--ui);min-width:0;background:var(--card)}
 
-  /* Na telefóne ide mriežka pod text; návod na klávesnicu tam nemá zmysel
-     a len odsúva hru nižšie. Celý je aj v sekcii Pravidlá. */
+  /* Two marks for a finished water: with help, and clean, which gets a second
+     ring so it is a shape, not only a shade. */
+  .den.hotove.ciste{box-shadow:inset 0 0 0 2px rgba(94,207,154,.5)}
+
+  /* On the phone the water goes under the text; the keyboard note there would
+     just push the game further down. It is in the Rules section too. */
   @media (max-width:860px){ .navod{display:none} }
 
   .jazyk{font:500 13px/1 var(--ui);color:var(--muted);background:transparent;border:1px solid var(--line);border-radius:999px;padding:6px 12px;cursor:pointer;margin-top:14px}
@@ -137,7 +150,7 @@
   .rule { transform:scaleX(1) !important; }
 </style></noscript>
 </head>
-<body class="noc obsah hra" data-den="2026-06-27">
+<body class="noc obsah hra" data-den="2027-09-27">
 <a class="skip site-skip" href="#arling-obsah" data-site-label="skip">Skip to content</a>
 <header class="site-header">
   <div class="wrap bar">
@@ -157,42 +170,41 @@
 <main id="arling-obsah" tabindex="-1">
   <div class="wrap hero" id="hero">
     <div>
-      <h1 id="h1"><span class="l">Hedgehogs.</span></h1>
-      <p class="lead r d3">Two hedgehogs in every row, every column and every flowerbed. No two hedgehogs may touch, not even at a corner: they prickle.</p>
-      <p class="uv-actions"><a class="btn btn-solid" href="#doska">Play today's garden</a><a class="uv-quiet" href="/games/hedgehogs/guide/">How to play</a></p>
-      <p class="proof r d5" id="dnes">The garden for Saturday 27 June 2026: hard, ten by ten. Exactly one solution.</p>
-      <p class="navod r d5">Tap a cell: dot, then hedgehog, then empty. Hold and drag to sweep dots. Keyboard: arrows move, <kbd>Space</kbd> cycles, <kbd>X</kbd> dot, <kbd>H</kbd> hedgehog, <kbd>Delete</kbd> clears, <kbd>P</kbd> pauses. Nothing lights up while you play; Check judges only when you ask.</p>
+      <h1 id="h1"><span class="l">Cranes.</span></h1>
+      <p class="lead r d3">Cranes rest on sandbanks. Join the sandbanks with straight walkways so that every sandbank has as many walkways as its number, at most two between the same pair, no crossings, and every sandbank can be reached from every other.</p>
+      <p class="uv-actions"><a class="btn btn-solid" href="#doska">Play today's sandbanks</a><a class="uv-quiet" href="/games/cranes/guide/">How to play</a></p>
+      <p class="proof r d5" id="dnes">This water opens on Monday 27 September 2027 at midnight, Bratislava time.</p>
+      <p class="navod r d5">Tap the water between two sandbanks: one walkway, then two, then none again. Drag from one sandbank to another to join them. Keyboard: arrows walk from sandbank to sandbank, <kbd>Ctrl</kbd> plus arrow lays a walkway, <kbd>Shift</kbd> plus arrow notes a pair as never joined, <kbd>U</kbd> undo, <kbd>R</kbd> redo, <kbd>P</kbd> pauses. Nothing lights up while you play; Check judges only when you ask.</p>
     </div>
     <div class="r d2">
       <div class="hra">
-        <div class="horna"><span><span id="datum">Saturday 27 June 2026</span><span class="uroven" id="uroven">Hard · 10×10</span></span><span id="cas-blok">Time <b id="cas">0:00</b><button type="button" class="pauza-btn" id="pauza" hidden>Pause</button></span></div>
+        <div class="horna"><span><span id="datum">Monday 27 September 2027</span><span class="uroven" id="uroven">Easy · 7×7</span></span><span id="cas-blok">Time <b id="cas">0:00</b><button type="button" class="pauza-btn" id="pauza" hidden>Pause</button></span></div>
         <div class="doska-obal">
-          <div class="doska" id="doska" role="grid" aria-label="Garden grid 10 by 10">
-            <div class="riadok" role="row"><button class="b r0 c0" data-i="0" data-reg="3"></button><button class="b r0 bl" data-i="1" data-reg="0"></button><button class="b r0" data-i="2" data-reg="0"></button><button class="b r0" data-i="3" data-reg="0"></button><button class="b r0 bl" data-i="4" data-reg="2"></button><button class="b r0" data-i="5" data-reg="2"></button><button class="b r0 bl" data-i="6" data-reg="1"></button><button class="b r0" data-i="7" data-reg="1"></button><button class="b r0" data-i="8" data-reg="1"></button><button class="b r0" data-i="9" data-reg="1"></button></div><div class="riadok" role="row"><button class="b c0" data-i="10" data-reg="3"></button><button class="b bl" data-i="11" data-reg="0"></button><button class="b bt bl" data-i="12" data-reg="2"></button><button class="b bt" data-i="13" data-reg="2"></button><button class="b" data-i="14" data-reg="2"></button><button class="b" data-i="15" data-reg="2"></button><button class="b bt" data-i="16" data-reg="2"></button><button class="b bt" data-i="17" data-reg="2"></button><button class="b bt bl" data-i="18" data-reg="4"></button><button class="b bl" data-i="19" data-reg="1"></button></div><div class="riadok" role="row"><button class="b c0" data-i="20" data-reg="3"></button><button class="b bt" data-i="21" data-reg="3"></button><button class="b bt bl" data-i="22" data-reg="6"></button><button class="b bt" data-i="23" data-reg="6"></button><button class="b bl" data-i="24" data-reg="2"></button><button class="b" data-i="25" data-reg="2"></button><button class="b bt bl" data-i="26" data-reg="6"></button><button class="b bl" data-i="27" data-reg="2"></button><button class="b bl" data-i="28" data-reg="4"></button><button class="b bt" data-i="29" data-reg="4"></button></div><div class="riadok" role="row"><button class="b c0 bt" data-i="30" data-reg="5"></button><button class="b bl" data-i="31" data-reg="3"></button><button class="b bl" data-i="32" data-reg="6"></button><button class="b" data-i="33" data-reg="6"></button><button class="b bt" data-i="34" data-reg="6"></button><button class="b bt" data-i="35" data-reg="6"></button><button class="b" data-i="36" data-reg="6"></button><button class="b bl" data-i="37" data-reg="2"></button><button class="b bl" data-i="38" data-reg="4"></button><button class="b" data-i="39" data-reg="4"></button></div><div class="riadok" role="row"><button class="b c0" data-i="40" data-reg="5"></button><button class="b bl" data-i="41" data-reg="3"></button><button class="b bt" data-i="42" data-reg="3"></button><button class="b bt" data-i="43" data-reg="3"></button><button class="b bl" data-i="44" data-reg="6"></button><button class="b" data-i="45" data-reg="6"></button><button class="b bt bl" data-i="46" data-reg="7"></button><button class="b bt" data-i="47" data-reg="7"></button><button class="b bl" data-i="48" data-reg="4"></button><button class="b" data-i="49" data-reg="4"></button></div><div class="riadok" role="row"><button class="b c0" data-i="50" data-reg="5"></button><button class="b bt bl" data-i="51" data-reg="8"></button><button class="b bt" data-i="52" data-reg="8"></button><button class="b bl" data-i="53" data-reg="3"></button><button class="b bl" data-i="54" data-reg="6"></button><button class="b" data-i="55" data-reg="6"></button><button class="b bt" data-i="56" data-reg="6"></button><button class="b bl" data-i="57" data-reg="7"></button><button class="b bl" data-i="58" data-reg="4"></button><button class="b" data-i="59" data-reg="4"></button></div><div class="riadok" role="row"><button class="b c0" data-i="60" data-reg="5"></button><button class="b bt" data-i="61" data-reg="5"></button><button class="b bl" data-i="62" data-reg="8"></button><button class="b bt" data-i="63" data-reg="8"></button><button class="b bl" data-i="64" data-reg="6"></button><button class="b" data-i="65" data-reg="6"></button><button class="b" data-i="66" data-reg="6"></button><button class="b bl" data-i="67" data-reg="7"></button><button class="b bl" data-i="68" data-reg="4"></button><button class="b bt bl" data-i="69" data-reg="7"></button></div><div class="riadok" role="row"><button class="b c0" data-i="70" data-reg="5"></button><button class="b" data-i="71" data-reg="5"></button><button class="b bl" data-i="72" data-reg="8"></button><button class="b" data-i="73" data-reg="8"></button><button class="b bt" data-i="74" data-reg="8"></button><button class="b bt" data-i="75" data-reg="8"></button><button class="b bt bl" data-i="76" data-reg="9"></button><button class="b bl" data-i="77" data-reg="7"></button><button class="b bt" data-i="78" data-reg="7"></button><button class="b" data-i="79" data-reg="7"></button></div><div class="riadok" role="row"><button class="b c0" data-i="80" data-reg="5"></button><button class="b" data-i="81" data-reg="5"></button><button class="b bl" data-i="82" data-reg="8"></button><button class="b" data-i="83" data-reg="8"></button><button class="b" data-i="84" data-reg="8"></button><button class="b bt bl" data-i="85" data-reg="9"></button><button class="b" data-i="86" data-reg="9"></button><button class="b bl" data-i="87" data-reg="7"></button><button class="b" data-i="88" data-reg="7"></button><button class="b" data-i="89" data-reg="7"></button></div><div class="riadok" role="row"><button class="b c0" data-i="90" data-reg="5"></button><button class="b" data-i="91" data-reg="5"></button><button class="b bl" data-i="92" data-reg="8"></button><button class="b bt bl" data-i="93" data-reg="9"></button><button class="b bt" data-i="94" data-reg="9"></button><button class="b" data-i="95" data-reg="9"></button><button class="b" data-i="96" data-reg="9"></button><button class="b bt" data-i="97" data-reg="9"></button><button class="b bt" data-i="98" data-reg="9"></button><button class="b bl" data-i="99" data-reg="7"></button></div><noscript><p>This game needs JavaScript to play; the garden above is today's layout.</p></noscript>
-          </div>
+          <svg class="doska" id="doska" viewBox="0 0 280 280" role="grid" aria-label="Water grid 7 by 7" aria-describedby="cisla-text"></svg>
+          <noscript><p>This game needs JavaScript: the puzzle is generated right in your browser.</p></noscript>
           <div class="pauza-blok" id="pauza-blok" hidden><p><b>Paused.</b> <span id="pauza-cas"></span></p><button type="button" class="btn btn-solid" id="pokracuj">Resume</button></div>
         </div>
+        <p class="skryte" id="cisla-text"></p>
         <div class="ovladanie">
           <button type="button" class="btn btn-line" id="spat">Undo</button>
+          <button type="button" class="btn btn-line" id="znova">Redo</button>
           <button type="button" class="btn btn-line" id="reset">Clear</button>
           <button type="button" class="btn btn-line" id="hint">Hint</button>
           <button type="button" class="btn btn-line" id="check">Check</button>
+          <button type="button" class="btn btn-line" id="zdielaj" hidden>Share</button>
           <span class="small" id="seria"></span>
+          <span class="small" id="zdielane" aria-live="polite"></span>
         </div>
         <p class="stav" id="stav" aria-live="polite"></p>
-        <div class="zdielanie" id="zdielanie" hidden>
-          <button type="button" class="btn btn-line" id="zdielaj">Share</button>
-          <span id="zdielanie-stav" aria-live="polite">Copies a short text: the garden, your time, the help you used. No cells, so it spoils nothing.</span>
-          <textarea id="zdielanie-text" rows="6" readonly hidden aria-label="The text to copy"></textarea>
-        </div>
         <nav class="pasik" id="pasik" aria-label="This week"></nav>
-        <p class="odkazy"><a href="/games/hedgehogs/guide/">How to play</a> · <a href="/games/hedgehogs/practice/">Practice sets</a> · <a href="/games/hedgehogs/archive/">Archive</a></p>
+        <p class="odkazy"><a href="/games/cranes/guide/">How to play</a> · <a href="/games/cranes/practice/">Practice sets</a> · <a href="/games/cranes/archive/">Archive</a></p>
         <p class="historia" id="historia" hidden></p>
         <details class="nastavenia">
           <summary>Settings</summary>
           <label><input type="checkbox" data-nastavenie="casovac"> Show the timer and the Pause button</label>
-          <label><input type="checkbox" data-nastavenie="pauzaPriOdchode"> Pause the clock when you leave the tab</label>
-          <label><input type="checkbox" data-nastavenie="autoBodky"> Auto dots: a hedgehog dots its neighbours and completed rows, columns and flowerbeds (off by default: placing the dots is part of the puzzle)</label>
+          <label><input type="checkbox" data-nastavenie="pauzaPriOdchode"> Pause the clock when you leave the tab or sit still for a minute</label>
+          <label><input type="checkbox" data-nastavenie="autoZnacky"> Auto notes: when a sandbank has all its walkways, or a pair is blocked by a crossing, note the pairs that are left as never joined (off by default: the notes are your own)</label>
+          <label><input type="checkbox" data-nastavenie="zivaKontrola"> Live check: mark a walkway that does not belong as soon as it appears (off by default: finding a mistake is part of the puzzle)</label>
           <label><input type="checkbox" data-nastavenie="potvrditReset"> Ask before Clear</label>
           <label><input type="checkbox" data-nastavenie="oslava"> Celebration: confetti and a bigger result when you finish</label>
           <p class="fineprint">Settings, progress, history and streak stay in this browser. Add this page to your home screen to open it like an app.</p>
@@ -210,33 +222,36 @@
         <details open>
           <summary>How to play</summary>
           <div class="telo">
-            <p>Place exactly two hedgehogs in every row, every column and every flowerbed (the outlined regions). A garden with nine rows has nine columns and nine flowerbeds, so eighteen hedgehogs in total; the size changes through the week, from eight by eight on Monday to ten by ten from Friday.</p>
-            <p>No two hedgehogs may touch: not side by side, not diagonally. They prickle.</p>
-            <p>A dot is your own note that a cell stays empty. When you place the last hedgehog, the game checks the solution by itself.</p>
+            <p>Cranes rest on sandbanks. Join the sandbanks with straight walkways so that every sandbank has as many walkways as its number, at most two between the same pair, no crossings, and every sandbank can be reached from every other.</p>
+            <p>A walkway runs straight across the water, up and down or left and right, and only between two sandbanks that stand in line with nothing in between. Two walkways may run side by side between the same pair, and that counts as two for both of their numbers.</p>
+            <p>The number on a sandbank is the whole truth about it: when it says four, exactly four walkways leave it, no more and no fewer. When the last number is right and the sandbanks hang together in one piece, the water is finished and the game notices by itself.</p>
           </div>
         </details>
         <details>
           <summary>Controls</summary>
           <div class="telo">
-            <p>Tap or click a cell: once for a dot, twice for a hedgehog, three times to clear it. Hold the button or your finger and drag to sweep dots over many cells at once. Nothing lights up while you play: finding a mistake is part of the puzzle.</p>
-            <p><b>Check</b> first tells you only how many marks are wrong. Press it again and it shows which. <b>Hint</b> outlines the next step a patient friend would point at and explains it; press it again to fill it in. Hints are counted and shown when you finish. <b>Clear</b> empties the garden; the clock keeps running.</p>
-            <p>Keyboard: arrows move, <kbd>Space</kbd> or <kbd>Enter</kbd> cycles the cell, <kbd>X</kbd> dot, <kbd>H</kbd> hedgehog, <kbd>Delete</kbd> or <kbd>Backspace</kbd> clears, <kbd>P</kbd> pauses. Undo takes back the last move.</p>
-            <p>The clock runs from your first move to the last hedgehog and pauses when you leave the tab, which also hides the garden. Your progress, time, history and day streak stay in this browser, and in your <a href="/ucet/">account</a> when you are signed in, so you can continue on another device.</p>
+            <p>Tap or click the water between two sandbanks that stand in line: once lays one walkway, twice lays two, a third time takes them away. You can also drag from one sandbank straight to another. Shift and a tap, or the right button, notes a pair as never joined; that note is only for you and is never checked. Nothing lights up while you play: finding a mistake is part of the puzzle.</p>
+            <p><b>Check</b> first tells you only how many walkways are wrong and roughly where. Press it again and it shows which. <b>Hint</b> names the rule and the place, and the second press builds that one step for you. If something on the board is already wrong, the hint points there first. Hints and checks are free and counted, and shown when you finish. <b>Clear</b> empties the water; the clock keeps running and one Undo brings everything back.</p>
+            <p>Keyboard: arrows walk from sandbank to sandbank, <kbd>Ctrl</kbd> plus arrow lays a walkway that way and pressing again makes it two and then none, <kbd>Shift</kbd> plus arrow notes that pair as never joined, <kbd>Enter</kbd> or <kbd>Space</kbd> works on the direction you used last, <kbd>X</kbd> notes it, <kbd>Delete</kbd> clears it, <kbd>U</kbd> or <kbd>Ctrl</kbd>+<kbd>Z</kbd> undo, <kbd>R</kbd> or <kbd>Ctrl</kbd>+<kbd>R</kbd> redo, <kbd>P</kbd> pauses.</p>
+            <p>The clock runs from your first walkway to the last one and pauses when you leave the tab or sit still for a minute, which also hides the water. Your progress, time, history and day streak stay in this browser, and in your <a href="/ucet/">account</a> when you are signed in, so you can continue on another device.</p>
+            <p>A water finished with no hint and no check counts as clean and the week strip gives it a second ring. Only the water of the day builds the streak, and after five days in a row one missed day is forgiven, at most twice in a month. When you finish, <b>Share</b> copies one line with the date, your time and how much help you took. It never copies the water or your walkways, so nothing is spoiled for anyone.</p>
           </div>
         </details>
         <details>
           <summary>The week</summary>
           <div class="telo">
-            <p>Monday and Tuesday are easy (eight by eight), Wednesday and Thursday medium (nine by nine), Friday and Saturday hard (ten by ten) and Sunday is the challenge: the hardest of the candidate gardens for that date. The week strip under the garden takes you to the other days; the <a href="/games/hedgehogs/archive/">archive</a> goes back a year, and the <a href="/games/hedgehogs/practice/">practice sets</a> have eight gardens of each level with no date attached.</p>
-            <p>Difficulty is measured, not guessed: the program plays every candidate garden with the same hints you can ask for and counts how often it gets stuck. Easy days never get stuck, Sunday gets stuck most.</p>
+            <p>Monday and Tuesday are easy (a seven by seven water with ten to twelve sandbanks), Wednesday and Thursday medium (nine by nine, sixteen to twenty), Friday and Saturday hard (eleven by eleven, twenty four to twenty eight) and Sunday is the challenge: thirteen by thirteen with thirty two to thirty eight. The week strip under the water takes you to the other days; the <a href="/games/cranes/archive/">archive</a> goes back a year, and the <a href="/games/cranes/practice/">practice sets</a> have eight waters of each level with no date attached.</p>
+            <p>Difficulty is measured, not guessed. Every water is solved by a program that only knows named rules, in three layers: what a single number allows on its own, the patterns between two numbers, and the hard ones, where a count is tried out for one step and ruled out because it ends in a contradiction or cuts a group of sandbanks off from the rest. Easy and Medium never need that third layer; Sunday leans on it the most.</p>
+            <p>No water, not even a Monday, can be beaten by tapping every stretch once. At least three in ten of the pairs you can see are there to be left alone, and at least a quarter of the walkways that do belong are doubles, so the shape of the answer never matches the shape of what is in front of you. On Friday, Saturday and Sunday there is always a crossing to steer around as well.</p>
           </div>
         </details>
         <details>
           <summary>A few ways in</summary>
           <div class="telo">
-            <p>A flowerbed that fits inside one row or one column holds both hedgehogs of that row or column, so every other cell in that line is empty.</p>
-            <p>Two flowerbeds that together cover exactly two rows use up all four hedgehogs of those rows. Any cell of a third flowerbed inside those rows is empty.</p>
-            <p>A hedgehog empties all eight cells around it. When a flowerbed has only a few cells left, count how many hedgehogs still fit without touching.</p>
+            <p>Start at the edges and the corners. A sandbank in a corner reaches only two others, so a 4 there means two walkways to each, and a 3 means at least one to each.</p>
+            <p>A 1 with a single neighbour, or a 2 with a single neighbour, has nowhere else to go. So does any sandbank whose neighbours have exactly as much room left as its number still needs.</p>
+            <p>Two sandbanks with a 1 never join to each other, and two with a 2 never join twice: the pair would be finished and cut off from the rest of the water, and every sandbank has to be reachable from every other.</p>
+            <p>When a walkway crosses the line between two other sandbanks, that pair is closed for good. Note it and move on; those notes are what turn a crowded middle into a chain of forced steps.</p>
           </div>
         </details>
       </div>
@@ -244,12 +259,12 @@
   </section>
 
 </main>
-<script type="application/json" id="zadanie">{"d":"2026-06-27","n":10,"r":"DAAACCBBBBDACCCCCCEBDDGGCCGCEEFDGGGGGCEEFDDDGGHHEEFIIDGGGHEEFFIIGGGHEHFFIIIIJHHHFFIIIJJHHHFFIJJJJJJH","s":[3,6,11,19,24,27,31,39,45,47,50,53,65,68,70,72,86,88,92,94],"u":"hard","p":2008,"h":3}</script>
+<script type="application/json" id="zadanie">{"d":"2027-09-27","n":7,"i":"0,1,1;0,4,5;0,6,3;2,1,1;2,4,3;2,6,2;4,1,3;4,4,3;6,4,1;6,6,2","b":"0-1:1;1-2:2;1-4:2;2-5:1;3-6:1;4-7:1;5-9:1;6-7:2;8-9:1","u":"easy","l":"9,0,0","s":9}</script>
 
-<aside class="predaj" data-predaj="hedgehogs" aria-label="More from ARLing" style="border-top:1px solid var(--line)">
+<aside class="predaj" data-predaj="cranes" aria-label="More from ARLing" style="border-top:1px solid var(--line)">
   <div class="wrap" style="padding:20px 0 28px">
     <p class="small" style="margin:0 0 6px">Everything on this page is free. For a tablet you can write on, we also make books.</p>
-    <p class="small" style="margin:0;display:flex;flex-wrap:wrap;gap:4px 18px"><a href="/puzzle-post/" data-umami-event="games_to_puzzle_post" data-umami-event-game="hedgehogs">Puzzle Post: 100 hyperlinked puzzles a month for e-ink tablets, 3.90 &euro;</a><a href="/shop/" data-umami-event="games_to_shop" data-umami-event-game="hedgehogs">All puzzle books and titles</a></p>
+    <p class="small" style="margin:0;display:flex;flex-wrap:wrap;gap:4px 18px"><a href="/puzzle-post/" data-umami-event="games_to_puzzle_post" data-umami-event-game="cranes">Puzzle Post: 100 hyperlinked puzzles a month for e-ink tablets, 3.90 &euro;</a><a href="/shop/" data-umami-event="games_to_shop" data-umami-event-game="cranes">All puzzle books and titles</a></p>
   </div>
 </aside>
 
