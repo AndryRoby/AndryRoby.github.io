@@ -21,7 +21,7 @@
  *   pyta znova, takze odkazy su vzdy cerstve.
  *   Ked sluzba neodpovie (vypadok, 503 "downloads-off", siet), panel povie
  *   pokojne, ze odkazy sa nenacitali, da tlacidlo "Try again", cislo platby
- *   (session id) a adresu andrej@arling.sk. Ziadny nahradny odkaz neexistuje.
+ *   (session id) a adresu support@arling.sk. Ziadny nahradny odkaz neexistuje.
  *
  * Preco uz nie blok titul-data: do 24. 9. 2026 lezali platene subory verejne na
  * GitHub Pages v priecinku files/<16 znakov> a presna cesta stala v bloku
@@ -51,10 +51,10 @@ export const KLUC_TEST = 'titul:test';
 
 export const T = {
   overujem: 'Checking the payment',
-  inaSuma: 'The payment went through, but not for an amount we recognise. Write to andrej@arling.sk and we will sort it out by hand.',
-  nepotvrdene: 'We have not been able to confirm the payment yet. We keep trying; if you paid, the files unlock as soon as Stripe answers. If it takes longer than a few minutes, write to andrej@arling.sk with the order number from the Stripe e-mail.',
+  inaSuma: 'The payment went through, but not for an amount we recognise. Write to support@arling.sk and we will sort it out by hand.',
+  nepotvrdene: 'We have not been able to confirm the payment yet. We keep trying; if you paid, the files unlock as soon as Stripe answers. If it takes longer than a few minutes, write to support@arling.sk with the order number from the Stripe e-mail.',
   overZnova: 'Check again',
-  zapina: 'Buying this title here is still being switched on. It is on sale on Etsy today, or write to andrej@arling.sk and we will send you the files.',
+  zapina: 'Buying this title here is still being switched on. It is on sale on Etsy today, or write to support@arling.sk and we will send you the files.',
   testChyba: 'Test mode is on, but this title has no test link yet. Run ops/stripe/tituly.mjs --test --zapis, or open this page without ?test=1 to buy it for real.',
   testCudzi: 'This is a payment from Stripe test mode. It unlocks files only in the browser that started the test with ?test=1.',
   /* Text odznaku testu. V HTML je od 25. 9. 2026 len prazdny skryty prvok
@@ -87,14 +87,14 @@ export const PANEL = {
   mailPred: 'These links stay in this browser and were also sent to ',
   mailBez: 'the e-mail address you paid with',
   mailPo: '.',
-  mailNeisty: 'Download the files now: these buttons stay in this browser only, and each link works for 7 days. We cannot confirm here whether the e-mail with the links has gone out, so if nothing arrives within a few minutes, write to andrej@arling.sk with the order number below and we will send the files by hand.',
+  mailNeisty: 'Download the files now: these buttons stay in this browser only, and each link works for 7 days. We cannot confirm here whether the e-mail with the links has gone out, so if nothing arrives within a few minutes, write to support@arling.sk with the order number below and we will send the files by hand.',
   objednavka: 'Order ',
   test: 'Test mode: the payment was made in Stripe test mode, no money is taken; the files below are the real ones.',
   /* Licencna sluzba neodpovedala. Nic sa neslubuje okrem toho, co vieme splnit:
      skusit znova a napisat nam. Ziadny nahradny odkaz, ten by viedol na verejny subor. */
   cakame: 'Your payment is confirmed, but the download links did not load just now. Wait a minute and press Try again.',
-  cakamePomoc: 'If they still do not appear, write to andrej@arling.sk with the payment reference below and we will send you the files.',
-  cakamePomocBez: 'If they still do not appear, write to andrej@arling.sk from the e-mail address you paid with and we will send you the files.',
+  cakamePomoc: 'If they still do not appear, write to support@arling.sk with the payment reference below and we will send you the files.',
+  cakamePomocBez: 'If they still do not appear, write to support@arling.sk from the e-mail address you paid with and we will send you the files.',
   znova: 'Try again',
   referencia: 'Payment reference ',
 };

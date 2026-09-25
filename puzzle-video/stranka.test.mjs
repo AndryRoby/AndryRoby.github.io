@@ -19,8 +19,9 @@ test('každé id, ktoré app.mjs hľadá, na stránke je', () => {
 test('CSP: len vlastné skripty, spojenie len na náš worker, blob na náhľad videa', () => {
   const csp = (/http-equiv="Content-Security-Policy" content="([^"]+)"/.exec(html) || [])[1];
   assert.ok(csp);
-  assert.match(csp, /script-src 'self'(;|\s'sha256)/);
-  assert.match(csp, /connect-src 'self' https:\/\/arling-asistent\.arling\.workers\.dev;/);
+  // Okrem vlastných skriptov len naša Umami analytika na homelabe (vkladá ops/design/obal.mjs).
+  assert.match(csp, /script-src 'self'( https:\/\/homelab\.tailbf8f27\.ts\.net)?(;|\s'sha256)/);
+  assert.match(csp, /connect-src 'self' https:\/\/arling-asistent\.arling\.workers\.dev( https:\/\/homelab\.tailbf8f27\.ts\.net)?;/);
   assert.match(csp, /img-src [^;]*blob:/);
   assert.match(csp, /media-src [^;]*blob:/);
   assert.ok(!/unsafe-inline|unsafe-eval/.test(csp));

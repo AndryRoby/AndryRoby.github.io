@@ -690,7 +690,7 @@ function pripoj() {
       if (u.indexOf('https://') !== 0) {
         $('stav-platby').textContent = testRezim()
           ? 'Test mode is on, but this plan has no test link yet. Run ops/stripe/puzzle-studio.mjs --test --zapis.'
-          : 'The subscription is still being switched on. Write to andrej@arling.sk and we will sort it out by hand.';
+          : 'The subscription is still being switched on. Write to support@arling.sk and we will sort it out by hand.';
         $('stav-platby').scrollIntoView({ behavior: 'smooth', block: 'center' });
         return;
       }

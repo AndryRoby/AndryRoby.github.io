@@ -28,7 +28,7 @@ async function verify(){
   // or this link cannot bypass its exact-price verification.
   download.href=API+'/v1/publisher/download?session_id='+encodeURIComponent(sid);
   download.hidden=false;track('publisher_paid');
- }catch{status.textContent='We cannot confirm this download yet. Please check again. If you paid, keep your Stripe receipt and contact andrej@arling.sk for help.';retry.hidden=false;}
+ }catch{status.textContent='We cannot confirm this download yet. Please check again. If you paid, keep your Stripe receipt and contact support@arling.sk for help.';retry.hidden=false;}
  finally{checking=false;}
 }
 retry.addEventListener('click',verify);

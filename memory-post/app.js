@@ -31,10 +31,10 @@ const ODKOHO = 'memory:od';
 const T = {
   overujem: 'Checking the payment',
   zaplatene: '<b>Paid, thank you.</b> One thing left: tell us who the gift is for.',
-  nepotvrdene: 'We have not been able to confirm the payment yet. We keep trying; if you paid, this line changes as soon as Stripe answers. If it takes longer than a few minutes, write to andrej@arling.sk with the order number from the Stripe e-mail.',
+  nepotvrdene: 'We have not been able to confirm the payment yet. We keep trying; if you paid, this line changes as soon as Stripe answers. If it takes longer than a few minutes, write to support@arling.sk with the order number from the Stripe e-mail.',
   overZnova: 'Check again',
-  inaSuma: 'The payment went through, but not for an amount we recognise. Write to andrej@arling.sk and we will sort it out by hand.',
-  zapina: 'This plan is still being switched on. Write to andrej@arling.sk and we will set the gift up for you by hand.',
+  inaSuma: 'The payment went through, but not for an amount we recognise. Write to support@arling.sk and we will sort it out by hand.',
+  zapina: 'This plan is still being switched on. Write to support@arling.sk and we will set the gift up for you by hand.',
   testChyba: 'Test mode is on, but this plan has no test link yet. Run ops/stripe/memory-post.mjs --test --zapis, or open this page without ?test=1.',
   testCudzi: 'This is a payment from Stripe test mode. No money was taken and no gift was set up.',
   testPoznamka: '(Test mode: no money was taken.)',
@@ -42,12 +42,12 @@ const T = {
   /* Musi byt jednoznacne, kedy otazka pride. Povodne „on its way“ znelo ako „teraz“
      a kupujuci cakal e-mail, ktory mal prist az vo zvoleny den (nahlasene 18. 9. 2026). */
   hotovo: 'Saved. Nothing arrives yet: the first question goes to {email} on {datum}, and then one every week. Print the card below and put it in an envelope.',
-  hotovoNezaplatene: 'Saved. We have not seen the payment from Stripe yet, so nothing is sent until it lands. If it does not within an hour, write to andrej@arling.sk with the order number.',
+  hotovoNezaplatene: 'Saved. We have not seen the payment from Stripe yet, so nothing is sent until it lands. If it does not within an hour, write to support@arling.sk with the order number.',
   chybaMeno: 'Please write their first name; it goes on the cover of the book.',
   chybaMail: 'Please write their e-mail address. It is the only place the question is sent.',
   chybaDatum: 'Please choose the day the first question should arrive.',
-  chybaSiet: 'We could not reach our server. Nothing is lost: try again in a minute, or write to andrej@arling.sk with the recipient name, e-mail and start date and we will set it up by hand.',
-  chybaSluzba: 'Our server refused that. Write to andrej@arling.sk with the recipient name, e-mail and start date and we will set it up by hand.',
+  chybaSiet: 'We could not reach our server. Nothing is lost: try again in a minute, or write to support@arling.sk with the recipient name, e-mail and start date and we will set it up by hand.',
+  chybaSluzba: 'Our server refused that. Write to support@arling.sk with the recipient name, e-mail and start date and we will set it up by hand.',
 };
 
 function $(id) { return document.getElementById(id); }

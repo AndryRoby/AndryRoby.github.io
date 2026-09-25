@@ -174,9 +174,9 @@ export const DICT = {
     de: 'Was, wenn mir Pro nicht zusagt oder ein Tool nicht funktioniert?',
   },
   'obj2.a': {
-    sk: 'Napíšte na andrej@arling.sk. Chybu, ktorú niektorý z nástrojov spracoval zle, opravíme prednostne; ak vám Pro jednoducho nesadne, do 14 dní od kúpy peniaze vrátime bez zbytočných otázok.',
-    en: 'Write to andrej@arling.sk. A bug in any of the tools gets fixed with priority; if Pro simply is not for you, we refund the payment within 14 days of purchase, no questions asked.',
-    de: 'Schreiben Sie an andrej@arling.sk. Einen Fehler, den eines der Tools falsch verarbeitet hat, beheben wir bevorzugt; wenn Pro einfach nicht passt, erstatten wir die Zahlung innerhalb von 14 Tagen nach dem Kauf ohne weitere Fragen.',
+    sk: 'Napíšte na podpora@arling.sk. Chybu, ktorú niektorý z nástrojov spracoval zle, opravíme prednostne; ak vám Pro jednoducho nesadne, do 14 dní od kúpy peniaze vrátime bez zbytočných otázok.',
+    en: 'Write to support@arling.sk. A bug in any of the tools gets fixed with priority; if Pro simply is not for you, we refund the payment within 14 days of purchase, no questions asked.',
+    de: 'Schreiben Sie an support@arling.sk. Einen Fehler, den eines der Tools falsch verarbeitet hat, beheben wir bevorzugt; wenn Pro einfach nicht passt, erstatten wir die Zahlung innerhalb von 14 Tagen nach dem Kauf ohne weitere Fragen.',
   },
   'obj3.q': { sk: 'Ako predplatné zrušiť?', en: 'How do I cancel the subscription?', de: 'Wie kündige ich das Abo?' },
   'obj3.a': {
@@ -290,9 +290,9 @@ export const DICT = {
     de: 'Danke. Wir melden uns nur, wenn es etwas Neues gibt.',
   },
   's5.subscribe.error': {
-    sk: 'Nepodarilo sa uložiť. Napíšte na <a href="mailto:andrej@arling.sk">andrej@arling.sk</a>.',
-    en: 'Could not save it. Please write to <a href="mailto:andrej@arling.sk">andrej@arling.sk</a>.',
-    de: 'Speichern fehlgeschlagen. Bitte schreiben Sie an <a href="mailto:andrej@arling.sk">andrej@arling.sk</a>.',
+    sk: 'Nepodarilo sa uložiť. Napíšte na <a href="mailto:podpora@arling.sk">podpora@arling.sk</a>.',
+    en: 'Could not save it. Please write to <a href="mailto:support@arling.sk">support@arling.sk</a>.',
+    de: 'Speichern fehlgeschlagen. Bitte schreiben Sie an <a href="mailto:support@arling.sk">support@arling.sk</a>.',
   },
   's5.subscribe.privacy': { sk: 'Súkromie', en: 'Privacy', de: 'Datenschutz' },
   's5.business.p': {
@@ -342,9 +342,9 @@ export const DICT = {
   },
   'faq.q6': { sk: 'Môžem licenciu zrušiť alebo dostať peniaze naspäť?', en: 'Can I cancel the licence or get a refund?', de: 'Kann ich die Lizenz kündigen oder eine Rückerstattung bekommen?' },
   'faq.a6': {
-    sk: 'Predplatné zrušíte alebo zmeníte kedykoľvek na <a href="https://billing.stripe.com/p/login/3cIaER9M63hNeFcg8B4ko00">portáli Stripe</a> (prihlásenie e-mailom, ktorým ste platili); platí do konca zaplateného obdobia. Ak vám Pro nesadne, napíšte do 14 dní od kúpy na <a href="mailto:andrej@arling.sk?subject=Vr%C3%A1tenie%20Pro%20licencie">andrej@arling.sk</a> a peniaze vrátime bez zbytočných otázok.',
-    en: 'You can cancel or change the subscription at any time in the <a href="https://billing.stripe.com/p/login/3cIaER9M63hNeFcg8B4ko00">Stripe customer portal</a> (log in with the e-mail you paid with); it stays active until the end of the paid period. If Pro is not for you, write within 14 days of purchase to <a href="mailto:andrej@arling.sk?subject=Vr%C3%A1tenie%20Pro%20licencie">andrej@arling.sk</a> and we will refund the payment, no questions asked.',
-    de: 'Sie können das Abo jederzeit im <a href="https://billing.stripe.com/p/login/3cIaER9M63hNeFcg8B4ko00">Stripe-Kundenportal</a> kündigen oder ändern (Anmeldung mit der E-Mail-Adresse der Zahlung); es bleibt bis zum Ende des bezahlten Zeitraums aktiv. Wenn Pro nicht passt, schreiben Sie innerhalb von 14 Tagen nach dem Kauf an <a href="mailto:andrej@arling.sk?subject=Vr%C3%A1tenie%20Pro%20licencie">andrej@arling.sk</a>, und wir erstatten die Zahlung ohne weitere Fragen.',
+    sk: 'Predplatné zrušíte alebo zmeníte kedykoľvek na <a href="https://billing.stripe.com/p/login/3cIaER9M63hNeFcg8B4ko00">portáli Stripe</a> (prihlásenie e-mailom, ktorým ste platili); platí do konca zaplateného obdobia. Ak vám Pro nesadne, napíšte do 14 dní od kúpy na <a href="mailto:podpora@arling.sk?subject=Vr%C3%A1tenie%20Pro%20licencie">podpora@arling.sk</a> a peniaze vrátime bez zbytočných otázok.',
+    en: 'You can cancel or change the subscription at any time in the <a href="https://billing.stripe.com/p/login/3cIaER9M63hNeFcg8B4ko00">Stripe customer portal</a> (log in with the e-mail you paid with); it stays active until the end of the paid period. If Pro is not for you, write within 14 days of purchase to <a href="mailto:support@arling.sk?subject=Vr%C3%A1tenie%20Pro%20licencie">support@arling.sk</a> and we will refund the payment, no questions asked.',
+    de: 'Sie können das Abo jederzeit im <a href="https://billing.stripe.com/p/login/3cIaER9M63hNeFcg8B4ko00">Stripe-Kundenportal</a> kündigen oder ändern (Anmeldung mit der E-Mail-Adresse der Zahlung); es bleibt bis zum Ende des bezahlten Zeitraums aktiv. Wenn Pro nicht passt, schreiben Sie innerhalb von 14 Tagen nach dem Kauf an <a href="mailto:support@arling.sk?subject=Vr%C3%A1tenie%20Pro%20licencie">support@arling.sk</a>, und wir erstatten die Zahlung ohne weitere Fragen.',
   },
 
   // ── closing CTA ──────────────────────────────────────────────────────
@@ -412,9 +412,9 @@ export const DICT = {
 
   'js.error.licenceKeyMissing': { sk: 'Vložte licenčný kľúč.', en: 'Paste a licence key.', de: 'Lizenzschlüssel einfügen.' },
   'js.error.activationFailed': {
-    sk: 'Aktivácia zlyhala. Skúste vložiť kľúč ručne nižšie, alebo napíšte na andrej@arling.sk.',
-    en: 'Activation failed. Try pasting the key manually below, or write to andrej@arling.sk.',
-    de: 'Aktivierung fehlgeschlagen. Versuchen Sie, den Schlüssel unten manuell einzufügen, oder schreiben Sie an andrej@arling.sk.',
+    sk: 'Aktivácia zlyhala. Skúste vložiť kľúč ručne nižšie, alebo napíšte na podpora@arling.sk.',
+    en: 'Activation failed. Try pasting the key manually below, or write to support@arling.sk.',
+    de: 'Aktivierung fehlgeschlagen. Versuchen Sie, den Schlüssel unten manuell einzufügen, oder schreiben Sie an support@arling.sk.',
   },
   'js.already.note': {
     sk: 'Pro už máte aktívne, platná do {date}. Kúpou novej licencie predĺžite alebo zmeníte plán.',
@@ -621,7 +621,7 @@ export function applyI18n(lang) {
 
   const businessLink = document.getElementById('business-link');
   if (businessLink) {
-    businessLink.href = 'mailto:andrej@arling.sk?subject=' + encodeURIComponent(t('s5.business.subject', l));
+    businessLink.href = 'mailto:' + (l === 'sk' || l === 'cs' ? 'podpora' : 'support') + '@arling.sk?subject=' + encodeURIComponent(t('s5.business.subject', l));
   }
 
   try { document.dispatchEvent(new CustomEvent('arling:langchange', { detail: { lang: l } })); } catch (e) {}

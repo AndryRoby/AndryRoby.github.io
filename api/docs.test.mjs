@@ -255,7 +255,9 @@ test('CSP: only scripts from this site, and the hashes match the inline JSON-LD'
     assert.ok(!/\sstyle=/i.test(z), 'inline style: ' + z.slice(0, 80));
   }
   for (const m of HTML.matchAll(/<script[^>]*\bsrc="([^"]+)"/g)) {
-    assert.ok(m[1].startsWith('/') || m[1].startsWith('./'), 'skript z tohto webu: ' + m[1]);
+    // Jediný cudzí skript je naša Umami analytika na homelabe (vkladá ops/design/obal.mjs).
+    const umami = m[1] === 'https://homelab.tailbf8f27.ts.net/script.js';
+    assert.ok(m[1].startsWith('/') || m[1].startsWith('./') || umami, 'skript z tohto webu: ' + m[1]);
   }
 });
 

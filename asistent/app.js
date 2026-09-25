@@ -30,10 +30,10 @@
   var PAGE_LANG = ((document.documentElement.getAttribute('lang') || 'sk').slice(0, 2)).toLowerCase();
   var STATUS_TEXT = {
     sk: {
-      slow: 'Spracovanie feedu trvá dlhšie ako obvykle. Skúste obnoviť stránku o chvíľu, alebo napíšte na andrej@arling.sk.',
+      slow: 'Spracovanie feedu trvá dlhšie ako obvykle. Skúste obnoviť stránku o chvíľu, alebo napíšte na podpora@arling.sk.',
       ready: 'Hotovo. Chat s vaším asistentom je vpravo dole na tejto stránke (okrúhle tlačidlo). Opýtajte sa ho niečo o vašich produktoch.',
       readyAgain: 'Váš asistent už beží vpravo dole na tejto stránke (okrúhle tlačidlo). Stačí naň kliknúť.',
-      failed: 'Feed sa nepodarilo spracovať. Skontrolujte URL feedu, alebo napíšte na andrej@arling.sk.',
+      failed: 'Feed sa nepodarilo spracovať. Skontrolujte URL feedu, alebo napíšte na podpora@arling.sk.',
       badUrl: 'URL feedu musí byť platná adresa (https://vaseshop.sk/feed.xml).',
       working: 'Sťahujeme a spracúvame váš feed produktov...',
       createFailed: 'Nepodarilo sa vytvoriť skúšobný účet: ',
@@ -45,13 +45,13 @@
       verifyBad: 'Kód nesedí. Skontrolujte ho a skúste znova.',
       verifyExpired: 'Kód už neplatí. Odošlite formulár znova, pošleme nový.',
       verifyFailed: 'Adresu sa nepodarilo overiť. Asistent funguje aj tak, kód na vloženie nájdete nižšie.',
-      codeFailed: 'Kód na overenie adresy sa nepodarilo poslať. Asistent funguje aj tak, kód na vloženie nájdete nižšie; ak chcete návod e-mailom, napíšte na andrej@arling.sk.',
+      codeFailed: 'Kód na overenie adresy sa nepodarilo poslať. Asistent funguje aj tak, kód na vloženie nájdete nižšie; ak chcete návod e-mailom, napíšte na podpora@arling.sk.',
     },
     en: {
-      slow: 'Processing your feed is taking longer than usual. Reload the page in a moment, or write to andrej@arling.sk.',
+      slow: 'Processing your feed is taking longer than usual. Reload the page in a moment, or write to support@arling.sk.',
       ready: 'Done. Your assistant is in the bottom right corner of this page (the round button). Ask it something about your products.',
       readyAgain: 'Your assistant is already running in the bottom right corner of this page (the round button). Just click it.',
-      failed: 'We could not process the feed. Check the feed URL, or write to andrej@arling.sk.',
+      failed: 'We could not process the feed. Check the feed URL, or write to support@arling.sk.',
       badUrl: 'The feed URL must be a valid address (https://yourshop.com/feed.xml).',
       working: 'Downloading and processing your product feed...',
       createFailed: 'Could not create the trial account: ',
@@ -63,13 +63,13 @@
       verifyBad: 'That code does not match. Check it and try again.',
       verifyExpired: 'The code has expired. Submit the form again and we will send a new one.',
       verifyFailed: 'We could not verify the address. The assistant works anyway; the embed code is below.',
-      codeFailed: 'We could not send the verification code. The assistant works anyway and the embed code is below; if you want the instructions by e-mail, write to andrej@arling.sk.',
+      codeFailed: 'We could not send the verification code. The assistant works anyway and the embed code is below; if you want the instructions by e-mail, write to support@arling.sk.',
     },
     de: {
-      slow: 'Die Verarbeitung des Feeds dauert länger als üblich. Laden Sie die Seite gleich neu oder schreiben Sie an andrej@arling.sk.',
+      slow: 'Die Verarbeitung des Feeds dauert länger als üblich. Laden Sie die Seite gleich neu oder schreiben Sie an support@arling.sk.',
       ready: 'Fertig. Ihr Assistent ist unten rechts auf dieser Seite (der runde Knopf). Fragen Sie ihn etwas zu Ihren Produkten.',
       readyAgain: 'Ihr Assistent läuft bereits unten rechts auf dieser Seite (der runde Knopf). Einfach anklicken.',
-      failed: 'Der Feed konnte nicht verarbeitet werden. Prüfen Sie die Feed-URL oder schreiben Sie an andrej@arling.sk.',
+      failed: 'Der Feed konnte nicht verarbeitet werden. Prüfen Sie die Feed-URL oder schreiben Sie an support@arling.sk.',
       badUrl: 'Die Feed-URL muss eine gültige Adresse sein (https://ihrshop.de/feed.xml).',
       working: 'Ihr Produktfeed wird geladen und verarbeitet...',
       createFailed: 'Das Testkonto konnte nicht erstellt werden: ',
@@ -81,7 +81,7 @@
       verifyBad: 'Der Code stimmt nicht. Prüfen Sie ihn und versuchen Sie es erneut.',
       verifyExpired: 'Der Code ist abgelaufen. Senden Sie das Formular erneut ab, wir schicken einen neuen.',
       verifyFailed: 'Die Adresse konnte nicht bestätigt werden. Der Assistent funktioniert trotzdem, den Einbindungscode finden Sie unten.',
-      codeFailed: 'Der Bestätigungscode konnte nicht gesendet werden. Der Assistent funktioniert trotzdem, den Einbindungscode finden Sie unten; wenn Sie die Anleitung per E-Mail möchten, schreiben Sie an andrej@arling.sk.',
+      codeFailed: 'Der Bestätigungscode konnte nicht gesendet werden. Der Assistent funktioniert trotzdem, den Einbindungscode finden Sie unten; wenn Sie die Anleitung per E-Mail möchten, schreiben Sie an support@arling.sk.',
     },
   };
   function T(key) {

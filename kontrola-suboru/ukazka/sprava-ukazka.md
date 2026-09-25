@@ -54,4 +54,4 @@ Text pre dodávateľa softvéru (skopírujte a pošlite):
 
 O prijatí súboru rozhoduje banka. ARLing s. r. o. nie je banka; táto správa je formátová kontrola podľa verejne publikovaných pravidiel a opravený súbor nie je zárukou, že ho banka prijme.
 
-ARLing s. r. o., andrej@arling.sk
+ARLing s. r. o., podpora@arling.sk

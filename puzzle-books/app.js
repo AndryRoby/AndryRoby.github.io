@@ -15,7 +15,7 @@
  * skladala sama. Kto si otvoril tento súbor, stiahol si každú knihu bez platby.
  * Stránka odvtedy žiadnu cestu k PDF nepozná a náhradný odkaz nemá: keď služba
  * neodpovie, karta knihy povie, že odkazy sa nenačítali, dá tlačidlo Try again,
- * celé číslo platby a andrej@arling.sk. Čisté funkcie sú v knihy.js.
+ * celé číslo platby a podpora@arling.sk. Čisté funkcie sú v knihy.js.
  *
  * Udalosti do Umami (ak beží) podľa ops/spec-puzzle-books.md: books_ukazka,
  * books_kupa_click, books_zaplatene, books_stiahnute; plus cena_videna, ktoré
@@ -38,11 +38,11 @@ const T = {
   zaplateneJedna: (n) => '<b>Paid, thank you.</b> ' + n + ' is unlocked in this browser and the download links are on its card below.',
   zaplateneVsetky: '<b>Paid, thank you.</b> All ten books are unlocked in this browser and the download links are on their cards below.',
   zaplateneBezOdkazov: '<b>Paid, thank you.</b> The download links did not load just now. The card of the book below has a Try again button and the payment reference.',
-  inaSuma: 'The payment went through, but not for an amount we recognise. Write to andrej@arling.sk and we will sort it out by hand.',
-  nevieme: 'The payment went through, but the download links did not load just now, so this page cannot tell yet which book it was for. Wait a minute and press Try again. If nothing changes, write to andrej@arling.sk with the payment reference ',
-  nepotvrdene: 'We have not been able to confirm the payment yet. We keep trying; if you paid, the books unlock as soon as Stripe answers. If it takes longer than a few minutes, write to andrej@arling.sk with the order number from the Stripe e-mail.',
+  inaSuma: 'The payment went through, but not for an amount we recognise. Write to support@arling.sk and we will sort it out by hand.',
+  nevieme: 'The payment went through, but the download links did not load just now, so this page cannot tell yet which book it was for. Wait a minute and press Try again. If nothing changes, write to support@arling.sk with the payment reference ',
+  nepotvrdene: 'We have not been able to confirm the payment yet. We keep trying; if you paid, the books unlock as soon as Stripe answers. If it takes longer than a few minutes, write to support@arling.sk with the order number from the Stripe e-mail.',
   overZnova: 'Check again',
-  zapina: 'Payment is still being switched on for this book. Write to andrej@arling.sk and we will send you the file.',
+  zapina: 'Payment is still being switched on for this book. Write to support@arling.sk and we will send you the file.',
   testChyba: 'Test mode is on, but this book has no test link yet. Run ops/stripe/puzzle-books-test.mjs --zapis, or open this page without ?test=1 to buy it for real.',
   testCudzi: 'This is a payment from Stripe test mode. It unlocks books only in the browser that started the test with ?test=1.',
   testPoznamka: '(Test mode: the payment was made in Stripe test mode, no money changed hands.)',
@@ -50,11 +50,11 @@ const T = {
   zaplatene: 'Paid.',
   nacitavam: 'Loading your download links.',
   nenacitane: 'The download links did not load just now. Wait a minute and press Try again.',
-  pomoc: 'If they still do not appear, write to andrej@arling.sk with the payment reference ',
+  pomoc: 'If they still do not appear, write to support@arling.sk with the payment reference ',
   pomocKoniec: ' and we will send you the files.',
   znova: 'Try again',
   stareZnacka: 'Unlocked in this browser.',
-  stare: 'The payment reference was not kept here, so this page cannot ask for the download links. Write to andrej@arling.sk with the order number from the Stripe e-mail and we will send you the files.',
+  stare: 'The payment reference was not kept here, so this page cannot ask for the download links. Write to support@arling.sk with the order number from the Stripe e-mail and we will send you the files.',
 };
 
 function $(id) { return document.getElementById(id); }

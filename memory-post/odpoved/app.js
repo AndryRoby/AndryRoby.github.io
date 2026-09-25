@@ -107,15 +107,15 @@
          takze z odpovede servera sa nikdy neda vyrobit znacka. */
       var p = $('sukromie-text');
       p.textContent = '';
-      var kusy = String(t.privacy).split('andrej@arling.sk');
+      /* Od 25. 9. 2026 texty uvadzaju podpora@ (SK, CS) alebo support@ (ostatne jazyky);
+         andrej@ ostava v zozname, kym sluzba na homelabe posiela starsie texty. */
+      var kusy = String(t.privacy).split(/(podpora@arling\.sk|support@arling\.sk|andrej@arling\.sk)/);
       for (var i = 0; i < kusy.length; i++) {
-        p.appendChild(document.createTextNode(kusy[i]));
-        if (i < kusy.length - 1) {
-          var a = document.createElement('a');
-          a.href = 'mailto:andrej@arling.sk';
-          a.textContent = 'andrej@arling.sk';
-          p.appendChild(a);
-        }
+        if (i % 2 === 0) { p.appendChild(document.createTextNode(kusy[i])); continue; }
+        var a = document.createElement('a');
+        a.href = 'mailto:' + kusy[i];
+        a.textContent = kusy[i];
+        p.appendChild(a);
       }
     }
     if (t.noAnalytics) $('ziadna').textContent = t.noAnalytics;
@@ -150,8 +150,8 @@
     var t = (d && d.texts) || {};
     $('cislo').textContent = '';
     $('preskocit').textContent = '';
-    var sprava = dovod === 'expired' ? (t.expired || 'This subscription has ended, so there are no new questions. Everything already written is still yours; write to andrej@arling.sk for the book and the files.')
-      : (t.unknown || 'This link is not one of ours, or it has been used up. Write to andrej@arling.sk and we will send you a new one.');
+    var sprava = dovod === 'expired' ? (t.expired || 'This subscription has ended, so there are no new questions. Everything already written is still yours; write to support@arling.sk for the book and the files.')
+      : (t.unknown || 'This link is not one of ours, or it has been used up. Write to support@arling.sk and we will send you a new one.');
     $('otazka').textContent = (t.back || 'Memory Post');
     vypniFormular();
     elText.hidden = true;

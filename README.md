@@ -69,7 +69,7 @@ This repo has no diagnostic rules to cite, only public specs it follows for disc
 
 ## Report a problem
 
-A broken link, a wrong number on the hub page, or a tool missing from the list: open an issue on this repo, or write to andrej@arling.sk with the URL and what's wrong.
+A broken link, a wrong number on the hub page, or a tool missing from the list: open an issue on this repo, or write to support@arling.sk with the URL and what's wrong.
 
 ## License
 
@@ -77,7 +77,7 @@ All rights reserved, ARLing s. r. o. Reading this code to see how the hub page w
 
 ---
 
-ARLing s. r. o., Bratislava, Slovakia. Company ID 56583486, VAT ID SK2122352100. andrej@arling.sk
+ARLing s. r. o., Bratislava, Slovakia. Company ID 56583486, VAT ID SK2122352100. support@arling.sk
 
 The tools this hub links to, each its own repository:
 

@@ -49,4 +49,4 @@ npx serve .
 
 ## About
 
-Built by ARLing s. r. o. (Bratislava, Slovakia). andrej@arling.sk
+Built by ARLing s. r. o. (Bratislava, Slovakia). support@arling.sk
