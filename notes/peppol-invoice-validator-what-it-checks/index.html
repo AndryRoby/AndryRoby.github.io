@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script src="/style/vzhlad.js?v=8a4019ae"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0a0908">
+<link rel="preconnect" href="https://homelab.tailbf8f27.ts.net" crossorigin>
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../../favicon.ico" sizes="48x48">
+<link rel="apple-touch-icon" href="../../icon-180.png">
+<title>Peppol Invoice Validator: What It Checks and What It Misses | ARLing</title>
+<meta name="description" content="What a Peppol invoice validator checks, how fatal and warning differ, and what we saw when we broke one sample invoice eleven ways.">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Peppol Invoice Validator: What It Checks and What It Misses">
+<meta property="og:description" content="What a Peppol invoice validator checks, how fatal and warning differ, and what we saw when we broke one sample invoice eleven ways.">
+<meta property="og:url" content="https://arling.sk/notes/peppol-invoice-validator-what-it-checks/">
+<meta property="og:locale" content="en_US">
+<link rel="canonical" href="https://arling.sk/notes/peppol-invoice-validator-what-it-checks/">
+<link rel="preload" href="/fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/style/paper.css?v=ce09c693">
+<script src="/style/prepinac.js?v=668e98c9" defer></script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Peppol Invoice Validator: What It Checks and What It Misses",
+  "description": "What a Peppol invoice validator checks, how fatal and warning differ, and what we saw when we broke one sample invoice eleven ways.",
+  "datePublished": "2026-09-25",
+  "dateModified": "2026-09-25",
+  "inLanguage": "en",
+  "author": {
+    "@type": "Organization",
+    "name": "ARLing s. r. o.",
+    "url": "https://arling.sk/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "ARLing s. r. o.",
+    "url": "https://arling.sk/"
+  },
+  "mainEntityOfPage": "https://arling.sk/notes/peppol-invoice-validator-what-it-checks/"
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Is an EN 16931 validator enough for a Peppol invoice?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No. Peppol BIS Billing 3.0 adds its own PEPPOL-EN16931-R and PEPPOL-COMMON-R rules on top of EN 16931, and the European Commission validator we tried offered only EN 16931 types. Use a validator that also runs the Peppol Schematron."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can I send an invoice that still shows warnings?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes, as long as none of the findings is fatal: a receiver shall not reject a compliant message. Most warnings in the EN 16931 file are UBL-CR rules about elements the core invoice does not use."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Why does my validator still report BR-CO-25?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Most likely because it runs rules older than release 3.0.21. The release notes of 3.0.21, mandatory since 17 August 2026, list BR-CO-25 as removed, and the rule is not in the current file. Our own check reports it for the same reason, as described above."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Which free Peppol validator also checks the XML Schema?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "The ecosio validator describes a three stage check: well-formed XML, the XML Schema, then the Schematron rules. The KoSIT Validator runs the XML Schema too, but from the command line. Our browser check does not run it."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Does any official rule check the Slovak 0245 identifier?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Only that 0245 is an allowed scheme. In the Peppol file of release 3.0.21 the code appears only in the list of allowed electronic address schemes, rule PEPPOL-EN16931-CL008, and no check verifies that the ten digit DIČ follows it. Our check reports a VAT number in that place as ARL-SK-DIC-TVAR."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Does a clean result mean the buyer will accept my invoice?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Only for what was actually checked. A clean run with the current artefacts means the file is compliant with the BIS. A partial check like ours, which skips the XML Schema and the UBL-CR, UBL-SR and UBL-DT rules, does not guarantee acceptance by the buyer or the network."
+      }
+    }
+  ]
+}
+</script>
+
+<style>
+  article { max-width:72ch; }
+  article h2 { margin:clamp(34px,4vh,52px) 0 12px; }
+  article h3 { margin:26px 0 8px; }
+  article p, article li { font-size:16.5px; line-height:1.7; }
+  article ol, article ul { padding-left:22px; }
+  article li { margin:0 0 8px; }
+  code { font:13.5px/1.4 var(--mono); background:var(--card); border:1px solid var(--line);
+    border-radius:3px; padding:1px 5px; overflow-wrap:anywhere; }
+  pre { background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    padding:16px 18px; overflow-x:auto; font:13px/1.6 var(--mono); color:var(--body); }
+  .byline { font-family:var(--ui); font-size:14px; color:var(--muted); margin:0 0 clamp(26px,3vh,40px); }
+  .zhrn { border-left:3px solid var(--accent); background:var(--card); border-radius:0 var(--radius) var(--radius) 0;
+    padding:18px 22px; margin:0 0 clamp(26px,3vh,40px); }
+  .zhrn p { margin:0; font-size:16px; }
+  .zdroje { font-family:var(--ui); font-size:13.5px; color:var(--muted); line-height:1.7;
+    border-top:1px solid var(--line); padding-top:18px; margin-top:clamp(34px,4vh,52px); }
+  .zdroje a { color:var(--body); }
+</style>
+<meta property="og:image" content="https://arling.sk/og.png">
+</head>
+<body class="noc">
+<div class="wash" aria-hidden="true"><i></i><i></i></div>
+
+<a class="skip site-skip" href="#arling-obsah" data-site-label="skip">Skip to content</a>
+<header class="site-header">
+  <div class="wrap bar">
+    <a class="brand" href="https://arling.sk/en/" aria-label="ARLing home" data-site-home>
+      <svg viewBox="0 0 488 215" width="38" height="15" aria-hidden="true" focusable="false"><path fill="#f4f4f7" fill-rule="evenodd" d="M0.00,213.00L74.00,214.00L181.00,85.00L285.00,214.00L360.00,214.00L206.00,21.00L185.00,4.00L164.00,10.00Z M221.00,0.00L263.00,50.00L395.00,50.00L409.00,55.00L419.00,76.00L401.00,96.00L313.00,98.00L411.00,214.00L487.00,214.00L422.00,139.00L457.00,123.00L482.00,88.00L482.00,48.00L463.00,19.00L417.00,0.00Z"/><path fill="#f2643c" d="M269.00,66.00L269.00,67.00L268.00,68.00L268.00,70.00L267.00,71.00L267.00,76.00L268.00,77.00L268.00,79.00L270.00,81.00L270.00,82.00L271.00,82.00L273.00,84.00L274.00,84.00L277.00,86.00L279.00,86.00L280.00,87.00L287.00,87.00L288.00,86.00L290.00,86.00L291.00,85.00L294.00,84.00L298.00,80.00L298.00,79.00L299.00,78.00L299.00,75.00L300.00,74.00L300.00,72.00L299.00,71.00L299.00,69.00L298.00,68.00L297.00,65.00L295.00,63.00L294.00,63.00L289.00,60.00L278.00,60.00L277.00,61.00L276.00,61.00L275.00,62.00L272.00,63.00Z"/></svg>
+      <b>ARLing</b>
+    </a>
+    <details class="site-menu">
+      <summary class="site-menu-toggle"><span class="site-menu-text" data-site-label="produkty">Products</span><span class="site-menu-bars" aria-hidden="true"><i></i><i></i><i></i></span><span class="site-menu-word" data-site-label="menu">Menu</span></summary>
+      <div class="site-menu-panel" role="navigation" aria-label="Products" data-site-aria="produkty"><div class="site-cols"><div class="site-col"><p>Business software</p><ul><li><a href="https://arling.sk/proof/"><b>Proof</b><span>Customer approval before printing</span></a></li><li><a href="https://arling.sk/renewals/"><b>Renewals</b><span>Supplier documents and renewal dates</span></a></li><li><a href="https://arling.sk/asistent/en/"><b>Asistent</b><span>Sales assistant for e-shops</span></a></li><li><a href="https://arling.sk/technologies/"><b>Stacklog</b><span>What a site runs on, and when it changed</span></a></li><li><a href="https://arling.sk/world/"><b>The World in Squares</b><span>Buy a square of the world map, name it and draw on it</span></a></li></ul></div><div class="site-col"><p>Invoices and payments</p><ul><li><a href="https://arling.sk/efaktura/en/"><b>E-invoice</b><span>Check, preview and create XML</span></a></li><li><a href="https://arling.sk/sepa-pain001-doctor/"><b>pain.001 check</b><span>Why the bank rejected the file</span></a></li><li><a href="https://arling.sk/sepa-pain001-generator/"><b>pain.001 generator</b><span>Bulk transfer from a table</span></a></li><li><a href="https://arling.sk/camt053-to-excel/"><b>Statement to Excel</b><span>camt.053 and MT940 to a sheet</span></a></li><li><a href="https://arling.sk/parovac-platieb/en/"><b>Payment matcher</b><span>Statement against invoices</span></a></li><li><a href="https://arling.sk/kontrola-suboru/en/"><b>SEPA file check</b><span>Addresses and errors before your bank sees them</span></a></li><li><a href="https://arling.sk/bankove-nastroje/en/"><b>Banking tools Pro</b><span>One licence, four tools</span></a></li></ul></div><div class="site-col"><p>Documents and company</p><ul><li><a href="https://arling.sk/gdpr-dokumenty/"><b>GDPR documents<em class="site-sk">SK</em></b><span>For a company or e-shop in 10 minutes</span></a></li><li><a href="https://arling.sk/vzory-zmluv/"><b>Contract templates<em class="site-sk">SK</em></b><span>Under Slovak law, free</span></a></li><li><a href="https://arling.sk/zivotopis/en/"><b>CV builder</b><span>A finished CV, no account</span></a></li><li><a href="https://arling.sk/feed-doctor/en/"><b>Feed Doctor</b><span>Product feed check</span></a></li><li><a href="https://arling.sk/mail-doctor/"><b>Mail Doctor</b><span>SPF, DKIM and DMARC of a domain</span></a></li></ul></div><div class="site-col"><p>Publishing</p><ul><li><a href="https://arling.sk/shop/"><b>Shop</b><span>Books, puzzles and gifts</span></a></li><li><a href="https://arling.sk/classics/"><b>Classics for e-ink</b><span>Books prepared for e-readers</span></a></li><li><a href="https://arling.sk/morning-quiet/"><b>Morning Quiet</b><span>Daily editions for e-ink</span></a></li><li><a href="https://arling.sk/games/"><b>Browser games</b><span>A free daily logic puzzle</span></a></li><li><a href="https://arling.sk/puzzle-post/"><b>Puzzle Post</b><span>Puzzles by post</span></a></li><li><a href="https://arling.sk/puzzle-post/bulletin/"><b>Puzzle Post Bulletin</b><span>A printable puzzle for your newsletter, every Monday</span></a></li><li><a href="https://arling.sk/memory-post/"><b>Memory Post</b><span>Memories on paper</span></a></li></ul></div></div><p class="site-dev"><span>For developers</span><em>Free diagnostics for CORS, JWT, OAuth, Supabase and Stripe webhook errors.</em><a href="https://arling.sk/en/#vyvojari">All developer tools<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></p><div class="site-col site-firma"><p>Company</p><ul><li><a href="https://arling.sk/en/#nastroje"><b>Tools</b></a></li><li><a href="https://arling.sk/en/#piloty"><b>Pilots</b></a></li><li><a href="https://arling.sk/how-we-work/en/"><b>How we work</b></a></li><li><a href="https://arling.sk/notes/en/"><b>Guides</b></a></li><li><a href="https://arling.sk/kontakt/en/"><b>Contact</b></a></li><li><a href="https://arling.sk/ucet/en/"><b>Account</b></a></li><li><a href="https://arling.sk/brand/en/"><b>Brand</b></a></li><li><a href="https://arling.sk/podmienky/en/"><b>Terms</b></a></li><li><a href="https://arling.sk/privacy/en/"><b>Privacy</b></a></li><li><a href="https://arling.sk/odstupenie/en/"><b>Withdraw from the contract here</b></a></li><li><a href="https://arling.sk/impressum/en/"><b>Imprint</b></a></li></ul></div><p class="site-menu-cta"><a class="site-cta" href="https://arling.sk/shop/" data-site-cta data-site-label="cta" data-umami-event="shell_cta_menu">Shop</a></p></div>
+    </details>
+    <nav id="hlavne-menu" class="site-main-nav" aria-label="Main navigation" data-site-aria="nav"><a href="https://arling.sk/en/#nastroje" data-site-nav="0">Tools</a><a href="https://arling.sk/en/#piloty" data-site-nav="1">Pilots</a><a href="https://arling.sk/notes/en/" data-site-nav="2">Guides</a><a href="https://arling.sk/how-we-work/en/" data-site-nav="3">Company</a></nav>
+    <a class="site-cta" href="https://arling.sk/shop/" data-site-cta data-site-label="cta" data-umami-event="shell_cta">Shop</a>
+  </div>
+</header>
+
+<main id="arling-obsah" tabindex="-1">
+  <div class="wrap">
+    <article>
+      <h1>Peppol Invoice Validator: What It Checks and What It Misses</h1>
+      <p class="byline">ARLing s. r. o. · 25 September 2026</p>
+
+      <div class="zhrn">
+        <p>A Peppol invoice validator should run three layers: the UBL 2.1 XML Schema, the EN 16931 rules and the Peppol BIS Billing 3.0 rules. An invoice is compliant when no fatal error comes back, and warnings alone do not change that. Before you trust a clean result, check which profile the validator detected and which release of the rules it runs. We broke one sample invoice eleven ways: our own browser check flagged eight, one of them only with a warning where Peppol has a fatal error, and it missed a swapped element order, an extra ProfileExecutionID and a shortened CustomizationID.</p>
+        <p>This matters to anyone who sends invoices over Peppol, and in Slovakia it becomes routine: e-invoices between domestic VAT payers are mandatory from 1 January 2027 and travel over the Peppol network through certified providers. Slovakia uses Peppol BIS Billing 3.0 directly, with no CIUS of its own. Below you will find what each layer checks, how to read fatal and warning, every result of our test with the free <a href="https://arling.sk/efaktura/en/peppol-validator/">ARLing Peppol validator</a>, and which free validators to use, including where ours falls short.</p>
+      </div>
+
+      <h2>Three layers, three different questions</h2>
+      <p>The first layer is the UBL 2.1 XML Schema (XSD), and it checks structure only: which elements occur where, how often and in which order. The free validator from ecosio lists it as the second of its three stages: well-formed XML, the XML Schema, then the Schematron rules. Our browser check skips this layer, which is why a swapped pair of dates went through it unnoticed in the test below.</p>
+      <p>The second layer is EN 16931, the European core invoice model, with its BR rules and the BR-CO rules for totals and consistency. The third is Peppol BIS Billing 3.0, which sits on top of EN 16931 in the UBL 2.1 syntax and adds its own PEPPOL-EN16931-R and PEPPOL-COMMON-R rules. Both rule sets are published as Schematron files on the Peppol BIS Billing 3.0 page.</p>
+      <p>Some countries keep their rules inside the Peppol file itself: of the 166 checks in release 3.0.21, 102 are national rules for Germany, Denmark, Greece, Iceland, Italy, the Netherlands, Norway and Sweden. Germany also has XRechnung, its national CIUS with its own BR-DE rules, for example BR-DE-15 for the buyer reference. There is no Slovak rule in the file. The Slovak national requirements (PASR) mainly set the network identifier, schemeID 0245 followed by the ten digit tax number DIČ, and nothing in the official files checks that the DIČ is really there.</p>
+
+      <h2>Fatal or warning: which findings stop an invoice</h2>
+      <p>A sender shall not send a message that is not compliant, a receiver may reject one, and a compliant message shall not be rejected.</p>
+      <p>In the current EN 16931 Schematron for UBL, version 1.3.16, we counted 979 checks: 281 fatal and 698 warning. Of those warnings, 676 are UBL-CR rules, 21 are UBL-DT rules and only one is a BR rule, BR-51. The Peppol file of release 3.0.21 is the other way round: 166 checks, 139 fatal and 27 warning.</p>
+      <p>A UBL-CR warning usually means the file carries an element the core invoice does not use, for example &quot;[UBL-CR-003]-A UBL invoice should not include the ProfileExecutionID&quot;.</p>
+
+      <h2>We broke one sample invoice eleven ways</h2>
+      <p>The test file was the made-up English sample from our e-invoice check: invoice 2026-0142, Peppol BIS Billing 3.0, reverse charge, 1500.00 without VAT. Unchanged, it passes with no errors and no warnings. On 25 September 2026 we changed one thing at a time and ran our check in Node over every variant.</p>
+      <ul>
+        <li>Only the total with VAT raised by one cent, to 1500.01: BR-CO-15 for the total itself and BR-CO-16, because the amount due no longer equals the new total.</li>
+        <li>Currency code EURO instead of EUR: 13 errors, BR-CL-04, BR-CO-15 and eleven times PEPPOL-EN16931-R051, one for every amount that still says EUR.</li>
+        <li>Empty invoice number: BR-02 and PEPPOL-EN16931-R008, &quot;Document MUST not contain empty elements.&quot;</li>
+        <li>A typo in the IBAN: ARL-IBAN, our own mod 97 check. The official Peppol rules check the IBAN only when supplier and customer are both in Germany, and then only as a warning, so a validator with those rules lets this through.</li>
+        <li>Issue date written as 11.09.2026: ARL-DATUM and PEPPOL-EN16931-F001, &quot;A date MUST be formatted YYYY-MM-DD.&quot;</li>
+        <li>An element left unclosed: XML-01 and nothing else, because no rule can run on broken XML.</li>
+        <li>A Slovak endpoint with schemeID 0245 holding SK2020000000, a VAT number instead of the DIČ: ARL-SK-DIC-TVAR, again our own check. No official rule checks that a ten digit DIČ follows 0245, so a validator with the official rules lets this through.</li>
+        <li>An unknown CustomizationID: only one warning in our check, ARL-PROFIL, and only the EN 16931 core rules ran. A validator that runs the Peppol rules stops this file with the fatal rule PEPPOL-EN16931-R004.</li>
+      </ul>
+      <p>Two things to take from this. A single mistake can fill a report: the EURO file produced 13 lines from one wrong code, so fix the first error of each kind and run the check again. And one cent is enough, because BR-CO-15 compares the totals with no tolerance, and that test is the same in version 1.3.16.</p>
+
+      <h2>Three mistakes that passed without a single finding</h2>
+      <p>Swapping the order of cbc:IssueDate and cbc:DueDate gave zero findings in our check. Element order is the job of the XML Schema, and our browser check does not run it.</p>
+      <p>Adding a cbc:ProfileExecutionID element also passed with zero findings, because we do not run the UBL-CR group. A validator with the official EN 16931 files would list it as the warning UBL-CR-003.</p>
+      <p>The third one is the dangerous kind. We shortened CustomizationID to urn:cen.eu:en16931:2017, and our check did exactly what it is built to do: it read the field, detected plain EN 16931 and evaluated 230 rules instead of 289. There was no error because the Peppol rules never ran, while the official fatal rule PEPPOL-EN16931-R004 requires the Peppol value in that field. So read the profile line and the rule count before you believe a report with zero errors.</p>
+
+      <h2>Which free validator to use, and which release it runs</h2>
+      <p>Free validators you can use today, each with a different scope:</p>
+      <ul>
+        <li>The <a href="https://ecosio.com/en/peppol-and-xml-document-validator/">ecosio validator</a> checks well-formed XML, the XML Schema and the Schematron rules, lists Peppol BIS 3.0, UBL, CII and XRechnung among its formats, and says it deletes a file once the result is displayed. It uses the validation engine of Philip Helger, and the upload page of his Peppol Practical site now points there. We could not confirm which release of the rules its form offers, so look for 3.0.21 before you rely on the result.</li>
+        <li>The <a href="https://www.itb.ec.europa.eu/invoice/upload">eInvoice Validator</a> of the European Commission checks EN 16931 in UBL and CII with release 1.3.16, but offered no Peppol BIS Billing 3.0 or XRechnung type when we looked, so it stops at the core rules.</li>
+        <li>The <a href="https://github.com/itplr-kosit/validator">KoSIT Validator</a>, with the KoSIT configuration for XRechnung, is a program for Java 11 or later that you start from the command line; it runs the XML Schema and the Schematron rules and computes an acceptance status.</li>
+      </ul>
+      <p>Whichever you pick, check the release. Peppol publishes its rules in numbered releases: release 3.0.21 came out on 20 May 2026 and has been mandatory since 17 August 2026, together with version 1.3.16 of the EN 16931 artefacts. Compliance is measured against the current artefacts, so a validator on an older release answers a slightly different question.</p>
+      <p>The changes look small but they bite: BR-CO-25 was removed, R007 now accepts only a list of approved business process identifiers that includes a new profile 02 and two French profiles, and PEPPOL-COMMON-R052 and R053 changed from warnings to errors. One trap caught us too: on 25 September 2026 the docs.peppol.eu files page served release 3.0.21, while the master branch of the GitHub repository still held 3.0.20.</p>
+      <p>Our own check was built from those GitHub files on 10 September 2026, so it runs release 3.0.20. In practice it still reports BR-CO-25 for an invoice with a positive amount due and neither a due date nor payment terms, and it reports R007 for the new profile 02 identifier and for a French profile, although release 3.0.21 allows them. It also lets urn:fdc:peppol.eu:2017:poacc:billing:02:1.0 through without a finding, a value release 3.0.21 does not approve.</p>
+
+      <h2>Frequently asked questions</h2>
+      <details>
+        <summary>Is an EN 16931 validator enough for a Peppol invoice?</summary>
+        <p>No. Peppol BIS Billing 3.0 adds its own PEPPOL-EN16931-R and PEPPOL-COMMON-R rules on top of EN 16931, and the European Commission validator we tried offered only EN 16931 types. Use a validator that also runs the Peppol Schematron.</p>
+      </details>
+      <details>
+        <summary>Can I send an invoice that still shows warnings?</summary>
+        <p>Yes, as long as none of the findings is fatal: a receiver shall not reject a compliant message. Most warnings in the EN 16931 file are UBL-CR rules about elements the core invoice does not use.</p>
+      </details>
+      <details>
+        <summary>Why does my validator still report BR-CO-25?</summary>
+        <p>Most likely because it runs rules older than release 3.0.21. The release notes of 3.0.21, mandatory since 17 August 2026, list BR-CO-25 as removed, and the rule is not in the current file. Our own check reports it for the same reason, as described above.</p>
+      </details>
+      <details>
+        <summary>Which free Peppol validator also checks the XML Schema?</summary>
+        <p>The ecosio validator describes a three stage check: well-formed XML, the XML Schema, then the Schematron rules. The KoSIT Validator runs the XML Schema too, but from the command line. Our browser check does not run it.</p>
+      </details>
+      <details>
+        <summary>Does any official rule check the Slovak 0245 identifier?</summary>
+        <p>Only that 0245 is an allowed scheme. In the Peppol file of release 3.0.21 the code appears only in the list of allowed electronic address schemes, rule PEPPOL-EN16931-CL008, and no check verifies that the ten digit DIČ follows it. Our check reports a VAT number in that place as ARL-SK-DIC-TVAR.</p>
+      </details>
+      <details>
+        <summary>Does a clean result mean the buyer will accept my invoice?</summary>
+        <p>Only for what was actually checked. A clean run with the current artefacts means the file is compliant with the BIS. A partial check like ours, which skips the XML Schema and the UBL-CR, UBL-SR and UBL-DT rules, does not guarantee acceptance by the buyer or the network.</p>
+      </details>
+
+      <h2>Check your own file</h2>
+      <p>Load your XML into the free <a href="https://arling.sk/efaktura/en/peppol-validator/">ARLing Peppol validator</a>: it reads the file in your browser, shows the detected profile and the number of rules it evaluated, and lists every finding with the rule code, the value from the file and the original wording of the rule. It still runs release 3.0.20, so if it reports BR-CO-25, or R007 for profile 02 or a French profile, the mistake is in our rules, not in your file. It also runs two checks the official files do not make on a Slovak invoice, the IBAN checksum and the DIČ after 0245. Before a large batch goes out, also run the file through a full validator such as the free one from ecosio, which checks the XML Schema and the Schematron rules. The same <a href="https://arling.sk/efaktura/en/">e-invoice tools</a> also draw the XML as a readable document, so you see the invoice the way a person reads it.</p>
+
+      <div class="zdroje">
+        <p><b>Sources.</b> The facts in this note are numbered after our internal fact list and were checked on the publication date. If a source has changed since, write to andrej@arling.sk and we will correct this page.</p>
+        <ul>
+          <li>F76, F79, F82: Finančná správa SR, 9/DPH/2025/IM Najčastejšie otázky a odpovede k eFaktúre, <a href="https://www.financnasprava.sk/_img/pfsedit/Dokumenty_PFS/Zverejnovanie_dok/Aktualne/DPH/2026/2026.08.26_009_DPH_2025_IM_FaQ_eFaktura.pdf.pdf" rel="noopener" target="_blank" style="overflow-wrap:anywhere">https://www.financnasprava.sk/_img/pfsedit/Dokumenty_PFS/Zverejnovanie_dok/Aktualne/DPH/2026/2026.08.26_009_DPH_2025_IM_FaQ_eFaktura.pdf.pdf</a> (overené 11. 9. 2026)</li>
+          <li>F84: Finančná správa SR, 9/DPH/2025/IM Najčastejšie otázky a odpovede k eFaktúre, <a href="https://www.financnasprava.sk/_img/pfsedit/Dokumenty_PFS/Zverejnovanie_dok/Aktualne/DPH/2026/2026.08.26_009_DPH_2025_IM_FaQ_eFaktura.pdf.pdf" rel="noopener" target="_blank" style="overflow-wrap:anywhere">https://www.financnasprava.sk/_img/pfsedit/Dokumenty_PFS/Zverejnovanie_dok/Aktualne/DPH/2026/2026.08.26_009_DPH_2025_IM_FaQ_eFaktura.pdf.pdf</a>; zoznam kódov Peppol, <a href="https://docs.peppol.eu/poacc/billing/3.0/codelist/ICD/" rel="noopener" target="_blank" style="overflow-wrap:anywhere">https://docs.peppol.eu/poacc/billing/3.0/codelist/ICD/</a> (overené 11. 9. 2026)</li>
+          <li>F87: KoSIT, XRechnung FAQ, <a href="https://xeinkauf.de/xrechnung/faq/" rel="noopener" target="_blank" style="overflow-wrap:anywhere">https://xeinkauf.de/xrechnung/faq/</a>; schematron XRechnung, <a href="https://github.com/itplr-kosit/xrechnung-schematron" rel="noopener" target="_blank" style="overflow-wrap:anywhere">https://github.com/itplr-kosit/xrechnung-schematron</a> (overené 11. 9. 2026)</li>
+          <li>F90: schematron CEN EN 16931, <a href="https://github.com/ConnectingEurope/eInvoicing-EN16931" rel="noopener" target="_blank" style="overflow-wrap:anywhere">https://github.com/ConnectingEurope/eInvoicing-EN16931</a> (licencia EUPL 1.2, overené 11. 9. 2026)</li>
+          <li>F91: schematron Peppol BIS Billing 3.0, <a href="https://github.com/OpenPEPPOL/peppol-bis-invoice-3" rel="noopener" target="_blank" style="overflow-wrap:anywhere">https://github.com/OpenPEPPOL/peppol-bis-invoice-3</a> (overené 11. 9. 2026)</li>
+          <li>F99: schematron XRechnung, súbor XRechnung-UBL-validation.sch, <a href="https://github.com/itplr-kosit/xrechnung-schematron" rel="noopener" target="_blank" style="overflow-wrap:anywhere">https://github.com/itplr-kosit/xrechnung-schematron</a> (licencia Apache License 2.0, overené 11. 9. 2026)</li>
+          <li>F213: Peppol BIS Billing 3.0, May 2026 Release, stránka pravidla BR-CO-15 s kontextom a testom XPath, <a href="https://docs.peppol.eu/poacc/billing/3.0/rules/ubl-tc434/BR-CO-15/" rel="noopener" target="_blank" style="overflow-wrap:anywhere">https://docs.peppol.eu/poacc/billing/3.0/rules/ubl-tc434/BR-CO-15/</a>; schematron CEN-EN16931-UBL.sch verzie 1.3.16 (Last update: 2026-04-10), <a href="https://docs.peppol.eu/poacc/billing/3.0/files/CEN-EN16931-UBL.sch" rel="noopener" target="_blank" style="overflow-wrap:anywhere">https://docs.peppol.eu/poacc/billing/3.0/files/CEN-EN16931-UBL.sch</a> (assert id BR-CO-15 s flag fatal; znenie assertu je zhodné s verziou 1.3.15 z <a href="https://github.com/OpenPEPPOL/peppol-bis-invoice-3" rel="noopener" target="_blank" style="overflow-wrap:anywhere">https://github.com/OpenPEPPOL/peppol-bis-invoice-3</a>) a EN16931-UBL-model.sch, <a href="https://github.com/ConnectingEurope/eInvoicing-EN16931" rel="noopener" target="_blank" style="overflow-wrap:anywhere">https://github.com/ConnectingEurope/eInvoicing-EN16931</a> (param BR-CO-15); stránka pravidla aj súbor verzie 1.3.16 stiahnuté a prečítané znova 25. 9. 2026</li>
+          <li>F214: schematron CEN-EN16931-UBL.sch verzie 1.3.16, <a href="https://docs.peppol.eu/poacc/billing/3.0/files/CEN-EN16931-UBL.sch" rel="noopener" target="_blank" style="overflow-wrap:anywhere">https://docs.peppol.eu/poacc/billing/3.0/files/CEN-EN16931-UBL.sch</a> (assert id BR-CO-13, BR-CO-14, BR-CO-16, BR-CO-17 a BR-S-09, všetky flag fatal; znenie assertov je zhodné s verziou 1.3.15 z <a href="https://github.com/OpenPEPPOL/peppol-bis-invoice-3" rel="noopener" target="_blank" style="overflow-wrap:anywhere">https://github.com/OpenPEPPOL/peppol-bis-invoice-3</a>), stiahnutý a prečítaný znova 25. 9. 2026</li>
+          <li>F216: <a href="https://arling.sk/efaktura/en/" rel="noopener" target="_blank" style="overflow-wrap:anywhere">https://arling.sk/efaktura/en/</a> (overené 25. 9. 2026 priamo na živej stránke: „Free, no account, and the file never leaves your browser.“, 332 kódov pravidiel, „We do not check the UBL 2.1 XSD schema“, „A CII file we recognise and tell you so, but we do not run the rules on it.“, tlačidlo Load sample) a <a href="https://arling.sk/efaktura/en/rules/br-co-15/" rel="noopener" target="_blank" style="overflow-wrap:anywhere">https://arling.sk/efaktura/en/rules/br-co-15/</a> (overené 25. 9. 2026)</li>
+          <li>F220: KoSIT, <a href="https://github.com/itplr-kosit/validator" rel="noopener" target="_blank" style="overflow-wrap:anywhere">https://github.com/itplr-kosit/validator</a> (README, overené 25. 9. 2026 priamo na zdroji; citát: „It basically does the following in order: identify actual XML format, validate the XML file (using schema and schematron rules), generate a custom report / extract custom data from the XML file, compute an acceptance status.“ a „The Validator is licensed under the Apache 2.0 license.“); <a href="https://raw.githubusercontent.com/itplr-kosit/validator/main/README.md" rel="noopener" target="_blank" style="overflow-wrap:anywhere">https://raw.githubusercontent.com/itplr-kosit/validator/main/README.md</a> (standalone JAR „can be used with Java &gt;= 11“); <a href="https://raw.githubusercontent.com/itplr-kosit/validator/main/docs/cli.md" rel="noopener" target="_blank" style="overflow-wrap:anywhere">https://raw.githubusercontent.com/itplr-kosit/validator/main/docs/cli.md</a> (voľby -p a -h, návratové kódy: „All validated xml files are acceptable according to the scenario configurations“, „Number of rejected (e.g. not acceptable) xml files“); <a href="https://github.com/itplr-kosit/validator-configuration-xrechnung" rel="noopener" target="_blank" style="overflow-wrap:anywhere">https://github.com/itplr-kosit/validator-configuration-xrechnung</a> (overené 25. 9. 2026); nápoveda programu validator-1.6.3-standalone.jar vypísaná 25. 9. 2026 („-h, --html, --extract-html: Extract and save any html content within result as a separate file“)</li>
+          <li>F225: OpenPeppol, Compliance to BIS, <a href="https://docs.peppol.eu/poacc/billing/3.0/compliance/" rel="noopener" target="_blank" style="overflow-wrap:anywhere">https://docs.peppol.eu/poacc/billing/3.0/compliance/</a> (overené 25. 9. 2026 priamo na zdroji; citáty: „A message is considered compliant to this BIS if no fatal errors are detected when validating with the current validation artefacts.“, „A receiver MAY reject receiving messages which are not compliant to the BIS.“, „Use of this Schematron is optional, however conformance to the rules themselves is mandatory.“); Peppol BIS Billing 3.0, <a href="https://docs.peppol.eu/poacc/billing/3.0/" rel="noopener" target="_blank" style="overflow-wrap:anywhere">https://docs.peppol.eu/poacc/billing/3.0/</a> (overené 25. 9. 2026, odkazy Schematron for Peppol rules (UBL) a Schematron for TC434 rules (UBL))</li>
+          <li>F226: Ionite, Validating Peppol Documents, <a href="https://ionite.net/news-articles/2023-08-17_validating_peppol_documents/" rel="noopener" target="_blank" style="overflow-wrap:anywhere">https://ionite.net/news-articles/2023-08-17_validating_peppol_documents/</a> (overené 25. 9. 2026; citáty: „For Peppol BIS documents, there is always an XML Schema and one or more Schematron definitions.“, „XML Schemas can be used to make sure that XML document adhere to a pre-defined structure, in terms of which elements occur where, how often, and in which order.“, „Schematron is capable of expressing constraints in ways that other XML schema languages like XML Schema and DTD cannot.“); Invoice Navigator, E-Invoice Schematron Rules Explained, <a href="https://www.invoicenavigator.eu/blog/e-invoice-schematron-rules-explained" rel="noopener" target="_blank" style="overflow-wrap:anywhere">https://www.invoicenavigator.eu/blog/e-invoice-schematron-rules-explained</a> (overené 25. 9. 2026; citát: „Schematron checks document meaning: relationships between elements, conditional requirements, calculation correctness.“); Peppol Practical, <a href="https://peppol.helger.com/public/locale-en_US/menuitem-validation" rel="noopener" target="_blank" style="overflow-wrap:anywhere">https://peppol.helger.com/public/locale-en_US/menuitem-validation</a> (overené 25. 9. 2026; citát: „This page is a personal project of Philip Helger. The content is neither provided nor approved by OpenPeppol AISBL.“)</li>
+          <li>F227: OpenPeppol, Release notes for Peppol BIS Billing v3, <a href="https://docs.peppol.eu/poacc/billing/3.0/release-notes/" rel="noopener" target="_blank" style="overflow-wrap:anywhere">https://docs.peppol.eu/poacc/billing/3.0/release-notes/</a> (overené 25. 9. 2026 priamo na zdroji; citáty: „Date of publication: 2026-05-20“, „Mandatory to use from: 2026-08-17“, „Validation artefacts UBL and CII 1.3.16 publication date: 2026-04-10“, „BR-CO-25 removed“, „Changed rule PEPPOL-COMMON-R052 and PEPPOL-COMMON-R053 to be errors instead of warnings, as the rules are now mandatory for all profiles.“); súbory <a href="https://docs.peppol.eu/poacc/billing/3.0/files/PEPPOL-EN16931-UBL.sch" rel="noopener" target="_blank" style="overflow-wrap:anywhere">https://docs.peppol.eu/poacc/billing/3.0/files/PEPPOL-EN16931-UBL.sch</a> a <a href="https://docs.peppol.eu/poacc/billing/3.0/files/CEN-EN16931-UBL.sch" rel="noopener" target="_blank" style="overflow-wrap:anywhere">https://docs.peppol.eu/poacc/billing/3.0/files/CEN-EN16931-UBL.sch</a> (stiahnuté a prečítané 25. 9. 2026: hlavičky „Last update: 2026 May release 3.0.21.“ a „Schematron version 1.3.16 - Last update: 2026-04-10“, premenná profile, assert PEPPOL-EN16931-R007, BR-CO-25 v súbore nie je); vetva master <a href="https://github.com/OpenPEPPOL/peppol-bis-invoice-3" rel="noopener" target="_blank" style="overflow-wrap:anywhere">https://github.com/OpenPEPPOL/peppol-bis-invoice-3</a> (overené 25. 9. 2026: „Last update: 2025 November release 3.0.20.“ a „Schematron version 1.3.15 - Last update: 2025-10-16“)</li>
+          <li>F228: ARLing, počet atribútov flag v prvkoch assert a report súborov <a href="https://docs.peppol.eu/poacc/billing/3.0/files/CEN-EN16931-UBL.sch" rel="noopener" target="_blank" style="overflow-wrap:anywhere">https://docs.peppol.eu/poacc/billing/3.0/files/CEN-EN16931-UBL.sch</a> a <a href="https://docs.peppol.eu/poacc/billing/3.0/files/PEPPOL-EN16931-UBL.sch" rel="noopener" target="_blank" style="overflow-wrap:anywhere">https://docs.peppol.eu/poacc/billing/3.0/files/PEPPOL-EN16931-UBL.sch</a>, stiahnutých a spočítaných 25. 9. 2026 (výpis Node)</li>
+          <li>F229: Európska komisia, eInvoice Validator, <a href="https://www.itb.ec.europa.eu/invoice/upload" rel="noopener" target="_blank" style="overflow-wrap:anywhere">https://www.itb.ec.europa.eu/invoice/upload</a> (overené 25. 9. 2026 priamo na stránke; citáty: „UBL Invoice XML - release 1.3.16“, „offered by the European Commission's DIGIT“, „powered by the Interoperability Test Bed“)</li>
+          <li>F230: <a href="https://arling.sk/efaktura/en/peppol-validator/" rel="noopener" target="_blank" style="overflow-wrap:anywhere">https://arling.sk/efaktura/en/peppol-validator/</a> (overené 25. 9. 2026 na živej stránke; citáty: „From the CustomizationID field, term BT-24.“, „For this profile we evaluated 289 rules.“, „the 755 rules in the UBL-CR, UBL-SR and UBL-DT groups“)</li>
+          <li>F231: ARLing, vlastné meranie kontroly e-faktúry <a href="https://arling.sk/efaktura/en/peppol-validator/" rel="noopener" target="_blank" style="overflow-wrap:anywhere">https://arling.sk/efaktura/en/peppol-validator/</a> nad vymyslenou vzorovou faktúrou z tlačidla Load sample a jej variantmi, 25. 9. 2026 (výpis Node)</li>
+          <li>F232: ARLing, vlastné meranie kontroly e-faktúry <a href="https://arling.sk/efaktura/en/peppol-validator/" rel="noopener" target="_blank" style="overflow-wrap:anywhere">https://arling.sk/efaktura/en/peppol-validator/</a> nad variantmi vymyslenej vzorovej faktúry z tlačidla Load sample, 25. 9. 2026 (výpis Node); príznaky a znenie pravidiel zo súborov <a href="https://docs.peppol.eu/poacc/billing/3.0/files/CEN-EN16931-UBL.sch" rel="noopener" target="_blank" style="overflow-wrap:anywhere">https://docs.peppol.eu/poacc/billing/3.0/files/CEN-EN16931-UBL.sch</a> a <a href="https://docs.peppol.eu/poacc/billing/3.0/files/PEPPOL-EN16931-UBL.sch" rel="noopener" target="_blank" style="overflow-wrap:anywhere">https://docs.peppol.eu/poacc/billing/3.0/files/PEPPOL-EN16931-UBL.sch</a> (prečítané 25. 9. 2026); poznámky k vydaniu <a href="https://docs.peppol.eu/poacc/billing/3.0/release-notes/" rel="noopener" target="_blank" style="overflow-wrap:anywhere">https://docs.peppol.eu/poacc/billing/3.0/release-notes/</a> (overené 25. 9. 2026)</li>
+          <li>F233: schematron CEN-EN16931-UBL.sch verzie 1.3.16, <a href="https://docs.peppol.eu/poacc/billing/3.0/files/CEN-EN16931-UBL.sch" rel="noopener" target="_blank" style="overflow-wrap:anywhere">https://docs.peppol.eu/poacc/billing/3.0/files/CEN-EN16931-UBL.sch</a> (stiahnutý a prečítaný 25. 9. 2026, asserty porovnané so súborom verzie 1.3.15 z <a href="https://github.com/OpenPEPPOL/peppol-bis-invoice-3" rel="noopener" target="_blank" style="overflow-wrap:anywhere">https://github.com/OpenPEPPOL/peppol-bis-invoice-3</a>); stránka pravidla <a href="https://docs.peppol.eu/poacc/billing/3.0/rules/ubl-tc434/BR-DEC-13/" rel="noopener" target="_blank" style="overflow-wrap:anywhere">https://docs.peppol.eu/poacc/billing/3.0/rules/ubl-tc434/BR-DEC-13/</a> (prečítaná 25. 9. 2026, May 2026 Release)</li>
+          <li>F238: ARLing, počet atribútov id v prvkoch assert a report a hľadanie reťazcov 0245 a IBAN v súboroch <a href="https://docs.peppol.eu/poacc/billing/3.0/files/PEPPOL-EN16931-UBL.sch" rel="noopener" target="_blank" style="overflow-wrap:anywhere">https://docs.peppol.eu/poacc/billing/3.0/files/PEPPOL-EN16931-UBL.sch</a> a <a href="https://docs.peppol.eu/poacc/billing/3.0/files/CEN-EN16931-UBL.sch" rel="noopener" target="_blank" style="overflow-wrap:anywhere">https://docs.peppol.eu/poacc/billing/3.0/files/CEN-EN16931-UBL.sch</a>, stiahnutých a prečítaných 25. 9. 2026 (hlavičky „Last update: 2026 May release 3.0.21.“ a „Schematron version 1.3.16 - Last update: 2026-04-10“; citát: „[DE-R-019]-If both supplier and customer are located in Germany, the element &quot;Payment account identifier&quot; (BT-84) should contain a valid IBAN if code 58 SEPA is provided in &quot;Payment means type code&quot; (BT-81).“)</li>
+          <li>F239: Peppol Practical, Document Validation (Upload), <a href="https://peppol.helger.com/public/locale-en_US/menuitem-validation-upload" rel="noopener" target="_blank" style="overflow-wrap:anywhere">https://peppol.helger.com/public/locale-en_US/menuitem-validation-upload</a> (prečítané 25. 9. 2026; citát: „This page was moved. The new home of the validation per upload is at my friends of ecosio: <a href="https://ecosio.com/en/peppol-and-xml-document-validator/" rel="noopener" target="_blank" style="overflow-wrap:anywhere">https://ecosio.com/en/peppol-and-xml-document-validator/</a> They are using my validation engine and helping me to save some server resources“); ecosio, <a href="https://ecosio.com/en/peppol-and-xml-document-validator/" rel="noopener" target="_blank" style="overflow-wrap:anywhere">https://ecosio.com/en/peppol-and-xml-document-validator/</a> (prečítané 25. 9. 2026; citáty: „Free Peppol, e-invoice &amp; XML validator“, „This includes the following three stage checks“, „Conformance to XML schema“, „Conformance to schematron rules“, „All documents submitted to the validation service are stored and processed in a non-persistent manner for the duration of the validation only, and are deleted after the result is displayed.“); phive-rules README, <a href="https://raw.githubusercontent.com/phax/phive-rules/master/README.md" rel="noopener" target="_blank" style="overflow-wrap:anywhere">https://raw.githubusercontent.com/phax/phive-rules/master/README.md</a> (prečítané 25. 9. 2026; v riadku o dánskych pravidlách CIUS-DK 1.17.0 citát: „The rules build on“ a súradnice eu.peppol.bis3:invoice:2026.5 a eu.peppol.bis3:creditnote:2026.5 s poznámkou „(Peppol BIS Billing 3.0.21)“)</li>
+        </ul>
+      </div>
+    </article>
+  </div>
+
+<!-- arling-related:start -->
+<aside class="note-dalej wrap" aria-labelledby="notes-related-title">
+<style>
+.note-dalej{max-width:min(100%,880px);margin:0 auto;padding:clamp(30px,4vw,56px) 0 clamp(34px,4.5vw,64px)}
+.note-dalej .nd-mast{display:flex;justify-content:space-between;gap:10px;margin:0 0 clamp(22px,3vw,34px);padding:10px 0;border-top:1px solid rgba(255,255,255,.42);border-bottom:1px solid var(--line);font:500 13px/1.3 var(--ui);color:var(--muted);max-width:none}
+.note-dalej .nd-mast span:nth-child(2){color:var(--body)}
+.note-dalej h2{font-size:clamp(21px,2vw,27px);font-weight:600;line-height:1.16;letter-spacing:-.018em;margin:0}
+.note-dalej h3{font:600 13px/1.3 var(--ui);color:var(--muted);letter-spacing:.02em;margin:clamp(26px,3vw,38px) 0 0}
+.note-dalej ol{list-style:none;margin:14px 0 0;padding:0;border-top:1px solid var(--line)}
+.note-dalej li{border-bottom:1px solid var(--line);margin:0}
+.note-dalej li a{display:grid;grid-template-columns:minmax(0,1fr) minmax(88px,auto);gap:4px 20px;align-items:baseline;padding:13px 10px;margin:0 -10px;border-radius:10px;text-decoration:none;color:inherit;transition:background-color .18s var(--ease)}
+.note-dalej li a:hover,.note-dalej li a:focus-visible{background:rgba(255,255,255,.04)}
+.note-dalej strong{display:block;font:600 17px/1.32 var(--display);color:var(--ink);letter-spacing:-.01em}
+.note-dalej .nd-veta{display:block;margin-top:4px;font-size:15px;line-height:1.45;color:var(--body)}
+.note-dalej .nd-meta{font:600 13px/1.4 var(--ui);color:var(--muted);text-align:right;white-space:nowrap}
+.note-dalej .nd-produkt .nd-meta{color:var(--accent-light)}
+.note-dalej .nd-vsetky{margin:18px 0 0;font:500 14.5px/1.4 var(--ui);color:var(--body)}
+@media(max-width:600px){.note-dalej li a{grid-template-columns:minmax(0,1fr)}.note-dalej .nd-meta{text-align:left}}
+</style>
+  <p class="nd-mast"><span>ARLing Notes</span><span>English</span><span>arling.sk</span></p>
+  <h2 id="notes-related-title">Where this note leads</h2>
+  <ol>
+    <li class="nd-produkt"><a href="https://arling.sk/efaktura/en/" data-umami-event="note_to_product" data-umami-event-target="peppol-invoice-validator-what-it-checks"><span><strong>E-invoice</strong><span class="nd-veta">Check XML against EN 16931 and Peppol BIS 3.0, or build a new invoice from a form.</span></span><span class="nd-meta">Check is free</span></a></li>
+  </ol>
+  <h3>Related articles</h3>
+  <ol>
+    <li><a href="https://arling.sk/notes/peppol-invoice-validation-errors-explained/" lang="en" data-umami-event="open-related-note" data-umami-event-note="peppol-invoice-validation-errors-explained" data-umami-event-source="peppol-invoice-validator-what-it-checks"><span><strong>Peppol Invoice Validation Errors Explained</strong></span><span class="nd-meta"></span></a></li>
+    <li><a href="https://arling.sk/notes/br-co-15-and-totals-errors/" lang="en" data-umami-event="open-related-note" data-umami-event-note="br-co-15-and-totals-errors" data-umami-event-source="peppol-invoice-validator-what-it-checks"><span><strong>BR-CO-15 and the Other Reasons Invoice Totals Do Not Match</strong></span><span class="nd-meta"></span></a></li>
+    <li><a href="https://arling.sk/notes/peppol-invoice-five-fields-worth-checking-first/" lang="en" data-umami-event="open-related-note" data-umami-event-note="peppol-invoice-five-fields-worth-checking-first" data-umami-event-source="peppol-invoice-validator-what-it-checks"><span><strong>Peppol Invoice Rejected? Five Fields Worth Checking First</strong></span><span class="nd-meta"></span></a></li>
+    <li><a href="https://arling.sk/notes/xrechnung-vs-peppol-bis-what-a-foreign-supplier-must-know/" lang="en" data-umami-event="open-related-note" data-umami-event-note="xrechnung-vs-peppol-bis-what-a-foreign-supplier-must-know" data-umami-event-source="peppol-invoice-validator-what-it-checks"><span><strong>XRechnung vs Peppol BIS Billing 3.0: A Guide for Foreign Suppliers</strong></span><span class="nd-meta"></span></a></li>
+    <li><a href="https://arling.sk/notes/how-to-create-a-ubl-invoice-without-an-erp/" lang="en" data-umami-event="open-related-note" data-umami-event-note="how-to-create-a-ubl-invoice-without-an-erp" data-umami-event-source="peppol-invoice-validator-what-it-checks"><span><strong>How to Create a UBL Invoice Without an ERP System</strong></span><span class="nd-meta"></span></a></li>
+  </ol>
+  <p class="nd-vsetky"><a href="/notes/en/">All articles</a></p>
+</aside>
+<!-- arling-related:end -->
+</main>
+
+<footer class="site-footer">
+  <div class="wrap foot">
+    <div class="site-foot-top"><div><a class="site-brand" href="https://arling.sk/en/" aria-label="ARLing home" data-site-home><svg viewBox="0 0 488 215" width="38" height="15" aria-hidden="true" focusable="false"><path fill="#f4f4f7" fill-rule="evenodd" d="M0.00,213.00L74.00,214.00L181.00,85.00L285.00,214.00L360.00,214.00L206.00,21.00L185.00,4.00L164.00,10.00Z M221.00,0.00L263.00,50.00L395.00,50.00L409.00,55.00L419.00,76.00L401.00,96.00L313.00,98.00L411.00,214.00L487.00,214.00L422.00,139.00L457.00,123.00L482.00,88.00L482.00,48.00L463.00,19.00L417.00,0.00Z"/><path fill="#f2643c" d="M269.00,66.00L269.00,67.00L268.00,68.00L268.00,70.00L267.00,71.00L267.00,76.00L268.00,77.00L268.00,79.00L270.00,81.00L270.00,82.00L271.00,82.00L273.00,84.00L274.00,84.00L277.00,86.00L279.00,86.00L280.00,87.00L287.00,87.00L288.00,86.00L290.00,86.00L291.00,85.00L294.00,84.00L298.00,80.00L298.00,79.00L299.00,78.00L299.00,75.00L300.00,74.00L300.00,72.00L299.00,71.00L299.00,69.00L298.00,68.00L297.00,65.00L295.00,63.00L294.00,63.00L289.00,60.00L278.00,60.00L277.00,61.00L276.00,61.00L275.00,62.00L272.00,63.00Z"/></svg><b>ARLing</b></a><p class="site-foot-firma">ARLing s. r. o., company ID <span class="num">56583486</span>, Bratislava. Own server in the European Union. Software for companies, freelancers and individuals.</p></div><a class="site-cta" href="https://arling.sk/shop/" data-umami-event="shell_footer_cta">Shop<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></div>
+    <div class="site-foot-cols"><div><p>Business software</p><ul><li><a href="https://arling.sk/proof/">Proof</a></li><li><a href="https://arling.sk/renewals/">Renewals</a></li><li><a href="https://arling.sk/asistent/en/">Asistent</a></li><li><a href="https://arling.sk/technologies/">Stacklog</a></li><li><a href="https://arling.sk/world/">The World in Squares</a></li></ul></div><div><p>Invoices and payments</p><ul><li><a href="https://arling.sk/efaktura/en/">E-invoice</a></li><li><a href="https://arling.sk/sepa-pain001-doctor/">pain.001 check</a></li><li><a href="https://arling.sk/sepa-pain001-generator/">pain.001 generator</a></li><li><a href="https://arling.sk/camt053-to-excel/">Statement to Excel</a></li><li><a href="https://arling.sk/parovac-platieb/en/">Payment matcher</a></li><li><a href="https://arling.sk/kontrola-suboru/en/">SEPA file check</a></li><li><a href="https://arling.sk/bankove-nastroje/en/">Banking tools Pro</a></li></ul></div><div><p>Documents and company</p><ul><li><a href="https://arling.sk/gdpr-dokumenty/">GDPR documents<em class="site-sk">SK</em></a></li><li><a href="https://arling.sk/vzory-zmluv/">Contract templates<em class="site-sk">SK</em></a></li><li><a href="https://arling.sk/zivotopis/en/">CV builder</a></li><li><a href="https://arling.sk/feed-doctor/en/">Feed Doctor</a></li><li><a href="https://arling.sk/mail-doctor/">Mail Doctor</a></li></ul></div><div><p>Publishing</p><ul><li><a href="https://arling.sk/shop/">Shop</a></li><li><a href="https://arling.sk/classics/">Classics for e-ink</a></li><li><a href="https://arling.sk/morning-quiet/">Morning Quiet</a></li><li><a href="https://arling.sk/games/">Browser games</a></li><li><a href="https://arling.sk/puzzle-post/">Puzzle Post</a></li><li><a href="https://arling.sk/puzzle-post/bulletin/">Puzzle Post Bulletin</a></li><li><a href="https://arling.sk/memory-post/">Memory Post</a></li></ul></div><div><p>Company</p><ul><li><a href="https://arling.sk/how-we-work/en/">How we work</a></li><li><a href="https://arling.sk/notes/en/">Guides</a></li><li><a href="https://arling.sk/kontakt/en/">Contact</a></li><li><a href="https://arling.sk/ucet/en/">Account</a></li><li><a href="https://arling.sk/brand/en/">Brand</a></li><li><a href="https://arling.sk/podmienky/en/">Terms</a></li><li><a href="https://arling.sk/privacy/en/">Privacy</a></li><li><a href="https://arling.sk/odstupenie/en/">Withdraw from the contract here</a></li><li><a href="https://arling.sk/impressum/en/">Imprint</a></li></ul></div></div>
+    <p class="site-dev site-dev-zoznam"><span>For developers</span><a href="https://arling.sk/cors-doctor/">CORS</a><a href="https://arling.sk/jwt-doctor/">JWT</a><a href="https://arling.sk/cookie-samesite-doctor/">Cookie SameSite</a><a href="https://arling.sk/redirect-loop-doctor/">Redirect loop</a><a href="https://arling.sk/stripe-webhook-doctor/">Stripe webhook</a><a href="https://arling.sk/firebase-auth-domain-doctor/">Firebase auth</a><a href="https://arling.sk/google-oauth-redirect-doctor/">Google OAuth</a><a href="https://arling.sk/supabase-redirect-doctor/">Supabase redirect</a><a href="https://arling.sk/flutter-supabase-doctor/">Flutter + Supabase</a><a href="https://arling.sk/expo-universal-links-doctor/">Expo links</a><a href="https://arling.sk/expo-supabase-auth-doctor/">Expo + Supabase</a><a href="https://arling.sk/api/">Puzzle API</a></p>
+    <div class="site-foot-bottom"><p>ARLing s. r. o., Ivanská cesta 32E, 821 04 Bratislava, Slovakia. Company ID 56583486, VAT ID SK2122352100. <a href="mailto:andrej@arling.sk">andrej@arling.sk</a></p><p><a href="https://arling.sk/impressum/en/">Impressum</a> · <a href="https://arling.sk/llms.txt">llms.txt</a> · <a href="https://arling.sk/sitemap-index.xml">Sitemap</a></p></div>
+    <p class="site-foot-legal">Tools are provided as is, without warranty. Anonymous visit counts via self-hosted Umami. <a href="https://arling.sk/privacy/en/">Privacy</a> · <a href="https://arling.sk/podmienky/en/">Terms</a> · <a href="https://arling.sk/gdpr/en/">GDPR</a> · <a href="https://arling.sk/odstupenie/en/">Withdraw from the contract here</a></p>
+  </div>
+</footer>
+
+<script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="338f035d-41c5-411e-8391-9a41db6accfd"></script>
+</body>
+</html>
