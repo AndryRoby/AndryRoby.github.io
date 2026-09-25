@@ -10,14 +10,15 @@
 <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
 <link rel="icon" href="../../favicon.ico" sizes="48x48">
 <link rel="apple-touch-icon" href="../../icon-180.png">
-<title>BR-CO-15 and the Other Reasons Invoice Totals Do Not Match | ARLing</title>
-<meta name="description" content="An invoice validator that rejects a file because BR-CO-15 fails is telling you something precise: the invoice total amount with VAT on the document does not">
+<title>BR-CO-15 error: fix the invoice total with VAT | ARLing</title>
+<meta name="description" content="BR-CO-15 means the total with VAT is not the net total plus VAT in the invoice currency. Four causes we reproduced, the exact messages and the fix.">
 <meta property="og:type" content="article">
-<meta property="og:title" content="BR-CO-15 and the Other Reasons Invoice Totals Do Not Match">
-<meta property="og:description" content="An invoice validator that rejects a file because BR-CO-15 fails is telling you something precise: the invoice total amount with VAT on the document does not">
+<meta property="og:title" content="BR-CO-15 error: fix the invoice total with VAT">
+<meta property="og:description" content="BR-CO-15 means the total with VAT is not the net total plus VAT in the invoice currency. Four causes we reproduced, the exact messages and the fix.">
 <meta property="og:url" content="https://arling.sk/notes/br-co-15-and-totals-errors/">
 <meta property="og:locale" content="en_US">
 <link rel="canonical" href="https://arling.sk/notes/br-co-15-and-totals-errors/">
+<link rel="preload" href="/fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/style/paper.css?v=ce09c693">
 <script src="/style/prepinac.js?v=668e98c9" defer></script>
 
@@ -25,10 +26,10 @@
 {
   "@context": "https://schema.org",
   "@type": "Article",
-  "headline": "BR-CO-15 and the Other Reasons Invoice Totals Do Not Match",
-  "description": "An invoice validator that rejects a file because BR-CO-15 fails is telling you something precise: the invoice total amount with VAT on the document does not",
-  "datePublished": "2026-09-11",
-  "dateModified": "2026-09-11",
+  "headline": "BR-CO-15 error: fix the invoice total with VAT",
+  "description": "BR-CO-15 means the total with VAT is not the net total plus VAT in the invoice currency. Four causes we reproduced, the exact messages and the fix.",
+  "datePublished": "2026-09-25",
+  "dateModified": "2026-09-25",
   "inLanguage": "en",
   "author": {
     "@type": "Organization",
@@ -50,26 +51,26 @@
   "mainEntity": [
     {
       "@type": "Question",
-      "name": "What exactly does BR-CO-15 compare?",
+      "name": "Is there any rounding tolerance in BR-CO-15?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "It compares three amounts on the same invoice: the total with VAT, the total without VAT, and the total VAT amount, and requires that the first equals the sum of the other two exactly."
+        "text": "No. The schematron rounds BT-109 plus BT-110 to two decimals and then wants an exact match, so one cent fails. The only margin in this area is in the VAT breakdown, under BR-CO-17 and BR-S-09."
       }
     },
     {
       "@type": "Question",
-      "name": "Can an invoice fail BR-CO-15 even if BR-CO-10 passes?",
+      "name": "Why do I get BR-CO-16 right after fixing BR-CO-15?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Yes. BR-CO-10 checks the line amounts against the header net total, while BR-CO-15 separately checks the net total, VAT total and gross total, so the two checks can pass or fail independently of each other. Separate rule groups also apply to VAT category codes and to allowance or charge amounts, each with their own arithmetic on the same invoice."
+        "text": "Because the amount due (BT-115) still holds the old figure. In our test, correcting only the total with VAT to 73.76 left 73.77 in cbc:PayableAmount, and the checker answered with BR-CO-16. Change both in the same edit; the BR-CO-16 rule page has the formula and our message."
       }
     },
     {
       "@type": "Question",
-      "name": "Is BR-CO-15 the only totals rule in EN 16931?",
+      "name": "The numbers add up. Why does BR-CO-15 still fail?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "No. It is one of 24 calculation and consistency rules in the BR-CO group alone, on top of separate rule groups tied to each VAT category code."
+        "text": "Look at the currency and the count, not the arithmetic. A VAT total whose currencyID differs from the invoice currency, or two cac:TaxTotal groups in the invoice currency, fail the first half of the test."
       }
     }
   ]
@@ -119,53 +120,126 @@
 <main id="arling-obsah" tabindex="-1">
   <div class="wrap">
     <article>
-      <h1>BR-CO-15 and the Other Reasons Invoice Totals Do Not Match</h1>
-      <p class="byline">ARLing s. r. o. · 11 September 2026</p>
+      <h1>BR-CO-15 error: fix the invoice total with VAT</h1>
+      <p class="byline">ARLing s. r. o. · 25 September 2026</p>
 
       <div class="zhrn">
-        <p>An invoice validator that rejects a file because BR-CO-15 fails is telling you something precise: the invoice total amount with VAT on the document does not equal the total without VAT plus the total VAT amount. It is the single most common reason an electronic invoice comes back saying its totals do not match, and it forms the last step in the chain of sum checks on an invoice. The mismatch does not have to start at that final line. It can begin earlier, when the sum of the individual invoice lines fails to equal the net amount stated in the header, which is exactly what the related rule BR-CO-10 checks. Both rules belong to a wider family of calculation and consistency rules inside the EN 16931 standard. This note walks through what BR-CO-15 and BR-CO-10 actually require, why a file that looks correct at a glance can still fail them, and which other totals-shaped rules tend to break on the same invoice.</p>
+        <p>A BR-CO-15 error means the invoice total with VAT (BT-112) is not exactly the total without VAT (BT-109) plus the total VAT amount (BT-110), or that the file does not hold exactly one VAT total in the invoice currency. The rule has no rounding tolerance, so one cent is enough to fail it.</p>
+        <p>The fix is to recompute BT-112 from the two amounts already in the file and to update the amount due (BT-115) with it. Our checker says it plainly: correct the total in the invoice header, not the individual lines.</p>
+        <p>We ran that checker over our sample invoice and over made-up variants of it, and this note quotes what came back: the one-cent rounding mix, a total typed in by hand, a VAT total in the wrong currency, two VAT totals, a VAT amount with three decimals, and the BR-CO-16 error that follows when only half of the fix is done. Each case names the XML element to open and shows the arithmetic.</p>
       </div>
 
-      <h2>Two Kinds of Rules Inside EN 16931</h2>
-      <p>EN 16931 does not treat invoice totals as a separate feature bolted onto the rest of the format. Its schematron splits the whole rule set into two different jobs. The plain BR rules are numbered BR-01 to BR-65, though only 58 of them actually exist, and they check that a required piece of data is present at all, in the right place and in the right format. BR-02 is a plain example of this first group: an invoice must have an invoice number, and a file that leaves it out is rejected outright, with no arithmetic involved.</p>
-      <p>The BR-CO rules are a separate, smaller family, numbered BR-CO-01 to BR-CO-26 though only 24 of them actually exist, and they check something different: that two or more amounts calculated from other figures on the same invoice actually agree with each other. BR-CO-15 and BR-CO-10 both live in this second group, which is why a missing invoice number and a wrong total feel like different kinds of mistakes even though the same schematron run reports both of them.</p>
+      <h2>What BR-CO-15 compares, element by element</h2>
+      <p>The rule text is short: &quot;[BR-CO-15]-Invoice total amount with VAT (BT-112) = Invoice total amount without VAT (BT-109) + Invoice total VAT amount (BT-110).&quot;</p>
+      <p>In a UBL invoice the three business terms sit in these elements:</p>
+      <ul>
+        <li>BT-112, total with VAT: <code>cbc:TaxInclusiveAmount</code> inside <code>cac:LegalMonetaryTotal</code></li>
+        <li>BT-109, total without VAT: <code>cbc:TaxExclusiveAmount</code> inside <code>cac:LegalMonetaryTotal</code></li>
+        <li>BT-110, total VAT: <code>cbc:TaxAmount</code> directly inside <code>cac:TaxTotal</code>, with a <code>currencyID</code> equal to <code>cbc:DocumentCurrencyCode</code></li>
+      </ul>
+      <p>The official schematron test does two things. First it counts the VAT totals in the invoice currency and wants exactly one. Then it compares BT-112 with BT-109 plus BT-110 rounded to two decimals, written as round((BT-109 + BT-110) * 10 * 10) div 100, and any difference is fatal.</p>
+      <p>In CII, the syntax inside Factur-X and ZUGFeRD, the same terms are <code>ram:GrandTotalAmount</code>, <code>ram:TaxBasisTotalAmount</code> and <code>ram:TaxTotalAmount</code>, whose <code>currencyID</code> has to match <code>ram:InvoiceCurrencyCode</code>, all inside <code>ram:SpecifiedTradeSettlementHeaderMonetarySummation</code>. The CII test has one extra branch: it also passes when the total with VAT equals the total without VAT.</p>
+      <p>BR-CO-15 is one link in a chain of totals rules, and its neighbors can show where a wrong figure came from:</p>
+      <ol>
+        <li>BR-CO-10: the line net amounts add up to BT-106</li>
+        <li>BR-CO-13: BT-109 is BT-106 minus document allowances plus document charges</li>
+        <li>BR-CO-14: BT-110 is the sum of the VAT amounts in the breakdown (BT-117)</li>
+        <li>BR-CO-15: BT-112 is BT-109 plus BT-110</li>
+        <li>BR-CO-16: the amount due (BT-115) is BT-112 minus the paid amount (BT-113) plus the rounding amount (BT-114)</li>
+      </ol>
+      <p>Because it is a core EN 16931 rule, the same check runs under Peppol BIS Billing 3.0 and XRechnung with the same code.</p>
 
-      <h2>What BR-CO-15 Actually Compares</h2>
-      <p>The normative text of the rule reads: Invoice total amount with VAT (BT-112) = Invoice total amount without VAT (BT-109) + Invoice total VAT amount (BT-110). In plain terms, whatever the invoice states as its grand total including tax has to equal the net total plus the tax total exactly, with nothing left over and nothing missing.</p>
-      <p>BT-112, BT-109 and BT-110 are three separate fields on the invoice, and the rule requires the first to equal the sum of the other two exactly, not approximately. That means all three have to be kept consistent with each other every time one of them changes.</p>
+      <h2>The one-cent case: two rounding methods in one file</h2>
+      <p>Take a made-up Peppol invoice with three lines of 19.99 each at the Slovak standard rate of 23%. The same three lines give different figures depending on where you round:</p>
+      <ul>
+        <li>VAT per category: 59.97 × 0.23 = 13.7931, rounded 13.79</li>
+        <li>VAT per line: 19.99 × 0.23 = 4.5977, rounded 4.60, three times 13.80</li>
+        <li>Gross per line: 19.99 × 1.23 = 24.5877, rounded 24.59, three times 73.77</li>
+      </ul>
+      <p>If the software writes the VAT per category (13.79) but builds the total with VAT by adding up the rounded gross lines (73.77), our checker returns exactly one error: &quot;The invoice total with VAT (BT-112) should be the total without VAT 59.97 plus the VAT 13.79, that is 73.76. The file says 73.77. Correct the total in the invoice header, not the individual lines.&quot;</p>
+      <p>The VAT breakdown itself is not the problem. BR-CO-17 and BR-S-09 accept a VAT amount per category that differs from taxable amount times rate by less than one unit of currency, so both 13.79 and 13.80 pass there. The totals chain has no such margin, which is why the cent surfaces in BR-CO-15 and nowhere earlier.</p>
+      <p>Both consistent versions passed our checker with zero errors: VAT 13.79 with a total of 73.76, and VAT 13.80 per line with a total of 73.77. Pick one method and derive BT-112 from BT-109 and BT-110 instead of adding up gross lines.</p>
+      <p>The corrected part of the file, with the old figure kept in comments:</p>
+      <pre><code>&lt;cac:TaxTotal&gt;
+        &lt;cbc:TaxAmount currencyID=&quot;EUR&quot;&gt;13.79&lt;/cbc:TaxAmount&gt;
+        &lt;cac:TaxSubtotal&gt;
+      &lt;cbc:TaxableAmount currencyID=&quot;EUR&quot;&gt;59.97&lt;/cbc:TaxableAmount&gt;
+      &lt;cbc:TaxAmount currencyID=&quot;EUR&quot;&gt;13.79&lt;/cbc:TaxAmount&gt;
+      &lt;cac:TaxCategory&gt;
+        &lt;cbc:ID&gt;S&lt;/cbc:ID&gt;
+        &lt;cbc:Percent&gt;23.00&lt;/cbc:Percent&gt;
+        &lt;cac:TaxScheme&gt;
+          &lt;cbc:ID&gt;VAT&lt;/cbc:ID&gt;
+        &lt;/cac:TaxScheme&gt;
+      &lt;/cac:TaxCategory&gt;
+        &lt;/cac:TaxSubtotal&gt;
+      &lt;/cac:TaxTotal&gt;
+      &lt;cac:LegalMonetaryTotal&gt;
+        &lt;cbc:LineExtensionAmount currencyID=&quot;EUR&quot;&gt;59.97&lt;/cbc:LineExtensionAmount&gt;
+        &lt;cbc:TaxExclusiveAmount currencyID=&quot;EUR&quot;&gt;59.97&lt;/cbc:TaxExclusiveAmount&gt;
+        &lt;!-- was 73.77 --&gt;
+        &lt;cbc:TaxInclusiveAmount currencyID=&quot;EUR&quot;&gt;73.76&lt;/cbc:TaxInclusiveAmount&gt;
+        &lt;!-- was 73.77 --&gt;
+        &lt;cbc:PayableAmount currencyID=&quot;EUR&quot;&gt;73.76&lt;/cbc:PayableAmount&gt;
+      &lt;/cac:LegalMonetaryTotal&gt;</code></pre>
+      <p>Your own file may carry the same gap. Open it in our <a href="https://arling.sk/efaktura/en/">free e-invoice checker</a>, and the message shows the two amounts it added and the total it expected.</p>
 
-      <h2>BR-CO-10: When the Mismatch Starts at the Line Level</h2>
-      <p>BR-CO-15 checks the very last step of the sum, where net plus tax has to equal gross. An invoice can already be broken before it gets that far, and BR-CO-10 is what catches the earlier failure. Its text reads: Sum of Invoice line net amount (BT-106) = Σ Invoice line net amount (BT-131). In other words, adding up the net amount of every individual line on the invoice has to produce the same net total that the header of the invoice states separately.</p>
-      <p>The two rules check related but distinct amounts on the invoice. BR-CO-10 checks whether the invoice lines add up to the line-sum field in the header, while BR-CO-15 checks a separate pair of totals further along the same calculation. Checking the line-level sum first is therefore a more direct way to find the source of a totals error than adjusting the final total on its own.</p>
+      <h2>Three other causes, and a near miss with decimals</h2>
+      <p><b>A total typed in by hand.</b> Our own sample with errors is this case: the total with VAT is one cent too high on a reverse charge invoice where the VAT is 0.00. The message reads &quot;The invoice total with VAT (BT-112) should be the total without VAT 1500.00 plus the VAT 0.00, that is 1500.00. The file says 1500.01.&quot;</p>
+      <p><b>A VAT total in the wrong currency.</b> When <code>cbc:TaxAmount</code> in <code>cac:TaxTotal</code> carries <code>currencyID=&quot;CZK&quot;</code> on an invoice in EUR, there is no VAT total in the invoice currency, and BR-CO-15 fails even though the amounts add up. Our checker says &quot;There has to be exactly one invoice total VAT amount (BT-110) in the invoice currency (EUR). We found 0.&quot; and adds PEPPOL-EN16931-R051 for the currency itself.</p>
+      <p><b>Two VAT totals in the invoice currency.</b> Two <code>cac:TaxTotal</code> groups with an amount in EUR make the count two instead of one. Our checker reports BR-CO-15 with &quot;We found 2.&quot; and PEPPOL-EN16931-R054, because a second <code>cac:TaxTotal</code> without a breakdown is allowed only with a VAT accounting currency (BT-6).</p>
+      <p><b>VAT with three decimals.</b> A VAT total of 13.793 does not trip BR-CO-15, because 59.97 + 13.793 = 73.763 is rounded to 73.76 before the comparison. In the official schematron the file fails BR-CO-14 instead, which compares the unrounded 13.793 with the breakdown sum rounded to 13.79, and BR-DEC-20 flags the three decimals in the breakdown. BR-DEC-13 sets a two decimal limit for the VAT total, but its test in schematron 1.3.16 never selects the amount, so it does not fire.</p>
+      <p>Our checker handles this file differently from the official schematron. It reports BR-DEC-13 and BR-DEC-20 and misses BR-CO-14, because it rounds the VAT total to two decimals before comparing. The repair is the same either way: write 13.79 in the total and in the breakdown, as in the version that passed.</p>
 
-      <h2>VAT Categories and Allowances Add Their Own Arithmetic</h2>
-      <p>Totals problems are not only about BR-CO-15 and BR-CO-10. The VAT category code on each invoice line, taken from UNTDID 5305, decides which extra rule group applies to that line: S for the standard rate, Z for zero rated, E for exempt, AE for reverse charge, K for an intra community supply, G for export outside the European Union, O for not subject to VAT, and further codes for the Canary Islands and for Ceuta and Melilla. Categories S, Z, E, AE and G each carry ten rules of their own, O carries fourteen, and K carries twelve, so the wrong category code does not just mislabel a line, it switches on an entirely different block of arithmetic checks.</p>
-      <p>Discounts and surcharges bring a rule of their own on top of that. Under Peppol BIS Billing 3.0, rule PEPPOL-EN16931-R040 states that an allowance or charge amount must equal the base amount multiplied by the percentage and divided by 100, whenever both a base amount and a percentage are given on the invoice. A discount typed in as a rounded amount instead of the exact product of its own base and percentage will fail this rule even when every other total on the invoice is correct.</p>
+      <h2>How to fix BR-CO-15, step by step</h2>
+      <ol>
+        <li>Read the two numbers in the message: our checker names BT-109, BT-110 and the result it expects, for example 59.97 plus 13.79, that is 73.76</li>
+        <li>Count the VAT totals: exactly one <code>cac:TaxTotal/cbc:TaxAmount</code> must carry the <code>currencyID</code> of <code>cbc:DocumentCurrencyCode</code></li>
+        <li>Check that BT-110 equals the sum of the breakdown amounts to the cent, with no more than two decimals in either, or <a href="https://arling.sk/efaktura/en/rules/br-co-14/">BR-CO-14</a> and BR-DEC-20 fail as well</li>
+        <li>Set <code>cbc:TaxInclusiveAmount</code> to BT-109 plus BT-110, rounded to two decimals</li>
+        <li>Set <code>cbc:PayableAmount</code> to that figure minus <code>cbc:PrepaidAmount</code> plus <code>cbc:PayableRoundingAmount</code>, or <a href="https://arling.sk/efaktura/en/rules/br-co-16/">BR-CO-16</a> appears next</li>
+        <li>Check the whole file again, not just this one rule</li>
+      </ol>
+      <p>If the invoice comes out of software, correct the calculation there as well, because a file fixed by hand does not change how the next export rounds. The Banqup help center points senders to the same place: the document, the customer card or the external software that produced the invoice.</p>
+      <p><b>If you received the invoice.</b> BR-CO-15 is fatal, so a file that fails it does not comply with Peppol BIS, and the receiver may reject it. In Banqup, for example, received e-invoices are read-only and the sender has to correct the document and send it again, so ask the supplier for a corrected file and quote the rule code.</p>
+
+      <h2>What our checker shows, and where it stops</h2>
+      <p>Our e-invoice check is free, needs no account and reads the file in your browser without uploading it. It runs 332 rule codes from EN 16931, Peppol BIS Billing 3.0 and XRechnung 3.0 and prints the rule code, a sentence and the XPath for every finding, like the messages quoted above.</p>
+      <p>To see BR-CO-15 without a file of your own, click Load sample and then See the sample with 2 errors: the total with VAT is one cent too high and the IBAN has a typo. The result lists BR-CO-15 at /Invoice/cac:LegalMonetaryTotal/cbc:TaxInclusiveAmount. Every rule also has a page of its own, this one included: <a href="https://arling.sk/efaktura/en/rules/br-co-15/">BR-CO-15 in our rule list</a>.</p>
+      <p>It is not a complete validation. It does not check the UBL 2.1 XSD schema or the UBL-CR, UBL-SR and UBL-DT rules, it runs the rules on UBL and not on CII, and passing it does not guarantee that your buyer or the Peppol network accepts the invoice. In the three decimal case above, its result also differs from the official schematron.</p>
 
       <h2>Frequently asked questions</h2>
       <details>
-        <summary>What exactly does BR-CO-15 compare?</summary>
-        <p>It compares three amounts on the same invoice: the total with VAT, the total without VAT, and the total VAT amount, and requires that the first equals the sum of the other two exactly.</p>
+        <summary>Is there any rounding tolerance in BR-CO-15?</summary>
+        <p>No. The schematron rounds BT-109 plus BT-110 to two decimals and then wants an exact match, so one cent fails. The only margin in this area is in the VAT breakdown, under BR-CO-17 and BR-S-09.</p>
       </details>
       <details>
-        <summary>Can an invoice fail BR-CO-15 even if BR-CO-10 passes?</summary>
-        <p>Yes. BR-CO-10 checks the line amounts against the header net total, while BR-CO-15 separately checks the net total, VAT total and gross total, so the two checks can pass or fail independently of each other. Separate rule groups also apply to VAT category codes and to allowance or charge amounts, each with their own arithmetic on the same invoice.</p>
+        <summary>Why do I get BR-CO-16 right after fixing BR-CO-15?</summary>
+        <p>Because the amount due (BT-115) still holds the old figure. In our test, correcting only the total with VAT to 73.76 left 73.77 in <code>cbc:PayableAmount</code>, and the checker answered with BR-CO-16. Change both in the same edit; the <a href="https://arling.sk/efaktura/en/rules/br-co-16/">BR-CO-16 rule page</a> has the formula and our message.</p>
       </details>
       <details>
-        <summary>Is BR-CO-15 the only totals rule in EN 16931?</summary>
-        <p>No. It is one of 24 calculation and consistency rules in the BR-CO group alone, on top of separate rule groups tied to each VAT category code.</p>
+        <summary>The numbers add up. Why does BR-CO-15 still fail?</summary>
+        <p>Look at the currency and the count, not the arithmetic. A VAT total whose <code>currencyID</code> differs from the invoice currency, or two <code>cac:TaxTotal</code> groups in the invoice currency, fail the first half of the test.</p>
       </details>
 
       <h2>Conclusion</h2>
-      <p>BR-CO-15 is one line inside a much larger rule set that also includes BR-CO-10, the VAT category rule groups, and the allowance and charge rule, so a rejection is worth checking against all of them rather than assuming BR-CO-15 alone is at fault. Working out which of these related rules actually triggered the rejection is a faster way to fix the file than adjusting the final total by trial and error. For more on preparing invoices that meet the EN 16931 standard, see <a href="https://arling.sk/efaktura/en/">ARLing's e-invoicing page</a>.</p>
+      <p>BR-CO-15 is simple arithmetic with two traps around it: exactly one VAT total in the invoice currency, and no tolerance for a cent. Derive the total with VAT from the two amounts in the file, update the amount due with it, and check the whole file again. You can run the same check on your own XML in the <a href="https://arling.sk/efaktura/en/">free e-invoice checker</a>, which shows the rule, the expected figure and the path to the element.</p>
 
       <div class="zdroje">
-        <p><b>Sources.</b> The facts in this note are numbered after our internal fact list and were checked on the publication date. ARLing is not a bank; a clean check result is no guarantee that the bank accepts the payment. If a source has changed since, write to andrej@arling.sk and we will correct this page.</p>
+        <p><b>Sources.</b> The facts in this note are numbered after our internal fact list and were checked on the publication date. If a source has changed since, write to andrej@arling.sk and we will correct this page.</p>
         <ul>
-          <li>F90: schematron CEN EN 16931, <a href="https://github.com/ConnectingEurope/eInvoicing-EN16931" rel="noopener" target="_blank">https://github.com/ConnectingEurope/eInvoicing-EN16931</a> (licencia EUPL 1.2, overené 11. 9. 2026)</li>
-          <li>F92: schematron CEN EN 16931, <a href="https://github.com/ConnectingEurope/eInvoicing-EN16931" rel="noopener" target="_blank">https://github.com/ConnectingEurope/eInvoicing-EN16931</a>; zoznam kódov Peppol, <a href="https://docs.peppol.eu/poacc/billing/3.0/codelist/vatex/" rel="noopener" target="_blank">https://docs.peppol.eu/poacc/billing/3.0/codelist/vatex/</a> (overené 11. 9. 2026)</li>
-          <li>F94, F95, F96: schematron CEN EN 16931, súbor CEN-EN16931-UBL.sch, <a href="https://github.com/ConnectingEurope/eInvoicing-EN16931" rel="noopener" target="_blank">https://github.com/ConnectingEurope/eInvoicing-EN16931</a> (licencia EUPL 1.2, overené 11. 9. 2026)</li>
-          <li>F98: schematron Peppol BIS Billing 3.0, súbor PEPPOL-EN16931-UBL.sch, <a href="https://github.com/OpenPEPPOL/peppol-bis-invoice-3" rel="noopener" target="_blank">https://github.com/OpenPEPPOL/peppol-bis-invoice-3</a> (overené 11. 9. 2026)</li>
+          <li>F93: Finančná správa SR, Sadzby dane, <a href="https://www.financnasprava.sk/sk/podnikatelia/dane/dan-z-pridanej-hodnoty/sadzby-dane" rel="noopener" target="_blank" style="overflow-wrap:anywhere">https://www.financnasprava.sk/sk/podnikatelia/dane/dan-z-pridanej-hodnoty/sadzby-dane</a> (overené 11. 9. 2026)</li>
+          <li>F95, F96: schematron CEN EN 16931, súbor CEN-EN16931-UBL.sch, <a href="https://github.com/ConnectingEurope/eInvoicing-EN16931" rel="noopener" target="_blank" style="overflow-wrap:anywhere">https://github.com/ConnectingEurope/eInvoicing-EN16931</a> (licencia EUPL 1.2, overené 11. 9. 2026)</li>
+          <li>F213: Peppol BIS Billing 3.0, May 2026 Release, stránka pravidla BR-CO-15 s kontextom a testom XPath, <a href="https://docs.peppol.eu/poacc/billing/3.0/rules/ubl-tc434/BR-CO-15/" rel="noopener" target="_blank" style="overflow-wrap:anywhere">https://docs.peppol.eu/poacc/billing/3.0/rules/ubl-tc434/BR-CO-15/</a>; schematron CEN-EN16931-UBL.sch verzie 1.3.16 (Last update: 2026-04-10), <a href="https://docs.peppol.eu/poacc/billing/3.0/files/CEN-EN16931-UBL.sch" rel="noopener" target="_blank" style="overflow-wrap:anywhere">https://docs.peppol.eu/poacc/billing/3.0/files/CEN-EN16931-UBL.sch</a> (assert id BR-CO-15 s flag fatal; znenie assertu je zhodné s verziou 1.3.15 z <a href="https://github.com/OpenPEPPOL/peppol-bis-invoice-3" rel="noopener" target="_blank" style="overflow-wrap:anywhere">https://github.com/OpenPEPPOL/peppol-bis-invoice-3</a>) a EN16931-UBL-model.sch, <a href="https://github.com/ConnectingEurope/eInvoicing-EN16931" rel="noopener" target="_blank" style="overflow-wrap:anywhere">https://github.com/ConnectingEurope/eInvoicing-EN16931</a> (param BR-CO-15); stránka pravidla aj súbor verzie 1.3.16 stiahnuté a prečítané znova 25. 9. 2026</li>
+          <li>F214: schematron CEN-EN16931-UBL.sch verzie 1.3.16, <a href="https://docs.peppol.eu/poacc/billing/3.0/files/CEN-EN16931-UBL.sch" rel="noopener" target="_blank" style="overflow-wrap:anywhere">https://docs.peppol.eu/poacc/billing/3.0/files/CEN-EN16931-UBL.sch</a> (assert id BR-CO-13, BR-CO-14, BR-CO-16, BR-CO-17 a BR-S-09, všetky flag fatal; znenie assertov je zhodné s verziou 1.3.15 z <a href="https://github.com/OpenPEPPOL/peppol-bis-invoice-3" rel="noopener" target="_blank" style="overflow-wrap:anywhere">https://github.com/OpenPEPPOL/peppol-bis-invoice-3</a>), stiahnutý a prečítaný znova 25. 9. 2026</li>
+          <li>F215: schematron CEN-EN16931-UBL.sch verzie 1.3.16, <a href="https://docs.peppol.eu/poacc/billing/3.0/files/CEN-EN16931-UBL.sch" rel="noopener" target="_blank" style="overflow-wrap:anywhere">https://docs.peppol.eu/poacc/billing/3.0/files/CEN-EN16931-UBL.sch</a> (assert id BR-DEC-13 a BR-DEC-14; znenie zhodné s verziou 1.3.15 z <a href="https://github.com/OpenPEPPOL/peppol-bis-invoice-3" rel="noopener" target="_blank" style="overflow-wrap:anywhere">https://github.com/OpenPEPPOL/peppol-bis-invoice-3</a>), stiahnutý a prečítaný znova 25. 9. 2026</li>
+          <li>F216: <a href="https://arling.sk/efaktura/en/" rel="noopener" target="_blank" style="overflow-wrap:anywhere">https://arling.sk/efaktura/en/</a> (overené 25. 9. 2026 priamo na živej stránke: „Free, no account, and the file never leaves your browser.“, 332 kódov pravidiel, „We do not check the UBL 2.1 XSD schema“, „A CII file we recognise and tell you so, but we do not run the rules on it.“, tlačidlo Load sample) a <a href="https://arling.sk/efaktura/en/rules/br-co-15/" rel="noopener" target="_blank" style="overflow-wrap:anywhere">https://arling.sk/efaktura/en/rules/br-co-15/</a> (overené 25. 9. 2026)</li>
+          <li>F219: zaokrúhlenie súčtu podľa testu BR-CO-15 v schematrone CEN-EN16931-UBL.sch, <a href="https://github.com/OpenPEPPOL/peppol-bis-invoice-3" rel="noopener" target="_blank" style="overflow-wrap:anywhere">https://github.com/OpenPEPPOL/peppol-bis-invoice-3</a> (prečítané 25. 9. 2026)</li>
+          <li>F225: OpenPeppol, Compliance to BIS, <a href="https://docs.peppol.eu/poacc/billing/3.0/compliance/" rel="noopener" target="_blank" style="overflow-wrap:anywhere">https://docs.peppol.eu/poacc/billing/3.0/compliance/</a> (overené 25. 9. 2026 priamo na zdroji; citáty: „A message is considered compliant to this BIS if no fatal errors are detected when validating with the current validation artefacts.“, „A receiver MAY reject receiving messages which are not compliant to the BIS.“, „Use of this Schematron is optional, however conformance to the rules themselves is mandatory.“); Peppol BIS Billing 3.0, <a href="https://docs.peppol.eu/poacc/billing/3.0/" rel="noopener" target="_blank" style="overflow-wrap:anywhere">https://docs.peppol.eu/poacc/billing/3.0/</a> (overené 25. 9. 2026, odkazy Schematron for Peppol rules (UBL) a Schematron for TC434 rules (UBL))</li>
+          <li>F233: schematron CEN-EN16931-UBL.sch verzie 1.3.16, <a href="https://docs.peppol.eu/poacc/billing/3.0/files/CEN-EN16931-UBL.sch" rel="noopener" target="_blank" style="overflow-wrap:anywhere">https://docs.peppol.eu/poacc/billing/3.0/files/CEN-EN16931-UBL.sch</a> (stiahnutý a prečítaný 25. 9. 2026, asserty porovnané so súborom verzie 1.3.15 z <a href="https://github.com/OpenPEPPOL/peppol-bis-invoice-3" rel="noopener" target="_blank" style="overflow-wrap:anywhere">https://github.com/OpenPEPPOL/peppol-bis-invoice-3</a>); stránka pravidla <a href="https://docs.peppol.eu/poacc/billing/3.0/rules/ubl-tc434/BR-DEC-13/" rel="noopener" target="_blank" style="overflow-wrap:anywhere">https://docs.peppol.eu/poacc/billing/3.0/rules/ubl-tc434/BR-DEC-13/</a> (prečítaná 25. 9. 2026, May 2026 Release)</li>
+          <li>F234: schematron EN16931-CII-validation-preprocessed.sch verzie 1.3.16 (Last update: 2026-04-10), <a href="https://github.com/ConnectingEurope/eInvoicing-EN16931" rel="noopener" target="_blank" style="overflow-wrap:anywhere">https://github.com/ConnectingEurope/eInvoicing-EN16931</a> (priečinok cii/schematron/preprocessed/, assert id BR-CO-15 s flag fatal) a EN16931-CII-model.sch z toho istého repozitára (priečinok cii/schematron/CII/, param BR-CO-15), oba stiahnuté a prečítané 25. 9. 2026; FNFE-MPE, stránka Factur-X, <a href="https://fnfe-mpe.org/factur-x/factur-x_en/" rel="noopener" target="_blank" style="overflow-wrap:anywhere">https://fnfe-mpe.org/factur-x/factur-x_en/</a> (prečítané 25. 9. 2026: „Factur-X is a Franco-German standard for hybrid e-invoice“, „an XML structured file conformant to EN16931 (syntax CII D22B)“, „Technically, both Factur-X and ZUGFeRD are identical.“)</li>
+          <li>F235: Banqup, Peppol validation errors explained (CL008, BR-CO-15, R120, BR-CO-26 and more), <a href="https://support.banqup.com/en/articles/809405-peppol-validation-errors-explained-cl008-br-co-15-r120-br-co-26-and-more" rel="noopener" target="_blank" style="overflow-wrap:anywhere">https://support.banqup.com/en/articles/809405-peppol-validation-errors-explained-cl008-br-co-15-r120-br-co-26-and-more</a> (prečítané 25. 9. 2026, časti „First: who has to act?“ a „BR-CO-15: the totals do not add up“)</li>
+          <li>F236: <a href="https://arling.sk/efaktura/en/rules/br-co-14/" rel="noopener" target="_blank" style="overflow-wrap:anywhere">https://arling.sk/efaktura/en/rules/br-co-14/</a> a <a href="https://arling.sk/efaktura/en/rules/br-co-16/" rel="noopener" target="_blank" style="overflow-wrap:anywhere">https://arling.sk/efaktura/en/rules/br-co-16/</a> (overené 25. 9. 2026 priamo na živých stránkach, odpoveď HTTP 200, nadpisy a vzorové hlásenia prečítané)</li>
         </ul>
       </div>
     </article>
@@ -197,11 +271,10 @@
   </ol>
   <h3>Related articles</h3>
   <ol>
-    <li><a href="https://arling.sk/notes/peppol-invoice-validation-errors-explained/" lang="en" data-umami-event="open-related-note" data-umami-event-note="peppol-invoice-validation-errors-explained" data-umami-event-source="br-co-15-and-totals-errors"><span><strong>Peppol Invoice Validation Errors Explained</strong></span><span class="nd-meta"></span></a></li>
     <li><a href="https://arling.sk/notes/e-invoice-mandatory-dates-germany-and-slovakia/" lang="en" data-umami-event="open-related-note" data-umami-event-note="e-invoice-mandatory-dates-germany-and-slovakia" data-umami-event-source="br-co-15-and-totals-errors"><span><strong>E-Invoicing Mandatory Dates in Germany and Slovakia</strong></span><span class="nd-meta"></span></a></li>
+    <li><a href="https://arling.sk/notes/peppol-invoice-validation-errors-explained/" lang="en" data-umami-event="open-related-note" data-umami-event-note="peppol-invoice-validation-errors-explained" data-umami-event-source="br-co-15-and-totals-errors"><span><strong>Peppol Invoice Validation Errors Explained</strong></span><span class="nd-meta"></span></a></li>
+    <li><a href="https://arling.sk/notes/csv-invoice-batch-preview-before-download/" lang="en" data-umami-event="open-related-note" data-umami-event-note="csv-invoice-batch-preview-before-download" data-umami-event-source="br-co-15-and-totals-errors"><span><strong>CSV invoice batches: check the preview before downloading XML</strong></span><span class="nd-meta"></span></a></li>
     <li><a href="https://arling.sk/notes/peppol-invoice-five-fields-worth-checking-first/" lang="en" data-umami-event="open-related-note" data-umami-event-note="peppol-invoice-five-fields-worth-checking-first" data-umami-event-source="br-co-15-and-totals-errors"><span><strong>Peppol Invoice Rejected? Five Fields Worth Checking First</strong></span><span class="nd-meta"></span></a></li>
-    <li><a href="https://arling.sk/notes/what-is-en-16931/" lang="en" data-umami-event="open-related-note" data-umami-event-note="what-is-en-16931" data-umami-event-source="br-co-15-and-totals-errors"><span><strong>What Is EN 16931? The Core Invoice Standard Explained</strong></span><span class="nd-meta"></span></a></li>
-    <li><a href="https://arling.sk/notes/e-faktura-od-2027-pre-szco-bez-uctovneho-programu/" lang="sk" data-umami-event="open-related-note" data-umami-event-note="e-faktura-od-2027-pre-szco-bez-uctovneho-programu" data-umami-event-source="br-co-15-and-totals-errors"><span><strong>E-faktúra 2027: čo musí vedieť SZČO bez účtovného programu</strong></span><span class="nd-meta">SK</span></a></li>
   </ol>
   <p class="nd-vsetky"><a href="/notes/en/">All articles</a></p>
 </aside>
