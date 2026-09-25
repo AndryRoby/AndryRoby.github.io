@@ -124,6 +124,191 @@ function tiles() {
 
 export function rgbStr(rgb, a = 1) { return `rgba(${rgb[0]},${rgb[1]},${rgb[2]},${a})`; }
 
+/* Strokes as fills. 25 Sep 2026: Firefox inks a stroke with a pattern about a hundred
+   times slower than a fill (60 µs a line; a fill, or a line in a plain colour, well under
+   one), because such a stroke leaves its fast GPU path. Where the village's start-up probe
+   finds that, every line is printed as the very shape the stroke would cover: a band
+   along each segment, a disc at each round join and cap, and the union goes to the
+   plate in one nonzero fill. The same area, the same grain, one fast fill. */
+export const OPT = { fillStrokes: false };
+const TAU_ = 6.283185307179586;
+const TOL = 0.08;                          // how far a flattened curve may stray, in device px
+
+function polyPiece(out, q) {
+  // every piece winds the same way, so a nonzero fill is their union
+  let a = 0; const n = q.length;
+  for (let i = 0; i < n; i += 2) { const j = (i + 2) % n; a += q[i] * q[j + 1] - q[j] * q[i + 1]; }
+  if (a < 0) { const r = []; for (let i = n - 2; i >= 0; i -= 2) r.push(q[i], q[i + 1]); q = r; }
+  out.push(q);
+}
+function outlineLine(out, P, closed, h, cap, join, miter, tol) {
+  const n = P.length;
+  const segs = closed ? n : n - 1;
+  for (let i = 0; i < segs; i++) {
+    const a = P[i], b = P[(i + 1) % n];
+    const dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy);
+    const nx = -dy / L * h, ny = dx / L * h;
+    let ax = a[0], ay = a[1], bx = b[0], by = b[1];
+    if (!closed && cap === 'square') {
+      if (i === 0) { ax -= dx / L * h; ay -= dy / L * h; }
+      if (i === segs - 1) { bx += dx / L * h; by += dy / L * h; }
+    }
+    polyPiece(out, [ax + nx, ay + ny, bx + nx, by + ny, bx - nx, by - ny, ax - nx, ay - ny]);
+  }
+  for (let i = closed ? 0 : 1; i < (closed ? n : n - 1); i++) {
+    const v = P[i], a = P[(i - 1 + n) % n], b = P[(i + 1) % n];
+    let d1x = v[0] - a[0], d1y = v[1] - a[1], d2x = b[0] - v[0], d2y = b[1] - v[1];
+    const l1 = Math.hypot(d1x, d1y), l2 = Math.hypot(d2x, d2y);
+    d1x /= l1; d1y /= l1; d2x /= l2; d2y /= l2;
+    const cr = d1x * d2y - d1y * d2x, dt = d1x * d2x + d1y * d2y;
+    if (Math.abs(cr) < 1e-12 && dt > 0) continue;
+    const s = cr > 0 ? -h : h;             // towards the outer side of the turn
+    const n1x = -d1y * s, n1y = d1x * s, n2x = -d2y * s, n2y = d2x * s;
+    const half = Math.atan2(Math.abs(cr), dt) / 2;
+    if (join === 'round') {
+      // a wedge where the arc it stands for is within the tolerance, else the disc
+      if (h * (1 - Math.cos(half)) < tol) polyPiece(out, [v[0], v[1], v[0] + n1x, v[1] + n1y, v[0] + n2x, v[1] + n2y]);
+      else out.push([v[0], v[1], h]);
+    } else {
+      polyPiece(out, [v[0], v[1], v[0] + n1x, v[1] + n1y, v[0] + n2x, v[1] + n2y]);
+      const c = Math.cos(half);
+      if (join === 'miter' && c > 1e-9 && 1 / c <= miter) {
+        const mx = n1x + n2x, my = n1y + n2y, ml = Math.hypot(mx, my);
+        if (ml > 1e-12) polyPiece(out, [v[0] + n1x, v[1] + n1y, v[0] + mx / ml * h / c, v[1] + my / ml * h / c, v[0] + n2x, v[1] + n2y, v[0], v[1]]);
+      }
+    }
+  }
+  if (!closed && cap === 'round') { out.push([P[0][0], P[0][1], h]); out.push([P[n - 1][0], P[n - 1][1], h]); }
+}
+/* split a polyline into its dashes, the pattern starting again on every subpath */
+function dashes(P, closed, D, off) {
+  const tot = D.reduce((s, x) => s + x, 0), res = [];
+  if (!(tot > 0)) return [{ pts: P, closed }];
+  let k = 0, rem = D[0], pos = ((off % tot) + tot) % tot;
+  while (pos > 0) { if (pos >= rem) { pos -= rem; k = (k + 1) % D.length; rem = D[k]; } else { rem -= pos; pos = 0; } }
+  let cur = k % 2 === 0 ? [P[0]] : null;
+  const n = P.length, segs = closed ? n : n - 1;
+  for (let i = 0; i < segs; i++) {
+    const a = P[i], b = P[(i + 1) % n];
+    const L = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    let at = 0;
+    while (L - at > rem) {
+      at += rem;
+      const q = [a[0] + (b[0] - a[0]) * at / L, a[1] + (b[1] - a[1]) * at / L];
+      if (cur) { cur.push(q); res.push({ pts: cur, closed: false }); cur = null; } else cur = [q];
+      k = (k + 1) % D.length; rem = D[k];
+    }
+    rem -= L - at;
+    if (cur) cur.push(b);
+  }
+  if (cur && cur.length > 1) res.push({ pts: cur, closed: false });
+  return res;
+}
+/* the outline of a stroke over subpaths [{pts, closed}], as pieces for emitPieces */
+function outlineStroke(out, subs, w, cap, join, miter, dash, dashOff, tol) {
+  const h = w / 2;
+  if (!(h > 0)) return out;
+  const D = dash && dash.length ? (dash.length % 2 ? dash.concat(dash) : dash) : null;
+  for (const sp of subs) {
+    const P = [];
+    for (const q of sp.pts) { const l = P[P.length - 1]; if (!l || Math.abs(q[0] - l[0]) > 1e-9 || Math.abs(q[1] - l[1]) > 1e-9) P.push(q); }
+    if (sp.closed && P.length > 1) { const f = P[0], l = P[P.length - 1]; if (Math.abs(f[0] - l[0]) <= 1e-9 && Math.abs(f[1] - l[1]) <= 1e-9) P.pop(); }
+    if (P.length < 2) {
+      // a line of no length still shows its round caps, as a dot
+      if (P.length === 1 && sp.pts.length > 1 && !sp.closed && cap === 'round' && !D) out.push([P[0][0], P[0][1], h]);
+      continue;
+    }
+    const closed = sp.closed && P.length > 2;
+    if (D) {
+      for (const d of dashes(P, closed, D, dashOff)) {
+        const Q = [];
+        for (const q of d.pts) { const l = Q[Q.length - 1]; if (!l || Math.abs(q[0] - l[0]) > 1e-9 || Math.abs(q[1] - l[1]) > 1e-9) Q.push(q); }
+        if (Q.length > 1) outlineLine(out, Q, false, h, cap, join, miter, tol);
+      }
+    } else outlineLine(out, P, closed, h, cap, join, miter, tol);
+  }
+  return out;
+}
+function emitPieces(d, pieces, ox = 0, oy = 0) {
+  for (const q of pieces) {
+    if (q.length === 3) { d.moveTo(q[0] + ox + q[2], q[1] + oy); d.arc(q[0] + ox, q[1] + oy, q[2], 0, TAU_); d.closePath(); continue; }
+    d.moveTo(q[0] + ox, q[1] + oy);
+    for (let i = 2; i < q.length; i += 2) d.lineTo(q[i] + ox, q[i + 1] + oy);
+    d.closePath();
+  }
+}
+/* A stand-in for the canvas while a path is built: it keeps the path as flattened
+   subpaths in the caller's space, so the path can be stroked as a fill. */
+class Rec {
+  constructor(c, s) {
+    this.c = c; this.tol = TOL / (s || 1);
+    this.m = [1, 0, 0, 1, 0, 0]; this.st = [];
+    this.subs = []; this.cur = null; this.pieces = [];
+    this.lineWidth = 1; this.lineCap = 'butt'; this.lineJoin = 'miter'; this.miterLimit = 10;
+  }
+  _p(x, y) { const m = this.m; return [m[0] * x + m[2] * y + m[4], m[1] * x + m[3] * y + m[5]]; }
+  _k() { const m = this.m; return Math.sqrt(Math.abs(m[0] * m[3] - m[1] * m[2])) || 1; }
+  save() { this.st.push(this.m.slice()); }
+  restore() { if (this.st.length) this.m = this.st.pop(); }
+  transform(a, b, c, d, e, f) { const m = this.m; this.m = [m[0] * a + m[2] * b, m[1] * a + m[3] * b, m[0] * c + m[2] * d, m[1] * c + m[3] * d, m[0] * e + m[2] * f + m[4], m[1] * e + m[3] * f + m[5]]; }
+  translate(x, y) { this.transform(1, 0, 0, 1, x, y); }
+  scale(x, y) { this.transform(x, 0, 0, y, 0, 0); }
+  rotate(r) { const c = Math.cos(r), s = Math.sin(r); this.transform(c, s, -s, c, 0, 0); }
+  setLineDash(d) { this.c.setLineDash(d); }
+  getLineDash() { return this.c.getLineDash(); }
+  beginPath() { this.subs = []; this.cur = null; }
+  moveTo(x, y) { this.cur = { pts: [this._p(x, y)], closed: false }; this.subs.push(this.cur); }
+  lineTo(x, y) { if (!this.cur) this.moveTo(x, y); else this.cur.pts.push(this._p(x, y)); }
+  closePath() {
+    if (!this.cur) return;
+    this.cur.closed = true;
+    this.cur = { pts: [this.cur.pts[0].slice()], closed: false }; this.subs.push(this.cur);
+  }
+  rect(x, y, w, h) { this.moveTo(x, y); this.lineTo(x + w, y); this.lineTo(x + w, y + h); this.lineTo(x, y + h); this.closePath(); }
+  quadraticCurveTo(cx, cy, x, y) {
+    if (!this.cur) this.moveTo(cx, cy);
+    const P = this.cur.pts, a = P[P.length - 1], b = this._p(cx, cy), e = this._p(x, y);
+    const dd = Math.hypot(a[0] - 2 * b[0] + e[0], a[1] - 2 * b[1] + e[1]);
+    const n = Math.max(1, Math.ceil(Math.sqrt(dd / (4 * this.tol))));
+    for (let k = 1; k <= n; k++) { const t = k / n, u = 1 - t; P.push([u * u * a[0] + 2 * u * t * b[0] + t * t * e[0], u * u * a[1] + 2 * u * t * b[1] + t * t * e[1]]); }
+  }
+  bezierCurveTo(c1x, c1y, c2x, c2y, x, y) {
+    if (!this.cur) this.moveTo(c1x, c1y);
+    const P = this.cur.pts, a = P[P.length - 1], b = this._p(c1x, c1y), c = this._p(c2x, c2y), e = this._p(x, y);
+    const dd = Math.max(Math.hypot(a[0] - 2 * b[0] + c[0], a[1] - 2 * b[1] + c[1]), Math.hypot(b[0] - 2 * c[0] + e[0], b[1] - 2 * c[1] + e[1]));
+    const n = Math.max(1, Math.ceil(Math.sqrt(0.75 * dd / this.tol)));
+    for (let k = 1; k <= n; k++) {
+      const t = k / n, u = 1 - t, A = u * u * u, B = 3 * u * u * t, C = 3 * u * t * t, E = t * t * t;
+      P.push([A * a[0] + B * b[0] + C * c[0] + E * e[0], A * a[1] + B * b[1] + C * c[1] + E * e[1]]);
+    }
+  }
+  ellipse(x, y, rx, ry, rot, a0, a1, ccw = false) {
+    let sw;
+    if (!ccw && a1 - a0 >= TAU_) sw = TAU_;
+    else if (ccw && a0 - a1 >= TAU_) sw = -TAU_;
+    else if (!ccw) sw = (((a1 - a0) % TAU_) + TAU_) % TAU_;
+    else sw = -((((a0 - a1) % TAU_) + TAU_) % TAU_);
+    const r = Math.max(rx, ry) * this._k();
+    const step = r > this.tol ? 2 * Math.acos(Math.max(-1, 1 - this.tol / r)) : Math.PI / 2;
+    const n = Math.max(1, Math.ceil(Math.abs(sw) / step));
+    const cr = Math.cos(rot), sr = Math.sin(rot);
+    const pt = th => { const ex = rx * Math.cos(th), ey = ry * Math.sin(th); return [x + ex * cr - ey * sr, y + ex * sr + ey * cr]; };
+    const s0 = pt(a0);
+    if (this.cur) this.lineTo(s0[0], s0[1]); else this.moveTo(s0[0], s0[1]);
+    for (let k = 1; k <= n; k++) { const q = pt(a0 + sw * k / n); this.cur.pts.push(this._p(q[0], q[1])); }
+  }
+  arc(x, y, r, a0, a1, ccw = false) { this.ellipse(x, y, r, r, 0, a0, a1, ccw); }
+  // what the stand-in was asked to paint is kept as pieces of one union
+  stroke() { outlineStroke(this.pieces, this.subs, this.lineWidth, this.lineCap, this.lineJoin, this.miterLimit, this.c.getLineDash(), this.c.lineDashOffset, this.tol); }
+  fill() {
+    for (const sp of this.subs) {
+      if (sp.pts.length < 3) continue;
+      const q = []; for (const p of sp.pts) q.push(p[0], p[1]);
+      polyPiece(this.pieces, q);
+    }
+  }
+}
+
 /* The pen: every drawing call in the village goes through it. It keeps a
    pattern per ink for one canvas context and knows the current print scale,
    so the grain stays the size of paper tooth at any zoom. */
@@ -170,6 +355,11 @@ export class Pen {
   line(name, a, w, pts, cap = 'round') {
     const c = this.ink(name, a), ox = this.ox, oy = this.oy;
     c.lineWidth = w; c.lineCap = cap; c.lineJoin = 'round';
+    if (OPT.fillStrokes) {
+      const P = []; for (const q of pts) P.push([q[0] + ox, q[1] + oy]);
+      this.fillOutline([{ pts: P, closed: false }], w, cap, 'round');
+      return;
+    }
     c.beginPath();
     c.moveTo(pts[0][0] + ox, pts[0][1] + oy);
     for (let k = 1; k < pts.length; k++) c.lineTo(pts[k][0] + ox, pts[k][1] + oy);
@@ -178,6 +368,12 @@ export class Pen {
   /* free path: fn gets the context and the register offset */
   path(name, a, fn, stroke = 0) {
     const c = this.ink(name, a);
+    if (stroke && OPT.fillStrokes) {
+      const r = new Rec(c, this.s); fn(r, this.ox, this.oy);
+      c.lineWidth = stroke; c.lineCap = 'round'; c.lineJoin = 'round';
+      this.fillOutline(r.subs, stroke, 'round', 'round', r.tol);
+      return;
+    }
     c.beginPath(); fn(c, this.ox, this.oy);
     if (stroke) { c.lineWidth = stroke; c.lineCap = 'round'; c.lineJoin = 'round'; c.stroke(); } else c.fill();
   }
@@ -188,4 +384,27 @@ export class Pen {
     c.fillText(str, x + this.ox, y + this.oy);
   }
   reset() { const c = this.c; c.globalAlpha = 1; c.globalCompositeOperation = 'source-over'; }
+  get fs() { return OPT.fillStrokes; }
+  /* the area a stroke over these subpaths covers, filled with the current ink */
+  fillOutline(subs, w, cap, join, tol) {
+    const c = this.c;
+    const out = outlineStroke([], subs, w, cap, join, c.miterLimit, c.getLineDash(), c.lineDashOffset, tol || TOL / (this.s || 1));
+    c.beginPath(); emitPieces(c, out); c.fill();
+  }
+  /* a stroke of these points with the context's own line settings (fast either way) */
+  strokePts(pts, w) {
+    const c = this.c;
+    c.lineWidth = w;
+    if (OPT.fillStrokes) { this.fillOutline([{ pts, closed: false }], w, c.lineCap, c.lineJoin); return; }
+    c.beginPath();
+    pts.forEach((q, k) => k ? c.lineTo(q[0], q[1]) : c.moveTo(q[0], q[1]));
+    c.stroke();
+  }
+  /* shape(cc) drawn on a stand-in: the union of what it stroked and filled, as a Path2D
+     maker that places the union at a register offset */
+  union(shape) {
+    const r = new Rec(this.c, this.s); shape(r);
+    const pieces = r.pieces;
+    return (ox, oy) => { const d = new Path2D(); emitPieces(d, pieces, ox, oy); return d; };
+  }
 }

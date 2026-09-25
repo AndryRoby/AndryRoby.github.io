@@ -267,9 +267,8 @@ export function drawStatic(p, W, rect, eve = false) {
     p.ink('pink', 0.2); c.fill(band);
     // strata
     for (const [off, w, ink, a] of [[4, 8, 'green', 0.85], [24, 3, 'night', 0.14], [40, 7, 'orange', 0.3], [58, 30, 'nightdots', 0.55]]) {
-      p.ink(ink, a); c.lineWidth = w; c.beginPath();
-      ch.forEach((q, k) => k ? c.lineTo(q[0], q[1] + off) : c.moveTo(q[0], q[1] + off));
-      c.stroke();
+      p.ink(ink, a);
+      p.strokePts(ch.map(q => [q[0], q[1] + off]), w);
     }
     // the face turned to the lower right sits in shade
     p.ink('blue', 0.28); c.fillRect(W.bottomX, -400, 1400, 2000);
@@ -379,6 +378,14 @@ function dusk(p, W, rect) {
 let MASK = null;
 function unionPaint(p, shape, inks) {
   const c = p.c;
+  if (p.fs) {
+    // where a mask is slow (see riso.js, strokes as fills), the union is one nonzero shape
+    // inked directly: every piece winds the same way, so no pixel gets the ink twice
+    const at = p.union(shape);
+    for (const [ink, a] of inks) { p.ink(ink, a); c.fill(at(p.ox, p.oy)); }
+    p.ink(inks[inks.length - 1][0], 1);
+    return;
+  }
   const t = c.getTransform();
   const w = c.canvas.width, h = c.canvas.height;
   if (!MASK) MASK = document.createElement('canvas');
