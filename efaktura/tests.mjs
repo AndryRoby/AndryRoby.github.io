@@ -559,6 +559,9 @@ console.log('Testy e-faktury\n');
 {
   const v = skontroluj('<Invoice><cbc:ID>1</cbc:ID></Faktura>');
   ok('13. neuzavrete znacky: hlasi XML-01', kody(v).includes('XML-01'), kody(v).join(', '));
+  // suhrn aj protokol na slovenskej stranke: profil s diakritikou (do 25. 9. 2026 "neznamy profil")
+  ok('13. neuzavrete znacky: profil je neznámy profil', v.profilNazov === 'neznámy profil', v.profilNazov);
+  ok('13. neuzavrete znacky: protokol pise neznámy profil', protokol(v, 'sk').includes('\nProfil: neznámy profil\n'));
 }
 
 // --- generator pre SK, DE a CZ
@@ -813,6 +816,15 @@ for (const [meno, faktura] of [['SK', fakturaSk()], ['DE', fakturaDe()], ['CZ', 
     ok('24. protokol ' + jazyk + ': obsahuje kod pravidla', t.includes('BR-CO-15'));
     ok('24. protokol ' + jazyk + ': obsahuje upozornenie o neuplnosti', t.length > 200 && /nie je úplná|není úplná|keine vollständige/.test(t));
   }
+  // nazov profilu v jazyku protokolu; do 25. 9. 2026 pisal pri XRechnung vsade slovenske "Nemecko"
+  const x = skontroluj(F8_XRECHNUNG);
+  const riadok = (t) => t.split('\n').find((r) => /^Profile?: /.test(r));
+  ok('24. protokol: fixtura 8 je XRechnung', x.profil === 'xrechnung', x.profil);
+  ok('24. protokol de: XRechnung 3.x (Deutschland)', riadok(protokol(x, 'de')) === 'Profil: XRechnung 3.x (Deutschland)', riadok(protokol(x, 'de')));
+  ok('24. protokol cs: XRechnung 3.x (Německo)', riadok(protokol(x, 'cs')) === 'Profil: XRechnung 3.x (Německo)', riadok(protokol(x, 'cs')));
+  ok('24. protokol en: XRechnung 3.x (Germany)', riadok(protokol(x, 'en')) === 'Profile: XRechnung 3.x (Germany)', riadok(protokol(x, 'en')));
+  ok('24. protokol sk: XRechnung 3.x (Nemecko)', riadok(protokol(x, 'sk')) === 'Profil: XRechnung 3.x (Nemecko)', riadok(protokol(x, 'sk')));
+  ok('24. protokol de ani cs nema slovenske Nemecko', !protokol(x, 'de').includes('Nemecko') && !protokol(x, 'cs').includes('Nemecko'));
 }
 
 // --- vynutenie profilu

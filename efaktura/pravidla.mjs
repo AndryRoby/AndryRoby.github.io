@@ -27,7 +27,7 @@ export const NAZVY_PROFILOV = {
   en16931: 'EN 16931',
   peppol: 'Peppol BIS Billing 3.0',
   xrechnung: 'XRechnung 3.x (Nemecko)',
-  neznamy: 'neznamy profil'
+  neznamy: 'neznámy profil'
 };
 
 // Nazvy profilov v anglickom protokole a na anglickej stranke.
@@ -37,6 +37,38 @@ export const NAZVY_PROFILOV_EN = {
   xrechnung: 'XRechnung 3.x (Germany)',
   neznamy: 'unknown profile'
 };
+
+// Nazvy profilov podla jazyka stranky a protokolu. Jedine miesto, odkial ich beru suhrn
+// na stranke (app.js) aj protokol na stiahnutie. Do 25. 9. 2026 pisal protokol pri XRechnung
+// slovenske "Nemecko" aj na ceskej a nemeckej stranke. Peppol BIS Billing 3.0 a EN 16931
+// su vlastne mena, neprekladaju sa.
+export const NAZVY_PROFILOV_JAZYK = {
+  sk: NAZVY_PROFILOV,
+  cs: {
+    en16931: 'EN 16931',
+    peppol: 'Peppol BIS Billing 3.0',
+    xrechnung: 'XRechnung 3.x (Německo)',
+    neznamy: 'neznámý profil'
+  },
+  de: {
+    en16931: 'EN 16931',
+    peppol: 'Peppol BIS Billing 3.0',
+    xrechnung: 'XRechnung 3.x (Deutschland)',
+    neznamy: 'unbekanntes Profil'
+  },
+  en: NAZVY_PROFILOV_EN
+};
+
+/**
+ * Nazov profilu z vysledku kontroly v danom jazyku.
+ * Vysledok samotny sa nemeni: profilNazov ostava slovensky, profilNazovEn anglicky.
+ * @param {{profil:string, profilNazov?:string}} vysledok vystup funkcie skontroluj
+ * @param {'sk'|'cs'|'de'|'en'} [jazyk]
+ */
+export function nazovProfilu(vysledok, jazyk = 'sk') {
+  const nazvy = NAZVY_PROFILOV_JAZYK[jazyk] || NAZVY_PROFILOV;
+  return nazvy[vysledok.profil] || vysledok.profilNazov || vysledok.profil;
+}
 
 // ---------------------------------------------------------------- vlastne kontroly navyse
 
@@ -334,7 +366,7 @@ export function protokol(vysledok, jazyk = 'sk', nazovSuboru = '') {
   if (nazovSuboru) r.push(nazovSuboru);
   r.push(new Date().toISOString().slice(0, 19).replace('T', ' '));
   r.push('');
-  r.push(H.profil + ': ' + (jazyk === 'en' ? (vysledok.profilNazovEn || vysledok.profilNazov) : vysledok.profilNazov));
+  r.push(H.profil + ': ' + nazovProfilu(vysledok, jazyk));
   r.push(H.typ + ': ' + vysledok.typ);
   r.push(H.chyby + ': ' + vysledok.sumar.chyby + ', ' + H.varovania + ': ' + vysledok.sumar.varovania + ', ' + H.informacie + ': ' + vysledok.sumar.informacie);
   r.push('');

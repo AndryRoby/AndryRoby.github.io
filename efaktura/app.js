@@ -16,7 +16,7 @@
  * skontrolovaneho XML do formulara, vlastnost chyby = pocet chyb v subore),
  * plus spolocne nastroj_pouzity a cena_videna.
  */
-import { skontroluj, protokol, IMPLEMENTOVANE } from './pravidla.mjs';
+import { skontroluj, protokol, nazovProfilu, IMPLEMENTOVANE } from './pravidla.mjs';
 import * as K from './kodovniky.mjs';
 import { parsujXml } from './parser.mjs';
 import { vytvorUbl, prepocitaj, prazdnaFaktura, zCentov } from './ubl.js';
@@ -57,17 +57,6 @@ const pocetPravidiel = (profil) => POCET_PRAVIDIEL.jadro
   + (profil === 'peppol' ? POCET_PRAVIDIEL.peppol : 0)
   + (profil === 'xrechnung' ? POCET_PRAVIDIEL.xrechnung : 0);
 
-/* Nazov profilu v suhrne. pravidla.mjs vracia profilNazov po slovensky ("XRechnung 3.x (Nemecko)")
- * a profilNazovEn po anglicky; ceska a nemecka stranka ukazovali slovensky nazov krajiny.
- * Ostatne profily (Peppol BIS Billing 3.0, EN 16931) su vlastne mena a ostavaju. */
-const NAZOV_PROFILU = {
-  cs: { xrechnung: 'XRechnung 3.x (Německo)', neznamy: 'neznámý profil' },
-  de: { xrechnung: 'XRechnung 3.x (Deutschland)', neznamy: 'unbekanntes Profil' },
-};
-const nazovProfilu = (v) => (LANG === 'en'
-  ? (v.profilNazovEn || v.profilNazov)
-  : ((NAZOV_PROFILU[LANG] || {})[v.profil] || v.profilNazov));
-
 /* ── Texty obrazovky ────────────────────────────────────────────────────── */
 const T = {
   sk: {
@@ -92,6 +81,8 @@ const T = {
     vzorSChybami: 'Pozrieť vzor s 2 chybami',
     vzorSChybamiNacitany: 'Načítali sme vzor s dvoma zámernými chybami: suma s DPH je o cent vyššia a IBAN má preklep. Skúste ich opraviť vo formulári.',
     skopirovane: 'Skopírované.',
+    // nazov vlozeneho XML (v stave vstupu a v hlavicke protokolu) a stiahnuteho protokolu
+    vlozeneMeno: 'vlozene.xml', menoProtokolu: 'protokol-efaktura.txt',
     kopirovanieZlyhalo: 'Kopírovanie sa nepodarilo, označte text myšou.',
     prazdnyNahlad: 'Načítajte súbor a doklad sa vykreslí tu.',
     typNieJeUbl: 'Doklad vieme vykresliť len z UBL 2.1 (Invoice alebo CreditNote). Čo je v súbore, píšeme v záložke Kontrola.',
@@ -182,6 +173,7 @@ const T = {
     vzorSChybami: 'Zobrazit vzor se 2 chybami',
     vzorSChybamiNacitany: 'Načetli jsme vzor se dvěma záměrnými chybami: částka s DPH je o haléř vyšší a IBAN má překlep. Zkuste je opravit ve formuláři.',
     skopirovane: 'Zkopírováno.',
+    vlozeneMeno: 'vlozene.xml', menoProtokolu: 'protokol-e-faktury.txt',
     kopirovanieZlyhalo: 'Kopírování se nepodařilo, označte text myší.',
     prazdnyNahlad: 'Načtěte soubor a doklad se vykreslí tady.',
     typNieJeUbl: 'Doklad umíme vykreslit jen z UBL 2.1 (Invoice nebo CreditNote). Co je v souboru, píšeme v záložce Kontrola.',
@@ -271,6 +263,7 @@ const T = {
     vzorSChybami: 'Beispiel mit 2 Fehlern ansehen',
     vzorSChybamiNacitany: 'Wir haben das Beispiel mit zwei absichtlichen Fehlern geladen: Der Betrag mit Umsatzsteuer ist einen Cent zu hoch und die IBAN hat einen Tippfehler. Korrigieren Sie sie im Formular.',
     skopirovane: 'Kopiert.',
+    vlozeneMeno: 'eingefuegt.xml', menoProtokolu: 'pruefprotokoll-e-rechnung.txt',
     kopirovanieZlyhalo: 'Das Kopieren ist fehlgeschlagen, markieren Sie den Text mit der Maus.',
     prazdnyNahlad: 'Laden Sie eine Datei, dann erscheint der Beleg hier.',
     typNieJeUbl: 'Wir können den Beleg nur aus UBL 2.1 darstellen (Invoice oder CreditNote). Was in der Datei steht, sagen wir im Tab Prüfung.',
@@ -360,6 +353,7 @@ const T = {
     vzorSChybami: 'See the sample with 2 errors',
     vzorSChybamiNacitany: 'We loaded the sample with two deliberate errors: the total with VAT is one cent too high and the IBAN has a typo. Try fixing them in the form.',
     skopirovane: 'Copied.',
+    vlozeneMeno: 'pasted.xml', menoProtokolu: 'e-invoice-check-report.txt',
     kopirovanieZlyhalo: 'Copying failed, select the text with the mouse instead.',
     prazdnyNahlad: 'Load a file and the document will be drawn here.',
     typNieJeUbl: 'We can only draw the document from UBL 2.1 (Invoice or CreditNote). What is in the file we say in the Check tab.',
@@ -1188,7 +1182,7 @@ if (vstupBlok) {
     const ta = $('xml');
     const t = ta ? ta.value : '';
     if (!t.trim()) { stavVstupu(T.nacitajteSubor); return; }
-    prijmiText(t, nazovSuboru || 'vlozene.xml');
+    prijmiText(t, nazovSuboru || T.vlozeneMeno);
   });
 }
 
@@ -1279,7 +1273,7 @@ function spustiKontrolu() {
   const stav = el('p', 'sumar-stav ' + (s.chyby ? 'je-chyba' : 'je-ok'), s.chyby ? T.maChyby(s.chyby) : T.bezChyb);
   cielSumar.appendChild(stav);
   const meta = el('p', 'sumar-meta');
-  meta.appendChild(el('span', null, T.sumarProfil + ': ' + nazovProfilu(v)));
+  meta.appendChild(el('span', null, T.sumarProfil + ': ' + nazovProfilu(v, LANG)));
   meta.appendChild(el('span', null, T.sumarTyp + ': ' + v.typ));
   meta.appendChild(el('span', null, s.chyby + ' ' + T.sumarChyby(s.chyby)));
   meta.appendChild(el('span', null, s.varovania + ' ' + T.sumarVarovania(s.varovania)));
@@ -1301,21 +1295,17 @@ function spustiKontrolu() {
   track('efaktura_kontrola', { vysledok: s.chyby ? 'chyby' : 'ok', profil: v.profil, produkt: 'efaktura', jazyk: LANG });
 }
 
-/* Protokol (Stiahnut aj Kopirovat) s nazvom profilu v jazyku stranky. pravidla.mjs by pri
- * XRechnung napisal slovensky "XRechnung 3.x (Nemecko)" aj do nemeckeho a ceskeho protokolu. */
-function protokolStranky(v) {
-  return protokol(Object.assign({}, v, { profilNazov: nazovProfilu(v) }), LANG, nazovSuboru);
-}
-
+/* Protokol (Stiahnut aj Kopirovat) v jazyku stranky. Nazov profilu v nom preklada protokol()
+ * v pravidla.mjs rovnako ako suhrn na obrazovke (nazovProfilu), nazov suboru je z T. */
 const btnProtokol = $('protokol');
 if (btnProtokol) btnProtokol.addEventListener('click', () => {
   if (!poslednyVysledok) return;
-  stiahni('protokol-efaktura.txt', protokolStranky(poslednyVysledok));
+  stiahni(T.menoProtokolu, protokol(poslednyVysledok, LANG, nazovSuboru));
 });
 const btnKopirovat = $('kopirovat');
 if (btnKopirovat) btnKopirovat.addEventListener('click', async () => {
   if (!poslednyVysledok) return;
-  const text = protokolStranky(poslednyVysledok);
+  const text = protokol(poslednyVysledok, LANG, nazovSuboru);
   try {
     await navigator.clipboard.writeText(text);
     stavVstupu(T.skopirovane);
