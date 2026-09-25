@@ -27,8 +27,12 @@ function start() {
   let reduce = mqReduce.matches;
   let weak = (navigator.hardwareConcurrency || 8) <= 4 || (navigator.deviceMemory || 8) <= 4;
   let DPR = Math.min(window.devicePixelRatio || 1, weak ? 1.5 : 2);
-  const T = 512;                           // tile size in device pixels
-  const MAX_TILES = weak ? 40 : 72;
+  // Tile size in device pixels. 25 Sep 2026: in Firefox one 512 px tile took 33 ms on average and
+  // up to 110 ms, and the view froze after every zoom; 256 px tiles take under 8 ms there. Chrome
+  // prints 512 px tiles fast and composes fewer of them, so the size is chosen by measurement.
+  let T = 512;
+  let MAX_TILES = weak ? 40 : 72;
+  let slowTileSeen = 0;
   const REST_MS = 40000;                   // quiet this long: the village holds still
   const CALM_MS = 10000;                   // quiet this long: the life loop halves
 
@@ -121,6 +125,7 @@ function start() {
       const tt = performance.now();
       tiles.set(k, { c: renderTile(L, tx, ty), L, tx, ty, u: ++tick });
       const dtt = performance.now() - tt; stats.tileN++; stats.tileMs += dtt; stats.tileMax = Math.max(stats.tileMax, dtt);
+      if (T === 512 && dtt > 24 && ++slowTileSeen >= 2) { smallTiles(); return n; }
       n++;
     }
     if (tiles.size > MAX_TILES) {
@@ -129,6 +134,8 @@ function start() {
     }
     return n;
   }
+  // this browser prints a big tile too slowly: from now on the island is printed in small ones
+  function smallTiles() { T = 256; MAX_TILES = weak ? 160 : 288; tiles.clear(); queue = []; stats.tileSize = T; full = true; }
   function drawLevel(L, r, strict) {
     const z = Z(), ox = OX(), oy = OY(), span = T / L;
     let missing = false;
