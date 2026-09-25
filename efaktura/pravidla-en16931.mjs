@@ -595,12 +595,16 @@ function sucty(ctx) {
     } else if (Number.isFinite(bt109) && Number.isFinite(bt112)) {
       const dph = cis(txt(vMene[0]));
       const ocak = r2(bt109 + dph);
+      // Sčítance sa vypíšu presne tak, ako sú v súbore (nie zaokrúhlené na 2 miesta): inak pri DPH
+      // s tromi desatinnými miestami veta tvrdila „510.00 plus 94.30, teda 604.31“ (25. 9. 2026).
+      const zaklad = (hod(S, 'cbc:TaxExclusiveAmount') || '').trim() || bt109.toFixed(2);
+      const dphText = (txt(vMene[0]) || '').trim() || dph.toFixed(2);
       if (r2(bt112) !== ocak) {
         P('BR-CO-15', prve(S, 'cbc:TaxInclusiveAmount'), hod(S, 'cbc:TaxInclusiveAmount'),
-          'Suma s DPH (BT-112) má byť základ dane ' + bt109.toFixed(2) + ' plus DPH ' + dph.toFixed(2) + ', teda ' + ocak.toFixed(2) + '. V súbore je ' + hod(S, 'cbc:TaxInclusiveAmount') + '.',
-          'Částka s DPH (BT-112) má být základ daně ' + bt109.toFixed(2) + ' plus DPH ' + dph.toFixed(2) + ', tedy ' + ocak.toFixed(2) + '. V souboru je ' + hod(S, 'cbc:TaxInclusiveAmount') + '.',
-          'Der Gesamtbetrag mit Umsatzsteuer (BT-112) soll ' + bt109.toFixed(2) + ' plus ' + dph.toFixed(2) + ' sein, also ' + ocak.toFixed(2) + '. In der Datei steht ' + hod(S, 'cbc:TaxInclusiveAmount') + '.',
-          'The invoice total with VAT (BT-112) should be the total without VAT ' + bt109.toFixed(2) + ' plus the VAT ' + dph.toFixed(2) + ', that is ' + ocak.toFixed(2) + '. The file says ' + hod(S, 'cbc:TaxInclusiveAmount') + '. Correct the total in the invoice header, not the individual lines.');
+          'Suma s DPH (BT-112) má byť základ dane ' + zaklad + ' plus DPH ' + dphText + ', teda ' + ocak.toFixed(2) + '. V súbore je ' + hod(S, 'cbc:TaxInclusiveAmount') + '.',
+          'Částka s DPH (BT-112) má být základ daně ' + zaklad + ' plus DPH ' + dphText + ', tedy ' + ocak.toFixed(2) + '. V souboru je ' + hod(S, 'cbc:TaxInclusiveAmount') + '.',
+          'Der Gesamtbetrag mit Umsatzsteuer (BT-112) soll ' + zaklad + ' plus ' + dphText + ' sein, also ' + ocak.toFixed(2) + '. In der Datei steht ' + hod(S, 'cbc:TaxInclusiveAmount') + '.',
+          'The invoice total with VAT (BT-112) should be the total without VAT ' + zaklad + ' plus the VAT ' + dphText + ', that is ' + ocak.toFixed(2) + '. The file says ' + hod(S, 'cbc:TaxInclusiveAmount') + '. Correct the total in the invoice header, not the individual lines.');
       }
     }
   }
