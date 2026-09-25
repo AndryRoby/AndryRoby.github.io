@@ -22,6 +22,49 @@
 (function () {
   'use strict';
 
+  // Base URL of this script (arling.sk/asistent/). The page lives at /asistent/, /asistent/en/ and
+  // /asistent/de/ but loads this one file, so widget.js and tenant/ are resolved against the script,
+  // never against the page: on 25 Sep 2026 a relative './widget.js' was a 404 on /asistent/en/ and the
+  // first real shop could not see its own trial chat.
+  var SCRIPT_BASE = new URL('.', (document.currentScript && document.currentScript.src) || window.location.href).href;
+  var PAGE_LANG = ((document.documentElement.getAttribute('lang') || 'sk').slice(0, 2)).toLowerCase();
+  var STATUS_TEXT = {
+    sk: {
+      slow: 'Spracovanie feedu trvá dlhšie ako obvykle. Skúste obnoviť stránku o chvíľu, alebo napíšte na andrej@arling.sk.',
+      ready: 'Hotovo. Chat s vaším asistentom je vpravo dole na tejto stránke (okrúhle tlačidlo). Opýtajte sa ho niečo o vašich produktoch.',
+      readyAgain: 'Váš asistent už beží vpravo dole na tejto stránke (okrúhle tlačidlo). Stačí naň kliknúť.',
+      failed: 'Feed sa nepodarilo spracovať. Skontrolujte URL feedu, alebo napíšte na andrej@arling.sk.',
+      badUrl: 'URL feedu musí byť platná adresa (https://vaseshop.sk/feed.xml).',
+      working: 'Sťahujeme a spracúvame váš feed produktov...',
+      createFailed: 'Nepodarilo sa vytvoriť skúšobný účet: ',
+      createFailedNet: 'Nepodarilo sa vytvoriť skúšobný účet. Skontrolujte internetové pripojenie a skúste znova.',
+    },
+    en: {
+      slow: 'Processing your feed is taking longer than usual. Reload the page in a moment, or write to andrej@arling.sk.',
+      ready: 'Done. Your assistant is in the bottom right corner of this page (the round button). Ask it something about your products.',
+      readyAgain: 'Your assistant is already running in the bottom right corner of this page (the round button). Just click it.',
+      failed: 'We could not process the feed. Check the feed URL, or write to andrej@arling.sk.',
+      badUrl: 'The feed URL must be a valid address (https://yourshop.com/feed.xml).',
+      working: 'Downloading and processing your product feed...',
+      createFailed: 'Could not create the trial account: ',
+      createFailedNet: 'Could not create the trial account. Check your internet connection and try again.',
+    },
+    de: {
+      slow: 'Die Verarbeitung des Feeds dauert länger als üblich. Laden Sie die Seite gleich neu oder schreiben Sie an andrej@arling.sk.',
+      ready: 'Fertig. Ihr Assistent ist unten rechts auf dieser Seite (der runde Knopf). Fragen Sie ihn etwas zu Ihren Produkten.',
+      readyAgain: 'Ihr Assistent läuft bereits unten rechts auf dieser Seite (der runde Knopf). Einfach anklicken.',
+      failed: 'Der Feed konnte nicht verarbeitet werden. Prüfen Sie die Feed-URL oder schreiben Sie an andrej@arling.sk.',
+      badUrl: 'Die Feed-URL muss eine gültige Adresse sein (https://ihrshop.de/feed.xml).',
+      working: 'Ihr Produktfeed wird geladen und verarbeitet...',
+      createFailed: 'Das Testkonto konnte nicht erstellt werden: ',
+      createFailedNet: 'Das Testkonto konnte nicht erstellt werden. Prüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.',
+    },
+  };
+  function T(key) {
+    var d = STATUS_TEXT[PAGE_LANG] || STATUS_TEXT.en;
+    return d[key] || STATUS_TEXT.en[key];
+  }
+
   var DEFAULT_ENDPOINT = 'https://arling-asistent.arling.workers.dev';
   var ENDPOINT = (new URLSearchParams(window.location.search).get('endpoint') || DEFAULT_ENDPOINT).replace(/\/$/, '');
   var POLL_INTERVAL_MS = 3000;
@@ -119,7 +162,7 @@
 
   /** Relative link to the per-tenant usage/upgrade page for this tenant (works on GitHub Pages and locally). */
   function tenantPageHrefFor(tenantId) {
-    return 'tenant/?t=' + encodeURIComponent(tenantId);
+    return new URL('tenant/?t=' + encodeURIComponent(tenantId), SCRIPT_BASE).href;
   }
 
   function embedSnippetFor(tenantId) {
@@ -206,9 +249,9 @@
   }
 
   function injectWidget(tenantId, lang) {
-    if (window.__arlingAsistentInit) return; // already injected once on this page
+    if (window.__arlingAsistentInit) return false; // already injected once on this page
     var script = document.createElement('script');
-    script.src = './widget.js';
+    script.src = new URL('widget.js', SCRIPT_BASE).href;
     script.setAttribute('data-tenant', tenantId);
     script.setAttribute('data-lang', lang || 'sk');
     script.setAttribute('data-color', 'auto');
@@ -216,11 +259,12 @@
     script.defer = true;
     document.body.appendChild(script);
     if (widgetMount) widgetMount.hidden = false;
+    return true;
   }
 
   function poll(tenantId, lang, triesLeft) {
     if (triesLeft <= 0) {
-      setStatus('Spracovanie feedu trva dlhšie ako obvykle. Skúste obnoviť stránku o chvíľu, alebo napíšte na andrej@arling.sk.', 'warn');
+      setStatus(T('slow'), 'warn');
       return;
     }
     fetch(ENDPOINT + '/v1/tenants/' + encodeURIComponent(tenantId) + '/status')
@@ -230,12 +274,12 @@
       })
       .then(function (data) {
         if (data.status === 'ready') {
-          setStatus('Hotovo. Otvorte chat vpravo dole a opýtajte sa niečo o vašich produktoch.', 'ok');
+          var novy = injectWidget(tenantId, lang);
+          setStatus(T(novy ? 'ready' : 'readyAgain'), 'ok');
           track('trial_ready', { lang: lang });
-          injectWidget(tenantId, lang);
           showEmbedCode(tenantId);
         } else if (data.status === 'error') {
-          setStatus('Feed sa nepodarilo spracovať. Skontrolujte URL feedu, alebo napíšte na andrej@arling.sk.', 'error');
+          setStatus(T('failed'), 'error');
           track('trial_error', { lang: lang });
         } else {
           setTimeout(function () { poll(tenantId, lang, triesLeft - 1); }, POLL_INTERVAL_MS);
@@ -257,12 +301,12 @@
     if (!feedInput.checkValidity()) { feedInput.reportValidity(); return; }
     if (!emailInput.checkValidity()) { emailInput.reportValidity(); return; }
     if (!domain) {
-      setStatus('URL feedu musí byť platná adresa (https://vaseshop.sk/feed.xml).', 'error');
+      setStatus(T('badUrl'), 'error');
       return;
     }
 
     submitBtn.disabled = true;
-    setStatus('Sťahujeme a spracúvame váš feed produktov...', 'pending');
+    setStatus(T('working'), 'pending');
     track('trial_start', { lang: lang });
 
     fetch(ENDPOINT + '/v1/tenants', {
@@ -280,8 +324,8 @@
       .catch(function (err) {
         var detail = describeTenantError(err);
         var message = detail
-          ? 'Nepodarilo sa vytvoriť skúšobný účet: ' + detail
-          : 'Nepodarilo sa vytvoriť skúšobný účet. Skontrolujte internetové pripojenie a skúste znova.';
+          ? T('createFailed') + detail
+          : T('createFailedNet');
         setStatus(message, 'error');
         submitBtn.disabled = false;
       });
