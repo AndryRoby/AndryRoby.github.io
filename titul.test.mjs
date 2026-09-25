@@ -274,7 +274,7 @@ test('bez potvrdenia od sluzby sa o e-maile netvrdi nic', () => {
   assert.equal(veta, PANEL.mailNeisty);
   assert.ok(!veta.includes('were also sent to'), 'ziadne tvrdenie o odoslanom e-maile');
   assert.ok(!veta.includes('kto@example.com'), 'adresa sa bez potvrdenia neukazuje ako prijemca');
-  assert.ok(veta.includes('andrej@arling.sk'), 'clovek ma vediet, komu napisat');
+  assert.ok(veta.includes('support@arling.sk'), 'clovek ma vediet, komu napisat');
   delete globalThis.document;
 });
 
@@ -310,7 +310,7 @@ test('sluzba neodpovedala: pokojna veta, Try again, cele cislo platby a kontakt,
   assert.equal(najdi(koren, 'hotovo-subory'), null, 'ziadny odkaz, ani mrtvy');
   const riadky = koren.deti.filter((d) => d.className === 'hotovo-riadok').map(text);
   assert.deepEqual(riadky, [PANEL.cakame, PANEL.cakamePomoc]);
-  assert.ok(riadky.join(' ').includes('andrej@arling.sk'));
+  assert.ok(riadky.join(' ').includes('support@arling.sk'));
   const tlacidlo = najdi(koren, 'hotovo-znova').deti[0];
   assert.equal(tlacidlo.tag, 'button');
   assert.equal(tlacidlo.atr.type, 'button');

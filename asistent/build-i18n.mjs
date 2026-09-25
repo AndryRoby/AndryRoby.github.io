@@ -240,7 +240,7 @@ export function translateMarkup(html, lang, problems) {
     }
     if (tn === 'form' && /\sdata-subscribe\b/.test(attrs)) attrs = setAttr(attrs, 'data-lang', lang);
     if (getAttr(attrs, 'id') === 'business-link') {
-      attrs = setAttr(attrs, 'href', escAttr('mailto:andrej@arling.sk?subject=' + encodeURIComponent(tr('s5.business.subject', lang, problems))));
+      attrs = setAttr(attrs, 'href', escAttr('mailto:' + (lang === 'sk' || lang === 'cs' ? 'podpora' : 'support') + '@arling.sk?subject=' + encodeURIComponent(tr('s5.business.subject', lang, problems))));
     }
     if (getAttr(attrs, 'id') === 'pro-bundle-link') attrs = setAttr(attrs, 'href', `https://arling.sk/bankove-nastroje/?lang=${lang}`);
     const setLangAttr = getAttr(attrs, 'data-set-lang');

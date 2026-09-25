@@ -126,8 +126,8 @@ export const DICT = {
   },
   'manage.title': { sk: 'Správa predplatného', en: 'Manage subscription' },
   'manage.body': {
-    sk: 'Predplatné zrušíte alebo zmeníte kedykoľvek na <a href="https://billing.stripe.com/p/login/3cIaER9M63hNeFcg8B4ko00" target="_blank" rel="noopener">portáli Stripe</a> (prihlásenie e-mailom, ktorým ste platili); platí do konca zaplateného obdobia. Na tom istom portáli zmeníte aj kartu a nájdete faktúry. Po zrušení sa účet po skončení zaplateného obdobia vráti na plán Free. Ak sa vám prihlásenie nedarí, napíšte na andrej@arling.sk.',
-    en: 'You can cancel or change the subscription at any time in the <a href="https://billing.stripe.com/p/login/3cIaER9M63hNeFcg8B4ko00" target="_blank" rel="noopener">Stripe customer portal</a> (log in with the e-mail you paid with); it stays active until the end of the paid period. In the same portal you can also change your card and find your invoices. After cancelling, the account returns to the Free plan when the paid period ends. If you cannot log in, write to andrej@arling.sk.',
+    sk: 'Predplatné zrušíte alebo zmeníte kedykoľvek na <a href="https://billing.stripe.com/p/login/3cIaER9M63hNeFcg8B4ko00" target="_blank" rel="noopener">portáli Stripe</a> (prihlásenie e-mailom, ktorým ste platili); platí do konca zaplateného obdobia. Na tom istom portáli zmeníte aj kartu a nájdete faktúry. Po zrušení sa účet po skončení zaplateného obdobia vráti na plán Free. Ak sa vám prihlásenie nedarí, napíšte na podpora@arling.sk.',
+    en: 'You can cancel or change the subscription at any time in the <a href="https://billing.stripe.com/p/login/3cIaER9M63hNeFcg8B4ko00" target="_blank" rel="noopener">Stripe customer portal</a> (log in with the e-mail you paid with); it stays active until the end of the paid period. In the same portal you can also change your card and find your invoices. After cancelling, the account returns to the Free plan when the paid period ends. If you cannot log in, write to support@arling.sk.',
   },
 
   // footer

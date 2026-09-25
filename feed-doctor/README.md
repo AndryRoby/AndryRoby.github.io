@@ -92,7 +92,7 @@ Field names and required-ness are drawn from Google's Merchant Center product da
 
 ## Report a problem
 
-Found a real feed this tool gets wrong, or a check that flags something that's actually fine? Open an issue: https://github.com/AndryRoby/feed-doctor/issues, or write to andrej@arling.sk. Please redact anything sensitive (API keys, internal URLs) before posting; issues are public.
+Found a real feed this tool gets wrong, or a check that flags something that's actually fine? Open an issue: https://github.com/AndryRoby/feed-doctor/issues, or write to support@arling.sk. Please redact anything sensitive (API keys, internal URLs) before posting; issues are public.
 
 ## License
 
@@ -100,7 +100,7 @@ MIT, see [LICENSE](LICENSE). Use it, fork it, ship it; keep the copyright notice
 
 ---
 
-ARLing s. r. o., Bratislava, Slovakia. andrej@arling.sk
+ARLing s. r. o., Bratislava, Slovakia. support@arling.sk
 
 Hub (more free tools): https://arling.sk/
 

@@ -42,10 +42,10 @@ const CHYBY = {
     en: 'The root element of the file is ' + m + ', not Invoice or CreditNote. We can only move an e-invoice in UBL 2.1 into the form.'
   }),
   vnutorna: {
-    sk: 'Súbor sa do formulára nepodarilo preniesť. Napíšte nám na andrej@arling.sk.',
-    cs: 'Soubor se do formuláře nepodařilo přenést. Napište nám na andrej@arling.sk.',
-    de: 'Die Datei ließ sich nicht ins Formular übernehmen. Schreiben Sie uns an andrej@arling.sk.',
-    en: 'The file could not be moved into the form. Write to us at andrej@arling.sk.'
+    sk: 'Súbor sa do formulára nepodarilo preniesť. Napíšte nám na podpora@arling.sk.',
+    cs: 'Soubor se do formuláře nepodařilo přenést. Napište nám na podpora@arling.sk.',
+    de: 'Die Datei ließ sich nicht ins Formular übernehmen. Schreiben Sie uns an support@arling.sk.',
+    en: 'The file could not be moved into the form. Write to us at support@arling.sk.'
   }
 };
 

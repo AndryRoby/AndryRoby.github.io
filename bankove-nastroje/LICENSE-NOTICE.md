@@ -23,5 +23,5 @@ You are **not** granted rights to:
 If you want to do something with the code beyond using the hosted page
 as intended (e.g. embed a derivative internally, contribute a fix,
 translate it, or anything not covered above), just ask:
-andrej@arling.sk. Reasonable requests are generally welcome; this notice
+support@arling.sk. Reasonable requests are generally welcome; this notice
 exists to prevent silent repackaging, not to block collaboration.

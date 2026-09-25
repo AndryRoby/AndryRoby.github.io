@@ -10,6 +10,6 @@
  */
 import { nastav, T } from '../../titul.js';
 
-T.zapina = 'Buying here is not switched on yet. Write to andrej@arling.sk and we send the kit by hand.';
+T.zapina = 'Buying here is not switched on yet. Write to support@arling.sk and we send the kit by hand.';
 
 nastav();

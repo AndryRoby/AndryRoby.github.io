@@ -23,7 +23,7 @@ You are **not** granted rights to:
 If you want to do something with the code beyond using the hosted tool
 as intended (e.g. embed a derivative internally, contribute a fix,
 translate it, or anything not covered above), just ask:
-andrej@arling.sk. Reasonable requests (bug fixes, accessibility
+support@arling.sk. Reasonable requests (bug fixes, accessibility
 improvements, adding a missing accounting-software header template)
 are generally welcome; this notice exists to prevent silent
 repackaging, not to block collaboration.

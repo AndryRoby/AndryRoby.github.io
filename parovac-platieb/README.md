@@ -170,7 +170,7 @@ systéme.
 ## O nástroji
 
 Vytvorila ARLing s. r. o. (Bratislava, Slovensko).
-Kontakt: andrej@arling.sk
+Kontakt: podpora@arling.sk
 
 Súvisiace nástroje:
 - camt.053 výpis banky do Excelu: https://arling.sk/camt053-to-excel/
