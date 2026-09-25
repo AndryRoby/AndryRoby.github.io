@@ -1,0 +1,239 @@
+/* The Count of Monte Cristo, drawn in code. A risograph poster on paper:
+   three inks (sunflower yellow, bright red, medium blue), text in a deep
+   blue black. The site header and footer keep the site's own look. */
+
+.poster {
+  --mc-paper: #f3eee3;
+  --mc-paper-deep: #e9e2d2;
+  --mc-ink: #1d2340;
+  --mc-body: #34395a;
+  --mc-muted: #5b5d72;
+  --mc-blue: #3255a4;
+  --mc-red: #f15060;
+  --mc-red-text: #b8303e;
+  --mc-yellow: #ffb511;
+  --mc-line: rgba(50, 85, 164, 0.28);
+  --mc-w: min(1240px, calc(100% - 32px));
+  position: relative;
+  z-index: 1;
+  color: var(--mc-body);
+  background-color: var(--mc-paper);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .42 0 0 0 0 .36 0 0 0 0 .26 0 0 0 .09 0'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)'/%3E%3C/svg%3E");
+  font: 17px/1.62 var(--text, "ARLing Serif", Georgia, serif);
+  font-family: "ARLing Serif", Georgia, "Times New Roman", serif;
+  padding-bottom: 40px;
+  overflow-x: clip;
+}
+main.poster ::selection { background: rgba(255, 181, 17, 0.55); color: var(--mc-ink); }
+.poster :focus-visible { outline: 3px solid var(--mc-blue); outline-offset: 3px; }
+.poster a { color: var(--mc-blue); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.poster a:hover { color: var(--mc-ink); }
+.poster .mc-wrap { width: var(--mc-w); margin: 0 auto; }
+.poster .mc-sans { font-family: "ARLing Sans", system-ui, -apple-system, "Segoe UI", sans-serif; }
+
+main.poster p, main.poster li { color: var(--mc-body); }
+
+/* ── Masthead ─────────────────────────────────────────────────────────── */
+.poster .mast { padding: clamp(28px, 5vw, 72px) 0 clamp(24px, 4vw, 56px); }
+.poster .mast-kicker { max-width: none;
+  display: flex; flex-wrap: wrap; gap: 4px 22px; margin: 0 0 clamp(18px, 3vw, 34px);
+  padding-bottom: 12px; border-bottom: 2px solid var(--mc-blue);
+  font: 600 12px/1.4 "ARLing Sans", system-ui, sans-serif; letter-spacing: .12em; text-transform: uppercase; color: var(--mc-blue);
+}
+.poster .mast-kicker span:last-child { margin-left: auto; }
+.poster .mast h1 {
+  margin: 0; color: var(--mc-blue);
+  font: 700 clamp(46px, 9.4vw, 148px)/0.9 "ARLing Sans", system-ui, sans-serif; letter-spacing: -0.035em;
+}
+/* the second drum out of register: a red print just behind the blue.
+   No blend modes on the page itself, they make every scrolled frame
+   recomposite the whole poster. */
+.poster .mast h1 .over { position: relative; display: inline-block; z-index: 0; }
+.poster .mast h1 .over::after {
+  content: attr(data-text); position: absolute; left: 0; top: 0; z-index: -1;
+  color: var(--mc-red); transform: translate(0.03em, -0.018em); pointer-events: none;
+}
+.poster .mast h1 em {
+  display: block; margin-top: .12em; font: italic 400 clamp(30px, 5.4vw, 84px)/1 "ARLing Serif", Georgia, serif;
+  letter-spacing: -0.01em; color: var(--mc-red-text);
+}
+.poster .mast-grid { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: clamp(24px, 4vw, 64px); margin-top: clamp(24px, 4vw, 48px); align-items: start; }
+.poster .mast .lede { margin: 0 0 16px; font-size: clamp(19px, 1.7vw, 23px); line-height: 1.5; color: var(--mc-ink); max-width: 38em; }
+.poster .mast-grid p { max-width: 40em; }
+.poster .inks { display: flex; flex-wrap: wrap; gap: 10px 22px; margin: 18px 0 0; padding: 0; list-style: none; font: 500 14px/1.3 "ARLing Sans", system-ui, sans-serif; color: var(--mc-muted); }
+.poster .inks li { display: flex; align-items: center; gap: 8px; }
+.poster .inks i { width: 22px; height: 22px; border-radius: 50%; display: inline-block; }
+.poster .inks .y { background: var(--mc-yellow); }
+.poster .inks .r { background: var(--mc-red); }
+.poster .inks .b { background: var(--mc-blue); }
+.poster .mast-toc { margin: 0; padding: 18px 0 0; border-top: 2px solid var(--mc-blue); list-style: none; counter-reset: part; }
+.poster .mast-toc li { border-bottom: 1px solid var(--mc-line); }
+.poster .mast-toc a {
+  display: grid; grid-template-columns: 44px 1fr auto; align-items: baseline; gap: 10px; min-height: 44px; padding: 8px 0;
+  text-decoration: none; color: var(--mc-ink); font: 600 17px/1.3 "ARLing Sans", system-ui, sans-serif;
+}
+.poster .mast-toc a span { font: 700 14px/1 "ARLing Sans", system-ui, sans-serif; color: var(--mc-red-text); }
+.poster .mast-toc a small { font: 400 13px/1.3 "ARLing Sans", system-ui, sans-serif; color: var(--mc-muted); }
+.poster .mast-toc a:hover { color: var(--mc-blue); }
+
+/* ── Parts of the story ───────────────────────────────────────────────── */
+.poster .part { padding: clamp(40px, 6vw, 96px) 0 0; }
+.poster .part-head { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px clamp(16px, 2.4vw, 32px); align-items: end; padding-bottom: 14px; border-bottom: 2px solid var(--mc-blue); margin-bottom: clamp(28px, 4vw, 56px); }
+.poster .part-num {
+  grid-row: span 2; font: 700 clamp(64px, 10vw, 150px)/0.78 "ARLing Sans", system-ui, sans-serif; color: var(--mc-yellow);
+  letter-spacing: -0.04em; position: relative; z-index: 0;
+}
+.poster .part-num::after { content: attr(data-text); position: absolute; left: 0; top: 0; z-index: -1; color: var(--mc-red); transform: translate(5px, 4px); }
+.poster .part-head h2 { margin: 0; font: 700 clamp(30px, 4.4vw, 60px)/1 "ARLing Sans", system-ui, sans-serif; letter-spacing: -0.025em; color: var(--mc-ink); }
+.poster .part-head p { margin: 6px 0 0; max-width: 46em; color: var(--mc-body); font-size: 17px; }
+
+/* ── A plate: the print and its caption ───────────────────────────────── */
+.poster .plate { margin: 0 0 clamp(48px, 7vw, 110px); display: grid; gap: clamp(18px, 2.6vw, 40px); align-items: start; }
+.poster .plate[data-shape="pano"] { grid-template-columns: minmax(0, 1fr); }
+.poster .plate[data-shape="wide"] { grid-template-columns: minmax(0, 8fr) minmax(0, 4fr); }
+.poster .plate[data-shape="tall"] { grid-template-columns: minmax(0, 6fr) minmax(0, 5fr); }
+.poster .plate.flip .art { order: 2; }
+.poster .plate[data-shape="tall"].flip { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); }
+.poster .plate[data-shape="wide"].flip { grid-template-columns: minmax(0, 4fr) minmax(0, 8fr); }
+.poster .art { position: relative; margin: 0; background: var(--mc-paper); contain: layout paint; }
+.poster .plate[data-shape="pano"] .art { aspect-ratio: 2 / 1; }
+.poster .plate[data-shape="wide"] .art { aspect-ratio: 3 / 2; }
+.poster .plate[data-shape="tall"] .art { aspect-ratio: 4 / 5; }
+.poster .art .print, .poster .art canvas.drum { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.poster .art-alt {
+  position: absolute; inset: 0; margin: 0; display: flex; align-items: center; justify-content: center; padding: 8%;
+  text-align: center; font-style: italic; font-size: 15px; line-height: 1.5; color: var(--mc-muted);
+  background-image: radial-gradient(rgba(50, 85, 164, .22) 1.2px, transparent 1.4px); background-size: 9px 9px;
+}
+.poster .art-alt span { background: var(--mc-paper); padding: 10px 14px; max-width: 34em; }
+.poster .is-printing .art-alt, .poster .is-printed .art-alt {
+  clip-path: inset(50%); width: 1px; height: 1px; overflow: hidden; padding: 0; white-space: nowrap;
+}
+.poster .is-failed .art-alt span { color: var(--mc-ink); }
+
+.poster .cap { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0 18px; align-content: start; }
+.poster .plate[data-shape="pano"] .cap { grid-template-columns: auto minmax(0, 1fr) minmax(0, 1.2fr); gap: 0 clamp(18px, 3vw, 44px); align-items: start; }
+.poster .cap-n {
+  grid-row: span 3; font: 700 clamp(56px, 6.4vw, 92px)/0.8 "ARLing Sans", system-ui, sans-serif; color: var(--mc-red);
+  letter-spacing: -0.04em; min-width: 1.1ch;
+}
+.poster .cap-t { margin: 0; font: 700 13px/1.35 "ARLing Sans", system-ui, sans-serif; letter-spacing: .1em; text-transform: uppercase; color: var(--mc-blue); }
+.poster .cap-t span { display: block; margin-top: 3px; letter-spacing: .04em; text-transform: none; font-weight: 500; color: var(--mc-muted); }
+.poster .cap blockquote { margin: 14px 0 0; padding: 0; }
+.poster .cap blockquote p {
+  margin: 0; font: italic 400 clamp(20px, 1.9vw, 26px)/1.38 "ARLing Serif", Georgia, serif; color: var(--mc-ink);
+  text-indent: -0.42em;
+}
+.poster .cap .drawn { margin: 14px 0 0; font: 400 14.5px/1.55 "ARLing Sans", system-ui, sans-serif; color: var(--mc-muted); }
+.poster .plate[data-shape="pano"] .cap blockquote { margin-top: 0; }
+.poster .plate[data-shape="pano"] .cap .drawn { margin-top: 2px; }
+
+/* ── The last two words of the book, set like the masthead ────────────── */
+.poster .coda { margin: 0; padding: clamp(28px, 5vw, 64px) 0 clamp(8px, 2vw, 24px); border-top: 2px solid var(--mc-blue); text-align: center; }
+.poster .coda .coda-w {
+  margin: 0; max-width: none; color: var(--mc-blue);
+  font: italic 400 clamp(54px, 11vw, 168px)/0.95 "ARLing Serif", Georgia, serif; letter-spacing: -0.02em;
+}
+.poster .coda-w .over { position: relative; display: inline-block; z-index: 0; }
+.poster .coda-w .over::after {
+  content: attr(data-text); position: absolute; left: 0; top: 0; z-index: -1;
+  color: var(--mc-red); transform: translate(0.03em, -0.018em); pointer-events: none;
+}
+.poster .coda .coda-s { margin: 18px auto 0; max-width: 34em; text-wrap: balance; font: 500 15px/1.5 "ARLing Sans", system-ui, sans-serif; color: var(--mc-muted); }
+
+/* ── All 117 chapters ─────────────────────────────────────────────────── */
+.poster .chapters { padding: clamp(48px, 7vw, 110px) 0 0; }
+.poster .chapters h2, .poster .edition h2, .poster .about h2 {
+  margin: 0; font: 700 clamp(34px, 5vw, 68px)/0.98 "ARLing Sans", system-ui, sans-serif; letter-spacing: -0.03em; color: var(--mc-ink);
+}
+.poster .chapters .intro { max-width: 44em; margin: 14px 0 26px; }
+.poster .tl-chart { display: block; width: 100%; height: auto; margin: 10px 0 6px; overflow: visible; }
+.poster .tl-chart rect { transition: opacity .15s; }
+.poster .tl-chart a:hover rect, .poster .tl-chart a:focus rect { opacity: .6; }
+.poster .tl-chart text { font: 700 12px "ARLing Sans", system-ui, sans-serif; fill: var(--mc-blue); }
+.poster .tl-chart .tl-dot { fill: var(--mc-ink); }
+.poster .tl-m { fill: #f15060; --c: #f15060; }
+.poster .tl-i { fill: #3255a4; --c: #3255a4; }
+.poster .tl-s { fill: #6f9a52; --c: #6f9a52; }
+.poster .tl-r { fill: #f7893a; --c: #f7893a; }
+.poster .tl-p { fill: #7a4f8e; --c: #7a4f8e; }
+.poster .tl-a { fill: #ffb511; --c: #ffb511; }
+.poster .tl-j { fill: #6b4a3a; --c: #6b4a3a; }
+.poster .tl-legend { display: flex; flex-wrap: wrap; gap: 6px 20px; margin: 10px 0 30px; padding: 0; list-style: none; font: 500 14px/1.3 "ARLing Sans", system-ui, sans-serif; color: var(--mc-muted); }
+.poster .tl-legend li { display: flex; align-items: center; gap: 7px; }
+.poster .tl-legend i { width: 14px; height: 14px; display: inline-block; background: var(--c); }
+.poster .tl-legend i.tl-dotkey { width: 8px; height: 8px; border-radius: 50%; background: var(--mc-ink); }
+.poster .tl-vols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px clamp(24px, 4vw, 64px); }
+.poster .tl-vol h3 {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin: 26px 0 6px; padding-bottom: 8px; border-bottom: 2px solid var(--mc-blue);
+  font: 700 22px/1.2 "ARLing Sans", system-ui, sans-serif; color: var(--mc-ink);
+}
+.poster .tl-vol h3 span { font: 500 13px/1 "ARLing Sans", system-ui, sans-serif; color: var(--mc-muted); letter-spacing: .04em; }
+.poster .tl-vol ol { list-style: none; margin: 0; padding: 0; }
+.poster .tl-vol li { display: grid; grid-template-columns: 38px minmax(0, 1fr); gap: 10px; padding: 9px 0 10px; border-bottom: 1px solid var(--mc-line); font-size: 15.5px; line-height: 1.5; scroll-margin-top: 90px; }
+.poster .tl-vol li:target { background: rgba(255, 181, 17, .22); }
+.poster .tl-n { font: 700 15px/1.5 "ARLing Sans", system-ui, sans-serif; color: var(--mc-ink); border-left: 5px solid var(--c); padding-left: 7px; height: fit-content; }
+.poster .tl-vol li b { font: 600 15.5px/1.4 "ARLing Sans", system-ui, sans-serif; color: var(--mc-ink); }
+.poster .tl-scene { display: inline-block; margin-left: 4px; font: 600 13.5px/1.5 "ARLing Sans", system-ui, sans-serif; white-space: nowrap; }
+.poster .tl-scene::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--mc-ink); margin-right: 6px; vertical-align: 1px; }
+
+/* ── The e-ink edition ────────────────────────────────────────────────── */
+.poster .edition { padding: clamp(56px, 8vw, 120px) 0 0; }
+.poster .edition-card {
+  display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: clamp(20px, 4vw, 56px);
+  padding: clamp(22px, 4vw, 52px); border: 2px solid var(--mc-blue); position: relative;
+  background-image: radial-gradient(rgba(255, 181, 17, .5) 1.3px, transparent 1.6px); background-size: 8px 8px; background-position: 0 0;
+}
+.poster .edition-card > div { background: var(--mc-paper); padding: 4px 0; }
+.poster .edition-card > div:first-child { padding-right: 12px; }
+.poster .edition p { max-width: 40em; }
+.poster .edition .facts { list-style: none; margin: 0; padding: 14px 18px; font: 500 15px/1.5 "ARLing Sans", system-ui, sans-serif; color: var(--mc-ink); }
+.poster .edition .facts li { padding: 7px 0; border-bottom: 1px solid var(--mc-line); }
+.poster .edition .facts li:last-child { border-bottom: 0; }
+.poster .mc-actions { display: flex; flex-wrap: wrap; gap: 12px 22px; align-items: center; margin-top: 22px; }
+.poster .mc-btn {
+  display: inline-flex; align-items: center; min-height: 48px; padding: 0 22px; border-radius: 999px;
+  background: var(--mc-blue); color: #fff !important; text-decoration: none; font: 600 16px/1 "ARLing Sans", system-ui, sans-serif;
+}
+.poster .mc-btn:hover { background: var(--mc-ink); }
+.poster .mc-quiet { font: 600 15px/1.4 "ARLing Sans", system-ui, sans-serif; min-height: 44px; display: inline-flex; align-items: center; }
+
+/* ── About ────────────────────────────────────────────────────────────── */
+.poster .about { padding: clamp(56px, 8vw, 120px) 0 0; }
+.poster .about-cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 clamp(24px, 4vw, 64px); margin-top: 18px; }
+.poster .about p { margin: 0 0 14px; font-size: 16px; }
+
+@media (max-width: 900px) {
+  .poster .mast-grid, .poster .edition-card, .poster .about-cols { grid-template-columns: minmax(0, 1fr); }
+  .poster .plate[data-shape="wide"], .poster .plate[data-shape="tall"], .poster .plate[data-shape="wide"].flip, .poster .plate[data-shape="tall"].flip { grid-template-columns: minmax(0, 1fr); }
+  .poster .plate.flip .art { order: 0; }
+  .poster .plate[data-shape="pano"] .cap { grid-template-columns: auto minmax(0, 1fr); }
+  .poster .plate[data-shape="pano"] .cap blockquote { margin-top: 14px; }
+  .poster .plate[data-shape="pano"] .cap .drawn { margin-top: 14px; }
+  .poster .tl-vols { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 560px) {
+  .poster { font-size: 16px; }
+  .poster .mast-kicker span:last-child { margin-left: 0; }
+  .poster .plate[data-shape="pano"] .art { aspect-ratio: 2 / 1; }
+  .poster .cap { grid-template-columns: minmax(0, 1fr); }
+  .poster .cap-n { grid-row: auto; font-size: 52px; margin-bottom: 8px; }
+  .poster .plate[data-shape="pano"] .cap { grid-template-columns: minmax(0, 1fr); }
+  .poster .part-head { grid-template-columns: minmax(0, 1fr); }
+  .poster .part-num { grid-row: auto; }
+  .poster .tl-vol li { grid-template-columns: 34px minmax(0, 1fr); font-size: 15px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .poster .tl-chart rect { transition: none; }
+}
+@media print {
+  .poster { background: #fff; }
+}
+
+/* the drums at work: the print in three stages (yellow; yellow and red; all
+   three inks), each opening down the sheet over the one before. The stages
+   are opaque, so no blend mode is needed and scrolling stays cheap. */
+.poster .drums { position: absolute; inset: 0; overflow: hidden; }
+.poster .drums .wipe { position: absolute; inset: 0; overflow: hidden; will-change: transform; }
+.poster .drums .wipe > div { position: absolute; inset: 0; will-change: transform; }
+.poster .drums canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
