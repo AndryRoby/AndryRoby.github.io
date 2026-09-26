@@ -364,3 +364,17 @@ test('po platbe: sluzba neodpovie, Try again sa spyta znova a az potom ukaze sub
   assert.equal(najdi(koren, 'hotovo-znova'), null);
   delete globalThis.document;
 });
+
+// Reklama 26. 9. 2026: UTM z príchodu idú do odkazu Stripe ako utm_* a client_reference_id.
+{
+  const { utmZAdresy, sOdkazomReklamy } = await import('./titul.js');
+  const u = utmZAdresy('https://arling.sk/shop/x/?utm_source=google&utm_medium=cpc&utm_campaign=sady-en&utm_content=a b<c>');
+  assert.equal(u.utm_content, 'abc');
+  const s = new URL(sOdkazomReklamy('https://buy.stripe.com/abc', u));
+  assert.equal(s.searchParams.get('client_reference_id'), 'gads_sady-en_abc');
+  assert.equal(s.searchParams.get('utm_campaign'), 'sady-en');
+  assert.equal(sOdkazomReklamy('https://buy.stripe.com/abc', { utm_source: 'x' }), 'https://buy.stripe.com/abc');
+  assert.equal(sOdkazomReklamy('https://buy.stripe.com/abc', null), 'https://buy.stripe.com/abc');
+  assert.equal(sOdkazomReklamy('', u), '');
+  console.log('ok reklama utm');
+}

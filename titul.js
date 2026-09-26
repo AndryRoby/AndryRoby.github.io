@@ -140,6 +140,44 @@ export function platnyOdkaz(url) {
   return /^https:\/\/buy\.stripe\.com\//.test(u) ? u : '';
 }
 
+/* Reklama (26. 9. 2026, rovnaky vzor ako sepa-pain001-doctor): UTM z prichodu sa ulozia do
+ * sessionStorage a pri kupe idu do odkazu Stripe ako utm_* a client_reference_id
+ * (gads_<kampan>_<obsah>), aby sa platba dala priradit kampani. Licencna sluzba pri tituloch
+ * client_reference_id nepouziva (app.py ho cita len pri Asistentovi a Feed Monitore).
+ * Len pismena, cislice, _ a -; bez UTM sa odkaz nemeni. */
+const UTM_KLUC = 'arling_utm';
+const UTM_POLIA = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'];
+
+export function utmZAdresy(adresa) {
+  const u = {};
+  try {
+    const q = new URL(adresa).searchParams;
+    for (const k of UTM_POLIA) { const v = q.get(k); if (v) u[k] = v.replace(/[^A-Za-z0-9_-]/g, '').slice(0, 80); }
+  } catch (e) { /* zla adresa: bez UTM */ }
+  return u;
+}
+
+export function sOdkazomReklamy(odkaz, u) {
+  if (!odkaz || !u || !u.utm_campaign) return odkaz;
+  try {
+    const url = new URL(odkaz);
+    for (const k of Object.keys(u)) url.searchParams.set(k, u[k]);
+    url.searchParams.set('client_reference_id', ('gads_' + u.utm_campaign + (u.utm_content ? '_' + u.utm_content : '')).replace(/[^A-Za-z0-9_-]/g, '').slice(0, 150));
+    return url.toString();
+  } catch (e) { return odkaz; }
+}
+
+function zapamatajUtm() {
+  try {
+    const u = utmZAdresy(location.href);
+    if (Object.keys(u).length) sessionStorage.setItem(UTM_KLUC, JSON.stringify(u));
+  } catch (e) { /* bez uloziska sa kampan nepriradi, platba ide normalne */ }
+}
+
+function ulozeneUtm() {
+  try { return JSON.parse(sessionStorage.getItem(UTM_KLUC) || 'null'); } catch (e) { return null; }
+}
+
 /** Titul z navratovej adresy sa prijme len vtedy, ked patri tejto stranke. */
 export function titulZDotazu(hodnota, mojTitul) {
   const t = String(hodnota || '');
@@ -481,6 +519,7 @@ export function nastav(volby = {}) {
     if (!panelHotovy) panel(sessionTitulu(data.titul), odomknute().test);
   }
 
+  zapamatajUtm();
   for (const btn of document.querySelectorAll('[data-titul]')) {
     btn.addEventListener('click', () => {
       track('kupa_click', { titul: btn.dataset.titul, cena: cena, produkt: data.produkt || data.titul });
@@ -489,7 +528,7 @@ export function nastav(volby = {}) {
         if (stavEl) { stavEl.textContent = test ? T.testChyba : T.zapina; stavEl.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
         return;
       }
-      location.href = u;
+      location.href = sOdkazomReklamy(u, ulozeneUtm());
     });
   }
   for (const a of document.querySelectorAll('a[data-ukazka]')) {
