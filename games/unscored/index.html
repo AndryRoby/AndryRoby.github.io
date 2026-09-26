@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self'; media-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="theme-color" content="#11151B">
+<meta name="description" content="UNSCORED, a prototype. After a night recalculation your score is 0 and the cameras stop seeing you. Whisper, invite people, light up the map of Lower Weir.">
+<title>UNSCORED (prototype)</title>
+<link rel="preload" href="fonty/courier-prime-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonty/courier-prime-700.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="hra.css">
+<link rel="modulepreload" href="ekonomika.mjs">
+<link rel="modulepreload" href="pribeh.mjs">
+<link rel="modulepreload" href="svet.mjs">
+<link rel="modulepreload" href="kresby.mjs">
+<link rel="modulepreload" href="pohyb.js">
+<link rel="modulepreload" href="mapa.js">
+<link rel="modulepreload" href="zvuk.js">
+<link rel="modulepreload" href="ukazky.mjs">
+<script type="module" src="ui.js"></script>
+</head>
+<body>
+<svg class="sprity" aria-hidden="true" focusable="false">
+  <symbol id="i-sepot" viewBox="0 0 16 16"><path d="M4.5 4.5c1.6 1.9 1.6 5.1 0 7M7.8 2.8c2.6 3 2.6 7.4 0 10.4M11.1 1.5c3.4 3.9 3.4 9.1 0 13"/></symbol>
+  <symbol id="i-papier" viewBox="0 0 16 16"><path d="M3.5 1.5h6l3 3v10h-9z"/><path d="M9.5 1.5v3h3M5.5 8h5M5.5 10.5h5M5.5 13h3"/></symbol>
+  <symbol id="i-clovek" viewBox="0 0 16 16"><circle cx="8" cy="5" r="2.6"/><path d="M3 14.5c0-3.2 2.2-5.4 5-5.4s5 2.2 5 5.4"/></symbol>
+  <symbol id="i-zamok" viewBox="0 0 16 16"><path d="M4 7.5h8v6.5H4z"/><path d="M5.6 7.5V5.2a2.4 2.4 0 0 1 4.8 0v2.3"/></symbol>
+  <symbol id="i-radio" viewBox="0 0 16 16"><path d="M2 6.5h12v7.5H2z"/><circle cx="10.6" cy="10.2" r="2"/><path d="M4.2 9h3M4.2 11.5h3M5 6.5l6.5-4.5"/></symbol>
+  <symbol id="i-zvuk" viewBox="0 0 16 16"><path d="M2.5 6h2.8l3.7-3v10L5.3 10H2.5z"/><path class="vlnka" d="M11.2 5.4c1.2 1.5 1.2 3.7 0 5.2M13 3.8c2 2.4 2 6 0 8.4"/><path class="krizik" d="M11 6l4 4M15 6l-4 4"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 16 16"><path d="M2.5 4h11M2.5 8h11M2.5 12h7"/></symbol>
+  <symbol id="i-zavriet" viewBox="0 0 16 16"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"/></symbol>
+</svg>
+
+<div class="hra" id="hra">
+  <header class="spravca" aria-label="The Steward">
+    <p class="skore"><span class="skore-stitok">Score</span> <span class="skore-hodnota" id="skore">0</span></p>
+    <p class="pozornost" id="pozornost" hidden>
+      <span class="pozornost-stitok">Attention</span>
+      <span class="pozornost-ciara" aria-hidden="true"><span class="pozornost-napln" id="pozornost-napln"></span></span>
+      <span class="pozornost-cislo" id="pozornost-cislo">0</span>
+    </p>
+    <button class="ikona" id="tl-zvuk" type="button" aria-pressed="true" aria-label="Sound"><svg><use href="#i-zvuk"/></svg></button>
+    <button class="ikona" id="tl-menu" type="button" aria-label="Settings and save code"><svg><use href="#i-menu"/></svg></button>
+  </header>
+
+  <section class="mapa" id="mapa-obal" aria-label="Map">
+    <canvas id="mapa" role="img" aria-label="Map of Lower Weir. One card on the table: your flat, score 0."></canvas>
+    <canvas id="kuzele" aria-hidden="true"></canvas>
+    <div class="oznam" id="oznam" role="status" aria-live="polite"></div>
+    <div class="stitky" id="stitky" aria-hidden="true"></div>
+    <button class="voditko-bod" id="voditko-bod" type="button" hidden></button>
+  </section>
+
+  <main class="papier" id="papier">
+    <div class="radio" id="radio">
+      <svg class="radio-ikona" aria-hidden="true"><use href="#i-radio"/></svg>
+      <p class="radio-text" id="radio-text" aria-hidden="true"></p>
+      <p class="sr" id="radio-sr" role="status" aria-live="polite"></p>
+    </div>
+
+    <div class="cisla" id="cisla">
+      <p class="cislo" id="c-sepoty"><span class="hodnota" id="h-sepoty">0</span><span class="nazov">whispers</span><span class="tok" id="t-sepoty"></span></p>
+      <p class="cislo" id="c-ludia"><span class="hodnota" id="h-ludia">0</span><span class="nazov">people</span><span class="tok" id="t-ludia"></span></p>
+      <p class="cislo cislo-papier" id="c-papier"><span class="hodnota" id="h-papier">0</span><span class="nazov">paper</span><span class="tok" id="t-papier"></span></p>
+    </div>
+
+    <div class="ponuka" id="ponuka"></div>
+
+    <div class="sepkaj-obal">
+      <button class="sepkaj" id="sepkaj" type="button"><span class="sepkaj-text">Whisper</span><span class="sepkaj-klaves" aria-hidden="true">space</span></button>
+      <div class="plus" id="plus" aria-hidden="true"></div>
+    </div>
+
+    <div class="nakupy-hlava">
+      <h2 class="nadpis-sekcie">Invite</h2>
+      <button class="nasobok" type="button" aria-label="Invite amount">x1</button>
+    </div>
+    <div class="nakupy" id="nakupy">
+      <button class="nakup" type="button" data-rola="p"><span class="nakup-meno">Listener</span><span class="nakup-cena"></span><span class="nakup-opis">Talks to others. Brings whispers.</span><span class="nakup-pozornost"></span><span class="nakup-postup" aria-hidden="true"></span></button>
+      <button class="nakup" type="button" data-rola="k"><span class="nakup-meno">Courier</span><span class="nakup-cena"></span><span class="nakup-opis">Turns whispers into paper.</span><span class="nakup-pozornost"></span><span class="nakup-postup" aria-hidden="true"></span></button>
+      <button class="nakup" type="button" data-rola="t"><span class="nakup-meno">Printer</span><span class="nakup-cena"></span><span class="nakup-opis">Turns paper into new listeners. Loud.</span><span class="nakup-pozornost"></span><span class="nakup-postup" aria-hidden="true"></span></button>
+    </div>
+
+    <nav class="zalozky" aria-label="Lists">
+      <button class="zalozka" type="button" data-list="nastroje" id="z-nastroje">Tools</button>
+      <button class="zalozka" type="button" data-list="ludia" id="z-ludia">People</button>
+      <button class="nasobok" type="button" aria-label="Invite amount">x1</button>
+    </nav>
+
+    <div class="zoznamy" id="zoznamy" aria-label="Tools and people">
+      <button class="zavriet" id="zavriet-zoznamy" type="button" aria-label="Close"><svg><use href="#i-zavriet"/></svg></button>
+      <section class="zoznam" id="nastroje" aria-labelledby="h-nastroje">
+        <h2 class="nadpis-sekcie" id="h-nastroje">Tools</h2>
+        <ul class="nastroje-zoznam" id="nastroje-zoznam"></ul>
+        <p class="nic" id="nastroje-nic">Tools cost paper. Couriers bring it.</p>
+        <p class="rozdelenie" id="rozdelenie"><svg aria-hidden="true"><use href="#i-zamok"/></svg><span><b>Split the cell</b><br><span id="rozdelenie-stav">150 people</span></span></p>
+      </section>
+      <section class="zoznam" id="ludia" aria-labelledby="h-ludia">
+        <h2 class="nadpis-sekcie" id="h-ludia">People</h2>
+        <p class="roly" id="roly"></p>
+        <ul class="postavy" id="postavy"></ul>
+        <h3 class="podnadpis" id="h-nedavni" hidden>Most recent</h3>
+        <ul class="nedavni" id="nedavni"></ul>
+      </section>
+    </div>
+    <p class="neuklada" id="neuklada" hidden>This window cannot save your progress.</p>
+  </main>
+</div>
+
+<div class="zaves" id="zaves" hidden></div>
+
+<div class="rozhovor" id="rozhovor" role="dialog" aria-modal="true" aria-labelledby="r-meno" hidden>
+  <button class="zavriet" id="zavriet-rozhovor" type="button" aria-label="Later"><svg><use href="#i-zavriet"/></svg></button>
+  <div class="r-karta">
+    <p class="r-peciatka" id="r-peciatka" aria-hidden="true">JOINED</p>
+    <h2 class="r-meno" id="r-meno"></h2>
+    <p class="r-riadok" id="r-riadok"></p>
+    <p class="r-hacik" id="r-hacik"></p>
+  </div>
+  <p class="r-uvod" id="r-uvod"></p>
+  <p class="r-cena" id="r-cena"></p>
+  <div class="r-volby">
+    <button class="r-volba" type="button" data-volba="a"><span class="r-volba-text"></span><span class="r-volba-bonus"></span></button>
+    <button class="r-volba" type="button" data-volba="b"><span class="r-volba-text"></span><span class="r-volba-bonus"></span></button>
+  </div>
+</div>
+
+<div class="nastavenia" id="nastavenia" role="dialog" aria-modal="true" aria-labelledby="n-nadpis" hidden>
+  <button class="zavriet" id="zavriet-nastavenia" type="button" aria-label="Close"><svg><use href="#i-zavriet"/></svg></button>
+  <h2 class="nadpis-sekcie" id="n-nadpis">Settings</h2>
+  <p class="n-riadok"><button class="tl" id="n-zvuk" type="button" aria-pressed="true">Sound: on</button></p>
+  <p class="n-popis">Progress is saved in this browser only. To move it, copy this code and paste it on the other device.</p>
+  <label class="n-label" for="n-kod">Save code</label>
+  <textarea class="n-kod" id="n-kod" rows="3" spellcheck="false" autocomplete="off"></textarea>
+  <p class="n-riadok"><button class="tl" id="n-kopirovat" type="button">Copy code</button> <button class="tl" id="n-nacitat" type="button">Load pasted code</button></p>
+  <p class="n-sprava" id="n-sprava" role="status"></p>
+  <p class="n-riadok"><button class="tl tl-varovanie" id="n-reset" type="button">Start over</button></p>
+  <p class="n-popis">UNSCORED is a prototype. Aetheria, the Council, the Steward and every person in it are fiction.</p>
+</div>
+
+<div class="prechod" id="prechod" hidden>
+  <div class="prechod-list" id="prechod-list">
+    <p class="prechod-hlava">Lower Weir</p>
+    <p class="prechod-cislo" id="prechod-cislo"></p>
+    <p class="prechod-nazov" id="prechod-nazov"></p>
+    <p class="prechod-peciatka" id="prechod-peciatka" aria-hidden="true"></p>
+    <p class="prechod-zero" id="prechod-zero"></p>
+    <p class="prechod-dalej">Tap to continue</p>
+  </div>
+</div>
+
+<div class="navrat" id="navrat" role="dialog" aria-modal="true" aria-labelledby="navrat-nadpis" hidden>
+  <div class="navrat-list">
+    <h2 class="navrat-nadpis" id="navrat-nadpis">While you were away</h2>
+    <p class="navrat-hlavne" id="navrat-hlavne"></p>
+    <p class="navrat-riadky" id="navrat-riadky"></p>
+    <button class="tl navrat-tl" id="navrat-tl" type="button">Back to the map</button>
+  </div>
+</div>
+
+<div class="let" id="let" aria-hidden="true"></div>
+
+<noscript><p class="bez-js">UNSCORED needs JavaScript. It is a small game about a city where everyone has a score, and you have zero.</p></noscript>
+</body>
+</html>
