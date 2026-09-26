@@ -1,7 +1,7 @@
 /* Puzzle Village: the island, its water, paths and trees.
    Built once from fixed numbers, so the village is the same for everyone. */
-import { iso, RX, RY, tree, bush, flowers, stone, signpost } from './iso.js?v=4';
-import { hash, DUSK, OPT } from './riso.js?v=4';
+import { iso, RX, RY, tree, bush, flowers, stone, signpost } from './iso.js?v=5';
+import { hash, DUSK, OPT } from './riso.js?v=5';
 
 export const C0 = [14.5, 14.5];
 export const DEPTH = 74;
