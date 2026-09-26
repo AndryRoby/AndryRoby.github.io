@@ -1,0 +1,114 @@
+/* Field Notes: bezplatné tlačové osemsmerovky (/games/field-notes/printable/).
+   Nočná plocha webu (paper.css, body.noc); strany PDF sú biely papier na tmavom stole.
+   Rozloženie sa kreslí od 360 px; nič nemá pevnú šírku väčšiu než stĺpec. Stránky generuje
+   ops/hry/field-notes/tlac/web.mjs, tento súbor je písaný ručne. */
+
+/* ── Úvod: text a skutočná strana PDF ── */
+.fnp-hero{display:grid;grid-template-columns:minmax(0,1fr);gap:36px;
+  padding:clamp(28px,6vw,88px) 0 clamp(44px,6vw,96px)}
+.fnp-hero-text{min-width:0}
+body.noc .fnp-hero h1{font-size:clamp(30px,4.4vw,58px);line-height:1.08;letter-spacing:-.024em;margin:0;max-width:19ch}
+body.noc .fnp-hero .lead{margin:20px 0 0;max-width:56ch;font-size:clamp(17px,1.35vw,20px);line-height:1.55}
+.fnp-cesta{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;margin:0 0 18px;
+  font:500 12px/1.4 var(--ui);letter-spacing:.12em;text-transform:uppercase}
+/* Dotykový cieľ 44 px bez zmeny rozloženia: výplň hore a dole, záporný okraj ju vráti. */
+.fnp-cesta a{color:var(--accent-light);text-decoration:none;display:inline-block;padding:13px 0;margin:-13px 0}
+.fnp-cesta a:hover{text-decoration:underline}
+.fnp-cesta span{color:var(--muted)}
+
+.fnp-akcie{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;margin:28px 0 0;max-width:540px}
+.fnp-akcie .btn{width:100%;justify-content:center;text-align:center}
+@media (min-width:560px){ .fnp-akcie{grid-template-columns:repeat(2,minmax(0,1fr))} }
+body.noc p.fnp-subor{font-family:var(--ui);font-size:13.5px;line-height:1.55;color:var(--muted);margin:14px 0 0;max-width:54ch}
+body.noc p.fnp-hrat{margin:22px 0 0;font-family:var(--ui);font-size:15px}
+.fnp-hrat .go{color:var(--accent-light);min-height:44px}
+.fnp-hrat .go:hover{color:var(--ink)}
+
+.fnp-fakty{list-style:none;margin:26px 0 0;padding:0;display:grid;gap:10px;font-family:var(--ui);font-size:15px;color:var(--body)}
+.fnp-fakty li{display:flex;gap:10px;align-items:baseline}
+.fnp-fakty b{color:var(--ink);font-weight:700;min-width:2ch;font-variant-numeric:tabular-nums}
+
+/* Strana PDF ako papier: biela, bez rámu, s tieňom na tmavom podklade. */
+.fnp-list{margin:0;width:100%;max-width:440px;justify-self:center;min-width:0}
+.fnp-list img,.fnp-dvojica img{display:block;width:100%;height:auto;background:#fff;border-radius:3px;
+  box-shadow:0 1px 0 rgba(255,255,255,.05),0 22px 48px -20px rgba(0,0,0,.85)}
+.fnp-list figcaption,.fnp-dvojica figcaption{font-family:var(--ui);font-size:13px;line-height:1.5;color:var(--muted);margin-top:14px}
+.fnp-dvojica{margin:0;width:100%;max-width:520px;justify-self:center;min-width:0;
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:start}
+.fnp-dvojica figcaption{grid-column:1 / -1;margin-top:2px}
+
+@media (min-width:900px){
+  .fnp-hero{grid-template-columns:minmax(0,1fr) minmax(0,420px);gap:clamp(40px,5vw,96px);align-items:start}
+  .fnp-hero .fnp-list,.fnp-hero .fnp-dvojica{justify-self:end}
+  .fnp-hero .fnp-dvojica{max-width:480px}
+  .fnp-hub .fnp-hero{grid-template-columns:minmax(0,1fr) minmax(0,480px)}
+}
+
+/* ── Slová a fakty ── */
+.fnp-slova-blok{display:grid;grid-template-columns:minmax(0,1fr);gap:40px}
+@media (min-width:900px){ .fnp-slova-blok{grid-template-columns:minmax(0,1fr) minmax(0,340px);gap:clamp(40px,5vw,88px);align-items:start} }
+.fnp-slova{list-style:none;margin:0;padding:0;max-width:720px}
+.fnp-slova li{border-top:1px solid var(--line);padding:16px 0}
+.fnp-slova li:last-child{border-bottom:1px solid var(--line)}
+body.noc .fnp-slova p{margin:0;max-width:62ch}
+body.noc .fnp-slova p+p{margin-top:6px}
+.fnp-slovo-riadok{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px}
+.fnp-slovo{font:700 15px/1.3 var(--ui);letter-spacing:.07em;color:var(--ink)}
+.fnp-meno{font:400 14px/1.3 var(--ui);color:var(--muted)}
+body.noc .fnp-slova p.fnp-zdroj{font-family:var(--ui);font-size:13px;color:var(--muted)}
+.fnp-zdroj a{color:var(--body);overflow-wrap:anywhere}
+.fnp-slova-blok .fnp-list{max-width:340px}
+
+/* ── Pre učiteľov a rodičov ── */
+.fnp-udaje{display:grid;grid-template-columns:minmax(0,7.5em) minmax(0,1fr);gap:10px 20px;margin:0 0 30px;max-width:640px;
+  font-family:var(--ui);font-size:15px;line-height:1.5}
+.fnp-udaje dt{color:var(--muted)}
+.fnp-udaje dd{margin:0;color:var(--ink)}
+.fnp-text{max-width:68ch}
+body.noc .fnp-text p{margin:0 0 14px}
+.fnp-text b{color:var(--ink)}
+body.noc .fnp-text + h3{margin-top:30px}
+.fnp-kroky{list-style:none;margin:14px 0 0;padding:0;counter-reset:k;display:grid;gap:14px;max-width:68ch}
+.fnp-kroky li{position:relative;padding-left:40px;font-size:16px;line-height:1.6;color:var(--body)}
+.fnp-kroky li::before{counter-increment:k;content:counter(k);position:absolute;left:0;top:1px;width:26px;height:26px;
+  border:1px solid var(--accent);border-radius:50%;color:var(--accent-light);font:600 13px/24px var(--ui);text-align:center}
+
+/* ── Otázky ── */
+.fnp-otazky{max-width:820px}
+.fnp-otazky details{border-top:1px solid var(--line);padding:6px 0}
+.fnp-otazky details:last-child{border-bottom:1px solid var(--line)}
+.fnp-otazky summary{cursor:pointer;list-style:none;display:block;position:relative;padding:10px 30px 10px 0;min-height:44px;
+  font:600 clamp(17px,1.3vw,19px)/1.4 var(--display);color:var(--ink)}
+.fnp-otazky summary::-webkit-details-marker{display:none}
+.fnp-otazky summary::after{content:"+";color:var(--accent-light);font-family:var(--ui);position:absolute;right:2px;top:10px}
+.fnp-otazky details[open] summary::after{content:"\2212"}
+body.noc .fnp-otazky details p{margin:4px 0 12px;max-width:70ch}
+
+/* ── Zoznam tém (rozcestník): riadky oddelené linkou, nie karty ── */
+.fnp-temy{list-style:none;margin:0;padding:0;max-width:980px}
+.fnp-temy>li{display:grid;grid-template-columns:84px minmax(0,1fr);gap:16px;padding:24px 0;border-top:1px solid var(--line)}
+.fnp-temy>li:last-child{border-bottom:1px solid var(--line)}
+.fnp-temy-obr{display:block;align-self:start}
+.fnp-temy-obr img{display:block;width:100%;height:auto;background:#fff;border-radius:2px;box-shadow:0 12px 28px -14px rgba(0,0,0,.85)}
+body.noc .fnp-temy h3{font-size:clamp(18px,1.7vw,23px);line-height:1.3;margin:0}
+.fnp-temy h3 a{color:var(--ink);text-decoration:none}
+.fnp-temy h3 a:hover{color:var(--accent-light)}
+body.noc p.fnp-temy-slova{margin:8px 0 0;font-size:15px;line-height:1.55;max-width:64ch}
+body.noc .fnp-temy-akcie{display:flex;flex-wrap:wrap;align-items:center;gap:10px 12px;margin:16px 0 0}
+body.noc .fnp-temy-akcie .btn{height:44px;padding:0 16px;font-size:14px}
+.fnp-temy-akcie .fnp-viac{font-family:var(--ui);font-size:14px;color:var(--accent-light);min-height:44px;display:inline-flex;align-items:center}
+@media (min-width:720px){ .fnp-temy>li{grid-template-columns:132px minmax(0,1fr);gap:28px} }
+
+/* ── Ďalšie témy pod stránkou témy ── */
+.fnp-dalsie{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:minmax(0,1fr);column-gap:32px}
+@media (min-width:640px){ .fnp-dalsie{grid-template-columns:repeat(2,minmax(0,1fr))} }
+@media (min-width:1100px){ .fnp-dalsie{grid-template-columns:repeat(4,minmax(0,1fr))} }
+.fnp-dalsie li{border-top:1px solid var(--line)}
+.fnp-dalsie a{display:flex;align-items:center;gap:14px;padding:12px 0;min-height:44px;text-decoration:none;color:var(--ink);
+  font:600 15px/1.35 var(--ui)}
+.fnp-dalsie img{width:40px;height:auto;flex:none;background:#fff;border-radius:2px}
+.fnp-dalsie a:hover span{color:var(--accent-light)}
+body.noc p.fnp-spat{margin:28px 0 0;font-family:var(--ui);font-size:15px;max-width:70ch}
+.fnp-spat a{color:var(--accent-light)}
+
+@media (prefers-reduced-motion:reduce){ .fnp-hrat .go svg{transition:none} }
