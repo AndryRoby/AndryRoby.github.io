@@ -8,7 +8,7 @@ Apache, GPL, etc.).
 You are welcome to:
 
 - Use the hosted page at https://arling.sk/bankove-nastroje/ freely, for
-  any purpose, personal or commercial, at no cost.
+  any purpose, personal or commercial, at no cost; buying the Pro licence it sells is a paid subscription.
 - Read the source of `index.html` and `licence.js` to understand or
   verify what they do client-side (it's static files: view source is the
   whole codebase for this page).
