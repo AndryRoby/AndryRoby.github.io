@@ -41,6 +41,18 @@ export async function nacitajPisma(zaklad) {
   })).catch(() => {});
 }
 
+/** Andrejove kresby zvierat, tie isté ako v appke (ops/games/hlavolamy/branding, orez do štvorca zo stredu). */
+const KRESBY = {};
+export async function nacitajZvierata(zaklad) {
+  if (typeof Image === 'undefined') return;
+  await Promise.all(ZVIERATA.map(([id]) => new Promise((ok) => {
+    const im = new Image();
+    im.onload = () => { KRESBY[id] = im; ok(); };
+    im.onerror = () => ok();
+    im.src = new URL(`zvierata/${id}.webp`, zaklad).href;
+  })));
+}
+
 export function sprite(dpr, w, h, kresli) {
   const c = platno(Math.ceil(w * dpr), Math.ceil(h * dpr)), x = c.getContext('2d');
   x.scale(dpr, dpr);
@@ -55,9 +67,15 @@ export function spriteTextu(dpr, text, px, w, { vaha = 700, farba = FARBA.ink, z
   m.font = nun(vaha, vel);
   let riadky = vyvazZalom(m, text, w);
   while (riadky.length > maxRiadkov && vel * 0.95 >= minPx) { vel *= 0.95; m.font = nun(vaha, vel); riadky = vyvazZalom(m, text, w); }
-  const lh = vel * riadkovanie;
   let sirka = 0;
   for (const r of riadky) sirka = Math.max(sirka, m.measureText(r).width);
+  // jedno dlhé slovo sa nezalomí: radšej menšie písmo (po minPx), potom širší sprite, nikdy orezané písmená
+  while (sirka > w && vel * 0.95 >= minPx) {
+    vel *= 0.95; m.font = nun(vaha, vel); riadky = vyvazZalom(m, text, w);
+    sirka = 0; for (const r of riadky) sirka = Math.max(sirka, m.measureText(r).width);
+  }
+  const lh = vel * riadkovanie;
+  if (zarovnanie === 'left') w = Math.max(w, Math.ceil(sirka) + 2);
   const x0 = zarovnanie === 'center' ? w / 2 : zarovnanie === 'right' ? w : 0;
   const s = sprite(dpr, w, lh * (riadky.length - 1) + vel * 1.3, (x) => {
     x.font = nun(vaha, vel); x.textBaseline = 'top'; x.textAlign = zarovnanie; x.fillStyle = farba;
@@ -100,13 +118,21 @@ export function spriteFarebny(dpr, casti, px, w, { vaha = 700, farba = FARBA.ink
 // ---------- hlava zvieraťa (Ui.kt animalHead) ----------
 
 /**
- * Znak typu: disk vo farbe typu a hlava zvieraťa, prepis Ui.kt animalHead (kresba v kóde).
- * Appka ukazuje namiesto hlavy Andrejovu kresbu (PNG), ak ju má; film kreslí záložný znak z kódu.
+ * Znak typu ako Ui.kt TypeBadge: disk vo farbe typu a na ňom Andrejova kresba orezaná do kruhu
+ * (44 dp disk, 40 dp kresba, farba ostane ako lem). Bez načítanej kresby záložný znak z kódu (animalHead).
  */
 export function znak(x, id, farba, cx0, cy0, s) {
   const ink = rgba(FARBA.ink, 0.88), paper = FARBA.paper;
   x.save();
   x.beginPath(); x.arc(cx0, cy0, s / 2, 0, Math.PI * 2); x.fillStyle = farba; x.fill();
+  const kresba = KRESBY[id];
+  if (kresba) {
+    const r = (s / 2) * (40 / 44);
+    x.beginPath(); x.arc(cx0, cy0, r, 0, Math.PI * 2); x.clip();
+    x.drawImage(kresba, cx0 - r, cy0 - r, r * 2, r * 2);
+    x.restore();
+    return;
+  }
   const cx = cx0, cy = cy0 - s / 2 + s * 0.54, r = s * 0.21, line = s * 0.055;
   x.fillStyle = ink; x.strokeStyle = ink; x.lineCap = 'round';
   const kruh = (px, py, rr, f = ink) => { x.beginPath(); x.arc(px, py, Math.max(0, rr), 0, Math.PI * 2); x.fillStyle = f; x.fill(); };

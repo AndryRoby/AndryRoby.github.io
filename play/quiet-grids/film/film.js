@@ -14,7 +14,7 @@ import { okno, obmedz, lerp, ease, obalka } from './engine/cas.js';
 import { platno, zrno } from './engine/kresba.js';
 import { hak, format, zona, minPismo } from './engine/hak.js';
 import { pridajNastroj } from './engine/zvuk.js';
-import { FARBA, ZVIERATA, meno, rgba, nun, nacitajPisma, sprite, spriteTextu, spriteFarebny, znak, spritePrsta, zaoblene } from './kresby.js';
+import { FARBA, ZVIERATA, meno, rgba, nun, nacitajPisma, nacitajZvierata, sprite, spriteTextu, spriteFarebny, znak, spritePrsta, zaoblene } from './kresby.js';
 import { ZAZNAMY, PRAVIDLA, rozbal, retaz, cesty, mosty, obrazok } from './hlavolamy.js';
 
 // ---------- záver: prepínač pre deň spustenia (ops/video/kodfilm/DOSTUPNE-V-OBCHODE.md) ----------
@@ -478,7 +478,7 @@ function kresliZoznam(x, t) {
     znak(x, z.id, z.farba, x0 + zs / 2, cy, zs);
     const tx = x0 + zs * 1.3;
     x.drawImage(z.meno.c, tx, cy - z.meno.h / 2, z.meno.w, z.meno.h);
-    x.drawImage(z.klas.c, tx + sirkaMena + zs * 0.45, cy - z.klas.h / 2 + z.meno.px * 0.06, z.klas.w, z.klas.h);
+    x.drawImage(z.klas.c, tx + sirkaMena + zs * 0.7, cy - z.klas.h / 2 + z.meno.px * 0.06, z.klas.w, z.klas.h);
     if (i < ZVIERATA.length - 1) { x.fillStyle = rgba(FARBA.ink, 0.10); x.fillRect(tx, y + riad - 1, R.B - (tx - x0), 1); }
     x.restore();
   });
@@ -639,7 +639,7 @@ const film = {
     { od: 14.45, text: 'Quiet Grids. Draw, reason, solve. No countdowns, no rush. Coming soon to Google Play. arling.sk' },
   ],
   async pripravit() {
-    await nacitajPisma(import.meta.url);
+    await Promise.all([nacitajPisma(import.meta.url), nacitajZvierata(import.meta.url)]);
     if (typeof document !== 'undefined' && document.fonts && document.fonts.load) {
       await Promise.all([400, 600, 700, 800].map((v) => document.fonts.load(nun(v, 40)))).catch(() => {});
     }
