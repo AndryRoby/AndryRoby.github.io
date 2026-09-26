@@ -1,0 +1,451 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script src="/style/vzhlad.js?v=8a4019ae"></script>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://homelab.tailbf8f27.ts.net 'sha256-W/ZY2UMqw8u9ijkSE1MUDN57UCKO24EmWxm1OltWh40=' 'sha256-PBy4jp886WqeCadeRpW6B6t/bVz4gIJbjLxRf1pYySU='; connect-src 'self' https://homelab.tailbf8f27.ts.net; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; media-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta name="color-scheme" content="dark">
+<link rel="preconnect" href="https://homelab.tailbf8f27.ts.net" crossorigin>
+<meta name="theme-color" content="#0a0908">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="48x48">
+<link rel="apple-touch-icon" href="/icon-180.png">
+<title>ARLing Motion: animated UI components that also render as video</title>
+<meta name="description" content="Free, MIT licensed animated UI components for React and plain JavaScript: dialog, tabs, toast, drawer and eight more. Built to WAI-ARIA patterns, no dependencies, each with a demo timeline a headless browser can render frame by frame. Install with the shadcn CLI." />
+<meta property="og:type" content="website" />
+<meta property="og:title" content="ARLing Motion: animated UI components that also render as video" />
+<meta property="og:description" content="Twelve free, MIT licensed UI components with calm spring motion. Each one follows the WAI-ARIA keyboard pattern and carries a demo timeline you can render frame by frame." />
+<meta property="og:url" content="https://arling.sk/motion/" />
+<meta property="og:locale" content="en_US" />
+<meta property="og:image" content="https://arling.sk/og.png" />
+<link rel="canonical" href="https://arling.sk/motion/" />
+<link rel="alternate" hreflang="en" href="https://arling.sk/motion/">
+<link rel="alternate" hreflang="x-default" href="https://arling.sk/motion/">
+<link rel="alternate" type="application/json" href="https://arling.sk/motion/r/registry.json" title="shadcn registry">
+<link rel="manifest" href="manifest.json" />
+<link rel="preload" href="/fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/style/paper.css?v=8959a9f0">
+<link rel="stylesheet" href="/style/nastroj.css?v=c9081cae">
+<link rel="stylesheet" href="site/components.css">
+<link rel="stylesheet" href="site/stage.css">
+<link rel="stylesheet" href="site/site.css">
+<script src="/style/prepinac.js?v=668e98c9" defer></script>
+<script defer src="https://homelab.tailbf8f27.ts.net/script.js" data-website-id="338f035d-41c5-411e-8391-9a41db6accfd"></script>
+<script type="module" src="site/gallery.js"></script>
+
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareSourceCode","name":"ARLing Motion","description":"Twelve animated UI components for React and plain JavaScript: dialog, tabs, tooltip, dropdown menu, toast, switch, accordion, command menu, drawer, carousel, one-time code input and dropzone. Built to WAI-ARIA patterns, no dependencies, installable with the shadcn CLI, each with a demo timeline that a headless browser can render frame by frame.","url":"https://arling.sk/motion/","license":"https://opensource.org/licenses/MIT","programmingLanguage":["JavaScript","TypeScript","CSS"],"runtimePlatform":"Web browser","isAccessibleForFree":true,"keywords":"animated UI components, shadcn registry, spring animation, React, accessible components, reduced motion, video","author":{"@type":"Organization","name":"ARLing s. r. o.","url":"https://arling.sk/"},"publisher":{"@type":"Organization","name":"ARLing s. r. o.","url":"https://arling.sk/"}}</script>
+
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Is ARLing Motion free?","acceptedAnswer":{"@type":"Answer","text":"Yes. The twelve components and the core are MIT licensed, for personal and commercial projects. ARLing Motion Pro, a paid kit for turning the demos into videos, is planned at 49 € one-time and is not on sale yet."}},{"@type":"Question","name":"How do I install a component?","acceptedAnswer":{"@type":"Answer","text":"With the shadcn CLI, for example npx shadcn@latest add https://arling.sk/motion/r/tabs.json. It adds the React file, the logic and the core, and puts the CSS into your global stylesheet. Without the CLI, load the CSS and JavaScript files straight from arling.sk/motion/components/."}},{"@type":"Question","name":"Do I need Framer Motion, GSAP or another animation library?","acceptedAnswer":{"@type":"Answer","text":"No. The core is one file without dependencies. Springs are computed in closed form, so every animated value is a pure function of time."}},{"@type":"Question","name":"Can I use the components without React?","acceptedAnswer":{"@type":"Answer","text":"Yes. Each component is plain JavaScript on your own markup (createTabs, createDialog and so on). The React files are thin wrappers over the same logic."}},{"@type":"Question","name":"What does render as video mean?","acceptedAnswer":{"@type":"Answer","text":"Every component carries a demo timeline of 8 beats at 120 BPM, which is 4 seconds. The same code can paint any moment of it with seek(t), so a headless browser can capture it frame by frame, and the last frame equals the first, so the clip loops. You can open any demo at a given time with demo.html on this site. The render script itself is part of the planned Pro kit."}},{"@type":"Question","name":"What happens with prefers-reduced-motion?","acceptedAnswer":{"@type":"Answer","text":"Nothing moves. The component shows each new state at once, and the demos on this page do not play."}},{"@type":"Question","name":"Are the components accessible?","acceptedAnswer":{"@type":"Answer","text":"Each one follows the matching WAI-ARIA Authoring Practices pattern: roles, states, keyboard and focus. Tests check the keyboard, the ARIA attributes after every change and reduced motion. They run in Node against a simulated DOM, so they do not replace a check with a real screen reader."}},{"@type":"Question","name":"Do I need Tailwind CSS?","acceptedAnswer":{"@type":"Answer","text":"No. The styles are plain CSS that read the shadcn variables (--background, --primary, --radius and others), so the components follow your theme and dark mode. With Tailwind v4 the CLI adds them under @layer components; with Tailwind v3 or no Tailwind, add the component CSS file yourself."}},{"@type":"Question","name":"Which browsers are supported?","acceptedAnswer":{"@type":"Answer","text":"Current Chrome, Edge, Firefox and Safari are the target. Checks in real browsers are still in progress, so if something looks wrong, write to support@arling.sk."}}]}</script>
+</head>
+<body class="noc nastroj">
+<div class="wash" aria-hidden="true"><i></i><i></i></div>
+
+<a class="skip site-skip" href="#arling-obsah" data-site-label="skip">Skip to content</a>
+<header class="site-header">
+  <div class="wrap bar">
+    <a class="brand" href="https://arling.sk/en/" aria-label="ARLing home" data-site-home>
+      <svg viewBox="0 0 488 215" width="38" height="15" aria-hidden="true" focusable="false"><path fill="#f4f4f7" fill-rule="evenodd" d="M0.00,213.00L74.00,214.00L181.00,85.00L285.00,214.00L360.00,214.00L206.00,21.00L185.00,4.00L164.00,10.00Z M221.00,0.00L263.00,50.00L395.00,50.00L409.00,55.00L419.00,76.00L401.00,96.00L313.00,98.00L411.00,214.00L487.00,214.00L422.00,139.00L457.00,123.00L482.00,88.00L482.00,48.00L463.00,19.00L417.00,0.00Z"/><path fill="#f2643c" d="M269.00,66.00L269.00,67.00L268.00,68.00L268.00,70.00L267.00,71.00L267.00,76.00L268.00,77.00L268.00,79.00L270.00,81.00L270.00,82.00L271.00,82.00L273.00,84.00L274.00,84.00L277.00,86.00L279.00,86.00L280.00,87.00L287.00,87.00L288.00,86.00L290.00,86.00L291.00,85.00L294.00,84.00L298.00,80.00L298.00,79.00L299.00,78.00L299.00,75.00L300.00,74.00L300.00,72.00L299.00,71.00L299.00,69.00L298.00,68.00L297.00,65.00L295.00,63.00L294.00,63.00L289.00,60.00L278.00,60.00L277.00,61.00L276.00,61.00L275.00,62.00L272.00,63.00Z"/></svg>
+      <b>ARLing</b><span>Motion</span>
+    </a>
+    <details class="site-menu">
+      <summary class="site-menu-toggle"><span class="site-menu-text" data-site-label="produkty">Products</span><span class="site-menu-bars" aria-hidden="true"><i></i><i></i><i></i></span><span class="site-menu-word" data-site-label="menu">Menu</span></summary>
+      <div class="site-menu-panel" role="navigation" aria-label="Products" data-site-aria="produkty"><div class="site-cols"><div class="site-col" data-skupina="firmy"><p>Businesses and accountants</p><ul><li><a href="https://arling.sk/efaktura/en/"><b>E-invoice</b><span>Check, preview and create XML</span></a></li><li><a href="https://arling.sk/kontrola-suboru/en/"><b>SEPA file check</b><span>Addresses and errors before your bank sees them</span></a></li><li><a href="https://arling.sk/bankove-nastroje/en/"><b>Banking tools Pro</b><span>One licence, three tools</span></a></li><li><a href="https://arling.sk/proof/"><b>Proof<em class="site-nove">New</em></b><span>Customer approval before printing</span></a></li><li><a href="https://arling.sk/renewals/"><b>Renewals</b><span>Supplier documents and renewal dates</span></a></li></ul><a class="site-col-all" href="https://arling.sk/vsetko/en/#firmy" data-umami-event="shell_menu_group" data-umami-event-target="firmy"><span class="site-dlho">All in this group</span><span class="site-kratko">All</span><b>12</b><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></div><div class="site-col" data-skupina="eshopy"><p>Online shops and websites</p><ul><li><a href="https://arling.sk/asistent/en/"><b>Asistent</b><span>Sales assistant for online shops</span></a></li><li><a href="https://arling.sk/technologies/"><b>Stacklog<em class="site-nove">New</em></b><span>What a site runs on, and when it changed</span></a></li><li><a href="https://arling.sk/mail-doctor/"><b>Mail Doctor</b><span>SPF, DKIM and DMARC of a domain</span></a></li><li><a href="https://arling.sk/feed-doctor/en/"><b>Feed Doctor</b><span>Product feed check</span></a></li></ul><a class="site-col-all" href="https://arling.sk/vsetko/en/#eshopy" data-umami-event="shell_menu_group" data-umami-event-target="eshopy"><span class="site-dlho">All in this group</span><span class="site-kratko">All</span><b>6</b><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></div><div class="site-col" data-skupina="hry"><p>Games and puzzles</p><ul><li><a href="https://arling.sk/games/"><b>Browser games</b><span>A free daily logic puzzle</span></a></li><li><a href="https://arling.sk/games/owls/"><b>Owls<em class="site-nove">New</em></b><span>Daily puzzle: day and night owls in balance</span></a></li><li><a href="https://arling.sk/games/beavers/"><b>Beavers</b><span>Daily puzzle: a beaver lodge beside every tree</span></a></li><li><a href="https://arling.sk/games/foxes/"><b>Foxes</b><span>Daily puzzle: place the foxes from the clues</span></a></li><li><a href="https://arling.sk/games/field-notes/"><b>Field Notes</b><span>A word search in a naturalist’s notebook</span></a></li></ul><a class="site-col-all" href="https://arling.sk/vsetko/en/#hry" data-umami-event="shell_menu_group" data-umami-event-target="hry"><span class="site-dlho">All in this group</span><span class="site-kratko">All</span><b>12</b><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></div><div class="site-col" data-skupina="knihy"><p>Books and gifts</p><ul><li><a href="https://arling.sk/shop/"><b>Shop</b><span>Books, puzzles and gifts</span></a></li><li><a href="https://arling.sk/puzzle-books/eink-bundle/"><b>E-ink puzzle bundle</b><span>3000 puzzles in ten books</span></a></li><li><a href="https://arling.sk/classics/monte-cristo/drawn/"><b>Monte Cristo, drawn<em class="site-nove">New</em></b><span>Scenes from the novel, drawn in code</span></a></li><li><a href="https://arling.sk/world/"><b>The World in Squares</b><span>Buy a square of the world map, name it and draw on it</span></a></li><li><a href="https://arling.sk/memory-post/"><b>Memory Post</b><span>Memories on paper</span></a></li></ul><a class="site-col-all" href="https://arling.sk/vsetko/en/#knihy" data-umami-event="shell_menu_group" data-umami-event-target="knihy"><span class="site-dlho">All in this group</span><span class="site-kratko">All</span><b>9</b><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></div></div><div class="site-menu-spodok"><p class="site-all"><a href="https://arling.sk/vsetko/en/" data-umami-event="shell_menu_all">Everything on one page<b>51</b><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></p><p class="site-dev"><span>For developers</span><em>Free diagnostics for CORS, JWT, OAuth, Supabase and Stripe webhook errors.</em><a href="https://arling.sk/vsetko/en/#vyvojari">All developer tools<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></p></div><div class="site-col site-firma"><p>Company</p><ul><li><a href="https://arling.sk/en/#nastroje"><b>Tools</b></a></li><li><a href="https://arling.sk/en/#piloty"><b>Pilots</b></a></li><li><a href="https://arling.sk/how-we-work/en/"><b>How we work</b></a></li><li><a href="https://arling.sk/notes/en/"><b>Guides</b></a></li><li><a href="https://arling.sk/kontakt/en/"><b>Contact</b></a></li><li><a href="https://arling.sk/ucet/en/"><b>Account</b></a></li><li><a href="https://arling.sk/brand/en/"><b>Brand</b></a></li><li><a href="https://arling.sk/podmienky/en/"><b>Terms</b></a></li><li><a href="https://arling.sk/privacy/en/"><b>Privacy</b></a></li><li><a href="https://arling.sk/odstupenie/en/"><b>Withdraw from the contract here</b></a></li><li><a href="https://arling.sk/impressum/en/"><b>Imprint</b></a></li></ul></div><p class="site-menu-cta"><a class="site-cta" href="https://arling.sk/shop/" data-site-cta data-site-label="cta" data-umami-event="shell_cta_menu">Shop</a></p></div>
+    </details>
+    <nav id="hlavne-menu" class="site-main-nav" aria-label="Main navigation" data-site-aria="nav"><a href="https://arling.sk/en/#nastroje" data-site-nav="0">Tools</a><a href="https://arling.sk/en/#piloty" data-site-nav="1">Pilots</a><a href="https://arling.sk/notes/en/" data-site-nav="2">Guides</a><a href="https://arling.sk/how-we-work/en/" data-site-nav="3">Company</a></nav>
+    <a class="site-cta" href="https://arling.sk/shop/" data-site-cta data-site-label="cta" data-umami-event="shell_cta">Shop</a>
+  </div>
+  <div class="site-page-links"><div class="wrap"><p data-site-label="stranka">On this page</p><nav aria-label="On this page" data-site-aria="stranka"><a href="#components">Components</a><a href="#outputs">Three outputs</a><a href="#install">Install</a><a href="#pro">Pro</a><a href="#compare">Comparison</a><a href="#faq">Questions</a></nav></div></div>
+</header>
+
+<main id="arling-obsah" class="mo-main" tabindex="-1">
+
+<section class="mo-hero" aria-labelledby="mo-title">
+  <div class="wrap mo-hero-grid">
+    <div>
+      <p class="mo-eyebrow">ARLing Motion · free, MIT licence</p>
+      <h1 id="mo-title">Motion components that also render as video.</h1>
+      <p class="mo-lead">Twelve UI components with calm, useful motion: a dialog that grows out of its button, tabs whose indicator stretches and catches up, toasts that start where you clicked. Each one follows the WAI-ARIA pattern for keyboard and screen readers (screen reader checks are in progress), and carries a short demo timeline you can render frame by frame.</p>
+      <div class="mo-actions">
+        <a class="mo-cta" href="#components" data-umami-event="motion_browse">Browse free components</a>
+        <a class="mo-link" href="#pro">Pro, 49 €, coming soon</a>
+      </div>
+      <ul class="mo-facts">
+        <li>No dependencies</li>
+        <li>React or plain JavaScript</li>
+        <li>Installs with the shadcn CLI</li>
+        <li>Reduced motion respected</li>
+      </ul>
+    </div>
+    <div class="mo-stage-wrap">
+      <div class="mo-stage" data-scene="hero" role="group" aria-label="Live example: a button that grows into a card"></div>
+      <div class="mo-stage-bar"><span><span class="mo-motion-note">Built from the Dialog and Toast below. Point at it to use it.</span><span class="mo-reduced-note">Reduced motion is on: nothing plays, every state shows at once.</span></span><button class="mo-play" type="button" aria-pressed="false">Play demo</button></div>
+    </div>
+  </div>
+</section>
+
+<section id="components" aria-labelledby="components-title">
+  <div class="wrap">
+    <header class="mo-section-head">
+      <p class="mo-eyebrow">Free, MIT licence</p>
+      <h2 id="components-title">Twelve components, each with its own demo</h2>
+      <p>Every stage below holds the real component: click it, tab into it, use the arrow keys. One stage at a time plays its 4 second demo while it is in view; point at it or press Stop to take over. With reduced motion turned on, nothing plays.</p>
+      <noscript><p class="mo-noscript">The live components need JavaScript. The code is still here: see the Source links.</p></noscript>
+    </header>
+    <ol class="mo-rows">
+      <li class="mo-row" id="dialog">
+        <div class="mo-row-text">
+          <p class="mo-row-n">01</p>
+          <h3>Dialog</h3>
+          <p>Opens out of the button that opened it and folds back into it. Focus stays inside, Escape closes, focus returns to the button.</p>
+          <div class="mo-install"><code>npx shadcn@latest add https://arling.sk/motion/r/dialog.json</code><button class="mo-copy" type="button" data-copy="npx shadcn@latest add https://arling.sk/motion/r/dialog.json" aria-label="Copy the install command for Dialog" data-umami-event="motion_copy" data-umami-event-item="dialog">Copy</button></div>
+          <p class="mo-row-links"><a href="components/dialog/dialog.js">Source</a><a href="r/dialog.json">Registry item</a><a href="demo.html?c=dialog">Demo canvas</a></p>
+        </div>
+        <div class="mo-stage-wrap">
+          <div class="mo-stage" data-scene="dialog" role="group" aria-label="Live example: Dialog"></div>
+          <div class="mo-stage-bar"><span>4 s demo</span><button class="mo-play" type="button" aria-pressed="false">Play demo</button></div>
+        </div>
+      </li>
+      <li class="mo-row" id="tabs">
+        <div class="mo-row-text">
+          <p class="mo-row-n">02</p>
+          <h3>Tabs</h3>
+          <p>The indicator stretches toward the new tab with its leading edge, and the trailing edge catches up. Arrow keys, Home and End.</p>
+          <div class="mo-install"><code>npx shadcn@latest add https://arling.sk/motion/r/tabs.json</code><button class="mo-copy" type="button" data-copy="npx shadcn@latest add https://arling.sk/motion/r/tabs.json" aria-label="Copy the install command for Tabs" data-umami-event="motion_copy" data-umami-event-item="tabs">Copy</button></div>
+          <p class="mo-row-links"><a href="components/tabs/tabs.js">Source</a><a href="r/tabs.json">Registry item</a><a href="demo.html?c=tabs">Demo canvas</a></p>
+        </div>
+        <div class="mo-stage-wrap">
+          <div class="mo-stage" data-scene="tabs" role="group" aria-label="Live example: Tabs"></div>
+          <div class="mo-stage-bar"><span>4 s demo</span><button class="mo-play" type="button" aria-pressed="false">Play demo</button></div>
+        </div>
+      </li>
+      <li class="mo-row" id="tooltip">
+        <div class="mo-row-text">
+          <p class="mo-row-n">03</p>
+          <h3>Tooltip</h3>
+          <p>One bubble for a toolbar: it slides and resizes from button to button. It shows on keyboard focus too, and Escape hides it.</p>
+          <div class="mo-install"><code>npx shadcn@latest add https://arling.sk/motion/r/tooltip.json</code><button class="mo-copy" type="button" data-copy="npx shadcn@latest add https://arling.sk/motion/r/tooltip.json" aria-label="Copy the install command for Tooltip" data-umami-event="motion_copy" data-umami-event-item="tooltip">Copy</button></div>
+          <p class="mo-row-links"><a href="components/tooltip/tooltip.js">Source</a><a href="r/tooltip.json">Registry item</a><a href="demo.html?c=tooltip">Demo canvas</a></p>
+        </div>
+        <div class="mo-stage-wrap">
+          <div class="mo-stage" data-scene="tooltip" role="group" aria-label="Live example: Tooltip"></div>
+          <div class="mo-stage-bar"><span>4 s demo</span><button class="mo-play" type="button" aria-pressed="false">Play demo</button></div>
+        </div>
+      </li>
+      <li class="mo-row" id="popover">
+        <div class="mo-row-text">
+          <p class="mo-row-n">04</p>
+          <h3>Dropdown menu and popover</h3>
+          <p>Unfolds from its button, the items enter one after another and a single highlight slides between them. Menu keys as in the WAI-ARIA pattern.</p>
+          <div class="mo-install"><code>npx shadcn@latest add https://arling.sk/motion/r/popover.json</code><button class="mo-copy" type="button" data-copy="npx shadcn@latest add https://arling.sk/motion/r/popover.json" aria-label="Copy the install command for Dropdown menu and popover" data-umami-event="motion_copy" data-umami-event-item="popover">Copy</button></div>
+          <p class="mo-row-links"><a href="components/popover/popover.js">Source</a><a href="r/popover.json">Registry item</a><a href="demo.html?c=popover">Demo canvas</a></p>
+        </div>
+        <div class="mo-stage-wrap">
+          <div class="mo-stage" data-scene="popover" role="group" aria-label="Live example: Dropdown menu"></div>
+          <div class="mo-stage-bar"><span>4 s demo</span><button class="mo-play" type="button" aria-pressed="false">Play demo</button></div>
+        </div>
+      </li>
+      <li class="mo-row" id="toast">
+        <div class="mo-row-text">
+          <p class="mo-row-n">05</p>
+          <h3>Toast</h3>
+          <p>Grows out of the point you clicked and folds into a stack. Hover or focus unfolds the stack and pauses the timers; Alt+T jumps to the newest toast.</p>
+          <div class="mo-install"><code>npx shadcn@latest add https://arling.sk/motion/r/toast.json</code><button class="mo-copy" type="button" data-copy="npx shadcn@latest add https://arling.sk/motion/r/toast.json" aria-label="Copy the install command for Toast" data-umami-event="motion_copy" data-umami-event-item="toast">Copy</button></div>
+          <p class="mo-row-links"><a href="components/toast/toast.js">Source</a><a href="r/toast.json">Registry item</a><a href="demo.html?c=toast">Demo canvas</a></p>
+        </div>
+        <div class="mo-stage-wrap">
+          <div class="mo-stage" data-scene="toast" role="group" aria-label="Live example: Toast"></div>
+          <div class="mo-stage-bar"><span>4 s demo</span><button class="mo-play" type="button" aria-pressed="false">Play demo</button></div>
+        </div>
+      </li>
+      <li class="mo-row" id="switch">
+        <div class="mo-row-text">
+          <p class="mo-row-n">06</p>
+          <h3>Switch</h3>
+          <p>The thumb travels on a spring and stretches while pressed. The new colour grows as a circle from where you pressed, never through grey.</p>
+          <div class="mo-install"><code>npx shadcn@latest add https://arling.sk/motion/r/switch.json</code><button class="mo-copy" type="button" data-copy="npx shadcn@latest add https://arling.sk/motion/r/switch.json" aria-label="Copy the install command for Switch" data-umami-event="motion_copy" data-umami-event-item="switch">Copy</button></div>
+          <p class="mo-row-links"><a href="components/switch/switch.js">Source</a><a href="r/switch.json">Registry item</a><a href="demo.html?c=switch">Demo canvas</a></p>
+        </div>
+        <div class="mo-stage-wrap">
+          <div class="mo-stage" data-scene="switch" role="group" aria-label="Live example: Switch"></div>
+          <div class="mo-stage-bar"><span>4 s demo</span><button class="mo-play" type="button" aria-pressed="false">Play demo</button></div>
+        </div>
+      </li>
+      <li class="mo-row" id="accordion">
+        <div class="mo-row-text">
+          <p class="mo-row-n">07</p>
+          <h3>Accordion</h3>
+          <p>The panel unfolds downward and each row enters as the growing edge reaches it. Closing lets the rows leave first, then folds the panel.</p>
+          <div class="mo-install"><code>npx shadcn@latest add https://arling.sk/motion/r/accordion.json</code><button class="mo-copy" type="button" data-copy="npx shadcn@latest add https://arling.sk/motion/r/accordion.json" aria-label="Copy the install command for Accordion" data-umami-event="motion_copy" data-umami-event-item="accordion">Copy</button></div>
+          <p class="mo-row-links"><a href="components/accordion/accordion.js">Source</a><a href="r/accordion.json">Registry item</a><a href="demo.html?c=accordion">Demo canvas</a></p>
+        </div>
+        <div class="mo-stage-wrap">
+          <div class="mo-stage" data-scene="accordion" role="group" aria-label="Live example: Accordion"></div>
+          <div class="mo-stage-bar"><span>4 s demo</span><button class="mo-play" type="button" aria-pressed="false">Play demo</button></div>
+        </div>
+      </li>
+      <li class="mo-row" id="command">
+        <div class="mo-row-text">
+          <p class="mo-row-n">08</p>
+          <h3>Command menu</h3>
+          <p>Filters without a cut: rows that stop matching leave in place, the rest slide into the gaps, and one highlight moves between rows.</p>
+          <div class="mo-install"><code>npx shadcn@latest add https://arling.sk/motion/r/command.json</code><button class="mo-copy" type="button" data-copy="npx shadcn@latest add https://arling.sk/motion/r/command.json" aria-label="Copy the install command for Command menu" data-umami-event="motion_copy" data-umami-event-item="command">Copy</button></div>
+          <p class="mo-row-links"><a href="components/command/command.js">Source</a><a href="r/command.json">Registry item</a><a href="demo.html?c=command">Demo canvas</a></p>
+        </div>
+        <div class="mo-stage-wrap">
+          <div class="mo-stage" data-scene="command" role="group" aria-label="Live example: Command menu"></div>
+          <div class="mo-stage-bar"><span>4 s demo</span><button class="mo-play" type="button" aria-pressed="false">Play demo</button></div>
+        </div>
+      </li>
+      <li class="mo-row" id="drawer">
+        <div class="mo-row-text">
+          <p class="mo-row-n">09</p>
+          <h3>Drawer</h3>
+          <p>Follows your pointer 1:1, then a spring takes over with your release speed. A flick or a pull past the middle closes it; Escape always works.</p>
+          <div class="mo-install"><code>npx shadcn@latest add https://arling.sk/motion/r/drawer.json</code><button class="mo-copy" type="button" data-copy="npx shadcn@latest add https://arling.sk/motion/r/drawer.json" aria-label="Copy the install command for Drawer" data-umami-event="motion_copy" data-umami-event-item="drawer">Copy</button></div>
+          <p class="mo-row-links"><a href="components/drawer/drawer.js">Source</a><a href="r/drawer.json">Registry item</a><a href="demo.html?c=drawer">Demo canvas</a></p>
+        </div>
+        <div class="mo-stage-wrap">
+          <div class="mo-stage" data-scene="drawer" role="group" aria-label="Live example: Drawer"></div>
+          <div class="mo-stage-bar"><span>4 s demo</span><button class="mo-play" type="button" aria-pressed="false">Play demo</button></div>
+        </div>
+      </li>
+      <li class="mo-row" id="carousel">
+        <div class="mo-row-text">
+          <p class="mo-row-n">10</p>
+          <h3>Carousel</h3>
+          <p>Drag it and throw it: the spring starts from your release speed and lands on the slide the throw points to. No auto rotation.</p>
+          <div class="mo-install"><code>npx shadcn@latest add https://arling.sk/motion/r/carousel.json</code><button class="mo-copy" type="button" data-copy="npx shadcn@latest add https://arling.sk/motion/r/carousel.json" aria-label="Copy the install command for Carousel" data-umami-event="motion_copy" data-umami-event-item="carousel">Copy</button></div>
+          <p class="mo-row-links"><a href="components/carousel/carousel.js">Source</a><a href="r/carousel.json">Registry item</a><a href="demo.html?c=carousel">Demo canvas</a></p>
+        </div>
+        <div class="mo-stage-wrap">
+          <div class="mo-stage" data-scene="carousel" role="group" aria-label="Live example: Carousel"></div>
+          <div class="mo-stage-bar"><span>4 s demo</span><button class="mo-play" type="button" aria-pressed="false">Play demo</button></div>
+        </div>
+      </li>
+      <li class="mo-row" id="otp">
+        <div class="mo-row-text">
+          <p class="mo-row-n">11</p>
+          <h3>One-time code input</h3>
+          <p>One real text field under six slots, so paste and autofill work. Each digit enters its slot, and a valid code turns green as one growing circle.</p>
+          <div class="mo-install"><code>npx shadcn@latest add https://arling.sk/motion/r/otp.json</code><button class="mo-copy" type="button" data-copy="npx shadcn@latest add https://arling.sk/motion/r/otp.json" aria-label="Copy the install command for One-time code input" data-umami-event="motion_copy" data-umami-event-item="otp">Copy</button></div>
+          <p class="mo-row-links"><a href="components/otp/otp.js">Source</a><a href="r/otp.json">Registry item</a><a href="demo.html?c=otp">Demo canvas</a></p>
+        </div>
+        <div class="mo-stage-wrap">
+          <div class="mo-stage" data-scene="otp" role="group" aria-label="Live example: One-time code input"></div>
+          <div class="mo-stage-bar"><span>4 s demo</span><button class="mo-play" type="button" aria-pressed="false">Play demo</button></div>
+        </div>
+      </li>
+      <li class="mo-row" id="dropzone">
+        <div class="mo-row-text">
+          <p class="mo-row-n">12</p>
+          <h3>Dropzone</h3>
+          <p>Unfolds into a file list row by row and folds back on Clear. It only lists the files and hands you the File objects; nothing is uploaded.</p>
+          <div class="mo-install"><code>npx shadcn@latest add https://arling.sk/motion/r/dropzone.json</code><button class="mo-copy" type="button" data-copy="npx shadcn@latest add https://arling.sk/motion/r/dropzone.json" aria-label="Copy the install command for Dropzone" data-umami-event="motion_copy" data-umami-event-item="dropzone">Copy</button></div>
+          <p class="mo-row-links"><a href="components/dropzone/dropzone.js">Source</a><a href="r/dropzone.json">Registry item</a><a href="demo.html?c=dropzone">Demo canvas</a></p>
+        </div>
+        <div class="mo-stage-wrap">
+          <div class="mo-stage" data-scene="dropzone" role="group" aria-label="Live example: Dropzone"></div>
+          <div class="mo-stage-bar"><span>4 s demo</span><button class="mo-play" type="button" aria-pressed="false">Play demo</button></div>
+        </div>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<section id="outputs" aria-labelledby="outputs-title">
+  <div class="wrap">
+    <header class="mo-section-head">
+      <p class="mo-eyebrow">One file, three outputs</p>
+      <h2 id="outputs-title">The same motion in React, in CSS and as video</h2>
+      <p>The springs are written once, in the core. The React wrapper, the CSS variables and the video frames all read the same numbers.</p>
+    </header>
+    <div class="mo-outputs">
+      <div class="mo-output">
+        <div>
+          <h3>React</h3>
+          <p>A thin wrapper over the plain JavaScript component, installed next to your shadcn components. It passes className through.</p>
+        </div>
+        <pre><code>import { Tabs, TabsList, TabsTrigger, TabsPanels, TabsContent } from "@/components/ui/motion-tabs";
+
+export function Report() {
+  return (
+    &lt;Tabs defaultValue={0}&gt;
+      &lt;TabsList aria-label="Report period"&gt;
+        &lt;TabsTrigger&gt;Week&lt;/TabsTrigger&gt;
+        &lt;TabsTrigger&gt;Month&lt;/TabsTrigger&gt;
+      &lt;/TabsList&gt;
+      &lt;TabsPanels&gt;
+        &lt;TabsContent&gt;This week&lt;/TabsContent&gt;
+        &lt;TabsContent&gt;This month&lt;/TabsContent&gt;
+      &lt;/TabsPanels&gt;
+    &lt;/Tabs&gt;
+  );
+}</code></pre>
+      </div>
+      <div class="mo-output">
+        <div>
+          <h3>CSS variables</h3>
+          <p>The same springs sampled into CSS <code>linear()</code> easings with their durations, for your own transitions. Each has 60 stops, and a test checks that it stays within 0.6 % of the spring. The core item adds all nine to your global stylesheet; they are also in <a href="springs.css">springs.css</a>.</p>
+        </div>
+        <pre><code>:root {
+  --arling-spring-snappy: linear(0 0%, 0.0204 1.7%, 0.072 3.4%, 0.1434 5.1%, 0.2256 6.8%, 0.3121 8.5%, 0.3983 10.2%, 0.481 11.9%, 0.5581 13.6%, 0.6284 15.3%, 0.6912 16.9%, 0.7465 18.6%, 0.7944 20.3%, 0.8354 22%, 0.8701 23.7%, 0.8991 25.4%, 0.923 27.1%, 0.9425 28.8%, 0.9581 30.5%, 0.9706 32.2%, 0.9803 33.9%, 0.9878 35.6%, 0.9934 37.3%, 0.9976 39%, 1.0005 40.7%, 1.0026 42.4%, 1.0039 44.1%, 1.0046 45.8%, 1.005 47.5%, 1.005 49.2%, 1.0048 50.8%, 1.0046 52.5%, 1.0042 54.2%, 1.0037 55.9%, 1.0033 57.6%, 1.0029 59.3%, 1.0025 61%, 1.0021 62.7%, 1.0018 64.4%, 1.0015 66.1%, 1.0012 67.8%, 1.001 69.5%, 1.0008 71.2%, 1.0006 72.9%, 1.0005 74.6%, 1.0004 76.3%, 1.0003 78%, 1.0002 79.7%, 1.0001 81.4%, 1.0001 83.1%, 1.0001 84.7%, 1 86.4%, 1 88.1%, 1 89.8%, 1 91.5%, 1 93.2%, 1 94.9%, 1 96.6%, 1 98.3%, 1 100%);
+  --arling-spring-snappy-duration: 645ms;
+  /* press, release, smooth, morph, gentle, enter, exit, camera: see springs.css */
+}
+
+.card {
+  transition: transform var(--arling-spring-snappy-duration) var(--arling-spring-snappy);
+}</code></pre>
+      </div>
+      <div class="mo-output">
+        <div>
+          <h3>Video</h3>
+          <p>Every component carries a demo of 8 beats at 120 BPM. <code>seek(t)</code> paints any moment of it, so a headless browser can capture it frame by frame, and the frame at 4 s equals the frame at 0 s. These four moments of the Tabs demo were painted by <code>seek(t)</code> in your browser just now, just after the click on Month.</p>
+          <p>The MP4 files are not published yet. The render script is part of Pro.</p>
+        </div>
+        <ol class="mo-frames">
+          <li><div class="mo-stage mo-frame-stage" data-t="1.00" role="img" aria-label="Tabs demo at 1.00 seconds: Week is selected"></div><a class="mo-time" href="demo.html?c=tabs&amp;t=1.00">t = 1.00 s</a></li>
+          <li><div class="mo-stage mo-frame-stage" data-t="1.06" role="img" aria-label="Tabs demo at 1.06 seconds: the indicator stretches toward Month"></div><a class="mo-time" href="demo.html?c=tabs&amp;t=1.06">t = 1.06 s</a></li>
+          <li><div class="mo-stage mo-frame-stage" data-t="1.14" role="img" aria-label="Tabs demo at 1.14 seconds: the trailing edge catches up"></div><a class="mo-time" href="demo.html?c=tabs&amp;t=1.14">t = 1.14 s</a></li>
+          <li><div class="mo-stage mo-frame-stage" data-t="1.40" role="img" aria-label="Tabs demo at 1.40 seconds: the indicator rests on Month"></div><a class="mo-time" href="demo.html?c=tabs&amp;t=1.40">t = 1.40 s</a></li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="install" aria-labelledby="install-title">
+  <div class="wrap">
+    <header class="mo-section-head">
+      <p class="mo-eyebrow">Install</p>
+      <h2 id="install-title">One command per component</h2>
+      <p>The registry follows the shadcn schema, so the shadcn CLI, and the AI assistants that use it, can install any component by its address.</p>
+    </header>
+    <ol class="mo-steps">
+      <li>
+        <h3>With the shadcn CLI</h3>
+        <pre><code>npx shadcn@latest add https://arling.sk/motion/r/tabs.json</code></pre>
+        <p>This adds <code>components/ui/motion-tabs.tsx</code>, the logic in <code>lib/arling-motion-tabs.js</code>, the core in <code>lib/arling-motion.js</code> (each with a <code>.d.ts</code>, so TypeScript projects build without <code>allowJs</code>), and the CSS rules to your global stylesheet (Tailwind v4, under <code>@layer components</code>). All items are listed in <a href="r/registry.json">r/registry.json</a>.</p>
+      </li>
+      <li>
+        <h3>Without React</h3>
+        <pre><code>&lt;link rel="stylesheet" href="https://arling.sk/motion/components/tabs/tabs.css"&gt;
+
+&lt;div class="am-tabs"&gt;
+  &lt;div class="am-tabs-list" role="tablist" aria-label="Report period"&gt;
+    &lt;button role="tab"&gt;Week&lt;/button&gt;
+    &lt;button role="tab"&gt;Month&lt;/button&gt;
+  &lt;/div&gt;
+  &lt;div class="am-tabs-panels"&gt;
+    &lt;div role="tabpanel"&gt;This week&lt;/div&gt;
+    &lt;div role="tabpanel"&gt;This month&lt;/div&gt;
+  &lt;/div&gt;
+&lt;/div&gt;
+
+&lt;script type="module"&gt;
+  import { createTabs } from "https://arling.sk/motion/components/tabs/tabs.js";
+  createTabs({ root: document.querySelector(".am-tabs") });
+&lt;/script&gt;</code></pre>
+        <p>The same works for every component: <code>components/&lt;name&gt;/&lt;name&gt;.css</code> and <code>&lt;name&gt;.js</code>. The markup each one expects is described at the top of its file.</p>
+      </li>
+      <li>
+        <h3>Tailwind v3 or no build step</h3>
+        <p>The CLI puts the CSS into <code>@layer components</code>. If your project does not use Tailwind v4, add the component's CSS file to your styles instead; it reads the shadcn variables (<code>--background</code>, <code>--primary</code>, <code>--radius</code> and others) and falls back to neutral colours without them.</p>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<section id="pro" aria-labelledby="pro-title">
+  <div class="wrap">
+    <header class="mo-section-head">
+      <p class="mo-eyebrow">Pro</p>
+      <h2 id="pro-title">ARLing Motion Pro</h2>
+      <p>For turning the demos into videos of your own product. It is not on sale yet, and there is no buy button on purpose.</p>
+    </header>
+    <div class="mo-pro">
+      <div>
+        <p class="mo-price">49 €</p>
+        <p>one-time</p>
+        <span class="mo-soon">Coming soon</span>
+      </div>
+      <div>
+        <h3>What it is planned to include</h3>
+        <ul class="mo-list">
+          <li>A video kit: a script that renders any component demo, with your own texts and colours, to MP4 in 9:16, 1:1 and 16:9, with checks for text size, reading time and framing, and a seamless loop. It runs on your computer and needs Node, Chrome and ffmpeg.</li>
+          <li>Three blocks, as website sections and as video templates: a hero where a button becomes a product card, a pricing section with a monthly and yearly switch, and a waitlist sign-up with a code input.</li>
+          <li>Music from code: a generator of 120 BPM loops built from formulas, with no samples to license.</li>
+          <li>Updates for 12 months.</li>
+        </ul>
+        <h3>Licence</h3>
+        <p>Your own projects and client projects, any number of them. You may not resell the code or build a competing library from it. Pro is not MIT; the free components stay MIT.</p>
+        <h3>What Pro is not</h3>
+        <p>Not custom work, and not lifetime support. Support is by e-mail, without a promised response time. The contents above may still change before release.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="compare" aria-labelledby="compare-title">
+  <div class="wrap">
+    <header class="mo-section-head">
+      <p class="mo-eyebrow">Comparison</p>
+      <h2 id="compare-title">An honest comparison</h2>
+      <p>The libraries below are good at what they do, and in several ways better than this one. The closest to our idea are remocn and snapcn: free kits of UI pieces made for product demo videos. They build pieces that look like UI for a video; we build the component your product ships, with its demo written into it. Facts are from their own pages, checked on 26 September 2026.</p>
+    </header>
+    <div class="mo-table-wrap">
+      <table class="mo-compare">
+        <thead>
+          <tr><th scope="col"><span class="mo-sr">Topic</span></th><th scope="col">ARLing Motion</th><th scope="col">Magic UI</th><th scope="col">Aceternity UI</th><th scope="col">remocn and snapcn</th><th scope="col">Remotion</th></tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row">What it is</th><td class="mo-us" data-label="ARLing Motion">Animated UI components for your product, each with a demo timeline</td><td data-label="Magic UI">Animated components and effects for React</td><td data-label="Aceternity UI">Animated components, blocks and templates for React</td><td data-label="remocn and snapcn">UI pieces for product demo videos. snapcn: “Product demo videos, in React.”</td><td data-label="Remotion">A framework for making videos with React</td></tr>
+          <tr><th scope="row">Free part</th><td class="mo-us" data-label="ARLing Motion">12 components and the core, MIT</td><td data-label="Magic UI">“150+ free and open-source animated components and effects”, MIT</td><td data-label="Aceternity UI">Free components, with a paid Pro</td><td data-label="remocn and snapcn">remocn: 308 components, MIT. snapcn: 43 components, MIT</td><td data-label="Remotion">Free for individuals and companies of up to 3 people</td></tr>
+          <tr><th scope="row">Paid</th><td class="mo-us" data-label="ARLing Motion">Pro 49 € one-time, coming soon</td><td data-label="Magic UI">Pro $199 one-time</td><td data-label="Aceternity UI">Pro $169 a year or $199 one-time</td><td data-label="remocn and snapcn">remocn: no paid tier we found. snapcn Pro: $129 a year</td><td data-label="Remotion">Company licence for larger companies</td></tr>
+          <tr><th scope="row">Built on</th><td class="mo-us" data-label="ARLing Motion">No dependencies; React wrappers are optional</td><td data-label="Magic UI">React, TypeScript, Tailwind CSS and Motion</td><td data-label="Aceternity UI">React, Tailwind CSS and Motion</td><td data-label="remocn and snapcn">snapcn: Remotion</td><td data-label="Remotion">React</td></tr>
+          <tr><th scope="row">Video</th><td class="mo-us" data-label="ARLing Motion">Each component has a demo you can seek to any frame; the render script comes with Pro</td><td data-label="Magic UI">Not a feature we found</td><td data-label="Aceternity UI">Not a feature we found</td><td data-label="remocn and snapcn">Their whole purpose. remocn: “Describe your product to your AI agent. It builds the demo video from ready-made pieces”</td><td data-label="Remotion">Its whole purpose: renders React to MP4, with a player for the web</td></tr>
+          <tr><th scope="row">Where they are better</th><td class="mo-us" data-label="ARLing Motion">Our weak spots: 12 components, new, no community yet; tested in a simulated DOM, browser checks still in progress</td><td data-label="Magic UI">Far more components and effects, a large community, proven in many projects</td><td data-label="Aceternity UI">Many ready blocks and templates, striking landing page effects</td><td data-label="remocn and snapcn">Far more video pieces, templates and an MCP server (snapcn Pro); they make a finished video today, we do not ship a render script yet</td><td data-label="Remotion">A mature video framework: audio, sequences, captions, rendering at scale</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="mo-sources">Sources: <a href="https://magicui.design/">magicui.design</a>, <a href="https://pro.magicui.design/">pro.magicui.design</a>, <a href="https://ui.aceternity.com/">ui.aceternity.com</a>, <a href="https://ui.aceternity.com/pricing">ui.aceternity.com/pricing</a>, <a href="https://www.remocn.dev/">remocn.dev</a>, <a href="https://snapcn.dev/">snapcn.dev</a>, <a href="https://www.indiehackers.com/post/my-ui-library-of-react-and-tailwind-css-components-made-8-000-in-1-week-ama-7de905a1a0">Aceternity on Indie Hackers</a>, <a href="https://www.remotion.dev/player">remotion.dev/player</a>, <a href="https://github.com/remotion-dev/remotion/blob/main/LICENSE.md">Remotion licence</a>.</p>
+  </div>
+</section>
+
+<section id="faq" aria-labelledby="faq-title">
+  <div class="wrap">
+    <header class="mo-section-head">
+      <p class="mo-eyebrow">Questions</p>
+      <h2 id="faq-title">Questions</h2>
+    </header>
+    <div class="mo-faq">
+      <details><summary>Is ARLing Motion free?</summary><p>Yes. The twelve components and the core are MIT licensed, for personal and commercial projects. ARLing Motion Pro, a paid kit for turning the demos into videos, is planned at 49 € one-time and is not on sale yet.</p></details>
+      <details><summary>How do I install a component?</summary><p>With the shadcn CLI, for example npx shadcn@latest add https://arling.sk/motion/r/tabs.json. It adds the React file, the logic and the core, and puts the CSS into your global stylesheet. Without the CLI, load the CSS and JavaScript files straight from arling.sk/motion/components/.</p></details>
+      <details><summary>Do I need Framer Motion, GSAP or another animation library?</summary><p>No. The core is one file without dependencies. Springs are computed in closed form, so every animated value is a pure function of time.</p></details>
+      <details><summary>Can I use the components without React?</summary><p>Yes. Each component is plain JavaScript on your own markup (createTabs, createDialog and so on). The React files are thin wrappers over the same logic.</p></details>
+      <details><summary>What does render as video mean?</summary><p>Every component carries a demo timeline of 8 beats at 120 BPM, which is 4 seconds. The same code can paint any moment of it with seek(t), so a headless browser can capture it frame by frame, and the last frame equals the first, so the clip loops. You can open any demo at a given time with demo.html on this site. The render script itself is part of the planned Pro kit.</p></details>
+      <details><summary>What happens with prefers-reduced-motion?</summary><p>Nothing moves. The component shows each new state at once, and the demos on this page do not play.</p></details>
+      <details><summary>Are the components accessible?</summary><p>Each one follows the matching WAI-ARIA Authoring Practices pattern: roles, states, keyboard and focus. Tests check the keyboard, the ARIA attributes after every change and reduced motion. They run in Node against a simulated DOM, so they do not replace a check with a real screen reader.</p></details>
+      <details><summary>Do I need Tailwind CSS?</summary><p>No. The styles are plain CSS that read the shadcn variables (--background, --primary, --radius and others), so the components follow your theme and dark mode. With Tailwind v4 the CLI adds them under @layer components; with Tailwind v3 or no Tailwind, add the component CSS file yourself.</p></details>
+      <details><summary>Which browsers are supported?</summary><p>Current Chrome, Edge, Firefox and Safari are the target. Checks in real browsers are still in progress, so if something looks wrong, write to support@arling.sk.</p></details>
+    </div>
+  </div>
+</section>
+
+<p id="mo-status" class="mo-sr" role="status" aria-live="polite"></p>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap foot">
+    <div class="site-foot-top"><div><a class="site-brand" href="https://arling.sk/en/" aria-label="ARLing home" data-site-home><svg viewBox="0 0 488 215" width="38" height="15" aria-hidden="true" focusable="false"><path fill="#f4f4f7" fill-rule="evenodd" d="M0.00,213.00L74.00,214.00L181.00,85.00L285.00,214.00L360.00,214.00L206.00,21.00L185.00,4.00L164.00,10.00Z M221.00,0.00L263.00,50.00L395.00,50.00L409.00,55.00L419.00,76.00L401.00,96.00L313.00,98.00L411.00,214.00L487.00,214.00L422.00,139.00L457.00,123.00L482.00,88.00L482.00,48.00L463.00,19.00L417.00,0.00Z"/><path fill="#f2643c" d="M269.00,66.00L269.00,67.00L268.00,68.00L268.00,70.00L267.00,71.00L267.00,76.00L268.00,77.00L268.00,79.00L270.00,81.00L270.00,82.00L271.00,82.00L273.00,84.00L274.00,84.00L277.00,86.00L279.00,86.00L280.00,87.00L287.00,87.00L288.00,86.00L290.00,86.00L291.00,85.00L294.00,84.00L298.00,80.00L298.00,79.00L299.00,78.00L299.00,75.00L300.00,74.00L300.00,72.00L299.00,71.00L299.00,69.00L298.00,68.00L297.00,65.00L295.00,63.00L294.00,63.00L289.00,60.00L278.00,60.00L277.00,61.00L276.00,61.00L275.00,62.00L272.00,63.00Z"/></svg><b>ARLing</b></a><p class="site-foot-firma">ARLing s. r. o., company ID <span class="num">56583486</span>, Bratislava. Own server in the European Union. Software for companies, freelancers and individuals.</p></div><a class="site-cta" href="https://arling.sk/shop/" data-umami-event="shell_footer_cta">Shop<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></div>
+    <div class="site-foot-cols"><div><p>Businesses and accountants</p><ul><li><a href="https://arling.sk/efaktura/en/">E-invoice</a></li><li><a href="https://arling.sk/kontrola-suboru/en/">SEPA file check</a></li><li><a href="https://arling.sk/bankove-nastroje/en/">Banking tools Pro</a></li><li><a href="https://arling.sk/proof/">Proof</a></li><li><a href="https://arling.sk/renewals/">Renewals</a></li><li><a href="https://arling.sk/parovac-platieb/en/">Payment matcher</a></li><li><a href="https://arling.sk/sepa-pain001-doctor/">pain.001 check</a></li><li><a href="https://arling.sk/sepa-pain001-generator/">pain.001 generator</a></li><li><a href="https://arling.sk/camt053-to-excel/">Statement to Excel</a></li><li><a href="https://arling.sk/vzory-zmluv/">Contract templates<em class="site-sk">SK</em></a></li><li><a href="https://arling.sk/zivotopis/en/">CV builder</a></li><li><a href="https://arling.sk/sanktionslisten/">EU sanctions check<em class="site-sk">SK</em></a></li></ul></div><div><p>Online shops and websites</p><ul><li><a href="https://arling.sk/asistent/en/">Asistent</a></li><li><a href="https://arling.sk/gdpr-dokumenty/">GDPR documents<em class="site-sk">SK</em></a></li><li><a href="https://arling.sk/kontrola-eshopu/">Online shop check<em class="site-sk">SK</em></a></li><li><a href="https://arling.sk/technologies/">Stacklog</a></li><li><a href="https://arling.sk/mail-doctor/">Mail Doctor</a></li><li><a href="https://arling.sk/feed-doctor/en/">Feed Doctor</a></li></ul></div><div><p>Games and puzzles</p><ul><li><a href="https://arling.sk/games/">Browser games</a></li><li><a href="https://arling.sk/games/owls/">Owls</a></li><li><a href="https://arling.sk/games/beavers/">Beavers</a></li><li><a href="https://arling.sk/games/foxes/">Foxes</a></li><li><a href="https://arling.sk/games/field-notes/">Field Notes</a></li><li><a href="https://arling.sk/shop/detective-kit/">Detective kit</a></li><li><a href="https://arling.sk/games/village/">Puzzle Village</a></li><li><a href="https://arling.sk/games/escape/lighthouse/">Grandpa's Lighthouse</a></li><li><a href="https://arling.sk/puzzle-video/">Puzzle video maker</a></li><li><a href="https://arling.sk/puzzle-studio/">Puzzle Studio</a></li><li><a href="https://arling.sk/puzzle-post/bulletin/">Puzzle Post Bulletin</a></li><li><a href="https://arling.sk/puzzle-publisher/">Publisher pack</a></li></ul></div><div><p>Books and gifts</p><ul><li><a href="https://arling.sk/shop/">Shop</a></li><li><a href="https://arling.sk/puzzle-books/eink-bundle/">E-ink puzzle bundle</a></li><li><a href="https://arling.sk/classics/monte-cristo/drawn/">Monte Cristo, drawn</a></li><li><a href="https://arling.sk/world/">The World in Squares</a></li><li><a href="https://arling.sk/puzzle-books/">Puzzle books</a></li><li><a href="https://arling.sk/classics/">Classics for e-ink</a></li><li><a href="https://arling.sk/morning-quiet/">Morning Quiet</a></li><li><a href="https://arling.sk/puzzle-post/">Puzzle Post</a></li><li><a href="https://arling.sk/memory-post/">Memory Post</a></li></ul></div><div><p>Company</p><ul><li><a href="https://arling.sk/how-we-work/en/">How we work</a></li><li><a href="https://arling.sk/notes/en/">Guides</a></li><li><a href="https://arling.sk/kontakt/en/">Contact</a></li><li><a href="https://arling.sk/ucet/en/">Account</a></li><li><a href="https://arling.sk/brand/en/">Brand</a></li><li><a href="https://arling.sk/podmienky/en/">Terms</a></li><li><a href="https://arling.sk/privacy/en/">Privacy</a></li><li><a href="https://arling.sk/odstupenie/en/">Withdraw from the contract here</a></li><li><a href="https://arling.sk/impressum/en/">Imprint</a></li></ul></div></div>
+    <p class="site-all"><a href="https://arling.sk/vsetko/en/" data-umami-event="shell_footer_all">Everything on one page<b>51</b><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></p>
+    <p class="site-dev site-dev-zoznam"><span>For developers</span><a href="https://arling.sk/motion/">Motion components</a><a href="https://arling.sk/cors-doctor/">CORS</a><a href="https://arling.sk/jwt-doctor/">JWT</a><a href="https://arling.sk/cookie-samesite-doctor/">Cookie SameSite</a><a href="https://arling.sk/redirect-loop-doctor/">Redirect loop</a><a href="https://arling.sk/stripe-webhook-doctor/">Stripe webhook</a><a href="https://arling.sk/firebase-auth-domain-doctor/">Firebase auth</a><a href="https://arling.sk/google-oauth-redirect-doctor/">Google OAuth</a><a href="https://arling.sk/supabase-redirect-doctor/">Supabase redirect</a><a href="https://arling.sk/flutter-supabase-doctor/">Flutter + Supabase</a><a href="https://arling.sk/expo-universal-links-doctor/">Expo links</a><a href="https://arling.sk/expo-supabase-auth-doctor/">Expo + Supabase</a><a href="https://arling.sk/api/">Puzzle API</a></p>
+    <div class="site-foot-bottom"><p>ARLing s. r. o., Ivanská cesta 32E, 821 04 Bratislava, Slovakia. Company ID 56583486, VAT ID SK2122352100. <a href="mailto:support@arling.sk">support@arling.sk</a></p><p><a href="https://arling.sk/impressum/en/">Impressum</a> · <a href="https://arling.sk/motion/llms.txt">llms.txt</a> · <a href="https://arling.sk/motion/sitemap.xml">Sitemap</a></p></div>
+    <p class="site-foot-legal">Tools are provided as is, without warranty. Anonymous visit counts via self-hosted Umami. <a href="https://arling.sk/privacy/en/">Privacy</a> · <a href="https://arling.sk/podmienky/en/">Terms</a> · <a href="https://arling.sk/gdpr/en/">GDPR</a> · <a href="https://arling.sk/odstupenie/en/">Withdraw from the contract here</a></p>
+  </div>
+</footer>
+</body>
+</html>

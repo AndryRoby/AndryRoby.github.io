@@ -1,0 +1,138 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "popover",
+  "type": "registry:ui",
+  "title": "Dropdown menu and popover",
+  "description": "A dropdown menu and a popover that unfold from their trigger. Items enter one after another and a single highlight slides between them. Menu keyboard as in the WAI-ARIA pattern.",
+  "author": "ARLing s. r. o. (https://arling.sk)",
+  "registryDependencies": [
+    "https://arling.sk/motion/r/core.json"
+  ],
+  "files": [
+    {
+      "path": "registry/arling/lib/arling-motion-popover.js",
+      "content": "'use strict';\n// ARLing Motion: popover. MIT licence, https://arling.sk/motion/ . Installed from the ARLing\n// Motion registry (source: components/popover/popover.js). Plain JavaScript; the .d.ts next to it types the exports.\n/*\n * ARLing Motion: Popover and dropdown Menu.\n * The surface unfolds out of its trigger as one shape (it starts as a strip as wide as the\n * trigger and grows to its full size), the items enter one after another, and in the menu\n * a single highlight slides from item to item instead of jumping.\n *\n * Markup:\n *   <div class=\"am-popover-root\">\n *     <button class=\"am-popover-trigger\">Actions</button>\n *     <div class=\"am-menu\" role=\"menu\" hidden>\n *       <button role=\"menuitem\">Duplicate</button>\n *       <button role=\"menuitem\">Rename</button>\n *       <button role=\"menuitem\">Archive</button>\n *     </div>\n *   </div>\n * The component wraps the surface in .am-popover-frame (it carries the shadow) if needed.\n * A popover is the same with <div class=\"am-popover\" role=\"dialog\"> and any content.\n *\n * Keyboard (WAI-ARIA APG, menu button): Enter, Space or Down on the trigger opens and\n * focuses the first item, Up focuses the last; Up and Down move and wrap, Home and End\n * jump, a letter jumps to the next item starting with it, Enter or Space picks, Escape\n * closes and returns focus, Tab closes. Popover: Escape closes and returns focus, focus\n * or a pointer leaving it closes it.\n * MIT licence.\n */\nimport { track, presence, applyPresence, driver, spring, PRESETS } from './arling-motion';\n\n// ------------------------------------------------------------------ shared helpers\n\nconst JUMP = spring(0.001, 1);\nconst clamp01 = (x) => (x < 0 ? 0 : x > 1 ? 1 : x);\nconst px = (v) => `${Math.round(v * 100) / 100}px`;\nconst num = (v) => String(Math.round(v * 10000) / 10000);\nconst SHOWN = { opacity: 1, blur: 0, y: 0, scale: 1, visible: true };\nconst GONE = { opacity: 0, blur: 0, y: 0, scale: 1, visible: false };\n\nfunction steps(initial) {\n  return {\n    initial,\n    ev: [],\n    set(t, v) { this.ev.push([t, v]); this.ev.sort((a, b) => a[0] - b[0]); return this; },\n    at(t) { let v = this.initial; for (const [et, x] of this.ev) { if (et > t) break; v = x; } return v; },\n    get last() { return this.ev.length ? this.ev[this.ev.length - 1][1] : this.initial; },\n    compact() { this.initial = this.last; this.ev = []; },\n  };\n}\n\nfunction attr(el, name, value) {\n  if (value === null || value === undefined || value === false) {\n    if (el.hasAttribute(name)) el.removeAttribute(name);\n  } else {\n    const v = value === true ? '' : String(value);\n    if (el.getAttribute(name) !== v) el.setAttribute(name, v);\n  }\n}\n\nlet uid = 0;\nconst ensureId = (el, prefix) => el.id || (el.id = `${prefix}-${++uid}`);\n\nconst FOCUSABLE = 'button, [href], input, select, textarea, [tabindex]';\nfunction tabbables(root) {\n  return [...root.querySelectorAll(FOCUSABLE)].filter((el) => !el.disabled && el.tabIndex >= 0 && !el.closest('[hidden], [inert]'));\n}\n\nfunction radiusOf(el, fallback) {\n  try {\n    const v = parseFloat(getComputedStyle(el).borderTopLeftRadius);\n    return Number.isFinite(v) ? v : fallback;\n  } catch {\n    return fallback;\n  }\n}\n\n// ------------------------------------------------------------------ popover and menu\n\n/** Stagger between items entering, seconds. */\nexport const ITEM_STEP = 0.03;\n\nfunction createFloating(o, kind) {\n  const isMenu = kind === 'menu';\n  const trigger = o.trigger;\n  const el = o.menu || o.popover || o.el;\n  const doc = el.ownerDocument || document;\n\n  let frame = el.parentElement;\n  if (!frame || !frame.classList.contains('am-popover-frame')) {\n    frame = doc.createElement('div');\n    frame.className = 'am-popover-frame';\n    el.parentNode.insertBefore(frame, el);\n    frame.appendChild(el);\n  }\n  if (!el.hasAttribute('role')) attr(el, 'role', isMenu ? 'menu' : 'dialog');\n  ensureId(el, isMenu ? 'am-menu' : 'am-popover');\n  ensureId(trigger, 'am-popover-trigger');\n  if (trigger.tagName === 'BUTTON' && !trigger.hasAttribute('type')) attr(trigger, 'type', 'button');\n  attr(trigger, 'aria-haspopup', isMenu ? 'menu' : 'dialog');\n  attr(trigger, 'aria-controls', el.id);\n  if (!el.hasAttribute('aria-labelledby') && !el.hasAttribute('aria-label')) attr(el, 'aria-labelledby', trigger.id);\n  if (!el.hasAttribute('tabindex')) attr(el, 'tabindex', '-1');\n\n  let bar = null;\n  if (isMenu) {\n    bar = el.querySelector('.am-menu-highlight');\n    if (!bar) {\n      bar = doc.createElement('div');\n      bar.className = 'am-menu-highlight';\n      el.insertBefore(bar, el.firstElementChild);\n    }\n    attr(bar, 'aria-hidden', 'true');\n  }\n  const items = isMenu\n    ? [...el.querySelectorAll('[role=\"menuitem\"], [role=\"menuitemcheckbox\"], [role=\"menuitemradio\"]')]\n    : [...el.children].filter((c) => c !== bar);\n  if (isMenu) items.forEach((it) => { attr(it, 'tabindex', '-1'); if (it.tagName === 'BUTTON' && !it.hasAttribute('type')) attr(it, 'type', 'button'); });\n\n  const openS = steps(false);\n  const geo = steps(null);\n  const k = track(0, PRESETS.snappy);\n  const pres = items.map(() => presence(false, { dyIn: -6, dyOut: -4, blur: 4, scaleFrom: 1 }));\n  const hl = steps(-1);\n  const hy = track(0, PRESETS.snappy);\n  const hh = track(0, PRESETS.snappy);\n  const ho = track(0, PRESETS.snappy);\n  let endT = -Infinity;\n  const mark = (t) => { if (t > endT) endT = t; };\n  const all = () => [k, hy, hh, ho, ...pres.map((p) => p.p)];\n  const settledAll = (t) => all().every((tr) => tr.settled(t));\n\n  function withShown(fn) {\n    const was = el.hidden;\n    const clip = el.style.clipPath;\n    el.hidden = false;\n    el.style.clipPath = '';\n    const out = fn();\n    el.style.clipPath = clip;\n    el.hidden = was;\n    return out;\n  }\n\n  // At k = 0 the surface is a strip as wide as the trigger on the trigger's side, with no\n  // height; at k = 1 it is the whole surface.\n  function measure() {\n    return withShown(() => {\n      const pr = el.getBoundingClientRect();\n      const tr = trigger.getBoundingClientRect();\n      const start = Math.abs(pr.left - tr.left) <= Math.abs(pr.right - tr.right);\n      const up = pr.bottom <= tr.top + 1;\n      const side = Math.max(0, pr.width - Math.min(tr.width, pr.width));\n      return {\n        top: up ? pr.height : 0,\n        bottom: up ? 0 : pr.height,\n        left: start ? 0 : side,\n        right: start ? side : 0,\n        r: radiusOf(el, 8),\n      };\n    });\n  }\n\n  function itemBox(i) {\n    return withShown(() => {\n      const pr = el.getBoundingClientRect();\n      const r = items[i].getBoundingClientRect();\n      return { y: r.top - pr.top, h: r.height };\n    });\n  }\n\n  function paint(t, { reduced }) {\n    const isOpen = openS.at(t);\n    const visible = isOpen || (!reduced && !settledAll(t));\n    attr(trigger, 'aria-expanded', String(isOpen));\n    attr(trigger, 'data-state', isOpen ? 'open' : 'closed');\n    attr(el, 'data-state', isOpen ? 'open' : 'closed');\n    el.hidden = !visible;\n    const h = hl.at(t);\n    if (isMenu) items.forEach((it, i) => attr(it, 'data-highlighted', i === h ? true : null));\n    if (!visible) return;\n    const g = geo.at(t);\n    const kk = reduced ? 1 : clamp01(k.at(t));\n    if (kk >= 1 || !g) el.style.clipPath = '';\n    else {\n      const f = 1 - kk;\n      el.style.clipPath = `inset(${px(g.top * f)} ${px(g.right * f)} ${px(g.bottom * f)} ${px(g.left * f)} round ${px(g.r)})`;\n    }\n    items.forEach((it, i) => applyPresence(it, reduced ? (isOpen ? SHOWN : GONE) : pres[i].at(t)));\n    if (bar) {\n      const op = reduced ? (h === -1 ? 0 : 1) : clamp01(ho.at(t));\n      bar.style.opacity = num(op);\n      bar.style.visibility = op > 0.002 ? '' : 'hidden';\n      bar.style.transform = `translateY(${px(reduced ? hy.target(t) : hy.at(t))})`;\n      bar.style.height = px(reduced ? hh.target(t) : hh.at(t));\n    }\n  }\n\n  function draw(t, s) {\n    paint(t, s);\n    if (!api.keep && t >= endT && openS.ev.length && settledAll(t)) {\n      for (const tr of all()) tr.compact(t);\n      for (const p of pres) p.marks = [];\n      openS.compact();\n      geo.compact();\n      hl.compact();\n    }\n  }\n\n  const d = driver(draw, { clock: o.clock, reduced: o.reduced });\n  d.busy = (t) => t < endT || !settledAll(t);\n  const commit = () => { paint(d.now(), { reduced: d.reduced }); d.kick(); };\n  const when = (opt) => (opt && opt.t !== undefined ? { t: opt.t, live: false } : { t: d.now(), live: true });\n\n  function open(opt = {}) {\n    const { t, live } = when(opt);\n    if (openS.last) return api;\n    openS.set(t, true);\n    geo.set(t, measure());\n    k.to(t, 1, PRESETS.snappy);\n    pres.forEach((p, i) => p.enter(t + 0.04 + i * ITEM_STEP));\n    mark(t + 0.04 + items.length * ITEM_STEP);\n    commit();\n    if (live) {\n      if (!isMenu) (tabbables(el)[0] || el).focus();\n      else if (opt.focus !== false) el.focus();\n      if (o.onOpenChange) o.onOpenChange(true);\n    }\n    return api;\n  }\n\n  function close(opt = {}) {\n    const { t, live } = when(opt);\n    if (!openS.last) return api;\n    openS.set(t, false);\n    for (const p of pres) p.exit(t);\n    k.to(t + 0.05, 0, PRESETS.exit);\n    if (hl.last !== -1) {\n      hl.set(t, -1);\n      ho.to(t, 0, PRESETS.exit);\n    }\n    mark(t + 0.05);\n    commit();\n    if (live) {\n      if (opt.returnFocus !== false) trigger.focus();\n      if (o.onOpenChange) o.onOpenChange(false);\n    }\n    return api;\n  }\n\n  const disabled = (i) => items[i].disabled || items[i].getAttribute('aria-disabled') === 'true';\n\n  /** Menu: move the one highlight to item i (focus follows when live). */\n  function highlight(i, opt = {}) {\n    const { t, live } = when(opt);\n    if (!isMenu || i < 0 || i >= items.length) return api;\n    if (i !== hl.last) {\n      const box = itemBox(i);\n      const fresh = hl.last === -1;\n      hy.to(t, box.y, fresh ? JUMP : PRESETS.snappy);\n      hh.to(t, box.h, fresh ? JUMP : PRESETS.snappy);\n      if (fresh) ho.to(t, 1, PRESETS.snappy);\n      hl.set(t, i);\n      mark(t);\n      commit();\n    }\n    if (live) items[i].focus();\n    return api;\n  }\n\n  /** Menu: pick item i, report it, close and return focus to the trigger. */\n  function select(i, opt = {}) {\n    if (!isMenu || i < 0 || i >= items.length || disabled(i)) return api;\n    const { t, live } = when(opt);\n    highlight(i, live ? {} : { t });\n    if (live && o.onSelect) o.onSelect(i, items[i]);\n    close(live ? {} : { t });\n    return api;\n  }\n\n  const enabled = () => items.map((_, i) => i).filter((i) => !disabled(i));\n  const move = (dir) => {\n    const list = enabled();\n    if (!list.length) return;\n    const cur = list.indexOf(hl.last);\n    const next = cur === -1 ? (dir > 0 ? 0 : list.length - 1) : (cur + dir + list.length) % list.length;\n    highlight(list[next]);\n  };\n\n  // ---------------------------------------------------------------- live input\n  const listeners = [];\n  const on = (target, type, fn) => { target.addEventListener(type, fn); listeners.push([target, type, fn]); };\n\n  on(trigger, 'click', (e) => {\n    if (openS.last) { close({ returnFocus: false }); return; }\n    const keyboard = !(e.detail > 0);\n    open({ focus: !keyboard });\n    if (isMenu && keyboard) move(1);\n  });\n  on(trigger, 'keydown', (e) => {\n    if (!isMenu || (e.key !== 'ArrowDown' && e.key !== 'ArrowUp')) return;\n    e.preventDefault();\n    open({ focus: false });\n    move(e.key === 'ArrowDown' ? 1 : -1);\n  });\n  on(el, 'keydown', (e) => {\n    if (!openS.last) return;\n    if (e.key === 'Escape') {\n      e.preventDefault();\n      e.stopPropagation();\n      close();\n      return;\n    }\n    if (!isMenu) return;\n    const list = enabled();\n    if (e.key === 'ArrowDown') { e.preventDefault(); move(1); }\n    else if (e.key === 'ArrowUp') { e.preventDefault(); move(-1); }\n    else if (e.key === 'Home') { e.preventDefault(); if (list.length) highlight(list[0]); }\n    else if (e.key === 'End') { e.preventDefault(); if (list.length) highlight(list[list.length - 1]); }\n    else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (hl.last !== -1) select(hl.last); }\n    else if (e.key === 'Tab') close({ returnFocus: false });\n    else if (e.key && e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {\n      const ch = e.key.toLowerCase();\n      const start = Math.max(0, list.indexOf(hl.last) + 1);\n      for (let n = 0; n < list.length; n++) {\n        const i = list[(start + n) % list.length];\n        if (items[i].textContent.trim().toLowerCase().startsWith(ch)) { highlight(i); break; }\n      }\n    }\n  });\n  if (isMenu) {\n    items.forEach((it, i) => {\n      on(it, 'pointermove', () => { if (openS.last && hl.last !== i && !disabled(i)) highlight(i); });\n      on(it, 'click', () => select(i));\n    });\n  }\n  on(el, 'focusout', (e) => {\n    const next = e.relatedTarget;\n    if (!openS.last || !next || el.contains(next) || next === trigger) return;\n    close({ returnFocus: false });\n  });\n  on(doc, 'pointerdown', (e) => {\n    if (!openS.last) return;\n    const target = e.target;\n    if (frame.contains(target) || trigger.contains(target)) return;\n    close({ returnFocus: false });\n  });\n\n  const api = {\n    trigger,\n    el,\n    frame,\n    items,\n    driver: d,\n    keep: false,\n    open,\n    close,\n    toggle: (opt) => (openS.last ? close(opt) : open(opt)),\n    isOpen: (t) => (t === undefined ? openS.last : openS.at(t)),\n    seek: (t) => paint(t, { reduced: d.reduced }),\n    settled: (t) => t >= endT && settledAll(t),\n    destroy() {\n      d.stop();\n      for (const [target, type, fn] of listeners) target.removeEventListener(type, fn);\n    },\n  };\n  if (isMenu) {\n    api.highlight = highlight;\n    api.select = select;\n    api.highlighted = (t) => (t === undefined ? hl.last : hl.at(t));\n  }\n  paint(d.now(), { reduced: d.reduced });\n  return api;\n}\n\n/**\n * createMenu({ trigger, menu, onSelect(index, item), onOpenChange, clock, reduced })\n * Returns { open, close, toggle, highlight, select, isOpen, highlighted, seek, settled, destroy, driver, keep }.\n */\nexport const createMenu = (o) => createFloating(o, 'menu');\n\n/**\n * createPopover({ trigger, popover, onOpenChange, clock, reduced })\n * A non modal dialog anchored to its trigger. Returns { open, close, toggle, isOpen, seek, settled, destroy, driver, keep }.\n */\nexport const createPopover = (o) => createFloating(o, 'popover');\n",
+      "type": "registry:lib"
+    },
+    {
+      "path": "registry/arling/lib/arling-motion-popover.d.ts",
+      "content": "// ARLing Motion: popover. MIT licence, https://arling.sk/motion/ . Types for the plain JavaScript file next to this one.\nexport declare const ITEM_STEP: any;\nexport declare const createMenu: any;\nexport declare const createPopover: any;\n",
+      "type": "registry:lib"
+    },
+    {
+      "path": "registry/arling/ui/motion-popover.tsx",
+      "content": "'use client';\n// ARLing Motion: Popover and DropdownMenu for React. Thin wrappers over the vanilla\n// component, which owns the unfold, the item entrances, the sliding highlight, ARIA and\n// the keyboard. In the registry the core lives at '@/lib/arling-motion' and this logic at\n// '@/lib/arling-motion-popover'.\nimport * as React from 'react';\nimport { createMenu, createPopover } from '@/lib/arling-motion-popover';\n\ntype FloatingApi = { open: () => unknown; close: () => unknown; isOpen: () => boolean; destroy: () => void };\n\nconst cx = (...c: Array<string | false | null | undefined>) => c.filter(Boolean).join(' ');\n\ninterface BaseProps {\n  /** Content of the trigger button. */\n  trigger: React.ReactNode;\n  /** 'start' lines the surface up with the trigger's left edge, 'end' with its right edge. */\n  align?: 'start' | 'end';\n  onOpenChange?: (open: boolean) => void;\n  className?: string;\n  triggerClassName?: string;\n  reducedMotion?: boolean;\n  children?: React.ReactNode;\n}\n\nexport interface DropdownMenuProps extends BaseProps {\n  /** Called with the index of the picked item. Items can also have their own onClick. */\n  onSelect?: (index: number) => void;\n  /** Accessible name of the menu when the trigger text is not enough. */\n  label?: string;\n}\n\n/**\n * <DropdownMenu trigger=\"Actions\" onSelect={(i) => ...}>\n *   <DropdownMenuItem>Duplicate</DropdownMenuItem>\n * </DropdownMenu>\n * The items are read once when the menu mounts; give it a new key when they change.\n */\nexport function DropdownMenu({ trigger, align, onOpenChange, onSelect, label, className, triggerClassName, reducedMotion, children }: DropdownMenuProps) {\n  const triggerRef = React.useRef<HTMLButtonElement>(null);\n  const menuRef = React.useRef<HTMLDivElement>(null);\n  const selectRef = React.useRef(onSelect);\n  const changeRef = React.useRef(onOpenChange);\n  selectRef.current = onSelect;\n  changeRef.current = onOpenChange;\n\n  React.useEffect(() => {\n    if (!triggerRef.current || !menuRef.current) return;\n    const api = createMenu({\n      trigger: triggerRef.current,\n      menu: menuRef.current,\n      reduced: reducedMotion,\n      onSelect: (i: number) => selectRef.current?.(i),\n      onOpenChange: (v: boolean) => changeRef.current?.(v),\n    }) as unknown as FloatingApi;\n    return () => api.destroy();\n  }, [reducedMotion]);\n\n  return (\n    <div className=\"am-popover-root\" data-align={align}>\n      <button ref={triggerRef} type=\"button\" className={cx('am-popover-trigger', triggerClassName)}>\n        {trigger}\n      </button>\n      <div className=\"am-popover-frame\">\n        <div ref={menuRef} role=\"menu\" aria-label={label} className={cx('am-menu', className)} hidden>\n          <div className=\"am-menu-highlight\" aria-hidden=\"true\" />\n          {children}\n        </div>\n      </div>\n    </div>\n  );\n}\n\nexport function DropdownMenuItem({ className, disabled, ...rest }: React.ButtonHTMLAttributes<HTMLButtonElement>) {\n  return <button type=\"button\" role=\"menuitem\" tabIndex={-1} aria-disabled={disabled || undefined} className={className} {...rest} />;\n}\n\nexport function DropdownMenuSeparator() {\n  return <div role=\"separator\" className=\"am-menu-separator\" />;\n}\n\nexport interface PopoverProps extends BaseProps {\n  /** Accessible name of the popover; by default the trigger names it. */\n  label?: string;\n}\n\n/** A non modal dialog anchored to its trigger. */\nexport function Popover({ trigger, align, onOpenChange, label, className, triggerClassName, reducedMotion, children }: PopoverProps) {\n  const triggerRef = React.useRef<HTMLButtonElement>(null);\n  const popRef = React.useRef<HTMLDivElement>(null);\n  const changeRef = React.useRef(onOpenChange);\n  changeRef.current = onOpenChange;\n\n  React.useEffect(() => {\n    if (!triggerRef.current || !popRef.current) return;\n    const api = createPopover({\n      trigger: triggerRef.current,\n      popover: popRef.current,\n      reduced: reducedMotion,\n      onOpenChange: (v: boolean) => changeRef.current?.(v),\n    }) as unknown as FloatingApi;\n    return () => api.destroy();\n  }, [reducedMotion]);\n\n  return (\n    <div className=\"am-popover-root\" data-align={align}>\n      <button ref={triggerRef} type=\"button\" className={cx('am-popover-trigger', triggerClassName)}>\n        {trigger}\n      </button>\n      <div className=\"am-popover-frame\">\n        <div ref={popRef} role=\"dialog\" aria-label={label} className={cx('am-popover', className)} hidden>\n          {children}\n        </div>\n      </div>\n    </div>\n  );\n}\n",
+      "type": "registry:ui"
+    }
+  ],
+  "css": {
+    "@layer components": {
+      ".am-popover-root": {
+        "position": "relative",
+        "display": "inline-block"
+      },
+      ".am-popover-trigger": {
+        "display": "inline-flex",
+        "align-items": "center",
+        "gap": "0.5rem",
+        "height": "2.25rem",
+        "padding": "0 0.875rem",
+        "border": "1px solid var(--border, #e5e5e5)",
+        "border-radius": "calc(var(--radius, 0.625rem) - 2px)",
+        "background": "var(--background, #ffffff)",
+        "color": "var(--foreground, #0a0a0a)",
+        "font": "inherit",
+        "font-size": "0.875rem",
+        "font-weight": "500",
+        "cursor": "pointer"
+      },
+      ".am-popover-trigger:focus-visible": {
+        "outline": "2px solid var(--ring, #a3a3a3)",
+        "outline-offset": "2px"
+      },
+      ".am-popover-frame": {
+        "position": "absolute",
+        "top": "calc(100% + 0.375rem)",
+        "left": "0",
+        "z-index": "50",
+        "filter": "drop-shadow(0 1px 2px rgb(0 0 0 / 0.06)) drop-shadow(0 8px 20px rgb(0 0 0 / 0.1))"
+      },
+      ".am-popover-root[data-align=\"end\"] .am-popover-frame": {
+        "right": "0",
+        "left": "auto"
+      },
+      ".am-menu, .am-popover": {
+        "position": "relative",
+        "min-width": "12rem",
+        "padding": "0.25rem",
+        "border": "1px solid var(--border, #e5e5e5)",
+        "border-radius": "var(--radius, 0.625rem)",
+        "background": "var(--popover, var(--background, #ffffff))",
+        "color": "var(--popover-foreground, var(--foreground, #0a0a0a))",
+        "outline": "none"
+      },
+      ".am-popover": {
+        "display": "grid",
+        "gap": "0.5rem",
+        "width": "18rem",
+        "padding": "1rem",
+        "font-size": "0.875rem"
+      },
+      ".am-menu[hidden], .am-popover[hidden]": {
+        "display": "none"
+      },
+      ".am-menu-highlight": {
+        "position": "absolute",
+        "top": "0",
+        "right": "0.25rem",
+        "left": "0.25rem",
+        "height": "0",
+        "border-radius": "calc(var(--radius, 0.625rem) - 4px)",
+        "background": "var(--accent, var(--muted, #f5f5f5))",
+        "visibility": "hidden",
+        "pointer-events": "none"
+      },
+      ".am-menu [role^=\"menuitem\"]": {
+        "position": "relative",
+        "display": "flex",
+        "align-items": "center",
+        "width": "100%",
+        "height": "2rem",
+        "padding": "0 0.5rem",
+        "border": "0",
+        "border-radius": "calc(var(--radius, 0.625rem) - 4px)",
+        "background": "transparent",
+        "color": "inherit",
+        "font": "inherit",
+        "font-size": "0.875rem",
+        "text-align": "left",
+        "cursor": "pointer"
+      },
+      ".am-menu [role^=\"menuitem\"]:focus": {
+        "outline": "none"
+      },
+      ".am-menu [role^=\"menuitem\"][data-highlighted]": {
+        "color": "var(--accent-foreground, var(--foreground, #0a0a0a))"
+      },
+      ".am-menu [role^=\"menuitem\"]:focus-visible": {
+        "box-shadow": "inset 0 0 0 2px var(--ring, #a3a3a3)"
+      },
+      ".am-menu [role^=\"menuitem\"][aria-disabled=\"true\"], .am-menu [role^=\"menuitem\"]:disabled": {
+        "opacity": "0.5",
+        "cursor": "not-allowed"
+      },
+      ".am-menu-separator": {
+        "height": "1px",
+        "margin": "0.25rem -0.25rem",
+        "background": "var(--border, #e5e5e5)"
+      }
+    }
+  },
+  "docs": "Dropdown menu and popover from ARLing Motion (MIT).\nReact: import { DropdownMenu, DropdownMenuItem, DropdownMenuSeparator, Popover } from \"@/components/ui/motion-popover\".\nThe logic is in lib/arling-motion-popover.js (typed by the .d.ts next to it) and works without React: createMenu or createPopover on your own markup.\nStyles were added to your global CSS under @layer components (Tailwind v4).\nWith Tailwind v3 or no Tailwind, add https://arling.sk/motion/components/popover/popover.css to your styles instead.\nLive demo and docs: https://arling.sk/motion/#popover",
+  "categories": [
+    "motion",
+    "menu",
+    "popover",
+    "dropdown"
+  ]
+}

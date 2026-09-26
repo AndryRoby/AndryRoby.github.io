@@ -1,0 +1,197 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "dropzone",
+  "type": "registry:ui",
+  "title": "Dropzone",
+  "description": "A drop zone that unfolds into a file list row by row and folds back on Clear. It only lists the files and hands you the File objects; nothing is uploaded.",
+  "author": "ARLing s. r. o. (https://arling.sk)",
+  "registryDependencies": [
+    "https://arling.sk/motion/r/core.json"
+  ],
+  "files": [
+    {
+      "path": "registry/arling/lib/arling-motion-dropzone.js",
+      "content": "'use strict';\n// ARLing Motion: dropzone. MIT licence, https://arling.sk/motion/ . Installed from the ARLing\n// Motion registry (source: components/dropzone/dropzone.js). Plain JavaScript; the .d.ts next to it types the exports.\n/*\n * ARLing Motion: Dropzone that unfolds into a file list.\n * The zone is one shape. When files arrive, its prompt leaves, its top edge stands still\n * and the shape grows row by row into a list; each row enters just after the growing edge\n * reaches it. Removing a row lets it leave in place while the rows below slide up; clearing\n * folds the list back into the zone. Nothing is uploaded anywhere: the component only lists\n * the files and hands you the File objects (onChange).\n *\n * Markup:\n *   <div class=\"am-dropzone\">\n *     <input type=\"file\" class=\"am-dropzone-input\" id=\"files\" multiple>\n *     <label class=\"am-dropzone-prompt\" for=\"files\">Drop files here or <u>browse</u></label>\n *   </div>\n * The component adds the list header (Add files, Clear), the list and a status line.\n *\n * Keyboard: the file input is in the Tab order while the zone is empty (Enter or Space\n * opens the picker, its focus ring is drawn on the zone). With files listed, Add files,\n * Clear and each row's Remove button take over; after a removal focus moves to the next\n * row, and to the input when the list is empty. Dragging files onto the zone is never the\n * only way to add them (WCAG 2.5.7).\n *\n * Layout: the zone keeps the space of a list of reserveRows rows (default 3) from the start.\n * While the shape grows or folds, a bottom margin fills the rest of that space, so the\n * content below never moves (no layout shift, even when files arrive from the system dialog\n * seconds after the last click). More rows than that scroll inside the zone. With\n * reserveRows: 0 the zone takes only the space it shows, and the content below moves as the\n * list grows; such a shift counts in CLS when no click or key came just before it.\n * MIT licence.\n */\nimport { track, presence, applyPresence, driver, springStep, settleTime, steps, attr, PRESETS } from './arling-motion';\n\n// ------------------------------------------------------------------ helpers\n\nconst px = (v) => `${Math.round(v * 100) / 100}px`;\nconst num = (v) => String(Math.round(v * 10000) / 10000);\nconst SHOWN = { opacity: 1, blur: 0, y: 0, scale: 1, visible: true };\nconst GONE = { opacity: 0, blur: 0, y: 0, scale: 1, visible: false };\n\nlet uid = 0;\nconst ensureId = (el, prefix) => el.id || (el.id = `${prefix}-${++uid}`);\n\n/** A presence state plus a place, written as one transform. */\nfunction applyAt(el, s, y) {\n  el.style.opacity = num(s.opacity);\n  el.style.filter = s.blur > 0.05 ? `blur(${s.blur.toFixed(2)}px)` : '';\n  el.style.transform = `translateY(${px(y + s.y)}) scale(${s.scale.toFixed(4)})`;\n  el.style.visibility = s.visible ? '' : 'hidden';\n}\n\n/** Seconds after the start until a unit step of this spring first reaches frac (unfold timing). */\nfunction reach(sp, frac) {\n  if (frac <= 0) return 0;\n  const f = Math.min(frac, 0.98);\n  let lo = 0;\n  let hi = settleTime(sp);\n  for (let i = 0; i < 32; i++) {\n    const mid = (lo + hi) / 2;\n    if (springStep(sp, mid) >= f) hi = mid; else lo = mid;\n  }\n  return hi;\n}\n\n/** 812 B, 14 KB, 2.4 MB */\nexport function formatSize(bytes) {\n  const b = Math.max(0, Number(bytes) || 0);\n  if (b < 1024) return `${b} B`;\n  if (b < 1024 * 1024) return `${Math.round(b / 1024)} KB`;\n  return `${(b / (1024 * 1024)).toFixed(1)} MB`;\n}\n\n// ------------------------------------------------------------------ dropzone\n\nexport const UNFOLD = { spring: PRESETS.smooth, rowAt: 0.4, step: 0.04 };\n/** How long a status message stays in the live region, s. */\nexport const SAY_FOR = 1;\nconst ROW_MOTION = { dyIn: 8, dyOut: -4, blur: 4, scaleFrom: 1 };\nconst PART_MOTION = { dyIn: 6, dyOut: -4, blur: 6, scaleFrom: 0.98 };\n\n/**\n * createDropzone({ root, onChange(files), labels, reserveRows, clock, reduced })\n * labels: { title, add, clear, remove(name) } for the header and buttons.\n * reserveRows: rows of list the layout keeps from the start (default 3, 0 = none).\n * Returns { add, remove, clear, over, files, count, seek, settled, destroy, driver, input,\n * prompt, list, addButton, clearButton, keep }.\n */\nexport function createDropzone(o) {\n  const root = o.root;\n  const doc = root.ownerDocument || document;\n  const L = { title: 'Selected files', add: 'Add files', clear: 'Clear', remove: (n) => `Remove ${n}`, ...(o.labels || {}) };\n  const input = root.querySelector('.am-dropzone-input') || root.querySelector('input[type=\"file\"]');\n  const prompt = root.querySelector('.am-dropzone-prompt');\n  if (o.multiple !== false) attr(input, 'multiple', true);\n  attr(prompt, 'for', ensureId(input, 'am-dropzone-input'));\n\n  const make = (tag, cls, parent, text) => {\n    const el = doc.createElement(tag);\n    if (cls) el.className = cls;\n    if (text) el.textContent = text;\n    parent.appendChild(el);\n    return el;\n  };\n  let head = root.querySelector('.am-dropzone-head');\n  if (!head) {\n    head = make('div', 'am-dropzone-head', root);\n    make('span', 'am-dropzone-title', head, L.title);\n    make('button', 'am-dropzone-add', head, L.add);\n    make('button', 'am-dropzone-clear', head, L.clear);\n  }\n  const title = head.querySelector('.am-dropzone-title');\n  const addButton = head.querySelector('.am-dropzone-add');\n  const clearButton = head.querySelector('.am-dropzone-clear');\n  for (const b of [addButton, clearButton]) if (b && !b.hasAttribute('type')) attr(b, 'type', 'button');\n  let list = root.querySelector('.am-dropzone-list');\n  if (!list) list = make('ul', 'am-dropzone-list', root);\n  if (title) attr(list, 'aria-labelledby', ensureId(title, 'am-dropzone-title'));\n  const status = root.querySelector('.am-dropzone-status') || make('div', 'am-dropzone-status', root);\n  attr(status, 'role', 'status');\n\n  // geometry: the empty zone, the header, one row, the space under the last row\n  const hOf = (el, fallback) => (el && el.getBoundingClientRect().height) || fallback;\n  const zoneH = o.zoneHeight ?? hOf(prompt, 128);\n  const headH = o.headHeight ?? hOf(head, 44);\n  let rowH = o.rowHeight ?? 44;\n  let rowMeasured = o.rowHeight !== undefined;\n  const padB = o.padBottom ?? 8;\n  if (!rowMeasured) {\n    // measure one row now, so the reserved space does not change when the first file arrives\n    const probe = make('li', 'am-dropzone-row', list);\n    make('span', 'am-dropzone-name', probe, 'file');\n    const r = probe.getBoundingClientRect();\n    probe.remove();\n    if (r.height) { rowH = r.height; rowMeasured = true; }\n  }\n  const heightFor = (n) => (n ? headH + n * rowH + padB : zoneH);\n  const rowY = (k) => headH + k * rowH;\n  // the space the zone keeps in the layout; the shape never grows past it (rows then scroll)\n  const reserveRows = Math.max(0, Math.floor(o.reserveRows ?? 3));\n  const reserveH = () => (reserveRows ? Math.max(zoneH, heightFor(reserveRows)) : Infinity);\n\n  const entries = []; // { id, file, name, size, el, remove, y, pres, added, removed }\n  const overS = steps(false);\n  const h = track(zoneH, UNFOLD.spring);\n  const promptP = presence(true, PART_MOTION);\n  const headP = presence(false, PART_MOTION);\n  const says = steps(['', -Infinity]);\n  let endT = -Infinity;\n  const mark = (t) => { if (t > endT) endT = t; };\n  const all = () => [h, promptP.p, headP.p, ...entries.flatMap((e) => [e.y, e.pres.p])];\n  const settledAll = (t) => all().every((tr) => tr.settled(t));\n\n  const presentAt = (t) => entries.filter((e) => e.added <= t && !(e.removed <= t));\n  const presentNow = () => entries.filter((e) => e.removed === Infinity);\n\n  function makeRow(file) {\n    const el = doc.createElement('li');\n    el.className = 'am-dropzone-row';\n    make('span', 'am-dropzone-name', el, file.name);\n    make('span', 'am-dropzone-size', el, formatSize(file.size));\n    const remove = make('button', 'am-dropzone-remove', el);\n    attr(remove, 'type', 'button');\n    attr(remove, 'aria-label', L.remove(file.name));\n    el.hidden = true;\n    list.appendChild(el);\n    if (!rowMeasured) {\n      el.hidden = false;\n      const r = el.getBoundingClientRect();\n      el.hidden = true;\n      if (r.height) { rowH = r.height; rowMeasured = true; }\n    }\n    return { el, remove };\n  }\n\n  function paint(t, { reduced }) {\n    const present = presentAt(t);\n    const n = present.length;\n    const over = overS.at(t);\n    attr(root, 'data-state', over ? 'over' : n ? 'filled' : 'empty');\n    attr(input, 'tabindex', n ? '-1' : null);\n    // reduced motion shows the size of the list in force now (the fold may start a little later)\n    const space = reserveH();\n    const shape = Math.min(reduced ? heightFor(n) : h.at(t), space);\n    root.style.height = px(shape);\n    if (space !== Infinity) root.style.marginBottom = px(space - shape);\n    const scroll = reserveRows > 0 && n > reserveRows;\n    attr(root, 'data-scroll', scroll ? true : null);\n    if (!scroll && root.scrollTop) root.scrollTop = 0;\n    applyPresence(prompt, reduced ? (n ? GONE : SHOWN) : promptP.at(t));\n    attr(prompt, 'aria-hidden', n ? 'true' : null);\n    applyPresence(head, reduced ? (n ? SHOWN : GONE) : headP.at(t));\n    attr(head, 'inert', n ? null : true);\n    for (const e of entries) {\n      const here = e.added <= t && !(e.removed <= t);\n      const s = reduced ? (here ? SHOWN : GONE) : e.pres.at(t);\n      e.el.hidden = !(here || s.visible);\n      attr(e.el, 'aria-hidden', here ? null : 'true');\n      attr(e.el, 'inert', here ? null : true);\n      if (!e.el.hidden) applyAt(e.el, s, reduced ? e.y.target(t) : e.y.at(t));\n    }\n    const [msg, at] = says.at(t);\n    const text = t < at + SAY_FOR ? msg : '';\n    if (status.textContent !== text) status.textContent = text;\n  }\n\n  function draw(t, s) {\n    paint(t, s);\n    if (!api.keep && t >= endT && settledAll(t) && (entries.length || overS.ev.length)) {\n      // rows that have left are gone for good\n      for (let i = entries.length - 1; i >= 0; i--) {\n        const e = entries[i];\n        if (e.removed <= t) { e.el.remove(); entries.splice(i, 1); }\n      }\n      for (const tr of all()) tr.compact(t);\n      for (const p of [promptP, headP, ...entries.map((e) => e.pres)]) p.marks = [];\n      overS.compact();\n    }\n  }\n\n  const d = driver(draw, { clock: o.clock, reduced: o.reduced });\n  d.busy = (t) => t < endT || !settledAll(t) || t < says.last[1] + SAY_FOR;\n  const commit = () => { paint(d.now(), { reduced: d.reduced }); d.kick(); };\n  const when = (opt) => (opt && opt.t !== undefined ? { t: opt.t, live: false } : { t: d.now(), live: true });\n  const say = (t, msg) => { says.set(t, [msg, t]); mark(t + SAY_FOR); };\n  const report = () => { if (o.onChange) o.onChange(presentNow().map((e) => e.file)); };\n\n  /** Lays the present rows out from the top, sliding the ones that moved. */\n  function relayout(t, keep) {\n    presentNow().forEach((e, k) => {\n      const y = rowY(k);\n      if (keep.has(e) && Math.abs(e.y.target(t) - y) > 0.01) e.y.to(t, y, PRESETS.snappy);\n    });\n  }\n\n  /** Adds files (File objects or { name, size }). The zone unfolds into rows. */\n  function add(files, opt = {}) {\n    const { t, live } = when(opt);\n    const incoming = [...(files || [])].filter(Boolean);\n    if (!incoming.length) return api;\n    const before = presentNow();\n    const h0 = h.target(t);\n    const fresh = incoming.map((file, j) => {\n      const { el, remove } = makeRow(file);\n      const k = before.length + j;\n      const e = { id: ++uid, file, name: file.name, size: file.size, el, remove, y: track(rowY(k), PRESETS.snappy), pres: presence(false, ROW_MOTION), added: t, removed: Infinity };\n      on(remove, 'click', () => removeLive(e));\n      entries.push(e);\n      return e;\n    });\n    const n = before.length + fresh.length;\n    const H = heightFor(n);\n    const sp = UNFOLD.spring;\n    let delay = 0;\n    if (!before.length) {\n      promptP.exit(t);\n      headP.enter(t + 0.05);\n      delay = 0.08; // the prompt leaves first\n    }\n    h.to(t, H, sp);\n    fresh.forEach((e, j) => {\n      const edge = rowY(before.length + j) + rowH * UNFOLD.rowAt;\n      const byEdge = H > h0 ? reach(sp, (edge - h0) / (H - h0)) : 0;\n      const tj = t + Math.max(byEdge, delay + j * UNFOLD.step);\n      e.pres.enter(tj);\n      mark(tj);\n    });\n    say(t, fresh.length === 1 ? `${fresh[0].name} added.` : `${fresh.length} files added.`);\n    commit();\n    if (live) report();\n    return api;\n  }\n\n  function removeEntry(e, t) {\n    if (e.removed !== Infinity) return false;\n    const keep = new Set(presentNow().filter((x) => x !== e));\n    e.removed = t;\n    e.pres.exit(t);\n    relayout(t, keep);\n    const n = keep.size;\n    h.to(t + 0.04, heightFor(n), PRESETS.snappy);\n    if (!n) {\n      headP.exit(t);\n      promptP.enter(t + 0.12);\n    }\n    mark(t + 0.12);\n    return true;\n  }\n\n  /** Removes the file at index i of the current list. */\n  function remove(i, opt = {}) {\n    const { t, live } = when(opt);\n    const e = presentNow()[i];\n    if (!e || !removeEntry(e, t)) return api;\n    say(t, `${e.name} removed.`);\n    commit();\n    if (live) report();\n    return api;\n  }\n\n  function removeLive(e) {\n    const list0 = presentNow();\n    const i = list0.indexOf(e);\n    if (i < 0) return;\n    remove(i);\n    const rest = presentNow();\n    const next = rest[Math.min(i, rest.length - 1)];\n    (next ? next.remove : input).focus();\n  }\n\n  /** Removes every file: rows leave from the last one back, the list folds into the zone. */\n  function clear(opt = {}) {\n    const { t, live } = when(opt);\n    const now = presentNow();\n    if (!now.length) return api;\n    for (let k = now.length - 1, j = 0; k >= 0; k--, j++) {\n      now[k].removed = t;\n      now[k].pres.exit(t + j * 0.02);\n    }\n    h.to(t + 0.05, zoneH, PRESETS.snappy);\n    headP.exit(t);\n    promptP.enter(t + 0.12);\n    mark(t + 0.12 + now.length * 0.02);\n    say(t, 'All files removed.');\n    commit();\n    if (live) {\n      report();\n      input.focus();\n    }\n    return api;\n  }\n\n  /** Files dragged over the zone: its border switches at once, nothing moves. */\n  function over(on, opt = {}) {\n    const { t } = when(opt);\n    if (overS.last === !!on) return api;\n    overS.set(t, !!on);\n    mark(t);\n    commit();\n    return api;\n  }\n\n  // ---------------------------------------------------------------- live input\n  const listeners = [];\n  const on = (target, type, fn) => { target.addEventListener(type, fn); listeners.push([target, type, fn]); };\n  const hasFiles = (e) => !e.dataTransfer || !e.dataTransfer.types || [...e.dataTransfer.types].includes('Files');\n\n  on(input, 'change', () => {\n    add(input.files);\n    input.value = '';\n  });\n  if (addButton) on(addButton, 'click', () => input.click());\n  if (clearButton) on(clearButton, 'click', () => clear());\n  on(root, 'dragenter', (e) => { if (hasFiles(e)) { e.preventDefault(); over(true); } });\n  on(root, 'dragover', (e) => {\n    if (!hasFiles(e)) return;\n    e.preventDefault();\n    if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';\n    over(true);\n  });\n  on(root, 'dragleave', (e) => {\n    const next = e.relatedTarget;\n    if (next && root.contains(next)) return;\n    over(false);\n  });\n  on(root, 'drop', (e) => {\n    e.preventDefault();\n    over(false);\n    const files = e.dataTransfer && e.dataTransfer.files;\n    if (files && files.length) add(files);\n  });\n\n  const api = {\n    root,\n    input,\n    prompt,\n    list,\n    addButton,\n    clearButton,\n    driver: d,\n    keep: false,\n    add,\n    remove,\n    clear,\n    over,\n    files: (t) => (t === undefined ? presentNow() : presentAt(t)).map((e) => e.file),\n    count: (t) => (t === undefined ? presentNow() : presentAt(t)).length,\n    seek: (t) => paint(t, { reduced: d.reduced }),\n    settled: (t) => t >= endT && settledAll(t),\n    destroy() {\n      d.stop();\n      for (const [target, type, fn] of listeners) target.removeEventListener(type, fn);\n    },\n  };\n  paint(d.now(), { reduced: d.reduced });\n  return api;\n}\n",
+      "type": "registry:lib"
+    },
+    {
+      "path": "registry/arling/lib/arling-motion-dropzone.d.ts",
+      "content": "// ARLing Motion: dropzone. MIT licence, https://arling.sk/motion/ . Types for the plain JavaScript file next to this one.\nexport declare function formatSize(...args: any[]): any;\nexport declare const UNFOLD: any;\nexport declare const SAY_FOR: any;\nexport declare function createDropzone(...args: any[]): any;\n",
+      "type": "registry:lib"
+    },
+    {
+      "path": "registry/arling/ui/motion-dropzone.tsx",
+      "content": "'use client';\n// ARLing Motion: Dropzone for React. A thin wrapper: the vanilla component owns the unfold\n// into a list, the row entrances and exits, drag and drop, ARIA and focus. It uploads\n// nothing; onFilesChange gets the File objects and the upload is yours.\n// In the registry the core lives at '@/lib/arling-motion' and this logic at\n// '@/lib/arling-motion-dropzone'.\nimport * as React from 'react';\nimport { createDropzone } from '@/lib/arling-motion-dropzone';\n\ntype DropzoneApi = { clear: () => unknown; destroy: () => void };\n\nconst cx = (...c: Array<string | false | null | undefined>) => c.filter(Boolean).join(' ');\n\nexport interface DropzoneProps {\n  /** Called with every file in the list after each change. */\n  onFilesChange?: (files: File[]) => void;\n  /** Passed to the file input, for example \"image/*,.pdf\". */\n  accept?: string;\n  /** Allow more than one file (default true). */\n  multiple?: boolean;\n  name?: string;\n  /** Text of the empty zone; the words in <u> read as the link to the picker. */\n  prompt?: React.ReactNode;\n  labels?: { title?: string; add?: string; clear?: string; remove?: (name: string) => string };\n  /** Rows of list the layout keeps from the start, so nothing below moves (default 3, 0 = none). */\n  reserveRows?: number;\n  reducedMotion?: boolean;\n  className?: string;\n}\n\nexport function Dropzone({\n  onFilesChange,\n  accept,\n  multiple = true,\n  name,\n  prompt = (\n    <span>\n      Drop files here or <u>browse</u>\n    </span>\n  ),\n  labels,\n  reserveRows,\n  reducedMotion,\n  className,\n}: DropzoneProps) {\n  const ref = React.useRef<HTMLDivElement>(null);\n  const changeRef = React.useRef(onFilesChange);\n  changeRef.current = onFilesChange;\n  const id = React.useId();\n\n  React.useEffect(() => {\n    if (!ref.current) return;\n    const api = createDropzone({\n      root: ref.current,\n      multiple,\n      labels,\n      reserveRows,\n      reduced: reducedMotion,\n      onChange: (files: File[]) => changeRef.current?.(files),\n    }) as unknown as DropzoneApi;\n    return () => api.destroy();\n    // eslint-disable-next-line react-hooks/exhaustive-deps\n  }, [multiple, reserveRows, reducedMotion]);\n\n  return (\n    <div ref={ref} className={cx('am-dropzone', className)}>\n      <input id={`${id}-input`} type=\"file\" className=\"am-dropzone-input\" accept={accept} multiple={multiple} name={name} />\n      <label className=\"am-dropzone-prompt\" htmlFor={`${id}-input`}>\n        {prompt}\n      </label>\n    </div>\n  );\n}\n\nexport default Dropzone;\n",
+      "type": "registry:ui"
+    }
+  ],
+  "css": {
+    "@layer components": {
+      ".am-dropzone": {
+        "position": "relative",
+        "width": "100%",
+        "height": "8rem",
+        "overflow": "hidden",
+        "border": "1px dashed var(--border, #d4d4d4)",
+        "border-radius": "var(--radius, 0.625rem)",
+        "background": "var(--background, #ffffff)",
+        "color": "var(--foreground, #0a0a0a)"
+      },
+      ".am-dropzone[data-state=\"over\"]": {
+        "border-style": "solid",
+        "border-color": "var(--primary, #171717)"
+      },
+      ".am-dropzone[data-state=\"filled\"]": {
+        "border-style": "solid"
+      },
+      ".am-dropzone:has(.am-dropzone-input:focus-visible)": {
+        "outline": "2px solid var(--ring, #a3a3a3)",
+        "outline-offset": "2px"
+      },
+      ".am-dropzone[data-scroll]": {
+        "overflow-y": "auto",
+        "overscroll-behavior": "contain"
+      },
+      ".am-dropzone-input": {
+        "position": "absolute",
+        "width": "1px",
+        "height": "1px",
+        "overflow": "hidden",
+        "clip-path": "inset(50%)",
+        "white-space": "nowrap",
+        "opacity": "0"
+      },
+      ".am-dropzone-prompt": {
+        "position": "absolute",
+        "top": "0",
+        "right": "0",
+        "left": "0",
+        "display": "grid",
+        "place-items": "center",
+        "height": "8rem",
+        "padding": "0 1rem",
+        "color": "var(--muted-foreground, #737373)",
+        "font-size": "0.875rem",
+        "text-align": "center",
+        "cursor": "pointer"
+      },
+      ".am-dropzone-prompt u": {
+        "color": "var(--foreground, #0a0a0a)",
+        "text-underline-offset": "3px"
+      },
+      ".am-dropzone-head": {
+        "position": "absolute",
+        "top": "0",
+        "right": "0",
+        "left": "0",
+        "display": "flex",
+        "align-items": "center",
+        "gap": "0.5rem",
+        "height": "2.75rem",
+        "padding": "0 0.5rem 0 1rem",
+        "border-bottom": "1px solid var(--border, #e5e5e5)",
+        "font-size": "0.8125rem",
+        "font-weight": "500",
+        "visibility": "hidden"
+      },
+      ".am-dropzone-title": {
+        "margin-right": "auto",
+        "color": "var(--muted-foreground, #737373)"
+      },
+      ".am-dropzone-add, .am-dropzone-clear": {
+        "height": "1.875rem",
+        "padding": "0 0.625rem",
+        "border": "1px solid var(--border, #e5e5e5)",
+        "border-radius": "calc(var(--radius, 0.625rem) - 4px)",
+        "background": "var(--background, #ffffff)",
+        "color": "inherit",
+        "font": "inherit",
+        "cursor": "pointer"
+      },
+      ".am-dropzone-list": {
+        "margin": "0",
+        "padding": "0",
+        "list-style": "none"
+      },
+      ".am-dropzone-row": {
+        "position": "absolute",
+        "top": "0",
+        "right": "0",
+        "left": "0",
+        "display": "flex",
+        "align-items": "center",
+        "gap": "0.75rem",
+        "height": "2.75rem",
+        "padding": "0 0.5rem 0 1rem",
+        "font-size": "0.875rem"
+      },
+      ".am-dropzone-row[hidden]": {
+        "display": "none"
+      },
+      ".am-dropzone-name": {
+        "min-width": "0",
+        "overflow": "hidden",
+        "text-overflow": "ellipsis",
+        "white-space": "nowrap"
+      },
+      ".am-dropzone-size": {
+        "margin-left": "auto",
+        "flex": "none",
+        "color": "var(--muted-foreground, #737373)",
+        "font-size": "0.8125rem",
+        "font-variant-numeric": "tabular-nums"
+      },
+      ".am-dropzone-remove": {
+        "position": "relative",
+        "flex": "none",
+        "width": "1.75rem",
+        "height": "1.75rem",
+        "padding": "0",
+        "border": "0",
+        "border-radius": "calc(var(--radius, 0.625rem) - 4px)",
+        "background": "transparent",
+        "color": "var(--muted-foreground, #737373)",
+        "cursor": "pointer"
+      },
+      ".am-dropzone-remove::before, .am-dropzone-remove::after": {
+        "content": "\"\"",
+        "position": "absolute",
+        "top": "50%",
+        "left": "50%",
+        "width": "0.75rem",
+        "height": "1.5px",
+        "background": "currentColor",
+        "translate": "-50% -50%"
+      },
+      ".am-dropzone-remove::before": {
+        "rotate": "45deg"
+      },
+      ".am-dropzone-remove::after": {
+        "rotate": "-45deg"
+      },
+      ".am-dropzone-remove:hover": {
+        "background": "var(--muted, #f5f5f5)",
+        "color": "var(--foreground, #0a0a0a)"
+      },
+      ".am-dropzone-add:focus-visible, .am-dropzone-clear:focus-visible, .am-dropzone-remove:focus-visible": {
+        "outline": "2px solid var(--ring, #a3a3a3)",
+        "outline-offset": "1px"
+      },
+      ".am-dropzone-status": {
+        "position": "absolute",
+        "width": "1px",
+        "height": "1px",
+        "overflow": "hidden",
+        "clip-path": "inset(50%)",
+        "white-space": "nowrap"
+      }
+    }
+  },
+  "docs": "Dropzone from ARLing Motion (MIT).\nReact: import { Dropzone } from \"@/components/ui/motion-dropzone\".\nThe logic is in lib/arling-motion-dropzone.js (typed by the .d.ts next to it) and works without React: createDropzone on your own markup.\nStyles were added to your global CSS under @layer components (Tailwind v4).\nWith Tailwind v3 or no Tailwind, add https://arling.sk/motion/components/dropzone/dropzone.css to your styles instead.\nLive demo and docs: https://arling.sk/motion/#dropzone",
+  "categories": [
+    "motion",
+    "dropzone",
+    "upload",
+    "file"
+  ]
+}

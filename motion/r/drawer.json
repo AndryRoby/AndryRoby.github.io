@@ -1,0 +1,127 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "drawer",
+  "type": "registry:ui",
+  "title": "Drawer",
+  "description": "A bottom sheet that follows your pointer 1:1 and hands over to a spring that keeps your release speed. A flick or a pull past the middle closes it; Escape and buttons always work too.",
+  "author": "ARLing s. r. o. (https://arling.sk)",
+  "registryDependencies": [
+    "https://arling.sk/motion/r/core.json"
+  ],
+  "files": [
+    {
+      "path": "registry/arling/lib/arling-motion-drawer.js",
+      "content": "'use strict';\n// ARLing Motion: drawer. MIT licence, https://arling.sk/motion/ . Installed from the ARLing\n// Motion registry (source: components/drawer/drawer.js). Plain JavaScript; the .d.ts next to it types the exports.\n/*\n * ARLing Motion: Drawer (a bottom sheet you can drag).\n * The panel rises from the bottom edge on a spring. While you drag it, it follows your\n * pointer 1:1 (above its open place it resists, like a rubber band). When you let go, a\n * spring takes over from where the panel is and how fast it moved: a flick or a pull past\n * the middle closes it, anything else sends it back home.\n *\n * Markup:\n *   <button class=\"am-drawer-trigger\">Edit goal</button>\n *   <div class=\"am-drawer\" hidden>\n *     <div class=\"am-drawer-overlay\"></div>\n *     <div class=\"am-drawer-panel\" role=\"dialog\" aria-labelledby=\"goal-title\">\n *       <div class=\"am-drawer-handle\"></div>\n *       <div class=\"am-drawer-content\">\n *         <h2 id=\"goal-title\">Daily goal</h2> ...\n *         <button data-am-close>Close</button>\n *       </div>\n *     </div>\n *   </div>\n *\n * Keyboard (WAI-ARIA APG, modal dialog): Enter or Space on the trigger opens, focus moves\n * inside, Tab and Shift+Tab stay inside, Escape closes and focus returns to the trigger.\n * Dragging is never the only way: Escape, the overlay and any [data-am-close] close it\n * (WCAG 2.5.7). Pressing on a button, link or field inside the panel does not start a drag,\n * and neither does anything inside [data-am-no-drag] (use it for scrolling content).\n * MIT licence.\n */\nimport { track, presence, applyPresence, driver, spring, steps, attr, PRESETS } from './arling-motion';\n\n// ------------------------------------------------------------------ helpers\n\nconst clamp01 = (x) => (x < 0 ? 0 : x > 1 ? 1 : x);\nconst px = (v) => `${Math.round(v * 100) / 100}px`;\nconst num = (v) => String(Math.round(v * 10000) / 10000);\nconst SHOWN = { opacity: 1, blur: 0, y: 0, scale: 1, visible: true };\nconst GONE = { opacity: 0, blur: 0, y: 0, scale: 1, visible: false };\n\nlet uid = 0;\nconst ensureId = (el, prefix) => el.id || (el.id = `${prefix}-${++uid}`);\n\nconst FOCUSABLE = 'button, [href], input, select, textarea, [tabindex]';\nfunction tabbables(root) {\n  return [...root.querySelectorAll(FOCUSABLE)].filter((el) => !el.disabled && el.tabIndex >= 0 && !el.closest('[hidden], [inert]'));\n}\n\n/** Easing of a scheduled pointer path, with its slope (for the release velocity). */\nexport const EASE = {\n  linear: [(u) => u, () => 1],\n  in: [(u) => u * u, (u) => 2 * u],\n  out: [(u) => 1 - (1 - u) * (1 - u), (u) => 2 * (1 - u)],\n  inOut: [(u) => u * u * (3 - 2 * u), (u) => 6 * u * (1 - u)],\n};\n\n/**\n * A recorded pointer path as a pure function of time: samples [[t, offset]] in time order,\n * linear between samples. The last 2 ms run at the release velocity v, so a Track that\n * measures the slope at the end of the drag gets exactly v.\n */\nexport function pathFn(samples, v) {\n  const [t1, end] = samples[samples.length - 1];\n  const tail = 1 / 480;\n  return (t) => {\n    if (t >= t1 - tail) return end + v * (t - t1);\n    if (t <= samples[0][0]) return samples[0][1];\n    for (let i = 1; i < samples.length; i++) {\n      const [tb, b] = samples[i];\n      if (t <= tb) {\n        const [ta, a] = samples[i - 1];\n        return tb === ta ? b : a + ((b - a) * (t - ta)) / (tb - ta);\n      }\n    }\n    return end;\n  };\n}\n\n/** Pointer velocity over the last 0.1 s of samples, units per second. */\nexport function releaseVelocity(samples, window = 0.1) {\n  if (samples.length < 2) return 0;\n  const [t1, end] = samples[samples.length - 1];\n  let j = samples.length - 2;\n  while (j > 0 && t1 - samples[j][0] < window) j--;\n  const [t0, start] = samples[j];\n  return t1 > t0 ? (end - start) / (t1 - t0) : 0;\n}\n\n// ------------------------------------------------------------------ drawer\n\n/** How far the panel may be pulled above its open place, px (it approaches this). */\nexport const RUBBER = 48;\n/** A release faster than this (px/s) decides by direction alone. */\nexport const FLICK = 600;\nconst DRAG_SPRING = spring(0.5, 0.9);\n\n/**\n * createDrawer({ trigger, root, onOpenChange, clock, reduced })\n * drag(dy, { t, duration, ease }) schedules a pointer drag for demos ('linear', 'in', 'out',\n * 'inOut'); the live pointer path goes through the same code on release.\n * Returns { open, close, toggle, drag, isOpen, height, position, seek, settled, destroy,\n * driver, trigger, root, panel, handle, content, keep }.\n */\nexport function createDrawer(o) {\n  const trigger = o.trigger;\n  const root = o.root;\n  const doc = root.ownerDocument || document;\n  const panel = root.querySelector('.am-drawer-panel') || root.querySelector('[role=\"dialog\"]');\n  const overlay = root.querySelector('.am-drawer-overlay');\n  const content = panel.querySelector('.am-drawer-content') || panel;\n  let handle = panel.querySelector('.am-drawer-handle');\n  if (!handle) {\n    handle = doc.createElement('div');\n    handle.className = 'am-drawer-handle';\n    panel.insertBefore(handle, panel.firstElementChild);\n  }\n  attr(handle, 'aria-hidden', 'true');\n\n  attr(panel, 'role', 'dialog');\n  attr(panel, 'aria-modal', 'true');\n  if (!panel.hasAttribute('tabindex')) attr(panel, 'tabindex', '-1');\n  if (!panel.hasAttribute('aria-labelledby') && !panel.hasAttribute('aria-label')) {\n    const title = panel.querySelector('h1, h2, h3, .am-drawer-title');\n    if (title) attr(panel, 'aria-labelledby', ensureId(title, 'am-drawer-title'));\n  }\n  ensureId(panel, 'am-drawer');\n  if (trigger.tagName === 'BUTTON' && !trigger.hasAttribute('type')) attr(trigger, 'type', 'button');\n  attr(trigger, 'aria-haspopup', 'dialog');\n  attr(trigger, 'aria-controls', panel.id);\n\n  // y: 0 = open, 1 = closed (below the edge), as a share of the panel height\n  const openS = steps(false);\n  const geo = steps({ H: 320 });\n  const y = track(1, PRESETS.snappy);\n  const body = presence(false, { dyIn: 10, dyOut: 6, blur: 4, scaleFrom: 1 });\n  let live = null; // a drag in progress: { t0, grab, startY, samples }\n  let endT = -Infinity;\n  const mark = (t) => { if (t > endT) endT = t; };\n  const settledAll = (t) => y.settled(t) && body.settled(t);\n\n  function measure() {\n    const was = root.hidden;\n    root.hidden = false;\n    const r = panel.getBoundingClientRect();\n    root.hidden = was;\n    return { H: r.height || geo.last.H };\n  }\n\n  /** Above the open place the panel resists: it approaches RUBBER px. */\n  const shape = (frac, H) => {\n    if (frac >= 0) return frac;\n    const over = -frac * H;\n    return -(RUBBER * (1 - 1 / (1 + over / RUBBER))) / H;\n  };\n\n  function yAt(t, reduced) {\n    if (reduced) return y.target(t);\n    if (live && t >= live.t0) {\n      const last = live.samples[live.samples.length - 1][1];\n      return shape(live.grab + last / geo.last.H, geo.last.H);\n    }\n    return y.at(t);\n  }\n\n  function paint(t, { reduced }) {\n    const isOpen = openS.at(t);\n    const still = reduced || (settledAll(t) && !live);\n    attr(trigger, 'aria-expanded', String(isOpen));\n    attr(trigger, 'data-state', isOpen ? 'open' : 'closed');\n    attr(panel, 'data-state', isOpen ? 'open' : 'closed');\n    root.hidden = !(isOpen || !still);\n    if (root.hidden) return;\n    const H = geo.at(t).H;\n    const v = yAt(t, reduced);\n    panel.style.transform = `translateY(${px(v * H)})`;\n    if (overlay) overlay.style.opacity = num(clamp01(1 - v));\n    applyPresence(content, reduced ? (isOpen ? SHOWN : GONE) : body.at(t));\n  }\n\n  function draw(t, s) {\n    paint(t, s);\n    if (!api.keep && !live && t >= endT && openS.ev.length && settledAll(t)) {\n      y.compact(t);\n      body.p.compact(t);\n      body.marks = [];\n      openS.compact();\n      geo.compact();\n    }\n  }\n\n  const d = driver(draw, { clock: o.clock, reduced: o.reduced });\n  d.busy = (t) => !!live || t < endT || !settledAll(t);\n  const commit = () => { paint(d.now(), { reduced: d.reduced }); d.kick(); };\n  const when = (opt) => (opt && opt.t !== undefined ? { t: opt.t, live: false } : { t: d.now(), live: true });\n\n  function open(opt = {}) {\n    const { t, live: now } = when(opt);\n    if (openS.last) return api;\n    geo.set(t, measure());\n    openS.set(t, true);\n    y.to(t, 0, PRESETS.snappy);\n    body.enter(t + 0.1);\n    mark(t + 0.1);\n    commit();\n    if (now) {\n      (panel.querySelector('[autofocus]') || tabbables(content)[0] || panel).focus();\n      if (o.onOpenChange) o.onOpenChange(true);\n    }\n    return api;\n  }\n\n  function closeAt(t) {\n    openS.set(t, false);\n    body.exit(t);\n    y.to(t, 1, PRESETS.snappy);\n    mark(t);\n  }\n\n  function close(opt = {}) {\n    const { t, live: now } = when(opt);\n    if (!openS.last) return api;\n    closeAt(t);\n    commit();\n    if (now) {\n      trigger.focus();\n      if (o.onOpenChange) o.onOpenChange(false);\n    }\n    return api;\n  }\n\n  /**\n   * Commits a drag from t0 to t1: offset(t) is the pointer's travel in px since t0, v its\n   * velocity at t1 in px/s. Decides where the spring goes and returns true when it closes.\n   */\n  function commitDrag(t0, t1, offset, v) {\n    const H = geo.last.H;\n    y.drag(t0, t1, (t, grab) => shape(grab + offset(t) / H, H), DRAG_SPRING);\n    const end = y.at(t1);\n    const closes = v > FLICK || (v > -FLICK && end + (v / H) * 0.15 > 0.5);\n    if (closes) closeAt(t1);\n    mark(t1);\n    return closes;\n  }\n\n  /** Scheduled drag for demos: the pointer travels dy px from t over duration s. */\n  function drag(dy, opt = {}) {\n    const t0 = opt.t ?? d.now();\n    const dur = opt.duration ?? 0.4;\n    const [e, slope] = EASE[opt.ease || 'inOut'];\n    const t1 = t0 + dur;\n    const offset = (t) => dy * e(clamp01((t - t0) / dur));\n    commitDrag(t0, t1, offset, (dy * slope(1)) / dur);\n    commit();\n    return api;\n  }\n\n  // ---------------------------------------------------------------- live input\n  const listeners = [];\n  const on = (target, type, fn) => { target.addEventListener(type, fn); listeners.push([target, type, fn]); };\n\n  on(trigger, 'click', () => (openS.last ? close() : open()));\n  on(root, 'keydown', (e) => {\n    if (!openS.last) return;\n    if (e.key === 'Escape') {\n      e.preventDefault();\n      e.stopPropagation();\n      close();\n      return;\n    }\n    if (e.key !== 'Tab') return;\n    const list = tabbables(content);\n    if (!list.length) { e.preventDefault(); panel.focus(); return; }\n    const first = list[0];\n    const lastEl = list[list.length - 1];\n    const active = doc.activeElement;\n    if (e.shiftKey && (active === first || active === panel || !panel.contains(active))) { e.preventDefault(); lastEl.focus(); }\n    else if (!e.shiftKey && (active === lastEl || !panel.contains(active))) { e.preventDefault(); first.focus(); }\n  });\n  // a click that ends a drag is not a click on the overlay or on a close button\n  let moved = false;\n  on(root, 'click', (e) => {\n    const target = e.target;\n    if (live) return;\n    if (moved) { moved = false; return; }\n    if (target === overlay || (target.closest && target.closest('[data-am-close]'))) close();\n  });\n  on(root, 'keydown', () => { moved = false; });\n\n  on(root, 'pointerdown', () => { moved = false; });\n  on(panel, 'pointerdown', (e) => {\n    if (!openS.last || (e.button !== undefined && e.button !== 0)) return;\n    const target = e.target;\n    if (target !== handle && target.closest && target.closest('button, a, input, textarea, select, label, [data-am-no-drag]')) return;\n    const t0 = d.now();\n    live = { t0, grab: y.at(t0), startY: e.clientY, samples: [[t0, 0]], id: e.pointerId };\n    moved = false;\n    if (panel.setPointerCapture && e.pointerId !== undefined) { try { panel.setPointerCapture(e.pointerId); } catch { /* not captured */ } }\n    commit();\n  });\n  on(panel, 'pointermove', (e) => {\n    if (!live) return;\n    const dy = e.clientY - live.startY;\n    if (Math.abs(dy) > 3) moved = true;\n    live.samples.push([d.now(), dy]);\n    commit();\n  });\n  const finish = (e) => {\n    if (!live) return;\n    const t1 = d.now();\n    const dy = e && e.clientY !== undefined && e.type !== 'pointercancel' ? e.clientY - live.startY : live.samples[live.samples.length - 1][1];\n    const samples = live.samples.concat([[t1, dy]]);\n    const v = releaseVelocity(samples);\n    const { t0 } = live;\n    live = null;\n    const closes = commitDrag(t0, Math.max(t1, t0 + 1e-6), pathFn(samples, v), v);\n    commit();\n    if (closes) {\n      trigger.focus();\n      if (o.onOpenChange) o.onOpenChange(false);\n    }\n  };\n  on(panel, 'pointerup', finish);\n  on(panel, 'pointercancel', finish);\n\n  const api = {\n    trigger,\n    root,\n    panel,\n    handle,\n    content,\n    driver: d,\n    keep: false,\n    open,\n    close,\n    toggle: (opt) => (openS.last ? close(opt) : open(opt)),\n    drag,\n    isOpen: (t) => (t === undefined ? openS.last : openS.at(t)),\n    /** Panel height in px, measured when it last opened. */\n    height: () => geo.last.H,\n    /** Position as a share of the panel height: 0 open, 1 closed, below 0 pulled above. */\n    position: (t) => yAt(t ?? d.now(), d.reduced),\n    seek: (t) => paint(t, { reduced: d.reduced }),\n    settled: (t) => !live && t >= endT && settledAll(t),\n    destroy() {\n      d.stop();\n      for (const [target, type, fn] of listeners) target.removeEventListener(type, fn);\n    },\n  };\n  paint(d.now(), { reduced: d.reduced });\n  return api;\n}\n",
+      "type": "registry:lib"
+    },
+    {
+      "path": "registry/arling/lib/arling-motion-drawer.d.ts",
+      "content": "// ARLing Motion: drawer. MIT licence, https://arling.sk/motion/ . Types for the plain JavaScript file next to this one.\nexport declare const EASE: any;\nexport declare function pathFn(...args: any[]): any;\nexport declare function releaseVelocity(...args: any[]): any;\nexport declare const RUBBER: any;\nexport declare const FLICK: any;\nexport declare function createDrawer(...args: any[]): any;\n",
+      "type": "registry:lib"
+    },
+    {
+      "path": "registry/arling/ui/motion-drawer.tsx",
+      "content": "'use client';\n// ARLing Motion: Drawer for React. A thin wrapper: the vanilla component owns the rise, the\n// 1:1 drag, the spring from the release speed, ARIA, focus and the keyboard.\n// In the registry the core lives at '@/lib/arling-motion' and this logic at\n// '@/lib/arling-motion-drawer'.\nimport * as React from 'react';\nimport { createDrawer } from '@/lib/arling-motion-drawer';\n\ntype DrawerApi = { open: () => unknown; close: () => unknown; isOpen: () => boolean; destroy: () => void };\n\nconst cx = (...c: Array<string | false | null | undefined>) => c.filter(Boolean).join(' ');\n\nexport interface DrawerProps {\n  /** Content of the button that opens the drawer. */\n  trigger: React.ReactNode;\n  title: React.ReactNode;\n  description?: React.ReactNode;\n  children?: React.ReactNode;\n  /** Buttons at the bottom. Give a button data-am-close to close the drawer with it. */\n  footer?: React.ReactNode;\n  /** Controlled open state (optional). */\n  open?: boolean;\n  onOpenChange?: (open: boolean) => void;\n  className?: string;\n  triggerClassName?: string;\n  reducedMotion?: boolean;\n}\n\nexport function Drawer({\n  trigger,\n  title,\n  description,\n  children,\n  footer,\n  open,\n  onOpenChange,\n  className,\n  triggerClassName,\n  reducedMotion,\n}: DrawerProps) {\n  const triggerRef = React.useRef<HTMLButtonElement>(null);\n  const rootRef = React.useRef<HTMLDivElement>(null);\n  const apiRef = React.useRef<DrawerApi | null>(null);\n  const changeRef = React.useRef(onOpenChange);\n  changeRef.current = onOpenChange;\n  const id = React.useId();\n\n  React.useEffect(() => {\n    if (!triggerRef.current || !rootRef.current) return;\n    const api = createDrawer({\n      trigger: triggerRef.current,\n      root: rootRef.current,\n      reduced: reducedMotion,\n      onOpenChange: (v: boolean) => changeRef.current?.(v),\n    }) as unknown as DrawerApi;\n    apiRef.current = api;\n    return () => {\n      api.destroy();\n      apiRef.current = null;\n    };\n  }, [reducedMotion]);\n\n  React.useEffect(() => {\n    const api = apiRef.current;\n    if (!api || open === undefined || open === api.isOpen()) return;\n    if (open) api.open();\n    else api.close();\n  }, [open]);\n\n  return (\n    <>\n      <button ref={triggerRef} type=\"button\" className={cx('am-drawer-trigger', triggerClassName)}>\n        {trigger}\n      </button>\n      <div ref={rootRef} className=\"am-drawer\" hidden>\n        <div className=\"am-drawer-overlay\" />\n        <div\n          className={cx('am-drawer-panel', className)}\n          role=\"dialog\"\n          aria-modal=\"true\"\n          aria-labelledby={`${id}-title`}\n          aria-describedby={description ? `${id}-desc` : undefined}\n          tabIndex={-1}\n        >\n          <div className=\"am-drawer-handle\" aria-hidden=\"true\" />\n          <div className=\"am-drawer-content\">\n            <h2 id={`${id}-title`} className=\"am-drawer-title\">\n              {title}\n            </h2>\n            {description ? <p id={`${id}-desc`}>{description}</p> : null}\n            {children}\n            {footer ? <div className=\"am-drawer-footer\">{footer}</div> : null}\n          </div>\n        </div>\n      </div>\n    </>\n  );\n}\n\nexport default Drawer;\n",
+      "type": "registry:ui"
+    }
+  ],
+  "css": {
+    "@layer components": {
+      ".am-drawer-trigger": {
+        "display": "inline-flex",
+        "align-items": "center",
+        "justify-content": "center",
+        "height": "2.5rem",
+        "padding": "0 1rem",
+        "border": "1px solid var(--border, #e5e5e5)",
+        "border-radius": "calc(var(--radius, 0.625rem) - 2px)",
+        "background": "var(--background, #ffffff)",
+        "color": "var(--foreground, #0a0a0a)",
+        "font": "inherit",
+        "font-weight": "500",
+        "cursor": "pointer"
+      },
+      ".am-drawer-trigger:focus-visible, .am-drawer-panel:focus-visible, .am-drawer-content button:focus-visible, .am-drawer-content [href]:focus-visible, .am-drawer-content input:focus-visible": {
+        "outline": "2px solid var(--ring, #a3a3a3)",
+        "outline-offset": "2px"
+      },
+      ".am-drawer": {
+        "position": "fixed",
+        "inset": "0",
+        "z-index": "50"
+      },
+      ".am-drawer[hidden]": {
+        "display": "none"
+      },
+      ".am-drawer-overlay": {
+        "position": "absolute",
+        "inset": "0",
+        "background": "rgb(0 0 0 / 0.32)"
+      },
+      ".am-drawer-panel": {
+        "position": "absolute",
+        "right": "0",
+        "bottom": "0",
+        "left": "0",
+        "display": "flex",
+        "flex-direction": "column",
+        "max-height": "85vh",
+        "margin": "0 auto",
+        "max-width": "40rem",
+        "padding-bottom": "calc(env(safe-area-inset-bottom, 0px) + 3rem)",
+        "margin-bottom": "-3rem",
+        "border": "1px solid var(--border, #e5e5e5)",
+        "border-bottom": "0",
+        "border-radius": "var(--radius, 0.625rem) var(--radius, 0.625rem) 0 0",
+        "background": "var(--background, #ffffff)",
+        "color": "var(--foreground, #0a0a0a)",
+        "box-shadow": "0 -1px 2px rgb(0 0 0 / 0.04), 0 -12px 32px rgb(0 0 0 / 0.1)",
+        "outline": "none",
+        "touch-action": "none",
+        "user-select": "none"
+      },
+      ".am-drawer-handle": {
+        "flex": "none",
+        "width": "2.75rem",
+        "height": "0.3125rem",
+        "margin": "0.75rem auto 0.5rem",
+        "border-radius": "9999px",
+        "background": "var(--muted, #e5e5e5)",
+        "cursor": "grab"
+      },
+      ".am-drawer-content": {
+        "display": "grid",
+        "gap": "0.75rem",
+        "padding": "0.5rem 1.5rem 1.5rem",
+        "font-size": "0.875rem",
+        "line-height": "1.5"
+      },
+      ".am-drawer-content > *": {
+        "margin": "0"
+      },
+      ".am-drawer-title": {
+        "font-size": "1.0625rem",
+        "font-weight": "600",
+        "line-height": "1.3"
+      },
+      ".am-drawer-footer": {
+        "display": "flex",
+        "justify-content": "flex-end",
+        "gap": "0.5rem",
+        "padding-top": "0.5rem"
+      },
+      ".am-drawer [data-am-no-drag]": {
+        "overflow-y": "auto",
+        "touch-action": "pan-y",
+        "user-select": "text"
+      }
+    }
+  },
+  "docs": "Drawer from ARLing Motion (MIT).\nReact: import { Drawer } from \"@/components/ui/motion-drawer\".\nThe logic is in lib/arling-motion-drawer.js (typed by the .d.ts next to it) and works without React: createDrawer on your own markup.\nStyles were added to your global CSS under @layer components (Tailwind v4).\nWith Tailwind v3 or no Tailwind, add https://arling.sk/motion/components/drawer/drawer.css to your styles instead.\nLive demo and docs: https://arling.sk/motion/#drawer",
+  "categories": [
+    "motion",
+    "drawer",
+    "sheet",
+    "gesture"
+  ]
+}

@@ -1,0 +1,153 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "dialog",
+  "type": "registry:ui",
+  "title": "Dialog",
+  "description": "A modal dialog that grows out of the button that opened it and folds back into it. Focus stays inside, Escape closes, focus returns to the button.",
+  "author": "ARLing s. r. o. (https://arling.sk)",
+  "registryDependencies": [
+    "https://arling.sk/motion/r/core.json"
+  ],
+  "files": [
+    {
+      "path": "registry/arling/lib/arling-motion-dialog.js",
+      "content": "'use strict';\n// ARLing Motion: dialog. MIT licence, https://arling.sk/motion/ . Installed from the ARLing\n// Motion registry (source: components/dialog/dialog.js). Plain JavaScript; the .d.ts next to it types the exports.\n/*\n * ARLing Motion: Dialog.\n * The modal grows out of the button that opened it and closes back into it. One shape\n * changes (clip of the panel), the new colour grows as a circle from the click point, and\n * the content has its own entrance and exit.\n *\n * Markup (the component adds the surface, ink and label parts it needs):\n *   <button class=\"am-dialog-trigger\">Edit profile</button>\n *   <div class=\"am-dialog-root\" hidden>\n *     <div class=\"am-dialog-backdrop\"></div>\n *     <div class=\"am-dialog-frame\">\n *       <div class=\"am-dialog\" role=\"dialog\" aria-labelledby=\"title-id\">\n *         <div class=\"am-dialog-content\"> ... <button data-am-close>Cancel</button></div>\n *       </div>\n *     </div>\n *   </div>\n *\n * Keyboard (WAI-ARIA APG, modal dialog): Enter or Space on the trigger opens, focus moves\n * into the dialog, Tab and Shift+Tab stay inside, Escape closes, focus returns to the trigger.\n * MIT licence.\n */\nimport { track, presence, applyPresence, driver, springStep, settleTime, PRESETS } from './arling-motion';\n\n// ------------------------------------------------------------------ shared helpers\n// (the same small helpers sit in every component file, so each file installs on its own)\n\nconst clamp01 = (x) => (x < 0 ? 0 : x > 1 ? 1 : x);\nconst px = (v) => `${Math.round(v * 100) / 100}px`;\nconst num = (v) => String(Math.round(v * 10000) / 10000);\n// reduced motion shows states from the discrete state, never from a delayed entrance\nconst SHOWN = { opacity: 1, blur: 0, y: 0, scale: 1, visible: true };\nconst GONE = { opacity: 0, blur: 0, y: 0, scale: 1, visible: false };\n\nfunction steps(initial) {\n  return {\n    initial,\n    ev: [],\n    set(t, v) { this.ev.push([t, v]); this.ev.sort((a, b) => a[0] - b[0]); return this; },\n    at(t) { let v = this.initial; for (const [et, x] of this.ev) { if (et > t) break; v = x; } return v; },\n    get last() { return this.ev.length ? this.ev[this.ev.length - 1][1] : this.initial; },\n    compact() { this.initial = this.last; this.ev = []; },\n  };\n}\n\nfunction attr(el, name, value) {\n  if (value === null || value === undefined || value === false) {\n    if (el.hasAttribute(name)) el.removeAttribute(name);\n  } else {\n    const v = value === true ? '' : String(value);\n    if (el.getAttribute(name) !== v) el.setAttribute(name, v);\n  }\n}\n\nlet uid = 0;\nconst ensureId = (el, prefix) => el.id || (el.id = `${prefix}-${++uid}`);\n\nconst FOCUSABLE = 'button, [href], input, select, textarea, [tabindex]';\nfunction tabbables(root) {\n  return [...root.querySelectorAll(FOCUSABLE)].filter((el) => !el.disabled && el.tabIndex >= 0 && !el.closest('[hidden], [inert]'));\n}\n\n/** Radius that covers a w by h box from the point (x, y). */\nconst cover = (x, y, w, h) => Math.max(Math.hypot(x, y), Math.hypot(w - x, y), Math.hypot(x, h - y), Math.hypot(w - x, h - y));\n\n/**\n * Ink: a new colour grows as a circle from a point; the base colour switches only when the\n * circle covers the shape. list holds { t, color, x, y, R, sp } in time order.\n */\nfunction inkAt(ink, t, reduced, layers = 2) {\n  let base = ink.base;\n  let active = [];\n  for (const e of ink.list) {\n    if (e.t > t) break;\n    const p = reduced ? 1 : springStep(e.sp, t - e.t);\n    if (p >= 1) { base = e.color; active = []; } else active.push({ color: e.color, r: p * e.R, x: e.x, y: e.y });\n  }\n  while (active.length > layers) base = active.shift().color;\n  return { base, layers: active };\n}\nconst inkSettled = (ink, t) => ink.list.every((e) => e.t > t || t >= e.t + settleTime(e.sp));\n\nfunction paintInk(state, surface, els) {\n  surface.style.background = state.base;\n  els.forEach((el, i) => {\n    const L = state.layers[i];\n    if (!L) { el.style.visibility = 'hidden'; el.style.clipPath = ''; el.style.background = ''; return; }\n    el.style.visibility = 'visible'; // the stylesheet hides ink layers until one grows\n    el.style.background = L.color;\n    el.style.clipPath = `circle(${px(L.r)} at ${px(L.x)} ${px(L.y)})`;\n  });\n}\n\nfunction radiusOf(el, fallback) {\n  try {\n    const v = parseFloat(getComputedStyle(el).borderTopLeftRadius);\n    return Number.isFinite(v) ? v : fallback;\n  } catch {\n    return fallback;\n  }\n}\n\n// ------------------------------------------------------------------ dialog\n\n/**\n * createDialog({ trigger, root, from, to, onOpenChange, clock, reduced })\n * from: colour of the trigger (default var(--primary)); to: colour of the dialog surface.\n * Returns { open, close, toggle, isOpen, seek, settled, destroy, driver, keep }.\n */\nexport function createDialog(o) {\n  const { trigger, root } = o;\n  const panel = root.querySelector('[role=\"dialog\"], [role=\"alertdialog\"]');\n  if (!panel) throw new Error('createDialog: root needs an element with role=\"dialog\"');\n  const doc = root.ownerDocument || document;\n  const FROM = o.from || 'var(--primary, #171717)';\n  const TO = o.to || 'var(--background, #ffffff)';\n\n  const make = (cls, tag = 'div') => { const el = doc.createElement(tag); el.className = cls; return el; };\n  let surface = panel.querySelector('.am-dialog-surface');\n  if (!surface) { surface = make('am-dialog-surface'); panel.insertBefore(surface, panel.firstElementChild); }\n  attr(surface, 'aria-hidden', 'true');\n  const inks = [...surface.querySelectorAll('.am-dialog-ink')];\n  while (inks.length < 2) inks.push(surface.appendChild(make('am-dialog-ink')));\n  let label = surface.querySelector('.am-dialog-label');\n  if (!label) label = surface.appendChild(make('am-dialog-label', 'span'));\n  label.textContent = o.label ?? trigger.textContent.trim();\n  let content = panel.querySelector('.am-dialog-content');\n  if (!content) {\n    content = make('am-dialog-content');\n    for (const c of [...panel.childNodes]) if (c !== surface) content.appendChild(c);\n    panel.appendChild(content);\n  }\n  const backdrop = root.querySelector('.am-dialog-backdrop');\n\n  ensureId(panel, 'am-dialog');\n  attr(panel, 'aria-modal', 'true');\n  if (!panel.hasAttribute('tabindex')) attr(panel, 'tabindex', '-1');\n  if (!panel.hasAttribute('aria-labelledby') && !panel.hasAttribute('aria-label')) {\n    const title = panel.querySelector('.am-dialog-title, h1, h2, h3');\n    if (title) attr(panel, 'aria-labelledby', ensureId(title, 'am-dialog-title'));\n  }\n  attr(trigger, 'aria-haspopup', 'dialog');\n  attr(trigger, 'aria-controls', panel.id);\n  attr(trigger, 'aria-expanded', 'false');\n\n  // state as functions of time\n  const openS = steps(false);\n  const geo = steps(null);\n  const m = track(0, PRESETS.morph); // 0 = the trigger's box, 1 = the dialog\n  const back = track(0, PRESETS.smooth);\n  const body = presence(false);\n  const lab = presence(true, { dyIn: 6, dyOut: -4, blur: 4, scaleFrom: 1 });\n  const ink = { base: FROM, list: [] };\n  let endT = -Infinity;\n  const mark = (t) => { if (t > endT) endT = t; };\n\n  // Geometry of the one shape: at k = 0 the panel is moved so its centre sits on the\n  // trigger's centre and clipped to the trigger's size; at k = 1 it is the dialog.\n  function measure() {\n    const was = root.hidden;\n    const moved = panel.style.transform;\n    root.hidden = false;\n    panel.style.transform = '';\n    const pr = panel.getBoundingClientRect();\n    const tr = trigger.getBoundingClientRect();\n    panel.style.transform = moved;\n    root.hidden = was;\n    const dx = tr.left + tr.width / 2 - (pr.left + pr.width / 2);\n    const dy = tr.top + tr.height / 2 - (pr.top + pr.height / 2);\n    return {\n      pr,\n      tr,\n      g: {\n        dx, dy,\n        ix: Math.max(0, (pr.width - tr.width) / 2), iy: Math.max(0, (pr.height - tr.height) / 2),\n        w: tr.width, h: tr.height, pw: pr.width, ph: pr.height,\n        r0: radiusOf(trigger, 8), r1: radiusOf(panel, 12),\n      },\n    };\n  }\n\n  const settledAll = (t) => m.settled(t) && back.settled(t) && body.settled(t) && lab.settled(t) && inkSettled(ink, t);\n\n  function paint(t, { reduced }) {\n    const isOpen = openS.at(t);\n    // closing stays on screen until every spring is home; before the first open all is settled\n    const visible = isOpen || (!reduced && !settledAll(t));\n    attr(trigger, 'aria-expanded', String(isOpen));\n    attr(panel, 'data-state', isOpen ? 'open' : 'closed');\n    root.hidden = !visible;\n    trigger.style.opacity = visible && !reduced ? '0' : '';\n    if (!visible) return;\n    const g = geo.at(t);\n    const k = reduced ? 1 : clamp01(m.at(t));\n    if (k >= 1 || !g) {\n      panel.style.clipPath = '';\n      panel.style.transform = '';\n    } else {\n      const f = 1 - k;\n      panel.style.transform = `translate(${px(g.dx * f)}, ${px(g.dy * f)})`;\n      panel.style.clipPath = `inset(${px(g.iy * f)} ${px(g.ix * f)} round ${px(g.r0 + (g.r1 - g.r0) * k)})`;\n    }\n    if (backdrop) backdrop.style.opacity = num(reduced ? 1 : clamp01(back.at(t)));\n    paintInk(inkAt(ink, t, reduced), surface, inks);\n    if (g) {\n      label.style.left = px(g.ix);\n      label.style.top = px(g.iy);\n      label.style.width = px(g.w);\n      label.style.height = px(g.h);\n    }\n    applyPresence(label, reduced ? GONE : lab.at(t));\n    applyPresence(content, reduced ? (isOpen ? SHOWN : GONE) : body.at(t));\n  }\n\n  function draw(t, s) {\n    paint(t, s);\n    if (!api.keep && t >= endT && openS.ev.length && settledAll(t)) {\n      for (const tr of [m, back, body.p, lab.p]) tr.compact(t);\n      body.marks = [];\n      lab.marks = [];\n      openS.compact();\n      geo.compact();\n      const lastInk = ink.list[ink.list.length - 1];\n      if (lastInk) ink.base = lastInk.color;\n      ink.list = [];\n    }\n  }\n\n  const d = driver(draw, { clock: o.clock, reduced: o.reduced });\n  d.busy = (t) => t < endT || !settledAll(t);\n  const commit = () => { paint(d.now(), { reduced: d.reduced }); d.kick(); };\n  const when = (opt) => (opt && opt.t !== undefined ? { t: opt.t, live: false } : { t: d.now(), live: true });\n\n  function open(opt = {}) {\n    const { t, live } = when(opt);\n    if (openS.last) return api;\n    const { pr, tr, g } = measure();\n    // the click point in the panel's own coordinates while it sits on the trigger\n    const x = (opt.x ?? tr.left + tr.width / 2) - pr.left - g.dx;\n    const y = (opt.y ?? tr.top + tr.height / 2) - pr.top - g.dy;\n    openS.set(t, true);\n    geo.set(t, g);\n    m.to(t, 1);\n    back.to(t, 1);\n    lab.exit(t);\n    body.enter(t + 0.14);\n    ink.list.push({ t, color: TO, x, y, R: cover(x, y, g.pw, g.ph), sp: PRESETS.smooth });\n    ink.list.sort((a, b) => a.t - b.t);\n    mark(t + 0.14);\n    commit();\n    if (live) {\n      const first = panel.querySelector('[autofocus]') || tabbables(content)[0] || panel;\n      first.focus();\n      if (o.onOpenChange) o.onOpenChange(true);\n    }\n    return api;\n  }\n\n  function close(opt = {}) {\n    const { t, live } = when(opt);\n    if (!openS.last) return api;\n    const { g } = measure();\n    // the trigger colour grows from the centre while the shape flies back into the button\n    const x = g.pw / 2;\n    const y = g.ph / 2;\n    openS.set(t, false);\n    geo.set(t, g);\n    body.exit(t);\n    back.to(t, 0);\n    m.to(t + 0.06, 0);\n    lab.enter(t + 0.3);\n    ink.list.push({ t: t + 0.06, color: FROM, x, y, R: cover(x, y, g.pw, g.ph), sp: PRESETS.snappy });\n    ink.list.sort((a, b) => a.t - b.t);\n    mark(t + 0.3);\n    commit();\n    if (live) {\n      trigger.focus();\n      if (o.onOpenChange) o.onOpenChange(false);\n    }\n    return api;\n  }\n\n  const listeners = [];\n  const on = (el, type, fn) => { el.addEventListener(type, fn); listeners.push([el, type, fn]); };\n\n  on(trigger, 'click', (e) => {\n    if (openS.last) return close();\n    const pointer = e.detail > 0;\n    open(pointer ? { x: e.clientX, y: e.clientY } : {});\n  });\n  on(root, 'keydown', (e) => {\n    if (!openS.last) return;\n    if (e.key === 'Escape') {\n      e.preventDefault();\n      e.stopPropagation();\n      close();\n      return;\n    }\n    if (e.key !== 'Tab') return;\n    const list = tabbables(content);\n    if (!list.length) { e.preventDefault(); panel.focus(); return; }\n    const first = list[0];\n    const lastEl = list[list.length - 1];\n    const active = doc.activeElement;\n    if (e.shiftKey && (active === first || active === panel || !panel.contains(active))) { e.preventDefault(); lastEl.focus(); }\n    else if (!e.shiftKey && (active === lastEl || !panel.contains(active))) { e.preventDefault(); first.focus(); }\n  });\n  on(root, 'click', (e) => {\n    const target = e.target;\n    if (target === backdrop || (target.closest && target.closest('[data-am-close]'))) close();\n  });\n\n  const api = {\n    trigger,\n    root,\n    panel,\n    content,\n    driver: d,\n    keep: false,\n    open,\n    close,\n    toggle: (opt) => (openS.last ? close(opt) : open(opt)),\n    isOpen: (t) => (t === undefined ? openS.last : openS.at(t)),\n    seek: (t) => paint(t, { reduced: d.reduced }),\n    settled: (t) => t >= endT && settledAll(t),\n    destroy() {\n      d.stop();\n      for (const [el, type, fn] of listeners) el.removeEventListener(type, fn);\n    },\n  };\n  paint(d.now(), { reduced: d.reduced });\n  return api;\n}\n",
+      "type": "registry:lib"
+    },
+    {
+      "path": "registry/arling/lib/arling-motion-dialog.d.ts",
+      "content": "// ARLing Motion: dialog. MIT licence, https://arling.sk/motion/ . Types for the plain JavaScript file next to this one.\nexport declare function createDialog(...args: any[]): any;\n",
+      "type": "registry:lib"
+    },
+    {
+      "path": "registry/arling/ui/motion-dialog.tsx",
+      "content": "'use client';\n// ARLing Motion: Dialog for React. A thin wrapper: the vanilla component does all motion,\n// ARIA and keyboard work; React only renders the markup and passes options.\n// In the registry the core lives at '@/lib/arling-motion' and this component's logic at\n// '@/lib/arling-motion-dialog' (dialog.js with its core import pointed at the core).\nimport * as React from 'react';\nimport { createDialog } from '@/lib/arling-motion-dialog';\n\ntype DialogApi = {\n  open: (o?: { t?: number; x?: number; y?: number }) => unknown;\n  close: (o?: { t?: number }) => unknown;\n  isOpen: () => boolean;\n  destroy: () => void;\n};\n\nexport interface DialogProps {\n  /** Text or node of the button that opens the dialog; the dialog grows out of it. */\n  trigger: React.ReactNode;\n  title: React.ReactNode;\n  description?: React.ReactNode;\n  children?: React.ReactNode;\n  /** Buttons at the bottom. Give a button data-am-close to close the dialog with it. */\n  footer?: React.ReactNode;\n  /** Controlled open state (optional). */\n  open?: boolean;\n  onOpenChange?: (open: boolean) => void;\n  className?: string;\n  triggerClassName?: string;\n  /** Force reduced motion on or off; by default the user's system setting decides. */\n  reducedMotion?: boolean;\n}\n\nconst cx = (...c: Array<string | false | null | undefined>) => c.filter(Boolean).join(' ');\n\nexport function Dialog({\n  trigger,\n  title,\n  description,\n  children,\n  footer,\n  open,\n  onOpenChange,\n  className,\n  triggerClassName,\n  reducedMotion,\n}: DialogProps) {\n  const triggerRef = React.useRef<HTMLButtonElement>(null);\n  const rootRef = React.useRef<HTMLDivElement>(null);\n  const apiRef = React.useRef<DialogApi | null>(null);\n  const changeRef = React.useRef(onOpenChange);\n  changeRef.current = onOpenChange;\n  const id = React.useId();\n\n  React.useEffect(() => {\n    if (!triggerRef.current || !rootRef.current) return;\n    const api = createDialog({\n      trigger: triggerRef.current,\n      root: rootRef.current,\n      reduced: reducedMotion,\n      onOpenChange: (v: boolean) => changeRef.current?.(v),\n    }) as unknown as DialogApi;\n    apiRef.current = api;\n    return () => {\n      api.destroy();\n      apiRef.current = null;\n    };\n  }, [reducedMotion]);\n\n  React.useEffect(() => {\n    const api = apiRef.current;\n    if (!api || open === undefined || open === api.isOpen()) return;\n    if (open) api.open();\n    else api.close();\n  }, [open]);\n\n  return (\n    <>\n      <button ref={triggerRef} type=\"button\" className={cx('am-dialog-trigger', triggerClassName)}>\n        {trigger}\n      </button>\n      <div ref={rootRef} className=\"am-dialog-root\" hidden>\n        <div className=\"am-dialog-backdrop\" />\n        <div className=\"am-dialog-frame\">\n          <div\n            className={cx('am-dialog', className)}\n            role=\"dialog\"\n            aria-modal=\"true\"\n            aria-labelledby={`${id}-title`}\n            aria-describedby={description ? `${id}-desc` : undefined}\n          >\n            <div className=\"am-dialog-content\">\n              <h2 id={`${id}-title`} className=\"am-dialog-title\">\n                {title}\n              </h2>\n              {description ? (\n                <p id={`${id}-desc`} className=\"am-dialog-description\">\n                  {description}\n                </p>\n              ) : null}\n              {children}\n              {footer ? <div className=\"am-dialog-footer\">{footer}</div> : null}\n            </div>\n          </div>\n        </div>\n      </div>\n    </>\n  );\n}\n\nexport default Dialog;\n",
+      "type": "registry:ui"
+    }
+  ],
+  "css": {
+    "@layer components": {
+      ".am-dialog-trigger": {
+        "display": "inline-flex",
+        "align-items": "center",
+        "justify-content": "center",
+        "height": "2.5rem",
+        "padding": "0 1rem",
+        "border": "0",
+        "border-radius": "calc(var(--radius, 0.625rem) - 2px)",
+        "background": "var(--primary, #171717)",
+        "color": "var(--primary-foreground, #fafafa)",
+        "font": "inherit",
+        "font-weight": "500",
+        "cursor": "pointer"
+      },
+      ".am-dialog-trigger:focus-visible, .am-dialog-content button:focus-visible, .am-dialog-content [href]:focus-visible, .am-dialog-content input:focus-visible": {
+        "outline": "2px solid var(--ring, #a3a3a3)",
+        "outline-offset": "2px"
+      },
+      ".am-dialog-root": {
+        "position": "fixed",
+        "inset": "0",
+        "z-index": "50",
+        "display": "grid",
+        "place-items": "center",
+        "padding": "16px"
+      },
+      ".am-dialog-root[hidden]": {
+        "display": "none"
+      },
+      ".am-dialog-backdrop": {
+        "position": "absolute",
+        "inset": "0",
+        "background": "rgb(0 0 0 / 0.32)"
+      },
+      ".am-dialog-frame": {
+        "position": "relative",
+        "width": "min(100%, 28rem)",
+        "filter": "drop-shadow(0 1px 2px rgb(0 0 0 / 0.06)) drop-shadow(0 12px 28px rgb(0 0 0 / 0.12))"
+      },
+      ".am-dialog": {
+        "position": "relative",
+        "border-radius": "var(--radius, 0.625rem)",
+        "color": "var(--foreground, #0a0a0a)",
+        "outline": "none"
+      },
+      ".am-dialog-surface": {
+        "position": "absolute",
+        "inset": "0",
+        "overflow": "hidden",
+        "border-radius": "inherit",
+        "background": "var(--background, #ffffff)"
+      },
+      ".am-dialog-surface::after": {
+        "content": "\"\"",
+        "position": "absolute",
+        "inset": "0",
+        "border-radius": "inherit",
+        "box-shadow": "inset 0 0 0 1px var(--border, #e5e5e5)",
+        "pointer-events": "none"
+      },
+      ".am-dialog-ink": {
+        "position": "absolute",
+        "inset": "0",
+        "visibility": "hidden"
+      },
+      ".am-dialog-label": {
+        "position": "absolute",
+        "display": "grid",
+        "place-items": "center",
+        "color": "var(--primary-foreground, #fafafa)",
+        "font-weight": "500",
+        "white-space": "nowrap",
+        "pointer-events": "none"
+      },
+      ".am-dialog-content": {
+        "position": "relative",
+        "display": "grid",
+        "gap": "1rem",
+        "padding": "1.5rem"
+      },
+      ".am-dialog-title": {
+        "margin": "0",
+        "font-size": "1.125rem",
+        "font-weight": "600",
+        "line-height": "1.3"
+      },
+      ".am-dialog-description": {
+        "margin": "0",
+        "color": "var(--muted-foreground, #737373)",
+        "font-size": "0.875rem",
+        "line-height": "1.5"
+      },
+      ".am-dialog-footer": {
+        "display": "flex",
+        "flex-wrap": "wrap",
+        "justify-content": "flex-end",
+        "gap": "0.5rem"
+      },
+      ".am-dialog-footer button": {
+        "height": "2.25rem",
+        "padding": "0 1rem",
+        "border": "1px solid var(--border, #e5e5e5)",
+        "border-radius": "calc(var(--radius, 0.625rem) - 2px)",
+        "background": "var(--background, #ffffff)",
+        "color": "var(--foreground, #0a0a0a)",
+        "font": "inherit",
+        "font-size": "0.875rem",
+        "font-weight": "500",
+        "cursor": "pointer"
+      },
+      ".am-dialog-footer button[data-variant=\"primary\"]": {
+        "border-color": "var(--primary, #171717)",
+        "background": "var(--primary, #171717)",
+        "color": "var(--primary-foreground, #fafafa)"
+      }
+    }
+  },
+  "docs": "Dialog from ARLing Motion (MIT).\nReact: import { Dialog } from \"@/components/ui/motion-dialog\".\nThe logic is in lib/arling-motion-dialog.js (typed by the .d.ts next to it) and works without React: createDialog on your own markup.\nStyles were added to your global CSS under @layer components (Tailwind v4).\nWith Tailwind v3 or no Tailwind, add https://arling.sk/motion/components/dialog/dialog.css to your styles instead.\nLive demo and docs: https://arling.sk/motion/#dialog",
+  "categories": [
+    "motion",
+    "dialog",
+    "modal"
+  ]
+}

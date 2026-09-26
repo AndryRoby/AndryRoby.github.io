@@ -1,0 +1,128 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "otp",
+  "type": "registry:ui",
+  "title": "One-time code input",
+  "description": "A one-time code input built on one real text field. Each digit enters its own slot, the focus ring slides ahead, and a verified code turns green as one circle growing across the row.",
+  "author": "ARLing s. r. o. (https://arling.sk)",
+  "registryDependencies": [
+    "https://arling.sk/motion/r/core.json"
+  ],
+  "files": [
+    {
+      "path": "registry/arling/lib/arling-motion-otp.js",
+      "content": "'use strict';\n// ARLing Motion: otp. MIT licence, https://arling.sk/motion/ . Installed from the ARLing\n// Motion registry (source: components/otp/otp.js). Plain JavaScript; the .d.ts next to it types the exports.\n/*\n * ARLing Motion: One-time code input (OTP).\n * One real input sits over a row of slots, so paste, autofill of one-time codes and screen\n * readers work as in any text field. Each digit enters its slot on its own (rise, blur,\n * fade), the focus ring slides from slot to slot with its leading edge first, and a\n * verified code turns the row green as one circle growing from the last digit: a slot\n * switches colour only once the circle covers it, never through a grey blend.\n *\n * Markup:\n *   <div class=\"am-otp\">\n *     <input class=\"am-otp-input\" aria-label=\"Verification code\" maxlength=\"6\">\n *     <div class=\"am-otp-slots\"></div>\n *   </div>\n * The component adds the slots, the ring and a status line. It sets inputmode=\"numeric\",\n * autocomplete=\"one-time-code\" and pattern on the input.\n *\n * Keyboard: type or paste the code, Backspace deletes. Left, Right, Home, End and Shift with\n * an arrow work as in any text field (screen readers read the characters with them), and the\n * ring follows the caret. Typing puts the caret back at the end, so the ring shows where the\n * next character goes. When the code is complete, onComplete(code) runs; return true or\n * false (or a promise of it), or call success() or error() yourself. After a verified code\n * the ring is gone, and a focused field shows an outline around the row (otp.css).\n * MIT licence.\n */\nimport { presence, applyPresence, indicator, track, driver, spring, springStep, settleTime, steps, attr, cover, JUMP, PRESETS } from './arling-motion';\n\n// ------------------------------------------------------------------ helpers\n\nconst clamp01 = (x) => (x < 0 ? 0 : x > 1 ? 1 : x);\nconst px = (v) => `${Math.round(v * 100) / 100}px`;\nconst num = (v) => String(Math.round(v * 10000) / 10000);\nconst SHOWN = { opacity: 1, blur: 0, y: 0, scale: 1, visible: true };\nconst GONE = { opacity: 0, blur: 0, y: 0, scale: 1, visible: false };\n\nlet uid = 0;\nconst ensureId = (el, prefix) => el.id || (el.id = `${prefix}-${++uid}`);\n\n/** Distance from (x, y) to the nearest point of a box: where a growing circle first touches it. */\nconst touch = (x, y, b) => Math.hypot(Math.max(b.x - x, 0, x - (b.x + b.w)), Math.max(b.y - y, 0, y - (b.y + b.h)));\n\n// ------------------------------------------------------------------ otp\n\n/** Springs of the focus ring (both edges home within 0.91 s). */\nexport const RING = { fast: spring(0.28, 0.9), slow: spring(0.48, 0.95) };\nconst DIGIT = { dyIn: 10, dyOut: -6, blur: 6, scaleFrom: 0.9 };\n\n/**\n * createOtp({ root, length, pattern, onComplete(code), onChange(value), success, base,\n *   successText, errorText, clock, reduced })\n * pattern: one allowed character (default /\\d/); success and base: colours of the verified\n * and the plain slot (default var(--am-success, #16a34a) and var(--background, #fff)).\n * Returns { type, setValue, clear, focus, blur, success, error, value, status, seek,\n * settled, destroy, driver, input, slots, keep }.\n */\nexport function createOtp(o) {\n  const root = o.root;\n  const doc = root.ownerDocument || document;\n  const input = root.querySelector('.am-otp-input') || root.querySelector('input');\n  const n = o.length || parseInt(input.getAttribute('maxlength'), 10) || 6;\n  const allowed = o.pattern || /\\d/;\n  const GREEN = o.success || 'var(--am-success, #16a34a)';\n  const BASE = o.base || 'var(--background, #ffffff)';\n\n  attr(input, 'maxlength', String(n));\n  attr(input, 'autocomplete', 'one-time-code');\n  if (!input.hasAttribute('inputmode')) attr(input, 'inputmode', allowed.source === '\\\\d' ? 'numeric' : 'text');\n  if (allowed.source === '\\\\d') attr(input, 'pattern', `\\\\d{${n}}`);\n  attr(input, 'spellcheck', 'false');\n  if (!input.hasAttribute('aria-label') && !input.hasAttribute('aria-labelledby')) attr(input, 'aria-label', 'Verification code');\n\n  const make = (cls, parent, tag = 'div') => { const el = doc.createElement(tag); el.className = cls; parent.appendChild(el); return el; };\n  let row = root.querySelector('.am-otp-slots');\n  if (!row) row = make('am-otp-slots', root);\n  attr(row, 'aria-hidden', 'true');\n  const slots = [...row.querySelectorAll('.am-otp-slot')];\n  while (slots.length < n) slots.push(make('am-otp-slot', row));\n  const parts = slots.slice(0, n).map((slot) => ({\n    slot,\n    ink: slot.querySelector('.am-otp-ink') || make('am-otp-ink', slot, 'span'),\n    char: slot.querySelector('.am-otp-char') || make('am-otp-char', slot, 'span'),\n  }));\n  const ring = row.querySelector('.am-otp-ring') || make('am-otp-ring', row);\n  const status = root.querySelector('.am-otp-status') || make('am-otp-status', root);\n  attr(status, 'role', 'status');\n  attr(input, 'aria-describedby', ensureId(status, 'am-otp-status'));\n\n  // slot boxes in the row's coordinates\n  function measure() {\n    const rr = row.getBoundingClientRect();\n    return parts.map((p, j) => {\n      const r = p.slot.getBoundingClientRect();\n      return r.width ? { x: r.left - rr.left, y: r.top - rr.top, w: r.width, h: r.height } : { x: j * 52, y: 0, w: 44, h: 52 };\n    });\n  }\n  let boxes = measure();\n\n  const sanitize = (s) => [...String(s || '')].filter((c) => allowed.test(c)).join('').slice(0, n);\n  const value = steps(sanitize(input.value));\n  const focusS = steps(false);\n  const state = steps(''); // '' | 'success' | 'error'\n  const digits = parts.map((_, j) => ({ shown: steps(value.initial[j] || ''), pres: presence(!!value.initial[j], DIGIT) }));\n  const activeOf = (v) => Math.min(v.length, n - 1);\n  // Live only: the slot of the caret when it is not at the end (moved with the arrow keys).\n  let caret = null;\n  const ringSlot = (v) => (caret === null ? activeOf(v) : Math.min(caret, n - 1, v.length));\n  const b0 = boxes[activeOf(value.initial)];\n  const ringInd = indicator(b0.x, b0.x + b0.w, RING.fast, RING.slow);\n  const ringOp = track(0, PRESETS.snappy);\n  const inks = []; // { t, color, x, y, R, sp }\n\n  let endT = -Infinity;\n  const mark = (t) => { if (t > endT) endT = t; };\n  const inkSettled = (t) => inks.every((e) => e.t > t || t >= e.t + settleTime(e.sp));\n  const settledAll = (t) => ringInd.settled(t) && ringOp.settled(t) && inkSettled(t) && digits.every((dg) => dg.pres.settled(t));\n\n  /** Ink of slot j at t: the base colour and the circles that are on their way across it. */\n  function slotInk(j, t, reduced) {\n    const b = boxes[j];\n    let base = BASE;\n    let layers = [];\n    for (const e of inks) {\n      if (e.t > t) break;\n      const r = reduced ? Infinity : springStep(e.sp, t - e.t) * e.R;\n      if (r >= cover(e.x - b.x, e.y - b.y, b.w, b.h)) { base = e.color; layers = []; }\n      else if (r > touch(e.x, e.y, b)) layers.push({ color: e.color, r, x: e.x - b.x, y: e.y - b.y });\n    }\n    if (layers.length > 1) layers = layers.slice(-1);\n    return { base, layer: layers[0] || null };\n  }\n\n  function paint(t, { reduced }) {\n    const v = value.at(t);\n    const st = state.at(t);\n    const focused = focusS.at(t);\n    if (input.value !== v) input.value = v;\n    attr(input, 'aria-invalid', st === 'error' ? 'true' : null);\n    attr(root, 'data-state', st || (v.length === n ? 'complete' : 'idle'));\n    const act = ringSlot(v);\n    parts.forEach((p, j) => {\n      const dg = digits[j];\n      const s = reduced ? (v[j] ? SHOWN : GONE) : dg.pres.at(t);\n      applyPresence(p.char, s);\n      const ch = s.visible ? (reduced ? v[j] || '' : dg.shown.at(t)) : '';\n      if (p.char.textContent !== ch) p.char.textContent = ch;\n      attr(p.slot, 'data-filled', v[j] ? true : null);\n      attr(p.slot, 'data-active', focused && j === act && st !== 'success' ? true : null);\n      const k = slotInk(j, t, reduced);\n      p.slot.style.background = k.base;\n      attr(p.slot, 'data-inked', k.base === GREEN ? true : null);\n      if (!k.layer) { p.ink.style.visibility = 'hidden'; p.ink.style.clipPath = ''; p.ink.style.background = ''; }\n      else {\n        p.ink.style.visibility = 'visible';\n        p.ink.style.background = k.layer.color;\n        p.ink.style.clipPath = `circle(${px(k.layer.r)} at ${px(k.layer.x)} ${px(k.layer.y)})`;\n      }\n    });\n    const e = reduced ? ringInd.target(t) : ringInd.at(t);\n    const op = reduced ? ringOp.target(t) : clamp01(ringOp.at(t));\n    ring.style.opacity = num(op);\n    ring.style.visibility = op > 0.002 ? '' : 'hidden';\n    ring.style.transform = `translateX(${px(e.left)})`;\n    ring.style.width = px(Math.max(0, e.right - e.left));\n    const msg = st === 'success' ? o.successText || 'Code verified.' : st === 'error' ? o.errorText || 'That code did not work. Try again.' : '';\n    if (status.textContent !== msg) status.textContent = msg;\n  }\n\n  function draw(t, s) {\n    paint(t, s);\n    if (!api.keep && t >= endT && (value.ev.length || focusS.ev.length || state.ev.length) && settledAll(t)) {\n      ringInd.l.compact(t);\n      ringInd.r.compact(t);\n      ringOp.compact(t);\n      for (const dg of digits) { dg.pres.p.compact(t); dg.pres.marks = []; dg.shown.compact(); }\n      if (inks.length) {\n        // keep only the colour in force: one finished circle that covers everything\n        const last = slotInk(0, t, true).base;\n        inks.length = 0;\n        if (last !== BASE) inks.push({ t: -1e9, color: last, x: 0, y: 0, R: 1e6, sp: JUMP });\n      }\n      value.compact();\n      focusS.compact();\n      state.compact();\n    }\n  }\n\n  const d = driver(draw, { clock: o.clock, reduced: o.reduced });\n  d.busy = (t) => t < endT || !settledAll(t);\n  const commit = () => { paint(d.now(), { reduced: d.reduced }); d.kick(); };\n  const when = (opt) => (opt && opt.t !== undefined ? { t: opt.t, live: false } : { t: d.now(), live: true });\n  const rowBox = () => {\n    const last = boxes[boxes.length - 1];\n    return { w: last.x + last.w, h: Math.max(...boxes.map((b) => b.y + b.h)) };\n  };\n\n  function moveRing(t, i) {\n    const b = boxes[i];\n    const cur = ringInd.target(t);\n    if (Math.abs(cur.left - b.x) < 0.01 && Math.abs(cur.right - b.x - b.w) < 0.01) return;\n    if (ringOp.target(t) === 0) {\n      // hidden: take the place at once, then show\n      ringInd.l.to(t, b.x, JUMP);\n      ringInd.r.to(t, b.x + b.w, JUMP);\n      ringInd.last = [b.x, b.x + b.w];\n    } else ringInd.to(t, b.x, b.x + b.w);\n  }\n\n  function growInk(t, color, j, sp) {\n    const b = boxes[j];\n    const x = b.x + b.w / 2;\n    const y = b.y + b.h / 2;\n    const { w, h } = rowBox();\n    inks.push({ t, color, x, y, R: cover(x, y, w, h), sp });\n    inks.sort((a, c) => a.t - c.t);\n  }\n\n  /** Sets the whole value (sanitised). Digits that change leave or enter their own slots. */\n  function setValue(raw, opt = {}) {\n    const { t, live } = when(opt);\n    const v = sanitize(raw);\n    const old = value.last;\n    if (v === old) return api;\n    boxes = live ? measure() : boxes;\n    value.set(t, v);\n    let first = -1;\n    for (let j = 0; j < n; j++) {\n      const a = old[j];\n      const b = v[j];\n      if (a === b) continue;\n      if (first < 0) first = j;\n      const dg = digits[j];\n      if (a && !b) dg.pres.exit(t);\n      else if (!a && b) { dg.shown.set(t, b); dg.pres.enter(t); }\n      else { dg.shown.set(t, b); dg.pres.p.to(t, 0, JUMP); dg.pres.enter(t + 0.001); }\n    }\n    moveRing(t, ringSlot(v));\n    const st = state.last;\n    if (st) {\n      // editing a checked code starts over: the plain colour grows back from the edit\n      state.set(t, '');\n      if (st === 'success') growInk(t, BASE, Math.max(0, first), PRESETS.snappy);\n      if (ringOp.target(t) === 0 && focusS.last) ringOp.to(t, 1, PRESETS.snappy);\n    }\n    mark(t + 0.001);\n    commit();\n    if (live) {\n      if (o.onChange) o.onChange(v);\n      if (v.length === n && o.onComplete) {\n        const r = o.onComplete(v);\n        const settle = (ok) => { if (value.last === v) (ok ? success : error)(); };\n        if (r === true || r === false) settle(r);\n        else if (r && typeof r.then === 'function') r.then((ok) => { if (ok === true || ok === false) settle(ok); });\n      }\n    }\n    return api;\n  }\n\n  /** Types characters one after another from opt.t, every opt.every seconds (demos). */\n  function type(chars, opt = {}) {\n    const t0 = opt.t ?? d.now();\n    const every = opt.every ?? 0.25;\n    [...chars].forEach((c, k) => setValue(value.last + c, { t: t0 + k * every }));\n    return api;\n  }\n\n  function success(opt = {}) {\n    const { t } = when(opt);\n    if (state.last === 'success') return api;\n    state.set(t, 'success');\n    growInk(t, GREEN, Math.max(0, value.last.length - 1), PRESETS.smooth);\n    ringOp.to(t, 0, PRESETS.exit);\n    mark(t);\n    commit();\n    return api;\n  }\n\n  function error(opt = {}) {\n    const { t } = when(opt);\n    if (state.last === 'error') return api;\n    const was = state.last;\n    state.set(t, 'error');\n    if (was === 'success') growInk(t, BASE, 0, PRESETS.snappy);\n    mark(t);\n    commit();\n    return api;\n  }\n\n  /** Empties the code: the digits leave from the last one back, the ring returns to the first slot. */\n  function clear(opt = {}) {\n    const { t } = when(opt);\n    const old = value.last;\n    if (!old && !state.last) return api;\n    value.set(t, '');\n    for (let j = old.length - 1, k = 0; j >= 0; j--, k++) digits[j].pres.exit(t + k * 0.02);\n    if (state.last === 'success') growInk(t, BASE, 0, PRESETS.snappy);\n    if (state.last) state.set(t, '');\n    moveRing(t, 0);\n    if (focusS.last) ringOp.to(t, 1, PRESETS.snappy);\n    mark(t + old.length * 0.02);\n    commit();\n    return api;\n  }\n\n  function setFocus(on, opt = {}) {\n    const { t } = when(opt);\n    if (focusS.last === on) return api;\n    focusS.set(t, on);\n    moveRing(t, ringSlot(value.last));\n    ringOp.to(t, on && state.last !== 'success' ? 1 : 0, PRESETS.snappy);\n    mark(t);\n    commit();\n    return api;\n  }\n\n  // ---------------------------------------------------------------- live input\n  const listeners = [];\n  const on = (target, type, fn) => { target.addEventListener(type, fn); listeners.push([target, type, fn]); };\n  const toEnd = () => { const L = input.value.length; if (input.setSelectionRange) { try { input.setSelectionRange(L, L); } catch { /* type without selection */ } } };\n\n  /** The ring follows the caret after arrow keys, Home, End or a selection (nothing is blocked). */\n  const syncCaret = () => {\n    const L = input.value.length;\n    const c = typeof input.selectionStart === 'number' ? input.selectionStart : L;\n    const next = c >= L ? null : Math.max(0, Math.min(c, n - 1));\n    if (next === caret) return;\n    caret = next;\n    if (!focusS.last) return;\n    moveRing(d.now(), ringSlot(value.last));\n    commit();\n  };\n\n  on(input, 'input', () => {\n    const clean = sanitize(input.value);\n    if (clean !== input.value) input.value = clean;\n    caret = null;\n    setValue(clean);\n    toEnd();\n  });\n  on(input, 'keyup', syncCaret);\n  on(input, 'select', syncCaret);\n  // data-focused follows the real focus only (not a demo's scheduled focus): with it otp.css\n  // keeps a visible focus outline around the row once the ring has left after success\n  on(input, 'focus', () => { caret = null; attr(root, 'data-focused', true); setFocus(true); toEnd(); });\n  on(input, 'blur', () => { caret = null; attr(root, 'data-focused', null); setFocus(false); });\n  on(input, 'click', () => { toEnd(); syncCaret(); });\n\n  const api = {\n    root,\n    input,\n    slots: parts.map((p) => p.slot),\n    driver: d,\n    keep: false,\n    type,\n    setValue,\n    clear,\n    success,\n    error,\n    focus: (opt = {}) => { if (opt.t === undefined) input.focus(); else setFocus(true, opt); return api; },\n    blur: (opt = {}) => { if (opt.t === undefined) input.blur(); else setFocus(false, opt); return api; },\n    value: (t) => (t === undefined ? value.last : value.at(t)),\n    status: (t) => (t === undefined ? state.last : state.at(t)),\n    seek: (t) => paint(t, { reduced: d.reduced }),\n    settled: (t) => t >= endT && settledAll(t),\n    destroy() {\n      d.stop();\n      attr(root, 'data-focused', null);\n      for (const [target, type, fn] of listeners) target.removeEventListener(type, fn);\n    },\n  };\n  // already focused (autofocus runs before the component is built): show the ring\n  if (doc.activeElement === input) { attr(root, 'data-focused', true); setFocus(true); }\n  paint(d.now(), { reduced: d.reduced });\n  return api;\n}\n",
+      "type": "registry:lib"
+    },
+    {
+      "path": "registry/arling/lib/arling-motion-otp.d.ts",
+      "content": "// ARLing Motion: otp. MIT licence, https://arling.sk/motion/ . Types for the plain JavaScript file next to this one.\nexport declare const RING: any;\nexport declare function createOtp(...args: any[]): any;\n",
+      "type": "registry:lib"
+    },
+    {
+      "path": "registry/arling/ui/motion-otp.tsx",
+      "content": "'use client';\n// ARLing Motion: One-time code input for React. A thin wrapper: the vanilla component owns\n// the digit entrances, the sliding ring, the green circle on success, ARIA and the keyboard.\n// In the registry the core lives at '@/lib/arling-motion' and this logic at\n// '@/lib/arling-motion-otp'.\nimport * as React from 'react';\nimport { createOtp } from '@/lib/arling-motion-otp';\n\ntype OtpApi = { clear: () => unknown; success: () => unknown; error: () => unknown; destroy: () => void };\n\nconst cx = (...c: Array<string | false | null | undefined>) => c.filter(Boolean).join(' ');\n\nexport interface OtpInputProps {\n  /** Number of characters (default 6). */\n  length?: number;\n  /** Accessible name of the field. */\n  label?: string;\n  /**\n   * Runs when every slot is filled. Return true (or a promise of true) to show success,\n   * false to mark the code invalid, or nothing and use the ref's success() and error().\n   */\n  onComplete?: (code: string) => boolean | void | Promise<boolean | void>;\n  onValueChange?: (value: string) => void;\n  successText?: string;\n  errorText?: string;\n  name?: string;\n  autoFocus?: boolean;\n  reducedMotion?: boolean;\n  className?: string;\n}\n\nexport interface OtpInputHandle {\n  clear: () => void;\n  success: () => void;\n  error: () => void;\n}\n\nexport const OtpInput = React.forwardRef<OtpInputHandle, OtpInputProps>(function OtpInput(\n  { length = 6, label = 'Verification code', onComplete, onValueChange, successText, errorText, name, autoFocus, reducedMotion, className },\n  handle,\n) {\n  const ref = React.useRef<HTMLDivElement>(null);\n  const apiRef = React.useRef<OtpApi | null>(null);\n  const completeRef = React.useRef(onComplete);\n  const changeRef = React.useRef(onValueChange);\n  completeRef.current = onComplete;\n  changeRef.current = onValueChange;\n\n  React.useImperativeHandle(handle, () => ({\n    clear: () => { apiRef.current?.clear(); },\n    success: () => { apiRef.current?.success(); },\n    error: () => { apiRef.current?.error(); },\n  }), []);\n\n  React.useEffect(() => {\n    if (!ref.current) return;\n    const api = createOtp({\n      root: ref.current,\n      length,\n      successText,\n      errorText,\n      reduced: reducedMotion,\n      onComplete: (code: string) => completeRef.current?.(code),\n      onChange: (v: string) => changeRef.current?.(v),\n    }) as unknown as OtpApi;\n    apiRef.current = api;\n    return () => {\n      api.destroy();\n      apiRef.current = null;\n    };\n    // eslint-disable-next-line react-hooks/exhaustive-deps\n  }, [length, reducedMotion]);\n\n  return (\n    <div ref={ref} className={cx('am-otp', className)}>\n      <input className=\"am-otp-input\" aria-label={label} maxLength={length} name={name} autoFocus={autoFocus} defaultValue=\"\" />\n      <div className=\"am-otp-slots\" aria-hidden=\"true\">\n        {Array.from({ length }, (_, j) => (\n          <div key={j} className=\"am-otp-slot\">\n            <span className=\"am-otp-ink\" />\n            <span className=\"am-otp-char\" />\n          </div>\n        ))}\n        <div className=\"am-otp-ring\" />\n      </div>\n      <div className=\"am-otp-status\" role=\"status\" />\n    </div>\n  );\n});\n\nexport default OtpInput;\n",
+      "type": "registry:ui"
+    }
+  ],
+  "css": {
+    "@layer components": {
+      ".am-otp": {
+        "position": "relative",
+        "display": "inline-grid",
+        "gap": "0.5rem",
+        "color": "var(--foreground, #0a0a0a)"
+      },
+      ".am-otp-input": {
+        "position": "absolute",
+        "inset": "0",
+        "z-index": "1",
+        "width": "100%",
+        "height": "3.25rem",
+        "margin": "0",
+        "padding": "0",
+        "border": "0",
+        "background": "transparent",
+        "color": "transparent",
+        "caret-color": "transparent",
+        "font": "inherit",
+        "letter-spacing": "2rem",
+        "outline": "none",
+        "cursor": "text"
+      },
+      ".am-otp-input::selection": {
+        "background": "transparent"
+      },
+      ".am-otp-slots": {
+        "position": "relative",
+        "display": "flex",
+        "gap": "0.5rem"
+      },
+      ".am-otp-slot": {
+        "position": "relative",
+        "display": "grid",
+        "place-items": "center",
+        "width": "2.75rem",
+        "height": "3.25rem",
+        "overflow": "hidden",
+        "border": "1px solid var(--input, var(--border, #e5e5e5))",
+        "border-radius": "calc(var(--radius, 0.625rem) - 2px)",
+        "background": "var(--background, #ffffff)",
+        "font-size": "1.375rem",
+        "font-weight": "600",
+        "font-variant-numeric": "tabular-nums"
+      },
+      ".am-otp-slot[data-filled]": {
+        "border-color": "var(--ring, #a3a3a3)"
+      },
+      ".am-otp-slot[data-inked]": {
+        "border-color": "transparent",
+        "color": "var(--am-success-foreground, #ffffff)"
+      },
+      ".am-otp[data-state=\"error\"] .am-otp-slot": {
+        "border-color": "var(--destructive, #dc2626)"
+      },
+      ".am-otp-ink": {
+        "position": "absolute",
+        "inset": "0",
+        "visibility": "hidden",
+        "pointer-events": "none"
+      },
+      ".am-otp-char": {
+        "position": "relative",
+        "pointer-events": "none"
+      },
+      ".am-otp-ring": {
+        "position": "absolute",
+        "top": "0",
+        "left": "0",
+        "width": "2.75rem",
+        "height": "3.25rem",
+        "border-radius": "calc(var(--radius, 0.625rem) - 2px)",
+        "box-shadow": "0 0 0 2px var(--ring, #a3a3a3)",
+        "visibility": "hidden",
+        "pointer-events": "none"
+      },
+      ".am-otp[data-state=\"success\"][data-focused] .am-otp-slots": {
+        "outline": "2px solid var(--ring, #a3a3a3)",
+        "outline-offset": "3px",
+        "border-radius": "var(--radius, 0.625rem)"
+      },
+      ".am-otp-status": {
+        "min-height": "1.25rem",
+        "color": "var(--muted-foreground, #737373)",
+        "font-size": "0.8125rem"
+      },
+      ".am-otp[data-state=\"error\"] .am-otp-status": {
+        "color": "var(--destructive, #dc2626)"
+      }
+    }
+  },
+  "docs": "One-time code input from ARLing Motion (MIT).\nReact: import { OtpInput } from \"@/components/ui/motion-otp\".\nThe logic is in lib/arling-motion-otp.js (typed by the .d.ts next to it) and works without React: createOtp on your own markup.\nStyles were added to your global CSS under @layer components (Tailwind v4).\nWith Tailwind v3 or no Tailwind, add https://arling.sk/motion/components/otp/otp.css to your styles instead.\nLive demo and docs: https://arling.sk/motion/#otp",
+  "categories": [
+    "motion",
+    "otp",
+    "input",
+    "form"
+  ]
+}
