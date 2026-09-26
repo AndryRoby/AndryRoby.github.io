@@ -48,6 +48,10 @@ import { denZParametra, adresaDna, trvalaAdresaDna } from '../okno.mjs?v=1';
 import { jeVyriesene, porovnaj, napoveda } from './logika.mjs';
 import * as ucet from '/style/ucet.js';
 import { oslava } from '../oslava.js';
+// The play screen (../hra-ui.js): the rule in one line over the board with a
+// Rules panel, the buttons pinned in reach, the board sized to the window.
+import { hraUi } from '../hra-ui.js?v=1';
+hraUi({ pravidlo: 'Join the two nests of every pair. Paths never cross or run beside themselves, and fill every cell.' });
 
 const $ = (id) => document.getElementById(id);
 const doska = $('doska');

@@ -50,6 +50,10 @@ import { denZParametra, adresaDna, trvalaAdresaDna } from '../okno.mjs?v=1';
 import { jeVyriesene, porovnaj, napoveda } from './logika.mjs';
 import * as ucet from '/style/ucet.js';
 import { oslava } from '../oslava.js';
+// The play screen (../hra-ui.js): the rule in one line over the board with a
+// Rules panel, the buttons pinned in reach, the board sized to the window.
+import { hraUi } from '../hra-ui.js?v=1';
+hraUi({ pravidlo: 'Each number once in every row, column and block. A cage adds up to its small number, with no repeats.' });
 
 const $ = (id) => document.getElementById(id);
 const hraEl = $('hra');

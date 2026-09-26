@@ -50,6 +50,10 @@ import { denZParametra, adresaDna, trvalaAdresaDna } from '../okno.mjs?v=1';
 import { jeVyriesene, cislaSedia, porovnaj, napoveda, autoTrava } from './logika.mjs';
 import * as ucet from '/style/ucet.js';
 import { oslava } from '../oslava.js';
+// The play screen (../hra-ui.js): the rule in one line over the board with a
+// Rules panel, the buttons pinned in reach, the board sized to the window.
+import { hraUi } from '../hra-ui.js?v=1';
+hraUi({ pravidlo: 'Each tree gets its own lodge beside it. Lodges never touch, even at a corner. Numbers count lodges per line.' });
 
 const $ = (id) => document.getElementById(id);
 const doska = $('doska');
