@@ -376,7 +376,10 @@ function start() {
     if (moving || dragging || now < zoomingUntil) settledAt = now;
     // a tile printed over again waits until the view has been still for a moment
     const again = queue.length && queue[0][3] >= 3 && (moving || dragging || now - settledAt < 600);
-    if (queue.length && !again && !((moving || dragging) && slowTiles && queue[0][3] !== 0)) { if (work(moving || dragging || now - settledAt < 600 ? 6 : 10)) full = true; }
+    // printing tiles over again (or after a lost context) is extra work the device did not ask
+    // for: it must not make the engine think the device is weak (that would lower the sharpness)
+    let extra = false;
+    if (queue.length && !again && !((moving || dragging) && slowTiles && queue[0][3] !== 0)) { extra = queue[0][3] >= 3 || performance.now() < calmUntil; if (work(moving || dragging || now - settledAt < 600 ? 6 : 10)) full = true; }
     const t = clock(now);
     const wasFull = full;
     if (full) { renderFull(t); full = false; if (!moving && !dragging || layer.contains(document.activeElement)) placeButtons(); else placeFloat(); }
@@ -391,7 +394,7 @@ function start() {
     stats.frames++; stats.tiles = tiles.size;
     const w = performance.now() - w0;
     stats.work += w;
-    slow.push(w); if (slow.length > 90) slow.shift();
+    if (!extra) { slow.push(w); if (slow.length > 90) slow.shift(); }
     if (!weak && slow.length === 90 && slow.reduce((a, b) => a + b, 0) / 90 > 9) { weak = true; if (DPR > 1.5) setDpr(1.5); }
     schedule(moving);
   }
