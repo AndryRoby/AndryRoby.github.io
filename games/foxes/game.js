@@ -41,6 +41,11 @@ import { prazdnaPlocha, kopiaPlochy, jeVyriesene, porovnaj, napoveda, pouziNapov
 import { plochaHTML, legendaHTML, obsadenieHTML, indicieHTML, padHTML, uvodText, otazkaText, kusHTML, poznamkyHTML, popisBunky, coMenuje } from './plocha.mjs';
 import * as ucet from '/style/ucet.js';
 import { oslava } from '../oslava.js';
+// The play screen (../hra-ui.js): the rule in one line over the board with a
+// Rules panel and the board sized to the window. The buttons stay in the
+// grid of chips below (.vstup), so they are not pinned here.
+import { hraUi } from '../hra-ui.js?v=1';
+hraUi({ pravidlo: 'One piece in every row and column, never on a stone. The fox alone in a chamber with the lost thing has it.' });
 
 const $ = (id) => document.getElementById(id);
 const doska = $('doska');

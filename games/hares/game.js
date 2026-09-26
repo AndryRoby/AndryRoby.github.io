@@ -56,6 +56,13 @@ import { denZParametra, adresaDna, trvalaAdresaDna } from '../okno.mjs?v=1';
 import { jeVyriesene, porovnaj, napoveda } from './logika.mjs';
 import * as ucet from '/style/ucet.js';
 import { oslava } from '../oslava.js';
+// The play screen (../hra-ui.js): the rule in one line over the board with a
+// Rules panel, the buttons pinned in reach, the board sized to the window.
+// The touch rule of the harder days is added once the meadow is known.
+import { hraUi } from '../hra-ui.js?v=1';
+const PRAVIDLO = "Each number once in every row, column and block, and never twice a knight's leap apart.";
+const PRAVIDLO_DOTYK = ' Equal numbers never touch, not even at a corner.';
+const obrazovka = hraUi({ pravidlo: PRAVIDLO });
 
 const $ = (id) => document.getElementById(id);
 const hraEl = $('hra');
@@ -1484,6 +1491,7 @@ async function spusti() {
   }
   n = zadanie.n;
   rules = zadanie.rules;
+  obrazovka.pravidlo(PRAVIDLO + (rules && rules.king ? PRAVIDLO_DOTYK : ''));
   J = jadro(n, rules);
   ulozene = nacitaj(KLUC);
   v = (ulozene && Array.isArray(ulozene.v) && ulozene.v.length === n * n) ? obnovPole(ulozene.v) : prazdnaPlocha();

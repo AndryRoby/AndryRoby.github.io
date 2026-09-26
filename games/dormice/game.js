@@ -45,6 +45,10 @@ import { tabulky, klucTabulky, prazdnaPlocha, jeVyriesene, porovnaj, napoveda, a
 import { plochaHTML, pocetPolicok, legendaHTML, indicieHTML, otazkaText } from './plocha.mjs';
 import * as ucet from '/style/ucet.js';
 import { oslava } from '../oslava.js';
+// The play screen (../hra-ui.js): the rule in one line over the board with a
+// Rules panel, the buttons pinned in reach, the board sized to the window.
+import { hraUi } from '../hra-ui.js?v=1';
+hraUi({ pravidlo: 'Every clue is true. Match each dormouse with one item of every kind: cross what cannot be, tick what must.' });
 
 const $ = (id) => document.getElementById(id);
 const doska = $('doska');

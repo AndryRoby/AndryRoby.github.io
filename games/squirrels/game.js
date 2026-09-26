@@ -52,6 +52,10 @@ import { denZParametra, adresaDna, trvalaAdresaDna } from '../okno.mjs?v=1';
 import { jeVyriesene, porovnaj, napoveda } from './logika.mjs';
 import * as ucet from '/style/ucet.js';
 import { oslava } from '../oslava.js';
+// The play screen (../hra-ui.js): the rule in one line over the board with a
+// Rules panel, the buttons pinned in reach, the board sized to the window.
+import { hraUi } from '../hra-ui.js?v=1';
+hraUi({ pravidlo: 'Each sign is the sum of its run, to the right or down. Use 1 to 9, never the same number twice in a run.' });
 
 const $ = (id) => document.getElementById(id);
 const hraEl = $('hra');

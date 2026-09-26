@@ -111,3 +111,104 @@ body.noc.hra{--wrap:min(1280px,89vw)}
   .hra .hero .hra{width:min(640px,100%);margin-left:auto;margin-right:auto}
 }
 
+/* ── Hracia obrazovka ─────────────────────────────────────────────────────
+   26. 9. 2026, Andrej: „aby vedeli ako hrať stále a čo robiť, lebo teraz
+   musia scrollovať“. Návrh a rozmery: ops/games/ROZLOZENIE-HIER.md.
+   Všetko je pod body.hra-ui: triedu pridáva /games/hra-ui.js, ktorý importujú
+   game.js štrnástich denných hier. Archívy, guide, tutorial a escape tento
+   súbor načítavajú tiež, ale bez modulu sa ich nič z tohto netýka.
+   Hracia obrazovka = dátum a čas, veta pravidla s tlačidlom Rules, doska,
+   pad (ak je), prilepené tlačidlá a prvý riadok stavu. Modul zmenší dosku
+   tak, aby sa to celé zmestilo do 100svh; tu je len vzhľad. */
+
+/* Sonda na výšku 100svh: JavaScript svh priamo neprečíta. */
+.hu-sonda{position:fixed;left:0;top:0;width:0;height:100vh;height:100svh;visibility:hidden;pointer-events:none}
+
+/* Veta pravidla nad doskou, tlačidlo Rules hneď za ňou v tom istom riadku,
+   aby veta na telefóne zabrala dva riadky, nie tri. */
+body.hra-ui .hra .hu-pravidlo{margin:-2px 0 12px;max-width:none;font:14px/1.45 var(--ui);color:var(--body)}
+body.hra-ui .hu-pravidla-btn{display:inline-flex;align-items:center;min-height:30px;margin-left:4px;padding:0 12px;vertical-align:middle;
+  font:600 13px/1 var(--ui);color:var(--ink);background:transparent;border:1px solid var(--line);border-radius:999px;cursor:pointer;
+  white-space:nowrap;touch-action:manipulation}
+body.hra-ui .hu-pravidla-btn:hover{border-color:var(--ink)}
+body.hra-ui .hu-veta[hidden]+.hu-pravidla-btn{margin-left:0}
+
+/* Doska podľa výšky okna. Šírku --hu-w počíta modul; selektor je zámerne
+   ťažší než pravidlá stránok (Foxes body.noc.hra .hra .doska-obal, Herons
+   a Dormice na telefóne) aj než pravidlo pre telefón vyššie. */
+body.hra-ui .hero .hra .doska-obal.hu-vyska{width:var(--hu-w);max-width:none;
+  margin-left:calc((100% - var(--hu-w)) / 2);margin-right:calc((100% - var(--hu-w)) / 2)}
+
+/* Tlačidlá prilepené dole, v dosahu palca, v jednom riadku rovnakej šírky
+   (dlhší popis si vezme viac). Výška 44 px na dotyk. Riadok série ide pod
+   tlačidlá a prázdny sa skryje. Foxes má tlačidlá v mriežke čipov (.vstup),
+   tam modul triedu hu-lista nedáva. */
+body.hra-ui .hero .hra > .ovladanie.hu-lista{position:sticky;bottom:0;z-index:8;display:flex;flex-wrap:wrap;align-items:center;gap:6px;
+  padding:8px 0 max(8px,env(safe-area-inset-bottom,0px))}
+body.hra-ui .hero .hra > .ovladanie.hu-lista > .btn{flex:1 1 0;min-width:max-content;width:auto;height:44px;padding:0 8px;
+  justify-content:center;font-size:14px;grid-column:auto}
+body.hra-ui .hero .hra > .ovladanie.hu-lista > .btn[hidden]{display:none}
+/* 320 px: päť tlačidiel (Undo, Redo, Restart, Hint, Check) ešte v jednom riadku. */
+@media (max-width:359px){
+  body.hra-ui .hero .hra > .ovladanie.hu-lista{gap:4px}
+  body.hra-ui .hero .hra > .ovladanie.hu-lista > .btn{padding:0 5px;font-size:13px}
+}
+/* Na PC (myš) tlačidlá v prirodzenej šírke vľavo, ako boli; prilepené ostávajú. */
+@media (min-width:1100px){
+  body.hra-ui .hero .hra > .ovladanie.hu-lista > .btn{flex:0 0 auto;min-width:0;height:40px;padding:0 16px}
+}
+body.hra-ui .hero .hra > .ovladanie.hu-lista > span{order:1;flex:1 0 100%;margin:0;font:13px/1.4 var(--ui);color:var(--muted)}
+body.hra-ui .hero .hra > .ovladanie.hu-lista > span:empty{display:none}
+/* Pozadie a vlasová linka len vtedy, keď lišta naozaj visí nad obsahom
+   (hu-prilepene prepína modul). Na telefóne siaha do šírky dosky (16 px od
+   okraja), aby okraj dosky pod ňou nevykúkal. */
+body.hra-ui .hero .hra > .ovladanie.hu-lista::after{content:"";position:absolute;z-index:-1;top:0;bottom:0;left:0;right:0;
+  border-top:1px solid transparent;pointer-events:none}
+body.hra-ui .hero .hra > .ovladanie.hu-lista.hu-prilepene::after{background:var(--paper);border-top-color:var(--line)}
+@media (max-width:480px){
+  body.hra-ui .hero .hra > .ovladanie.hu-lista::after{left:calc((100% - var(--sirka-okna,100vw)) / 2 + 16px);right:calc((100% - var(--sirka-okna,100vw)) / 2 + 16px)}
+}
+/* Fokus klávesnicou (bunka, Share, stav) sa nikdy neschová pod lištu. */
+html.hra-ui{scroll-padding-bottom:calc(var(--hu-lista,0px) + 8px)}
+
+/* PC: ľavý stĺpec (pravidlo, Play, ovládanie, indície) ostáva pri doske,
+   ale len keď sa celý zmestí do okna (inak by jeho spodok nebolo vidieť);
+   o tom rozhoduje modul triedou hu-lepi. */
+@media (min-width:1100px){
+  body.hra-ui .hero > .hu-lavy.hu-lepi{position:sticky;top:calc(var(--hlavicka,70px) + 24px)}
+}
+
+/* Panel Rules: na telefóne spodný panel, od 700 px okno v strede. Obsah sú
+   odseky How to play a Controls zo sekcie Rules tej istej stránky. */
+body.hra-ui .hu-dialog{box-sizing:border-box;width:100%;max-width:100%;max-height:min(85vh,760px);max-height:min(85svh,760px);
+  margin:auto 0 0;padding:0;border:1px solid var(--line);border-bottom:0;border-radius:16px 16px 0 0;
+  background:var(--card-plna);color:var(--body);font:15px/1.55 var(--ui);overflow:hidden}
+body.hra-ui .hu-dialog[open]{display:flex;flex-direction:column}
+body.hra-ui .hu-dialog::backdrop{background:rgba(10,9,8,.72)}
+@media (min-width:700px){
+  body.hra-ui .hu-dialog{width:min(560px,calc(100% - 32px));margin:auto;border-bottom:1px solid var(--line);border-radius:16px;
+    max-height:min(80vh,720px);max-height:min(80svh,720px)}
+}
+body.hra-ui .hu-hlava{flex:none;display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:12px 14px 12px 20px;border-bottom:1px solid var(--line)}
+body.hra-ui .hu-dialog .hu-nadpis{margin:0;font:600 17px/1.3 var(--ui);letter-spacing:-.005em;color:var(--ink)}
+body.hra-ui .hu-dialog .hu-nadpis::before,body.hra-ui .hu-dialog .hu-nadpis::after,
+body.hra-ui .hu-dialog .hu-podnadpis::before,body.hra-ui .hu-dialog .hu-podnadpis::after{content:none}
+body.hra-ui .hu-zavri{flex:none;min-height:40px;padding:0 16px;font:600 14px/1 var(--ui);color:var(--ink);background:transparent;
+  border:1px solid var(--line);border-radius:999px;cursor:pointer;touch-action:manipulation}
+body.hra-ui .hu-zavri:hover{border-color:var(--ink)}
+body.hra-ui .hu-telo{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;
+  padding:16px 20px calc(20px + env(safe-area-inset-bottom,0px))}
+body.hra-ui .hu-dialog .hu-podnadpis{margin:22px 0 8px;font:600 12px/1.2 var(--ui);letter-spacing:.1em;text-transform:uppercase;color:var(--accent-light)}
+body.hra-ui .hu-dialog .hu-podnadpis:first-child{margin-top:0}
+body.hra-ui .hu-telo p{margin:0 0 10px;max-width:none;font-size:15px;line-height:1.55;color:var(--body)}
+body.hra-ui .hu-telo b{color:var(--ink)}
+body.hra-ui .hu-telo a{color:var(--accent-light)}
+body.hra-ui .hu-telo .hu-odkaz{margin:18px 0 0;padding-top:14px;border-top:1px solid var(--line)}
+@media (prefers-reduced-motion:no-preference){
+  body.hra-ui .hu-dialog[open]{animation:hu-panel .26s var(--ease)}
+  body.hra-ui .hu-dialog[open]::backdrop{animation:hu-tien .26s ease}
+}
+@keyframes hu-panel{from{transform:translateY(28px);opacity:0}to{transform:none;opacity:1}}
+@keyframes hu-tien{from{opacity:0}to{opacity:1}}
+
