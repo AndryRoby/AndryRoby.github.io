@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self';script-src 'self';style-src 'self' 'unsafe-inline';img-src 'self' data:;font-src 'self';connect-src 'none';object-src 'none';base-uri 'none';form-action 'none'">
+<meta name="theme-color" content="#f4ecd9">
+<title>Tumble Dojo · prototype 3</title>
+<style>
+/* tlačidlá bez type: stránka nemá žiadny form, takže nič neodosielajú */
+@font-face{font-family:"ARLing Sans";src:url(/fonts/arling-sans.woff2) format("woff2");font-weight:100 900;font-display:swap}
+:root{--sheet:#fbf6ea;--ink:#283046;--muted:#5a6078;--line:rgba(40,48,70,.22);--ui:"ARLing Sans",system-ui,sans-serif;--sat:env(safe-area-inset-top,0px);--sab:env(safe-area-inset-bottom,0px);--sal:env(safe-area-inset-left,0px);--sar:env(safe-area-inset-right,0px);--pas:0px;--c0:#d8532c;--c1:#3460b2;--tien:rgba(242,100,60,.55)}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#f4ecd9;color:var(--ink);font:500 16px/1.45 var(--ui);overflow:hidden;overscroll-behavior:none}
+#stage{position:fixed;inset:0;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+#stage canvas,#svet{position:absolute;inset:0;width:100%;height:100%}
+#svet{will-change:transform}
+#ui{pointer-events:none}
+button{font:inherit;color:inherit;cursor:pointer}
+.hud{position:fixed;left:0;right:0;top:max(12px,env(safe-area-inset-top));display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none;visibility:hidden}
+.sk{display:flex;align-items:center;gap:14px;height:44px;padding:0 14px;border-radius:12px;background:rgba(251,246,234,.92);box-shadow:0 0 0 1px var(--line)}
+.sk span{display:flex;gap:6px}
+.sk i{width:16px;height:16px;display:block;border:2px solid currentColor}
+.p0,.c0{color:var(--c0)}.p0 i{border-radius:50%}
+.p1,.c1{color:var(--c1)}.p1 i{transform:rotate(45deg) scale(.82);border-radius:2px}
+.sk i.on{background:currentColor}
+.sv i{border-radius:50%;border-color:var(--ink);background:var(--sheet)}
+.sv i.on{background:#ffb826}.sv i.go{background:#2c9e60;border-color:#2c9e60}
+.kb{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;font:700 12px/1 var(--ui);letter-spacing:.02em}
+.kb>div{display:flex;align-items:center;gap:6px}
+.kb>div:first-child{justify-content:flex-end}
+.kb b{padding:4px 7px;border-radius:7px;background:rgba(251,246,234,.92);box-shadow:0 0 0 1px var(--line);white-space:nowrap}
+.kb .f{display:flex;gap:3px}.kb .f i{width:8px;height:8px;border-radius:50%;border:1.5px solid #c98a00;background:var(--sheet)}.kb .f i.on{background:#ffb826}
+.kb .mid{min-width:1px;font-size:11px;color:var(--muted)}
+#menuBtn,#menuBtn2{position:fixed;left:16px;top:max(12px,env(safe-area-inset-top));height:44px;padding:0 14px;border-radius:10px;border:1px solid var(--line);background:rgba(251,246,234,.92);font-weight:600;font-size:14px;visibility:hidden}
+#menuBtn2{display:none}
+#demoL{position:fixed;left:50%;transform:translateX(-50%);top:calc(max(12px,env(safe-area-inset-top)) + 88px);margin:0;padding:5px 10px;border-radius:8px;background:rgba(251,246,234,.92);box-shadow:0 0 0 1px var(--line);font:700 12px/1.3 var(--ui);white-space:nowrap}
+.leg{position:fixed;left:16px;right:16px;bottom:max(14px,env(safe-area-inset-bottom));margin:0;display:flex;flex-wrap:wrap;justify-content:center;gap:6px 16px;font-size:13px;color:var(--muted);pointer-events:none;visibility:hidden}
+.hra .hud,.hra #menuBtn,.hra .leg{visibility:visible}
+.hra[data-rezim=demo] #menuBtn{visibility:hidden}
+#hud2,#leg2{display:none}
+kbd{font:600 12px/1 var(--ui);padding:3px 6px;border-radius:5px;border:1px solid var(--line);background:var(--sheet)}
+[data-rezim=tel2] #hud{top:auto;bottom:calc(max(12px,env(safe-area-inset-bottom)) + var(--pas));flex-direction:column-reverse}
+[data-rezim=tel2] #hud2{display:flex;transform:rotate(180deg);bottom:auto;top:calc(max(12px,env(safe-area-inset-top)) + var(--pas));flex-direction:column-reverse}
+[data-rezim=tel2] #leg{bottom:84px}
+[data-rezim=tel2] #leg2{display:flex;bottom:auto;top:84px;transform:rotate(180deg)}
+[data-rezim=tel2] #menuBtn{top:auto;bottom:calc(max(12px,env(safe-area-inset-bottom)) + var(--pas));padding:0 10px}
+[data-rezim=tel2] #menuBtn2{display:block;top:calc(max(12px,env(safe-area-inset-top)) + var(--pas));left:auto;right:16px;padding:0 10px;transform:rotate(180deg)}
+.tl[data-rezim=tel2] #menuBtn{bottom:var(--pas)}.tl[data-rezim=tel2] #menuBtn2{top:var(--pas)}
+.tl[data-rezim=tel2] #hud2{top:calc(var(--pas) + 8px)}
+.hra[data-rezim=tel2] #menuBtn2{visibility:visible}
+.tl[data-rezim=tel2] #hud{bottom:calc(var(--pas) + 8px)}
+.tl .leg{display:none}
+#uc{position:fixed;left:50%;transform:translateX(-50%);top:calc(max(12px,env(safe-area-inset-top)) + 54px);width:min(440px,calc(100vw - 32px));margin:0;padding:10px 14px 12px;border-radius:12px;background:rgba(251,246,234,.95);box-shadow:0 0 0 1px var(--line),4px 4px 0 rgba(36,142,150,.45);pointer-events:auto}
+#uc[hidden]{display:none}
+#ucN{margin:0;font:700 12px/1.2 var(--ui);letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+#ucT{margin:6px 0 0;font:700 17px/1.3 var(--ui)}
+.ucb{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.ucb .btn{height:40px;padding:0 14px;font-size:14px}
+.hlav{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 12px}.hlav h2{margin:0}.hlav .btn{padding:0 18px}
+[data-rezim=uc] .hud{visibility:hidden!important}
+.panel{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(460px,calc(100vw - 32px));max-height:calc(100dvh - 32px);overflow:auto;padding:26px 26px 20px;border-radius:14px;background:rgba(251,246,234,.97);box-shadow:0 0 0 1px var(--line),6px 6px 0 var(--tien)}
+.panel[hidden]{display:none}
+/* dioráma: panel dole na výšku, vpravo na šírku */
+.dio .panel{top:auto;bottom:max(12px,env(safe-area-inset-bottom));transform:translateX(-50%);max-height:calc(100dvh - 150px)}
+@media (min-aspect-ratio:1/1){.dio .panel{left:auto;right:max(24px,env(safe-area-inset-right));top:50%;bottom:auto;transform:translateY(-50%);width:min(440px,46vw);max-height:calc(100dvh - 24px)}}
+h1,h2{margin:0 0 6px;font-weight:800;line-height:1.1;font-size:34px}h2{font-size:28px}
+.kick{margin:0 0 2px;font:700 12px/1.2 var(--ui);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.lead{margin:0 0 16px;color:var(--muted)}
+.btns{display:grid;gap:10px;margin:0 0 14px}
+.btn{height:48px;border-radius:10px;border:2px solid var(--ink);background:var(--sheet);font-weight:700;padding:0 10px}
+.btn.hl{background:var(--ink);color:var(--sheet)}
+.btn:hover{background:#efe5cd}.btn.hl:hover{background:#3a4460}
+.btn[disabled]{opacity:.35;cursor:default}
+.lnk{height:48px;border:0;background:none;font-weight:700;text-decoration:underline;text-underline-offset:3px;color:var(--muted);justify-self:center;padding:0 12px}
+.dvoj{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tri{grid-template-columns:1fr 1fr 1fr}
+:focus-visible{outline:3px solid #3460b2;outline-offset:2px}
+.seg{display:inline-flex;border:2px solid var(--ink);border-radius:10px;overflow:hidden}
+.seg button{min-width:56px;height:44px;padding:0 12px;border:0;border-left:1px solid var(--line);background:var(--sheet);font-weight:700;font-size:14px}
+.seg button:first-child{border-left:0}
+.seg button[aria-pressed=true]{background:var(--ink);color:var(--sheet)}
+.seg.cel{display:flex;width:100%}.seg.cel button{flex:1;min-width:0;height:44px;padding:0 4px}
+.lvl{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 14px}
+.lvl span{font-size:14px;color:var(--muted)}
+.rows{display:grid;gap:12px;margin:0 0 18px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px;font-weight:600}
+.row[hidden]{display:none}
+input[type=range]{width:160px;accent-color:#283046}
+.note{margin:0 0 12px;font-size:13px;color:var(--muted)}
+.ml{margin:0 0 14px;padding:0;list-style:none;display:grid;gap:9px}
+.ml li{display:grid;grid-template-columns:26px 1fr;gap:1px 10px;font-size:14px;line-height:1.35}
+.ml b{font-weight:800;letter-spacing:.02em;font-size:13px}
+.ml span{color:var(--muted)}
+.ik{display:block;flex:none;width:20px;height:20px}.ml .ik{width:26px;height:26px;grid-row:span 2;align-self:center}
+#kaZ{display:flex;align-items:center;gap:6px}
+/* pásy: rad vytlačených kruhov, každý je tlačidlo 48 px */
+.pasy{display:flex;gap:6px;margin:0 0 10px}
+.pasy button,.pasy span{width:48px;height:48px;padding:0;border:0;background:none;display:grid;place-items:center}
+.pasy i{display:block;width:26px;height:26px;border-radius:50%;border:2px dashed rgba(40,48,70,.45)}
+.pasy .ok i{border:2px solid var(--ink);background:var(--b)}
+.pasy .nx i{width:36px;height:36px;border:4px solid var(--b);box-shadow:0 0 0 2px var(--ink)}
+.kd{margin:0 0 14px;display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:14px}
+.kd dt{font-weight:800;font-size:12px;letter-spacing:.04em;text-transform:uppercase;padding-top:2px}
+.kd dd{margin:0}
+.kd .hi{background:#ffe3a3;box-shadow:0 0 0 4px #ffe3a3;border-radius:2px}
+/* Kit */
+.vzr{display:flex;flex-wrap:wrap;gap:10px;margin:14px 0 10px}
+.vzr button{position:relative;width:56px;height:56px;padding:0;border:0;border-radius:50%;background:none}
+.vzr canvas{width:56px;height:56px;display:block}
+.vzr button[aria-pressed=true]::after{content:"";position:absolute;inset:-5px;border:3px solid var(--ink);border-radius:50%}
+.nw{position:absolute;z-index:1;right:-8px;top:-10px;padding:2px 5px;border-radius:6px;background:#ffb826;font:800 10px/1.2 var(--ui);letter-spacing:.04em}
+#kitT{margin:0 0 14px;min-height:44px;font-size:15px}
+#kitT b{font-weight:800}
+/* Record: výsledková karta s linkami */
+.rec{width:100%;border-collapse:collapse;margin:0 0 12px;font-size:14px}
+.rec td{padding:5px 0;border-bottom:1px solid var(--line)}
+.rec td:nth-child(2n){text-align:right;font-weight:800;padding-right:14px}
+.rec td:last-child{padding-right:0}
+.rec .nd{color:var(--muted);font-weight:600}
+.recs{margin:14px 0 6px;font:800 12px/1.2 var(--ui);letter-spacing:.06em;text-transform:uppercase;display:flex;justify-content:space-between}
+.mb{margin:0 0 12px;padding:0;list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:4px 14px;font-size:13px}
+.mb li{display:flex;justify-content:space-between;gap:6px;border-bottom:1px solid var(--line);padding:3px 0}
+.mb small{display:block;color:var(--muted);font-size:11px;line-height:1.25}
+.mb .nie{color:var(--muted)}.mb b{white-space:nowrap}.mb li>span{flex:1}.mb .ik{width:18px;height:18px;margin-top:1px}.mb .nie .ik{opacity:.4}
+/* koniec */
+.odm{margin:0 0 12px;padding:0;list-style:none;display:grid;gap:8px}.odm[hidden]{display:none}
+.btns.dal{grid-template-columns:1fr 1fr}.btns.dal #kDalsi{grid-column:1/-1}
+#kBtns{position:sticky;bottom:-20px;margin:0 -8px -8px;padding:10px 8px 8px;background:rgba(251,246,234,.97)}
+.odm li{display:grid;grid-template-columns:44px 1fr;gap:2px 10px;align-items:center}
+.odm canvas{width:44px;height:44px;grid-row:span 2}
+.odm b{font-weight:800;letter-spacing:.03em}
+.odm span{font-size:14px;color:var(--muted)}
+.kl{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:0 0 12px}
+.kl h3{margin:0 0 6px;font-size:14px}
+.kl ul{margin:0;padding:0;list-style:none;display:grid;gap:4px;font-size:13px}.kl li{display:flex;flex-wrap:wrap;align-items:center;gap:0 5px}
+.kl .nic{color:var(--muted)}
+.kl .n{font:800 10px/1 var(--ui);padding:2px 4px;border-radius:4px;background:#ffb826;margin-left:4px}
+#gtag{display:none;padding:3px 6px;border-radius:6px;background:rgba(251,246,234,.92);box-shadow:0 0 0 1px var(--line);font:700 11px/1 var(--ui);color:var(--muted)}
+.gentle #gtag{display:inline-block}
+#mer{position:fixed;right:16px;top:118px;margin:0;font:600 12px/1 monospace;background:var(--sheet);padding:6px 8px;border-radius:6px}
+@media (max-width:420px){.panel{padding:20px 18px 16px}h1{font-size:30px}h2{font-size:24px}.sk{gap:10px;padding:0 10px}.sk i{width:14px;height:14px}.seg button{min-width:48px;padding:0 9px}input[type=range]{width:130px}.pasy{gap:2px}.btn{font-size:15px}}
+@media (max-width:350px){.pasy button{width:44px}}
+@media (max-height:500px) and (orientation:landscape){#uc{left:16px;transform:none;top:max(64px,calc(env(safe-area-inset-top) + 64px));width:230px}#ucT{font-size:15px}#demoL{left:16px;transform:none;top:max(12px,env(safe-area-inset-top));white-space:normal;max-width:170px}.hud{gap:4px}.leg{bottom:8px}.panel{padding:16px 18px 12px}h1{font-size:26px}h2{font-size:22px}.lead{margin-bottom:10px}.btns{gap:8px;margin-bottom:8px}}
+/* telefón na šírku */
+@media (max-height:500px) and (min-aspect-ratio:1/1){
+  .btn{height:44px}.pasy{margin:0 0 4px}.dio .panel{padding:12px 16px 10px}
+  #menu .btns{grid-template-columns:repeat(3,1fr)}#menu .dvoj{display:contents}#hrajAI,#ucBtn{grid-column:1/-1}#ucBtn{height:44px}#menu .btn{font-size:14px;padding:0 4px;white-space:nowrap}
+  .btns.dal{grid-template-columns:1fr 1fr 1fr}.btns.dal #kDalsi{grid-column:auto}
+  #menu .lead,#karta .lead{margin-bottom:8px;line-height:1.3}#menu h1{font-size:24px;margin-bottom:2px}.kick,#lvlN{display:none}
+  .kd{gap:2px 10px;font-size:13px;margin-bottom:8px}#karta .btns{grid-template-columns:1fr 1fr}#karta .tri{grid-column:1/-1}#kaG{margin-bottom:6px}
+  #kit .note{display:none}.vzr{margin:8px 0 4px;gap:8px}#kitT{margin:0;min-height:0}
+  #record,#koniec{width:min(760px,calc(100vw - 32px))}.odm{grid-template-columns:1fr 1fr}.mb{grid-template-columns:1fr 1fr 1fr}.kl ul{columns:2}
+}
+</style>
+<script type="module" src="hra.js"></script>
+</head>
+<body>
+<div id="stage"><div id="svet"><canvas id="bg"></canvas><canvas id="rg"></canvas><canvas id="fg" role="img" aria-label="Ring with two round wrestlers: your side has a circle on the belt, the rival a diamond"></canvas></div><canvas id="ui" hidden aria-hidden="true"></canvas></div>
+<div class="hud" id="hud">
+  <div class="sk"><span class="p0" aria-label="Your points"><i></i><i></i><i></i></span><span class="sv" aria-hidden="true"><i></i><i></i><i></i></span><span class="p1" aria-label="Rival points"><i></i><i></i><i></i></span></div>
+  <div class="kb"><div><b class="c0">Combos 0</b><span class="f f0" aria-label="Your focus"><i></i><i></i><i></i></span></div><span class="mid"><b id="gtag">Gentle</b></span><div><span class="f f1" aria-label="Rival focus"><i></i><i></i><i></i></span><b class="c1">Combos 0</b></div></div>
+</div>
+<div class="hud" id="hud2" aria-hidden="true">
+  <div class="sk"><span class="p0"><i></i><i></i><i></i></span><span class="sv"><i></i><i></i><i></i></span><span class="p1"><i></i><i></i><i></i></span></div>
+  <div class="kb"><div><b class="c0">Combos 0</b><span class="f f0"><i></i><i></i><i></i></span></div><span class="mid"></span><div><span class="f f1"><i></i><i></i><i></i></span><b class="c1">Combos 0</b></div></div>
+</div>
+<button id="menuBtn" aria-label="Pause">Pause</button><button id="menuBtn2" aria-label="Pause for the top player">Pause</button>
+<div id="uc" hidden><div class="ucb"><p id="ucN"></p><button class="btn" id="ucSkip">Skip intro</button><button class="btn hl" id="ucHraj" hidden>Bow in</button></div><p id="ucT" aria-live="polite"></p></div>
+<p id="demoL" hidden>Demo: orange bot vs the computer, Hard</p>
+<p class="leg" id="leg"></p><p class="leg" id="leg2" aria-hidden="true"></p>
+<section class="panel" id="menu" aria-labelledby="mT">
+  <div class="pasy" id="pasy" role="group" aria-label="Belts, one for each master"></div>
+  <h1 id="mT">Tumble Dojo</h1>
+  <p class="lead" id="mNext"></p>
+  <div class="btns">
+    <button class="btn hl" id="hrajAI">Bow in</button>
+    <div class="dvoj"><button class="btn" id="volnaBtn">Free play</button><button class="btn" id="dvaBtn">Two players</button></div>
+    <div class="dvoj"><button class="btn" id="kitBtn">Kit</button><button class="btn" id="recBtn">Record</button></div>
+    <div class="dvoj"><button class="btn" id="movesBtn">Moves</button><button class="btn" id="nastBtn">Settings</button></div>
+    <button class="lnk" id="ucBtn">Intro, 45 seconds</button>
+  </div>
+  <p class="note" id="lvlN" hidden>Your first 3 matches show labels under the buttons.</p>
+</section>
+<section class="panel" id="karta" hidden aria-labelledby="kaM">
+  <p class="kick" id="kaN"></p>
+  <h2 id="kaM"></h2>
+  <p class="lead" id="kaV"></p>
+  <dl class="kd"><dt>Signature</dt><dd id="kaZ"></dd><dt>How to beat</dt><dd id="kaTip"></dd><dt>Win</dt><dd id="kaW"></dd></dl>
+  <p class="note" id="kaG" hidden></p>
+  <div class="btns">
+    <button class="btn hl" id="kaHraj">Bow in</button>
+    <button class="btn" id="kaGentle" hidden>Gentle</button>
+    <div class="tri dvoj"><button class="btn" id="kaPred">Previous</button><button class="btn" id="kaSpat">Back</button><button class="btn" id="kaDal">Next</button></div>
+  </div>
+</section>
+<section class="panel" id="kit" hidden aria-labelledby="kiT">
+  <div class="hlav"><h2 id="kiT">Kit</h2><button class="btn hl" id="kitOk">Done</button></div>
+  <div class="seg cel" id="slot" role="group" aria-label="Part of the kit"><button data-v="k">Kimono</button><button data-v="p">Print</button><button data-v="b">Belt</button><button data-v="h">Headband</button></div>
+  <div class="vzr" id="vzr" role="group" aria-label="Choices"></div>
+  <p id="kitT" aria-live="polite"></p>
+  <p class="note">Tap your wrestler to see the back. Everything unlocks by playing the computer.</p>
+</section>
+<section class="panel" id="record" hidden aria-labelledby="reT">
+  <div class="hlav"><h2 id="reT">Record</h2><button class="btn hl" id="recOk">Back</button></div>
+  <table class="rec" id="recTab"></table>
+  <p class="recs"><span>Belts</span><span id="recB"></span></p>
+  <div class="pasy" id="recP" aria-hidden="true"></div>
+  <p class="recs"><span>Move book</span><span id="recMN"></span></p>
+  <ul class="mb" id="recM"></ul>
+  <p class="note" id="recU">Progress stays in this browser. Nothing is sent.</p>
+  <div class="btns"><button class="btn" id="recReset">Reset record</button></div>
+</section>
+<section class="panel" id="volna" hidden aria-labelledby="voT">
+  <h2 id="voT">Free play</h2>
+  <p class="lead">Play the computer at any level. Wins count for your Record and your kit.</p>
+  <div class="lvl"><span>Computer</span><div class="seg" data-k="level" role="group" aria-label="Computer level"><button data-v="easy">Easy</button><button data-v="normal">Normal</button><button data-v="hard">Hard</button></div></div>
+  <div class="btns"><button class="btn hl" id="volnaHraj">Bow in</button><button class="btn" id="volnaSpat">Back</button></div>
+</section>
+<section class="panel" id="dva" hidden aria-labelledby="dvT">
+  <h2 id="dvT">Two players</h2>
+  <p class="lead">A friendly match on one device. It counts in your Record as a two player match and unlocks nothing.</p>
+  <div class="btns"><button class="btn hl" id="hrajTel">One phone</button><button class="btn" id="hrajKl">One keyboard</button><button class="btn" id="dvaSpat">Back</button></div>
+</section>
+<section class="panel" id="moves" hidden aria-labelledby="moT">
+  <h2 id="moT">Moves</h2>
+  <p class="lead" id="mD"></p>
+  <ul class="ml" id="mL"></ul>
+  <div class="btns"><button class="btn hl" id="movesOk">Back</button></div>
+</section>
+<section class="panel" id="nast" hidden aria-labelledby="nT">
+  <h2 id="nT">Settings</h2>
+  <div class="rows">
+    <div class="row"><span>Touch controls</span><div class="seg" data-k="controls"><button data-v="buttons">Buttons</button><button data-v="swipes">Swipes</button></div></div>
+    <div class="row"><span>Keys</span><div class="seg" data-k="keys"><button data-v="dojo">Dojo</button><button data-v="classic">Classic</button></div></div>
+    <div class="row"><span>Button size</span><div class="seg" data-k="size"><button data-v="S">S</button><button data-v="M">M</button><button data-v="L">L</button></div></div>
+    <label class="row" for="opa"><span>Button opacity</span><input type="range" id="opa" min="30" max="100" step="5"></label>
+    <div class="row"><span>Left handed</span><div class="seg" data-k="left"><button data-v="false">Off</button><button data-v="true">On</button></div></div>
+    <div class="row" id="rVib"><span>Vibration</span><div class="seg" data-k="vib"><button data-v="false">Off</button><button data-v="true">On</button></div></div>
+    <div class="row"><span>Sound</span><div class="seg" data-k="sound"><button data-v="false">Off</button><button data-v="true">On</button></div></div>
+  </div>
+  <div class="btns"><button class="btn hl" id="nastOk">Done</button></div>
+</section>
+<section class="panel" id="pauza" hidden aria-labelledby="pT">
+  <h2 id="pT">Paused</h2>
+  <p class="note" id="pNote">Leaving now does not count the match.</p>
+  <div class="btns"><button class="btn hl" id="pokracuj">Resume</button><button class="btn" id="pOdveta">Start again</button><button class="btn" id="pMenu">Menu</button></div>
+</section>
+<section class="panel" id="koniec" hidden aria-live="polite">
+  <h2 id="kT"></h2>
+  <p class="lead" id="kP"></p>
+  <ul class="odm" id="kOdm"></ul>
+  <p class="note" id="kCiel"></p>
+  <div class="kl"><div><h3 id="kN0" class="c0"></h3><ul id="kL0"></ul></div><div><h3 id="kN1" class="c1"></h3><ul id="kL1"></ul></div></div>
+  <p class="note" id="kSum"></p>
+  <div class="btns dvoj" id="kBtns"><button class="btn hl" id="kDalsi" hidden>Next master</button><button class="btn" id="odveta">Rematch</button><button class="btn" id="doMenu">Menu</button></div>
+</section>
+<p id="mer" hidden></p>
+</body>
+</html>
