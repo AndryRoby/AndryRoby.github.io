@@ -1,0 +1,111 @@
+/* Sanktionslisten-Prüfung: len to, čo je vlastné tejto stránke. Farby, písma,
+   hlavička, pätička, tlačidlá a tabuľky sú v /style/paper.css a /style/nastroj.css
+   (body.noc.nastroj). Mobil najprv, zlomy od 760 a 1040 px. */
+[hidden]{display:none!important}
+
+/* Úvod. Mobil: nadpis, hneď nástroj, fakty až pod ním (nástroj nesmie byť
+   pod štyrmi faktami). Počítač od 1041 px: nadpis a fakty vľavo, nástroj vpravo
+   cez oba riadky. */
+.sl-lead{padding-top:clamp(22px,3vw,34px)}
+.sl-lead .sl-lead-grid{align-items:start}
+.sl-lead h1{max-width:17ch}
+.sl-lead .sl-fakty{margin-top:0}
+@media (min-width:1041px){
+  .sl-lead .sl-lead-grid{row-gap:0}
+  .sl-lead .sl-uvod{grid-column:1;grid-row:1}
+  .sl-lead .sl-ramec{grid-column:2;grid-row:1/span 2}
+  .sl-lead .sl-fakty{grid-column:1;grid-row:2;margin-top:34px}
+}
+
+/* Pracovný rám: skutočný nástroj, nie obrázok. */
+.sl-ramec{border:1px solid var(--line);border-radius:14px;background:var(--card-plna);
+  box-shadow:var(--tien);overflow:hidden;min-width:0}
+.sl-ramec-pas{display:flex;align-items:center;gap:6px;padding:11px 14px;border-bottom:1px solid var(--line)}
+.sl-ramec-pas i{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.16);display:block;flex:none}
+/* body.noc.nastroj h2 z nastroj.css má špecificitu (0,2,2) a veľkosť 26 až 38 px;
+   tento selektor má (0,3,2), preto nadpis rámu ostane 14 px. */
+body.noc.nastroj .sl-ramec-pas h2{font:600 14px/1.2 var(--ui);letter-spacing:0;margin:0 0 0 8px;color:var(--body)}
+.sl-ramec-telo{padding:clamp(16px,2vw,22px)}
+
+.sl-drop{display:flex;flex-direction:column;align-items:flex-start;gap:14px;border:1.5px dashed rgba(255,255,255,.26);
+  border-radius:12px;padding:clamp(18px,2.4vw,26px);cursor:pointer;transition:border-color .18s var(--ease),background-color .18s var(--ease)}
+.sl-drop:hover,.sl-drop:focus-within,.sl-drop.nad{border-color:var(--accent);background:rgba(242,100,60,.05)}
+.sl-drop p{margin:0;font:500 16px/1.45 var(--ui);color:var(--ink);max-width:34ch}
+.sl-drop small{display:block;font:400 13.5px/1.5 var(--ui);color:var(--muted);margin-top:4px}
+.sl-drop-akcie{display:flex;flex-wrap:wrap;gap:10px}
+.sl-drop-akcie .btn{min-height:46px}
+
+.sl-stand{margin:14px 0 0;font:500 13.5px/1.5 var(--ui);color:var(--muted)}
+.sl-stand b{color:var(--body);font-weight:600}
+.sl-stav{margin:14px 0 0;font:500 14px/1.5 var(--ui);color:var(--body)}
+.sl-stav.chyba{color:var(--accent-light)}
+.sl-stav progress{display:block;width:100%;height:6px;margin-top:8px;accent-color:var(--accent)}
+
+/* Výsledok */
+.sl-vysledok{border-top:1px solid var(--linka-silna)}
+.sl-vysledok h2{margin-bottom:8px}
+.sl-suhrn{font:500 clamp(17px,1.3vw,19px)/1.45 var(--ui);color:var(--ink);margin:0 0 18px;max-width:62ch}
+.sl-suhrn b{font-variant-numeric:tabular-nums}
+.sl-nastavenia{display:grid;grid-template-columns:minmax(0,1fr);gap:14px;margin:0 0 20px;padding:16px;
+  border:1px solid var(--line);border-radius:12px;background:var(--card)}
+.sl-pole{display:flex;flex-direction:column;gap:6px;min-width:0}
+.sl-pole label,.sl-pole .sl-popis{font:600 12.5px/1.3 var(--ui);color:var(--muted);letter-spacing:.02em}
+.sl-pole select{min-height:44px;padding:0 12px;border:1px solid var(--line);border-radius:10px;
+  background:var(--paper);color:var(--ink);font:15px/1.3 var(--ui);max-width:100%}
+.sl-pole select:focus-visible,.sl-pole input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.sl-zaskrt{display:flex;align-items:center;gap:10px;min-height:44px;font:15px/1.3 var(--ui);color:var(--body);cursor:pointer}
+.sl-zaskrt input{width:20px;height:20px;accent-color:var(--accent);flex:none}
+.sl-prah{display:flex;align-items:center;gap:12px}
+.sl-prah input{flex:1 1 auto;min-width:0;accent-color:var(--accent);height:44px}
+.sl-prah output{font:600 16px/1 var(--ui);color:var(--ink);font-variant-numeric:tabular-nums;min-width:2.2em;text-align:right}
+.sl-akcie{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+
+.sl-tab td{font:15px/1.45 var(--ui);color:var(--body);overflow-wrap:anywhere}
+.sl-tab td.sl-cislo{font-variant-numeric:tabular-nums;color:var(--muted);white-space:nowrap}
+.sl-tab .sl-skore{font:600 17px/1 var(--ui);color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap}
+.sl-tab .sl-meno{color:var(--ink);font-weight:600}
+.sl-tab .sl-ref{display:block;margin-top:3px;font-size:13.5px;color:var(--muted)}
+.sl-tab .sl-ref a{color:var(--body)}
+.sl-prazdne{margin:0;padding:18px;border:1px solid var(--line);border-radius:12px;background:var(--card);
+  font:15.5px/1.5 var(--ui);color:var(--body);max-width:none}
+.sl-verzia{margin:16px 0 0;font:13.5px/1.55 var(--ui);color:var(--muted);max-width:none;overflow-wrap:anywhere}
+.sl-verzia code{font-size:12.5px;color:var(--body);overflow-wrap:anywhere;word-break:break-all}
+
+/* Ponuka stráženia: pravdivá, bez ceny, bez naliehania. */
+.sl-straz{margin-top:clamp(28px,3.4vw,44px);padding-top:clamp(20px,2.4vw,28px);border-top:1px solid var(--line);max-width:68ch}
+.sl-straz h3{margin-bottom:10px}
+.sl-straz p{font:16px/1.55 var(--ui);color:var(--body)}
+.sl-straz ul{margin:0 0 16px;padding-left:1.1em;font:16px/1.55 var(--ui);color:var(--body)}
+.sl-straz li{margin:0 0 6px}
+.sl-straz-dik{font:500 15px/1.5 var(--ui);color:var(--ink);margin:12px 0 0}
+
+/* Textové sekcie */
+.sl-text p,.sl-text li{font:16.5px/1.6 var(--ui);color:var(--body);max-width:68ch}
+.sl-text ul{padding-left:1.1em;margin:0 0 14px}
+.sl-text li{margin:0 0 8px}
+.sl-text b{color:var(--ink);font-weight:600}
+.sl-cisla{list-style:none;padding:0;margin:18px 0 0;border-top:1px solid var(--linka-silna);max-width:68ch}
+.sl-cisla li{display:grid;grid-template-columns:minmax(0,1fr);gap:2px;padding:12px 0;border-bottom:1px solid var(--line);margin:0}
+.sl-cisla b{font:600 18px/1.3 var(--ui);color:var(--ink);font-variant-numeric:tabular-nums}
+.sl-cisla span{font:15px/1.5 var(--ui);color:var(--body)}
+
+.sl-otazky details{border-top:1px solid var(--line);padding:15px 0;max-width:74ch}
+.sl-otazky details:last-of-type{border-bottom:1px solid var(--line)}
+.sl-otazky summary{cursor:pointer;font:600 clamp(17px,1.4vw,19px)/1.35 var(--display);color:var(--ink);
+  list-style:none;display:flex;justify-content:space-between;gap:12px;min-height:44px;align-items:center}
+.sl-otazky summary::-webkit-details-marker{display:none}
+.sl-otazky summary::after{content:"+";color:var(--accent);flex:none;font-family:var(--ui)}
+.sl-otazky details[open] summary::after{content:"\2212"}
+.sl-otazky details p{margin:10px 0 0;font:16px/1.6 var(--ui);color:var(--body)}
+
+@media (min-width:760px){
+  .sl-nastavenia{grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) minmax(0,1fr);align-items:end}
+  .sl-akcie{grid-column:1/-1}
+  .sl-cisla li{grid-template-columns:minmax(0,14ch) minmax(0,1fr);gap:18px;align-items:baseline}
+}
+@media (max-width:600px){
+  .sl-tab td.sl-cislo{white-space:normal}
+}
+@media (prefers-reduced-motion:reduce){
+  .sl-drop{transition:none}
+}
