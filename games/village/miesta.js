@@ -126,7 +126,7 @@ const K = 1.35;
    the village with a small "opening soon" board and no link. When a puzzle
    goes live (games/zoznam.json), add its key here and to the list in
    index.html. */
-export const LIVE = new Set(['hedgehogs', 'dormice', 'badgers', 'hares', 'voles', 'swans', 'cranes', 'otters', 'magpies', 'squirrels', 'herons']);
+export const LIVE = new Set(['hedgehogs', 'dormice', 'badgers', 'hares', 'voles', 'swans', 'cranes', 'otters', 'magpies', 'squirrels', 'herons', 'owls', 'beavers', 'foxes']);
 
 /* The house that is open right now. Its family does one small thing when the
    card opens (a hedgehog wakes, a walkway is laid) and then stays like that. */
