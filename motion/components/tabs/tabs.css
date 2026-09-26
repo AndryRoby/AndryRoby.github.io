@@ -1,0 +1,88 @@
+/* ARLing Motion: Tabs. The indicator and panels move by the core (inline styles), no CSS transitions. */
+
+.am-tabs {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.am-tabs-list {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border-radius: var(--radius, 0.625rem);
+  background: var(--muted, #f5f5f5);
+}
+
+.am-tabs-list[aria-orientation="vertical"] {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+/* The pill behind the selected tab: one shape, its width and position come from the core. */
+.am-tabs-indicator {
+  position: absolute;
+  top: 0.25rem;
+  bottom: 0.25rem;
+  left: 0;
+  width: 0;
+  border-radius: calc(var(--radius, 0.625rem) - 2px);
+  background: var(--background, #ffffff);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.06), 0 0 0 1px var(--border, #e5e5e5);
+  pointer-events: none;
+}
+
+.am-tabs-list[aria-orientation="vertical"] .am-tabs-indicator {
+  top: 0;
+  right: 0.25rem;
+  bottom: auto;
+  left: 0.25rem;
+  width: auto;
+  height: 0;
+}
+
+.am-tabs-list [role="tab"] {
+  position: relative;
+  z-index: 1;
+  height: 2rem;
+  padding: 0 0.875rem;
+  border: 0;
+  border-radius: calc(var(--radius, 0.625rem) - 2px);
+  background: transparent;
+  color: var(--muted-foreground, #737373);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+/* Small elements switch colour at once, never through a blend. */
+.am-tabs-list [role="tab"][aria-selected="true"] {
+  color: var(--foreground, #0a0a0a);
+}
+
+.am-tabs-list [role="tab"]:focus-visible,
+.am-tabs-panels [role="tabpanel"]:focus-visible {
+  outline: 2px solid var(--ring, #a3a3a3);
+  outline-offset: 2px;
+}
+
+.am-tabs-list [role="tab"]:disabled,
+.am-tabs-list [role="tab"][aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* All panels share one grid cell, so the height is the tallest panel and nothing shifts. */
+.am-tabs-panels {
+  display: grid;
+}
+
+.am-tabs-panels > [role="tabpanel"] {
+  grid-area: 1 / 1;
+  min-width: 0;
+  border-radius: calc(var(--radius, 0.625rem) - 2px);
+}

@@ -1,0 +1,114 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "carousel",
+  "type": "registry:ui",
+  "title": "Carousel",
+  "description": "A carousel you can drag and throw. The spring starts from your release speed and lands on the slide the throw points to; buttons and arrow keys use the same spring. No auto rotation.",
+  "author": "ARLing s. r. o. (https://arling.sk)",
+  "registryDependencies": [
+    "https://arling.sk/motion/r/core.json"
+  ],
+  "files": [
+    {
+      "path": "registry/arling/lib/arling-motion-carousel.js",
+      "content": "'use strict';\n// ARLing Motion: carousel. MIT licence, https://arling.sk/motion/ . Installed from the ARLing\n// Motion registry (source: components/carousel/carousel.js). Plain JavaScript; the .d.ts next to it types the exports.\n/*\n * ARLing Motion: Carousel with drag and snap.\n * The strip of slides follows your pointer 1:1 (past the first or last slide it resists).\n * When you let go, the spring starts from where the strip is and how fast it moved, and it\n * lands on the slide the throw points to, so a quick flick can pass more than one slide.\n * The buttons and arrow keys glide to the neighbour on the same spring.\n *\n * Markup (WAI-ARIA APG, carousel without auto rotation):\n *   <section class=\"am-carousel\" aria-roledescription=\"carousel\" aria-label=\"Featured\">\n *     <div class=\"am-carousel-viewport\">\n *       <div class=\"am-carousel-track\">\n *         <div class=\"am-carousel-slide\">...</div>\n *       </div>\n *     </div>\n *     <div class=\"am-carousel-controls\">\n *       <button class=\"am-carousel-prev\" aria-label=\"Previous slide\"></button>\n *       <button class=\"am-carousel-next\" aria-label=\"Next slide\"></button>\n *     </div>\n *   </section>\n * Slides get role=\"group\", aria-roledescription=\"slide\" and \"3 of 5\" as their name; slides\n * out of view are inert. The track is a polite live region (there is no auto rotation).\n *\n * Keyboard: the Previous and Next buttons (Enter or Space); Left and Right, Home and End\n * anywhere inside the carousel except in a text field. At the ends the button gets\n * aria-disabled=\"true\" and stays focusable.\n * MIT licence.\n */\nimport { track, driver, steps, attr, JUMP, PRESETS } from './arling-motion';\n\n// ------------------------------------------------------------------ helpers\n\nconst clamp01 = (x) => (x < 0 ? 0 : x > 1 ? 1 : x);\nconst px = (v) => `${Math.round(v * 100) / 100}px`;\n\nlet uid = 0;\nconst ensureId = (el, prefix) => el.id || (el.id = `${prefix}-${++uid}`);\n\n/** Easing of a scheduled pointer path, with its slope (for the release velocity). */\nexport const EASE = {\n  linear: [(u) => u, () => 1],\n  in: [(u) => u * u, (u) => 2 * u],\n  out: [(u) => 1 - (1 - u) * (1 - u), (u) => 2 * (1 - u)],\n  inOut: [(u) => u * u * (3 - 2 * u), (u) => 6 * u * (1 - u)],\n};\n\n/** A recorded pointer path [[t, offset]] as a pure function of time; ends at velocity v. */\nfunction pathFn(samples, v) {\n  const [t1, end] = samples[samples.length - 1];\n  const tail = 1 / 480;\n  return (t) => {\n    if (t >= t1 - tail) return end + v * (t - t1);\n    if (t <= samples[0][0]) return samples[0][1];\n    for (let i = 1; i < samples.length; i++) {\n      const [tb, b] = samples[i];\n      if (t <= tb) {\n        const [ta, a] = samples[i - 1];\n        return tb === ta ? b : a + ((b - a) * (t - ta)) / (tb - ta);\n      }\n    }\n    return end;\n  };\n}\n\n/** Pointer velocity over the last 0.1 s of samples, units per second. */\nfunction releaseVelocity(samples, window = 0.1) {\n  if (samples.length < 2) return 0;\n  const [t1, end] = samples[samples.length - 1];\n  let j = samples.length - 2;\n  while (j > 0 && t1 - samples[j][0] < window) j--;\n  const [t0, start] = samples[j];\n  return t1 > t0 ? (end - start) / (t1 - t0) : 0;\n}\n\n// ------------------------------------------------------------------ carousel\n\n/** Seconds of the throw added to the release position before choosing a slide. */\nexport const THROW = 0.2;\n/** How far the strip may be pulled past either end, px (it approaches this). */\nexport const RUBBER = 64;\n/** A pointer must move this far sideways before a drag starts, px. */\nconst SLOP = 4;\nconst SNAP = PRESETS.morph;\n\n/**\n * createCarousel({ root, index, onChange, clock, reduced })\n * drag(dx, { t, duration, ease }) schedules a pointer drag for demos.\n * Returns { go, next, prev, drag, index, count, measure, seek, settled, destroy, driver,\n * root, viewport, track, slides, prevButton, nextButton, keep }.\n */\nexport function createCarousel(o) {\n  const root = o.root;\n  const doc = root.ownerDocument || document;\n  const viewport = root.querySelector('.am-carousel-viewport');\n  const strip = root.querySelector('.am-carousel-track');\n  const slides = [...strip.querySelectorAll('.am-carousel-slide')];\n  const prevButton = root.querySelector('.am-carousel-prev');\n  const nextButton = root.querySelector('.am-carousel-next');\n  if (!slides.length) throw new Error('createCarousel: no .am-carousel-slide');\n\n  attr(root, 'aria-roledescription', 'carousel');\n  if (root.tagName !== 'SECTION' && !root.hasAttribute('role')) attr(root, 'role', 'region');\n  attr(strip, 'aria-live', 'polite');\n  ensureId(strip, 'am-carousel-track');\n  slides.forEach((s, i) => {\n    attr(s, 'role', 'group');\n    attr(s, 'aria-roledescription', 'slide');\n    if (!s.hasAttribute('aria-label') && !s.hasAttribute('aria-labelledby')) attr(s, 'aria-label', `${i + 1} of ${slides.length}`);\n  });\n  for (const b of [prevButton, nextButton]) {\n    if (!b) continue;\n    if (b.tagName === 'BUTTON' && !b.hasAttribute('type')) attr(b, 'type', 'button');\n    attr(b, 'aria-controls', strip.id);\n  }\n  if (prevButton && !prevButton.hasAttribute('aria-label') && !prevButton.textContent.trim()) attr(prevButton, 'aria-label', 'Previous slide');\n  if (nextButton && !nextButton.hasAttribute('aria-label') && !nextButton.textContent.trim()) attr(nextButton, 'aria-label', 'Next slide');\n\n  // ---------------------------------------------------------------- geometry\n  let geo;\n  function measureGeo() {\n    const vr = viewport.getBoundingClientRect();\n    const r0 = slides[0].getBoundingClientRect();\n    const boxes = slides.map((s) => {\n      const r = s.getBoundingClientRect();\n      return { left: r.left - r0.left, width: r.width };\n    });\n    const last = boxes[boxes.length - 1];\n    const content = last.left + last.width;\n    const max = Math.max(0, content - vr.width);\n    // one snap per distinct resting place: the last slides share the end of the strip\n    const snaps = [];\n    for (const b of boxes) {\n      const s = Math.min(b.left, max);\n      if (!snaps.length || s - snaps[snaps.length - 1] > 0.5) snaps.push(s);\n    }\n    return { vw: vr.width, boxes, max, snaps };\n  }\n  geo = measureGeo();\n\n  const clampIndex = (i) => Math.max(0, Math.min(geo.snaps.length - 1, i));\n  const first = clampIndex(o.index ?? 0);\n  const idx = steps(first);\n  let x = track(-geo.snaps[first], SNAP);\n  // Every change since the last compaction, kept so measure() can plan them again on a new\n  // layout without touching the timeline of a scheduled demo (api.keep).\n  let plan = [];\n  let live = null; // a drag in progress: { t0, grab, startX, startY, samples, active }\n  let moved = false;\n  let endT = -Infinity;\n  const mark = (t) => { if (t > endT) endT = t; };\n  const settledAll = (t) => x.settled(t);\n\n  /** Past either end the strip resists: it approaches RUBBER px. */\n  const shape = (v) => {\n    const lo = -geo.max;\n    if (v > 0) return RUBBER * (1 - 1 / (1 + v / RUBBER));\n    if (v < lo) return lo - RUBBER * (1 - 1 / (1 + (lo - v) / RUBBER));\n    return v;\n  };\n\n  function xAt(t, reduced) {\n    if (reduced) return x.target(t);\n    if (live && live.active && t >= live.t0) return shape(live.grab + live.samples[live.samples.length - 1][1]);\n    return x.at(t);\n  }\n\n  function paint(t, { reduced }) {\n    const i = idx.at(t);\n    strip.style.transform = `translateX(${px(xAt(t, reduced))})`;\n    const view = geo.snaps[i];\n    slides.forEach((s, j) => {\n      const b = geo.boxes[j];\n      const inView = b.left >= view - 1 && b.left + b.width <= view + geo.vw + 1;\n      attr(s, 'inert', inView ? null : true);\n      attr(s, 'aria-hidden', inView ? null : 'true');\n      attr(s, 'data-state', inView ? 'active' : 'inactive');\n    });\n    if (prevButton) attr(prevButton, 'aria-disabled', i === 0 ? 'true' : null);\n    if (nextButton) attr(nextButton, 'aria-disabled', i === geo.snaps.length - 1 ? 'true' : null);\n    attr(root, 'data-index', String(i));\n  }\n\n  function draw(t, s) {\n    paint(t, s);\n    if (!api.keep && !live && t >= endT && idx.ev.length && settledAll(t)) {\n      x.compact(t);\n      idx.compact();\n      plan = [];\n    }\n  }\n\n  const d = driver(draw, { clock: o.clock, reduced: o.reduced });\n  d.busy = (t) => !!live || t < endT || !settledAll(t);\n  const commit = () => { paint(d.now(), { reduced: d.reduced }); d.kick(); };\n  const when = (opt) => (opt && opt.t !== undefined ? { t: opt.t, live: false } : { t: d.now(), live: true });\n\n  /** Applies one change on the current geometry; returns the new slide or -1. */\n  function apply(op) {\n    if (op.k === 'drag') {\n      x.drag(op.t0, op.t1, (t, grab) => shape(grab + op.offset(t)), SNAP);\n      const to = landing(x.at(op.t1), op.v);\n      const changed = to !== idx.last;\n      idx.set(op.t1, to);\n      x.to(op.t1, -geo.snaps[to], SNAP);\n      mark(op.t1);\n      return changed ? to : -1;\n    }\n    const to = clampIndex(op.i);\n    if (op.k === 'go' && to === idx.last) return -1;\n    if (to !== idx.last) idx.set(op.t, to);\n    x.to(op.t, -geo.snaps[to], op.k === 'jump' ? JUMP : SNAP);\n    mark(op.t);\n    return to;\n  }\n\n  const run = (op) => { plan.push(op); return apply(op); };\n\n  function go(i, opt = {}) {\n    const { t, live: now } = when(opt);\n    const to = run({ k: 'go', t, i });\n    if (to < 0) return api;\n    commit();\n    if (now && o.onChange) o.onChange(to);\n    return api;\n  }\n\n  /** The slide a throw lands on: nearest resting place to where the velocity points. */\n  function landing(pos, v) {\n    const aim = -(pos + v * THROW);\n    let best = 0;\n    geo.snaps.forEach((s, i) => { if (Math.abs(s - aim) < Math.abs(geo.snaps[best] - aim)) best = i; });\n    return best;\n  }\n\n  /** Commits a drag from t0 to t1: offset(t) is the pointer's travel in px, v its velocity. */\n  function commitDrag(t0, t1, offset, v) {\n    return run({ k: 'drag', t0, t1, offset, v });\n  }\n\n  /** Scheduled drag for demos: the pointer travels dx px from t over duration s. */\n  function drag(dx, opt = {}) {\n    const t0 = opt.t ?? d.now();\n    const dur = opt.duration ?? 0.4;\n    const [e, slope] = EASE[opt.ease || 'inOut'];\n    commitDrag(t0, t0 + dur, (t) => dx * e(clamp01((t - t0) / dur)), (dx * slope(1)) / dur);\n    commit();\n    return api;\n  }\n\n  const near = (a, b) => Math.abs(a - b) < 0.5;\n  const sameGeo = (a, b) => near(a.vw, b.vw) && a.snaps.length === b.snaps.length && a.snaps.every((s, k) => near(s, b.snaps[k]))\n    && a.boxes.length === b.boxes.length && a.boxes.every((bx, k) => near(bx.left, b.boxes[k].left) && near(bx.width, b.boxes[k].width));\n\n  /**\n   * Re-measure after a layout change. Nothing happens when the geometry is the same. Live, the\n   * strip jumps to the current slide without motion. With api.keep (a scheduled demo) the\n   * timeline is not touched: every change since the start is planned again on the new layout.\n   */\n  function measure() {\n    const prev = geo;\n    geo = measureGeo();\n    if (sameGeo(prev, geo)) return api;\n    if (api.keep) {\n      const ops = plan;\n      const start = clampIndex(idx.initial);\n      idx.initial = start;\n      idx.ev = [];\n      x = track(-geo.snaps[start], SNAP);\n      endT = -Infinity;\n      plan = [];\n      for (const op of ops) run(op);\n      commit();\n      return api;\n    }\n    run({ k: 'jump', t: d.now(), i: idx.last });\n    commit();\n    return api;\n  }\n\n  // ---------------------------------------------------------------- live input\n  const listeners = [];\n  const on = (target, type, fn, capture) => { target.addEventListener(type, fn, capture); listeners.push([target, type, fn, capture]); };\n\n  if (prevButton) on(prevButton, 'click', () => go(idx.last - 1));\n  if (nextButton) on(nextButton, 'click', () => go(idx.last + 1));\n  on(root, 'keydown', (e) => {\n    const target = e.target;\n    if (target && target.closest && target.closest('input, textarea, select, [contenteditable]')) return;\n    let to = null;\n    if (e.key === 'ArrowLeft') to = idx.last - 1;\n    else if (e.key === 'ArrowRight') to = idx.last + 1;\n    else if (e.key === 'Home') to = 0;\n    else if (e.key === 'End') to = geo.snaps.length - 1;\n    if (to === null) return;\n    e.preventDefault();\n    go(to);\n  });\n\n  on(viewport, 'pointerdown', (e) => {\n    if (e.button !== undefined && e.button !== 0) return;\n    if (e.target && e.target.closest && e.target.closest('input, textarea, select, [data-am-no-drag]')) return;\n    const t0 = d.now();\n    live = { t0, grab: x.at(t0), startX: e.clientX, startY: e.clientY, samples: [[t0, 0]], active: false, id: e.pointerId };\n    moved = false;\n  });\n  on(viewport, 'pointermove', (e) => {\n    if (!live) return;\n    const dx = e.clientX - live.startX;\n    if (!live.active) {\n      if (Math.abs(dx) < SLOP) return;\n      if (Math.abs(e.clientY - live.startY) > Math.abs(dx)) { live = null; return; } // a vertical scroll\n      live.active = true;\n      moved = true;\n      if (viewport.setPointerCapture && e.pointerId !== undefined) { try { viewport.setPointerCapture(e.pointerId); } catch { /* not captured */ } }\n    }\n    live.samples.push([d.now(), dx]);\n    commit();\n  });\n  const finish = (e) => {\n    if (!live) return;\n    const cur = live;\n    live = null;\n    if (!cur.active) return;\n    const t1 = Math.max(d.now(), cur.t0 + 1e-6);\n    const dx = e && e.type !== 'pointercancel' && e.clientX !== undefined ? e.clientX - cur.startX : cur.samples[cur.samples.length - 1][1];\n    const samples = cur.samples.concat([[t1, dx]]);\n    const v = releaseVelocity(samples);\n    const to = commitDrag(cur.t0, t1, pathFn(samples, v), v);\n    commit();\n    if (to >= 0 && o.onChange) o.onChange(to);\n  };\n  on(viewport, 'pointerup', finish);\n  on(viewport, 'pointercancel', finish);\n  // the click at the end of a drag must not follow a link or press a button in a slide\n  on(viewport, 'click', (e) => {\n    if (!moved) return;\n    moved = false;\n    e.preventDefault();\n    e.stopPropagation();\n  }, true);\n\n  let ro = null;\n  if (typeof ResizeObserver === 'function') {\n    ro = new ResizeObserver(() => measure());\n    ro.observe(viewport);\n  }\n\n  const api = {\n    root,\n    viewport,\n    track: strip,\n    slides,\n    prevButton,\n    nextButton,\n    driver: d,\n    keep: false,\n    go,\n    next: (opt) => go(idx.last + 1, opt),\n    prev: (opt) => go(idx.last - 1, opt),\n    drag,\n    measure,\n    index: (t) => (t === undefined ? idx.last : idx.at(t)),\n    count: () => geo.snaps.length,\n    /** Distance between the first two slides, px (one step of the strip). */\n    step: () => (geo.boxes[1] ? geo.boxes[1].left : geo.boxes[0].width),\n    seek: (t) => paint(t, { reduced: d.reduced }),\n    settled: (t) => !live && t >= endT && settledAll(t),\n    destroy() {\n      d.stop();\n      if (ro) ro.disconnect();\n      for (const [target, type, fn, capture] of listeners) target.removeEventListener(type, fn, capture);\n    },\n  };\n  paint(d.now(), { reduced: d.reduced });\n  return api;\n}\n",
+      "type": "registry:lib"
+    },
+    {
+      "path": "registry/arling/lib/arling-motion-carousel.d.ts",
+      "content": "// ARLing Motion: carousel. MIT licence, https://arling.sk/motion/ . Types for the plain JavaScript file next to this one.\nexport declare const EASE: any;\nexport declare const THROW: any;\nexport declare const RUBBER: any;\nexport declare function createCarousel(...args: any[]): any;\n",
+      "type": "registry:lib"
+    },
+    {
+      "path": "registry/arling/ui/motion-carousel.tsx",
+      "content": "'use client';\n// ARLing Motion: Carousel for React. A thin wrapper: the vanilla component owns the 1:1 drag,\n// the throw and snap, the buttons, ARIA and the keyboard.\n// In the registry the core lives at '@/lib/arling-motion' and this logic at\n// '@/lib/arling-motion-carousel'.\nimport * as React from 'react';\nimport { createCarousel } from '@/lib/arling-motion-carousel';\n\ntype CarouselApi = { go: (i: number) => unknown; index: () => number; destroy: () => void };\n\nconst cx = (...c: Array<string | false | null | undefined>) => c.filter(Boolean).join(' ');\n\nexport interface CarouselProps {\n  /** Accessible name of the carousel, for example \"Featured plans\". */\n  label: string;\n  /** Slide shown first. */\n  defaultIndex?: number;\n  /** Controlled slide (optional). */\n  index?: number;\n  onIndexChange?: (index: number) => void;\n  previousLabel?: string;\n  nextLabel?: string;\n  reducedMotion?: boolean;\n  className?: string;\n  slideClassName?: string;\n  /** Each child is one slide. */\n  children?: React.ReactNode;\n}\n\n/**\n * <Carousel label=\"Plans\"><PlanCard /><PlanCard /></Carousel>\n * The slides are read once when the carousel mounts; give it a new key when they change.\n */\nexport function Carousel({\n  label,\n  defaultIndex = 0,\n  index,\n  onIndexChange,\n  previousLabel = 'Previous slide',\n  nextLabel = 'Next slide',\n  reducedMotion,\n  className,\n  slideClassName,\n  children,\n}: CarouselProps) {\n  const ref = React.useRef<HTMLElement>(null);\n  const apiRef = React.useRef<CarouselApi | null>(null);\n  const changeRef = React.useRef(onIndexChange);\n  changeRef.current = onIndexChange;\n\n  React.useEffect(() => {\n    if (!ref.current) return;\n    const api = createCarousel({\n      root: ref.current,\n      index: index ?? defaultIndex,\n      reduced: reducedMotion,\n      onChange: (i: number) => changeRef.current?.(i),\n    }) as unknown as CarouselApi;\n    apiRef.current = api;\n    return () => {\n      api.destroy();\n      apiRef.current = null;\n    };\n    // eslint-disable-next-line react-hooks/exhaustive-deps\n  }, [reducedMotion]);\n\n  React.useEffect(() => {\n    const api = apiRef.current;\n    if (api && index !== undefined && index !== api.index()) api.go(index);\n  }, [index]);\n\n  const slides = React.Children.toArray(children);\n  return (\n    <section ref={ref} className={cx('am-carousel', className)} aria-roledescription=\"carousel\" aria-label={label}>\n      <div className=\"am-carousel-viewport\">\n        <div className=\"am-carousel-track\" aria-live=\"polite\">\n          {slides.map((slide, i) => (\n            <div\n              key={i}\n              className={cx('am-carousel-slide', slideClassName)}\n              role=\"group\"\n              aria-roledescription=\"slide\"\n              aria-label={`${i + 1} of ${slides.length}`}\n            >\n              {slide}\n            </div>\n          ))}\n        </div>\n      </div>\n      <div className=\"am-carousel-controls\">\n        <button type=\"button\" className=\"am-carousel-prev\" aria-label={previousLabel} />\n        <button type=\"button\" className=\"am-carousel-next\" aria-label={nextLabel} />\n      </div>\n    </section>\n  );\n}\n\nexport default Carousel;\n",
+      "type": "registry:ui"
+    }
+  ],
+  "css": {
+    "@layer components": {
+      ".am-carousel": {
+        "display": "grid",
+        "gap": "0.75rem",
+        "width": "100%",
+        "color": "var(--foreground, #0a0a0a)"
+      },
+      ".am-carousel-viewport": {
+        "overflow": "hidden",
+        "border-radius": "var(--radius, 0.625rem)",
+        "touch-action": "pan-y",
+        "cursor": "grab",
+        "user-select": "none"
+      },
+      ".am-carousel-viewport:active": {
+        "cursor": "grabbing"
+      },
+      ".am-carousel-track": {
+        "display": "flex",
+        "gap": "0.75rem"
+      },
+      ".am-carousel-slide": {
+        "flex": "0 0 min(80%, 18rem)",
+        "min-width": "0",
+        "padding": "1.25rem",
+        "border": "1px solid var(--border, #e5e5e5)",
+        "border-radius": "var(--radius, 0.625rem)",
+        "background": "var(--background, #ffffff)",
+        "box-shadow": "0 1px 2px rgb(0 0 0 / 0.04)"
+      },
+      ".am-carousel-slide img": {
+        "display": "block",
+        "max-width": "100%",
+        "pointer-events": "none",
+        "-webkit-user-drag": "none"
+      },
+      ".am-carousel-controls": {
+        "display": "flex",
+        "justify-content": "flex-end",
+        "gap": "0.5rem"
+      },
+      ".am-carousel-prev, .am-carousel-next": {
+        "display": "inline-grid",
+        "place-items": "center",
+        "width": "2.25rem",
+        "height": "2.25rem",
+        "padding": "0",
+        "border": "1px solid var(--border, #e5e5e5)",
+        "border-radius": "9999px",
+        "background": "var(--background, #ffffff)",
+        "color": "var(--foreground, #0a0a0a)",
+        "cursor": "pointer"
+      },
+      ".am-carousel-prev::before, .am-carousel-next::before": {
+        "content": "\"\"",
+        "width": "0.5rem",
+        "height": "0.5rem",
+        "border-bottom": "1.5px solid currentColor",
+        "border-left": "1.5px solid currentColor"
+      },
+      ".am-carousel-prev::before": {
+        "translate": "1px 0",
+        "rotate": "45deg"
+      },
+      ".am-carousel-next::before": {
+        "translate": "-1px 0",
+        "rotate": "-135deg"
+      },
+      ".am-carousel-prev:focus-visible, .am-carousel-next:focus-visible, .am-carousel-slide :focus-visible": {
+        "outline": "2px solid var(--ring, #a3a3a3)",
+        "outline-offset": "2px"
+      },
+      ".am-carousel-prev[aria-disabled=\"true\"], .am-carousel-next[aria-disabled=\"true\"]": {
+        "opacity": "0.4",
+        "cursor": "default"
+      }
+    }
+  },
+  "docs": "Carousel from ARLing Motion (MIT).\nReact: import { Carousel } from \"@/components/ui/motion-carousel\".\nThe logic is in lib/arling-motion-carousel.js (typed by the .d.ts next to it) and works without React: createCarousel on your own markup.\nStyles were added to your global CSS under @layer components (Tailwind v4).\nWith Tailwind v3 or no Tailwind, add https://arling.sk/motion/components/carousel/carousel.css to your styles instead.\nLive demo and docs: https://arling.sk/motion/#carousel",
+  "categories": [
+    "motion",
+    "carousel",
+    "slider",
+    "gesture"
+  ]
+}

@@ -1,0 +1,138 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "command",
+  "type": "registry:ui",
+  "title": "Command menu",
+  "description": "A Cmd+K command menu that filters without a cut: rows that stop matching leave in place, the rest slide into the gaps and one highlight moves between rows.",
+  "author": "ARLing s. r. o. (https://arling.sk)",
+  "registryDependencies": [
+    "https://arling.sk/motion/r/core.json"
+  ],
+  "files": [
+    {
+      "path": "registry/arling/lib/arling-motion-command.js",
+      "content": "'use strict';\n// ARLing Motion: command. MIT licence, https://arling.sk/motion/ . Installed from the ARLing\n// Motion registry (source: components/command/command.js). Plain JavaScript; the .d.ts next to it types the exports.\n/*\n * ARLing Motion: Command menu (the Cmd+K palette).\n * Typing filters the list without a cut: rows that no longer match leave in place, the\n * rows that stay slide up into the gaps, rows that match again enter, and the list's\n * height follows on a spring. One highlight marks the chosen row; it stretches toward the\n * next row with its leading edge first and the trailing edge catches up.\n *\n * Markup:\n *   <div class=\"am-command\">\n *     <input class=\"am-command-input\" placeholder=\"Type a command or search\" aria-label=\"Command\">\n *     <div class=\"am-command-list\" role=\"listbox\" aria-label=\"Commands\">\n *       <div role=\"option\" data-value=\"new-file\" data-keywords=\"create\">New file</div>\n *       <div role=\"option\">Settings</div>\n *     </div>\n *   </div>\n * The component adds the highlight, the empty message and a status line for screen readers.\n * Rows are one height (the first row is measured) and keep their order; there are no groups.\n *\n * Keyboard (WAI-ARIA APG, combobox with a listbox that is always shown): typing filters,\n * Down and Up move the chosen row, Enter picks it, Escape clears the search (with an empty\n * search it is left to a surrounding dialog). Focus stays in the input; the chosen row is\n * aria-activedescendant. Ctrl+K or Cmd+K anywhere on the page focuses the input.\n * MIT licence.\n */\nimport { track, indicator, presence, driver, spring, steps, attr, JUMP, PRESETS } from './arling-motion';\n\n// ------------------------------------------------------------------ helpers\n\nconst clamp01 = (x) => (x < 0 ? 0 : x > 1 ? 1 : x);\nconst px = (v) => `${Math.round(v * 100) / 100}px`;\nconst num = (v) => String(Math.round(v * 10000) / 10000);\nconst SHOWN = { opacity: 1, blur: 0, y: 0, scale: 1, visible: true };\nconst GONE = { opacity: 0, blur: 0, y: 0, scale: 1, visible: false };\n\nlet uid = 0;\nconst ensureId = (el, prefix) => el.id || (el.id = `${prefix}-${++uid}`);\n\n/** A presence state plus a place in the list, written as one transform. */\nfunction applyAt(el, s, y) {\n  el.style.opacity = num(s.opacity);\n  el.style.filter = s.blur > 0.05 ? `blur(${s.blur.toFixed(2)}px)` : '';\n  el.style.transform = `translateY(${px(y + s.y)}) scale(${s.scale.toFixed(4)})`;\n  el.style.visibility = s.visible ? '' : 'hidden';\n}\n\n// ------------------------------------------------------------------ matching\n\nconst norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/\\p{M}/gu, '');\n\n/** Every word of the query appears in the row's text, value or keywords (case and accents ignored). */\nexport function matches(haystack, query) {\n  const words = norm(query).trim().split(/\\s+/).filter(Boolean);\n  const h = norm(haystack);\n  return words.every((w) => h.includes(w));\n}\n\n// ------------------------------------------------------------------ command\n\n/** Stagger between rows that enter again, seconds. */\nexport const ROW_STEP = 0.025;\nconst ROW_MOTION = { dyIn: 6, dyOut: -2, blur: 4, scaleFrom: 0.98 };\n\n/**\n * createCommand({ root, onSelect(value, row), loop, shortcut, pad, clock, reduced })\n * loop: Down on the last row goes to the first (default false); shortcut: the letter for\n * Ctrl or Cmd (default 'k', false turns it off); pad: space above the first row, px (4).\n * Returns { search, move, highlight, select, query, active, visible, measure, seek, settled,\n * destroy, driver, input, list, items, keep }.\n */\nexport function createCommand(o) {\n  const root = o.root;\n  const doc = root.ownerDocument || document;\n  const input = o.input || root.querySelector('.am-command-input') || root.querySelector('input');\n  const list = o.list || root.querySelector('[role=\"listbox\"]');\n  const items = [...list.querySelectorAll('[role=\"option\"]')];\n  const pad = o.pad ?? 4;\n  const loop = !!o.loop;\n\n  // ARIA: a combobox whose listbox is always shown\n  attr(input, 'role', 'combobox');\n  attr(input, 'aria-expanded', 'true');\n  attr(input, 'aria-autocomplete', 'list');\n  attr(input, 'aria-controls', ensureId(list, 'am-command-list'));\n  attr(input, 'autocomplete', 'off');\n  attr(input, 'spellcheck', 'false');\n  if (!list.hasAttribute('aria-label') && !list.hasAttribute('aria-labelledby')) attr(list, 'aria-label', 'Commands');\n  items.forEach((it) => { ensureId(it, 'am-command-item'); attr(it, 'tabindex', null); });\n\n  const make = (cls, text, parent) => {\n    const el = doc.createElement('div');\n    el.className = cls;\n    if (text) el.textContent = text;\n    parent.appendChild(el);\n    return el;\n  };\n  const bar = list.querySelector('.am-command-highlight') || make('am-command-highlight', '', list);\n  if (bar !== list.firstElementChild) list.insertBefore(bar, list.firstElementChild);\n  attr(bar, 'aria-hidden', 'true');\n  const empty = list.querySelector('.am-command-empty') || make('am-command-empty', o.emptyText || 'No results.', list);\n  attr(empty, 'aria-hidden', 'true'); // the status line says it to screen readers\n  const status = root.querySelector('.am-command-status') || make('am-command-status', '', root);\n  attr(status, 'role', 'status');\n\n  // a shortcut hint (.am-command-kbd) is shown but not searched\n  const labelOf = (it) => {\n    const hint = it.querySelector('.am-command-kbd');\n    return (hint ? it.textContent.replace(hint.textContent, '') : it.textContent).trim();\n  };\n  const text = items.map((it) => `${labelOf(it)} ${it.getAttribute('data-value') || ''} ${it.getAttribute('data-keywords') || ''}`);\n  const disabled = (i) => items[i].getAttribute('aria-disabled') === 'true';\n  const cache = new Map();\n  const visibleFor = (q) => {\n    if (!cache.has(q)) cache.set(q, items.map((_, i) => matches(text[i], q)));\n    return cache.get(q);\n  };\n\n  let rowH = 36;\n  let emptyH = 54;\n  let measured = false;\n  function tryMeasure() {\n    const r = items[0] ? items[0].getBoundingClientRect() : { height: 0 };\n    if (!r.height) return false;\n    rowH = r.height;\n    const er = empty.getBoundingClientRect();\n    emptyH = o.emptyHeight ?? Math.max(er.height, rowH * 1.5);\n    measured = true;\n    return true;\n  }\n  tryMeasure();\n  const heightFor = (n) => pad * 2 + (n ? n * rowH : emptyH);\n  const slotY = (rank) => pad + rank * rowH;\n  const firstUsable = (vis) => items.findIndex((_, i) => vis[i] && !disabled(i));\n\n  const query = steps(input.value || '');\n  const vis0 = visibleFor(query.initial);\n  const rank0 = [];\n  { let r = 0; for (let i = 0; i < items.length; i++) rank0.push(vis0[i] ? r++ : -1); }\n  const count0 = vis0.filter(Boolean).length;\n  const rows = items.map((_, i) => ({\n    y: track(slotY(Math.max(0, rank0[i])), PRESETS.snappy),\n    pres: presence(vis0[i], ROW_MOTION),\n  }));\n  const height = track(heightFor(count0), PRESETS.snappy);\n  const emptyP = presence(count0 === 0, ROW_MOTION);\n  const act = steps(firstUsable(vis0));\n  const a0 = act.initial;\n  const ind = indicator(slotY(Math.max(0, rank0[a0] ?? 0)), slotY(Math.max(0, rank0[a0] ?? 0)) + rowH, spring(0.26, 0.9), spring(0.42, 0.95));\n  const ho = track(a0 >= 0 ? 1 : 0, PRESETS.snappy);\n  const press = track(0, PRESETS.press);\n\n  let endT = -Infinity;\n  const mark = (t) => { if (t > endT) endT = t; };\n  const all = () => [height, ho, press, emptyP.p, ind.l, ind.r, ...rows.flatMap((r) => [r.y, r.pres.p])];\n  const settledAll = (t) => all().every((tr) => tr.settled(t));\n\n  /** Where row i sits (and its rank among the shown rows) for a query. */\n  const layoutFor = (q) => {\n    const vis = visibleFor(q);\n    const rank = [];\n    let r = 0;\n    for (let i = 0; i < items.length; i++) rank.push(vis[i] ? r++ : -1);\n    return { vis, rank, count: r };\n  };\n\n  function paint(t, { reduced }) {\n    const q = query.at(t);\n    const { vis, count } = layoutFor(q);\n    const a = act.at(t);\n    if (input.value !== q) input.value = q;\n    items.forEach((it, i) => {\n      attr(it, 'aria-hidden', vis[i] ? null : 'true');\n      attr(it, 'aria-selected', i === a ? 'true' : 'false');\n      attr(it, 'data-selected', i === a ? true : null);\n      const r = rows[i];\n      applyAt(it, reduced ? (vis[i] ? SHOWN : GONE) : r.pres.at(t), reduced ? r.y.target(t) : r.y.at(t));\n    });\n    attr(input, 'aria-activedescendant', a >= 0 ? items[a].id : null);\n    list.style.height = px(reduced ? height.target(t) : height.at(t));\n    applyAt(empty, reduced ? (count ? GONE : SHOWN) : emptyP.at(t), pad);\n    const e = reduced ? ind.target(t) : ind.at(t);\n    const op = reduced ? ho.target(t) : clamp01(ho.at(t));\n    const squeeze = reduced ? 0 : clamp01(press.at(t)) * 0.02;\n    bar.style.opacity = num(op);\n    bar.style.visibility = op > 0.002 ? '' : 'hidden';\n    bar.style.transform = `translateY(${px(e.left)}) scaleX(${num(1 - squeeze)})`;\n    bar.style.height = px(Math.max(0, e.right - e.left));\n    const msg = !q.trim() ? '' : count === 0 ? 'No results.' : count === 1 ? '1 result' : `${count} results`;\n    if (status.textContent !== msg) status.textContent = msg;\n  }\n\n  function draw(t, s) {\n    paint(t, s);\n    if (!api.keep && t >= endT && (query.ev.length || act.ev.length) && settledAll(t)) {\n      for (const tr of all()) tr.compact(t);\n      for (const r of rows) r.pres.marks = [];\n      emptyP.marks = [];\n      query.compact();\n      act.compact();\n    }\n  }\n\n  const d = driver(draw, { clock: o.clock, reduced: o.reduced });\n  d.busy = (t) => t < endT || !settledAll(t);\n  const commit = () => { paint(d.now(), { reduced: d.reduced }); d.kick(); };\n  const when = (opt) => (opt && opt.t !== undefined ? { t: opt.t, live: false } : { t: d.now(), live: true });\n\n  /** Moves the highlight to row i (-1 hides it) at time t. */\n  function setActive(t, i, rank) {\n    const prev = act.last;\n    if (i === prev && i >= 0) {\n      // the row may have moved in the list: follow it\n      const y = slotY(rank[i]);\n      if (Math.abs(ind.target(t).left - y) > 0.01) ind.to(t, y, y + rowH);\n      return;\n    }\n    act.set(t, i);\n    if (i < 0) { ho.to(t, 0, PRESETS.exit); return; }\n    const y = slotY(rank[i]);\n    if (prev < 0 && ho.target(t) === 0) {\n      // appearing again: jump to the row, then fade in\n      ind.l.to(t, y, JUMP);\n      ind.r.to(t, y + rowH, JUMP);\n      ind.last = [y, y + rowH];\n      ho.to(t, 1, PRESETS.snappy);\n    } else {\n      ind.to(t, y, y + rowH);\n      ho.to(t, 1, PRESETS.snappy);\n    }\n  }\n\n  /** Filters the list for q. Live when opt.t is missing (from the input event). */\n  function search(q, opt = {}) {\n    const { t } = when(opt);\n    if (!measured && tryMeasure() && !query.ev.length) {\n      const L = layoutFor(query.last);\n      rows.forEach((r, i) => { r.y = track(slotY(Math.max(0, L.rank[i])), PRESETS.snappy); });\n      height.initial = heightFor(L.count);\n    }\n    const before = layoutFor(query.last);\n    if (q === query.last) return api;\n    const after = layoutFor(q);\n    query.set(t, q);\n    let entering = 0;\n    items.forEach((_, i) => {\n      const r = rows[i];\n      const was = before.vis[i];\n      const now = after.vis[i];\n      const y = slotY(Math.max(0, after.rank[i]));\n      if (now && !was) {\n        // an invisible row takes its new place at once, then enters there\n        const shown = r.pres.p.at(t) > 0.002;\n        r.y.to(t, y, shown ? PRESETS.snappy : JUMP);\n        r.pres.enter(t + 0.04 + entering * ROW_STEP);\n        mark(t + 0.04 + entering * ROW_STEP);\n        entering++;\n      } else if (now && Math.abs(r.y.target(t) - y) > 0.01) {\n        r.y.to(t, y, PRESETS.snappy);\n      } else if (!now && was) {\n        r.pres.exit(t);\n      }\n    });\n    height.to(t, heightFor(after.count), PRESETS.snappy);\n    if (after.count === 0 && before.count > 0) emptyP.enter(t + 0.06);\n    if (after.count > 0 && before.count === 0) emptyP.exit(t);\n    setActive(t, firstUsable(after.vis), after.rank);\n    mark(t + 0.06);\n    commit();\n    return api;\n  }\n\n  /** Chooses row i (it must be shown and enabled). */\n  function highlight(i, opt = {}) {\n    const { t } = when(opt);\n    const L = layoutFor(query.last);\n    if (i < 0 || i >= items.length || !L.vis[i] || disabled(i) || i === act.last) return api;\n    setActive(t, i, L.rank);\n    mark(t);\n    commit();\n    if (opt.t === undefined) reveal(i, L.rank);\n    return api;\n  }\n\n  /** Down (dir 1) or Up (dir -1) among the shown, enabled rows. */\n  function move(dir, opt = {}) {\n    const L = layoutFor(query.last);\n    const usable = items.map((_, i) => i).filter((i) => L.vis[i] && !disabled(i));\n    if (!usable.length) return api;\n    const cur = usable.indexOf(act.last);\n    let next;\n    if (cur < 0) next = dir > 0 ? 0 : usable.length - 1;\n    else if (loop) next = (cur + dir + usable.length) % usable.length;\n    else next = Math.min(usable.length - 1, Math.max(0, cur + dir));\n    return highlight(usable[next], opt);\n  }\n\n  /** Picks row i (default: the chosen row): the highlight gives a short press, onSelect runs. */\n  function select(i = act.last, opt = {}) {\n    const { t, live } = when(opt);\n    const L = layoutFor(query.last);\n    if (i < 0 || i >= items.length || !L.vis[i] || disabled(i)) return api;\n    if (i !== act.last) setActive(t, i, L.rank);\n    press.to(t, 1, PRESETS.press);\n    press.to(t + 0.1, 0, PRESETS.release);\n    mark(t + 0.1);\n    commit();\n    if (live && o.onSelect) o.onSelect(items[i].getAttribute('data-value') || labelOf(items[i]), items[i]);\n    return api;\n  }\n\n  /** Keeps the chosen row inside a scrolled list (live only). */\n  function reveal(i, rank) {\n    const view = list.clientHeight;\n    if (typeof view !== 'number' || !(list.scrollHeight > view)) return;\n    const y = slotY(rank[i]);\n    if (y < list.scrollTop) list.scrollTop = y - pad;\n    else if (y + rowH > list.scrollTop + view) list.scrollTop = y + rowH + pad - view;\n  }\n\n  /** Re-measure the row height (after a font or size change); rows jump to their places. */\n  function measure() {\n    measured = false;\n    if (!tryMeasure()) return api;\n    const t = d.now();\n    const L = layoutFor(query.last);\n    rows.forEach((r, i) => { if (L.vis[i]) r.y.to(t, slotY(L.rank[i]), JUMP); });\n    height.to(t, heightFor(L.count), JUMP);\n    if (act.last >= 0) { const y = slotY(L.rank[act.last]); ind.l.to(t, y, JUMP); ind.r.to(t, y + rowH, JUMP); ind.last = [y, y + rowH]; }\n    commit();\n    return api;\n  }\n\n  // ---------------------------------------------------------------- live input\n  const listeners = [];\n  const on = (target, type, fn) => { target.addEventListener(type, fn); listeners.push([target, type, fn]); };\n\n  on(input, 'input', () => search(input.value));\n  on(input, 'keydown', (e) => {\n    if (e.key === 'ArrowDown') { e.preventDefault(); move(1); }\n    else if (e.key === 'ArrowUp') { e.preventDefault(); move(-1); }\n    else if (e.key === 'Enter') { e.preventDefault(); select(); }\n    else if (e.key === 'Escape' && query.last) {\n      e.preventDefault();\n      e.stopPropagation();\n      search('');\n    }\n  });\n  items.forEach((it, i) => {\n    on(it, 'pointermove', () => { if (i !== act.last) highlight(i); });\n    // keep focus in the input when a row is pressed\n    on(it, 'pointerdown', (e) => e.preventDefault());\n    on(it, 'click', () => select(i));\n  });\n  const key = o.shortcut === false ? null : (o.shortcut || 'k').toLowerCase();\n  if (key) {\n    on(doc, 'keydown', (e) => {\n      if (!(e.ctrlKey || e.metaKey) || !e.key || e.key.toLowerCase() !== key) return;\n      e.preventDefault();\n      input.focus();\n      if (input.select) input.select();\n    });\n  }\n\n  const api = {\n    root,\n    input,\n    list,\n    items,\n    driver: d,\n    keep: false,\n    search,\n    move,\n    highlight,\n    select,\n    measure,\n    query: (t) => (t === undefined ? query.last : query.at(t)),\n    active: (t) => (t === undefined ? act.last : act.at(t)),\n    visible: (t) => layoutFor(t === undefined ? query.last : query.at(t)).vis.map((v, i) => (v ? i : -1)).filter((i) => i >= 0),\n    seek: (t) => paint(t, { reduced: d.reduced }),\n    settled: (t) => t >= endT && settledAll(t),\n    destroy() {\n      d.stop();\n      for (const [target, type, fn] of listeners) target.removeEventListener(type, fn);\n    },\n  };\n  paint(d.now(), { reduced: d.reduced });\n  return api;\n}\n",
+      "type": "registry:lib"
+    },
+    {
+      "path": "registry/arling/lib/arling-motion-command.d.ts",
+      "content": "// ARLing Motion: command. MIT licence, https://arling.sk/motion/ . Types for the plain JavaScript file next to this one.\nexport declare function matches(...args: any[]): any;\nexport declare const ROW_STEP: any;\nexport declare function createCommand(...args: any[]): any;\n",
+      "type": "registry:lib"
+    },
+    {
+      "path": "registry/arling/ui/motion-command.tsx",
+      "content": "'use client';\n// ARLing Motion: Command menu for React. A thin wrapper: the vanilla component owns the\n// filtering, the moving rows, the list height, the highlight, ARIA and the keyboard.\n// In the registry the core lives at '@/lib/arling-motion' and this logic at\n// '@/lib/arling-motion-command'.\nimport * as React from 'react';\nimport { createCommand } from '@/lib/arling-motion-command';\n\ntype CommandApi = { search: (q: string) => unknown; destroy: () => void };\n\nconst cx = (...c: Array<string | false | null | undefined>) => c.filter(Boolean).join(' ');\n\nexport interface CommandItem {\n  value: string;\n  label: React.ReactNode;\n  /** Extra words that should find this row. */\n  keywords?: string[];\n  /** A hint shown on the right, for example a keyboard shortcut. Not searched. */\n  hint?: React.ReactNode;\n  disabled?: boolean;\n}\n\nexport interface CommandProps {\n  items: CommandItem[];\n  onSelect?: (value: string) => void;\n  placeholder?: string;\n  /** Accessible name of the search field. */\n  label?: string;\n  /** Accessible name of the list. */\n  listLabel?: string;\n  emptyText?: string;\n  /** Down on the last row goes to the first. */\n  loop?: boolean;\n  /** Letter for Ctrl or Cmd that focuses the field; false turns it off. */\n  shortcut?: string | false;\n  reducedMotion?: boolean;\n  className?: string;\n}\n\n/**\n * <Command items={[{ value: 'new-file', label: 'New file' }]} onSelect={(v) => ...} />\n * The rows are read once when the menu mounts; give it a new key when they change.\n */\nexport function Command({\n  items,\n  onSelect,\n  placeholder = 'Type a command or search',\n  label = 'Command',\n  listLabel = 'Commands',\n  emptyText = 'No results.',\n  loop,\n  shortcut,\n  reducedMotion,\n  className,\n}: CommandProps) {\n  const ref = React.useRef<HTMLDivElement>(null);\n  const selectRef = React.useRef(onSelect);\n  selectRef.current = onSelect;\n\n  React.useEffect(() => {\n    if (!ref.current) return;\n    const api = createCommand({\n      root: ref.current,\n      loop,\n      shortcut,\n      emptyText,\n      reduced: reducedMotion,\n      onSelect: (value: string) => selectRef.current?.(value),\n    }) as unknown as CommandApi;\n    return () => api.destroy();\n    // eslint-disable-next-line react-hooks/exhaustive-deps\n  }, [loop, shortcut, reducedMotion]);\n\n  return (\n    <div ref={ref} className={cx('am-command', className)}>\n      <input className=\"am-command-input\" placeholder={placeholder} aria-label={label} defaultValue=\"\" />\n      <div className=\"am-command-list\" role=\"listbox\" aria-label={listLabel}>\n        <div className=\"am-command-highlight\" aria-hidden=\"true\" />\n        {items.map((it) => (\n          <div\n            key={it.value}\n            role=\"option\"\n            aria-selected=\"false\"\n            aria-disabled={it.disabled || undefined}\n            data-value={it.value}\n            data-keywords={it.keywords?.join(' ')}\n          >\n            <span>{it.label}</span>\n            {it.hint ? <span className=\"am-command-kbd\" aria-hidden=\"true\">{it.hint}</span> : null}\n          </div>\n        ))}\n        <div className=\"am-command-empty\" aria-hidden=\"true\">\n          {emptyText}\n        </div>\n      </div>\n      <div className=\"am-command-status\" role=\"status\" />\n    </div>\n  );\n}\n\nexport default Command;\n",
+      "type": "registry:ui"
+    }
+  ],
+  "css": {
+    "@layer components": {
+      ".am-command": {
+        "position": "relative",
+        "display": "flex",
+        "flex-direction": "column",
+        "width": "min(100%, 32rem)",
+        "overflow": "hidden",
+        "border": "1px solid var(--border, #e5e5e5)",
+        "border-radius": "var(--radius, 0.625rem)",
+        "background": "var(--popover, var(--background, #ffffff))",
+        "color": "var(--popover-foreground, var(--foreground, #0a0a0a))",
+        "box-shadow": "0 1px 2px rgb(0 0 0 / 0.05), 0 12px 28px rgb(0 0 0 / 0.08)"
+      },
+      ".am-command-input": {
+        "width": "100%",
+        "height": "3rem",
+        "padding": "0 1rem",
+        "border": "0",
+        "border-bottom": "1px solid var(--border, #e5e5e5)",
+        "background": "transparent",
+        "color": "inherit",
+        "font": "inherit",
+        "font-size": "0.9375rem",
+        "outline": "none"
+      },
+      ".am-command-input::placeholder": {
+        "color": "var(--muted-foreground, #737373)"
+      },
+      ".am-command:has(.am-command-input:focus-visible)": {
+        "outline": "2px solid var(--ring, #a3a3a3)",
+        "outline-offset": "2px"
+      },
+      ".am-command-list": {
+        "position": "relative",
+        "max-height": "20rem",
+        "overflow-x": "hidden",
+        "overflow-y": "auto",
+        "overscroll-behavior": "contain"
+      },
+      ".am-command-list [role=\"option\"]": {
+        "position": "absolute",
+        "top": "0",
+        "right": "0.25rem",
+        "left": "0.25rem",
+        "display": "flex",
+        "align-items": "center",
+        "gap": "0.5rem",
+        "height": "2.25rem",
+        "padding": "0 0.75rem",
+        "border-radius": "calc(var(--radius, 0.625rem) - 4px)",
+        "font-size": "0.875rem",
+        "white-space": "nowrap",
+        "cursor": "pointer",
+        "user-select": "none"
+      },
+      ".am-command-list [role=\"option\"][data-selected]": {
+        "color": "var(--accent-foreground, var(--foreground, #0a0a0a))"
+      },
+      ".am-command-list [role=\"option\"][aria-disabled=\"true\"]": {
+        "opacity": "0.5",
+        "cursor": "not-allowed"
+      },
+      ".am-command-highlight": {
+        "position": "absolute",
+        "top": "0",
+        "right": "0.25rem",
+        "left": "0.25rem",
+        "height": "0",
+        "border-radius": "calc(var(--radius, 0.625rem) - 4px)",
+        "background": "var(--accent, var(--muted, #f5f5f5))",
+        "transform-origin": "50% 50%",
+        "visibility": "hidden",
+        "pointer-events": "none"
+      },
+      ".am-command-empty": {
+        "position": "absolute",
+        "top": "0",
+        "right": "0",
+        "left": "0",
+        "display": "grid",
+        "place-items": "center",
+        "height": "3.375rem",
+        "color": "var(--muted-foreground, #737373)",
+        "font-size": "0.875rem",
+        "visibility": "hidden"
+      },
+      ".am-command-kbd": {
+        "margin-left": "auto",
+        "color": "var(--muted-foreground, #737373)",
+        "font-size": "0.75rem",
+        "letter-spacing": "0.04em"
+      },
+      ".am-command-status": {
+        "position": "absolute",
+        "width": "1px",
+        "height": "1px",
+        "overflow": "hidden",
+        "clip-path": "inset(50%)",
+        "white-space": "nowrap"
+      }
+    }
+  },
+  "docs": "Command menu from ARLing Motion (MIT).\nReact: import { Command } from \"@/components/ui/motion-command\".\nThe logic is in lib/arling-motion-command.js (typed by the .d.ts next to it) and works without React: createCommand on your own markup.\nStyles were added to your global CSS under @layer components (Tailwind v4).\nWith Tailwind v3 or no Tailwind, add https://arling.sk/motion/components/command/command.css to your styles instead.\nLive demo and docs: https://arling.sk/motion/#command",
+  "categories": [
+    "motion",
+    "command",
+    "search",
+    "combobox"
+  ]
+}

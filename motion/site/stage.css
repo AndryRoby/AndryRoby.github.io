@@ -1,0 +1,290 @@
+/* ARLing Motion: the stage every live component sits on, on arling.sk/motion and in demo.html.
+   A stage is a sheet of warm paper with the shadcn variables the components read, so they look
+   as they would in a shadcn project with a calm light theme. contain: layout makes the stage the
+   box for the fixed parts (dialog, drawer, toasts), so they open inside the stage, not over the page.
+   Load after site/components.css. No transitions here: motion comes from the core. */
+
+.mo-stage {
+  --background: #fffefa;
+  --foreground: #1c1b18;
+  --card: #fffefa;
+  --card-foreground: #1c1b18;
+  --popover: #fffefa;
+  --popover-foreground: #1c1b18;
+  --primary: #1c1b18;
+  --primary-foreground: #faf8f2;
+  --secondary: #efece3;
+  --secondary-foreground: #1c1b18;
+  --muted: #efece3;
+  --muted-foreground: #66645d;
+  --accent: #ebe7dc;
+  --accent-foreground: #1c1b18;
+  --destructive: #b3261e;
+  --border: #e0dccf;
+  --input: #d9d4c6;
+  --ring: #b23a1d;
+  --radius: 0.625rem;
+  --am-success: #3d6b39;
+  --am-success-foreground: #ffffff;
+  /* the page's paper tokens, for any page rule that still reaches inside */
+  --ink: #1c1b18;
+  --body: #1c1b18;
+  --line: #e0dccf;
+  --accent-light: #b23a1d;
+
+  position: relative;
+  contain: layout paint;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  height: 240px;
+  padding: 24px 20px;
+  border-radius: 16px;
+  background: #f5f2ea;
+  color: var(--foreground);
+  font-size: 15px;
+  line-height: 1.5;
+  box-shadow: inset 0 0 0 1px rgb(28 27 24 / 0.06);
+  isolation: isolate;
+}
+
+.mo-stage[data-align="top"],
+.mo-stage[data-scene="popover"],
+.mo-stage[data-scene="accordion"],
+.mo-stage[data-scene="command"],
+.mo-stage[data-scene="dropzone"] {
+  align-content: start;
+  padding-top: 28px;
+}
+
+/* Heights per scene (the same numbers as SCENES in site/scenes.js, a test keeps them equal).
+   Fixed heights keep the page still while panels open and lists grow. */
+.mo-stage[data-scene="hero"] { height: 400px; }
+.mo-stage[data-scene="dialog"] { height: 380px; }
+.mo-stage[data-scene="tabs"] { height: 220px; }
+.mo-stage[data-scene="tooltip"] { height: 150px; }
+.mo-stage[data-scene="popover"] { height: 250px; }
+.mo-stage[data-scene="toast"] { height: 260px; }
+.mo-stage[data-scene="switch"] { height: 130px; }
+.mo-stage[data-scene="accordion"] { height: 330px; }
+.mo-stage[data-scene="command"] { height: 340px; }
+.mo-stage[data-scene="drawer"] { height: 360px; }
+.mo-stage[data-scene="carousel"] { height: 290px; }
+.mo-stage[data-scene="otp"] { height: 170px; }
+.mo-stage[data-scene="dropzone"] { height: 270px; }
+
+@media (max-width: 480px) {
+  .mo-stage { padding: 20px 16px; }
+}
+
+/* ------------------------------------------------------------------ page rules that must not leak in
+   The ARLing page styles set text, headings, links, code and inputs with body.noc selectors.
+   On the stage they fall back to plain values; the component rules (site/components.css, one
+   step more specific) then apply exactly as in the component CSS. */
+body.noc .mo-stage :is(h1, h2, h3, h4, p) {
+  margin: 0;
+  max-width: none;
+  color: inherit;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+  letter-spacing: normal;
+}
+body.noc .mo-stage :is(h1, h2, h3, h4)::before,
+body.noc .mo-stage :is(h1, h2, h3, h4)::after {
+  content: none;
+}
+body.noc .mo-stage :is(a, a:hover) { color: inherit; }
+body.noc .mo-stage :is(code, kbd) {
+  padding: 0;
+  border-radius: 0;
+  background: none;
+  color: inherit;
+}
+body.noc .mo-stage :is(input, textarea, select) {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  box-shadow: none;
+}
+body.noc .mo-stage :is(input, textarea, select):focus {
+  border-color: transparent;
+  box-shadow: none;
+}
+body.noc .mo-stage input::placeholder { color: var(--muted-foreground); }
+body.noc .mo-stage input[type="file"] { padding: 0; }
+
+/* ------------------------------------------------------------------ fixed parts inside the stage */
+body.noc .mo-stage .am-toaster { width: min(356px, calc(100% - 32px)); }
+body.noc .mo-stage .am-drawer-panel { max-height: calc(100% - 24px); }
+body.noc .mo-stage .am-dialog-root { padding: 16px; }
+
+/* ------------------------------------------------------------------ small parts of the sample scenes */
+body.noc .mo-stage .mo-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 2.5rem;
+  padding: 0 1rem;
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) - 2px);
+  background: var(--background);
+  color: var(--foreground);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.04);
+}
+body.noc .mo-stage .mo-btn:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+body.noc .mo-stage .mo-field {
+  display: grid;
+  gap: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+body.noc .mo-stage .mo-input {
+  height: 2.25rem;
+  padding: 0 0.75rem;
+  border: 1px solid var(--input);
+  border-radius: calc(var(--radius) - 2px);
+  background: var(--background);
+  color: var(--foreground);
+  font-size: 0.9375rem;
+  font-weight: 400;
+}
+body.noc .mo-stage .mo-input:focus-visible {
+  border-color: var(--input);
+  outline: 2px solid var(--ring);
+  outline-offset: 1px;
+}
+body.noc .mo-stage .mo-panel-title {
+  font-weight: 600;
+  font-size: 0.9375rem;
+}
+body.noc .mo-stage .mo-panel-line {
+  margin-top: 0.25rem;
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+}
+body.noc .mo-stage .am-tabs { width: min(100%, 22rem); }
+body.noc .mo-stage .am-tabs-panels > [role="tabpanel"] { padding: 0.75rem 0.25rem 0; }
+body.noc .mo-stage .mo-toolbar { gap: 0.25rem; }
+body.noc .mo-stage .mo-glyph-b { font-weight: 700; }
+body.noc .mo-stage .mo-glyph-i { font-style: italic; font-family: Georgia, "Times New Roman", serif; }
+body.noc .mo-stage .mo-glyph-u { text-decoration: underline; text-underline-offset: 3px; }
+body.noc .mo-stage .mo-switch-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  max-width: 100%;
+  font-size: 0.9375rem;
+}
+body.noc .mo-stage .am-accordion { width: min(100%, 26rem); }
+body.noc .mo-stage .am-accordion-content > p { color: var(--muted-foreground); font-size: 0.875rem; }
+body.noc .mo-stage .am-command { width: min(100%, 26rem); }
+body.noc .mo-stage .mo-drawer-text { color: var(--muted-foreground); font-size: 0.875rem; }
+body.noc .mo-stage .am-carousel { width: min(100%, 30rem); }
+body.noc .mo-stage .am-carousel-slide {
+  display: grid;
+  gap: 0.25rem;
+  min-height: 9.5rem;
+  align-content: end;
+}
+body.noc .mo-stage .mo-slide-n {
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+body.noc .mo-stage .mo-slide-title { font-size: 1.125rem; font-weight: 600; }
+body.noc .mo-stage .mo-slide-line { color: var(--muted-foreground); font-size: 0.875rem; }
+body.noc .mo-stage .mo-otp-wrap { display: grid; justify-items: center; gap: 0.75rem; }
+body.noc .mo-stage .mo-hint { color: var(--muted-foreground); font-size: 0.8125rem; text-align: center; }
+body.noc .mo-stage .am-dropzone { width: min(100%, 26rem); }
+body.noc .mo-stage .mo-card-kicker {
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+body.noc .mo-stage .mo-card-cmd {
+  display: block;
+  padding: 0.625rem 0.75rem;
+  border-radius: calc(var(--radius) - 2px);
+  background: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+/* ------------------------------------------------------------------ demo cursor (site/cursor.js) */
+.mo-cursor-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 100;
+  pointer-events: none;
+}
+.mo-cursor {
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  transform-origin: 2px 2px;
+  filter: drop-shadow(0 1px 1.5px rgb(0 0 0 / 0.28));
+}
+.mo-cursor svg { display: block; }
+.mo-cursor path {
+  fill: #1c1b18;
+  stroke: #ffffff;
+  stroke-width: 1.4;
+  stroke-linejoin: round;
+}
+.mo-cursor-ring {
+  position: absolute;
+  width: 36px;
+  height: 36px;
+  border: 2px solid #1c1b18;
+  border-radius: 50%;
+  visibility: hidden;
+}
+.mo-cursor-chip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  padding: 3px 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--background);
+  color: var(--foreground);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 0.12);
+  visibility: hidden;
+}
+.mo-keycap {
+  position: absolute;
+  bottom: 14px;
+  left: 50%;
+  min-width: 30px;
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-bottom-width: 2px;
+  border-radius: 7px;
+  background: var(--background);
+  color: var(--foreground);
+  font: 600 13px/1.2 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  text-align: center;
+  transform: translateX(-50%);
+  visibility: hidden;
+}

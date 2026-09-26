@@ -1,0 +1,52 @@
+# ARLing Motion
+
+> Free, MIT licensed animated UI components for React and plain JavaScript. Each component follows the WAI-ARIA Authoring Practices pattern for keyboard and screen readers (roles, states, focus, prefers-reduced-motion; screen reader checks are in progress), has no dependencies, and carries a 4 second demo timeline that can be painted at any moment with seek(t), so a headless browser can capture it frame by frame as video (the render script is planned for Pro). Install with the shadcn CLI: npx shadcn@latest add https://arling.sk/motion/r/<name>.json
+
+Made by ARLing s. r. o., Bratislava, Slovakia. Site: https://arling.sk/motion/ . Contact: support@arling.sk
+
+## Install
+
+- shadcn CLI: `npx shadcn@latest add https://arling.sk/motion/r/tabs.json` (replace tabs with any name below). It adds `components/ui/motion-<name>.tsx` (React), `lib/arling-motion-<name>.js` (the logic, plain JavaScript) and `lib/arling-motion.js` (the core), each .js with a .d.ts, and puts the CSS under `@layer components` in the global stylesheet (Tailwind v4).
+- Registry index (shadcn schema): https://arling.sk/motion/r/registry.json
+- Without React or a build step: load `https://arling.sk/motion/components/<name>/<name>.css` and import `create<Name>` from `https://arling.sk/motion/components/<name>/<name>.js` as an ES module. The markup each component expects is documented at the top of its file.
+- Tailwind v3 or no Tailwind: add the component CSS file yourself. Styles read the shadcn variables (--background, --foreground, --primary, --muted, --border, --ring, --radius) and fall back to neutral colours.
+
+## Components
+
+- [Dialog](https://arling.sk/motion/r/dialog.json): modal that grows out of the button that opened it and folds back into it; focus trap, Escape, focus returns to the button.
+- [Tabs](https://arling.sk/motion/r/tabs.json): indicator whose leading edge moves first while the trailing edge catches up; arrow keys, Home, End; panels without layout shift.
+- [Tooltip](https://arling.sk/motion/r/tooltip.json): one bubble for a group of triggers that slides and resizes between them; shows on keyboard focus, Escape hides it.
+- [Dropdown menu and popover](https://arling.sk/motion/r/popover.json): unfold from the trigger, items enter one after another, one highlight slides between items; APG menu button keyboard.
+- [Toast](https://arling.sk/motion/r/toast.json): grows out of the click point and folds into a stack; hover or focus unfolds it and pauses timers; polite live region; Alt+T.
+- [Switch](https://arling.sk/motion/r/switch.json): thumb on a spring that stretches while pressed; the new colour grows as a circle from the press point.
+- [Accordion](https://arling.sk/motion/r/accordion.json): panel unfolds downward and rows enter as the edge reaches them; single or multiple, collapsible.
+- [Command menu](https://arling.sk/motion/r/command.json): Cmd+K palette that filters without a cut; combobox with an always visible listbox and aria-activedescendant.
+- [Drawer](https://arling.sk/motion/r/drawer.json): bottom sheet that follows the pointer 1:1 and hands over to a spring with the release speed; flick to close; Escape and buttons always work.
+- [Carousel](https://arling.sk/motion/r/carousel.json): drag and throw; the spring lands on the slide the throw points to; no auto rotation; APG carousel roles.
+- [One-time code input](https://arling.sk/motion/r/otp.json): one real input under the slots (paste, autocomplete="one-time-code"); a valid code turns green as one growing circle.
+- [Dropzone](https://arling.sk/motion/r/dropzone.json): unfolds into a file list row by row, folds back on Clear; lists File objects, uploads nothing.
+- [Core](https://arling.sk/motion/r/core.json): closed-form springs (spring, PRESETS, springDisp, settleTime, cssEasing), track, indicator, presence, stagger, driver, beats; also adds the springs as CSS variables (--arling-spring-snappy and others).
+
+## How the motion works
+
+- Every animated value is a pure function of time: a track keeps a list of target changes, and its value at time t is the sum of one closed-form spring per change. No frame-to-frame state, no animation library.
+- Live, a driver draws with requestAnimationFrame only while something moves. For video, seek(t) paints any moment exactly; the frame at the end of a demo equals the first frame, so clips loop.
+- With prefers-reduced-motion, nothing moves: components show each new state at once.
+- Springs as CSS: https://arling.sk/motion/springs.css (CSS linear() easings with durations, generated from the core with 60 stops each; a test keeps them within 0.6 % of the spring).
+- Demo canvas for any component at any time: https://arling.sk/motion/demo.html?c=tabs&t=1.25
+
+## Pro (not on sale yet)
+
+ARLing Motion Pro is planned at 49 EUR one-time: a video kit that renders any component demo to MP4 (9:16, 1:1, 16:9) on your own computer (Node, Chrome, ffmpeg), three blocks as website sections and video templates, a music generator for 120 BPM loops, and 12 months of updates. Pro is not MIT. There is no purchase link yet.
+
+## Honest limits
+
+- Twelve components; far fewer than Magic UI or Aceternity UI.
+- Tests run in Node against a simulated DOM (keyboard, ARIA after every change, reduced motion, seamless demo loops). Checks in real browsers and with screen readers are still in progress.
+- Not in the shadcn directory yet, so the short form `npx shadcn add @arling/<name>` does not work yet; use the full URL.
+
+## Optional
+
+- Source of each component: https://arling.sk/motion/components/<name>/<name>.js
+- Licence: MIT, https://arling.sk/motion/LICENSE
+- ARLing company site: https://arling.sk/en/

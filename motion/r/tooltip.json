@@ -1,0 +1,87 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "tooltip",
+  "type": "registry:ui",
+  "title": "Tooltip",
+  "description": "One tooltip bubble for a group of triggers that slides and resizes from one trigger to the next. Shows on keyboard focus, Escape hides it, it stays while the pointer is over it.",
+  "author": "ARLing s. r. o. (https://arling.sk)",
+  "registryDependencies": [
+    "https://arling.sk/motion/r/core.json"
+  ],
+  "files": [
+    {
+      "path": "registry/arling/lib/arling-motion-tooltip.js",
+      "content": "'use strict';\n// ARLing Motion: tooltip. MIT licence, https://arling.sk/motion/ . Installed from the ARLing\n// Motion registry (source: components/tooltip/tooltip.js). Plain JavaScript; the .d.ts next to it types the exports.\n/*\n * ARLing Motion: Tooltip.\n * One bubble for a group of triggers. The first tooltip waits for the delay and enters;\n * while it is open (or shortly after), moving to the next trigger slides the same bubble\n * over and changes its width, and the text inside has its own exit and entrance.\n *\n * Markup: any triggers with data-tooltip inside a group element.\n *   <div class=\"am-tooltip-group\">\n *     <button aria-label=\"Bold\" data-tooltip=\"Bold\">B</button>\n *     <button aria-label=\"Italic\" data-tooltip=\"Italic\">I</button>\n *   </div>\n *\n * Accessibility (WAI-ARIA APG, tooltip): role=\"tooltip\", the trigger points to it with\n * aria-describedby (or aria-labelledby when the trigger has no name of its own). Shows on\n * hover after a delay and at once on keyboard focus, hides on blur, pointer down and\n * Escape (focus stays), and stays while the pointer is over the bubble (WCAG 1.4.13).\n * MIT licence.\n */\nimport { track, presence, applyPresence, driver, spring, PRESETS } from './arling-motion';\n\n// ------------------------------------------------------------------ shared helpers\n\nconst JUMP = spring(0.001, 1); // a change that lands within one frame, still a pure function of time\nconst px = (v) => `${Math.round(v * 100) / 100}px`;\nconst SHOWN = { opacity: 1, blur: 0, y: 0, scale: 1, visible: true };\nconst GONE = { opacity: 0, blur: 0, y: 0, scale: 1, visible: false };\n\nfunction steps(initial) {\n  return {\n    initial,\n    ev: [],\n    set(t, v) { this.ev.push([t, v]); this.ev.sort((a, b) => a[0] - b[0]); return this; },\n    at(t) { let v = this.initial; for (const [et, x] of this.ev) { if (et > t) break; v = x; } return v; },\n    get last() { return this.ev.length ? this.ev[this.ev.length - 1][1] : this.initial; },\n    compact() { this.initial = this.last; this.ev = []; },\n  };\n}\n\nfunction attr(el, name, value) {\n  if (value === null || value === undefined || value === false) {\n    if (el.hasAttribute(name)) el.removeAttribute(name);\n  } else {\n    const v = value === true ? '' : String(value);\n    if (el.getAttribute(name) !== v) el.setAttribute(name, v);\n  }\n}\n\nlet uid = 0;\nconst ensureId = (el, prefix) => el.id || (el.id = `${prefix}-${++uid}`);\n\n// ------------------------------------------------------------------ tooltip\n\n/**\n * createTooltip({ root, triggers, delay, skipDelay, gap, clock, reduced })\n * delay: seconds before the first tooltip shows on hover (default 0.5);\n * skipDelay: after hiding, a new trigger within this time shows at once (default 0.3).\n * Returns { show, hide, active, seek, settled, destroy, driver, bubble, tips, triggers, keep }.\n */\nexport function createTooltip(o) {\n  const root = o.root;\n  const doc = root.ownerDocument || document;\n  const triggers = o.triggers ? [...o.triggers] : [...root.querySelectorAll('[data-tooltip]')];\n  const delay = o.delay ?? 0.5;\n  const skipDelay = o.skipDelay ?? 0.3;\n  const gap = o.gap ?? 6;\n  const padX = o.padX ?? 10;\n  const padY = o.padY ?? 6;\n\n  let bubble = root.querySelector('.am-tooltip');\n  if (!bubble) {\n    bubble = doc.createElement('div');\n    bubble.className = 'am-tooltip';\n    root.appendChild(bubble);\n  }\n  const tips = triggers.map((tr) => {\n    const tip = doc.createElement('div');\n    tip.className = 'am-tooltip-text';\n    attr(tip, 'role', 'tooltip');\n    const label = doc.createElement('span');\n    label.className = 'am-tooltip-label';\n    label.textContent = tr.getAttribute('data-tooltip') || '';\n    tip.appendChild(label);\n    bubble.appendChild(tip);\n    const id = ensureId(tip, 'am-tooltip');\n    const named = tr.hasAttribute('aria-label') || tr.hasAttribute('aria-labelledby') || tr.textContent.trim();\n    const rel = named ? 'aria-describedby' : 'aria-labelledby';\n    const prev = tr.getAttribute(rel);\n    attr(tr, rel, prev ? `${prev} ${id}` : id);\n    return tip;\n  });\n\n  const active = steps(-1);\n  const x = track(0, PRESETS.snappy);\n  const y = track(0, PRESETS.snappy);\n  const w = track(0, PRESETS.snappy);\n  const hgt = track(0, PRESETS.snappy);\n  const bub = presence(false, { dyIn: 4, dyOut: 2, blur: 4, scaleFrom: 0.96 });\n  const tipP = tips.map(() => presence(false, { dyIn: 5, dyOut: -4, blur: 4, scaleFrom: 1 }));\n  let lastHide = -Infinity;\n  let endT = -Infinity;\n  const mark = (t) => { if (t > endT) endT = t; };\n  const all = () => [x, y, w, hgt, bub.p, ...tipP.map((p) => p.p)];\n  const settledAll = (t) => all().every((tr) => tr.settled(t));\n\n  function geometry(i) {\n    const rr = root.getBoundingClientRect();\n    const r = triggers[i].getBoundingClientRect();\n    const lr = tips[i].firstElementChild.getBoundingClientRect();\n    const bw = lr.width + 2 * padX;\n    const bh = lr.height + 2 * padY;\n    return { cx: r.left + r.width / 2 - rr.left, top: r.top - rr.top - gap - bh, w: bw, h: bh };\n  }\n\n  function paint(t, { reduced }) {\n    const a = active.at(t);\n    attr(bubble, 'data-state', a === -1 ? 'closed' : 'open');\n    triggers.forEach((tr, i) => attr(tr, 'data-state', i === a ? 'open' : 'closed'));\n    const b = reduced ? (a === -1 ? GONE : SHOWN) : bub.at(t);\n    if (!b.visible) {\n      bubble.style.visibility = 'hidden';\n    } else {\n      const X = reduced ? x.target(t) : x.at(t);\n      const Y = reduced ? y.target(t) : y.at(t);\n      const W = reduced ? w.target(t) : w.at(t);\n      const H = reduced ? hgt.target(t) : hgt.at(t);\n      bubble.style.visibility = 'visible'; // the stylesheet keeps it hidden until the core shows it\n      bubble.style.width = px(W);\n      bubble.style.height = px(H);\n      bubble.style.opacity = String(Math.round(b.opacity * 10000) / 10000);\n      bubble.style.filter = b.blur > 0.05 ? `blur(${b.blur.toFixed(2)}px)` : '';\n      bubble.style.transform = `translate(${px(X - W / 2)}, ${px(Y + b.y)}) scale(${b.scale.toFixed(4)})`;\n    }\n    tips.forEach((tip, i) => {\n      attr(tip, 'data-state', i === a ? 'open' : 'closed');\n      applyPresence(tip, reduced ? (i === a ? SHOWN : GONE) : tipP[i].at(t));\n    });\n  }\n\n  function draw(t, s) {\n    paint(t, s);\n    if (!api.keep && t >= endT && active.ev.length && settledAll(t)) {\n      for (const tr of all()) tr.compact(t);\n      bub.marks = [];\n      for (const p of tipP) p.marks = [];\n      active.compact();\n    }\n  }\n\n  const d = driver(draw, { clock: o.clock, reduced: o.reduced });\n  d.busy = (t) => t < endT || !settledAll(t);\n  const commit = () => { paint(d.now(), { reduced: d.reduced }); d.kick(); };\n  const when = (opt) => (opt && opt.t !== undefined ? { t: opt.t, live: false } : { t: d.now(), live: true });\n\n  function show(i, opt = {}) {\n    const { t } = when(opt);\n    const cur = active.last;\n    if (i === cur || i < 0 || i >= triggers.length) return api;\n    const g = geometry(i);\n    const open = cur !== -1;\n    const warm = open || t - lastHide < skipDelay;\n    const sp = warm ? PRESETS.snappy : JUMP;\n    x.to(t, g.cx, sp);\n    y.to(t, g.top, sp);\n    w.to(t, g.w, sp);\n    hgt.to(t, g.h, sp);\n    if (open) {\n      tipP[cur].exit(t);\n      tipP[i].enter(t + 0.04);\n    } else {\n      bub.enter(t);\n      tipP[i].enter(t, warm ? undefined : JUMP);\n    }\n    active.set(t, i);\n    mark(t + 0.04);\n    commit();\n    return api;\n  }\n\n  function hide(opt = {}) {\n    const { t } = when(opt);\n    const cur = active.last;\n    if (cur === -1) return api;\n    active.set(t, -1);\n    bub.exit(t);\n    tipP[cur].exit(t);\n    lastHide = t;\n    mark(t);\n    commit();\n    return api;\n  }\n\n  // ---------------------------------------------------------------- live input\n  const listeners = [];\n  const on = (el, type, fn) => { el.addEventListener(type, fn); listeners.push([el, type, fn]); };\n  let showTimer = 0;\n  let hideTimer = 0;\n  const clear = () => { clearTimeout(showTimer); clearTimeout(hideTimer); };\n  const hideSoon = () => { clearTimeout(hideTimer); hideTimer = setTimeout(() => hide(), 100); };\n\n  triggers.forEach((tr, i) => {\n    on(tr, 'pointerenter', (e) => {\n      if (e.pointerType === 'touch') return;\n      clear();\n      if (active.last !== -1 || d.now() - lastHide < skipDelay) show(i);\n      else showTimer = setTimeout(() => show(i), delay * 1000);\n    });\n    on(tr, 'pointerleave', () => { clearTimeout(showTimer); hideSoon(); });\n    on(tr, 'pointerdown', () => { clear(); hide(); });\n    on(tr, 'focus', () => {\n      try {\n        if (!tr.matches(':focus-visible')) return; // pointer focus does not open it\n      } catch {\n        // older engines without :focus-visible: show on every focus\n      }\n      clear();\n      show(i);\n    });\n    on(tr, 'blur', () => { clear(); hide(); });\n  });\n  on(bubble, 'pointerenter', () => clearTimeout(hideTimer));\n  on(bubble, 'pointerleave', hideSoon);\n  on(doc, 'keydown', (e) => {\n    if (e.key === 'Escape' && active.last !== -1) {\n      clear();\n      hide();\n    }\n  });\n\n  const api = {\n    root,\n    bubble,\n    tips,\n    triggers,\n    driver: d,\n    keep: false,\n    show,\n    hide,\n    active: (t) => (t === undefined ? active.last : active.at(t)),\n    seek: (t) => paint(t, { reduced: d.reduced }),\n    settled: (t) => t >= endT && settledAll(t),\n    destroy() {\n      clear();\n      d.stop();\n      for (const [el, type, fn] of listeners) el.removeEventListener(type, fn);\n      // undo what this instance added, so it can be created again (React remounts)\n      triggers.forEach((tr, i) => {\n        for (const rel of ['aria-describedby', 'aria-labelledby']) {\n          const ids = (tr.getAttribute(rel) || '').split(/\\s+/).filter((x) => x && x !== tips[i].id);\n          attr(tr, rel, ids.length ? ids.join(' ') : null);\n        }\n        attr(tr, 'data-state', null);\n        tips[i].remove();\n      });\n    },\n  };\n  paint(d.now(), { reduced: d.reduced });\n  return api;\n}\n",
+      "type": "registry:lib"
+    },
+    {
+      "path": "registry/arling/lib/arling-motion-tooltip.d.ts",
+      "content": "// ARLing Motion: tooltip. MIT licence, https://arling.sk/motion/ . Types for the plain JavaScript file next to this one.\nexport declare function createTooltip(...args: any[]): any;\n",
+      "type": "registry:lib"
+    },
+    {
+      "path": "registry/arling/ui/motion-tooltip.tsx",
+      "content": "'use client';\n// ARLing Motion: Tooltip for React. A thin wrapper over the vanilla component: one bubble\n// for the whole group, so moving between icons slides the same bubble along.\n// In the registry the core lives at '@/lib/arling-motion' and this logic at\n// '@/lib/arling-motion-tooltip'.\nimport * as React from 'react';\nimport { createTooltip } from '@/lib/arling-motion-tooltip';\n\ntype TooltipApi = { destroy: () => void };\n\nconst cx = (...c: Array<string | false | null | undefined>) => c.filter(Boolean).join(' ');\n\nexport interface TooltipGroupProps extends React.HTMLAttributes<HTMLDivElement> {\n  /** Seconds before the first tooltip shows on hover (default 0.5). */\n  delay?: number;\n  /** After a tooltip hides, another trigger within this many seconds shows at once (default 0.3). */\n  skipDelay?: number;\n  reducedMotion?: boolean;\n}\n\n/**\n * Wrap triggers that carry data-tooltip=\"Text\":\n *   <TooltipGroup><button aria-label=\"Bold\" data-tooltip=\"Bold\">B</button></TooltipGroup>\n * When the set of triggers changes, give the group a new key so it is built again.\n */\nexport function TooltipGroup({ delay, skipDelay, reducedMotion, className, children, ...rest }: TooltipGroupProps) {\n  const ref = React.useRef<HTMLDivElement>(null);\n\n  React.useEffect(() => {\n    if (!ref.current) return;\n    const api = createTooltip({ root: ref.current, delay, skipDelay, reduced: reducedMotion }) as unknown as TooltipApi;\n    return () => api.destroy();\n  }, [delay, skipDelay, reducedMotion]);\n\n  return (\n    <div ref={ref} className={cx('am-tooltip-group', className)} {...rest}>\n      {children}\n      <div className=\"am-tooltip\" />\n    </div>\n  );\n}\n\nexport default TooltipGroup;\n",
+      "type": "registry:ui"
+    }
+  ],
+  "css": {
+    "@layer components": {
+      ".am-tooltip-group": {
+        "position": "relative",
+        "display": "inline-flex",
+        "align-items": "center",
+        "gap": "0.25rem"
+      },
+      ".am-tooltip-group [data-tooltip]": {
+        "display": "inline-grid",
+        "place-items": "center",
+        "width": "2.25rem",
+        "height": "2.25rem",
+        "border": "0",
+        "border-radius": "calc(var(--radius, 0.625rem) - 2px)",
+        "background": "transparent",
+        "color": "var(--foreground, #0a0a0a)",
+        "font": "inherit",
+        "cursor": "pointer"
+      },
+      ".am-tooltip-group [data-tooltip]:hover, .am-tooltip-group [data-tooltip][data-state=\"open\"]": {
+        "background": "var(--muted, #f5f5f5)"
+      },
+      ".am-tooltip-group [data-tooltip]:focus-visible": {
+        "outline": "2px solid var(--ring, #a3a3a3)",
+        "outline-offset": "2px"
+      },
+      ".am-tooltip": {
+        "position": "absolute",
+        "top": "0",
+        "left": "0",
+        "z-index": "50",
+        "visibility": "hidden",
+        "border-radius": "calc(var(--radius, 0.625rem) - 4px)",
+        "background": "var(--foreground, #0a0a0a)",
+        "color": "var(--background, #ffffff)",
+        "box-shadow": "0 4px 12px rgb(0 0 0 / 0.12)",
+        "font-size": "0.75rem",
+        "font-weight": "500",
+        "line-height": "1.25",
+        "transform-origin": "50% 100%"
+      },
+      ".am-tooltip-text": {
+        "position": "absolute",
+        "inset": "0",
+        "display": "grid",
+        "place-items": "center",
+        "white-space": "nowrap"
+      },
+      ".am-tooltip-label": {
+        "display": "inline-block"
+      }
+    }
+  },
+  "docs": "Tooltip from ARLing Motion (MIT).\nReact: import { TooltipGroup } from \"@/components/ui/motion-tooltip\".\nThe logic is in lib/arling-motion-tooltip.js (typed by the .d.ts next to it) and works without React: createTooltip on your own markup.\nStyles were added to your global CSS under @layer components (Tailwind v4).\nWith Tailwind v3 or no Tailwind, add https://arling.sk/motion/components/tooltip/tooltip.css to your styles instead.\nLive demo and docs: https://arling.sk/motion/#tooltip",
+  "categories": [
+    "motion",
+    "tooltip"
+  ]
+}

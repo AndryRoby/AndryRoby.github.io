@@ -1,0 +1,82 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "switch",
+  "type": "registry:ui",
+  "title": "Switch",
+  "description": "A switch whose thumb travels on a spring and stretches while pressed. The new colour grows as a circle from the press point instead of fading through grey.",
+  "author": "ARLing s. r. o. (https://arling.sk)",
+  "registryDependencies": [
+    "https://arling.sk/motion/r/core.json"
+  ],
+  "files": [
+    {
+      "path": "registry/arling/lib/arling-motion-switch.js",
+      "content": "'use strict';\n// ARLing Motion: switch. MIT licence, https://arling.sk/motion/ . Installed from the ARLing\n// Motion registry (source: components/switch/switch.js). Plain JavaScript; the .d.ts next to it types the exports.\n/*\n * ARLing Motion: Switch.\n * The thumb travels on the release spring (one small overshoot, under 3 %) and stretches a\n * little while pressed. The new track colour never blends through grey: it grows as a\n * circle from the point that was pressed, and the base colour switches only once the\n * circle covers the track.\n *\n * Markup:\n *   <button class=\"am-switch\" role=\"switch\" aria-checked=\"false\" aria-label=\"Wi-Fi\"></button>\n * The component adds the thumb and ink parts if they are missing.\n *\n * Keyboard (WAI-ARIA APG, switch): Space toggles (Enter too, as on any button); on an\n * element that is not a button the component handles both keys itself.\n * MIT licence.\n */\nimport { track, driver, springStep, settleTime, PRESETS } from './arling-motion';\n\n// ------------------------------------------------------------------ shared helpers\n\nconst clamp01 = (x) => (x < 0 ? 0 : x > 1 ? 1 : x);\nconst px = (v) => `${Math.round(v * 100) / 100}px`;\n\nfunction steps(initial) {\n  return {\n    initial,\n    ev: [],\n    set(t, v) { this.ev.push([t, v]); this.ev.sort((a, b) => a[0] - b[0]); return this; },\n    at(t) { let v = this.initial; for (const [et, x] of this.ev) { if (et > t) break; v = x; } return v; },\n    get last() { return this.ev.length ? this.ev[this.ev.length - 1][1] : this.initial; },\n    compact() { this.initial = this.last; this.ev = []; },\n  };\n}\n\nfunction attr(el, name, value) {\n  if (value === null || value === undefined || value === false) {\n    if (el.hasAttribute(name)) el.removeAttribute(name);\n  } else {\n    const v = value === true ? '' : String(value);\n    if (el.getAttribute(name) !== v) el.setAttribute(name, v);\n  }\n}\n\n/** Radius that covers a w by h box from the point (x, y). */\nconst cover = (x, y, w, h) => Math.max(Math.hypot(x, y), Math.hypot(w - x, y), Math.hypot(x, h - y), Math.hypot(w - x, h - y));\n\n/**\n * Ink: a new colour grows as a circle from a point; the base colour switches only when the\n * circle covers the shape. list holds { t, color, x, y, R, sp } in time order.\n */\nfunction inkAt(ink, t, reduced, layers = 2) {\n  let base = ink.base;\n  let active = [];\n  for (const e of ink.list) {\n    if (e.t > t) break;\n    const p = reduced ? 1 : springStep(e.sp, t - e.t);\n    if (p >= 1) { base = e.color; active = []; } else active.push({ color: e.color, r: p * e.R, x: e.x, y: e.y });\n  }\n  while (active.length > layers) base = active.shift().color;\n  return { base, layers: active };\n}\nconst inkSettled = (ink, t) => ink.list.every((e) => e.t > t || t >= e.t + settleTime(e.sp));\n\nfunction paintInk(state, surface, els) {\n  surface.style.background = state.base;\n  els.forEach((el, i) => {\n    const L = state.layers[i];\n    if (!L) { el.style.visibility = 'hidden'; el.style.clipPath = ''; el.style.background = ''; return; }\n    el.style.visibility = 'visible';\n    el.style.background = L.color;\n    el.style.clipPath = `circle(${px(L.r)} at ${px(L.x)} ${px(L.y)})`;\n  });\n}\n\n// ------------------------------------------------------------------ switch\n\n/** How far the thumb stretches while pressed, px. */\nexport const PRESS_STRETCH = 4;\n\n/**\n * createSwitch({ el, checked, on, off, onChange, clock, reduced })\n * on / off: track colours (default var(--primary) and var(--input)).\n * Returns { toggle, set, press, release, checked, seek, settled, destroy, driver, keep }.\n */\nexport function createSwitch(o) {\n  const el = o.el;\n  const doc = el.ownerDocument || document;\n  const isButton = el.tagName === 'BUTTON';\n  attr(el, 'role', 'switch');\n  if (isButton && !el.hasAttribute('type')) attr(el, 'type', 'button');\n  if (!isButton && !el.hasAttribute('tabindex')) attr(el, 'tabindex', '0');\n  const ON = o.on || 'var(--primary, #171717)';\n  const OFF = o.off || 'var(--input, #e5e5e5)';\n\n  const make = (cls) => { const s = doc.createElement('span'); s.className = cls; attr(s, 'aria-hidden', 'true'); el.appendChild(s); return s; };\n  const inks = [...el.querySelectorAll('.am-switch-ink')];\n  while (inks.length < 2) inks.push(make('am-switch-ink'));\n  const thumb = el.querySelector('.am-switch-thumb') || make('am-switch-thumb');\n  for (const part of [thumb, ...inks]) attr(part, 'aria-hidden', 'true');\n\n  const initial = o.checked ?? el.getAttribute('aria-checked') === 'true';\n  const state = steps(!!initial);\n  const pos = track(initial ? 1 : 0, PRESETS.release);\n  const press = track(0, PRESETS.press);\n  const ink = { base: initial ? ON : OFF, list: [] };\n  let endT = -Infinity;\n  const mark = (t) => { if (t > endT) endT = t; };\n  const settledAll = (t) => pos.settled(t) && press.settled(t) && inkSettled(ink, t);\n\n  function measure() {\n    const r = el.getBoundingClientRect();\n    const W = r.width || 44;\n    const H = r.height || 24;\n    const T = Math.min(thumb.getBoundingClientRect().height || H - 4, H);\n    const pad = (H - T) / 2;\n    return { r, W, H, T, pad, travel: Math.max(0, W - T - 2 * pad) };\n  }\n  let g = measure();\n\n  const disabled = () => el.disabled || el.getAttribute('aria-disabled') === 'true';\n\n  function paint(t, { reduced }) {\n    const c = state.at(t);\n    attr(el, 'aria-checked', String(c));\n    attr(el, 'data-state', c ? 'checked' : 'unchecked');\n    const p = reduced ? pos.target(t) : pos.at(t);\n    const s = reduced ? 0 : clamp01(press.at(t)) * PRESS_STRETCH;\n    // pressed, the thumb widens toward the middle of the track\n    thumb.style.width = px(g.T + s);\n    thumb.style.transform = `translateX(${px(g.travel * p - s * clamp01(p))})`;\n    paintInk(inkAt(ink, t, reduced), el, inks);\n  }\n\n  function draw(t, st) {\n    paint(t, st);\n    if (!api.keep && t >= endT && state.ev.length && settledAll(t)) {\n      pos.compact(t);\n      press.compact(t);\n      state.compact();\n      const lastInk = ink.list[ink.list.length - 1];\n      if (lastInk) ink.base = lastInk.color;\n      ink.list = [];\n    }\n  }\n\n  const d = driver(draw, { clock: o.clock, reduced: o.reduced });\n  d.busy = (t) => t < endT || !settledAll(t);\n  const commit = () => { paint(d.now(), { reduced: d.reduced }); d.kick(); };\n  const when = (opt) => (opt && opt.t !== undefined ? { t: opt.t, live: false } : { t: d.now(), live: true });\n\n  /** Sets the state. opt: { t, x, y } where x, y is the page point the colour grows from. */\n  function set(value, opt = {}) {\n    const { t, live } = when(opt);\n    const v = !!value;\n    if (v === state.last || (live && disabled())) return api;\n    g = measure();\n    const p = state.last ? 1 : 0; // the thumb's resting place before this change\n    const cx = opt.x !== undefined ? opt.x - g.r.left : g.pad + g.T / 2 + g.travel * p;\n    const cy = opt.y !== undefined ? opt.y - g.r.top : g.H / 2;\n    state.set(t, v);\n    pos.to(t, v ? 1 : 0);\n    ink.list.push({ t, color: v ? ON : OFF, x: cx, y: cy, R: cover(cx, cy, g.W, g.H), sp: PRESETS.snappy });\n    ink.list.sort((a, b) => a.t - b.t);\n    mark(t);\n    commit();\n    if (live && o.onChange) o.onChange(v);\n    return api;\n  }\n\n  const toggle = (opt = {}) => set(!state.last, opt);\n  function pressDown(opt = {}) {\n    const { t } = when(opt);\n    press.to(t, 1, PRESETS.press);\n    mark(t);\n    commit();\n    return api;\n  }\n  function pressUp(opt = {}) {\n    const { t } = when(opt);\n    if (press.target(Infinity) === 0) return api;\n    press.to(t, 0, PRESETS.release);\n    mark(t);\n    commit();\n    return api;\n  }\n\n  // ---------------------------------------------------------------- live input\n  const listeners = [];\n  const on = (target, type, fn) => { target.addEventListener(type, fn); listeners.push([target, type, fn]); };\n  on(el, 'pointerdown', () => { if (!disabled()) pressDown(); });\n  for (const type of ['pointerup', 'pointerleave', 'pointercancel']) on(el, type, () => pressUp());\n  on(el, 'click', (e) => {\n    if (disabled()) return;\n    const pointer = e.detail > 0;\n    toggle(pointer ? { x: e.clientX, y: e.clientY } : {});\n  });\n  if (!isButton) {\n    on(el, 'keydown', (e) => {\n      if (e.key !== ' ' && e.key !== 'Enter') return;\n      e.preventDefault();\n      if (!disabled()) toggle();\n    });\n  }\n\n  const api = {\n    el,\n    thumb,\n    driver: d,\n    keep: false,\n    set,\n    toggle,\n    press: pressDown,\n    release: pressUp,\n    checked: (t) => (t === undefined ? state.last : state.at(t)),\n    seek: (t) => paint(t, { reduced: d.reduced }),\n    settled: (t) => t >= endT && settledAll(t),\n    destroy() {\n      d.stop();\n      for (const [target, type, fn] of listeners) target.removeEventListener(type, fn);\n    },\n  };\n  paint(d.now(), { reduced: d.reduced });\n  return api;\n}\n",
+      "type": "registry:lib"
+    },
+    {
+      "path": "registry/arling/lib/arling-motion-switch.d.ts",
+      "content": "// ARLing Motion: switch. MIT licence, https://arling.sk/motion/ . Types for the plain JavaScript file next to this one.\nexport declare const PRESS_STRETCH: any;\nexport declare function createSwitch(...args: any[]): any;\n",
+      "type": "registry:lib"
+    },
+    {
+      "path": "registry/arling/ui/motion-switch.tsx",
+      "content": "'use client';\n// ARLing Motion: Switch for React. A thin wrapper: the vanilla component owns the thumb\n// spring, the colour that grows as a circle, aria-checked and the keyboard.\n// In the registry the core lives at '@/lib/arling-motion' and this logic at\n// '@/lib/arling-motion-switch'.\nimport * as React from 'react';\nimport { createSwitch } from '@/lib/arling-motion-switch';\n\ntype SwitchApi = { set: (v: boolean) => unknown; checked: () => boolean; destroy: () => void };\n\nexport interface SwitchProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'onChange' | 'role' | 'aria-checked'> {\n  defaultChecked?: boolean;\n  /** Controlled state (optional). */\n  checked?: boolean;\n  onCheckedChange?: (checked: boolean) => void;\n  reducedMotion?: boolean;\n}\n\nexport function Switch({ defaultChecked = false, checked, onCheckedChange, reducedMotion, className, ...rest }: SwitchProps) {\n  const ref = React.useRef<HTMLButtonElement>(null);\n  const apiRef = React.useRef<SwitchApi | null>(null);\n  const changeRef = React.useRef(onCheckedChange);\n  changeRef.current = onCheckedChange;\n\n  React.useEffect(() => {\n    if (!ref.current) return;\n    const api = createSwitch({\n      el: ref.current,\n      checked: checked ?? defaultChecked,\n      reduced: reducedMotion,\n      onChange: (v: boolean) => changeRef.current?.(v),\n    }) as unknown as SwitchApi;\n    apiRef.current = api;\n    return () => {\n      api.destroy();\n      apiRef.current = null;\n    };\n    // built once; later changes of `checked` go through set()\n    // eslint-disable-next-line react-hooks/exhaustive-deps\n  }, [reducedMotion]);\n\n  React.useEffect(() => {\n    const api = apiRef.current;\n    if (api && checked !== undefined && checked !== api.checked()) api.set(checked);\n  }, [checked]);\n\n  return (\n    <button\n      ref={ref}\n      type=\"button\"\n      role=\"switch\"\n      aria-checked={checked ?? defaultChecked}\n      className={['am-switch', className].filter(Boolean).join(' ')}\n      {...rest}\n    >\n      <span className=\"am-switch-ink\" aria-hidden=\"true\" />\n      <span className=\"am-switch-ink\" aria-hidden=\"true\" />\n      <span className=\"am-switch-thumb\" aria-hidden=\"true\" />\n    </button>\n  );\n}\n\nexport default Switch;\n",
+      "type": "registry:ui"
+    }
+  ],
+  "css": {
+    "@layer components": {
+      ".am-switch": {
+        "position": "relative",
+        "display": "inline-block",
+        "flex": "none",
+        "width": "2.75rem",
+        "height": "1.5rem",
+        "padding": "0",
+        "overflow": "hidden",
+        "border": "0",
+        "border-radius": "9999px",
+        "background": "var(--input, #e5e5e5)",
+        "vertical-align": "middle",
+        "cursor": "pointer"
+      },
+      ".am-switch[aria-checked=\"true\"]": {
+        "background": "var(--primary, #171717)"
+      },
+      ".am-switch:focus-visible": {
+        "outline": "2px solid var(--ring, #a3a3a3)",
+        "outline-offset": "2px"
+      },
+      ".am-switch:disabled, .am-switch[aria-disabled=\"true\"]": {
+        "opacity": "0.5",
+        "cursor": "not-allowed"
+      },
+      ".am-switch-ink": {
+        "position": "absolute",
+        "inset": "0",
+        "border-radius": "inherit",
+        "visibility": "hidden",
+        "pointer-events": "none"
+      },
+      ".am-switch-thumb": {
+        "position": "absolute",
+        "top": "2px",
+        "left": "2px",
+        "width": "1.25rem",
+        "height": "1.25rem",
+        "border-radius": "9999px",
+        "background": "var(--background, #ffffff)",
+        "box-shadow": "0 1px 2px rgb(0 0 0 / 0.12), 0 1px 1px rgb(0 0 0 / 0.06)",
+        "pointer-events": "none"
+      }
+    }
+  },
+  "docs": "Switch from ARLing Motion (MIT).\nReact: import { Switch } from \"@/components/ui/motion-switch\".\nThe logic is in lib/arling-motion-switch.js (typed by the .d.ts next to it) and works without React: createSwitch on your own markup.\nStyles were added to your global CSS under @layer components (Tailwind v4).\nWith Tailwind v3 or no Tailwind, add https://arling.sk/motion/components/switch/switch.css to your styles instead.\nLive demo and docs: https://arling.sk/motion/#switch",
+  "categories": [
+    "motion",
+    "switch",
+    "toggle",
+    "form"
+  ]
+}

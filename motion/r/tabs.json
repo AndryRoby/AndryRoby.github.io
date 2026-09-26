@@ -1,0 +1,109 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "tabs",
+  "type": "registry:ui",
+  "title": "Tabs",
+  "description": "Tabs whose indicator stretches toward the new tab with its leading edge while the trailing edge catches up. Arrow keys, Home and End, panels without layout shift.",
+  "author": "ARLing s. r. o. (https://arling.sk)",
+  "registryDependencies": [
+    "https://arling.sk/motion/r/core.json"
+  ],
+  "files": [
+    {
+      "path": "registry/arling/lib/arling-motion-tabs.js",
+      "content": "'use strict';\n// ARLing Motion: tabs. MIT licence, https://arling.sk/motion/ . Installed from the ARLing\n// Motion registry (source: components/tabs/tabs.js). Plain JavaScript; the .d.ts next to it types the exports.\n/*\n * ARLing Motion: Tabs.\n * The indicator is one shape with two edges on different springs: the leading edge is\n * faster, so it stretches toward the new tab and the trailing edge catches up. Panels\n * share one grid cell (no layout shift) and each has its own entrance and exit.\n *\n * Markup:\n *   <div class=\"am-tabs\">\n *     <div class=\"am-tabs-list\" role=\"tablist\" aria-label=\"Account\">\n *       <button role=\"tab\">Profile</button><button role=\"tab\">Billing</button>\n *     </div>\n *     <div class=\"am-tabs-panels\">\n *       <div role=\"tabpanel\">...</div><div role=\"tabpanel\">...</div>\n *     </div>\n *   </div>\n *\n * Keyboard (WAI-ARIA APG, tabs): Left and Right (Up and Down when vertical) move between\n * tabs and wrap, Home and End jump; with activation 'automatic' focus selects, with\n * 'manual' Enter or Space selects. Only the selected tab is in the Tab order.\n * MIT licence.\n */\nimport { indicator, presence, applyPresence, driver, spring } from './arling-motion';\n\n// ------------------------------------------------------------------ shared helpers\n\nconst px = (v) => `${Math.round(v * 100) / 100}px`;\nconst SHOWN = { opacity: 1, blur: 0, y: 0, scale: 1, visible: true };\nconst GONE = { opacity: 0, blur: 0, y: 0, scale: 1, visible: false };\n\nfunction steps(initial) {\n  return {\n    initial,\n    ev: [],\n    set(t, v) { this.ev.push([t, v]); this.ev.sort((a, b) => a[0] - b[0]); return this; },\n    at(t) { let v = this.initial; for (const [et, x] of this.ev) { if (et > t) break; v = x; } return v; },\n    get last() { return this.ev.length ? this.ev[this.ev.length - 1][1] : this.initial; },\n    compact() { this.initial = this.last; this.ev = []; },\n  };\n}\n\nfunction attr(el, name, value) {\n  if (value === null || value === undefined || value === false) {\n    if (el.hasAttribute(name)) el.removeAttribute(name);\n  } else {\n    const v = value === true ? '' : String(value);\n    if (el.getAttribute(name) !== v) el.setAttribute(name, v);\n  }\n}\n\nlet uid = 0;\nconst ensureId = (el, prefix) => el.id || (el.id = `${prefix}-${++uid}`);\n\n// ------------------------------------------------------------------ tabs\n\n/** Springs of the indicator: both land within 0.91 s, overshoot under 0.2 %. */\nexport const TAB_SPRINGS = { fast: spring(0.28, 0.9), slow: spring(0.48, 0.95) };\n\n/**\n * createTabs({ root, selected, orientation, activation, onChange, clock, reduced })\n * Returns { select, selected, seek, settled, measure, destroy, driver, tabs, panels, keep }.\n */\nexport function createTabs(o) {\n  const root = o.root;\n  const doc = root.ownerDocument || document;\n  const list = root.querySelector('[role=\"tablist\"]') || root;\n  const vertical = (o.orientation || list.getAttribute('aria-orientation')) === 'vertical';\n  const manual = o.activation === 'manual';\n  const tabs = [...list.querySelectorAll('[role=\"tab\"]')];\n  if (!tabs.length) throw new Error('createTabs: no elements with role=\"tab\"');\n  const allPanels = [...root.querySelectorAll('[role=\"tabpanel\"]')];\n  const panels = tabs.map((tab, i) => {\n    const id = tab.getAttribute('aria-controls');\n    return (id && allPanels.find((p) => p.id === id)) || allPanels[i] || null;\n  });\n  if (vertical) attr(list, 'aria-orientation', 'vertical');\n  tabs.forEach((tab, i) => {\n    if (tab.tagName === 'BUTTON' && !tab.hasAttribute('type')) attr(tab, 'type', 'button');\n    const p = panels[i];\n    if (!p) return;\n    attr(tab, 'aria-controls', ensureId(p, 'am-tabpanel'));\n    attr(p, 'aria-labelledby', ensureId(tab, 'am-tab'));\n    if (!p.hasAttribute('tabindex')) attr(p, 'tabindex', '0');\n  });\n  let bar = list.querySelector('.am-tabs-indicator');\n  if (!bar) {\n    bar = doc.createElement('span');\n    bar.className = 'am-tabs-indicator';\n    list.appendChild(bar);\n  }\n  attr(bar, 'aria-hidden', 'true');\n\n  const disabled = (i) => tabs[i].disabled || tabs[i].getAttribute('aria-disabled') === 'true';\n  const marked = tabs.findIndex((t) => t.getAttribute('aria-selected') === 'true');\n  let first = o.selected ?? (marked >= 0 ? marked : 0);\n  if (first < 0 || first >= tabs.length || disabled(first)) first = tabs.findIndex((_, i) => !disabled(i));\n\n  const sel = steps(first);\n  const edges = (i) => {\n    const lr = list.getBoundingClientRect();\n    const r = tabs[i].getBoundingClientRect();\n    return vertical ? [r.top - lr.top, r.bottom - lr.top] : [r.left - lr.left, r.right - lr.left];\n  };\n  const fast = o.fast || TAB_SPRINGS.fast;\n  const slow = o.slow || TAB_SPRINGS.slow;\n  let ind = indicator(...edges(first), fast, slow);\n  const panelMotion = { dyIn: 8, dyOut: -4, blur: 6, scaleFrom: 0.985 };\n  const pres = panels.map((_, i) => presence(i === first, panelMotion));\n  let endT = -Infinity;\n  const mark = (t) => { if (t > endT) endT = t; };\n  const settledAll = (t) => ind.settled(t) && pres.every((p) => p.settled(t));\n\n  function paint(t, { reduced }) {\n    const s = sel.at(t);\n    tabs.forEach((tab, i) => {\n      const on = i === s;\n      attr(tab, 'aria-selected', String(on));\n      attr(tab, 'tabindex', on ? '0' : '-1');\n      attr(tab, 'data-state', on ? 'active' : 'inactive');\n    });\n    const v = reduced ? ind.target(t) : ind.at(t);\n    bar.style.transform = vertical ? `translateY(${px(v.left)})` : `translateX(${px(v.left)})`;\n    if (vertical) bar.style.height = px(v.right - v.left);\n    else bar.style.width = px(v.right - v.left);\n    panels.forEach((p, i) => {\n      if (!p) return;\n      const on = i === s;\n      attr(p, 'data-state', on ? 'active' : 'inactive');\n      attr(p, 'inert', on ? null : true);\n      attr(p, 'aria-hidden', on ? null : 'true');\n      applyPresence(p, reduced ? (on ? SHOWN : GONE) : pres[i].at(t));\n    });\n  }\n\n  function draw(t, s) {\n    paint(t, s);\n    if (!api.keep && t >= endT && sel.ev.length && settledAll(t)) {\n      ind.l.compact(t);\n      ind.r.compact(t);\n      for (const p of pres) { p.p.compact(t); p.marks = []; }\n      sel.compact();\n    }\n  }\n\n  const d = driver(draw, { clock: o.clock, reduced: o.reduced });\n  d.busy = (t) => t < endT || !settledAll(t);\n  const commit = () => { paint(d.now(), { reduced: d.reduced }); d.kick(); };\n  const when = (opt) => (opt && opt.t !== undefined ? { t: opt.t, live: false } : { t: d.now(), live: true });\n\n  function select(i, opt = {}) {\n    const { t, live } = when(opt);\n    if (i < 0 || i >= tabs.length || disabled(i)) return api;\n    const prev = sel.last;\n    if (i !== prev) {\n      sel.set(t, i);\n      ind.to(t, ...edges(i));\n      if (pres[prev]) pres[prev].exit(t);\n      if (pres[i]) pres[i].enter(t + 0.06);\n      mark(t + 0.06);\n      commit();\n    }\n    if (live) {\n      if (opt.focus) tabs[i].focus();\n      if (i !== prev && o.onChange) o.onChange(i);\n    }\n    return api;\n  }\n\n  /** The same selections as now, planned again on the current layout. */\n  function replan() {\n    const e0 = edges(sel.initial);\n    const next = indicator(e0[0], e0[1], fast, slow);\n    for (const [t, i] of sel.ev) next.to(t, ...edges(i));\n    return next;\n  }\n\n  const near = (a, b) => Math.abs(a - b) < 0.5;\n  const sameTrack = (a, b) => near(a.initial, b.initial) && a.ev.length === b.ev.length\n    && a.ev.every((e, k) => e.k === b.ev[k].k && e.t === b.ev[k].t && (e.k !== 'to' || near(e.target, b.ev[k].target)));\n\n  /**\n   * Re-measure after a layout change. Live, the indicator jumps to the selected tab without\n   * motion. With api.keep (a scheduled demo) the timeline stays as it is: every scheduled\n   * selection is planned again on the new layout, so seeking still shows the right tab.\n   */\n  function measure() {\n    if (api.keep) {\n      const next = replan();\n      if (sameTrack(next.l, ind.l) && sameTrack(next.r, ind.r)) return api;\n      ind = next;\n      commit();\n      return api;\n    }\n    const e = edges(sel.last);\n    const cur = ind.target(Infinity);\n    if (Math.abs(cur.left - e[0]) < 0.5 && Math.abs(cur.right - e[1]) < 0.5) return api;\n    ind = indicator(e[0], e[1], fast, slow);\n    commit();\n    return api;\n  }\n\n  const step = (from, dir) => {\n    for (let k = 1; k <= tabs.length; k++) {\n      const j = (from + dir * k + tabs.length * k) % tabs.length;\n      if (!disabled(j)) return j;\n    }\n    return from;\n  };\n\n  const listeners = [];\n  const on = (el, type, fn) => { el.addEventListener(type, fn); listeners.push([el, type, fn]); };\n\n  on(list, 'keydown', (e) => {\n    const tab = e.target && e.target.closest ? e.target.closest('[role=\"tab\"]') : null;\n    const cur = tabs.indexOf(tab);\n    if (cur < 0) return;\n    const nextKey = vertical ? 'ArrowDown' : 'ArrowRight';\n    const prevKey = vertical ? 'ArrowUp' : 'ArrowLeft';\n    let to = null;\n    if (e.key === nextKey) to = step(cur, 1);\n    else if (e.key === prevKey) to = step(cur, -1);\n    else if (e.key === 'Home') to = step(tabs.length - 1, 1); // first enabled tab\n    else if (e.key === 'End') to = step(0, -1); // last enabled tab\n    else if (manual && (e.key === 'Enter' || e.key === ' ')) {\n      e.preventDefault();\n      select(cur);\n      return;\n    }\n    if (to === null) return;\n    e.preventDefault();\n    if (manual) tabs[to].focus();\n    else select(to, { focus: true });\n  });\n  on(list, 'click', (e) => {\n    const tab = e.target && e.target.closest ? e.target.closest('[role=\"tab\"]') : null;\n    const i = tabs.indexOf(tab);\n    if (i >= 0) select(i, { focus: true });\n  });\n  let ro = null;\n  if (typeof ResizeObserver === 'function') {\n    ro = new ResizeObserver(() => measure());\n    ro.observe(list);\n  }\n\n  const api = {\n    root,\n    list,\n    tabs,\n    panels,\n    indicator: bar,\n    driver: d,\n    keep: false,\n    select,\n    measure,\n    selected: (t) => (t === undefined ? sel.last : sel.at(t)),\n    seek: (t) => paint(t, { reduced: d.reduced }),\n    settled: (t) => t >= endT && settledAll(t),\n    destroy() {\n      d.stop();\n      if (ro) ro.disconnect();\n      for (const [el, type, fn] of listeners) el.removeEventListener(type, fn);\n    },\n  };\n  paint(d.now(), { reduced: d.reduced });\n  return api;\n}\n",
+      "type": "registry:lib"
+    },
+    {
+      "path": "registry/arling/lib/arling-motion-tabs.d.ts",
+      "content": "// ARLing Motion: tabs. MIT licence, https://arling.sk/motion/ . Types for the plain JavaScript file next to this one.\nexport declare const TAB_SPRINGS: any;\nexport declare function createTabs(...args: any[]): any;\n",
+      "type": "registry:lib"
+    },
+    {
+      "path": "registry/arling/ui/motion-tabs.tsx",
+      "content": "'use client';\n// ARLing Motion: Tabs for React. A thin wrapper over the vanilla component, which owns\n// the motion, ARIA state (aria-selected, tabindex, inert) and the keyboard.\n// In the registry the core lives at '@/lib/arling-motion' and this logic at\n// '@/lib/arling-motion-tabs'.\nimport * as React from 'react';\nimport { createTabs } from '@/lib/arling-motion-tabs';\n\ntype TabsApi = { select: (i: number, o?: { t?: number; focus?: boolean }) => unknown; selected: () => number; destroy: () => void };\n\nconst cx = (...c: Array<string | false | null | undefined>) => c.filter(Boolean).join(' ');\n\nexport interface TabsProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onChange'> {\n  /** Index of the tab selected at first. */\n  defaultValue?: number;\n  /** Controlled index (optional). */\n  value?: number;\n  onValueChange?: (index: number) => void;\n  orientation?: 'horizontal' | 'vertical';\n  /** 'automatic' selects on focus (default), 'manual' needs Enter or Space. */\n  activation?: 'automatic' | 'manual';\n  reducedMotion?: boolean;\n}\n\nexport function Tabs({ defaultValue = 0, value, onValueChange, orientation, activation, reducedMotion, className, children, ...rest }: TabsProps) {\n  const ref = React.useRef<HTMLDivElement>(null);\n  const apiRef = React.useRef<TabsApi | null>(null);\n  const changeRef = React.useRef(onValueChange);\n  changeRef.current = onValueChange;\n\n  React.useEffect(() => {\n    if (!ref.current) return;\n    const api = createTabs({\n      root: ref.current,\n      selected: value ?? defaultValue,\n      orientation,\n      activation,\n      reduced: reducedMotion,\n      onChange: (i: number) => changeRef.current?.(i),\n    }) as unknown as TabsApi;\n    apiRef.current = api;\n    return () => {\n      api.destroy();\n      apiRef.current = null;\n    };\n    // the component is built once per layout option; value changes go through select()\n    // eslint-disable-next-line react-hooks/exhaustive-deps\n  }, [orientation, activation, reducedMotion]);\n\n  React.useEffect(() => {\n    const api = apiRef.current;\n    if (api && value !== undefined && value !== api.selected()) api.select(value);\n  }, [value]);\n\n  return (\n    <div ref={ref} className={cx('am-tabs', className)} {...rest}>\n      {children}\n    </div>\n  );\n}\n\nexport interface TabsListProps extends React.HTMLAttributes<HTMLDivElement> {\n  orientation?: 'horizontal' | 'vertical';\n}\n\nexport function TabsList({ className, children, orientation, ...rest }: TabsListProps) {\n  return (\n    <div role=\"tablist\" aria-orientation={orientation === 'vertical' ? 'vertical' : undefined} className={cx('am-tabs-list', className)} {...rest}>\n      {children}\n      <span className=\"am-tabs-indicator\" aria-hidden=\"true\" />\n    </div>\n  );\n}\n\nexport function TabsTrigger({ className, ...rest }: React.ButtonHTMLAttributes<HTMLButtonElement>) {\n  return <button type=\"button\" role=\"tab\" className={className} {...rest} />;\n}\n\nexport function TabsPanels({ className, ...rest }: React.HTMLAttributes<HTMLDivElement>) {\n  return <div className={cx('am-tabs-panels', className)} {...rest} />;\n}\n\nexport function TabsContent({ className, ...rest }: React.HTMLAttributes<HTMLDivElement>) {\n  return <div role=\"tabpanel\" className={className} {...rest} />;\n}\n",
+      "type": "registry:ui"
+    }
+  ],
+  "css": {
+    "@layer components": {
+      ".am-tabs": {
+        "display": "grid",
+        "gap": "0.75rem"
+      },
+      ".am-tabs-list": {
+        "position": "relative",
+        "display": "inline-flex",
+        "align-items": "center",
+        "justify-self": "start",
+        "gap": "0.25rem",
+        "padding": "0.25rem",
+        "border-radius": "var(--radius, 0.625rem)",
+        "background": "var(--muted, #f5f5f5)"
+      },
+      ".am-tabs-list[aria-orientation=\"vertical\"]": {
+        "flex-direction": "column",
+        "align-items": "stretch"
+      },
+      ".am-tabs-indicator": {
+        "position": "absolute",
+        "top": "0.25rem",
+        "bottom": "0.25rem",
+        "left": "0",
+        "width": "0",
+        "border-radius": "calc(var(--radius, 0.625rem) - 2px)",
+        "background": "var(--background, #ffffff)",
+        "box-shadow": "0 1px 2px rgb(0 0 0 / 0.06), 0 0 0 1px var(--border, #e5e5e5)",
+        "pointer-events": "none"
+      },
+      ".am-tabs-list[aria-orientation=\"vertical\"] .am-tabs-indicator": {
+        "top": "0",
+        "right": "0.25rem",
+        "bottom": "auto",
+        "left": "0.25rem",
+        "width": "auto",
+        "height": "0"
+      },
+      ".am-tabs-list [role=\"tab\"]": {
+        "position": "relative",
+        "z-index": "1",
+        "height": "2rem",
+        "padding": "0 0.875rem",
+        "border": "0",
+        "border-radius": "calc(var(--radius, 0.625rem) - 2px)",
+        "background": "transparent",
+        "color": "var(--muted-foreground, #737373)",
+        "font": "inherit",
+        "font-size": "0.875rem",
+        "font-weight": "500",
+        "white-space": "nowrap",
+        "cursor": "pointer"
+      },
+      ".am-tabs-list [role=\"tab\"][aria-selected=\"true\"]": {
+        "color": "var(--foreground, #0a0a0a)"
+      },
+      ".am-tabs-list [role=\"tab\"]:focus-visible, .am-tabs-panels [role=\"tabpanel\"]:focus-visible": {
+        "outline": "2px solid var(--ring, #a3a3a3)",
+        "outline-offset": "2px"
+      },
+      ".am-tabs-list [role=\"tab\"]:disabled, .am-tabs-list [role=\"tab\"][aria-disabled=\"true\"]": {
+        "opacity": "0.5",
+        "cursor": "not-allowed"
+      },
+      ".am-tabs-panels": {
+        "display": "grid"
+      },
+      ".am-tabs-panels > [role=\"tabpanel\"]": {
+        "grid-area": "1 / 1",
+        "min-width": "0",
+        "border-radius": "calc(var(--radius, 0.625rem) - 2px)"
+      }
+    }
+  },
+  "docs": "Tabs from ARLing Motion (MIT).\nReact: import { Tabs, TabsList, TabsTrigger, TabsPanels, TabsContent } from \"@/components/ui/motion-tabs\".\nThe logic is in lib/arling-motion-tabs.js (typed by the .d.ts next to it) and works without React: createTabs on your own markup.\nStyles were added to your global CSS under @layer components (Tailwind v4).\nWith Tailwind v3 or no Tailwind, add https://arling.sk/motion/components/tabs/tabs.css to your styles instead.\nLive demo and docs: https://arling.sk/motion/#tabs",
+  "categories": [
+    "motion",
+    "tabs",
+    "navigation"
+  ]
+}

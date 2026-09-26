@@ -1,0 +1,116 @@
+/* ARLing Motion: Command menu. Rows, list height and highlight move by the core (inline styles), no CSS transitions. */
+
+.am-command {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: min(100%, 32rem);
+  overflow: hidden;
+  border: 1px solid var(--border, #e5e5e5);
+  border-radius: var(--radius, 0.625rem);
+  background: var(--popover, var(--background, #ffffff));
+  color: var(--popover-foreground, var(--foreground, #0a0a0a));
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.05), 0 12px 28px rgb(0 0 0 / 0.08);
+}
+
+.am-command-input {
+  width: 100%;
+  height: 3rem;
+  padding: 0 1rem;
+  border: 0;
+  border-bottom: 1px solid var(--border, #e5e5e5);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 0.9375rem;
+  outline: none;
+}
+
+.am-command-input::placeholder {
+  color: var(--muted-foreground, #737373);
+}
+
+/* The input is the focused element; show it on the whole palette. */
+.am-command:has(.am-command-input:focus-visible) {
+  outline: 2px solid var(--ring, #a3a3a3);
+  outline-offset: 2px;
+}
+
+/* Rows sit on absolute places the core computes; the list height comes from the core too. */
+.am-command-list {
+  position: relative;
+  max-height: 20rem;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.am-command-list [role="option"] {
+  position: absolute;
+  top: 0;
+  right: 0.25rem;
+  left: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: 2.25rem;
+  padding: 0 0.75rem;
+  border-radius: calc(var(--radius, 0.625rem) - 4px);
+  font-size: 0.875rem;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+}
+
+.am-command-list [role="option"][data-selected] {
+  color: var(--accent-foreground, var(--foreground, #0a0a0a));
+}
+
+.am-command-list [role="option"][aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* One highlight for the whole list. */
+.am-command-highlight {
+  position: absolute;
+  top: 0;
+  right: 0.25rem;
+  left: 0.25rem;
+  height: 0;
+  border-radius: calc(var(--radius, 0.625rem) - 4px);
+  background: var(--accent, var(--muted, #f5f5f5));
+  transform-origin: 50% 50%;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.am-command-empty {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  display: grid;
+  place-items: center;
+  height: 3.375rem;
+  color: var(--muted-foreground, #737373);
+  font-size: 0.875rem;
+  visibility: hidden;
+}
+
+.am-command-kbd {
+  margin-left: auto;
+  color: var(--muted-foreground, #737373);
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+}
+
+/* Read by screen readers only. */
+.am-command-status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

@@ -1,0 +1,108 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "accordion",
+  "type": "registry:ui",
+  "title": "Accordion",
+  "description": "An accordion whose panel unfolds downward while each row enters as the growing edge reaches it. Closing lets the rows leave first, then folds the panel.",
+  "author": "ARLing s. r. o. (https://arling.sk)",
+  "registryDependencies": [
+    "https://arling.sk/motion/r/core.json"
+  ],
+  "files": [
+    {
+      "path": "registry/arling/lib/arling-motion-accordion.js",
+      "content": "'use strict';\n// ARLing Motion: accordion. MIT licence, https://arling.sk/motion/ . Installed from the ARLing\n// Motion registry (source: components/accordion/accordion.js). Plain JavaScript; the .d.ts next to it types the exports.\n/*\n * ARLing Motion: Accordion.\n * Opening unfolds the panel: its top stands still, the panel grows downward, and each row\n * of content enters just after the growing edge reaches it. Closing lets the rows leave\n * first, then folds the panel up. The chevron turns on the same spring.\n *\n * Markup:\n *   <div class=\"am-accordion\">\n *     <div class=\"am-accordion-item\">\n *       <h3 class=\"am-accordion-heading\">\n *         <button class=\"am-accordion-trigger\">Shipping</button>\n *       </h3>\n *       <div class=\"am-accordion-panel\" hidden>\n *         <div class=\"am-accordion-content\"><p>Row</p><p>Row</p></div>\n *       </div>\n *     </div>\n *   </div>\n * Each direct child of .am-accordion-content is one row. The component adds the chevron.\n *\n * Keyboard (WAI-ARIA APG, accordion): Enter or Space on a header toggles its panel, Down\n * and Up move between headers and wrap, Home and End jump. Every header stays in the Tab\n * order. When a panel may not collapse, its open header gets aria-disabled=\"true\".\n *\n * Layout: the height of an opening panel moves the content below it, right after the\n * user's click or key. Browsers do not count such shifts in CLS (input within 500 ms).\n * MIT licence.\n */\nimport { track, presence, applyPresence, driver, springStep, settleTime, steps, attr, PRESETS } from './arling-motion';\n\n// ------------------------------------------------------------------ helpers\n\nconst px = (v) => `${Math.round(v * 100) / 100}px`;\nconst SHOWN = { opacity: 1, blur: 0, y: 0, scale: 1, visible: true };\nconst GONE = { opacity: 0, blur: 0, y: 0, scale: 1, visible: false };\n\nlet uid = 0;\nconst ensureId = (el, prefix) => el.id || (el.id = `${prefix}-${++uid}`);\n\n/** Seconds after the start until a unit step of this spring first reaches frac (unfold timing). */\nexport function reach(sp, frac) {\n  if (frac <= 0) return 0;\n  const f = Math.min(frac, 0.98);\n  let lo = 0;\n  let hi = settleTime(sp);\n  for (let i = 0; i < 32; i++) {\n    const mid = (lo + hi) / 2;\n    if (springStep(sp, mid) >= f) hi = mid; else lo = mid;\n  }\n  return hi;\n}\n\n// ------------------------------------------------------------------ accordion\n\n/** The spring the panel unfolds on, and where in a row the growing edge lets it enter. */\nexport const UNFOLD = { spring: PRESETS.smooth, rowAt: 0.4 };\nconst ROW_MOTION = { dyIn: 6, dyOut: -4, blur: 4, scaleFrom: 1 };\n\n/**\n * createAccordion({ root, multiple, collapsible, open, onChange, clock, reduced })\n * multiple: several panels may be open (default false); collapsible: the last open panel\n * may close (default true); open: index or list of indexes open at the start.\n * Returns { open, close, toggle, isOpen, seek, settled, destroy, driver, items, triggers, panels, keep }.\n */\nexport function createAccordion(o) {\n  const root = o.root;\n  const doc = root.ownerDocument || document;\n  const multiple = !!o.multiple;\n  const collapsible = o.collapsible !== false;\n  const itemEls = [...root.querySelectorAll('.am-accordion-item')];\n  if (!itemEls.length) throw new Error('createAccordion: no .am-accordion-item');\n  const startOpen = new Set([].concat(o.open ?? []));\n\n  const items = itemEls.map((item, i) => {\n    const trigger = item.querySelector('.am-accordion-trigger') || item.querySelector('button');\n    const panel = item.querySelector('.am-accordion-panel');\n    const content = panel.querySelector('.am-accordion-content') || panel;\n    const rows = [...content.children];\n    if (trigger.tagName === 'BUTTON' && !trigger.hasAttribute('type')) attr(trigger, 'type', 'button');\n    attr(trigger, 'aria-controls', ensureId(panel, 'am-accordion-panel'));\n    attr(panel, 'aria-labelledby', ensureId(trigger, 'am-accordion-trigger'));\n    attr(panel, 'role', 'region');\n    let chevron = trigger.querySelector('.am-accordion-chevron');\n    if (!chevron) {\n      chevron = doc.createElement('span');\n      chevron.className = 'am-accordion-chevron';\n      trigger.appendChild(chevron);\n    }\n    attr(chevron, 'aria-hidden', 'true');\n    const isOpen = startOpen.has(i) || trigger.getAttribute('aria-expanded') === 'true';\n    return {\n      item,\n      trigger,\n      panel,\n      content,\n      rows,\n      chevron,\n      openS: steps(isOpen),\n      h: track(0, UNFOLD.spring),\n      rot: track(isOpen ? 1 : 0, PRESETS.snappy),\n      pres: rows.map(() => presence(isOpen, ROW_MOTION)),\n    };\n  });\n  const setInitial = (it, v) => {\n    it.openS.initial = v;\n    it.rot = track(v ? 1 : 0, PRESETS.snappy);\n    it.pres = it.rows.map(() => presence(v, ROW_MOTION));\n  };\n  if (!multiple) {\n    // one panel at most: keep the first one asked for\n    let seen = false;\n    for (const it of items) {\n      if (!it.openS.initial) continue;\n      if (seen) setInitial(it, false);\n      seen = true;\n    }\n    if (!collapsible && !seen) setInitial(items[0], true);\n  }\n\n  let endT = -Infinity;\n  const mark = (t) => { if (t > endT) endT = t; };\n  const tracksOf = (it) => [it.h, it.rot, ...it.pres.map((p) => p.p)];\n  const itemSettled = (it, t) => tracksOf(it).every((tr) => tr.settled(t));\n  const settledAll = (t) => items.every((it) => itemSettled(it, t));\n\n  /** Content height and each row's box, measured with the panel shown at its natural height. */\n  function measure(it) {\n    const { panel, content, rows } = it;\n    const wasHidden = panel.hidden;\n    const height = panel.style.height;\n    panel.hidden = false;\n    panel.style.height = '';\n    const cr = content.getBoundingClientRect();\n    const pr = panel.getBoundingClientRect();\n    const H = Math.max(pr.height, cr.bottom - pr.top, 0);\n    const boxes = rows.map((r) => {\n      const b = r.getBoundingClientRect();\n      return { y: b.top - pr.top, h: b.height };\n    });\n    panel.style.height = height;\n    panel.hidden = wasHidden;\n    return { H, boxes };\n  }\n  for (const it of items) if (it.openS.initial) it.h = track(measure(it).H, UNFOLD.spring);\n\n  const blocked = (it) => !collapsible && !multiple && it.openS.last;\n  const disabled = (it) => it.trigger.disabled || (it.trigger.getAttribute('aria-disabled') === 'true' && !blocked(it));\n\n  function paint(t, { reduced }) {\n    for (const it of items) {\n      const isOpen = it.openS.at(t);\n      const state = isOpen ? 'open' : 'closed';\n      attr(it.trigger, 'aria-expanded', String(isOpen));\n      if (!collapsible && !multiple) attr(it.trigger, 'aria-disabled', isOpen ? 'true' : null);\n      attr(it.trigger, 'data-state', state);\n      attr(it.item, 'data-state', state);\n      attr(it.panel, 'data-state', state);\n      const still = reduced || itemSettled(it, t);\n      it.panel.hidden = !(isOpen || !still);\n      it.chevron.style.transform = `rotate(${Math.round((reduced ? it.rot.target(t) : it.rot.at(t)) * 18000) / 100}deg)`;\n      if (it.panel.hidden) continue;\n      // open and at rest the height is natural again, so the content can reflow\n      it.panel.style.height = isOpen && still ? '' : px(Math.max(0, it.h.at(t)));\n      it.rows.forEach((row, j) => applyPresence(row, reduced ? (isOpen ? SHOWN : GONE) : it.pres[j].at(t)));\n    }\n  }\n\n  function draw(t, s) {\n    paint(t, s);\n    if (!api.keep && t >= endT && settledAll(t) && items.some((it) => it.openS.ev.length)) {\n      for (const it of items) {\n        for (const tr of tracksOf(it)) tr.compact(t);\n        for (const p of it.pres) p.marks = [];\n        it.openS.compact();\n      }\n    }\n  }\n\n  const d = driver(draw, { clock: o.clock, reduced: o.reduced });\n  d.busy = (t) => t < endT || !settledAll(t);\n  const commit = () => { paint(d.now(), { reduced: d.reduced }); d.kick(); };\n  const when = (opt) => (opt && opt.t !== undefined ? { t: opt.t, live: false } : { t: d.now(), live: true });\n\n  function openAt(it, t) {\n    const g = measure(it);\n    const sp = UNFOLD.spring;\n    const from = it.h.target(t);\n    it.openS.set(t, true);\n    it.h.to(t, g.H, sp);\n    it.rot.to(t, 1);\n    let last = t;\n    it.pres.forEach((p, j) => {\n      const b = g.boxes[j] || { y: 0, h: 0 };\n      const edge = b.y + b.h * UNFOLD.rowAt;\n      const tj = t + (g.H > from ? reach(sp, (edge - from) / (g.H - from)) : 0);\n      p.enter(tj);\n      if (tj > last) last = tj;\n    });\n    mark(last);\n  }\n\n  function closeAt(it, t) {\n    // an open panel at rest has its natural height (the content may have reflowed since it\n    // opened): with no history left, start the fold from what is on screen now\n    if (!it.h.ev.length) it.h = track(measure(it).H, UNFOLD.spring);\n    it.openS.set(t, false);\n    for (const p of it.pres) p.exit(t);\n    it.h.to(t + 0.05, 0, PRESETS.snappy);\n    it.rot.to(t, 0);\n    mark(t + 0.05);\n  }\n\n  function open(i, opt = {}) {\n    const { t, live } = when(opt);\n    const it = items[i];\n    if (!it || it.openS.last) return api;\n    if (!multiple) for (const other of items) if (other !== it && other.openS.last) closeAt(other, t);\n    openAt(it, t);\n    commit();\n    if (live && o.onChange) o.onChange(openList());\n    return api;\n  }\n\n  function close(i, opt = {}) {\n    const { t, live } = when(opt);\n    const it = items[i];\n    if (!it || !it.openS.last || blocked(it)) return api;\n    closeAt(it, t);\n    commit();\n    if (live && o.onChange) o.onChange(openList());\n    return api;\n  }\n\n  const toggle = (i, opt) => (items[i] && items[i].openS.last ? close(i, opt) : open(i, opt));\n  const openList = () => items.map((it, i) => (it.openS.last ? i : -1)).filter((i) => i >= 0);\n\n  // ---------------------------------------------------------------- live input\n  const listeners = [];\n  const on = (target, type, fn) => { target.addEventListener(type, fn); listeners.push([target, type, fn]); };\n  const triggers = items.map((it) => it.trigger);\n  const indexOf = (target) => (target && target.closest ? triggers.indexOf(target.closest('.am-accordion-trigger, button')) : -1);\n\n  on(root, 'click', (e) => {\n    const i = indexOf(e.target);\n    if (i < 0 || disabled(items[i])) return;\n    toggle(i);\n  });\n  on(root, 'keydown', (e) => {\n    const i = indexOf(e.target);\n    if (i < 0) return;\n    const usable = triggers.map((_, j) => j).filter((j) => !items[j].trigger.disabled);\n    const k = usable.indexOf(i);\n    let to = -1;\n    if (e.key === 'ArrowDown') to = usable[(k + 1) % usable.length];\n    else if (e.key === 'ArrowUp') to = usable[(k - 1 + usable.length) % usable.length];\n    else if (e.key === 'Home') to = usable[0];\n    else if (e.key === 'End') to = usable[usable.length - 1];\n    if (to === undefined || to < 0) return;\n    e.preventDefault();\n    triggers[to].focus();\n  });\n\n  const api = {\n    root,\n    items: itemEls,\n    triggers,\n    panels: items.map((it) => it.panel),\n    multiple,\n    driver: d,\n    keep: false,\n    open,\n    close,\n    toggle,\n    isOpen: (i, t) => (items[i] ? (t === undefined ? items[i].openS.last : items[i].openS.at(t)) : false),\n    openItems: openList,\n    seek: (t) => paint(t, { reduced: d.reduced }),\n    settled: (t) => t >= endT && settledAll(t),\n    destroy() {\n      d.stop();\n      for (const [target, type, fn] of listeners) target.removeEventListener(type, fn);\n    },\n  };\n  paint(d.now(), { reduced: d.reduced });\n  return api;\n}\n",
+      "type": "registry:lib"
+    },
+    {
+      "path": "registry/arling/lib/arling-motion-accordion.d.ts",
+      "content": "// ARLing Motion: accordion. MIT licence, https://arling.sk/motion/ . Types for the plain JavaScript file next to this one.\nexport declare function reach(...args: any[]): any;\nexport declare const UNFOLD: any;\nexport declare function createAccordion(...args: any[]): any;\n",
+      "type": "registry:lib"
+    },
+    {
+      "path": "registry/arling/ui/motion-accordion.tsx",
+      "content": "'use client';\n// ARLing Motion: Accordion for React. A thin wrapper: the vanilla component owns the\n// unfold, the row entrances, the chevron, ARIA and the keyboard.\n// In the registry the core lives at '@/lib/arling-motion' and this logic at\n// '@/lib/arling-motion-accordion'.\nimport * as React from 'react';\nimport { createAccordion } from '@/lib/arling-motion-accordion';\n\ntype AccordionApi = { open: (i: number) => unknown; close: (i: number) => unknown; destroy: () => void };\n\nconst cx = (...c: Array<string | false | null | undefined>) => c.filter(Boolean).join(' ');\n\nexport interface AccordionProps {\n  /** Several panels may be open at once (default false). */\n  multiple?: boolean;\n  /** The last open panel may close (default true). */\n  collapsible?: boolean;\n  /** Index or indexes open at the start. */\n  defaultOpen?: number | number[];\n  /** Called with the indexes of the open panels after every change. */\n  onOpenChange?: (open: number[]) => void;\n  reducedMotion?: boolean;\n  className?: string;\n  children?: React.ReactNode;\n}\n\n/**\n * <Accordion defaultOpen={0}>\n *   <AccordionItem title=\"Shipping\"><p>Row</p><p>Row</p></AccordionItem>\n * </Accordion>\n * The items are read once when the accordion mounts; give it a new key when they change.\n */\nexport function Accordion({ multiple, collapsible, defaultOpen, onOpenChange, reducedMotion, className, children }: AccordionProps) {\n  const ref = React.useRef<HTMLDivElement>(null);\n  const changeRef = React.useRef(onOpenChange);\n  changeRef.current = onOpenChange;\n\n  React.useEffect(() => {\n    if (!ref.current) return;\n    const api = createAccordion({\n      root: ref.current,\n      multiple,\n      collapsible,\n      open: defaultOpen,\n      reduced: reducedMotion,\n      onChange: (open: number[]) => changeRef.current?.(open),\n    }) as unknown as AccordionApi;\n    return () => api.destroy();\n    // built once per mode; defaultOpen is only read at the start\n    // eslint-disable-next-line react-hooks/exhaustive-deps\n  }, [multiple, collapsible, reducedMotion]);\n\n  return (\n    <div ref={ref} className={cx('am-accordion', className)}>\n      {children}\n    </div>\n  );\n}\n\nexport interface AccordionItemProps {\n  title: React.ReactNode;\n  /** Heading level of the header (default 3). */\n  level?: 2 | 3 | 4 | 5 | 6;\n  disabled?: boolean;\n  className?: string;\n  /** Each direct child is one row that enters after the unfold reaches it. */\n  children?: React.ReactNode;\n}\n\nexport function AccordionItem({ title, level = 3, disabled, className, children }: AccordionItemProps) {\n  const Heading = `h${level}` as 'h3';\n  return (\n    <div className={cx('am-accordion-item', className)}>\n      <Heading className=\"am-accordion-heading\">\n        <button type=\"button\" className=\"am-accordion-trigger\" aria-expanded=\"false\" disabled={disabled}>\n          <span>{title}</span>\n          <span className=\"am-accordion-chevron\" aria-hidden=\"true\" />\n        </button>\n      </Heading>\n      <div className=\"am-accordion-panel\" role=\"region\" hidden>\n        <div className=\"am-accordion-content\">{children}</div>\n      </div>\n    </div>\n  );\n}\n\nexport default Accordion;\n",
+      "type": "registry:ui"
+    }
+  ],
+  "css": {
+    "@layer components": {
+      ".am-accordion": {
+        "display": "grid",
+        "width": "100%",
+        "color": "var(--foreground, #0a0a0a)"
+      },
+      ".am-accordion-item": {
+        "border-bottom": "1px solid var(--border, #e5e5e5)"
+      },
+      ".am-accordion-heading": {
+        "margin": "0",
+        "font": "inherit"
+      },
+      ".am-accordion-trigger": {
+        "display": "flex",
+        "align-items": "center",
+        "justify-content": "space-between",
+        "gap": "1rem",
+        "width": "100%",
+        "min-height": "3rem",
+        "padding": "0.75rem 0",
+        "border": "0",
+        "border-radius": "calc(var(--radius, 0.625rem) - 4px)",
+        "background": "transparent",
+        "color": "inherit",
+        "font": "inherit",
+        "font-size": "0.9375rem",
+        "font-weight": "500",
+        "text-align": "left",
+        "cursor": "pointer"
+      },
+      ".am-accordion-trigger:focus-visible": {
+        "outline": "2px solid var(--ring, #a3a3a3)",
+        "outline-offset": "2px"
+      },
+      ".am-accordion-trigger:disabled": {
+        "opacity": "0.5",
+        "cursor": "not-allowed"
+      },
+      ".am-accordion-trigger[aria-disabled=\"true\"]": {
+        "cursor": "default"
+      },
+      ".am-accordion-chevron": {
+        "flex": "none",
+        "width": "0.5rem",
+        "height": "0.5rem",
+        "margin": "0 0.25rem 0.25rem 0",
+        "border-right": "1.5px solid var(--muted-foreground, #737373)",
+        "border-bottom": "1.5px solid var(--muted-foreground, #737373)",
+        "transform-origin": "50% 50%",
+        "translate": "0 -1px",
+        "rotate": "45deg",
+        "pointer-events": "none"
+      },
+      ".am-accordion-panel": {
+        "overflow": "hidden"
+      },
+      ".am-accordion-panel[hidden]": {
+        "display": "none"
+      },
+      ".am-accordion-content": {
+        "display": "grid",
+        "gap": "0.5rem",
+        "padding": "0 0 1rem",
+        "color": "var(--muted-foreground, #737373)",
+        "font-size": "0.875rem",
+        "line-height": "1.5"
+      },
+      ".am-accordion-content > *": {
+        "margin": "0"
+      }
+    }
+  },
+  "docs": "Accordion from ARLing Motion (MIT).\nReact: import { Accordion, AccordionItem } from \"@/components/ui/motion-accordion\".\nThe logic is in lib/arling-motion-accordion.js (typed by the .d.ts next to it) and works without React: createAccordion on your own markup.\nStyles were added to your global CSS under @layer components (Tailwind v4).\nWith Tailwind v3 or no Tailwind, add https://arling.sk/motion/components/accordion/accordion.css to your styles instead.\nLive demo and docs: https://arling.sk/motion/#accordion",
+  "categories": [
+    "motion",
+    "accordion",
+    "disclosure"
+  ]
+}

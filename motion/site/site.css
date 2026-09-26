@@ -1,0 +1,268 @@
+/* arling.sk/motion page layout on top of /style/paper.css and /style/nastroj.css (body.noc).
+   Calm and quiet: one live stage plays at a time, no gradients, no glow, no equal card grids.
+   Everything is fluid: at 390 px the wrap is 347 px and nothing has a fixed width above that. */
+
+.mo-main { overflow-x: clip; }
+/* grid and flex children may shrink below their longest code line; pre blocks scroll inside */
+.mo-main :is(.mo-hero-grid, .mo-rows, .mo-row, .mo-outputs, .mo-output, .mo-steps, .mo-pro, .mo-faq) > * { min-width: 0; }
+
+.mo-eyebrow {
+  margin: 0 0 14px;
+  color: var(--accent-light);
+  font: 600 12px/1.3 var(--ui);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* ------------------------------------------------------------------ hero */
+.mo-hero { padding: clamp(36px, 6vw, 88px) 0 clamp(40px, 6vw, 96px); border-top: 0; }
+.mo-hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: clamp(28px, 4vw, 64px);
+  align-items: center;
+}
+@media (min-width: 960px) {
+  .mo-hero-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+}
+body.noc .mo-hero h1 { margin: 0; max-width: 14ch; }
+body.noc .mo-lead { max-width: 46ch; margin-top: 20px; color: var(--body); font-size: clamp(17px, 1.3vw, 19px); }
+.mo-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 22px; margin-top: 28px; }
+body.noc a.mo-cta {
+  display: inline-flex;
+  align-items: center;
+  min-height: 46px;
+  padding: 0 22px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--paper);
+  font: 600 15px/1 var(--ui);
+  text-decoration: none;
+}
+body.noc a.mo-cta:hover { background: #ffffff; color: var(--paper); }
+body.noc a.mo-link { color: var(--ink); font: 500 15px/1.4 var(--ui); text-decoration-color: var(--line-silna, rgba(255,255,255,.25)); }
+.mo-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  margin: 30px 0 0;
+  padding: 0;
+  list-style: none;
+  color: var(--muted);
+  font: 500 13.5px/1.4 var(--ui);
+}
+.mo-facts li { display: flex; align-items: center; gap: 8px; }
+.mo-facts li::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
+
+/* ------------------------------------------------------------------ stage frame and bar */
+.mo-stage-wrap { display: grid; gap: 10px; min-width: 0; }
+.mo-stage-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  color: var(--muted);
+  font: 500 13px/1.4 var(--ui);
+}
+.mo-stage-bar a { color: var(--body); }
+.mo-play {
+  min-height: 34px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink);
+  font: 500 13px/1 var(--ui);
+  cursor: pointer;
+}
+.mo-play:hover { border-color: rgba(255, 255, 255, 0.28); }
+.mo-play[aria-pressed="true"] { background: rgba(255, 255, 255, 0.06); }
+.mo-reduced-note { display: none; }
+.mo-reduced .mo-reduced-note { display: inline; }
+.mo-reduced .mo-motion-note { display: none; }
+body.noc .mo-stage { box-shadow: inset 0 0 0 1px rgb(28 27 24 / 0.06), 0 24px 48px -28px rgb(0 0 0 / 0.8); }
+.mo-stage[data-playing] { cursor: default; }
+.mo-noscript { color: var(--muted); font: 500 14px/1.5 var(--ui); }
+
+/* ------------------------------------------------------------------ sections */
+.mo-section-head { display: grid; gap: 0; max-width: 60ch; margin-bottom: clamp(28px, 4vw, 48px); }
+body.noc .mo-section-head p:not(.mo-eyebrow) { color: var(--body); }
+
+/* ------------------------------------------------------------------ gallery rows */
+.mo-rows { margin: 0; padding: 0; list-style: none; counter-reset: row; }
+.mo-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 20px;
+  padding: clamp(28px, 4vw, 48px) 0;
+  border-top: 1px solid var(--line);
+  scroll-margin-top: 90px;
+}
+@media (min-width: 900px) {
+  .mo-row { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: clamp(28px, 4vw, 64px); align-items: start; }
+}
+.mo-row-text { display: grid; align-content: start; gap: 12px; min-width: 0; }
+.mo-row-n { margin: 0; color: var(--muted); font: 500 12px/1 var(--mono); letter-spacing: 0.08em; }
+body.noc .mo-row h3 { margin: 0; font-size: clamp(22px, 2vw, 28px); }
+body.noc .mo-row-text > p { margin: 0; max-width: 44ch; }
+.mo-install {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  max-width: 100%;
+  padding: 10px 10px 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.025);
+}
+body.noc .mo-install code {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 4px 0 0;
+  background: none;
+  color: #e9ded6;
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.mo-copy {
+  flex: 0 0 auto;
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--ink);
+  font: 500 13px/1 var(--ui);
+  cursor: pointer;
+}
+.mo-copy:hover { background: rgba(255, 255, 255, 0.1); }
+.mo-row-links { display: flex; flex-wrap: wrap; gap: 4px 16px; font: 500 13.5px/1.5 var(--ui); }
+body.noc .mo-row-links a { color: var(--body); }
+
+/* ------------------------------------------------------------------ one file, three outputs */
+.mo-outputs { display: grid; gap: 0; }
+.mo-output {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  padding: clamp(24px, 3vw, 40px) 0;
+  border-top: 1px solid var(--line);
+}
+@media (min-width: 900px) {
+  .mo-output { grid-template-columns: minmax(0, 4fr) minmax(0, 8fr); gap: clamp(28px, 4vw, 64px); }
+}
+body.noc .mo-output h3 { margin: 0 0 8px; }
+body.noc .mo-output pre {
+  margin: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #e9ded6;
+}
+body.noc .mo-output pre code { padding: 0; background: none; color: inherit; }
+.mo-frames {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+@media (min-width: 640px) { .mo-frames { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1200px) { .mo-frames { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.mo-frames li { display: grid; gap: 6px; min-width: 0; }
+body.noc .mo-stage.mo-frame-stage { height: 84px; padding: 16px 12px; }
+.mo-frames .mo-time { color: var(--muted); font: 500 12.5px/1.3 var(--mono); }
+
+/* ------------------------------------------------------------------ install */
+.mo-steps { display: grid; gap: 28px; margin: 0; padding: 0; list-style: none; }
+.mo-steps li { display: grid; gap: 10px; min-width: 0; }
+body.noc .mo-steps pre { margin: 0; max-width: 100%; overflow-x: auto; font-size: 13px; line-height: 1.6; color: #e9ded6; }
+body.noc .mo-steps pre code { padding: 0; background: none; color: inherit; }
+
+/* ------------------------------------------------------------------ pro */
+.mo-pro {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: clamp(24px, 4vw, 64px);
+  padding-top: clamp(24px, 3vw, 36px);
+  border-top: 1px solid var(--line);
+}
+@media (min-width: 900px) { .mo-pro { grid-template-columns: minmax(0, 4fr) minmax(0, 8fr); } }
+.mo-price { margin: 0; color: var(--ink); font: 700 clamp(48px, 6vw, 80px)/1 var(--display); letter-spacing: -0.03em; }
+.mo-soon {
+  display: inline-block;
+  margin-top: 14px;
+  padding: 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--body);
+  font: 500 13px/1 var(--ui);
+}
+.mo-list { margin: 0; padding: 0 0 0 1.1em; }
+.mo-list li { margin: 0 0 10px; color: var(--body); }
+.mo-list li::marker { color: var(--accent); }
+body.noc .mo-pro h3 { margin: 22px 0 10px; }
+body.noc .mo-pro h3:first-child { margin-top: 0; }
+
+/* ------------------------------------------------------------------ comparison */
+.mo-table-wrap { max-width: 100%; }
+body.noc .mo-compare { width: 100%; border-collapse: collapse; font: 400 14.5px/1.5 var(--ui); }
+body.noc .mo-compare th,
+body.noc .mo-compare td { padding: 14px 16px 14px 0; border-bottom: 1px solid var(--line); vertical-align: top; text-align: left; }
+body.noc .mo-compare thead th { color: var(--ink); font: 600 14px/1.3 var(--ui); letter-spacing: 0; text-transform: none; }
+body.noc .mo-compare tbody th { color: var(--muted); font: 500 13px/1.4 var(--ui); letter-spacing: 0; text-transform: none; width: 16%; }
+body.noc .mo-compare td { color: var(--body); }
+body.noc .mo-compare td.mo-us { color: var(--ink); }
+@media (max-width: 760px) {
+  body.noc .mo-compare thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  body.noc .mo-compare,
+  body.noc .mo-compare tbody,
+  body.noc .mo-compare tr,
+  body.noc .mo-compare th,
+  body.noc .mo-compare td { display: block; width: auto; }
+  body.noc .mo-compare tr { padding: 14px 0; border-bottom: 1px solid var(--line); }
+  body.noc .mo-compare tbody th { padding: 0 0 8px; border: 0; color: var(--ink); font-size: 14px; }
+  body.noc .mo-compare td { padding: 4px 0; border: 0; }
+  body.noc .mo-compare td::before {
+    content: attr(data-label);
+    display: block;
+    color: var(--muted);
+    font: 500 12px/1.4 var(--ui);
+  }
+}
+.mo-sources { margin-top: 18px; color: var(--muted); font: 400 13px/1.6 var(--ui); }
+body.noc .mo-sources a { color: var(--body); overflow-wrap: anywhere; }
+
+/* ------------------------------------------------------------------ faq */
+.mo-faq { border-top: 1px solid var(--line); }
+.mo-faq details { border-bottom: 1px solid var(--line); }
+.mo-faq summary {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 0;
+  color: var(--ink);
+  font: 600 16.5px/1.4 var(--ui);
+  cursor: pointer;
+  list-style: none;
+}
+.mo-faq summary::-webkit-details-marker { display: none; }
+.mo-faq summary::after { content: "+"; color: var(--muted); font-weight: 400; }
+.mo-faq details[open] summary::after { content: "\2212"; }
+body.noc .mo-faq details p { max-width: 68ch; margin: 0 0 18px; }
+
+/* screen reader only status for copy buttons */
+.mo-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* Nadpisy sekcií sú <header>; zdieľaný paper.css má body.noc header{position:fixed;top:0} pre hlavičku webu,
+   ktorý by ich všetky prilepil hore cez seba (kontrola vo Firefoxe 26. 9.). Tu sú obyčajné bloky v toku. */
+body header.mo-section-head,
+body.noc header.mo-section-head {
+  position: static; top: auto; left: auto; right: auto; z-index: auto;
+  background: none; border-bottom: 0; box-shadow: none;
+  -webkit-backdrop-filter: none; backdrop-filter: none; transition: none;
+}

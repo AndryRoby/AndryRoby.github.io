@@ -1,0 +1,121 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "toast",
+  "type": "registry:ui",
+  "title": "Toast",
+  "description": "Toasts that grow out of the point you clicked and fold into a stack. Hover or focus unfolds the stack and pauses the timers, a polite live region reads each one, Alt+T jumps to the newest.",
+  "author": "ARLing s. r. o. (https://arling.sk)",
+  "registryDependencies": [
+    "https://arling.sk/motion/r/core.json"
+  ],
+  "files": [
+    {
+      "path": "registry/arling/lib/arling-motion-toast.js",
+      "content": "'use strict';\n// ARLing Motion: toast. MIT licence, https://arling.sk/motion/ . Installed from the ARLing\n// Motion registry (source: components/toast/toast.js). Plain JavaScript; the .d.ts next to it types the exports.\n/*\n * ARLing Motion: Toast.\n * A new toast grows out of the point that was clicked: it starts as a small circle there,\n * flies to its place and opens into the toast, then its text enters. Toasts fold into a\n * stack (older ones peek out behind, a little smaller); hover or keyboard focus unfolds\n * the stack into a list and pauses the timers.\n *\n * Markup: none needed. createToaster() adds a labelled region to the page, or use yours:\n *   <section class=\"am-toaster\" aria-label=\"Notifications\"><ol class=\"am-toaster-list\"></ol></section>\n *\n * Accessibility: the list is a polite live region, so each new toast is read out once.\n * Alt+T moves focus to the newest toast (and unfolds the stack), Escape dismisses the\n * focused toast, each toast has a Dismiss button, timers pause while the stack is open.\n * MIT licence.\n */\nimport { track, presence, applyPresence, driver, PRESETS } from './arling-motion';\n\n// ------------------------------------------------------------------ shared helpers\n\nconst clamp01 = (x) => (x < 0 ? 0 : x > 1 ? 1 : x);\nconst px = (v) => `${Math.round(v * 100) / 100}px`;\nconst num = (v) => String(Math.round(v * 10000) / 10000);\nconst SHOWN = { opacity: 1, blur: 0, y: 0, scale: 1, visible: true };\nconst GONE = { opacity: 0, blur: 0, y: 0, scale: 1, visible: false };\n\nfunction steps(initial) {\n  return {\n    initial,\n    ev: [],\n    set(t, v) { this.ev.push([t, v]); this.ev.sort((a, b) => a[0] - b[0]); return this; },\n    at(t) { let v = this.initial; for (const [et, x] of this.ev) { if (et > t) break; v = x; } return v; },\n    get last() { return this.ev.length ? this.ev[this.ev.length - 1][1] : this.initial; },\n    compact() { this.initial = this.last; this.ev = []; },\n  };\n}\n\nfunction attr(el, name, value) {\n  if (value === null || value === undefined || value === false) {\n    if (el.hasAttribute(name)) el.removeAttribute(name);\n  } else {\n    const v = value === true ? '' : String(value);\n    if (el.getAttribute(name) !== v) el.setAttribute(name, v);\n  }\n}\n\nfunction radiusOf(el, fallback) {\n  try {\n    const v = parseFloat(getComputedStyle(el).borderTopLeftRadius);\n    return Number.isFinite(v) ? v : fallback;\n  } catch {\n    return fallback;\n  }\n}\n\n/** Centre of an element in page coordinates, for toast(msg, { from }). */\nexport function centerOf(el) {\n  const r = el.getBoundingClientRect();\n  return { x: r.left + r.width / 2, y: r.top + r.height / 2 };\n}\n\n// ------------------------------------------------------------------ toaster\n\n/**\n * createToaster({ root, trigger, duration, max, gap, peek, hotkey, label, clock, reduced })\n * duration: seconds before a toast leaves on its own (default 4, Infinity keeps it);\n * max: toasts visible in the folded stack (default 3); hotkey: KeyboardEvent.code with Alt\n * (default 'KeyT', false turns it off).\n * Returns { toast, dismiss, dismissAll, expand, collapse, expanded, seek, settled, destroy, driver, keep }.\n */\nexport function createToaster(o = {}) {\n  const doc = (o.root && o.root.ownerDocument) || o.document || document;\n  let root = o.root;\n  if (!root) {\n    root = doc.createElement('section');\n    doc.body.appendChild(root);\n  }\n  root.classList.add('am-toaster');\n  if (!root.hasAttribute('aria-label')) attr(root, 'aria-label', o.label || 'Notifications');\n  if (!root.hasAttribute('tabindex')) attr(root, 'tabindex', '-1');\n  let list = root.querySelector('.am-toaster-list');\n  if (!list) {\n    list = doc.createElement('ol');\n    list.className = 'am-toaster-list';\n    root.appendChild(list);\n  }\n  attr(list, 'aria-live', 'polite');\n\n  const max = o.max ?? 3;\n  const gap = o.gap ?? 8;\n  const peek = o.peek ?? 10;\n  const life = o.duration ?? 4;\n  const hotkey = o.hotkey === undefined ? 'KeyT' : o.hotkey;\n  const toasts = [];\n  let alive = []; // oldest first, in the order changes were made\n  let n = 0;\n  const exp = steps(false);\n  let endT = -Infinity;\n  const mark = (t) => { if (t > endT) endT = t; };\n  const tracksOf = (T) => [T.y, T.s, T.fade, T.ox, T.oy, T.g, T.body.p, T.gone.p];\n  const settledAll = (t) => toasts.every((T) => tracksOf(T).every((tr) => tr.settled(t)));\n\n  const setTo = (tr, t, v, sp) => { if (tr.target(Infinity) !== v) tr.to(t, v, sp); };\n\n  function restack(t) {\n    const open = exp.last;\n    let acc = 0;\n    [...alive].reverse().forEach((T, i) => {\n      setTo(T.y, t, open ? -acc : -i * peek);\n      setTo(T.s, t, open ? 1 : Math.max(0, 1 - i * 0.05));\n      setTo(T.fade, t, i < max ? 1 : 0);\n      acc += T.H + gap;\n    });\n  }\n\n  function paint(t, { reduced }) {\n    attr(root, 'data-expanded', String(exp.at(t)));\n    for (const T of toasts) {\n      const li = T.li;\n      const gone = t >= T.dead;\n      attr(li, 'data-state', t >= T.born && !gone ? 'open' : 'closed');\n      if (t < T.born) { li.style.visibility = 'hidden'; continue; }\n      const G = reduced ? (gone ? GONE : SHOWN) : T.gone.at(t);\n      if (!G.visible) { li.style.visibility = 'hidden'; continue; }\n      const y = reduced ? T.y.target(t) : T.y.at(t);\n      const s = reduced ? T.s.target(t) : T.s.at(t);\n      const fade = clamp01(reduced ? T.fade.target(t) : T.fade.at(t));\n      const ox = reduced ? 0 : T.ox.at(t);\n      const oy = reduced ? 0 : T.oy.at(t);\n      const k = reduced ? 1 : clamp01(T.g.at(t));\n      li.style.visibility = fade > 0.002 ? 'visible' : 'hidden'; // the stylesheet hides toasts until the core shows them\n      li.style.zIndex = String(T.id);\n      li.style.transform = `translate(${px(ox)}, ${px(y + oy + G.y)}) scale(${(s * G.scale).toFixed(4)})`;\n      li.style.opacity = num(G.opacity * fade);\n      li.style.filter = G.blur > 0.05 ? `blur(${G.blur.toFixed(2)}px)` : '';\n      if (k >= 1) li.style.clipPath = '';\n      else {\n        // a small circle at the click point opens into the toast\n        const d0 = Math.min(T.H, 20);\n        const f = 1 - k;\n        const r = d0 / 2 + (T.R - d0 / 2) * k;\n        li.style.clipPath = `inset(${px(((T.H - d0) / 2) * f)} ${px(((T.W - d0) / 2) * f)} round ${px(r)})`;\n      }\n      applyPresence(T.content, reduced ? SHOWN : T.body.at(t));\n    }\n  }\n\n  function draw(t, s) {\n    paint(t, s);\n    if (api.keep || t < endT) return;\n    for (let i = toasts.length - 1; i >= 0; i--) {\n      const T = toasts[i];\n      if (t >= T.dead && T.gone.settled(t)) { T.li.remove(); toasts.splice(i, 1); }\n    }\n    if (settledAll(t)) {\n      for (const T of toasts) { for (const tr of tracksOf(T)) tr.compact(t); T.body.marks = []; T.gone.marks = []; }\n      exp.compact();\n    }\n  }\n\n  const d = driver(draw, { clock: o.clock, reduced: o.reduced });\n  d.busy = (t) => t < endT || !settledAll(t);\n  const commit = () => { paint(d.now(), { reduced: d.reduced }); d.kick(); };\n  const when = (opt) => (opt && opt.t !== undefined ? { t: opt.t, live: false } : { t: d.now(), live: true });\n\n  // live timers, paused while the stack is open\n  function startTimer(T) {\n    if (!Number.isFinite(T.left) || exp.last || T.timer) return;\n    T.started = d.now();\n    T.timer = setTimeout(() => { T.timer = 0; dismiss(T.id); }, Math.max(0, T.left) * 1000);\n  }\n  function pauseTimer(T) {\n    if (!T.timer) return;\n    clearTimeout(T.timer);\n    T.timer = 0;\n    T.left -= d.now() - T.started;\n  }\n\n  /** Shows a toast. opt: { t, from: { x, y } page point it grows from, description, duration }. Returns its id. */\n  function toast(message, opt = {}) {\n    const { t, live } = when(opt);\n    const li = doc.createElement('li');\n    li.className = 'am-toast';\n    attr(li, 'aria-atomic', 'true');\n    const content = doc.createElement('div');\n    content.className = 'am-toast-content';\n    const title = doc.createElement('p');\n    title.className = 'am-toast-title';\n    title.textContent = message;\n    content.appendChild(title);\n    if (opt.description) {\n      const desc = doc.createElement('p');\n      desc.className = 'am-toast-description';\n      desc.textContent = opt.description;\n      content.appendChild(desc);\n    }\n    const close = doc.createElement('button');\n    close.className = 'am-toast-close';\n    attr(close, 'type', 'button');\n    attr(close, 'aria-label', 'Dismiss notification');\n    close.textContent = '×';\n    content.appendChild(close);\n    li.appendChild(content);\n    list.insertBefore(li, list.firstElementChild);\n\n    const r = li.getBoundingClientRect();\n    const lr = list.getBoundingClientRect();\n    const W = r.width || 356;\n    const H = r.height || 56;\n    const from = opt.from || null;\n    const ox0 = from ? from.x - (lr.right - W / 2) : 0;\n    const oy0 = from ? from.y - (lr.bottom - H / 2) : 0;\n    const T = {\n      id: ++n, li, content, close, W, H, R: radiusOf(li, 10),\n      born: t, dead: Infinity,\n      y: track(0, PRESETS.snappy), s: track(1, PRESETS.snappy), fade: track(1, PRESETS.snappy),\n      ox: track(ox0, PRESETS.morph), oy: track(oy0, PRESETS.morph), g: track(0, PRESETS.morph),\n      body: presence(false), gone: presence(true, { dyOut: 6, blur: 6 }),\n      left: opt.duration ?? life, timer: 0, started: 0,\n    };\n    T.ox.to(t, 0);\n    T.oy.to(t, 0);\n    T.g.to(t, 1);\n    T.body.enter(t + 0.12);\n    toasts.push(T);\n    alive.push(T);\n    restack(t);\n    mark(t + 0.12);\n    close.addEventListener('click', () => dismiss(T.id));\n    commit();\n    if (live) startTimer(T);\n    return T.id;\n  }\n\n  function leaveFocus(T) {\n    if (!T.li.contains(doc.activeElement)) return;\n    const next = [...alive].reverse()[0];\n    if (next) next.close.focus();\n    else if (lastFocus && lastFocus.focus) lastFocus.focus();\n    else root.focus();\n  }\n\n  function dismiss(id, opt = {}) {\n    const { t, live } = when(opt);\n    const T = toasts.find((x) => x.id === id);\n    if (!T || T.dead !== Infinity) return api;\n    T.dead = t;\n    T.gone.exit(t);\n    alive = alive.filter((x) => x !== T);\n    restack(t);\n    mark(t);\n    if (live) { pauseTimer(T); leaveFocus(T); }\n    commit();\n    return api;\n  }\n\n  /** Dismisses every toast at once, without restacking the ones that leave together. */\n  function dismissAll(opt = {}) {\n    const { t, live } = when(opt);\n    const leaving = alive;\n    alive = [];\n    for (const T of leaving) {\n      T.dead = t;\n      T.gone.exit(t);\n      if (live) { pauseTimer(T); leaveFocus(T); }\n    }\n    mark(t);\n    commit();\n    return api;\n  }\n\n  function setExpanded(v, opt = {}) {\n    const { t, live } = when(opt);\n    if (exp.last === v) return api;\n    exp.set(t, v);\n    restack(t);\n    mark(t);\n    if (live) for (const T of alive) (v ? pauseTimer(T) : startTimer(T));\n    commit();\n    return api;\n  }\n\n  // ---------------------------------------------------------------- live input\n  const listeners = [];\n  const on = (el, type, fn) => { el.addEventListener(type, fn); listeners.push([el, type, fn]); };\n  let lastFocus = null;\n  let hovered = false;\n  const focusInside = () => root.contains(doc.activeElement) && doc.activeElement !== doc.body;\n\n  on(root, 'pointerenter', () => { hovered = true; setExpanded(true); });\n  on(root, 'pointerleave', () => { hovered = false; if (!focusInside()) setExpanded(false); });\n  on(root, 'focusin', () => setExpanded(true));\n  on(root, 'focusout', (e) => {\n    const next = e.relatedTarget;\n    if (next && root.contains(next)) return;\n    if (!hovered) setExpanded(false);\n  });\n  on(root, 'keydown', (e) => {\n    if (e.key !== 'Escape') return;\n    const T = alive.find((x) => x.li.contains(doc.activeElement));\n    e.preventDefault();\n    if (T) dismiss(T.id);\n    else if (lastFocus && lastFocus.focus) lastFocus.focus();\n  });\n  if (hotkey) {\n    on(doc, 'keydown', (e) => {\n      if (!e.altKey || !(e.code === hotkey || (e.key && `Key${e.key.toUpperCase()}` === hotkey))) return;\n      e.preventDefault();\n      if (!root.contains(doc.activeElement)) lastFocus = doc.activeElement;\n      const newest = [...alive].reverse()[0];\n      (newest ? newest.close : root).focus();\n    });\n  }\n\n  const api = {\n    root,\n    list,\n    trigger: o.trigger || null,\n    driver: d,\n    keep: false,\n    toast,\n    dismiss,\n    dismissAll,\n    expand: (opt) => setExpanded(true, opt),\n    collapse: (opt) => setExpanded(false, opt),\n    expanded: (t) => (t === undefined ? exp.last : exp.at(t)),\n    toasts: () => alive.map((T) => T.id),\n    element: (id) => (toasts.find((x) => x.id === id) || {}).li || null,\n    seek: (t) => paint(t, { reduced: d.reduced }),\n    settled: (t) => t >= endT && settledAll(t),\n    destroy() {\n      d.stop();\n      for (const T of toasts) pauseTimer(T);\n      for (const [el, type, fn] of listeners) el.removeEventListener(type, fn);\n    },\n  };\n  paint(d.now(), { reduced: d.reduced });\n  return api;\n}\n",
+      "type": "registry:lib"
+    },
+    {
+      "path": "registry/arling/lib/arling-motion-toast.d.ts",
+      "content": "// ARLing Motion: toast. MIT licence, https://arling.sk/motion/ . Types for the plain JavaScript file next to this one.\nexport declare function centerOf(...args: any[]): any;\nexport declare function createToaster(...args: any[]): any;\n",
+      "type": "registry:lib"
+    },
+    {
+      "path": "registry/arling/ui/motion-toast.tsx",
+      "content": "'use client';\n// ARLing Motion: Toast for React. A thin wrapper: the vanilla toaster owns the growth from\n// the click point, the stack, timers, ARIA and the keyboard; React gives it a region and a hook.\n// In the registry the core lives at '@/lib/arling-motion' and this logic at\n// '@/lib/arling-motion-toast'.\nimport * as React from 'react';\nimport { createToaster } from '@/lib/arling-motion-toast';\n\ntype Point = { x: number; y: number };\ntype ToastOptions = { description?: string; duration?: number; from?: Point };\ntype ToasterApi = {\n  toast: (message: string, o?: ToastOptions) => number;\n  dismiss: (id: number) => unknown;\n  dismissAll: () => unknown;\n  destroy: () => void;\n};\n\nconst ToasterContext = React.createContext<ToasterApi | null>(null);\n\nexport interface ToasterProps {\n  children?: React.ReactNode;\n  /** Seconds before a toast leaves on its own (default 4; Infinity keeps it). */\n  duration?: number;\n  /** Toasts visible in the folded stack (default 3). */\n  max?: number;\n  /** Name of the notification region (default \"Notifications\"). */\n  label?: string;\n  className?: string;\n  reducedMotion?: boolean;\n}\n\n/** Put once near the root of the app; children can call useToast(). */\nexport function Toaster({ children, duration, max, label = 'Notifications', className, reducedMotion }: ToasterProps) {\n  const ref = React.useRef<HTMLElement>(null);\n  const [api, setApi] = React.useState<ToasterApi | null>(null);\n\n  React.useEffect(() => {\n    if (!ref.current) return;\n    const a = createToaster({ root: ref.current, duration, max, reduced: reducedMotion }) as unknown as ToasterApi;\n    setApi(a);\n    return () => {\n      a.destroy();\n      setApi(null);\n    };\n  }, [duration, max, reducedMotion]);\n\n  return (\n    <ToasterContext.Provider value={api}>\n      {children}\n      <section ref={ref} aria-label={label} className={['am-toaster', className].filter(Boolean).join(' ')}>\n        <ol className=\"am-toaster-list\" />\n      </section>\n    </ToasterContext.Provider>\n  );\n}\n\n/**\n * const toast = useToast();\n * <button onClick={(e) => toast('Draft saved', { event: e })}>Save</button>\n * Passing the click event makes the toast grow out of the point that was clicked.\n */\nexport function useToast() {\n  const api = React.useContext(ToasterContext);\n  return React.useCallback(\n    (message: string, o: Omit<ToastOptions, 'from'> & { event?: React.MouseEvent | MouseEvent } = {}) => {\n      if (!api) return -1;\n      const { event, ...rest } = o;\n      const from = event && event.detail > 0 ? { x: event.clientX, y: event.clientY } : undefined;\n      return api.toast(message, { ...rest, from });\n    },\n    [api],\n  );\n}\n",
+      "type": "registry:ui"
+    }
+  ],
+  "css": {
+    "@layer components": {
+      ".am-toaster": {
+        "position": "fixed",
+        "right": "16px",
+        "bottom": "16px",
+        "z-index": "60",
+        "width": "min(356px, calc(100vw - 32px))",
+        "outline": "none"
+      },
+      ".am-toaster-list": {
+        "position": "relative",
+        "height": "0",
+        "margin": "0",
+        "padding": "0",
+        "list-style": "none"
+      },
+      ".am-toast": {
+        "position": "absolute",
+        "right": "0",
+        "bottom": "0",
+        "width": "100%",
+        "visibility": "hidden",
+        "border": "1px solid var(--border, #e5e5e5)",
+        "border-radius": "var(--radius, 0.625rem)",
+        "background": "var(--background, #ffffff)",
+        "color": "var(--foreground, #0a0a0a)",
+        "box-shadow": "0 1px 2px rgb(0 0 0 / 0.05), 0 6px 18px rgb(0 0 0 / 0.08)",
+        "transform-origin": "50% 100%"
+      },
+      ".am-toast::after": {
+        "content": "\"\"",
+        "position": "absolute",
+        "right": "0",
+        "left": "0",
+        "top": "100%",
+        "height": "9px"
+      },
+      ".am-toast-content": {
+        "display": "grid",
+        "grid-template-columns": "1fr auto",
+        "align-items": "center",
+        "column-gap": "0.75rem",
+        "row-gap": "0.125rem",
+        "min-height": "3.5rem",
+        "padding": "0.75rem 0.75rem 0.75rem 1rem"
+      },
+      ".am-toast-title": {
+        "grid-column": "1",
+        "margin": "0",
+        "font-size": "0.875rem",
+        "font-weight": "500",
+        "line-height": "1.35"
+      },
+      ".am-toast-description": {
+        "grid-column": "1",
+        "margin": "0",
+        "color": "var(--muted-foreground, #737373)",
+        "font-size": "0.8125rem",
+        "line-height": "1.4"
+      },
+      ".am-toast-close": {
+        "grid-column": "2",
+        "grid-row": "1 / span 2",
+        "display": "grid",
+        "place-items": "center",
+        "width": "1.75rem",
+        "height": "1.75rem",
+        "border": "0",
+        "border-radius": "calc(var(--radius, 0.625rem) - 4px)",
+        "background": "transparent",
+        "color": "var(--muted-foreground, #737373)",
+        "font": "inherit",
+        "font-size": "1.125rem",
+        "line-height": "1",
+        "cursor": "pointer"
+      },
+      ".am-toast-close:hover": {
+        "background": "var(--muted, #f5f5f5)",
+        "color": "var(--foreground, #0a0a0a)"
+      },
+      ".am-toast-close:focus-visible": {
+        "outline": "2px solid var(--ring, #a3a3a3)",
+        "outline-offset": "1px"
+      }
+    }
+  },
+  "docs": "Toast from ARLing Motion (MIT).\nReact: import { Toaster, useToast } from \"@/components/ui/motion-toast\".\nThe logic is in lib/arling-motion-toast.js (typed by the .d.ts next to it) and works without React: createToaster on your own markup.\nStyles were added to your global CSS under @layer components (Tailwind v4).\nWith Tailwind v3 or no Tailwind, add https://arling.sk/motion/components/toast/toast.css to your styles instead.\nLive demo and docs: https://arling.sk/motion/#toast",
+  "categories": [
+    "motion",
+    "toast",
+    "notification"
+  ]
+}
