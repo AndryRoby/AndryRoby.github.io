@@ -1,7 +1,7 @@
 /* Puzzle Village: the island, its water, paths and trees.
    Built once from fixed numbers, so the village is the same for everyone. */
-import { iso, RX, RY, tree, bush, flowers, stone, signpost } from './iso.js?v=3';
-import { hash, DUSK, OPT } from './riso.js?v=3';
+import { iso, RX, RY, tree, bush, flowers, stone, signpost } from './iso.js?v=4';
+import { hash, DUSK, OPT } from './riso.js?v=4';
 
 export const C0 = [14.5, 14.5];
 export const DEPTH = 74;
@@ -399,7 +399,7 @@ function unionPaint(p, shape, inks, key) {
     MASK.addEventListener('contextlost', f); MASK.addEventListener('contextrestored', f);
   }
   if (MASK.width !== w || MASK.height !== h) { MASK.width = w; MASK.height = h; }
-  const m = MASK.getContext('2d');
+  const m = MASK.getContext('2d', { willReadFrequently: OPT.soft });
   for (const [ink, a] of inks) {
     m.setTransform(1, 0, 0, 1, 0, 0);
     m.globalCompositeOperation = 'source-over';
