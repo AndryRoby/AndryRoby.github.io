@@ -109,7 +109,7 @@ function nacitajStranu() {
     <li class="vz${najdene.has(k) ? ' najdene hned' : ''}" data-k="${k}">
       <button type="button" class="vz-tl" data-k="${k}" aria-describedby="vz-f-${k}">
         ${kresbaSvg(s.kresba)}
-        <span class="vz-meno${s.slovo.length >= 9 ? ' dlhe' : ''}">${s.slovo}</span><span class="fn-sr" id="vz-s-${k}">${najdene.has(k) ? ', found' : ', not found yet'}</span>
+        <span class="vz-meno${triedaMena(s.slovo)}">${s.slovo}</span><span class="fn-sr" id="vz-s-${k}">${najdene.has(k) ? ', found' : ', not found yet'}</span>
       </button>
       <p class="vz-fakt" id="vz-f-${k}">${najdene.has(k) ? faktHtml(s) : ''}</p>
     </li>`).join('');
@@ -135,6 +135,16 @@ function nacitajStranu() {
   }
   el.stopa.hidden = true;
   rozloz();
+}
+
+/* Dlhé mená pod kresbou: od 9 písmen bez rozostupu, najširšie (GRAMOPHONE, MATTERHORN, MICROSCOPE,
+   ACONCAGUA) aj menším písmom, aby sa s fajkou zmestili do stĺpca 81 px na 390 px. Šírky písmen A až Z
+   v tisícinách em pre ARLing Sans 600 (z fontu, fontTools, 26. 9. 2026). */
+const SIRKY = [724, 666, 712, 721, 598, 575, 726, 740, 398, 568, 701, 566, 910, 752, 769, 650, 769, 667, 635, 671, 701, 700, 980, 703, 645, 619];
+function triedaMena(slovo) {
+  const em = [...slovo].reduce((a, c) => a + (SIRKY[c.charCodeAt(0) - 65] || 700), 0) / 1000;
+  if (em > 6.4) return ' dlhe dlhe2';
+  return slovo.length >= 9 ? ' dlhe' : '';
 }
 
 function faktHtml(s) {
