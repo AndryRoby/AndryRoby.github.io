@@ -40,9 +40,9 @@ export const DICT = {
     de: 'Vier Tools für die Arbeit mit der Bank. Eine Lizenz.',
   },
   'hero.lead': {
-    sk: 'SEPA pain.001 Doctor, SEPA pain.001 Generátor, camt.053 do Excelu a Párovač platieb bežia celé vo vašom prehliadači: nič z toho, čo do nich vložíte, sa neodosiela. Jedna Pro licencia platí v troch z nich (Generátor, camt.053 do Excelu, Párovač platieb); SEPA pain.001 Doctor je zadarmo a licenciu nepotrebuje. Kontrola a tvorba pain.001 sú zadarmo bez limitu; prevod výpisu a párovanie platieb bežia zadarmo nad celým súborom, stiahnutý súbor má však bez licencie len prvých 20 riadkov ako ukážku.',
-    en: 'SEPA pain.001 Doctor, SEPA pain.001 Generator, camt.053 to Excel and Payment matcher run entirely in your browser: nothing you put into them is uploaded. They work with any bank that exports camt.053 or accepts pain.001, for example Sparkasse, Volksbank, Deutsche Bank, Commerzbank, Raiffeisen, Erste, UBS or PostFinance, as well as Slovak banks. One Pro licence works in three of them (Generator, camt.053 to Excel, Payment matcher); SEPA pain.001 Doctor is free and needs no licence. Checking and building pain.001 files is free with no limit; statement conversion and payment matching run free on the whole file, but without a licence the downloaded file holds only the first 20 rows as a sample.',
-    de: 'SEPA pain.001 Doctor, SEPA-pain.001-Generator, camt.053 nach Excel und Zahlungsabgleich laufen vollständig in Ihrem Browser: nichts, was Sie eingeben, wird hochgeladen. Sie funktionieren mit jeder Bank, die camt.053 exportiert oder pain.001 akzeptiert, zum Beispiel Sparkasse, Volksbank, Deutsche Bank, Commerzbank, Raiffeisen, Erste, UBS oder PostFinance, sowie mit slowakischen Banken. Eine Pro-Lizenz gilt in dreien davon (Generator, camt.053 nach Excel, Zahlungsabgleich); SEPA pain.001 Doctor ist kostenlos und braucht keine Lizenz. Prüfen und Erstellen von pain.001 ist kostenlos und ohne Limit; Umwandlung und Zahlungsabgleich laufen kostenlos über die ganze Datei, ohne Lizenz enthält die heruntergeladene Datei aber nur die ersten 20 Zeilen als Muster.',
+    sk: 'SEPA pain.001 Doctor, SEPA pain.001 Generátor, camt.053 do Excelu a Párovač platieb bežia celé vo vašom prehliadači: nič z toho, čo do nich vložíte, sa neodosiela. Jedna Pro licencia platí v troch z nich (Generátor, camt.053 do Excelu, Párovač platieb); SEPA pain.001 Doctor je zadarmo a licenciu nepotrebuje. Kontrola a tvorba pain.001 sú zadarmo, generátor až do 5 000 platieb v jednom súbore; prevod výpisu a párovanie platieb bežia zadarmo nad celým súborom, stiahnutý súbor má však bez licencie len prvých 20 riadkov ako ukážku.',
+    en: 'SEPA pain.001 Doctor, SEPA pain.001 Generator, camt.053 to Excel and Payment matcher run entirely in your browser: nothing you put into them is uploaded. They work with any bank that exports camt.053 or accepts pain.001, for example Sparkasse, Volksbank, Deutsche Bank, Commerzbank, Raiffeisen, Erste, UBS or PostFinance, as well as Slovak banks. One Pro licence works in three of them (Generator, camt.053 to Excel, Payment matcher); SEPA pain.001 Doctor is free and needs no licence. Checking and building pain.001 files is free, up to 5,000 payments per generated file; statement conversion and payment matching run free on the whole file, but without a licence the downloaded file holds only the first 20 rows as a sample.',
+    de: 'SEPA pain.001 Doctor, SEPA-pain.001-Generator, camt.053 nach Excel und Zahlungsabgleich laufen vollständig in Ihrem Browser: nichts, was Sie eingeben, wird hochgeladen. Sie funktionieren mit jeder Bank, die camt.053 exportiert oder pain.001 akzeptiert, zum Beispiel Sparkasse, Volksbank, Deutsche Bank, Commerzbank, Raiffeisen, Erste, UBS oder PostFinance, sowie mit slowakischen Banken. Eine Pro-Lizenz gilt in dreien davon (Generator, camt.053 nach Excel, Zahlungsabgleich); SEPA pain.001 Doctor ist kostenlos und braucht keine Lizenz. Prüfen und Erstellen von pain.001 ist kostenlos, bis zu 5.000 Zahlungen je erstellter Datei; Umwandlung und Zahlungsabgleich laufen kostenlos über die ganze Datei, ohne Lizenz enthält die heruntergeladene Datei aber nur die ersten 20 Zeilen als Muster.',
   },
   'hero.buy.yearly': { sk: 'Kúpiť za 79 € ročne', en: 'Buy for €79 a year', de: 'Kaufen für 79 €/Jahr' },
   'hero.buy.monthly': { sk: 'alebo 9 € mesačne', en: 'or €9 a month', de: 'oder 9 €/Monat' },
@@ -141,9 +141,9 @@ export const DICT = {
   // ── section 02: Pro pricing ──────────────────────────────────────────
   's2.h2': { sk: '9 € mesačne, alebo 79 € ročne za Pro v troch nástrojoch.', en: '€9 a month, or €79 a year for Pro in three tools.', de: '9 €/Monat oder 79 €/Jahr für Pro in drei Tools.' },
   's2.sub': {
-    sk: 'Jedna platba, jedna licencia, žiadne obmedzenie na počet nástrojov ani zariadení. DPH v cene, faktúru pošle Stripe hneď po zaplatení, zrušiť môžete kedykoľvek.',
-    en: 'One payment, one licence, no limit on the number of tools or devices. VAT included, Stripe sends the invoice right after payment, cancel anytime.',
-    de: 'Eine Zahlung, eine Lizenz, keine Begrenzung bei der Anzahl der Tools oder Geräte. Inklusive MwSt., die Rechnung stellt Stripe sofort nach der Zahlung, jederzeit kündbar.',
+    sk: 'Jedna licencia pre všetky tri nástroje, bez obmedzenia počtu zariadení. DPH v cene. Platbu spracuje Stripe cez Managed Payments, doklad a faktúru vám pošle Link (Sold through Link, LLC). Zrušiť môžete kedykoľvek.',
+    en: 'One licence for all three tools, no limit on devices. VAT included. Stripe processes the payment through Managed Payments; Link (Sold through Link, LLC) sends you the receipt and the invoice. Cancel anytime.',
+    de: 'Eine Lizenz für alle drei Tools, ohne Begrenzung der Geräte. Inklusive MwSt. Die Zahlung wickelt Stripe über Managed Payments ab; Beleg und Rechnung schickt Ihnen Link (Sold through Link, LLC). Jederzeit kündbar.',
   },
   's2.badge.recommended': { sk: 'Odporúčané, ušetríte 29 €', en: 'Recommended, save €29', de: 'Empfohlen, sparen Sie 29 €' },
   's2.year.unit': { sk: '/ rok', en: '/ year', de: '/ Jahr' },
@@ -186,17 +186,17 @@ export const DICT = {
   },
   'obj4.q': { sk: 'Čo presne je zadarmo?', en: 'What exactly is free?', de: 'Was genau ist kostenlos?' },
   'obj4.a': {
-    sk: 'SEPA pain.001 Doctor a SEPA pain.001 Generátor: kontrola aj tvorba súboru sú zadarmo, bez limitu na počet použití. camt.053 do Excelu a Párovač platieb: prevod aj párovanie bežia zadarmo nad celým súborom, bez licencie sa stiahne prvých 20 riadkov ako ukážka. Celý stiahnutý súbor, export do MT940 a DATEV a pohodlie pri opakovanom mesačnom spracovaní sú súčasť Pro.',
-    en: 'SEPA pain.001 Doctor and SEPA pain.001 Generator: checking and building a file are free, with no limit on uses. camt.053 to Excel and Payment matcher: conversion and matching run free on the whole file; without a licence the download holds the first 20 rows as a sample. The full downloaded file, the MT940 and DATEV export and convenience for repeated monthly processing are part of Pro.',
-    de: 'SEPA pain.001 Doctor und SEPA-pain.001-Generator: Prüfen und Erstellen einer Datei sind kostenlos, ohne Limit bei der Nutzung. camt.053 nach Excel und Zahlungsabgleich: Umwandlung und Abgleich laufen kostenlos über die ganze Datei; ohne Lizenz enthält der Download die ersten 20 Zeilen als Muster. Die vollständige Datei, der Export nach MT940 und DATEV und Komfort für die wiederkehrende monatliche Verarbeitung gehören zu Pro.',
+    sk: 'SEPA pain.001 Doctor a SEPA pain.001 Generátor: kontrola aj tvorba súboru sú zadarmo, bez limitu na počet použití, generátor až do 5 000 platieb v jednom súbore. camt.053 do Excelu a Párovač platieb: prevod aj párovanie bežia zadarmo nad celým súborom, bez licencie sa stiahne prvých 20 riadkov ako ukážka. Celý stiahnutý súbor, export do MT940 a DATEV a pohodlie pri opakovanom mesačnom spracovaní sú súčasť Pro.',
+    en: 'SEPA pain.001 Doctor and SEPA pain.001 Generator: checking and building a file are free, with no limit on uses (the generator takes up to 5,000 payments per file). camt.053 to Excel and Payment matcher: conversion and matching run free on the whole file; without a licence the download holds the first 20 rows as a sample. The full downloaded file, the MT940 and DATEV export and convenience for repeated monthly processing are part of Pro.',
+    de: 'SEPA pain.001 Doctor und SEPA-pain.001-Generator: Prüfen und Erstellen einer Datei sind kostenlos, ohne Limit bei der Nutzung (der Generator nimmt bis zu 5.000 Zahlungen je Datei). camt.053 nach Excel und Zahlungsabgleich: Umwandlung und Abgleich laufen kostenlos über die ganze Datei; ohne Lizenz enthält der Download die ersten 20 Zeilen als Muster. Die vollständige Datei, der Export nach MT940 und DATEV und Komfort für die wiederkehrende monatliche Verarbeitung gehören zu Pro.',
   },
 
   // ── section 03: Pro benefits ─────────────────────────────────────────
   's3.h2': { sk: 'Čo Pro pridá v troch nástrojoch.', en: 'What Pro adds in three tools.', de: 'Was Pro in drei Tools hinzufügt.' },
   's3.sub': {
-    sk: 'Celý stiahnutý súbor pri prevode výpisu a párovaní a pohodlie pre opakované mesačné spracovanie. Kontrola a tvorba pain.001 ostávajú zadarmo bez limitu.',
-    en: 'The full downloaded file in statement conversion and matching, plus convenience for repeated monthly processing. Checking and building pain.001 stays free with no limit.',
-    de: 'Die vollständige heruntergeladene Datei bei Umwandlung und Abgleich und Komfort für die wiederkehrende monatliche Verarbeitung. Prüfen und Erstellen von pain.001 bleibt kostenlos und ohne Limit.',
+    sk: 'Celý stiahnutý súbor pri prevode výpisu a párovaní a pohodlie pre opakované mesačné spracovanie. Kontrola a tvorba pain.001 ostávajú zadarmo, generátor až do 5 000 platieb v jednom súbore.',
+    en: 'The full downloaded file in statement conversion and matching, plus convenience for repeated monthly processing. Checking and building pain.001 stays free, up to 5,000 payments per generated file.',
+    de: 'Die vollständige heruntergeladene Datei bei Umwandlung und Abgleich und Komfort für die wiederkehrende monatliche Verarbeitung. Prüfen und Erstellen von pain.001 bleibt kostenlos, bis zu 5.000 Zahlungen je erstellter Datei.',
   },
   'r1.title': { sk: 'Uložené profily platiteľov.', en: 'Saved payer profiles.', de: 'Gespeicherte Zahlerprofile.' },
   'r1.body': {
@@ -235,9 +235,9 @@ export const DICT = {
     de: 'Eine Frage, oder ein Fall, den eines der Tools falsch verarbeitet hat? Eine bevorzugte Antwort, direkt vom Autor der Tools.',
   },
   's3.note': {
-    sk: 'Bez licencie: kontrola a tvorba pain.001 bez limitu, prevod výpisu a párovanie nad celým súborom, stiahnutý súbor s prvými 20 riadkami ako ukážkou.',
-    en: 'Without a licence: checking and building pain.001 with no limit, statement conversion and matching on the whole file, a downloaded file with the first 20 rows as a sample.',
-    de: 'Ohne Lizenz: Prüfen und Erstellen von pain.001 ohne Limit, Umwandlung und Abgleich über die ganze Datei, eine heruntergeladene Datei mit den ersten 20 Zeilen als Muster.',
+    sk: 'Bez licencie: kontrola a tvorba pain.001 zadarmo (generátor až do 5 000 platieb v súbore), prevod výpisu a párovanie nad celým súborom, stiahnutý súbor s prvými 20 riadkami ako ukážkou.',
+    en: 'Without a licence: checking and building pain.001 free (up to 5,000 payments per generated file), statement conversion and matching on the whole file, a downloaded file with the first 20 rows as a sample.',
+    de: 'Ohne Lizenz: Prüfen und Erstellen von pain.001 kostenlos (bis zu 5.000 Zahlungen je erstellter Datei), Umwandlung und Abgleich über die ganze Datei, eine heruntergeladene Datei mit den ersten 20 Zeilen als Muster.',
   },
 
   // ── section 04: licence ──────────────────────────────────────────────
@@ -272,9 +272,9 @@ export const DICT = {
     de: 'Sagen Sie uns Bescheid, oder schreiben Sie, was Sie brauchen.',
   },
   's5.sub': {
-    sk: 'Bez účtu a bez platby: kontrola a tvorba pain.001 bez limitu, pri prevode výpisu a párovaní stiahnutie prvých 20 riadkov.',
-    en: 'No account, no payment: checking and building pain.001 with no limit, and a download of the first 20 rows in statement conversion and matching.',
-    de: 'Ohne Konto, ohne Zahlung: Prüfen und Erstellen von pain.001 ohne Limit, bei Umwandlung und Abgleich ein Download der ersten 20 Zeilen.',
+    sk: 'Bez účtu a bez platby: kontrola a tvorba pain.001 zadarmo (generátor až do 5 000 platieb v súbore), pri prevode výpisu a párovaní stiahnutie prvých 20 riadkov.',
+    en: 'No account, no payment: checking and building pain.001 free (up to 5,000 payments per generated file), and a download of the first 20 rows in statement conversion and matching.',
+    de: 'Ohne Konto, ohne Zahlung: Prüfen und Erstellen von pain.001 kostenlos (bis zu 5.000 Zahlungen je erstellter Datei), bei Umwandlung und Abgleich ein Download der ersten 20 Zeilen.',
   },
   's5.subscribe.p': {
     sk: '<b>Dajte mi vedieť o novom nástroji.</b> Len nové nástroje. Žiadny newsletter, žiadne zdieľanie. Odhlásenie odpoveďou na mail.',
@@ -312,9 +312,9 @@ export const DICT = {
   },
   'faq.q1': { sk: 'Čo presne dostanem v balíku Bankové nástroje?', en: 'What exactly do I get in the Banking tools bundle?', de: 'Was genau bekomme ich im Banktools-Paket?' },
   'faq.a1': {
-    sk: 'Jednu Pro licenciu platnú v troch nástrojoch naraz: SEPA pain.001 Generátor, camt.053 do Excelu a Párovač platieb. SEPA pain.001 Doctor je zadarmo bez licencie; jeho automatická oprava súboru za 29 € je samostatný nákup. Kontrola a tvorba pain.001 sú zadarmo bez limitu; prevod výpisu a párovanie tiež, stiahnutý súbor má však bez licencie prvých 20 riadkov. Pro pridáva celý stiahnutý súbor, export do MT940 a DATEV a pohodlie: uložené profily platiteľov, viac súborov a účtov naraz, šablóny mapovania pre Pohodu, Omegu (KROS) a Money S3, históriu spracovaní a prednostnú e-mailovú podporu.',
-    en: 'One Pro licence valid in three tools at once: SEPA pain.001 Generator, camt.053 to Excel and Payment matcher. SEPA pain.001 Doctor is free without a licence; its automatic file fix for €29 is a separate purchase. Checking and building pain.001 files is free with no limit; statement conversion and matching are free too, but without a licence the downloaded file holds the first 20 rows. Pro adds the full downloaded file, the MT940 and DATEV export, and convenience: saved payer profiles, several files and accounts at once, mapping presets for Pohoda, Omega (KROS) and Money S3, a processing history, and priority email support.',
-    de: 'Eine Pro-Lizenz, gültig in drei Tools gleichzeitig: SEPA-pain.001-Generator, camt.053 nach Excel und Zahlungsabgleich. SEPA pain.001 Doctor ist ohne Lizenz kostenlos; seine automatische Korrektur der Datei für 29 € ist ein separater Kauf. Prüfen und Erstellen von pain.001 ist kostenlos und ohne Limit; Umwandlung und Abgleich ebenfalls, ohne Lizenz enthält die heruntergeladene Datei aber die ersten 20 Zeilen. Pro fügt die vollständige Datei, den Export nach MT940 und DATEV und Komfort hinzu: gespeicherte Zahlerprofile, mehrere Dateien und Konten gleichzeitig, Mapping-Vorlagen für Pohoda, Omega (KROS) und Money S3, einen Verarbeitungsverlauf und bevorzugten E-Mail-Support.',
+    sk: 'Jednu Pro licenciu platnú v troch nástrojoch naraz: SEPA pain.001 Generátor, camt.053 do Excelu a Párovač platieb. SEPA pain.001 Doctor je zadarmo bez licencie; jeho automatická oprava súboru za 29 € je samostatný nákup. Kontrola a tvorba pain.001 sú zadarmo, generátor až do 5 000 platieb v jednom súbore; prevod výpisu a párovanie tiež, stiahnutý súbor má však bez licencie prvých 20 riadkov. Pro pridáva celý stiahnutý súbor, export do MT940 a DATEV a pohodlie: uložené profily platiteľov, viac súborov a účtov naraz, šablóny mapovania pre Pohodu, Omegu (KROS) a Money S3, históriu spracovaní a prednostnú e-mailovú podporu.',
+    en: 'One Pro licence valid in three tools at once: SEPA pain.001 Generator, camt.053 to Excel and Payment matcher. SEPA pain.001 Doctor is free without a licence; its automatic file fix for €29 is a separate purchase. Checking and building pain.001 files is free, up to 5,000 payments per generated file; statement conversion and matching are free too, but without a licence the downloaded file holds the first 20 rows. Pro adds the full downloaded file, the MT940 and DATEV export, and convenience: saved payer profiles, several files and accounts at once, mapping presets for Pohoda, Omega (KROS) and Money S3, a processing history, and priority email support.',
+    de: 'Eine Pro-Lizenz, gültig in drei Tools gleichzeitig: SEPA-pain.001-Generator, camt.053 nach Excel und Zahlungsabgleich. SEPA pain.001 Doctor ist ohne Lizenz kostenlos; seine automatische Korrektur der Datei für 29 € ist ein separater Kauf. Prüfen und Erstellen von pain.001 ist kostenlos, bis zu 5.000 Zahlungen je erstellter Datei; Umwandlung und Abgleich ebenfalls, ohne Lizenz enthält die heruntergeladene Datei aber die ersten 20 Zeilen. Pro fügt die vollständige Datei, den Export nach MT940 und DATEV und Komfort hinzu: gespeicherte Zahlerprofile, mehrere Dateien und Konten gleichzeitig, Mapping-Vorlagen für Pohoda, Omega (KROS) und Money S3, einen Verarbeitungsverlauf und bevorzugten E-Mail-Support.',
   },
   'faq.q2': { sk: 'Ako funguje jedna licencia pre tri nástroje?', en: 'How does one licence for three tools work?', de: 'Wie funktioniert eine Lizenz für drei Tools?' },
   'faq.a2': {
@@ -330,15 +330,15 @@ export const DICT = {
   },
   'faq.q4': { sk: 'Čo ak chcem len jeden z nástrojov, nie všetky štyri?', en: 'What if I only want one of the tools, not all four?', de: 'Was, wenn ich nur eines der Tools möchte, nicht alle vier?' },
   'faq.a4': {
-    sk: 'Každý zo štyroch nástrojov funguje zadarmo aj bez tejto stránky: kontrola a tvorba pain.001 bez limitu, prevod výpisu a párovanie nad celým súborom so stiahnutím prvých 20 riadkov. Balík Bankové nástroje sa oplatí, keď opakovane používate aspoň dva z nich; ak vám pri príležitostnom použití jedného nástroja stačí free verzia, je presne na to určená a Pro nepotrebujete.',
-    en: 'Each of the four tools works free without this page: checking and building pain.001 with no limit, statement conversion and matching on the whole file with a download of the first 20 rows. The Banking tools bundle pays off once you repeatedly use at least two of them; if the free version is enough for occasional use of one tool, that is exactly what it is for, and you do not need Pro.',
-    de: 'Jedes der vier Tools funktioniert kostenlos auch ohne diese Seite: Prüfen und Erstellen von pain.001 ohne Limit, Umwandlung und Abgleich über die ganze Datei mit einem Download der ersten 20 Zeilen. Das Banktools-Paket lohnt sich, sobald Sie mindestens zwei davon wiederholt nutzen; reicht Ihnen die kostenlose Version für die gelegentliche Nutzung eines Tools, ist genau dafür sie gedacht, und Sie brauchen Pro nicht.',
+    sk: 'Každý zo štyroch nástrojov funguje zadarmo aj bez tejto stránky: kontrola a tvorba pain.001 zadarmo (generátor až do 5 000 platieb v súbore), prevod výpisu a párovanie nad celým súborom so stiahnutím prvých 20 riadkov. Balík Bankové nástroje sa oplatí, keď opakovane používate aspoň dva z nich; ak vám pri príležitostnom použití jedného nástroja stačí free verzia, je presne na to určená a Pro nepotrebujete.',
+    en: 'Each of the four tools works free without this page: checking and building pain.001 free (up to 5,000 payments per generated file), statement conversion and matching on the whole file with a download of the first 20 rows. The Banking tools bundle pays off once you repeatedly use at least two of them; if the free version is enough for occasional use of one tool, that is exactly what it is for, and you do not need Pro.',
+    de: 'Jedes der vier Tools funktioniert kostenlos auch ohne diese Seite: Prüfen und Erstellen von pain.001 kostenlos (bis zu 5.000 Zahlungen je erstellter Datei), Umwandlung und Abgleich über die ganze Datei mit einem Download der ersten 20 Zeilen. Das Banktools-Paket lohnt sich, sobald Sie mindestens zwei davon wiederholt nutzen; reicht Ihnen die kostenlose Version für die gelegentliche Nutzung eines Tools, ist genau dafür sie gedacht, und Sie brauchen Pro nicht.',
   },
   'faq.q5': { sk: 'Ako dostanem faktúru?', en: 'How do I get an invoice?', de: 'Wie bekomme ich eine Rechnung?' },
   'faq.a5': {
-    sk: 'Faktúru vystaví a pošle na váš e-mail Stripe hneď po zaplatení. Pri tomto predaji je ARLing s. r. o. predajcom cez Stripe Managed Payments: DPH aj vystavenie dokladu rieši priamo Stripe.',
-    en: 'Stripe issues and sends the invoice to your email right after payment. For this sale, ARLing s. r. o. sells through Stripe Managed Payments: Stripe handles both the VAT and issuing the document directly.',
-    de: 'Stripe stellt die Rechnung aus und sendet sie sofort nach der Zahlung an Ihre E-Mail-Adresse. Bei diesem Verkauf tritt ARLing s. r. o. als Verkäufer über Stripe Managed Payments auf: Stripe übernimmt sowohl die MwSt. als auch die Ausstellung des Belegs direkt.',
+    sk: 'Licenciu predávame cez Stripe Managed Payments. Predajcom je v ňom Link (Sold through Link, LLC), ktorý vám pošle doklad a faktúru v PDF; DPH vypočíta a odvedie Stripe. ARLing s. r. o. dodáva nástroje a licenčný kľúč.',
+    en: 'The licence is sold through Stripe Managed Payments. The merchant of record there is Link (Sold through Link, LLC), which sends you the receipt and the invoice as a PDF; Stripe calculates and remits the VAT. ARLing s. r. o. delivers the tools and the licence key.',
+    de: 'Die Lizenz wird über Stripe Managed Payments verkauft. Verkäufer (Merchant of Record) ist dort Link (Sold through Link, LLC), der Ihnen Beleg und Rechnung als PDF schickt; die Umsatzsteuer berechnet und führt Stripe ab. ARLing s. r. o. liefert die Tools und den Lizenzschlüssel.',
   },
   'faq.q6': { sk: 'Môžem licenciu zrušiť alebo dostať peniaze naspäť?', en: 'Can I cancel the licence or get a refund?', de: 'Kann ich die Lizenz kündigen oder eine Rückerstattung bekommen?' },
   'faq.a6': {
@@ -349,9 +349,9 @@ export const DICT = {
 
   // ── closing CTA ──────────────────────────────────────────────────────
   's7.sub': {
-    sk: 'Štyri nástroje na prácu s bankou, jedna licencia pre tri z nich za 9 € mesačne alebo 79 € ročne. Kontrola a tvorba pain.001 ostávajú zadarmo bez limitu.',
-    en: 'Four tools for working with your bank, one licence covering three of them for €9 a month or €79 a year. Checking and building pain.001 stays free with no limit.',
-    de: 'Vier Tools für die Arbeit mit der Bank, eine Lizenz für drei davon zu 9 €/Monat oder 79 €/Jahr. Prüfen und Erstellen von pain.001 bleibt kostenlos und ohne Limit.',
+    sk: 'Štyri nástroje na prácu s bankou, jedna licencia pre tri z nich za 9 € mesačne alebo 79 € ročne. Kontrola a tvorba pain.001 ostávajú zadarmo, generátor až do 5 000 platieb v jednom súbore.',
+    en: 'Four tools for working with your bank, one licence covering three of them for €9 a month or €79 a year. Checking and building pain.001 stays free, up to 5,000 payments per generated file.',
+    de: 'Vier Tools für die Arbeit mit der Bank, eine Lizenz für drei davon zu 9 €/Monat oder 79 €/Jahr. Prüfen und Erstellen von pain.001 bleibt kostenlos, bis zu 5.000 Zahlungen je erstellter Datei.',
   },
 
   // ── sticky mobile buy bar ────────────────────────────────────────────
@@ -429,9 +429,9 @@ export const DICT = {
     de: 'Bankwerkzeuge für die Buchhaltung: eine Pro-Lizenz für drei Tools',
   },
   'meta.description': {
-    sk: 'SEPA pain.001 Doctor, SEPA pain.001 Generátor, camt.053 do Excelu a Párovač platieb: štyri nástroje na prácu s bankou, jedna Pro licencia pre tri z nich za 9 € mesačne alebo 79 € ročne. Kontrola a tvorba pain.001 zadarmo bez limitu, nič sa neodosiela.',
-    en: 'SEPA pain.001 Doctor, SEPA pain.001 Generator, camt.053 to Excel and Payment matcher: four tools for working with your bank, one Pro licence covering three of them for €9 a month or €79 a year. Checking and building pain.001 free with no limit, nothing is uploaded.',
-    de: 'SEPA pain.001 Doctor, SEPA-pain.001-Generator, camt.053 nach Excel und Zahlungsabgleich: vier Tools für die Arbeit mit der Bank, eine Pro-Lizenz für drei davon zu 9 €/Monat oder 79 €/Jahr. Prüfen und Erstellen von pain.001 kostenlos ohne Limit, nichts wird hochgeladen.',
+    sk: 'SEPA pain.001 Doctor, SEPA pain.001 Generátor, camt.053 do Excelu a Párovač platieb: štyri nástroje na prácu s bankou, jedna Pro licencia pre tri z nich za 9 € mesačne alebo 79 € ročne. Kontrola a tvorba pain.001 zadarmo, generátor až do 5 000 platieb v súbore, nič sa neodosiela.',
+    en: 'SEPA pain.001 Doctor, SEPA pain.001 Generator, camt.053 to Excel and Payment matcher: four tools for working with your bank, one Pro licence covering three of them for €9 a month or €79 a year. Checking and building pain.001 free, up to 5,000 payments per generated file, nothing is uploaded.',
+    de: 'SEPA pain.001 Doctor, SEPA-pain.001-Generator, camt.053 nach Excel und Zahlungsabgleich: vier Tools für die Arbeit mit der Bank, eine Pro-Lizenz für drei davon zu 9 €/Monat oder 79 €/Jahr. Prüfen und Erstellen von pain.001 kostenlos, bis zu 5.000 Zahlungen je erstellter Datei, nichts wird hochgeladen.',
   },
 };
 

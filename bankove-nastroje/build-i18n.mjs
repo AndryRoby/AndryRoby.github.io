@@ -275,6 +275,8 @@ function transformJsonLd(html, lang, problems) {
     if (obj['@type'] === 'SoftwareApplication') {
       obj.name = tr('meta.title', lang, problems);
       obj.url = langUrl(lang);
+      // Contact per language: podpora@ on the Slovak root page, support@ on en/ and de/.
+      if (obj.author && obj.author.email) obj.author.email = lang === 'sk' ? 'podpora@arling.sk' : 'support@arling.sk';
       if (lang !== 'en') obj.description = tr('meta.description', lang, problems);
       if (Array.isArray(obj.offers)) {
         obj.offers.forEach((o) => {

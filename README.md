@@ -1,29 +1,23 @@
 # ARLing
 
-Small, free, browser-only tools for one exact developer problem each, plus a home-library app.
+arling.sk is the site of ARLing s. r. o. (Bratislava, Slovakia): browser tools for businesses, accountants, online shops and developers (e-invoice XML, SEPA pain.001 and camt.053 bank files, product feeds, auth and redirect errors), plus puzzle books and games, and this repository is the source of that site. Many tools are free; the paid paths have their price on each product page, for example the Banking tools Pro licence for 9 EUR a month or 79 EUR a year (https://arling.sk/bankove-nastroje/en/), the SEPA file check for 149 EUR invoiced only after delivery (https://arling.sk/kontrola-suboru/en/), and e-invoice XML downloads from 2.90 EUR excluding VAT (https://arling.sk/efaktura/en/).
 
 Live: https://arling.sk/
 
 ## What it is
 
-This repository is the source for the hub page at arling.sk, the page every ARLing tool links back to. It is one static site:
+This repository is the GitHub Pages source for arling.sk. It holds the hub page and many of the product pages served under the same domain, for example `/efaktura/`, `/kontrola-suboru/`, `/bankove-nastroje/`, `/parovac-platieb/`, `/feed-doctor/`, `/asistent/`, `/gdpr-dokumenty/`, `/shop/`, `/games/`, `/notes/`, `/podmienky/` (terms) and `/privacy/`. Some tools (for example SEPA pain.001 Doctor, SEPA pain.001 Generator, camt.053 to Excel and the developer doctors) live in their own repositories and are served at `arling.sk/<repository>/`.
 
-- `index.html`: the page itself. Lists the 7 live tools, each with what you see, what you get, and a link. Has a "notify me about new tools" email form and three JSON-LD blocks (`Organization`, `WebSite`, `ItemList` of the 7 tools) so the company and the tool list are machine-readable.
-- `how-we-work/index.html`: the method page. What Andrej decides, what AI agents do, how the company makes money, a 404 page for the section.
-- `privacy/index.html`: what is collected (anonymous visit counts, an optional e-mail address) and what never is (anything typed into a tool).
-- `llms.txt`: the same tool list in plain text for AI agents, with a one-paragraph summary of each tool and a link to that tool's own `llms.txt` / `llms-full.txt`.
-- `sitemap.xml` and `sitemap-index.xml`: this domain's own pages, plus an index that points at every tool's own `sitemap.xml` (each tool is a separate repository with its own sitemap).
-- `robots.txt`: `Allow: /` for everyone, with GPTBot, ClaudeBot, PerplexityBot, Google-Extended, Bingbot and Applebot listed explicitly.
+- `index.html`: the hub page with the product catalogue, an e-mail form for news, and JSON-LD so the company and the product list are machine-readable.
+- `llms.txt`: the product list in plain text for AI agents, with links to each tool's own `llms.txt` / `llms-full.txt`.
+- `sitemap.xml` and `sitemap-index.xml`: this domain's pages, plus an index that points at the sitemaps of tools that live in their own repositories.
+- `robots.txt`: `Allow: /` for everyone, with AI crawlers listed explicitly.
 - `CNAME`: `arling.sk`. This repo is named `AndryRoby.github.io` (GitHub's naming convention for a user's default Pages site) and GitHub Pages serves it at the custom domain in that file.
-- `subscribe.js`: wires the email form to a self-hosted subscribe API. No inline event handlers, since the CSP in `index.html` has no `unsafe-inline` for scripts.
-- `google053b559de11f5b40.html` and `25d148747bb8560e7423770bf741ecbe.txt`: Google Search Console and IndexNow verification files.
+- `subscribe.js`: wires the e-mail form to a self-hosted subscribe API. No inline event handlers, since the CSP has no `unsafe-inline` for scripts.
 
-## What it does not do
+## Payments, receipts and contact
 
-- It runs no checks itself. Every diagnostic lives in its own tool, in its own repository, with its own engine and its own tests.
-- No accounts, no login, no cookies of its own.
-- It does not store what anyone types into a tool. The one thing it does store, if you submit the form, is an email address for the "new tools" list, held by the subscribe service, not in this repo.
-- It has no backend of its own. The only network call this repo's code makes is the subscribe form's POST, to a self-hosted endpoint outside this repo.
+Card payments for licences, subscriptions and digital products are sold through Stripe Managed Payments: the merchant of record is Link (Sold through Link, LLC, which provides that service for Stripe), Link sends the receipt and the invoice, and Stripe calculates and remits the VAT; ARLing s. r. o. delivers the product or service. The SEPA file check (149 EUR) is not paid through Stripe: ARLing s. r. o. invoices it after delivery, payable by bank transfer. Prices, withdrawal and refunds: terms of use, https://arling.sk/podmienky/en/. Contact: support@arling.sk.
 
 ## How it works
 
@@ -52,11 +46,11 @@ python -m http.server
 
 or open `index.html` directly in a browser. The subscribe form and the Umami script will fail closed (caught, logged, no crash) when the homelab endpoint is unreachable, which is expected when running offline.
 
-There is no `tests.mjs` in this repository: a static index page with no engine has nothing to unit-test. Each tool it links to has its own `tests.mjs`, in its own repository.
+Tools that live in their own repositories carry their own tests there.
 
 ## Privacy
 
-Everything on this page runs in your browser except one thing: submitting the subscribe form, which is opt-in. Visit counts and which link was clicked are collected with a self-hosted Umami instance that runs without cookies; the content of anything typed into a tool linked from this page never reaches this domain, since each tool is client-side on its own page. Full policy: https://arling.sk/privacy/.
+Everything on the hub page runs in your browser except one thing: submitting the subscribe form, which is opt-in. Visit counts and which link was clicked are collected with a self-hosted Umami instance that runs without cookies; most tools process what you type only in your browser; the exceptions (for example the e-shop check and Feed Doctor Monitor) say so on their own pages. Full policy: https://arling.sk/privacy/en/.
 
 ## Sources
 
@@ -79,12 +73,21 @@ All rights reserved, ARLing s. r. o. Reading this code to see how the hub page w
 
 ARLing s. r. o., Bratislava, Slovakia. Company ID 56583486, VAT ID SK2122352100. support@arling.sk
 
-The tools this hub links to, each its own repository:
+Tools that live in their own repositories:
 
+- https://arling.sk/sepa-pain001-doctor/ (github.com/AndryRoby/sepa-pain001-doctor)
+- https://arling.sk/sepa-pain001-generator/ (github.com/AndryRoby/sepa-pain001-generator)
+- https://arling.sk/camt053-to-excel/ (github.com/AndryRoby/camt053-to-excel)
 - https://arling.sk/google-oauth-redirect-doctor/
 - https://arling.sk/expo-supabase-auth-doctor/
 - https://arling.sk/supabase-redirect-doctor/
 - https://arling.sk/flutter-supabase-doctor/
 - https://arling.sk/expo-universal-links-doctor/
-- https://arling.sk/sepa-pain001-doctor/
+- https://arling.sk/cors-doctor/
+- https://arling.sk/jwt-doctor/
+- https://arling.sk/cookie-samesite-doctor/
+- https://arling.sk/redirect-loop-doctor/
+- https://arling.sk/stripe-webhook-doctor/
+- https://arling.sk/firebase-auth-domain-doctor/
 - https://arling.sk/bookapp/
+- https://arling.sk/janii/
