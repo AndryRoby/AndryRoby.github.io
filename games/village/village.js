@@ -14,12 +14,36 @@
    4. Reduced motion prints one still frame and never starts a loop.
    All module URLs carry the same ?v= so a new engine never meets old drawings;
    bump it in every import and in index.html together. */
-import { Pen, OPT, inksLost } from './riso.js?v=3';
-import { build, drawStatic } from './svet.js?v=3';
-import { PLACES, ambient, ACT } from './miesta.js?v=3';
+import { Pen, OPT, inksLost } from './riso.js?v=4';
+import { build, drawStatic } from './svet.js?v=4';
+import { PLACES, ambient, ACT } from './miesta.js?v=4';
 
 const $ = s => document.querySelector(s);
 const stage = $('#vl-stage'), cv = $('#vl-canvas');
+
+/* Test switch (26 Sep 2026). A Galaxy Z Fold 7 (Adreno 830) showed the village with blocks of noise
+   (see the tiles note below for the fix). To tell a GPU fault from anything else on such a phone:
+   ?soft=2 prints the tiles and scratch plates on the CPU (the screen canvas stays on the GPU; dragging
+   stays near 13 ms a frame on a desktop), ?soft=1 puts every village canvas on the CPU (dragging went
+   from 13 to 173 ms a frame, so never by default), ?diag shows the GPU, the choice and lost contexts.
+   Without a switch nothing changes. */
+const Q = new URLSearchParams(location.search);
+const GPU = Q.has('diag') ? gpuName() : '';
+const SOFT = Q.get('soft') === '1' || Q.get('soft') === '2';
+// ?soft=2: only the tiles and scratch plates on the CPU, the screen canvas stays on the GPU
+const SOFT_MAIN = SOFT && Q.get('soft') !== '2';
+OPT.soft = SOFT;
+function gpuName() {
+  try {
+    const c = document.createElement('canvas'), gl = c.getContext('webgl');
+    if (!gl) return '';
+    const e = gl.getExtension('WEBGL_debug_renderer_info');
+    const n = String(gl.getParameter(e ? e.UNMASKED_RENDERER_WEBGL : gl.RENDERER) || '');
+    const lose = gl.getExtension('WEBGL_lose_context');
+    if (lose) lose.loseContext();
+    return n;
+  } catch { return ''; }
+}
 if (stage && cv && cv.getContext) start();
 
 /* 25 Sep 2026, Firefox 156 in a real window. Two kinds of drawing leave its fast GPU
@@ -36,7 +60,7 @@ if (stage && cv && cv.getContext) start();
 function isGecko() { return /\bGecko\/\d/.test(navigator.userAgent); }
 
 function start() {
-  const ctx = cv.getContext('2d', { alpha: false });
+  const ctx = cv.getContext('2d', { alpha: false, willReadFrequently: SOFT_MAIN });
   const mqReduce = matchMedia('(prefers-reduced-motion: reduce)');
   let reduce = mqReduce.matches;
   let weak = (navigator.hardwareConcurrency || 8) <= 4 || (navigator.deviceMemory || 8) <= 4;
@@ -141,7 +165,7 @@ function start() {
     while (c && (c.width !== T || c.gen !== plateGen)) { free(c); c = spare.pop(); }
     if (!c) {
       c = document.createElement('canvas'); c.width = c.height = T; c.gen = plateGen;
-      c.pen = new Pen(c.getContext('2d', { alpha: false }));
+      c.pen = new Pen(c.getContext('2d', { alpha: false, willReadFrequently: SOFT }));
       c.addEventListener('contextlost', gpuLost); c.addEventListener('contextrestored', gpuLost);
     }
     const p = c.pen, g = p.c;
@@ -333,6 +357,20 @@ function start() {
      and ink away and prints them all again; the main canvas is laid again whole. */
   let lostN = 0, doneN = 0;
   function gpuLost() { lostN++; full = true; if (!raf && !timer) wake(true); }
+  // ?diag: what this device got (GPU, CPU drawing, pixel ratio, tile size, lost contexts), for a screenshot
+  if (Q.has('diag')) {
+    const box = document.createElement('div');
+    box.style.cssText = 'position:fixed;left:8px;right:8px;bottom:8px;z-index:9999;padding:10px 12px;border-radius:10px;background:#111;color:#f3ead8;font:13px/1.45 ui-monospace,monospace;white-space:pre-wrap;pointer-events:none';
+    document.body.appendChild(box);
+    const ukaz = () => {
+      const chrome = (/Chrome\/(\d+)/.exec(navigator.userAgent) || [])[1] || '?';
+      box.textContent = 'GPU: ' + (GPU || 'unknown') + '\nCPU drawing: ' + (SOFT ? 'on' : 'off') + (Q.has('soft') ? ' (forced)' : ' (auto)') +
+        '\nChrome ' + chrome + ' · DPR ' + DPR + ' (device ' + (window.devicePixelRatio || 1) + ') · tile ' + T + ' px' +
+        '\nview ' + innerWidth + 'x' + innerHeight + ' · screen ' + screen.width + 'x' + screen.height +
+        '\ntiles ' + tiles.size + ' · lost contexts ' + lostN + (weak ? ' · weak' : '') + (mobile ? ' · mobile' : '');
+    };
+    ukaz(); setInterval(ukaz, 1000);
+  }
   OPT.lost = gpuLost;
   cv.addEventListener('contextlost', gpuLost);
   cv.addEventListener('contextrestored', gpuLost);

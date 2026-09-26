@@ -143,7 +143,8 @@ export function rgbStr(rgb, a = 1) { return `rgba(${rgb[0]},${rgb[1]},${rgb[2]},
    corners and caps, curves flattened to 0.08 device px, dashes cut as the canvas cuts
    them, all in one nonzero fill. The same area, the same grain, one fast fill.
    Checked against the distance-to-line definition on 449 000 random points: no miss. */
-export const OPT = { fillStrokes: false };
+// soft: every village canvas is drawn on the CPU (willReadFrequently), set by village.js before the first print
+export const OPT = { fillStrokes: false, soft: false };
 let SCR = null;                            // the scratch plate for letters (Pen.textAside)
 const TAU_ = 6.283185307179586;
 const TOL = 0.08;                          // how far a flattened curve may stray, in device px
@@ -450,7 +451,7 @@ export class Pen {
     if (!(w > 0 && h > 0) || w > 4096 || h > 4096) return;
     if (!SCR) SCR = watch(document.createElement('canvas'));
     if (SCR.width < w || SCR.height < h) { SCR.width = Math.max(SCR.width, w); SCR.height = Math.max(SCR.height, h); }
-    const g = SCR.getContext('2d', { alpha: false });
+    const g = SCR.getContext('2d', { alpha: false, willReadFrequently: OPT.soft });
     const a = c.globalAlpha, mult = c.globalCompositeOperation === 'multiply', ink = c.fillStyle;
     const pass = (ground, style, op, onto) => {
       g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
