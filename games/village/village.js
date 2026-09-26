@@ -14,24 +14,25 @@
    4. Reduced motion prints one still frame and never starts a loop.
    All module URLs carry the same ?v= so a new engine never meets old drawings;
    bump it in every import and in index.html together. */
-import { Pen, OPT, inksLost } from './riso.js?v=4';
-import { build, drawStatic } from './svet.js?v=4';
-import { PLACES, ambient, ACT } from './miesta.js?v=4';
+import { Pen, OPT, inksLost } from './riso.js?v=5';
+import { build, drawStatic } from './svet.js?v=5';
+import { PLACES, ambient, ACT } from './miesta.js?v=5';
 
 const $ = s => document.querySelector(s);
 const stage = $('#vl-stage'), cv = $('#vl-canvas');
 
-/* Test switch (26 Sep 2026). A Galaxy Z Fold 7 (Adreno 830) showed the village with blocks of noise
-   (see the tiles note below for the fix). To tell a GPU fault from anything else on such a phone:
-   ?soft=2 prints the tiles and scratch plates on the CPU (the screen canvas stays on the GPU; dragging
-   stays near 13 ms a frame on a desktop), ?soft=1 puts every village canvas on the CPU (dragging went
-   from 13 to 173 ms a frame, so never by default), ?diag shows the GPU, the choice and lost contexts.
-   Without a switch nothing changes. */
+/* CPU tiles (26 Sep 2026). A Galaxy Z Fold 7 (Adreno 830, Chrome 153) draws the village with blocks of
+   noise and whole tiles printed at the wrong place, with no lost context at all (?diag showed 0), while a
+   Fold 3 and desktop browsers draw it right. So on an Adreno 8xx GPU the tiles and scratch plates are
+   printed on the CPU (willReadFrequently keeps a 2D canvas in memory); the screen canvas stays on the GPU.
+   On a desktop that kept dragging at 13 ms a frame (p95 27 ms). The GPU name is read only on Android.
+   ?soft=2 forces CPU tiles anywhere, ?soft=1 puts every canvas on the CPU (dragging 173 ms a frame on a
+   desktop, a last resort), ?soft=0 turns it off; ?diag shows the GPU, the choice and lost contexts. */
 const Q = new URLSearchParams(location.search);
-const GPU = Q.has('diag') ? gpuName() : '';
-const SOFT = Q.get('soft') === '1' || Q.get('soft') === '2';
-// ?soft=2: only the tiles and scratch plates on the CPU, the screen canvas stays on the GPU
-const SOFT_MAIN = SOFT && Q.get('soft') !== '2';
+const GPU = Q.has('diag') || /Android/.test(navigator.userAgent) ? gpuName() : '';
+const ADRENO8 = /Adreno[^0-9]*[89]\d\d/.test(GPU);
+const SOFT = Q.get('soft') === '1' || Q.get('soft') === '2' || (Q.get('soft') !== '0' && ADRENO8);
+const SOFT_MAIN = Q.get('soft') === '1';
 OPT.soft = SOFT;
 function gpuName() {
   try {
@@ -364,7 +365,7 @@ function start() {
     document.body.appendChild(box);
     const ukaz = () => {
       const chrome = (/Chrome\/(\d+)/.exec(navigator.userAgent) || [])[1] || '?';
-      box.textContent = 'GPU: ' + (GPU || 'unknown') + '\nCPU drawing: ' + (SOFT ? 'on' : 'off') + (Q.has('soft') ? ' (forced)' : ' (auto)') +
+      box.textContent = 'GPU: ' + (GPU || 'unknown') + '\nCPU drawing: ' + (SOFT_MAIN ? 'all canvases' : SOFT ? 'tiles' : 'off') + (Q.has('soft') ? ' (forced)' : ' (auto)') +
         '\nChrome ' + chrome + ' · DPR ' + DPR + ' (device ' + (window.devicePixelRatio || 1) + ') · tile ' + T + ' px' +
         '\nview ' + innerWidth + 'x' + innerHeight + ' · screen ' + screen.width + 'x' + screen.height +
         '\ntiles ' + tiles.size + ' · lost contexts ' + lostN + (weak ? ' · weak' : '') + (mobile ? ' · mobile' : '');

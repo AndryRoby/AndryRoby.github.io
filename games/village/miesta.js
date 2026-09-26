@@ -6,8 +6,8 @@
 import {
   iso, RX, RY, box, faceJ, faceI, cottage, tree, bush, flowers, stone, fence, eye, chimneyTop,
   hedgehog, otter, magpie, crane, squirrel, badger, dormouse, hare, heron, swan, vole, beaver, owl, fox
-} from './iso.js?v=4';
-import { hash } from './riso.js?v=4';
+} from './iso.js?v=5';
+import { hash } from './riso.js?v=5';
 
 const TAU = Math.PI * 2;
 const { sin, cos, min, max, abs, hypot, floor } = Math;
