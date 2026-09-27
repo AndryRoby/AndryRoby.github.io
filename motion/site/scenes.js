@@ -21,6 +21,8 @@ import { createToaster, centerOf } from '../components/toast/toast.js';
 import { demo as toastDemo, MESSAGES } from '../components/toast/demo.js';
 import { createSwitch } from '../components/switch/switch.js';
 import { demo as switchDemo } from '../components/switch/demo.js';
+import { createNumber } from '../components/number/number.js';
+import { demo as numberDemo } from '../components/number/demo.js';
 import { createAccordion } from '../components/accordion/accordion.js';
 import { demo as accordionDemo } from '../components/accordion/demo.js';
 import { createCommand } from '../components/command/command.js';
@@ -313,6 +315,20 @@ const switchScene = {
   demo: switchDemo,
 };
 
+const numberScene = {
+  title: 'Number',
+  height: 150,
+  build() {
+    return [
+      h('div', { class: 'mo-number-row' },
+        h('span', { class: 'mo-number-label' }, 'Net sales this month'),
+        h('span', { class: 'am-number mo-number-value' })),
+    ];
+  },
+  create: (stage, o = {}) => createNumber({ el: q(stage, '.am-number'), value: 0, decimals: 2, prefix: '€', clock: o.clock, reduced: o.reduced }),
+  demo: numberDemo,
+};
+
 const accordion = {
   title: 'Accordion',
   height: 330,
@@ -432,8 +448,8 @@ const dropzone = {
 };
 
 /** Every scene by name; GALLERY is the order of the component rows on the page. */
-export const SCENES = { hero, dialog, tabs, tooltip, popover, toast, switch: switchScene, accordion, command, drawer, carousel, otp, dropzone };
-export const GALLERY = ['dialog', 'tabs', 'tooltip', 'popover', 'toast', 'switch', 'accordion', 'command', 'drawer', 'carousel', 'otp', 'dropzone'];
+export const SCENES = { hero, dialog, tabs, tooltip, popover, toast, switch: switchScene, number: numberScene, accordion, command, drawer, carousel, otp, dropzone };
+export const GALLERY = ['dialog', 'tabs', 'tooltip', 'popover', 'toast', 'switch', 'accordion', 'command', 'drawer', 'carousel', 'otp', 'dropzone', 'number'];
 
 // ------------------------------------------------------------------ one frame strip for "three outputs"
 
