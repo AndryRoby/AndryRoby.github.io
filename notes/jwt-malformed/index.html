@@ -1,0 +1,567 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script src="/style/vzhlad.js?v=8a4019ae"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://server.invalid 'sha256-Q4hul6OkIuZEt918rZb8fmhEK924qHfVjWoXVTbkFDI=' 'sha256-RSuTlzHEpDUiHFruheNSESz3i30ge+1RQxhydXBfdhY=' 'sha256-g/hqz9lohk+fDj6WN3HnFEw3xlvYqPVaZqffzzS3lsM=' 'sha256-kHzhLBitzZlfAaUS4VuXMelQQYrrpIhEmCeLW+iUbL4='; connect-src 'self' https://server.invalid; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0a0908">
+<link rel="preconnect" href="https://server.invalid" crossorigin>
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../../favicon.ico" sizes="48x48">
+<link rel="apple-touch-icon" href="../../icon-180.png">
+<title>"jwt malformed": what your verifier received instead of a token</title>
+<meta name="description" content="jsonwebtoken throws jwt malformed when the value does not split into three parts at the periods. What arrived instead of a token, and the fix for each case.">
+<link rel="canonical" href="https://arling.sk/notes/jwt-malformed/">
+<meta property="og:type" content="article">
+<meta property="og:title" content="&quot;jwt malformed&quot;: what your verifier received instead of a token">
+<meta property="og:description" content="jsonwebtoken throws jwt malformed when the value does not split into three parts at the periods. What arrived instead of a token, and the fix for each case.">
+<meta property="og:url" content="https://arling.sk/notes/jwt-malformed/">
+
+
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"Article","headline":"\"jwt malformed\": what your verifier received instead of a token","description":"jsonwebtoken throws jwt malformed when the value does not split into three parts at the periods. What arrived instead of a token, and the fix for each case.","datePublished":"2026-09-27","dateModified":"2026-09-27","inLanguage":"en","author":{"@type":"Organization","name":"ARLing s. r. o."},"publisher":{"@type":"Organization","name":"ARLing s. r. o.","url":"https://arling.sk/"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://arling.sk/notes/jwt-malformed/"}}
+</script>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Does jwt malformed mean my secret is wrong?","acceptedAnswer":{"@type":"Answer","text":"No. jsonwebtoken counts the parts before it reads the header or uses a key, so your secret has not been involved yet. A wrong secret shows up later, as invalid signature, once the value really is a token."}},{"@type":"Question","name":"The token works in a JWT debugger. Why does my server say jwt malformed?","acceptedAnswer":{"@type":"Answer","text":"The debugger checked the string you pasted, and your server received a different one. The usual differences: the text null or undefined from a client that had no token yet, the word Bearer or the payload alone from splitting the header, or an encrypted session cookie instead of the token you copied. Log the shape of the value on the server and compare."}},{"@type":"Question","name":"Why does null give jwt must be provided, but \"null\" gives jwt malformed?","acceptedAnswer":{"@type":"Answer","text":"jsonwebtoken rejects empty values first: undefined, null and an empty string all stop at jwt must be provided. The four-letter string \"null\" is not empty, so it reaches the count, has no period, and fails as jwt malformed. A template literal such as `Bearer ${token}` turns a null token into exactly that string."}},{"@type":"Question","name":"Can jsonwebtoken verify an encrypted JWT (JWE)?","acceptedAnswer":{"@type":"Answer","text":"Not as it is. jwt.verify() accepts only the three-part signed form, and a JWE has five parts, so it fails as jwt malformed. Decrypt it with the library or service that issued it, NextAuth's getToken() for example, or ask that issuer for a signed token meant for your API."}},{"@type":"Question","name":"What status code should my API return for a malformed token?","acceptedAnswer":{"@type":"Answer","text":"401. RFC 6750 lists a malformed token under the invalid_token error and says the resource server should respond with 401 Unauthorized and a WWW-Authenticate: Bearer header. When no token was sent at all, it says to leave the error code out."}}]}
+</script>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"ARLing","item":"https://arling.sk/"},{"@type":"ListItem","position":2,"name":"Notes","item":"https://arling.sk/notes/"},{"@type":"ListItem","position":3,"name":"\"jwt malformed\": what your verifier received instead of a token","item":"https://arling.sk/notes/jwt-malformed/"}]}
+</script>
+<link rel="preload" href="/fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/style/paper.css?v=704b28ed">
+<script src="/style/prepinac.js?v=668e98c9" defer></script>
+<style>
+  /* Notes. Vzhlad, farby, typografia a pohyb su v /style/paper.css.
+     Tu ostava len to, co je pre clanok vlastne: merany pas, register, panel s nastrojom. */
+  .note{max-width:min(100%,880px);margin:0 auto}
+  .doc{max-width:min(68ch,660px);margin-inline:auto;font-size:clamp(17px,1.2vw,18px);line-height:1.62}
+
+  /* uvod clanku: nadpis, datum, odkaz na nastroj */
+  .hero-note{padding:clamp(34px,4.6vw,72px) 0 clamp(20px,2.4vw,34px)}
+  /* Titul clanku je hero stranky. Hlavna veta dorastie na desktope na 64 px, ako ziada
+     paper-v2 bod 9.4. Druhy riadok titulu je vzdy vysvetlujuca cast za dvojbodkou:
+     ostava v rovnakom reze, len mensia a tlmenejsia, aby ani najdlhsi titul (141 znakov
+     v clanku o Shopify) nezabral cely prvy pohlad. Rodinu, farbu a letter-spacing
+     urcuje paper.css, tu je len mierka. */
+  .hero-note h1{font-size:clamp(32px,4.6vw,64px);line-height:1.05;margin:0 0 18px}
+  .hero-note h1 .l+.l{display:block;margin-top:.3em;font-weight:500;
+    font-size:clamp(20px,2.4vw,34px);line-height:1.2;letter-spacing:-.01em;color:var(--body)}
+  .hero-note .kicker{display:block;margin:0 0 12px}
+  .hero-note .crumbs{font-family:var(--ui);font-size:12px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--accent);margin:0 0 12px}
+  .hero-note .crumbs a{color:inherit;text-decoration:none}
+  .hero-note .crumbs a:hover{text-decoration:underline}
+  .byline,.dateline{font-family:var(--ui);font-size:14px;color:var(--muted);margin:0 0 20px;max-width:none}
+  .toolgo{margin:0}
+
+  /* rytmus clanku: vlasova linka medzi castami, ziadne velke medzery sekcii */
+  section{scroll-margin-top:86px}
+  .doc section{padding:0;border-top:none;margin:0 0 clamp(26px,2.8vw,38px)}
+  .doc section+section{border-top:1px solid var(--line);padding-top:clamp(26px,2.8vw,36px)}
+  /* Mierka nadpisov vnutri clanku, nie kopia paper.css: pas textu ma 660 px, do neho sa
+     sekcny nadpis v plnej velkosti z paper.css (42 px) nezmesti bez zalomenia. Mení sa
+     len velkost a odstupy, vsetko ostatne dedi z paper.css. */
+  .doc h2{font-size:clamp(21px,1.9vw,27px);line-height:1.22;margin:0 0 12px}
+  .doc h3{font-size:clamp(17.5px,1.3vw,20px);margin:18px 0 8px}
+  .doc p{margin:0 0 14px;max-width:none}
+  .doc .num,.doc .kicker{display:block;font-family:var(--ui);font-size:12px;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--accent);margin:0 0 7px}
+  .doc .lead,.doc .lede{font-size:clamp(18px,1.35vw,20.5px);line-height:1.55;max-width:none;margin:0 0 18px}
+  .doc ol,.doc ul{padding-left:22px;margin:0 0 16px}
+  .doc li{margin:0 0 7px}
+  .doc li:last-child{margin-bottom:0}
+  .doc a{overflow-wrap:anywhere}
+  .doc code{background:var(--paper-deep);border:1px solid var(--line);border-radius:4px;padding:1px 5px;
+    overflow-wrap:anywhere}
+  .doc pre{margin:0 0 16px;white-space:pre-wrap;overflow-wrap:break-word}
+  .doc pre code{background:none;border:none;padding:0;font-size:13.5px;line-height:1.55}
+  .doc blockquote{margin:0 0 16px;padding:8px 16px;border-left:2px solid var(--line);color:var(--muted)}
+
+  /* chybova hlaska, oprava, ukazka kodu s popisom */
+  .doc .err{background:color-mix(in srgb,var(--accent) 7%,var(--card));border:1px solid var(--line);
+    border-left:3px solid var(--accent);border-radius:8px;padding:12px 16px;margin:0 0 16px}
+  .doc .err code{background:none;border:none;padding:0;color:var(--ink)}
+  .doc .fix{margin:0 0 16px;padding-left:16px;border-left:2px solid var(--accent)}
+  .doc .fix p{margin:0 0 8px}
+  .doc .fix p:last-child{margin-bottom:0}
+  .doc .fix-label{font-family:var(--ui);font-size:12px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--muted);margin:0 0 6px}
+  .doc .snippet{background:var(--card);border:1px solid var(--line);border-radius:10px;margin:0 0 18px;
+    overflow:hidden}
+  .doc .snippet .cap{padding:8px 14px;border-bottom:1px solid var(--line);
+    font:500 11px/1.3 var(--ui);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  .doc .snippet.bad .cap{color:var(--accent)}
+  .doc .snippet pre{margin:0;border:none;border-radius:0;background:none;white-space:pre-wrap}
+
+  /* diagram: co doslo do jwt.verify(), rozdelene na bodkach, a sprava pri kazdej hodnote.
+     Farby su tokeny z paper.css. */
+  .doc figure.dg{margin:6px 0 22px}
+  .doc figure.dg svg{display:block;width:100%;height:auto;max-width:540px;margin:0 auto}
+  .dg .dg-pill{fill:none;stroke:var(--line-silna,var(--line));stroke-width:1}
+  .dg .dg-pt{fill:var(--ink);font:500 12.5px var(--mono)}
+  .dg .dg-div{stroke:var(--line-silna,var(--line));stroke-width:1}
+  .dg .dg-s{fill:var(--body);font:400 13px var(--ui)}
+  .dg .dg-s.dg-dim{fill:var(--muted)}
+  .dg .dg-lab{fill:var(--muted);font:600 12px var(--ui);letter-spacing:.08em}
+  .dg .dg-lab-hot{fill:var(--accent)}
+  .dg .dg-msg{fill:var(--accent);font:500 12.5px var(--mono)}
+  .dg .dg-msg-big{font-size:15px;font-weight:700}
+  body.noc .dg .dg-msg,body.noc .dg .dg-lab-hot{fill:var(--accent-light)}
+  .dg .dg-msg.dg-msg-ok,body.noc .dg .dg-msg.dg-msg-ok{fill:var(--ok,#2f7d57)}
+  .dg .dg-msg.dg-msg-dim,body.noc .dg .dg-msg.dg-msg-dim{fill:var(--body)}
+  .dg .dg-seg{fill:var(--card-plna,var(--card));stroke:var(--line-silna,var(--line));stroke-width:1}
+  .dg .dg-seg-bad{fill:color-mix(in srgb,var(--accent) 16%,var(--card-plna,var(--card)));stroke:var(--accent);stroke-width:1.2}
+  .dg .dg-seg-ok{stroke:var(--ok,#2f7d57);stroke-width:1.2}
+  .dg .dg-seg-empty{fill:none;stroke:var(--muted);stroke-dasharray:4 3}
+  .dg .dg-dot{fill:var(--accent-light)}
+  .dg .dg-count{fill:var(--muted);font:600 13px var(--ui)}
+  .dg .dg-count-ok{fill:var(--ok,#2f7d57)}
+  .dg .dg-count-bad{fill:var(--accent-light)}
+  .doc figure.dg figcaption{margin:10px auto 0;max-width:540px;font:400 14px/1.5 var(--ui);color:var(--muted)}
+
+  /* caste otazky */
+  .doc details{border-top:1px solid var(--line);padding:14px 0}
+  .doc details:last-of-type{border-bottom:1px solid var(--line);margin-bottom:16px}
+  .doc summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;gap:14px;
+    font:600 17px/1.35 var(--display);color:var(--ink)}
+  .doc summary::-webkit-details-marker{display:none}
+  .doc summary::after{content:"+";flex:none;color:var(--accent);font-family:var(--ui);font-weight:400}
+  .doc details[open] summary::after{content:"\2212"}
+  .doc details p{margin:10px 0 0}
+
+  /* zdroje */
+  .doc ul.sources{list-style:none;padding-left:0}
+  .doc ul.sources li{padding-left:14px;border-left:2px solid var(--line)}
+  .doc .sources li{margin:0 0 10px;font-size:.95em}
+  .doc .sources cite{font-style:italic}
+  .doc ul.plain{list-style:none;padding-left:0}
+  .doc ul.plain li{margin:0;padding:10px 0;border-top:1px solid var(--line)}
+  .doc ul.plain li:first-child{border-top:none}
+
+  /* panel s nastrojom: jedina tmava plocha v texte, tam sa klika */
+  .doc .tool-box,.doc .toolbox,.doc .check,.doc .try,.doc .cta{display:block;background:var(--ink);
+    color:#cfcabd;border:none;border-radius:var(--radius);padding:clamp(20px,2.2vw,28px);margin:0 0 18px}
+  .doc .tool-box p,.doc .check p,.doc .try p,.doc .cta p{max-width:none;margin:0 0 12px;color:#cfcabd}
+  .doc .toolbox{max-width:none;color:#cfcabd}
+  .doc .tool-box p:last-of-type,.doc .check p:last-child,.doc .try p:last-child,
+  .doc .cta p:last-child{margin-bottom:0}
+  .doc .tool-box a,.doc .toolbox a,.doc .check a,.doc .try a,.doc .cta a{color:#fffdf8}
+  .doc .tool-box a:hover,.doc .toolbox a:hover,.doc .check a:hover,.doc .try a:hover,
+  .doc .cta a:hover{color:var(--accent-light)}
+  .doc .tool-box code,.doc .toolbox code,.doc .check code,.doc .try code,.doc .cta code{
+    background:rgba(255,253,248,.10);border-color:rgba(255,253,248,.22);color:#fffdf8}
+  .doc .tool-box .btn{margin:14px 10px 0 0;text-decoration:none;color:#fff}
+  /* dve tlacidla vedla seba sa nesmu dotykat, na uzkom mobile sa zalomia pod seba */
+  /* druhe tlacidlo v tmavom paneli je vedlajsie: linka namiesto plochy */
+  .doc .tool-box .btn+.btn{background:none;border:1px solid rgba(255,253,248,.45);color:#fffdf8}
+  .doc .tool-box .btn+.btn:hover{background:#fffdf8;color:var(--ink)}
+  .doc .tool-cta{display:inline-flex;align-items:center;height:46px;padding:0 20px;border-radius:12px;
+    margin:2px 0 0;background:var(--accent);color:#fff;font:500 15px/1 var(--ui);text-decoration:none}
+  .doc .tool-cta:hover{background:var(--accent-dark);color:#fff}
+
+  /* bocny register drzi sa laveho okraja clanku */
+  /* Stlpec clanku je uzsi nez obsah hubu (880 px, nie 1340), tak sa register zmesti
+     uz od 1280 px: cely stoji v lavom okraji a od textu ho deli stalych 35 px.
+     Pod tou hranicou by uz do textu zasahoval, preto ho paper.css skryje. */
+  @media (min-width:1280px){}
+
+  /* paticka je tmavy pas na konci */
+  footer.band{border-top:none;color:#a8a294}
+  footer.band a,footer.band b{color:#fffdf8}
+  footer.band .wrap{max-width:880px}
+  footer.band .cols{width:min(880px,92vw);margin:0 auto;gap:16px 32px}
+
+</style>
+<meta property="og:image" content="https://arling.sk/og.png">
+</head>
+<body class="noc">
+<div class="wash" aria-hidden="true"><i></i><i></i></div>
+<noscript><style>.r,.w{opacity:1;transform:none;filter:none}</style></noscript>
+<a class="skip site-skip" href="#arling-obsah" data-site-label="skip">Skip to content</a>
+<header class="site-header">
+  <div class="wrap bar">
+    <a class="brand" href="https://arling.sk/en/" aria-label="ARLing home" data-site-home>
+      <svg viewBox="0 0 488 215" width="38" height="15" aria-hidden="true" focusable="false"><path fill="#f4f4f7" fill-rule="evenodd" d="M0.00,213.00L74.00,214.00L181.00,85.00L285.00,214.00L360.00,214.00L206.00,21.00L185.00,4.00L164.00,10.00Z M221.00,0.00L263.00,50.00L395.00,50.00L409.00,55.00L419.00,76.00L401.00,96.00L313.00,98.00L411.00,214.00L487.00,214.00L422.00,139.00L457.00,123.00L482.00,88.00L482.00,48.00L463.00,19.00L417.00,0.00Z"/><path fill="#f2643c" d="M269.00,66.00L269.00,67.00L268.00,68.00L268.00,70.00L267.00,71.00L267.00,76.00L268.00,77.00L268.00,79.00L270.00,81.00L270.00,82.00L271.00,82.00L273.00,84.00L274.00,84.00L277.00,86.00L279.00,86.00L280.00,87.00L287.00,87.00L288.00,86.00L290.00,86.00L291.00,85.00L294.00,84.00L298.00,80.00L298.00,79.00L299.00,78.00L299.00,75.00L300.00,74.00L300.00,72.00L299.00,71.00L299.00,69.00L298.00,68.00L297.00,65.00L295.00,63.00L294.00,63.00L289.00,60.00L278.00,60.00L277.00,61.00L276.00,61.00L275.00,62.00L272.00,63.00Z"/></svg>
+      <b>ARLing</b><span>Notes</span>
+    </a>
+    <details class="site-menu">
+      <summary class="site-menu-toggle"><span class="site-menu-text" data-site-label="produkty">Products</span><span class="site-menu-bars" aria-hidden="true"><i></i><i></i><i></i></span><span class="site-menu-word" data-site-label="menu">Menu</span></summary>
+      <div class="site-menu-panel" role="navigation" aria-label="Products" data-site-aria="produkty"><div class="site-bloky"><div class="site-blok" data-blok="firemne"><p class="site-blok-nazov">For businesses</p><div class="site-cols"><div class="site-col" data-skupina="firmy"><p>Businesses and accountants</p><a class="site-col-all" href="https://arling.sk/vsetko/en/#firmy" aria-label="All in this group: Businesses and accountants" data-umami-event="shell_menu_group" data-umami-event-target="firmy"><span class="site-dlho">All in this group</span><span class="site-kratko">All</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></div><div class="site-col" data-skupina="eshopy"><p>Online shops and websites</p><a class="site-col-all" href="https://arling.sk/vsetko/en/#eshopy" aria-label="All in this group: Online shops and websites" data-umami-event="shell_menu_group" data-umami-event-target="eshopy"><span class="site-dlho">All in this group</span><span class="site-kratko">All</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></div></div></div><div class="site-blok" data-blok="spotrebitelske"><p class="site-blok-nazov">For leisure</p><div class="site-cols"><div class="site-col" data-skupina="hry"><p>Games and puzzles</p><a class="site-col-all" href="https://arling.sk/vsetko/en/#hry" aria-label="All in this group: Games and puzzles" data-umami-event="shell_menu_group" data-umami-event-target="hry"><span class="site-dlho">All in this group</span><span class="site-kratko">All</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></div><div class="site-col" data-skupina="knihy"><p>Books and gifts</p><a class="site-col-all" href="https://arling.sk/vsetko/en/#knihy" aria-label="All in this group: Books and gifts" data-umami-event="shell_menu_group" data-umami-event-target="knihy"><span class="site-dlho">All in this group</span><span class="site-kratko">All</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></div></div></div></div><div class="site-menu-spodok"><p class="site-all"><a href="https://arling.sk/vsetko/en/" data-umami-event="shell_menu_all">Everything on one page<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></p><p class="site-dev"><span>For developers</span><em>Free diagnostics for CORS, JWT, OAuth, Supabase and Stripe webhook errors.</em><a href="https://arling.sk/vsetko/en/#vyvojari">All developer tools<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></p></div><div class="site-col site-firma"><p>Company</p><ul><li><a href="https://arling.sk/en/#nastroje"><b>Tools</b></a></li><li><a href="https://arling.sk/en/#piloty"><b>Pilots</b></a></li><li><a href="https://arling.sk/how-we-work/en/"><b>How we work</b></a></li><li><a href="https://arling.sk/notes/en/"><b>Guides</b></a></li><li><a href="https://arling.sk/kontakt/en/"><b>Contact</b></a></li><li><a href="https://arling.sk/ucet/en/"><b>Account</b></a></li><li><a href="https://arling.sk/brand/en/"><b>Brand</b></a></li><li><a href="https://arling.sk/podmienky/en/"><b>Terms</b></a></li><li><a href="https://arling.sk/privacy/en/"><b>Privacy</b></a></li><li><a href="https://arling.sk/odstupenie/en/"><b>Withdraw from the contract here</b></a></li><li><a href="https://arling.sk/impressum/en/"><b>Imprint</b></a></li></ul></div><p class="site-menu-cta"><a class="site-cta" href="https://arling.sk/shop/" data-site-cta data-site-label="cta" data-umami-event="shell_cta_menu">Shop</a></p></div>
+    </details>
+    <nav id="hlavne-menu" class="site-main-nav" aria-label="Main navigation" data-site-aria="nav"><a href="https://arling.sk/en/#nastroje" data-site-nav="0">Tools</a><a href="https://arling.sk/en/#piloty" data-site-nav="1">Pilots</a><a href="https://arling.sk/notes/en/" data-site-nav="2">Guides</a><a href="https://arling.sk/how-we-work/en/" data-site-nav="3">Company</a></nav>
+    <a class="site-cta" href="https://arling.sk/shop/" data-site-cta data-site-label="cta" data-umami-event="shell_cta">Shop</a>
+  </div>
+  <script src="/style/menu-en.js" defer></script>
+</header>
+<main id="arling-obsah" tabindex="-1">
+  <div class="wrap">
+    <div class="note">
+      <div class="hero-note" id="hero">
+        <p class="kicker r">Notes</p>
+        <h1 id="h1" class="r d1"><span class="l">JsonWebTokenError: jwt malformed</span><span class="l">what your verifier received instead of a token</span></h1>
+        <p class="byline r d2">ARLing s. r. o. · 2026-09-27</p>
+        <p class="toolgo r d3"><a data-umami-event="open-jwt-doctor-hero" class="go" href="https://arling.sk/jwt-doctor/">JWT Doctor <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2.5 8h11M9 3.5 13.5 8 9 12.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a></p>
+      </div>
+      <div class="doc">
+        <section class="sec" id="s1">
+  <p class="lead r">Your Node backend calls <code>jwt.verify()</code> from the jsonwebtoken package, and instead of a payload it throws this:</p>
+  <div class="err r d1"><code>JsonWebTokenError: jwt malformed</code></div>
+  <p class="r d2">The message is narrower than it sounds. jsonwebtoken splits the value at every period, and unless it gets exactly three parts, it stops right there. It has not read a header, looked at an algorithm or used your secret. So the fix is never in the key, and changing <code>JWT_SECRET</code> will not touch this error. The useful question is what your verifier received instead of a token, and the answer is usually in the first few characters of that value.</p>
+  <p class="r d3">Other libraries run the same count and say it differently. jose throws <code>JWSInvalid</code> with "Invalid Compact JWS" when a compact token does not have three parts, and PyJWT raises <code>DecodeError</code> with "Not enough segments" when it has fewer. The code on this page uses jsonwebtoken, because this exact message comes from it.</p>
+        </section>
+        <section class="sec" id="s2">
+    <h2 class="r">The check behind the message</h2>
+    <p class="r d1">A signed JWT in compact form is three base64url strings joined by periods: header, payload and signature. RFC 7515 puts it as "exactly two delimiting period characters". jsonwebtoken checks the value in this order before it decodes anything, with the same checks and messages in version 8.5.1 and in 9.0.3, the current release:</p>
+    <div class="snippet r d2">
+      <p class="cap">jsonwebtoken 9.0.3, verify.js (shortened)</p>
+      <pre><code>if (!jwtString) {
+  return done(new JsonWebTokenError('jwt must be provided'));
+}
+if (typeof jwtString !== 'string') {
+  return done(new JsonWebTokenError('jwt must be a string'));
+}
+const parts = jwtString.split('.');
+if (parts.length !== 3) {
+  return done(new JsonWebTokenError('jwt malformed'));
+}</code></pre>
+    </div>
+    <p class="r d3">So jwt malformed means one specific thing: a non-empty string with a number of periods other than two. A missing value gets a different message, and so does a value with three parts that will not decode. A token that still has <code>Bearer </code> in front of it is the common example of that second kind: the decoder in the jws package accepts only base64url characters, the space fails that test, and jsonwebtoken reports <code>invalid token</code>.</p>
+    <figure class="dg r d2">
+      <svg viewBox="0 0 400 924" role="img" aria-labelledby="dg-title dg-desc">
+        <title id="dg-title">What reached jwt.verify(), split at the periods, and the message each value gets</title>
+        <desc id="dg-desc">jsonwebtoken splits the value at every period and throws jwt malformed unless it gets exactly three parts. A token looks like eyJhbGci, a period, eyJzdWIi, a period, SflKxwRJ: three parts, so the count passes and decoding comes next, before any key is used. Values that get jwt malformed: the secret superSuperSecret sent as the token, one part; the text null from Bearer ${token} before login, one part; the word Bearer from split at the space with index 0, one part; the payload alone from split at the period with index 1, one part; an encrypted JWE such as a NextAuth session cookie, five parts. Values stopped by other checks: no value at all (undefined, null or an empty string) gives jwt must be provided before the count; an object instead of a string gives jwt must be a string before the count; a token with the Bearer prefix still in front has three parts, passes the count, and fails decoding with invalid token.</desc>
+        <rect class="dg-pill" x="0.5" y="0.5" width="399" height="44" rx="22"/>
+        <text class="dg-pt" x="20" y="27">jwtString.split('.').length !== 3</text>
+        <text class="dg-lab" x="380" y="27" text-anchor="end">THE CHECK</text>
+        <line class="dg-div" x1="0" y1="66" x2="400" y2="66"/>
+        <text class="dg-lab" x="0" y="84">WHAT jwt.verify() EXPECTS</text>
+        <rect class="dg-seg dg-seg-ok" x="0.5" y="102.5" width="83.5" height="26" rx="5"/>
+        <text class="dg-pt" x="8.5" y="120" textLength="67.5" lengthAdjust="spacingAndGlyphs">eyJhbGci…</text>
+        <circle class="dg-dot" cx="91.0" cy="115.5" r="3"/>
+        <rect class="dg-seg dg-seg-ok" x="98.0" y="102.5" width="83.5" height="26" rx="5"/>
+        <text class="dg-pt" x="106.0" y="120" textLength="67.5" lengthAdjust="spacingAndGlyphs">eyJzdWIi…</text>
+        <circle class="dg-dot" cx="188.5" cy="115.5" r="3"/>
+        <rect class="dg-seg dg-seg-ok" x="195.5" y="102.5" width="83.5" height="26" rx="5"/>
+        <text class="dg-pt" x="203.5" y="120" textLength="67.5" lengthAdjust="spacingAndGlyphs">SflKxwRJ…</text>
+        <text class="dg-count dg-count-ok" x="400" y="120" text-anchor="end">3 parts</text>
+        <text class="dg-s" x="0" y="148">header, payload, signature: two periods</text>
+        <text class="dg-msg dg-msg-ok" x="0" y="168">count passes, decoding comes next</text>
+        <line class="dg-div" x1="0" y1="182" x2="400" y2="182"/>
+        <text class="dg-lab dg-lab-hot" x="0" y="200">NOT THREE PARTS: jwt malformed</text>
+        <rect class="dg-seg dg-seg-bad" x="0.5" y="218.5" width="136.0" height="26" rx="5"/>
+        <text class="dg-pt" x="8.5" y="236" textLength="120.0" lengthAdjust="spacingAndGlyphs">superSuperSecret</text>
+        <text class="dg-count dg-count-bad" x="400" y="236" text-anchor="end">1 part</text>
+        <text class="dg-s" x="0" y="264">the secret sent as the token (2018 question)</text>
+        <text class="dg-msg dg-msg-big" x="0" y="284">jwt malformed</text>
+        <rect class="dg-seg dg-seg-bad" x="0.5" y="304.5" width="46.0" height="26" rx="5"/>
+        <text class="dg-pt" x="8.5" y="322" textLength="30.0" lengthAdjust="spacingAndGlyphs">null</text>
+        <text class="dg-count dg-count-bad" x="400" y="322" text-anchor="end">1 part</text>
+        <text class="dg-s" x="0" y="350">the text null: Bearer ${token} before login</text>
+        <text class="dg-msg dg-msg-big" x="0" y="370">jwt malformed</text>
+        <rect class="dg-seg dg-seg-bad" x="0.5" y="390.5" width="61.0" height="26" rx="5"/>
+        <text class="dg-pt" x="8.5" y="408" textLength="45.0" lengthAdjust="spacingAndGlyphs">Bearer</text>
+        <text class="dg-count dg-count-bad" x="400" y="408" text-anchor="end">1 part</text>
+        <text class="dg-s" x="0" y="436">split(' ')[0]: the scheme, not the token</text>
+        <text class="dg-msg dg-msg-big" x="0" y="456">jwt malformed</text>
+        <rect class="dg-seg dg-seg-bad" x="0.5" y="476.5" width="98.5" height="26" rx="5"/>
+        <text class="dg-pt" x="8.5" y="494" textLength="82.5" lengthAdjust="spacingAndGlyphs">eyJzdWIiOi…</text>
+        <text class="dg-count dg-count-bad" x="400" y="494" text-anchor="end">1 part</text>
+        <text class="dg-s" x="0" y="522">split('.')[1]: the payload alone (2016 question)</text>
+        <text class="dg-msg dg-msg-big" x="0" y="542">jwt malformed</text>
+        <rect class="dg-seg dg-seg-bad" x="0.5" y="562.5" width="46.0" height="26" rx="5"/>
+        <text class="dg-pt" x="8.5" y="580" textLength="30.0" lengthAdjust="spacingAndGlyphs">eyJ…</text>
+        <circle class="dg-dot" cx="53.5" cy="575.5" r="3"/>
+        <rect class="dg-seg dg-seg-bad" x="60.5" y="562.5" width="30.0" height="26" rx="5"/>
+        <text class="dg-pt" x="75.5" y="580" text-anchor="middle">…</text>
+        <circle class="dg-dot" cx="97.5" cy="575.5" r="3"/>
+        <rect class="dg-seg dg-seg-bad" x="104.5" y="562.5" width="30.0" height="26" rx="5"/>
+        <text class="dg-pt" x="119.5" y="580" text-anchor="middle">…</text>
+        <circle class="dg-dot" cx="141.5" cy="575.5" r="3"/>
+        <rect class="dg-seg dg-seg-bad" x="148.5" y="562.5" width="30.0" height="26" rx="5"/>
+        <text class="dg-pt" x="163.5" y="580" text-anchor="middle">…</text>
+        <circle class="dg-dot" cx="185.5" cy="575.5" r="3"/>
+        <rect class="dg-seg dg-seg-bad" x="192.5" y="562.5" width="30.0" height="26" rx="5"/>
+        <text class="dg-pt" x="207.5" y="580" text-anchor="middle">…</text>
+        <text class="dg-count dg-count-bad" x="400" y="580" text-anchor="end">5 parts</text>
+        <text class="dg-s" x="0" y="608">an encrypted JWE, e.g. a NextAuth session cookie</text>
+        <text class="dg-msg dg-msg-big" x="0" y="628">jwt malformed</text>
+        <line class="dg-div" x1="0" y1="642" x2="400" y2="642"/>
+        <text class="dg-lab" x="0" y="660">OTHER CHECKS, OTHER MESSAGES</text>
+        <rect class="dg-seg dg-seg-empty" x="0.5" y="678.5" width="76.0" height="26" rx="5"/>
+        <text class="dg-s dg-dim" x="38.5" y="696" text-anchor="middle">no value</text>
+        <text class="dg-count" x="400" y="696" text-anchor="end">not split</text>
+        <text class="dg-s" x="0" y="724">undefined, null or '': checked before the count</text>
+        <text class="dg-msg dg-msg-dim" x="0" y="744">jwt must be provided</text>
+        <rect class="dg-seg" x="0.5" y="764.5" width="106.0" height="26" rx="5"/>
+        <text class="dg-pt" x="8.5" y="782" textLength="90.0" lengthAdjust="spacingAndGlyphs">{ token: … }</text>
+        <text class="dg-count" x="400" y="782" text-anchor="end">not split</text>
+        <text class="dg-s" x="0" y="810">an object, not a string: checked before the count</text>
+        <text class="dg-msg dg-msg-dim" x="0" y="830">jwt must be a string</text>
+        <rect class="dg-seg dg-seg-bad" x="0.5" y="850.5" width="98.5" height="26" rx="5"/>
+        <text class="dg-pt" x="8.5" y="868" textLength="82.5" lengthAdjust="spacingAndGlyphs">Bearer eyJ…</text>
+        <circle class="dg-dot" cx="106.0" cy="863.5" r="3"/>
+        <rect class="dg-seg" x="113.0" y="850.5" width="46.0" height="26" rx="5"/>
+        <text class="dg-pt" x="121.0" y="868" textLength="30.0" lengthAdjust="spacingAndGlyphs">eyJ…</text>
+        <circle class="dg-dot" cx="166.0" cy="863.5" r="3"/>
+        <rect class="dg-seg" x="173.0" y="850.5" width="46.0" height="26" rx="5"/>
+        <text class="dg-pt" x="181.0" y="868" textLength="30.0" lengthAdjust="spacingAndGlyphs">Sfl…</text>
+        <text class="dg-count" x="400" y="868" text-anchor="end">3 parts</text>
+        <text class="dg-s" x="0" y="896">Bearer prefix kept: the count passes, decoding fails</text>
+        <text class="dg-msg dg-msg-dim" x="0" y="916">invalid token</text>
+      </svg>
+      <figcaption>jsonwebtoken splits the value at every period and throws <code>jwt malformed</code> unless it gets exactly three parts. Most rows are values from the questions and documentation cited below, shortened; the others follow from the checks in <code>verify.js</code> in jsonwebtoken 9.0.3 and 8.5.1, which also give the order of checks and the messages. The decoding rule for the last row comes from the jws package it uses.</figcaption>
+    </figure>
+    <p class="r d3">The count also tells you where to look. One part means the value has no period at all: a word, a key, or one piece of a token. Five parts is the shape of an encrypted token, which RFC 7516 defines with four periods. If the value started out as a token, any other count means characters were lost or changed on the way to your verifier. One answer on the 2018 question below had exactly that: a token whose two periods had been replaced with underscores.</p>
+        </section>
+        <section class="sec" id="s3">
+    <p class="num r">01</p>
+    <h2 class="r d1">Something that was never a token</h2>
+    <p class="r d2">The most viewed question about this error, from 2018 (about 171,000 views), is this case. The middleware read the token from an <code>x-access-token</code> header, and in Postman the asker had put the secret there, <code>superSuperSecret</code>. A secret has no periods, so it is one part. The accepted answer: you cannot pass any value as a token; create one with <code>jwt.sign()</code> and send it as <code>Authorization: Bearer</code> followed by the token. Another answer points at the Postman version of the same mistake: check that the environment variable meant to hold the token actually holds it.</p>
+    <p class="r d3">Supabase's newer API keys land here too. Its documentation says publishable and secret keys (<code>sb_publishable_...</code>, <code>sb_secret_...</code>) are not JWTs, that anything trying to verify one as a JWT fails, and that they belong in the <code>apikey</code> header, not in <code>Authorization: Bearer</code>. The value your own backend should verify is the signed-in user's access token, which Supabase documents as a JWT sent in <code>Authorization: Bearer</code>.</p>
+    <p class="r d3">Fix: call your real login route, take the token it returns, and send that. A signed token has two periods; a secret, a new <code>sb_</code> API key or a placeholder does not.</p>
+    <p class="r d3">Supabase's legacy <code>anon</code> and <code>service_role</code> keys are the exception. The same documentation lists them as long-lived JWTs, the legacy versions of the publishable and secret keys. They have two periods, pass the count and never give jwt malformed. Sent in place of the user's token, they fail a later check, or, if your verifier accepts them, what it verified is a project key and not a signed-in user.</p>
+        </section>
+        <section class="sec" id="s4">
+    <p class="num r">02</p>
+    <h2 class="r d1">The text "null" or "undefined"</h2>
+    <p class="r d2">This one hides well, because the header looks almost right. <code>localStorage.getItem()</code> returns <code>null</code> when the key does not exist, and a template literal turns <code>null</code> into the text "null" and <code>undefined</code> into "undefined". A client that builds the header before anyone has signed in sends this:</p>
+    <div class="snippet bad r d2">
+      <p class="cap">Sends Authorization: Bearer null</p>
+      <pre><code>const token = localStorage.getItem('token'); // null: nothing saved yet
+fetch('/api/me', {
+  headers: { Authorization: `Bearer ${token}` },
+});</code></pre>
+    </div>
+    <p class="r d3">The server takes the part after the space, gets the four letters <code>null</code>, finds no period and throws jwt malformed. A real <code>null</code> or an empty string would have stopped one check earlier, with jwt must be provided. An answer on the 2018 question with 15 votes says a null token gives jwt malformed. In jsonwebtoken 8.5.1 and 9 that holds for the text "null"; the value null stops at jwt must be provided.</p>
+    <div class="snippet r d3">
+      <p class="cap">Send the header only when there is a token</p>
+      <pre><code>const token = localStorage.getItem('token');
+const headers = token ? { Authorization: `Bearer ${token}` } : {};
+fetch('/api/me', { headers });</code></pre>
+    </div>
+    <p class="r d3">The same thing happens with <code>undefined</code> from a variable that was never set, for example state that has not loaded yet when the first request fires. The rule is the same: no token, no header.</p>
+    <p class="r d3">A saved value can carry the same text. <code>localStorage</code> stores strings only, so <code>localStorage.setItem('token', data.token)</code> with no token in the login response saves the text "undefined", and the <code>token ?</code> check above lets it through. Save the token only when there is one:</p>
+    <div class="snippet r d3">
+      <p class="cap">Never store a missing token</p>
+      <pre><code>if (data.token) localStorage.setItem('token', data.token);</code></pre>
+    </div>
+        </section>
+        <section class="sec" id="s5">
+    <p class="num r">03</p>
+    <h2 class="r d1">The wrong piece of the Authorization header</h2>
+    <p class="r d2">RFC 6750 defines the header as the word Bearer, one or more spaces, and the token. Splitting it by hand goes wrong in two classic ways. In the 2016 question (about 35,000 views) the middleware used <code>authorization.split('.')[1]</code>, which is only the payload, a string without periods; the accepted answer says to split at the space instead. The mirror mistake, <code>split(' ')[0]</code>, returns the word Bearer. Both are one part.</p>
+    <p class="r d3">Read the header in one function, and refuse a missing token before <code>jwt.verify()</code> ever sees it:</p>
+    <div class="snippet r d3">
+      <p class="cap">Express middleware: one place reads the header</p>
+      <pre><code>function bearerToken(req) {
+  const header = req.headers.authorization || '';
+  const match = /^Bearer +(\S+)$/i.exec(header);
+  return match ? match[1] : null;
+}
+
+function requireUser(req, res, next) {
+  const token = bearerToken(req);
+  if (!token) {
+    res.set('WWW-Authenticate', 'Bearer realm="api"');
+    return res.status(401).end();
+  }
+  try {
+    req.user = jwt.verify(token, secret, { algorithms: ['HS256'] });
+    return next();
+  } catch (err) {
+    console.warn('jwt rejected:', err.message);
+    res.set('WWW-Authenticate', 'Bearer error="invalid_token"');
+    return res.status(401).end();
+  }
+}</code></pre>
+    </div>
+    <p class="r d3">Three details in it come from the specs. Node lowercases incoming header names, so <code>req.headers.Authorization</code> is always undefined, which would end in jwt must be provided. RFC 9110 makes the scheme name case-insensitive, hence the <code>i</code> flag: <code>bearer</code> is as valid as <code>Bearer</code>. And RFC 6750 asks for a 401 with a <code>WWW-Authenticate: Bearer</code> header, with <code>error="invalid_token"</code> for a token that is malformed and no error code when no token was sent at all.</p>
+    <p class="r d3">The usual shortcuts work for the usual header and miss the edges: <code>split(' ')[1]</code> returns an empty string when there are two spaces, and <code>replace('Bearer ', '')</code>, suggested in a 2024 answer on the 2018 question, leaves a lowercase <code>bearer </code> prefix in place.</p>
+        </section>
+        <section class="sec" id="s6">
+    <p class="num r">04</p>
+    <h2 class="r d1">A real token, but not a signed JWT</h2>
+    <p class="r d2">RFC 7519 lets a JWT be signed (a JWS, three parts) or encrypted (a JWE, five parts and four periods). <code>jwt.verify()</code> needs the three-part signed form, so a JWE fails the count before anything else. Two popular setups hand you something other than a signed JWT without making it obvious:</p>
+    <ul class="r d2">
+      <li><b>NextAuth's session cookie.</b> NextAuth's documentation says its JSON Web Tokens are encrypted (JWE) by default and recommends keeping it that way. On the Next.js server, its <code>getToken()</code> helper decrypts and verifies the session for you, given the same <code>secret</code> as your NextAuth configuration. Forward the raw cookie to another backend that runs <code>jwt.verify()</code>, and that backend sees five parts.</li>
+      <li><b>Auth0 access tokens without an audience.</b> Auth0's documentation lists the access token for its <code>/userinfo</code> endpoint, requested with no <code>audience</code>, as opaque, and access tokens for a custom API registered in the Auth0 Dashboard as JWTs. To get a token your API can verify, request it with your API's identifier as the <code>audience</code>.</li>
+    </ul>
+    <p class="r d3">The 2022 question on this, Auth0 with NextAuth (about 1,000 views, no answers), includes the asker's own guess that the token is an encrypted JWE. Whichever of the two it was, jsonwebtoken rejects the value before it uses any key: with jwt malformed when it does not split into three parts, and with invalid token when it does.</p>
+    <p class="r d3">To see what you have, decode only the first part and print the names in it, not the values. The header of a JWE is not encrypted, and RFC 7516 says a header with an <code>enc</code> member belongs to a JWE. Run this only after the shape log in <a href="#s7">the next section</a> shows a value that starts with <code>eyJ</code>; if it could be a secret or an API key, the shape alone tells you enough:</p>
+    <div class="snippet r d3">
+      <p class="cap">Look at the first part only, names without values</p>
+      <pre><code>const first = String(token).split('.')[0];
+try {
+  const json = JSON.parse(Buffer.from(first, 'base64url').toString('utf8'));
+  console.log(Object.keys(json)); // member names only
+} catch {
+  console.log('first part is not JSON');
+}
+// has "enc"               → a JWE: decrypt it with the library that issued it
+// has "alg", no "enc"     → a JWS header: periods were lost or added on the way
+// claims such as "sub"    → the payload alone (see 03)
+// not JSON                → not a JWT: a key, an opaque token or plain text</code></pre>
+    </div>
+    <p class="r d3">The <code>'base64url'</code> encoding in <code>Buffer</code> exists since Node 14.18 and 15.7.</p>
+        </section>
+        <section class="sec" id="s7">
+    <h2 class="r">Find out what arrived, without logging the token</h2>
+    <p class="r d1">A bearer token is a credential, and RFC 6750 says clients must make sure bearer tokens are not leaked to unintended parties. A log line is one more place a token can end up. You do not need the whole value for this error. Log its shape once, right before <code>jwt.verify()</code>, and delete the line afterwards:</p>
+    <div class="snippet r d1">
+      <p class="cap">Temporary: the shape, not the token</p>
+      <pre><code>console.log({
+  type: typeof token,
+  length: typeof token === 'string' ? token.length : null,
+  parts: typeof token === 'string' ? token.split('.').length : null,
+  start: String(token).slice(0, 6), // enough to recognize null, Bearer or eyJ
+});</code></pre>
+    </div>
+    <p class="r d2">If the value might be a secret or an API key, leave out <code>start</code>; the other three fields narrow it down on their own. Then read the result like this:</p>
+    <ul class="r d2">
+      <li><code>type: 'undefined'</code>, <code>length: 0</code>, or <code>type: 'object'</code> with <code>start: 'null'</code> (the value null): nothing arrived, and the message is jwt must be provided. Check the header name and whether the client sends it at all.</li>
+      <li><code>type: 'object'</code> with anything else: jwt must be a string. You passed the object that holds the token, not the token.</li>
+      <li><code>parts: 1</code> and <code>start</code> is <code>null</code>, <code>undefi</code> or <code>Bearer</code>: section 02 or 03.</li>
+      <li><code>parts: 1</code> and <code>start</code> is <code>eyJ</code>: one piece of a token, usually the payload (03). A JSON object that begins with <code>{"</code> and a letter encodes to text starting with <code>eyJ</code>, which is why the example tokens in RFC 7515 start that way.</li>
+      <li><code>parts: 1</code> and anything else, such as <code>sb_pub</code>: a key or a placeholder (01).</li>
+      <li><code>parts: 5</code> and <code>eyJ</code>: a JWE (04).</li>
+      <li><code>parts: 3</code>: the count passes, so this error is gone, and whatever you see now comes from a later check.</li>
+    </ul>
+        </section>
+        <section class="sec" id="s8">
+    <h2 class="r">Confirm the fix</h2>
+    <p class="r d1">Send the request again through the same client code, not with a token pasted into Postman, because the bug usually lives in the code that builds the header. The count is the first check that looks inside the string, so after a fix the message either disappears or moves to a later check:</p>
+    <ul class="r d1">
+      <li><b>The payload comes back.</b> Done.</li>
+      <li><b><code>invalid token</code>.</b> Three parts now, but the value does not decode: usually a <code>Bearer </code> prefix, quotes or whitespace still in it, which the base64url check in the jws package rejects. A header that decodes with a payload that is not JSON can throw a <code>SyntaxError</code> instead.</li>
+      <li><b><code>invalid signature</code>.</b> The token is well formed now, and its signature does not match your key. That is a different problem, covered in <a href="https://arling.sk/notes/jwt-invalid-signature/">the note on invalid signature</a>.</li>
+      <li><b><code>jwt expired</code>.</b> Well formed and correctly signed, just old. Sign in again.</li>
+    </ul>
+    <p class="r d2">Then test the empty case on purpose: call the endpoint without an <code>Authorization</code> header, and load the client once while signed out. Both requests should get your 401 for a missing token without ever reaching <code>jwt.verify()</code>.</p>
+        </section>
+        <section class="sec" id="s9">
+    <h2 class="r">Traps</h2>
+    <ul class="r d1">
+      <li><b>Changing the secret.</b> The key is not used until after the count, so rotating or re-pasting <code>JWT_SECRET</code> cannot fix jwt malformed. It can only add a second problem.</li>
+      <li><b>Decoding instead of verifying.</b> <code>jwt.decode()</code> never checks the signature, and the jsonwebtoken README says not to use it for untrusted messages. It also returns <code>null</code> for anything that is not a three-part signed token, JWEs included, so a <code>null</code> from it is a hint about the shape and nothing more.</li>
+      <li><b>Switching off NextAuth's encryption so another service can read the cookie.</b> NextAuth recommends keeping the default JWE. Read the session with <code>getToken()</code> on the Next.js side, and give the other service a token meant for it, such as an access token issued for its audience.</li>
+      <li><b>Answering with a 500.</b> RFC 6750 puts a malformed token under <code>invalid_token</code> and says the resource server should respond with 401, after which the client may get a new token and retry. A 500 tells the client nothing it can act on.</li>
+      <li><b>Logging whole tokens while you debug.</b> Log the shape as above. If a real token did end up in a log, treat it as exposed until it expires.</li>
+    </ul>
+        </section>
+        <section class="sec" id="s10">
+    <h2 class="r">Check a value in your browser</h2>
+    <div class="try r d1"><p>If you have the exact value your server received, paste it into <a data-umami-event="open-jwt-doctor-cta" href="https://arling.sk/jwt-doctor/">JWT Doctor</a>. It strips a <code>Bearer </code> prefix, wrapping quotes and whitespace, and tells you which of them it found, counts the parts and periods, and decodes the header and payload. Give it a secret or a public key and it also verifies the signature. It runs in your browser, and the page states that nothing you paste leaves it. For the shape alone you do not need a real token: a test token with the same problem gives the same count.</p></div>
+        </section>
+        <section class="sec" id="s11">
+    <h2 class="r">Questions</h2>
+    <details class="r d1">
+      <summary>Does jwt malformed mean my secret is wrong?</summary>
+      <p>No. jsonwebtoken counts the parts before it reads the header or uses a key, so your secret has not been involved yet. A wrong secret shows up later, as invalid signature, once the value really is a token.</p>
+    </details>
+    <details class="r d1">
+      <summary>The token works in a JWT debugger. Why does my server say jwt malformed?</summary>
+      <p>The debugger checked the string you pasted, and your server received a different one. The usual differences: the text null or undefined from a client that had no token yet, the word Bearer or the payload alone from splitting the header, or an encrypted session cookie instead of the token you copied. Log the shape of the value on the server and compare.</p>
+    </details>
+    <details class="r d2">
+      <summary>Why does null give jwt must be provided, but "null" gives jwt malformed?</summary>
+      <p>jsonwebtoken rejects empty values first: <code>undefined</code>, <code>null</code> and an empty string all stop at jwt must be provided. The four-letter string "null" is not empty, so it reaches the count, has no period, and fails as jwt malformed. A template literal such as <code>`Bearer ${token}`</code> turns a null token into exactly that string.</p>
+    </details>
+    <details class="r d2">
+      <summary>Can jsonwebtoken verify an encrypted JWT (JWE)?</summary>
+      <p>Not as it is. <code>jwt.verify()</code> accepts only the three-part signed form, and a JWE has five parts, so it fails as jwt malformed. Decrypt it with the library or service that issued it, NextAuth's <code>getToken()</code> for example, or ask that issuer for a signed token meant for your API.</p>
+    </details>
+    <details class="r d2">
+      <summary>What status code should my API return for a malformed token?</summary>
+      <p>401. RFC 6750 lists a malformed token under the <code>invalid_token</code> error and says the resource server should respond with 401 Unauthorized and a <code>WWW-Authenticate: Bearer</code> header. When no token was sent at all, it says to leave the error code out.</p>
+    </details>
+        </section>
+      </div>
+    </div>
+  </div>
+  <section class="deep" id="s12">
+    <div class="wrap">
+      <div class="note">
+        <div class="doc">
+    <h2 class="r">Sources</h2>
+    <ul class="r d1">
+      <li>auth0/node-jsonwebtoken, README, "Errors &amp; Codes" ('jwt malformed': the token does not have three components delimited by a period; 'invalid token': the header or payload could not be parsed): <a href="https://github.com/auth0/node-jsonwebtoken#errors--codes">github.com/auth0/node-jsonwebtoken#errors--codes</a>; the same README on <code>jwt.decode</code> (does not verify the signature, not for untrusted messages): <a href="https://github.com/auth0/node-jsonwebtoken#jwtdecodetoken--options">github.com/auth0/node-jsonwebtoken#jwtdecodetoken--options</a></li>
+      <li>auth0/node-jsonwebtoken, <code>verify.js</code> in 9.0.3 (the checks in the order shown: jwt must be provided, jwt must be a string, the split at periods with jwt malformed, then decoding, where an error thrown by the decoder is passed on as it is and a failed decode gives invalid token, and only then the secret or key):<a href="https://github.com/auth0/node-jsonwebtoken/blob/master/verify.js">github.com/auth0/node-jsonwebtoken/blob/master/verify.js</a>; the same checks in 8.5.1: <a href="https://github.com/auth0/node-jsonwebtoken/blob/v8.5.1/verify.js">github.com/auth0/node-jsonwebtoken/blob/v8.5.1/verify.js</a>; <code>decode.js</code> (returns null when jws cannot decode the value): <a href="https://github.com/auth0/node-jsonwebtoken/blob/master/decode.js">github.com/auth0/node-jsonwebtoken/blob/master/decode.js</a></li>
+      <li>auth0/node-jws, <code>verify-stream.js</code> (<code>JWS_REGEX</code> allows only base64url characters and exactly two periods; decode returns null for anything else, and for a header with <code>typ</code> JWT it runs <code>JSON.parse</code> on the payload, which throws when the payload is not JSON):<a href="https://github.com/auth0/node-jws/blob/master/lib/verify-stream.js">github.com/auth0/node-jws/blob/master/lib/verify-stream.js</a></li>
+      <li>panva/jose, <code>jws_verify.ts</code> (<code>JWSInvalid('Invalid Compact JWS')</code> when a compact JWS does not split into three parts): <a href="https://github.com/panva/jose/blob/main/src/lib/jws_verify.ts">github.com/panva/jose/blob/main/src/lib/jws_verify.ts</a>; jpadilla/pyjwt, <code>api_jws.py</code> (<code>DecodeError("Not enough segments")</code>): <a href="https://github.com/jpadilla/pyjwt/blob/master/jwt/api_jws.py">github.com/jpadilla/pyjwt/blob/master/jwt/api_jws.py</a></li>
+      <li>RFC 7519, JSON Web Token (JWTs are always represented in the JWS or the JWE Compact Serialization, and the number of parts depends on which): <a href="https://www.rfc-editor.org/rfc/rfc7519">rfc-editor.org/rfc/rfc7519</a></li>
+      <li>RFC 7515, JSON Web Signature, section 7.1 "JWS Compact Serialization": <a href="https://www.rfc-editor.org/rfc/rfc7515#section-7.1">rfc-editor.org/rfc/rfc7515#section-7.1</a>; section 5.2 ("exactly two delimiting period characters"): <a href="https://www.rfc-editor.org/rfc/rfc7515#section-5.2">rfc-editor.org/rfc/rfc7515#section-5.2</a>; section 3.3 "Example JWS" (encoded headers and payloads starting with eyJ): <a href="https://www.rfc-editor.org/rfc/rfc7515#section-3.3">rfc-editor.org/rfc/rfc7515#section-3.3</a></li>
+      <li>RFC 7516, JSON Web Encryption, section 7.1 "JWE Compact Serialization" (five parts): <a href="https://www.rfc-editor.org/rfc/rfc7516#section-7.1">rfc-editor.org/rfc/rfc7516#section-7.1</a>; section 9 (three segments for a JWS, five for a JWE; an <code>enc</code> member means a JWE): <a href="https://www.rfc-editor.org/rfc/rfc7516#section-9">rfc-editor.org/rfc/rfc7516#section-9</a></li>
+      <li>RFC 6750, Bearer Token Usage, section 2.1 (the Authorization header syntax, "Bearer" and one or more spaces): <a href="https://www.rfc-editor.org/rfc/rfc6750#section-2.1">rfc-editor.org/rfc/rfc6750#section-2.1</a>; section 3 and 3.1 (WWW-Authenticate, <code>invalid_token</code> for a malformed token with 401, no error code when the request has no authentication): <a href="https://www.rfc-editor.org/rfc/rfc6750#section-3.1">rfc-editor.org/rfc/rfc6750#section-3.1</a>; section 5.3 ("Safeguard bearer tokens"): <a href="https://www.rfc-editor.org/rfc/rfc6750#section-5.3">rfc-editor.org/rfc/rfc6750#section-5.3</a></li>
+      <li>RFC 9110, HTTP Semantics, section 11.1 (the authentication scheme is a case-insensitive token): <a href="https://www.rfc-editor.org/rfc/rfc9110#section-11.1">rfc-editor.org/rfc/rfc9110#section-11.1</a></li>
+      <li>Node.js, HTTP, <code>message.headers</code> ("Header names are lower-cased."): <a href="https://nodejs.org/api/http.html#messageheaders">nodejs.org/api/http.html#messageheaders</a>; Buffer, character encodings (<code>'base64url'</code>, added in v15.7.0 and v14.18.0): <a href="https://nodejs.org/api/buffer.html#buffers-and-character-encodings">nodejs.org/api/buffer.html#buffers-and-character-encodings</a></li>
+      <li>MDN, <code>String</code>, "String coercion" (undefined becomes "undefined", null becomes "null", and a template literal does the same): <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String#string_coercion">developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String#string_coercion</a>; <code>Storage.getItem()</code> (null when the key does not exist): <a href="https://developer.mozilla.org/en-US/docs/Web/API/Storage/getItem">developer.mozilla.org/en-US/docs/Web/API/Storage/getItem</a>; <code>Storage.setItem()</code> ("Storage only supports storing and retrieving strings"): <a href="https://developer.mozilla.org/en-US/docs/Web/API/Storage/setItem">developer.mozilla.org/en-US/docs/Web/API/Storage/setItem</a>; <code>typeof</code> (<code>typeof null</code> is "object"): <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/typeof">developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/typeof</a></li>
+      <li>WHATWG HTML Living Standard, "The Storage interface" (<code>setItem(DOMString key, DOMString value)</code>: the value is taken as a string, so undefined arrives as "undefined"): <a href="https://html.spec.whatwg.org/multipage/webstorage.html#the-storage-interface">html.spec.whatwg.org/multipage/webstorage.html#the-storage-interface</a></li>
+      <li>NextAuth.js, "Options" (JSON Web Tokens are encrypted (JWE) by default, and the docs recommend keeping it): <a href="https://next-auth.js.org/configuration/options#jwt">next-auth.js.org/configuration/options#jwt</a>; "Securing pages and API routes" (<code>getToken()</code> handles decryption and verification, with the same secret): <a href="https://next-auth.js.org/tutorials/securing-pages-and-api-routes">next-auth.js.org/tutorials/securing-pages-and-api-routes</a></li>
+      <li>Auth0, "Access Tokens" (opaque and JWT access tokens; tokens for a custom API follow the JWT standard): <a href="https://auth0.com/docs/secure/tokens/access-tokens">auth0.com/docs/secure/tokens/access-tokens</a>; "Get Access Tokens" (the /userinfo endpoint with no audience gives an opaque token, a custom API identifier as the audience gives a JWT): <a href="https://auth0.com/docs/secure/tokens/access-tokens/get-access-tokens">auth0.com/docs/secure/tokens/access-tokens/get-access-tokens</a></li>
+      <li>Supabase, "API keys" (publishable and secret keys are not JWTs, go on the apikey header, not Authorization: Bearer; the legacy <code>anon</code> and <code>service_role</code> keys have the format "JWT (long-lived)" and are the legacy versions of the publishable and secret keys):<a href="https://supabase.com/docs/guides/api/api-keys">supabase.com/docs/guides/api/api-keys</a>; "JSON Web Token (JWT)" (the user's access token is a JWT, sent as Authorization: Bearer): <a href="https://supabase.com/docs/guides/auth/jwts">supabase.com/docs/guides/auth/jwts</a></li>
+      <li>Stack Overflow, "Json Web Token verify() return jwt malformed" (2018, about 171,000 views; the secret sent as the token, the accepted answer with Authorization: Bearer; later answers on a null token, a Postman environment variable, underscores instead of periods, and <code>replace("Bearer ", "")</code>): <a href="https://stackoverflow.com/questions/51849010">stackoverflow.com/questions/51849010</a></li>
+      <li>Stack Overflow, "JWT not decoding "JWT malformed" - Node Angular" (2016, about 35,000 views; <code>split('.')[1]</code> kept only the payload, the accepted answer splits at the space): <a href="https://stackoverflow.com/questions/35375215">stackoverflow.com/questions/35375215</a></li>
+      <li>Stack Overflow, "Auth0 &amp; Next-Auth Malformed JWT" (2022, about 1,000 views, no answers; the asker suspects an encrypted JWE): <a href="https://stackoverflow.com/questions/74258155">stackoverflow.com/questions/74258155</a></li>
+    </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+<footer class="site-footer">
+  <div class="wrap foot">
+    <div class="site-foot-top"><div><a class="site-brand" href="https://arling.sk/en/" aria-label="ARLing home" data-site-home><svg viewBox="0 0 488 215" width="38" height="15" aria-hidden="true" focusable="false"><path fill="#f4f4f7" fill-rule="evenodd" d="M0.00,213.00L74.00,214.00L181.00,85.00L285.00,214.00L360.00,214.00L206.00,21.00L185.00,4.00L164.00,10.00Z M221.00,0.00L263.00,50.00L395.00,50.00L409.00,55.00L419.00,76.00L401.00,96.00L313.00,98.00L411.00,214.00L487.00,214.00L422.00,139.00L457.00,123.00L482.00,88.00L482.00,48.00L463.00,19.00L417.00,0.00Z"/><path fill="#f2643c" d="M269.00,66.00L269.00,67.00L268.00,68.00L268.00,70.00L267.00,71.00L267.00,76.00L268.00,77.00L268.00,79.00L270.00,81.00L270.00,82.00L271.00,82.00L273.00,84.00L274.00,84.00L277.00,86.00L279.00,86.00L280.00,87.00L287.00,87.00L288.00,86.00L290.00,86.00L291.00,85.00L294.00,84.00L298.00,80.00L298.00,79.00L299.00,78.00L299.00,75.00L300.00,74.00L300.00,72.00L299.00,71.00L299.00,69.00L298.00,68.00L297.00,65.00L295.00,63.00L294.00,63.00L289.00,60.00L278.00,60.00L277.00,61.00L276.00,61.00L275.00,62.00L272.00,63.00Z"/></svg><b>ARLing</b></a><p class="site-foot-firma">ARLing s. r. o., company ID <span class="num">56583486</span>, Bratislava. Own server in the European Union. Software for companies, freelancers and individuals.</p></div><a class="site-cta" href="https://arling.sk/shop/" data-umami-event="shell_footer_cta">Shop<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></div>
+    <div class="site-foot-cols"><div data-skupina="firmy" data-blok="firemne"><p>Businesses and accountants</p><ul><li><a href="https://arling.sk/vsetko/en/#firmy" aria-label="All in this group: Businesses and accountants">All in this group</a></li></ul></div><div data-skupina="eshopy" data-blok="firemne"><p>Online shops and websites</p><ul><li><a href="https://arling.sk/vsetko/en/#eshopy" aria-label="All in this group: Online shops and websites">All in this group</a></li></ul></div><div data-skupina="hry" data-blok="spotrebitelske"><p>Games and puzzles</p><ul><li><a href="https://arling.sk/vsetko/en/#hry" aria-label="All in this group: Games and puzzles">All in this group</a></li></ul></div><div data-skupina="knihy" data-blok="spotrebitelske"><p>Books and gifts</p><ul><li><a href="https://arling.sk/vsetko/en/#knihy" aria-label="All in this group: Books and gifts">All in this group</a></li></ul></div><div><p>Company</p><ul><li><a href="https://arling.sk/how-we-work/en/">How we work</a></li><li><a href="https://arling.sk/notes/en/">Guides</a></li><li><a href="https://arling.sk/kontakt/en/">Contact</a></li><li><a href="https://arling.sk/ucet/en/">Account</a></li><li><a href="https://arling.sk/brand/en/">Brand</a></li><li><a href="https://arling.sk/podmienky/en/">Terms</a></li><li><a href="https://arling.sk/privacy/en/">Privacy</a></li><li><a href="https://arling.sk/odstupenie/en/">Withdraw from the contract here</a></li><li><a href="https://arling.sk/impressum/en/">Imprint</a></li></ul></div></div>
+    <p class="site-all"><a href="https://arling.sk/vsetko/en/" data-umami-event="shell_footer_all">Everything on one page<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></p>
+    <p class="site-dev" data-site-vyvojari><span>For developers</span><em>Free diagnostics for CORS, JWT, OAuth, Supabase and Stripe webhook errors.</em><a href="https://arling.sk/vsetko/en/#vyvojari">All developer tools<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></p>
+    <div class="site-foot-bottom"><p>ARLing s. r. o., Ivanská cesta 32E, 821 04 Bratislava, Slovakia. Company ID 56583486, VAT ID SK2122352100. <a href="mailto:support@arling.sk">support@arling.sk</a></p><p><a href="https://arling.sk/impressum/en/">Impressum</a> · <a href="https://arling.sk/llms.txt">llms.txt</a> · <a href="https://arling.sk/sitemap-index.xml">Sitemap</a></p></div>
+    <p class="site-foot-legal">Tools are provided as is, without warranty. Anonymous visit counts via self-hosted Umami. <a href="https://arling.sk/privacy/en/">Privacy</a> · <a href="https://arling.sk/podmienky/en/">Terms</a> · <a href="https://arling.sk/gdpr/en/">GDPR</a> · <a href="https://arling.sk/odstupenie/en/">Withdraw from the contract here</a></p>
+  </div>
+</footer>
+<script defer src="https://server.invalid/script.js" data-website-id="be534d51-4d01-4860-b267-9596d91606de"></script>
+<script>
+(function () {
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var hero = document.getElementById('hero');
+  if (reduce) {
+    document.querySelectorAll('.r, section').forEach(function (e) { e.classList.add('in'); });
+  }
+  if (!reduce && hero) {
+    requestAnimationFrame(function () {
+      hero.querySelectorAll('.r').forEach(function (e) { e.classList.add('in'); });
+    });
+  }
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (en) {
+      if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); }
+    });
+  }, { rootMargin: '0px 0px -12% 0px', threshold: 0.1 });
+  document.querySelectorAll('section').forEach(function (s) { io.observe(s); });
+
+  // nadpis clanku sa objavi po slovach, ako dobre vytlaceny titulok
+  var h1 = document.getElementById('h1');
+  if (h1) {
+    var i = 0;
+    Array.prototype.forEach.call(h1.querySelectorAll('.l'), function (line) {
+      var words = line.textContent.split(' ');
+      line.textContent = '';
+      words.forEach(function (w, k) {
+        var s = document.createElement('span');
+        s.className = 'w';
+        s.style.transitionDelay = (i++ * 0.06).toFixed(2) + 's';
+        s.textContent = w;
+        line.appendChild(s);
+        if (k < words.length - 1) line.appendChild(document.createTextNode(' '));
+      });
+    });
+    requestAnimationFrame(function () { h1.classList.add('in'); });
+  }
+
+  // bocny register sleduje, ktora cast clanku je v strede obrazovky
+})();
+</script>
+</body>
+</html>

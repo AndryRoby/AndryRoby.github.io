@@ -1,0 +1,469 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script src="/style/vzhlad.js?v=8a4019ae"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://server.invalid 'sha256-r1JQF2DJJO+BDSpbz6SW8uT0ogqv2Dw82IKa9FNBpWk=' 'sha256-ZaWTQ5t6cgT3k0ONXBcVvMX4eWcF1zV52y7BAbuiiUw=' 'sha256-kZIhl4BY3ER25l4vHKUg+IR6638KwwOmE765emAzmWw=' 'sha256-kHzhLBitzZlfAaUS4VuXMelQQYrrpIhEmCeLW+iUbL4='; connect-src 'self' https://server.invalid; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0a0908">
+<link rel="preconnect" href="https://server.invalid" crossorigin>
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../../favicon.ico" sizes="48x48">
+<link rel="apple-touch-icon" href="../../icon-180.png">
+<title>Request header field is not allowed by Access-Control-Allow-Headers: fixing the preflight allow-list</title>
+<meta name="description" content="Why the CORS preflight rejects a request header such as Authorization or Content-Type, how to read the full list the browser asked for, and how to fix Access-Control-Allow-Headers.">
+<link rel="canonical" href="https://arling.sk/notes/cors-request-header-field-not-allowed/">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Request header field is not allowed by Access-Control-Allow-Headers: fixing the preflight allow-list">
+<meta property="og:description" content="Why the CORS preflight rejects a request header such as Authorization or Content-Type, how to read the full list the browser asked for, and how to fix Access-Control-Allow-Headers.">
+<meta property="og:url" content="https://arling.sk/notes/cors-request-header-field-not-allowed/">
+
+
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"Article","headline":"Request header field is not allowed by Access-Control-Allow-Headers: fixing the preflight allow-list","description":"Why the CORS preflight rejects a request header such as Authorization or Content-Type, how to read the full list the browser asked for, and how to fix Access-Control-Allow-Headers.","datePublished":"2026-09-27","dateModified":"2026-09-27","inLanguage":"en","author":{"@type":"Organization","name":"ARLing s. r. o."},"publisher":{"@type":"Organization","name":"ARLing s. r. o.","url":"https://arling.sk/"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://arling.sk/notes/cors-request-header-field-not-allowed/"}}
+</script>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Why is the header name lowercase in the error when my code sends Authorization?","acceptedAnswer":{"@type":"Answer","text":"Chromium lowercases header names before it compares them with the allow-list, and it reports the lowercased name. HTTP field names are case-insensitive, so Authorization, authorization and AUTHORIZATION are the same header, and your Access-Control-Allow-Headers value can use any letter case."}},{"@type":"Question","name":"Do I need to list Content-Type or Accept in Access-Control-Allow-Headers?","acceptedAnswer":{"@type":"Answer","text":"When the value breaks the safelist rules, for example Content-Type with anything other than application/x-www-form-urlencoded, multipart/form-data or text/plain (so a JSON body needs it), or any safelisted header with a value longer than 128 bytes. MDN and the Fetch Standard list the other rules, such as the characters allowed in Accept-Language and the one form Range may take. MDN also notes that listing safelisted headers anyway lifts those extra restrictions, so adding Content-Type to the list does no harm."}},{"@type":"Question","name":"Why does the same request work in Postman or curl?","acceptedAnswer":{"@type":"Answer","text":"Preflights are sent by browsers. Postman and curl send only the request you give them, so the check that fails in the browser never happens there. That is also what makes curl useful for this error: you can send the preflight by hand, with the same Origin and Access-Control-Request-* headers, and read the exact answer."}},{"@type":"Question","name":"I added the header and now the error names a different one. Did the fix fail?","acceptedAnswer":{"@type":"Answer","text":"No. Chrome stops at the first header it cannot find in the allow-list and reports only that one, so a second missing header shows up only after the first is fixed. Compare the whole Access-Control-Request-Headers list from the preflight with your allow-list to fix them all at once."}},{"@type":"Question","name":"Can I use Access-Control-Allow-Headers: * instead of a list?","acceptedAnswer":{"@type":"Answer","text":"Only for requests without credentials, and not to cover Authorization: the Fetch Standard excludes Authorization from the wildcard, even though MDN's compatibility data shows Chrome and Safari do not enforce that rule yet. With credentials, * is just a literal header name. An explicit list is the version that matches the standard in every browser."}}]}
+</script>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"ARLing","item":"https://arling.sk/"},{"@type":"ListItem","position":2,"name":"Notes","item":"https://arling.sk/notes/"},{"@type":"ListItem","position":3,"name":"Request header field is not allowed by Access-Control-Allow-Headers: fixing the preflight allow-list","item":"https://arling.sk/notes/cors-request-header-field-not-allowed/"}]}
+</script>
+<link rel="preload" href="/fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/style/paper.css?v=704b28ed">
+<script src="/style/prepinac.js?v=668e98c9" defer></script>
+<style>
+  /* Notes. Vzhlad, farby, typografia a pohyb su v /style/paper.css.
+     Tu ostava len to, co je pre clanok vlastne: merany pas, register, panel s nastrojom. */
+  .note{max-width:min(100%,880px);margin:0 auto}
+  .doc{max-width:min(68ch,660px);margin-inline:auto;font-size:clamp(17px,1.2vw,18px);line-height:1.62}
+
+  /* uvod clanku: nadpis, datum, odkaz na nastroj */
+  .hero-note{padding:clamp(34px,4.6vw,72px) 0 clamp(20px,2.4vw,34px)}
+  /* Titul je tu presny text chyby a je dlhy, preto je o stupen mensi nez v inych clankoch
+     a smie sa zalomit aj vnutri slova. */
+  .hero-note h1{font-size:clamp(28px,3.9vw,52px);line-height:1.08;margin:0 0 18px;overflow-wrap:anywhere}
+  .hero-note h1 .l+.l{display:block;margin-top:.3em;font-weight:500;
+    font-size:clamp(20px,2.4vw,34px);line-height:1.2;letter-spacing:-.01em;color:var(--body)}
+  .hero-note .kicker{display:block;margin:0 0 12px}
+  .hero-note .crumbs{font-family:var(--ui);font-size:12px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--accent);margin:0 0 12px}
+  .hero-note .crumbs a{color:inherit;text-decoration:none}
+  .hero-note .crumbs a:hover{text-decoration:underline}
+  .byline,.dateline{font-family:var(--ui);font-size:14px;color:var(--muted);margin:0 0 20px;max-width:none}
+  .toolgo{margin:0}
+
+  /* rytmus clanku: vlasova linka medzi castami, ziadne velke medzery sekcii */
+  section{scroll-margin-top:86px}
+  .doc section{padding:0;border-top:none;margin:0 0 clamp(26px,2.8vw,38px)}
+  .doc section+section{border-top:1px solid var(--line);padding-top:clamp(26px,2.8vw,36px)}
+  .doc h2{font-size:clamp(21px,1.9vw,27px);line-height:1.22;margin:0 0 12px}
+  .doc h3{font-size:clamp(17.5px,1.3vw,20px);margin:18px 0 8px}
+  .doc p{margin:0 0 14px;max-width:none}
+  .doc .num,.doc .kicker{display:block;font-family:var(--ui);font-size:12px;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--accent);margin:0 0 7px}
+  .doc .lead,.doc .lede{font-size:clamp(18px,1.35vw,20.5px);line-height:1.55;max-width:none;margin:0 0 18px}
+  .doc ol,.doc ul{padding-left:22px;margin:0 0 16px}
+  .doc li{margin:0 0 7px}
+  .doc li:last-child{margin-bottom:0}
+  .doc li .snippet{margin:10px 0 4px}
+  .doc a{overflow-wrap:anywhere}
+  .doc code{background:var(--paper-deep);border:1px solid var(--line);border-radius:4px;padding:1px 5px;
+    overflow-wrap:anywhere}
+  .doc pre{margin:0 0 16px;white-space:pre-wrap;overflow-wrap:break-word}
+  .doc pre code{background:none;border:none;padding:0;font-size:13.5px;line-height:1.55}
+  .doc blockquote{margin:0 0 16px;padding:8px 16px;border-left:2px solid var(--line);color:var(--muted)}
+
+  /* chybova hlaska, oprava, ukazka kodu s popisom */
+  .doc .err{background:color-mix(in srgb,var(--accent) 7%,var(--card));border:1px solid var(--line);
+    border-left:3px solid var(--accent);border-radius:8px;padding:12px 16px;margin:0 0 16px}
+  .doc .err code{background:none;border:none;padding:0;color:var(--ink)}
+  .doc .snippet{background:var(--card);border:1px solid var(--line);border-radius:10px;margin:0 0 18px;
+    overflow:hidden}
+  .doc .snippet .cap{padding:8px 14px;border-bottom:1px solid var(--line);
+    font:500 11px/1.3 var(--ui);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  .doc .snippet pre{margin:0;border:none;border-radius:0;background:none;white-space:pre-wrap}
+
+  /* diagram: zoznam, ktory posiela prehliadac, proti zoznamu zo servera, meno po mene.
+     Farby su tokeny z paper.css, takze sedi na oboch plochach. */
+  .doc figure.dg{margin:6px 0 22px}
+  .doc figure.dg svg{display:block;width:100%;height:auto;max-width:500px;margin:0 auto}
+  .dg .dg-box{fill:var(--card-plna,var(--card));stroke:var(--line-silna,var(--line));stroke-width:1}
+  .dg .dg-box-ok{stroke:var(--ok,#2f7d57)}
+  .dg .dg-bad{fill:color-mix(in srgb,var(--accent) 10%,var(--card-plna,var(--card)));stroke:var(--accent);stroke-width:1}
+  .dg .dg-lab{fill:var(--muted);font:600 11.5px var(--ui);letter-spacing:.08em}
+  .dg .dg-s{fill:var(--body);font:400 13px var(--ui)}
+  .dg .dg-pt{fill:var(--ink);font:500 12.5px var(--mono)}
+  .dg .dg-okt{fill:var(--ok,#2f7d57);font:500 12.5px var(--mono)}
+  .dg .dg-con{fill:var(--accent);font:400 12.5px var(--mono)}
+  .dg .dg-badt{fill:var(--accent);font:600 13px var(--ui)}
+  .dg .dg-fix{fill:var(--ok,#2f7d57);font:700 13px var(--ui)}
+  .dg .dg-arrow{stroke:var(--muted);stroke-width:1.5;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .dg .dg-mark-ok{stroke:var(--ok,#2f7d57);stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .dg .dg-mark-bad{stroke:var(--accent);stroke-width:2;fill:none;stroke-linecap:round}
+  body.noc .dg .dg-con,body.noc .dg .dg-badt{fill:var(--accent-light)}
+  body.noc .dg .dg-mark-bad{stroke:var(--accent-light)}
+  .doc figure.dg figcaption{margin:10px auto 0;max-width:500px;font:400 14px/1.5 var(--ui);color:var(--muted)}
+
+  /* caste otazky */
+  .doc details{border-top:1px solid var(--line);padding:14px 0}
+  .doc details:last-of-type{border-bottom:1px solid var(--line);margin-bottom:16px}
+  .doc summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;gap:14px;
+    font:600 17px/1.35 var(--display);color:var(--ink)}
+  .doc summary::-webkit-details-marker{display:none}
+  .doc summary::after{content:"+";flex:none;color:var(--accent);font-family:var(--ui);font-weight:400}
+  .doc details[open] summary::after{content:"\2212"}
+  .doc details p{margin:10px 0 0}
+
+  /* panel s nastrojom: jedina tmava plocha v texte, tam sa klika */
+  .doc .tool-box,.doc .toolbox,.doc .check,.doc .try,.doc .cta{display:block;background:var(--ink);
+    color:#cfcabd;border:none;border-radius:var(--radius);padding:clamp(20px,2.2vw,28px);margin:0 0 18px}
+  .doc .tool-box p,.doc .check p,.doc .try p,.doc .cta p{max-width:none;margin:0 0 12px;color:#cfcabd}
+  .doc .toolbox{max-width:none;color:#cfcabd}
+  .doc .tool-box p:last-of-type,.doc .check p:last-child,.doc .try p:last-child,
+  .doc .cta p:last-child{margin-bottom:0}
+  .doc .tool-box a,.doc .toolbox a,.doc .check a,.doc .try a,.doc .cta a{color:#fffdf8}
+  .doc .tool-box a:hover,.doc .toolbox a:hover,.doc .check a:hover,.doc .try a:hover,
+  .doc .cta a:hover{color:var(--accent-light)}
+  .doc .tool-box code,.doc .toolbox code,.doc .check code,.doc .try code,.doc .cta code{
+    background:rgba(255,253,248,.10);border-color:rgba(255,253,248,.22);color:#fffdf8}
+
+  @media (min-width:1280px){}
+
+  /* paticka je tmavy pas na konci */
+  footer.band{border-top:none;color:#a8a294}
+  footer.band a,footer.band b{color:#fffdf8}
+  footer.band .wrap{max-width:880px}
+  footer.band .cols{width:min(880px,92vw);margin:0 auto;gap:16px 32px}
+
+</style>
+<meta property="og:image" content="https://arling.sk/og.png">
+</head>
+<body class="noc">
+<div class="wash" aria-hidden="true"><i></i><i></i></div>
+<noscript><style>.r,.w{opacity:1;transform:none;filter:none}</style></noscript>
+<a class="skip site-skip" href="#arling-obsah" data-site-label="skip">Skip to content</a>
+<header class="site-header">
+  <div class="wrap bar">
+    <a class="brand" href="https://arling.sk/en/" aria-label="ARLing home" data-site-home>
+      <svg viewBox="0 0 488 215" width="38" height="15" aria-hidden="true" focusable="false"><path fill="#f4f4f7" fill-rule="evenodd" d="M0.00,213.00L74.00,214.00L181.00,85.00L285.00,214.00L360.00,214.00L206.00,21.00L185.00,4.00L164.00,10.00Z M221.00,0.00L263.00,50.00L395.00,50.00L409.00,55.00L419.00,76.00L401.00,96.00L313.00,98.00L411.00,214.00L487.00,214.00L422.00,139.00L457.00,123.00L482.00,88.00L482.00,48.00L463.00,19.00L417.00,0.00Z"/><path fill="#f2643c" d="M269.00,66.00L269.00,67.00L268.00,68.00L268.00,70.00L267.00,71.00L267.00,76.00L268.00,77.00L268.00,79.00L270.00,81.00L270.00,82.00L271.00,82.00L273.00,84.00L274.00,84.00L277.00,86.00L279.00,86.00L280.00,87.00L287.00,87.00L288.00,86.00L290.00,86.00L291.00,85.00L294.00,84.00L298.00,80.00L298.00,79.00L299.00,78.00L299.00,75.00L300.00,74.00L300.00,72.00L299.00,71.00L299.00,69.00L298.00,68.00L297.00,65.00L295.00,63.00L294.00,63.00L289.00,60.00L278.00,60.00L277.00,61.00L276.00,61.00L275.00,62.00L272.00,63.00Z"/></svg>
+      <b>ARLing</b><span>Notes</span>
+    </a>
+    <details class="site-menu">
+      <summary class="site-menu-toggle"><span class="site-menu-text" data-site-label="produkty">Products</span><span class="site-menu-bars" aria-hidden="true"><i></i><i></i><i></i></span><span class="site-menu-word" data-site-label="menu">Menu</span></summary>
+      <div class="site-menu-panel" role="navigation" aria-label="Products" data-site-aria="produkty"><div class="site-bloky"><div class="site-blok" data-blok="firemne"><p class="site-blok-nazov">For businesses</p><div class="site-cols"><div class="site-col" data-skupina="firmy"><p>Businesses and accountants</p><a class="site-col-all" href="https://arling.sk/vsetko/en/#firmy" aria-label="All in this group: Businesses and accountants" data-umami-event="shell_menu_group" data-umami-event-target="firmy"><span class="site-dlho">All in this group</span><span class="site-kratko">All</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></div><div class="site-col" data-skupina="eshopy"><p>Online shops and websites</p><a class="site-col-all" href="https://arling.sk/vsetko/en/#eshopy" aria-label="All in this group: Online shops and websites" data-umami-event="shell_menu_group" data-umami-event-target="eshopy"><span class="site-dlho">All in this group</span><span class="site-kratko">All</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></div></div></div><div class="site-blok" data-blok="spotrebitelske"><p class="site-blok-nazov">For leisure</p><div class="site-cols"><div class="site-col" data-skupina="hry"><p>Games and puzzles</p><a class="site-col-all" href="https://arling.sk/vsetko/en/#hry" aria-label="All in this group: Games and puzzles" data-umami-event="shell_menu_group" data-umami-event-target="hry"><span class="site-dlho">All in this group</span><span class="site-kratko">All</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></div><div class="site-col" data-skupina="knihy"><p>Books and gifts</p><a class="site-col-all" href="https://arling.sk/vsetko/en/#knihy" aria-label="All in this group: Books and gifts" data-umami-event="shell_menu_group" data-umami-event-target="knihy"><span class="site-dlho">All in this group</span><span class="site-kratko">All</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></div></div></div></div><div class="site-menu-spodok"><p class="site-all"><a href="https://arling.sk/vsetko/en/" data-umami-event="shell_menu_all">Everything on one page<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></p><p class="site-dev"><span>For developers</span><em>Free diagnostics for CORS, JWT, OAuth, Supabase and Stripe webhook errors.</em><a href="https://arling.sk/vsetko/en/#vyvojari">All developer tools<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></p></div><div class="site-col site-firma"><p>Company</p><ul><li><a href="https://arling.sk/en/#nastroje"><b>Tools</b></a></li><li><a href="https://arling.sk/en/#piloty"><b>Pilots</b></a></li><li><a href="https://arling.sk/how-we-work/en/"><b>How we work</b></a></li><li><a href="https://arling.sk/notes/en/"><b>Guides</b></a></li><li><a href="https://arling.sk/kontakt/en/"><b>Contact</b></a></li><li><a href="https://arling.sk/ucet/en/"><b>Account</b></a></li><li><a href="https://arling.sk/brand/en/"><b>Brand</b></a></li><li><a href="https://arling.sk/podmienky/en/"><b>Terms</b></a></li><li><a href="https://arling.sk/privacy/en/"><b>Privacy</b></a></li><li><a href="https://arling.sk/odstupenie/en/"><b>Withdraw from the contract here</b></a></li><li><a href="https://arling.sk/impressum/en/"><b>Imprint</b></a></li></ul></div><p class="site-menu-cta"><a class="site-cta" href="https://arling.sk/shop/" data-site-cta data-site-label="cta" data-umami-event="shell_cta_menu">Shop</a></p></div>
+    </details>
+    <nav id="hlavne-menu" class="site-main-nav" aria-label="Main navigation" data-site-aria="nav"><a href="https://arling.sk/en/#nastroje" data-site-nav="0">Tools</a><a href="https://arling.sk/en/#piloty" data-site-nav="1">Pilots</a><a href="https://arling.sk/notes/en/" data-site-nav="2">Guides</a><a href="https://arling.sk/how-we-work/en/" data-site-nav="3">Company</a></nav>
+    <a class="site-cta" href="https://arling.sk/shop/" data-site-cta data-site-label="cta" data-umami-event="shell_cta">Shop</a>
+  </div>
+  <script src="/style/menu-en.js" defer></script>
+</header>
+<main id="arling-obsah" tabindex="-1">
+  <div class="wrap">
+    <div class="note">
+      <div class="hero-note" id="hero">
+        <p class="kicker r">Notes</p>
+        <h1 id="h1" class="r d1"><span class="l">Request header field authorization is not allowed by Access-Control-Allow-Headers in preflight response:</span><span class="l">fixing the preflight allow-list</span></h1>
+        <p class="byline r d2">ARLing s. r. o. · 2026-09-27</p>
+        <p class="toolgo r d3"><a data-umami-event="open-cors-doctor-hero" class="go" href="https://arling.sk/cors-doctor/">CORS Doctor <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2.5 8h11M9 3.5 13.5 8 9 12.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a></p>
+      </div>
+      <div class="doc">
+        <section class="sec" id="s1">
+  <p class="lead r">You add a token or a JSON body to an API call, and the browser console prints this:</p>
+  <div class="err r d1"><code>Access to XMLHttpRequest at 'https://api.example.com/items' from origin 'http://localhost:3000' has been blocked by CORS policy: Request header field authorization is not allowed by Access-Control-Allow-Headers in preflight response.</code></div>
+  <p class="r d2">Before the real request, the browser sent an <code>OPTIONS</code> request to the same URL, the preflight, and named the headers it was about to send in <code>Access-Control-Request-Headers</code>. Your server answered with an <code>Access-Control-Allow-Headers</code> list that did not contain one of those names, or with no <code>Access-Control-Allow-Headers</code> at all, which Chromium treats as an empty list. The browser stopped there, so the real request never left it.</p>
+  <p class="r d2">The wording also tells you what already works. In Chromium's source (Chrome and the browsers built on it), the header list is the last thing checked on a preflight answer: first <code>Access-Control-Allow-Origin</code> and a 2xx status, then the method, and only then the headers. So with this exact message, the preflight passed everything else: it got a 2xx, the origin matched, and the method was allowed. What is left is the header list: a name missing from the server's answer, or a name your frontend should not be sending at all.</p>
+  <p class="r d3">The name is lowercase because Chromium lowercases header names for this check: <code>authorization</code> is the <code>Authorization</code> header your code sets, and HTTP header names are case-insensitive anyway. <code>XMLHttpRequest</code> means the call went through XHR, which is what axios uses in the browser; a <code>fetch()</code> call says <code>Access to fetch at</code> instead. Firefox reports the same problem as <code>Reason: missing token 'xyz' in CORS header 'Access-Control-Allow-Headers' from CORS preflight channel</code>.</p>
+        </section>
+        <section class="sec" id="s2">
+    <h2 class="r">What the browser compares, name by name</h2>
+    <p class="r d1">Only headers outside the CORS-safelisted set need to be on the list. That set is short: <code>Accept</code>, <code>Accept-Language</code>, <code>Content-Language</code>, <code>Content-Type</code> and <code>Range</code>, each with extra rules. <code>Content-Type</code> only counts when its value is <code>application/x-www-form-urlencoded</code>, <code>multipart/form-data</code> or <code>text/plain</code>, and no safelisted value may be longer than 128 bytes. Everything else has to be allowed by name: <code>Authorization</code>, every <code>X-</code> header, anything an SDK adds, and <code>Content-Type</code> once it says <code>application/json</code>.</p>
+    <p class="r d2">The browser sends those names as one sorted, lowercase, comma-separated list. The server answers with its own list, and the browser looks up each requested name in it, ignoring case:</p>
+    <figure class="dg r d2">
+      <svg viewBox="0 0 400 592" role="img" aria-labelledby="dg-title dg-desc">
+        <title id="dg-title">How the preflight header check fails</title>
+        <desc id="dg-desc">On the OPTIONS request the browser sends Access-Control-Request-Headers: authorization,content-type,x-requested-with. The server answers with Access-Control-Allow-Headers: Content-Type, X-Requested-With. Each requested name is looked up in the answer, ignoring case. content-type matches Content-Type and x-requested-with matches X-Requested-With, but authorization is not in the list. Chrome prints: Request header field authorization is not allowed by Access-Control-Allow-Headers in preflight response. The fix is to answer the OPTIONS request with Access-Control-Allow-Headers: Authorization, Content-Type, X-Requested-With.</desc>
+
+        <text class="dg-lab" x="2" y="14">THE BROWSER ASKS, ON OPTIONS</text>
+        <rect class="dg-box" x="0.5" y="24.5" width="399" height="64" rx="10"/>
+        <text class="dg-s" x="16" y="49">Access-Control-Request-Headers:</text>
+        <text class="dg-pt" x="16" y="73">authorization,content-type,x-requested-with</text>
+
+        <text class="dg-lab" x="2" y="114">YOUR SERVER ANSWERS</text>
+        <rect class="dg-box" x="0.5" y="124.5" width="399" height="64" rx="10"/>
+        <text class="dg-s" x="16" y="149">Access-Control-Allow-Headers:</text>
+        <text class="dg-pt" x="16" y="173">Content-Type, X-Requested-With</text>
+
+        <text class="dg-lab" x="2" y="214">EACH NAME IS LOOKED UP, IGNORING CASE</text>
+        <rect class="dg-bad" x="0.5" y="224.5" width="399" height="44" rx="10"/>
+        <text class="dg-con" x="16" y="251">authorization</text>
+        <path class="dg-arrow" d="M146 246.5h30m-6-5 6 5-6 5"/>
+        <text class="dg-badt" x="188" y="251">not in the list</text>
+        <path class="dg-mark-bad" d="M366 240.5l12 12m0-12-12 12"/>
+
+        <rect class="dg-box" x="0.5" y="276.5" width="399" height="44" rx="10"/>
+        <text class="dg-pt" x="16" y="303">content-type</text>
+        <path class="dg-arrow" d="M146 298.5h30m-6-5 6 5-6 5"/>
+        <text class="dg-okt" x="188" y="303">Content-Type</text>
+        <path class="dg-mark-ok" d="M365 298.5l5 5 9-10"/>
+
+        <rect class="dg-box" x="0.5" y="328.5" width="399" height="44" rx="10"/>
+        <text class="dg-pt" x="16" y="355">x-requested-with</text>
+        <path class="dg-arrow" d="M146 350.5h30m-6-5 6 5-6 5"/>
+        <text class="dg-okt" x="188" y="355">X-Requested-With</text>
+        <path class="dg-mark-ok" d="M365 350.5l5 5 9-10"/>
+
+        <text class="dg-lab" x="2" y="398">WHAT CHROME PRINTS</text>
+        <rect class="dg-bad" x="0.5" y="408.5" width="399" height="84" rx="10"/>
+        <text class="dg-con" x="16" y="435">Request header field authorization is not</text>
+        <text class="dg-con" x="16" y="455">allowed by Access-Control-Allow-Headers</text>
+        <text class="dg-con" x="16" y="475">in preflight response.</text>
+
+        <rect class="dg-box dg-box-ok" x="0.5" y="504.5" width="399" height="86" rx="10"/>
+        <text class="dg-fix" x="16" y="530">Fix: add the name to the OPTIONS answer</text>
+        <text class="dg-pt" x="16" y="553">Access-Control-Allow-Headers: Authorization,</text>
+        <text class="dg-pt" x="16" y="573">Content-Type, X-Requested-With</text>
+      </svg>
+      <figcaption>The browser names every non-safelisted header it is about to send, in lowercase. The server's list can use any letter case, but every name has to be on it. Here two match and <code>authorization</code> does not, so the real request is never sent.</figcaption>
+    </figure>
+    <p class="r d3">Chrome stops at the first name it cannot find and reports only that one. If two names are missing, you fix the first, reload, and get the same error again with the second name. So take the full list from <code>Access-Control-Request-Headers</code> on the preflight, not the single name from the console.</p>
+        </section>
+        <section class="sec" id="s3">
+    <p class="num r">01</p>
+    <h2 class="r d1">The token: Authorization is not on the list</h2>
+    <p class="r d2">The message in this note's title names <code>authorization</code>: the frontend sends a bearer token, and the server's list was written for a public API, or before anyone added login. Add <code>Authorization</code> to <code>Access-Control-Allow-Headers</code> on the preflight answer. Do not reach for <code>*</code> instead; why is under "Things that look like fixes" below.</p>
+    <p class="r d3">One detail from a Stack Overflow question on this exact message with over 250,000 views: the asker's Node code already listed <code>Authorization</code> in <code>res.header('Access-Control-Allow-Headers', ...)</code>, and the error appeared anyway. The answers there disagree on why. The lesson holds either way: the browser reads the answer to the <code>OPTIONS</code> request it actually sent, not your source code. Check that answer with curl (step 2 below) before you rewrite code that looks right.</p>
+        </section>
+        <section class="sec" id="s4">
+    <p class="num r">02</p>
+    <h2 class="r d1">A JSON body: content-type</h2>
+    <p class="r d2">If the message names <code>content-type</code>, the request sends a <code>Content-Type</code> outside the three safelisted values, typically <code>application/json</code>. From that moment <code>Content-Type</code> is treated like any custom header and has to be listed. It was the first error in a Stack Overflow question with over 600,000 views: a POST from AngularJS's <code>$http</code> failing with <code>Request header field Content-Type is not allowed by Access-Control-Allow-Headers</code>. Add <code>Content-Type</code> to the list.</p>
+        </section>
+        <section class="sec" id="s5">
+    <p class="num r">03</p>
+    <h2 class="r d1">A header you did not add by hand</h2>
+    <p class="r d2">SDKs and wrappers add headers you never typed, and every one of them ends up in the preflight:</p>
+    <ul class="r d3">
+      <li><b>supabase-js</b> sends <code>authorization</code>, <code>apikey</code> and <code>x-client-info</code> on every request and <code>content-type</code> when there is a body. Supabase's documentation lists more that only appear in specific cases: <code>x-retry-count</code> on automatic retries, and <code>traceparent</code>, <code>tracestate</code> and <code>baggage</code> only when trace propagation is turned on. That is why a list copied from an old example can fall behind. From <code>@supabase/supabase-js</code> 2.95.0, Supabase recommends importing <code>corsHeaders</code> from the SDK, so the allow-list follows the client.</li>
+      <li><b>Sentry</b> adds <code>sentry-trace</code> and <code>baggage</code> to requests that match <code>tracePropagationTargets</code>. The default matches any URL containing <code>localhost</code> and any URL starting with <code>/</code>, so a frontend on <code>localhost:5173</code> calling an API on <code>localhost:8000</code> sends them as soon as <code>browserTracingIntegration</code> is on, without touching <code>tracePropagationTargets</code>. Sentry's docs say to allow both on the API, plus <code>traceparent</code> if you turn on <code>propagateTraceparent</code>.</li>
+      <li><b>Your own interceptors:</b> an axios or fetch wrapper that adds <code>X-Request-Id</code>, <code>X-CSRF-Token</code> or <code>Cache-Control</code> to every call. None of them is on the safelist.</li>
+    </ul>
+        </section>
+        <section class="sec" id="s6">
+    <p class="num r">04</p>
+    <h2 class="r d1">Access-Control-Allow-* headers sent from the frontend</h2>
+    <p class="r d2">If the message names <code>access-control-allow-origin</code> or another <code>Access-Control-Allow-*</code> header, the frontend is sending response headers. In the 600,000-view question, the asker added <code>Access-Control-Allow-Origin</code>, <code>Access-Control-Allow-Methods</code> and <code>Access-Control-Allow-Headers</code> to the request after the first error, and the message changed to <code>Request header field Access-Control-Allow-Origin is not allowed by Access-Control-Allow-Headers</code>.</p>
+    <p class="r d3">These headers only mean something on the server's answer. On a request they are three more non-safelisted headers, each of which would need its own place on the list. Delete them from the client, as the accepted answer there says.</p>
+        </section>
+        <section class="sec" id="s7">
+    <p class="num r">05</p>
+    <h2 class="r d1">A default list that does not know your header</h2>
+    <p class="r d2">Most CORS layers ship with a fixed list or take one static string, and adding a header in the frontend does not update it:</p>
+    <ul class="r d3">
+      <li><b>django-cors-headers:</b> <code>CORS_ALLOW_HEADERS</code> defaults to <code>accept</code>, <code>authorization</code>, <code>content-type</code>, <code>user-agent</code>, <code>x-csrftoken</code> and <code>x-requested-with</code>. Anything else, such as <code>x-api-key</code>, has to be added.</li>
+      <li><b>Express with the <code>cors</code> package:</b> once you set <code>allowedHeaders</code>, only those names are sent. If you leave the option out, the package reflects whatever the browser asked for in <code>Access-Control-Request-Headers</code>.</li>
+      <li><b>AWS API Gateway (REST API), Enable CORS in the console:</b> <code>Access-Control-Allow-Headers</code> is a static string, prefilled with <code>Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token</code>. A header outside it has to be added there, and the API has to be deployed again before the change takes effect.</li>
+    </ul>
+    <p class="r d3">Hand-written middleware can fail the same way in one more place: headers set inside a <code>GET</code> or <code>POST</code> handler never reach the preflight, because the <code>OPTIONS</code> request does not run that handler. Set them wherever <code>OPTIONS</code> is answered.</p>
+        </section>
+        <section class="sec" id="s8">
+    <p class="num r">06</p>
+    <h2 class="r d1">Someone else's API that does not accept the header</h2>
+    <p class="r d2">When the API belongs to someone else, you cannot change its list. In a 2022 question, a Next.js app called the Slack Web API from the browser with <code>Authorization: Bearer ...</code>. Slack's preflight answer listed only its own headers (<code>slack-route</code>, <code>x-slack-version-ts</code> and a few <code>x-b3-</code> tracing headers), so <code>authorization</code> failed. In the accepted answer, the asker reports that Slack support told them requests from browsers were not supported at that time.</p>
+    <p class="r d3">The way out is to make the call from a server you control, which calls the API and hands the result to your page; MDN describes the same approach for servers you do not control. It also fixes a second problem in that code: the token sat in a <code>NEXT_PUBLIC_</code> variable, and Next.js inlines those into the JavaScript bundle it sends to the browser, where anyone can read it.</p>
+        </section>
+        <section class="sec" id="s9">
+    <h2 class="r">The fix, step by step</h2>
+    <ol class="r d1">
+      <li><b>Get the full list the browser asked for.</b> In DevTools, open the Network tab, find the <code>OPTIONS</code> request to the same URL and copy <code>Access-Control-Request-Headers</code> from its request headers. If you cannot find it, write the list yourself from the headers your code, your interceptors and your SDKs set.</li>
+      <li><b>Reproduce the preflight with curl,</b> using that list:
+        <div class="snippet">
+          <p class="cap">Terminal</p>
+          <pre><code>curl -i -X OPTIONS https://api.example.com/items \
+  -H "Origin: http://localhost:3000" \
+  -H "Access-Control-Request-Method: POST" \
+  -H "Access-Control-Request-Headers: authorization,content-type,x-requested-with"</code></pre>
+        </div>
+      </li>
+      <li><b>Sort the names into two groups.</b> Some should not be sent at all: <code>Access-Control-*</code> headers, a stray <code>Cache-Control</code>, trace headers going to an API that does not use them. Remove those in the frontend. Everything else goes on the server's list.</li>
+      <li><b>Add the names to <code>Access-Control-Allow-Headers</code> on the <code>OPTIONS</code> answer.</b> The answer should end up shaped like this:
+        <div class="snippet">
+          <p class="cap">What the preflight needs back</p>
+          <pre><code>HTTP/1.1 204 No Content
+Access-Control-Allow-Origin: http://localhost:3000
+Access-Control-Allow-Methods: POST
+Access-Control-Allow-Headers: Authorization, Content-Type, X-Requested-With</code></pre>
+        </div>
+        <div class="snippet">
+          <p class="cap">Express, with the cors package</p>
+          <pre><code>const cors = require('cors');
+
+app.use(cors({
+  origin: 'http://localhost:3000',
+  allowedHeaders: ['Authorization', 'Content-Type', 'X-Requested-With'],
+}));</code></pre>
+        </div>
+        <div class="snippet">
+          <p class="cap">Django, settings.py with django-cors-headers</p>
+          <pre><code>from corsheaders.defaults import default_headers
+
+CORS_ALLOW_HEADERS = (
+    *default_headers,
+    "x-api-key",
+)</code></pre>
+        </div>
+        <div class="snippet">
+          <p class="cap">Supabase Edge Function, supabase-js 2.95.0 or later (fragment)</p>
+          <pre><code>import { corsHeaders } from 'npm:@supabase/supabase-js@^2/cors'
+
+// inside your fetch handler, before reading the body
+if (req.method === 'OPTIONS') {
+  return Response.json({ ok: true }, { headers: corsHeaders })
+}</code></pre>
+        </div>
+      </li>
+      <li><b>Run the same curl command again</b> and check the answer against the next section.</li>
+    </ol>
+        </section>
+        <section class="sec" id="s10">
+    <h2 class="r">How to tell it is fixed</h2>
+    <p class="r d1">In the curl output:</p>
+    <ul class="r d2">
+      <li>The status is 2xx (usually 200 or 204).</li>
+      <li><code>access-control-allow-headers</code> contains every name you passed in <code>Access-Control-Request-Headers</code>, in any letter case.</li>
+      <li><code>access-control-allow-origin</code> is your page's exact origin, or <code>*</code> for a request sent without credentials.</li>
+    </ul>
+    <p class="r d3">Then reload the page with the Network tab open: the <code>OPTIONS</code> request should now be followed by your real request. There is no cache to wait out, because the Fetch Standard only stores a preflight result after a successful preflight. If the error comes back naming a different header, that is the next missing name, reported one at a time; add it too. If the message changes to "It does not have HTTP ok status", the server now rejects the <code>OPTIONS</code> request itself, and <a href="https://arling.sk/notes/cors-preflight-doesnt-pass-access-control-check/">that case has its own note</a>.</p>
+        </section>
+        <section class="sec" id="s11">
+    <h2 class="r">Things that look like fixes but are not</h2>
+    <ul class="r d1">
+      <li><b><code>Access-Control-Allow-Headers: *</code>.</b> With credentials (<code>credentials: 'include'</code> or <code>withCredentials</code>), <code>*</code> is not a wildcard at all, just a header literally named <code>*</code>, so every custom header still fails. Without credentials, the Fetch Standard says the wildcard never covers <code>Authorization</code>. MDN's compatibility data shows that Chrome and Safari do not enforce that rule yet, and Firefox only behind a preference since version 115, so <code>*</code> with a bearer token can pass today and still go against the standard. List <code>Authorization</code> by name. The cookie side of the wildcard rules is in <a href="https://arling.sk/notes/cors-wildcard-origin-with-credentials/">the note on credentials mode 'include'</a>.</li>
+      <li><b>Adding <code>OPTIONS</code> to <code>Access-Control-Allow-Methods</code>.</b> That is the accepted answer on the 250,000-view question. The browser checks the real request's method against that list, and the header list separately, so it does not change this error.</li>
+      <li><b>Switching to form encoding to avoid the preflight.</b> A highly voted answer on the 600,000-view question does this, and <code>Content-Type: application/x-www-form-urlencoded</code> does make that header safelisted again. It only helps if no other unsafe header is left, because <code>Authorization</code> alone still triggers a preflight, and only if your server parses form bodies.</li>
+      <li><b><code>mode: 'no-cors'</code>.</b> In that mode, fetch only lets you set safelisted headers, so the token cannot be sent, and the response is opaque: status 0, empty headers and a body your code cannot read. MDN names analytics beacons and loading resources into a service worker cache as the use cases, not API calls whose response you need to read.</li>
+    </ul>
+        </section>
+        <section class="sec" id="s12">
+    <h2 class="r">Check your preflight values</h2>
+    <div class="try r d1"><p>CORS Doctor compares the headers your request sends with the <code>Access-Control-Allow-Headers</code> value from the preflight, ignoring case, and names every missing header at once instead of one at a time. Fill in the fields rather than pasting only the console message: from the message alone it cannot see your <code>Access-Control-Allow-Origin</code>, and it lists that header as missing too.</p><p><a data-umami-event="open-cors-doctor-cta" href="https://arling.sk/cors-doctor/#c=eyJlcnJvciI6eyJtZXNzYWdlIjoiIn0sInJlcXVlc3QiOnsicGFnZU9yaWdpbiI6Imh0dHA6Ly9sb2NhbGhvc3Q6MzAwMCIsInJlcXVlc3RVcmwiOiJodHRwczovL2FwaS5leGFtcGxlLmNvbS9pdGVtcyIsIm1ldGhvZCI6IlBPU1QiLCJjcmVkZW50aWFscyI6IiIsImN1c3RvbUhlYWRlcnMiOlsiQXV0aG9yaXphdGlvbiIsIlgtUmVxdWVzdGVkLVdpdGgiXSwiY29udGVudFR5cGUiOiJhcHBsaWNhdGlvbi9qc29uIn0sInJlc3BvbnNlIjp7ImFjYW8iOiJodHRwOi8vbG9jYWxob3N0OjMwMDAiLCJhY2FjIjoiIiwiYWNhbSI6IkdFVCwgUE9TVCwgT1BUSU9OUyIsImFjYWgiOiJDb250ZW50LVR5cGUsIFgtUmVxdWVzdGVkLVdpdGgiLCJ2YXJ5IjoiT3JpZ2luIiwic3RhdHVzIjpudWxsLCJyZWRpcmVjdHNUb090aGVyT3JpZ2luIjpudWxsLCJwcmVmbGlnaHRTdGF0dXMiOjIwNH0sInNlcnZlciI6eyJzdGFjayI6IiJ9fQ">Open CORS Doctor with this note's example filled in</a>: a POST with <code>Authorization</code>, <code>X-Requested-With</code> and a JSON body, answered with <code>Access-Control-Allow-Headers: Content-Type, X-Requested-With</code>. Then replace the values with yours from the curl output. If you pick your stack, it adds a server snippet. For Express, FastAPI, Go, ASP.NET Core, Supabase Edge Functions, Cloudflare Workers and S3, that snippet carries the header names from your request. The Django snippet does not set <code>CORS_ALLOW_HEADERS</code>, so add your extra names there by hand as in step 4 above. The Supabase snippet writes <code>corsHeaders</code> out by hand; on supabase-js 2.95.0 or later, the import from step 4 keeps the list in step with the client. It treats <code>*</code> the way today's browsers do, so the wildcard point above is one to check by hand. The check runs in your browser and does not call your API.</p></div>
+        </section>
+        <section class="sec" id="s13">
+    <h2 class="r">Questions</h2>
+    <details class="r d1">
+      <summary>Why is the header name lowercase in the error when my code sends Authorization?</summary>
+      <p>Chromium lowercases header names before it compares them with the allow-list, and it reports the lowercased name. HTTP field names are case-insensitive, so <code>Authorization</code>, <code>authorization</code> and <code>AUTHORIZATION</code> are the same header, and your <code>Access-Control-Allow-Headers</code> value can use any letter case.</p>
+    </details>
+    <details class="r d1">
+      <summary>Do I need to list Content-Type or Accept in Access-Control-Allow-Headers?</summary>
+      <p>When the value breaks the safelist rules, for example <code>Content-Type</code> with anything other than <code>application/x-www-form-urlencoded</code>, <code>multipart/form-data</code> or <code>text/plain</code> (so a JSON body needs it), or any safelisted header with a value longer than 128 bytes. MDN and the Fetch Standard list the other rules, such as the characters allowed in <code>Accept-Language</code> and the one form <code>Range</code> may take. MDN also notes that listing safelisted headers anyway lifts those extra restrictions, so adding <code>Content-Type</code> to the list does no harm.</p>
+    </details>
+    <details class="r d2">
+      <summary>Why does the same request work in Postman or curl?</summary>
+      <p>Preflights are sent by browsers. Postman and curl send only the request you give them, so the check that fails in the browser never happens there. That is also what makes curl useful for this error: you can send the preflight by hand, with the same <code>Origin</code> and <code>Access-Control-Request-*</code> headers, and read the exact answer.</p>
+    </details>
+    <details class="r d2">
+      <summary>I added the header and now the error names a different one. Did the fix fail?</summary>
+      <p>No. Chrome stops at the first header it cannot find in the allow-list and reports only that one, so a second missing header shows up only after the first is fixed. Compare the whole <code>Access-Control-Request-Headers</code> list from the preflight with your allow-list to fix them all at once.</p>
+    </details>
+    <details class="r d2">
+      <summary>Can I use Access-Control-Allow-Headers: * instead of a list?</summary>
+      <p>Only for requests without credentials, and not to cover <code>Authorization</code>: the Fetch Standard excludes <code>Authorization</code> from the wildcard, even though MDN's compatibility data shows Chrome and Safari do not enforce that rule yet. With credentials, <code>*</code> is just a literal header name. An explicit list is the version that matches the standard in every browser.</p>
+    </details>
+        </section>
+      </div>
+    </div>
+  </div>
+  <section class="deep" id="s14">
+    <div class="wrap">
+      <div class="note">
+        <div class="doc">
+    <h2 class="r">Sources</h2>
+    <ul class="r d1">
+      <li>MDN, "Reason: missing token 'xyz' in CORS header 'Access-Control-Allow-Headers' from CORS preflight channel" (Firefox wording, the header is not in the list, fix on the server or stop sending the header): <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS/Errors/CORSMissingAllowHeaderFromPreflight">developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS/Errors/CORSMissingAllowHeaderFromPreflight</a></li>
+      <li>MDN, "Access-Control-Allow-Headers header" (required when the preflight has Access-Control-Request-Headers; * only for requests without credentials; Authorization always listed explicitly; listing safelisted headers lifts the extra restrictions): <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Access-Control-Allow-Headers">developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Access-Control-Allow-Headers</a></li>
+      <li>MDN, "CORS-safelisted request header" (Accept, Accept-Language, Content-Language, Content-Type with three values, Range; value length up to 128; allowed characters in Accept-Language and Content-Language, forbidden bytes in Accept and Content-Type, a single byte range for Range): <a href="https://developer.mozilla.org/en-US/docs/Glossary/CORS-safelisted_request_header">developer.mozilla.org/en-US/docs/Glossary/CORS-safelisted_request_header</a></li>
+      <li>MDN, "Access-Control-Request-Headers header" (sorted, unique, comma-separated, lowercase names): <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Access-Control-Request-Headers">developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Access-Control-Request-Headers</a></li>
+      <li>MDN, "Preflight request" (sent automatically by the browser): <a href="https://developer.mozilla.org/en-US/docs/Glossary/Preflight_request">developer.mozilla.org/en-US/docs/Glossary/Preflight_request</a></li>
+      <li>MDN, "CORS errors", client-side considerations (avoid the preflight, no-cors for analytics beacons or loading resources into a cache via a service worker, opaque response with status 0, use a proxy server you control): <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS/Errors">developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS/Errors</a></li>
+      <li>MDN, "RequestInit", mode no-cors (only CORS-safelisted request headers, opaque response): <a href="https://developer.mozilla.org/en-US/docs/Web/API/RequestInit">developer.mozilla.org/en-US/docs/Web/API/RequestInit</a></li>
+      <li>MDN browser-compat-data, Access-Control-Allow-Headers, "Authorization header is not covered by wildcard" (Chrome and Safari: no; Firefox 115 behind the preference network.cors_preflight.authorization_covered_by_wildcard): <a href="https://github.com/mdn/browser-compat-data/blob/main/http/headers/Access-Control-Allow-Headers.json">github.com/mdn/browser-compat-data/blob/main/http/headers/Access-Control-Allow-Headers.json</a></li>
+      <li>WHATWG Fetch Standard, "CORS-preflight fetch" (the response needs an ok status, 200 to 299; Access-Control-Request-Headers from the CORS-unsafe request-header names; byte-case-insensitive match against Access-Control-Allow-Headers; * only without credentials; Authorization never covered by *; cache entries created only after a successful preflight): <a href="https://fetch.spec.whatwg.org/#cors-preflight-fetch">fetch.spec.whatwg.org/#cors-preflight-fetch</a></li>
+      <li>WHATWG Fetch Standard, "CORS-safelisted request-header", "CORS-unsafe request-header names" (sorted-lowercase set) and "CORS non-wildcard request-header name" (Authorization): <a href="https://fetch.spec.whatwg.org/#cors-safelisted-request-header">fetch.spec.whatwg.org/#cors-safelisted-request-header</a>, <a href="https://fetch.spec.whatwg.org/#cors-unsafe-request-header-names">fetch.spec.whatwg.org/#cors-unsafe-request-header-names</a>, <a href="https://fetch.spec.whatwg.org/#cors-non-wildcard-request-header-name">fetch.spec.whatwg.org/#cors-non-wildcard-request-header-name</a></li>
+      <li>Chromium source, <code>preflight_controller.cc</code> (origin check and ok status first, then the method, then the headers): <a href="https://source.chromium.org/chromium/chromium/src/+/main:services/network/cors/preflight_controller.cc">source.chromium.org/chromium/chromium/src/+/main:services/network/cors/preflight_controller.cc</a></li>
+      <li>Chromium source, <code>preflight_result.cc</code> (allow-list parsed in lowercase, a missing Access-Control-Allow-Headers parsed as an empty list, case-insensitive lookup, returns on the first missing header name): <a href="https://source.chromium.org/chromium/chromium/src/+/main:services/network/cors/preflight_result.cc">source.chromium.org/chromium/chromium/src/+/main:services/network/cors/preflight_result.cc</a></li>
+      <li>Chromium source, <code>cors_error_string.cc</code> (the "Access to ... at" prefix and "Request header field ... is not allowed by Access-Control-Allow-Headers in preflight response."): <a href="https://source.chromium.org/chromium/chromium/src/+/main:third_party/blink/renderer/platform/loader/cors/cors_error_string.cc">source.chromium.org/chromium/chromium/src/+/main:third_party/blink/renderer/platform/loader/cors/cors_error_string.cc</a></li>
+      <li>RFC 9110, section 5.1 "Field Names" (case-insensitive): <a href="https://www.rfc-editor.org/rfc/rfc9110.html#section-5.1">rfc-editor.org/rfc/rfc9110.html#section-5.1</a></li>
+      <li>axios README ("Make XMLHttpRequests from the browser"): <a href="https://github.com/axios/axios">github.com/axios/axios</a></li>
+      <li>expressjs/cors README (allowedHeaders; if not specified, reflects Access-Control-Request-Headers): <a href="https://github.com/expressjs/cors">github.com/expressjs/cors</a></li>
+      <li>django-cors-headers README (CORS_ALLOW_HEADERS default and extending default_headers): <a href="https://github.com/adamchainz/django-cors-headers">github.com/adamchainz/django-cors-headers</a></li>
+      <li>Supabase, "CORS support for invoking from the browser" (headers the client libraries send and when, corsHeaders import from 2.95.0, OPTIONS handling): <a href="https://supabase.com/docs/guides/functions/cors">supabase.com/docs/guides/functions/cors</a></li>
+      <li>Sentry, "Dealing with CORS Issues" (sentry-trace and baggage on URLs matching tracePropagationTargets, default localhost and /, allow both on the backend, traceparent with propagateTraceparent): <a href="https://docs.sentry.io/platforms/javascript/tracing/distributed-tracing/dealing-with-cors-issues/">docs.sentry.io/platforms/javascript/tracing/distributed-tracing/dealing-with-cors-issues/</a></li>
+      <li>Sentry, "Distributed Tracing" (works out of the box once the BrowserTracing integration is enabled): <a href="https://docs.sentry.io/platforms/javascript/tracing/distributed-tracing/">docs.sentry.io/platforms/javascript/tracing/distributed-tracing/</a></li>
+      <li>AWS, "Enable CORS on a resource using the API Gateway console" (REST API resources; static Access-Control-Allow-Headers string, console-provided list, deploy or redeploy the API): <a href="https://docs.aws.amazon.com/apigateway/latest/developerguide/how-to-cors-console.html">docs.aws.amazon.com/apigateway/latest/developerguide/how-to-cors-console.html</a></li>
+      <li>Next.js, "Environment Variables", bundling for the browser (NEXT_PUBLIC_ values inlined into the client bundle at build time): <a href="https://nextjs.org/docs/app/guides/environment-variables">nextjs.org/docs/app/guides/environment-variables</a></li>
+      <li>curl, "curl.1 the man page" (-i, -X, -H): <a href="https://curl.se/docs/manpage.html">curl.se/docs/manpage.html</a></li>
+      <li>Stack Overflow, "Request header field Access-Control-Allow-Headers is not allowed by Access-Control-Allow-Headers" (Content-Type first, then Access-Control-Allow-* headers sent from the client): <a href="https://stackoverflow.com/questions/25727306">stackoverflow.com/questions/25727306</a></li>
+      <li>Stack Overflow, "Request header field Authorization is not allowed by Access-Control-Allow-Headers in preflight response" (AngularJS and Node, Authorization already in the server code): <a href="https://stackoverflow.com/questions/42061727">stackoverflow.com/questions/42061727</a></li>
+      <li>Stack Overflow, Authorization not allowed when calling the Slack API from the browser (Slack's own allow-list, answer from Slack support in 2022): <a href="https://stackoverflow.com/questions/71293668">stackoverflow.com/questions/71293668</a></li>
+    </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+<footer class="site-footer">
+  <div class="wrap foot">
+    <div class="site-foot-top"><div><a class="site-brand" href="https://arling.sk/en/" aria-label="ARLing home" data-site-home><svg viewBox="0 0 488 215" width="38" height="15" aria-hidden="true" focusable="false"><path fill="#f4f4f7" fill-rule="evenodd" d="M0.00,213.00L74.00,214.00L181.00,85.00L285.00,214.00L360.00,214.00L206.00,21.00L185.00,4.00L164.00,10.00Z M221.00,0.00L263.00,50.00L395.00,50.00L409.00,55.00L419.00,76.00L401.00,96.00L313.00,98.00L411.00,214.00L487.00,214.00L422.00,139.00L457.00,123.00L482.00,88.00L482.00,48.00L463.00,19.00L417.00,0.00Z"/><path fill="#f2643c" d="M269.00,66.00L269.00,67.00L268.00,68.00L268.00,70.00L267.00,71.00L267.00,76.00L268.00,77.00L268.00,79.00L270.00,81.00L270.00,82.00L271.00,82.00L273.00,84.00L274.00,84.00L277.00,86.00L279.00,86.00L280.00,87.00L287.00,87.00L288.00,86.00L290.00,86.00L291.00,85.00L294.00,84.00L298.00,80.00L298.00,79.00L299.00,78.00L299.00,75.00L300.00,74.00L300.00,72.00L299.00,71.00L299.00,69.00L298.00,68.00L297.00,65.00L295.00,63.00L294.00,63.00L289.00,60.00L278.00,60.00L277.00,61.00L276.00,61.00L275.00,62.00L272.00,63.00Z"/></svg><b>ARLing</b></a><p class="site-foot-firma">ARLing s. r. o., company ID <span class="num">56583486</span>, Bratislava. Own server in the European Union. Software for companies, freelancers and individuals.</p></div><a class="site-cta" href="https://arling.sk/shop/" data-umami-event="shell_footer_cta">Shop<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></div>
+    <div class="site-foot-cols"><div data-skupina="firmy" data-blok="firemne"><p>Businesses and accountants</p><ul><li><a href="https://arling.sk/vsetko/en/#firmy" aria-label="All in this group: Businesses and accountants">All in this group</a></li></ul></div><div data-skupina="eshopy" data-blok="firemne"><p>Online shops and websites</p><ul><li><a href="https://arling.sk/vsetko/en/#eshopy" aria-label="All in this group: Online shops and websites">All in this group</a></li></ul></div><div data-skupina="hry" data-blok="spotrebitelske"><p>Games and puzzles</p><ul><li><a href="https://arling.sk/vsetko/en/#hry" aria-label="All in this group: Games and puzzles">All in this group</a></li></ul></div><div data-skupina="knihy" data-blok="spotrebitelske"><p>Books and gifts</p><ul><li><a href="https://arling.sk/vsetko/en/#knihy" aria-label="All in this group: Books and gifts">All in this group</a></li></ul></div><div><p>Company</p><ul><li><a href="https://arling.sk/how-we-work/en/">How we work</a></li><li><a href="https://arling.sk/notes/en/">Guides</a></li><li><a href="https://arling.sk/kontakt/en/">Contact</a></li><li><a href="https://arling.sk/ucet/en/">Account</a></li><li><a href="https://arling.sk/brand/en/">Brand</a></li><li><a href="https://arling.sk/podmienky/en/">Terms</a></li><li><a href="https://arling.sk/privacy/en/">Privacy</a></li><li><a href="https://arling.sk/odstupenie/en/">Withdraw from the contract here</a></li><li><a href="https://arling.sk/impressum/en/">Imprint</a></li></ul></div></div>
+    <p class="site-all"><a href="https://arling.sk/vsetko/en/" data-umami-event="shell_footer_all">Everything on one page<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></p>
+    <p class="site-dev" data-site-vyvojari><span>For developers</span><em>Free diagnostics for CORS, JWT, OAuth, Supabase and Stripe webhook errors.</em><a href="https://arling.sk/vsetko/en/#vyvojari">All developer tools<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></p>
+    <div class="site-foot-bottom"><p>ARLing s. r. o., Ivanská cesta 32E, 821 04 Bratislava, Slovakia. Company ID 56583486, VAT ID SK2122352100. <a href="mailto:support@arling.sk">support@arling.sk</a></p><p><a href="https://arling.sk/impressum/en/">Impressum</a> · <a href="https://arling.sk/llms.txt">llms.txt</a> · <a href="https://arling.sk/sitemap-index.xml">Sitemap</a></p></div>
+    <p class="site-foot-legal">Tools are provided as is, without warranty. Anonymous visit counts via self-hosted Umami. <a href="https://arling.sk/privacy/en/">Privacy</a> · <a href="https://arling.sk/podmienky/en/">Terms</a> · <a href="https://arling.sk/gdpr/en/">GDPR</a> · <a href="https://arling.sk/odstupenie/en/">Withdraw from the contract here</a></p>
+  </div>
+</footer>
+<script defer src="https://server.invalid/script.js" data-website-id="be534d51-4d01-4860-b267-9596d91606de"></script>
+<script>
+(function () {
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var hero = document.getElementById('hero');
+  if (reduce) {
+    document.querySelectorAll('.r, section').forEach(function (e) { e.classList.add('in'); });
+  }
+  if (!reduce && hero) {
+    requestAnimationFrame(function () {
+      hero.querySelectorAll('.r').forEach(function (e) { e.classList.add('in'); });
+    });
+  }
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (en) {
+      if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); }
+    });
+  }, { rootMargin: '0px 0px -12% 0px', threshold: 0.1 });
+  document.querySelectorAll('section').forEach(function (s) { io.observe(s); });
+
+  // nadpis clanku sa objavi po slovach, ako dobre vytlaceny titulok
+  var h1 = document.getElementById('h1');
+  if (h1) {
+    var i = 0;
+    Array.prototype.forEach.call(h1.querySelectorAll('.l'), function (line) {
+      var words = line.textContent.split(' ');
+      line.textContent = '';
+      words.forEach(function (w, k) {
+        var s = document.createElement('span');
+        s.className = 'w';
+        s.style.transitionDelay = (i++ * 0.06).toFixed(2) + 's';
+        s.textContent = w;
+        line.appendChild(s);
+        if (k < words.length - 1) line.appendChild(document.createTextNode(' '));
+      });
+    });
+    requestAnimationFrame(function () { h1.classList.add('in'); });
+  }
+
+  // bocny register sleduje, ktora cast clanku je v strede obrazovky
+})();
+</script>
+</body>
+</html>

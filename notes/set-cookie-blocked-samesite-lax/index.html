@@ -1,0 +1,566 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script src="/style/vzhlad.js?v=8a4019ae"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://server.invalid 'sha256-6cJQYOB2BhXA+c8Gfwknp5YsrIAYRjMCXEeZKRYEA+o=' 'sha256-vFV/RyFvfc3x+8NJXLOVKfC3u/kLtwRzVq+gy/5qD74=' 'sha256-A4JZ/dvCv5EQlzq+OizHVyAzWtdWGu3Ia9J66MNemLc=' 'sha256-kHzhLBitzZlfAaUS4VuXMelQQYrrpIhEmCeLW+iUbL4='; connect-src 'self' https://server.invalid; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0a0908">
+<link rel="preconnect" href="https://server.invalid" crossorigin>
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../../favicon.ico" sizes="48x48">
+<link rel="apple-touch-icon" href="../../icon-180.png">
+<title>Set-Cookie blocked because of SameSite=Lax: fixing a session cookie from a cross-site API</title>
+<meta name="description" content="Why Chrome drops a Set-Cookie without SameSite from a cross-site API response, how to tell cross-site from cross-origin, and the two routes that fix it.">
+<link rel="canonical" href="https://arling.sk/notes/set-cookie-blocked-samesite-lax/">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Set-Cookie blocked because of SameSite=Lax: fixing a session cookie from a cross-site API">
+<meta property="og:description" content="Why Chrome drops a Set-Cookie without SameSite from a cross-site API response, how to tell cross-site from cross-origin, and the two routes that fix it.">
+<meta property="og:url" content="https://arling.sk/notes/set-cookie-blocked-samesite-lax/">
+
+
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"Article","headline":"Set-Cookie blocked because of SameSite=Lax: fixing a session cookie from a cross-site API","description":"Why Chrome drops a Set-Cookie without SameSite from a cross-site API response, how to tell cross-site from cross-origin, and the two routes that fix it.","datePublished":"2026-09-27","dateModified":"2026-09-27","inLanguage":"en","author":{"@type":"Organization","name":"ARLing s. r. o."},"publisher":{"@type":"Organization","name":"ARLing s. r. o.","url":"https://arling.sk/"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://arling.sk/notes/set-cookie-blocked-samesite-lax/"}}
+</script>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Are localhost:3000 and localhost:8000 cross-site?","acceptedAnswer":{"@type":"Answer","text":"No. The port is not part of a site, so they are the same site, and SameSite does not stop a Lax cookie set by the API on port 8000. They are still two origins, though: the fetch needs credentials: 'include' for the cookie to be stored and sent, and the API needs CORS headers for requests with credentials. localhost and 127.0.0.1, on the other hand, are two different hosts and therefore two sites."}},{"@type":"Question","name":"Do I need HTTPS in development to use SameSite=None?","acceptedAnswer":{"@type":"Answer","text":"Usually not. If the page and the API both run on localhost, they are the same site and you do not need SameSite=None at all. If you do need it, MDN notes that the https requirement of the Secure attribute is ignored when the cookie is set by localhost. The 2021 question gave up on SameSite=None because of certificates; running the API locally or proxying it avoids the question."}},{"@type":"Question","name":"Why is the cookie stored in Chrome but not in Safari?","acceptedAnswer":{"@type":"Answer","text":"With SameSite=None; Secure on an API that is another site, the cookie is a third-party cookie. Safari has blocked cookies for cross-site resources by default since Safari 13.1 and iOS 13.4 (March 2020). Chrome does not block third-party cookies by default, only in Incognito mode or when the user turns it on. The lasting fix is to put the page and the API on one site."}},{"@type":"Question","name":"Can I turn Chrome's old cookie behavior back on?","acceptedAnswer":{"@type":"Answer","text":"No. The chrome://flags switches for the Lax default and for SameSite=None requiring Secure were removed in Chrome 91, and the command-line switch was announced for removal in Chrome 94. Downgrading Chrome, which one old answer suggests, only hides the problem on one machine."}},{"@type":"Question","name":"Is SameSite=None safe for a session cookie?","acceptedAnswer":{"@type":"Answer","text":"It gives up the protection Lax gave you: the cookie now travels with requests that other sites trigger, which is what cross-site request forgery relies on. MDN warns that credentials in cross-origin requests can make a site vulnerable to CSRF. Keep HttpOnly and Secure, and protect state-changing endpoints with CSRF tokens or a Sec-Fetch-Site check, two of the defenses in MDN's CSRF guide. Putting the page and the API on one site avoids the trade-off."}}]}
+</script>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"ARLing","item":"https://arling.sk/"},{"@type":"ListItem","position":2,"name":"Notes","item":"https://arling.sk/notes/"},{"@type":"ListItem","position":3,"name":"Set-Cookie blocked because of SameSite=Lax: fixing a session cookie from a cross-site API","item":"https://arling.sk/notes/set-cookie-blocked-samesite-lax/"}]}
+</script>
+<link rel="preload" href="/fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/style/paper.css?v=704b28ed">
+<script src="/style/prepinac.js?v=668e98c9" defer></script>
+<style>
+  /* Notes. Vzhlad, farby, typografia a pohyb su v /style/paper.css.
+     Tu ostava len to, co je pre clanok vlastne: merany pas, register, panel s nastrojom. */
+  .note{max-width:min(100%,880px);margin:0 auto}
+  .doc{max-width:min(68ch,660px);margin-inline:auto;font-size:clamp(17px,1.2vw,18px);line-height:1.62}
+
+  /* uvod clanku: nadpis, datum, odkaz na nastroj */
+  .hero-note{padding:clamp(34px,4.6vw,72px) 0 clamp(20px,2.4vw,34px)}
+  /* Titul je tu presny text chyby z DevTools a je dlhy, preto je o stupen mensi nez v inych
+     clankoch a smie sa zalomit aj vnutri slova. */
+  .hero-note h1{font-size:clamp(26px,3.6vw,48px);line-height:1.08;margin:0 0 18px;overflow-wrap:anywhere}
+  .hero-note h1 .l+.l{display:block;margin-top:.3em;font-weight:500;
+    font-size:clamp(19px,2.2vw,31px);line-height:1.22;letter-spacing:-.01em;color:var(--body)}
+  .hero-note .kicker{display:block;margin:0 0 12px}
+  .hero-note .crumbs{font-family:var(--ui);font-size:12px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--accent);margin:0 0 12px}
+  .hero-note .crumbs a{color:inherit;text-decoration:none}
+  .hero-note .crumbs a:hover{text-decoration:underline}
+  .byline,.dateline{font-family:var(--ui);font-size:14px;color:var(--muted);margin:0 0 20px;max-width:none}
+  .toolgo{margin:0}
+
+  /* rytmus clanku: vlasova linka medzi castami, ziadne velke medzery sekcii */
+  section{scroll-margin-top:86px}
+  .doc section{padding:0;border-top:none;margin:0 0 clamp(26px,2.8vw,38px)}
+  .doc section+section{border-top:1px solid var(--line);padding-top:clamp(26px,2.8vw,36px)}
+  .doc h2{font-size:clamp(21px,1.9vw,27px);line-height:1.22;margin:0 0 12px}
+  .doc h3{font-size:clamp(17.5px,1.3vw,20px);margin:18px 0 8px}
+  .doc p{margin:0 0 14px;max-width:none}
+  .doc .num,.doc .kicker{display:block;font-family:var(--ui);font-size:12px;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--accent);margin:0 0 7px}
+  .doc .lead,.doc .lede{font-size:clamp(18px,1.35vw,20.5px);line-height:1.55;max-width:none;margin:0 0 18px}
+  .doc ol,.doc ul{padding-left:22px;margin:0 0 16px}
+  .doc li{margin:0 0 7px}
+  .doc li:last-child{margin-bottom:0}
+  .doc li .snippet{margin:10px 0 4px}
+  .doc a{overflow-wrap:anywhere}
+  .doc code{background:var(--paper-deep);border:1px solid var(--line);border-radius:4px;padding:1px 5px;
+    overflow-wrap:anywhere}
+  .doc pre{margin:0 0 16px;white-space:pre-wrap;overflow-wrap:break-word}
+  .doc pre code{background:none;border:none;padding:0;font-size:13.5px;line-height:1.55}
+  .doc blockquote{margin:0 0 16px;padding:8px 16px;border-left:2px solid var(--line);color:var(--muted)}
+
+  /* chybova hlaska, oprava, ukazka kodu s popisom */
+  .doc .err{background:color-mix(in srgb,var(--accent) 7%,var(--card));border:1px solid var(--line);
+    border-left:3px solid var(--accent);border-radius:8px;padding:12px 16px;margin:0 0 16px}
+  .doc .err code{background:none;border:none;padding:0;color:var(--ink)}
+  .doc .fix{margin:0 0 16px;padding-left:16px;border-left:2px solid var(--accent)}
+  .doc .fix p{margin:0 0 8px}
+  .doc .fix p:last-child{margin-bottom:0}
+  .doc .fix-label{font-family:var(--ui);font-size:12px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--muted);margin:0 0 6px}
+  .doc .snippet{background:var(--card);border:1px solid var(--line);border-radius:10px;margin:0 0 18px;
+    overflow:hidden}
+  .doc .snippet .cap{padding:8px 14px;border-bottom:1px solid var(--line);
+    font:500 11px/1.3 var(--ui);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  .doc .snippet.bad .cap{color:var(--accent)}
+  .doc .snippet pre{margin:0;border:none;border-radius:0;background:none;white-space:pre-wrap}
+
+  /* diagram: ktore dvojice stranka a API su jedna stranka (site). Porovnava sa schema a registrovatelna
+     domena znak po znaku. Farby su tokeny z paper.css, takze sedi na oboch plochach. */
+  .doc figure.dg{margin:6px 0 22px}
+  .doc figure.dg svg{display:block;width:100%;height:auto;max-width:540px;margin:0 auto}
+  .dg .dg-pill{fill:none;stroke:var(--line-silna,var(--line));stroke-width:1}
+  .dg .dg-pt{fill:var(--ink);font:500 12.5px var(--mono)}
+  .dg .dg-box{fill:var(--card-plna,var(--card));stroke:var(--line-silna,var(--line));stroke-width:1}
+  .dg .dg-box-ok{stroke:var(--ok,#2f7d57)}
+  .dg .dg-s{fill:var(--body);font:400 13px var(--ui)}
+  .dg .dg-okc{fill:var(--ok,#2f7d57);font:700 12.5px var(--ui)}
+  .dg .dg-lab{fill:var(--muted);font:600 12px var(--ui);letter-spacing:.08em}
+  .dg .dg-con{fill:var(--accent);font:700 12.5px var(--ui)}
+  body.noc .dg .dg-con{fill:var(--accent-light)}
+  .dg .dg-hl{fill:color-mix(in srgb,var(--accent) 22%,var(--card-plna,var(--card)));stroke:var(--accent);stroke-width:1.2}
+  .dg .dg-hl-ok{fill:color-mix(in srgb,var(--ok,#2f7d57) 20%,var(--card-plna,var(--card)));stroke:var(--ok,#2f7d57);stroke-width:1.2}
+  .doc figure.dg figcaption{margin:10px auto 0;max-width:540px;font:400 14px/1.5 var(--ui);color:var(--muted)}
+
+  /* caste otazky */
+  .doc details{border-top:1px solid var(--line);padding:14px 0}
+  .doc details:last-of-type{border-bottom:1px solid var(--line);margin-bottom:16px}
+  .doc summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;gap:14px;
+    font:600 17px/1.35 var(--display);color:var(--ink)}
+  .doc summary::-webkit-details-marker{display:none}
+  .doc summary::after{content:"+";flex:none;color:var(--accent);font-family:var(--ui);font-weight:400}
+  .doc details[open] summary::after{content:"\2212"}
+  .doc details p{margin:10px 0 0}
+
+  /* zdroje */
+  .doc ul.sources{list-style:none;padding-left:0}
+  .doc ul.sources li{padding-left:14px;border-left:2px solid var(--line)}
+  .doc .sources li{margin:0 0 10px;font-size:.95em}
+  .doc .sources cite{font-style:italic}
+  .doc ul.plain{list-style:none;padding-left:0}
+  .doc ul.plain li{margin:0;padding:10px 0;border-top:1px solid var(--line)}
+  .doc ul.plain li:first-child{border-top:none}
+
+  /* panel s nastrojom: jedina tmava plocha v texte, tam sa klika */
+  .doc .tool-box,.doc .toolbox,.doc .check,.doc .try,.doc .cta{display:block;background:var(--ink);
+    color:#cfcabd;border:none;border-radius:var(--radius);padding:clamp(20px,2.2vw,28px);margin:0 0 18px}
+  .doc .tool-box p,.doc .check p,.doc .try p,.doc .cta p{max-width:none;margin:0 0 12px;color:#cfcabd}
+  .doc .toolbox{max-width:none;color:#cfcabd}
+  .doc .tool-box p:last-of-type,.doc .check p:last-child,.doc .try p:last-child,
+  .doc .cta p:last-child{margin-bottom:0}
+  .doc .tool-box a,.doc .toolbox a,.doc .check a,.doc .try a,.doc .cta a{color:#fffdf8}
+  .doc .tool-box a:hover,.doc .toolbox a:hover,.doc .check a:hover,.doc .try a:hover,
+  .doc .cta a:hover{color:var(--accent-light)}
+  .doc .tool-box code,.doc .toolbox code,.doc .check code,.doc .try code,.doc .cta code{
+    background:rgba(255,253,248,.10);border-color:rgba(255,253,248,.22);color:#fffdf8}
+  .doc .tool-box .btn{margin:14px 10px 0 0;text-decoration:none;color:#fff}
+  .doc .tool-box .btn+.btn{background:none;border:1px solid rgba(255,253,248,.45);color:#fffdf8}
+  .doc .tool-box .btn+.btn:hover{background:#fffdf8;color:var(--ink)}
+  .doc .tool-cta{display:inline-flex;align-items:center;height:46px;padding:0 20px;border-radius:12px;
+    margin:2px 0 0;background:var(--accent);color:#fff;font:500 15px/1 var(--ui);text-decoration:none}
+  .doc .tool-cta:hover{background:var(--accent-dark);color:#fff}
+
+  @media (min-width:1280px){}
+
+  /* paticka je tmavy pas na konci */
+  footer.band{border-top:none;color:#a8a294}
+  footer.band a,footer.band b{color:#fffdf8}
+  footer.band .wrap{max-width:880px}
+  footer.band .cols{width:min(880px,92vw);margin:0 auto;gap:16px 32px}
+
+</style>
+<meta property="og:image" content="https://arling.sk/og.png">
+</head>
+<body class="noc">
+<div class="wash" aria-hidden="true"><i></i><i></i></div>
+<noscript><style>.r,.w{opacity:1;transform:none;filter:none}</style></noscript>
+<a class="skip site-skip" href="#arling-obsah" data-site-label="skip">Skip to content</a>
+<header class="site-header">
+  <div class="wrap bar">
+    <a class="brand" href="https://arling.sk/en/" aria-label="ARLing home" data-site-home>
+      <svg viewBox="0 0 488 215" width="38" height="15" aria-hidden="true" focusable="false"><path fill="#f4f4f7" fill-rule="evenodd" d="M0.00,213.00L74.00,214.00L181.00,85.00L285.00,214.00L360.00,214.00L206.00,21.00L185.00,4.00L164.00,10.00Z M221.00,0.00L263.00,50.00L395.00,50.00L409.00,55.00L419.00,76.00L401.00,96.00L313.00,98.00L411.00,214.00L487.00,214.00L422.00,139.00L457.00,123.00L482.00,88.00L482.00,48.00L463.00,19.00L417.00,0.00Z"/><path fill="#f2643c" d="M269.00,66.00L269.00,67.00L268.00,68.00L268.00,70.00L267.00,71.00L267.00,76.00L268.00,77.00L268.00,79.00L270.00,81.00L270.00,82.00L271.00,82.00L273.00,84.00L274.00,84.00L277.00,86.00L279.00,86.00L280.00,87.00L287.00,87.00L288.00,86.00L290.00,86.00L291.00,85.00L294.00,84.00L298.00,80.00L298.00,79.00L299.00,78.00L299.00,75.00L300.00,74.00L300.00,72.00L299.00,71.00L299.00,69.00L298.00,68.00L297.00,65.00L295.00,63.00L294.00,63.00L289.00,60.00L278.00,60.00L277.00,61.00L276.00,61.00L275.00,62.00L272.00,63.00Z"/></svg>
+      <b>ARLing</b><span>Notes</span>
+    </a>
+    <details class="site-menu">
+      <summary class="site-menu-toggle"><span class="site-menu-text" data-site-label="produkty">Products</span><span class="site-menu-bars" aria-hidden="true"><i></i><i></i><i></i></span><span class="site-menu-word" data-site-label="menu">Menu</span></summary>
+      <div class="site-menu-panel" role="navigation" aria-label="Products" data-site-aria="produkty"><div class="site-bloky"><div class="site-blok" data-blok="firemne"><p class="site-blok-nazov">For businesses</p><div class="site-cols"><div class="site-col" data-skupina="firmy"><p>Businesses and accountants</p><a class="site-col-all" href="https://arling.sk/vsetko/en/#firmy" aria-label="All in this group: Businesses and accountants" data-umami-event="shell_menu_group" data-umami-event-target="firmy"><span class="site-dlho">All in this group</span><span class="site-kratko">All</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></div><div class="site-col" data-skupina="eshopy"><p>Online shops and websites</p><a class="site-col-all" href="https://arling.sk/vsetko/en/#eshopy" aria-label="All in this group: Online shops and websites" data-umami-event="shell_menu_group" data-umami-event-target="eshopy"><span class="site-dlho">All in this group</span><span class="site-kratko">All</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></div></div></div><div class="site-blok" data-blok="spotrebitelske"><p class="site-blok-nazov">For leisure</p><div class="site-cols"><div class="site-col" data-skupina="hry"><p>Games and puzzles</p><a class="site-col-all" href="https://arling.sk/vsetko/en/#hry" aria-label="All in this group: Games and puzzles" data-umami-event="shell_menu_group" data-umami-event-target="hry"><span class="site-dlho">All in this group</span><span class="site-kratko">All</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></div><div class="site-col" data-skupina="knihy"><p>Books and gifts</p><a class="site-col-all" href="https://arling.sk/vsetko/en/#knihy" aria-label="All in this group: Books and gifts" data-umami-event="shell_menu_group" data-umami-event-target="knihy"><span class="site-dlho">All in this group</span><span class="site-kratko">All</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></div></div></div></div><div class="site-menu-spodok"><p class="site-all"><a href="https://arling.sk/vsetko/en/" data-umami-event="shell_menu_all">Everything on one page<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></p><p class="site-dev"><span>For developers</span><em>Free diagnostics for CORS, JWT, OAuth, Supabase and Stripe webhook errors.</em><a href="https://arling.sk/vsetko/en/#vyvojari">All developer tools<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></p></div><div class="site-col site-firma"><p>Company</p><ul><li><a href="https://arling.sk/en/#nastroje"><b>Tools</b></a></li><li><a href="https://arling.sk/en/#piloty"><b>Pilots</b></a></li><li><a href="https://arling.sk/how-we-work/en/"><b>How we work</b></a></li><li><a href="https://arling.sk/notes/en/"><b>Guides</b></a></li><li><a href="https://arling.sk/kontakt/en/"><b>Contact</b></a></li><li><a href="https://arling.sk/ucet/en/"><b>Account</b></a></li><li><a href="https://arling.sk/brand/en/"><b>Brand</b></a></li><li><a href="https://arling.sk/podmienky/en/"><b>Terms</b></a></li><li><a href="https://arling.sk/privacy/en/"><b>Privacy</b></a></li><li><a href="https://arling.sk/odstupenie/en/"><b>Withdraw from the contract here</b></a></li><li><a href="https://arling.sk/impressum/en/"><b>Imprint</b></a></li></ul></div><p class="site-menu-cta"><a class="site-cta" href="https://arling.sk/shop/" data-site-cta data-site-label="cta" data-umami-event="shell_cta_menu">Shop</a></p></div>
+    </details>
+    <nav id="hlavne-menu" class="site-main-nav" aria-label="Main navigation" data-site-aria="nav"><a href="https://arling.sk/en/#nastroje" data-site-nav="0">Tools</a><a href="https://arling.sk/en/#piloty" data-site-nav="1">Pilots</a><a href="https://arling.sk/notes/en/" data-site-nav="2">Guides</a><a href="https://arling.sk/how-we-work/en/" data-site-nav="3">Company</a></nav>
+    <a class="site-cta" href="https://arling.sk/shop/" data-site-cta data-site-label="cta" data-umami-event="shell_cta">Shop</a>
+  </div>
+  <script src="/style/menu-en.js" defer></script>
+</header>
+<main id="arling-obsah" tabindex="-1">
+  <div class="wrap">
+    <div class="note">
+      <div class="hero-note" id="hero">
+        <p class="kicker r">Notes</p>
+        <h1 id="h1" class="r d1"><span class="l">This Set-Cookie header didn't specify a "SameSite" attribute and was defaulted to "SameSite=Lax,"</span> <span class="l">and was blocked because it came from a cross-site response which was not the response to a top-level navigation.</span></h1>
+        <p class="byline r d2">ARLing s. r. o. · 2026-09-27</p>
+        <p class="toolgo r d3"><a data-umami-event="open-cookie-samesite-doctor-hero" class="go" href="https://arling.sk/cookie-samesite-doctor/">Cookie Doctor (SameSite, Secure, Domain) <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2.5 8h11M9 3.5 13.5 8 9 12.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a></p>
+      </div>
+      <div class="doc">
+        <section class="sec" id="s1">
+  <p class="lead r">Your frontend signs in against an API on another domain. The login call returns 200 and even carries a <code>Set-Cookie</code> header, yet the next request leaves without the session cookie and the API answers as if nobody had logged in. Open the login request in Chrome's Network panel, switch to its Cookies tab and hover the info icon next to the cookie. This is what it says:</p>
+  <div class="err r d1"><code>This Set-Cookie header didn't specify a "SameSite" attribute and was defaulted to "SameSite=Lax," and was blocked because it came from a cross-site response which was not the response to a top-level navigation.</code></div>
+  <p class="r d2">The cookie reached the browser, and the browser refused to store it. Two facts met in one response. Your <code>Set-Cookie</code> header had no <code>SameSite</code> attribute, so Chrome treated it as <code>SameSite=Lax</code>, a default Chrome rolled out during 2020, targeting all users of Chrome 80 and newer from 11 August 2020. And the response answered a request that went to a different site than the one in the address bar: a <code>fetch()</code> call, an XMLHttpRequest, or a page loading inside an iframe. RFC 6265bis, the IETF draft that updates the cookie specification, puts the rule in one sentence: cookies with <code>SameSite=Lax</code> or <code>SameSite=Strict</code> "cannot be set in responses to cross-site subresource requests, or cross-site nested navigations." Only a top-level navigation, the kind that changes the address bar, may set them.</p>
+  <p class="r d2">This default is Chrome's, and Edge's. MDN's browser compatibility data lists it for Chrome 80 and Edge 86; Firefox has it only behind a preference, and Safari does not have it. That is why the same login can behave differently in Firefox or Safari, where the third-party cookie rules in route B decide instead.</p>
+  <p class="r d2">The full tooltip goes on with one more sentence. In the current DevTools source it reads: 'The "Set-Cookie" header had to have been set with "SameSite=None" to enable cross-site usage.' The quotes and the comma move between Chrome versions (the 2020 source prints "SameSite=Lax," with the comma inside the quotes, the current one "SameSite=Lax", and quotes "Set-Cookie" too), so search for the words rather than the punctuation. Its neighbors in the same DevTools tooltip list are worth recognizing:</p>
+  <ul class="r d2">
+    <li>"...blocked because it had the "SameSite=Lax" attribute but came from a cross-site response which was not the response to a top-level navigation" (or <code>SameSite=Strict</code>): you wrote the attribute yourself. Same cause, same fix.</li>
+    <li>"...blocked because it had the "SameSite=None" attribute but did not have the "Secure" attribute": you are halfway through the fix. See the traps below.</li>
+    <li>"...blocked because its "Domain" attribute was invalid with regards to the current host URL": a different problem, also covered in the traps.</li>
+  </ul>
+  <p class="r d3">Everything below hangs on one question: is your API really on another site? A different site is not the same thing as a different origin, and most of the confusion around this message comes from mixing the two.</p>
+        </section>
+        <section class="sec" id="s2">
+    <h2 class="r">What counts as the same site</h2>
+    <p class="r d1">An origin is scheme, host and port. A site is coarser: the scheme plus the registrable domain, which is one entry of the Public Suffix List plus the label just before it. Subdomains and ports do not count. So <code>https://app.example.com</code> and <code>https://api.example.com</code> are two origins but one site, and so are <code>http://localhost:3000</code> and <code>http://localhost:8000</code>. The scheme does count: web.dev calls this schemeful same-site, and MDN notes that the SameSite rules use this stricter definition, so <code>http://example.com</code> and <code>https://example.com</code> are two sites. A host that is an IP address has no registrable domain, so the HTML Standard makes the address itself the site.</p>
+    <p class="r d2">The surprise is hosting platforms. <code>vercel.app</code>, <code>netlify.app</code>, <code>onrender.com</code>, <code>herokuapp.com</code>, <code>up.railway.app</code>, <code>fly.dev</code>, <code>pages.dev</code> and <code>github.io</code> are all entries of the Public Suffix List (we checked the list on 27 September 2026). To a browser, <code>my-app.vercel.app</code> and <code>my-api.vercel.app</code> are as unrelated as two companies.</p>
+    <p class="r d2">You do not have to work it out by hand. In the Network panel, look at the request headers of your login call. For a request your page makes itself (not from inside an iframe), <code>Sec-Fetch-Site: cross-site</code> means the browser sees two sites, and a cookie without <code>SameSite</code> from that response will be dropped. <code>same-site</code> or <code>same-origin</code> means SameSite is not what blocks you; go straight to the traps. Two limits: browsers send this header only to URLs they consider potentially trustworthy, which in practice means <code>https://</code> and <code>localhost</code>, and after a redirect the value reflects every URL in the chain. If the header is missing, compare scheme and registrable domain by hand, as in the diagram.</p>
+    <figure class="dg r d3">
+      <svg viewBox="0 0 400 849" role="img" aria-labelledby="dg-title dg-desc">
+        <title id="dg-title">Which page and API pairs are the same site</title>
+        <desc id="dg-desc">A site is the scheme plus the registrable domain; ports and subdomains are ignored. Six pairs are compared part by part. https://app.example.com and https://api.example.com: same site, because subdomains of one registrable domain are one site. http://localhost:3000 and http://localhost:8000: same site, the port is ignored, but they are still cross-origin. http://localhost:3000 and http://127.0.0.1:8000: cross-site, different hosts, and an IP address is its own site. https://my-app.vercel.app and https://my-api.vercel.app: cross-site, because vercel.app is a public suffix. https://app.example.com and https://my-api.onrender.com: cross-site, different registrable domains. http://app.example.com and https://api.example.com: cross-site, same domain but a different scheme. Bottom box, what Chrome and Edge do with a cookie set by a cross-site fetch (Firefox and Safari differ): with no SameSite attribute it is treated as Lax and dropped; SameSite=None without Secure is rejected; SameSite=None with Secure is stored only if the fetch used credentials: 'include' and the browser allows third-party cookies.</desc>
+        <rect class="dg-pill" x="0.5" y="0.5" width="399" height="64" rx="14"/>
+        <text class="dg-lab" x="18" y="26">SITE = SCHEME + REGISTRABLE DOMAIN</text>
+        <rect class="dg-hl-ok" x="18.5" y="37.5" width="14" height="14" rx="3"/>
+        <text class="dg-s" x="40" y="49">parts match</text>
+        <rect class="dg-hl" x="136.5" y="37.5" width="14" height="14" rx="3"/>
+        <text class="dg-s" x="158" y="49">parts differ</text>
+
+        <rect class="dg-box dg-box-ok" x="0.5" y="78.5" width="399" height="88" rx="10"/>
+        <text class="dg-lab" x="18" y="103">PAGE</text>
+        <rect class="dg-hl-ok" x="63" y="88.5" width="39.5" height="20" rx="3"/>
+        <rect class="dg-hl-ok" x="153" y="88.5" width="84.5" height="20" rx="3"/>
+        <text class="dg-pt" x="64" y="103" textLength="172.5" lengthAdjust="spacingAndGlyphs">https://app.example.com</text>
+        <text class="dg-lab" x="18" y="126">API</text>
+        <rect class="dg-hl-ok" x="63" y="111.5" width="39.5" height="20" rx="3"/>
+        <rect class="dg-hl-ok" x="153" y="111.5" width="84.5" height="20" rx="3"/>
+        <text class="dg-pt" x="64" y="126" textLength="172.5" lengthAdjust="spacingAndGlyphs">https://api.example.com</text>
+        <text class="dg-okc" x="383" y="115" text-anchor="end">same site</text>
+        <text class="dg-s" x="18" y="152">Subdomains of one registrable domain: one site.</text>
+
+        <rect class="dg-box dg-box-ok" x="0.5" y="176.5" width="399" height="88" rx="10"/>
+        <text class="dg-lab" x="18" y="201">PAGE</text>
+        <rect class="dg-hl-ok" x="63" y="186.5" width="32" height="20" rx="3"/>
+        <rect class="dg-hl-ok" x="115.5" y="186.5" width="69.5" height="20" rx="3"/>
+        <text class="dg-pt" x="64" y="201" textLength="157.5" lengthAdjust="spacingAndGlyphs">http://localhost:3000</text>
+        <text class="dg-lab" x="18" y="224">API</text>
+        <rect class="dg-hl-ok" x="63" y="209.5" width="32" height="20" rx="3"/>
+        <rect class="dg-hl-ok" x="115.5" y="209.5" width="69.5" height="20" rx="3"/>
+        <text class="dg-pt" x="64" y="224" textLength="157.5" lengthAdjust="spacingAndGlyphs">http://localhost:8000</text>
+        <text class="dg-okc" x="383" y="213" text-anchor="end">same site</text>
+        <text class="dg-s" x="18" y="250">The port is ignored. Still cross-origin.</text>
+
+        <rect class="dg-box" x="0.5" y="274.5" width="399" height="88" rx="10"/>
+        <text class="dg-lab" x="18" y="299">PAGE</text>
+        <rect class="dg-hl-ok" x="63" y="284.5" width="32" height="20" rx="3"/>
+        <rect class="dg-hl" x="115.5" y="284.5" width="69.5" height="20" rx="3"/>
+        <text class="dg-pt" x="64" y="299" textLength="157.5" lengthAdjust="spacingAndGlyphs">http://localhost:3000</text>
+        <text class="dg-lab" x="18" y="322">API</text>
+        <rect class="dg-hl-ok" x="63" y="307.5" width="32" height="20" rx="3"/>
+        <rect class="dg-hl" x="115.5" y="307.5" width="69.5" height="20" rx="3"/>
+        <text class="dg-pt" x="64" y="322" textLength="157.5" lengthAdjust="spacingAndGlyphs">http://127.0.0.1:8000</text>
+        <text class="dg-con" x="383" y="311" text-anchor="end">cross-site</text>
+        <text class="dg-s" x="18" y="348">Different hosts. An IP address is its own site.</text>
+
+        <rect class="dg-box" x="0.5" y="372.5" width="399" height="88" rx="10"/>
+        <text class="dg-lab" x="18" y="397">PAGE</text>
+        <rect class="dg-hl-ok" x="63" y="382.5" width="39.5" height="20" rx="3"/>
+        <rect class="dg-hl" x="123" y="382.5" width="129.5" height="20" rx="3"/>
+        <text class="dg-pt" x="64" y="397" textLength="187.5" lengthAdjust="spacingAndGlyphs">https://my-app.vercel.app</text>
+        <text class="dg-lab" x="18" y="420">API</text>
+        <rect class="dg-hl-ok" x="63" y="405.5" width="39.5" height="20" rx="3"/>
+        <rect class="dg-hl" x="123" y="405.5" width="129.5" height="20" rx="3"/>
+        <text class="dg-pt" x="64" y="420" textLength="187.5" lengthAdjust="spacingAndGlyphs">https://my-api.vercel.app</text>
+        <text class="dg-con" x="383" y="409" text-anchor="end">cross-site</text>
+        <text class="dg-s" x="18" y="446">vercel.app is a public suffix.</text>
+
+        <rect class="dg-box" x="0.5" y="470.5" width="399" height="88" rx="10"/>
+        <text class="dg-lab" x="18" y="495">PAGE</text>
+        <rect class="dg-hl-ok" x="63" y="480.5" width="39.5" height="20" rx="3"/>
+        <rect class="dg-hl" x="153" y="480.5" width="84.5" height="20" rx="3"/>
+        <text class="dg-pt" x="64" y="495" textLength="172.5" lengthAdjust="spacingAndGlyphs">https://app.example.com</text>
+        <text class="dg-lab" x="18" y="518">API</text>
+        <rect class="dg-hl-ok" x="63" y="503.5" width="39.5" height="20" rx="3"/>
+        <rect class="dg-hl" x="123" y="503.5" width="144.5" height="20" rx="3"/>
+        <text class="dg-pt" x="64" y="518" textLength="202.5" lengthAdjust="spacingAndGlyphs">https://my-api.onrender.com</text>
+        <text class="dg-con" x="383" y="507" text-anchor="end">cross-site</text>
+        <text class="dg-s" x="18" y="544">Different registrable domains.</text>
+
+        <rect class="dg-box" x="0.5" y="568.5" width="399" height="88" rx="10"/>
+        <text class="dg-lab" x="18" y="593">PAGE</text>
+        <rect class="dg-hl" x="63" y="578.5" width="32" height="20" rx="3"/>
+        <rect class="dg-hl-ok" x="145.5" y="578.5" width="84.5" height="20" rx="3"/>
+        <text class="dg-pt" x="64" y="593" textLength="165" lengthAdjust="spacingAndGlyphs">http://app.example.com</text>
+        <text class="dg-lab" x="18" y="616">API</text>
+        <rect class="dg-hl" x="63" y="601.5" width="39.5" height="20" rx="3"/>
+        <rect class="dg-hl-ok" x="153" y="601.5" width="84.5" height="20" rx="3"/>
+        <text class="dg-pt" x="64" y="616" textLength="172.5" lengthAdjust="spacingAndGlyphs">https://api.example.com</text>
+        <text class="dg-con" x="383" y="605" text-anchor="end">cross-site</text>
+        <text class="dg-s" x="18" y="642">Same domain, different scheme.</text>
+
+        <rect class="dg-pill" x="0.5" y="666.5" width="399" height="182" rx="14"/>
+        <text class="dg-lab" x="18" y="692">A COOKIE SET BY A CROSS-SITE FETCH</text>
+        <text class="dg-s" x="18" y="712">In Chrome and Edge. Firefox and Safari differ.</text>
+        <text class="dg-pt" x="18" y="740" textLength="150" lengthAdjust="spacingAndGlyphs">no SameSite (so Lax)</text>
+        <text class="dg-con" x="383" y="740" text-anchor="end">dropped</text>
+        <text class="dg-pt" x="18" y="766" textLength="97.5" lengthAdjust="spacingAndGlyphs">SameSite=None</text>
+        <text class="dg-con" x="383" y="766" text-anchor="end">rejected</text>
+        <text class="dg-pt" x="18" y="792" textLength="157.5" lengthAdjust="spacingAndGlyphs">SameSite=None; Secure</text>
+        <text class="dg-okc" x="383" y="792" text-anchor="end">stored</text>
+        <text class="dg-s" x="18" y="816">Stored only with credentials: 'include', and</text>
+        <text class="dg-s" x="18" y="834">only if third-party cookies are allowed.</text>
+      </svg>
+      <figcaption>Each row compares the two parts of a site, character by character: the scheme and the registrable domain. Ports and subdomains are left out because the definition of a site leaves them out. The bottom box shows what Chrome and Edge do with a cookie set by a <code>fetch()</code> that crosses sites. Firefox applies the Lax default only behind a preference and has rejected <code>SameSite=None</code> without <code>Secure</code> since version 131; Safari does neither, but blocks third-party cookies anyway. The rules come from MDN's glossary entry for a site, web.dev's article on same-site and same-origin, the HTML Standard's "obtain a site" algorithm, the Public Suffix List, RFC 6265bis and MDN's browser compatibility data.</figcaption>
+    </figure>
+        </section>
+        <section class="sec" id="s3">
+    <p class="num r">01</p>
+    <h2 class="r d1">Frontend and API on two sites in production</h2>
+    <p class="r d2">The most common setup behind this message: the frontend on your own domain or on Vercel or Netlify, the API on its platform's default domain, such as <code>onrender.com</code> or <code>herokuapp.com</code>. Every call from the page to the API is cross-site, so the login response's cookie, which has no <code>SameSite</code> attribute, is dropped. Code like this may have worked years ago: Chrome rolled the Lax default out in stages during 2020, and on 11 August 2020 raised the target to 100% of users on Chrome 80 and newer.</p>
+    <p class="r d3">Fix: make the page and the API one site (route A in the steps below), or declare the cookie cross-site (route B).</p>
+        </section>
+        <section class="sec" id="s4">
+    <p class="num r">02</p>
+    <h2 class="r d1">Local development against a remote API, or localhost against 127.0.0.1</h2>
+    <p class="r d2">The 2021 question in the sources describes it: frontend and server share a domain in production, but in development the frontend runs on <code>localhost</code> and talks to the deployed server, so logging in fails only on the developer's machine. Until Chrome 91, a switch in <code>chrome://flags</code> hid the problem; Chrome 91 removed it, and the Chromium team announced the command-line switch's removal for Chrome 94. A quieter variant from the same thread: the frontend on <code>http://localhost:8080</code>, the backend on <code>http://127.0.0.1:8000</code>. One machine, two hosts, two sites.</p>
+    <p class="r d3">Fix: run the API locally as well (one answer points out that <code>localhost:1234</code> and <code>localhost:5678</code> are the same site), use the same host name for both, or let your dev server proxy the API (route A, option 2). None of these needs a weaker production cookie.</p>
+        </section>
+        <section class="sec" id="s5">
+    <p class="num r">03</p>
+    <h2 class="r d1">Your app lives inside someone else's page</h2>
+    <p class="r d2">An embedded widget, an app shown in an iframe of a dashboard or a shop's admin, a login form inside an iframe: here even the response to the iframe's own page load is a cross-site nested navigation, and a Lax cookie cannot be set there. A subdomain or a proxy does not help, because the top-level site belongs to someone else. You need <code>SameSite=None; Secure</code> (route B), and third-party cookie blocking and partitioning still apply. MDN's guide to third-party cookies names two tools for this case: the <code>Partitioned</code> attribute (CHIPS), which keeps a separate cookie jar per top-level site, and the Storage Access API, which asks the user for permission per frame.</p>
+        </section>
+        <section class="sec" id="s6">
+    <p class="num r">04</p>
+    <h2 class="r d1">The cookie is not yours</h2>
+    <p class="r d2">If the blocked cookie belongs to an analytics script, a chat widget or a CDN, only its owner can change the header. The most viewed question on the topic, from 2019 when Chrome still printed a console warning instead of blocking, is exactly this: the cookies came from jQuery's, Font Awesome's and Google's domains, and the accepted answer says it has nothing to do with the asker's code. Filter the Network panel by your API's domain and look only at your own requests.</p>
+        </section>
+        <section class="sec" id="s7">
+    <h2 class="r">The fix, step by step</h2>
+    <ol class="r d1">
+      <li><b>Confirm the call is cross-site.</b> Check <code>Sec-Fetch-Site</code> on the login request (sent only to <code>https://</code> and <code>localhost</code> URLs), or compare scheme and registrable domain as in the diagram. If the answer is same-site, SameSite is not your problem; the traps below are.</li>
+      <li><b>Pick a route.</b> Route A makes the page and the API one site, so the default Lax cookie is stored and third-party cookie blocking does not apply to it. Route B keeps two sites and marks the cookie as cross-site. Take B only when A is not possible, for example inside someone else's iframe.</li>
+      <li><b>Route A, option 1: a subdomain.</b> Serve the API as <code>api.example.com</code> next to <code>app.example.com</code>. The two are still different origins, so the login call needs <code>credentials: 'include'</code>, and the API has to answer with your exact origin in <code>Access-Control-Allow-Origin</code> plus <code>Access-Control-Allow-Credentials: true</code>. A JSON login also triggers a preflight, which needs the same two headers plus <code>Access-Control-Allow-Headers: Content-Type</code> (details in route B). <a href="https://arling.sk/notes/cors-wildcard-origin-with-credentials/">The note on CORS with credentials</a> covers those headers. One Safari caveat: if <code>api.example.com</code> is a CNAME to another domain, such as your hosting platform's, and the page's own host does not resolve through that same CNAME, Safari 14 and newer caps cookies set in the API's responses at 7 days (WebKit's CNAME cloaking defense). The cookie is stored, but a login meant to last longer ends after a week. The proxy in option 2 does not hit this, because the cookie comes from the page's own host.</li>
+      <li><b>Route A, option 2: a proxy on the frontend's origin.</b> The page calls a path on its own origin and the frontend server forwards the request to the API. The browser sees a single origin, so there is no CORS and the cookie is first-party. In Next.js, a rewrite to an external URL does this; the documentation describes rewrites as a URL proxy that masks the destination:
+        <div class="snippet">
+          <p class="cap">next.config.js</p>
+          <pre><code>module.exports = {
+  async rewrites() {
+    return [
+      {
+        source: '/backend/:path*',
+        destination: 'https://my-api.onrender.com/:path*',
+      },
+    ]
+  },
+}</code></pre>
+        </div>
+        In development with Vite, <code>server.proxy</code> does the same. Vite passes further options to http-proxy-3, whose <code>cookieDomainRewrite: ''</code> removes a <code>Domain</code> attribute that the API sets for its own host, which the browser would otherwise reject on <code>localhost</code>:
+        <div class="snippet">
+          <p class="cap">vite.config.js</p>
+          <pre><code>export default defineConfig({
+  server: {
+    proxy: {
+      '/api': {
+        target: 'https://staging-api.example.com',
+        changeOrigin: true,
+        cookieDomainRewrite: '',
+      },
+    },
+  },
+})</code></pre>
+        </div>
+      </li>
+      <li><b>Route B: mark the cookie as cross-site.</b> Add <code>SameSite=None</code> and <code>Secure</code>, both of them: a <code>SameSite=None</code> cookie without <code>Secure</code> is rejected by Chrome and Edge, and by Firefox since version 131, according to MDN's browser compatibility data.
+        <div class="snippet">
+          <p class="cap">The header the browser needs</p>
+          <pre><code>Set-Cookie: session=abc123; Path=/; HttpOnly; Secure; SameSite=None</code></pre>
+        </div>
+        With express-session, the cookie options map one to one. Behind a proxy that terminates HTTPS, its README says to set <code>trust proxy</code>, or a secure cookie is not set at all:
+        <div class="snippet">
+          <p class="cap">Express with express-session</p>
+          <pre><code>app.set('trust proxy', 1);
+app.use(session({
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false,
+  cookie: { httpOnly: true, secure: true, sameSite: 'none' },
+}));</code></pre>
+        </div>
+        In Django, both settings exist for the session cookie and default to <code>'Lax'</code> and <code>False</code>. Django accepts <code>'None'</code> as a value; browsers then also need <code>Secure</code> (see MDN), so set <code>SESSION_COOKIE_SECURE = True</code> as well. If the message names the <code>csrftoken</code> cookie instead, <code>CSRF_COOKIE_SAMESITE</code> and <code>CSRF_COOKIE_SECURE</code> work the same way:
+        <div class="snippet">
+          <p class="cap">Django settings.py</p>
+          <pre><code>SESSION_COOKIE_SAMESITE = "None"
+SESSION_COOKIE_SECURE = True</code></pre>
+        </div>
+      </li>
+      <li><b>Route B: credentials and CORS.</b> Send the login call itself with credentials, not only the calls after it. For a cross-origin request without credentials, MDN says the browser ignores <code>Set-Cookie</code> in the response, whatever the cookie's attributes say:
+        <div class="snippet">
+          <p class="cap">Client</p>
+          <pre><code>await fetch('https://my-api.onrender.com/login', {
+  method: 'POST',
+  credentials: 'include',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ email, password }),
+});
+// XMLHttpRequest and axios: withCredentials: true</code></pre>
+        </div>
+        The API then has to answer with the exact origin, never <code>*</code>:
+        <div class="snippet">
+          <p class="cap">API response headers</p>
+          <pre><code>Access-Control-Allow-Origin: https://app.example.com
+Access-Control-Allow-Credentials: true
+Vary: Origin</code></pre>
+        </div>
+        Because the login sends <code>Content-Type: application/json</code>, the browser first sends a preflight <code>OPTIONS</code> request (a request can skip it only if, among other conditions, its content type is form-encoded, multipart or <code>text/plain</code>). The answer to that preflight needs the same two <code>Access-Control-Allow-*</code> headers plus the one below. With credentials, a <code>*</code> there is not a wildcard, so name the header. Without it the preflight fails, the login request is never sent, and there is no <code>Set-Cookie</code> to block. <a href="https://arling.sk/notes/cors-request-header-field-not-allowed/">The note on headers not allowed by Access-Control-Allow-Headers</a> covers that error.
+        <div class="snippet">
+          <p class="cap">Also on the preflight (OPTIONS) response</p>
+          <pre><code>Access-Control-Allow-Headers: Content-Type</code></pre>
+        </div>
+      </li>
+      <li><b>Route B: know its limits.</b> A <code>SameSite=None</code> cookie from an API on another site is a third-party cookie. Safari has blocked cookies for cross-site resources by default since Safari 13.1 and iOS 13.4 (March 2020). Firefox, with its default Enhanced Tracking Protection, keeps third-party cookies in a separate cookie jar per site. Chrome does not block them by default, only in Incognito mode or when the user turns blocking on. Such a cookie also travels with requests that other sites trigger, so protect state-changing endpoints against cross-site request forgery, for example with CSRF tokens or a <code>Sec-Fetch-Site</code> check.</li>
+    </ol>
+        </section>
+        <section class="sec" id="s8">
+    <h2 class="r">How to tell it is fixed</h2>
+    <ol class="r d1">
+      <li>In the Network panel, open <b>More filters</b> and tick <b>Blocked response cookies</b>, then log in again. The filter keeps only requests whose response cookies were blocked, so if your login request no longer shows up, its cookie was stored.</li>
+      <li>Select the login request and open its Cookies tab: the session cookie has no info icon next to it. Select the next request to the API: its Cookies tab lists the session cookie among the cookies it sent.</li>
+      <li>Read the raw header the server sends, because a framework default or a proxy can change attributes on the way out:
+        <div class="snippet">
+          <p class="cap">Terminal</p>
+          <pre><code>curl -i https://my-api.onrender.com/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"you@example.com","password":"..."}'</code></pre>
+        </div>
+        The <code>set-cookie</code> line should carry the attributes of the route you chose. No <code>set-cookie</code> line at all, with express-session behind a proxy, points to the <code>trust proxy</code> trap below. On Windows, call <code>curl.exe</code> in PowerShell, because in Windows PowerShell 5.1 <code>curl</code> is an alias for <code>Invoke-WebRequest</code>, and put the command on one line without the backslashes. Windows PowerShell 5.1 also strips the double quotes inside <code>'{...}'</code> before <code>curl.exe</code> sees them (we checked: the argument arrives as <code>{email:you@example.com,password:...}</code>), so the API gets invalid JSON and the login fails without a <code>set-cookie</code> line, which looks like the <code>trust proxy</code> trap but is not. PowerShell 7.3 and newer pass the quotes through. The way around it that does not depend on the shell's quoting is to save the body as <code>login.json</code> and let curl read the file:
+        <div class="snippet">
+          <p class="cap">Windows, body from a file</p>
+          <pre><code>curl.exe -i https://my-api.onrender.com/login -H "Content-Type: application/json" --data-binary "@login.json"</code></pre>
+        </div>
+      </li>
+      <li>Route B only: repeat the login in Safari and in a Chrome Incognito window. If the cookie is missing there but works in a normal Chrome window, that is third-party cookie blocking, and route A is the lasting fix.</li>
+    </ol>
+        </section>
+        <section class="sec" id="s9">
+    <h2 class="r">Traps</h2>
+    <ul class="r d1">
+      <li><b><code>SameSite=None</code> without <code>Secure</code>.</b> The cookie is rejected, and DevTools says it "did not have the "Secure" attribute, which is required in order to use "SameSite=None"". RFC 6265bis tells browsers to ignore such a cookie entirely.</li>
+      <li><b><code>Secure</code> behind a proxy that terminates HTTPS.</b> express-session's README: "If <code>secure</code> is set, and you access your site over HTTP, the cookie will not be set." Behind a proxy, set <code>app.set('trust proxy', 1)</code>. Without it there is no <code>Set-Cookie</code> header, and so no DevTools message to read either.</li>
+      <li><b>A <code>Domain</code> attribute the browser refuses.</b> The 2022 question in the sources had <code>Domain=https://domain.me</code> and got "its Domain attribute was invalid with regards to the current host URL"; removing <code>https://</code> fixed it. The value is a domain, not a URL, and MDN says it must be the responding server's own domain or a parent of it: an API on <code>my-api.onrender.com</code> cannot set <code>Domain=example.com</code>. The browser ignores cookies that break this rule.</li>
+      <li><b>A login call without credentials.</b> With <code>fetch()</code>'s default <code>credentials: 'same-origin'</code>, or XMLHttpRequest without <code>withCredentials</code>, the response to a cross-origin request cannot set cookies, even when the page and the API are the same site. MDN's page on <code>withCredentials</code> adds that this holds "regardless of Access-Control- header values".</li>
+      <li><b>Looking for the cookie in <code>document.cookie</code>.</b> An <code>HttpOnly</code> cookie never shows up there, yet the browser still sends it with <code>fetch()</code>. Check the Cookies tab in DevTools instead.</li>
+      <li><b>Old switches and hand edits.</b> The <code>chrome://flags</code> entries from older answers are gone since Chrome 91. Editing the cookie to <code>SameSite=None</code> in DevTools, which two answers in the 2021 question suggest, changes one cookie in one browser; your users still get the message.</li>
+    </ul>
+        </section>
+        <section class="sec" id="s10">
+    <h2 class="r">Check your case</h2>
+    <div class="try r d1"><p>Cookie Doctor takes the raw <code>Set-Cookie</code> header, the page origin, the API origin, the credentials mode and the context, and names the rule that stops the cookie. <a data-umami-event="open-cookie-samesite-doctor-cta" href="https://arling.sk/cookie-samesite-doctor/#c=eyJzZXRDb29raWUiOiJzZXNzaW9uPWFiYzEyMzsgUGF0aD0vOyBIdHRwT25seSIsInBhZ2VPcmlnaW4iOiJodHRwczovL2FwcC5leGFtcGxlLmNvbSIsImFwaU9yaWdpbiI6Imh0dHBzOi8vbXktYXBpLm9ucmVuZGVyLmNvbSIsInJlcXVlc3RDcmVkZW50aWFscyI6ImluY2x1ZGUiLCJjb250ZXh0IjoiZmV0Y2gteGhyIiwiYnJvd3NlciI6ImNocm9tZSIsInByb3h5QmVoaW5kSHR0cHMiOm51bGx9">Open Cookie Doctor with this note's example filled in</a>: <code>session=abc123; Path=/; HttpOnly</code> from <code>https://my-api.onrender.com</code>, for a <code>fetch()</code> with <code>credentials: 'include'</code> on <code>https://app.example.com</code>. It reports the default Lax as the reason the cookie is blocked on a cross-site fetch, and gives the corrected line <code>session=abc123; Path=/; Secure; HttpOnly; SameSite=None</code>. It cannot see your server, so it also lists the CORS pair from route B as something the API must send. It decides what is the same site with a short built-in list of public suffixes, not the full Public Suffix List, so check the list yourself for an unusual domain. <!-- Fable: odstranit tieto dve vety po oprave doctor-cookie.js (up.railway.app v MULTI_LABEL_SUFFIXES + trojclenne pripony; poznamka samesite_default_lax podla BCD). -->Two known gaps today: the list does not have <code>up.railway.app</code>, so the tool wrongly calls two Railway hosts the same site, and its note on the Lax default names Firefox and Safari too, which MDN's compatibility data does not (see the first section). It runs in your browser and does not call your API. Replace the example with your own header and origins.</p></div>
+        </section>
+        <section class="sec" id="s11">
+    <h2 class="r">Questions</h2>
+    <details class="r d1">
+      <summary>Are localhost:3000 and localhost:8000 cross-site?</summary>
+      <p>No. The port is not part of a site, so they are the same site, and SameSite does not stop a Lax cookie set by the API on port 8000. They are still two origins, though: the fetch needs <code>credentials: 'include'</code> for the cookie to be stored and sent, and the API needs CORS headers for requests with credentials. <code>localhost</code> and <code>127.0.0.1</code>, on the other hand, are two different hosts and therefore two sites.</p>
+    </details>
+    <details class="r d1">
+      <summary>Do I need HTTPS in development to use SameSite=None?</summary>
+      <p>Usually not. If the page and the API both run on <code>localhost</code>, they are the same site and you do not need <code>SameSite=None</code> at all. If you do need it, MDN notes that the https requirement of the <code>Secure</code> attribute is ignored when the cookie is set by localhost. The 2021 question gave up on <code>SameSite=None</code> because of certificates; running the API locally or proxying it avoids the question.</p>
+    </details>
+    <details class="r d2">
+      <summary>Why is the cookie stored in Chrome but not in Safari?</summary>
+      <p>With <code>SameSite=None; Secure</code> on an API that is another site, the cookie is a third-party cookie. Safari has blocked cookies for cross-site resources by default since Safari 13.1 and iOS 13.4 (March 2020). Chrome does not block third-party cookies by default, only in Incognito mode or when the user turns it on. The lasting fix is to put the page and the API on one site.</p>
+    </details>
+    <details class="r d2">
+      <summary>Can I turn Chrome's old cookie behavior back on?</summary>
+      <p>No. The <code>chrome://flags</code> switches for the Lax default and for <code>SameSite=None</code> requiring <code>Secure</code> were removed in Chrome 91, and the command-line switch was announced for removal in Chrome 94. Downgrading Chrome, which one old answer suggests, only hides the problem on one machine.</p>
+    </details>
+    <details class="r d2">
+      <summary>Is SameSite=None safe for a session cookie?</summary>
+      <p>It gives up the protection Lax gave you: the cookie now travels with requests that other sites trigger, which is what cross-site request forgery relies on. MDN warns that credentials in cross-origin requests can make a site vulnerable to CSRF. Keep <code>HttpOnly</code> and <code>Secure</code>, and protect state-changing endpoints with CSRF tokens or a <code>Sec-Fetch-Site</code> check, two of the defenses in MDN's CSRF guide. Putting the page and the API on one site avoids the trade-off.</p>
+    </details>
+        </section>
+      </div>
+    </div>
+  </div>
+  <section class="deep" id="s12">
+    <div class="wrap">
+      <div class="note">
+        <div class="doc">
+    <h2 class="r">Sources</h2>
+    <ul class="r d1">
+      <li>Chrome DevTools source, <code>NetworkRequest.ts</code> (the current tooltip texts: the defaulted-to-Lax message with its closing sentence, the explicit Lax or Strict message, SameSite=None without Secure, the invalid Domain message; quotes and comma placement differ between Chrome versions): <a href="https://github.com/ChromeDevTools/devtools-frontend/blob/main/front_end/core/sdk/NetworkRequest.ts">github.com/ChromeDevTools/devtools-frontend/blob/main/front_end/core/sdk/NetworkRequest.ts</a>; the same messages in the 2020 source, branch chromium/4103 (with "SameSite=Lax," and the closing sentence): <a href="https://github.com/ChromeDevTools/devtools-frontend/blob/chromium/4103/front_end/sdk/NetworkRequest.js">github.com/ChromeDevTools/devtools-frontend/blob/chromium/4103/front_end/sdk/NetworkRequest.js</a></li>
+      <li>MDN browser compatibility data, <code>http/headers/Set-Cookie.json</code> (the Lax default: Chrome 80, Edge 86, Firefox 69 only behind the preference network.cookie.sameSite.laxByDefault, Safari no; Secure required with SameSite=None: Chrome 80, Edge 86, Firefox 131, Safari no; the same data feeds the compatibility table on MDN's Set-Cookie page): <a href="https://github.com/mdn/browser-compat-data/blob/main/http/headers/Set-Cookie.json">github.com/mdn/browser-compat-data/blob/main/http/headers/Set-Cookie.json</a></li>
+      <li>MDN, "Set-Cookie" (SameSite Strict, Lax and None; None requires Secure; Secure and the localhost exception; the Domain rules and public suffixes; HttpOnly; Set-Cookie ignored on CORS requests without credentials): <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Set-Cookie">developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Set-Cookie</a></li>
+      <li>web.dev, "SameSite cookies explained" (cookies without SameSite are treated as Lax; SameSite=None must also specify Secure; what a site is): <a href="https://web.dev/articles/samesite-cookies-explained">web.dev/articles/samesite-cookies-explained</a></li>
+      <li>Chromium, "SameSite Updates" (the 2020 rollout from the week of 17 February, the rollback on 3 April, the resumption on 14 July, the target raised to 100% of Chrome 80+ users on 11 August 2020; the chrome://flags entries removed in Chrome 91, the command-line flag announced for removal in Chrome 94): <a href="https://www.chromium.org/updates/same-site/">chromium.org/updates/same-site/</a></li>
+      <li>MDN, "Third-party cookies" (first-party vs third-party; Firefox Total Cookie Protection, Safari tracking prevention, Chrome blocking only in Incognito or by user choice; CHIPS and the Storage Access API): <a href="https://developer.mozilla.org/en-US/docs/Web/Privacy/Guides/Third-party_cookies">developer.mozilla.org/en-US/docs/Web/Privacy/Guides/Third-party_cookies</a></li>
+      <li>IETF, "Cookies: HTTP State Management Mechanism" (RFC 6265bis, draft 22), section 4.1.2.7 "The SameSite Attribute" (Lax and Strict cookies cannot be set in responses to cross-site subresource requests or nested navigations) and section 5.7 "Storage Model" (SameSite=None without Secure is ignored): <a href="https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-rfc6265bis">datatracker.ietf.org/doc/html/draft-ietf-httpbis-rfc6265bis</a></li>
+      <li>MDN, "Site" (registrable domain, ports ignored, schemeful same-site used for SameSite): <a href="https://developer.mozilla.org/en-US/docs/Glossary/Site">developer.mozilla.org/en-US/docs/Glossary/Site</a>; web.dev, "Understanding same-site and same-origin" (eTLD+1, the Public Suffix List, schemeful same-site, Sec-Fetch-Site): <a href="https://web.dev/articles/same-site-same-origin">web.dev/articles/same-site-same-origin</a></li>
+      <li>WHATWG HTML Standard, "obtain a site" and "same site" (a host without a registrable domain is its own site): <a href="https://html.spec.whatwg.org/multipage/browsers.html#obtain-a-site">html.spec.whatwg.org/multipage/browsers.html#obtain-a-site</a></li>
+      <li>Public Suffix List (vercel.app, netlify.app, onrender.com, herokuapp.com, up.railway.app, fly.dev, pages.dev and github.io are entries; checked 27 September 2026): <a href="https://publicsuffix.org/list/public_suffix_list.dat">publicsuffix.org/list/public_suffix_list.dat</a></li>
+      <li>MDN, "Sec-Fetch-Site" (cross-site, same-site, same-origin, none): <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Sec-Fetch-Site">developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Sec-Fetch-Site</a>; W3C, "Fetch Metadata Request Headers" (the headers are not added when the URL is not potentially trustworthy; section 4.1 "Redirects": Sec-Fetch-Site walks the request's whole URL list): <a href="https://w3c.github.io/webappsec-fetch-metadata/">w3c.github.io/webappsec-fetch-metadata/</a></li>
+      <li>MDN, "RequestInit", credentials (omit, same-origin as the default, include; with include the server must send Access-Control-Allow-Credentials and an exact origin; the CSRF warning): <a href="https://developer.mozilla.org/en-US/docs/Web/API/RequestInit">developer.mozilla.org/en-US/docs/Web/API/RequestInit</a>; "XMLHttpRequest: withCredentials property" (cross-origin responses cannot set cookies without it): <a href="https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/withCredentials">developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/withCredentials</a></li>
+      <li>MDN, "Access-Control-Allow-Origin" (an exact origin with credentials; Vary: Origin): <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Access-Control-Allow-Origin">developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Access-Control-Allow-Origin</a></li>
+      <li>MDN, "Cross-Origin Resource Sharing (CORS)" (simple requests and the three content types that skip the preflight; "Preflighted requests"; "Preflight requests and credentials": the preflight response must specify Access-Control-Allow-Credentials: true): <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS">developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS</a>; MDN, "Access-Control-Allow-Headers" (sent in response to a preflight; with credentials, * is the literal header name): <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Access-Control-Allow-Headers">developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Access-Control-Allow-Headers</a></li>
+      <li>MDN, "Cross-site request forgery (CSRF)" (CSRF tokens, Fetch metadata, SameSite as defense in depth): <a href="https://developer.mozilla.org/en-US/docs/Web/Security/Attacks/CSRF">developer.mozilla.org/en-US/docs/Web/Security/Attacks/CSRF</a></li>
+      <li>WebKit, "Full Third-Party Cookie Blocking and More" (24 March 2020; Safari 13.1, iOS and iPadOS 13.4): <a href="https://webkit.org/blog/10218/full-third-party-cookie-blocking-and-more/">webkit.org/blog/10218/full-third-party-cookie-blocking-and-more/</a></li>
+      <li>WebKit, "CNAME Cloaking and Bounce Tracking Defense" (12 November 2020; Safari 14, iOS and iPadOS 14; cookies set in third-party CNAME-cloaked responses capped at 7 days; a CNAME that matches the top frame host's CNAME is not capped): <a href="https://webkit.org/blog/11338/cname-cloaking-and-bounce-tracking-defense/">webkit.org/blog/11338/cname-cloaking-and-bounce-tracking-defense/</a></li>
+      <li>Chrome for Developers, "Network features reference" (Cookies tab, More filters, Blocked response cookies, the info icon): <a href="https://developer.chrome.com/docs/devtools/network/reference">developer.chrome.com/docs/devtools/network/reference</a></li>
+      <li>express-session README (cookie.secure, "trust proxy", cookie.sameSite values including 'none'): <a href="https://github.com/expressjs/session">github.com/expressjs/session</a></li>
+      <li>Django, "Settings" (SESSION_COOKIE_SAMESITE with its values including 'None' and the default 'Lax', SESSION_COOKIE_SECURE with the default False, CSRF_COOKIE_SAMESITE, CSRF_COOKIE_SECURE): <a href="https://docs.djangoproject.com/en/5.2/ref/settings/#session-cookie-samesite">docs.djangoproject.com/en/5.2/ref/settings/#session-cookie-samesite</a></li>
+      <li>Next.js, "rewrites" (a URL proxy that masks the destination; rewriting to an external URL): <a href="https://nextjs.org/docs/app/api-reference/config/next-config-js/rewrites">nextjs.org/docs/app/api-reference/config/next-config-js/rewrites</a></li>
+      <li>Vite, "Server Options", server.proxy (the options go to http-proxy-3): <a href="https://vite.dev/config/server-options">vite.dev/config/server-options</a>; http-proxy-3 README, cookieDomainRewrite: <a href="https://github.com/sagemathinc/http-proxy-3#options">github.com/sagemathinc/http-proxy-3#options</a></li>
+      <li>curl, "curl.1 the man page" (-i, -H, -d; --data-binary with @ reads the data from a file): <a href="https://curl.se/docs/manpage.html">curl.se/docs/manpage.html</a>; Microsoft Learn, "curl on Windows" (curl is an alias for Invoke-WebRequest in Windows PowerShell 5.1): <a href="https://learn.microsoft.com/en-us/windows/curl/">learn.microsoft.com/en-us/windows/curl/</a>; Microsoft Learn, "about_Parsing", "Passing arguments that contain quote characters" (PowerShell 7.3 changed how arguments with embedded quotes reach native commands, a breaking change from Windows PowerShell 5.1): <a href="https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_parsing">learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_parsing</a>. We also ran the command's JSON argument through Windows PowerShell 5.1.26100 on our own machine: the inner double quotes were gone.</li>
+      <li>Stack Overflow, "SameSite warning Chrome 77" (2019, about 275,000 views; the cookies came from jQuery, Font Awesome and Google domains; the accepted answer says it is not the asker's code): <a href="https://stackoverflow.com/questions/58270663">stackoverflow.com/questions/58270663</a></li>
+      <li>Stack Overflow, "This Set-Cookie didn't specify a "SameSite" attribute and was default to "SameSite=Lax" - Localhost" (2021, about 84,000 views; frontend on localhost against the production server; answers on running the server locally on another port, dev proxies, localhost vs 127.0.0.1, editing the cookie in DevTools (answers 68209384 and 67886090) and downgrading Chrome): <a href="https://stackoverflow.com/questions/67821709">stackoverflow.com/questions/67821709</a></li>
+      <li>Stack Overflow, "this attempt to set a cookie via set-cookie header was blocked" (2022; Domain=https://domain.me, fixed by removing https://): <a href="https://stackoverflow.com/questions/73449512">stackoverflow.com/questions/73449512</a></li>
+    </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+<footer class="site-footer">
+  <div class="wrap foot">
+    <div class="site-foot-top"><div><a class="site-brand" href="https://arling.sk/en/" aria-label="ARLing home" data-site-home><svg viewBox="0 0 488 215" width="38" height="15" aria-hidden="true" focusable="false"><path fill="#f4f4f7" fill-rule="evenodd" d="M0.00,213.00L74.00,214.00L181.00,85.00L285.00,214.00L360.00,214.00L206.00,21.00L185.00,4.00L164.00,10.00Z M221.00,0.00L263.00,50.00L395.00,50.00L409.00,55.00L419.00,76.00L401.00,96.00L313.00,98.00L411.00,214.00L487.00,214.00L422.00,139.00L457.00,123.00L482.00,88.00L482.00,48.00L463.00,19.00L417.00,0.00Z"/><path fill="#f2643c" d="M269.00,66.00L269.00,67.00L268.00,68.00L268.00,70.00L267.00,71.00L267.00,76.00L268.00,77.00L268.00,79.00L270.00,81.00L270.00,82.00L271.00,82.00L273.00,84.00L274.00,84.00L277.00,86.00L279.00,86.00L280.00,87.00L287.00,87.00L288.00,86.00L290.00,86.00L291.00,85.00L294.00,84.00L298.00,80.00L298.00,79.00L299.00,78.00L299.00,75.00L300.00,74.00L300.00,72.00L299.00,71.00L299.00,69.00L298.00,68.00L297.00,65.00L295.00,63.00L294.00,63.00L289.00,60.00L278.00,60.00L277.00,61.00L276.00,61.00L275.00,62.00L272.00,63.00Z"/></svg><b>ARLing</b></a><p class="site-foot-firma">ARLing s. r. o., company ID <span class="num">56583486</span>, Bratislava. Own server in the European Union. Software for companies, freelancers and individuals.</p></div><a class="site-cta" href="https://arling.sk/shop/" data-umami-event="shell_footer_cta">Shop<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></div>
+    <div class="site-foot-cols"><div data-skupina="firmy" data-blok="firemne"><p>Businesses and accountants</p><ul><li><a href="https://arling.sk/vsetko/en/#firmy" aria-label="All in this group: Businesses and accountants">All in this group</a></li></ul></div><div data-skupina="eshopy" data-blok="firemne"><p>Online shops and websites</p><ul><li><a href="https://arling.sk/vsetko/en/#eshopy" aria-label="All in this group: Online shops and websites">All in this group</a></li></ul></div><div data-skupina="hry" data-blok="spotrebitelske"><p>Games and puzzles</p><ul><li><a href="https://arling.sk/vsetko/en/#hry" aria-label="All in this group: Games and puzzles">All in this group</a></li></ul></div><div data-skupina="knihy" data-blok="spotrebitelske"><p>Books and gifts</p><ul><li><a href="https://arling.sk/vsetko/en/#knihy" aria-label="All in this group: Books and gifts">All in this group</a></li></ul></div><div><p>Company</p><ul><li><a href="https://arling.sk/how-we-work/en/">How we work</a></li><li><a href="https://arling.sk/notes/en/">Guides</a></li><li><a href="https://arling.sk/kontakt/en/">Contact</a></li><li><a href="https://arling.sk/ucet/en/">Account</a></li><li><a href="https://arling.sk/brand/en/">Brand</a></li><li><a href="https://arling.sk/podmienky/en/">Terms</a></li><li><a href="https://arling.sk/privacy/en/">Privacy</a></li><li><a href="https://arling.sk/odstupenie/en/">Withdraw from the contract here</a></li><li><a href="https://arling.sk/impressum/en/">Imprint</a></li></ul></div></div>
+    <p class="site-all"><a href="https://arling.sk/vsetko/en/" data-umami-event="shell_footer_all">Everything on one page<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></p>
+    <p class="site-dev" data-site-vyvojari><span>For developers</span><em>Free diagnostics for CORS, JWT, OAuth, Supabase and Stripe webhook errors.</em><a href="https://arling.sk/vsetko/en/#vyvojari">All developer tools<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></p>
+    <div class="site-foot-bottom"><p>ARLing s. r. o., Ivanská cesta 32E, 821 04 Bratislava, Slovakia. Company ID 56583486, VAT ID SK2122352100. <a href="mailto:support@arling.sk">support@arling.sk</a></p><p><a href="https://arling.sk/impressum/en/">Impressum</a> · <a href="https://arling.sk/llms.txt">llms.txt</a> · <a href="https://arling.sk/sitemap-index.xml">Sitemap</a></p></div>
+    <p class="site-foot-legal">Tools are provided as is, without warranty. Anonymous visit counts via self-hosted Umami. <a href="https://arling.sk/privacy/en/">Privacy</a> · <a href="https://arling.sk/podmienky/en/">Terms</a> · <a href="https://arling.sk/gdpr/en/">GDPR</a> · <a href="https://arling.sk/odstupenie/en/">Withdraw from the contract here</a></p>
+  </div>
+</footer>
+<script defer src="https://server.invalid/script.js" data-website-id="be534d51-4d01-4860-b267-9596d91606de"></script>
+<script>
+(function () {
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var hero = document.getElementById('hero');
+  if (reduce) {
+    document.querySelectorAll('.r, section').forEach(function (e) { e.classList.add('in'); });
+  }
+  if (!reduce && hero) {
+    requestAnimationFrame(function () {
+      hero.querySelectorAll('.r').forEach(function (e) { e.classList.add('in'); });
+    });
+  }
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (en) {
+      if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); }
+    });
+  }, { rootMargin: '0px 0px -12% 0px', threshold: 0.1 });
+  document.querySelectorAll('section').forEach(function (s) { io.observe(s); });
+
+  // nadpis clanku sa objavi po slovach, ako dobre vytlaceny titulok
+  var h1 = document.getElementById('h1');
+  if (h1) {
+    var i = 0;
+    Array.prototype.forEach.call(h1.querySelectorAll('.l'), function (line) {
+      var words = line.textContent.split(' ');
+      line.textContent = '';
+      words.forEach(function (w, k) {
+        var s = document.createElement('span');
+        s.className = 'w';
+        s.style.transitionDelay = (i++ * 0.06).toFixed(2) + 's';
+        s.textContent = w;
+        line.appendChild(s);
+        if (k < words.length - 1) line.appendChild(document.createTextNode(' '));
+      });
+    });
+    requestAnimationFrame(function () { h1.classList.add('in'); });
+  }
+
+  // bocny register sleduje, ktora cast clanku je v strede obrazovky
+})();
+</script>
+</body>
+</html>

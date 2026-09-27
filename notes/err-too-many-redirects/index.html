@@ -1,0 +1,589 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script src="/style/vzhlad.js?v=8a4019ae"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://server.invalid 'sha256-Rv0QV6Kq+fyIFDDj2AyF8y7kZTqAYqZ5kZiatAa4opw=' 'sha256-1IVQFvQARO8NeuGA1QkMJffVHatPgYnWzOuyudwGfug=' 'sha256-q4i48ks1OdkLugLb/crKswowZASDLNdB5ZTvkKHZohc=' 'sha256-kHzhLBitzZlfAaUS4VuXMelQQYrrpIhEmCeLW+iUbL4='; connect-src 'self' https://server.invalid; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0a0908">
+<link rel="preconnect" href="https://server.invalid" crossorigin>
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../../favicon.ico" sizes="48x48">
+<link rel="apple-touch-icon" href="../../icon-180.png">
+<title>ERR_TOO_MANY_REDIRECTS: find the two rules redirecting to each other (Cloudflare, nginx, proxies, WordPress)</title>
+<meta name="description" content="ERR_TOO_MANY_REDIRECTS means two layers keep undoing each other's redirect. Read the loop with curl, then fix the Cloudflare, nginx, proxy or WordPress rule behind it.">
+<link rel="canonical" href="https://arling.sk/notes/err-too-many-redirects/">
+<meta property="og:type" content="article">
+<meta property="og:title" content="ERR_TOO_MANY_REDIRECTS: find the two rules redirecting to each other (Cloudflare, nginx, proxies, WordPress)">
+<meta property="og:description" content="ERR_TOO_MANY_REDIRECTS means two layers keep undoing each other's redirect. Read the loop with curl, then fix the Cloudflare, nginx, proxy or WordPress rule behind it.">
+<meta property="og:url" content="https://arling.sk/notes/err-too-many-redirects/">
+
+
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"Article","headline":"ERR_TOO_MANY_REDIRECTS: find the two rules redirecting to each other (Cloudflare, nginx, proxies, WordPress)","description":"ERR_TOO_MANY_REDIRECTS means two layers keep undoing each other's redirect. Read the loop with curl, then fix the Cloudflare, nginx, proxy or WordPress rule behind it.","datePublished":"2026-09-27","dateModified":"2026-09-27","inLanguage":"en","author":{"@type":"Organization","name":"ARLing s. r. o."},"publisher":{"@type":"Organization","name":"ARLing s. r. o.","url":"https://arling.sk/"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://arling.sk/notes/err-too-many-redirects/"}}
+</script>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Why did ERR_TOO_MANY_REDIRECTS start right after I put my site behind Cloudflare?","acceptedAnswer":{"@type":"Answer","text":"Most often because the SSL/TLS encryption mode is Flexible and your origin redirects HTTP to HTTPS. On Flexible, Cloudflare connects to your origin over plain HTTP, so the origin redirects every request to the HTTPS address the visitor already asked for. Put a certificate on the origin and switch to Full (strict), or remove the origin's redirect and let Cloudflare enforce HTTPS with Always Use HTTPS."}},{"@type":"Question","name":"Does clearing cookies fix ERR_TOO_MANY_REDIRECTS?","acceptedAnswer":{"@type":"Answer","text":"Only when the loop depends on a cookie, such as a login that never sticks. Scheme and host loops live in server configuration. Run curl -sIL against the URL: curl sends and keeps no cookies unless you give it some or turn its cookie engine on, for example with -b, so if curl loops too, cookies are not the cause."}},{"@type":"Question","name":"I fixed the configuration. Why does my browser still show the error?","acceptedAnswer":{"@type":"Answer","text":"The browser may be replaying what it stored. RFC 9110 makes 301 and 308 responses heuristically cacheable, and after a site has sent Strict-Transport-Security the browser upgrades http:// to https:// on its own. curl starts fresh on every run and only uses an HSTS cache when you pass --hsts, so check with curl first. If curl ends in a 200, the fix worked."}},{"@type":"Question","name":"Flexible, Full or Full (strict): which Cloudflare mode should I use?","acceptedAnswer":{"@type":"Answer","text":"Cloudflare recommends Full (strict) whenever possible. It needs an origin that accepts HTTPS on port 443 and presents an unexpired certificate from a publicly trusted CA or from Cloudflare's Origin CA, valid for the hostname; otherwise visitors get error 526. Flexible is meant for origins that cannot support SSL/TLS, and it loops whenever the origin redirects HTTP to HTTPS."}},{"@type":"Question","name":"How many redirects does a browser follow before it shows the error?","acceptedAnswer":{"@type":"Answer","text":"20. The Fetch standard, which browsers implement, returns a network error when a request's redirect count reaches 20. curl follows up to 50 redirects by default with -L, and exits with code 47 when it reaches the limit set by --max-redirs."}}]}
+</script>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"ARLing","item":"https://arling.sk/"},{"@type":"ListItem","position":2,"name":"Notes","item":"https://arling.sk/notes/"},{"@type":"ListItem","position":3,"name":"ERR_TOO_MANY_REDIRECTS: find the two rules redirecting to each other","item":"https://arling.sk/notes/err-too-many-redirects/"}]}
+</script>
+<link rel="preload" href="/fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/style/paper.css?v=704b28ed">
+<script src="/style/prepinac.js?v=668e98c9" defer></script>
+<style>
+  /* Notes. Vzhlad, farby, typografia a pohyb su v /style/paper.css.
+     Tu ostava len to, co je pre clanok vlastne: merany pas, register, panel s nastrojom. */
+  .note{max-width:min(100%,880px);margin:0 auto}
+  .doc{max-width:min(68ch,660px);margin-inline:auto;font-size:clamp(17px,1.2vw,18px);line-height:1.62}
+
+  /* uvod clanku: nadpis, datum, odkaz na nastroj */
+  .hero-note{padding:clamp(34px,4.6vw,72px) 0 clamp(20px,2.4vw,34px)}
+  /* Titul clanku je hero stranky. Hlavna veta dorastie na desktope na 64 px, ako ziada
+     paper-v2 bod 9.4. Druhy riadok titulu je vzdy vysvetlujuca cast za dvojbodkou:
+     ostava v rovnakom reze, len mensia a tlmenejsia, aby ani najdlhsi titul (141 znakov
+     v clanku o Shopify) nezabral cely prvy pohlad. Rodinu, farbu a letter-spacing
+     urcuje paper.css, tu je len mierka. */
+  .hero-note h1{font-size:clamp(32px,4.6vw,64px);line-height:1.05;margin:0 0 18px;overflow-wrap:anywhere}
+  /* Prvy riadok je jedno 23-znakove slovo bez medzier (nazov chyby s dvojbodkou). Na mobile
+     by pri 32 px pretiekol, preto sa zmensi podla sirky okna, na desktope ostava mierka z paper.css. */
+  .hero-note h1 .l:first-child{font-size:min(clamp(32px,4.6vw,64px),6.3vw)}
+  .hero-note h1 .l+.l{display:block;margin-top:.3em;font-weight:500;
+    font-size:clamp(20px,2.4vw,34px);line-height:1.2;letter-spacing:-.01em;color:var(--body)}
+  .hero-note .kicker{display:block;margin:0 0 12px}
+  .hero-note .crumbs{font-family:var(--ui);font-size:12px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--accent);margin:0 0 12px}
+  .hero-note .crumbs a{color:inherit;text-decoration:none}
+  .hero-note .crumbs a:hover{text-decoration:underline}
+  .byline,.dateline{font-family:var(--ui);font-size:14px;color:var(--muted);margin:0 0 20px;max-width:none}
+  .toolgo{margin:0}
+
+  /* rytmus clanku: vlasova linka medzi castami, ziadne velke medzery sekcii */
+  section{scroll-margin-top:86px}
+  .doc section{padding:0;border-top:none;margin:0 0 clamp(26px,2.8vw,38px)}
+  .doc section+section{border-top:1px solid var(--line);padding-top:clamp(26px,2.8vw,36px)}
+  /* Mierka nadpisov vnutri clanku, nie kopia paper.css: pas textu ma 660 px, do neho sa
+     sekcny nadpis v plnej velkosti z paper.css (42 px) nezmesti bez zalomenia. Mení sa
+     len velkost a odstupy, vsetko ostatne dedi z paper.css. */
+  .doc h2{font-size:clamp(21px,1.9vw,27px);line-height:1.22;margin:0 0 12px}
+  .doc h3{font-size:clamp(17.5px,1.3vw,20px);margin:18px 0 8px}
+  .doc p{margin:0 0 14px;max-width:none}
+  .doc .num,.doc .kicker{display:block;font-family:var(--ui);font-size:12px;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--accent);margin:0 0 7px}
+  .doc .lead,.doc .lede{font-size:clamp(18px,1.35vw,20.5px);line-height:1.55;max-width:none;margin:0 0 18px}
+  .doc ol,.doc ul{padding-left:22px;margin:0 0 16px}
+  .doc li{margin:0 0 7px}
+  .doc li:last-child{margin-bottom:0}
+  .doc a{overflow-wrap:anywhere}
+  .doc code{background:var(--paper-deep);border:1px solid var(--line);border-radius:4px;padding:1px 5px;
+    overflow-wrap:anywhere}
+  .doc pre{margin:0 0 16px;white-space:pre-wrap;overflow-wrap:break-word}
+  .doc pre code{background:none;border:none;padding:0;font-size:13.5px;line-height:1.55}
+  .doc blockquote{margin:0 0 16px;padding:8px 16px;border-left:2px solid var(--line);color:var(--muted)}
+
+  /* chybova hlaska, oprava, ukazka kodu s popisom */
+  .doc .err{background:color-mix(in srgb,var(--accent) 7%,var(--card));border:1px solid var(--line);
+    border-left:3px solid var(--accent);border-radius:8px;padding:12px 16px;margin:0 0 16px}
+  .doc .err code{background:none;border:none;padding:0;color:var(--ink)}
+  .doc .fix{margin:0 0 16px;padding-left:16px;border-left:2px solid var(--accent)}
+  .doc .fix p{margin:0 0 8px}
+  .doc .fix p:last-child{margin-bottom:0}
+  .doc .fix-label{font-family:var(--ui);font-size:12px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--muted);margin:0 0 6px}
+  .doc .snippet{background:var(--card);border:1px solid var(--line);border-radius:10px;margin:0 0 18px;
+    overflow:hidden}
+  .doc .snippet .cap{padding:8px 14px;border-bottom:1px solid var(--line);
+    font:500 11px/1.3 var(--ui);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  .doc .snippet.bad .cap{color:var(--accent)}
+  .doc .snippet pre{margin:0;border:none;border-radius:0;background:none;white-space:pre-wrap}
+
+  /* diagram: jedna poziadavka cez Cloudflare na origin, raz v slucke (Flexible), raz spravne
+     (Full strict). Farby su tokeny z paper.css. */
+  .doc figure.dg{margin:6px 0 22px}
+  .doc figure.dg svg{display:block;width:100%;height:auto;max-width:540px;margin:0 auto}
+  .dg .dg-actor{fill:var(--card-plna,var(--card));stroke:var(--line-silna,var(--line));stroke-width:1}
+  .dg .dg-actor-t{fill:var(--ink);font:600 12.5px var(--ui)}
+  .dg .dg-life{stroke:var(--muted);stroke-width:1;stroke-dasharray:3 4}
+  .dg .dg-arrow{stroke:var(--body);stroke-width:1.4}
+  .dg .dg-head{fill:var(--body)}
+  .dg .dg-arrow-hot{stroke:var(--accent)}
+  .dg .dg-head-hot{fill:var(--accent)}
+  .dg .dg-arrow-ok{stroke:var(--ok,#2f7d57)}
+  .dg .dg-head-ok{fill:var(--ok,#2f7d57)}
+  .dg .dg-url{fill:var(--ink);font:500 12.5px var(--mono)}
+  .dg .dg-hot{fill:var(--accent);font-weight:700}
+  .dg .dg-ok{fill:var(--ok,#2f7d57);font-weight:700}
+  .dg .dg-note{fill:var(--muted);font:400 12px var(--ui)}
+  .dg .dg-loop{fill:none;stroke:var(--accent);stroke-width:1.4;stroke-dasharray:4 3}
+  .dg .dg-loop-head{fill:var(--accent)}
+  .dg .dg-s{fill:var(--body);font:400 13px var(--ui)}
+  .dg .dg-lab{fill:var(--muted);font:600 12px var(--ui);letter-spacing:.08em}
+  .dg .dg-lab-hot{fill:var(--accent)}
+  .dg .dg-lab-ok{fill:var(--ok,#2f7d57)}
+  .dg .dg-msg{fill:var(--accent);font:500 12.5px var(--mono)}
+  .dg .dg-msg-big{font-size:15px;font-weight:700}
+  .dg .dg-div{stroke:var(--line-silna,var(--line));stroke-width:1}
+  body.noc .dg .dg-arrow-hot,body.noc .dg .dg-loop{stroke:var(--accent-light)}
+  body.noc .dg .dg-head-hot,body.noc .dg .dg-loop-head,body.noc .dg .dg-hot,
+  body.noc .dg .dg-lab-hot,body.noc .dg .dg-msg{fill:var(--accent-light)}
+  .doc figure.dg figcaption{margin:10px auto 0;max-width:540px;font:400 14px/1.5 var(--ui);color:var(--muted)}
+
+  /* caste otazky */
+  .doc details{border-top:1px solid var(--line);padding:14px 0}
+  .doc details:last-of-type{border-bottom:1px solid var(--line);margin-bottom:16px}
+  .doc summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;gap:14px;
+    font:600 17px/1.35 var(--display);color:var(--ink)}
+  .doc summary::-webkit-details-marker{display:none}
+  .doc summary::after{content:"+";flex:none;color:var(--accent);font-family:var(--ui);font-weight:400}
+  .doc details[open] summary::after{content:"\2212"}
+  .doc details p{margin:10px 0 0}
+
+  /* zdroje */
+  .doc ul.sources{list-style:none;padding-left:0}
+  .doc ul.sources li{padding-left:14px;border-left:2px solid var(--line)}
+  .doc .sources li{margin:0 0 10px;font-size:.95em}
+  .doc .sources cite{font-style:italic}
+  .doc ul.plain{list-style:none;padding-left:0}
+  .doc ul.plain li{margin:0;padding:10px 0;border-top:1px solid var(--line)}
+  .doc ul.plain li:first-child{border-top:none}
+
+  /* panel s nastrojom: jedina tmava plocha v texte, tam sa klika */
+  .doc .tool-box,.doc .toolbox,.doc .check,.doc .try,.doc .cta{display:block;background:var(--ink);
+    color:#cfcabd;border:none;border-radius:var(--radius);padding:clamp(20px,2.2vw,28px);margin:0 0 18px}
+  .doc .tool-box p,.doc .check p,.doc .try p,.doc .cta p{max-width:none;margin:0 0 12px;color:#cfcabd}
+  .doc .toolbox{max-width:none;color:#cfcabd}
+  .doc .tool-box p:last-of-type,.doc .check p:last-child,.doc .try p:last-child,
+  .doc .cta p:last-child{margin-bottom:0}
+  .doc .tool-box a,.doc .toolbox a,.doc .check a,.doc .try a,.doc .cta a{color:#fffdf8}
+  .doc .tool-box a:hover,.doc .toolbox a:hover,.doc .check a:hover,.doc .try a:hover,
+  .doc .cta a:hover{color:var(--accent-light)}
+  .doc .tool-box code,.doc .toolbox code,.doc .check code,.doc .try code,.doc .cta code{
+    background:rgba(255,253,248,.10);border-color:rgba(255,253,248,.22);color:#fffdf8}
+  .doc .tool-box .btn{margin:14px 10px 0 0;text-decoration:none;color:#fff}
+  /* dve tlacidla vedla seba sa nesmu dotykat, na uzkom mobile sa zalomia pod seba */
+  /* druhe tlacidlo v tmavom paneli je vedlajsie: linka namiesto plochy */
+  .doc .tool-box .btn+.btn{background:none;border:1px solid rgba(255,253,248,.45);color:#fffdf8}
+  .doc .tool-box .btn+.btn:hover{background:#fffdf8;color:var(--ink)}
+  .doc .tool-cta{display:inline-flex;align-items:center;height:46px;padding:0 20px;border-radius:12px;
+    margin:2px 0 0;background:var(--accent);color:#fff;font:500 15px/1 var(--ui);text-decoration:none}
+  .doc .tool-cta:hover{background:var(--accent-dark);color:#fff}
+
+  /* bocny register drzi sa laveho okraja clanku */
+  /* Stlpec clanku je uzsi nez obsah hubu (880 px, nie 1340), tak sa register zmesti
+     uz od 1280 px: cely stoji v lavom okraji a od textu ho deli stalych 35 px.
+     Pod tou hranicou by uz do textu zasahoval, preto ho paper.css skryje. */
+  @media (min-width:1280px){}
+
+  /* paticka je tmavy pas na konci */
+  footer.band{border-top:none;color:#a8a294}
+  footer.band a,footer.band b{color:#fffdf8}
+  footer.band .wrap{max-width:880px}
+  footer.band .cols{width:min(880px,92vw);margin:0 auto;gap:16px 32px}
+
+</style>
+<meta property="og:image" content="https://arling.sk/og.png">
+</head>
+<body class="noc">
+<div class="wash" aria-hidden="true"><i></i><i></i></div>
+<noscript><style>.r,.w{opacity:1;transform:none;filter:none}</style></noscript>
+<a class="skip site-skip" href="#arling-obsah" data-site-label="skip">Skip to content</a>
+<header class="site-header">
+  <div class="wrap bar">
+    <a class="brand" href="https://arling.sk/en/" aria-label="ARLing home" data-site-home>
+      <svg viewBox="0 0 488 215" width="38" height="15" aria-hidden="true" focusable="false"><path fill="#f4f4f7" fill-rule="evenodd" d="M0.00,213.00L74.00,214.00L181.00,85.00L285.00,214.00L360.00,214.00L206.00,21.00L185.00,4.00L164.00,10.00Z M221.00,0.00L263.00,50.00L395.00,50.00L409.00,55.00L419.00,76.00L401.00,96.00L313.00,98.00L411.00,214.00L487.00,214.00L422.00,139.00L457.00,123.00L482.00,88.00L482.00,48.00L463.00,19.00L417.00,0.00Z"/><path fill="#f2643c" d="M269.00,66.00L269.00,67.00L268.00,68.00L268.00,70.00L267.00,71.00L267.00,76.00L268.00,77.00L268.00,79.00L270.00,81.00L270.00,82.00L271.00,82.00L273.00,84.00L274.00,84.00L277.00,86.00L279.00,86.00L280.00,87.00L287.00,87.00L288.00,86.00L290.00,86.00L291.00,85.00L294.00,84.00L298.00,80.00L298.00,79.00L299.00,78.00L299.00,75.00L300.00,74.00L300.00,72.00L299.00,71.00L299.00,69.00L298.00,68.00L297.00,65.00L295.00,63.00L294.00,63.00L289.00,60.00L278.00,60.00L277.00,61.00L276.00,61.00L275.00,62.00L272.00,63.00Z"/></svg>
+      <b>ARLing</b><span>Notes</span>
+    </a>
+    <details class="site-menu">
+      <summary class="site-menu-toggle"><span class="site-menu-text" data-site-label="produkty">Products</span><span class="site-menu-bars" aria-hidden="true"><i></i><i></i><i></i></span><span class="site-menu-word" data-site-label="menu">Menu</span></summary>
+      <div class="site-menu-panel" role="navigation" aria-label="Products" data-site-aria="produkty"><div class="site-bloky"><div class="site-blok" data-blok="firemne"><p class="site-blok-nazov">For businesses</p><div class="site-cols"><div class="site-col" data-skupina="firmy"><p>Businesses and accountants</p><a class="site-col-all" href="https://arling.sk/vsetko/en/#firmy" aria-label="All in this group: Businesses and accountants" data-umami-event="shell_menu_group" data-umami-event-target="firmy"><span class="site-dlho">All in this group</span><span class="site-kratko">All</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></div><div class="site-col" data-skupina="eshopy"><p>Online shops and websites</p><a class="site-col-all" href="https://arling.sk/vsetko/en/#eshopy" aria-label="All in this group: Online shops and websites" data-umami-event="shell_menu_group" data-umami-event-target="eshopy"><span class="site-dlho">All in this group</span><span class="site-kratko">All</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></div></div></div><div class="site-blok" data-blok="spotrebitelske"><p class="site-blok-nazov">For leisure</p><div class="site-cols"><div class="site-col" data-skupina="hry"><p>Games and puzzles</p><a class="site-col-all" href="https://arling.sk/vsetko/en/#hry" aria-label="All in this group: Games and puzzles" data-umami-event="shell_menu_group" data-umami-event-target="hry"><span class="site-dlho">All in this group</span><span class="site-kratko">All</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></div><div class="site-col" data-skupina="knihy"><p>Books and gifts</p><a class="site-col-all" href="https://arling.sk/vsetko/en/#knihy" aria-label="All in this group: Books and gifts" data-umami-event="shell_menu_group" data-umami-event-target="knihy"><span class="site-dlho">All in this group</span><span class="site-kratko">All</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></div></div></div></div><div class="site-menu-spodok"><p class="site-all"><a href="https://arling.sk/vsetko/en/" data-umami-event="shell_menu_all">Everything on one page<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></p><p class="site-dev"><span>For developers</span><em>Free diagnostics for CORS, JWT, OAuth, Supabase and Stripe webhook errors.</em><a href="https://arling.sk/vsetko/en/#vyvojari">All developer tools<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></p></div><div class="site-col site-firma"><p>Company</p><ul><li><a href="https://arling.sk/en/#nastroje"><b>Tools</b></a></li><li><a href="https://arling.sk/en/#piloty"><b>Pilots</b></a></li><li><a href="https://arling.sk/how-we-work/en/"><b>How we work</b></a></li><li><a href="https://arling.sk/notes/en/"><b>Guides</b></a></li><li><a href="https://arling.sk/kontakt/en/"><b>Contact</b></a></li><li><a href="https://arling.sk/ucet/en/"><b>Account</b></a></li><li><a href="https://arling.sk/brand/en/"><b>Brand</b></a></li><li><a href="https://arling.sk/podmienky/en/"><b>Terms</b></a></li><li><a href="https://arling.sk/privacy/en/"><b>Privacy</b></a></li><li><a href="https://arling.sk/odstupenie/en/"><b>Withdraw from the contract here</b></a></li><li><a href="https://arling.sk/impressum/en/"><b>Imprint</b></a></li></ul></div><p class="site-menu-cta"><a class="site-cta" href="https://arling.sk/shop/" data-site-cta data-site-label="cta" data-umami-event="shell_cta_menu">Shop</a></p></div>
+    </details>
+    <nav id="hlavne-menu" class="site-main-nav" aria-label="Main navigation" data-site-aria="nav"><a href="https://arling.sk/en/#nastroje" data-site-nav="0">Tools</a><a href="https://arling.sk/en/#piloty" data-site-nav="1">Pilots</a><a href="https://arling.sk/notes/en/" data-site-nav="2">Guides</a><a href="https://arling.sk/how-we-work/en/" data-site-nav="3">Company</a></nav>
+    <a class="site-cta" href="https://arling.sk/shop/" data-site-cta data-site-label="cta" data-umami-event="shell_cta">Shop</a>
+  </div>
+  <script src="/style/menu-en.js" defer></script>
+</header>
+<main id="arling-obsah" tabindex="-1">
+  <div class="wrap">
+    <div class="note">
+      <div class="hero-note" id="hero">
+        <p class="kicker r">Notes</p>
+        <h1 id="h1" class="r d1"><span class="l">ERR_TOO_MANY_REDIRECTS:</span><span class="l">find the two rules redirecting to each other (Cloudflare, nginx, proxies, WordPress)</span></h1>
+        <p class="byline r d2">ARLing s. r. o. · 2026-09-27</p>
+        <p class="toolgo r d3"><a data-umami-event="open-redirect-loop-doctor-hero" class="go" href="https://arling.sk/redirect-loop-doctor/">Redirect Loop Doctor <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2.5 8h11M9 3.5 13.5 8 9 12.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a></p>
+      </div>
+      <div class="doc">
+        <section class="sec" id="s1">
+  <p class="lead r">You open your site and the browser refuses to show it. Chrome says the address "redirected you too many times" and names the error:</p>
+  <div class="err r d1"><code>ERR_TOO_MANY_REDIRECTS</code></div>
+  <p class="r d2">Firefox says "The page isn't redirecting properly", and adds that the server is redirecting the request "in a way that will never complete". Both mean the same thing: every response the browser got was another redirect, none of them led to a page, and the browser stopped following them. The Fetch standard, which browsers implement, draws that line at 20: when a request's redirect count reaches 20, the fetch ends in a network error.</p>
+  <p class="r d3">A loop almost always has exactly two parts. One layer sends the request somewhere (to HTTPS, to www, to a trailing slash) and another layer sends it back. Each rule looks correct on its own, which is why the loop survives review. The job is to find the pair and remove one side of it, not to add a third rule on top. Cloudflare's page for this error names the same first suspects: the SSL/TLS encryption mode, edge settings such as Always Use HTTPS, and redirect rules. Below is how to read the loop, then the causes, starting with the two behind the most viewed questions about this error.</p>
+        </section>
+        <section class="sec" id="s2">
+    <h2 class="r">Read the loop before you change anything</h2>
+    <p class="r d1">You do not have to guess which pair it is. curl follows redirects with <code>-L</code>, and with <code>-I</code> it prints only the headers of every response, so each hop shows its status and its <code>Location</code>. <code>--max-redirs</code> keeps a loop short:</p>
+    <div class="snippet r d1">
+      <p class="cap">Every hop, headers only</p>
+      <pre><code>curl -sIL --max-redirs 5 https://example.com/
+echo $?   # 47 means curl gave up: "Too many redirects"</code></pre>
+    </div>
+    <div class="snippet bad r d2">
+      <p class="cap">Illustrative output of a loop, shortened</p>
+      <pre><code>HTTP/2 301
+location: https://example.com/
+
+HTTP/2 301
+location: https://example.com/
+
+HTTP/2 301
+location: https://example.com/</code></pre>
+    </div>
+    <p class="r d2">Put each <code>Location</code> next to the URL that was requested and look at what changes. That tells you which pair you are dealing with:</p>
+    <ul class="r d2">
+      <li><b>Nothing changes: the URL redirects to itself.</b> From the outside, the first three causes below all look like this: Cloudflare on Flexible (<a href="#s3">01</a>), an nginx block that redirects its own HTTPS traffic (<a href="#s4">02</a>), and an app behind a proxy or load balancer that cannot see the visitor used HTTPS (<a href="#s5">03</a>). In 01 and 03 the layer that redirects is looking at a plain HTTP hop the visitor never sees; in 02 it does not check the scheme at all. Either way it sends the visitor to the https address they already have.</li>
+      <li><b>The scheme flips between https and http.</b> One layer forces HTTPS and another sends HTTPS back to HTTP (<a href="#s8">06</a>).</li>
+      <li><b>The host flips between www and the bare domain.</b> Two layers disagree on the canonical host (<a href="#s7">05</a>).</li>
+      <li><b>The path flips, with and without a trailing slash.</b> One layer adds the slash and another strips it. Choose one convention and set it in one place.</li>
+    </ul>
+    <p class="r d3">Test with curl, not in the tab that looped. RFC 9110 makes 301 and 308 responses heuristically cacheable, so a browser can keep replaying a redirect it stored after the server has stopped sending it. And once a site has sent <code>Strict-Transport-Security</code>, the browser upgrades <code>http://</code> to <code>https://</code> by itself for that host. curl does neither: it only uses an HSTS cache when you pass <code>--hsts</code>, and it keeps no cookies between hops unless you turn its cookie engine on, for example with <code>-b</code>.</p>
+        </section>
+        <section class="sec" id="s3">
+    <p class="num r">01</p>
+    <h2 class="r d1">Cloudflare on Flexible, and an origin that forces HTTPS</h2>
+    <p class="r d2">The most viewed question about this error, from 2017 (about 94,000 views), is exactly this setup: nginx behind Cloudflare with the Flexible option, and a port 80 server block with <code>return 301 https://$server_name$request_uri;</code>. On the second most viewed one (about 77,000 views), the answer with the most votes (113 at the time of writing, against 32 for the accepted answer) is one line: "In my case it was Cloudflare. I had to change to Full SSL encryption".</p>
+    <p class="r d2">Cloudflare documents the mechanism. On Flexible, "all connections between Cloudflare and your origin are made through HTTP", whatever the visitor used. So the origin sees plain HTTP on every request and redirects it to HTTPS, Cloudflare hands that redirect to the browser, and the browser asks Cloudflare for the same https address again. The Flexible page puts it plainly: "If your origin forces HTTPS by automatically redirecting HTTP requests to HTTPS, do not use Flexible mode."</p>
+    <figure class="dg r d2">
+      <svg viewBox="0 0 400 648" role="img" aria-labelledby="dg-title" aria-describedby="dg-desc">
+        <title id="dg-title">One request through Cloudflare to the origin: on Flexible it loops, on Full (strict) it loads</title>
+        <desc id="dg-desc">Three columns: browser, Cloudflare, origin. Flexible mode with an origin that forces HTTPS: the browser requests https://example.com/ from Cloudflare. Cloudflare requests http://example.com/ from the origin over plain HTTP. The origin answers 301 with Location https://example.com/. Cloudflare passes the 301 to the browser, which requests the same https://example.com/ again. The browser never sees the HTTP hop, and after 20 rounds it shows ERR_TOO_MANY_REDIRECTS. Full (strict) mode with the same origin rule: the browser requests https://example.com/, Cloudflare requests https://example.com/ from the origin over HTTPS, the request is already HTTPS so the origin answers 200 OK, and the page loads. The origin keeps its HTTPS redirect: it does not match an https request, and a visit over http:// is redirected to https once, then loads.</desc>
+        <rect class="dg-actor" x="1.5" y="0.5" width="78" height="28" rx="14"/>
+        <text class="dg-actor-t" x="40" y="19" text-anchor="middle">Browser</text>
+        <rect class="dg-actor" x="161.5" y="0.5" width="78" height="28" rx="14"/>
+        <text class="dg-actor-t" x="200" y="19" text-anchor="middle">Cloudflare</text>
+        <rect class="dg-actor" x="321.5" y="0.5" width="78" height="28" rx="14"/>
+        <text class="dg-actor-t" x="360" y="19" text-anchor="middle">Origin</text>
+        <text class="dg-lab dg-lab-hot" x="0" y="62">FLEXIBLE, ORIGIN FORCES HTTPS</text>
+        <line class="dg-life" x1="40" y1="72" x2="40" y2="286"/>
+        <line class="dg-life" x1="200" y1="72" x2="200" y2="286"/>
+        <line class="dg-life" x1="360" y1="72" x2="360" y2="286"/>
+        <line class="dg-arrow" x1="45" y1="104" x2="188" y2="104"/>
+        <polygon class="dg-head" points="195,104 187,99.5 187,108.5"/>
+        <text class="dg-url" x="120" y="96" text-anchor="middle">https://example.com/</text>
+        <text class="dg-note" x="120" y="121" text-anchor="middle">GET</text>
+        <line class="dg-arrow dg-arrow-hot" x1="205" y1="158" x2="348" y2="158"/>
+        <polygon class="dg-head dg-head-hot" points="355,158 347,153.5 347,162.5"/>
+        <text class="dg-url" x="280" y="150" text-anchor="middle"><tspan class="dg-hot">http</tspan>://example.com/</text>
+        <text class="dg-note" x="280" y="175" text-anchor="middle">GET over plain HTTP</text>
+        <line class="dg-arrow" x1="355" y1="212" x2="212" y2="212"/>
+        <polygon class="dg-head" points="205,212 213,207.5 213,216.5"/>
+        <text class="dg-url" x="280" y="204" text-anchor="middle">https://example.com/</text>
+        <text class="dg-note" x="280" y="229" text-anchor="middle">301 Location</text>
+        <line class="dg-arrow" x1="195" y1="266" x2="52" y2="266"/>
+        <polygon class="dg-head" points="45,266 53,261.5 53,270.5"/>
+        <text class="dg-url" x="120" y="258" text-anchor="middle">https://example.com/</text>
+        <text class="dg-note" x="120" y="283" text-anchor="middle">301, passed on</text>
+        <path class="dg-loop" d="M36 286 C 6 286, 6 104, 26 104"/>
+        <polygon class="dg-loop-head" points="34,104 25,99.5 25,108.5"/>
+        <text class="dg-s" x="0" y="314">Same URL again: the browser never sees the HTTP hop.</text>
+        <text class="dg-msg dg-msg-big" x="0" y="338">20 rounds: ERR_TOO_MANY_REDIRECTS</text>
+        <line class="dg-div" x1="0" y1="360" x2="400" y2="360"/>
+        <text class="dg-lab dg-lab-ok" x="0" y="386">FULL (STRICT), SAME ORIGIN RULE</text>
+        <line class="dg-life" x1="40" y1="396" x2="40" y2="610"/>
+        <line class="dg-life" x1="200" y1="396" x2="200" y2="610"/>
+        <line class="dg-life" x1="360" y1="396" x2="360" y2="610"/>
+        <line class="dg-arrow" x1="45" y1="428" x2="188" y2="428"/>
+        <polygon class="dg-head" points="195,428 187,423.5 187,432.5"/>
+        <text class="dg-url" x="120" y="420" text-anchor="middle">https://example.com/</text>
+        <text class="dg-note" x="120" y="445" text-anchor="middle">GET</text>
+        <line class="dg-arrow dg-arrow-ok" x1="205" y1="482" x2="348" y2="482"/>
+        <polygon class="dg-head dg-head-ok" points="355,482 347,477.5 347,486.5"/>
+        <text class="dg-url" x="280" y="474" text-anchor="middle"><tspan class="dg-ok">https</tspan>://example.com/</text>
+        <text class="dg-note" x="280" y="499" text-anchor="middle">GET over HTTPS</text>
+        <line class="dg-arrow" x1="355" y1="536" x2="212" y2="536"/>
+        <polygon class="dg-head" points="205,536 213,531.5 213,540.5"/>
+        <text class="dg-url" x="280" y="528" text-anchor="middle">200 OK</text>
+        <text class="dg-note" x="280" y="553" text-anchor="middle">request is already HTTPS</text>
+        <line class="dg-arrow" x1="195" y1="590" x2="52" y2="590"/>
+        <polygon class="dg-head" points="45,590 53,585.5 53,594.5"/>
+        <text class="dg-url" x="120" y="582" text-anchor="middle">200 OK</text>
+        <text class="dg-note" x="120" y="607" text-anchor="middle">page loads</text>
+        <text class="dg-s" x="0" y="638">No loop: only an http:// visit is redirected, once.</text>
+      </svg>
+      <figcaption>The same origin rule, "redirect HTTP to HTTPS", behind two Cloudflare modes. On Flexible, Cloudflare reaches the origin over plain HTTP, so the rule fires on every request and sends the browser back to the address it asked for. On Full (strict), Cloudflare reaches the origin with the scheme the visitor used, so an https request arrives over HTTPS and the rule does not match it. A visit over http:// gets one redirect to https (or Cloudflare's Always Use HTTPS does that at the edge) and then loads. The modes' behavior is from Cloudflare's SSL/TLS documentation; the stop at 20 redirects is from the Fetch standard.</figcaption>
+    </figure>
+    <p class="r d3">Fix it in the order Cloudflare recommends:</p>
+    <ol class="r d3">
+      <li><b>Give the origin a certificate and switch to Full (strict)</b>, on the SSL/TLS Overview page. The origin has to accept HTTPS on port 443 and present a certificate that is unexpired, issued by a publicly trusted CA or by Cloudflare's Origin CA, and valid for the hostname; otherwise visitors get error 526 instead of the loop. Your origin can keep its HTTP to HTTPS redirect. In Full and Full (strict), Cloudflare connects to the origin with the scheme the visitor used, so an https request now arrives over HTTPS and is served, and a visit over http:// is redirected once and then loads.</li>
+      <li><b>If the origin really cannot do TLS</b>, stay on Flexible, remove the HTTPS redirect from the origin, and let Cloudflare enforce HTTPS at the edge with Always Use HTTPS (SSL/TLS, Edge Certificates). Cloudflare meant Flexible for origins that cannot support SSL/TLS, and says to use Full or Full (strict) if the site handles personal data or logins, because the hop to your origin stays unencrypted.</li>
+    </ol>
+    <p class="r d3">The accepted 2017 answer took a third route: keep Flexible and redirect only when Cloudflare reports that the visitor used HTTP.</p>
+    <div class="snippet r d3">
+      <p class="cap">Accepted answer, 2017 (shortened): redirect on the visitor's scheme</p>
+      <pre><code>server {
+  listen 80 default_server;
+  server_name mydomain.com www.mydomain.com;
+
+  if ($http_x_forwarded_proto = "http") {
+    return 301 https://$server_name$request_uri;
+  }
+  # ... root, locations
+}</code></pre>
+    </div>
+    <p class="r d3">It works because Cloudflare sets <code>X-Forwarded-Proto</code> to the protocol the visitor used and overwrites any value the client sent. It also leaves the hop to your origin unencrypted, and a request that reaches the origin without Cloudflare has no such header and is never redirected. Use it as a bridge until the origin has a certificate.</p>
+    <h3 class="r">The same loop in Kubernetes</h3>
+    <p class="r d3">The 2023 question (about 16,000 views) looks different at first: Argo CD behind ingress-nginx. The ingress log in it tells the story. Every line is <code>GET /</code> answered with <code>308</code>, the client is <code>172.71.6.219</code>, an address inside Cloudflare's published range <code>172.64.0.0/13</code>, and the four upstream fields just before the request ID at the end of each line are dashes. In ingress-nginx's documented log format those four fields are the upstream server's address, response length, response time and status, so no upstream was contacted: the controller sent the 308 itself, before Argo CD saw anything. That fits what the asker reported: switching Argo CD's <code>server.insecure</code> between "true" and "false" did not help.</p>
+    <p class="r d3">ingress-nginx documents where a 308 like that comes from: "By default the controller redirects (308) to HTTPS if TLS is enabled for that ingress", and the ingress in the question has a <code>tls</code> section. The annotation the asker set to "false" was <code>force-ssl-redirect</code>, a different switch from <code>ssl-redirect</code>. If Cloudflare reaches the ingress over plain HTTP, as it does on Flexible, this is the loop in the diagram with a Kubernetes controller as the origin, and the fixes are the same: let Cloudflare connect over HTTPS, or set <code>nginx.ingress.kubernetes.io/ssl-redirect: "false"</code> and enforce HTTPS at Cloudflare. Argo CD's ingress guide adds its own requirement when TLS ends at the ingress: run the API server with TLS disabled, through <code>--insecure</code> or <code>server.insecure: "true"</code>.</p>
+    <p class="r d3">One caveat for 2026: ingress-nginx is retired. The same Argo CD guide says it "was archived on March 24, 2026", and the Kubernetes announcement said that after March 2026 there would be "no further releases, no bugfixes, and no updates to resolve any security vulnerabilities", while existing deployments keep working. The annotations in this article apply to those existing installations. If you have moved to Gateway API or another controller, the loop is the same, but look for that controller's own HTTP to HTTPS redirect setting instead.</p>
+        </section>
+        <section class="sec" id="s4">
+    <p class="num r">02</p>
+    <h2 class="r d1">One nginx server block that redirects its own HTTPS traffic</h2>
+    <p class="r d2">The second most viewed question (2017, about 77,000 views) had a different bug in its config. One <code>server</code> block listened on port 80 and on 443, and had the redirect at server level:</p>
+    <div class="snippet bad r d2">
+      <p class="cap">From the question (shortened): the redirect runs for HTTPS too</p>
+      <pre><code>server {
+  listen 80 default_server;
+  listen 443 ssl default_server;
+  server_name mywebsite.me www.mywebsite.me;
+  return 301 https://$server_name$request_uri;
+  # ... certificates, root, locations
+}</code></pre>
+    </div>
+    <p class="r d3">nginx executes the rewrite-module directives at server level in order, and <code>return</code> "stops processing and returns the specified code to a client". Nothing in that block asks which port the request came in on, so a request that is already HTTPS gets redirected to itself. The accepted answer splits the block in two, so only port 80 redirects:</p>
+    <div class="snippet r d3">
+      <p class="cap">Accepted answer (shortened): port 80 redirects, port 443 serves</p>
+      <pre><code>server {
+  listen 80 default_server;
+  server_name mywebsite.me www.mywebsite.me;
+  return 301 https://$server_name$request_uri;
+}
+
+server {
+  listen 443 ssl default_server;
+  server_name mywebsite.me www.mywebsite.me;
+  ssl_certificate     /etc/letsencrypt/live/mywebsite.me/fullchain.pem;
+  ssl_certificate_key /etc/letsencrypt/live/mywebsite.me/privkey.pem;
+  # ... root, locations
+}</code></pre>
+    </div>
+    <p class="r d3">Another answer, on the 2017 Cloudflare question, keeps one block and guards the redirect with <code>if ($scheme = "http")</code>. nginx documents <code>$scheme</code> as the request scheme, "http" or "https", and that is the scheme of the connection nginx itself received. The guard is right when nginx terminates TLS. Behind Cloudflare on Flexible or behind a load balancer, the hop nginx sees is always http, so the guard matches every request and loops exactly like the unguarded redirect.</p>
+        </section>
+        <section class="sec" id="s5">
+    <p class="num r">03</p>
+    <h2 class="r d1">TLS ends at a proxy or load balancer, and the app forces HTTPS anyway</h2>
+    <p class="r d2">This is the general form of 01. Something in front of the app (a load balancer, a reverse proxy, an ingress, a tunnel) accepts HTTPS from the visitor and forwards plain HTTP. The app has an HTTPS redirect, sees an HTTP request, and sends the visitor to the https address they already have. AWS describes this for its Classic Load Balancer: rewrite rules that ignore <code>X-Forwarded-Proto</code> "can create an infinite loop of redirection requests between your Classic Load Balancer and the instances behind your load balancer", which "results in the error ERR_TOO_MANY_REDIRECTS". The same page notes that Application Load Balancers support redirect actions that can redirect HTTP traffic to HTTPS, so on an ALB the redirect can live on the load balancer instead of the instances.</p>
+    <p class="r d2"><code>X-Forwarded-Proto</code> is how the app learns what the visitor used. MDN describes it as a de-facto standard header "for identifying the protocol (HTTP or HTTPS) that a client used to connect to a proxy or load balancer". Redirect only when it says <code>http</code>, or tell your framework to read it:</p>
+    <div class="snippet r d2">
+      <p class="cap">nginx behind a load balancer (AWS's example)</p>
+      <pre><code>server {
+  listen 80;
+  server_name _;
+  if ($http_x_forwarded_proto = 'http') {
+    return 301 https://$host$request_uri;
+  }
+  # ... root, locations
+}</code></pre>
+    </div>
+    <div class="snippet r d3">
+      <p class="cap">WordPress: wp-config.php, above the require_once line</p>
+      <pre><code>if (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) &amp;&amp; $_SERVER['HTTP_X_FORWARDED_PROTO'] == 'https')
+    $_SERVER['HTTPS'] = 'on';</code></pre>
+    </div>
+    <div class="snippet r d3">
+      <p class="cap">Django: settings.py</p>
+      <pre><code>SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+SECURE_SSL_REDIRECT = True</code></pre>
+    </div>
+    <div class="snippet r d3">
+      <p class="cap">Express: trust one proxy hop, then redirect on req.secure</p>
+      <pre><code>app.set('trust proxy', 1);
+app.use((req, res, next) =&gt; {
+  if (req.secure) return next();
+  res.redirect(301, 'https://example.com' + req.originalUrl);
+});</code></pre>
+    </div>
+    <p class="r d3">In Express, <code>req.protocol</code> takes the value of <code>X-Forwarded-Proto</code> only when <code>trust proxy</code> is set, and <code>req.secure</code> is the same as <code>req.protocol === 'https'</code>. The redirect target is a fixed host here on purpose, so the Host header of the request does not decide where visitors are sent.</p>
+    <p class="r d3">Trust the header only from your own proxy. Django's documentation says to set <code>SECURE_PROXY_SSL_HEADER</code> only if you control the proxy or have another guarantee that it sets or strips the header, and Express warns that with <code>trust proxy</code> set to <code>true</code>, the last trusted proxy must remove or overwrite <code>X-Forwarded-Proto</code>, "otherwise it may be possible for the client to provide any value". A hop count such as the <code>1</code> above does not change that: <code>req.protocol</code> still reads the header, so your proxy still has to set it.</p>
+        </section>
+        <section class="sec" id="s6">
+    <p class="num r">04</p>
+    <h2 class="r d1">WordPress after the switch to HTTPS</h2>
+    <p class="r d2">The WordPress question (2015, about 66,000 views) began with an .htaccess rule that forced HTTPS by port: <code>RewriteCond %{SERVER_PORT} !^443$</code>. The accepted answer changed the condition to <code>%{HTTPS} !=on</code>. The two answers with the most votes went further. Both set <code>WP_HOME</code> and <code>WP_SITEURL</code> to https in wp-config.php and set <code>$_SERVER['HTTPS']</code> to <code>'on'</code>, one only when <code>X-Forwarded-Proto</code> is https, the other always. That second step only matters when TLS ends in front of the web server, and that is the case where neither .htaccess test can help.</p>
+    <p class="r d2">Apache sets its <code>HTTPS</code> variable to "on" only "if the connection is using SSL/TLS", and the connection Apache gets from Cloudflare on Flexible or from a load balancer is plain HTTP, on the plain HTTP port. So both conditions match every request, including the ones that are HTTPS for the visitor. Behind such a proxy, test the header it sets instead; mod_rewrite reads any request header as <code>%{HTTP:header}</code>, and <code>=</code> compares it as an exact string:</p>
+    <div class="snippet r d2">
+      <p class="cap">.htaccess behind a proxy that always sets X-Forwarded-Proto</p>
+      <pre><code>RewriteEngine On
+RewriteCond %{HTTP:X-Forwarded-Proto} =http
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]</code></pre>
+    </div>
+    <p class="r d3">WordPress has its own HTTPS logic on top of that. Its handbook says that when WordPress is "hosted behind a reverse proxy that provides SSL, but is hosted itself without SSL", its HTTPS options such as <code>FORCE_SSL_ADMIN</code> "will initially send any requests into an infinite redirect loop", and fixes it by reading <code>HTTP_X_FORWARDED_PROTO</code> in wp-config.php. The reason is <code>is_ssl()</code>, the function WordPress uses to decide whether a request is HTTPS: it checks <code>$_SERVER['HTTPS']</code> and port 443, nothing else. The snippet in <a href="#s5">03</a> is the version from the <code>is_ssl()</code> reference page. The handbook's version tests with <code>strpos()</code> instead, because "in some setups HTTP_X_FORWARDED_PROTO might contain a comma-separated list e.g. http,https". Setting <code>$_SERVER['HTTPS'] = 'on'</code> unconditionally also stops the loop, but only by telling WordPress that every request is HTTPS, whether it is or not.</p>
+    <p class="r d3">Then make WordPress's own addresses agree with the rest of the stack. <code>WP_HOME</code> and <code>WP_SITEURL</code> in wp-config.php override the home and siteurl values from the database without changing them there; the documentation says each should include <code>https://</code> and no trailing slash:</p>
+    <div class="snippet r d3">
+      <p class="cap">wp-config.php</p>
+      <pre><code>define( 'WP_HOME', 'https://example.com' );
+define( 'WP_SITEURL', 'https://example.com' );</code></pre>
+    </div>
+    <p class="r d3">The host you put there matters as much as the scheme, which is the next cause.</p>
+        </section>
+        <section class="sec" id="s7">
+    <p class="num r">05</p>
+    <h2 class="r d1">www and the bare domain, redirecting to each other</h2>
+    <p class="r d2">If the host changes on every hop, two layers have a different idea of the canonical host. WordPress is often one of the two. Its <code>redirect_canonical()</code> takes the host for the redirect from <code>home_url()</code>, and only switches between the www and the non-www form of the same name. So a WordPress site whose home is <code>https://www.example.com</code>, behind a server, ingress or Cloudflare rule that sends www to the bare domain, sends visitors back and forth until the browser gives up. ingress-nginx, on installations that still run it (see the caveat in <a href="#s3">01</a>), has a switch of the same kind: <code>from-to-www-redirect</code> redirects toward whichever form the Ingress host uses. Cloudflare's troubleshooting page lists conflicting redirect rules and Page Rules as a cause in their own right.</p>
+    <p class="r d3">Fix: pick one host, then make every layer agree with it: Cloudflare redirect rules and Page Rules, the web server, ingress annotations, and the app's base URL (in WordPress, home and siteurl). Then delete the redirects that point the other way instead of adding one more.</p>
+        </section>
+        <section class="sec" id="s8">
+    <p class="num r">06</p>
+    <h2 class="r d1">Cloudflare forces HTTPS, and the origin sends it back to HTTP</h2>
+    <p class="r d2">This is the mirror image of 01, and in curl output the scheme flips on every hop. On Full or Full (strict), Cloudflare connects to the origin with the scheme the visitor used, so an https request reaches the origin over HTTPS; with Always Use HTTPS on, Cloudflare redirects every http request to https. If the origin redirects HTTPS requests back to HTTP, from an old rule or a hardcoded <code>http://</code> base URL, each side undoes the other: the origin sends the https request to http, and Cloudflare sends the http request back to https. Cloudflare lists the same loop when HSTS is enabled and the origin redirects to HTTP, or when HSTS is on while the encryption mode is Off.</p>
+    <p class="r d3">Fix: remove the origin's redirect to HTTP, and make sure the encryption mode is at least Flexible if you keep HSTS or Always Use HTTPS on. Cloudflare's Always Use HTTPS page goes further and recommends not performing redirects at the origin at all, because they can cause redirect loops.</p>
+        </section>
+        <section class="sec" id="s9">
+    <h2 class="r">Confirm the fix</h2>
+    <p class="r d1">Check all four ways a visitor can arrive, not only the one that failed:</p>
+    <div class="snippet r d1">
+      <p class="cap">Every entry point, status and Location only</p>
+      <pre><code>for u in http://example.com/ http://www.example.com/ https://example.com/ https://www.example.com/; do
+  echo "== $u"
+  curl -sIL --max-redirs 10 "$u" | grep -iE '^(HTTP/|location:)'
+done</code></pre>
+    </div>
+    <ul class="r d2">
+      <li><b>Fixed:</b> every chain ends in a <code>200</code> (or the status your page really returns). Ideally the addresses that are not canonical get there in one redirect, straight to the canonical one.</li>
+      <li><b>Still looping:</b> the chain stops at your <code>--max-redirs</code> with a 3xx. The loop above pipes curl into grep, so you will not see curl's exit code there; run that address alone with the first command in this article, and <code>echo $?</code> prints 47. Read the flipping part again, as in the first section.</li>
+      <li><b>Loops only after you sign in:</b> plain curl is signed out, so it will not reproduce this. Copy your session cookie from the browser's developer tools and send it with <code>-b 'name=value'</code>, which curl puts in the Cookie header of every request. If the chain loops only with that cookie, look at your session and login redirects, not at HTTPS. If the sign-in itself never sticks (the server sets a cookie during the redirects and then asks for it again), run the chain with <code>-b ""</code> instead: that turns on curl's cookie engine without any cookies, so curl records the cookies it receives along the way and sends them on the next hops.</li>
+    </ul>
+    <p class="r d2">Then open the site in the browser again. If curl ends in a 200 and the old tab still loops, the tab is replaying a cached redirect.</p>
+        </section>
+        <section class="sec" id="s10">
+    <h2 class="r">Traps</h2>
+    <ul class="r d1">
+      <li><b>Switching to Full (strict) before the origin has a valid certificate.</b> The loop goes away and error 526 takes its place.</li>
+      <li><b>Staying on Flexible for good.</b> Removing the origin's redirect ends the loop, but the hop from Cloudflare to your origin stays unencrypted, which Cloudflare advises against for any site with logins or personal data.</li>
+      <li><b>A second nginx that rewrites X-Forwarded-Proto.</b> The WordPress handbook's proxy example sets <code>proxy_set_header X-Forwarded-Proto $scheme;</code>. That is right when this nginx is the first hop and terminates TLS. If it sits behind Cloudflare or a load balancer, <code>$scheme</code> is http there, and the line replaces the https the first proxy sent with http. The app then redirects again. In that setup pass the incoming value on with <code>proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;</code> (nginx exposes any request header as <code>$http_</code> plus its name), and let only the front proxy reach this nginx.</li>
+      <li><b>Trusting X-Forwarded-Proto from anyone.</b> A client can send the header too. Trust it only from a proxy that overwrites it, as the Django and Express documentation both insist.</li>
+      <li><b>Clearing cookies as the fix.</b> Scheme and host loops live in configuration, so clearing cookies does not touch them. A loop that starts only after you sign in points at the session, and clearing cookies may not help there either. In a 2017 question about an AWS load balancer (two instances, and the asker describes only a port 80 listener, no HTTPS), the loop began right after logging in and stayed after the asker cleared all browser cookies. A later answer there reports that turning on sticky sessions for the target group fixed a similar login loop. Test that kind of loop with your session cookie, as in Confirm the fix.</li>
+      <li><b>Changing two layers at once.</b> Change one, run curl, then the next. Otherwise you will not know which pair it was, and the removed rule may have been the one you needed.</li>
+    </ul>
+        </section>
+        <section class="sec" id="s11">
+    <h2 class="r">Check your chain in the browser</h2>
+    <div class="try r d1"><p>Run the first command from <a href="#s2">Read the loop</a>, one <code>curl -sIL</code> for the one address that loops, and paste its output into <a data-umami-event="open-redirect-loop-doctor-cta" href="https://arling.sk/redirect-loop-doctor/">Redirect Loop Doctor</a>, together with that URL, your Cloudflare SSL/TLS mode, whether your server and your app force HTTPS, whether your server trusts <code>X-Forwarded-Proto</code>, your www rule and your app's site URL. Do not paste the four-address output from Confirm the fix: the tool reads every Location line as one chain, so four chains that each end in a 200 look like a loop to it. It finds the step that repeats and, when the Location headers are absolute URLs, names what differs there (scheme, host or trailing slash); relative ones such as <code>location: /blog/</code> are skipped, so compare those by hand. It also checks your settings for several of the pairs above: Flexible against an origin that forces HTTPS, an app that forces HTTPS without trusting the proxy header, a site URL that disagrees on scheme or www, and a Cloudflare rule that forwards to itself. It does not request your URL; it reads only what you paste, in your browser.</p></div>
+        </section>
+        <section class="sec" id="s12">
+    <h2 class="r">Questions</h2>
+    <details class="r d1">
+      <summary>Why did ERR_TOO_MANY_REDIRECTS start right after I put my site behind Cloudflare?</summary>
+      <p>Most often because the SSL/TLS encryption mode is Flexible and your origin redirects HTTP to HTTPS. On Flexible, Cloudflare connects to your origin over plain HTTP, so the origin redirects every request to the HTTPS address the visitor already asked for. Put a certificate on the origin and switch to Full (strict), or remove the origin's redirect and let Cloudflare enforce HTTPS with Always Use HTTPS.</p>
+    </details>
+    <details class="r d1">
+      <summary>Does clearing cookies fix ERR_TOO_MANY_REDIRECTS?</summary>
+      <p>Only when the loop depends on a cookie, such as a login that never sticks. Scheme and host loops live in server configuration. Run <code>curl -sIL</code> against the URL: curl sends and keeps no cookies unless you give it some or turn its cookie engine on, for example with <code>-b</code>, so if curl loops too, cookies are not the cause.</p>
+    </details>
+    <details class="r d2">
+      <summary>I fixed the configuration. Why does my browser still show the error?</summary>
+      <p>The browser may be replaying what it stored. RFC 9110 makes 301 and 308 responses heuristically cacheable, and after a site has sent <code>Strict-Transport-Security</code> the browser upgrades <code>http://</code> to <code>https://</code> on its own. curl starts fresh on every run and only uses an HSTS cache when you pass <code>--hsts</code>, so check with curl first. If curl ends in a 200, the fix worked.</p>
+    </details>
+    <details class="r d2">
+      <summary>Flexible, Full or Full (strict): which Cloudflare mode should I use?</summary>
+      <p>Cloudflare recommends Full (strict) whenever possible. It needs an origin that accepts HTTPS on port 443 and presents an unexpired certificate from a publicly trusted CA or from Cloudflare's Origin CA, valid for the hostname; otherwise visitors get error 526. Flexible is meant for origins that cannot support SSL/TLS, and it loops whenever the origin redirects HTTP to HTTPS.</p>
+    </details>
+    <details class="r d2">
+      <summary>How many redirects does a browser follow before it shows the error?</summary>
+      <p>20. The Fetch standard, which browsers implement, returns a network error when a request's redirect count reaches 20. curl follows up to 50 redirects by default with <code>-L</code>, and exits with code 47 when it reaches the limit set by <code>--max-redirs</code>.</p>
+    </details>
+        </section>
+      </div>
+    </div>
+  </div>
+  <section class="deep" id="s13">
+    <div class="wrap">
+      <div class="note">
+        <div class="doc">
+    <h2 class="r">Sources</h2>
+    <ul class="r d1">
+      <li>Cloudflare, "ERR_TOO_MANY_REDIRECTS" (the browser messages; Flexible with an origin that redirects HTTP to HTTPS; Full or Full (strict) with an origin that redirects HTTPS to HTTP; Always Use HTTPS; HSTS with an origin redirect to HTTP or encryption mode Off; conflicting redirect rules and Page Rules): <a href="https://developers.cloudflare.com/ssl/troubleshooting/too-many-redirects/">developers.cloudflare.com/ssl/troubleshooting/too-many-redirects/</a></li>
+      <li>Cloudflare, "Flexible" encryption mode ("all connections between Cloudflare and your origin are made through HTTP"; use when the origin cannot support SSL/TLS; "do not use Flexible mode" when the origin forces HTTPS; Full or Full (strict) for sensitive information such as logins): <a href="https://developers.cloudflare.com/ssl/origin-configuration/ssl-modes/flexible/">developers.cloudflare.com/ssl/origin-configuration/ssl-modes/flexible/</a></li>
+      <li>Cloudflare, "Full" encryption mode (Cloudflare "makes connections to the origin using the scheme requested by the visitor": http from the visitor means plaintext HTTP to the origin, and vice versa): <a href="https://developers.cloudflare.com/ssl/origin-configuration/ssl-modes/full/">developers.cloudflare.com/ssl/origin-configuration/ssl-modes/full/</a></li>
+      <li>Cloudflare, "Full (strict)" encryption mode ("does everything in Full mode" with stricter certificate checks; recommended whenever possible; origin on port 443 with an unexpired certificate from a publicly trusted CA or Cloudflare Origin CA matching the hostname; error 526 otherwise): <a href="https://developers.cloudflare.com/ssl/origin-configuration/ssl-modes/full-strict/">developers.cloudflare.com/ssl/origin-configuration/ssl-modes/full-strict/</a></li>
+      <li>Cloudflare, "Always Use HTTPS" (redirects all http requests to https; recommends not redirecting at the origin; set under Edge Certificates, not available with encryption mode Off): <a href="https://developers.cloudflare.com/ssl/edge-certificates/additional-options/always-use-https/">developers.cloudflare.com/ssl/edge-certificates/additional-options/always-use-https/</a></li>
+      <li>Cloudflare, "Cloudflare HTTP headers" (<code>X-Forwarded-Proto</code> is the protocol the visitor used, and a client-sent value is overwritten): <a href="https://developers.cloudflare.com/fundamentals/reference/http-headers/">developers.cloudflare.com/fundamentals/reference/http-headers/</a>; Cloudflare IPv4 ranges (includes <code>172.64.0.0/13</code>): <a href="https://www.cloudflare.com/ips-v4">cloudflare.com/ips-v4</a></li>
+      <li>WHATWG Fetch Standard, "HTTP-redirect fetch" ("If request's redirect count is 20, then return a network error"): <a href="https://fetch.spec.whatwg.org/#http-redirect-fetch">fetch.spec.whatwg.org/#http-redirect-fetch</a></li>
+      <li>RFC 9110, HTTP Semantics, section 15.4 (a client should detect and intervene in cyclical redirections), 15.4.2 and 15.4.9 (301 and 308 responses are heuristically cacheable): <a href="https://www.rfc-editor.org/rfc/rfc9110#section-15.4">rfc-editor.org/rfc/rfc9110#section-15.4</a></li>
+      <li>MDN, <code>X-Forwarded-Proto</code> (de-facto standard header for the protocol a client used to connect to a proxy or load balancer): <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/X-Forwarded-Proto">developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/X-Forwarded-Proto</a>; <code>Strict-Transport-Security</code> (future http requests to the host are upgraded to https): <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Strict-Transport-Security">developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Strict-Transport-Security</a>; "Redirections in HTTP", redirection loops: <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Redirections#redirection_loops">developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Redirections#redirection_loops</a></li>
+      <li>nginx, <code>ngx_http_rewrite_module</code> (server-level directives run in order; <code>return</code> "stops processing and returns the specified code to a client"): <a href="https://nginx.org/en/docs/http/ngx_http_rewrite_module.html#return">nginx.org/en/docs/http/ngx_http_rewrite_module.html#return</a>; <code>ngx_http_core_module</code> embedded variables (<code>$scheme</code>, <code>$http_name</code>, <code>$host</code>): <a href="https://nginx.org/en/docs/http/ngx_http_core_module.html#variables">nginx.org/en/docs/http/ngx_http_core_module.html#variables</a></li>
+      <li>AWS re:Post Knowledge Center, "How do I redirect HTTP traffic to HTTPS on my Classic Load Balancer?" (the loop between the load balancer and the instances, the ERR_TOO_MANY_REDIRECTS error, the nginx example with <code>$http_x_forwarded_proto</code>, and the note that Application Load Balancers support redirect actions): <a href="https://repost.aws/knowledge-center/redirect-http-https-elb">repost.aws/knowledge-center/redirect-http-https-elb</a></li>
+      <li>ingress-nginx, annotations, "Server-side HTTPS enforcement through redirect" (308 to HTTPS by default when TLS is enabled; <code>ssl-redirect</code> and <code>force-ssl-redirect</code>) and "Redirect from/to www": <a href="https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/annotations/">kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/annotations/</a>; log format (the upstream fields): <a href="https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/log-format/">kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/log-format/</a></li>
+      <li>Argo CD, "Ingress Configuration" (run the API server with TLS disabled, <code>--insecure</code> or <code>server.insecure: "true"</code>, when TLS ends at the ingress; ingress-nginx "is retired, and was archived on March 24, 2026"): <a href="https://argo-cd.readthedocs.io/en/stable/operator-manual/ingress/">argo-cd.readthedocs.io/en/stable/operator-manual/ingress/</a></li>
+      <li>Kubernetes blog, "Ingress NGINX Retirement: What You Need to Know" (November 11, 2025; after March 2026 no releases, bugfixes or security updates; existing deployments continue to function; Gateway API as the suggested replacement): <a href="https://kubernetes.io/blog/2025/11/11/ingress-nginx-retirement/">kubernetes.io/blog/2025/11/11/ingress-nginx-retirement/</a></li>
+      <li>WordPress Advanced Administration Handbook, "HTTPS" (behind a reverse proxy that provides SSL the options "will initially send any requests into an infinite redirect loop"; the <code>HTTP_X_FORWARDED_PROTO</code> snippet; the nginx proxy example): <a href="https://developer.wordpress.org/advanced-administration/security/https/">developer.wordpress.org/advanced-administration/security/https/</a>; "wp-config.php" (<code>WP_SITEURL</code>, <code>WP_HOME</code>): <a href="https://developer.wordpress.org/advanced-administration/wordpress/wp-config/">developer.wordpress.org/advanced-administration/wordpress/wp-config/</a></li>
+      <li>WordPress Code Reference, <code>is_ssl()</code> (checks HTTPS or port 443; the load balancer fix above the require_once call): <a href="https://developer.wordpress.org/reference/functions/is_ssl/">developer.wordpress.org/reference/functions/is_ssl/</a>; <code>redirect_canonical()</code> (the host comes from <code>home_url()</code>, only between www and non-www): <a href="https://developer.wordpress.org/reference/functions/redirect_canonical/">developer.wordpress.org/reference/functions/redirect_canonical/</a></li>
+      <li>Apache HTTP Server, <code>mod_rewrite</code>, RewriteCond (<code>HTTPS</code> is "on" if the connection uses SSL/TLS; <code>%{HTTP:header}</code>; the <code>=</code> comparison): <a href="https://httpd.apache.org/docs/2.4/mod/mod_rewrite.html#rewritecond">httpd.apache.org/docs/2.4/mod/mod_rewrite.html#rewritecond</a></li>
+      <li>Django, settings, <code>SECURE_PROXY_SSL_HEADER</code> (and its warning) and <code>SECURE_SSL_REDIRECT</code>: <a href="https://docs.djangoproject.com/en/stable/ref/settings/#secure-proxy-ssl-header">docs.djangoproject.com/en/stable/ref/settings/#secure-proxy-ssl-header</a></li>
+      <li>Express, "Express behind proxies" (<code>trust proxy</code>, the warning about overwriting X-Forwarded-Proto when it is set to <code>true</code>, <code>req.protocol</code>): <a href="https://expressjs.com/en/guide/behind-proxies.html">expressjs.com/en/guide/behind-proxies.html</a>; request API (<code>req.protocol</code> uses <code>X-Forwarded-Proto</code> whenever <code>trust proxy</code> does not evaluate to false; <code>req.secure</code>): <a href="https://expressjs.com/en/5x/api/request/">expressjs.com/en/5x/api/request/</a></li>
+      <li>curl, man page (<code>-L</code>, <code>-I</code>, <code>--max-redirs</code> with a default of 50, exit code 47 "Too many redirects", <code>-b</code> with <code>NAME=VALUE</code> cookies sent in every request, or with <code>""</code> to turn on the cookie engine, which records incoming cookies for use with <code>--location</code>, <code>--hsts</code>): <a href="https://curl.se/docs/manpage.html">curl.se/docs/manpage.html</a></li>
+      <li>Stack Overflow, "HTTP to HTTPS Nginx too many redirects" (2017, about 94,000 views; the Chrome and Firefox messages as the asker quotes them; Cloudflare Flexible with an nginx redirect; the accepted <code>$http_x_forwarded_proto</code> answer, the Full (strict) answer and the <code>$scheme</code> answer): <a href="https://stackoverflow.com/questions/41583088">stackoverflow.com/questions/41583088</a></li>
+      <li>Stack Overflow, "ERR_TOO_MANY_REDIRECTS with nginx" (2017, about 77,000 views; one server block for ports 80 and 443; the accepted split into two blocks; the 113-vote answer about Cloudflare Full SSL): <a href="https://stackoverflow.com/questions/46413494">stackoverflow.com/questions/46413494</a></li>
+      <li>Stack Overflow, "Too many Redirects after switching WordPress to https" (2015, about 66,000 views; the SERVER_PORT rule and the answers with WP_HOME, WP_SITEURL and <code>$_SERVER['HTTPS']</code>): <a href="https://stackoverflow.com/questions/29478863">stackoverflow.com/questions/29478863</a></li>
+      <li>Stack Overflow, "AWS Load Balancer ERR_TOO_MANY_REDIRECTS" (2017, about 33,000 views; two instances behind a load balancer with a port 80 listener; the loop starts after logging in; cookies already cleared; the answer reporting that sticky sessions fixed a similar login loop): <a href="https://stackoverflow.com/questions/42715718">stackoverflow.com/questions/42715718</a></li>
+      <li>Stack Overflow, "ArgoCD Ingress Kubernetes Too Many Redirects even With --insecure - Nginx" (2023, about 16,000 views; the ingress log with repeated 308 responses; "Nothing is working" after both server.insecure values): <a href="https://stackoverflow.com/questions/76624577">stackoverflow.com/questions/76624577</a></li>
+    </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+<footer class="site-footer">
+  <div class="wrap foot">
+    <div class="site-foot-top"><div><a class="site-brand" href="https://arling.sk/en/" aria-label="ARLing home" data-site-home><svg viewBox="0 0 488 215" width="38" height="15" aria-hidden="true" focusable="false"><path fill="#f4f4f7" fill-rule="evenodd" d="M0.00,213.00L74.00,214.00L181.00,85.00L285.00,214.00L360.00,214.00L206.00,21.00L185.00,4.00L164.00,10.00Z M221.00,0.00L263.00,50.00L395.00,50.00L409.00,55.00L419.00,76.00L401.00,96.00L313.00,98.00L411.00,214.00L487.00,214.00L422.00,139.00L457.00,123.00L482.00,88.00L482.00,48.00L463.00,19.00L417.00,0.00Z"/><path fill="#f2643c" d="M269.00,66.00L269.00,67.00L268.00,68.00L268.00,70.00L267.00,71.00L267.00,76.00L268.00,77.00L268.00,79.00L270.00,81.00L270.00,82.00L271.00,82.00L273.00,84.00L274.00,84.00L277.00,86.00L279.00,86.00L280.00,87.00L287.00,87.00L288.00,86.00L290.00,86.00L291.00,85.00L294.00,84.00L298.00,80.00L298.00,79.00L299.00,78.00L299.00,75.00L300.00,74.00L300.00,72.00L299.00,71.00L299.00,69.00L298.00,68.00L297.00,65.00L295.00,63.00L294.00,63.00L289.00,60.00L278.00,60.00L277.00,61.00L276.00,61.00L275.00,62.00L272.00,63.00Z"/></svg><b>ARLing</b></a><p class="site-foot-firma">ARLing s. r. o., company ID <span class="num">56583486</span>, Bratislava. Own server in the European Union. Software for companies, freelancers and individuals.</p></div><a class="site-cta" href="https://arling.sk/shop/" data-umami-event="shell_footer_cta">Shop<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></div>
+    <div class="site-foot-cols"><div data-skupina="firmy" data-blok="firemne"><p>Businesses and accountants</p><ul><li><a href="https://arling.sk/vsetko/en/#firmy" aria-label="All in this group: Businesses and accountants">All in this group</a></li></ul></div><div data-skupina="eshopy" data-blok="firemne"><p>Online shops and websites</p><ul><li><a href="https://arling.sk/vsetko/en/#eshopy" aria-label="All in this group: Online shops and websites">All in this group</a></li></ul></div><div data-skupina="hry" data-blok="spotrebitelske"><p>Games and puzzles</p><ul><li><a href="https://arling.sk/vsetko/en/#hry" aria-label="All in this group: Games and puzzles">All in this group</a></li></ul></div><div data-skupina="knihy" data-blok="spotrebitelske"><p>Books and gifts</p><ul><li><a href="https://arling.sk/vsetko/en/#knihy" aria-label="All in this group: Books and gifts">All in this group</a></li></ul></div><div><p>Company</p><ul><li><a href="https://arling.sk/how-we-work/en/">How we work</a></li><li><a href="https://arling.sk/notes/en/">Guides</a></li><li><a href="https://arling.sk/kontakt/en/">Contact</a></li><li><a href="https://arling.sk/ucet/en/">Account</a></li><li><a href="https://arling.sk/brand/en/">Brand</a></li><li><a href="https://arling.sk/podmienky/en/">Terms</a></li><li><a href="https://arling.sk/privacy/en/">Privacy</a></li><li><a href="https://arling.sk/odstupenie/en/">Withdraw from the contract here</a></li><li><a href="https://arling.sk/impressum/en/">Imprint</a></li></ul></div></div>
+    <p class="site-all"><a href="https://arling.sk/vsetko/en/" data-umami-event="shell_footer_all">Everything on one page<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></p>
+    <p class="site-dev" data-site-vyvojari><span>For developers</span><em>Free diagnostics for CORS, JWT, OAuth, Supabase and Stripe webhook errors.</em><a href="https://arling.sk/vsetko/en/#vyvojari">All developer tools<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></p>
+    <div class="site-foot-bottom"><p>ARLing s. r. o., Ivanská cesta 32E, 821 04 Bratislava, Slovakia. Company ID 56583486, VAT ID SK2122352100. <a href="mailto:support@arling.sk">support@arling.sk</a></p><p><a href="https://arling.sk/impressum/en/">Impressum</a> · <a href="https://arling.sk/llms.txt">llms.txt</a> · <a href="https://arling.sk/sitemap-index.xml">Sitemap</a></p></div>
+    <p class="site-foot-legal">Tools are provided as is, without warranty. Anonymous visit counts via self-hosted Umami. <a href="https://arling.sk/privacy/en/">Privacy</a> · <a href="https://arling.sk/podmienky/en/">Terms</a> · <a href="https://arling.sk/gdpr/en/">GDPR</a> · <a href="https://arling.sk/odstupenie/en/">Withdraw from the contract here</a></p>
+  </div>
+</footer>
+<script defer src="https://server.invalid/script.js" data-website-id="be534d51-4d01-4860-b267-9596d91606de"></script>
+<script>
+(function () {
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var hero = document.getElementById('hero');
+  if (reduce) {
+    document.querySelectorAll('.r, section').forEach(function (e) { e.classList.add('in'); });
+  }
+  if (!reduce && hero) {
+    requestAnimationFrame(function () {
+      hero.querySelectorAll('.r').forEach(function (e) { e.classList.add('in'); });
+    });
+  }
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (en) {
+      if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); }
+    });
+  }, { rootMargin: '0px 0px -12% 0px', threshold: 0.1 });
+  document.querySelectorAll('section').forEach(function (s) { io.observe(s); });
+
+  // nadpis clanku sa objavi po slovach, ako dobre vytlaceny titulok
+  var h1 = document.getElementById('h1');
+  if (h1) {
+    var i = 0;
+    Array.prototype.forEach.call(h1.querySelectorAll('.l'), function (line) {
+      var words = line.textContent.split(' ');
+      line.textContent = '';
+      words.forEach(function (w, k) {
+        var s = document.createElement('span');
+        s.className = 'w';
+        s.style.transitionDelay = (i++ * 0.06).toFixed(2) + 's';
+        s.textContent = w;
+        line.appendChild(s);
+        if (k < words.length - 1) line.appendChild(document.createTextNode(' '));
+      });
+    });
+    requestAnimationFrame(function () { h1.classList.add('in'); });
+  }
+
+  // bocny register sleduje, ktora cast clanku je v strede obrazovky
+})();
+</script>
+</body>
+</html>

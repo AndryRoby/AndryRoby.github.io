@@ -1,0 +1,509 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script src="/style/vzhlad.js?v=8a4019ae"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://server.invalid 'sha256-YSjvgQIZuvVFaxN5G1qx+y18dZvqagPHMq8Ry8WsMVA=' 'sha256-iX/PES02Kj6vQirQAS0ER7qxLoQ9RxTawBS1fCgAbxE=' 'sha256-tW7kZmHEn6B56MFbocCP4k2F5NjaNJCdG8m4QOt1ucE=' 'sha256-kHzhLBitzZlfAaUS4VuXMelQQYrrpIhEmCeLW+iUbL4='; connect-src 'self' https://server.invalid; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0a0908">
+<link rel="preconnect" href="https://server.invalid" crossorigin>
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../../favicon.ico" sizes="48x48">
+<link rel="apple-touch-icon" href="../../icon-180.png">
+<title>It does not have HTTP ok status: what the CORS preflight (OPTIONS) request needs</title>
+<meta name="description" content="Why Chrome says the preflight does not have HTTP ok status, which server layer turns your OPTIONS request into a 401, 404, 405 or 500, and how to answer it with a 2xx.">
+<link rel="canonical" href="https://arling.sk/notes/cors-preflight-doesnt-pass-access-control-check/">
+<meta property="og:type" content="article">
+<meta property="og:title" content="It does not have HTTP ok status: what the CORS preflight (OPTIONS) request needs">
+<meta property="og:description" content="Why Chrome says the preflight does not have HTTP ok status, which server layer turns your OPTIONS request into a 401, 404, 405 or 500, and how to answer it with a 2xx.">
+<meta property="og:url" content="https://arling.sk/notes/cors-preflight-doesnt-pass-access-control-check/">
+
+
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"Article","headline":"It does not have HTTP ok status: what the CORS preflight (OPTIONS) request needs","description":"Why Chrome says the preflight does not have HTTP ok status, which server layer turns your OPTIONS request into a 401, 404, 405 or 500, and how to answer it with a 2xx.","datePublished":"2026-09-27","dateModified":"2026-09-27","inLanguage":"en","author":{"@type":"Organization","name":"ARLing s. r. o."},"publisher":{"@type":"Organization","name":"ARLing s. r. o.","url":"https://arling.sk/"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://arling.sk/notes/cors-preflight-doesnt-pass-access-control-check/"}}
+</script>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Why does the same request work in Postman, Insomnia or curl?","acceptedAnswer":{"@type":"Answer","text":"Preflights are sent by browsers. Postman, Insomnia and curl send only the request you give them, so the OPTIONS request that fails in the browser never happens there. That also makes curl the right tool for testing the preflight: send the OPTIONS request by hand, with the same Origin and Access-Control-Request-* headers the browser would send."}},{"@type":"Question","name":"Why does my breakpoint in the POST handler never hit?","acceptedAnswer":{"@type":"Answer","text":"Because the POST was never sent. The browser sends the actual request only after a successful preflight. When the preflight fails, the whole fetch ends with a network error. Put the breakpoint or a log line on the OPTIONS request instead."}},{"@type":"Question","name":"Should the preflight return 200 or 204?","acceptedAnswer":{"@type":"Answer","text":"Either. The Fetch Standard accepts any status from 200 to 299 and names 200 and 204 as examples. The Express cors package answers with 204 by default and has an optionsSuccessStatus option because, according to its README, some legacy browsers (IE11, various SmartTVs) choke on 204."}},{"@type":"Question","name":"Can I avoid the preflight instead of fixing it?","acceptedAnswer":{"@type":"Answer","text":"Only if the request qualifies as simple: GET, HEAD or POST, only CORS-safelisted headers, and a Content-Type of application/x-www-form-urlencoded, multipart/form-data or text/plain. A JSON body or an Authorization header rules that out. If you do not control the API, MDN describes the other way: route the call through a server you control, which fetches the resource for you."}}]}
+</script>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"ARLing","item":"https://arling.sk/"},{"@type":"ListItem","position":2,"name":"Notes","item":"https://arling.sk/notes/"},{"@type":"ListItem","position":3,"name":"It does not have HTTP ok status: what the CORS preflight (OPTIONS) request needs","item":"https://arling.sk/notes/cors-preflight-doesnt-pass-access-control-check/"}]}
+</script>
+<link rel="preload" href="/fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/style/paper.css?v=704b28ed">
+<script src="/style/prepinac.js?v=668e98c9" defer></script>
+<style>
+  /* Notes. Vzhlad, farby, typografia a pohyb su v /style/paper.css.
+     Tu ostava len to, co je pre clanok vlastne: merany pas, register, panel s nastrojom. */
+  .note{max-width:min(100%,880px);margin:0 auto}
+  .doc{max-width:min(68ch,660px);margin-inline:auto;font-size:clamp(17px,1.2vw,18px);line-height:1.62}
+
+  /* uvod clanku: nadpis, datum, odkaz na nastroj */
+  .hero-note{padding:clamp(34px,4.6vw,72px) 0 clamp(20px,2.4vw,34px)}
+  /* Titul je tu presny text chyby a je dlhy, preto je o stupen mensi nez v inych clankoch
+     a smie sa zalomit aj vnutri slova. */
+  .hero-note h1{font-size:clamp(28px,3.9vw,52px);line-height:1.08;margin:0 0 18px;overflow-wrap:anywhere}
+  .hero-note h1 .l+.l{display:block;margin-top:.3em;font-weight:500;
+    font-size:clamp(20px,2.4vw,34px);line-height:1.2;letter-spacing:-.01em;color:var(--body)}
+  .hero-note .kicker{display:block;margin:0 0 12px}
+  .hero-note .crumbs{font-family:var(--ui);font-size:12px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--accent);margin:0 0 12px}
+  .hero-note .crumbs a{color:inherit;text-decoration:none}
+  .hero-note .crumbs a:hover{text-decoration:underline}
+  .byline,.dateline{font-family:var(--ui);font-size:14px;color:var(--muted);margin:0 0 20px;max-width:none}
+  .toolgo{margin:0}
+
+  /* rytmus clanku: vlasova linka medzi castami, ziadne velke medzery sekcii */
+  section{scroll-margin-top:86px}
+  .doc section{padding:0;border-top:none;margin:0 0 clamp(26px,2.8vw,38px)}
+  .doc section+section{border-top:1px solid var(--line);padding-top:clamp(26px,2.8vw,36px)}
+  .doc h2{font-size:clamp(21px,1.9vw,27px);line-height:1.22;margin:0 0 12px}
+  .doc h3{font-size:clamp(17.5px,1.3vw,20px);margin:18px 0 8px}
+  .doc p{margin:0 0 14px;max-width:none}
+  .doc .num,.doc .kicker{display:block;font-family:var(--ui);font-size:12px;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--accent);margin:0 0 7px}
+  .doc .lead,.doc .lede{font-size:clamp(18px,1.35vw,20.5px);line-height:1.55;max-width:none;margin:0 0 18px}
+  .doc ol,.doc ul{padding-left:22px;margin:0 0 16px}
+  .doc li{margin:0 0 7px}
+  .doc li:last-child{margin-bottom:0}
+  .doc li .snippet{margin:10px 0 4px}
+  .doc a{overflow-wrap:anywhere}
+  .doc code{background:var(--paper-deep);border:1px solid var(--line);border-radius:4px;padding:1px 5px;
+    overflow-wrap:anywhere}
+  .doc pre{margin:0 0 16px;white-space:pre-wrap;overflow-wrap:break-word}
+  .doc pre code{background:none;border:none;padding:0;font-size:13.5px;line-height:1.55}
+  .doc blockquote{margin:0 0 16px;padding:8px 16px;border-left:2px solid var(--line);color:var(--muted)}
+
+  /* chybova hlaska, oprava, ukazka kodu s popisom */
+  .doc .err{background:color-mix(in srgb,var(--accent) 7%,var(--card));border:1px solid var(--line);
+    border-left:3px solid var(--accent);border-radius:8px;padding:12px 16px;margin:0 0 16px}
+  .doc .err code{background:none;border:none;padding:0;color:var(--ink)}
+  .doc .fix{margin:0 0 16px;padding-left:16px;border-left:2px solid var(--accent)}
+  .doc .fix p{margin:0 0 8px}
+  .doc .fix p:last-child{margin-bottom:0}
+  .doc .fix-label{font-family:var(--ui);font-size:12px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--muted);margin:0 0 6px}
+  .doc .snippet{background:var(--card);border:1px solid var(--line);border-radius:10px;margin:0 0 18px;
+    overflow:hidden}
+  .doc .snippet .cap{padding:8px 14px;border-bottom:1px solid var(--line);
+    font:500 11px/1.3 var(--ui);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  .doc .snippet.bad .cap{color:var(--accent)}
+  .doc .snippet pre{margin:0;border:none;border-radius:0;background:none;white-space:pre-wrap}
+
+  /* diagram: kde preflight dostane chybovy status. Farby su tokeny z paper.css, takze sedi na oboch plochach. */
+  .doc figure.dg{margin:6px 0 22px}
+  .doc figure.dg svg{display:block;width:100%;height:auto;max-width:540px;margin:0 auto}
+  .dg .dg-pill{fill:none;stroke:var(--line-silna,var(--line));stroke-width:1}
+  .dg .dg-pt{fill:var(--ink);font:500 12.5px var(--mono)}
+  .dg .dg-spine{stroke:var(--line-silna,var(--line));stroke-width:2}
+  .dg .dg-node{fill:var(--accent)}
+  .dg .dg-node-ok{fill:var(--ok,#2f7d57)}
+  .dg .dg-num{fill:var(--paper-deep);font:700 13px var(--ui)}
+  .dg .dg-num-ok{fill:var(--paper-deep)}
+  .dg .dg-box{fill:var(--card-plna,var(--card));stroke:var(--line-silna,var(--line));stroke-width:1}
+  .dg .dg-box-ok{stroke:var(--ok,#2f7d57)}
+  .dg .dg-div{stroke:var(--line-silna,var(--line));stroke-width:1}
+  .dg .dg-h{fill:var(--ink);font:600 16px var(--ui)}
+  .dg .dg-s{fill:var(--body);font:400 13px var(--ui)}
+  .dg .dg-need{fill:var(--ok,#2f7d57);font:600 12.5px var(--ui)}
+  .dg .dg-fix{fill:var(--ok,#2f7d57);font:700 13px var(--ui)}
+  .dg .dg-lab{fill:var(--muted);font:600 12px var(--ui);letter-spacing:.08em}
+  .dg .dg-con{fill:var(--accent);font:400 13px var(--mono)}
+  body.noc .dg .dg-con{fill:var(--accent-light)}
+  .dg .dg-end{fill:color-mix(in srgb,var(--accent) 10%,var(--card-plna,var(--card)));stroke:var(--accent);stroke-width:1}
+  .doc figure.dg figcaption{margin:10px auto 0;max-width:540px;font:400 14px/1.5 var(--ui);color:var(--muted)}
+
+  /* caste otazky */
+  .doc details{border-top:1px solid var(--line);padding:14px 0}
+  .doc details:last-of-type{border-bottom:1px solid var(--line);margin-bottom:16px}
+  .doc summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;gap:14px;
+    font:600 17px/1.35 var(--display);color:var(--ink)}
+  .doc summary::-webkit-details-marker{display:none}
+  .doc summary::after{content:"+";flex:none;color:var(--accent);font-family:var(--ui);font-weight:400}
+  .doc details[open] summary::after{content:"\2212"}
+  .doc details p{margin:10px 0 0}
+
+  /* zdroje */
+  .doc ul.sources{list-style:none;padding-left:0}
+  .doc ul.sources li{padding-left:14px;border-left:2px solid var(--line)}
+  .doc .sources li{margin:0 0 10px;font-size:.95em}
+  .doc .sources cite{font-style:italic}
+  .doc ul.plain{list-style:none;padding-left:0}
+  .doc ul.plain li{margin:0;padding:10px 0;border-top:1px solid var(--line)}
+  .doc ul.plain li:first-child{border-top:none}
+
+  /* panel s nastrojom: jedina tmava plocha v texte, tam sa klika */
+  .doc .tool-box,.doc .toolbox,.doc .check,.doc .try,.doc .cta{display:block;background:var(--ink);
+    color:#cfcabd;border:none;border-radius:var(--radius);padding:clamp(20px,2.2vw,28px);margin:0 0 18px}
+  .doc .tool-box p,.doc .check p,.doc .try p,.doc .cta p{max-width:none;margin:0 0 12px;color:#cfcabd}
+  .doc .toolbox{max-width:none;color:#cfcabd}
+  .doc .tool-box p:last-of-type,.doc .check p:last-child,.doc .try p:last-child,
+  .doc .cta p:last-child{margin-bottom:0}
+  .doc .tool-box a,.doc .toolbox a,.doc .check a,.doc .try a,.doc .cta a{color:#fffdf8}
+  .doc .tool-box a:hover,.doc .toolbox a:hover,.doc .check a:hover,.doc .try a:hover,
+  .doc .cta a:hover{color:var(--accent-light)}
+  .doc .tool-box code,.doc .toolbox code,.doc .check code,.doc .try code,.doc .cta code{
+    background:rgba(255,253,248,.10);border-color:rgba(255,253,248,.22);color:#fffdf8}
+  .doc .tool-box .btn{margin:14px 10px 0 0;text-decoration:none;color:#fff}
+  .doc .tool-box .btn+.btn{background:none;border:1px solid rgba(255,253,248,.45);color:#fffdf8}
+  .doc .tool-box .btn+.btn:hover{background:#fffdf8;color:var(--ink)}
+  .doc .tool-cta{display:inline-flex;align-items:center;height:46px;padding:0 20px;border-radius:12px;
+    margin:2px 0 0;background:var(--accent);color:#fff;font:500 15px/1 var(--ui);text-decoration:none}
+  .doc .tool-cta:hover{background:var(--accent-dark);color:#fff}
+
+  @media (min-width:1280px){}
+
+  /* paticka je tmavy pas na konci */
+  footer.band{border-top:none;color:#a8a294}
+  footer.band a,footer.band b{color:#fffdf8}
+  footer.band .wrap{max-width:880px}
+  footer.band .cols{width:min(880px,92vw);margin:0 auto;gap:16px 32px}
+
+</style>
+<meta property="og:image" content="https://arling.sk/og.png">
+</head>
+<body class="noc">
+<div class="wash" aria-hidden="true"><i></i><i></i></div>
+<noscript><style>.r,.w{opacity:1;transform:none;filter:none}</style></noscript>
+<a class="skip site-skip" href="#arling-obsah" data-site-label="skip">Skip to content</a>
+<header class="site-header">
+  <div class="wrap bar">
+    <a class="brand" href="https://arling.sk/en/" aria-label="ARLing home" data-site-home>
+      <svg viewBox="0 0 488 215" width="38" height="15" aria-hidden="true" focusable="false"><path fill="#f4f4f7" fill-rule="evenodd" d="M0.00,213.00L74.00,214.00L181.00,85.00L285.00,214.00L360.00,214.00L206.00,21.00L185.00,4.00L164.00,10.00Z M221.00,0.00L263.00,50.00L395.00,50.00L409.00,55.00L419.00,76.00L401.00,96.00L313.00,98.00L411.00,214.00L487.00,214.00L422.00,139.00L457.00,123.00L482.00,88.00L482.00,48.00L463.00,19.00L417.00,0.00Z"/><path fill="#f2643c" d="M269.00,66.00L269.00,67.00L268.00,68.00L268.00,70.00L267.00,71.00L267.00,76.00L268.00,77.00L268.00,79.00L270.00,81.00L270.00,82.00L271.00,82.00L273.00,84.00L274.00,84.00L277.00,86.00L279.00,86.00L280.00,87.00L287.00,87.00L288.00,86.00L290.00,86.00L291.00,85.00L294.00,84.00L298.00,80.00L298.00,79.00L299.00,78.00L299.00,75.00L300.00,74.00L300.00,72.00L299.00,71.00L299.00,69.00L298.00,68.00L297.00,65.00L295.00,63.00L294.00,63.00L289.00,60.00L278.00,60.00L277.00,61.00L276.00,61.00L275.00,62.00L272.00,63.00Z"/></svg>
+      <b>ARLing</b><span>Notes</span>
+    </a>
+    <details class="site-menu">
+      <summary class="site-menu-toggle"><span class="site-menu-text" data-site-label="produkty">Products</span><span class="site-menu-bars" aria-hidden="true"><i></i><i></i><i></i></span><span class="site-menu-word" data-site-label="menu">Menu</span></summary>
+      <div class="site-menu-panel" role="navigation" aria-label="Products" data-site-aria="produkty"><div class="site-bloky"><div class="site-blok" data-blok="firemne"><p class="site-blok-nazov">For businesses</p><div class="site-cols"><div class="site-col" data-skupina="firmy"><p>Businesses and accountants</p><a class="site-col-all" href="https://arling.sk/vsetko/en/#firmy" aria-label="All in this group: Businesses and accountants" data-umami-event="shell_menu_group" data-umami-event-target="firmy"><span class="site-dlho">All in this group</span><span class="site-kratko">All</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></div><div class="site-col" data-skupina="eshopy"><p>Online shops and websites</p><a class="site-col-all" href="https://arling.sk/vsetko/en/#eshopy" aria-label="All in this group: Online shops and websites" data-umami-event="shell_menu_group" data-umami-event-target="eshopy"><span class="site-dlho">All in this group</span><span class="site-kratko">All</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></div></div></div><div class="site-blok" data-blok="spotrebitelske"><p class="site-blok-nazov">For leisure</p><div class="site-cols"><div class="site-col" data-skupina="hry"><p>Games and puzzles</p><a class="site-col-all" href="https://arling.sk/vsetko/en/#hry" aria-label="All in this group: Games and puzzles" data-umami-event="shell_menu_group" data-umami-event-target="hry"><span class="site-dlho">All in this group</span><span class="site-kratko">All</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></div><div class="site-col" data-skupina="knihy"><p>Books and gifts</p><a class="site-col-all" href="https://arling.sk/vsetko/en/#knihy" aria-label="All in this group: Books and gifts" data-umami-event="shell_menu_group" data-umami-event-target="knihy"><span class="site-dlho">All in this group</span><span class="site-kratko">All</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></div></div></div></div><div class="site-menu-spodok"><p class="site-all"><a href="https://arling.sk/vsetko/en/" data-umami-event="shell_menu_all">Everything on one page<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></p><p class="site-dev"><span>For developers</span><em>Free diagnostics for CORS, JWT, OAuth, Supabase and Stripe webhook errors.</em><a href="https://arling.sk/vsetko/en/#vyvojari">All developer tools<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></p></div><div class="site-col site-firma"><p>Company</p><ul><li><a href="https://arling.sk/en/#nastroje"><b>Tools</b></a></li><li><a href="https://arling.sk/en/#piloty"><b>Pilots</b></a></li><li><a href="https://arling.sk/how-we-work/en/"><b>How we work</b></a></li><li><a href="https://arling.sk/notes/en/"><b>Guides</b></a></li><li><a href="https://arling.sk/kontakt/en/"><b>Contact</b></a></li><li><a href="https://arling.sk/ucet/en/"><b>Account</b></a></li><li><a href="https://arling.sk/brand/en/"><b>Brand</b></a></li><li><a href="https://arling.sk/podmienky/en/"><b>Terms</b></a></li><li><a href="https://arling.sk/privacy/en/"><b>Privacy</b></a></li><li><a href="https://arling.sk/odstupenie/en/"><b>Withdraw from the contract here</b></a></li><li><a href="https://arling.sk/impressum/en/"><b>Imprint</b></a></li></ul></div><p class="site-menu-cta"><a class="site-cta" href="https://arling.sk/shop/" data-site-cta data-site-label="cta" data-umami-event="shell_cta_menu">Shop</a></p></div>
+    </details>
+    <nav id="hlavne-menu" class="site-main-nav" aria-label="Main navigation" data-site-aria="nav"><a href="https://arling.sk/en/#nastroje" data-site-nav="0">Tools</a><a href="https://arling.sk/en/#piloty" data-site-nav="1">Pilots</a><a href="https://arling.sk/notes/en/" data-site-nav="2">Guides</a><a href="https://arling.sk/how-we-work/en/" data-site-nav="3">Company</a></nav>
+    <a class="site-cta" href="https://arling.sk/shop/" data-site-cta data-site-label="cta" data-umami-event="shell_cta">Shop</a>
+  </div>
+  <script src="/style/menu-en.js" defer></script>
+</header>
+<main id="arling-obsah" tabindex="-1">
+  <div class="wrap">
+    <div class="note">
+      <div class="hero-note" id="hero">
+        <p class="kicker r">Notes</p>
+        <h1 id="h1" class="r d1"><span class="l">Response to preflight request doesn't pass access control check:</span><span class="l">It does not have HTTP ok status</span></h1>
+        <p class="byline r d2">ARLing s. r. o. · 2026-09-27</p>
+        <p class="toolgo r d3"><a data-umami-event="open-cors-doctor-hero" class="go" href="https://arling.sk/cors-doctor/">CORS Doctor <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2.5 8h11M9 3.5 13.5 8 9 12.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a></p>
+      </div>
+      <div class="doc">
+        <section class="sec" id="s1">
+  <p class="lead r">Your frontend calls an API, nothing reaches the handler, and the browser console prints this:</p>
+  <div class="err r d1"><code>Access to XMLHttpRequest at 'https://api.example.com/items' from origin 'http://localhost:3000' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: It does not have HTTP ok status.</code></div>
+  <p class="r d2">Before your actual request, the browser sent an <code>OPTIONS</code> request to the same URL to ask whether the real one is allowed. That is the preflight. The server answered it with a status outside 200 to 299, and since a preflight only counts with a 2xx, the browser stopped there. Your POST, PUT or DELETE never left the browser. That is why a breakpoint in its handler never hits, and why the same call works in Postman or curl: they are not browsers and do not send preflights.</p>
+  <p class="r d2">The exact wording narrows it down further. In Chromium's source (Chrome and the browsers built on it), "It does not have HTTP ok status" is only reported after the preflight response has already passed the <code>Access-Control-Allow-Origin</code> check. A missing header gives "No 'Access-Control-Allow-Origin' header is present" after the same prefix, and a redirect gives "Redirect is not allowed for a preflight request". So your CORS headers most likely do reach the browser. The status is the problem: some layer of your server answered the <code>OPTIONS</code> request with an error, typically 401, 403, 404, 405 or 500.</p>
+  <p class="r d3"><code>XMLHttpRequest</code> in the message means the call went through XHR, which is what axios uses in the browser. A <code>fetch()</code> call says <code>Access to fetch at</code> instead. The causes and fixes below are the same for both. If your message ends in "No 'Access-Control-Allow-Origin' header is present", the failing response lacks the header as well, and <a href="https://arling.sk/notes/cors-no-access-control-allow-origin-header/">that case has its own note</a>.</p>
+        </section>
+        <section class="sec" id="s2">
+    <h2 class="r">Why the browser sent an OPTIONS request first</h2>
+    <p class="r d1">The browser skips the preflight only for a simple request: the method is GET, HEAD or POST, every header you set is CORS-safelisted, and <code>Content-Type</code> is <code>application/x-www-form-urlencoded</code>, <code>multipart/form-data</code> or <code>text/plain</code>. A typical API call breaks at least one of those rules:</p>
+    <ul class="r d2">
+      <li>A JSON body, sent with <code>Content-Type: application/json</code>.</li>
+      <li>An <code>Authorization</code> header, or any custom header such as <code>X-Api-Key</code>.</li>
+      <li>A PUT, PATCH or DELETE.</li>
+      <li>Less obvious: any event listener on <code>xhr.upload</code>, for example for upload progress, or a <code>ReadableStream</code> as the body.</li>
+    </ul>
+    <p class="r d2">The preflight itself carries very little. The Fetch Standard builds it as a new request that carries none of your own headers, <code>Authorization</code> included: it adds only <code>Accept</code>, <code>Access-Control-Request-Method</code> and <code>Access-Control-Request-Headers</code>, next to the headers the browser adds on its own, such as <code>Host</code>, <code>Origin</code> and <code>User-Agent</code>. So there is no body and no cookies, and your own headers are only named. DevTools will show you more lines than this:</p>
+    <div class="snippet r d3">
+      <p class="cap">The CORS-relevant part of what the browser sends</p>
+      <pre><code>OPTIONS /items HTTP/1.1
+Host: api.example.com
+Origin: http://localhost:3000
+Accept: */*
+Access-Control-Request-Method: POST
+Access-Control-Request-Headers: authorization,content-type</code></pre>
+    </div>
+    <p class="r d3">To pass, the answer needs a 2xx status (the standard gives 200 and 204 as examples) and headers that cover the request that will follow:</p>
+    <div class="snippet r d3">
+      <p class="cap">What it needs back</p>
+      <pre><code>HTTP/1.1 204 No Content
+Access-Control-Allow-Origin: http://localhost:3000
+Access-Control-Allow-Methods: GET, POST, OPTIONS
+Access-Control-Allow-Headers: Authorization, Content-Type</code></pre>
+    </div>
+    <p class="r d3">If the real request is sent with credentials, which here means <code>credentials: 'include'</code> in <code>fetch()</code> or <code>xhr.withCredentials = true</code> (so cookies, HTTP authentication or TLS client certificates can go along), the preflight answer also needs <code>Access-Control-Allow-Credentials: true</code>, and <code>*</code> stops working as a wildcard in these headers: name the origin, the methods and the headers explicitly. A bearer token you set in the <code>Authorization</code> header yourself does not make the request credentialed in this sense, but <code>Authorization</code> still has to be listed by name in <code>Access-Control-Allow-Headers</code>.</p>
+        </section>
+        <section class="sec" id="s3">
+    <h2 class="r">Where the preflight gets its error status</h2>
+    <p class="r d1">On most servers the <code>OPTIONS</code> request walks through the same layers as any other request. If the CORS layer only adds headers and lets it continue, the first layer that does not expect a preflight picks the status:</p>
+    <figure class="dg r d2">
+      <svg viewBox="0 0 400 634" role="img" aria-labelledby="dg-title dg-desc">
+        <title id="dg-title">Where the preflight gets its error status</title>
+        <desc id="dg-desc">The browser sends OPTIONS /items with no body, no cookie and no token, and it passes the server's layers in order. One: the CORS layer adds the Access-Control-Allow headers that pass Chrome's origin check; the fix is to answer OPTIONS here with 204 and stop. Two: the auth middleware finds no token or cookie and returns 401 Unauthorized or 403 Forbidden. Three: the router has no OPTIONS route, or the URL is mistyped, and returns 404 Not Found or 405 Method Not Allowed. Four: the handler reads a body the preflight does not have and returns 500 Internal Server Error. As long as the headers from layer one survive, any of these ends in: It does not have HTTP ok status. The real request is never sent.</desc>
+        <rect class="dg-pill" x="0.5" y="0.5" width="399" height="48" rx="24"/>
+        <text class="dg-pt" x="20" y="29">OPTIONS /items: no body, no cookie, no token</text>
+        <line class="dg-spine" x1="22" y1="49" x2="22" y2="568"/>
+
+        <circle class="dg-node dg-node-ok" cx="22" cy="90" r="13"/>
+        <text class="dg-num dg-num-ok" x="22" y="94.5" text-anchor="middle">1</text>
+        <rect class="dg-box dg-box-ok" x="46.5" y="66.5" width="353" height="118" rx="10"/>
+        <text class="dg-h" x="62" y="93">CORS layer</text>
+        <text class="dg-s" x="62" y="114">Adds the Access-Control-Allow-* headers</text>
+        <text class="dg-need" x="62" y="135">Headers that pass Chrome's origin check</text>
+        <line class="dg-div" x1="62" y1="147.5" x2="383" y2="147.5"/>
+        <text class="dg-fix" x="62" y="169">Fix: answer OPTIONS here with 204, stop</text>
+
+        <circle class="dg-node" cx="22" cy="226" r="13"/>
+        <text class="dg-num" x="22" y="230.5" text-anchor="middle">2</text>
+        <rect class="dg-box" x="46.5" y="202.5" width="353" height="104" rx="10"/>
+        <text class="dg-h" x="62" y="229">Auth middleware</text>
+        <text class="dg-s" x="62" y="250">Finds no token or cookie, rejects it</text>
+        <text class="dg-lab" x="62" y="272">RETURNS</text>
+        <text class="dg-con" x="62" y="290">401 Unauthorized or 403 Forbidden</text>
+
+        <circle class="dg-node" cx="22" cy="348" r="13"/>
+        <text class="dg-num" x="22" y="352.5" text-anchor="middle">3</text>
+        <rect class="dg-box" x="46.5" y="324.5" width="353" height="104" rx="10"/>
+        <text class="dg-h" x="62" y="351">Router</text>
+        <text class="dg-s" x="62" y="372">No OPTIONS route, or a mistyped URL</text>
+        <text class="dg-lab" x="62" y="394">RETURNS</text>
+        <text class="dg-con" x="62" y="412">404 Not Found or 405 Method Not Allowed</text>
+
+        <circle class="dg-node" cx="22" cy="470" r="13"/>
+        <text class="dg-num" x="22" y="474.5" text-anchor="middle">4</text>
+        <rect class="dg-box" x="46.5" y="446.5" width="353" height="104" rx="10"/>
+        <text class="dg-h" x="62" y="473">Handler</text>
+        <text class="dg-s" x="62" y="494">Reads a body the preflight does not have</text>
+        <text class="dg-lab" x="62" y="516">RETURNS</text>
+        <text class="dg-con" x="62" y="534">500 Internal Server Error</text>
+
+        <rect class="dg-end" x="0.5" y="568.5" width="399" height="64" rx="14"/>
+        <text class="dg-con" x="20" y="594">It does not have HTTP ok status.</text>
+        <text class="dg-s" x="20" y="617">The real request is never sent.</text>
+      </svg>
+      <figcaption>The preflight passes through your server in the same order as any request. Once layer 1 has added the headers, any 4xx or 5xx from a later layer ends in this exact message, as long as the headers survive on that error response. The fix sits in layer 1: answer OPTIONS there with a 2xx and do not pass it on.</figcaption>
+    </figure>
+    <p class="r d3">The four causes below map onto these layers: 01 is the router answering an <code>OPTIONS</code> request that layer 1 let through, 02 is the auth middleware, 03 is the handler, and 04 is the router again, for a URL that does not exist.</p>
+        </section>
+        <section class="sec" id="s4">
+    <p class="num r">01</p>
+    <h2 class="r d1">The CORS code adds headers, then passes OPTIONS on</h2>
+    <p class="r d2">A middleware sets the <code>Access-Control-Allow-*</code> headers on every response, which is enough for the origin check, and then hands the <code>OPTIONS</code> request to the router like any other request. The router has no <code>OPTIONS</code> route for that path, answers 404 or 405, and the headers ride along on the error. In the Go question linked below, a wrapper set the headers and then called the Twirp handler for every method. In the ASP.NET 6 one, hand-written middleware added the headers in front of a controller that only had an <code>[HttpPost]</code> action, and the asker noticed that the breakpoint never hit.</p>
+    <p class="r d2">The fix is to end the preflight in the CORS layer itself: if the method is <code>OPTIONS</code>, send a 2xx and return without calling the next handler.</p>
+    <div class="snippet r d3">
+      <p class="cap">Go, net/http</p>
+      <pre><code>func withCORS(next http.Handler) http.Handler {
+    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        h := w.Header()
+        h.Set("Access-Control-Allow-Origin", "http://localhost:3000")
+        if r.Method == http.MethodOptions {
+            h.Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+            h.Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
+            w.WriteHeader(http.StatusNoContent) // 204
+            return // do not call next: the router would answer 404 or 405
+        }
+        next.ServeHTTP(w, r)
+    })
+}</code></pre>
+    </div>
+    <p class="r d3">Libraries do this for you, as long as you let them. In Express, <code>app.use(cors())</code> from the <code>cors</code> package handles preflights for all routes and ends them with 204 by default. In ASP.NET Core, the built-in CORS middleware (<code>AddCors</code> plus <code>UseCors</code>) answers preflight requests automatically, which is usually a better choice than headers added by hand.</p>
+        </section>
+        <section class="sec" id="s5">
+    <p class="num r">02</p>
+    <h2 class="r d1">Authentication rejects the preflight</h2>
+    <p class="r d2">The preflight never carries credentials. The Fetch Standard says its credentials mode is always "same-origin", which excludes them for a cross-origin call. MDN puts it as "CORS-preflight requests must never include credentials". Your own <code>Authorization</code> header is only named in <code>Access-Control-Request-Headers</code>, never sent. So an auth middleware that sees the <code>OPTIONS</code> request finds no token and no session cookie, and returns 401 or 403. The real request would have had the token, but it is never sent.</p>
+    <p class="r d2">With this exact message, something already puts the CORS headers on that 401 or 403, typically CORS code that runs before authentication and then lets the <code>OPTIONS</code> request continue. That makes this a variant of 01. The fix is the same: end the preflight with a 2xx in the CORS layer, so auth never sees it, or let the auth check skip <code>OPTIONS</code>, since a preflight never carries credentials anyway. With a library, load it before auth and let it answer the preflight. Express runs middleware in the order you load it:</p>
+    <div class="snippet r d3">
+      <p class="cap">Express, with the cors package</p>
+      <pre><code>const cors = require('cors');
+
+// 1. CORS first: answers every OPTIONS request with 204 and ends it
+app.use(cors({ origin: 'http://localhost:3000' }));
+
+// 2. auth only sees real requests (requireAuth is your own middleware)
+app.use(requireAuth);
+
+// 3. routes
+app.post('/items', createItem);</code></pre>
+    </div>
+    <p class="r d3">In ASP.NET Core, Microsoft's documentation places <code>UseCors</code> after <code>UseRouting</code> and before <code>UseAuthorization</code>:</p>
+    <div class="snippet r d3">
+      <p class="cap">ASP.NET Core, Program.cs</p>
+      <pre><code>builder.Services.AddCors(o =&gt; o.AddPolicy("app", p =&gt; p
+    .WithOrigins("http://localhost:3000")
+    .WithMethods("GET", "POST")
+    .WithHeaders("Authorization", "Content-Type")));
+
+app.UseRouting();
+app.UseCors("app");      // after UseRouting, before UseAuthorization
+app.UseAuthorization();</code></pre>
+    </div>
+    <p class="r d3">If authentication runs before any CORS code at all, the 401 carries no CORS headers either, and Chrome reports "No 'Access-Control-Allow-Origin' header is present" after the preflight prefix instead. That is the case where moving the CORS layer in front of authentication is the fix.</p>
+        </section>
+        <section class="sec" id="s6">
+    <p class="num r">03</p>
+    <h2 class="r d1">A function that does not expect OPTIONS throws</h2>
+    <p class="r d2">In a bare serverless function, nothing answers <code>OPTIONS</code> unless your code does. The preflight reaches code written for the real request, which parses a JSON body the preflight does not have, throws, and the function answers 500, or 400 if your own error handler catches it. Supabase's documentation for Edge Functions offers two ways out. The <code>withSupabase</code> wrapper from <code>npm:@supabase/server</code> handles CORS and the <code>OPTIONS</code> preflight for you. In a function without it, check the method first, before touching the body.</p>
+    <div class="snippet r d3">
+      <p class="cap">Supabase Edge Function without the wrapper, from the official example</p>
+      <pre><code>// Handle the CORS preflight request.
+if (req.method === 'OPTIONS') {
+  return Response.json({ ok: true }, { headers: corsHeaders })
+}
+
+// only now read the body
+const { name } = await req.json()</code></pre>
+    </div>
+    <p class="r d3">With supabase-js 2.95.0 or later, <code>corsHeaders</code> can be imported from <code>npm:@supabase/supabase-js@^2/cors</code>; for older versions, the docs define it in a <code>_shared/cors.ts</code> file. On AWS API Gateway REST APIs, a non-proxy integration needs an <code>OPTIONS</code> method with a mock integration that returns the three <code>Access-Control-Allow-*</code> headers. With a Lambda proxy or HTTP proxy integration, your backend returns those headers. If <code>OPTIONS</code> is routed to that integration, for example through an <code>ANY</code> method on <code>{proxy+}</code>, your function has to answer it.</p>
+        </section>
+        <section class="sec" id="s7">
+    <p class="num r">04</p>
+    <h2 class="r d1">The preflight goes to a URL that does not exist</h2>
+    <p class="r d2">The preflight is sent to exactly the URL of your request. A typo, a missing <code>/api</code> prefix, a path renamed in a refactor or the wrong port gives a 404 on <code>OPTIONS</code>. When a global layer adds CORS headers to every response, 404s included, this error is all you see of it. Take the URL from the error message, which is the one the preflight went to, and request it with curl as in the next section.</p>
+        </section>
+        <section class="sec" id="s8">
+    <h2 class="r">The fix, step by step</h2>
+    <ol class="r d1">
+      <li><b>Reproduce the preflight outside the browser.</b> Copy the method and the header names from your real request. Leave out cookies and the token, because the browser leaves them out too.
+        <div class="snippet">
+          <p class="cap">Terminal</p>
+          <pre><code>curl -i -X OPTIONS https://api.example.com/items \
+  -H "Origin: http://localhost:3000" \
+  -H "Access-Control-Request-Method: POST" \
+  -H "Access-Control-Request-Headers: authorization,content-type"</code></pre>
+        </div>
+      </li>
+      <li><b>Match the status to a layer.</b> 401 or 403: authentication (02). 404: the URL, or a router with no <code>OPTIONS</code> route (04, 01). 405: a router or framework that does not accept <code>OPTIONS</code> on that path (01). 500, or a 400 from your own error handler: code written for the real request (03).</li>
+      <li><b>Answer <code>OPTIONS</code> in the first layer that sees it,</b> with 204 or 200 and three headers: <code>Access-Control-Allow-Origin</code> with the exact page origin, <code>Access-Control-Allow-Methods</code> with the real method, and <code>Access-Control-Allow-Headers</code> with every name the browser listed in <code>Access-Control-Request-Headers</code>. Add <code>Access-Control-Allow-Credentials: true</code> if the real request is sent with <code>credentials: 'include'</code> or <code>withCredentials</code>.</li>
+      <li><b>Run the same curl command again</b> and check the answer against the next section.</li>
+    </ol>
+        </section>
+        <section class="sec" id="s9">
+    <h2 class="r">How to tell it is fixed</h2>
+    <p class="r d1">curl should now print an answer shaped like "What it needs back" above:</p>
+    <ul class="r d2">
+      <li>The status is 200 or 204, not a 3xx, 4xx or 5xx. Header names are case-insensitive, so lowercase names in curl's output are fine.</li>
+      <li><code>Access-Control-Allow-Origin</code> is exactly your page's origin, or <code>*</code> if the request is not sent with <code>credentials: 'include'</code> or <code>withCredentials</code>. A bearer token in <code>Authorization</code> does not count as credentials here.</li>
+      <li>Every name you passed in <code>Access-Control-Request-Headers</code> appears in <code>Access-Control-Allow-Headers</code>, in any letter case.</li>
+    </ul>
+    <p class="r d3">Then reload the page with DevTools open on the Network tab. You should see the <code>OPTIONS</code> request with a 2xx, followed by your real request. If the console now shows a different preflight message, such as "Request header field authorization is not allowed by Access-Control-Allow-Headers in preflight response" or "Method PUT is not allowed by Access-Control-Allow-Methods in preflight response", that is progress: the status is fixed, and one of the two lists is missing a name.</p>
+        </section>
+        <section class="sec" id="s10">
+    <h2 class="r">Things that look like fixes but are not</h2>
+    <ul class="r d1">
+      <li><b>Adding <code>Access-Control-Allow-Origin</code> to the request.</b> The Go question linked below did this in its axios config. It is a response header. On the request it is just a header that is not CORS-safelisted, so it forces a preflight on its own and then has to be listed in <code>Access-Control-Allow-Headers</code> as well.</li>
+      <li><b><code>preflightContinue: true</code> in the Express cors package.</b> It passes the preflight on to the next handler instead of ending it, which is exactly the fall-through from 01. Leave it at the default, <code>false</code>, unless a later handler really answers <code>OPTIONS</code>.</li>
+      <li><b><code>Access-Control-Allow-Headers: *</code> to cover the token.</b> The Fetch Standard never lets the wildcard cover <code>Authorization</code>: it has to be listed by name. With credentials, <code>*</code> in <code>Access-Control-Allow-Methods</code> and <code>Access-Control-Allow-Headers</code> does not count as a wildcard at all.</li>
+      <li><b>Fixing only the route you are testing.</b> Every URL the frontend calls with a JSON body or a token gets its own preflight. Answer <code>OPTIONS</code> in one global place, not route by route.</li>
+      <li><b>Turning off web security in Chrome, or a CORS browser extension.</b> The accepted answer on the most-viewed question lists these as workarounds. They change only your own browser, and every user still gets the error.</li>
+    </ul>
+        </section>
+        <section class="sec" id="s11">
+    <h2 class="r">Check your preflight values</h2>
+    <div class="try r d1"><p>For this error, fill in the fields in CORS Doctor instead of only pasting the message. From the message alone it cannot see that your <code>Access-Control-Allow-Origin</code> header was there, and it lists that header as missing first.</p><p><a data-umami-event="open-cors-doctor-cta" href="https://arling.sk/cors-doctor/#c=eyJlcnJvciI6eyJtZXNzYWdlIjoiIn0sInJlcXVlc3QiOnsicGFnZU9yaWdpbiI6Imh0dHA6Ly9sb2NhbGhvc3Q6MzAwMCIsInJlcXVlc3RVcmwiOiJodHRwczovL2FwaS5leGFtcGxlLmNvbS9pdGVtcyIsIm1ldGhvZCI6IlBPU1QiLCJjcmVkZW50aWFscyI6IiIsImN1c3RvbUhlYWRlcnMiOlsiQXV0aG9yaXphdGlvbiJdLCJjb250ZW50VHlwZSI6ImFwcGxpY2F0aW9uL2pzb24ifSwicmVzcG9uc2UiOnsiYWNhbyI6Imh0dHA6Ly9sb2NhbGhvc3Q6MzAwMCIsImFjYWMiOiIiLCJhY2FtIjoiIiwiYWNhaCI6IiIsInZhcnkiOiIiLCJzdGF0dXMiOm51bGwsInJlZGlyZWN0c1RvT3RoZXJPcmlnaW4iOm51bGwsInByZWZsaWdodFN0YXR1cyI6NDA1fSwic2VydmVyIjp7InN0YWNrIjoiIn19">Open CORS Doctor with this note's example filled in</a>: a POST with <code>Authorization</code> and a JSON body, and a preflight answered with 405. Then replace the values with yours, from the curl output in step 1 or from the preflight in the Network tab: page origin, request URL, method, custom headers, <code>Content-Type</code>, the preflight status and its <code>Access-Control-Allow-Origin</code>. It tells you whether and why the request needs a preflight, flags a preflight status outside 2xx, and lists the <code>Access-Control-Allow-Methods</code> and <code>Access-Control-Allow-Headers</code> values the preflight must return, with a server snippet if you pick your stack (Express, FastAPI, Django, Rails, Laravel, Go, ASP.NET Core, Supabase Edge Functions, Firebase Cloud Functions, Cloudflare Workers or S3). The check runs in your browser and does not call your API.</p></div>
+        </section>
+        <section class="sec" id="s12">
+    <h2 class="r">Questions</h2>
+    <details class="r d1">
+      <summary>Why does the same request work in Postman, Insomnia or curl?</summary>
+      <p>Preflights are sent by browsers. Postman, Insomnia and curl send only the request you give them, so the <code>OPTIONS</code> request that fails in the browser never happens there. That also makes curl the right tool for testing the preflight: send the <code>OPTIONS</code> request by hand, with the same <code>Origin</code> and <code>Access-Control-Request-*</code> headers the browser would send.</p>
+    </details>
+    <details class="r d1">
+      <summary>Why does my breakpoint in the POST handler never hit?</summary>
+      <p>Because the POST was never sent. The browser sends the actual request only after a successful preflight. When the preflight fails, the whole fetch ends with a network error. Put the breakpoint or a log line on the <code>OPTIONS</code> request instead.</p>
+    </details>
+    <details class="r d2">
+      <summary>Should the preflight return 200 or 204?</summary>
+      <p>Either. The Fetch Standard accepts any status from 200 to 299 and names 200 and 204 as examples. The Express cors package answers with 204 by default and has an <code>optionsSuccessStatus</code> option because, according to its README, some legacy browsers (IE11, various SmartTVs) choke on 204.</p>
+    </details>
+    <details class="r d2">
+      <summary>Can I avoid the preflight instead of fixing it?</summary>
+      <p>Only if the request qualifies as simple: GET, HEAD or POST, only CORS-safelisted headers, and a <code>Content-Type</code> of <code>application/x-www-form-urlencoded</code>, <code>multipart/form-data</code> or <code>text/plain</code>. A JSON body or an <code>Authorization</code> header rules that out. If you do not control the API, MDN describes the other way: route the call through a server you control, which fetches the resource for you.</p>
+    </details>
+        </section>
+      </div>
+    </div>
+  </div>
+  <section class="deep" id="s13">
+    <div class="wrap">
+      <div class="note">
+        <div class="doc">
+    <h2 class="r">Sources</h2>
+    <ul class="r d1">
+      <li>MDN, "Preflight request" (OPTIONS with Access-Control-Request-Method, Origin and Access-Control-Request-Headers, issued automatically by the browser): <a href="https://developer.mozilla.org/en-US/docs/Glossary/Preflight_request">developer.mozilla.org/en-US/docs/Glossary/Preflight_request</a></li>
+      <li>MDN, "Cross-Origin Resource Sharing (CORS)" (simple requests, upload listeners and ReadableStream, "CORS-preflight requests must never include credentials", credentialed requests via credentials: "include" or withCredentials, wildcards and credentials): <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS">developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS</a></li>
+      <li>MDN, "CORS-safelisted request header" (Accept, Accept-Language, Content-Language, Content-Type with three values, Range): <a href="https://developer.mozilla.org/en-US/docs/Glossary/CORS-safelisted_request_header">developer.mozilla.org/en-US/docs/Glossary/CORS-safelisted_request_header</a></li>
+      <li>MDN, "CORS errors", client-side considerations (avoid triggering a preflight, use a proxy server): <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS/Errors">developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS/Errors</a></li>
+      <li>WHATWG Fetch Standard, "CORS-preflight fetch" (a new OPTIONS request with Accept, Access-Control-Request-Method and Access-Control-Request-Headers; success needs a CORS check and an ok status; Authorization is never covered by the wildcard): <a href="https://fetch.spec.whatwg.org/#cors-preflight-fetch">fetch.spec.whatwg.org/#cors-preflight-fetch</a></li>
+      <li>WHATWG Fetch Standard, "ok status" (200 to 299), "HTTP responses" (preflight restricted to an ok status such as 200 or 204; credentials mode of a preflight is always same-origin) and "HTTP fetch" (a failed preflight returns a network error): <a href="https://fetch.spec.whatwg.org/#ok-status">fetch.spec.whatwg.org/#ok-status</a>, <a href="https://fetch.spec.whatwg.org/#http-responses">fetch.spec.whatwg.org/#http-responses</a>, <a href="https://fetch.spec.whatwg.org/#http-fetch">fetch.spec.whatwg.org/#http-fetch</a></li>
+      <li>WHATWG Fetch Standard, "HTTP-network-or-cache fetch" (the browser appends Origin, Referer, the Fetch metadata headers and User-Agent to the request it sends, and a note there lists Host among the headers appended at that point), "CORS check" (<code>*</code> passes only when the credentials mode is not "include") and "credentials" (HTTP cookies, TLS client certificates and HTTP authentication entries): <a href="https://fetch.spec.whatwg.org/#concept-http-network-or-cache-fetch">fetch.spec.whatwg.org/#concept-http-network-or-cache-fetch</a>, <a href="https://fetch.spec.whatwg.org/#concept-cors-check">fetch.spec.whatwg.org/#concept-cors-check</a>, <a href="https://fetch.spec.whatwg.org/#credentials">fetch.spec.whatwg.org/#credentials</a></li>
+      <li>Chromium source, <code>CheckPreflightAccess</code> (the origin check runs first; "It does not have HTTP ok status" only when it passed and the status is not 2xx) and the redirect handler for preflights: <a href="https://source.chromium.org/chromium/chromium/src/+/main:services/network/cors/preflight_controller.cc">source.chromium.org/chromium/chromium/src/+/main:services/network/cors/preflight_controller.cc</a></li>
+      <li>Chromium source, <code>cors_error_string.cc</code> (the "Access to ... at" prefix and the exact preflight messages): <a href="https://source.chromium.org/chromium/chromium/src/+/main:third_party/blink/renderer/platform/loader/cors/cors_error_string.cc">source.chromium.org/chromium/chromium/src/+/main:third_party/blink/renderer/platform/loader/cors/cors_error_string.cc</a></li>
+      <li>axios README ("Make XMLHttpRequests from the browser"): <a href="https://github.com/axios/axios">github.com/axios/axios</a></li>
+      <li>expressjs/cors README (pre-flight handled for all routes with app.use(cors()), preflightContinue, optionsSuccessStatus default 204): <a href="https://github.com/expressjs/cors">github.com/expressjs/cors</a></li>
+      <li>Express, "Writing middleware" (middleware loaded first is executed first): <a href="https://expressjs.com/en/guide/writing-middleware.html">expressjs.com/en/guide/writing-middleware.html</a></li>
+      <li>Microsoft Learn, "Enable Cross-Origin Requests (CORS) in ASP.NET Core" (UseCors order, automatic preflight handling): <a href="https://learn.microsoft.com/en-us/aspnet/core/security/cors">learn.microsoft.com/en-us/aspnet/core/security/cors</a></li>
+      <li>Go, package net/http (MethodOptions, StatusNoContent, Header, WriteHeader): <a href="https://pkg.go.dev/net/http">pkg.go.dev/net/http</a></li>
+      <li>Supabase, "CORS support for invoking from the browser" (withSupabase handles CORS and preflight requests, OPTIONS check before the body without it, corsHeaders import from 2.95.0): <a href="https://supabase.com/docs/guides/functions/cors">supabase.com/docs/guides/functions/cors</a></li>
+      <li>AWS, "CORS for REST APIs in API Gateway" (OPTIONS method with a mock integration; proxy integrations return the headers from the backend): <a href="https://docs.aws.amazon.com/apigateway/latest/developerguide/how-to-cors.html">docs.aws.amazon.com/apigateway/latest/developerguide/how-to-cors.html</a></li>
+      <li>AWS, "Set up a method request in API Gateway" (proxy resource {proxy+}; the ANY method covers DELETE, GET, HEAD, OPTIONS, PATCH, POST and PUT): <a href="https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-method-settings-method-request.html">docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-method-settings-method-request.html</a></li>
+      <li>RFC 9110, section 5.1 "Field Names" (case-insensitive): <a href="https://www.rfc-editor.org/rfc/rfc9110#section-5.1">rfc-editor.org/rfc/rfc9110#section-5.1</a></li>
+      <li>curl, "curl.1 the man page" (-i, -X, -H): <a href="https://curl.se/docs/manpage.html">curl.se/docs/manpage.html</a></li>
+      <li>Stack Overflow, preflight answered with 405, accepted answer listing browser workarounds: <a href="https://stackoverflow.com/questions/35588699">stackoverflow.com/questions/35588699</a></li>
+      <li>Stack Overflow, "It does not have HTTP ok status" with a Go and Twirp server, Access-Control-Allow-Origin set in the axios request: <a href="https://stackoverflow.com/questions/53298478">stackoverflow.com/questions/53298478</a></li>
+      <li>Stack Overflow, "It does not have HTTP ok status" with ASP.NET 6, hand-written CORS middleware and a breakpoint that never hits: <a href="https://stackoverflow.com/questions/71195398">stackoverflow.com/questions/71195398</a></li>
+    </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+<footer class="site-footer">
+  <div class="wrap foot">
+    <div class="site-foot-top"><div><a class="site-brand" href="https://arling.sk/en/" aria-label="ARLing home" data-site-home><svg viewBox="0 0 488 215" width="38" height="15" aria-hidden="true" focusable="false"><path fill="#f4f4f7" fill-rule="evenodd" d="M0.00,213.00L74.00,214.00L181.00,85.00L285.00,214.00L360.00,214.00L206.00,21.00L185.00,4.00L164.00,10.00Z M221.00,0.00L263.00,50.00L395.00,50.00L409.00,55.00L419.00,76.00L401.00,96.00L313.00,98.00L411.00,214.00L487.00,214.00L422.00,139.00L457.00,123.00L482.00,88.00L482.00,48.00L463.00,19.00L417.00,0.00Z"/><path fill="#f2643c" d="M269.00,66.00L269.00,67.00L268.00,68.00L268.00,70.00L267.00,71.00L267.00,76.00L268.00,77.00L268.00,79.00L270.00,81.00L270.00,82.00L271.00,82.00L273.00,84.00L274.00,84.00L277.00,86.00L279.00,86.00L280.00,87.00L287.00,87.00L288.00,86.00L290.00,86.00L291.00,85.00L294.00,84.00L298.00,80.00L298.00,79.00L299.00,78.00L299.00,75.00L300.00,74.00L300.00,72.00L299.00,71.00L299.00,69.00L298.00,68.00L297.00,65.00L295.00,63.00L294.00,63.00L289.00,60.00L278.00,60.00L277.00,61.00L276.00,61.00L275.00,62.00L272.00,63.00Z"/></svg><b>ARLing</b></a><p class="site-foot-firma">ARLing s. r. o., company ID <span class="num">56583486</span>, Bratislava. Own server in the European Union. Software for companies, freelancers and individuals.</p></div><a class="site-cta" href="https://arling.sk/shop/" data-umami-event="shell_footer_cta">Shop<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></div>
+    <div class="site-foot-cols"><div data-skupina="firmy" data-blok="firemne"><p>Businesses and accountants</p><ul><li><a href="https://arling.sk/vsetko/en/#firmy" aria-label="All in this group: Businesses and accountants">All in this group</a></li></ul></div><div data-skupina="eshopy" data-blok="firemne"><p>Online shops and websites</p><ul><li><a href="https://arling.sk/vsetko/en/#eshopy" aria-label="All in this group: Online shops and websites">All in this group</a></li></ul></div><div data-skupina="hry" data-blok="spotrebitelske"><p>Games and puzzles</p><ul><li><a href="https://arling.sk/vsetko/en/#hry" aria-label="All in this group: Games and puzzles">All in this group</a></li></ul></div><div data-skupina="knihy" data-blok="spotrebitelske"><p>Books and gifts</p><ul><li><a href="https://arling.sk/vsetko/en/#knihy" aria-label="All in this group: Books and gifts">All in this group</a></li></ul></div><div><p>Company</p><ul><li><a href="https://arling.sk/how-we-work/en/">How we work</a></li><li><a href="https://arling.sk/notes/en/">Guides</a></li><li><a href="https://arling.sk/kontakt/en/">Contact</a></li><li><a href="https://arling.sk/ucet/en/">Account</a></li><li><a href="https://arling.sk/brand/en/">Brand</a></li><li><a href="https://arling.sk/podmienky/en/">Terms</a></li><li><a href="https://arling.sk/privacy/en/">Privacy</a></li><li><a href="https://arling.sk/odstupenie/en/">Withdraw from the contract here</a></li><li><a href="https://arling.sk/impressum/en/">Imprint</a></li></ul></div></div>
+    <p class="site-all"><a href="https://arling.sk/vsetko/en/" data-umami-event="shell_footer_all">Everything on one page<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></p>
+    <p class="site-dev" data-site-vyvojari><span>For developers</span><em>Free diagnostics for CORS, JWT, OAuth, Supabase and Stripe webhook errors.</em><a href="https://arling.sk/vsetko/en/#vyvojari">All developer tools<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></p>
+    <div class="site-foot-bottom"><p>ARLing s. r. o., Ivanská cesta 32E, 821 04 Bratislava, Slovakia. Company ID 56583486, VAT ID SK2122352100. <a href="mailto:support@arling.sk">support@arling.sk</a></p><p><a href="https://arling.sk/impressum/en/">Impressum</a> · <a href="https://arling.sk/llms.txt">llms.txt</a> · <a href="https://arling.sk/sitemap-index.xml">Sitemap</a></p></div>
+    <p class="site-foot-legal">Tools are provided as is, without warranty. Anonymous visit counts via self-hosted Umami. <a href="https://arling.sk/privacy/en/">Privacy</a> · <a href="https://arling.sk/podmienky/en/">Terms</a> · <a href="https://arling.sk/gdpr/en/">GDPR</a> · <a href="https://arling.sk/odstupenie/en/">Withdraw from the contract here</a></p>
+  </div>
+</footer>
+<script defer src="https://server.invalid/script.js" data-website-id="be534d51-4d01-4860-b267-9596d91606de"></script>
+<script>
+(function () {
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var hero = document.getElementById('hero');
+  if (reduce) {
+    document.querySelectorAll('.r, section').forEach(function (e) { e.classList.add('in'); });
+  }
+  if (!reduce && hero) {
+    requestAnimationFrame(function () {
+      hero.querySelectorAll('.r').forEach(function (e) { e.classList.add('in'); });
+    });
+  }
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (en) {
+      if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); }
+    });
+  }, { rootMargin: '0px 0px -12% 0px', threshold: 0.1 });
+  document.querySelectorAll('section').forEach(function (s) { io.observe(s); });
+
+  // nadpis clanku sa objavi po slovach, ako dobre vytlaceny titulok
+  var h1 = document.getElementById('h1');
+  if (h1) {
+    var i = 0;
+    Array.prototype.forEach.call(h1.querySelectorAll('.l'), function (line) {
+      var words = line.textContent.split(' ');
+      line.textContent = '';
+      words.forEach(function (w, k) {
+        var s = document.createElement('span');
+        s.className = 'w';
+        s.style.transitionDelay = (i++ * 0.06).toFixed(2) + 's';
+        s.textContent = w;
+        line.appendChild(s);
+        if (k < words.length - 1) line.appendChild(document.createTextNode(' '));
+      });
+    });
+    requestAnimationFrame(function () { h1.classList.add('in'); });
+  }
+
+  // bocny register sleduje, ktora cast clanku je v strede obrazovky
+})();
+</script>
+</body>
+</html>

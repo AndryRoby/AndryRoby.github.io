@@ -1,0 +1,540 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script src="/style/vzhlad.js?v=8a4019ae"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://server.invalid 'sha256-QPwRYljoWNm3uozK/O9hop4NZkXfGeawLbf0PZu4L8E=' 'sha256-2/8ZSNIPX6l1x2H28t6yDJ4yFzgre8sRsu+4XCAyQ9I=' 'sha256-qdhEX7/wT+0P1YhsPmvVYk0BJ91QQKPLFki1qJ5lB2Q=' 'sha256-kHzhLBitzZlfAaUS4VuXMelQQYrrpIhEmCeLW+iUbL4='; connect-src 'self' https://server.invalid; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0a0908">
+<link rel="preconnect" href="https://server.invalid" crossorigin>
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../../favicon.ico" sizes="48x48">
+<link rel="apple-touch-icon" href="../../icon-180.png">
+<title>Access-Control-Allow-Origin '*' with credentials mode 'include': why cookies need an exact origin</title>
+<meta name="description" content="Why browsers reject Access-Control-Allow-Origin: * on requests with cookies, where the * comes from in Express or Laravel, and the two headers that fix it.">
+<link rel="canonical" href="https://arling.sk/notes/cors-wildcard-origin-with-credentials/">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Access-Control-Allow-Origin '*' with credentials mode 'include': why cookies need an exact origin">
+<meta property="og:description" content="Why browsers reject Access-Control-Allow-Origin: * on requests with cookies, where the * comes from in Express or Laravel, and the two headers that fix it.">
+<meta property="og:url" content="https://arling.sk/notes/cors-wildcard-origin-with-credentials/">
+
+
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"Article","headline":"Access-Control-Allow-Origin '*' with credentials mode 'include': why cookies need an exact origin","description":"Why browsers reject Access-Control-Allow-Origin: * on requests with cookies, where the * comes from in Express or Laravel, and the two headers that fix it.","datePublished":"2026-09-27","dateModified":"2026-09-27","inLanguage":"en","author":{"@type":"Organization","name":"ARLing s. r. o."},"publisher":{"@type":"Organization","name":"ARLing s. r. o.","url":"https://arling.sk/"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://arling.sk/notes/cors-wildcard-origin-with-credentials/"}}
+</script>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Why does the same request work in Postman or curl?","acceptedAnswer":{"@type":"Answer","text":"Because CORS is enforced by the browser. Postman and curl do not run the CORS check at all, so whatever headers come back, nothing is withheld. The 2017 question describes exactly that: no error in Postman, a 200 in the browser, and the CORS error anyway."}},{"@type":"Question","name":"Why is the session cookie not saved after a login that returned 200?","acceptedAnswer":{"@type":"Answer","text":"Most often because the login call itself was sent without credentials. A cross-origin response can set cookies only when the request asked for them: the Fetch Standard says credentials: 'include' makes Set-Cookie fully functional and that it is ignored otherwise, and MDN says the same about withCredentials for XMLHttpRequest. So the login call needs credentials too, and then it needs the exact origin and Access-Control-Allow-Credentials: true like every other call, or your code never sees its result. If the cookie is still missing after that, its SameSite and Secure attributes are the next suspects."}},{"@type":"Question","name":"Can one API send * on some routes and an exact origin on others?","acceptedAnswer":{"@type":"Answer","text":"Yes. The * is fine for routes that are called without credentials. The documentation of Express's cors package shows this with a per-request options function: an exact origin with credentials for one path, * for the rest."}},{"@type":"Question","name":"Do I need credentials: 'include' for a Bearer token?","acceptedAnswer":{"@type":"Answer","text":"No. In the Fetch Standard, credentials are cookies, TLS client certificates and HTTP authentication entries. A token you set in the Authorization header yourself is sent like any other request header. The server has to list Authorization in Access-Control-Allow-Headers by name, because the wildcard never covers it."}},{"@type":"Question","name":"Is it safe to copy the Origin header into the response?","acceptedAnswer":{"@type":"Answer","text":"Only after comparing it with a list of origins you trust. Copying it unchecked, together with Access-Control-Allow-Credentials: true, lets any website make requests with your users' cookies and read the answers. When the value depends on the request, send Vary: Origin as well."}}]}
+</script>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"ARLing","item":"https://arling.sk/"},{"@type":"ListItem","position":2,"name":"Notes","item":"https://arling.sk/notes/"},{"@type":"ListItem","position":3,"name":"Access-Control-Allow-Origin '*' with credentials mode 'include': why cookies need an exact origin","item":"https://arling.sk/notes/cors-wildcard-origin-with-credentials/"}]}
+</script>
+<link rel="preload" href="/fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/style/paper.css?v=704b28ed">
+<script src="/style/prepinac.js?v=668e98c9" defer></script>
+<style>
+  /* Notes. Vzhlad, farby, typografia a pohyb su v /style/paper.css.
+     Tu ostava len to, co je pre clanok vlastne: merany pas, register, panel s nastrojom. */
+  .note{max-width:min(100%,880px);margin:0 auto}
+  .doc{max-width:min(68ch,660px);margin-inline:auto;font-size:clamp(17px,1.2vw,18px);line-height:1.62}
+
+  /* uvod clanku: nadpis, datum, odkaz na nastroj */
+  .hero-note{padding:clamp(34px,4.6vw,72px) 0 clamp(20px,2.4vw,34px)}
+  /* Titul je tu presny text chyby a je dlhy, preto je o stupen mensi nez v inych clankoch
+     a smie sa zalomit aj vnutri slova. */
+  .hero-note h1{font-size:clamp(28px,3.9vw,52px);line-height:1.08;margin:0 0 18px;overflow-wrap:anywhere}
+  .hero-note h1 .l+.l{display:block;margin-top:.3em;font-weight:500;
+    font-size:clamp(20px,2.4vw,34px);line-height:1.2;letter-spacing:-.01em;color:var(--body)}
+  .hero-note .kicker{display:block;margin:0 0 12px}
+  .hero-note .crumbs{font-family:var(--ui);font-size:12px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--accent);margin:0 0 12px}
+  .hero-note .crumbs a{color:inherit;text-decoration:none}
+  .hero-note .crumbs a:hover{text-decoration:underline}
+  .byline,.dateline{font-family:var(--ui);font-size:14px;color:var(--muted);margin:0 0 20px;max-width:none}
+  .toolgo{margin:0}
+
+  /* rytmus clanku: vlasova linka medzi castami, ziadne velke medzery sekcii */
+  section{scroll-margin-top:86px}
+  .doc section{padding:0;border-top:none;margin:0 0 clamp(26px,2.8vw,38px)}
+  .doc section+section{border-top:1px solid var(--line);padding-top:clamp(26px,2.8vw,36px)}
+  .doc h2{font-size:clamp(21px,1.9vw,27px);line-height:1.22;margin:0 0 12px}
+  .doc h3{font-size:clamp(17.5px,1.3vw,20px);margin:18px 0 8px}
+  .doc p{margin:0 0 14px;max-width:none}
+  .doc .num,.doc .kicker{display:block;font-family:var(--ui);font-size:12px;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--accent);margin:0 0 7px}
+  .doc .lead,.doc .lede{font-size:clamp(18px,1.35vw,20.5px);line-height:1.55;max-width:none;margin:0 0 18px}
+  .doc ol,.doc ul{padding-left:22px;margin:0 0 16px}
+  .doc li{margin:0 0 7px}
+  .doc li:last-child{margin-bottom:0}
+  .doc li .snippet{margin:10px 0 4px}
+  .doc a{overflow-wrap:anywhere}
+  .doc code{background:var(--paper-deep);border:1px solid var(--line);border-radius:4px;padding:1px 5px;
+    overflow-wrap:anywhere}
+  .doc pre{margin:0 0 16px;white-space:pre-wrap;overflow-wrap:break-word}
+  .doc pre code{background:none;border:none;padding:0;font-size:13.5px;line-height:1.55}
+  .doc blockquote{margin:0 0 16px;padding:8px 16px;border-left:2px solid var(--line);color:var(--muted)}
+
+  /* chybova hlaska, oprava, ukazka kodu s popisom */
+  .doc .err{background:color-mix(in srgb,var(--accent) 7%,var(--card));border:1px solid var(--line);
+    border-left:3px solid var(--accent);border-radius:8px;padding:12px 16px;margin:0 0 16px}
+  .doc .err code{background:none;border:none;padding:0;color:var(--ink)}
+  .doc .fix{margin:0 0 16px;padding-left:16px;border-left:2px solid var(--accent)}
+  .doc .fix p{margin:0 0 8px}
+  .doc .fix p:last-child{margin-bottom:0}
+  .doc .fix-label{font-family:var(--ui);font-size:12px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--muted);margin:0 0 6px}
+  .doc .snippet{background:var(--card);border:1px solid var(--line);border-radius:10px;margin:0 0 18px;
+    overflow:hidden}
+  .doc .snippet .cap{padding:8px 14px;border-bottom:1px solid var(--line);
+    font:500 11px/1.3 var(--ui);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  .doc .snippet.bad .cap{color:var(--accent)}
+  .doc .snippet pre{margin:0;border:none;border-radius:0;background:none;white-space:pre-wrap}
+
+  /* diagram: dve kontroly odpovede na poziadavku s cookies. Farby su tokeny z paper.css, takze sedi na oboch plochach. */
+  .doc figure.dg{margin:6px 0 22px}
+  .doc figure.dg svg{display:block;width:100%;height:auto;max-width:540px;margin:0 auto}
+  .dg .dg-pill{fill:none;stroke:var(--line-silna,var(--line));stroke-width:1}
+  .dg .dg-pt{fill:var(--ink);font:500 12.5px var(--mono)}
+  .dg .dg-spine{stroke:var(--line-silna,var(--line));stroke-width:2}
+  .dg .dg-node{fill:var(--accent)}
+  .dg .dg-node-n{fill:var(--body)}
+  .dg .dg-node-ok{fill:var(--ok,#2f7d57)}
+  .dg .dg-num{fill:var(--paper-deep);font:700 13px var(--ui)}
+  .dg .dg-box{fill:var(--card-plna,var(--card));stroke:var(--line-silna,var(--line));stroke-width:1}
+  .dg .dg-box-ok{stroke:var(--ok,#2f7d57)}
+  .dg .dg-div{stroke:var(--line-silna,var(--line));stroke-width:1}
+  .dg .dg-h{fill:var(--ink);font:600 16px var(--ui)}
+  .dg .dg-s{fill:var(--body);font:400 13px var(--ui)}
+  .dg .dg-okc{fill:var(--ok,#2f7d57);font:700 12.5px var(--ui)}
+  .dg .dg-lab{fill:var(--muted);font:600 12px var(--ui);letter-spacing:.08em}
+  .dg .dg-con{fill:var(--accent);font:700 12.5px var(--ui)}
+  body.noc .dg .dg-con{fill:var(--accent-light)}
+  .dg .dg-cell-add{fill:color-mix(in srgb,var(--accent) 22%,var(--card-plna,var(--card)));stroke:var(--accent);stroke-width:1.5}
+  .dg .dg-ch-add{fill:var(--accent-light);font:700 14px var(--mono)}
+  .dg .dg-plus{fill:var(--accent-light);font:700 13px var(--ui)}
+  .doc figure.dg figcaption{margin:10px auto 0;max-width:540px;font:400 14px/1.5 var(--ui);color:var(--muted)}
+
+  /* caste otazky */
+  .doc details{border-top:1px solid var(--line);padding:14px 0}
+  .doc details:last-of-type{border-bottom:1px solid var(--line);margin-bottom:16px}
+  .doc summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;gap:14px;
+    font:600 17px/1.35 var(--display);color:var(--ink)}
+  .doc summary::-webkit-details-marker{display:none}
+  .doc summary::after{content:"+";flex:none;color:var(--accent);font-family:var(--ui);font-weight:400}
+  .doc details[open] summary::after{content:"\2212"}
+  .doc details p{margin:10px 0 0}
+
+  /* zdroje */
+  .doc ul.sources{list-style:none;padding-left:0}
+  .doc ul.sources li{padding-left:14px;border-left:2px solid var(--line)}
+  .doc .sources li{margin:0 0 10px;font-size:.95em}
+  .doc .sources cite{font-style:italic}
+  .doc ul.plain{list-style:none;padding-left:0}
+  .doc ul.plain li{margin:0;padding:10px 0;border-top:1px solid var(--line)}
+  .doc ul.plain li:first-child{border-top:none}
+
+  /* panel s nastrojom: jedina tmava plocha v texte, tam sa klika */
+  .doc .tool-box,.doc .toolbox,.doc .check,.doc .try,.doc .cta{display:block;background:var(--ink);
+    color:#cfcabd;border:none;border-radius:var(--radius);padding:clamp(20px,2.2vw,28px);margin:0 0 18px}
+  .doc .tool-box p,.doc .check p,.doc .try p,.doc .cta p{max-width:none;margin:0 0 12px;color:#cfcabd}
+  .doc .toolbox{max-width:none;color:#cfcabd}
+  .doc .tool-box p:last-of-type,.doc .check p:last-child,.doc .try p:last-child,
+  .doc .cta p:last-child{margin-bottom:0}
+  .doc .tool-box a,.doc .toolbox a,.doc .check a,.doc .try a,.doc .cta a{color:#fffdf8}
+  .doc .tool-box a:hover,.doc .toolbox a:hover,.doc .check a:hover,.doc .try a:hover,
+  .doc .cta a:hover{color:var(--accent-light)}
+  .doc .tool-box code,.doc .toolbox code,.doc .check code,.doc .try code,.doc .cta code{
+    background:rgba(255,253,248,.10);border-color:rgba(255,253,248,.22);color:#fffdf8}
+  .doc .tool-box .btn{margin:14px 10px 0 0;text-decoration:none;color:#fff}
+  .doc .tool-box .btn+.btn{background:none;border:1px solid rgba(255,253,248,.45);color:#fffdf8}
+  .doc .tool-box .btn+.btn:hover{background:#fffdf8;color:var(--ink)}
+  .doc .tool-cta{display:inline-flex;align-items:center;height:46px;padding:0 20px;border-radius:12px;
+    margin:2px 0 0;background:var(--accent);color:#fff;font:500 15px/1 var(--ui);text-decoration:none}
+  .doc .tool-cta:hover{background:var(--accent-dark);color:#fff}
+
+  @media (min-width:1280px){}
+
+  /* paticka je tmavy pas na konci */
+  footer.band{border-top:none;color:#a8a294}
+  footer.band a,footer.band b{color:#fffdf8}
+  footer.band .wrap{max-width:880px}
+  footer.band .cols{width:min(880px,92vw);margin:0 auto;gap:16px 32px}
+
+</style>
+<meta property="og:image" content="https://arling.sk/og.png">
+</head>
+<body class="noc">
+<div class="wash" aria-hidden="true"><i></i><i></i></div>
+<noscript><style>.r,.w{opacity:1;transform:none;filter:none}</style></noscript>
+<a class="skip site-skip" href="#arling-obsah" data-site-label="skip">Skip to content</a>
+<header class="site-header">
+  <div class="wrap bar">
+    <a class="brand" href="https://arling.sk/en/" aria-label="ARLing home" data-site-home>
+      <svg viewBox="0 0 488 215" width="38" height="15" aria-hidden="true" focusable="false"><path fill="#f4f4f7" fill-rule="evenodd" d="M0.00,213.00L74.00,214.00L181.00,85.00L285.00,214.00L360.00,214.00L206.00,21.00L185.00,4.00L164.00,10.00Z M221.00,0.00L263.00,50.00L395.00,50.00L409.00,55.00L419.00,76.00L401.00,96.00L313.00,98.00L411.00,214.00L487.00,214.00L422.00,139.00L457.00,123.00L482.00,88.00L482.00,48.00L463.00,19.00L417.00,0.00Z"/><path fill="#f2643c" d="M269.00,66.00L269.00,67.00L268.00,68.00L268.00,70.00L267.00,71.00L267.00,76.00L268.00,77.00L268.00,79.00L270.00,81.00L270.00,82.00L271.00,82.00L273.00,84.00L274.00,84.00L277.00,86.00L279.00,86.00L280.00,87.00L287.00,87.00L288.00,86.00L290.00,86.00L291.00,85.00L294.00,84.00L298.00,80.00L298.00,79.00L299.00,78.00L299.00,75.00L300.00,74.00L300.00,72.00L299.00,71.00L299.00,69.00L298.00,68.00L297.00,65.00L295.00,63.00L294.00,63.00L289.00,60.00L278.00,60.00L277.00,61.00L276.00,61.00L275.00,62.00L272.00,63.00Z"/></svg>
+      <b>ARLing</b><span>Notes</span>
+    </a>
+    <details class="site-menu">
+      <summary class="site-menu-toggle"><span class="site-menu-text" data-site-label="produkty">Products</span><span class="site-menu-bars" aria-hidden="true"><i></i><i></i><i></i></span><span class="site-menu-word" data-site-label="menu">Menu</span></summary>
+      <div class="site-menu-panel" role="navigation" aria-label="Products" data-site-aria="produkty"><div class="site-bloky"><div class="site-blok" data-blok="firemne"><p class="site-blok-nazov">For businesses</p><div class="site-cols"><div class="site-col" data-skupina="firmy"><p>Businesses and accountants</p><a class="site-col-all" href="https://arling.sk/vsetko/en/#firmy" aria-label="All in this group: Businesses and accountants" data-umami-event="shell_menu_group" data-umami-event-target="firmy"><span class="site-dlho">All in this group</span><span class="site-kratko">All</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></div><div class="site-col" data-skupina="eshopy"><p>Online shops and websites</p><a class="site-col-all" href="https://arling.sk/vsetko/en/#eshopy" aria-label="All in this group: Online shops and websites" data-umami-event="shell_menu_group" data-umami-event-target="eshopy"><span class="site-dlho">All in this group</span><span class="site-kratko">All</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></div></div></div><div class="site-blok" data-blok="spotrebitelske"><p class="site-blok-nazov">For leisure</p><div class="site-cols"><div class="site-col" data-skupina="hry"><p>Games and puzzles</p><a class="site-col-all" href="https://arling.sk/vsetko/en/#hry" aria-label="All in this group: Games and puzzles" data-umami-event="shell_menu_group" data-umami-event-target="hry"><span class="site-dlho">All in this group</span><span class="site-kratko">All</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></div><div class="site-col" data-skupina="knihy"><p>Books and gifts</p><a class="site-col-all" href="https://arling.sk/vsetko/en/#knihy" aria-label="All in this group: Books and gifts" data-umami-event="shell_menu_group" data-umami-event-target="knihy"><span class="site-dlho">All in this group</span><span class="site-kratko">All</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></div></div></div></div><div class="site-menu-spodok"><p class="site-all"><a href="https://arling.sk/vsetko/en/" data-umami-event="shell_menu_all">Everything on one page<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></p><p class="site-dev"><span>For developers</span><em>Free diagnostics for CORS, JWT, OAuth, Supabase and Stripe webhook errors.</em><a href="https://arling.sk/vsetko/en/#vyvojari">All developer tools<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></p></div><div class="site-col site-firma"><p>Company</p><ul><li><a href="https://arling.sk/en/#nastroje"><b>Tools</b></a></li><li><a href="https://arling.sk/en/#piloty"><b>Pilots</b></a></li><li><a href="https://arling.sk/how-we-work/en/"><b>How we work</b></a></li><li><a href="https://arling.sk/notes/en/"><b>Guides</b></a></li><li><a href="https://arling.sk/kontakt/en/"><b>Contact</b></a></li><li><a href="https://arling.sk/ucet/en/"><b>Account</b></a></li><li><a href="https://arling.sk/brand/en/"><b>Brand</b></a></li><li><a href="https://arling.sk/podmienky/en/"><b>Terms</b></a></li><li><a href="https://arling.sk/privacy/en/"><b>Privacy</b></a></li><li><a href="https://arling.sk/odstupenie/en/"><b>Withdraw from the contract here</b></a></li><li><a href="https://arling.sk/impressum/en/"><b>Imprint</b></a></li></ul></div><p class="site-menu-cta"><a class="site-cta" href="https://arling.sk/shop/" data-site-cta data-site-label="cta" data-umami-event="shell_cta_menu">Shop</a></p></div>
+    </details>
+    <nav id="hlavne-menu" class="site-main-nav" aria-label="Main navigation" data-site-aria="nav"><a href="https://arling.sk/en/#nastroje" data-site-nav="0">Tools</a><a href="https://arling.sk/en/#piloty" data-site-nav="1">Pilots</a><a href="https://arling.sk/notes/en/" data-site-nav="2">Guides</a><a href="https://arling.sk/how-we-work/en/" data-site-nav="3">Company</a></nav>
+    <a class="site-cta" href="https://arling.sk/shop/" data-site-cta data-site-label="cta" data-umami-event="shell_cta">Shop</a>
+  </div>
+  <script src="/style/menu-en.js" defer></script>
+</header>
+<main id="arling-obsah" tabindex="-1">
+  <div class="wrap">
+    <div class="note">
+      <div class="hero-note" id="hero">
+        <p class="kicker r">Notes</p>
+        <h1 id="h1" class="r d1"><span class="l">The value of the 'Access-Control-Allow-Origin' header in the response must not be the wildcard '*'</span><span class="l">when the request's credentials mode is 'include'</span></h1>
+        <p class="byline r d2">ARLing s. r. o. · 2026-09-27</p>
+        <p class="toolgo r d3"><a data-umami-event="open-cors-doctor-hero" class="go" href="https://arling.sk/cors-doctor/">CORS Doctor <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2.5 8h11M9 3.5 13.5 8 9 12.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a></p>
+      </div>
+      <div class="doc">
+        <section class="sec" id="s1">
+  <p class="lead r">Your frontend calls an API on another origin with cookies, the server may even answer with a 200, and Chrome's console prints this:</p>
+  <div class="err r d1"><code>Access to fetch at 'https://api.example.com/me' from origin 'http://localhost:3000' has been blocked by CORS policy: The value of the 'Access-Control-Allow-Origin' header in the response must not be the wildcard '*' when the request's credentials mode is 'include'.</code></div>
+  <p class="r d2">Two settings met in one request. Your code asked the browser to send credentials: <code>credentials: 'include'</code> on <code>fetch()</code>, or <code>withCredentials: true</code> on XMLHttpRequest (jQuery sets it through <code>xhrFields</code>, axios has its own <code>withCredentials</code> option). In the Fetch Standard, credentials means cookies, TLS client certificates and HTTP authentication entries. The server answered with <code>Access-Control-Allow-Origin: *</code>. For a request with credentials the browser does not accept the wildcard: the header has to name your page's origin exactly, and <code>Access-Control-Allow-Credentials: true</code> has to be there too. Otherwise the browser keeps the response away from your code. A request that needed no preflight has still reached the server with its cookies; only the answer is withheld, which is why a 200 from the server proves nothing here.</p>
+  <p class="r d2">The same rule shows up in a few wordings:</p>
+  <ul class="r d2">
+    <li>When the request comes from XMLHttpRequest, Chrome appends: "The credentials mode of requests initiated by the XMLHttpRequest is controlled by the withCredentials attribute."</li>
+    <li>When the request needed a preflight, the part after "blocked by CORS policy:" starts with "Response to preflight request doesn't pass access control check:". Then the <code>OPTIONS</code> answer is the one that failed. The 2024 question linked below shows this variant.</li>
+    <li>Firefox writes "Reason: Credential is not supported if the CORS header 'Access-Control-Allow-Origin' is '*'".</li>
+    <li>In 2013 Chrome said "Cannot use wildcard in Access-Control-Allow-Origin when credentials flag is true", which is the title of the oldest question linked below.</li>
+  </ul>
+  <p class="r d3">There are two ways out, and one question picks between them: does this particular call need cookies? If it does, the server has to send your exact origin plus <code>Access-Control-Allow-Credentials: true</code>. If it does not, the client should stop sending credentials, and <code>*</code> is fine as it is.</p>
+        </section>
+        <section class="sec" id="s2">
+    <h2 class="r">What the browser checks</h2>
+    <p class="r d1">The Fetch Standard defines the CORS check in a few lines. For any CORS response, it goes like this:</p>
+    <ol class="r d2">
+      <li>Read <code>Access-Control-Allow-Origin</code>. If it is missing, fail.</li>
+      <li>If the credentials mode is not <code>include</code> and the value is <code>*</code>, pass. This is the only step where <code>*</code> means "anyone".</li>
+      <li>Otherwise the value must be the request's origin, byte for byte. With credentials, <code>*</code> lands here and is compared as a one-character string, so it fails.</li>
+      <li>With credentials, <code>Access-Control-Allow-Credentials</code> must also be exactly <code>true</code>. A missing header fails, and so does <code>True</code>.</li>
+    </ol>
+    <p class="r d2">The reason is written into the standard's section on credentials: sharing responses and allowing requests with credentials is "rather unsafe", and the server developer has to decide deliberately whether such responses can be shared. Microsoft's ASP.NET Core documentation says what goes wrong otherwise: a website at another domain can send a signed-in user's credentials to the app on the user's behalf without the user's knowledge. A wildcard would answer yes for every website at once, and the standard does not allow that combination.</p>
+    <figure class="dg r d3">
+      <svg viewBox="0 0 400 812" role="img" aria-labelledby="dg-title dg-desc">
+        <title id="dg-title">The two checks a response to a request with cookies has to pass</title>
+        <desc id="dg-desc">Your code calls fetch with credentials set to include. Step one: the request goes out with Origin http://localhost:3000 and a Cookie header. Step two, check one, Access-Control-Allow-Origin must equal the Origin byte for byte. An asterisk fails, because with cookies it is only a character. http://localhost:3000 with a trailing slash fails, because a serialized origin has no trailing slash. http://localhost:3000 passes. Step three, check two, Access-Control-Allow-Credentials. A missing header fails. True with a capital T fails, because the value is case-sensitive. Lowercase true passes. Step four: your code gets the response; if Access-Control-Allow-Origin comes from an allow-list, also send Vary: Origin. If the request needs a preflight, the OPTIONS answer must pass both checks as well, and only the real request carries the cookies.</desc>
+        <rect class="dg-pill" x="0.5" y="0.5" width="399" height="48" rx="24"/>
+        <text class="dg-pt" x="20" y="29">fetch(url, { credentials: 'include' })</text>
+        <line class="dg-spine" x1="22" y1="49" x2="22" y2="652"/>
+
+        <circle class="dg-node dg-node-n" cx="22" cy="90" r="13"/>
+        <text class="dg-num" x="22" y="94.5" text-anchor="middle">1</text>
+        <rect class="dg-box" x="46.5" y="66.5" width="353" height="104" rx="10"/>
+        <text class="dg-h" x="62" y="93">The request carries cookies</text>
+        <text class="dg-pt" x="62" y="117">Origin: http://localhost:3000</text>
+        <text class="dg-pt" x="62" y="138">Cookie: session=abc123</text>
+        <text class="dg-s" x="62" y="159">The answer then has to pass two checks.</text>
+
+        <circle class="dg-node" cx="22" cy="212" r="13"/>
+        <text class="dg-num" x="22" y="216.5" text-anchor="middle">2</text>
+        <rect class="dg-box" x="46.5" y="188.5" width="353" height="206" rx="10"/>
+        <text class="dg-h" x="62" y="215">Check 1: Allow-Origin</text>
+        <text class="dg-lab" x="62" y="237">EQUAL TO ORIGIN, BYTE FOR BYTE</text>
+        <rect class="dg-cell-add" x="61.5" y="252.5" width="18" height="21" rx="4"/>
+        <text class="dg-ch-add" x="70.5" y="268" text-anchor="middle">*</text>
+        <text class="dg-con" x="383" y="267" text-anchor="end">fails</text>
+        <text class="dg-s" x="62" y="289">With cookies, * is only a character</text>
+        <text class="dg-pt" x="62" y="319" textLength="157.5" lengthAdjust="spacingAndGlyphs">http://localhost:3000</text>
+        <rect class="dg-cell-add" x="221.5" y="304.5" width="15" height="21" rx="4"/>
+        <text class="dg-ch-add" x="229" y="320" text-anchor="middle">/</text>
+        <text class="dg-plus" x="243" y="319">+1</text>
+        <text class="dg-con" x="383" y="319" text-anchor="end">fails</text>
+        <text class="dg-s" x="62" y="340">A serialized origin has no trailing slash</text>
+        <text class="dg-pt" x="62" y="368" textLength="157.5" lengthAdjust="spacingAndGlyphs">http://localhost:3000</text>
+        <text class="dg-okc" x="383" y="368" text-anchor="end">passes</text>
+        <text class="dg-s" x="62" y="386">Same scheme, host and port</text>
+
+        <circle class="dg-node" cx="22" cy="436" r="13"/>
+        <text class="dg-num" x="22" y="440.5" text-anchor="middle">3</text>
+        <rect class="dg-box" x="46.5" y="412.5" width="353" height="194" rx="10"/>
+        <text class="dg-h" x="62" y="439">Check 2: Allow-Credentials</text>
+        <text class="dg-lab" x="62" y="461">MUST BE PRESENT, LOWERCASE</text>
+        <text class="dg-pt" x="62" y="491">(header missing)</text>
+        <text class="dg-con" x="383" y="491" text-anchor="end">fails</text>
+        <text class="dg-s" x="62" y="512">The response is withheld from your code</text>
+        <rect class="dg-cell-add" x="61.5" y="527.5" width="14" height="21" rx="4"/>
+        <text class="dg-ch-add" x="68.5" y="543" text-anchor="middle">T</text>
+        <text class="dg-pt" x="79" y="542" textLength="22.5" lengthAdjust="spacingAndGlyphs">rue</text>
+        <text class="dg-con" x="383" y="542" text-anchor="end">fails</text>
+        <text class="dg-s" x="62" y="563">Case-sensitive: only lowercase true</text>
+        <text class="dg-pt" x="62" y="592">true</text>
+        <text class="dg-okc" x="383" y="592" text-anchor="end">passes</text>
+
+        <circle class="dg-node dg-node-ok" cx="22" cy="652" r="13"/>
+        <text class="dg-num" x="22" y="656.5" text-anchor="middle">4</text>
+        <rect class="dg-box dg-box-ok" x="46.5" y="624.5" width="353" height="84" rx="10"/>
+        <text class="dg-h" x="62" y="651">Your code gets the response</text>
+        <text class="dg-s" x="62" y="674">If Allow-Origin comes from an allow-list,</text>
+        <text class="dg-s" x="62" y="694">also send Vary: Origin.</text>
+
+        <rect class="dg-pill" x="0.5" y="726.5" width="399" height="84" rx="14"/>
+        <text class="dg-lab" x="20" y="752">THE REQUEST NEEDS A PREFLIGHT?</text>
+        <text class="dg-s" x="20" y="775">The OPTIONS answer must pass both checks too.</text>
+        <text class="dg-s" x="20" y="796">Only the real request carries the cookies.</text>
+      </svg>
+      <figcaption>A response to a request with credentials passes two checks, in this order. The first compares <code>Access-Control-Allow-Origin</code> with the <code>Origin</code> the browser sent, as plain text: <code>*</code> does not match, and neither does the right origin with one extra slash. The second wants <code>Access-Control-Allow-Credentials</code> with the exact value <code>true</code>. The rows follow the Fetch Standard's CORS check and the table in its section on CORS and credentials.</figcaption>
+    </figure>
+        </section>
+        <section class="sec" id="s3">
+    <p class="num r">01</p>
+    <h2 class="r d1">A CORS library on its default, with credentials switched on</h2>
+    <p class="r d2">A CORS setup that allows every origin sends <code>*</code>, and in some libraries switching on credentials does not change that value; it only adds the second header.</p>
+    <p class="r d2"><b>Express with the <code>cors</code> package.</b> Its default configuration has <code>"origin": "*"</code>, and the <code>credentials</code> option only adds <code>Access-Control-Allow-Credentials</code>. So the line below sends exactly the pair the browser rejects. Half of the answers on the 2013 question are about this package.</p>
+    <div class="snippet bad r d2">
+      <p class="cap">Express: sends * together with credentials</p>
+      <pre><code>app.use(cors({ credentials: true }));</code></pre>
+    </div>
+    <div class="snippet r d3">
+      <p class="cap">Express: an explicit list</p>
+      <pre><code>app.use(cors({
+  origin: ['http://localhost:3000', 'https://app.example.com'],
+  credentials: true,
+}));</code></pre>
+    </div>
+    <p class="r d3">With an array, the package sends back the request's origin only when it is in the list, and it adds <code>Vary: Origin</code> on its own.</p>
+    <p class="r d3"><b>ASP.NET Core.</b> A policy with <code>AllowAnyOrigin</code> sends <code>*</code>, so it produces this message as soon as the client sends cookies. Adding <code>AllowCredentials</code> to it does not get you further. Microsoft's documentation calls that combination insecure, and in the current source <code>CorsPolicyBuilder.Build()</code> throws an <code>InvalidOperationException</code> ("The CORS protocol does not allow specifying a wildcard (any) origin and credentials at the same time"), and <code>CorsService</code> rejects such a policy with an <code>ArgumentException</code>. That version ends in an exception on the server, not in this message. Name the origins instead. The URL in <code>WithOrigins</code> must not end with a slash, or the comparison fails and no header is returned. A JSON <code>POST</code> also needs a preflight, and unless you call <code>AllowAnyHeader</code>, ASP.NET Core answers it only with the headers you list, hence <code>WithHeaders</code> below.</p>
+    <div class="snippet r d3">
+      <p class="cap">ASP.NET Core, based on Microsoft's CORS documentation</p>
+      <pre><code>builder.Services.AddCors(options =>
+{
+    options.AddPolicy("Frontend", policy =>
+        policy.WithOrigins("http://localhost:3000")
+              .WithMethods("GET", "POST")
+              .WithHeaders("Content-Type")
+              .AllowCredentials());
+});
+// ...
+app.UseRouting();
+app.UseCors("Frontend");   // after UseRouting, before UseAuthorization
+app.UseAuthorization();</code></pre>
+    </div>
+    <p class="r d3"><b>FastAPI.</b> Its documentation says that none of <code>allow_origins</code>, <code>allow_methods</code> and <code>allow_headers</code> can be <code>['*']</code> when <code>allow_credentials=True</code>; all of them must be listed. The trap section below explains why following that rule matters even when the error does not show up.</p>
+    <div class="snippet r d3">
+      <p class="cap">FastAPI</p>
+      <pre><code>app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type"],
+)</code></pre>
+    </div>
+        </section>
+        <section class="sec" id="s4">
+    <p class="num r">02</p>
+    <h2 class="r d1">Laravel's default CORS config meets Sanctum's cookies</h2>
+    <p class="r d2">Laravel's default <code>config/cors.php</code> has <code>'allowed_origins' => ['*']</code> and <code>'supports_credentials' => false</code>. The CORS layer underneath, <code>fruitcake/php-cors</code>, then answers with <code>*</code> and no credentials header. Sanctum's SPA authentication, on the other hand, tells you to set <code>axios.defaults.withCredentials = true</code>, because it runs on the session cookie. Put the two together, with the SPA on another origin, and its calls to the paths listed in <code>'paths'</code> end in this error.</p>
+    <p class="r d2">Sanctum's documentation gives the fix: publish the file with <code>php artisan config:publish cors</code>, because it is not published by default, and set <code>supports_credentials</code> to <code>true</code>. List your SPA's origin while you are there:</p>
+    <div class="snippet r d3">
+      <p class="cap">config/cors.php</p>
+      <pre><code>'paths' => ['api/*', 'sanctum/csrf-cookie'],
+'allowed_origins' => ['http://localhost:3000'],
+'supports_credentials' => true,</code></pre>
+    </div>
+    <p class="r d3">With <code>supports_credentials</code> set to <code>true</code>, php-cors never sends <code>*</code>: its code sets the wildcard only when all origins are allowed and credentials are off. That is what makes the 2024 question below useful. Its config already had <code>'supports_credentials' => true</code> and a list of origins, and the response still said <code>*</code>. Nobody answered it, but two commenters point elsewhere: a cached config (<code>php artisan config:clear</code>) and the web server overriding the header Laravel set. Which leads to the next cause.</p>
+        </section>
+        <section class="sec" id="s5">
+    <p class="num r">03</p>
+    <h2 class="r d1">Another layer writes its own *</h2>
+    <p class="r d2">CORS headers can come from a CORS middleware, a hand-written middleware, the web server, a reverse proxy or a CDN. If one of them sends <code>*</code>, fixing another one changes nothing in the browser. In the 2013 question, the author set a specific origin in the Node.js server that served the frontend (the backend's own origin, with a trailing slash), while the response that mattered came from the Django API, which still answered with <code>*</code>. The fix the author added to the question was in the Django API's own CORS settings.</p>
+    <p class="r d3">Fix: find out which layer writes the header. Send the same request with <code>curl -i</code> (see below) once to the public URL and once to the app directly, for example on its local port, and compare the <code>Access-Control-Allow-Origin</code> lines. Then keep CORS in one place. If two layers both send the header, Chrome reports a different error, "The 'Access-Control-Allow-Origin' header contains multiple values", which <a href="https://arling.sk/notes/cors-no-access-control-allow-origin-header/">the note on the missing header</a> covers.</p>
+        </section>
+        <section class="sec" id="s6">
+    <p class="num r">04</p>
+    <h2 class="r d1">Credentials on a call that does not need them</h2>
+    <p class="r d2">The opposite case: the server is a public API or a CDN that answers with <code>*</code> on purpose, and your client sends credentials to it anyway. It usually comes from a global setting meant for your own API, such as <code>axios.defaults.withCredentials = true</code>, which Sanctum's documentation recommends, or a fetch wrapper that adds <code>credentials: 'include'</code> to every call. You cannot change their server, and you do not need to. MDN's client-side fix for this error is to not send credentials:</p>
+    <div class="snippet r d3">
+      <p class="cap">Client: no credentials for a public API</p>
+      <pre><code>// fetch: 'omit' sends no cookies and ignores any Set-Cookie
+fetch('https://public-api.example.org/data', { credentials: 'omit' });
+
+// axios: a separate instance for third-party calls
+const publicApi = axios.create({ withCredentials: false });</code></pre>
+    </div>
+    <p class="r d3">Leaving the option out works too: <code>fetch()</code> defaults to <code>same-origin</code>, which sends no cookies to another origin, and <code>XMLHttpRequest.withCredentials</code> defaults to <code>false</code>.</p>
+    <p class="r d3">Bearer tokens belong here as well. A token your code puts into an <code>Authorization</code> header is not a credential in the Fetch Standard's sense, it is an ordinary request header, so it does not need <code>credentials: 'include'</code>. It does need to be listed in <code>Access-Control-Allow-Headers</code> by name: MDN notes that the wildcard never covers <code>Authorization</code>.</p>
+        </section>
+        <section class="sec" id="s7">
+    <h2 class="r">The fix, step by step</h2>
+    <ol class="r d1">
+      <li><b>Read what follows "blocked by CORS policy:".</b> If it starts with "Response to preflight request doesn't pass access control check", the <code>OPTIONS</code> answer failed; without that prefix, the actual response did. With credentials, both need the same two headers.</li>
+      <li><b>Decide whether this call needs cookies</b> (or HTTP authentication, or a client certificate). If it does not, remove <code>credentials: 'include'</code> or <code>withCredentials</code> for this call, as in cause 04, and you are done.</li>
+      <li><b>If it does, send the exact origin.</b> Compare the request's <code>Origin</code> header with a list of your frontends and send that same value back: scheme, host and port, no path and no trailing slash.</li>
+      <li><b>Add <code>Access-Control-Allow-Credentials: true</code></b>, in lowercase, to the preflight answer and to the actual response.</li>
+      <li><b>Send <code>Vary: Origin</code></b> whenever the value depends on the request, so caches keep the answers for different origins apart.</li>
+      <li><b>Replace <code>*</code> in the other CORS headers.</b> With credentials, <code>Access-Control-Allow-Methods</code>, <code>Access-Control-Allow-Headers</code> and <code>Access-Control-Expose-Headers</code> need explicit lists too.</li>
+      <li><b>Keep one layer in charge</b> of these headers, as in cause 03.</li>
+    </ol>
+    <p class="r d2">The response your browser needs then looks like this:</p>
+    <div class="snippet r d3">
+      <p class="cap">A response that passes both checks</p>
+      <pre><code>HTTP/1.1 200 OK
+Access-Control-Allow-Origin: http://localhost:3000
+Access-Control-Allow-Credentials: true
+Vary: Origin</code></pre>
+    </div>
+        </section>
+        <section class="sec" id="s8">
+    <h2 class="r">How to tell it is fixed</h2>
+    <p class="r d1">Ask the server directly, with the <code>Origin</code> header your page sends:</p>
+    <div class="snippet r d2">
+      <p class="cap">Terminal: the actual request</p>
+      <pre><code>curl -i https://api.example.com/me \
+  -H "Origin: http://localhost:3000"</code></pre>
+    </div>
+    <p class="r d2">If your request needs a preflight, send that one by hand as well, with the method and header names your code uses:</p>
+    <div class="snippet r d2">
+      <p class="cap">Terminal: the preflight</p>
+      <pre><code>curl -i -X OPTIONS https://api.example.com/me \
+  -H "Origin: http://localhost:3000" \
+  -H "Access-Control-Request-Method: POST" \
+  -H "Access-Control-Request-Headers: content-type"</code></pre>
+    </div>
+    <p class="r d2">On Windows, type <code>curl.exe</code> instead of <code>curl</code>, because in Windows PowerShell 5.1 <code>curl</code> is an alias for <code>Invoke-WebRequest</code>. Put each command on one line, without the backslashes.</p>
+    <ul class="r d3">
+      <li><code>access-control-allow-origin</code> is exactly <code>http://localhost:3000</code>. Header names are case-insensitive, so lowercase names in curl's output are fine. The values are compared exactly: the origin byte for byte, and <code>true</code> only in lowercase.</li>
+      <li><code>access-control-allow-credentials: true</code> is on both answers.</li>
+      <li>If the value comes from a list, <code>vary</code> includes <code>Origin</code>.</li>
+    </ul>
+    <p class="r d3">Then run the first command once more with <code>-H "Origin: https://not-my-site.example"</code>. That origin must not come back in <code>Access-Control-Allow-Origin</code>. If it does, the server copies any origin it receives, which is the first trap below.</p>
+    <p class="r d3">In the browser, reload with DevTools open on the Network tab. The request headers should show your <code>Cookie</code>, the response headers the two values above, and the console should stay quiet. If Chrome now says "The value of the 'Access-Control-Allow-Credentials' header in the response is '' which must be 'true' when the request's credentials mode is 'include'", the origin is fixed and step 4 is still missing.</p>
+        </section>
+        <section class="sec" id="s9">
+    <h2 class="r">Traps</h2>
+    <ul class="r d1">
+      <li><b>Echoing back any origin.</b> Several answers on the 2013 question suggest <code>origin: true</code> or an origin callback that always says yes; in the <code>cors</code> package, <code>true</code> reflects the request's origin. With credentials, that lets any website send requests with your users' cookies and read the answers. The accepted answer on the 2017 question warns about exactly this, and Microsoft calls <code>SetIsOriginAllowed(_ => true)</code> with <code>AllowCredentials</code> insecure. Some libraries do it quietly when you combine "allow all" with credentials: django-cors-headers (<code>CORS_ALLOW_ALL_ORIGINS</code> with <code>CORS_ALLOW_CREDENTIALS</code>), php-cors under Laravel (<code>['*']</code> with <code>supports_credentials</code>), Starlette, whose <code>CORSMiddleware</code> FastAPI uses (<code>allow_origins=['*']</code> with <code>allow_credentials=True</code>), and the older ASP.NET Web API 2 (<code>new EnableCorsAttribute("*", "*", "*") { SupportsCredentials = true }</code>, or Katana's <code>CorsOptions.AllowAll</code>, which sets both flags) all send back the request's origin in that case. The error goes away and the hole stays. Use a list. The 2017 question used both Web API 2 settings, and neither of them writes <code>*</code> with credentials on; the question does not show where its <code>*</code> came from.</li>
+      <li><b>A trailing slash in the configured origin.</b> An origin is scheme, host and port, and the Fetch Standard's table marks <code>https://rabbit.invalid/</code> as a failure even without credentials. The author of the 2013 question fixed it in the end by removing exactly that slash from <code>CORS_ORIGIN_WHITELIST</code>.</li>
+      <li><b><code>True</code> or <code>false</code> in Allow-Credentials.</b> The only valid value is lowercase <code>true</code>. MDN advises leaving the header out rather than sending <code>false</code>.</li>
+      <li><b><code>*</code> in the other headers.</b> With credentials, <code>*</code> in <code>Access-Control-Allow-Headers</code> is the literal header name <code>*</code>, not a wildcard, and <code>Authorization</code> is never covered by it. The same goes for Allow-Methods and Expose-Headers.</li>
+      <li><b>CORS headers on the request.</b> In the 2013 question the frontend sent <code>Access-Control-Allow-Credentials</code>, <code>-Headers</code> and <code>-Methods</code> as request headers. They are response headers. On a request they do nothing for CORS, and since they are not CORS-safelisted request headers, each of them forces a preflight.</li>
+      <li><b>CORS passes, but the cookie still does not travel.</b> Cookie rules are separate from CORS. <code>localhost:3000</code> calling <code>api.example.com</code> is cross-site, so the cookie needs <code>SameSite=None; Secure</code>, and MDN notes that third-party cookie policies can still block it regardless of the server's CORS setup. <code>app.example.com</code> calling <code>api.example.com</code> is same-site, because subdomains of one registrable domain count as one site, so a <code>Lax</code> cookie goes along. <a data-umami-event="open-cookie-samesite-doctor-inline" href="https://arling.sk/cookie-samesite-doctor/">Cookie Doctor</a> checks these attributes for your case.</li>
+      <li><b>A browser extension or <code>--disable-web-security</code>.</b> The author of the 2013 question had been using the flag, and one answer recommends an extension. Both change only your own browser, and every user still gets the error. An extension can also cause it: one answerer on the 2017 question found that a CORS extension in Chrome had rewritten the header to <code>*</code>.</li>
+    </ul>
+        </section>
+        <section class="sec" id="s10">
+    <h2 class="r">Check your case</h2>
+    <div class="try r d1"><p>Paste the console message into CORS Doctor and fill in your request and the response headers. <a data-umami-event="open-cors-doctor-cta" href="https://arling.sk/cors-doctor/#c=eyJlcnJvciI6eyJtZXNzYWdlIjoiQWNjZXNzIHRvIGZldGNoIGF0ICdodHRwczovL2FwaS5leGFtcGxlLmNvbS9tZScgZnJvbSBvcmlnaW4gJ2h0dHA6Ly9sb2NhbGhvc3Q6MzAwMCcgaGFzIGJlZW4gYmxvY2tlZCBieSBDT1JTIHBvbGljeTogVGhlIHZhbHVlIG9mIHRoZSAnQWNjZXNzLUNvbnRyb2wtQWxsb3ctT3JpZ2luJyBoZWFkZXIgaW4gdGhlIHJlc3BvbnNlIG11c3Qgbm90IGJlIHRoZSB3aWxkY2FyZCAnKicgd2hlbiB0aGUgcmVxdWVzdCdzIGNyZWRlbnRpYWxzIG1vZGUgaXMgJ2luY2x1ZGUnLiJ9LCJyZXF1ZXN0Ijp7InBhZ2VPcmlnaW4iOiJodHRwOi8vbG9jYWxob3N0OjMwMDAiLCJyZXF1ZXN0VXJsIjoiaHR0cHM6Ly9hcGkuZXhhbXBsZS5jb20vbWUiLCJtZXRob2QiOiJHRVQiLCJjcmVkZW50aWFscyI6ImluY2x1ZGUiLCJjdXN0b21IZWFkZXJzIjpbXSwiY29udGVudFR5cGUiOiIifSwicmVzcG9uc2UiOnsiYWNhbyI6IioiLCJhY2FjIjoiIiwiYWNhbSI6IiIsImFjYWgiOiIiLCJ2YXJ5IjoiIiwic3RhdHVzIjoyMDAsInJlZGlyZWN0c1RvT3RoZXJPcmlnaW4iOm51bGwsInByZWZsaWdodFN0YXR1cyI6bnVsbH0sInNlcnZlciI6eyJzdGFjayI6ImV4cHJlc3MifX0">Open CORS Doctor with this note's example filled in</a>: a <code>GET</code> with <code>credentials: 'include'</code> from <code>http://localhost:3000</code>, and a response with <code>Access-Control-Allow-Origin: *</code>. It flags the wildcard with credentials, gives the three header values from the fix above, and prints an Express snippet with your origin; pick your own stack in the form for the matching snippet. Because the page and the API are on different hosts in this example, it also points out the <code>SameSite=None; Secure</code> requirement for the cookie. For the cookie attributes themselves, <a data-umami-event="open-cookie-samesite-doctor-cta" href="https://arling.sk/cookie-samesite-doctor/">Cookie Doctor</a> goes further. Neither tool can see your server: they check the values you enter, in your browser, and do not call your API.</p></div>
+        </section>
+        <section class="sec" id="s11">
+    <h2 class="r">Questions</h2>
+    <details class="r d1">
+      <summary>Why does the same request work in Postman or curl?</summary>
+      <p>Because CORS is enforced by the browser. Postman and curl do not run the CORS check at all, so whatever headers come back, nothing is withheld. The 2017 question describes exactly that: no error in Postman, a 200 in the browser, and the CORS error anyway.</p>
+    </details>
+    <details class="r d1">
+      <summary>Why is the session cookie not saved after a login that returned 200?</summary>
+      <p>Most often because the login call itself was sent without credentials. A cross-origin response can set cookies only when the request asked for them: the Fetch Standard says <code>credentials: 'include'</code> makes <code>Set-Cookie</code> fully functional and that it is ignored otherwise, and MDN says the same about <code>withCredentials</code> for XMLHttpRequest. So the login call needs credentials too, and then it needs the exact origin and <code>Access-Control-Allow-Credentials: true</code> like every other call, or your code never sees its result. If the cookie is still missing after that, its <code>SameSite</code> and <code>Secure</code> attributes are the next suspects.</p>
+    </details>
+    <details class="r d2">
+      <summary>Can one API send * on some routes and an exact origin on others?</summary>
+      <p>Yes. The <code>*</code> is fine for routes that are called without credentials. The documentation of Express's <code>cors</code> package shows this with a per-request options function: an exact origin with credentials for one path, <code>*</code> for the rest.</p>
+    </details>
+    <details class="r d2">
+      <summary>Do I need credentials: 'include' for a Bearer token?</summary>
+      <p>No. In the Fetch Standard, credentials are cookies, TLS client certificates and HTTP authentication entries. A token you set in the <code>Authorization</code> header yourself is sent like any other request header. The server has to list <code>Authorization</code> in <code>Access-Control-Allow-Headers</code> by name, because the wildcard never covers it.</p>
+    </details>
+    <details class="r d2">
+      <summary>Is it safe to copy the Origin header into the response?</summary>
+      <p>Only after comparing it with a list of origins you trust. Copying it unchecked, together with <code>Access-Control-Allow-Credentials: true</code>, lets any website make requests with your users' cookies and read the answers. When the value depends on the request, send <code>Vary: Origin</code> as well.</p>
+    </details>
+        </section>
+      </div>
+    </div>
+  </div>
+  <section class="deep" id="s12">
+    <div class="wrap">
+      <div class="note">
+        <div class="doc">
+    <h2 class="r">Sources</h2>
+    <ul class="r d1">
+      <li>MDN, "Reason: Credential is not supported if the CORS header 'Access-Control-Allow-Origin' is '*'" (the Firefox message; client fix: credentials "omit" or no withCredentials; server fix: a specific origin): <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS/Errors/CORSNotSupportingCredentials">developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS/Errors/CORSNotSupportingCredentials</a>; "CORS errors" (these reason messages are what Firefox's console shows): <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS/Errors">developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS/Errors</a></li>
+      <li>MDN, "Access-Control-Allow-Credentials" (the only valid value is true, case-sensitive; omit the header instead of false; preflight and non-preflight behavior): <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Access-Control-Allow-Credentials">developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Access-Control-Allow-Credentials</a></li>
+      <li>MDN, "Request: credentials property" (omit, same-origin as the default, include): <a href="https://developer.mozilla.org/en-US/docs/Web/API/Request/credentials">developer.mozilla.org/en-US/docs/Web/API/Request/credentials</a>; "XMLHttpRequest: withCredentials property" (default false; cross-origin responses cannot set cookies without it): <a href="https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/withCredentials">developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/withCredentials</a></li>
+      <li>MDN, "Access-Control-Allow-Origin" (the wildcard only for requests without credentials; a single origin; Vary: Origin): <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Access-Control-Allow-Origin">developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Access-Control-Allow-Origin</a></li>
+      <li>MDN, "Access-Control-Allow-Headers" (with credentials, * is a literal header name; Authorization always has to be listed): <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Access-Control-Allow-Headers">developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Access-Control-Allow-Headers</a></li>
+      <li>MDN, "Cross-Origin Resource Sharing (CORS)", sections "Requests with credentials", "Preflight requests and credentials", "Credentialed requests and wildcards" and "Third-party cookies": <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS#requests_with_credentials">developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS#requests_with_credentials</a></li>
+      <li>MDN, "CORS-safelisted request header": <a href="https://developer.mozilla.org/en-US/docs/Glossary/CORS-safelisted_request_header">developer.mozilla.org/en-US/docs/Glossary/CORS-safelisted_request_header</a></li>
+      <li>MDN, "Set-Cookie", SameSite attribute (Lax and None; None requires Secure): <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Set-Cookie">developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Set-Cookie</a>; "Site" (subdomains of one registrable domain are the same site): <a href="https://developer.mozilla.org/en-US/docs/Glossary/Site">developer.mozilla.org/en-US/docs/Glossary/Site</a></li>
+      <li>WHATWG Fetch Standard, "CORS protocol and credentials" (the table of legal and illegal combinations, the trailing slash, case-sensitive true, * in the other headers, the credentialed example with Set-Cookie): <a href="https://fetch.spec.whatwg.org/#cors-protocol-and-credentials">fetch.spec.whatwg.org/#cors-protocol-and-credentials</a></li>
+      <li>WHATWG Fetch Standard, "CORS check": <a href="https://fetch.spec.whatwg.org/#concept-cors-check">fetch.spec.whatwg.org/#concept-cors-check</a>; "credentials" and "credentials mode": <a href="https://fetch.spec.whatwg.org/#credentials">fetch.spec.whatwg.org/#credentials</a>, <a href="https://fetch.spec.whatwg.org/#concept-request-credentials-mode">fetch.spec.whatwg.org/#concept-request-credentials-mode</a>; "CORS-preflight fetch" (the check runs with the real request's credentials mode): <a href="https://fetch.spec.whatwg.org/#cors-preflight-fetch">fetch.spec.whatwg.org/#cors-preflight-fetch</a>; "CORS non-wildcard request-header name" (Authorization): <a href="https://fetch.spec.whatwg.org/#cors-non-wildcard-request-header-name">fetch.spec.whatwg.org/#cors-non-wildcard-request-header-name</a>; "CORS protocol and HTTP caches" (Vary: Origin): <a href="https://fetch.spec.whatwg.org/#cors-protocol-and-http-caches">fetch.spec.whatwg.org/#cors-protocol-and-http-caches</a></li>
+      <li>Chromium source, <code>cors_error_string.cc</code> (the wildcard message, the XMLHttpRequest sentence, the preflight prefix, the Allow-Credentials message and the multiple-values message): <a href="https://source.chromium.org/chromium/chromium/src/+/main:third_party/blink/renderer/platform/loader/cors/cors_error_string.cc">source.chromium.org/chromium/chromium/src/+/main:third_party/blink/renderer/platform/loader/cors/cors_error_string.cc</a></li>
+      <li>Express, "cors" middleware (origin values including true, credentials, the default configuration, the per-request options example): <a href="https://expressjs.com/en/resources/middleware/cors/">expressjs.com/en/resources/middleware/cors/</a>; its source (a list reflects an allowed origin and adds Vary: Origin): <a href="https://github.com/expressjs/cors/blob/master/lib/index.js">github.com/expressjs/cors/blob/master/lib/index.js</a></li>
+      <li>Microsoft Learn, "Enable Cross-Origin Requests (CORS) in ASP.NET Core" (credentials in cross-origin requests, AllowAnyOrigin with AllowCredentials, SetIsOriginAllowed, no trailing slash in WithOrigins, WithHeaders and WithMethods, when a preflight is needed, UseCors order): <a href="https://learn.microsoft.com/en-us/aspnet/core/security/cors">learn.microsoft.com/en-us/aspnet/core/security/cors</a></li>
+      <li>ASP.NET Core source: <code>CorsPolicyBuilder.Build()</code> throws an InvalidOperationException for any origin with credentials: <a href="https://github.com/dotnet/aspnetcore/blob/main/src/Middleware/CORS/src/Infrastructure/CorsPolicyBuilder.cs">github.com/dotnet/aspnetcore/blob/main/src/Middleware/CORS/src/Infrastructure/CorsPolicyBuilder.cs</a>; <code>CorsService</code> (AllowAnyOrigin sends *, an ArgumentException for any origin with credentials, the listed headers answer the preflight): <a href="https://github.com/dotnet/aspnetcore/blob/main/src/Middleware/CORS/src/Infrastructure/CorsService.cs">github.com/dotnet/aspnetcore/blob/main/src/Middleware/CORS/src/Infrastructure/CorsService.cs</a>; the exception message: <a href="https://github.com/dotnet/aspnetcore/blob/main/src/Middleware/CORS/src/Resources.resx">github.com/dotnet/aspnetcore/blob/main/src/Middleware/CORS/src/Resources.resx</a></li>
+      <li>ASP.NET Web API 2 source: <code>System.Web.Cors</code> <code>CorsEngine</code> (with AllowAnyOrigin and SupportsCredentials it sends back the request's origin): <a href="https://github.com/aspnet/AspNetWebStack/blob/main/src/System.Web.Cors/CorsEngine.cs">github.com/aspnet/AspNetWebStack/blob/main/src/System.Web.Cors/CorsEngine.cs</a>; <code>EnableCorsAttribute</code> ("*" sets AllowAnyOrigin): <a href="https://github.com/aspnet/AspNetWebStack/blob/main/src/System.Web.Http.Cors/EnableCorsAttribute.cs">github.com/aspnet/AspNetWebStack/blob/main/src/System.Web.Http.Cors/EnableCorsAttribute.cs</a>; Katana <code>CorsOptions.AllowAll</code> (AllowAnyOrigin and SupportsCredentials both true) and <code>CorsMiddleware</code> (uses the same CorsEngine): <a href="https://github.com/aspnet/AspNetKatana/blob/main/src/Microsoft.Owin.Cors/CorsOptions.cs">github.com/aspnet/AspNetKatana/blob/main/src/Microsoft.Owin.Cors/CorsOptions.cs</a>, <a href="https://github.com/aspnet/AspNetKatana/blob/main/src/Microsoft.Owin.Cors/CorsMiddleware.cs">github.com/aspnet/AspNetKatana/blob/main/src/Microsoft.Owin.Cors/CorsMiddleware.cs</a></li>
+      <li>FastAPI, "CORS (Cross-Origin Resource Sharing)" (no ['*'] with allow_credentials=True; the middleware comes from Starlette): <a href="https://fastapi.tiangolo.com/tutorial/cors/">fastapi.tiangolo.com/tutorial/cors/</a>; Starlette <code>CORSMiddleware</code> source (echoes the origin when all origins and credentials are allowed): <a href="https://github.com/encode/starlette/blob/master/starlette/middleware/cors.py">github.com/encode/starlette/blob/master/starlette/middleware/cors.py</a></li>
+      <li>Laravel 12.x, "Sanctum", section "CORS and Cookies" (config:publish cors, supports_credentials, axios withCredentials): <a href="https://laravel.com/docs/12.x/sanctum#cors-and-cookies">laravel.com/docs/12.x/sanctum#cors-and-cookies</a>; the default <code>config/cors.php</code>: <a href="https://github.com/laravel/framework/blob/12.x/config/cors.php">github.com/laravel/framework/blob/12.x/config/cors.php</a>; <code>HandleCors</code> uses fruitcake/php-cors: <a href="https://github.com/laravel/framework/blob/12.x/src/Illuminate/Http/Middleware/HandleCors.php">github.com/laravel/framework/blob/12.x/src/Illuminate/Http/Middleware/HandleCors.php</a>; php-cors <code>CorsService</code> (the wildcard only without credentials): <a href="https://github.com/fruitcake/php-cors/blob/master/src/CorsService.php">github.com/fruitcake/php-cors/blob/master/src/CorsService.php</a></li>
+      <li>django-cors-headers, middleware source (CORS_ALLOW_ALL_ORIGINS with CORS_ALLOW_CREDENTIALS sends the request's origin): <a href="https://github.com/adamchainz/django-cors-headers/blob/main/src/corsheaders/middleware.py">github.com/adamchainz/django-cors-headers/blob/main/src/corsheaders/middleware.py</a></li>
+      <li>Axios, "Request config" (withCredentials): <a href="https://axios.rest/pages/advanced/request-config">axios.rest/pages/advanced/request-config</a></li>
+      <li>RFC 9110, section 5.1 "Field Names" (case-insensitive): <a href="https://www.rfc-editor.org/rfc/rfc9110#section-5.1">rfc-editor.org/rfc/rfc9110#section-5.1</a></li>
+      <li>curl, "curl.1 the man page" (-i, -X, -H): <a href="https://curl.se/docs/manpage.html">curl.se/docs/manpage.html</a>; Microsoft Learn, "curl on Windows" (in Windows PowerShell 5.1 the curl alias maps to Invoke-WebRequest, call curl.exe): <a href="https://learn.microsoft.com/en-us/windows/curl/">learn.microsoft.com/en-us/windows/curl/</a></li>
+      <li>Stack Overflow, "CORS: Cannot use wildcard in Access-Control-Allow-Origin when credentials flag is true" (2013, Node.js frontend server and Django API, about 860,000 views; --disable-web-security in Edit 1; fixed by listing http://localhost:3000 without a trailing slash; 6 of its 12 answers use the cors package): <a href="https://stackoverflow.com/questions/19743396">stackoverflow.com/questions/19743396</a></li>
+      <li>Stack Overflow, "CORS: credentials mode is 'include'" (2017, AngularJS and ASP.NET Web API 2, about 340,000 views; works in Postman; EnableCorsAttribute and CorsOptions.AllowAll with SupportsCredentials; the accepted answer warns against reflecting any origin; another answer found a Chrome CORS extension rewriting the header to *): <a href="https://stackoverflow.com/questions/42803394">stackoverflow.com/questions/42803394</a></li>
+      <li>Stack Overflow, "Laravel 11 response Access-Control-Allow-Origin is still a wildcard (*)" (2024, Nuxt 3 and Laravel, the preflight variant; unanswered, comments on config cache and the web server): <a href="https://stackoverflow.com/questions/78684653">stackoverflow.com/questions/78684653</a></li>
+    </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+<footer class="site-footer">
+  <div class="wrap foot">
+    <div class="site-foot-top"><div><a class="site-brand" href="https://arling.sk/en/" aria-label="ARLing home" data-site-home><svg viewBox="0 0 488 215" width="38" height="15" aria-hidden="true" focusable="false"><path fill="#f4f4f7" fill-rule="evenodd" d="M0.00,213.00L74.00,214.00L181.00,85.00L285.00,214.00L360.00,214.00L206.00,21.00L185.00,4.00L164.00,10.00Z M221.00,0.00L263.00,50.00L395.00,50.00L409.00,55.00L419.00,76.00L401.00,96.00L313.00,98.00L411.00,214.00L487.00,214.00L422.00,139.00L457.00,123.00L482.00,88.00L482.00,48.00L463.00,19.00L417.00,0.00Z"/><path fill="#f2643c" d="M269.00,66.00L269.00,67.00L268.00,68.00L268.00,70.00L267.00,71.00L267.00,76.00L268.00,77.00L268.00,79.00L270.00,81.00L270.00,82.00L271.00,82.00L273.00,84.00L274.00,84.00L277.00,86.00L279.00,86.00L280.00,87.00L287.00,87.00L288.00,86.00L290.00,86.00L291.00,85.00L294.00,84.00L298.00,80.00L298.00,79.00L299.00,78.00L299.00,75.00L300.00,74.00L300.00,72.00L299.00,71.00L299.00,69.00L298.00,68.00L297.00,65.00L295.00,63.00L294.00,63.00L289.00,60.00L278.00,60.00L277.00,61.00L276.00,61.00L275.00,62.00L272.00,63.00Z"/></svg><b>ARLing</b></a><p class="site-foot-firma">ARLing s. r. o., company ID <span class="num">56583486</span>, Bratislava. Own server in the European Union. Software for companies, freelancers and individuals.</p></div><a class="site-cta" href="https://arling.sk/shop/" data-umami-event="shell_footer_cta">Shop<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></div>
+    <div class="site-foot-cols"><div data-skupina="firmy" data-blok="firemne"><p>Businesses and accountants</p><ul><li><a href="https://arling.sk/vsetko/en/#firmy" aria-label="All in this group: Businesses and accountants">All in this group</a></li></ul></div><div data-skupina="eshopy" data-blok="firemne"><p>Online shops and websites</p><ul><li><a href="https://arling.sk/vsetko/en/#eshopy" aria-label="All in this group: Online shops and websites">All in this group</a></li></ul></div><div data-skupina="hry" data-blok="spotrebitelske"><p>Games and puzzles</p><ul><li><a href="https://arling.sk/vsetko/en/#hry" aria-label="All in this group: Games and puzzles">All in this group</a></li></ul></div><div data-skupina="knihy" data-blok="spotrebitelske"><p>Books and gifts</p><ul><li><a href="https://arling.sk/vsetko/en/#knihy" aria-label="All in this group: Books and gifts">All in this group</a></li></ul></div><div><p>Company</p><ul><li><a href="https://arling.sk/how-we-work/en/">How we work</a></li><li><a href="https://arling.sk/notes/en/">Guides</a></li><li><a href="https://arling.sk/kontakt/en/">Contact</a></li><li><a href="https://arling.sk/ucet/en/">Account</a></li><li><a href="https://arling.sk/brand/en/">Brand</a></li><li><a href="https://arling.sk/podmienky/en/">Terms</a></li><li><a href="https://arling.sk/privacy/en/">Privacy</a></li><li><a href="https://arling.sk/odstupenie/en/">Withdraw from the contract here</a></li><li><a href="https://arling.sk/impressum/en/">Imprint</a></li></ul></div></div>
+    <p class="site-all"><a href="https://arling.sk/vsetko/en/" data-umami-event="shell_footer_all">Everything on one page<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></p>
+    <p class="site-dev" data-site-vyvojari><span>For developers</span><em>Free diagnostics for CORS, JWT, OAuth, Supabase and Stripe webhook errors.</em><a href="https://arling.sk/vsetko/en/#vyvojari">All developer tools<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></p>
+    <div class="site-foot-bottom"><p>ARLing s. r. o., Ivanská cesta 32E, 821 04 Bratislava, Slovakia. Company ID 56583486, VAT ID SK2122352100. <a href="mailto:support@arling.sk">support@arling.sk</a></p><p><a href="https://arling.sk/impressum/en/">Impressum</a> · <a href="https://arling.sk/llms.txt">llms.txt</a> · <a href="https://arling.sk/sitemap-index.xml">Sitemap</a></p></div>
+    <p class="site-foot-legal">Tools are provided as is, without warranty. Anonymous visit counts via self-hosted Umami. <a href="https://arling.sk/privacy/en/">Privacy</a> · <a href="https://arling.sk/podmienky/en/">Terms</a> · <a href="https://arling.sk/gdpr/en/">GDPR</a> · <a href="https://arling.sk/odstupenie/en/">Withdraw from the contract here</a></p>
+  </div>
+</footer>
+<script defer src="https://server.invalid/script.js" data-website-id="be534d51-4d01-4860-b267-9596d91606de"></script>
+<script>
+(function () {
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var hero = document.getElementById('hero');
+  if (reduce) {
+    document.querySelectorAll('.r, section').forEach(function (e) { e.classList.add('in'); });
+  }
+  if (!reduce && hero) {
+    requestAnimationFrame(function () {
+      hero.querySelectorAll('.r').forEach(function (e) { e.classList.add('in'); });
+    });
+  }
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (en) {
+      if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); }
+    });
+  }, { rootMargin: '0px 0px -12% 0px', threshold: 0.1 });
+  document.querySelectorAll('section').forEach(function (s) { io.observe(s); });
+
+  // nadpis clanku sa objavi po slovach, ako dobre vytlaceny titulok
+  var h1 = document.getElementById('h1');
+  if (h1) {
+    var i = 0;
+    Array.prototype.forEach.call(h1.querySelectorAll('.l'), function (line) {
+      var words = line.textContent.split(' ');
+      line.textContent = '';
+      words.forEach(function (w, k) {
+        var s = document.createElement('span');
+        s.className = 'w';
+        s.style.transitionDelay = (i++ * 0.06).toFixed(2) + 's';
+        s.textContent = w;
+        line.appendChild(s);
+        if (k < words.length - 1) line.appendChild(document.createTextNode(' '));
+      });
+    });
+    requestAnimationFrame(function () { h1.classList.add('in'); });
+  }
+
+  // bocny register sleduje, ktora cast clanku je v strede obrazovky
+})();
+</script>
+</body>
+</html>

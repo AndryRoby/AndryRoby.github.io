@@ -1,0 +1,534 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script src="/style/vzhlad.js?v=8a4019ae"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://server.invalid 'sha256-7oMA4V1sHDCEmVY7s4ZE9+7EqTIsN9zl1xIcZ6yl9cs=' 'sha256-ZMsnUfd4bPwY8kpoXgxyNocCQRrSOlfJJG+wvpTSyWg=' 'sha256-gI3uGX0xJj4TkrfY96BDjfip9q7YQr2YpdTR5g5Mbrw=' 'sha256-kHzhLBitzZlfAaUS4VuXMelQQYrrpIhEmCeLW+iUbL4='; connect-src 'self' https://server.invalid; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0a0908">
+<link rel="preconnect" href="https://server.invalid" crossorigin>
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../../favicon.ico" sizes="48x48">
+<link rel="apple-touch-icon" href="../../icon-180.png">
+<title>Redirect is not allowed for a preflight request: CORS, redirects and the trailing slash</title>
+<meta name="description" content="Why Chrome refuses a CORS preflight that gets a 3xx, how to find the redirect with one curl command, and the usual causes: a trailing slash, www, https or a login page.">
+<link rel="canonical" href="https://arling.sk/notes/cors-redirect-not-allowed-for-preflight-request/">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Redirect is not allowed for a preflight request: CORS, redirects and the trailing slash">
+<meta property="og:description" content="Why Chrome refuses a CORS preflight that gets a 3xx, how to find the redirect with one curl command, and the usual causes: a trailing slash, www, https or a login page.">
+<meta property="og:url" content="https://arling.sk/notes/cors-redirect-not-allowed-for-preflight-request/">
+
+
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"Article","headline":"Redirect is not allowed for a preflight request: CORS, redirects and the trailing slash","description":"Why Chrome refuses a CORS preflight that gets a 3xx, how to find the redirect with one curl command, and the usual causes: a trailing slash, www, https or a login page.","datePublished":"2026-09-27","dateModified":"2026-09-27","inLanguage":"en","author":{"@type":"Organization","name":"ARLing s. r. o."},"publisher":{"@type":"Organization","name":"ARLing s. r. o.","url":"https://arling.sk/"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://arling.sk/notes/cors-redirect-not-allowed-for-preflight-request/"}}
+</script>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Why does Postman reach the endpoint when the browser does not?","acceptedAnswer":{"@type":"Answer","text":"Postman sends no preflight, and it follows a 3xx on its own unless you switch off its Automatically follow redirects setting, so you never see the redirect there. curl without -L prints the 3xx and stops, which makes it the right tool to see what the browser saw, as long as you send the OPTIONS request by hand with the same Origin and Access-Control-Request-* headers."}},{"@type":"Question","name":"Why does only one route fail?","acceptedAnswer":{"@type":"Answer","text":"Because only that URL differs from its canonical form, or only that route sits behind authentication. The 2019 question linked on this page asks exactly this. Compare the failing URL with its route definition, including the trailing slash, or send the preflight to it with curl and read the Location header."}},{"@type":"Question","name":"Can I make the browser follow the redirect on the preflight?","acceptedAnswer":{"@type":"Answer","text":"No. The Fetch Standard fetches the preflight without following redirects, and Chromium fails it on the first one. MDN describes a workaround for browsers that refuse redirects after a preflight: send a simple request first, read the final URL from Response.url or XMLHttpRequest.responseURL, then send the real request there. MDN also says this does not work when the preflight is caused by an Authorization header, and that in that case there is no workaround at all without control over the server."}},{"@type":"Question","name":"Does it matter whether the server sends 301, 302, 307 or 308?","acceptedAnswer":{"@type":"Answer","text":"Not for the preflight: every redirect status fails it. It matters for the real request. According to the Fetch Standard, a 301 or 302 turns a POST into a GET without a body, and a 303 does that to every method except GET and HEAD. A 307 or 308 keeps the method and the body."}}]}
+</script>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"ARLing","item":"https://arling.sk/"},{"@type":"ListItem","position":2,"name":"Notes","item":"https://arling.sk/notes/"},{"@type":"ListItem","position":3,"name":"Redirect is not allowed for a preflight request: CORS, redirects and the trailing slash","item":"https://arling.sk/notes/cors-redirect-not-allowed-for-preflight-request/"}]}
+</script>
+<link rel="preload" href="/fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/style/paper.css?v=704b28ed">
+<script src="/style/prepinac.js?v=668e98c9" defer></script>
+<style>
+  /* Notes. Vzhlad, farby, typografia a pohyb su v /style/paper.css.
+     Tu ostava len to, co je pre clanok vlastne: merany pas, register, panel s nastrojom. */
+  .note{max-width:min(100%,880px);margin:0 auto}
+  .doc{max-width:min(68ch,660px);margin-inline:auto;font-size:clamp(17px,1.2vw,18px);line-height:1.62}
+
+  /* uvod clanku: nadpis, datum, odkaz na nastroj */
+  .hero-note{padding:clamp(34px,4.6vw,72px) 0 clamp(20px,2.4vw,34px)}
+  /* Titul je tu presny text chyby a je dlhy, preto je o stupen mensi nez v inych clankoch
+     a smie sa zalomit aj vnutri slova. */
+  .hero-note h1{font-size:clamp(28px,3.9vw,52px);line-height:1.08;margin:0 0 18px;overflow-wrap:anywhere}
+  .hero-note h1 .l+.l{display:block;margin-top:.3em;font-weight:500;
+    font-size:clamp(20px,2.4vw,34px);line-height:1.2;letter-spacing:-.01em;color:var(--body)}
+  .hero-note .kicker{display:block;margin:0 0 12px}
+  .hero-note .crumbs{font-family:var(--ui);font-size:12px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--accent);margin:0 0 12px}
+  .hero-note .crumbs a{color:inherit;text-decoration:none}
+  .hero-note .crumbs a:hover{text-decoration:underline}
+  .byline,.dateline{font-family:var(--ui);font-size:14px;color:var(--muted);margin:0 0 20px;max-width:none}
+  .toolgo{margin:0}
+
+  /* rytmus clanku: vlasova linka medzi castami, ziadne velke medzery sekcii */
+  section{scroll-margin-top:86px}
+  .doc section{padding:0;border-top:none;margin:0 0 clamp(26px,2.8vw,38px)}
+  .doc section+section{border-top:1px solid var(--line);padding-top:clamp(26px,2.8vw,36px)}
+  .doc h2{font-size:clamp(21px,1.9vw,27px);line-height:1.22;margin:0 0 12px}
+  .doc h3{font-size:clamp(17.5px,1.3vw,20px);margin:18px 0 8px}
+  .doc p{margin:0 0 14px;max-width:none}
+  .doc .num,.doc .kicker{display:block;font-family:var(--ui);font-size:12px;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--accent);margin:0 0 7px}
+  .doc .lead,.doc .lede{font-size:clamp(18px,1.35vw,20.5px);line-height:1.55;max-width:none;margin:0 0 18px}
+  .doc ol,.doc ul{padding-left:22px;margin:0 0 16px}
+  .doc li{margin:0 0 7px}
+  .doc li:last-child{margin-bottom:0}
+  .doc li .snippet{margin:10px 0 4px}
+  .doc a{overflow-wrap:anywhere}
+  .doc code{background:var(--paper-deep);border:1px solid var(--line);border-radius:4px;padding:1px 5px;
+    overflow-wrap:anywhere}
+  .doc pre{margin:0 0 16px;white-space:pre-wrap;overflow-wrap:break-word}
+  .doc pre code{background:none;border:none;padding:0;font-size:13.5px;line-height:1.55}
+  .doc blockquote{margin:0 0 16px;padding:8px 16px;border-left:2px solid var(--line);color:var(--muted)}
+
+  /* chybova hlaska, oprava, ukazka kodu s popisom */
+  .doc .err{background:color-mix(in srgb,var(--accent) 7%,var(--card));border:1px solid var(--line);
+    border-left:3px solid var(--accent);border-radius:8px;padding:12px 16px;margin:0 0 16px}
+  .doc .err code{background:none;border:none;padding:0;color:var(--ink)}
+  .doc .fix{margin:0 0 16px;padding-left:16px;border-left:2px solid var(--accent)}
+  .doc .fix p{margin:0 0 8px}
+  .doc .fix p:last-child{margin-bottom:0}
+  .doc .fix-label{font-family:var(--ui);font-size:12px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--muted);margin:0 0 6px}
+  .doc .snippet{background:var(--card);border:1px solid var(--line);border-radius:10px;margin:0 0 18px;
+    overflow:hidden}
+  .doc .snippet .cap{padding:8px 14px;border-bottom:1px solid var(--line);
+    font:500 11px/1.3 var(--ui);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  .doc .snippet.bad .cap{color:var(--accent)}
+  .doc .snippet pre{margin:0;border:none;border-radius:0;background:none;white-space:pre-wrap}
+
+  /* diagram: jeden znak navyse, jedno presmerovanie. Farby su tokeny z paper.css, takze sedi na oboch plochach. */
+  .doc figure.dg{margin:6px 0 22px}
+  .doc figure.dg svg{display:block;width:100%;height:auto;max-width:540px;margin:0 auto}
+  .dg .dg-pill{fill:none;stroke:var(--line-silna,var(--line));stroke-width:1}
+  .dg .dg-pt{fill:var(--ink);font:500 12.5px var(--mono)}
+  .dg .dg-spine{stroke:var(--line-silna,var(--line));stroke-width:2}
+  .dg .dg-node{fill:var(--accent)}
+  .dg .dg-node-n{fill:var(--body)}
+  .dg .dg-node-ok{fill:var(--ok,#2f7d57)}
+  .dg .dg-num{fill:var(--paper-deep);font:700 13px var(--ui)}
+  .dg .dg-box{fill:var(--card-plna,var(--card));stroke:var(--line-silna,var(--line));stroke-width:1}
+  .dg .dg-box-ok{stroke:var(--ok,#2f7d57)}
+  .dg .dg-div{stroke:var(--line-silna,var(--line));stroke-width:1}
+  .dg .dg-h{fill:var(--ink);font:600 16px var(--ui)}
+  .dg .dg-s{fill:var(--body);font:400 13px var(--ui)}
+  .dg .dg-fix{fill:var(--ok,#2f7d57);font:700 13px var(--ui)}
+  .dg .dg-okc{fill:var(--ok,#2f7d57);font:700 12.5px var(--mono)}
+  .dg .dg-lab{fill:var(--muted);font:600 12px var(--ui);letter-spacing:.08em}
+  .dg .dg-con{fill:var(--accent);font:400 13px var(--mono)}
+  body.noc .dg .dg-con{fill:var(--accent-light)}
+  .dg .dg-end{fill:color-mix(in srgb,var(--accent) 10%,var(--card-plna,var(--card)));stroke:var(--accent);stroke-width:1}
+  .dg .dg-cell{fill:var(--paper-deep);stroke:var(--line-silna,var(--line));stroke-width:1}
+  .dg .dg-cell-gap{fill:none;stroke:var(--muted);stroke-width:1;stroke-dasharray:3 3}
+  .dg .dg-cell-add{fill:color-mix(in srgb,var(--accent) 22%,var(--card-plna,var(--card)));stroke:var(--accent);stroke-width:1.5}
+  .dg .dg-ch{fill:var(--ink);font:500 14px var(--mono)}
+  .dg .dg-ch-add{fill:var(--accent-light);font:700 14px var(--mono)}
+  .dg .dg-plus{fill:var(--accent-light);font:700 13px var(--ui)}
+  .dg .dg-arr{fill:var(--accent-light)}
+  .doc figure.dg figcaption{margin:10px auto 0;max-width:540px;font:400 14px/1.5 var(--ui);color:var(--muted)}
+
+  /* caste otazky */
+  .doc details{border-top:1px solid var(--line);padding:14px 0}
+  .doc details:last-of-type{border-bottom:1px solid var(--line);margin-bottom:16px}
+  .doc summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;gap:14px;
+    font:600 17px/1.35 var(--display);color:var(--ink)}
+  .doc summary::-webkit-details-marker{display:none}
+  .doc summary::after{content:"+";flex:none;color:var(--accent);font-family:var(--ui);font-weight:400}
+  .doc details[open] summary::after{content:"\2212"}
+  .doc details p{margin:10px 0 0}
+
+  /* zdroje */
+  .doc ul.sources{list-style:none;padding-left:0}
+  .doc ul.sources li{padding-left:14px;border-left:2px solid var(--line)}
+  .doc .sources li{margin:0 0 10px;font-size:.95em}
+  .doc .sources cite{font-style:italic}
+  .doc ul.plain{list-style:none;padding-left:0}
+  .doc ul.plain li{margin:0;padding:10px 0;border-top:1px solid var(--line)}
+  .doc ul.plain li:first-child{border-top:none}
+
+  /* panel s nastrojom: jedina tmava plocha v texte, tam sa klika */
+  .doc .tool-box,.doc .toolbox,.doc .check,.doc .try,.doc .cta{display:block;background:var(--ink);
+    color:#cfcabd;border:none;border-radius:var(--radius);padding:clamp(20px,2.2vw,28px);margin:0 0 18px}
+  .doc .tool-box p,.doc .check p,.doc .try p,.doc .cta p{max-width:none;margin:0 0 12px;color:#cfcabd}
+  .doc .toolbox{max-width:none;color:#cfcabd}
+  .doc .tool-box p:last-of-type,.doc .check p:last-child,.doc .try p:last-child,
+  .doc .cta p:last-child{margin-bottom:0}
+  .doc .tool-box a,.doc .toolbox a,.doc .check a,.doc .try a,.doc .cta a{color:#fffdf8}
+  .doc .tool-box a:hover,.doc .toolbox a:hover,.doc .check a:hover,.doc .try a:hover,
+  .doc .cta a:hover{color:var(--accent-light)}
+  .doc .tool-box code,.doc .toolbox code,.doc .check code,.doc .try code,.doc .cta code{
+    background:rgba(255,253,248,.10);border-color:rgba(255,253,248,.22);color:#fffdf8}
+  .doc .tool-box .btn{margin:14px 10px 0 0;text-decoration:none;color:#fff}
+  .doc .tool-box .btn+.btn{background:none;border:1px solid rgba(255,253,248,.45);color:#fffdf8}
+  .doc .tool-box .btn+.btn:hover{background:#fffdf8;color:var(--ink)}
+  .doc .tool-cta{display:inline-flex;align-items:center;height:46px;padding:0 20px;border-radius:12px;
+    margin:2px 0 0;background:var(--accent);color:#fff;font:500 15px/1 var(--ui);text-decoration:none}
+  .doc .tool-cta:hover{background:var(--accent-dark);color:#fff}
+
+  @media (min-width:1280px){}
+
+  /* paticka je tmavy pas na konci */
+  footer.band{border-top:none;color:#a8a294}
+  footer.band a,footer.band b{color:#fffdf8}
+  footer.band .wrap{max-width:880px}
+  footer.band .cols{width:min(880px,92vw);margin:0 auto;gap:16px 32px}
+
+</style>
+<meta property="og:image" content="https://arling.sk/og.png">
+</head>
+<body class="noc">
+<div class="wash" aria-hidden="true"><i></i><i></i></div>
+<noscript><style>.r,.w{opacity:1;transform:none;filter:none}</style></noscript>
+<a class="skip site-skip" href="#arling-obsah" data-site-label="skip">Skip to content</a>
+<header class="site-header">
+  <div class="wrap bar">
+    <a class="brand" href="https://arling.sk/en/" aria-label="ARLing home" data-site-home>
+      <svg viewBox="0 0 488 215" width="38" height="15" aria-hidden="true" focusable="false"><path fill="#f4f4f7" fill-rule="evenodd" d="M0.00,213.00L74.00,214.00L181.00,85.00L285.00,214.00L360.00,214.00L206.00,21.00L185.00,4.00L164.00,10.00Z M221.00,0.00L263.00,50.00L395.00,50.00L409.00,55.00L419.00,76.00L401.00,96.00L313.00,98.00L411.00,214.00L487.00,214.00L422.00,139.00L457.00,123.00L482.00,88.00L482.00,48.00L463.00,19.00L417.00,0.00Z"/><path fill="#f2643c" d="M269.00,66.00L269.00,67.00L268.00,68.00L268.00,70.00L267.00,71.00L267.00,76.00L268.00,77.00L268.00,79.00L270.00,81.00L270.00,82.00L271.00,82.00L273.00,84.00L274.00,84.00L277.00,86.00L279.00,86.00L280.00,87.00L287.00,87.00L288.00,86.00L290.00,86.00L291.00,85.00L294.00,84.00L298.00,80.00L298.00,79.00L299.00,78.00L299.00,75.00L300.00,74.00L300.00,72.00L299.00,71.00L299.00,69.00L298.00,68.00L297.00,65.00L295.00,63.00L294.00,63.00L289.00,60.00L278.00,60.00L277.00,61.00L276.00,61.00L275.00,62.00L272.00,63.00Z"/></svg>
+      <b>ARLing</b><span>Notes</span>
+    </a>
+    <details class="site-menu">
+      <summary class="site-menu-toggle"><span class="site-menu-text" data-site-label="produkty">Products</span><span class="site-menu-bars" aria-hidden="true"><i></i><i></i><i></i></span><span class="site-menu-word" data-site-label="menu">Menu</span></summary>
+      <div class="site-menu-panel" role="navigation" aria-label="Products" data-site-aria="produkty"><div class="site-bloky"><div class="site-blok" data-blok="firemne"><p class="site-blok-nazov">For businesses</p><div class="site-cols"><div class="site-col" data-skupina="firmy"><p>Businesses and accountants</p><a class="site-col-all" href="https://arling.sk/vsetko/en/#firmy" aria-label="All in this group: Businesses and accountants" data-umami-event="shell_menu_group" data-umami-event-target="firmy"><span class="site-dlho">All in this group</span><span class="site-kratko">All</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></div><div class="site-col" data-skupina="eshopy"><p>Online shops and websites</p><a class="site-col-all" href="https://arling.sk/vsetko/en/#eshopy" aria-label="All in this group: Online shops and websites" data-umami-event="shell_menu_group" data-umami-event-target="eshopy"><span class="site-dlho">All in this group</span><span class="site-kratko">All</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></div></div></div><div class="site-blok" data-blok="spotrebitelske"><p class="site-blok-nazov">For leisure</p><div class="site-cols"><div class="site-col" data-skupina="hry"><p>Games and puzzles</p><a class="site-col-all" href="https://arling.sk/vsetko/en/#hry" aria-label="All in this group: Games and puzzles" data-umami-event="shell_menu_group" data-umami-event-target="hry"><span class="site-dlho">All in this group</span><span class="site-kratko">All</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></div><div class="site-col" data-skupina="knihy"><p>Books and gifts</p><a class="site-col-all" href="https://arling.sk/vsetko/en/#knihy" aria-label="All in this group: Books and gifts" data-umami-event="shell_menu_group" data-umami-event-target="knihy"><span class="site-dlho">All in this group</span><span class="site-kratko">All</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></div></div></div></div><div class="site-menu-spodok"><p class="site-all"><a href="https://arling.sk/vsetko/en/" data-umami-event="shell_menu_all">Everything on one page<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></p><p class="site-dev"><span>For developers</span><em>Free diagnostics for CORS, JWT, OAuth, Supabase and Stripe webhook errors.</em><a href="https://arling.sk/vsetko/en/#vyvojari">All developer tools<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></p></div><div class="site-col site-firma"><p>Company</p><ul><li><a href="https://arling.sk/en/#nastroje"><b>Tools</b></a></li><li><a href="https://arling.sk/en/#piloty"><b>Pilots</b></a></li><li><a href="https://arling.sk/how-we-work/en/"><b>How we work</b></a></li><li><a href="https://arling.sk/notes/en/"><b>Guides</b></a></li><li><a href="https://arling.sk/kontakt/en/"><b>Contact</b></a></li><li><a href="https://arling.sk/ucet/en/"><b>Account</b></a></li><li><a href="https://arling.sk/brand/en/"><b>Brand</b></a></li><li><a href="https://arling.sk/podmienky/en/"><b>Terms</b></a></li><li><a href="https://arling.sk/privacy/en/"><b>Privacy</b></a></li><li><a href="https://arling.sk/odstupenie/en/"><b>Withdraw from the contract here</b></a></li><li><a href="https://arling.sk/impressum/en/"><b>Imprint</b></a></li></ul></div><p class="site-menu-cta"><a class="site-cta" href="https://arling.sk/shop/" data-site-cta data-site-label="cta" data-umami-event="shell_cta_menu">Shop</a></p></div>
+    </details>
+    <nav id="hlavne-menu" class="site-main-nav" aria-label="Main navigation" data-site-aria="nav"><a href="https://arling.sk/en/#nastroje" data-site-nav="0">Tools</a><a href="https://arling.sk/en/#piloty" data-site-nav="1">Pilots</a><a href="https://arling.sk/notes/en/" data-site-nav="2">Guides</a><a href="https://arling.sk/how-we-work/en/" data-site-nav="3">Company</a></nav>
+    <a class="site-cta" href="https://arling.sk/shop/" data-site-cta data-site-label="cta" data-umami-event="shell_cta">Shop</a>
+  </div>
+  <script src="/style/menu-en.js" defer></script>
+</header>
+<main id="arling-obsah" tabindex="-1">
+  <div class="wrap">
+    <div class="note">
+      <div class="hero-note" id="hero">
+        <p class="kicker r">Notes</p>
+        <h1 id="h1" class="r d1"><span class="l">Response to preflight request doesn't pass access control check:</span><span class="l">Redirect is not allowed for a preflight request</span></h1>
+        <p class="byline r d2">ARLing s. r. o. · 2026-09-27</p>
+        <p class="toolgo r d3"><a data-umami-event="open-cors-doctor-hero" class="go" href="https://arling.sk/cors-doctor/">CORS Doctor <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2.5 8h11M9 3.5 13.5 8 9 12.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a></p>
+      </div>
+      <div class="doc">
+        <section class="sec" id="s1">
+  <p class="lead r">Your frontend calls an API, nothing reaches the handler, and Chrome's console prints this:</p>
+  <div class="err r d1"><code>Access to XMLHttpRequest at 'https://api.example.com/items' from origin 'http://localhost:3000' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: Redirect is not allowed for a preflight request.</code></div>
+  <p class="r d2">Before your real request, the browser sent an <code>OPTIONS</code> request to the same URL to ask whether the real one is allowed. That is the preflight. Something on the server side answered it with a redirect: a 301, 302, 303, 307 or 308 status and a <code>Location</code> header pointing somewhere else. Chrome does not follow a redirect on a preflight. In Chromium's source, the preflight loader ends with exactly this error the moment a redirect arrives, without reading any header on it. The preflight fails, and your POST, PUT or DELETE is never sent.</p>
+  <p class="r d2">So the fix is usually not more CORS configuration. Your <code>Access-Control-Allow-*</code> headers may be fine. Some layer wants the request at a slightly different URL: with or without a trailing slash, on <code>www</code>, on <code>https</code>, or on a login page. Find that URL, call it directly, and the error goes away together with the redirect.</p>
+  <p class="r d3">The message itself will not tell you where the redirect points. The URL after "Access to XMLHttpRequest at" is the one your code called, because the redirect was never followed; a <code>fetch()</code> call prints "Access to fetch at" in the same place. The target sits in the <code>Location</code> header of the <code>OPTIONS</code> response, and the section after the diagram shows how to read it. Other browsers word the failure differently. In the 2024 question linked below, Safari reported the same redirect as "Preflight response is not successful. Status code: 307". Firefox prints "Reason: CORS request external redirect not allowed". MDN describes that message for a redirect to another origin, but Firefox's source logs it for any redirect of a preflight, including one that only adds a slash on the same host; only Firefox's own internal redirects to the same URL and HSTS upgrades get through. MDN's fix is the same as here: use the URL the redirect points to.</p>
+  <p class="r d3">An older Chrome wording, <code>Redirect from 'A' to 'B' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.</code>, came from a redirect on a request without a preflight: in the best-known case, from 2017, a jQuery GET redirected to the same URL with a slash added. Current Chromium source no longer has that sentence, and the same situation now ends in the message covered by the note on <a href="https://arling.sk/notes/cors-no-access-control-allow-origin-header/">No 'Access-Control-Allow-Origin' header is present</a>.</p>
+        </section>
+        <section class="sec" id="s2">
+    <h2 class="r">What the browser does with a redirect</h2>
+    <p class="r d1">The rules differ between the preflight and the request that follows it:</p>
+    <ul class="r d2">
+      <li><b>The preflight never follows a redirect.</b> The Fetch Standard builds the preflight as a separate <code>OPTIONS</code> request and fetches it through a step that does not handle redirects. It accepts the answer only if it passes the CORS check and has an ok status, which the standard defines as 200 to 299. A 3xx is not one, so the preflight ends in a network error. No option on your own call changes that: the <code>redirect</code> option of <code>fetch()</code> belongs to your request, and <code>"follow"</code> is already its default.</li>
+      <li><b>The actual request can follow one, with conditions.</b> For a request that needs no preflight, or after a preflight that passed, the standard runs the CORS check on the 3xx itself and only then follows it, so the redirect response needs <code>Access-Control-Allow-Origin</code> as well. MDN adds that not all browsers follow redirects after a preflighted request, and quotes errors such as "Request requires preflight, which is disallowed to follow cross-origin redirects".</li>
+    </ul>
+    <p class="r d3">In short: a redirect in front of a CORS endpoint is fragile even where it works, and on a preflight it never works. The case that comes up most often looks like this:</p>
+    <figure class="dg r d3">
+      <svg viewBox="0 0 400 682" role="img" aria-labelledby="dg-title dg-desc">
+        <title id="dg-title">How one trailing slash turns into Redirect is not allowed for a preflight request</title>
+        <desc id="dg-desc">Your code sends POST https://api.example.com/items. Step one: the browser sends the preflight, OPTIONS /items. The server answers 308 Permanent Redirect with Location: /items/. Chrome stops with Redirect is not allowed for a preflight request, and the POST is never sent. Step two: compare the two URLs character by character. You call slash items; the route is slash items slash, one character longer. Step three, the fix: call the URL from the Location header. OPTIONS /items/ gets 204 and POST /items/ gets 200, so there is no redirect left for Chrome to refuse. The same failure happens when the Location changes another part of the URL: the scheme from http to https, the host from example.com to www.example.com, or the path to a login page.</desc>
+        <rect class="dg-pill" x="0.5" y="0.5" width="399" height="48" rx="24"/>
+        <text class="dg-pt" x="20" y="29">POST https://api.example.com/items</text>
+        <line class="dg-spine" x1="22" y1="49" x2="22" y2="450"/>
+
+        <circle class="dg-node" cx="22" cy="90" r="13"/>
+        <text class="dg-num" x="22" y="94.5" text-anchor="middle">1</text>
+        <rect class="dg-box" x="46.5" y="66.5" width="353" height="124" rx="10"/>
+        <text class="dg-h" x="62" y="93">The browser sends the preflight</text>
+        <text class="dg-pt" x="62" y="115">OPTIONS /items</text>
+        <text class="dg-lab" x="62" y="140">THE SERVER ANSWERS</text>
+        <text class="dg-con" x="62" y="160">308 Permanent Redirect</text>
+        <text class="dg-con" x="62" y="179">Location: /items/</text>
+
+        <rect class="dg-end" x="46.5" y="204.5" width="353" height="62" rx="10"/>
+        <text class="dg-con" x="62" y="230">Redirect is not allowed</text>
+        <text class="dg-s" x="62" y="252">Chrome stops. The POST is never sent.</text>
+
+        <circle class="dg-node dg-node-n" cx="22" cy="308" r="13"/>
+        <text class="dg-num" x="22" y="312.5" text-anchor="middle">2</text>
+        <rect class="dg-box" x="46.5" y="284.5" width="353" height="124" rx="10"/>
+        <text class="dg-h" x="62" y="311">Compare the two URLs</text>
+        <text class="dg-lab" x="62" y="344">YOU CALL</text>
+        <rect class="dg-cell" x="150.5" y="326.5" width="24" height="26" rx="4"/>
+        <rect class="dg-cell" x="176.5" y="326.5" width="24" height="26" rx="4"/>
+        <rect class="dg-cell" x="202.5" y="326.5" width="24" height="26" rx="4"/>
+        <rect class="dg-cell" x="228.5" y="326.5" width="24" height="26" rx="4"/>
+        <rect class="dg-cell" x="254.5" y="326.5" width="24" height="26" rx="4"/>
+        <rect class="dg-cell" x="280.5" y="326.5" width="24" height="26" rx="4"/>
+        <rect class="dg-cell-gap" x="306.5" y="326.5" width="24" height="26" rx="4"/>
+        <text class="dg-ch" x="162.5" y="344" text-anchor="middle">/</text>
+        <text class="dg-ch" x="188.5" y="344" text-anchor="middle">i</text>
+        <text class="dg-ch" x="214.5" y="344" text-anchor="middle">t</text>
+        <text class="dg-ch" x="240.5" y="344" text-anchor="middle">e</text>
+        <text class="dg-ch" x="266.5" y="344" text-anchor="middle">m</text>
+        <text class="dg-ch" x="292.5" y="344" text-anchor="middle">s</text>
+        <text class="dg-lab" x="62" y="380">THE ROUTE</text>
+        <rect class="dg-cell" x="150.5" y="362.5" width="24" height="26" rx="4"/>
+        <rect class="dg-cell" x="176.5" y="362.5" width="24" height="26" rx="4"/>
+        <rect class="dg-cell" x="202.5" y="362.5" width="24" height="26" rx="4"/>
+        <rect class="dg-cell" x="228.5" y="362.5" width="24" height="26" rx="4"/>
+        <rect class="dg-cell" x="254.5" y="362.5" width="24" height="26" rx="4"/>
+        <rect class="dg-cell" x="280.5" y="362.5" width="24" height="26" rx="4"/>
+        <rect class="dg-cell-add" x="306.5" y="362.5" width="24" height="26" rx="4"/>
+        <text class="dg-ch" x="162.5" y="380" text-anchor="middle">/</text>
+        <text class="dg-ch" x="188.5" y="380" text-anchor="middle">i</text>
+        <text class="dg-ch" x="214.5" y="380" text-anchor="middle">t</text>
+        <text class="dg-ch" x="240.5" y="380" text-anchor="middle">e</text>
+        <text class="dg-ch" x="266.5" y="380" text-anchor="middle">m</text>
+        <text class="dg-ch" x="292.5" y="380" text-anchor="middle">s</text>
+        <text class="dg-ch-add" x="318.5" y="380" text-anchor="middle">/</text>
+        <text class="dg-plus" x="342" y="380">+1</text>
+
+        <circle class="dg-node dg-node-ok" cx="22" cy="450" r="13"/>
+        <text class="dg-num" x="22" y="454.5" text-anchor="middle">3</text>
+        <rect class="dg-box dg-box-ok" x="46.5" y="426.5" width="353" height="124" rx="10"/>
+        <text class="dg-h" x="62" y="453">Fix: call the URL from Location</text>
+        <text class="dg-pt" x="62" y="477">OPTIONS /items/</text>
+        <text class="dg-okc" x="383" y="477" text-anchor="end">204</text>
+        <text class="dg-pt" x="62" y="500">POST /items/</text>
+        <text class="dg-okc" x="383" y="500" text-anchor="end">200</text>
+        <line class="dg-div" x1="62" y1="514.5" x2="383" y2="514.5"/>
+        <text class="dg-fix" x="62" y="536">No redirect left for Chrome to refuse</text>
+
+        <rect class="dg-pill" x="0.5" y="568.5" width="399" height="112" rx="14"/>
+        <text class="dg-lab" x="20" y="594">SAME FAILURE, ANOTHER PART OF THE URL</text>
+        <text class="dg-lab" x="20" y="620">SCHEME</text>
+        <text class="dg-pt" x="92" y="620">http:// <tspan class="dg-arr">→</tspan> https://</text>
+        <text class="dg-lab" x="20" y="644">HOST</text>
+        <text class="dg-pt" x="92" y="644">example.com <tspan class="dg-arr">→</tspan> www.example.com</text>
+        <text class="dg-lab" x="20" y="668">AUTH</text>
+        <text class="dg-pt" x="92" y="668">/items <tspan class="dg-arr">→</tspan> /login</text>
+      </svg>
+      <figcaption>The preflight goes to the URL in your code. If the server prefers another form of that URL, it answers with a 3xx, and Chrome ends the preflight right there, whatever headers the redirect carries. Here the difference is one trailing slash; in the other common cases it is the scheme, the host, or a login page. The fix is the same shape every time: send the request to the URL from the <code>Location</code> header, so nothing needs to be redirected.</figcaption>
+    </figure>
+        </section>
+        <section class="sec" id="s3">
+    <h2 class="r">Find the redirect with one curl command</h2>
+    <p class="r d1">curl does not send preflights on its own, so send one by hand, with the headers the browser would use. Take the URL, the method and the header names from your request. Leave out cookies and tokens, because the browser leaves them out of a preflight too.</p>
+    <div class="snippet r d2">
+      <p class="cap">Terminal</p>
+      <pre><code>curl -i -X OPTIONS https://api.example.com/items \
+  -H "Origin: http://localhost:3000" \
+  -H "Access-Control-Request-Method: POST" \
+  -H "Access-Control-Request-Headers: authorization,content-type"</code></pre>
+    </div>
+    <p class="r d2">On Windows, type <code>curl.exe</code> instead of <code>curl</code>, because in Windows PowerShell 5.1 <code>curl</code> is an alias for <code>Invoke-WebRequest</code>, which takes different parameters. Put the whole command on one line, without the backslashes.</p>
+    <p class="r d2">Without <code>-L</code>, curl does not follow redirects: it prints the first answer and stops, which is exactly the answer the browser refused. With this error, the status line is a 3xx and there is a <code>Location</code> header:</p>
+    <div class="snippet bad r d3">
+      <p class="cap">The part of the answer that matters</p>
+      <pre><code>HTTP/1.1 308 Permanent Redirect
+Location: https://api.example.com/items/</code></pre>
+    </div>
+    <p class="r d3">Compare the <code>Location</code> with the URL in your code, character by character: scheme, host, port, path and the trailing slash. The difference tells you which of the causes below you have. In the browser, the accepted answer on the 2024 question points out that Chrome lists preflights in the Network tab while the All or Other filter is active; the <code>Location</code> response header of that <code>OPTIONS</code> row gives the same answer.</p>
+        </section>
+        <section class="sec" id="s4">
+    <p class="num r">01</p>
+    <h2 class="r d1">A trailing slash your framework adds or removes</h2>
+    <p class="r d2">This is the cause that comes up most in the questions linked below. Many frameworks treat <code>/items</code> and <code>/items/</code> as one resource with one canonical form and redirect the other form to it. The preflight goes to whichever form is in your code:</p>
+    <ul class="r d2">
+      <li><b>Django:</b> with <code>CommonMiddleware</code>, which a new project has in <code>MIDDLEWARE</code>, and <code>APPEND_SLASH</code>, which defaults to <code>True</code>, a URL without a slash that only matches a pattern with one is redirected to the slash version.</li>
+      <li><b>Flask:</b> a route declared as <code>/projects/</code> is canonical with the slash, and Flask redirects <code>/projects</code> to it. Werkzeug, the routing library underneath, sends that redirect as a 308.</li>
+      <li><b>FastAPI:</b> FastAPI inherits from Starlette, whose router answers with a 307 to the other form, adding or removing the slash, when only that form matches a route. The option is <code>redirect_slashes</code>, on by default. With <code>CORSMiddleware</code>, the way FastAPI's documentation sets up CORS, the preflight never gets that far: the middleware intercepts every <code>OPTIONS</code> request that carries <code>Origin</code> and <code>Access-Control-Request-Method</code> and answers it itself with a 200 or a 400. The 307 then only hits the real request (see "Keeping the redirect for the real request" further down). The router redirects the preflight only when the <code>OPTIONS</code> request reaches it, for example when <code>CORSMiddleware</code> is missing, or when CORS is handled in front of the app and <code>OPTIONS</code> is passed through.</li>
+      <li><b>Laravel behind Apache:</b> the <code>public/.htaccess</code> in the Laravel skeleton redirects URLs that end in a slash to the version without it, with a 301, before Laravel or its CORS middleware see the request. The highest-voted answer on the 2019 question below describes that direction: <code>/api/methods/</code> redirected to <code>/api/methods</code>.</li>
+      <li><b>nginx:</b> for a <code>location /api/</code> handled by <code>proxy_pass</code>, a request for <code>/api</code> without the slash gets a 301 to <code>/api/</code>.</li>
+    </ul>
+    <p class="r d3">The fix is on the calling side: use the canonical form, and take it from the <code>Location</code> header, not from memory.</p>
+    <div class="snippet r d3">
+      <p class="cap">Frontend</p>
+      <pre><code>// the route is /items/, so OPTIONS /items got a 308
+await fetch('https://api.example.com/items', { method: 'POST', headers, body });
+
+// the exact URL from the Location header
+await fetch('https://api.example.com/items/', { method: 'POST', headers, body });</code></pre>
+    </div>
+    <p class="r d3">In Django, the order of middleware matters too. The django-cors-headers README asks for <code>CorsMiddleware</code> as high as possible, and before <code>CommonMiddleware</code> in particular. Its source answers a preflight right there with an empty response, for the URLs it is configured to cover, so the preflight never reaches the slash redirect:</p>
+    <div class="snippet r d3">
+      <p class="cap">Django settings.py, order from the django-cors-headers README</p>
+      <pre><code>MIDDLEWARE = [
+    ...,
+    "corsheaders.middleware.CorsMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    ...,
+]</code></pre>
+    </div>
+    <p class="r d3">That fixes the preflight, but the POST that follows still meets the redirect, and Django's own documentation warns that this redirect may lose data submitted in a POST. Order the middleware correctly and still call the canonical URL.</p>
+        </section>
+        <section class="sec" id="s5">
+    <p class="num r">02</p>
+    <h2 class="r d1">Another host: www, the bare domain, or a different name</h2>
+    <p class="r d2">The redirect can change the host instead of the path. In the 2024 question below, a React app called an Express API deployed on Render. The preflight got a 307, and its <code>Location</code> pointed at a <code>www</code> address that the axios request URL did not have. Adding <code>www</code> to the request URL fixed it. Django can do the same on purpose: with <code>PREPEND_WWW</code>, <code>CommonMiddleware</code> redirects URLs without <code>www.</code> to the same URL with it.</p>
+    <p class="r d3">Fix: call the host from the <code>Location</code> header, or change the domain rule so that the API hostname is not redirected at all. A redirect to another host is also a redirect to another origin, which causes more trouble even for the actual request (see the traps further down).</p>
+        </section>
+        <section class="sec" id="s6">
+    <p class="num r">03</p>
+    <h2 class="r d1">http in the request URL, https on the server</h2>
+    <p class="r d2">A base URL that still says <code>http://</code>, often from an environment file written during local development, meets a server that sends every plain HTTP request to HTTPS. In Django, that is <code>SECURE_SSL_REDIRECT = True</code>: <code>SecurityMiddleware</code> then redirects all non-HTTPS requests to HTTPS. The preflight is the first request to hit that redirect. This version of the error shows up when the page itself runs on <code>http</code>, typically a local dev server. From a page served over <code>https</code>, the browser blocks a <code>fetch()</code> or <code>XMLHttpRequest</code> to an <code>http://</code> URL as mixed content, and the console shows a mixed-content error instead.</p>
+    <p class="r d3">Fix: put <code>https://</code> in the base URL, in every environment file, not only in the one you are testing.</p>
+        </section>
+        <section class="sec" id="s7">
+    <p class="num r">04</p>
+    <h2 class="r d1">The server sends anonymous requests to a login page</h2>
+    <p class="r d2">A preflight never carries cookies or other credentials. MDN puts it as "CORS-preflight requests must never include credentials". An app that protects its routes with a session cookie therefore sees the preflight as an anonymous visitor, and a setup that answers anonymous visitors with a redirect to the login page does exactly that. Spring Security's documentation describes the first half: CORS must be processed before Spring Security, because the preflight contains no cookies (no <code>JSESSIONID</code>), so Spring Security decides the user is not authenticated and rejects the request. With form login, that rejection is a redirect to the login page. In curl, you see it as a <code>Location</code> pointing at <code>/login</code> or at an identity provider.</p>
+    <p class="r d2">Here, calling another URL does not help. CORS has to answer the preflight before authentication runs. Spring Security's documentation says the easiest way to get CORS handled first is its <code>CorsFilter</code>, set up by providing a <code>CorsConfigurationSource</code> bean:</p>
+    <div class="snippet r d3">
+      <p class="cap">Spring Security, based on its CORS documentation</p>
+      <pre><code>@Bean
+UrlBasedCorsConfigurationSource corsConfigurationSource() {
+    CorsConfiguration configuration = new CorsConfiguration();
+    configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000"));
+    configuration.setAllowedMethods(Arrays.asList("GET","POST"));
+    // the header names your request sends; not set by default
+    configuration.setAllowedHeaders(Arrays.asList("Authorization","Content-Type"));
+    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+    source.registerCorsConfiguration("/**", configuration);
+    return source;
+}</code></pre>
+    </div>
+    <p class="r d3">For other stacks the rule is the same: the CORS layer runs first and answers <code>OPTIONS</code> itself. <a href="https://arling.sk/notes/cors-preflight-doesnt-pass-access-control-check/">The note on "It does not have HTTP ok status"</a> shows that order for Express and ASP.NET Core, where the same mistake ends in a 401 instead of a redirect.</p>
+        </section>
+        <section class="sec" id="s8">
+    <h2 class="r">The fix, step by step</h2>
+    <ol class="r d1">
+      <li><b>Read the URL from the message,</b> after "Access to XMLHttpRequest at" or "Access to fetch at". That is the URL your code called.</li>
+      <li><b>Send the preflight with curl</b> as shown above, and read the status line and the <code>Location</code> header.</li>
+      <li><b>Match the <code>Location</code> to a cause.</b> The same URL with or without a trailing slash: 01. Another host: 02. <code>https</code> instead of <code>http</code>: 03. A login page or an identity provider: 04.</li>
+      <li><b>Change the right side.</b> For 01 to 03, put the exact <code>Location</code> URL into your frontend: the base URL in your config or environment, and the path in the call. For 04, make the CORS layer answer <code>OPTIONS</code> before authentication.</li>
+      <li><b>Run the same curl command again</b> with the new URL, until the answer is a 2xx without a <code>Location</code> header.</li>
+    </ol>
+        </section>
+        <section class="sec" id="s9">
+    <h2 class="r">How to tell it is fixed</h2>
+    <p class="r d1">The preflight answer should now look roughly like this:</p>
+    <div class="snippet r d2">
+      <p class="cap">A preflight answer that passes</p>
+      <pre><code>HTTP/1.1 204 No Content
+Access-Control-Allow-Origin: http://localhost:3000
+Access-Control-Allow-Methods: GET, POST, OPTIONS
+Access-Control-Allow-Headers: Authorization, Content-Type</code></pre>
+    </div>
+    <ul class="r d2">
+      <li>The status is between 200 and 299 and there is no <code>Location</code> header. A 200 is as good as a 204; django-cors-headers, for example, answers the preflight with an empty 200.</li>
+      <li><code>Access-Control-Allow-Origin</code> is exactly your page's origin, or <code>*</code> if the request is sent without credentials. Header names are case-insensitive, so lowercase names in curl's output are fine.</li>
+      <li>The real request is not a 3xx either. Check it with <code>curl -i</code>, the same <code>Origin</code> header and the real method. A POST will really run, so use test data.</li>
+    </ul>
+    <p class="r d3">Then reload the page with DevTools open on the Network tab. The <code>OPTIONS</code> row should show a 2xx, followed by your real request. If the console now shows a different preflight message, such as "It does not have HTTP ok status" or "Request header field authorization is not allowed by Access-Control-Allow-Headers in preflight response", the redirect is gone and the next layer is talking. The first of those has <a href="https://arling.sk/notes/cors-preflight-doesnt-pass-access-control-check/">its own note</a>.</p>
+        </section>
+        <section class="sec" id="s10">
+    <h2 class="r">Things that look like fixes but are not</h2>
+    <ul class="r d1">
+      <li><b>CORS headers on the redirect.</b> Chrome ends the preflight at a redirect without reading its headers. Headers on a 3xx only count for a request that needed no preflight, or for the actual request after a preflight that passed.</li>
+      <li><b>Access-Control-Allow-Origin on the request.</b> In the 2019 question below, the axios defaults set <code>Access-Control-Allow-Origin</code> and <code>Access-Control-Allow-Headers</code> as request headers. Both are response headers. On a request they are just headers outside the CORS-safelisted set, so each of them forces a preflight by itself.</li>
+      <li><b>Keeping the redirect for the real request.</b> Even where the browser follows it, the Fetch Standard turns a POST into a GET without a body on a 301 or 302, and every method except GET and HEAD into a GET on a 303. Only 307 and 308 keep the method and the body. A redirect to another origin also makes the browser send <code>Origin: null</code> on the next request, and the standard removes the <code>Authorization</code> header at that point.</li>
+      <li><b>A browser extension or <code>--disable-web-security</code>.</b> The accepted answers on the two older questions below include these. They change only your own browser, and every user still gets the error.</li>
+    </ul>
+        </section>
+        <section class="sec" id="s11">
+    <h2 class="r">Check your case</h2>
+    <div class="try r d1"><p>Paste the console message into CORS Doctor and fill in your request. <a data-umami-event="open-cors-doctor-cta" href="https://arling.sk/cors-doctor/#c=eyJlcnJvciI6eyJtZXNzYWdlIjoiQWNjZXNzIHRvIFhNTEh0dHBSZXF1ZXN0IGF0ICdodHRwczovL2FwaS5leGFtcGxlLmNvbS9pdGVtcycgZnJvbSBvcmlnaW4gJ2h0dHA6Ly9sb2NhbGhvc3Q6MzAwMCcgaGFzIGJlZW4gYmxvY2tlZCBieSBDT1JTIHBvbGljeTogUmVzcG9uc2UgdG8gcHJlZmxpZ2h0IHJlcXVlc3QgZG9lc24ndCBwYXNzIGFjY2VzcyBjb250cm9sIGNoZWNrOiBSZWRpcmVjdCBpcyBub3QgYWxsb3dlZCBmb3IgYSBwcmVmbGlnaHQgcmVxdWVzdC4ifSwicmVxdWVzdCI6eyJwYWdlT3JpZ2luIjoiaHR0cDovL2xvY2FsaG9zdDozMDAwIiwicmVxdWVzdFVybCI6Imh0dHBzOi8vYXBpLmV4YW1wbGUuY29tL2l0ZW1zIiwibWV0aG9kIjoiUE9TVCIsImNyZWRlbnRpYWxzIjoiIiwiY3VzdG9tSGVhZGVycyI6WyJBdXRob3JpemF0aW9uIl0sImNvbnRlbnRUeXBlIjoiYXBwbGljYXRpb24vanNvbiJ9LCJyZXNwb25zZSI6eyJhY2FvIjoiaHR0cDovL2xvY2FsaG9zdDozMDAwIiwiYWNhYyI6IiIsImFjYW0iOiIiLCJhY2FoIjoiIiwidmFyeSI6Ik9yaWdpbiIsInN0YXR1cyI6bnVsbCwicmVkaXJlY3RzVG9PdGhlck9yaWdpbiI6bnVsbCwicHJlZmxpZ2h0U3RhdHVzIjozMDh9LCJzZXJ2ZXIiOnsic3RhY2siOiIifX0">Open CORS Doctor with this note's example filled in</a>: a POST with <code>Authorization</code> and a JSON body, the Chrome message above, and a preflight answered with 308 that even carries the right <code>Access-Control-Allow-Origin</code>. It recognizes the redirect message, flags the 3xx preflight status as a failure, and lists why your request needs a preflight at all (here, the <code>Authorization</code> header and the JSON <code>Content-Type</code>), which tells you whether avoiding the preflight is even an option. Next to the redirect finding it also lists its general one for any preflight without a 2xx, which talks about auth middleware and a 401 or 404. That text fits cause 04; for a slash, <code>www</code> or <code>https</code> redirect, the fix is still the URL from <code>Location</code>. The tool cannot see your <code>Location</code> header, so the curl command above is still what finds the redirect target. The check runs in your browser and does not call your API.</p></div>
+        </section>
+        <section class="sec" id="s12">
+    <h2 class="r">Questions</h2>
+    <details class="r d1">
+      <summary>Why does Postman reach the endpoint when the browser does not?</summary>
+      <p>Postman sends no preflight, and it follows a 3xx on its own unless you switch off its "Automatically follow redirects" setting, so you never see the redirect there. curl without <code>-L</code> prints the 3xx and stops, which makes it the right tool to see what the browser saw, as long as you send the <code>OPTIONS</code> request by hand with the same <code>Origin</code> and <code>Access-Control-Request-*</code> headers.</p>
+    </details>
+    <details class="r d1">
+      <summary>Why does only one route fail?</summary>
+      <p>Because only that URL differs from its canonical form, or only that route sits behind authentication. The 2019 question linked on this page asks exactly this. Compare the failing URL with its route definition, including the trailing slash, or send the preflight to it with curl and read the <code>Location</code> header.</p>
+    </details>
+    <details class="r d2">
+      <summary>Can I make the browser follow the redirect on the preflight?</summary>
+      <p>No. The Fetch Standard fetches the preflight without following redirects, and Chromium fails it on the first one. MDN describes a workaround for browsers that refuse redirects after a preflight: send a simple request first, read the final URL from <code>Response.url</code> or <code>XMLHttpRequest.responseURL</code>, then send the real request there. MDN also says this does not work when the preflight is caused by an <code>Authorization</code> header, and that in that case there is no workaround at all without control over the server.</p>
+    </details>
+    <details class="r d2">
+      <summary>Does it matter whether the server sends 301, 302, 307 or 308?</summary>
+      <p>Not for the preflight: every redirect status fails it. It matters for the real request. According to the Fetch Standard, a 301 or 302 turns a POST into a GET without a body, and a 303 does that to every method except GET and HEAD. A 307 or 308 keeps the method and the body.</p>
+    </details>
+        </section>
+      </div>
+    </div>
+  </div>
+  <section class="deep" id="s13">
+    <div class="wrap">
+      <div class="note">
+        <div class="doc">
+    <h2 class="r">Sources</h2>
+    <ul class="r d1">
+      <li>MDN, "Reason: CORS request external redirect not allowed" (a CORS redirect to another origin; fix: use the new URL from the redirect) and "CORS errors" (these reason messages are Firefox's console messages): <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS/Errors/CORSExternalRedirectNotAllowed">developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS/Errors/CORSExternalRedirectNotAllowed</a>, <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS/Errors">developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS/Errors</a></li>
+      <li>Firefox source, <code>nsCORSPreflightListener::AsyncOnChannelRedirect</code> in <code>nsCORSListenerProxy.cpp</code> (every redirect of a preflight except an internal same-URI redirect or an HSTS upgrade is blocked and logged as <code>CORSExternalRedirectNotAllowed</code>): <a href="https://github.com/mozilla-firefox/firefox/blob/main/netwerk/protocol/http/nsCORSListenerProxy.cpp">github.com/mozilla-firefox/firefox/blob/main/netwerk/protocol/http/nsCORSListenerProxy.cpp</a></li>
+      <li>MDN, "Cross-Origin Resource Sharing (CORS)", section "Preflighted requests and redirects" (not all browsers follow redirects after a preflighted request, the quoted error messages, the Response.url and responseURL workaround and its limit with Authorization), plus "Simple requests" and "CORS-preflight requests must never include credentials": <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS#preflighted_requests_and_redirects">developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS#preflighted_requests_and_redirects</a></li>
+      <li>MDN, "CORS-safelisted request header" (Access-Control-Allow-Origin is not one of them): <a href="https://developer.mozilla.org/en-US/docs/Glossary/CORS-safelisted_request_header">developer.mozilla.org/en-US/docs/Glossary/CORS-safelisted_request_header</a></li>
+      <li>MDN, "Mixed content" (fetch() and XMLHttpRequest requests to http from an https page are blockable content, and browsers block them): <a href="https://developer.mozilla.org/en-US/docs/Web/Security/Mixed_content">developer.mozilla.org/en-US/docs/Web/Security/Mixed_content</a></li>
+      <li>WHATWG Fetch Standard, "CORS-preflight fetch" (a new OPTIONS request fetched with HTTP-network-or-cache fetch; success needs a CORS check and an ok status, otherwise a network error): <a href="https://fetch.spec.whatwg.org/#cors-preflight-fetch">fetch.spec.whatwg.org/#cors-preflight-fetch</a></li>
+      <li>WHATWG Fetch Standard, "ok status" (200 to 299) and "redirect status" (301, 302, 303, 307, 308): <a href="https://fetch.spec.whatwg.org/#ok-status">fetch.spec.whatwg.org/#ok-status</a>, <a href="https://fetch.spec.whatwg.org/#redirect-status">fetch.spec.whatwg.org/#redirect-status</a></li>
+      <li>WHATWG Fetch Standard, "HTTP fetch" (the CORS check runs on a response before its redirect is followed; redirect modes) and "HTTP-redirect fetch" (301 or 302 on POST and 303 on other methods become GET without a body; the Authorization header is removed when a redirect leads to another origin): <a href="https://fetch.spec.whatwg.org/#http-fetch">fetch.spec.whatwg.org/#http-fetch</a>, <a href="https://fetch.spec.whatwg.org/#http-redirect-fetch">fetch.spec.whatwg.org/#http-redirect-fetch</a></li>
+      <li>WHATWG Fetch Standard, "redirect-taint" and "serializing a request origin" (after a redirect across origins the Origin is serialized as null) and the request's redirect mode (default "follow"): <a href="https://fetch.spec.whatwg.org/#concept-request-tainted-origin">fetch.spec.whatwg.org/#concept-request-tainted-origin</a>, <a href="https://fetch.spec.whatwg.org/#serializing-a-request-origin">fetch.spec.whatwg.org/#serializing-a-request-origin</a>, <a href="https://fetch.spec.whatwg.org/#concept-request-redirect-mode">fetch.spec.whatwg.org/#concept-request-redirect-mode</a></li>
+      <li>Chromium source, <code>PreflightLoader::HandleRedirect</code> (any redirect on a preflight ends it with <code>kPreflightDisallowedRedirect</code>): <a href="https://source.chromium.org/chromium/chromium/src/+/main:services/network/cors/preflight_controller.cc">source.chromium.org/chromium/chromium/src/+/main:services/network/cors/preflight_controller.cc</a></li>
+      <li>Chromium source, <code>cors_error_string.cc</code> (the "Access to ... at" prefix with the requested URL, "(redirected from" only after a followed redirect, and the text "Redirect is not allowed for a preflight request."): <a href="https://source.chromium.org/chromium/chromium/src/+/main:third_party/blink/renderer/platform/loader/cors/cors_error_string.cc">source.chromium.org/chromium/chromium/src/+/main:third_party/blink/renderer/platform/loader/cors/cors_error_string.cc</a></li>
+      <li>Chromium source, <code>CorsURLLoader::OnReceiveRedirect</code> (the CORS check on a 3xx of the actual request, before the redirect is followed): <a href="https://source.chromium.org/chromium/chromium/src/+/main:services/network/cors/cors_url_loader.cc">source.chromium.org/chromium/chromium/src/+/main:services/network/cors/cors_url_loader.cc</a></li>
+      <li>Django, settings <code>APPEND_SLASH</code> (default True, redirect may lose POST data), <code>PREPEND_WWW</code> and <code>SECURE_SSL_REDIRECT</code>: <a href="https://docs.djangoproject.com/en/stable/ref/settings/#append-slash">docs.djangoproject.com/en/stable/ref/settings/#append-slash</a>, <a href="https://docs.djangoproject.com/en/stable/ref/settings/#prepend-www">#prepend-www</a>, <a href="https://docs.djangoproject.com/en/stable/ref/settings/#secure-ssl-redirect">#secure-ssl-redirect</a></li>
+      <li>Django, "Middleware": <code>CommonMiddleware</code> (URL rewriting with APPEND_SLASH and PREPEND_WWW): <a href="https://docs.djangoproject.com/en/stable/ref/middleware/#module-django.middleware.common">docs.djangoproject.com/en/stable/ref/middleware/#module-django.middleware.common</a>; the default <code>MIDDLEWARE</code> of a new project: <a href="https://github.com/django/django/blob/main/django/conf/project_template/project_name/settings.py-tpl">github.com/django/django/blob/main/django/conf/project_template/project_name/settings.py-tpl</a></li>
+      <li>django-cors-headers, README (CorsMiddleware before CommonMiddleware) and <code>check_preflight</code> in its middleware source: <a href="https://github.com/adamchainz/django-cors-headers">github.com/adamchainz/django-cors-headers</a>, <a href="https://github.com/adamchainz/django-cors-headers/blob/main/src/corsheaders/middleware.py">github.com/adamchainz/django-cors-headers/blob/main/src/corsheaders/middleware.py</a></li>
+      <li>Flask, "Quickstart: Unique URLs / Redirection Behavior": <a href="https://flask.palletsprojects.com/en/stable/quickstart/#unique-urls-redirection-behavior">flask.palletsprojects.com/en/stable/quickstart/#unique-urls-redirection-behavior</a>; Werkzeug <code>RequestRedirect</code> (code 308): <a href="https://github.com/pallets/werkzeug/blob/main/src/werkzeug/routing/exceptions.py">github.com/pallets/werkzeug/blob/main/src/werkzeug/routing/exceptions.py</a></li>
+      <li>FastAPI, "First Steps" (FastAPI inherits directly from Starlette): <a href="https://fastapi.tiangolo.com/tutorial/first-steps/">fastapi.tiangolo.com/tutorial/first-steps/</a>; Starlette <code>Router</code> (<code>redirect_slashes=True</code>, adds or strips the slash) and <code>RedirectResponse</code> (default 307): <a href="https://github.com/encode/starlette/blob/master/starlette/routing.py">github.com/encode/starlette/blob/master/starlette/routing.py</a>, <a href="https://github.com/encode/starlette/blob/master/starlette/responses.py">github.com/encode/starlette/blob/master/starlette/responses.py</a>; FastAPI, "CORS (Cross-Origin Resource Sharing)" (CORSMiddleware intercepts a preflight and answers it with a 200 or 400) and the Starlette <code>CORSMiddleware</code> source that returns the preflight response before the app runs: <a href="https://fastapi.tiangolo.com/tutorial/cors/">fastapi.tiangolo.com/tutorial/cors/</a>, <a href="https://github.com/encode/starlette/blob/master/starlette/middleware/cors.py">github.com/encode/starlette/blob/master/starlette/middleware/cors.py</a></li>
+      <li>Laravel skeleton, <code>public/.htaccess</code> ("Redirect Trailing Slashes If Not A Folder", R=301): <a href="https://github.com/laravel/laravel/blob/12.x/public/.htaccess">github.com/laravel/laravel/blob/12.x/public/.htaccess</a></li>
+      <li>nginx, <code>location</code> directive (a prefix location ending in a slash with proxy_pass answers the URI without the slash with a 301): <a href="https://nginx.org/en/docs/http/ngx_http_core_module.html#location">nginx.org/en/docs/http/ngx_http_core_module.html#location</a></li>
+      <li>Spring Security, "CORS" (process CORS before Spring Security because the preflight has no cookies; CorsConfigurationSource bean): <a href="https://docs.spring.io/spring-security/reference/servlet/integrations/cors.html">docs.spring.io/spring-security/reference/servlet/integrations/cors.html</a>; "Form Login" (an unauthenticated request is redirected to the login page): <a href="https://docs.spring.io/spring-security/reference/servlet/authentication/passwords/form.html">docs.spring.io/spring-security/reference/servlet/authentication/passwords/form.html</a>; <code>CorsConfiguration.setAllowedHeaders</code> (not set by default): <a href="https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/web/cors/CorsConfiguration.html">docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/web/cors/CorsConfiguration.html</a></li>
+      <li>RFC 9110, section 5.1 "Field Names" (case-insensitive): <a href="https://www.rfc-editor.org/rfc/rfc9110#section-5.1">rfc-editor.org/rfc/rfc9110#section-5.1</a></li>
+      <li>curl, "curl.1 the man page" (-i, -X, -H, and -L to follow redirects): <a href="https://curl.se/docs/manpage.html">curl.se/docs/manpage.html</a>; Microsoft Learn, "curl on Windows" (curl is included with Windows; in Windows PowerShell 5.1 the curl alias maps to Invoke-WebRequest, call curl.exe instead): <a href="https://learn.microsoft.com/en-us/windows/curl/">learn.microsoft.com/en-us/windows/curl/</a></li>
+      <li>Postman Docs, "My request is redirected to a GET request" (Postman automatically follows 3xx responses; the "Automatically follow redirects" setting turns it off): <a href="https://learning.postman.com/help/resolve-issues/sending-requests/my-request-is-redirected-to-a-get-request">learning.postman.com/help/resolve-issues/sending-requests/my-request-is-redirected-to-a-get-request</a></li>
+      <li>Stack Overflow, "Redirect from ... has been blocked by CORS policy" for a jQuery GET redirected to the same URL with a trailing slash (2017, about 1.9 million views; accepted answer: a browser extension): <a href="https://stackoverflow.com/questions/46522749">stackoverflow.com/questions/46522749</a></li>
+      <li>Stack Overflow, "Redirect is not allowed for a preflight request" on one route, Laravel and Vue with Access-Control-Allow-Origin set as an axios request header; highest-voted answer: the trailing slash: <a href="https://stackoverflow.com/questions/54212220">stackoverflow.com/questions/54212220</a></li>
+      <li>Stack Overflow, "Redirect is not allowed for a preflight request" with Express on Render, Safari's "Preflight response is not successful. Status code: 307", fixed by adding www; accepted answer on reading the preflight and its Location header in the Network tab: <a href="https://stackoverflow.com/questions/78385480">stackoverflow.com/questions/78385480</a></li>
+    </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+<footer class="site-footer">
+  <div class="wrap foot">
+    <div class="site-foot-top"><div><a class="site-brand" href="https://arling.sk/en/" aria-label="ARLing home" data-site-home><svg viewBox="0 0 488 215" width="38" height="15" aria-hidden="true" focusable="false"><path fill="#f4f4f7" fill-rule="evenodd" d="M0.00,213.00L74.00,214.00L181.00,85.00L285.00,214.00L360.00,214.00L206.00,21.00L185.00,4.00L164.00,10.00Z M221.00,0.00L263.00,50.00L395.00,50.00L409.00,55.00L419.00,76.00L401.00,96.00L313.00,98.00L411.00,214.00L487.00,214.00L422.00,139.00L457.00,123.00L482.00,88.00L482.00,48.00L463.00,19.00L417.00,0.00Z"/><path fill="#f2643c" d="M269.00,66.00L269.00,67.00L268.00,68.00L268.00,70.00L267.00,71.00L267.00,76.00L268.00,77.00L268.00,79.00L270.00,81.00L270.00,82.00L271.00,82.00L273.00,84.00L274.00,84.00L277.00,86.00L279.00,86.00L280.00,87.00L287.00,87.00L288.00,86.00L290.00,86.00L291.00,85.00L294.00,84.00L298.00,80.00L298.00,79.00L299.00,78.00L299.00,75.00L300.00,74.00L300.00,72.00L299.00,71.00L299.00,69.00L298.00,68.00L297.00,65.00L295.00,63.00L294.00,63.00L289.00,60.00L278.00,60.00L277.00,61.00L276.00,61.00L275.00,62.00L272.00,63.00Z"/></svg><b>ARLing</b></a><p class="site-foot-firma">ARLing s. r. o., company ID <span class="num">56583486</span>, Bratislava. Own server in the European Union. Software for companies, freelancers and individuals.</p></div><a class="site-cta" href="https://arling.sk/shop/" data-umami-event="shell_footer_cta">Shop<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></div>
+    <div class="site-foot-cols"><div data-skupina="firmy" data-blok="firemne"><p>Businesses and accountants</p><ul><li><a href="https://arling.sk/vsetko/en/#firmy" aria-label="All in this group: Businesses and accountants">All in this group</a></li></ul></div><div data-skupina="eshopy" data-blok="firemne"><p>Online shops and websites</p><ul><li><a href="https://arling.sk/vsetko/en/#eshopy" aria-label="All in this group: Online shops and websites">All in this group</a></li></ul></div><div data-skupina="hry" data-blok="spotrebitelske"><p>Games and puzzles</p><ul><li><a href="https://arling.sk/vsetko/en/#hry" aria-label="All in this group: Games and puzzles">All in this group</a></li></ul></div><div data-skupina="knihy" data-blok="spotrebitelske"><p>Books and gifts</p><ul><li><a href="https://arling.sk/vsetko/en/#knihy" aria-label="All in this group: Books and gifts">All in this group</a></li></ul></div><div><p>Company</p><ul><li><a href="https://arling.sk/how-we-work/en/">How we work</a></li><li><a href="https://arling.sk/notes/en/">Guides</a></li><li><a href="https://arling.sk/kontakt/en/">Contact</a></li><li><a href="https://arling.sk/ucet/en/">Account</a></li><li><a href="https://arling.sk/brand/en/">Brand</a></li><li><a href="https://arling.sk/podmienky/en/">Terms</a></li><li><a href="https://arling.sk/privacy/en/">Privacy</a></li><li><a href="https://arling.sk/odstupenie/en/">Withdraw from the contract here</a></li><li><a href="https://arling.sk/impressum/en/">Imprint</a></li></ul></div></div>
+    <p class="site-all"><a href="https://arling.sk/vsetko/en/" data-umami-event="shell_footer_all">Everything on one page<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></p>
+    <p class="site-dev" data-site-vyvojari><span>For developers</span><em>Free diagnostics for CORS, JWT, OAuth, Supabase and Stripe webhook errors.</em><a href="https://arling.sk/vsetko/en/#vyvojari">All developer tools<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></p>
+    <div class="site-foot-bottom"><p>ARLing s. r. o., Ivanská cesta 32E, 821 04 Bratislava, Slovakia. Company ID 56583486, VAT ID SK2122352100. <a href="mailto:support@arling.sk">support@arling.sk</a></p><p><a href="https://arling.sk/impressum/en/">Impressum</a> · <a href="https://arling.sk/llms.txt">llms.txt</a> · <a href="https://arling.sk/sitemap-index.xml">Sitemap</a></p></div>
+    <p class="site-foot-legal">Tools are provided as is, without warranty. Anonymous visit counts via self-hosted Umami. <a href="https://arling.sk/privacy/en/">Privacy</a> · <a href="https://arling.sk/podmienky/en/">Terms</a> · <a href="https://arling.sk/gdpr/en/">GDPR</a> · <a href="https://arling.sk/odstupenie/en/">Withdraw from the contract here</a></p>
+  </div>
+</footer>
+<script defer src="https://server.invalid/script.js" data-website-id="be534d51-4d01-4860-b267-9596d91606de"></script>
+<script>
+(function () {
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var hero = document.getElementById('hero');
+  if (reduce) {
+    document.querySelectorAll('.r, section').forEach(function (e) { e.classList.add('in'); });
+  }
+  if (!reduce && hero) {
+    requestAnimationFrame(function () {
+      hero.querySelectorAll('.r').forEach(function (e) { e.classList.add('in'); });
+    });
+  }
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (en) {
+      if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); }
+    });
+  }, { rootMargin: '0px 0px -12% 0px', threshold: 0.1 });
+  document.querySelectorAll('section').forEach(function (s) { io.observe(s); });
+
+  // nadpis clanku sa objavi po slovach, ako dobre vytlaceny titulok
+  var h1 = document.getElementById('h1');
+  if (h1) {
+    var i = 0;
+    Array.prototype.forEach.call(h1.querySelectorAll('.l'), function (line) {
+      var words = line.textContent.split(' ');
+      line.textContent = '';
+      words.forEach(function (w, k) {
+        var s = document.createElement('span');
+        s.className = 'w';
+        s.style.transitionDelay = (i++ * 0.06).toFixed(2) + 's';
+        s.textContent = w;
+        line.appendChild(s);
+        if (k < words.length - 1) line.appendChild(document.createTextNode(' '));
+      });
+    });
+    requestAnimationFrame(function () { h1.classList.add('in'); });
+  }
+
+  // bocny register sleduje, ktora cast clanku je v strede obrazovky
+})();
+</script>
+</body>
+</html>

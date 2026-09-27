@@ -1,0 +1,525 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script src="/style/vzhlad.js?v=8a4019ae"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://server.invalid 'sha256-xIuVuudLxIdq3mbAtYFRzWkGCaYWlKtkFl9F/t8WoBo=' 'sha256-qECldPD6tcdUra6RZmJ2B8gs76XuTIopKc4GutIOsQw=' 'sha256-OIRFpVHgtI1ZUSlnAqBk5HbURHdsoOulc29iOrU/fyg=' 'sha256-kHzhLBitzZlfAaUS4VuXMelQQYrrpIhEmCeLW+iUbL4='; connect-src 'self' https://server.invalid; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0a0908">
+<link rel="preconnect" href="https://server.invalid" crossorigin>
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../../favicon.ico" sizes="48x48">
+<link rel="apple-touch-icon" href="../../icon-180.png">
+<title>"The given origin is not allowed for the given client ID": Sign In With Google and JavaScript origins</title>
+<meta name="description" content="Google Identity Services logs this when the scheme, host and port of your page match no entry in Authorized JavaScript origins. The causes in order, and the fix for each.">
+<link rel="canonical" href="https://arling.sk/notes/google-given-origin-not-allowed-for-client-id/">
+<meta property="og:type" content="article">
+<meta property="og:title" content="&quot;The given origin is not allowed for the given client ID&quot;: Sign In With Google and JavaScript origins">
+<meta property="og:description" content="Google Identity Services logs this when the scheme, host and port of your page match no entry in Authorized JavaScript origins. The causes in order, and the fix for each.">
+<meta property="og:url" content="https://arling.sk/notes/google-given-origin-not-allowed-for-client-id/">
+
+
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"Article","headline":"\"The given origin is not allowed for the given client ID\": Sign In With Google and JavaScript origins","description":"Google Identity Services logs this when the scheme, host and port of your page match no entry in Authorized JavaScript origins. The causes in order, and the fix for each.","datePublished":"2026-09-27","dateModified":"2026-09-27","inLanguage":"en","author":{"@type":"Organization","name":"ARLing s. r. o."},"publisher":{"@type":"Organization","name":"ARLing s. r. o.","url":"https://arling.sk/"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://arling.sk/notes/google-given-origin-not-allowed-for-client-id/"}}
+</script>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"I added the origin and still see the error. What now?","acceptedAnswer":{"@type":"Answer","text":"Wait first. Google's help page on OAuth clients says changes to these settings can take 5 minutes to a few hours to take effect. Then load the page in a new private window. If it still fails, compare location.origin on the page with the list again, add the port-less http://localhost if you are on localhost, and check that the client_id in the request to accounts.google.com is the client you edited."}},{"@type":"Question","name":"Do I also need an Authorized redirect URI for Sign In With Google?","acceptedAnswer":{"@type":"Answer","text":"Only when Google POSTs the credential to your server through login_uri, which defaults to the current page. With the JavaScript API that happens only in the button's redirect UX mode. With the HTML API it also happens for One Tap and the popup button when no data-callback is set. In those cases login_uri must exactly match one of the Authorized redirect URIs. With a JavaScript callback you need no redirect URI. The origin list is checked either way, so adding redirect URIs does not fix this message."}},{"@type":"Question","name":"Can I use a wildcard for Vercel or Netlify preview URLs?","acceptedAnswer":{"@type":"Answer","text":"No. Google's JavaScript origin validation rules do not allow wildcard characters. Add each preview origin you want to test with, or test sign-in on a fixed domain."}},{"@type":"Question","name":"Sign-in works on localhost but not on my staging server. Why?","acceptedAnswer":{"@type":"Answer","text":"Usually one of three things. Staging is served over plain http, which Google only allows for localhost. The staging host in the list differs from the one in the address bar, www against the bare domain for example. Or the server sends a Referrer-Policy that localhost did not, such as Helmet's default no-referrer or Django's default same-origin."}},{"@type":"Question","name":"Is this the same problem as origin_mismatch or idpiframe_initialization_failed?","acceptedAnswer":{"@type":"Answer","text":"It is the same list. Google documents origin_mismatch for the OAuth 2.0 flow in client-side web apps, when the scheme, domain or port of the page does not match an authorized JavaScript origin. idpiframe_initialization_failed with Not a valid origin for the client came from the older Google Sign-In JavaScript library, which is deprecated and cannot be used with new client IDs."}}]}
+</script>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"ARLing","item":"https://arling.sk/"},{"@type":"ListItem","position":2,"name":"Notes","item":"https://arling.sk/notes/"},{"@type":"ListItem","position":3,"name":"\"The given origin is not allowed for the given client ID\": Sign In With Google and JavaScript origins","item":"https://arling.sk/notes/google-given-origin-not-allowed-for-client-id/"}]}
+</script>
+<link rel="preload" href="/fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/style/paper.css?v=704b28ed">
+<script src="/style/prepinac.js?v=668e98c9" defer></script>
+<style>
+  /* Notes. Vzhlad, farby, typografia a pohyb su v /style/paper.css.
+     Tu ostava len to, co je pre clanok vlastne: merany pas, register, panel s nastrojom. */
+  .note{max-width:min(100%,880px);margin:0 auto}
+  .doc{max-width:min(68ch,660px);margin-inline:auto;font-size:clamp(17px,1.2vw,18px);line-height:1.62}
+
+  /* uvod clanku: nadpis, datum, odkaz na nastroj */
+  .hero-note{padding:clamp(34px,4.6vw,72px) 0 clamp(20px,2.4vw,34px)}
+  /* Titul clanku je hero stranky. Hlavna veta dorastie na desktope na 64 px, ako ziada
+     paper-v2 bod 9.4. Druhy riadok titulu je vzdy vysvetlujuca cast za dvojbodkou:
+     ostava v rovnakom reze, len mensia a tlmenejsia, aby ani najdlhsi titul (141 znakov
+     v clanku o Shopify) nezabral cely prvy pohlad. Rodinu, farbu a letter-spacing
+     urcuje paper.css, tu je len mierka. */
+  .hero-note h1{font-size:clamp(32px,4.6vw,64px);line-height:1.05;margin:0 0 18px}
+  .hero-note h1 .l+.l{display:block;margin-top:.3em;font-weight:500;
+    font-size:clamp(20px,2.4vw,34px);line-height:1.2;letter-spacing:-.01em;color:var(--body)}
+  .hero-note .kicker{display:block;margin:0 0 12px}
+  .hero-note .crumbs{font-family:var(--ui);font-size:12px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--accent);margin:0 0 12px}
+  .hero-note .crumbs a{color:inherit;text-decoration:none}
+  .hero-note .crumbs a:hover{text-decoration:underline}
+  .byline,.dateline{font-family:var(--ui);font-size:14px;color:var(--muted);margin:0 0 20px;max-width:none}
+  .toolgo{margin:0}
+
+  /* rytmus clanku: vlasova linka medzi castami, ziadne velke medzery sekcii */
+  section{scroll-margin-top:86px}
+  .doc section{padding:0;border-top:none;margin:0 0 clamp(26px,2.8vw,38px)}
+  .doc section+section{border-top:1px solid var(--line);padding-top:clamp(26px,2.8vw,36px)}
+  /* Mierka nadpisov vnutri clanku, nie kopia paper.css: pas textu ma 660 px, do neho sa
+     sekcny nadpis v plnej velkosti z paper.css (42 px) nezmesti bez zalomenia. Mení sa
+     len velkost a odstupy, vsetko ostatne dedi z paper.css. */
+  .doc h2{font-size:clamp(21px,1.9vw,27px);line-height:1.22;margin:0 0 12px}
+  .doc h3{font-size:clamp(17.5px,1.3vw,20px);margin:18px 0 8px}
+  .doc p{margin:0 0 14px;max-width:none}
+  .doc .num,.doc .kicker{display:block;font-family:var(--ui);font-size:12px;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--accent);margin:0 0 7px}
+  .doc .lead,.doc .lede{font-size:clamp(18px,1.35vw,20.5px);line-height:1.55;max-width:none;margin:0 0 18px}
+  .doc ol,.doc ul{padding-left:22px;margin:0 0 16px}
+  .doc li{margin:0 0 7px}
+  .doc li:last-child{margin-bottom:0}
+  .doc a{overflow-wrap:anywhere}
+  .doc code{background:var(--paper-deep);border:1px solid var(--line);border-radius:4px;padding:1px 5px;
+    overflow-wrap:anywhere}
+  .doc pre{margin:0 0 16px;white-space:pre-wrap;overflow-wrap:break-word}
+  .doc pre code{background:none;border:none;padding:0;font-size:13.5px;line-height:1.55}
+  .doc blockquote{margin:0 0 16px;padding:8px 16px;border-left:2px solid var(--line);color:var(--muted)}
+
+  /* chybova hlaska, oprava, ukazka kodu s popisom */
+  .doc .err{background:color-mix(in srgb,var(--accent) 7%,var(--card));border:1px solid var(--line);
+    border-left:3px solid var(--accent);border-radius:8px;padding:12px 16px;margin:0 0 16px}
+  .doc .err code{background:none;border:none;padding:0;color:var(--ink)}
+  .doc .fix{margin:0 0 16px;padding-left:16px;border-left:2px solid var(--accent)}
+  .doc .fix p{margin:0 0 8px}
+  .doc .fix p:last-child{margin-bottom:0}
+  .doc .fix-label{font-family:var(--ui);font-size:12px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--muted);margin:0 0 6px}
+  .doc .snippet{background:var(--card);border:1px solid var(--line);border-radius:10px;margin:0 0 18px;
+    overflow:hidden}
+  .doc .snippet .cap{padding:8px 14px;border-bottom:1px solid var(--line);
+    font:500 11px/1.3 var(--ui);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  .doc .snippet.bad .cap{color:var(--accent)}
+  .doc .snippet pre{margin:0;border:none;border-radius:0;background:none;white-space:pre-wrap}
+
+  /* diagram: adresa stranky rozdelena na schemu, host, port a cestu, potom zaznamy
+     v Authorized JavaScript origins a ktora cast sa nezhoduje. Farby su tokeny z paper.css. */
+  .doc figure.dg{margin:6px 0 22px}
+  .doc figure.dg svg{display:block;width:100%;height:auto;max-width:540px;margin:0 auto}
+  .dg .dg-pt{fill:var(--ink);font:500 12.5px var(--mono)}
+  .dg .dg-pt.dg-dim{fill:var(--muted)}
+  .dg .dg-div{stroke:var(--line-silna,var(--line));stroke-width:1}
+  .dg .dg-s{fill:var(--body);font:400 13px var(--ui)}
+  .dg .dg-s.dg-dim{fill:var(--muted)}
+  .dg .dg-lab{fill:var(--muted);font:600 12px var(--ui);letter-spacing:.08em}
+  .dg .dg-lab-ok{fill:var(--ok,#2f7d57)}
+  .dg .dg-seg{fill:var(--card-plna,var(--card));stroke:var(--line-silna,var(--line));stroke-width:1}
+  .dg .dg-seg-bad{fill:color-mix(in srgb,var(--accent) 16%,var(--card-plna,var(--card)));stroke:var(--accent);stroke-width:1.2}
+  .dg .dg-seg-ok{stroke:var(--ok,#2f7d57);stroke-width:1.2}
+  .dg .dg-seg-empty{fill:none;stroke:var(--muted);stroke-dasharray:4 3}
+  .dg .dg-count{fill:var(--muted);font:600 13px var(--ui)}
+  .dg .dg-count-ok{fill:var(--ok,#2f7d57)}
+  .dg .dg-count-bad{fill:var(--accent)}
+  body.noc .dg .dg-count-bad{fill:var(--accent-light)}
+  .doc figure.dg figcaption{margin:10px auto 0;max-width:540px;font:400 14px/1.5 var(--ui);color:var(--muted)}
+
+  /* caste otazky */
+  .doc details{border-top:1px solid var(--line);padding:14px 0}
+  .doc details:last-of-type{border-bottom:1px solid var(--line);margin-bottom:16px}
+  .doc summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;gap:14px;
+    font:600 17px/1.35 var(--display);color:var(--ink)}
+  .doc summary::-webkit-details-marker{display:none}
+  .doc summary::after{content:"+";flex:none;color:var(--accent);font-family:var(--ui);font-weight:400}
+  .doc details[open] summary::after{content:"\2013"}
+  .doc details p{margin:10px 0 0}
+
+  /* zdroje */
+  .doc ul.sources{list-style:none;padding-left:0}
+  .doc ul.sources li{padding-left:14px;border-left:2px solid var(--line)}
+  .doc .sources li{margin:0 0 10px;font-size:.95em}
+  .doc .sources cite{font-style:italic}
+  .doc ul.plain{list-style:none;padding-left:0}
+  .doc ul.plain li{margin:0;padding:10px 0;border-top:1px solid var(--line)}
+  .doc ul.plain li:first-child{border-top:none}
+
+  /* panel s nastrojom: jedina tmava plocha v texte, tam sa klika */
+  .doc .tool-box,.doc .toolbox,.doc .check,.doc .try,.doc .cta{display:block;background:var(--ink);
+    color:#cfcabd;border:none;border-radius:var(--radius);padding:clamp(20px,2.2vw,28px);margin:0 0 18px}
+  .doc .tool-box p,.doc .check p,.doc .try p,.doc .cta p{max-width:none;margin:0 0 12px;color:#cfcabd}
+  .doc .toolbox{max-width:none;color:#cfcabd}
+  .doc .tool-box p:last-of-type,.doc .check p:last-child,.doc .try p:last-child,
+  .doc .cta p:last-child{margin-bottom:0}
+  .doc .tool-box a,.doc .toolbox a,.doc .check a,.doc .try a,.doc .cta a{color:#fffdf8}
+  .doc .tool-box a:hover,.doc .toolbox a:hover,.doc .check a:hover,.doc .try a:hover,
+  .doc .cta a:hover{color:var(--accent-light)}
+  .doc .tool-box code,.doc .toolbox code,.doc .check code,.doc .try code,.doc .cta code{
+    background:rgba(255,253,248,.10);border-color:rgba(255,253,248,.22);color:#fffdf8}
+  .doc .tool-box .btn{margin:14px 10px 0 0;text-decoration:none;color:#fff}
+  /* dve tlacidla vedla seba sa nesmu dotykat, na uzkom mobile sa zalomia pod seba */
+  /* druhe tlacidlo v tmavom paneli je vedlajsie: linka namiesto plochy */
+  .doc .tool-box .btn+.btn{background:none;border:1px solid rgba(255,253,248,.45);color:#fffdf8}
+  .doc .tool-box .btn+.btn:hover{background:#fffdf8;color:var(--ink)}
+  .doc .tool-cta{display:inline-flex;align-items:center;height:46px;padding:0 20px;border-radius:12px;
+    margin:2px 0 0;background:var(--accent);color:#fff;font:500 15px/1 var(--ui);text-decoration:none}
+  .doc .tool-cta:hover{background:var(--accent-dark);color:#fff}
+
+  /* bocny register drzi sa laveho okraja clanku */
+  /* Stlpec clanku je uzsi nez obsah hubu (880 px, nie 1340), tak sa register zmesti
+     uz od 1280 px: cely stoji v lavom okraji a od textu ho deli stalych 35 px.
+     Pod tou hranicou by uz do textu zasahoval, preto ho paper.css skryje. */
+  @media (min-width:1280px){}
+
+  /* paticka je tmavy pas na konci */
+  footer.band{border-top:none;color:#a8a294}
+  footer.band a,footer.band b{color:#fffdf8}
+  footer.band .wrap{max-width:880px}
+  footer.band .cols{width:min(880px,92vw);margin:0 auto;gap:16px 32px}
+
+</style>
+<meta property="og:image" content="https://arling.sk/og.png">
+</head>
+<body class="noc">
+<div class="wash" aria-hidden="true"><i></i><i></i></div>
+<noscript><style>.r,.w{opacity:1;transform:none;filter:none}</style></noscript>
+<a class="skip site-skip" href="#arling-obsah" data-site-label="skip">Skip to content</a>
+<header class="site-header">
+  <div class="wrap bar">
+    <a class="brand" href="https://arling.sk/en/" aria-label="ARLing home" data-site-home>
+      <svg viewBox="0 0 488 215" width="38" height="15" aria-hidden="true" focusable="false"><path fill="#f4f4f7" fill-rule="evenodd" d="M0.00,213.00L74.00,214.00L181.00,85.00L285.00,214.00L360.00,214.00L206.00,21.00L185.00,4.00L164.00,10.00Z M221.00,0.00L263.00,50.00L395.00,50.00L409.00,55.00L419.00,76.00L401.00,96.00L313.00,98.00L411.00,214.00L487.00,214.00L422.00,139.00L457.00,123.00L482.00,88.00L482.00,48.00L463.00,19.00L417.00,0.00Z"/><path fill="#f2643c" d="M269.00,66.00L269.00,67.00L268.00,68.00L268.00,70.00L267.00,71.00L267.00,76.00L268.00,77.00L268.00,79.00L270.00,81.00L270.00,82.00L271.00,82.00L273.00,84.00L274.00,84.00L277.00,86.00L279.00,86.00L280.00,87.00L287.00,87.00L288.00,86.00L290.00,86.00L291.00,85.00L294.00,84.00L298.00,80.00L298.00,79.00L299.00,78.00L299.00,75.00L300.00,74.00L300.00,72.00L299.00,71.00L299.00,69.00L298.00,68.00L297.00,65.00L295.00,63.00L294.00,63.00L289.00,60.00L278.00,60.00L277.00,61.00L276.00,61.00L275.00,62.00L272.00,63.00Z"/></svg>
+      <b>ARLing</b><span>Notes</span>
+    </a>
+    <details class="site-menu">
+      <summary class="site-menu-toggle"><span class="site-menu-text" data-site-label="produkty">Products</span><span class="site-menu-bars" aria-hidden="true"><i></i><i></i><i></i></span><span class="site-menu-word" data-site-label="menu">Menu</span></summary>
+      <div class="site-menu-panel" role="navigation" aria-label="Products" data-site-aria="produkty"><div class="site-bloky"><div class="site-blok" data-blok="firemne"><p class="site-blok-nazov">For businesses</p><div class="site-cols"><div class="site-col" data-skupina="firmy"><p>Businesses and accountants</p><a class="site-col-all" href="https://arling.sk/vsetko/en/#firmy" aria-label="All in this group: Businesses and accountants" data-umami-event="shell_menu_group" data-umami-event-target="firmy"><span class="site-dlho">All in this group</span><span class="site-kratko">All</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></div><div class="site-col" data-skupina="eshopy"><p>Online shops and websites</p><a class="site-col-all" href="https://arling.sk/vsetko/en/#eshopy" aria-label="All in this group: Online shops and websites" data-umami-event="shell_menu_group" data-umami-event-target="eshopy"><span class="site-dlho">All in this group</span><span class="site-kratko">All</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></div></div></div><div class="site-blok" data-blok="spotrebitelske"><p class="site-blok-nazov">For leisure</p><div class="site-cols"><div class="site-col" data-skupina="hry"><p>Games and puzzles</p><a class="site-col-all" href="https://arling.sk/vsetko/en/#hry" aria-label="All in this group: Games and puzzles" data-umami-event="shell_menu_group" data-umami-event-target="hry"><span class="site-dlho">All in this group</span><span class="site-kratko">All</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></div><div class="site-col" data-skupina="knihy"><p>Books and gifts</p><a class="site-col-all" href="https://arling.sk/vsetko/en/#knihy" aria-label="All in this group: Books and gifts" data-umami-event="shell_menu_group" data-umami-event-target="knihy"><span class="site-dlho">All in this group</span><span class="site-kratko">All</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></div></div></div></div><div class="site-menu-spodok"><p class="site-all"><a href="https://arling.sk/vsetko/en/" data-umami-event="shell_menu_all">Everything on one page<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></p><p class="site-dev"><span>For developers</span><em>Free diagnostics for CORS, JWT, OAuth, Supabase and Stripe webhook errors.</em><a href="https://arling.sk/vsetko/en/#vyvojari">All developer tools<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></p></div><div class="site-col site-firma"><p>Company</p><ul><li><a href="https://arling.sk/en/#nastroje"><b>Tools</b></a></li><li><a href="https://arling.sk/en/#piloty"><b>Pilots</b></a></li><li><a href="https://arling.sk/how-we-work/en/"><b>How we work</b></a></li><li><a href="https://arling.sk/notes/en/"><b>Guides</b></a></li><li><a href="https://arling.sk/kontakt/en/"><b>Contact</b></a></li><li><a href="https://arling.sk/ucet/en/"><b>Account</b></a></li><li><a href="https://arling.sk/brand/en/"><b>Brand</b></a></li><li><a href="https://arling.sk/podmienky/en/"><b>Terms</b></a></li><li><a href="https://arling.sk/privacy/en/"><b>Privacy</b></a></li><li><a href="https://arling.sk/odstupenie/en/"><b>Withdraw from the contract here</b></a></li><li><a href="https://arling.sk/impressum/en/"><b>Imprint</b></a></li></ul></div><p class="site-menu-cta"><a class="site-cta" href="https://arling.sk/shop/" data-site-cta data-site-label="cta" data-umami-event="shell_cta_menu">Shop</a></p></div>
+    </details>
+    <nav id="hlavne-menu" class="site-main-nav" aria-label="Main navigation" data-site-aria="nav"><a href="https://arling.sk/en/#nastroje" data-site-nav="0">Tools</a><a href="https://arling.sk/en/#piloty" data-site-nav="1">Pilots</a><a href="https://arling.sk/notes/en/" data-site-nav="2">Guides</a><a href="https://arling.sk/how-we-work/en/" data-site-nav="3">Company</a></nav>
+    <a class="site-cta" href="https://arling.sk/shop/" data-site-cta data-site-label="cta" data-umami-event="shell_cta">Shop</a>
+  </div>
+  <script src="/style/menu-en.js" defer></script>
+</header>
+<main id="arling-obsah" tabindex="-1">
+  <div class="wrap">
+    <div class="note">
+      <div class="hero-note" id="hero">
+        <p class="kicker r">Notes</p>
+        <h1 id="h1" class="r d1"><span class="l">"The given origin is not allowed for the given client ID":</span><span class="l">Sign In With Google and JavaScript origins</span></h1>
+        <p class="byline r d2">ARLing s. r. o. · 2026-09-27</p>
+        <p class="toolgo r d3"><a data-umami-event="open-google-oauth-redirect-doctor-hero" class="go" href="https://arling.sk/google-oauth-redirect-doctor/">Google OAuth redirect_uri_mismatch Doctor <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2.5 8h11M9 3.5 13.5 8 9 12.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a></p>
+      </div>
+      <div class="doc">
+        <section class="sec" id="s1">
+  <p class="lead r">You add a Sign In With Google button or One Tap to a page, and sign-in does not work. In the reports cited below, the button failed to load or the Google window kept coming back without signing anyone in. The browser console has one line:</p>
+  <div class="err r d1"><code>[GSI_LOGGER]: The given origin is not allowed for the given client ID.</code></div>
+  <p class="r d2">Google Identity Services, the library you load from <code>accounts.google.com/gsi/client</code>, only works on pages whose origin is listed under Authorized JavaScript origins on the OAuth client whose ID you passed in. An origin is three things: scheme, host and port. If no entry in that list matches all three, you get this line. In one of the Stack Overflow questions below it came together with a <code>403</code> on <code>accounts.google.com/gsi/status?client_id=...</code>, so the Network tab is worth a look too.</p>
+  <p class="r d3">This is a different list from Authorized redirect URIs. If Google shows you <code>Error 400: redirect_uri_mismatch</code> instead, that one is covered in <a href="https://arling.sk/notes/google-redirect-uri-mismatch/">the note on redirect_uri_mismatch</a>, and changing redirect URIs does nothing for this message. Below: what Google compares, the causes in the order people tend to hit them, the fix, and how to confirm it.</p>
+        </section>
+        <section class="sec" id="s2">
+    <h2 class="r">What Google compares</h2>
+    <p class="r d1">Google's setup guide says an entry in Authorized JavaScript origins "includes the scheme and fully qualified hostname only", for example <code>https://www.example.com</code>. MDN's definition of an origin adds the port: two URLs have the same origin only when the scheme, the hostname and the port all match. The path, the query string and anything after <code>#</code> never take part. To see the exact origin of your page, open the console on the page with the button and ask the browser:</p>
+    <div class="snippet r d2">
+      <p class="cap">Browser console, on the page with the button</p>
+      <pre><code>location.origin
+// "http://localhost:5173"</code></pre>
+    </div>
+    <figure class="dg r d2">
+      <svg viewBox="0 0 400 746" role="img" aria-labelledby="dg-title dg-desc">
+        <title id="dg-title">Which part of the page address Google checks, and which list entries match it</title>
+        <desc id="dg-desc">The page address http://localhost:5173/login?next=/app splits into scheme http, host localhost, port 5173, and a path and query that never take part in the check. The origin Google checks is http://localhost:5173, the value of location.origin. Entries in Authorized JavaScript origins that do not match: http://127.0.0.1:5173 has a different host, and one report says 127.0.0.1 fails even when it is listed; https://localhost:5173 has a different scheme; http://localhost:5174 has a different port, as when Vite takes the next free port. Not a valid entry at all: http://localhost:5173/ has a path, which Google's rules do not allow in an origin, so the Console rejects it instead of saving it. What makes it match: the exact entry http://localhost:5173, plus the port-less http://localhost that Google asks for in local development. Both go on the Web application client whose ID the page sends.</desc>
+        <text class="dg-lab" x="0" y="14">THE PAGE WHERE THE BUTTON RUNS</text>
+        <rect class="dg-seg" x="0.5" y="30.5" width="68.5" height="26" rx="5"/>
+        <text class="dg-pt" x="8.5" y="48" textLength="52.5" lengthAdjust="spacingAndGlyphs">http://</text>
+        <rect class="dg-seg" x="75" y="30.5" width="83.5" height="26" rx="5"/>
+        <text class="dg-pt" x="83" y="48" textLength="67.5" lengthAdjust="spacingAndGlyphs">localhost</text>
+        <rect class="dg-seg" x="164.5" y="30.5" width="53.5" height="26" rx="5"/>
+        <text class="dg-pt" x="172.5" y="48" textLength="37.5" lengthAdjust="spacingAndGlyphs">:5173</text>
+        <rect class="dg-seg dg-seg-empty" x="224" y="30.5" width="136" height="26" rx="5"/>
+        <text class="dg-pt dg-dim" x="232" y="48" textLength="120" lengthAdjust="spacingAndGlyphs">/login?next=/app</text>
+        <text class="dg-s" x="34.75" y="76" text-anchor="middle">scheme</text>
+        <text class="dg-s" x="116.75" y="76" text-anchor="middle">host</text>
+        <text class="dg-s" x="191.25" y="76" text-anchor="middle">port</text>
+        <text class="dg-s dg-dim" x="292" y="76" text-anchor="middle">path, query</text>
+        <text class="dg-s dg-dim" x="0" y="98">the path and the query never take part in the check</text>
+        <line class="dg-div" x1="0" y1="114" x2="400" y2="114"/>
+        <text class="dg-lab" x="0" y="134">THE ORIGIN GOOGLE CHECKS</text>
+        <rect class="dg-seg dg-seg-ok" x="0.5" y="148.5" width="173.5" height="26" rx="5"/>
+        <text class="dg-pt" x="8.5" y="166" textLength="157.5" lengthAdjust="spacingAndGlyphs">http://localhost:5173</text>
+        <text class="dg-count" x="400" y="166" text-anchor="end">location.origin</text>
+        <text class="dg-s" x="0" y="196">scheme, host and port must all equal one entry</text>
+        <line class="dg-div" x1="0" y1="214" x2="400" y2="214"/>
+        <text class="dg-lab" x="0" y="234">ENTRIES THAT DO NOT MATCH</text>
+        <rect class="dg-seg" x="0.5" y="248.5" width="68.5" height="26" rx="5"/>
+        <text class="dg-pt" x="8.5" y="266" textLength="52.5" lengthAdjust="spacingAndGlyphs">http://</text>
+        <rect class="dg-seg dg-seg-bad" x="75" y="248.5" width="83.5" height="26" rx="5"/>
+        <text class="dg-pt" x="83" y="266" textLength="67.5" lengthAdjust="spacingAndGlyphs">127.0.0.1</text>
+        <rect class="dg-seg" x="164.5" y="248.5" width="53.5" height="26" rx="5"/>
+        <text class="dg-pt" x="172.5" y="266" textLength="37.5" lengthAdjust="spacingAndGlyphs">:5173</text>
+        <text class="dg-count dg-count-bad" x="400" y="266" text-anchor="end">different host</text>
+        <text class="dg-s dg-dim" x="0" y="292">a different host; reported to fail even when listed</text>
+        <rect class="dg-seg dg-seg-bad" x="0.5" y="312.5" width="76" height="26" rx="5"/>
+        <text class="dg-pt" x="8.5" y="330" textLength="60" lengthAdjust="spacingAndGlyphs">https://</text>
+        <rect class="dg-seg" x="82.5" y="312.5" width="83.5" height="26" rx="5"/>
+        <text class="dg-pt" x="90.5" y="330" textLength="67.5" lengthAdjust="spacingAndGlyphs">localhost</text>
+        <rect class="dg-seg" x="172" y="312.5" width="53.5" height="26" rx="5"/>
+        <text class="dg-pt" x="180" y="330" textLength="37.5" lengthAdjust="spacingAndGlyphs">:5173</text>
+        <text class="dg-count dg-count-bad" x="400" y="330" text-anchor="end">different scheme</text>
+        <text class="dg-s dg-dim" x="0" y="356">the dev server serves http, the entry says https</text>
+        <rect class="dg-seg" x="0.5" y="376.5" width="68.5" height="26" rx="5"/>
+        <text class="dg-pt" x="8.5" y="394" textLength="52.5" lengthAdjust="spacingAndGlyphs">http://</text>
+        <rect class="dg-seg" x="75" y="376.5" width="83.5" height="26" rx="5"/>
+        <text class="dg-pt" x="83" y="394" textLength="67.5" lengthAdjust="spacingAndGlyphs">localhost</text>
+        <rect class="dg-seg dg-seg-bad" x="164.5" y="376.5" width="53.5" height="26" rx="5"/>
+        <text class="dg-pt" x="172.5" y="394" textLength="37.5" lengthAdjust="spacingAndGlyphs">:5174</text>
+        <text class="dg-count dg-count-bad" x="400" y="394" text-anchor="end">different port</text>
+        <text class="dg-s dg-dim" x="0" y="420">Vite took the next free port because 5173 was busy</text>
+        <line class="dg-div" x1="0" y1="440" x2="400" y2="440"/>
+        <text class="dg-lab" x="0" y="460">NOT A VALID ENTRY</text>
+        <rect class="dg-seg" x="0.5" y="474.5" width="68.5" height="26" rx="5"/>
+        <text class="dg-pt" x="8.5" y="492" textLength="52.5" lengthAdjust="spacingAndGlyphs">http://</text>
+        <rect class="dg-seg" x="75" y="474.5" width="83.5" height="26" rx="5"/>
+        <text class="dg-pt" x="83" y="492" textLength="67.5" lengthAdjust="spacingAndGlyphs">localhost</text>
+        <rect class="dg-seg" x="164.5" y="474.5" width="53.5" height="26" rx="5"/>
+        <text class="dg-pt" x="172.5" y="492" textLength="37.5" lengthAdjust="spacingAndGlyphs">:5173</text>
+        <rect class="dg-seg dg-seg-bad" x="224" y="474.5" width="23.5" height="26" rx="5"/>
+        <text class="dg-pt" x="232" y="492" textLength="7.5" lengthAdjust="spacingAndGlyphs">/</text>
+        <text class="dg-count dg-count-bad" x="400" y="492" text-anchor="end">rejected on save</text>
+        <text class="dg-s dg-dim" x="0" y="518">a trailing / is a path; the Console will not save it</text>
+        <line class="dg-div" x1="0" y1="538" x2="400" y2="538"/>
+        <text class="dg-lab dg-lab-ok" x="0" y="558">WHAT MAKES IT MATCH</text>
+        <rect class="dg-seg dg-seg-ok" x="0.5" y="572.5" width="68.5" height="26" rx="5"/>
+        <text class="dg-pt" x="8.5" y="590" textLength="52.5" lengthAdjust="spacingAndGlyphs">http://</text>
+        <rect class="dg-seg dg-seg-ok" x="75" y="572.5" width="83.5" height="26" rx="5"/>
+        <text class="dg-pt" x="83" y="590" textLength="67.5" lengthAdjust="spacingAndGlyphs">localhost</text>
+        <rect class="dg-seg dg-seg-ok" x="164.5" y="572.5" width="53.5" height="26" rx="5"/>
+        <text class="dg-pt" x="172.5" y="590" textLength="37.5" lengthAdjust="spacingAndGlyphs">:5173</text>
+        <text class="dg-count dg-count-ok" x="400" y="590" text-anchor="end">match</text>
+        <text class="dg-s dg-dim" x="0" y="616">the exact origin of the page</text>
+        <rect class="dg-seg dg-seg-ok" x="0.5" y="636.5" width="68.5" height="26" rx="5"/>
+        <text class="dg-pt" x="8.5" y="654" textLength="52.5" lengthAdjust="spacingAndGlyphs">http://</text>
+        <rect class="dg-seg dg-seg-ok" x="75" y="636.5" width="83.5" height="26" rx="5"/>
+        <text class="dg-pt" x="83" y="654" textLength="67.5" lengthAdjust="spacingAndGlyphs">localhost</text>
+        <text class="dg-count dg-count-ok" x="400" y="654" text-anchor="end">add it too</text>
+        <text class="dg-s dg-dim" x="0" y="680">Google's key point for local development</text>
+        <line class="dg-div" x1="0" y1="698" x2="400" y2="698"/>
+        <text class="dg-s" x="0" y="720">Both go on the Web application client whose ID</text>
+        <text class="dg-s" x="0" y="740">your page sends in data-client_id or client_id.</text>
+      </svg>
+      <figcaption>Google checks the scheme, host and port of the page, never its path. The three rows that fail each differ from <code>http://localhost:5173</code> in one part. The entry with a trailing slash never reaches your list: Google's rules do not allow a path in an origin, and the Console rejects it when you save. The rules come from Google's setup guide and its JavaScript origin validation rules, the port behavior from Vite's server options, the port-less localhost entry from the guide's key point for local development, and the 127.0.0.1 and trailing-slash reports from Stack Overflow. All are cited below.</figcaption>
+    </figure>
+    <p class="r d3">Google's JavaScript origin validation rules also limit what an entry may contain: https for everything except localhost, no raw IP addresses except localhost ones, no path, no query, no fragment, and no wildcard characters. RFC 3986 counts the <code>/</code> right after the host as a path, so an origin copied from the address bar with a trailing slash is not a valid entry. The Console will not save it, so it cannot be the entry that fails in a list you already saved: look at scheme, host and port there.</p>
+        </section>
+        <section class="sec" id="s3">
+    <p class="num r">01</p>
+    <h2 class="r d1">Localhost with a port, and no entry without it</h2>
+    <p class="r d2">This is the accepted answer, with over 500 votes, on the most viewed question about this error (about 139,000 views). The asker's page ran on <code>http://localhost:8080</code>, the older gapi library worked there, and GSI refused it until the origin without the port was added too. Google's setup guide states it as a key point: for local tests or development, add both <code>http://localhost</code> and <code>http://localhost:&lt;port_number&gt;</code>.</p>
+    <div class="snippet r d2">
+      <p class="cap">Authorized JavaScript origins, local development</p>
+      <pre><code>http://localhost
+http://localhost:5173</code></pre>
+    </div>
+    <p class="r d3">Use the port your dev server actually prints. Vite starts on 5173, but its docs say that if the port is in use it "will automatically try the next available port", so the origin you registered yesterday may not be today's. Setting <code>server.strictPort: true</code> makes Vite exit instead of moving.</p>
+        </section>
+        <section class="sec" id="s4">
+    <p class="num r">02</p>
+    <h2 class="r d1">The page runs on a different host than the entry</h2>
+    <p class="r d2">MDN lists <code>http://example.com</code> and <code>http://www.example.com</code> as different origins, and Google compares strings, not machines. Three versions show up again and again:</p>
+    <ul class="r d2">
+      <li><b>127.0.0.1 instead of localhost.</b> Two answers on the main question, both from people using VS Code's Live Server, report that <code>127.0.0.1</code> kept failing and the error went away once they switched Live Server's host setting to <code>localhost</code>. One of them, with 29 votes, says 127.0.0.1 did not work even when it was registered. So do not stop at registering 127.0.0.1: open the page on localhost and register localhost, which is also what Google's guide names.</li>
+      <li><b>www and the bare domain.</b> One answer needed both <code>https://example.com</code> and <code>https://www.example.com</code> in the list. Register every host that can load the page, or redirect to one of them before the page with the button loads.</li>
+      <li><b>A LAN address, to test on a phone.</b> <code>http://192.168.1.20:5173</code> cannot be registered at all: the rules forbid raw IP addresses other than localhost ones, and plain http outside localhost. Use a real hostname served over https.</li>
+    </ul>
+        </section>
+        <section class="sec" id="s5">
+    <p class="num r">03</p>
+    <h2 class="r d1">Staging or production on plain http</h2>
+    <p class="r d2">One question below describes it exactly: sign-in worked on localhost, and the staging server, registered as <code>http://stg...</code>, returned 403 on <code>gsi/status</code> with this message. Google's rules require the https scheme for every JavaScript origin except localhost, and the setup guide adds that One Tap can only be displayed on HTTPS domains. An answer on the main question gives the same fix: outside localhost, serve the site over https.</p>
+    <pre class="r d3"><code>Before: http://stg.example.com
+After:  https://stg.example.com</code></pre>
+        </section>
+        <section class="sec" id="s6">
+    <p class="num r">04</p>
+    <h2 class="r d1">A Referrer-Policy that hides your origin</h2>
+    <p class="r d2">Google's setup guide notes that loading <code>gsi/client</code> from accounts.google.com is a cross-origin request and recommends <code>Referrer-Policy: strict-origin-when-cross-origin</code>. For testing over http on localhost it says to use <code>no-referrer-when-downgrade</code>. An answer with 51 votes on the main question reports that with <code>no-referrer</code>, the requests to <code>gsi/button</code> and <code>gsi/iframe/select</code> fail with 400 and this exact message. Two common server defaults are stricter than Google's recommendation:</p>
+    <ul class="r d2">
+      <li><b>Helmet</b> sets <code>Referrer-Policy: no-referrer</code> by default, which per MDN sends no referrer information at all.</li>
+      <li><b>Django</b> sets <code>SECURE_REFERRER_POLICY</code> to <code>'same-origin'</code> by default, and MDN says that policy sends no Referer header on cross-origin requests. An answer on the Django question below fixed One Tap on localhost with <code>no-referrer-when-downgrade</code>.</li>
+    </ul>
+    <div class="snippet r d3">
+      <p class="cap">Express with Helmet</p>
+      <pre><code>app.use(helmet({
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+}));</code></pre>
+    </div>
+    <div class="snippet r d3">
+      <p class="cap">Django, settings.py</p>
+      <pre><code># Google's recommendation for gsi/client over https
+SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
+# Google's key point for testing over http on localhost:
+# SECURE_REFERRER_POLICY = "no-referrer-when-downgrade"</code></pre>
+    </div>
+    <p class="r d3">A policy can also come from a <code>&lt;meta name="referrer"&gt;</code> tag in the HTML, which MDN documents as a second way to set it. Search your templates for one before you decide the header is fine.</p>
+        </section>
+        <section class="sec" id="s7">
+    <p class="num r">05</p>
+    <h2 class="r d1">The client ID is not the client you edited</h2>
+    <p class="r d2">The list belongs to one OAuth client. Google's guide says to use a client of type Web application and to put its ID in your page through <code>data-client_id</code> or <code>client_id</code>. The usual mix-ups: a production build that reads a client ID from another Google Cloud project, the right-looking client edited in the wrong project, or a client of another type. On the older question about the previous library, one answer found a trailing space inside the client ID string.</p>
+    <div class="snippet r d3">
+      <p class="cap">The ID the page sends is the one Google checks</p>
+      <pre><code>google.accounts.id.initialize({
+  client_id: 'YOUR_CLIENT_ID.apps.googleusercontent.com',
+  callback: handleCredentialResponse,
+});</code></pre>
+    </div>
+    <p class="r d3">Fix: read the ID from the page itself, not from your notes. The request to <code>accounts.google.com/gsi/status</code> in the report above carried it in its URL as <code>client_id=</code>. Open exactly that client on the Clients page of Google Cloud Console.</p>
+        </section>
+        <section class="sec" id="s8">
+    <p class="num r">06</p>
+    <h2 class="r d1">You just saved, and nothing has changed yet</h2>
+    <p class="r d2">Google Cloud's help page on OAuth clients says: "It may take 5 minutes to a few hours for changes made to these settings to take effect". On the older question about the previous library, the most voted answer (277 votes) was simply clearing the browser cache after the change. So after you save a correct entry, wait, then test in a new private window before you change anything else. Changing three things at once during the delay is how a correct fix gets undone.</p>
+        </section>
+        <section class="sec" id="s9">
+    <h2 class="r">The older message: idpiframe_initialization_failed</h2>
+    <p class="r d1">The same problem on the older Google Sign-In JavaScript library looked like this, in a 2017 question with about 158,000 views: <code>idpiframe_initialization_failed</code> with "Not a valid origin for the client". It is the same Authorized JavaScript origins list and the same fixes. Google deprecated that library as of March 31, 2023, and new OAuth client IDs cannot use it. Only client IDs created before July 29, 2022 may. If you are still on it, the migration to Google Identity Services is the real fix.</p>
+        </section>
+        <section class="sec" id="s10">
+    <h2 class="r">Fix it, in order</h2>
+    <ol class="r d1">
+      <li>On the page with the button, run <code>location.origin</code> in the console and copy the result exactly.</li>
+      <li>In the Network tab, find a request to <code>accounts.google.com/gsi/</code> and read its <code>client_id</code>. That is the client Google checks, whatever your config file says. If you see no such request, read <code>data-client_id</code> in the Elements panel, or log the value your code passes to <code>initialize</code>. Google's FedCM migration guide says that with FedCM the browser shows the prompts itself and contacts Google only after the user consents, so a current browser may not make the same requests as the 2021 and 2022 reports.</li>
+      <li>Open the Clients page in Google Cloud Console, in the project that owns that client ID, and open that Web application client.</li>
+      <li>Under Authorized JavaScript origins, add the origin from step 1 character for character: no path, no trailing slash. On localhost, add the port-less <code>http://localhost</code> as well.</li>
+      <li>Save. Then check the Referrer-Policy of your page: select the document request in the Network tab, read its response headers, and look for a <code>&lt;meta name="referrer"&gt;</code> tag.</li>
+      <li>Wait a few minutes and test in a new private window.</li>
+    </ol>
+        </section>
+        <section class="sec" id="s11">
+    <h2 class="r">Confirm the fix</h2>
+    <ul class="r d1">
+      <li><b>The console is clean.</b> After a fresh load, the <code>[GSI_LOGGER]</code> line no longer appears.</li>
+      <li><b>The requests pass.</b> In the Network tab, the requests to <code>accounts.google.com/gsi/</code> that you do see no longer come back with 403 or 400.</li>
+      <li><b>A credential arrives.</b> The button renders, and after you pick an account your callback runs. Google's reference says the callback receives a response whose <code>credential</code> field is the ID token.</li>
+      <li><b>Every origin works.</b> Repeat on each origin that serves the page: localhost, staging, production, and both www and the bare domain if both load it.</li>
+    </ul>
+    <div class="snippet r d2">
+      <p class="cap">Temporary check in the callback</p>
+      <pre><code>function handleCredentialResponse(response) {
+  // true means Google returned an ID token; do not log the token itself
+  console.log('credential received:', Boolean(response.credential));
+}</code></pre>
+    </div>
+        </section>
+        <section class="sec" id="s12">
+    <h2 class="r">Traps</h2>
+    <ul class="r d1">
+      <li><b>Editing Authorized redirect URIs.</b> Google's guide asks for redirect URIs only when the credential is returned "using a redirect to an endpoint you host rather than through a JavaScript callback". The API references spell out when that is: a POST to <code>login_uri</code>, which with the JavaScript API happens only in the button's redirect UX mode, and with the HTML API also for One Tap and the popup button when no <code>data-callback</code> is set. Then <code>login_uri</code> must exactly match one of the redirect URIs. The origin list is still checked either way: the asker of the most viewed question below used <code>data-login_uri</code> with no callback, and the accepted fix was an origin entry.</li>
+      <li><b>A trailing slash from the address bar.</b> <code>https://example.com/</code> has a path, and Google's rules do not allow a path in an origin. The Console refuses to save it (in one question it said origin URIs "must not contain a path or end with" a slash), so if saving fails, drop the slash. If your list saved, a trailing slash is not what fails.</li>
+      <li><b>A wildcard for preview deploys.</b> The rules do not allow wildcard characters. Add each preview origin you test with, or test sign-in on a fixed domain.</li>
+      <li><b>Loosening Cross-Origin-Opener-Policy to fix this line.</b> The COOP section of Google's guide is about popups: a wrong COOP leads to "a blank pop-up window or similar bugs", which is a different symptom. It also matters only when FedCM is disabled: "When FedCM is enabled the browser directly renders popups and no changes are necessary." Leave COOP alone unless that is what you see.</li>
+    </ul>
+        </section>
+        <section class="sec" id="s13">
+    <h2 class="r">Compare your origin with the list</h2>
+    <div class="try r d1"><p>The <a data-umami-event="open-google-oauth-redirect-doctor-cta" href="https://arling.sk/google-oauth-redirect-doctor/#c=eyJlcnJvciI6eyJyZWRpcmVjdFVyaUZyb21FcnJvciI6IiIsImNsaWVudFR5cGUiOiJ3ZWIifSwiY29uc29sZSI6eyJhdXRob3JpemVkUmVkaXJlY3RVcmlzIjpbXSwiYXV0aG9yaXplZEpzT3JpZ2lucyI6WyJodHRwOi8vbG9jYWxob3N0IiwiaHR0cDovLzEyNy4wLjAuMTo1MTczIl0sInB1Ymxpc2hpbmdTdGF0dXMiOiIiLCJzYXZlZE1pbnV0ZXNBZ28iOm51bGx9LCJhcHAiOnsic3RhY2siOiIiLCJvcmlnaW4iOiJodHRwOi8vbG9jYWxob3N0OjUxNzMiLCJjYWxsYmFja1BhdGgiOiIiLCJzdXBhYmFzZVJlZiI6IiIsImZpcmViYXNlQXV0aERvbWFpbiI6IiIsImV4cG9Vc2VybmFtZSI6IiIsImV4cG9TbHVnIjoiIiwidXNlUHJveHkiOm51bGwsInBvcnQiOm51bGwsImVudiI6IiJ9fQ">Google OAuth redirect_uri_mismatch Doctor</a> is built for redirect_uri_mismatch, and it has one check that fits this error. This link opens it with an example for this error only: <code>http://localhost:5173</code> in App origin, and <code>http://localhost</code> and <code>http://127.0.0.1:5173</code> in Authorized JavaScript origins. Replace them with your <code>location.origin</code> and your own list, one origin per line, and press Diagnose. If your origin is missing, the tool says so and gives the entry to add. It calls the error by its older names, invalid_origin and "not a valid origin for the client", not by the <code>[GSI_LOGGER]</code> text. If your origin is in the list, it says nothing about the origin at all. It will also report that the redirect_uri field is empty, which you can ignore for this error, and its Reset button brings back its own Supabase example rather than an empty form. It does not check the port-less localhost entry or your Referrer-Policy. The tool page states that nothing you paste leaves your browser.</p></div>
+        </section>
+        <section class="sec" id="s14">
+    <h2 class="r">Questions</h2>
+    <details class="r d1">
+      <summary>I added the origin and still see the error. What now?</summary>
+      <p>Wait first. Google's help page on OAuth clients says changes to these settings can take 5 minutes to a few hours to take effect. Then load the page in a new private window. If it still fails, compare <code>location.origin</code> on the page with the list again, add the port-less <code>http://localhost</code> if you are on localhost, and check that the <code>client_id</code> in the request to accounts.google.com is the client you edited.</p>
+    </details>
+    <details class="r d1">
+      <summary>Do I also need an Authorized redirect URI for Sign In With Google?</summary>
+      <p>Only when Google POSTs the credential to your server through <code>login_uri</code>, which defaults to the current page. With the JavaScript API that happens only in the button's redirect UX mode. With the HTML API it also happens for One Tap and the popup button when no <code>data-callback</code> is set, as in the most viewed question below. In those cases <code>login_uri</code> must exactly match one of the Authorized redirect URIs. With a JavaScript callback you need no redirect URI. The origin list is checked either way, so adding redirect URIs does not fix this message.</p>
+    </details>
+    <details class="r d2">
+      <summary>Can I use a wildcard for Vercel or Netlify preview URLs?</summary>
+      <p>No. Google's JavaScript origin validation rules do not allow wildcard characters. Add each preview origin you want to test with, or test sign-in on a fixed domain.</p>
+    </details>
+    <details class="r d2">
+      <summary>Sign-in works on localhost but not on my staging server. Why?</summary>
+      <p>Usually one of three things. Staging is served over plain http, which Google only allows for localhost. The staging host in the list differs from the one in the address bar, www against the bare domain for example. Or the server sends a Referrer-Policy that localhost did not, such as Helmet's default <code>no-referrer</code> or Django's default <code>same-origin</code>.</p>
+    </details>
+    <details class="r d2">
+      <summary>Is this the same problem as origin_mismatch or idpiframe_initialization_failed?</summary>
+      <p>It is the same list. Google documents <code>origin_mismatch</code> for the OAuth 2.0 flow in client-side web apps, when the scheme, domain or port of the page does not match an authorized JavaScript origin. <code>idpiframe_initialization_failed</code> with "Not a valid origin for the client" came from the older Google Sign-In JavaScript library, which is deprecated and cannot be used with new client IDs.</p>
+    </details>
+        </section>
+      </div>
+    </div>
+  </div>
+  <section class="deep" id="s15">
+    <div class="wrap">
+      <div class="note">
+        <div class="doc">
+    <h2 class="r">Sources</h2>
+    <ul class="r d1">
+      <li>Google for Developers, "Get your Google API client ID" (Sign In With Google for Web: a client of type Web application; an origin entry "includes the scheme and fully qualified hostname only"; add both <code>http://localhost</code> and <code>http://localhost:&lt;port_number&gt;</code> for local tests; One Tap only on HTTPS domains; the client ID goes in <code>data-client_id</code> or <code>client_id</code>; redirect URIs only when the credential is returned through a redirect; <code>strict-origin-when-cross-origin</code> recommended because loading gsi/client is cross-origin, <code>no-referrer-when-downgrade</code> when testing over http on localhost): <a href="https://developers.google.com/identity/gsi/web/guides/get-google-api-clientid">developers.google.com/identity/gsi/web/guides/get-google-api-clientid</a>; the same page, "Cross Origin Opener Policy" (a wrong COOP leads to a blank pop-up window; when FedCM is enabled no COOP changes are necessary): <a href="https://developers.google.com/identity/gsi/web/guides/get-google-api-clientid#cross_origin_opener_policy">#cross_origin_opener_policy</a></li>
+      <li>Google for Developers, "Migrate to FedCM" (with FedCM the browser displays the user prompts and contacts Google only after explicit user consent): <a href="https://developers.google.com/identity/gsi/web/guides/fedcm-migration#overview">developers.google.com/identity/gsi/web/guides/fedcm-migration</a></li>
+      <li>Google for Developers, "Using OAuth 2.0 for Client-side Web Applications", "JavaScript origin validation rules" (https except localhost, no raw IP addresses except localhost ones, no userinfo, path, query or fragment, no wildcard characters): <a href="https://developers.google.com/identity/protocols/oauth2/javascript-implicit-flow#origin-validation">developers.google.com/identity/protocols/oauth2/javascript-implicit-flow#origin-validation</a>; the <code>origin_mismatch</code> error (scheme, domain and/or port do not match an authorized JavaScript origin): <a href="https://developers.google.com/identity/protocols/oauth2/javascript-implicit-flow#authorization-errors-origin-mismatch">#authorization-errors-origin-mismatch</a></li>
+      <li>Google for Developers, "Sign In With Google JavaScript API reference" (<code>google.accounts.id.initialize</code>, <code>client_id</code>, <code>callback</code>; <code>login_uri</code> must exactly match one of the authorized redirect URIs and is only used when <code>ux_mode</code> is <code>redirect</code>; with the JavaScript API, One Tap and the popup UX mode return the response only to the callback; the <code>credential</code> field of CredentialResponse is the ID token): <a href="https://developers.google.com/identity/gsi/web/reference/js-reference#login_uri">developers.google.com/identity/gsi/web/reference/js-reference</a></li>
+      <li>Google for Developers, "Sign In With Google HTML API reference", <code>data-login_uri</code> (must exactly match one of the authorized redirect URIs; defaults to the current page; the credential is posted there "when no callback function is defined and a user clicks on the Sign In With Google or One Tap buttons, or automatic sign takes place") and <code>data-callback</code> (one of the two must be set for One Tap and the popup UX mode; the redirect UX mode requires <code>data-login_uri</code>): <a href="https://developers.google.com/identity/gsi/web/reference/html-reference#data-login_uri">developers.google.com/identity/gsi/web/reference/html-reference#data-login_uri</a></li>
+      <li>Google for Developers, "Google Sign-In JavaScript library deprecation" (deprecated as of March 31, 2023; new OAuth client IDs cannot use the deprecated library; client IDs created before July 29, 2022 may): <a href="https://developers.google.com/identity/sign-in/web/deprecation-and-sunset">developers.google.com/identity/sign-in/web/deprecation-and-sunset</a></li>
+      <li>Google Cloud Platform Console Help, "Manage OAuth Clients" ("It may take 5 minutes to a few hours for changes made to these settings to take effect"): <a href="https://support.google.com/cloud/answer/15549257">support.google.com/cloud/answer/15549257</a></li>
+      <li>MDN, "Origin" (scheme, hostname and port; <code>example.com</code> and <code>www.example.com</code> are different origins): <a href="https://developer.mozilla.org/en-US/docs/Glossary/Origin">developer.mozilla.org/en-US/docs/Glossary/Origin</a>; <code>Location.origin</code>: <a href="https://developer.mozilla.org/en-US/docs/Web/API/Location/origin">developer.mozilla.org/en-US/docs/Web/API/Location/origin</a>; <code>Referrer-Policy</code> (<code>no-referrer</code>, <code>same-origin</code>, <code>strict-origin-when-cross-origin</code>, <code>no-referrer-when-downgrade</code>, and the <code>&lt;meta name="referrer"&gt;</code> element): <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Referrer-Policy">developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Referrer-Policy</a></li>
+      <li>RFC 3986, URI Generic Syntax, section 3.3 "Path" (<code>path-abempty = *( "/" segment )</code>, so a <code>/</code> after the host is a path): <a href="https://www.rfc-editor.org/rfc/rfc3986#section-3.3">rfc-editor.org/rfc/rfc3986#section-3.3</a></li>
+      <li>Helmet, "Referrer-Policy" (default <code>no-referrer</code>; the <code>referrerPolicy</code> option with <code>policy</code>): <a href="https://helmet.js.org/#referrer-policy">helmet.js.org/#referrer-policy</a></li>
+      <li>Django, settings, <code>SECURE_REFERRER_POLICY</code> (default <code>'same-origin'</code>): <a href="https://docs.djangoproject.com/en/stable/ref/settings/#secure-referrer-policy">docs.djangoproject.com/en/stable/ref/settings/#secure-referrer-policy</a></li>
+      <li>Vite, "Server Options" (<code>server.port</code> defaults to 5173 and moves to the next available port when it is in use; <code>server.strictPort</code>): <a href="https://vite.dev/config/server-options#server-strictport">vite.dev/config/server-options#server-strictport</a></li>
+      <li>Stack Overflow, "The given origin is not allowed for the given client ID (GSI)" (2021, about 139,000 views; <code>http://localhost:8080</code> with gapi working and GSI failing, the asker's HTML sets <code>data-login_uri</code> and no <code>data-callback</code>; the accepted answer with over 500 votes adds the origin without the port; an answer with 51 votes on <code>no-referrer</code> and Helmet; two answers on Live Server and 127.0.0.1, one with 29 votes saying 127.0.0.1 did not work even when registered; an answer needing both www and the bare domain; an answer on https outside localhost): <a href="https://stackoverflow.com/questions/68438293">stackoverflow.com/questions/68438293</a></li>
+      <li>Stack Overflow, "[GSI_LOGGER]: The given origin is not allowed for the given client ID" (2021, about 11,500 views; Django and One Tap on localhost; an answer setting <code>SECURE_REFERRER_POLICY = "no-referrer-when-downgrade"</code>): <a href="https://stackoverflow.com/questions/68854740">stackoverflow.com/questions/68854740</a></li>
+      <li>Stack Overflow, "Google OAuth [GSI_LOGGER]: The given origin is not allowed for the given client ID" (2022, about 8,500 views; localhost works, a staging server registered over http fails with 403 on <code>gsi/status?client_id=...</code>): <a href="https://stackoverflow.com/questions/74385278">stackoverflow.com/questions/74385278</a></li>
+      <li>Stack Overflow, "Google API: Not a valid origin for the client" (2017, about 158,000 views; <code>idpiframe_initialization_failed</code> on the older library; the most voted answer, 277 votes, cleared the browser cache; another answer found a trailing space in the client ID): <a href="https://stackoverflow.com/questions/43964539">stackoverflow.com/questions/43964539</a></li>
+      <li>Stack Overflow, "Authorized JavaScript origins not working localhost" (2017, about 12,000 views; the Console refused <code>http://localhost/charts/</code> with "Origin URIs must not contain a path or end with "/""): <a href="https://stackoverflow.com/questions/46957780">stackoverflow.com/questions/46957780</a></li>
+    </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+<footer class="site-footer">
+  <div class="wrap foot">
+    <div class="site-foot-top"><div><a class="site-brand" href="https://arling.sk/en/" aria-label="ARLing home" data-site-home><svg viewBox="0 0 488 215" width="38" height="15" aria-hidden="true" focusable="false"><path fill="#f4f4f7" fill-rule="evenodd" d="M0.00,213.00L74.00,214.00L181.00,85.00L285.00,214.00L360.00,214.00L206.00,21.00L185.00,4.00L164.00,10.00Z M221.00,0.00L263.00,50.00L395.00,50.00L409.00,55.00L419.00,76.00L401.00,96.00L313.00,98.00L411.00,214.00L487.00,214.00L422.00,139.00L457.00,123.00L482.00,88.00L482.00,48.00L463.00,19.00L417.00,0.00Z"/><path fill="#f2643c" d="M269.00,66.00L269.00,67.00L268.00,68.00L268.00,70.00L267.00,71.00L267.00,76.00L268.00,77.00L268.00,79.00L270.00,81.00L270.00,82.00L271.00,82.00L273.00,84.00L274.00,84.00L277.00,86.00L279.00,86.00L280.00,87.00L287.00,87.00L288.00,86.00L290.00,86.00L291.00,85.00L294.00,84.00L298.00,80.00L298.00,79.00L299.00,78.00L299.00,75.00L300.00,74.00L300.00,72.00L299.00,71.00L299.00,69.00L298.00,68.00L297.00,65.00L295.00,63.00L294.00,63.00L289.00,60.00L278.00,60.00L277.00,61.00L276.00,61.00L275.00,62.00L272.00,63.00Z"/></svg><b>ARLing</b></a><p class="site-foot-firma">ARLing s. r. o., company ID <span class="num">56583486</span>, Bratislava. Own server in the European Union. Software for companies, freelancers and individuals.</p></div><a class="site-cta" href="https://arling.sk/shop/" data-umami-event="shell_footer_cta">Shop<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></div>
+    <div class="site-foot-cols"><div data-skupina="firmy" data-blok="firemne"><p>Businesses and accountants</p><ul><li><a href="https://arling.sk/vsetko/en/#firmy" aria-label="All in this group: Businesses and accountants">All in this group</a></li></ul></div><div data-skupina="eshopy" data-blok="firemne"><p>Online shops and websites</p><ul><li><a href="https://arling.sk/vsetko/en/#eshopy" aria-label="All in this group: Online shops and websites">All in this group</a></li></ul></div><div data-skupina="hry" data-blok="spotrebitelske"><p>Games and puzzles</p><ul><li><a href="https://arling.sk/vsetko/en/#hry" aria-label="All in this group: Games and puzzles">All in this group</a></li></ul></div><div data-skupina="knihy" data-blok="spotrebitelske"><p>Books and gifts</p><ul><li><a href="https://arling.sk/vsetko/en/#knihy" aria-label="All in this group: Books and gifts">All in this group</a></li></ul></div><div><p>Company</p><ul><li><a href="https://arling.sk/how-we-work/en/">How we work</a></li><li><a href="https://arling.sk/notes/en/">Guides</a></li><li><a href="https://arling.sk/kontakt/en/">Contact</a></li><li><a href="https://arling.sk/ucet/en/">Account</a></li><li><a href="https://arling.sk/brand/en/">Brand</a></li><li><a href="https://arling.sk/podmienky/en/">Terms</a></li><li><a href="https://arling.sk/privacy/en/">Privacy</a></li><li><a href="https://arling.sk/odstupenie/en/">Withdraw from the contract here</a></li><li><a href="https://arling.sk/impressum/en/">Imprint</a></li></ul></div></div>
+    <p class="site-all"><a href="https://arling.sk/vsetko/en/" data-umami-event="shell_footer_all">Everything on one page<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></p>
+    <p class="site-dev" data-site-vyvojari><span>For developers</span><em>Free diagnostics for CORS, JWT, OAuth, Supabase and Stripe webhook errors.</em><a href="https://arling.sk/vsetko/en/#vyvojari">All developer tools<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></p>
+    <div class="site-foot-bottom"><p>ARLing s. r. o., Ivanská cesta 32E, 821 04 Bratislava, Slovakia. Company ID 56583486, VAT ID SK2122352100. <a href="mailto:support@arling.sk">support@arling.sk</a></p><p><a href="https://arling.sk/impressum/en/">Impressum</a> · <a href="https://arling.sk/llms.txt">llms.txt</a> · <a href="https://arling.sk/sitemap-index.xml">Sitemap</a></p></div>
+    <p class="site-foot-legal">Tools are provided as is, without warranty. Anonymous visit counts via self-hosted Umami. <a href="https://arling.sk/privacy/en/">Privacy</a> · <a href="https://arling.sk/podmienky/en/">Terms</a> · <a href="https://arling.sk/gdpr/en/">GDPR</a> · <a href="https://arling.sk/odstupenie/en/">Withdraw from the contract here</a></p>
+  </div>
+</footer>
+<script defer src="https://server.invalid/script.js" data-website-id="be534d51-4d01-4860-b267-9596d91606de"></script>
+<script>
+(function () {
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var hero = document.getElementById('hero');
+  if (reduce) {
+    document.querySelectorAll('.r, section').forEach(function (e) { e.classList.add('in'); });
+  }
+  if (!reduce && hero) {
+    requestAnimationFrame(function () {
+      hero.querySelectorAll('.r').forEach(function (e) { e.classList.add('in'); });
+    });
+  }
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (en) {
+      if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); }
+    });
+  }, { rootMargin: '0px 0px -12% 0px', threshold: 0.1 });
+  document.querySelectorAll('section').forEach(function (s) { io.observe(s); });
+
+  // nadpis clanku sa objavi po slovach, ako dobre vytlaceny titulok
+  var h1 = document.getElementById('h1');
+  if (h1) {
+    var i = 0;
+    Array.prototype.forEach.call(h1.querySelectorAll('.l'), function (line) {
+      var words = line.textContent.split(' ');
+      line.textContent = '';
+      words.forEach(function (w, k) {
+        var s = document.createElement('span');
+        s.className = 'w';
+        s.style.transitionDelay = (i++ * 0.06).toFixed(2) + 's';
+        s.textContent = w;
+        line.appendChild(s);
+        if (k < words.length - 1) line.appendChild(document.createTextNode(' '));
+      });
+    });
+    requestAnimationFrame(function () { h1.classList.add('in'); });
+  }
+
+  // bocny register sleduje, ktora cast clanku je v strede obrazovky
+})();
+</script>
+</body>
+</html>

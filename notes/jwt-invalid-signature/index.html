@@ -1,0 +1,525 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script src="/style/vzhlad.js?v=8a4019ae"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://server.invalid 'sha256-o3xsDYR9jlYXD3xsYnIYhZMegEGII0NRTPrLfxDRmgI=' 'sha256-ttR/4w2KztbaeFAZCLrkgBc+gdjm2lJgzYIHXfShK1U=' 'sha256-igvf1eA7RB0EWkKIiZfMbVJt3kof+N9Tlm8yzm3iBO0=' 'sha256-kHzhLBitzZlfAaUS4VuXMelQQYrrpIhEmCeLW+iUbL4='; connect-src 'self' https://server.invalid; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0a0908">
+<link rel="preconnect" href="https://server.invalid" crossorigin>
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../../favicon.ico" sizes="48x48">
+<link rel="apple-touch-icon" href="../../icon-180.png">
+<title>JWT "invalid signature": wrong secret, wrong key, or the wrong algorithm</title>
+<meta name="description" content="What JsonWebTokenError: invalid signature rules out, the four byte mismatches behind it, and how to prove which one you have before you change any code.">
+<link rel="canonical" href="https://arling.sk/notes/jwt-invalid-signature/">
+<meta property="og:type" content="article">
+<meta property="og:title" content="JWT &quot;invalid signature&quot;: wrong secret, wrong key, or the wrong algorithm">
+<meta property="og:description" content="What JsonWebTokenError: invalid signature rules out, the four byte mismatches behind it, and how to prove which one you have before you change any code.">
+<meta property="og:url" content="https://arling.sk/notes/jwt-invalid-signature/">
+
+
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"Article","headline":"JWT \"invalid signature\": wrong secret, wrong key, or the wrong algorithm","description":"What JsonWebTokenError: invalid signature rules out, the four byte mismatches behind it, and how to prove which one you have before you change any code.","datePublished":"2026-09-27","dateModified":"2026-09-27","inLanguage":"en","author":{"@type":"Organization","name":"ARLing s. r. o."},"publisher":{"@type":"Organization","name":"ARLing s. r. o.","url":"https://arling.sk/"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://arling.sk/notes/jwt-invalid-signature/"}}
+</script>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Why does jwt.io say \"Invalid Signature\" when my server accepts the token?","acceptedAnswer":{"@type":"Answer","text":"Decoding needs no key, because the header and payload are only base64url, so the debugger shows them for any token. Checking the signature needs the same secret or public key your server uses. Answers on the 2018 question (about 135,000 views) list what went wrong there: the secret field left empty or holding a different value, a secret that had to be read as base64, and for public-key algorithms a debugger that could not fetch the issuer's keys, for example from a server on localhost. Use a test token and a test secret for this where you can."}},{"@type":"Question","name":"Does invalid signature mean my token is expired?","acceptedAnswer":{"@type":"Answer","text":"No, and it says nothing about the other claims either. jsonwebtoken checks the signature before nbf and exp, so a token that is expired and signed with another key reports invalid signature. Fix the key first. If the token is also expired, the error then changes to jwt expired."}},{"@type":"Question","name":"I changed JWT_SECRET. Why does every user get invalid signature now?","acceptedAnswer":{"@type":"Answer","text":"Every token signed with the old secret fails against the new one, so those users have to sign in again, or the verifier has to accept both secrets for a while. jsonwebtoken can take a function instead of a key when you call verify with a callback, and that function receives the token's header, so it can pick the secret by kid if you signed with the keyid option. Supabase's asymmetric signing keys handle this for you: after a rotation, non-expired tokens signed with the previous key are still accepted."}},{"@type":"Question","name":"Can I use jwt.decode() until I find the cause?","acceptedAnswer":{"@type":"Answer","text":"Not for anything that makes a decision. jwt.decode() returns the payload without checking the signature, and the jsonwebtoken README says not to use it for untrusted messages. Anyone can write a payload that decodes."}},{"@type":"Question","name":"Does invalid signature mean someone tampered with the token?","acceptedAnswer":{"@type":"Answer","text":"It means the bytes and the key do not match, and the error cannot tell you why. In the answered questions linked on this page the cause was configuration: a different secret, a secret that had to be read as base64, a key the debugger did not have. Reject the token either way: RFC 7515 says a JWS whose signature does not validate must be considered invalid."}}]}
+</script>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"ARLing","item":"https://arling.sk/"},{"@type":"ListItem","position":2,"name":"Notes","item":"https://arling.sk/notes/"},{"@type":"ListItem","position":3,"name":"JWT \"invalid signature\": wrong secret, wrong key, or the wrong algorithm","item":"https://arling.sk/notes/jwt-invalid-signature/"}]}
+</script>
+<link rel="preload" href="/fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/style/paper.css?v=704b28ed">
+<script src="/style/prepinac.js?v=668e98c9" defer></script>
+<style>
+  /* Notes. Vzhlad, farby, typografia a pohyb su v /style/paper.css.
+     Tu ostava len to, co je pre clanok vlastne: merany pas, register, panel s nastrojom. */
+  .note{max-width:min(100%,880px);margin:0 auto}
+  .doc{max-width:min(68ch,660px);margin-inline:auto;font-size:clamp(17px,1.2vw,18px);line-height:1.62}
+
+  /* uvod clanku: nadpis, datum, odkaz na nastroj */
+  .hero-note{padding:clamp(34px,4.6vw,72px) 0 clamp(20px,2.4vw,34px)}
+  /* Titul clanku je hero stranky. Hlavna veta dorastie na desktope na 64 px, ako ziada
+     paper-v2 bod 9.4. Druhy riadok titulu je vzdy vysvetlujuca cast za dvojbodkou:
+     ostava v rovnakom reze, len mensia a tlmenejsia, aby ani najdlhsi titul (141 znakov
+     v clanku o Shopify) nezabral cely prvy pohlad. Rodinu, farbu a letter-spacing
+     urcuje paper.css, tu je len mierka. */
+  .hero-note h1{font-size:clamp(32px,4.6vw,64px);line-height:1.05;margin:0 0 18px}
+  .hero-note h1 .l+.l{display:block;margin-top:.3em;font-weight:500;
+    font-size:clamp(20px,2.4vw,34px);line-height:1.2;letter-spacing:-.01em;color:var(--body)}
+  .hero-note .kicker{display:block;margin:0 0 12px}
+  .hero-note .crumbs{font-family:var(--ui);font-size:12px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--accent);margin:0 0 12px}
+  .hero-note .crumbs a{color:inherit;text-decoration:none}
+  .hero-note .crumbs a:hover{text-decoration:underline}
+  .byline,.dateline{font-family:var(--ui);font-size:14px;color:var(--muted);margin:0 0 20px;max-width:none}
+  .toolgo{margin:0}
+
+  /* rytmus clanku: vlasova linka medzi castami, ziadne velke medzery sekcii */
+  section{scroll-margin-top:86px}
+  .doc section{padding:0;border-top:none;margin:0 0 clamp(26px,2.8vw,38px)}
+  .doc section+section{border-top:1px solid var(--line);padding-top:clamp(26px,2.8vw,36px)}
+  /* Mierka nadpisov vnutri clanku, nie kopia paper.css: pas textu ma 660 px, do neho sa
+     sekcny nadpis v plnej velkosti z paper.css (42 px) nezmesti bez zalomenia. Mení sa
+     len velkost a odstupy, vsetko ostatne dedi z paper.css. */
+  .doc h2{font-size:clamp(21px,1.9vw,27px);line-height:1.22;margin:0 0 12px}
+  .doc h3{font-size:clamp(17.5px,1.3vw,20px);margin:18px 0 8px}
+  .doc p{margin:0 0 14px;max-width:none}
+  .doc .num,.doc .kicker{display:block;font-family:var(--ui);font-size:12px;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--accent);margin:0 0 7px}
+  .doc .lead,.doc .lede{font-size:clamp(18px,1.35vw,20.5px);line-height:1.55;max-width:none;margin:0 0 18px}
+  .doc ol,.doc ul{padding-left:22px;margin:0 0 16px}
+  .doc li{margin:0 0 7px}
+  .doc li:last-child{margin-bottom:0}
+  .doc a{overflow-wrap:anywhere}
+  .doc code{background:var(--paper-deep);border:1px solid var(--line);border-radius:4px;padding:1px 5px;
+    overflow-wrap:anywhere}
+  .doc pre{margin:0 0 16px;white-space:pre-wrap;overflow-wrap:break-word}
+  .doc pre code{background:none;border:none;padding:0;font-size:13.5px;line-height:1.55}
+  .doc blockquote{margin:0 0 16px;padding:8px 16px;border-left:2px solid var(--line);color:var(--muted)}
+
+  /* chybova hlaska, oprava, ukazka kodu s popisom */
+  .doc .err{background:color-mix(in srgb,var(--accent) 7%,var(--card));border:1px solid var(--line);
+    border-left:3px solid var(--accent);border-radius:8px;padding:12px 16px;margin:0 0 16px}
+  .doc .err code{background:none;border:none;padding:0;color:var(--ink)}
+  .doc .fix{margin:0 0 16px;padding-left:16px;border-left:2px solid var(--accent)}
+  .doc .fix p{margin:0 0 8px}
+  .doc .fix p:last-child{margin-bottom:0}
+  .doc .fix-label{font-family:var(--ui);font-size:12px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--muted);margin:0 0 6px}
+  .doc .snippet{background:var(--card);border:1px solid var(--line);border-radius:10px;margin:0 0 18px;
+    overflow:hidden}
+  .doc .snippet .cap{padding:8px 14px;border-bottom:1px solid var(--line);
+    font:500 11px/1.3 var(--ui);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  .doc .snippet.bad .cap{color:var(--accent)}
+  .doc .snippet pre{margin:0;border:none;border-radius:0;background:none;white-space:pre-wrap}
+
+  /* diagram: poradie kontrol v jwt.verify() a sprava pri kazdej. Farby su tokeny z paper.css. */
+  .doc figure.dg{margin:6px 0 22px}
+  .doc figure.dg svg{display:block;width:100%;height:auto;max-width:540px;margin:0 auto}
+  .dg .dg-pill{fill:none;stroke:var(--line-silna,var(--line));stroke-width:1}
+  .dg .dg-pt{fill:var(--ink);font:500 12.5px var(--mono)}
+  .dg .dg-spine{stroke:var(--line-silna,var(--line));stroke-width:2}
+  .dg .dg-node{fill:var(--accent)}
+  .dg .dg-node-n{fill:var(--body)}
+  .dg .dg-node-ok{fill:var(--ok,#2f7d57)}
+  .dg .dg-num{fill:var(--paper-deep);font:700 13px var(--ui)}
+  .dg .dg-box{fill:var(--card-plna,var(--card));stroke:var(--line-silna,var(--line));stroke-width:1}
+  .dg .dg-box-hot{stroke:var(--accent);stroke-width:1.5}
+  .dg .dg-div{stroke:var(--line-silna,var(--line));stroke-width:1}
+  .dg .dg-h{fill:var(--ink);font:600 16px var(--ui)}
+  .dg .dg-h-dim{fill:var(--muted)}
+  .dg .dg-s{fill:var(--body);font:400 13px var(--ui)}
+  .dg .dg-lab{fill:var(--muted);font:600 12px var(--ui);letter-spacing:.08em}
+  .dg .dg-lab-hot{fill:var(--accent)}
+  .dg .dg-msg{fill:var(--accent);font:500 12.5px var(--mono)}
+  .dg .dg-msg-big{font-size:15px;font-weight:700}
+  body.noc .dg .dg-msg,body.noc .dg .dg-lab-hot{fill:var(--accent-light)}
+  .dg .dg-cell-add{fill:color-mix(in srgb,var(--accent) 22%,var(--card-plna,var(--card)));stroke:var(--accent);stroke-width:1.5}
+  .dg .dg-ch-add{fill:var(--accent-light);font:700 14px var(--mono)}
+  .dg .dg-plus{fill:var(--accent-light);font:700 13px var(--ui)}
+  .doc figure.dg figcaption{margin:10px auto 0;max-width:540px;font:400 14px/1.5 var(--ui);color:var(--muted)}
+
+  /* caste otazky */
+  .doc details{border-top:1px solid var(--line);padding:14px 0}
+  .doc details:last-of-type{border-bottom:1px solid var(--line);margin-bottom:16px}
+  .doc summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;gap:14px;
+    font:600 17px/1.35 var(--display);color:var(--ink)}
+  .doc summary::-webkit-details-marker{display:none}
+  .doc summary::after{content:"+";flex:none;color:var(--accent);font-family:var(--ui);font-weight:400}
+  .doc details[open] summary::after{content:"\2212"}
+  .doc details p{margin:10px 0 0}
+
+  /* zdroje */
+  .doc ul.sources{list-style:none;padding-left:0}
+  .doc ul.sources li{padding-left:14px;border-left:2px solid var(--line)}
+  .doc .sources li{margin:0 0 10px;font-size:.95em}
+  .doc .sources cite{font-style:italic}
+  .doc ul.plain{list-style:none;padding-left:0}
+  .doc ul.plain li{margin:0;padding:10px 0;border-top:1px solid var(--line)}
+  .doc ul.plain li:first-child{border-top:none}
+
+  /* panel s nastrojom: jedina tmava plocha v texte, tam sa klika */
+  .doc .tool-box,.doc .toolbox,.doc .check,.doc .try,.doc .cta{display:block;background:var(--ink);
+    color:#cfcabd;border:none;border-radius:var(--radius);padding:clamp(20px,2.2vw,28px);margin:0 0 18px}
+  .doc .tool-box p,.doc .check p,.doc .try p,.doc .cta p{max-width:none;margin:0 0 12px;color:#cfcabd}
+  .doc .toolbox{max-width:none;color:#cfcabd}
+  .doc .tool-box p:last-of-type,.doc .check p:last-child,.doc .try p:last-child,
+  .doc .cta p:last-child{margin-bottom:0}
+  .doc .tool-box a,.doc .toolbox a,.doc .check a,.doc .try a,.doc .cta a{color:#fffdf8}
+  .doc .tool-box a:hover,.doc .toolbox a:hover,.doc .check a:hover,.doc .try a:hover,
+  .doc .cta a:hover{color:var(--accent-light)}
+  .doc .tool-box code,.doc .toolbox code,.doc .check code,.doc .try code,.doc .cta code{
+    background:rgba(255,253,248,.10);border-color:rgba(255,253,248,.22);color:#fffdf8}
+  .doc .tool-box .btn{margin:14px 10px 0 0;text-decoration:none;color:#fff}
+  /* dve tlacidla vedla seba sa nesmu dotykat, na uzkom mobile sa zalomia pod seba */
+  /* druhe tlacidlo v tmavom paneli je vedlajsie: linka namiesto plochy */
+  .doc .tool-box .btn+.btn{background:none;border:1px solid rgba(255,253,248,.45);color:#fffdf8}
+  .doc .tool-box .btn+.btn:hover{background:#fffdf8;color:var(--ink)}
+  .doc .tool-cta{display:inline-flex;align-items:center;height:46px;padding:0 20px;border-radius:12px;
+    margin:2px 0 0;background:var(--accent);color:#fff;font:500 15px/1 var(--ui);text-decoration:none}
+  .doc .tool-cta:hover{background:var(--accent-dark);color:#fff}
+
+  /* bocny register drzi sa laveho okraja clanku */
+  /* Stlpec clanku je uzsi nez obsah hubu (880 px, nie 1340), tak sa register zmesti
+     uz od 1280 px: cely stoji v lavom okraji a od textu ho deli stalych 35 px.
+     Pod tou hranicou by uz do textu zasahoval, preto ho paper.css skryje. */
+  @media (min-width:1280px){}
+
+  /* paticka je tmavy pas na konci */
+  footer.band{border-top:none;color:#a8a294}
+  footer.band a,footer.band b{color:#fffdf8}
+  footer.band .wrap{max-width:880px}
+  footer.band .cols{width:min(880px,92vw);margin:0 auto;gap:16px 32px}
+
+</style>
+<meta property="og:image" content="https://arling.sk/og.png">
+</head>
+<body class="noc">
+<div class="wash" aria-hidden="true"><i></i><i></i></div>
+<noscript><style>.r,.w{opacity:1;transform:none;filter:none}</style></noscript>
+<a class="skip site-skip" href="#arling-obsah" data-site-label="skip">Skip to content</a>
+<header class="site-header">
+  <div class="wrap bar">
+    <a class="brand" href="https://arling.sk/en/" aria-label="ARLing home" data-site-home>
+      <svg viewBox="0 0 488 215" width="38" height="15" aria-hidden="true" focusable="false"><path fill="#f4f4f7" fill-rule="evenodd" d="M0.00,213.00L74.00,214.00L181.00,85.00L285.00,214.00L360.00,214.00L206.00,21.00L185.00,4.00L164.00,10.00Z M221.00,0.00L263.00,50.00L395.00,50.00L409.00,55.00L419.00,76.00L401.00,96.00L313.00,98.00L411.00,214.00L487.00,214.00L422.00,139.00L457.00,123.00L482.00,88.00L482.00,48.00L463.00,19.00L417.00,0.00Z"/><path fill="#f2643c" d="M269.00,66.00L269.00,67.00L268.00,68.00L268.00,70.00L267.00,71.00L267.00,76.00L268.00,77.00L268.00,79.00L270.00,81.00L270.00,82.00L271.00,82.00L273.00,84.00L274.00,84.00L277.00,86.00L279.00,86.00L280.00,87.00L287.00,87.00L288.00,86.00L290.00,86.00L291.00,85.00L294.00,84.00L298.00,80.00L298.00,79.00L299.00,78.00L299.00,75.00L300.00,74.00L300.00,72.00L299.00,71.00L299.00,69.00L298.00,68.00L297.00,65.00L295.00,63.00L294.00,63.00L289.00,60.00L278.00,60.00L277.00,61.00L276.00,61.00L275.00,62.00L272.00,63.00Z"/></svg>
+      <b>ARLing</b><span>Notes</span>
+    </a>
+    <details class="site-menu">
+      <summary class="site-menu-toggle"><span class="site-menu-text" data-site-label="produkty">Products</span><span class="site-menu-bars" aria-hidden="true"><i></i><i></i><i></i></span><span class="site-menu-word" data-site-label="menu">Menu</span></summary>
+      <div class="site-menu-panel" role="navigation" aria-label="Products" data-site-aria="produkty"><div class="site-bloky"><div class="site-blok" data-blok="firemne"><p class="site-blok-nazov">For businesses</p><div class="site-cols"><div class="site-col" data-skupina="firmy"><p>Businesses and accountants</p><a class="site-col-all" href="https://arling.sk/vsetko/en/#firmy" aria-label="All in this group: Businesses and accountants" data-umami-event="shell_menu_group" data-umami-event-target="firmy"><span class="site-dlho">All in this group</span><span class="site-kratko">All</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></div><div class="site-col" data-skupina="eshopy"><p>Online shops and websites</p><a class="site-col-all" href="https://arling.sk/vsetko/en/#eshopy" aria-label="All in this group: Online shops and websites" data-umami-event="shell_menu_group" data-umami-event-target="eshopy"><span class="site-dlho">All in this group</span><span class="site-kratko">All</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></div></div></div><div class="site-blok" data-blok="spotrebitelske"><p class="site-blok-nazov">For leisure</p><div class="site-cols"><div class="site-col" data-skupina="hry"><p>Games and puzzles</p><a class="site-col-all" href="https://arling.sk/vsetko/en/#hry" aria-label="All in this group: Games and puzzles" data-umami-event="shell_menu_group" data-umami-event-target="hry"><span class="site-dlho">All in this group</span><span class="site-kratko">All</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></div><div class="site-col" data-skupina="knihy"><p>Books and gifts</p><a class="site-col-all" href="https://arling.sk/vsetko/en/#knihy" aria-label="All in this group: Books and gifts" data-umami-event="shell_menu_group" data-umami-event-target="knihy"><span class="site-dlho">All in this group</span><span class="site-kratko">All</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></div></div></div></div><div class="site-menu-spodok"><p class="site-all"><a href="https://arling.sk/vsetko/en/" data-umami-event="shell_menu_all">Everything on one page<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></p><p class="site-dev"><span>For developers</span><em>Free diagnostics for CORS, JWT, OAuth, Supabase and Stripe webhook errors.</em><a href="https://arling.sk/vsetko/en/#vyvojari">All developer tools<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></p></div><div class="site-col site-firma"><p>Company</p><ul><li><a href="https://arling.sk/en/#nastroje"><b>Tools</b></a></li><li><a href="https://arling.sk/en/#piloty"><b>Pilots</b></a></li><li><a href="https://arling.sk/how-we-work/en/"><b>How we work</b></a></li><li><a href="https://arling.sk/notes/en/"><b>Guides</b></a></li><li><a href="https://arling.sk/kontakt/en/"><b>Contact</b></a></li><li><a href="https://arling.sk/ucet/en/"><b>Account</b></a></li><li><a href="https://arling.sk/brand/en/"><b>Brand</b></a></li><li><a href="https://arling.sk/podmienky/en/"><b>Terms</b></a></li><li><a href="https://arling.sk/privacy/en/"><b>Privacy</b></a></li><li><a href="https://arling.sk/odstupenie/en/"><b>Withdraw from the contract here</b></a></li><li><a href="https://arling.sk/impressum/en/"><b>Imprint</b></a></li></ul></div><p class="site-menu-cta"><a class="site-cta" href="https://arling.sk/shop/" data-site-cta data-site-label="cta" data-umami-event="shell_cta_menu">Shop</a></p></div>
+    </details>
+    <nav id="hlavne-menu" class="site-main-nav" aria-label="Main navigation" data-site-aria="nav"><a href="https://arling.sk/en/#nastroje" data-site-nav="0">Tools</a><a href="https://arling.sk/en/#piloty" data-site-nav="1">Pilots</a><a href="https://arling.sk/notes/en/" data-site-nav="2">Guides</a><a href="https://arling.sk/how-we-work/en/" data-site-nav="3">Company</a></nav>
+    <a class="site-cta" href="https://arling.sk/shop/" data-site-cta data-site-label="cta" data-umami-event="shell_cta">Shop</a>
+  </div>
+  <script src="/style/menu-en.js" defer></script>
+</header>
+<main id="arling-obsah" tabindex="-1">
+  <div class="wrap">
+    <div class="note">
+      <div class="hero-note" id="hero">
+        <p class="kicker r">Notes</p>
+        <h1 id="h1" class="r d1"><span class="l">JsonWebTokenError: invalid signature</span><span class="l">wrong secret, wrong key, or the wrong algorithm</span></h1>
+        <p class="byline r d2">ARLing s. r. o. · 2026-09-27</p>
+        <p class="toolgo r d3"><a data-umami-event="open-jwt-doctor-hero" class="go" href="https://arling.sk/jwt-doctor/">JWT Doctor <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2.5 8h11M9 3.5 13.5 8 9 12.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a></p>
+      </div>
+      <div class="doc">
+        <section class="sec" id="s1">
+  <p class="lead r">Your Node backend calls <code>jwt.verify()</code> from the jsonwebtoken package, and instead of a payload it throws this:</p>
+  <div class="err r d1"><code>JsonWebTokenError: invalid signature</code></div>
+  <p class="r d2">The token was not rejected for being malformed, expired or meant for another audience. jsonwebtoken got further than that: it split the token into its three parts, read the header, accepted the algorithm in it and the kind of key you passed, then checked the third part, the signature, over the first two parts with your key, and they did not match. So one of two things is true. The key your verifier holds is not the key that signed the token, or the token is not the one that was signed. The message cannot tell you which, and it never shows either key.</p>
+  <p class="r d3">Other tools say the same thing in other words. jose throws <code>JWSSignatureVerificationFailed</code> with the message "signature verification failed", PyJWT raises <code>InvalidSignatureError</code> with "Signature verification failed", and the jwt.io debugger shows "Invalid Signature". The causes below apply to all of them. The code uses jsonwebtoken, because this exact message comes from it.</p>
+  <p class="r d3">The title names the algorithm too, because it is a common first suspect. In jsonwebtoken 9 a wrong algorithm usually gets its own message instead, and section 05 shows which one.</p>
+        </section>
+        <section class="sec" id="s2">
+    <h2 class="r">What the message already rules out</h2>
+    <p class="r d1">jsonwebtoken runs its checks in a fixed order and stops at the first one that fails. Every earlier check has its own message, so getting to invalid signature tells you what has already passed. The order below is from <code>verify.js</code> in version 9, the current major version since December 2022.</p>
+    <figure class="dg r d2">
+      <svg viewBox="0 0 400 900" role="img" aria-labelledby="dg-title dg-desc">
+        <title id="dg-title">The order of checks in jwt.verify() and the message each one gives</title>
+        <desc id="dg-desc">jsonwebtoken checks a token in this order and stops at the first failure. Step 1: the token has three parts, otherwise jwt malformed. Step 2: the header is JSON, otherwise invalid token; a payload that is not JSON throws a SyntaxError instead when the header says typ JWT. Step 3: a secret or key was passed, otherwise secret or public key must be provided. Step 4: alg is on the allowed list, which the key type sets when there is no algorithms option, otherwise invalid algorithm. Step 5: the key is the right kind for alg, HS needs a secret and RS, PS and ES a public key, otherwise secretOrPublicKey must be an asymmetric key when using RS256. Step 6: the signature matches. This is where invalid signature comes from, so steps 1 to 5 passed. Two examples of a mismatch: the key bytes differ, the token signed with s3cr3t-key and verified with s3cr3t-key plus a newline; or the token bytes differ, role user when signed and role admin when sent. Step 7: only then the claims exp, nbf, aud and iss, so an expired token signed with another key still says invalid signature.</desc>
+        <rect class="dg-pill" x="0.5" y="0.5" width="399" height="48" rx="24"/>
+        <text class="dg-pt" x="20" y="29">jwt.verify(token, key, options)</text>
+        <line class="dg-spine" x1="22" y1="49" x2="22" y2="838"/>
+        <text class="dg-lab" x="48" y="72">EACH CHECK, AND ITS MESSAGE IF IT FAILS</text>
+
+        <circle class="dg-node dg-node-ok" cx="22" cy="110" r="13"/>
+        <text class="dg-num" x="22" y="114.5" text-anchor="middle">1</text>
+        <rect class="dg-box" x="46.5" y="86.5" width="353" height="61" rx="10"/>
+        <text class="dg-h" x="62" y="113">The token has three parts</text>
+        <text class="dg-msg" x="62" y="135">jwt malformed</text>
+
+        <circle class="dg-node dg-node-ok" cx="22" cy="186" r="13"/>
+        <text class="dg-num" x="22" y="190.5" text-anchor="middle">2</text>
+        <rect class="dg-box" x="46.5" y="162.5" width="353" height="61" rx="10"/>
+        <text class="dg-h" x="62" y="189">The header is JSON</text>
+        <text class="dg-msg" x="62" y="211">invalid token</text>
+
+        <circle class="dg-node dg-node-ok" cx="22" cy="262" r="13"/>
+        <text class="dg-num" x="22" y="266.5" text-anchor="middle">3</text>
+        <rect class="dg-box" x="46.5" y="238.5" width="353" height="61" rx="10"/>
+        <text class="dg-h" x="62" y="265">A secret or key was passed</text>
+        <text class="dg-msg" x="62" y="287">secret or public key must be provided</text>
+
+        <circle class="dg-node dg-node-ok" cx="22" cy="338" r="13"/>
+        <text class="dg-num" x="22" y="342.5" text-anchor="middle">4</text>
+        <rect class="dg-box" x="46.5" y="314.5" width="353" height="83" rx="10"/>
+        <text class="dg-h" x="62" y="341">alg is on the allowed list</text>
+        <text class="dg-s" x="62" y="362">No algorithms option: the key type sets it</text>
+        <text class="dg-msg" x="62" y="384">invalid algorithm</text>
+
+        <circle class="dg-node dg-node-ok" cx="22" cy="436" r="13"/>
+        <text class="dg-num" x="22" y="440.5" text-anchor="middle">5</text>
+        <rect class="dg-box" x="46.5" y="412.5" width="353" height="105" rx="10"/>
+        <text class="dg-h" x="62" y="439">The key is the right kind for alg</text>
+        <text class="dg-s" x="62" y="460">HS needs a secret; RS, PS, ES a public key</text>
+        <text class="dg-msg" x="62" y="482">secretOrPublicKey must be an</text>
+        <text class="dg-msg" x="62" y="501">asymmetric key when using RS256</text>
+
+        <circle class="dg-node" cx="22" cy="556" r="13"/>
+        <text class="dg-num" x="22" y="560.5" text-anchor="middle">6</text>
+        <rect class="dg-box dg-box-hot" x="46.5" y="532.5" width="353" height="267" rx="10"/>
+        <text class="dg-h" x="62" y="559">The signature matches</text>
+        <text class="dg-lab dg-lab-hot" x="62" y="580">YOU ARE HERE: STEPS 1 TO 5 PASSED</text>
+        <text class="dg-msg dg-msg-big" x="62" y="604">invalid signature</text>
+        <line class="dg-div" x1="62" y1="620" x2="383" y2="620"/>
+        <text class="dg-lab" x="62" y="642">THE KEY BYTES DIFFER</text>
+        <text class="dg-s" x="62" y="666">signed with</text>
+        <text class="dg-pt" x="158" y="666" textLength="75" lengthAdjust="spacingAndGlyphs">s3cr3t-key</text>
+        <text class="dg-s" x="62" y="692">verified with</text>
+        <text class="dg-pt" x="158" y="692" textLength="75" lengthAdjust="spacingAndGlyphs">s3cr3t-key</text>
+        <rect class="dg-cell-add" x="235.5" y="677.5" width="26" height="21" rx="4"/>
+        <text class="dg-ch-add" x="248.5" y="693" text-anchor="middle">\n</text>
+        <text class="dg-plus" x="270" y="692">+1 byte</text>
+        <line class="dg-div" x1="62" y1="710" x2="383" y2="710"/>
+        <text class="dg-lab" x="62" y="732">THE TOKEN BYTES DIFFER</text>
+        <text class="dg-s" x="62" y="756">signed</text>
+        <text class="dg-pt" x="158" y="756" textLength="97.5" lengthAdjust="spacingAndGlyphs">"role":"user"</text>
+        <text class="dg-s" x="62" y="782">sent</text>
+        <text class="dg-pt" x="158" y="782" textLength="60" lengthAdjust="spacingAndGlyphs">"role":"</text>
+        <rect class="dg-cell-add" x="219.5" y="767.5" width="46" height="21" rx="4"/>
+        <text class="dg-ch-add" x="242.5" y="783" text-anchor="middle">admin</text>
+        <text class="dg-pt" x="267" y="782">"</text>
+        <text class="dg-plus" x="284" y="782">edited</text>
+
+        <circle class="dg-node dg-node-n" cx="22" cy="838" r="13"/>
+        <text class="dg-num" x="22" y="842.5" text-anchor="middle">7</text>
+        <rect class="dg-box" x="46.5" y="814.5" width="353" height="83" rx="10"/>
+        <text class="dg-h dg-h-dim" x="62" y="841">Then the claims: exp, nbf, aud, iss</text>
+        <text class="dg-s" x="62" y="862">Not reached yet. An expired token signed</text>
+        <text class="dg-s" x="62" y="882">with another key still says invalid signature.</text>
+      </svg>
+      <figcaption>jsonwebtoken 9 checks a token in this order and throws at the first failure. Getting <code>invalid signature</code> means steps 1 to 5 passed: the token is well formed and its <code>alg</code> fits the kind of key you passed. What is left is a difference in bytes, in the secret or key, or in the header and payload the signature covers. The order and the messages are taken from <code>verify.js</code> in the jsonwebtoken repository; the two mismatches in step 6 are illustrations.</figcaption>
+    </figure>
+    <p class="r d3">Two things follow from the order. First, the algorithm is rarely the problem: an RS256 token checked with an HMAC secret stops at step 4 or 5 and never reaches the signature. Second, the claims have not been read yet. The expiry is checked only after the signature, so a token that is expired and signed with another key still says invalid signature.</p>
+    <p class="r d3">Step 6 is plain arithmetic over bytes. RFC 7515 defines the signing input as the base64url header, a dot and the base64url payload, exactly as they appear in the token. For HS256 the verifier computes an HMAC with SHA-256 over those characters, keyed with its secret (RFC 7518, section 3.2). For RS256 and ES256 it checks the signature with the public key. One different byte in the key, or in the first two parts of the token, gives a different result, and nothing in the output says which byte it was.</p>
+        </section>
+        <section class="sec" id="s3">
+    <p class="num r">01</p>
+    <h2 class="r d1">The verifier's secret is not the signer's secret</h2>
+    <p class="r d2">With HS256, HS384 and HS512 the same secret signs and verifies. jsonwebtoken reads a string secret as UTF-8 bytes, so both sides agree only if the two strings are identical, character for character, including characters you cannot see. The 2021 question linked below comes down to this, and so do several answers on the 2018 one (its highest-voted answer is about public keys, section 03). It shows up in one of these forms:</p>
+    <ul class="r d2">
+      <li><b>Signed with one value, verified with another.</b> In the 2021 question (about 86,000 views) the login route signed with the literal string <code>'secret'</code> and passed the environment variable as a fourth argument, where <code>jwt.sign()</code> expects a callback. The middleware verified with <code>process.env.JWT_TOKEN_SECRET</code>. The accepted answer: sign with the variable, not the word.</li>
+      <li><b>The variable's name instead of its value.</b> A 2024 answer on the same question had written <code>'process.env.JWT_SK'</code> in quotes, so the code used that literal text as the secret.</li>
+      <li><b>The secret changed, the token did not.</b> A token signed before you changed <code>JWT_SECRET</code> never verifies against the new value. It keeps coming back from browser storage, a cookie or a saved Postman request until someone signs in again, which is how one answer on that question got rid of the error.</li>
+      <li><b>Two processes, two values.</b> The service that signs and the service that verifies read different <code>.env</code> files, or a staging token reaches production. Each side is consistent with itself, and they still disagree.</li>
+      <li><b>An invisible character.</b> A trailing newline or space that got into one environment is part of the key. HMAC uses every byte of the secret.</li>
+    </ul>
+    <div class="snippet bad r d3">
+      <p class="cap">Two files, two secrets</p>
+      <pre><code>// routes/login.js
+const token = jwt.sign(payload, 'secret', { expiresIn: '24h' });
+
+// middleware/verify-token.js
+const verified = jwt.verify(token, process.env.JWT_TOKEN_SECRET);</code></pre>
+    </div>
+    <div class="snippet r d3">
+      <p class="cap">One module owns the secret</p>
+      <pre><code>// auth/secret.js
+const secret = process.env.JWT_SECRET;
+if (!secret) throw new Error('JWT_SECRET is not set');
+module.exports = secret;
+
+// login and middleware both use it
+const secret = require('../auth/secret');
+const token = jwt.sign(payload, secret, { algorithm: 'HS256', expiresIn: '24h' });
+const claims = jwt.verify(token, secret, { algorithms: ['HS256'] });</code></pre>
+    </div>
+    <p class="r d3">The check at the top matters because a missing variable is a different failure: jsonwebtoken then says <code>secret or public key must be provided</code>. If you are looking at invalid signature, the variable has a value. It is just not the same value on both sides.</p>
+        </section>
+        <section class="sec" id="s4">
+    <p class="num r">02</p>
+    <h2 class="r d1">The secret is base64, and only one side decodes it</h2>
+    <p class="r d2">Some systems generate an HMAC secret as random bytes and show it to you base64-encoded. If the signer used the decoded bytes and your verifier passes the base64 text, the keys differ even though you copied the value exactly. jsonwebtoken's README describes this case: other libraries expect base64-encoded secrets, and for those you pass <code>Buffer.from(secret, 'base64')</code>.</p>
+    <div class="snippet r d2">
+      <p class="cap">Verify with the decoded bytes</p>
+      <pre><code>const claims = jwt.verify(token, Buffer.from(process.env.JWT_SECRET, 'base64'), {
+  algorithms: ['HS256'],
+});</code></pre>
+    </div>
+    <p class="r d3">It breaks in the other direction too: if the signer used the text, decoding it on your side is the mistake. Try the other form once. If the error disappears, you know which side decodes the secret and which one does not. On the 2018 jwt.io question, one answer got the token verified only after ticking the debugger's option for a base64-encoded secret.</p>
+        </section>
+        <section class="sec" id="s5">
+    <p class="num r">03</p>
+    <h2 class="r d1">The public key is not the one that signed this token</h2>
+    <p class="r d2">With RS256, PS256 and ES256 the issuer, for example Firebase or Supabase, signs with a private key you never see, and you verify with the matching public key. Issuers publish their current public keys, each with an ID, and the token's header names the one that signed it in <code>kid</code>. Verify with a key you saved once, or with the key of another project, tenant or environment, and the check fails with invalid signature.</p>
+    <ul class="r d2">
+      <li><b>Firebase ID tokens.</b> Firebase's documentation requires <code>alg</code> to be <code>RS256</code> and <code>kid</code> to match one of the public keys at <code>https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com</code>, refreshed according to <code>max-age</code> in the <code>Cache-Control</code> header of that response. The Admin SDK's <code>verifyIdToken()</code> does all of this for you. The same page warns that these checks are meant for ID tokens from the client SDKs, not for custom tokens you create with the Admin SDK.</li>
+      <li><b>Supabase.</b> Projects that moved from the legacy JWT secret to asymmetric signing keys publish the public keys at <code>https://&lt;project-ref&gt;.supabase.co/auth/v1/.well-known/jwks.json</code>, each with its <code>kid</code> and <code>alg</code>. Supabase's migration guide warns that code verifying every JWT against the legacy secret, with jose, jsonwebtoken or similar, can break once you rotate. With jsonwebtoken that break usually reads invalid algorithm, because an ES256 or RS256 token now meets an HMAC secret. While a project still uses only the shared secret, the key set is empty.</li>
+      <li><b>Anything with a key set.</b> Pick the key by <code>kid</code> instead of hardcoding one. With jsonwebtoken, pass a function as the key and let jwks-rsa fetch it, as the jsonwebtoken README shows. With jose, <code>createRemoteJWKSet</code> does the lookup, as in Supabase's documentation:</li>
+    </ul>
+    <div class="snippet r d3">
+      <p class="cap">jose: the key set picks the key by kid</p>
+      <pre><code>import { createRemoteJWKSet, jwtVerify } from 'jose';
+
+const JWKS = createRemoteJWKSet(
+  new URL('https://&lt;project-ref&gt;.supabase.co/auth/v1/.well-known/jwks.json')
+);
+const { payload } = await jwtVerify(token, JWKS);</code></pre>
+    </div>
+    <p class="r d3">The 2022 question about this error shows the confusing version: an RS256 key pair generated with Node's <code>crypto</code>, a token that jwt.io verifies with those keys, and jsonwebtoken still answering invalid signature. It has no answers. Signature verification is deterministic: given the same token and the same key, a correct debugger and jsonwebtoken agree. When they disagree, compare the inputs first. Log the exact token string your middleware receives and a fingerprint of the key it loaded (see the checks below), and compare both with what you pasted.</p>
+        </section>
+        <section class="sec" id="s6">
+    <p class="num r">04</p>
+    <h2 class="r d1">The token changed after it was signed</h2>
+    <p class="r d2">The signature covers the header and the payload exactly as they appear in the token, as base64url text (RFC 7515, section 5.2, step 8). Change one character and the check fails, which is the whole point of a signature. Ways this happens without any attacker:</p>
+    <ul class="r d2">
+      <li>You edited the payload in a debugger, to try another role or user, and sent the edited token to your API.</li>
+      <li>Code decoded the token, changed or reordered a claim and encoded it again. The same claims with different spacing or key order are different bytes. To change a claim, sign a new token.</li>
+      <li>The signature part was cut short on the way. A shortened HS, RS or PS signature fails as invalid signature. For ES256, ES384 and ES512 jsonwebtoken throws a TypeError instead, such as <code>"ES256" signatures must be "64" bytes, saw "30"</code> (see 05). Damage in the header or payload usually fails earlier, as invalid token or a JSON parse error.</li>
+    </ul>
+    <p class="r d3">A <code>Bearer </code> prefix left in front of the token is not this case either: jsonwebtoken reports it as invalid token, because the first part no longer decodes.</p>
+        </section>
+        <section class="sec" id="s7">
+    <p class="num r">05</p>
+    <h2 class="r d1">When it really is the algorithm</h2>
+    <p class="r d2">A wrong algorithm is a real cause, but jsonwebtoken mostly reports it with a different message. That is useful, because the message tells you which of the three problems you have:</p>
+    <ul class="r d2">
+      <li><code>invalid algorithm</code>: the header's <code>alg</code> is not on the allowed list. Without an <code>algorithms</code> option, jsonwebtoken derives the list from the key: a secret allows HS256, HS384 and HS512, an RSA key the RS and PS algorithms, an EC key the ES ones. An RS256 token checked with a secret lands here, and so does an HS512 token when you allowed only HS256.</li>
+      <li><code>secretOrPublicKey must be an asymmetric key when using RS256</code>, or <code>a symmetric key when using HS256</code>: you set <code>algorithms</code> yourself, and the key is the wrong kind for the token.</li>
+      <li><code>"ES256" signatures must be "64" bytes, saw "71"</code>, a TypeError that compares the signature's length with the one the algorithm needs: 64 bytes for ES256, 96 for ES384, 132 for ES512. RFC 7518 requires that fixed-size concatenation of R and S. A larger number usually means a DER-encoded signature: Node's <code>crypto.sign()</code> produces DER unless you pass <code>dsaEncoding: 'ieee-p1363'</code>, so this points at a token signed by hand, or by code that skipped the conversion. A smaller number means the signature was cut short on the way (see 04).</li>
+    </ul>
+    <p class="r d3">One key problem turns into an algorithm message: a PEM public key that Node cannot parse. jsonwebtoken 9 first tries to read a string key as a public key, and if that fails it uses the string as an HMAC secret without saying so. A PEM kept in an environment variable with its line breaks written as the two characters <code>\n</code> gets there, and the result is invalid algorithm, or the asymmetric-key message if you pinned RS256. Turn the escapes back into line breaks before you pass the key:</p>
+    <div class="snippet r d3">
+      <p class="cap">A PEM from an environment variable, with real line breaks</p>
+      <pre><code>const publicKey = process.env.JWT_PUBLIC_KEY.replace(/\\n/g, '\n');
+const claims = jwt.verify(token, publicKey, { algorithms: ['RS256'] });</code></pre>
+    </div>
+    <p class="r d3">If you pinned <code>algorithms</code> to the one you expect and still see invalid signature, the algorithm is settled. Go back to sections 01 to 04.</p>
+        </section>
+        <section class="sec" id="s8">
+    <h2 class="r">Check which one you have, and that the fix worked</h2>
+    <ol class="r d1">
+      <li><b>Read the header first.</b> <code>jwt.decode(token, { complete: true }).header</code> shows <code>alg</code> and, for keys from a key set, <code>kid</code>. HS means a shared secret; RS, PS and ES mean a public key. <code>decode()</code> verifies nothing, so use it only to look.</li>
+      <li><b>HS: compare the secret on both sides without printing it.</b> Run this once in the process that signs and once in the process that verifies, then delete it:
+        <pre><code>const crypto = require('crypto');
+const s = process.env.JWT_SECRET;
+console.log(s.length, crypto.createHash('sha256').update(s).digest('hex').slice(0, 12));</code></pre>
+        Same length and the same 12 characters means the same secret. A length that is off by one or two points at a newline, a space or quotes. If one side decodes the secret as base64, hash the decoded bytes on both sides instead.</li>
+      <li><b>HS: round trip in the verifying process.</b> Sign a fresh token there with the same secret and verify it right away. If that passes and the real token fails, the real token was signed with a different secret, or was changed after signing (see 04).</li>
+      <li><b>RS, PS, ES: find the <code>kid</code> in the issuer's key set.</b> Open the Firebase key URL or your Supabase <code>jwks.json</code> and look for the token's <code>kid</code>. No match there means the token was signed by another project or environment, or with a key that is no longer published. A match there while your code still fails means your code verifies with an older copy of the keys.</li>
+      <li><b>Pin the algorithm and run the real token again.</b> Call <code>jwt.verify(token, key, { algorithms: ['HS256'] })</code> with the algorithm you expect. A fixed setup returns the payload, or fails with <code>jwt expired</code> or <code>jwt not active</code> (or an audience or issuer message, if you pass the <code>audience</code> or <code>issuer</code> option). Those come after the signature (step 7 in the diagram), so seeing one of them means the signature now passes.</li>
+    </ol>
+        </section>
+        <section class="sec" id="s9">
+    <h2 class="r">Traps</h2>
+    <ul class="r d1">
+      <li><b>Making the error disappear instead of fixing it.</b> <code>jwt.decode()</code> returns the payload without checking the signature, and the jsonwebtoken README says not to use it for untrusted messages. A route that accepts anything that decodes accepts tokens anyone can write.</li>
+      <li><b>Allowing every algorithm.</b> Leaving <code>algorithms</code> open, or allowing HS256 and RS256 against the same key, is the opening for algorithm confusion attacks. RFC 8725 says each key must be used with exactly one algorithm. jsonwebtoken 9 fixed its own versions of this (CVE-2022-23540 and CVE-2022-23541 in its changelog), but pin the list anyway.</li>
+      <li><b>Trusting one line of the README.</b> An example in jsonwebtoken's README says an algorithm mismatch gives invalid signature. The code in 8.5.1 and in 9 returns invalid algorithm. Go by the message you actually get.</li>
+      <li><b>Caching keys forever.</b> Firebase tells you when to refresh through <code>max-age</code>. Supabase caches its key set for 10 minutes at the edge and asks you not to cache it longer in your app, or to have a way to purge that cache when keys rotate. Keys loaded once at startup fail on the first token signed with a newer key.</li>
+      <li><b>Printing the secret to compare it.</b> Logs get copied, shipped and kept. Compare fingerprints as above, and rotate a secret that ended up in a log, a screenshot or a chat.</li>
+    </ul>
+        </section>
+        <section class="sec" id="s10">
+    <h2 class="r">Check your token in the browser</h2>
+    <div class="try r d1"><p><a data-umami-event="open-jwt-doctor-cta" href="https://arling.sk/jwt-doctor/">JWT Doctor</a> decodes the token, shows <code>alg</code> and <code>kid</code>, and verifies the signature in your browser with Web Crypto against what you paste: a shared secret, a public key PEM (<code>-----BEGIN PUBLIC KEY-----</code>) or a JWK. The token and the key never leave your browser. Other PEM forms need one conversion first: the Firebase key URL returns X.509 certificates (<code>-----BEGIN CERTIFICATE-----</code>), and some tools write RSA keys as <code>-----BEGIN RSA PUBLIC KEY-----</code>. In Node, <code>crypto.createPublicKey(pem).export({ type: 'spki', format: 'pem' })</code> turns either into the public key PEM the tool reads. It also flags a secret pasted for an RS256 or ES256 token (and the other way round), a Supabase project API key where a user access token was expected, and a Firebase custom token where an ID token was expected. It reads a pasted secret as text, like a string passed to <code>jwt.verify()</code>, so for an HS token that verifies there and fails in your code, your code is not using that text, or is not receiving that exact token (see 04). Use a test token and a test secret where you can.</p></div>
+        </section>
+        <section class="sec" id="s11">
+    <h2 class="r">Questions</h2>
+    <details class="r d1">
+      <summary>Why does jwt.io say "Invalid Signature" when my server accepts the token?</summary>
+      <p>Decoding needs no key, because the header and payload are only base64url, so the debugger shows them for any token. Checking the signature needs the same secret or public key your server uses. Answers on the 2018 question (about 135,000 views) list what went wrong there: the secret field left empty or holding a different value, a secret that had to be read as base64, and for public-key algorithms a debugger that could not fetch the issuer's keys, for example from a server on localhost. Use a test token and a test secret for this where you can.</p>
+    </details>
+    <details class="r d1">
+      <summary>Does invalid signature mean my token is expired?</summary>
+      <p>No, and it says nothing about the other claims either. jsonwebtoken checks the signature before <code>nbf</code> and <code>exp</code>, so a token that is expired and signed with another key reports invalid signature. Fix the key first. If the token is also expired, the error then changes to <code>jwt expired</code>.</p>
+    </details>
+    <details class="r d2">
+      <summary>I changed JWT_SECRET. Why does every user get invalid signature now?</summary>
+      <p>Every token signed with the old secret fails against the new one, so those users have to sign in again, or the verifier has to accept both secrets for a while. jsonwebtoken can take a function instead of a key when you call verify with a callback, and that function receives the token's header, so it can pick the secret by <code>kid</code> if you signed with the <code>keyid</code> option. Supabase's asymmetric signing keys handle this for you: after a rotation, non-expired tokens signed with the previous key are still accepted.</p>
+    </details>
+    <details class="r d2">
+      <summary>Can I use jwt.decode() until I find the cause?</summary>
+      <p>Not for anything that makes a decision. <code>jwt.decode()</code> returns the payload without checking the signature, and the jsonwebtoken README says not to use it for untrusted messages. Anyone can write a payload that decodes.</p>
+    </details>
+    <details class="r d2">
+      <summary>Does invalid signature mean someone tampered with the token?</summary>
+      <p>It means the bytes and the key do not match, and the error cannot tell you why. In the answered questions linked on this page the cause was configuration: a different secret, a secret that had to be read as base64, a key the debugger did not have. Reject the token either way: RFC 7515 says a JWS whose signature does not validate must be considered invalid.</p>
+    </details>
+        </section>
+      </div>
+    </div>
+  </div>
+  <section class="deep" id="s12">
+    <div class="wrap">
+      <div class="note">
+        <div class="doc">
+    <h2 class="r">Sources</h2>
+    <ul class="r d1">
+      <li>auth0/node-jsonwebtoken, README, "Errors &amp; Codes" (the JsonWebTokenError messages, including invalid signature, and NotBeforeError "jwt not active"):<a href="https://github.com/auth0/node-jsonwebtoken#errors--codes">github.com/auth0/node-jsonwebtoken#errors--codes</a>; the same README on <code>jwt.sign</code> (callback as the fourth argument, <code>keyid</code>), <code>jwt.verify</code> (a string secret is UTF-8, the <code>Buffer.from(secret, 'base64')</code> note, default algorithms by key type, a key function with jwks-rsa, audience and issuer checked only when you pass those options, the alg mismatch example comment) and <code>jwt.decode</code> (does not verify, not for untrusted messages): <a href="https://github.com/auth0/node-jsonwebtoken#jwtverifytoken-secretorpublickey-options-callback">github.com/auth0/node-jsonwebtoken#jwtverifytoken-secretorpublickey-options-callback</a></li>
+      <li>auth0/node-jsonwebtoken, <code>verify.js</code> in 9.0.3 (the order of checks and every message in the diagram; a string key is tried as a public key first, then used as a secret): <a href="https://github.com/auth0/node-jsonwebtoken/blob/master/verify.js">github.com/auth0/node-jsonwebtoken/blob/master/verify.js</a>; <code>verify.js</code> in 8.5.1 (invalid algorithm for an alg outside the list): <a href="https://github.com/auth0/node-jsonwebtoken/blob/v8.5.1/verify.js">github.com/auth0/node-jsonwebtoken/blob/v8.5.1/verify.js</a>; CHANGELOG (9.0.0 on 2022-12-21, key types must match the algorithm, CVE-2022-23540 and CVE-2022-23541): <a href="https://github.com/auth0/node-jsonwebtoken/blob/master/CHANGELOG.md">github.com/auth0/node-jsonwebtoken/blob/master/CHANGELOG.md</a></li>
+      <li>auth0/node-jws, <code>verify-stream.js</code>, used by jsonwebtoken to decode (the payload is parsed as JSON only when the header's <code>typ</code> is JWT, so a payload that is not JSON throws a SyntaxError there): <a href="https://github.com/auth0/node-jws/blob/master/lib/verify-stream.js">github.com/auth0/node-jws/blob/master/lib/verify-stream.js</a></li>
+      <li>Brightspace/node-ecdsa-sig-formatter, used by jsonwebtoken through jws and jwa (the "signatures must be N bytes" TypeError, thrown for any other length, with 64, 96 and 132 bytes for ES256, ES384 and ES512): <a href="https://github.com/Brightspace/node-ecdsa-sig-formatter/blob/master/src/ecdsa-sig-formatter.js">github.com/Brightspace/node-ecdsa-sig-formatter/blob/master/src/ecdsa-sig-formatter.js</a></li>
+      <li>RFC 7515, JSON Web Signature, section 5.2 "Message Signature or MAC Validation" (the signing input is the encoded header, a period and the encoded payload; a JWS whose signature does not validate must be considered invalid): <a href="https://www.rfc-editor.org/rfc/rfc7515#section-5.2">rfc-editor.org/rfc/rfc7515#section-5.2</a></li>
+      <li>RFC 7518, JSON Web Algorithms, section 3.2 "HMAC with SHA-2 Functions": <a href="https://www.rfc-editor.org/rfc/rfc7518#section-3.2">rfc-editor.org/rfc/rfc7518#section-3.2</a>; section 3.4 "Digital Signature with ECDSA" (R and S concatenated: a 64-octet sequence for ES256, 96 for ES384, 132 for ES512): <a href="https://www.rfc-editor.org/rfc/rfc7518#section-3.4">rfc-editor.org/rfc/rfc7518#section-3.4</a></li>
+      <li>RFC 8725, JSON Web Token Best Current Practices, section 3.1 "Perform Algorithm Verification" (each key used with exactly one algorithm): <a href="https://www.rfc-editor.org/rfc/rfc8725#section-3.1">rfc-editor.org/rfc/rfc8725#section-3.1</a></li>
+      <li>Firebase, "Verify ID Tokens" (alg RS256, kid from the securetoken key URL, refresh by Cache-Control max-age, not for custom tokens, verifyIdToken in the Admin SDK): <a href="https://firebase.google.com/docs/auth/admin/verify-id-tokens">firebase.google.com/docs/auth/admin/verify-id-tokens</a>; the key URL itself (a JSON object of kid to X.509 certificate, each <code>-----BEGIN CERTIFICATE-----</code>): <a href="https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com">googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com</a></li>
+      <li>Supabase, "JWT Signing Keys" (migrating from the legacy JWT secret, code that verifies against it with jose or jsonwebtoken can break, previously used keys keep verifying after a rotation, ES256, RS256 and HS256): <a href="https://supabase.com/docs/guides/auth/signing-keys">supabase.com/docs/guides/auth/signing-keys</a>; "JSON Web Token (JWT)", section "Verifying a JWT from Supabase" (the jwks.json endpoint, empty without asymmetric keys, 10 minutes of edge cache, the jose example): <a href="https://supabase.com/docs/guides/auth/jwts#verifying-a-jwt-from-supabase">supabase.com/docs/guides/auth/jwts#verifying-a-jwt-from-supabase</a></li>
+      <li>Node.js, "Crypto": <code>crypto.createPublicKey()</code> (PEM keys and X.509 certificates): <a href="https://nodejs.org/api/crypto.html#cryptocreatepublickeykey">nodejs.org/api/crypto.html#cryptocreatepublickeykey</a>; <code>keyObject.export()</code> (<code>type: 'spki'</code>, <code>format: 'pem'</code>): <a href="https://nodejs.org/api/crypto.html#keyobjectexportoptions">nodejs.org/api/crypto.html#keyobjectexportoptions</a>;<code>crypto.sign()</code> (<code>dsaEncoding</code>, DER by default): <a href="https://nodejs.org/api/crypto.html#cryptosignalgorithm-data-key-callback">nodejs.org/api/crypto.html#cryptosignalgorithm-data-key-callback</a>; <code>crypto.createHash()</code>: <a href="https://nodejs.org/api/crypto.html#cryptocreatehashalgorithm-options">nodejs.org/api/crypto.html#cryptocreatehashalgorithm-options</a></li>
+      <li>panva/jose, <code>JWSSignatureVerificationFailed</code> ("signature verification failed"): <a href="https://github.com/panva/jose/blob/main/src/util/errors.ts">github.com/panva/jose/blob/main/src/util/errors.ts</a>; jpadilla/pyjwt, <code>InvalidSignatureError("Signature verification failed")</code>: <a href="https://github.com/jpadilla/pyjwt/blob/master/jwt/api_jws.py">github.com/jpadilla/pyjwt/blob/master/jwt/api_jws.py</a></li>
+      <li>Stack Overflow, "Always getting invalid signature in jwt.io" (2018, jsonwebtoken, about 135,000 views; the highest-voted answer: paste the issuer's public key from its JWKS; other answers: the secret field left empty, the wrong secret, the base64 option, the debugger unable to fetch keys from a localhost issuer or without CORS headers): <a href="https://stackoverflow.com/questions/50774780">stackoverflow.com/questions/50774780</a></li>
+      <li>Stack Overflow, "How to solve JsonWebTokenError "invalid signature" after assigning some infos to the generated token?" (2021, Express, about 86,000 views; the accepted answer finds the literal 'secret' in jwt.sign; later answers: the variable name in quotes, logging in again for a fresh token): <a href="https://stackoverflow.com/questions/65882838">stackoverflow.com/questions/65882838</a></li>
+      <li>Stack Overflow, "How do i solve JsonWebTokenError: invalid signature RS256" (2022, RS256 keys from Node's crypto, verified in jwt.io, no answers): <a href="https://stackoverflow.com/questions/74402740">stackoverflow.com/questions/74402740</a></li>
+    </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+<footer class="site-footer">
+  <div class="wrap foot">
+    <div class="site-foot-top"><div><a class="site-brand" href="https://arling.sk/en/" aria-label="ARLing home" data-site-home><svg viewBox="0 0 488 215" width="38" height="15" aria-hidden="true" focusable="false"><path fill="#f4f4f7" fill-rule="evenodd" d="M0.00,213.00L74.00,214.00L181.00,85.00L285.00,214.00L360.00,214.00L206.00,21.00L185.00,4.00L164.00,10.00Z M221.00,0.00L263.00,50.00L395.00,50.00L409.00,55.00L419.00,76.00L401.00,96.00L313.00,98.00L411.00,214.00L487.00,214.00L422.00,139.00L457.00,123.00L482.00,88.00L482.00,48.00L463.00,19.00L417.00,0.00Z"/><path fill="#f2643c" d="M269.00,66.00L269.00,67.00L268.00,68.00L268.00,70.00L267.00,71.00L267.00,76.00L268.00,77.00L268.00,79.00L270.00,81.00L270.00,82.00L271.00,82.00L273.00,84.00L274.00,84.00L277.00,86.00L279.00,86.00L280.00,87.00L287.00,87.00L288.00,86.00L290.00,86.00L291.00,85.00L294.00,84.00L298.00,80.00L298.00,79.00L299.00,78.00L299.00,75.00L300.00,74.00L300.00,72.00L299.00,71.00L299.00,69.00L298.00,68.00L297.00,65.00L295.00,63.00L294.00,63.00L289.00,60.00L278.00,60.00L277.00,61.00L276.00,61.00L275.00,62.00L272.00,63.00Z"/></svg><b>ARLing</b></a><p class="site-foot-firma">ARLing s. r. o., company ID <span class="num">56583486</span>, Bratislava. Own server in the European Union. Software for companies, freelancers and individuals.</p></div><a class="site-cta" href="https://arling.sk/shop/" data-umami-event="shell_footer_cta">Shop<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></div>
+    <div class="site-foot-cols"><div data-skupina="firmy" data-blok="firemne"><p>Businesses and accountants</p><ul><li><a href="https://arling.sk/vsetko/en/#firmy" aria-label="All in this group: Businesses and accountants">All in this group</a></li></ul></div><div data-skupina="eshopy" data-blok="firemne"><p>Online shops and websites</p><ul><li><a href="https://arling.sk/vsetko/en/#eshopy" aria-label="All in this group: Online shops and websites">All in this group</a></li></ul></div><div data-skupina="hry" data-blok="spotrebitelske"><p>Games and puzzles</p><ul><li><a href="https://arling.sk/vsetko/en/#hry" aria-label="All in this group: Games and puzzles">All in this group</a></li></ul></div><div data-skupina="knihy" data-blok="spotrebitelske"><p>Books and gifts</p><ul><li><a href="https://arling.sk/vsetko/en/#knihy" aria-label="All in this group: Books and gifts">All in this group</a></li></ul></div><div><p>Company</p><ul><li><a href="https://arling.sk/how-we-work/en/">How we work</a></li><li><a href="https://arling.sk/notes/en/">Guides</a></li><li><a href="https://arling.sk/kontakt/en/">Contact</a></li><li><a href="https://arling.sk/ucet/en/">Account</a></li><li><a href="https://arling.sk/brand/en/">Brand</a></li><li><a href="https://arling.sk/podmienky/en/">Terms</a></li><li><a href="https://arling.sk/privacy/en/">Privacy</a></li><li><a href="https://arling.sk/odstupenie/en/">Withdraw from the contract here</a></li><li><a href="https://arling.sk/impressum/en/">Imprint</a></li></ul></div></div>
+    <p class="site-all"><a href="https://arling.sk/vsetko/en/" data-umami-event="shell_footer_all">Everything on one page<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></p>
+    <p class="site-dev" data-site-vyvojari><span>For developers</span><em>Free diagnostics for CORS, JWT, OAuth, Supabase and Stripe webhook errors.</em><a href="https://arling.sk/vsetko/en/#vyvojari">All developer tools<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></p>
+    <div class="site-foot-bottom"><p>ARLing s. r. o., Ivanská cesta 32E, 821 04 Bratislava, Slovakia. Company ID 56583486, VAT ID SK2122352100. <a href="mailto:support@arling.sk">support@arling.sk</a></p><p><a href="https://arling.sk/impressum/en/">Impressum</a> · <a href="https://arling.sk/llms.txt">llms.txt</a> · <a href="https://arling.sk/sitemap-index.xml">Sitemap</a></p></div>
+    <p class="site-foot-legal">Tools are provided as is, without warranty. Anonymous visit counts via self-hosted Umami. <a href="https://arling.sk/privacy/en/">Privacy</a> · <a href="https://arling.sk/podmienky/en/">Terms</a> · <a href="https://arling.sk/gdpr/en/">GDPR</a> · <a href="https://arling.sk/odstupenie/en/">Withdraw from the contract here</a></p>
+  </div>
+</footer>
+<script defer src="https://server.invalid/script.js" data-website-id="be534d51-4d01-4860-b267-9596d91606de"></script>
+<script>
+(function () {
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var hero = document.getElementById('hero');
+  if (reduce) {
+    document.querySelectorAll('.r, section').forEach(function (e) { e.classList.add('in'); });
+  }
+  if (!reduce && hero) {
+    requestAnimationFrame(function () {
+      hero.querySelectorAll('.r').forEach(function (e) { e.classList.add('in'); });
+    });
+  }
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (en) {
+      if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); }
+    });
+  }, { rootMargin: '0px 0px -12% 0px', threshold: 0.1 });
+  document.querySelectorAll('section').forEach(function (s) { io.observe(s); });
+
+  // nadpis clanku sa objavi po slovach, ako dobre vytlaceny titulok
+  var h1 = document.getElementById('h1');
+  if (h1) {
+    var i = 0;
+    Array.prototype.forEach.call(h1.querySelectorAll('.l'), function (line) {
+      var words = line.textContent.split(' ');
+      line.textContent = '';
+      words.forEach(function (w, k) {
+        var s = document.createElement('span');
+        s.className = 'w';
+        s.style.transitionDelay = (i++ * 0.06).toFixed(2) + 's';
+        s.textContent = w;
+        line.appendChild(s);
+        if (k < words.length - 1) line.appendChild(document.createTextNode(' '));
+      });
+    });
+    requestAnimationFrame(function () { h1.classList.add('in'); });
+  }
+
+  // bocny register sleduje, ktora cast clanku je v strede obrazovky
+})();
+</script>
+</body>
+</html>
