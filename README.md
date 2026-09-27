@@ -26,7 +26,7 @@ Card payments for licences, subscriptions and digital products are sold through 
 Example, from `subscribe.js`:
 
 ```
-POST https://server.invalid/subscribe/api/subscribe
+POST https://api.arling.workers.dev/subscribe/api/subscribe
 Content-Type: application/json
 
 {"email":"you@example.com","source":"hub","lang":"en","hp":""}

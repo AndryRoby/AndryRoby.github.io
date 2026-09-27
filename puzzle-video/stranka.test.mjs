@@ -20,8 +20,8 @@ test('CSP: len vlastné skripty, spojenie len na náš worker, blob na náhľad 
   const csp = (/http-equiv="Content-Security-Policy" content="([^"]+)"/.exec(html) || [])[1];
   assert.ok(csp);
   // Okrem vlastných skriptov len naša Umami analytika na homelabe (vkladá ops/design/obal.mjs).
-  assert.match(csp, /script-src 'self'( https:\/\/homelab\.server\.ts\.net)?(;|\s'sha256)/);
-  assert.match(csp, /connect-src 'self' https:\/\/arling-asistent\.arling\.workers\.dev( https:\/\/homelab\.server\.ts\.net)?;/);
+  assert.match(csp, /script-src 'self'( https:\/\/api\.arling\.workers\.dev)?(;|\s'sha256)/);
+  assert.match(csp, /connect-src 'self' https:\/\/arling-asistent\.arling\.workers\.dev( https:\/\/api\.arling\.workers\.dev)?;/);
   assert.match(csp, /img-src [^;]*blob:/);
   assert.match(csp, /media-src [^;]*blob:/);
   assert.ok(!/unsafe-inline|unsafe-eval/.test(csp));

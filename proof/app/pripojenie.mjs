@@ -3,7 +3,7 @@
 export function pripojenie(product, fallback) {
   const configured = document.querySelector('meta[name="arling-api"]')?.content;
   const endpoint = new URL(configured || fallback);
-  if (configured && endpoint.origin !== 'https://server.invalid' &&
+  if (configured && endpoint.origin !== 'https://api.arling.workers.dev' &&
       !(endpoint.protocol === 'http:' && ['localhost', '127.0.0.1'].includes(endpoint.hostname)))
     throw new Error('Unexpected API address.');
   const cross = endpoint.origin !== location.origin, key = `arling-${product}-session`;

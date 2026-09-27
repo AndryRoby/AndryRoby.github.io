@@ -256,7 +256,7 @@ test('CSP: only scripts from this site, and the hashes match the inline JSON-LD'
   }
   for (const m of HTML.matchAll(/<script[^>]*\bsrc="([^"]+)"/g)) {
     // Jediný cudzí skript je naša Umami analytika na homelabe (vkladá ops/design/obal.mjs).
-    const umami = m[1] === 'https://server.invalid/script.js';
+    const umami = m[1] === 'https://api.arling.workers.dev/script.js';
     assert.ok(m[1].startsWith('/') || m[1].startsWith('./') || umami, 'skript z tohto webu: ' + m[1]);
   }
 });

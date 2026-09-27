@@ -44,7 +44,7 @@
 export const API = 'https://arling-asistent.arling.workers.dev';
 /* Licencna sluzba na homelabe. Ta ista adresa ako /style/ucet.js pre workera a
    subscribe.js pre homelab; v CSP stranok uz stoji v connect-src. */
-export const LICENCIE = 'https://server.invalid/licence/api';
+export const LICENCIE = 'https://api.arling.workers.dev/licence/api';
 export const KLUC_ODOMKNUTE = 'titul:zaplatene';
 export const KLUC_CAKAJUCA = 'titul:cakajuca';
 export const KLUC_TEST = 'titul:test';
@@ -205,7 +205,7 @@ export function velkostSuboru(bytes) {
 export function platnaAdresaSuboru(url) {
   const u = String(url || '').trim();
   if (!u) return '';
-  if (/^https:\/\/(homelab\.server\.ts\.net|arling\.sk)\//.test(u)) return u;
+  if (/^https:\/\/(api\.arling\.workers\.dev|arling\.sk)\//.test(u)) return u;
   if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(u)) return '';
   if (u.startsWith('//')) return '';
   return u;

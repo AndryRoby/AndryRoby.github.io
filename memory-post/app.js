@@ -19,7 +19,7 @@
  */
 
 const API = 'https://arling-asistent.arling.workers.dev';
-const LICENCIE = 'https://server.invalid/licence/api';
+const LICENCIE = 'https://api.arling.workers.dev/licence/api';
 
 /* Centy pred zlavovym kodom. Musia sediet s ops/stripe/memory-post.mjs. */
 const CENY = { yearly: 3900, monthly: 490 };

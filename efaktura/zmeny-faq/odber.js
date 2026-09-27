@@ -6,7 +6,7 @@
 // Podpis overuje skript na homelabe (faq_odber.py); táto stránka ho len prenesie.
 // Žiadne inline skripty (CSP), meranie cez Umami len ak je načítané, nikdy neblokuje formulár.
 
-export const ENDPOINT = 'https://server.invalid/subscribe/api/subscribe';
+export const ENDPOINT = 'https://api.arling.workers.dev/subscribe/api/subscribe';
 export const ZDROJ = 'efaktura-faq';
 const EMAIL_RE = /^[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}$/;
 const TOKEN_RE = /^[0-9a-f]{32}$/;

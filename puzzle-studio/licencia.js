@@ -24,7 +24,7 @@ import { PLANY, jePlan, identitaZLicencie } from './jadro.mjs';
 
 export { ed25519Supported, todayIso };
 
-export const SLUZBA = 'https://server.invalid/licence/api';
+export const SLUZBA = 'https://api.arling.workers.dev/licence/api';
 export const PREDPONA = 'arling_licence_';
 export const KLUC_SESSION = 'puzzle-studio:session';
 /* Refresh this many days before the signed expiry. A monthly subscription is

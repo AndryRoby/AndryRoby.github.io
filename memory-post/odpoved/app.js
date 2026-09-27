@@ -20,7 +20,7 @@
 (function () {
   'use strict';
 
-  var LICENCIE = 'https://server.invalid/licence/api';
+  var LICENCIE = 'https://api.arling.workers.dev/licence/api';
   var KONCEPT = 'memory-post:draft:';
   var AUTOSAVE_MS = 3000;
 

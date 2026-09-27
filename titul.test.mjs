@@ -90,8 +90,8 @@ test('velkost suboru sa pise tak, ako ju clovek cita', () => {
 });
 
 test('odkaz na subor smie viest len k nam', () => {
-  assert.equal(platnaAdresaSuboru('https://server.invalid/licence/api/file/abc'),
-    'https://server.invalid/licence/api/file/abc');
+  assert.equal(platnaAdresaSuboru('https://api.arling.workers.dev/licence/api/file/abc'),
+    'https://api.arling.workers.dev/licence/api/file/abc');
   assert.equal(platnaAdresaSuboru('https://arling.sk/classics/ben-hur/files/x.pdf'), 'https://arling.sk/classics/ben-hur/files/x.pdf');
   assert.equal(platnaAdresaSuboru('files/abcdefgh12345678/Ben-Hur-eink.pdf'), 'files/abcdefgh12345678/Ben-Hur-eink.pdf');
   assert.equal(platnaAdresaSuboru('https://example.com/x.pdf'), '', 'cudzia domena nie');
@@ -106,7 +106,7 @@ test('subory z odpovede sluzby: len ok:true a len pouzitelne odkazy', () => {
     ok: true,
     product: 'ben-hur',
     files: [
-      { label: 'e-ink PDF, 157 x 210 mm', url: 'https://server.invalid/licence/api/file/1', bytes: 5609062 },
+      { label: 'e-ink PDF, 157 x 210 mm', url: 'https://api.arling.workers.dev/licence/api/file/1', bytes: 5609062 },
       { label: 'A4 PDF', url: 'https://zly.example/2.pdf', bytes: 10 },
       null,
     ],
@@ -128,7 +128,7 @@ const DATA = { titul: 'ben-hur', cesta: 'files/abcdefgh12345678/', subory: [
   { file: 'Ben-Hur-eink.pdf', format: 'eink', nazov: 'e-ink PDF, 157 x 210 mm', popis: '953 pages, 5.35 MB' },
   { file: 'Ben-Hur-A4.pdf', format: 'a4', nazov: 'A4 PDF', popis: '953 pages, 5.36 MB' },
 ] };
-const PODPISANY = 'https://server.invalid/licence/api/download?p=ben-hur&f=Ben-Hur-eink.pdf&exp=1790208000&sig=' + 'a'.repeat(64);
+const PODPISANY = 'https://api.arling.workers.dev/licence/api/download?p=ben-hur&f=Ben-Hur-eink.pdf&exp=1790208000&sig=' + 'a'.repeat(64);
 
 function fetchDvojnik(odpoved, { ok = true, hodVynimku = false } = {}) {
   const volania = [];
@@ -143,7 +143,7 @@ function fetchDvojnik(odpoved, { ok = true, hodVynimku = false } = {}) {
 
 test('odkazy zo sluzby: dotaz ide na koncovy bod licencnej sluzby', async () => {
   const f = fetchDvojnik({ ok: true, product: 'ben-hur', email: 'kto@example.com', week: '2026-W39',
-    files: [{ label: 'e-ink PDF', url: 'https://server.invalid/licence/api/file/1', bytes: 5609062 }] });
+    files: [{ label: 'e-ink PDF', url: 'https://api.arling.workers.dev/licence/api/file/1', bytes: 5609062 }] });
   const zo = await odkazyZoSluzby('cs_test_123456789012', { fetch: f });
   assert.equal(f.volania[0], LICENCIE + '/purchase/links?session_id=cs_test_123456789012');
   assert.equal(zo.subory.length, 1);

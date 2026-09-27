@@ -26,7 +26,7 @@
 (function () {
   'use strict';
 
-  var ENDPOINT = 'https://server.invalid/subscribe/api/dopyt';
+  var ENDPOINT = 'https://api.arling.workers.dev/subscribe/api/dopyt';
 
   function meraj(source) {
     try {
