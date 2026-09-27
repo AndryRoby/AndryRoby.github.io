@@ -1,0 +1,155 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "island",
+  "type": "registry:ui",
+  "title": "Island",
+  "description": "A status pill that reshapes between states, Dynamic Island style: width and height move on one spring with round ends, the old content leaves as the new one enters part by part, and the spinner and the check that draws itself are functions of time. Screen readers get each state from a polite status region; nothing takes focus.",
+  "author": "ARLing s. r. o. (https://arling.sk)",
+  "registryDependencies": [
+    "https://arling.sk/motion/r/core.json"
+  ],
+  "files": [
+    {
+      "path": "registry/arling/lib/arling-motion-island.js",
+      "content": "'use strict';\n// ARLing Motion: island. MIT licence, https://arling.sk/motion/ . Installed from the ARLing\n// Motion registry (source: components/island/island.js). Plain JavaScript; the .d.ts next to it types the exports.\n/*\n * ARLing Motion: Island.\n * A status pill that reshapes between states, Dynamic Island style. Width and height move on the\n * morph spring (one small overshoot, under 3 %) and the ends stay fully round at every size. The\n * old content leaves at once and the new one enters part by part (icon, title, detail) with a\n * short stagger. The spinner turns and the check draws itself as functions of time (rotation and\n * stroke-dashoffset from the seconds since the state appeared), so seek(t) paints any moment\n * exactly and a video frame equals the live frame. Sizes are measured once per show() from the\n * new content (getBoundingClientRect), never per frame.\n *\n * Markup:\n *   <div class=\"am-island\"></div>\n * The component adds the parts. Screen readers get the title and detail of the current state in\n * a polite status region (role=\"status\"); the pill, its icons and the animated text are\n * aria-hidden. Nothing in the island takes focus. The root centres the pill and grows it\n * downward from its top edge; place the root where the island belongs (for example fixed at the\n * top of the page).\n *\n *   const island = createIsland({ el });\n *   island.show({ icon: 'spinner', title: 'Paying…' });\n *   island.show({ icon: 'check', title: 'Payment received', tone: 'success' });\n *   island.show({ icon: 'download', title: 'Download ready', detail: 'guide.pdf', tone: 'accent' });\n *   island.hide();\n * Calls are expected in time order. With prefers-reduced-motion every state shows at once and\n * the spinner stands still.\n * MIT licence.\n */\nimport { track, presence, stagger, applyPresence, driver, spring, springStep, settleTime, steps, attr, JUMP, PRESETS } from './arling-motion';\n\nexport const ICONS = ['spinner', 'check', 'download', 'dot'];\nexport const TONES = ['neutral', 'success', 'accent'];\n/** Seconds between the entrances of icon, title and detail. */\nexport const STAGGER = 0.04;\n/** The new content starts entering this long after show(), while the old content leaves. */\nexport const ENTER_DELAY = 0.08;\n/** The check starts drawing (and the download arrow dropping) this long after its icon enters. */\nexport const DRAW_DELAY = 0.1;\n/** Seconds per turn of the spinner. */\nexport const SPIN_PERIOD = 0.8;\n/** Stroke drawing: critically damped, so the line never runs past its end. */\nexport const DRAW = spring(0.42, 1);\n/** hide(): the pill fades and scales down on this spring while it folds into a circle. */\nexport const HIDE = spring(0.5, 1);\n/** Scale of the pill when it is not shown; it grows from here as it appears. */\nexport const SCALE_FROM = 0.6;\n\nconst clamp01 = (x) => (x < 0 ? 0 : x > 1 ? 1 : x);\nconst round2 = (v) => Math.round(v * 100) / 100;\nconst px = (v) => `${round2(v)}px`;\nconst SVG = 'http://www.w3.org/2000/svg';\nconst PART = { dyIn: 5, dyOut: -4, blur: 6, scaleFrom: 0.94 };\nconst SHOWN = { opacity: 1, blur: 0, y: 0, scale: 1, visible: true };\nconst GONE = { opacity: 0, blur: 0, y: 0, scale: 1, visible: false };\n/** Drop of the download arrow into its tray, in icon units (24 per icon). */\nconst DROP = 7;\n\n/** Spinner rotation in degrees after `seconds` of spinning: a pure function of time. */\nexport function spinAngle(seconds) {\n  const turns = Math.max(0, seconds) / SPIN_PERIOD;\n  return Math.round((turns - Math.floor(turns)) * 3600) / 10;\n}\n\n/** A state with its defaults: unknown icons become no icon, unknown tones become neutral. */\nexport function normalizeState(s) {\n  const o = s || {};\n  return {\n    icon: ICONS.includes(o.icon) ? o.icon : null,\n    title: o.title === undefined || o.title === null ? '' : String(o.title),\n    detail: o.detail === undefined || o.detail === null ? '' : String(o.detail),\n    tone: TONES.includes(o.tone) ? o.tone : 'neutral',\n  };\n}\n\n/** Size from the text length, used only when there is no layout to measure (hidden ancestor, server). */\nfunction estimate(s) {\n  const chars = Math.max(s.title.length, s.detail.length * 0.86);\n  return { w: Math.round((s.icon ? 56 : 32) + chars * 7.4), h: s.detail ? 48 : 36 };\n}\n\n/**\n * createIsland({ el, clock, reduced })\n * State: { icon?: 'spinner' | 'check' | 'download' | 'dot', title, detail?, tone?: 'neutral' | 'success' | 'accent' }.\n * Returns { show, hide, state, seek, settled, destroy, driver, keep, el, pill }.\n */\nexport function createIsland(o) {\n  const el = o.el;\n  const doc = el.ownerDocument || document;\n  const make = (cls, text) => {\n    const s = doc.createElement('span');\n    s.className = cls;\n    if (text !== undefined) s.textContent = text;\n    return s;\n  };\n  const svg = (tag, attrs) => {\n    const s = doc.createElementNS(SVG, tag);\n    for (const [k, v] of Object.entries(attrs)) s.setAttribute(k, v);\n    return s;\n  };\n\n  el.textContent = '';\n  el.classList.add('am-island');\n  const sr = make('am-island-sr');\n  attr(sr, 'role', 'status');\n  attr(sr, 'aria-live', 'polite');\n  attr(sr, 'aria-atomic', 'true');\n  const pill = make('am-island-pill');\n  attr(pill, 'aria-hidden', 'true');\n  el.appendChild(sr);\n  el.appendChild(pill);\n\n  /** One state: its content element, the parts that enter one after another, its icon moves. */\n  function build(s) {\n    const L = { state: s, el: make('am-island-content'), parts: [], pres: [], enter: [], tIn: 0, tOut: Infinity, tDraw: null, spin: null, draw: null, drop: null };\n    attr(L.el, 'data-icon', s.icon || 'none');\n    attr(L.el, 'data-tone', s.tone);\n    if (s.icon) {\n      const box = make('am-island-icon');\n      L.el.appendChild(box);\n      L.parts.push(box);\n      if (s.icon === 'dot') box.appendChild(make('am-island-dot'));\n      else {\n        const g = svg('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2.5', 'stroke-linecap': 'round', 'stroke-linejoin': 'round', focusable: 'false' });\n        box.appendChild(g);\n        if (s.icon === 'spinner') {\n          g.appendChild(svg('circle', { class: 'am-island-track', cx: '12', cy: '12', r: '9' }));\n          g.appendChild(svg('path', { d: 'M12 3a9 9 0 0 1 9 9' }));\n          L.spin = g;\n        } else if (s.icon === 'check') {\n          L.draw = svg('path', { class: 'am-island-draw', d: 'M6 12.5l4 4 8-8.5', pathLength: '1' });\n          g.appendChild(L.draw);\n        } else {\n          L.drop = svg('g', {});\n          L.drop.appendChild(svg('path', { d: 'M12 4.5v10M7.5 10l4.5 4.5 4.5-4.5' }));\n          g.appendChild(L.drop);\n          g.appendChild(svg('path', { d: 'M5.5 19.5h13' }));\n        }\n      }\n    }\n    const text = make('am-island-text');\n    const title = make('am-island-title', s.title);\n    text.appendChild(title);\n    L.parts.push(title);\n    if (s.detail) {\n      const detail = make('am-island-detail', s.detail);\n      text.appendChild(detail);\n      L.parts.push(detail);\n    }\n    L.el.appendChild(text);\n    L.pres = L.parts.map(() => presence(false, PART));\n    return L;\n  }\n\n  /** The natural size of a state's content, once per show(); the pill's own scale is left out. */\n  function measure(L) {\n    const was = pill.style.transform;\n    pill.style.transform = 'none';\n    const r = L.el.getBoundingClientRect();\n    pill.style.transform = was;\n    const e = estimate(L.state);\n    return { w: Math.ceil(r.width) || e.w, h: Math.ceil(r.height) || e.h };\n  }\n\n  const w = track(0, PRESETS.morph);\n  const hgt = track(0, PRESETS.morph);\n  const vis = track(0, PRESETS.enter);\n  const current = steps(null); // the state in force: a layer, or null when hidden\n  const layers = [];\n  let endT = -Infinity;\n  const mark = (t) => { if (t > endT) endT = t; };\n  const drawSettle = Math.max(settleTime(DRAW), settleTime(PRESETS.snappy));\n  const settledAll = (t) => w.settled(t) && hgt.settled(t) && vis.settled(t)\n    && layers.every((L) => L.pres.every((p) => p.settled(t)) && (L.tDraw === null || t >= L.tDraw + drawSettle));\n  const spinning = (t) => { const L = current.at(t); return !!(L && L.spin); };\n\n  let spoken = '';\n  function paint(t, { reduced }) {\n    const at = (tr) => (reduced ? tr.target(t) : tr.at(t));\n    const v = at(vis);\n    // opaque from 60 % of the way in: a quick fade in, and on hide it fades late, once it is small\n    const opacity = clamp01(v / 0.6);\n    const scale = SCALE_FROM + (1 - SCALE_FROM) * v;\n    pill.style.visibility = opacity > 0.002 ? 'visible' : 'hidden';\n    pill.style.opacity = String(Math.round(opacity * 1000) / 1000);\n    pill.style.width = px(Math.max(0, at(w)));\n    pill.style.height = px(Math.max(0, at(hgt)));\n    pill.style.transform = Math.abs(scale - 1) < 1e-4 ? '' : `scale(${scale.toFixed(4)})`;\n\n    const cur = current.at(t);\n    for (const L of layers) {\n      const on = L === cur;\n      L.parts.forEach((part, i) => {\n        // a part whose entrance came after its state was replaced never shows\n        const s = reduced ? (on ? SHOWN : GONE) : L.enter[i] >= L.tOut ? GONE : L.pres[i].at(t);\n        applyPresence(part, s);\n      });\n      if (L.spin) L.spin.style.transform = `rotate(${reduced ? 0 : spinAngle(t - L.tIn)}deg)`;\n      if (L.draw) L.draw.style.strokeDashoffset = String(reduced ? 0 : Math.round((1 - clamp01(springStep(DRAW, t - L.tDraw))) * 1e4) / 1e4);\n      if (L.drop) L.drop.style.transform = `translateY(${reduced ? 0 : round2(-(1 - springStep(PRESETS.snappy, t - L.tDraw)) * DROP)}px)`;\n    }\n    attr(el, 'data-state', cur ? 'shown' : 'hidden');\n    const text = cur ? (cur.state.detail ? `${cur.state.title}, ${cur.state.detail}` : cur.state.title) : '';\n    if (text !== spoken) {\n      sr.textContent = text;\n      spoken = text;\n    }\n  }\n\n  function compact(t) {\n    const cur = current.at(t);\n    for (let i = layers.length - 1; i >= 0; i--) {\n      if (layers[i] !== cur) {\n        layers[i].el.remove();\n        layers.splice(i, 1);\n      }\n    }\n    w.compact(t);\n    hgt.compact(t);\n    vis.compact(t);\n    current.compact();\n  }\n\n  function draw(t, st) {\n    paint(t, st);\n    if (!api.keep && t >= endT && settledAll(t)) compact(t);\n  }\n\n  const d = driver(draw, { clock: o.clock, reduced: o.reduced });\n  d.busy = (t) => t < endT || !settledAll(t) || spinning(t);\n  const when = (opt) => (opt && opt.t !== undefined ? opt.t : d.now());\n  const commit = () => { paint(d.now(), { reduced: d.reduced }); d.kick(); };\n\n  /** The old content leaves at t; parts that had not started entering never will. */\n  function leave(L, t) {\n    L.tOut = t;\n    L.pres.forEach((p, i) => { if (L.enter[i] < t) p.exit(t); });\n  }\n\n  /** Shows a state. opt: { t } to schedule it (demo, video). */\n  function show(state, opt = {}) {\n    const t = when(opt);\n    const L = build(normalizeState(state));\n    pill.appendChild(L.el);\n    const size = measure(L);\n    const prev = current.last;\n    if (prev) leave(prev, t);\n    // from nothing on screen, the pill starts as a circle of the new height and widens\n    if (clamp01(vis.at(t)) < 0.002) {\n      w.to(t, size.h, JUMP);\n      hgt.to(t, size.h, JUMP);\n    }\n    w.to(t, size.w);\n    hgt.to(t, size.h);\n    if (vis.target(Infinity) !== 1) vis.to(t, 1, PRESETS.enter);\n    L.tIn = t;\n    L.enter = stagger(L.pres, t + ENTER_DELAY, STAGGER);\n    if (L.draw || L.drop) {\n      L.tDraw = L.enter[0] + DRAW_DELAY;\n      mark(L.tDraw);\n    }\n    mark(L.enter[L.enter.length - 1]);\n    current.set(t, L);\n    layers.push(L);\n    commit();\n    return api;\n  }\n\n  /** Hides the island: the content leaves, the pill folds into a circle and fades. opt: { t }. */\n  function hide(opt = {}) {\n    const t = when(opt);\n    const prev = current.last;\n    if (!prev) return api;\n    leave(prev, t);\n    current.set(t, null);\n    w.to(t, hgt.target(Infinity));\n    vis.to(t, 0, HIDE);\n    mark(t);\n    commit();\n    return api;\n  }\n\n  const api = {\n    el,\n    pill,\n    driver: d,\n    keep: false,\n    show,\n    hide,\n    /** The last state shown (normalized), or null after hide(). */\n    state: () => (current.last ? { ...current.last.state } : null),\n    seek: (t) => paint(t, { reduced: d.reduced }),\n    settled: (t) => t >= endT && settledAll(t) && !spinning(t),\n    destroy() { d.stop(); },\n  };\n  paint(d.now(), { reduced: d.reduced });\n  return api;\n}\n",
+      "type": "registry:lib"
+    },
+    {
+      "path": "registry/arling/lib/arling-motion-island.d.ts",
+      "content": "// ARLing Motion: island. MIT licence, https://arling.sk/motion/ . Types for the plain JavaScript file next to this one.\nexport declare const ICONS: any;\nexport declare const TONES: any;\nexport declare const STAGGER: any;\nexport declare const ENTER_DELAY: any;\nexport declare const DRAW_DELAY: any;\nexport declare const SPIN_PERIOD: any;\nexport declare const DRAW: any;\nexport declare const HIDE: any;\nexport declare const SCALE_FROM: any;\nexport declare function spinAngle(...args: any[]): any;\nexport declare function normalizeState(...args: any[]): any;\nexport declare function createIsland(...args: any[]): any;\n",
+      "type": "registry:lib"
+    },
+    {
+      "path": "registry/arling/ui/motion-island.tsx",
+      "content": "'use client';\n// ARLing Motion: Island for React. A thin wrapper: the vanilla component owns the pill springs,\n// the content that leaves and enters, the spinner, the check that draws itself and the status\n// text for screen readers. In the registry the core lives at '@/lib/arling-motion' and this\n// logic at '@/lib/arling-motion-island'.\nimport * as React from 'react';\nimport { createIsland } from '@/lib/arling-motion-island';\n\nexport type IslandIcon = 'spinner' | 'check' | 'download' | 'dot';\nexport type IslandTone = 'neutral' | 'success' | 'accent';\n\nexport interface IslandState {\n  icon?: IslandIcon;\n  title: string;\n  detail?: string;\n  tone?: IslandTone;\n}\n\ntype IslandApi = { show: (s: IslandState) => unknown; hide: () => unknown; destroy: () => void };\n\nexport interface IslandProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'children'> {\n  /** What the island shows; null or undefined hides it. A new state reshapes the pill. */\n  state?: IslandState | null;\n  reducedMotion?: boolean;\n}\n\nconst keyOf = (s?: IslandState | null) => (s ? JSON.stringify([s.icon ?? null, s.title, s.detail ?? '', s.tone ?? 'neutral']) : '');\n\nexport function Island({ state, reducedMotion, className, ...rest }: IslandProps) {\n  const ref = React.useRef<HTMLDivElement>(null);\n  const apiRef = React.useRef<IslandApi | null>(null);\n  const stateRef = React.useRef(state);\n  stateRef.current = state;\n  // the state the vanilla island shows now, so an equal state does not replay the morph\n  const shownRef = React.useRef('');\n  const key = keyOf(state);\n\n  React.useEffect(() => {\n    if (!ref.current) return;\n    const api = createIsland({ el: ref.current, reduced: reducedMotion }) as unknown as IslandApi;\n    apiRef.current = api;\n    const s = stateRef.current;\n    if (s) api.show(s);\n    shownRef.current = keyOf(s);\n    return () => {\n      api.destroy();\n      apiRef.current = null;\n    };\n  }, [reducedMotion]);\n\n  React.useEffect(() => {\n    const api = apiRef.current;\n    if (!api || key === shownRef.current) return;\n    shownRef.current = key;\n    const s = stateRef.current;\n    if (s) api.show(s);\n    else api.hide();\n  }, [key]);\n\n  return <div ref={ref} className={['am-island', className].filter(Boolean).join(' ')} {...rest} />;\n}\n\nexport default Island;\n",
+      "type": "registry:ui"
+    }
+  ],
+  "css": {
+    "@layer components": {
+      ".am-island": {
+        "position": "relative",
+        "display": "flex",
+        "justify-content": "center",
+        "align-items": "flex-start",
+        "pointer-events": "none"
+      },
+      ".am-island-pill": {
+        "position": "relative",
+        "display": "block",
+        "flex": "none",
+        "width": "0",
+        "height": "0",
+        "overflow": "hidden",
+        "border-radius": "9999px",
+        "background": "var(--am-island-bg, var(--primary, #171717))",
+        "color": "var(--am-island-fg, var(--primary-foreground, #fafafa))",
+        "box-shadow": "0 1px 2px rgb(0 0 0 / 0.1), 0 10px 24px -8px rgb(0 0 0 / 0.3)",
+        "transform-origin": "50% 0",
+        "visibility": "hidden"
+      },
+      ".am-island-content": {
+        "--am-island-tone": "var(--am-island-fg, var(--primary-foreground, #fafafa))",
+        "--am-island-on-tone": "var(--am-island-bg, var(--primary, #171717))",
+        "position": "absolute",
+        "top": "50%",
+        "left": "50%",
+        "display": "flex",
+        "align-items": "center",
+        "gap": "0.625rem",
+        "box-sizing": "border-box",
+        "width": "max-content",
+        "max-width": "min(22rem, calc(100vw - 4rem))",
+        "padding": "0.375rem 1rem 0.375rem 0.375rem",
+        "transform": "translate(-50%, -50%)",
+        "font-size": "0.875rem",
+        "line-height": "1.25rem",
+        "text-align": "left",
+        "white-space": "nowrap"
+      },
+      ".am-island-content[data-icon=\"none\"]": {
+        "padding-left": "1rem"
+      },
+      ".am-island-content[data-tone=\"success\"]": {
+        "--am-island-tone": "var(--am-success, #16a34a)",
+        "--am-island-on-tone": "var(--am-success-foreground, #ffffff)"
+      },
+      ".am-island-content[data-tone=\"accent\"]": {
+        "--am-island-tone": "var(--am-accent, #2563eb)",
+        "--am-island-on-tone": "var(--am-accent-foreground, #ffffff)"
+      },
+      ".am-island-icon": {
+        "display": "grid",
+        "place-items": "center",
+        "flex": "none",
+        "width": "1.5rem",
+        "height": "1.5rem",
+        "border-radius": "9999px",
+        "color": "var(--am-island-tone)"
+      },
+      ".am-island-content[data-icon=\"check\"] .am-island-icon, .am-island-content[data-icon=\"download\"] .am-island-icon": {
+        "background": "var(--am-island-tone)",
+        "color": "var(--am-island-on-tone)"
+      },
+      ".am-island-icon svg": {
+        "display": "block",
+        "width": "1rem",
+        "height": "1rem",
+        "overflow": "hidden",
+        "transform-origin": "50% 50%"
+      },
+      ".am-island-content[data-icon=\"spinner\"] .am-island-icon svg": {
+        "width": "1.25rem",
+        "height": "1.25rem"
+      },
+      ".am-island-track": {
+        "opacity": "0.25"
+      },
+      ".am-island-draw": {
+        "stroke-dasharray": "1",
+        "stroke-dashoffset": "1"
+      },
+      ".am-island-dot": {
+        "display": "block",
+        "width": "0.5rem",
+        "height": "0.5rem",
+        "border-radius": "9999px",
+        "background": "var(--am-island-tone)"
+      },
+      ".am-island-text": {
+        "display": "grid",
+        "min-width": "0"
+      },
+      ".am-island-title, .am-island-detail": {
+        "display": "block",
+        "overflow": "hidden",
+        "text-overflow": "ellipsis"
+      },
+      ".am-island-title": {
+        "font-weight": "500"
+      },
+      ".am-island-detail": {
+        "font-size": "0.75rem",
+        "line-height": "1rem",
+        "color": "color-mix(in oklab, var(--am-island-fg, var(--primary-foreground, #fafafa)) 68%, var(--am-island-bg, var(--primary, #171717)))"
+      },
+      ".am-island-sr": {
+        "position": "absolute",
+        "width": "1px",
+        "height": "1px",
+        "overflow": "hidden",
+        "clip": "rect(0 0 0 0)",
+        "clip-path": "inset(50%)",
+        "white-space": "nowrap"
+      }
+    }
+  },
+  "docs": "Island from ARLing Motion (MIT).\nReact: import { Island } from \"@/components/ui/motion-island\".\nThe logic is in lib/arling-motion-island.js (typed by the .d.ts next to it) and works without React: createIsland on your own markup.\nStyles were added to your global CSS under @layer components (Tailwind v4).\nWith Tailwind v3 or no Tailwind, add https://arling.sk/motion/components/island/island.css to your styles instead.\nLive demo and docs: https://arling.sk/motion/#island",
+  "categories": [
+    "motion",
+    "island",
+    "status",
+    "notification",
+    "payment"
+  ]
+}

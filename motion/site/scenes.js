@@ -35,6 +35,9 @@ import { createOtp } from '../components/otp/otp.js';
 import { demo as otpDemo } from '../components/otp/demo.js';
 import { createDropzone } from '../components/dropzone/dropzone.js';
 import { demo as dropzoneDemo } from '../components/dropzone/demo.js';
+import { createIsland } from '../components/island/island.js';
+import { demo as islandDemo, PAYMENT } from '../components/island/demo.js';
+import { beats } from '../src/core.js';
 
 export const REGISTRY = 'https://arling.sk/motion/r/';
 export const installCommand = (name) => `npx shadcn@latest add ${REGISTRY}${name}.json`;
@@ -121,14 +124,14 @@ const hero = {
   build() {
     const t = uid('hero-title');
     return [
-      h('button', { class: 'am-dialog-trigger mo-hero-trigger', type: 'button' }, 'Get 12 free components'),
+      h('button', { class: 'am-dialog-trigger mo-hero-trigger', type: 'button' }, 'Get 14 free components'),
       h('div', { class: 'am-dialog-root', hidden: true },
         h('div', { class: 'am-dialog-backdrop' }),
         h('div', { class: 'am-dialog-frame' },
           h('div', { class: 'am-dialog', role: 'dialog', 'aria-labelledby': t },
             h('div', { class: 'am-dialog-content' },
               h('p', { class: 'mo-card-kicker' }, 'ARLing Motion'),
-              h('h3', { class: 'am-dialog-title', id: t }, '12 components, MIT licence'),
+              h('h3', { class: 'am-dialog-title', id: t }, '14 components, MIT licence'),
               h('p', { class: 'am-dialog-description' },
                 'Each one is a real component for your product, with a 4 second demo timeline written into it.'),
               h('code', { class: 'mo-card-cmd' }, HERO_CMD),
@@ -197,7 +200,7 @@ const hero = {
   },
 };
 
-// ------------------------------------------------------------------ the twelve components
+// ------------------------------------------------------------------ the components
 
 const dialog = {
   title: 'Dialog',
@@ -340,7 +343,7 @@ const accordion = {
         h('div', { class: 'am-accordion-content' }, ...rows.map((r) => h('p', {}, r)))));
     return [
       h('div', { class: 'am-accordion' },
-        item('What is free?', ['All twelve components and the core.', 'MIT licence, for any project.', 'No account, no key.']),
+        item('What is free?', ['All fourteen components and the core.','MIT licence, for any project.', 'No account, no key.']),
         item('Do I need React?', ['No. Each component is plain JavaScript.', 'The React files are thin wrappers.', 'Both use the same logic.']),
         item('How does the video work?', ['Every component has a 4 second demo.', 'seek(t) paints any moment of it.', 'The last frame equals the first.'])),
     ];
@@ -447,9 +450,56 @@ const dropzone = {
   demo: dropzoneDemo,
 };
 
+// The island sits at the top of the stage like a status pill on a sales page. Live, the button
+// runs the demo's made-up payment once (timers, so reduced motion shows every state too);
+// nothing is charged.
+const islandScene = {
+  title: 'Island',
+  height: 180,
+  align: 'top',
+  build() {
+    return [
+      h('div', { class: 'mo-island-scene' },
+        h('div', { class: 'mo-island-slot' }, h('div', { class: 'am-island' })),
+        h('button', { class: 'mo-btn mo-island-trigger', type: 'button' }, 'Simulate a payment')),
+    ];
+  },
+  create(stage, o = {}) {
+    const button = q(stage, '.mo-island-trigger');
+    const api = createIsland({ el: q(stage, '.am-island'), clock: o.clock, reduced: o.reduced });
+    api.trigger = button;
+    const B = beats(120);
+    const timers = [];
+    // Live stage only (no clock given): rest on a finished state, so the row is never an empty box.
+    // Demo and video builds pass a clock and keep the demo's own first frame, so the loop stays seamless.
+    const REST = { icon: 'check', title: 'Payment received', tone: 'success' };
+    const rest = () => { if (!o.clock) api.show(REST, { t: api.driver.now() - 10 }); };
+    rest();
+    const onClick = () => {
+      if (timers.length) return; // one run at a time
+      PAYMENT.forEach(([b, state], i) => {
+        timers.push(setTimeout(() => {
+          if (state) api.show(state);
+          else api.hide();
+          if (i === PAYMENT.length - 1) {
+            timers.push(setTimeout(() => { timers.length = 0; if (!o.clock) api.show(REST); }, 900));
+          }
+        }, B(b) * 1000));
+      });
+    };
+    button.addEventListener('click', onClick);
+    return withCleanup(api, () => {
+      button.removeEventListener('click', onClick);
+      for (const id of timers) clearTimeout(id);
+      timers.length = 0;
+    });
+  },
+  demo: islandDemo,
+};
+
 /** Every scene by name; GALLERY is the order of the component rows on the page. */
-export const SCENES = { hero, dialog, tabs, tooltip, popover, toast, switch: switchScene, number: numberScene, accordion, command, drawer, carousel, otp, dropzone };
-export const GALLERY = ['dialog', 'tabs', 'tooltip', 'popover', 'toast', 'switch', 'accordion', 'command', 'drawer', 'carousel', 'otp', 'dropzone', 'number'];
+export const SCENES = { hero, dialog, tabs, tooltip, popover, toast, switch: switchScene, number: numberScene, island: islandScene, accordion, command, drawer, carousel, otp, dropzone };
+export const GALLERY = ['dialog', 'tabs', 'tooltip', 'popover', 'toast', 'switch', 'accordion', 'command', 'drawer', 'carousel', 'otp', 'dropzone', 'number', 'island'];
 
 // ------------------------------------------------------------------ one frame strip for "three outputs"
 

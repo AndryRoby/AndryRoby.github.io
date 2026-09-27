@@ -4,7 +4,7 @@ Motion components that also render as video.
 
 Each component is a real UI component for your product that follows the WAI-ARIA pattern for keyboard and screen readers (roles, states, focus, reduced motion), with a short demo timeline written into it. The same file runs live on your site and carries a demo timeline that a headless browser can render frame by frame, so it can become a clip for Shorts, Reels or a launch post. This repository has no render script; one is planned for ARLing Motion Pro, which is not on sale yet.
 
-Status: early. The core (`src/core.js`) and twelve components are built and tested in Node with a simulated DOM; checks in real browsers and with screen readers are in progress. Site: https://arling.sk/motion/
+Status: early. The core (`src/core.js`) and fourteen components are built and tested in Node with a simulated DOM; checks in real browsers and with screen readers are in progress. Site: https://arling.sk/motion/
 
 ## Install
 
@@ -12,7 +12,7 @@ Status: early. The core (`src/core.js`) and twelve components are built and test
 npx shadcn@latest add https://arling.sk/motion/r/tabs.json
 ```
 
-Any of: dialog, tabs, tooltip, popover, toast, switch, accordion, command, drawer, carousel, otp, dropzone. The registry index is `r/registry.json`; `node build-registry.mjs` rebuilds `r/`, `springs.css` and `site/components.css` from the sources (`--check` fails when they are stale). Without React, load `components/<name>/<name>.css` and import `create<Name>` from `components/<name>/<name>.js`.
+Any of: dialog, tabs, tooltip, popover, toast, switch, accordion, command, drawer, carousel, otp, dropzone, number, island. The registry index is `r/registry.json`; `node build-registry.mjs` rebuilds `r/`, `springs.css` and `site/components.css` from the sources (`--check` fails when they are stale). Without React, load `components/<name>/<name>.css` and import `create<Name>` from `components/<name>/<name>.js`.
 
 ## Site and demo canvas
 

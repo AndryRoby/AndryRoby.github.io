@@ -1,0 +1,141 @@
+/* ARLing Motion: Island. The pill's size, the content and the icons move by the core (inline styles), no CSS transitions or animations. */
+
+.am-island {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  pointer-events: none;
+}
+
+/* Fully round ends at every size: the radius is larger than any height the pill reaches. */
+.am-island-pill {
+  position: relative;
+  display: block;
+  flex: none;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  border-radius: 9999px;
+  background: var(--am-island-bg, var(--primary, #171717));
+  color: var(--am-island-fg, var(--primary-foreground, #fafafa));
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.1), 0 10px 24px -8px rgb(0 0 0 / 0.3);
+  transform-origin: 50% 0;
+  visibility: hidden;
+}
+
+/* One state, centred in the pill at its natural size, so a narrower pill clips it evenly. */
+.am-island-content {
+  --am-island-tone: var(--am-island-fg, var(--primary-foreground, #fafafa));
+  --am-island-on-tone: var(--am-island-bg, var(--primary, #171717));
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  box-sizing: border-box;
+  width: max-content;
+  max-width: min(22rem, calc(100vw - 4rem));
+  padding: 0.375rem 1rem 0.375rem 0.375rem;
+  transform: translate(-50%, -50%);
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.am-island-content[data-icon="none"] {
+  padding-left: 1rem;
+}
+
+.am-island-content[data-tone="success"] {
+  --am-island-tone: var(--am-success, #16a34a);
+  --am-island-on-tone: var(--am-success-foreground, #ffffff);
+}
+
+.am-island-content[data-tone="accent"] {
+  --am-island-tone: var(--am-accent, #2563eb);
+  --am-island-on-tone: var(--am-accent-foreground, #ffffff);
+}
+
+.am-island-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 9999px;
+  color: var(--am-island-tone);
+}
+
+/* The check and the download arrow sit on a disc in the tone colour. */
+.am-island-content[data-icon="check"] .am-island-icon,
+.am-island-content[data-icon="download"] .am-island-icon {
+  background: var(--am-island-tone);
+  color: var(--am-island-on-tone);
+}
+
+.am-island-icon svg {
+  display: block;
+  width: 1rem;
+  height: 1rem;
+  overflow: hidden;
+  transform-origin: 50% 50%;
+}
+
+.am-island-content[data-icon="spinner"] .am-island-icon svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.am-island-track {
+  opacity: 0.25;
+}
+
+/* pathLength is 1, so stroke-dashoffset 1 hides the check and 0 shows all of it. */
+.am-island-draw {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+}
+
+.am-island-dot {
+  display: block;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 9999px;
+  background: var(--am-island-tone);
+}
+
+.am-island-text {
+  display: grid;
+  min-width: 0;
+}
+
+.am-island-title,
+.am-island-detail {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.am-island-title {
+  font-weight: 500;
+}
+
+.am-island-detail {
+  font-size: 0.75rem;
+  line-height: 1rem;
+  color: color-mix(in oklab, var(--am-island-fg, var(--primary-foreground, #fafafa)) 68%, var(--am-island-bg, var(--primary, #171717)));
+}
+
+/* Read by screen readers, not shown. */
+.am-island-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
