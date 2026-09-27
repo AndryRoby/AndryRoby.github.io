@@ -1,0 +1,116 @@
+/* ARLing Motion: Marquee. The track moves by the core (inline transform), no CSS transitions or animations. */
+
+.am-marquee {
+  --am-marquee-gap: 0.75rem;
+  --am-marquee-fade: 2rem;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+}
+
+/* The window onto the band. The edges fade out, so items come and go softly. */
+.am-marquee-viewport {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  padding: 0.375rem 0;
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 var(--am-marquee-fade), #000 calc(100% - var(--am-marquee-fade)), transparent);
+  mask-image: linear-gradient(to right, transparent, #000 var(--am-marquee-fade), #000 calc(100% - var(--am-marquee-fade)), transparent);
+}
+
+/* clip, where supported, also keeps focus from scrolling the viewport */
+.am-marquee .am-marquee-viewport {
+  overflow: clip;
+}
+
+/* Reduced motion: the band stands and scrolls sideways like a normal list. */
+.am-marquee[data-motion="reduced"] .am-marquee-viewport {
+  overflow-x: auto;
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+
+.am-marquee-track {
+  display: flex;
+  width: max-content;
+  will-change: transform;
+}
+
+/* One copy of the content. The space after the last item is part of the group, so the band repeats evenly. */
+.am-marquee-group {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--am-marquee-gap);
+  margin: 0;
+  padding: 0 var(--am-marquee-gap) 0 0;
+  list-style: none;
+}
+
+.am-marquee-group[hidden] {
+  display: none;
+}
+
+.am-marquee-item {
+  flex: none;
+  white-space: nowrap;
+}
+
+/* The focus ring of a live (:focus-visible) or scheduled (data-focused) keyboard focus. */
+.am-marquee-group :focus-visible,
+.am-marquee-group [data-focused] {
+  outline: 2px solid var(--ring, #a3a3a3);
+  outline-offset: 2px;
+}
+
+/* Pause and play. The icon is drawn here: two bars while it runs, a triangle while it is paused. */
+.am-marquee-toggle {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  box-sizing: border-box;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 1px solid var(--border, #e5e5e5);
+  border-radius: 9999px;
+  background: var(--background, #ffffff);
+  color: var(--foreground, #0a0a0a);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.am-marquee-toggle::before {
+  content: "";
+  box-sizing: border-box;
+  width: 0.625rem;
+  height: 0.75rem;
+  border-right: 0.1875rem solid currentColor;
+  border-left: 0.1875rem solid currentColor;
+}
+
+.am-marquee-toggle[data-state="paused"]::before {
+  width: 0.6875rem;
+  margin-left: 0.125rem;
+  border: 0;
+  background: currentColor;
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
+}
+
+.am-marquee-toggle:hover {
+  background: var(--accent, #f5f5f5);
+}
+
+.am-marquee-toggle:focus-visible {
+  outline: 2px solid var(--ring, #a3a3a3);
+  outline-offset: 2px;
+}
+
+.am-marquee-toggle[hidden] {
+  display: none;
+}

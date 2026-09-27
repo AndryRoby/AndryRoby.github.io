@@ -41,6 +41,10 @@ import { createSegmented } from '../components/segmented/segmented.js';
 import { demo as segmentedDemo } from '../components/segmented/demo.js';
 import { createSlider } from '../components/slider/slider.js';
 import { demo as sliderDemo, conversations } from '../components/slider/demo.js';
+import { createMorph } from '../components/morph/morph.js';
+import { demo as morphDemo } from '../components/morph/demo.js';
+import { createMarquee } from '../components/marquee/marquee.js';
+import { demo as marqueeDemo } from '../components/marquee/demo.js';
 import { beats } from '../src/core.js';
 
 export const REGISTRY = 'https://arling.sk/motion/r/';
@@ -128,14 +132,14 @@ const hero = {
   build() {
     const t = uid('hero-title');
     return [
-      h('button', { class: 'am-dialog-trigger mo-hero-trigger', type: 'button' }, 'Get 16 free components'),
+      h('button', { class: 'am-dialog-trigger mo-hero-trigger', type: 'button' }, 'Get 18 free components'),
       h('div', { class: 'am-dialog-root', hidden: true },
         h('div', { class: 'am-dialog-backdrop' }),
         h('div', { class: 'am-dialog-frame' },
           h('div', { class: 'am-dialog', role: 'dialog', 'aria-labelledby': t },
             h('div', { class: 'am-dialog-content' },
               h('p', { class: 'mo-card-kicker' }, 'ARLing Motion'),
-              h('h3', { class: 'am-dialog-title', id: t }, '16 components, MIT licence'),
+              h('h3', { class: 'am-dialog-title', id: t }, '18 components, MIT licence'),
               h('p', { class: 'am-dialog-description' },
                 'Each one is a real component for your product, with a 4 second demo timeline written into it.'),
               h('code', { class: 'mo-card-cmd' }, HERO_CMD),
@@ -347,7 +351,7 @@ const accordion = {
         h('div', { class: 'am-accordion-content' }, ...rows.map((r) => h('p', {}, r)))));
     return [
       h('div', { class: 'am-accordion' },
-        item('What is free?', ['All sixteen components and the core.', 'MIT licence, for any project.', 'No account, no key.']),
+        item('What is free?', ['All eighteen components and the core.', 'MIT licence, for any project.', 'No account, no key.']),
         item('Do I need React?', ['No. Each component is plain JavaScript.', 'The React files are thin wrappers.', 'Both use the same logic.']),
         item('How does the video work?', ['Every component has a 4 second demo.', 'seek(t) paints any moment of it.', 'The last frame equals the first.'])),
     ];
@@ -537,9 +541,119 @@ const sliderScene = {
   demo: sliderDemo,
 };
 
+// Three rows of our own catalogue (names, lines and pages as on arling.sk). Each card grows into
+// its dialog; Open the page goes to the real page. The demo opens the first card.
+const CATALOGUE = [
+  {
+    group: 'For online shops',
+    name: 'Asistent',
+    line: 'Sales assistant for online shops',
+    text: 'Answers your customers from the shop\'s own product feed, in their language, with links to the products. Conversations are not stored.',
+    href: 'https://arling.sk/asistent/en/',
+  },
+  {
+    group: 'For businesses',
+    name: 'pain.001 generator',
+    line: 'Bulk transfer from a table',
+    text: 'Turns a table of payments into one SEPA credit transfer file (pain.001) that your bank can import.',
+    href: 'https://arling.sk/sepa-pain001-generator/',
+  },
+  {
+    group: 'Games',
+    name: 'Field Notes',
+    line: 'A word search in a naturalist\'s notebook',
+    text: 'Every theme has ten words to find, and every word has its own drawing, made in code.',
+    href: 'https://arling.sk/games/field-notes/',
+  },
+];
+
+const morphScene = {
+  title: 'Morph',
+  height: 400,
+  build() {
+    const row = (p) => {
+      const t = uid('morph-title');
+      return h('li', {},
+        h('button', { class: 'am-morph-card', type: 'button' },
+          h('span', { class: 'mo-morph-kicker' }, p.group),
+          h('span', { class: 'mo-morph-name' }, p.name),
+          h('span', { class: 'mo-morph-line' }, p.line)),
+        h('div', { class: 'am-morph-root', hidden: true },
+          h('div', { class: 'am-morph-backdrop' }),
+          h('div', { class: 'am-morph-panel', role: 'dialog', 'aria-labelledby': t },
+            h('div', { class: 'am-morph-content' },
+              h('div', { class: 'mo-morph-head' },
+                h('p', { class: 'mo-morph-kicker' }, p.group),
+                h('h3', { class: 'am-morph-title', id: t }, p.name)),
+              h('p', { class: 'am-morph-description' }, p.text),
+              h('div', { class: 'am-morph-footer' },
+                h('button', { type: 'button', 'data-am-close': true }, 'Close'),
+                h('a', { href: p.href, 'data-variant': 'primary' }, 'Open the page'))))));
+    };
+    return [h('ul', { class: 'mo-morph-list', 'aria-label': 'Part of our catalogue' }, ...CATALOGUE.map(row))];
+  },
+  create(stage, o = {}) {
+    const cards = [...stage.querySelectorAll('.am-morph-card')];
+    const roots = [...stage.querySelectorAll('.am-morph-root')];
+    const list = cards.map((card, i) => createMorph({ trigger: card, root: roots[i], clock: o.clock, reduced: o.reduced }));
+    let keep = false;
+    return {
+      morphs: list,
+      primary: list[0],
+      get keep() { return keep; },
+      set keep(v) { keep = v; for (const m of list) m.keep = v; },
+      seek(t) { for (const m of list) m.seek(t); },
+      settled: (t) => list.every((m) => m.settled(t)),
+      driver: {
+        busy: () => false,
+        kick() {},
+        stop() { for (const m of list) m.driver.stop(); },
+        get reduced() { return list[0].driver.reduced; },
+      },
+      destroy() { for (const m of list) m.destroy(); },
+    };
+  },
+  demo(api, B) {
+    api.keep = true;
+    return morphDemo(api.primary, B);
+  },
+};
+
+// Tools and games from arling.sk, each a link to its page. Live, the band runs; with reduced
+// motion it stands and scrolls sideways.
+const TOOLS = [
+  ['Asistent', 'https://arling.sk/asistent/en/'],
+  ['pain.001 generator', 'https://arling.sk/sepa-pain001-generator/'],
+  ['Statement to Excel', 'https://arling.sk/camt053-to-excel/'],
+  ['Feed Doctor', 'https://arling.sk/feed-doctor/en/'],
+  ['Mail Doctor', 'https://arling.sk/mail-doctor/'],
+  ['Field Notes', 'https://arling.sk/games/field-notes/'],
+  ['Puzzle Village', 'https://arling.sk/games/village/'],
+  ['E-invoice', 'https://arling.sk/efaktura/en/'],
+];
+
+const marqueeScene = {
+  title: 'Marquee',
+  height: 170,
+  build() {
+    const id = uid('marquee-label');
+    return [
+      h('div', { class: 'mo-marquee-scene' },
+        h('span', { class: 'mo-marquee-label', id }, 'Tools and games by ARLing'),
+        h('div', { class: 'am-marquee', role: 'group', 'aria-labelledby': id, 'data-speed': '40' },
+          h('div', { class: 'am-marquee-viewport' },
+            h('div', { class: 'am-marquee-track' },
+              h('ul', { class: 'am-marquee-group' },
+                ...TOOLS.map(([name, href]) => h('li', { class: 'am-marquee-item' }, h('a', { class: 'mo-chip', href }, name)))))))),
+    ];
+  },
+  create: (stage, o = {}) => createMarquee({ root: q(stage, '.am-marquee'), clock: o.clock, reduced: o.reduced }),
+  demo: marqueeDemo,
+};
+
 /** Every scene by name; GALLERY is the order of the component rows on the page. */
-export const SCENES = { hero, dialog, tabs, tooltip, popover, toast, switch: switchScene, number: numberScene, island: islandScene, segmented: segmentedScene, slider: sliderScene, accordion, command, drawer, carousel, otp, dropzone };
-export const GALLERY = ['dialog', 'tabs', 'tooltip', 'popover', 'toast', 'switch', 'accordion', 'command', 'drawer', 'carousel', 'otp', 'dropzone', 'number', 'island', 'segmented', 'slider'];
+export const SCENES = { hero, dialog, tabs, tooltip, popover, toast, switch: switchScene, number: numberScene, island: islandScene, segmented: segmentedScene, slider: sliderScene, morph: morphScene, marquee: marqueeScene, accordion, command, drawer, carousel, otp, dropzone };
+export const GALLERY = ['dialog', 'tabs', 'tooltip', 'popover', 'toast', 'switch', 'accordion', 'command', 'drawer', 'carousel', 'otp', 'dropzone', 'number', 'island', 'segmented', 'slider', 'morph', 'marquee'];
 
 // ------------------------------------------------------------------ one frame strip for "three outputs"
 

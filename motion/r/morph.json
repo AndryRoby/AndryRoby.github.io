@@ -1,0 +1,159 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "morph",
+  "type": "registry:ui",
+  "title": "Morph",
+  "description": "A card that grows into a dialog and folds back into the card (FLIP): position and size move on one spring, the content never stretches and the corners stay round. Closing mid flight turns around from the current speed. Focus stays inside, Escape, the backdrop and Close close it, focus returns to the card.",
+  "author": "ARLing s. r. o. (https://arling.sk)",
+  "registryDependencies": [
+    "https://arling.sk/motion/r/core.json"
+  ],
+  "files": [
+    {
+      "path": "registry/arling/lib/arling-motion-morph.js",
+      "content": "'use strict';\n// ARLing Motion: morph. MIT licence, https://arling.sk/motion/ . Installed from the ARLing\n// Motion registry (source: components/morph/morph.js). Plain JavaScript; the .d.ts next to it types the exports.\n/*\n * ARLing Motion: Morph.\n * A card that grows into a dialog and folds back into the card, like the Morphing Dialog of\n * Motion Primitives. FLIP: the dialog is laid out where it ends; at the first frame it is moved\n * and scaled (from its top left corner) onto the card's box, and one spring takes position and\n * size to the dialog's own, so both always cover the same share of the way. Nothing inside\n * stretches: the card's face and the dialog's content sit under the inverse scale, the face\n * fades out while the content enters, the corners are corrected per axis so they stay round,\n * and the 1 px ring stays 1 px. Closing while it still grows adds a spring back from where the\n * dialog is and how fast it moves, so it turns around without a jolt.\n *\n * Markup (the component adds the face and the ring):\n *   <button class=\"am-morph-card\" type=\"button\"> ...what the card shows... </button>\n *   <div class=\"am-morph-root\" hidden>\n *     <div class=\"am-morph-backdrop\"></div>\n *     <div class=\"am-morph-panel\" role=\"dialog\" aria-labelledby=\"title-id\">\n *       <div class=\"am-morph-content\">\n *         <h2 class=\"am-morph-title\" id=\"title-id\">...</h2> ... <button data-am-close>Close</button>\n *       </div>\n *     </div>\n *   </div>\n * The face is a copy of the card (aria-hidden, inert), taken each time the dialog opens. For a\n * seamless landing give the card and the panel the same background.\n *\n * Keyboard (WAI-ARIA APG, modal dialog): Enter or Space on the card opens, focus moves into the\n * dialog, Tab and Shift+Tab stay inside, Escape closes, focus returns to the card. A click on\n * the backdrop or on an element with data-am-close closes too. With prefers-reduced-motion the\n * dialog opens and closes at once.\n * MIT licence.\n */\nimport { track, presence, driver, steps, attr, PRESETS } from './arling-motion';\n\n/** Position and size move on this one spring (about 1.5 % overshoot, tested under 3 %). */\nexport const MORPH = PRESETS.morph;\n/** The dialog's content starts entering this long after the card starts to grow. */\nexport const CONTENT_DELAY = 0.1;\n/** On close, the card's face starts coming back this long after the dialog starts to fold. */\nexport const FACE_DELAY = 0.12;\n\nconst FACE = { dyIn: 0, dyOut: 0, blur: 0, scaleFrom: 1 };\nconst CONTENT = { dyIn: 10, dyOut: -6, blur: 6, scaleFrom: 0.98 };\nconst SHOWN = { opacity: 1, blur: 0, y: 0, scale: 1, visible: true };\nconst GONE = { opacity: 0, blur: 0, y: 0, scale: 1, visible: false };\nconst MIN_SCALE = 0.01;\n\nconst clamp01 = (x) => (x < 0 ? 0 : x > 1 ? 1 : x);\nconst px = (v) => `${Math.round(v * 100) / 100}px`;\nconst n4 = (v) => String(Math.round(v * 1e4) / 1e4);\n\nlet uid = 0;\nconst ensureId = (el, prefix) => el.id || (el.id = `${prefix}-${++uid}`);\n\nconst FOCUSABLE = 'button, [href], input, select, textarea, [tabindex]';\nfunction tabbables(root) {\n  return [...root.querySelectorAll(FOCUSABLE)].filter((el) => !el.disabled && el.tabIndex >= 0 && !el.closest('[hidden], [inert]'));\n}\n\nfunction radiusOf(el, fallback) {\n  try {\n    const v = parseFloat(getComputedStyle(el).borderTopLeftRadius);\n    return Number.isFinite(v) ? v : fallback;\n  } catch {\n    return fallback;\n  }\n}\n\n/**\n * createMorph({ trigger, root, onOpenChange, clock, reduced })\n * trigger: the card; root: the .am-morph-root with the dialog inside.\n * Returns { open, close, toggle, isOpen, seek, settled, destroy, driver, keep, trigger, root,\n * panel, content, face }.\n */\nexport function createMorph(o) {\n  const { trigger: card, root } = o;\n  const panel = root.querySelector('[role=\"dialog\"], [role=\"alertdialog\"]');\n  if (!panel) throw new Error('createMorph: root needs an element with role=\"dialog\"');\n  const doc = root.ownerDocument || document;\n  const make = (cls) => { const el = doc.createElement('div'); el.className = cls; return el; };\n  const ours = (el) => el.classList && (el.classList.contains('am-morph-face') || el.classList.contains('am-morph-ring'));\n\n  let content = panel.querySelector('.am-morph-content');\n  if (!content) {\n    content = make('am-morph-content');\n    for (const c of [...panel.childNodes]) if (!ours(c)) content.appendChild(c);\n    panel.appendChild(content);\n  }\n  let ring = panel.querySelector('.am-morph-ring');\n  if (!ring) {\n    ring = make('am-morph-ring');\n    panel.appendChild(ring);\n  }\n  attr(ring, 'aria-hidden', 'true');\n  const backdrop = root.querySelector('.am-morph-backdrop');\n\n  /** A copy of the card for the first frames of the dialog: no ids, no ARIA, not focusable. */\n  function buildFace() {\n    const f = card.cloneNode(true);\n    for (const name of f.getAttributeNames()) if (name !== 'class' && name !== 'type') f.removeAttribute(name);\n    for (const el of f.querySelectorAll('[id]')) el.removeAttribute('id');\n    f.classList.add('am-morph-face');\n    f.style.opacity = '';\n    f.style.transform = '';\n    attr(f, 'aria-hidden', 'true');\n    attr(f, 'tabindex', '-1');\n    attr(f, 'inert', true);\n    return f;\n  }\n  let face = panel.querySelector('.am-morph-face');\n  if (face) face.remove();\n  face = buildFace();\n  panel.insertBefore(face, panel.firstElementChild);\n\n  ensureId(panel, 'am-morph');\n  attr(panel, 'aria-modal', 'true');\n  if (!panel.hasAttribute('tabindex')) attr(panel, 'tabindex', '-1');\n  if (!panel.hasAttribute('aria-labelledby') && !panel.hasAttribute('aria-label')) {\n    const title = panel.querySelector('.am-morph-title, h1, h2, h3');\n    if (title) attr(panel, 'aria-labelledby', ensureId(title, 'am-morph-title'));\n  }\n  if (card.tagName === 'BUTTON' && !card.hasAttribute('type')) attr(card, 'type', 'button');\n  attr(card, 'aria-haspopup', 'dialog');\n  attr(card, 'aria-controls', panel.id);\n  attr(card, 'aria-expanded', 'false');\n\n  // ---------------------------------------------------------------- state as functions of time\n  const openS = steps(false);\n  const geo = steps(null);\n  const m = track(0, MORPH); // 0 = the card's box, 1 = the dialog\n  const back = track(0, PRESETS.smooth);\n  const faceP = presence(true, FACE);\n  const body = presence(false, CONTENT);\n  let endT = -Infinity;\n  const mark = (t) => { if (t > endT) endT = t; };\n  const settledAll = (t) => m.settled(t) && back.settled(t) && faceP.settled(t) && body.settled(t);\n\n  /** The card's box against the dialog's own box (the panel measured without its transform). */\n  function measure() {\n    const was = root.hidden;\n    const moved = panel.style.transform;\n    const rounded = panel.style.borderRadius;\n    root.hidden = false;\n    panel.style.transform = '';\n    panel.style.borderRadius = '';\n    const pr = panel.getBoundingClientRect();\n    const cr = card.getBoundingClientRect();\n    const r1 = radiusOf(panel, 16);\n    panel.style.transform = moved;\n    panel.style.borderRadius = rounded;\n    root.hidden = was;\n    const ok = pr.width > 0 && pr.height > 0 && cr.width > 0 && cr.height > 0;\n    return {\n      flat: !ok, // nothing to measure (hidden or no layout yet): only the crossfade\n      dx: ok ? cr.left - pr.left : 0,\n      dy: ok ? cr.top - pr.top : 0,\n      sx: ok ? Math.max(MIN_SCALE, cr.width / pr.width) : 1,\n      sy: ok ? Math.max(MIN_SCALE, cr.height / pr.height) : 1,\n      cw: cr.width,\n      ch: cr.height,\n      r0: radiusOf(card, 12),\n      r1,\n    };\n  }\n  const sameGeo = (a, b) => !!a && !!b && ['dx', 'dy', 'cw', 'ch'].every((k) => Math.abs(a[k] - b[k]) < 0.5)\n    && Math.abs(a.sx - b.sx) < 1e-3 && Math.abs(a.sy - b.sy) < 1e-3;\n\n  function paintPart(el, st, inverse) {\n    el.style.opacity = n4(st.opacity);\n    el.style.filter = st.blur > 0.05 ? `blur(${st.blur.toFixed(2)}px)` : '';\n    const own = Math.abs(st.y) > 0.005 || Math.abs(st.scale - 1) > 1e-4 ? `translateY(${st.y.toFixed(2)}px) scale(${st.scale.toFixed(4)})` : '';\n    el.style.transform = [inverse, own].filter(Boolean).join(' ');\n    el.style.visibility = st.visible ? '' : 'hidden';\n  }\n\n  function paint(t, { reduced }) {\n    const isOpen = openS.at(t);\n    // closing stays on screen until every spring is home; before the first open all is settled\n    const visible = isOpen || (!reduced && !settledAll(t));\n    attr(card, 'aria-expanded', String(isOpen));\n    attr(panel, 'data-state', isOpen ? 'open' : 'closed');\n    root.hidden = !visible;\n    card.style.opacity = visible && !reduced ? '0' : '';\n    if (!visible) return;\n    const g = geo.at(t);\n    const k = reduced || !g ? 1 : m.at(t);\n    const f = 1 - k;\n    const moving = !!g && !g.flat && Math.abs(f) > 1e-9;\n    let inverse = '';\n    if (moving) {\n      const sx = Math.max(MIN_SCALE, 1 - (1 - g.sx) * f);\n      const sy = Math.max(MIN_SCALE, 1 - (1 - g.sy) * f);\n      const r = g.r0 + (g.r1 - g.r0) * clamp01(k);\n      panel.style.transform = `translate(${px(g.dx * f)}, ${px(g.dy * f)}) scale(${n4(sx)}, ${n4(sy)})`;\n      // corrected per axis: after the scale the corners are round with radius r\n      panel.style.borderRadius = `${px(r / sx)} / ${px(r / sy)}`;\n      ring.style.borderWidth = `${px(1 / sy)} ${px(1 / sx)}`;\n      inverse = `scale(${n4(1 / sx)}, ${n4(1 / sy)})`;\n    } else {\n      panel.style.transform = '';\n      panel.style.borderRadius = '';\n      ring.style.borderWidth = '';\n    }\n    if (g) {\n      face.style.width = px(g.cw);\n      face.style.height = px(g.ch);\n    }\n    if (backdrop) backdrop.style.opacity = n4(reduced ? 1 : clamp01(back.at(t)));\n    paintPart(face, reduced ? GONE : faceP.at(t), inverse);\n    paintPart(content, reduced ? (isOpen ? SHOWN : GONE) : body.at(t), inverse);\n  }\n\n  function draw(t, st) {\n    paint(t, st);\n    if (!api.keep && t >= endT && openS.ev.length && settledAll(t)) {\n      for (const tr of [m, back, faceP.p, body.p]) tr.compact(t);\n      faceP.marks = faceP.marks.slice(-1);\n      body.marks = body.marks.slice(-1);\n      openS.compact();\n      geo.compact();\n    }\n  }\n\n  const d = driver(draw, { clock: o.clock, reduced: o.reduced });\n  d.busy = (t) => t < endT || !settledAll(t);\n  const commit = () => { paint(d.now(), { reduced: d.reduced }); d.kick(); };\n  const when = (opt) => (opt && opt.t !== undefined ? { t: opt.t, live: false } : { t: d.now(), live: true });\n\n  /** Opens: the card grows into the dialog. opt: { t } to schedule it (demo, video). */\n  function open(opt = {}) {\n    const { t, live } = when(opt);\n    if (openS.last) return api;\n    const nf = buildFace(); // the card as it looks now\n    panel.insertBefore(nf, face);\n    face.remove();\n    face = nf;\n    openS.set(t, true);\n    geo.set(t, measure());\n    m.to(t, 1);\n    back.to(t, 1);\n    faceP.exit(t);\n    body.enter(t + CONTENT_DELAY);\n    mark(t + CONTENT_DELAY);\n    commit();\n    if (live) {\n      const first = panel.querySelector('[autofocus]') || tabbables(content)[0] || panel;\n      first.focus();\n      // A real browser will not focus the content while it is still visibility:hidden (it fades in\n      // after CONTENT_DELAY): hold focus on the panel (tabindex -1), so Escape and Tab already work,\n      // and hand it to the first control once the content shows.\n      if (doc.activeElement !== first) {\n        panel.focus();\n        if (first !== panel) {\n          clearTimeout(focusTimer);\n          focusTimer = setTimeout(() => {\n            if (openS.last && doc.activeElement === panel) first.focus();\n          }, Math.ceil(CONTENT_DELAY * 1000) + 50);\n        }\n      }\n      if (o.onOpenChange) o.onOpenChange(true);\n    }\n    return api;\n  }\n\n  /** Closes: the dialog folds back into the card, from wherever it is. opt: { t }. */\n  function close(opt = {}) {\n    const { t, live } = when(opt);\n    if (!openS.last) return api;\n    const prev = geo.last;\n    const g = measure();\n    openS.set(t, false);\n    // the same boxes as before: keep the same numbers, so a close mid flight has no jump\n    geo.set(t, sameGeo(prev, g) ? prev : g);\n    body.exit(t);\n    back.to(t, 0);\n    m.to(t, 0);\n    faceP.enter(t + FACE_DELAY);\n    mark(t + FACE_DELAY);\n    commit();\n    if (live) {\n      card.focus();\n      if (o.onOpenChange) o.onOpenChange(false);\n    }\n    return api;\n  }\n\n  const listeners = [];\n  const on = (el, type, fn) => { el.addEventListener(type, fn); listeners.push([el, type, fn]); };\n  let focusTimer = 0;\n\n  on(card, 'click', () => (openS.last ? close() : open()));\n  on(root, 'keydown', (e) => {\n    if (!openS.last) return;\n    if (e.key === 'Escape') {\n      e.preventDefault();\n      e.stopPropagation();\n      close();\n      return;\n    }\n    if (e.key !== 'Tab') return;\n    const list = tabbables(content);\n    if (!list.length) { e.preventDefault(); panel.focus(); return; }\n    const first = list[0];\n    const lastEl = list[list.length - 1];\n    const active = doc.activeElement;\n    if (e.shiftKey && (active === first || active === panel || !panel.contains(active))) { e.preventDefault(); lastEl.focus(); }\n    else if (!e.shiftKey && (active === lastEl || !panel.contains(active))) { e.preventDefault(); first.focus(); }\n  });\n  on(root, 'click', (e) => {\n    const target = e.target;\n    if (target === backdrop || (target.closest && target.closest('[data-am-close]'))) close();\n  });\n\n  const api = {\n    trigger: card,\n    root,\n    panel,\n    content,\n    get face() { return face; },\n    driver: d,\n    keep: false,\n    open,\n    close,\n    toggle: (opt) => (openS.last ? close(opt) : open(opt)),\n    isOpen: (t) => (t === undefined ? openS.last : openS.at(t)),\n    seek: (t) => paint(t, { reduced: d.reduced }),\n    settled: (t) => t >= endT && settledAll(t),\n    destroy() {\n      clearTimeout(focusTimer);\n      d.stop();\n      for (const [el, type, fn] of listeners) el.removeEventListener(type, fn);\n    },\n  };\n  paint(d.now(), { reduced: d.reduced });\n  return api;\n}\n",
+      "type": "registry:lib"
+    },
+    {
+      "path": "registry/arling/lib/arling-motion-morph.d.ts",
+      "content": "// ARLing Motion: morph. MIT licence, https://arling.sk/motion/ . Types for the plain JavaScript file next to this one.\nexport declare const MORPH: any;\nexport declare const CONTENT_DELAY: any;\nexport declare const FACE_DELAY: any;\nexport declare function createMorph(...args: any[]): any;\n",
+      "type": "registry:lib"
+    },
+    {
+      "path": "registry/arling/ui/motion-morph.tsx",
+      "content": "'use client';\n// ARLing Motion: Morph for React. A thin wrapper: the vanilla component does the FLIP, the\n// face and content crossfade, ARIA, focus and keyboard; React only renders the markup.\n// In the registry the core lives at '@/lib/arling-motion' and this component's logic at\n// '@/lib/arling-motion-morph'.\nimport * as React from 'react';\nimport { createMorph } from '@/lib/arling-motion-morph';\n\ntype MorphApi = {\n  open: (o?: { t?: number }) => unknown;\n  close: (o?: { t?: number }) => unknown;\n  isOpen: () => boolean;\n  destroy: () => void;\n};\n\nexport interface MorphProps {\n  /** What the card shows, for example a kicker, a name and one line. The card grows into the dialog. */\n  card: React.ReactNode;\n  title: React.ReactNode;\n  description?: React.ReactNode;\n  children?: React.ReactNode;\n  /** Buttons or links at the bottom. Give a button data-am-close to close the dialog with it. */\n  footer?: React.ReactNode;\n  /** Controlled open state (optional). */\n  open?: boolean;\n  onOpenChange?: (open: boolean) => void;\n  /** Class of the dialog panel. */\n  className?: string;\n  /** Class of the card. */\n  cardClassName?: string;\n  /** Force reduced motion on or off; by default the user's system setting decides. */\n  reducedMotion?: boolean;\n}\n\nconst cx = (...c: Array<string | false | null | undefined>) => c.filter(Boolean).join(' ');\n\nexport function Morph({\n  card,\n  title,\n  description,\n  children,\n  footer,\n  open,\n  onOpenChange,\n  className,\n  cardClassName,\n  reducedMotion,\n}: MorphProps) {\n  const cardRef = React.useRef<HTMLButtonElement>(null);\n  const rootRef = React.useRef<HTMLDivElement>(null);\n  const apiRef = React.useRef<MorphApi | null>(null);\n  const changeRef = React.useRef(onOpenChange);\n  changeRef.current = onOpenChange;\n  const id = React.useId();\n\n  React.useEffect(() => {\n    if (!cardRef.current || !rootRef.current) return;\n    const api = createMorph({\n      trigger: cardRef.current,\n      root: rootRef.current,\n      reduced: reducedMotion,\n      onOpenChange: (v: boolean) => changeRef.current?.(v),\n    }) as unknown as MorphApi;\n    apiRef.current = api;\n    return () => {\n      api.destroy();\n      apiRef.current = null;\n    };\n  }, [reducedMotion]);\n\n  React.useEffect(() => {\n    const api = apiRef.current;\n    if (!api || open === undefined || open === api.isOpen()) return;\n    if (open) api.open();\n    else api.close();\n  }, [open]);\n\n  return (\n    <>\n      <button ref={cardRef} type=\"button\" className={cx('am-morph-card', cardClassName)}>\n        {card}\n      </button>\n      <div ref={rootRef} className=\"am-morph-root\" hidden>\n        <div className=\"am-morph-backdrop\" />\n        <div\n          className={cx('am-morph-panel', className)}\n          role=\"dialog\"\n          aria-modal=\"true\"\n          aria-labelledby={`${id}-title`}\n          aria-describedby={description ? `${id}-desc` : undefined}\n        >\n          <div className=\"am-morph-content\">\n            <h2 id={`${id}-title`} className=\"am-morph-title\">\n              {title}\n            </h2>\n            {description ? (\n              <p id={`${id}-desc`} className=\"am-morph-description\">\n                {description}\n              </p>\n            ) : null}\n            {children}\n            {footer ? <div className=\"am-morph-footer\">{footer}</div> : null}\n          </div>\n        </div>\n      </div>\n    </>\n  );\n}\n\nexport default Morph;\n",
+      "type": "registry:ui"
+    }
+  ],
+  "css": {
+    "@layer components": {
+      ".am-morph-card": {
+        "display": "grid",
+        "gap": "0.25rem",
+        "box-sizing": "border-box",
+        "width": "100%",
+        "padding": "1rem 1.25rem",
+        "border": "1px solid var(--border, #e5e5e5)",
+        "border-radius": "var(--radius, 0.625rem)",
+        "background": "var(--card, #ffffff)",
+        "color": "var(--card-foreground, #0a0a0a)",
+        "font": "inherit",
+        "text-align": "left",
+        "cursor": "pointer",
+        "-webkit-tap-highlight-color": "transparent"
+      },
+      ".am-morph-card:hover": {
+        "border-color": "var(--input, #d4d4d4)"
+      },
+      ".am-morph-card:focus-visible, .am-morph-content :is(button, [href], input):focus-visible": {
+        "outline": "2px solid var(--ring, #a3a3a3)",
+        "outline-offset": "2px"
+      },
+      ".am-morph-root": {
+        "position": "fixed",
+        "inset": "0",
+        "z-index": "50",
+        "display": "grid",
+        "place-items": "center",
+        "padding": "16px"
+      },
+      ".am-morph-root[hidden]": {
+        "display": "none"
+      },
+      ".am-morph-backdrop": {
+        "position": "absolute",
+        "inset": "0",
+        "background": "var(--am-morph-backdrop, rgb(0 0 0 / 0.32))"
+      },
+      ".am-morph-panel": {
+        "position": "relative",
+        "box-sizing": "border-box",
+        "width": "min(100%, 26rem)",
+        "overflow": "hidden",
+        "border-radius": "var(--radius, 0.625rem)",
+        "background": "var(--card, #ffffff)",
+        "color": "var(--card-foreground, #0a0a0a)",
+        "box-shadow": "0 1px 2px rgb(0 0 0 / 0.06), 0 16px 32px -8px rgb(0 0 0 / 0.2)",
+        "transform-origin": "0 0",
+        "outline": "none"
+      },
+      ".am-morph-ring": {
+        "position": "absolute",
+        "inset": "0",
+        "z-index": "2",
+        "box-sizing": "border-box",
+        "border": "1px solid var(--border, #e5e5e5)",
+        "border-radius": "inherit",
+        "pointer-events": "none"
+      },
+      ".am-morph-panel .am-morph-face": {
+        "position": "absolute",
+        "top": "0",
+        "left": "0",
+        "z-index": "1",
+        "box-sizing": "border-box",
+        "margin": "0",
+        "border-color": "transparent",
+        "background": "transparent",
+        "box-shadow": "none",
+        "transform-origin": "0 0",
+        "pointer-events": "none"
+      },
+      ".am-morph-content": {
+        "position": "relative",
+        "display": "grid",
+        "gap": "1rem",
+        "padding": "1.25rem",
+        "transform-origin": "0 0"
+      },
+      ".am-morph-title": {
+        "margin": "0",
+        "font-size": "1.125rem",
+        "font-weight": "600",
+        "line-height": "1.3"
+      },
+      ".am-morph-description": {
+        "margin": "0",
+        "color": "var(--muted-foreground, #737373)",
+        "font-size": "0.875rem",
+        "line-height": "1.5"
+      },
+      ".am-morph-footer": {
+        "display": "flex",
+        "flex-wrap": "wrap",
+        "justify-content": "flex-end",
+        "gap": "0.5rem"
+      },
+      ".am-morph-footer :is(button, a)": {
+        "display": "inline-flex",
+        "align-items": "center",
+        "justify-content": "center",
+        "box-sizing": "border-box",
+        "height": "2.25rem",
+        "padding": "0 1rem",
+        "border": "1px solid var(--border, #e5e5e5)",
+        "border-radius": "calc(var(--radius, 0.625rem) - 2px)",
+        "background": "var(--background, #ffffff)",
+        "color": "var(--foreground, #0a0a0a)",
+        "font": "inherit",
+        "font-size": "0.875rem",
+        "font-weight": "500",
+        "text-decoration": "none",
+        "cursor": "pointer"
+      },
+      ".am-morph-footer [data-variant=\"primary\"]": {
+        "border-color": "var(--primary, #171717)",
+        "background": "var(--primary, #171717)",
+        "color": "var(--primary-foreground, #fafafa)"
+      }
+    }
+  },
+  "docs": "Morph from ARLing Motion (MIT).\nReact: import { Morph } from \"@/components/ui/motion-morph\".\nThe logic is in lib/arling-motion-morph.js (typed by the .d.ts next to it) and works without React: createMorph on your own markup.\nStyles were added to your global CSS under @layer components (Tailwind v4).\nWith Tailwind v3 or no Tailwind, add https://arling.sk/motion/components/morph/morph.css to your styles instead.\nLive demo and docs: https://arling.sk/motion/#morph",
+  "categories": [
+    "motion",
+    "dialog",
+    "morph",
+    "card",
+    "catalogue"
+  ]
+}
