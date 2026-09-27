@@ -95,7 +95,7 @@ test('odkaz na subor smie viest len k nam', () => {
   assert.equal(platnaAdresaSuboru('https://arling.sk/classics/ben-hur/files/x.pdf'), 'https://arling.sk/classics/ben-hur/files/x.pdf');
   assert.equal(platnaAdresaSuboru('files/abcdefgh12345678/Ben-Hur-eink.pdf'), 'files/abcdefgh12345678/Ben-Hur-eink.pdf');
   assert.equal(platnaAdresaSuboru('https://example.com/x.pdf'), '', 'cudzia domena nie');
-  assert.equal(platnaAdresaSuboru('http://server.invalid/x.pdf'), '', 'len https');
+  assert.equal(platnaAdresaSuboru('http://files.example.org/x.pdf'), '', 'len https');
   assert.equal(platnaAdresaSuboru('javascript:alert(1)'), '');
   assert.equal(platnaAdresaSuboru('//example.com/x.pdf'), '');
   assert.equal(platnaAdresaSuboru(''), '');
