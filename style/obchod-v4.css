@@ -55,7 +55,7 @@ body.shopv4 main ::selection{background:rgba(242,100,60,.34);color:#fff}
 .shopv4 .sv-lead{margin-top:22px;max-width:44ch;font-size:clamp(17px,1.3vw,19px);line-height:1.58;color:var(--telo)}
 .shopv4 .sv-akcie{display:flex;align-items:center;flex-wrap:wrap;gap:12px 24px;margin-top:32px}
 .shopv4 .sv-scena{position:relative;min-width:0}
-.shopv4 .sv-lampa{position:absolute;left:-8%;bottom:4%;width:116%;height:64%;z-index:0;pointer-events:none;background:radial-gradient(46% 56% at 50% 100%,rgba(255,152,108,.42) 0%,rgba(242,100,60,.18) 38%,transparent 70%),radial-gradient(72% 70% at 50% 98%,rgba(242,100,60,.16) 0%,transparent 70%);filter:blur(26px)}
+.shopv4 .sv-lampa{position:absolute;left:-8%;bottom:4%;width:116%;height:64%;z-index:0;pointer-events:none;background:radial-gradient(46% 50% at 50% 72%,rgba(255,152,108,.36) 0%,rgba(242,100,60,.15) 40%,transparent 78%),radial-gradient(70% 62% at 50% 70%,rgba(242,100,60,.13) 0%,transparent 80%)}
 .shopv4 .sv-stol{position:relative;z-index:1;aspect-ratio:100/60}
 .shopv4 .sv-h{position:absolute;display:block;border-radius:6px;background:#efe9df;box-shadow:0 44px 70px -30px rgba(0,0,0,.95),0 12px 26px -12px rgba(0,0,0,.7);transition:translate .5s var(--pero),scale .16s var(--tik)}
 .shopv4 .sv-h img{width:100%;border-radius:6px}
@@ -70,7 +70,7 @@ body.shopv4 main ::selection{background:rgba(242,100,60,.34);color:#fff}
 .shopv4 .sv-scena figcaption a:hover{color:var(--ink);text-decoration-color:var(--med)}
 /* Border Beam: svetlo obieha po hrane hlavnej strany. */
 .shopv4 .sv-beam{position:absolute;inset:0;z-index:5;border-radius:inherit;pointer-events:none;border:1.5px solid transparent;-webkit-mask:linear-gradient(#fff 0 0) padding-box,linear-gradient(#fff 0 0);mask:linear-gradient(#fff 0 0) padding-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude}
-.shopv4 .sv-beam::after{content:"";position:absolute;width:90px;aspect-ratio:1;offset-path:rect(0 auto auto 0 round 6px);offset-anchor:50% 50%;background:linear-gradient(to left,#ffb59d,#f2643c,transparent);animation:sv-beam 9s linear infinite}
+.shopv4 .sv-beam::after{content:"";position:absolute;width:90px;aspect-ratio:1;offset-path:rect(0 auto auto 0 round 6px);offset-anchor:50% 50%;background:linear-gradient(to left,#ffb59d,#f2643c,transparent);animation:sv-beam 9s linear 2}
 @keyframes sv-beam{from{offset-distance:0%}to{offset-distance:100%}}
 @supports not (offset-path:rect(0 auto auto 0)){.shopv4 .sv-beam{display:none}}
 /* Ceny z registra hneď pod scénou, ako na úvode. */
@@ -184,10 +184,10 @@ body.shopv4 main ::selection{background:rgba(242,100,60,.34);color:#fff}
 
 /* Záver: karta so Shine Border. Lesk je kužeľový prechod, ktorý sa pod okrajom len otáča. */
 .shopv4 .sv-zaver{overflow:hidden;border-top:1px solid var(--linka);padding:clamp(76px,8vw,128px) 0}
-.shopv4 .sv-zaver::before{content:"";position:absolute;left:50%;bottom:-58%;translate:-50% 0;width:min(1100px,110vw);height:100%;pointer-events:none;background:radial-gradient(50% 50% at 50% 50%,rgba(242,100,60,.28) 0%,transparent 70%);filter:blur(36px)}
+.shopv4 .sv-zaver::before{content:"";position:absolute;left:50%;bottom:-58%;translate:-50% 0;width:min(1100px,110vw);height:100%;pointer-events:none;background:radial-gradient(50% 50% at 50% 50%,rgba(242,100,60,.24) 0%,rgba(242,100,60,.08) 45%,transparent 72%)}
 .shopv4 .sv-zaver .wrap{position:relative}
 .shopv4 .sv-zaver-karta{position:relative;overflow:hidden;isolation:isolate;border-radius:22px;padding:1px;background:var(--linka)}
-.shopv4 .sv-zaver-karta::before{content:"";position:absolute;left:50%;top:50%;z-index:-1;width:max(140%,900px);aspect-ratio:1;translate:-50% -50%;background:conic-gradient(from 0deg,transparent 0 64%,rgba(242,100,60,.9) 78%,#ffb59d 84%,transparent 94%);animation:sv-toc 14s linear infinite}
+.shopv4 .sv-zaver-karta::before{content:"";position:absolute;left:50%;top:50%;z-index:-1;width:max(140%,900px);aspect-ratio:1;translate:-50% -50%;background:conic-gradient(from 0deg,transparent 0 64%,rgba(242,100,60,.9) 78%,#ffb59d 84%,transparent 94%);animation:sv-toc 14s linear 2}
 @keyframes sv-toc{to{transform:rotate(1turn)}}
 .shopv4 .sv-zaver-vnutro{border-radius:21px;padding:clamp(40px,5vw,72px) clamp(22px,4vw,64px);text-align:center;background:linear-gradient(180deg,#181412,#0e0c0a)}
 .shopv4 .sv-zaver h2{max-width:20ch;margin-inline:auto}
@@ -302,3 +302,7 @@ body.shopv4 main ::selection{background:rgba(242,100,60,.34);color:#fff}
   .shopv4 .sv-zaver-vnutro{padding:38px 20px}
   .shopv4 .sv-zaver .sv-cta{width:100%}
 }
+
+/* Výkon (27. 9. 2026, Andrej: obchod seká): bez rozmazania cez filter, animácie len dvakrát, na dotyku a pri zníženom pohybe vypnuté. */
+@media (hover:none),(prefers-reduced-motion:reduce){.shopv4 .sv-beam::after,.shopv4 .sv-zaver-karta::before{animation:none}}
+.shopv4 .sv-zaver-karta{contain:paint}
