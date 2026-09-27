@@ -4,7 +4,7 @@
 <script src="/style/vzhlad.js?v=8a4019ae"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://server.invalid 'sha256-zz9y7hKCxnYmdJn+aLytqRbefJ/IZpZGDm1Mo8KHXxM='; connect-src 'self' https://server.invalid; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://server.invalid 'sha256-KuKNlFjJXY5vez0a2+MjO7AWuS+7cq/50b3KzflAqEA='; connect-src 'self' https://server.invalid; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#0a0908">
 <link rel="preconnect" href="https://server.invalid" crossorigin>
@@ -32,8 +32,9 @@
 <link rel="preload" href="/fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/style/paper.css?v=704b28ed">
-<link rel="stylesheet" href="/efaktura/pravidla/pravidla.css?v=109e1a6d">
+<link rel="stylesheet" href="/efaktura/pravidla/pravidla.css?v=c6440d34">
 <script src="/style/prepinac.js?v=668e98c9" defer></script>
+<script type="module" src="/efaktura/pravidlo-xml.js?v=0b44209e"></script>
 <script type="application/ld+json">
 {
  "@context": "https://schema.org",
@@ -46,7 +47,7 @@
    "url": "https://arling.sk/efaktura/de/regeln/br-ic-04/",
    "mainEntityOfPage": "https://arling.sk/efaktura/de/regeln/br-ic-04/",
    "inLanguage": "de",
-   "dateModified": "2026-09-26",
+   "dateModified": "2026-09-27",
    "image": "https://arling.sk/efaktura/og.png",
    "about": {
     "@type": "Thing",
@@ -125,14 +126,22 @@
     <nav class="drobky" aria-label="Sie befinden sich hier"><a href="/efaktura/de/">E-Rechnung</a> <span aria-hidden="true">/</span> <a href="/efaktura/de/regeln/">Regeln</a> <span aria-hidden="true">/</span> <a href="/efaktura/de/regeln/gruppe-br-ic/">BR-IC</a> <span aria-hidden="true">/</span> <span aria-current="page">BR-IC-04</span></nav>
     <p class="kicker">Regel der E-Rechnung <span>EN 16931</span></p>
     <h1><span class="kodh">BR-IC-04:</span> <span class="nazovh">Bei der Umsatzsteuerkategorie K (innergemeinschaftliche Lieferung) muss die USt-IdNr. des…</span></h1>
-    <p class="lead r">Bei der Umsatzsteuerkategorie K (innergemeinschaftliche Lieferung) muss die USt-IdNr. des Verkäufers (BT-31) oder des Steuervertreters (BT-63) mit dem Schema VAT angegeben sein.</p>
-    <section class="blok-chyby r d1" aria-labelledby="blok-chyby-nadpis">
-      <h2 id="blok-chyby-nadpis">Haben Sie den Fehler <span class="kod">BR-IC-04</span> in Ihrem XML?</h2>
-      <p>Die Prüfung ist kostenlos und läuft in Ihrem Browser, die Datei wird nicht hochgeladen.</p>
+    <section class="blok-xml r d1" aria-labelledby="blok-xml-nadpis" data-pravidlo="BR-IC-04">
+      <h2 id="blok-xml-nadpis">XML einfügen und prüfen, ob dieser Fehler vorkommt</h2>
+      <p>Die Prüfung markiert <span class="kod">BR-IC-04</span> und listet auch alle anderen Befunde auf. Sie ist kostenlos und läuft in Ihrem Browser, die Datei wird nicht hochgeladen.</p>
+      <label class="blok-xml-menovka" for="blok-xml-text">XML der E-Rechnung</label>
+      <textarea id="blok-xml-text" rows="4" spellcheck="false" autocomplete="off" autocapitalize="off" placeholder="Hier den gesamten Inhalt der XML-Datei einfügen"></textarea>
+      <input type="file" id="blok-xml-subor" accept=".xml,text/xml,application/xml" hidden>
       <div class="akcie">
-        <a class="btn btn-solid" href="/efaktura/de/#kontrola" data-umami-event="efaktura_pravidlo_blok_klik" data-umami-event-id="BR-IC-04" data-umami-event-jazyk="de">Mein XML prüfen</a>
+        <button type="button" class="btn btn-solid" id="blok-xml-spustit" data-umami-event="pravidlo_xml_vlozene" data-umami-event-pravidlo="BR-IC-04" disabled>Mein XML prüfen</button>
+        <button type="button" class="btn btn-line" id="blok-xml-vybrat">XML-Datei auswählen</button>
       </div>
+      <p class="blok-xml-stav" id="blok-xml-stav" role="status"></p>
+      <div class="blok-xml-vysledok" id="blok-xml-vysledok" hidden></div>
+      <noscript><p class="blok-xml-meta">Die Prüfung braucht JavaScript: Die Datei wird in Ihrem Browser gelesen und geprüft, nicht auf einem Server.</p></noscript>
+      <p class="blok-xml-nastroj"><a href="/efaktura/de/#kontrola" data-umami-event="efaktura_pravidlo_blok_klik" data-umami-event-id="BR-IC-04" data-umami-event-jazyk="de">Vollständiges Werkzeug öffnen</a></p>
     </section>
+    <p class="lead r">Bei der Umsatzsteuerkategorie K (innergemeinschaftliche Lieferung) muss die USt-IdNr. des Verkäufers (BT-31) oder des Steuervertreters (BT-63) mit dem Schema VAT angegeben sein.</p>
     <div class="rule"></div>
     <h2 id="znenie">Was die Regel sagt</h2>
     <blockquote class="citacia"><p>[BR-IC-04]-An Invoice that contains a Document level charge (BG-21) where the Document level charge VAT category code (BT-102) is &quot;Intra-community supply&quot; shall contain the Seller VAT Identifier (BT-31) or the Seller tax representative VAT identifier (BT-63) and the Buyer VAT identifier (BT-48).</p></blockquote>
@@ -189,7 +198,7 @@
     <p class="jazyky">Diese Seite in einer anderen Sprache: <a href="/efaktura/en/rules/br-ic-04/" hreflang="en" lang="en">English</a> · <a href="/efaktura/pravidla/br-ic-04/" hreflang="sk" lang="sk">Slovensky</a> · <a href="/efaktura/cs/pravidla/br-ic-04/" hreflang="cs" lang="cs">Česky</a></p>
     <div class="rule"></div>
     <p class="pomoc">Unsere Prüfung ist nicht vollständig: wir prüfen weder das XSD-Schema noch alle Regeln, und dass eine Datei durchläuft, sagt nichts darüber, ob der Empfänger oder das Peppol-Netz sie annimmt. Die Quelle des zitierten Wortlauts steht beim Zitat.</p>
-    <p class="pomoc">Inhalt der Seite zuletzt geändert: <time datetime="2026-09-26">26.09.2026</time></p>
+    <p class="pomoc">Inhalt der Seite zuletzt geändert: <time datetime="2026-09-27">27.09.2026</time></p>
   </article>
 </main>
 <footer class="site-footer">

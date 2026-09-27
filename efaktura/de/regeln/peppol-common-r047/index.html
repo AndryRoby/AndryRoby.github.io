@@ -4,7 +4,7 @@
 <script src="/style/vzhlad.js?v=8a4019ae"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://server.invalid 'sha256-u4B2h1kqWGu7EE/sPw+ZP42V4REDo4UfUIqktA3dBuM='; connect-src 'self' https://server.invalid; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://server.invalid 'sha256-0N62R354DqqDsL6sLheQqLDIPFSVFWh/3jbTYCjceS0='; connect-src 'self' https://server.invalid; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#0a0908">
 <link rel="preconnect" href="https://server.invalid" crossorigin>
@@ -32,8 +32,9 @@
 <link rel="preload" href="/fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/style/paper.css?v=704b28ed">
-<link rel="stylesheet" href="/efaktura/pravidla/pravidla.css?v=109e1a6d">
+<link rel="stylesheet" href="/efaktura/pravidla/pravidla.css?v=c6440d34">
 <script src="/style/prepinac.js?v=668e98c9" defer></script>
+<script type="module" src="/efaktura/pravidlo-xml.js?v=0b44209e"></script>
 <script type="application/ld+json">
 {
  "@context": "https://schema.org",
@@ -46,7 +47,7 @@
    "url": "https://arling.sk/efaktura/de/regeln/peppol-common-r047/",
    "mainEntityOfPage": "https://arling.sk/efaktura/de/regeln/peppol-common-r047/",
    "inLanguage": "de",
-   "dateModified": "2026-09-26",
+   "dateModified": "2026-09-27",
    "image": "https://arling.sk/efaktura/og.png",
    "about": {
     "@type": "Thing",
@@ -125,14 +126,22 @@
     <nav class="drobky" aria-label="Sie befinden sich hier"><a href="/efaktura/de/">E-Rechnung</a> <span aria-hidden="true">/</span> <a href="/efaktura/de/regeln/">Regeln</a> <span aria-hidden="true">/</span> <a href="/efaktura/de/regeln/gruppe-peppol-common-r/">PEPPOL-COMMON-R</a> <span aria-hidden="true">/</span> <span aria-current="page">PEPPOL-COMMON-R047</span></nav>
     <p class="kicker">Regel der E-Rechnung <span>Peppol BIS Billing 3.0</span></p>
     <h1><span class="kodh">PEPPOL-COMMON-R047:</span> <span class="nazovh">Die italienische Partita IVA soll 11 Ziffern mit gültiger Prüfziffer haben</span></h1>
-    <p class="lead r">Die italienische Partita IVA soll 11 Ziffern mit gültiger Prüfziffer haben.</p>
-    <section class="blok-chyby r d1" aria-labelledby="blok-chyby-nadpis">
-      <h2 id="blok-chyby-nadpis">Haben Sie den Fehler <span class="kod">PEPPOL-COMMON-R047</span> in Ihrem XML?</h2>
-      <p>Die Prüfung ist kostenlos und läuft in Ihrem Browser, die Datei wird nicht hochgeladen.</p>
+    <section class="blok-xml r d1" aria-labelledby="blok-xml-nadpis" data-pravidlo="PEPPOL-COMMON-R047">
+      <h2 id="blok-xml-nadpis">XML einfügen und prüfen, ob dieser Fehler vorkommt</h2>
+      <p>Die Prüfung markiert <span class="kod">PEPPOL-COMMON-R047</span> und listet auch alle anderen Befunde auf. Sie ist kostenlos und läuft in Ihrem Browser, die Datei wird nicht hochgeladen.</p>
+      <label class="blok-xml-menovka" for="blok-xml-text">XML der E-Rechnung</label>
+      <textarea id="blok-xml-text" rows="4" spellcheck="false" autocomplete="off" autocapitalize="off" placeholder="Hier den gesamten Inhalt der XML-Datei einfügen"></textarea>
+      <input type="file" id="blok-xml-subor" accept=".xml,text/xml,application/xml" hidden>
       <div class="akcie">
-        <a class="btn btn-solid" href="/efaktura/de/#kontrola" data-umami-event="efaktura_pravidlo_blok_klik" data-umami-event-id="PEPPOL-COMMON-R047" data-umami-event-jazyk="de">Mein XML prüfen</a>
+        <button type="button" class="btn btn-solid" id="blok-xml-spustit" data-umami-event="pravidlo_xml_vlozene" data-umami-event-pravidlo="PEPPOL-COMMON-R047" disabled>Mein XML prüfen</button>
+        <button type="button" class="btn btn-line" id="blok-xml-vybrat">XML-Datei auswählen</button>
       </div>
+      <p class="blok-xml-stav" id="blok-xml-stav" role="status"></p>
+      <div class="blok-xml-vysledok" id="blok-xml-vysledok" hidden></div>
+      <noscript><p class="blok-xml-meta">Die Prüfung braucht JavaScript: Die Datei wird in Ihrem Browser gelesen und geprüft, nicht auf einem Server.</p></noscript>
+      <p class="blok-xml-nastroj"><a href="/efaktura/de/#kontrola" data-umami-event="efaktura_pravidlo_blok_klik" data-umami-event-id="PEPPOL-COMMON-R047" data-umami-event-jazyk="de">Vollständiges Werkzeug öffnen</a></p>
     </section>
+    <p class="lead r">Die italienische Partita IVA soll 11 Ziffern mit gültiger Prüfziffer haben.</p>
     <div class="rule"></div>
     <h2 id="znenie">Was die Regel sagt</h2>
     <blockquote class="citacia"><p>Italian VAT Code (Partita Iva) must be stated in the correct format</p></blockquote>
@@ -187,7 +196,7 @@
     <p class="jazyky">Diese Seite in einer anderen Sprache: <a href="/efaktura/en/rules/peppol-common-r047/" hreflang="en" lang="en">English</a> · <a href="/efaktura/pravidla/peppol-common-r047/" hreflang="sk" lang="sk">Slovensky</a> · <a href="/efaktura/cs/pravidla/peppol-common-r047/" hreflang="cs" lang="cs">Česky</a></p>
     <div class="rule"></div>
     <p class="pomoc">Unsere Prüfung ist nicht vollständig: wir prüfen weder das XSD-Schema noch alle Regeln, und dass eine Datei durchläuft, sagt nichts darüber, ob der Empfänger oder das Peppol-Netz sie annimmt. Die Quelle des zitierten Wortlauts steht beim Zitat.</p>
-    <p class="pomoc">Inhalt der Seite zuletzt geändert: <time datetime="2026-09-26">26.09.2026</time></p>
+    <p class="pomoc">Inhalt der Seite zuletzt geändert: <time datetime="2026-09-27">27.09.2026</time></p>
   </article>
 </main>
 <footer class="site-footer">
