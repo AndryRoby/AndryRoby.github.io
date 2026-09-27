@@ -316,6 +316,15 @@ for (const m of ZAVERY.filter((z) => z !== 'coming-soon')) {
 }
 nastavZaver('coming-soon');
 
+// na stránke je plátno malé: písmo v telefóne musí mať rovnaký pomer k šírke ako vo videu (27. 9. obrovská hláška na mobile)
+{
+  const pomer = (W, H) => { film.vrstvy(W, H, 1, { render: true, slabe: false, dpr: 1, W, H }); const r = film.kontrola.rozlozenie(); return r.vTelefone.hlaska / r.telefonPribeh[2]; };
+  for (const [W, H] of [[360, 640], [250, 444], [640, 360]]) {
+    const velke = pomer(W * 3, H * 3), male = pomer(W, H);
+    if (male > velke * 1.1) chyby.push(`${W}x${H}: hláška v telefóne je pomerne o ${Math.round((male / velke - 1) * 100)} % väčšia ako vo videu`);
+  }
+}
+
 // partitúra
 const ZNAME = new Set(['zvon', 'pad', 'sum', 'praskot', 'tuk', 'glis', 'appka']);
 for (const u of film.zvuk) {

@@ -69,7 +69,9 @@ const KOLA = [
   // Odd One Out (OddOne.kt): kolo 2 = mriežka 3 x 3, rozdiel 78,75° (90 -> 45 po krokoch), všetky ostatné šípky rovnako.
   // Orange ťukne na zlú šípku; Blue sa ešte len blíži k správnej, kolo sa skončí a jeho palec sa stiahne.
   { id: 'oddone', nazov: 'Odd One Out', ikona: IKONY.oddone, rodina: FARBA.visual, intro: 3.30, odpocet: 4.80, zive: 6.30,
-    tapO: 7.24, tapB: null, vitaz: 'B', chybaO: true, koniec: 9.06,
+    tapO: 7.24, tapB: null, vitaz: 'B', chybaO: true, koniec: 9.06, karta: false,
+    // karta: false = vo filme bez pilulky hlášky: mriežka zaberá celú polovicu a pilulka by zakryla šípky
+    // (Andrej 27. 9.); príbeh nesie prstenec, krížik, rozsvietenie a titulok pod telefónom
     hlaska: { O: 'Look first, tap second 👓', B: 'Cool as ice 🧊' }, metrika: {} },
   // Bigger Circle (Bigger.kt): kolo 3 = plocha menšieho o 36 % menšia, kruhy na x .28 a .72, y .46
   { id: 'bigger', nazov: 'Bigger Circle', ikona: IKONY.bigger, rodina: FARBA.visual, intro: 9.06, odpocet: 10.56, zive: 12.06,
@@ -211,7 +213,11 @@ function stavVrstiev(W, H, dpr) {
   // --- texty v telefóne: sp appky * px na dp, najmenej cieľová veľkosť vo výslednom videu ---
   // cielPx je výška písma vo videu pri mierke, v ktorej sa text kreslí: príbeh (1) alebo hák a záver (kE).
   // Hlášky kola 1 kreslí aj hák (menší telefón), preto majú mieru háku; kolá 2 a 3 len príbeh.
-  const px = (sp, cielPx, vHaku) => Math.max(sp * ppdS, vHaku ? cielPx / R.kE : cielPx);
+  // cielPx platí pre video s kratšou stranou 1080 px; na stránke je plátno menšie (telefón asi 250 px), preto sa
+  // mierka odvodí od kratšej strany plátna. Bez toho mala hláška na mobile 42 px pri telefóne širokom 150 px
+  // a zakryla polovicu obrazovky (Andrej 27. 9.: „je tam veľký text a nevidno niekedy to podstatné“).
+  const mk = Math.min(W, H) / 1080;
+  const px = (sp, cielPx, vHaku) => Math.max(sp * ppdS, (vHaku ? cielPx / R.kE : cielPx) * mk);
   const wKarta = (SW - 2 * 20 - 2 * 16) * ppdS; // stĺpec 20 dp, vnútro karty 16 dp
   const T_ = (text, velkost, farba, w = wKarta, riadky = 2, vaha = 800) => spriteTextu(dpr, text, velkost, w, { vaha, farba, maxRiadkov: riadky, minPx: mp * 1.02 });
   const vnutri = {
@@ -222,9 +228,10 @@ function stavVrstiev(W, H, dpr) {
     ready: T_('Ready', px(28, 46), FARBA.textMuted, wKarta, 1),
     set: T_('Set', px(28, 46), FARBA.textMuted, wKarta, 1),
     go: T_('Go!', px(64, 46), FARBA.good, wKarta, 1),
+    // hák (k 0) kreslí menší telefón: hláška 37 px vo videu a širšia, aby sa aj v 4:5 zmestila na jeden riadok (27. 9.)
     karty: KOLA.map((K, k) => ({
-      O: { hlaska: T_(bezEmoji(K.hlaska.O), px(22, 42, k === 0), FARBA.text), metrika: K.metrika.O ? T_(K.metrika.O, px(16, 40, k === 0), FARBA.textMuted, wKarta, 1, 700) : null },
-      B: { hlaska: T_(bezEmoji(K.hlaska.B), px(22, 42, k === 0), FARBA.text), metrika: K.metrika.B ? T_(K.metrika.B, px(16, 40, k === 0), FARBA.textMuted, wKarta, 1, 700) : null },
+      O: { hlaska: T_(bezEmoji(K.hlaska.O), px(22, k === 0 ? 37 : 42, k === 0), FARBA.text, k === 0 ? (SW - 52) * ppdS : wKarta), metrika: K.metrika.O ? T_(K.metrika.O, px(16, k === 0 ? 37 : 40, k === 0), FARBA.textMuted, wKarta, 1, 700) : null },
+      B: { hlaska: T_(bezEmoji(K.hlaska.B), px(22, k === 0 ? 37 : 42, k === 0), FARBA.text, k === 0 ? (SW - 52) * ppdS : wKarta), metrika: K.metrika.B ? T_(K.metrika.B, px(16, k === 0 ? 37 : 40, k === 0), FARBA.textMuted, wKarta, 1, 700) : null },
     })),
     plus: { O: T_('+1', px(40, 46, true), FARBA.p1, 140 * ppdS, 1), B: T_('+1', px(40, 46, true), FARBA.p2, 140 * ppdS, 1) },
     // obrazovka výsledku sa číta hlavne na konci (menší telefón): väčšie písmo ako v appke
@@ -297,16 +304,18 @@ function choreografia(R) {
   const O = [
     // hák: kolo sa rozhodlo pred snímkou 0, palec sa práve zdvíha z padu a odchádza
     k(0, nad(padO, domO, 20)), k(0.3, vonO(padO)), k(0.95, [domO.x, domO.y]),
-    k(5.5, [domO.x, domO.y]), k(6.45, nad(Z(vahaO), domO, 34)), k(6.9, nad(Z(vahaO), domO, 28)),
-    k(7.14, nad(Z(zlaO), domO, 20)), k(7.24, Z(zlaO), 1), k(7.3, Z(zlaO), 1), k(7.52, vonO(Z(zlaO))), k(8.2, [domO.x, domO.y]),
-    k(11.0, [domO.x, domO.y]), k(12.1, nad(Z(velkyO), domO, 40)), k(12.55, nad(Z(velkyO), domO, 18)),
+    // 27. 9. (Andrej: „nevidno niekedy to podstatné“): palec čaká na okraji mimo šípok a kruhov, k cieľu
+    // skočí až v poslednej 0,15 s, takže mriežku aj oba kruhy vidno celé, kým sa hráč rozhoduje
+    k(5.5, [domO.x, domO.y]), k(6.45, nad(Z(vahaO), domO, 80)), k(6.9, nad(Z(vahaO), domO, 74)),
+    k(7.09, nad(Z(zlaO), domO, 76)), k(7.24, Z(zlaO), 1), k(7.3, Z(zlaO), 1), k(7.52, vonO(Z(zlaO))), k(8.2, [domO.x, domO.y]),
+    k(11.0, [domO.x, domO.y]), k(12.1, nad(Z(velkyO), domO, 110)), k(12.49, nad(Z(velkyO), domO, 100)),
     k(12.64, Z(velkyO), 1), k(12.7, Z(velkyO), 1), k(12.92, vonO(Z(velkyO))), k(13.6, [domO.x, domO.y]),
   ];
   const B = [
     k(0, nad(padB, domB, 24)), k(0.35, vonB(padB)), k(1.0, [domB.x, domB.y]),
-    // kolo 2 a 3: Blue sa blíži k správnej odpovedi, kolo sa skončí skôr, palec sa stiahne (neťukne)
-    k(5.7, [domB.x, domB.y]), k(6.7, nad(inaB, domB, 44)), k(7.2, nad(inaB, domB, 26)), k(7.3, nad(inaB, domB, 30)), k(7.55, vonB(inaB)), k(8.3, [domB.x, domB.y]),
-    k(11.2, [domB.x, domB.y]), k(12.25, nad(velkyB, domB, 44)), k(12.64, nad(velkyB, domB, 26)), k(12.7, nad(velkyB, domB, 30)), k(12.95, vonB(velkyB)), k(13.6, [domB.x, domB.y]),
+    // kolo 2 a 3: Blue sa blíži k správnej odpovedi, ale zostane mimo nej; kolo sa skončí skôr a palec sa stiahne
+    k(5.7, [domB.x, domB.y]), k(6.7, nad(inaB, domB, 100)), k(7.2, nad(inaB, domB, 80)), k(7.3, nad(inaB, domB, 86)), k(7.55, vonB(inaB)), k(8.3, [domB.x, domB.y]),
+    k(11.2, [domB.x, domB.y]), k(12.25, nad(velkyB, domB, 120)), k(12.64, nad(velkyB, domB, 104)), k(12.7, nad(velkyB, domB, 110)), k(12.95, vonB(velkyB)), k(13.6, [domB.x, domB.y]),
   ];
   return { O: { kluce: O, u: domO.u }, B: { kluce: B, u: domB.u }, dotyky: { O: [[KOLA[0].tapO, padO], [KOLA[1].tapO, Z(zlaO)], [KOLA[2].tapO, Z(velkyO)]], B: [[KOLA[0].tapB, padB]] } };
 }
@@ -483,11 +492,13 @@ function kartaKola(k, kto) {
   const K = KOLA[k], c = L.vnutri.karty[k][kto];
   const hh = spH(c.hlaska), mh = c.metrika ? spH(c.metrika) : 0;
   const tw = Math.max(c.hlaska.textW / L.R.ppdS, c.metrika ? c.metrika.textW / L.R.ppdS : 0);
-  const w = Math.min(SW - 40, tw + 32), h = hh + (c.metrika ? mh * 0.92 : 0) + 20;
+  // hák: pilulka smie byť širšia (okraj 14 dp), aby hláška ostala na jeden riadok aj v menšom telefóne 4:5
+  const w = Math.min(SW - (k === 0 ? 28 : 40), tw + (k === 0 ? 24 : 32)), h = hh + (c.metrika ? mh * 0.92 : 0) + 20;
   const hore = Math.max(POL.y + POL.h / 6, POL.y + h / 2 + 4), dole = Math.min(POL.y + POL.h * (5 / 6), LISTA.y - h / 2 - 6);
   const ciele = cieleKola(K, kto);
   const volne = (cy) => !ciele.some((q) => q.x < SW / 2 + w / 2 && q.x + q.w > SW / 2 - w / 2 && q.y < cy + h / 2 && q.y + q.h > cy - h / 2);
-  const cy = [hore, dole, POL_CY].find(volne) ?? hore;
+  // White Flash: polovica je prázdna, hláška v strede nechá nad sebou miesto, odkiaľ vyletí +1 (nie cez text)
+  const cy = K.id === 'light' ? Math.min(SCENA_LIGHT.y + SCENA_LIGHT.h * 0.58, PAD.y - h / 2 - 12) : [hore, dole, POL_CY].find(volne) ?? hore;
   return { c, w, h, hh, mh, cx: SW / 2, cy };
 }
 
@@ -515,8 +526,12 @@ function kresliPlus(x, K, t) {
   const kto = K.vitaz, i = skore(K.rozhodnute + 0.5)[kto];
   const q = ease.inOutCubic(obmedz(dt / 0.4));
   const bx = bodkaX('O', i), by = PAS_CY; // v súradniciach hráča: jeho bodky sú pri jeho ľavom okraji
-  const karta = kartaKola(KOLA.indexOf(K), kto); // +1 vyletí z hlášky víťaza
-  const px = lerp(karta.cx, bx, q), py = lerp(karta.cy, by, q);
+  // +1 vyletí zo správnej odpovede (prstenec); pri White Flash z voľného miesta nad hláškou, nikdy nie cez jej text
+  let zx, zy;
+  if (K.id === 'oddone') { const b = bunkaOdd(ODD.ina); zx = b.x; zy = b.y; }
+  else if (K.id === 'bigger') { const c = kruh(BIG.zelenyVacsi); zx = c.x; zy = c.y; }
+  else { const karta = kartaKola(KOLA.indexOf(K), kto); zx = karta.cx; zy = (POL.y + karta.cy - karta.h / 2) / 2; }
+  const px = lerp(zx, bx, q), py = lerp(zy, by, q);
   polovica(x, kto, () => {
     alfa(x, 1 - okno(dt, 0.34, 0.45));
     sp(x, L.vnutri.plus[kto], px, py);
@@ -617,7 +632,7 @@ function kresliKolo(x, k, t) {
   if (f === 'rozhodnute') {
     const od = k === 0 ? T.kartyR1 : K.rozhodnute + KARTA_OD;
     for (const kto of ['O', 'B']) polovica(x, kto, () => {
-      kresliKartu(x, k, kto, t, od);
+      if (K.karta !== false) kresliKartu(x, k, kto, t, od);
       // prstenec správnej odpovede ešte raz nad kartou (MainActivity: correctRings)
       if (K.id !== 'light' && dt > 0.15) kresliOdhalenie(x, { ...K, chybaO: false }, kto, dt);
     });

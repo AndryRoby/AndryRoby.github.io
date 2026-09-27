@@ -157,35 +157,81 @@ export async function citajXlsx(bajty) {
 
 /* ── Stĺpec s menom ──────────────────────────────────────────────────────── */
 
-const HLAVICKA_MENO = /^(name|name ?1|firma|firmenname|firmierung|unternehmen|unternehmensname|partner|geschäftspartner|geschaeftspartner|kunde|kundenname|lieferant|lieferantenname|debitor|kreditor|bezeichnung|company|company name|organisation|organization|empfänger|empfaenger|auftraggeber|kontoinhaber|nachname)$/i;
-const HLAVICKA_CAST = /name|firma|unternehmen|partner|kunde|lieferant|company|debitor|kreditor|bezeichnung/i;
+/* Hlavičky nemeckého, slovenského, českého a anglického Excelu (27. 9. 2026
+ * pribudli slovenská a česká stránka /sankcny-zoznam/ a anglická /sanctions-check/). */
+const HLAVICKA_MENO = /^(name|name ?1|firma|firmenname|firmierung|unternehmen|unternehmensname|partner|geschäftspartner|geschaeftspartner|kunde|kundenname|lieferant|lieferantenname|debitor|kreditor|bezeichnung|company|company name|customer|customer name|supplier|supplier name|business partner|organisation|organization|empfänger|empfaenger|auftraggeber|kontoinhaber|nachname|názov|nazov|názov firmy|nazov firmy|názov spoločnosti|nazov spolocnosti|obchodné meno|obchodne meno|meno|meno a priezvisko|priezvisko a meno|priezvisko|odberateľ|odberatel|dodávateľ|dodavatel|zákazník|zakaznik|klient|spoločnosť|spolocnost|název|nazev|název firmy|nazev firmy|obchodní jméno|obchodni jmeno|jméno|jmeno|odběratel|společnost|spolecnost)$/i;
+const HLAVICKA_CAST = /name|firma|unternehmen|partner|kunde|lieferant|company|debitor|kreditor|bezeichnung|názov|nazov|obchodné meno|obchodne meno|název|nazev|jméno|spoločnos|spolecnos|společnos/i;
 
-/* Odhad: má prvý riadok hlavičku a ktorý stĺpec nesie meno partnera. */
+/* Stĺpce s identifikátorom sa za meno nikdy nevyberú (kontrola 27. 9. 2026: hlavička „IČO spoločnosti;Meno partnera“
+ * vybrala IČO a stránka hlásila „žiadne meno nedosiahlo skóre“, hoci mená vôbec neskontrolovala, falošne negatívne). */
+const HLAVICKA_ID = /(^|[^\p{L}])(ičo|ico|dič|dic|ič ?dph|ic ?dph|id|ids|nr|no|number|nummer|číslo|cislo|vat|iban|bic|ust|ust-?id|steuernummer|handelsregister|registration|reg\.?)([^\p{L}]|$)/iu;
+const KRSTNE = /^(meno|jméno|jmeno|vorname|first ?name|given ?name)$/i;
+const PRIEZVISKO = /^(priezvisko|příjmení|prijmeni|nachname|last ?name|surname|family ?name)$/i;
+
+/* Krátky nadpis, ktorý končí slovom ako „name“ či „ID“ („Legal name“, „Company ID“, „VAT number“), alebo začína
+ * identifikátorom („IČO spoločnosti“). „ID“, „No“ a „Nr“ na začiatku nestačia: ID Logistics či No Limit sú firmy. */
+const HLAVICKA_KONIEC = /(^|\s)(name|names|názov|nazov|meno|jméno|jmeno|název|nazev|bezeichnung|id|ids|ičo|ico|dič|dic|nr\.?|no\.?|number|nummer|číslo|cislo|iban|vat)$/iu;
+const HLAVICKA_ZACIATOK = /^(ičo|ico|dič|dic|ič ?dph|ic ?dph|číslo|cislo|iban|vat|ust-?id|steuernummer)(\s|$)/iu;
+
+/* Podiel vyplnených hodnôt v stĺpci, ktoré majú aspoň dve písmená (mená), nie čísla. */
+function pismenovy(riadky, k, odRiadku) {
+  const hodnoty = riadky.slice(odRiadku, odRiadku + 50).map((r) => (r[k] || '').trim()).filter(Boolean);
+  if (!hodnoty.length) return true;
+  return hodnoty.filter((h) => ((h.match(/\p{L}/gu) || []).length >= 2)).length / hodnoty.length >= 0.6;
+}
+
+/* Silné znaky hlavičky: bunka je presne známy nadpis (Name, Meno, Priezvisko), krátky nadpis končí slovom ako
+ * „name“ alebo „ID“, alebo stĺpec je pod prvým riadkom číselný (IČO, suma) a v prvom riadku má písmená. */
+function jeHlavicka(riadky, prvy) {
+  const t = (x) => (x || '').trim();
+  const kratky = (s) => s.length <= 40 && s.split(/\s+/).length <= 4;
+  if (prvy.some((x) => HLAVICKA_MENO.test(t(x)) || KRSTNE.test(t(x)) || PRIEZVISKO.test(t(x)))) return true;
+  if (prvy.some((x) => kratky(t(x)) && (HLAVICKA_KONIEC.test(t(x)) || HLAVICKA_ZACIATOK.test(t(x))))) return true;
+  if (riadky.length < 2) return false;
+  return prvy.some((x, k) => (t(x).match(/\p{L}/gu) || []).length >= 2 && !pismenovy(riadky, k, 1));
+}
+
+/* Odhad: má prvý riadok hlavičku a ktorý stĺpec nesie meno partnera. Pri osobe rozdelenej na meno a priezvisko
+ * vráti aj „spojit“ (stĺpec priezviska), aby sa kontrolovalo celé meno. */
 export function odhadniStlpec(riadky) {
-  if (!riadky.length) return { hlavicka: false, stlpec: 0, stlpcov: 0 };
+  if (!riadky.length) return { hlavicka: false, stlpec: 0, stlpcov: 0, spojit: null };
   const stlpcov = Math.max(...riadky.slice(0, 50).map((r) => r.length));
   const prvy = riadky[0];
-  let stlpec = prvy.findIndex((x) => HLAVICKA_MENO.test(x.trim()));
-  if (stlpec < 0) stlpec = prvy.findIndex((x) => HLAVICKA_CAST.test(x) && x.length <= 40);
-  const hlavicka = stlpec >= 0;
-  if (!hlavicka) {
-    // Bez hlavičky: stĺpec s najviac písmenami (mená), nie čísla.
+  const kandidat = (x, k) => !HLAVICKA_ID.test(x.trim()) && pismenovy(riadky, k, 1);
+  const krstne = prvy.findIndex((x) => KRSTNE.test(x.trim()));
+  const priezvisko = prvy.findIndex((x) => PRIEZVISKO.test(x.trim()));
+  if (krstne >= 0 && priezvisko >= 0 && krstne !== priezvisko) {
+    return { hlavicka: true, stlpec: krstne, stlpcov, spojit: priezvisko };
+  }
+  // Riadok s čisto číselnou bunkou (IČO, suma) sú dáta, nie hlavička: inak by sa prvá firma, napríklad
+  // „Rosneft Oil Company“, vzala za nadpis stĺpca a vôbec by sa neskontrolovala.
+  const prvyJeData = prvy.some((x) => /^[\d\s.,/-]+$/.test((x || '').trim()) && (x || '').trim().length > 0);
+  // O hlavičke rozhoduje len silný znak, nie samotné slovo „company“ či „name“ v bunke (Astra 27. 9.: súbor bez
+  // hlavičky „Al-Arabi Trading Company;…“ prišiel o prvé meno, hoci je na zozname). Pri pochybnosti sa kontroluje
+  // aj prvý riadok: nadpis skontrolovaný ako meno nič nepokazí, vynechané meno áno.
+  const hlavicka = !prvyJeData && jeHlavicka(riadky, prvy);
+  let stlpec = hlavicka ? prvy.findIndex((x, k) => HLAVICKA_MENO.test(x.trim()) && kandidat(x, k)) : -1;
+  if (stlpec < 0 && hlavicka) stlpec = prvy.findIndex((x, k) => HLAVICKA_CAST.test(x) && x.length <= 40 && kandidat(x, k));
+  if (stlpec < 0) {
+    // Bez rozpoznanej hlavičky mena: stĺpec s najviac písmenami (mená), nie čísla ani stĺpec s identifikátorom.
+    const od = hlavicka ? 1 : 0;
     let naj = 0; let najSkore = -1;
     for (let k = 0; k < stlpcov; k++) {
-      const s = riadky.slice(0, 50).reduce((a, r) => a + ((r[k] || '').match(/\p{L}/gu) || []).length, 0);
+      if (hlavicka && HLAVICKA_ID.test((prvy[k] || '').trim())) continue;
+      const s = riadky.slice(od, od + 50).reduce((a, r) => a + ((r[k] || '').match(/\p{L}/gu) || []).length, 0);
       if (s > najSkore) { najSkore = s; naj = k; }
     }
     stlpec = naj;
   }
-  return { hlavicka, stlpec, stlpcov };
+  return { hlavicka, stlpec, stlpcov, spojit: null };
 }
 
-/* Mená na kontrolu: [{ riadok (číslo v súbore, od 1), meno }]. */
-export function menaZoStlpca(riadky, stlpec, hlavicka) {
+/* Mená na kontrolu: [{ riadok (číslo v súbore, od 1), meno }]. So „spojit“ sa pridá priezvisko z druhého stĺpca. */
+export function menaZoStlpca(riadky, stlpec, hlavicka, spojit = null) {
   const out = [];
   riadky.forEach((r, i) => {
     if (hlavicka && i === 0) return;
-    const m = (r[stlpec] || '').trim();
+    const m = [r[stlpec], spojit === null || spojit === undefined ? '' : r[spojit]].map((x) => (x || '').trim()).filter(Boolean).join(' ');
     if (m) out.push({ riadok: i + 1, meno: m });
   });
   return out;
