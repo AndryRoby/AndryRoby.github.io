@@ -1,10 +1,11 @@
 /*
  * A drawn pointer for the demos on arling.sk/motion and in demo.html?cursor=1.
- * Every demo returns cursor keyframes { t, el, dx?, dy?, click?, down?, up?, carry?, drop? } and
- * sometimes keys [{ t, key }]. This draws them at time t as a pure function of t (like the
+ * Every demo returns cursor keyframes { t, el, dx?, dy?, click?, down?, ease?, up?, carry?, drop? }
+ * and sometimes keys [{ t, key }]. This draws them at time t as a pure function of t (like the
  * components), so a live loop and a frame by frame render show the same thing.
  * The pointer glides to each target in the last 0.45 s before it, clicks leave a small ring,
- * between down and up the pointer is pressed and follows the drag, a carried file shows a label,
+ * between down and up the pointer is pressed and follows the drag (easing in, or in and out when
+ * the down keyframe has ease: 'inOut', as the component's own drag did), a carried file shows a label,
  * and keys show as a keycap at the bottom of the stage.
  * MIT licence.
  */
@@ -62,7 +63,7 @@ export function createCursor(stage) {
       const pa = point(a, sr);
       const pb = point(b, sr);
       let s;
-      if (a.down && b.up) { s = easeIn(clamp01((t - a.t) / (b.t - a.t))); pressed = true; }
+      if (a.down && b.up) { s = (a.ease === 'inOut' ? smooth : easeIn)(clamp01((t - a.t) / (b.t - a.t))); pressed = true; }
       else { const move = Math.min(GLIDE, b.t - a.t); s = smooth(clamp01((t - (b.t - move)) / move)); }
       pos = { x: pa.x + (pb.x - pa.x) * s, y: pa.y + (pb.y - pa.y) * s };
       break;

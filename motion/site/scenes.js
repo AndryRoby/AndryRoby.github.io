@@ -45,6 +45,10 @@ import { createMorph } from '../components/morph/morph.js';
 import { demo as morphDemo } from '../components/morph/demo.js';
 import { createMarquee } from '../components/marquee/marquee.js';
 import { demo as marqueeDemo } from '../components/marquee/demo.js';
+import { createSortable } from '../components/sortable/sortable.js';
+import { demo as sortableDemo } from '../components/sortable/demo.js';
+import { createSteps } from '../components/steps/steps.js';
+import { demo as stepsDemo } from '../components/steps/demo.js';
 import { beats } from '../src/core.js';
 
 export const REGISTRY = 'https://arling.sk/motion/r/';
@@ -132,14 +136,14 @@ const hero = {
   build() {
     const t = uid('hero-title');
     return [
-      h('button', { class: 'am-dialog-trigger mo-hero-trigger', type: 'button' }, 'Get 18 free components'),
+      h('button', { class: 'am-dialog-trigger mo-hero-trigger', type: 'button' }, 'Get 20 free components'),
       h('div', { class: 'am-dialog-root', hidden: true },
         h('div', { class: 'am-dialog-backdrop' }),
         h('div', { class: 'am-dialog-frame' },
           h('div', { class: 'am-dialog', role: 'dialog', 'aria-labelledby': t },
             h('div', { class: 'am-dialog-content' },
               h('p', { class: 'mo-card-kicker' }, 'ARLing Motion'),
-              h('h3', { class: 'am-dialog-title', id: t }, '18 components, MIT licence'),
+              h('h3', { class: 'am-dialog-title', id: t }, '20 components, MIT licence'),
               h('p', { class: 'am-dialog-description' },
                 'Each one is a real component for your product, with a 4 second demo timeline written into it.'),
               h('code', { class: 'mo-card-cmd' }, HERO_CMD),
@@ -351,7 +355,7 @@ const accordion = {
         h('div', { class: 'am-accordion-content' }, ...rows.map((r) => h('p', {}, r)))));
     return [
       h('div', { class: 'am-accordion' },
-        item('What is free?', ['All eighteen components and the core.', 'MIT licence, for any project.', 'No account, no key.']),
+        item('What is free?', ['All twenty components and the core.', 'MIT licence, for any project.', 'No account, no key.']),
         item('Do I need React?', ['No. Each component is plain JavaScript.', 'The React files are thin wrappers.', 'Both use the same logic.']),
         item('How does the video work?', ['Every component has a 4 second demo.', 'seek(t) paints any moment of it.', 'The last frame equals the first.'])),
     ];
@@ -651,9 +655,83 @@ const marqueeScene = {
   demo: marqueeDemo,
 };
 
+// Today's tasks in the order you choose, as in a to-do app. The list is only on this page;
+// nothing is saved.
+const TASKS = [
+  ['reply', 'Reply to customers'],
+  ['invoices', 'Send invoices'],
+  ['prices', 'Update prices'],
+  ['plan', 'Plan next week'],
+];
+
+const sortableScene = {
+  title: 'Sortable',
+  height: 330,
+  build() {
+    const id = uid('sortable-label');
+    return [
+      h('div', { class: 'mo-sortable-scene' },
+        h('span', { class: 'mo-sortable-label', id }, 'Today, in order'),
+        h('div', { class: 'am-sortable' },
+          h('ul', { class: 'am-sortable-list', 'aria-labelledby': id },
+            ...TASKS.map(([value, label]) => h('li', { 'data-value': value }, h('span', { class: 'am-sortable-label' }, label))))),
+        h('p', { class: 'mo-hint' }, 'Drag a handle, or press Space on it and use the arrow keys.')),
+    ];
+  },
+  create: (stage, o = {}) => createSortable({ root: q(stage, '.am-sortable'), clock: o.clock, reduced: o.reduced }),
+  demo: sortableDemo,
+};
+
+// The setup of Asistent, our sales assistant for online shops, in its three steps as on its page
+// (feed, check, one script tag). Next step moves on; after the last one it starts over. Nothing
+// is set up here.
+const SETUP = [
+  ['Product feed', 'Your feed URL'],
+  ['Check products', 'See what it read'],
+  ['Paste the code', 'One script tag'],
+];
+
+const stepsScene = {
+  title: 'Steps',
+  height: 220,
+  build() {
+    return [
+      h('div', { class: 'mo-steps-scene' },
+        h('div', { class: 'am-steps' },
+          h('ol', { class: 'am-steps-list', 'aria-label': 'Asistent setup' },
+            ...SETUP.map(([title, detail]) => h('li', {},
+              h('span', { class: 'am-steps-title' }, title),
+              h('span', { class: 'am-steps-detail' }, detail))))),
+        h('button', { class: 'mo-btn mo-steps-next', type: 'button' })),
+    ];
+  },
+  create(stage, o = {}) {
+    const button = q(stage, '.mo-steps-next');
+    // Live stage only (no clock given): rest on the second step, so the row shows a finished step.
+    // Demo and video builds pass a clock and start on the first step, as the demo expects.
+    const api = createSteps({ root: q(stage, '.am-steps'), step: o.clock ? 0 : 1, clock: o.clock, reduced: o.reduced });
+    // the label is a function of time too, so a video frame shows the right one
+    const paintLabel = (t) => {
+      const text = api.step(t) >= api.count ? 'Start over' : 'Next step';
+      if (button.textContent !== text) button.textContent = text;
+    };
+    const onClick = () => {
+      api.setStep(api.step() >= api.count ? 0 : api.step() + 1);
+      paintLabel();
+    };
+    button.addEventListener('click', onClick);
+    const seek = api.seek;
+    api.seek = (t) => { seek(t); paintLabel(t); };
+    api.trigger = button;
+    paintLabel();
+    return withCleanup(api, () => button.removeEventListener('click', onClick));
+  },
+  demo: stepsDemo,
+};
+
 /** Every scene by name; GALLERY is the order of the component rows on the page. */
-export const SCENES = { hero, dialog, tabs, tooltip, popover, toast, switch: switchScene, number: numberScene, island: islandScene, segmented: segmentedScene, slider: sliderScene, morph: morphScene, marquee: marqueeScene, accordion, command, drawer, carousel, otp, dropzone };
-export const GALLERY = ['dialog', 'tabs', 'tooltip', 'popover', 'toast', 'switch', 'accordion', 'command', 'drawer', 'carousel', 'otp', 'dropzone', 'number', 'island', 'segmented', 'slider', 'morph', 'marquee'];
+export const SCENES = { hero, dialog, tabs, tooltip, popover, toast, switch: switchScene, number: numberScene, island: islandScene, segmented: segmentedScene, slider: sliderScene, morph: morphScene, marquee: marqueeScene, sortable: sortableScene, steps: stepsScene, accordion, command, drawer, carousel, otp, dropzone };
+export const GALLERY = ['dialog', 'tabs', 'tooltip', 'popover', 'toast', 'switch', 'accordion', 'command', 'drawer', 'carousel', 'otp', 'dropzone', 'number', 'island', 'segmented', 'slider', 'morph', 'marquee', 'sortable', 'steps'];
 
 // ------------------------------------------------------------------ one frame strip for "three outputs"
 

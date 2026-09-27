@@ -1,0 +1,169 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "steps",
+  "type": "registry:ui",
+  "title": "Steps",
+  "description": "Steps with progress for a setup or a checkout: the line draws on to the current step on a spring, the current step lights up, and a finished step fills and gets a check that draws itself. A list with aria-current=\"step\" and a progressbar with the number of steps done; nothing takes focus.",
+  "author": "ARLing s. r. o. (https://arling.sk)",
+  "registryDependencies": [
+    "https://arling.sk/motion/r/core.json"
+  ],
+  "files": [
+    {
+      "path": "registry/arling/lib/arling-motion-steps.js",
+      "content": "'use strict';\n// ARLing Motion: steps. MIT licence, https://arling.sk/motion/ . Installed from the ARLing\n// Motion registry (source: components/steps/steps.js). Plain JavaScript; the .d.ts next to it types the exports.\n/*\n * ARLing Motion: Steps.\n * Steps with progress, for a setup or a checkout, like a shadcn Progress under a stepper. A line\n * behind the markers draws on to the current step on a spring, the step you are on lights up (a\n * ring closes in on its marker), and a finished step fills and gets a check that draws itself.\n * Going back undoes it the same way, and a jump over several steps finishes them one after\n * another. Every value is a function of time (the check is stroke-dashoffset from the seconds\n * since its step was finished), so seek(t) paints any moment of a scheduled demo.\n *\n * Markup:\n *   <div class=\"am-steps\">\n *     <ol class=\"am-steps-list\" aria-label=\"Setup\">\n *       <li><span class=\"am-steps-title\">Product feed</span><span class=\"am-steps-detail\">Your feed URL</span></li>\n *       <li><span class=\"am-steps-title\">Check products</span></li>\n *     </ol>\n *   </div>\n * The component adds the parts that are missing: a marker per step (number, filled disc, check\n * and ring, all aria-hidden), a visually hidden \"Completed:\" before every finished step, the\n * progress line (.am-steps-bar with .am-steps-fill) and a polite status region. Horizontal, one\n * equal column per step.\n *\n * Screen readers: the list keeps its list role (role=\"list\", which some browsers drop with\n * list-style: none), the current step has aria-current=\"step\", and the line is a progressbar\n * with aria-valuenow (steps done), aria-valuemax (steps) and aria-valuetext (\"Step 2 of 3: Check\n * products\"). A change made by setStep() is also said once in the status region. The steps do not\n * take focus and are not buttons: focus stays on your own Next or Back button, which is always\n * visible. With prefers-reduced-motion every change shows at once.\n * MIT licence.\n */\nimport { track, driver, steps as discrete, attr, spring, PRESETS } from './arling-motion';\n\nconst clamp01 = (x) => (x < 0 ? 0 : x > 1 ? 1 : x);\nconst n4 = (v) => String(Math.round(v * 1e4) / 1e4);\nconst SVG = 'http://www.w3.org/2000/svg';\n\n/** The line draws on to the current step on this spring (overshoot under 1 %). */\nexport const LINE = PRESETS.smooth;\n/** A finished step's disc grows on this spring. */\nexport const FILL = PRESETS.snappy;\n/** The check draws itself on this spring: critically damped, so the stroke never runs past its end. */\nexport const DRAW = spring(0.42, 1);\n/** The ring of the current step closes in on this spring. */\nexport const RING = PRESETS.smooth;\n/** Going back: the check, the disc and the ring leave on this quick spring without overshoot. */\nexport const UNDO = PRESETS.exit;\n/** The check starts drawing this long after its disc starts to grow. */\nexport const CHECK_DELAY = 0.12;\n/** The new current step lights up this long after the line starts toward it. */\nexport const CURRENT_DELAY = 0.16;\n/** Several steps finished at once fill one after another, this many seconds apart. */\nexport const STAGGER = 0.08;\n/** The ring starts this much larger than the marker and closes in. */\nexport const RING_FROM = 1.3;\n/** The check, in a 24 by 24 box. */\nexport const CHECK_PATH = 'M5 12.5l4.5 4.5L19 7.5';\n\n/** The default aria-valuetext and announcement: \"Step 2 of 3: Check products\" or \"All 3 steps completed\". */\nexport function describeStep(step, count, titles) {\n  return step >= count ? `All ${count} steps completed` : `Step ${step + 1} of ${count}: ${titles[step]}`;\n}\n\n/** Sets a new target at time `at`; changes planned after `now` are dropped (the later call wins). */\nfunction aim(tr, now, at, target, sp) {\n  tr.ev = tr.ev.filter((e) => e.t <= now);\n  tr.to(at, target, sp);\n}\n\n/**\n * createSteps({ root, list, step, label, doneText, describe, announce, clock, reduced })\n * step: the current step, 0 is the first; the number of steps means every step is done.\n * label: the name of the progress bar (default: the list's name and \"progress\").\n * doneText: the hidden word before a finished step (default \"Completed\").\n * describe(step, count, titles): aria-valuetext and the announcement (default describeStep).\n * announce: false leaves out the status region.\n * setStep(i, { t }) schedules a change (demos, video); without t it happens now and is announced.\n * Returns { setStep, step, count, titles, seek, settled, destroy, driver, root, list, items, bar,\n * status, keep }.\n */\nexport function createSteps(o) {\n  const root = o.root;\n  const doc = root.ownerDocument || document;\n  root.classList.add('am-steps');\n  const list = o.list || root.querySelector('.am-steps-list, ol, ul');\n  if (!list) throw new Error('createSteps: root needs a list (ol) inside it');\n  list.classList.add('am-steps-list');\n  attr(list, 'role', 'list');\n  const items = [...list.children].filter((el) => !!el.tagName && (el.tagName === 'LI' || el.classList.contains('am-steps-item')));\n  if (!items.length) throw new Error('createSteps: the list has no steps (li)');\n  const n = items.length;\n  root.style.setProperty('--am-steps-count', String(n));\n  const describe = o.describe || describeStep;\n  const doneText = o.doneText ?? 'Completed';\n\n  // ---------------------------------------------------------------- parts\n  const make = (tag, cls, parent, before) => {\n    const el = doc.createElement(tag);\n    el.className = cls;\n    if (before === undefined) parent.appendChild(el);\n    else parent.insertBefore(el, before);\n    return el;\n  };\n  const svg = (tag, attrs) => {\n    const s = doc.createElementNS(SVG, tag);\n    for (const [k, v] of Object.entries(attrs)) s.setAttribute(k, v);\n    return s;\n  };\n  const firstOf = (el) => ('firstChild' in el ? el.firstChild : el.firstElementChild);\n  const nextOf = (el) => {\n    if ('nextSibling' in el) return el.nextSibling;\n    const kids = [...el.parentNode.children];\n    return kids[kids.indexOf(el) + 1] || null;\n  };\n\n  const titles = items.map((li) => {\n    const own = li.getAttribute('data-title');\n    if (own) return own;\n    const title = li.querySelector('.am-steps-title');\n    return (title || li).textContent.trim().replace(/\\s+/g, ' ');\n  });\n\n  const parts = items.map((li, i) => {\n    li.classList.add('am-steps-item');\n    let marker = li.querySelector('.am-steps-marker');\n    if (!marker) marker = make('span', 'am-steps-marker', li, firstOf(li));\n    attr(marker, 'aria-hidden', 'true');\n    const halo = marker.querySelector('.am-steps-halo') || make('span', 'am-steps-halo', marker);\n    const disc = marker.querySelector('.am-steps-disc') || make('span', 'am-steps-disc', marker);\n    let num = marker.querySelector('.am-steps-num');\n    if (!num) {\n      num = make('span', 'am-steps-num', marker);\n      num.textContent = String(i + 1);\n    }\n    let check = marker.querySelector('.am-steps-check');\n    if (!check) {\n      check = svg('svg', { class: 'am-steps-check', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '3', 'stroke-linecap': 'round', 'stroke-linejoin': 'round', focusable: 'false' });\n      check.appendChild(svg('path', { class: 'am-steps-draw', d: CHECK_PATH, pathLength: '1' }));\n      marker.appendChild(check);\n    }\n    const draw = check.querySelector('.am-steps-draw') || check.querySelector('path');\n    // the hidden word goes right after the marker, before the title\n    const sr = li.querySelector('.am-steps-sr') || make('span', 'am-steps-sr', li, nextOf(marker));\n    return { marker, halo, disc, num, check, draw, sr };\n  });\n\n  let bar = root.querySelector('.am-steps-bar');\n  if (!bar) bar = make('div', 'am-steps-bar', root, firstOf(root));\n  const fill = bar.querySelector('.am-steps-fill') || make('span', 'am-steps-fill', bar);\n  attr(bar, 'role', 'progressbar');\n  attr(bar, 'aria-valuemin', '0');\n  attr(bar, 'aria-valuemax', String(n));\n  if (o.label) attr(bar, 'aria-label', o.label);\n  else if (!bar.hasAttribute('aria-label') && !bar.hasAttribute('aria-labelledby')) {\n    const name = list.getAttribute('aria-label');\n    attr(bar, 'aria-label', name ? `${name} progress` : 'Progress');\n  }\n  let status = null;\n  if (o.announce !== false) {\n    status = root.querySelector('.am-steps-status') || make('span', 'am-steps-status', root);\n    attr(status, 'role', 'status');\n    attr(status, 'aria-live', 'polite');\n    attr(status, 'aria-atomic', 'true');\n  }\n\n  // ---------------------------------------------------------------- state as functions of time\n  const clampStep = (i) => {\n    const v = Math.round(Number(i));\n    return Number.isFinite(v) ? Math.max(0, Math.min(n, v)) : 0;\n  };\n  const s0 = clampStep(o.step ?? root.getAttribute('data-step') ?? 0);\n  const frac = (s) => (n > 1 ? Math.min(s, n - 1) / (n - 1) : 0);\n  const cur = discrete(s0);\n  const line = track(frac(s0), LINE);\n  const fills = items.map((_, i) => track(i < s0 ? 1 : 0, FILL));\n  const checks = items.map((_, i) => track(i < s0 ? 1 : 0, DRAW));\n  const rings = items.map((_, i) => track(i === s0 ? 1 : 0, RING));\n  const all = [line, ...fills, ...checks, ...rings];\n  let endT = -Infinity;\n  const mark = (t) => { if (t > endT) endT = t; };\n  const settledAll = (t) => all.every((tr) => tr.settled(t));\n\n  function paint(t, { reduced }) {\n    const s = cur.at(t);\n    fill.style.transform = `scaleX(${n4(clamp01(reduced ? frac(s) : line.at(t)))})`;\n    attr(bar, 'aria-valuenow', String(s));\n    attr(bar, 'aria-valuetext', describe(s, n, titles));\n    attr(root, 'data-complete', s >= n ? true : null);\n    items.forEach((li, i) => {\n      const done = i < s;\n      attr(li, 'data-state', done ? 'complete' : i === s ? 'current' : 'upcoming');\n      attr(li, 'aria-current', i === s ? 'step' : null);\n      const P = parts[i];\n      const word = done && doneText ? `${doneText}: ` : '';\n      if (P.sr.textContent !== word) P.sr.textContent = word;\n      const f = reduced ? (done ? 1 : 0) : Math.max(0, fills[i].at(t));\n      P.disc.style.transform = `scale(${n4(f)})`;\n      P.disc.style.visibility = f > 0.002 ? 'visible' : 'hidden';\n      P.num.style.opacity = n4(1 - clamp01(f));\n      const c = reduced ? (done ? 1 : 0) : clamp01(checks[i].at(t));\n      P.draw.style.strokeDashoffset = n4(1 - c);\n      P.check.style.visibility = c > 0.001 ? 'visible' : 'hidden';\n      const r = reduced ? (i === s ? 1 : 0) : rings[i].at(t);\n      const q = clamp01(r);\n      P.halo.style.opacity = n4(q);\n      P.halo.style.transform = `scale(${n4(1 + (RING_FROM - 1) * (1 - r))})`;\n      P.halo.style.visibility = q > 0.002 ? 'visible' : 'hidden';\n    });\n  }\n\n  function draw(t, st) {\n    paint(t, st);\n    if (!api.keep && t >= endT && settledAll(t)) {\n      for (const tr of all) tr.compact(t);\n      cur.compact();\n    }\n  }\n\n  const d = driver(draw, { clock: o.clock, reduced: o.reduced });\n  d.busy = (t) => t < endT || !settledAll(t);\n  const commit = () => { paint(d.now(), { reduced: d.reduced }); d.kick(); };\n  const when = (opt) => (opt && opt.t !== undefined ? { t: opt.t, live: false } : { t: d.now(), live: true });\n\n  /** Goes to step i (0 is the first, the number of steps means all done). opt: { t } to schedule it. */\n  function setStep(i, opt = {}) {\n    const { t, live } = when(opt);\n    const next = clampStep(i);\n    const prev = cur.last;\n    if (next === prev) return api;\n    cur.set(t, next);\n    aim(line, t, t, frac(next), LINE);\n    let k = 0; // the steps finished now fill one after another\n    for (let j = 0; j < n; j++) {\n      const was = j < prev;\n      const is = j < next;\n      if (was !== is) {\n        if (is) {\n          const at = t + STAGGER * k++;\n          aim(fills[j], t, at, 1, FILL);\n          aim(checks[j], t, at + CHECK_DELAY, 1, DRAW);\n          mark(at + CHECK_DELAY);\n        } else {\n          aim(fills[j], t, t, 0, UNDO);\n          aim(checks[j], t, t, 0, UNDO);\n        }\n      }\n      if ((j === prev) !== (j === next)) {\n        if (j === next) {\n          aim(rings[j], t, t + CURRENT_DELAY, 1, RING);\n          mark(t + CURRENT_DELAY);\n        } else aim(rings[j], t, t, 0, UNDO);\n      }\n    }\n    mark(t);\n    commit();\n    if (live && status) status.textContent = describe(next, n, titles);\n    return api;\n  }\n\n  const api = {\n    root,\n    list,\n    items,\n    bar,\n    status,\n    driver: d,\n    keep: false,\n    count: n,\n    titles,\n    setStep,\n    /** The current step now, or at time t of a scheduled timeline. */\n    step: (t) => (t === undefined ? cur.last : cur.at(t)),\n    seek: (t) => paint(t, { reduced: d.reduced }),\n    settled: (t) => t >= endT && settledAll(t),\n    destroy() { d.stop(); },\n  };\n  paint(d.now(), { reduced: d.reduced });\n  return api;\n}\n",
+      "type": "registry:lib"
+    },
+    {
+      "path": "registry/arling/lib/arling-motion-steps.d.ts",
+      "content": "// ARLing Motion: steps. MIT licence, https://arling.sk/motion/ . Types for the plain JavaScript file next to this one.\nexport declare const LINE: any;\nexport declare const FILL: any;\nexport declare const DRAW: any;\nexport declare const RING: any;\nexport declare const UNDO: any;\nexport declare const CHECK_DELAY: any;\nexport declare const CURRENT_DELAY: any;\nexport declare const STAGGER: any;\nexport declare const RING_FROM: any;\nexport declare const CHECK_PATH: any;\nexport declare function describeStep(...args: any[]): any;\nexport declare function createSteps(...args: any[]): any;\n",
+      "type": "registry:lib"
+    },
+    {
+      "path": "registry/arling/ui/motion-steps.tsx",
+      "content": "'use client';\n// ARLing Motion: Steps for React. A thin wrapper: React renders every part once, and the vanilla\n// component owns the line, the discs, the checks that draw themselves, the rings, the ARIA state\n// and the status text. In the registry the core lives at '@/lib/arling-motion' and this logic at\n// '@/lib/arling-motion-steps'.\nimport * as React from 'react';\nimport { createSteps } from '@/lib/arling-motion-steps';\n\ntype StepsApi = { setStep: (i: number) => unknown; step: () => number; destroy: () => void };\n\nconst cx = (...c: Array<string | false | null | undefined>) => c.filter(Boolean).join(' ');\nconst CHECK_PATH = 'M5 12.5l4.5 4.5L19 7.5';\n\nexport interface StepItem {\n  title: string;\n  detail?: string;\n}\n\nexport interface StepsProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'children'> {\n  items: StepItem[];\n  /** The current step, 0 is the first; items.length means every step is done. */\n  step: number;\n  /** The name of the progress bar (default: the list's name and \"progress\"). */\n  label?: string;\n  /** The hidden word before a finished step (default \"Completed\"). */\n  doneText?: string;\n  /** Say each change in a polite status region (default true). */\n  announce?: boolean;\n  reducedMotion?: boolean;\n}\n\nexport function Steps({\n  items,\n  step,\n  label,\n  doneText,\n  announce = true,\n  reducedMotion,\n  className,\n  style,\n  'aria-label': ariaLabel,\n  'aria-labelledby': ariaLabelledby,\n  ...rest\n}: StepsProps) {\n  const ref = React.useRef<HTMLDivElement>(null);\n  const apiRef = React.useRef<StepsApi | null>(null);\n  const stepRef = React.useRef(step);\n  stepRef.current = step;\n  const titles = items.map((it) => it.title).join('\\u0000');\n\n  React.useEffect(() => {\n    if (!ref.current) return;\n    const api = createSteps({\n      root: ref.current,\n      step: stepRef.current,\n      label,\n      doneText,\n      announce,\n      reduced: reducedMotion,\n    }) as unknown as StepsApi;\n    apiRef.current = api;\n    return () => {\n      api.destroy();\n      apiRef.current = null;\n    };\n    // built once per set of steps; a new step goes through setStep()\n    // eslint-disable-next-line react-hooks/exhaustive-deps\n  }, [titles, label, doneText, announce, reducedMotion]);\n\n  React.useEffect(() => {\n    const api = apiRef.current;\n    if (api && api.step() !== step) api.setStep(step);\n  }, [step]);\n\n  const vars = { ...style, ['--am-steps-count' as string]: String(items.length) } as React.CSSProperties;\n\n  return (\n    <div ref={ref} className={cx('am-steps', className)} style={vars} {...rest}>\n      <div className=\"am-steps-bar\">\n        <span className=\"am-steps-fill\" />\n      </div>\n      <ol className=\"am-steps-list\" role=\"list\" aria-label={ariaLabel} aria-labelledby={ariaLabelledby}>\n        {items.map((it, i) => (\n          <li key={i} className=\"am-steps-item\">\n            <span className=\"am-steps-marker\" aria-hidden=\"true\">\n              <span className=\"am-steps-halo\" />\n              <span className=\"am-steps-disc\" />\n              <span className=\"am-steps-num\">{i + 1}</span>\n              <svg className=\"am-steps-check\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" strokeWidth={3} strokeLinecap=\"round\" strokeLinejoin=\"round\" focusable=\"false\">\n                <path className=\"am-steps-draw\" d={CHECK_PATH} pathLength={1} />\n              </svg>\n            </span>\n            <span className=\"am-steps-sr\" />\n            <span className=\"am-steps-title\">{it.title}</span>\n            {it.detail ? <span className=\"am-steps-detail\">{it.detail}</span> : null}\n          </li>\n        ))}\n      </ol>\n      {announce ? <span className=\"am-steps-status\" /> : null}\n    </div>\n  );\n}\n\nexport default Steps;\n",
+      "type": "registry:ui"
+    }
+  ],
+  "css": {
+    "@layer components": {
+      ".am-steps": {
+        "--am-steps-marker": "2rem",
+        "--am-steps-line": "2px",
+        "position": "relative",
+        "display": "block"
+      },
+      ".am-steps-list": {
+        "position": "relative",
+        "z-index": "1",
+        "display": "grid",
+        "grid-auto-columns": "minmax(0, 1fr)",
+        "grid-auto-flow": "column",
+        "margin": "0",
+        "padding": "0",
+        "list-style": "none"
+      },
+      ".am-steps-item": {
+        "display": "flex",
+        "flex-direction": "column",
+        "align-items": "center",
+        "gap": "0.125rem",
+        "min-width": "0",
+        "margin": "0",
+        "padding": "0 0.25rem",
+        "color": "var(--muted-foreground, #737373)",
+        "font-size": "0.875rem",
+        "line-height": "1.25rem",
+        "text-align": "center"
+      },
+      ".am-steps-item[data-state=\"current\"], .am-steps-item[data-state=\"complete\"]": {
+        "color": "var(--foreground, #0a0a0a)"
+      },
+      ".am-steps-marker": {
+        "position": "relative",
+        "display": "grid",
+        "place-items": "center",
+        "flex": "none",
+        "box-sizing": "border-box",
+        "width": "var(--am-steps-marker)",
+        "height": "var(--am-steps-marker)",
+        "margin-bottom": "0.375rem",
+        "border": "2px solid var(--border, #e5e5e5)",
+        "border-radius": "9999px",
+        "background": "var(--background, #ffffff)",
+        "color": "var(--muted-foreground, #737373)",
+        "font-size": "0.8125rem",
+        "font-weight": "600",
+        "font-variant-numeric": "tabular-nums",
+        "line-height": "1"
+      },
+      ".am-steps-item[data-state=\"current\"] .am-steps-marker": {
+        "color": "var(--foreground, #0a0a0a)"
+      },
+      ".am-steps-halo": {
+        "position": "absolute",
+        "inset": "-2px",
+        "box-sizing": "border-box",
+        "border": "2px solid var(--primary, #171717)",
+        "border-radius": "9999px",
+        "box-shadow": "0 0 0 4px color-mix(in oklab, var(--primary, #171717) 14%, transparent)",
+        "visibility": "hidden",
+        "pointer-events": "none"
+      },
+      ".am-steps-disc": {
+        "position": "absolute",
+        "inset": "-2px",
+        "border-radius": "9999px",
+        "background": "var(--primary, #171717)",
+        "transform": "scale(0)",
+        "visibility": "hidden"
+      },
+      ".am-steps-check": {
+        "position": "absolute",
+        "top": "50%",
+        "left": "50%",
+        "width": "0.875rem",
+        "height": "0.875rem",
+        "margin": "-0.4375rem 0 0 -0.4375rem",
+        "overflow": "visible",
+        "color": "var(--primary-foreground, #fafafa)",
+        "visibility": "hidden"
+      },
+      ".am-steps-draw": {
+        "stroke-dasharray": "1",
+        "stroke-dashoffset": "1"
+      },
+      ".am-steps-title": {
+        "display": "block",
+        "max-width": "100%",
+        "font-weight": "500",
+        "overflow-wrap": "anywhere"
+      },
+      ".am-steps-detail": {
+        "display": "block",
+        "max-width": "100%",
+        "color": "var(--muted-foreground, #737373)",
+        "font-size": "0.75rem",
+        "line-height": "1rem",
+        "overflow-wrap": "anywhere"
+      },
+      ".am-steps-bar": {
+        "position": "absolute",
+        "top": "calc(var(--am-steps-marker) / 2 - var(--am-steps-line) / 2)",
+        "right": "calc(50% / var(--am-steps-count, 3))",
+        "left": "calc(50% / var(--am-steps-count, 3))",
+        "height": "var(--am-steps-line)",
+        "overflow": "hidden",
+        "border-radius": "9999px",
+        "background": "var(--border, #e5e5e5)"
+      },
+      ".am-steps-fill": {
+        "position": "absolute",
+        "inset": "0",
+        "background": "var(--primary, #171717)",
+        "transform": "scaleX(0)",
+        "transform-origin": "0 50%"
+      },
+      ".am-steps[dir=\"rtl\"] .am-steps-fill, [dir=\"rtl\"] .am-steps-fill": {
+        "transform-origin": "100% 50%"
+      },
+      ".am-steps-sr, .am-steps-status": {
+        "position": "absolute",
+        "width": "1px",
+        "height": "1px",
+        "overflow": "hidden",
+        "clip": "rect(0 0 0 0)",
+        "clip-path": "inset(50%)",
+        "white-space": "nowrap"
+      }
+    }
+  },
+  "docs": "Steps from ARLing Motion (MIT).\nReact: import { Steps } from \"@/components/ui/motion-steps\".\nThe logic is in lib/arling-motion-steps.js (typed by the .d.ts next to it) and works without React: createSteps on your own markup.\nStyles were added to your global CSS under @layer components (Tailwind v4).\nWith Tailwind v3 or no Tailwind, add https://arling.sk/motion/components/steps/steps.css to your styles instead.\nLive demo and docs: https://arling.sk/motion/#steps",
+  "categories": [
+    "motion",
+    "steps",
+    "stepper",
+    "progress",
+    "onboarding"
+  ]
+}
