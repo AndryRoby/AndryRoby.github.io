@@ -37,6 +37,10 @@ import { createDropzone } from '../components/dropzone/dropzone.js';
 import { demo as dropzoneDemo } from '../components/dropzone/demo.js';
 import { createIsland } from '../components/island/island.js';
 import { demo as islandDemo, PAYMENT } from '../components/island/demo.js';
+import { createSegmented } from '../components/segmented/segmented.js';
+import { demo as segmentedDemo } from '../components/segmented/demo.js';
+import { createSlider } from '../components/slider/slider.js';
+import { demo as sliderDemo, conversations } from '../components/slider/demo.js';
 import { beats } from '../src/core.js';
 
 export const REGISTRY = 'https://arling.sk/motion/r/';
@@ -124,14 +128,14 @@ const hero = {
   build() {
     const t = uid('hero-title');
     return [
-      h('button', { class: 'am-dialog-trigger mo-hero-trigger', type: 'button' }, 'Get 14 free components'),
+      h('button', { class: 'am-dialog-trigger mo-hero-trigger', type: 'button' }, 'Get 16 free components'),
       h('div', { class: 'am-dialog-root', hidden: true },
         h('div', { class: 'am-dialog-backdrop' }),
         h('div', { class: 'am-dialog-frame' },
           h('div', { class: 'am-dialog', role: 'dialog', 'aria-labelledby': t },
             h('div', { class: 'am-dialog-content' },
               h('p', { class: 'mo-card-kicker' }, 'ARLing Motion'),
-              h('h3', { class: 'am-dialog-title', id: t }, '14 components, MIT licence'),
+              h('h3', { class: 'am-dialog-title', id: t }, '16 components, MIT licence'),
               h('p', { class: 'am-dialog-description' },
                 'Each one is a real component for your product, with a 4 second demo timeline written into it.'),
               h('code', { class: 'mo-card-cmd' }, HERO_CMD),
@@ -343,7 +347,7 @@ const accordion = {
         h('div', { class: 'am-accordion-content' }, ...rows.map((r) => h('p', {}, r)))));
     return [
       h('div', { class: 'am-accordion' },
-        item('What is free?', ['All fourteen components and the core.','MIT licence, for any project.', 'No account, no key.']),
+        item('What is free?', ['All sixteen components and the core.', 'MIT licence, for any project.', 'No account, no key.']),
         item('Do I need React?', ['No. Each component is plain JavaScript.', 'The React files are thin wrappers.', 'Both use the same logic.']),
         item('How does the video work?', ['Every component has a 4 second demo.', 'seek(t) paints any moment of it.', 'The last frame equals the first.'])),
     ];
@@ -497,9 +501,45 @@ const islandScene = {
   demo: islandDemo,
 };
 
+// A plan picker as on a pricing page. It rests on Pro, so the row is never an empty box; the
+// plans are only names, nothing is bought here.
+const segmentedScene = {
+  title: 'Segmented control',
+  height: 150,
+  build() {
+    const id = uid('plan');
+    const option = (label, on) => h('button', { type: 'button', role: 'radio', 'data-value': label.toLowerCase(), 'aria-checked': on ? 'true' : 'false' }, label);
+    return [
+      h('div', { class: 'mo-segmented-scene' },
+        h('span', { class: 'mo-segmented-label', id }, 'Plan'),
+        h('div', { class: 'am-segmented', role: 'radiogroup', 'aria-labelledby': id },
+          option('Free'), option('Pro', true), option('Business'))),
+    ];
+  },
+  create: (stage, o = {}) => createSegmented({ root: q(stage, '.am-segmented'), clock: o.clock, reduced: o.reduced }),
+  demo: segmentedDemo,
+};
+
+// The input of a price calculator: conversations per month, with the value always in the bubble.
+const sliderScene = {
+  title: 'Slider',
+  height: 190,
+  build() {
+    const id = uid('slider-label');
+    return [
+      h('div', { class: 'mo-slider-scene' },
+        h('span', { class: 'mo-slider-label', id }, 'Conversations per month'),
+        h('div', { class: 'am-slider', 'aria-labelledby': id, 'data-min': '0', 'data-max': '2000', 'data-step': '50', 'data-value': '400' }),
+        h('div', { class: 'mo-slider-scale', 'aria-hidden': 'true' }, h('span', {}, '0'), h('span', {}, '2,000'))),
+    ];
+  },
+  create: (stage, o = {}) => createSlider({ root: q(stage, '.am-slider'), format: conversations, bubble: 'always', clock: o.clock, reduced: o.reduced }),
+  demo: sliderDemo,
+};
+
 /** Every scene by name; GALLERY is the order of the component rows on the page. */
-export const SCENES = { hero, dialog, tabs, tooltip, popover, toast, switch: switchScene, number: numberScene, island: islandScene, accordion, command, drawer, carousel, otp, dropzone };
-export const GALLERY = ['dialog', 'tabs', 'tooltip', 'popover', 'toast', 'switch', 'accordion', 'command', 'drawer', 'carousel', 'otp', 'dropzone', 'number', 'island'];
+export const SCENES = { hero, dialog, tabs, tooltip, popover, toast, switch: switchScene, number: numberScene, island: islandScene, segmented: segmentedScene, slider: sliderScene, accordion, command, drawer, carousel, otp, dropzone };
+export const GALLERY = ['dialog', 'tabs', 'tooltip', 'popover', 'toast', 'switch', 'accordion', 'command', 'drawer', 'carousel', 'otp', 'dropzone', 'number', 'island', 'segmented', 'slider'];
 
 // ------------------------------------------------------------------ one frame strip for "three outputs"
 

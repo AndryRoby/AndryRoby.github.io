@@ -1,0 +1,99 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "segmented",
+  "type": "registry:ui",
+  "title": "Segmented control",
+  "description": "A segmented control, like an iOS segmented control or a toggle group with one value: the thumb moves in position and width on one spring, and a new choice made mid flight continues from its current speed. A WAI-ARIA radio group with arrow keys, Home, End and one tab stop.",
+  "author": "ARLing s. r. o. (https://arling.sk)",
+  "registryDependencies": [
+    "https://arling.sk/motion/r/core.json"
+  ],
+  "files": [
+    {
+      "path": "registry/arling/lib/arling-motion-segmented.js",
+      "content": "'use strict';\n// ARLing Motion: segmented. MIT licence, https://arling.sk/motion/ . Installed from the ARLing\n// Motion registry (source: components/segmented/segmented.js). Plain JavaScript; the .d.ts next to it types the exports.\n/*\n * ARLing Motion: Segmented control.\n * A row of options with one thumb under the chosen one, like an iOS segmented control or a\n * shadcn toggle group that holds one value. The thumb's position and width move on one spring,\n * so it stretches or narrows toward an option of another width while it travels. A new choice\n * made while the thumb is still moving continues from its current speed: every change adds one\n * spring to the sum and nothing restarts. Pressing the chosen option shrinks the thumb a little\n * until the press ends. Labels switch colour at once, never through a blend.\n *\n * Markup:\n *   <div class=\"am-segmented\" role=\"radiogroup\" aria-label=\"Billing\">\n *     <button role=\"radio\" data-value=\"monthly\">Monthly</button>\n *     <button role=\"radio\" data-value=\"yearly\">Yearly</button>\n *   </div>\n * The component adds the thumb (.am-segmented-thumb) if it is missing. Add data-equal to the\n * root to give every option the same width.\n *\n * Keyboard (WAI-ARIA APG, radio group): Tab moves into the group to the chosen option (roving\n * tabindex, one tab stop). Right and Down choose the next option, Left and Up the previous\n * one, both wrap; Home and End choose the first and the last. Disabled options are skipped.\n * Space chooses the focused option (on a button Enter does too, as on any button). In a right\n * to left layout Left and Right swap.\n * MIT licence.\n */\nimport { track, driver, steps, attr, PRESETS } from './arling-motion';\n\nconst px = (v) => `${Math.round(v * 100) / 100}px`;\nconst round4 = (v) => Math.round(v * 1e4) / 1e4;\n\n/** Position and width of the thumb move on this one spring (overshoot under 1 %). */\nexport const SEGMENT_SPRING = PRESETS.snappy;\n/** Scale of the thumb while the chosen option is pressed. */\nexport const PRESS_SCALE = 0.96;\n\n/**\n * createSegmented({ root, selected, onChange, spring, clock, reduced })\n * selected: index or data-value of the option chosen at first (default: the one with\n * aria-checked=\"true\", else the first enabled one). onChange(index, value) runs on user input.\n * Returns { select, selected, value, press, release, measure, seek, settled, destroy, driver,\n * root, items, thumb, keep }.\n */\nexport function createSegmented(o) {\n  const root = o.root;\n  const doc = root.ownerDocument || document;\n  attr(root, 'role', 'radiogroup');\n  const items = [...root.querySelectorAll('[role=\"radio\"], .am-segmented-item')];\n  if (!items.length) throw new Error('createSegmented: no elements with role=\"radio\"');\n  for (const it of items) {\n    attr(it, 'role', 'radio');\n    if (it.tagName === 'BUTTON' && !it.hasAttribute('type')) attr(it, 'type', 'button');\n  }\n  let thumb = root.querySelector('.am-segmented-thumb');\n  if (!thumb) {\n    thumb = doc.createElement('span');\n    thumb.className = 'am-segmented-thumb';\n    root.insertBefore(thumb, root.firstElementChild);\n  }\n  attr(thumb, 'aria-hidden', 'true');\n\n  const disabled = (i) => items[i].disabled || items[i].getAttribute('aria-disabled') === 'true';\n  const valueOf = (i) => (items[i].hasAttribute('data-value') ? items[i].getAttribute('data-value') : items[i].textContent.trim());\n  const indexOf = (target) => (typeof target === 'number' ? target : items.findIndex((_, i) => valueOf(i) === String(target)));\n\n  const marked = items.findIndex((it) => it.getAttribute('aria-checked') === 'true');\n  let first = o.selected !== undefined && o.selected !== null ? indexOf(o.selected) : marked;\n  if (first < 0 || first >= items.length || disabled(first)) first = items.findIndex((_, i) => !disabled(i));\n  if (first < 0) first = 0;\n\n  /** Where option i sits inside the root's padding box, px. */\n  const box = (i) => {\n    const rr = root.getBoundingClientRect();\n    const r = items[i].getBoundingClientRect();\n    return { x: r.left - rr.left - (root.clientLeft || 0), w: r.width };\n  };\n\n  const sp = o.spring || SEGMENT_SPRING;\n  const sel = steps(first);\n  const b0 = box(first);\n  let x = track(b0.x, sp);\n  let w = track(b0.w, sp);\n  const press = track(0, PRESETS.press);\n  let endT = -Infinity;\n  const mark = (t) => { if (t > endT) endT = t; };\n  const settledAll = (t) => x.settled(t) && w.settled(t) && press.settled(t);\n\n  function paint(t, { reduced }) {\n    const s = sel.at(t);\n    items.forEach((it, i) => {\n      const on = i === s;\n      attr(it, 'aria-checked', String(on));\n      attr(it, 'tabindex', on ? '0' : '-1');\n      attr(it, 'data-state', on ? 'checked' : 'unchecked');\n    });\n    const at = (tr) => (reduced ? tr.target(t) : tr.at(t));\n    const k = 1 - (1 - PRESS_SCALE) * (reduced ? 0 : press.at(t));\n    thumb.style.width = px(Math.max(0, at(w)));\n    thumb.style.transform = `translateX(${px(at(x))}) scale(${round4(k)})`;\n    attr(root, 'data-state', settledAll(t) ? 'idle' : 'moving');\n  }\n\n  function draw(t, st) {\n    paint(t, st);\n    if (!api.keep && t >= endT && settledAll(t)) {\n      x.compact(t);\n      w.compact(t);\n      press.compact(t);\n      sel.compact();\n    }\n  }\n\n  const d = driver(draw, { clock: o.clock, reduced: o.reduced });\n  d.busy = (t) => t < endT || !settledAll(t);\n  const commit = () => { paint(d.now(), { reduced: d.reduced }); d.kick(); };\n  const when = (opt) => (opt && opt.t !== undefined ? { t: opt.t, live: false } : { t: d.now(), live: true });\n\n  /** Chooses an option by index or data-value. opt: { t } to schedule it, { focus } to focus it. */\n  function select(target, opt = {}) {\n    const { t, live } = when(opt);\n    const i = indexOf(target);\n    if (i < 0 || i >= items.length || disabled(i)) return api;\n    const prev = sel.last;\n    if (i !== prev) {\n      sel.set(t, i);\n      const b = box(i);\n      x.to(t, b.x);\n      w.to(t, b.w);\n      mark(t);\n      commit();\n    }\n    if (live) {\n      if (opt.focus) items[i].focus();\n      if (i !== prev && o.onChange) o.onChange(i, valueOf(i));\n    }\n    return api;\n  }\n\n  /** The thumb shrinks to PRESS_SCALE. opt: { t }. */\n  function pressDown(opt = {}) {\n    const { t } = when(opt);\n    if (press.target(Infinity) === 1) return api;\n    press.to(t, 1, PRESETS.press);\n    mark(t);\n    commit();\n    return api;\n  }\n\n  /** The thumb springs back to its size. opt: { t }. */\n  function pressUp(opt = {}) {\n    const { t } = when(opt);\n    if (press.target(Infinity) === 0) return api;\n    press.to(t, 0, PRESETS.release);\n    mark(t);\n    commit();\n    return api;\n  }\n\n  const near = (a, b) => Math.abs(a - b) < 0.5;\n  const sameTrack = (a, b) => near(a.initial, b.initial) && a.ev.length === b.ev.length\n    && a.ev.every((e, k) => e.t === b.ev[k].t && near(e.target, b.ev[k].target));\n\n  /**\n   * Re-measure after a layout change. Live, the thumb jumps to the chosen option without\n   * motion. With api.keep (a scheduled demo) every scheduled choice is planned again on the new\n   * layout, so seeking still shows the right option.\n   */\n  function measure() {\n    if (api.keep) {\n      const b = box(sel.initial);\n      const nx = track(b.x, sp);\n      const nw = track(b.w, sp);\n      for (const [t, i] of sel.ev) {\n        const bi = box(i);\n        nx.to(t, bi.x);\n        nw.to(t, bi.w);\n      }\n      if (sameTrack(nx, x) && sameTrack(nw, w)) return api;\n      x = nx;\n      w = nw;\n      commit();\n      return api;\n    }\n    const b = box(sel.last);\n    if (near(x.target(Infinity), b.x) && near(w.target(Infinity), b.w)) return api;\n    x = track(b.x, sp);\n    w = track(b.w, sp);\n    commit();\n    return api;\n  }\n\n  // ---------------------------------------------------------------- live input\n  const listeners = [];\n  const on = (el, type, fn) => { el.addEventListener(type, fn); listeners.push([el, type, fn]); };\n  const itemOf = (e) => (e.target && e.target.closest ? e.target.closest('[role=\"radio\"]') : null);\n  const rtl = () => {\n    const dirEl = root.closest ? root.closest('[dir]') : null;\n    return !!dirEl && dirEl.getAttribute('dir') === 'rtl';\n  };\n  const stepFrom = (from, dir) => {\n    for (let k = 1; k <= items.length; k++) {\n      const j = (from + dir * k + items.length * k) % items.length;\n      if (!disabled(j)) return j;\n    }\n    return from;\n  };\n\n  on(root, 'keydown', (e) => {\n    const item = itemOf(e);\n    const cur = items.indexOf(item);\n    if (cur < 0) return;\n    const flip = rtl();\n    let to = null;\n    if (e.key === 'ArrowDown' || e.key === (flip ? 'ArrowLeft' : 'ArrowRight')) to = stepFrom(cur, 1);\n    else if (e.key === 'ArrowUp' || e.key === (flip ? 'ArrowRight' : 'ArrowLeft')) to = stepFrom(cur, -1);\n    else if (e.key === 'Home') to = stepFrom(items.length - 1, 1); // first enabled option\n    else if (e.key === 'End') to = stepFrom(0, -1); // last enabled option\n    else if (e.key === ' ' && item.tagName !== 'BUTTON') {\n      // a button chooses itself through its own click\n      e.preventDefault();\n      if (!disabled(cur)) select(cur);\n      return;\n    }\n    if (to === null) return;\n    e.preventDefault();\n    select(to, { focus: true });\n  });\n  on(root, 'click', (e) => {\n    const i = items.indexOf(itemOf(e));\n    if (i >= 0 && !disabled(i)) select(i, { focus: true });\n  });\n  on(root, 'pointerdown', (e) => {\n    if (e.button !== undefined && e.button !== 0) return;\n    const i = items.indexOf(itemOf(e));\n    if (i >= 0 && i === sel.last && !disabled(i)) pressDown();\n  });\n  for (const type of ['pointerup', 'pointercancel', 'pointerleave']) on(root, type, () => pressUp());\n\n  let ro = null;\n  if (typeof ResizeObserver === 'function') {\n    ro = new ResizeObserver(() => measure());\n    ro.observe(root);\n  }\n\n  const api = {\n    root,\n    items,\n    thumb,\n    driver: d,\n    keep: false,\n    select,\n    press: pressDown,\n    release: pressUp,\n    measure,\n    selected: (t) => (t === undefined ? sel.last : sel.at(t)),\n    value: (t) => valueOf(t === undefined ? sel.last : sel.at(t)),\n    seek: (t) => paint(t, { reduced: d.reduced }),\n    settled: (t) => t >= endT && settledAll(t),\n    destroy() {\n      d.stop();\n      if (ro) ro.disconnect();\n      for (const [el, type, fn] of listeners) el.removeEventListener(type, fn);\n    },\n  };\n  paint(d.now(), { reduced: d.reduced });\n  return api;\n}\n",
+      "type": "registry:lib"
+    },
+    {
+      "path": "registry/arling/lib/arling-motion-segmented.d.ts",
+      "content": "// ARLing Motion: segmented. MIT licence, https://arling.sk/motion/ . Types for the plain JavaScript file next to this one.\nexport declare const SEGMENT_SPRING: any;\nexport declare const PRESS_SCALE: any;\nexport declare function createSegmented(...args: any[]): any;\n",
+      "type": "registry:lib"
+    },
+    {
+      "path": "registry/arling/ui/motion-segmented.tsx",
+      "content": "'use client';\n// ARLing Motion: Segmented control for React. A thin wrapper: the vanilla component owns the\n// thumb spring, aria-checked, the roving tabindex and the keyboard.\n// In the registry the core lives at '@/lib/arling-motion' and this logic at\n// '@/lib/arling-motion-segmented'.\nimport * as React from 'react';\nimport { createSegmented } from '@/lib/arling-motion-segmented';\n\ntype SegmentedApi = { select: (v: number | string) => unknown; value: () => string; destroy: () => void };\n\nconst cx = (...c: Array<string | false | null | undefined>) => c.filter(Boolean).join(' ');\n\nexport interface SegmentedProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onChange' | 'defaultValue'> {\n  /** Value of the option chosen at first (its value prop). */\n  defaultValue?: string;\n  /** Controlled value (optional). */\n  value?: string;\n  onValueChange?: (value: string) => void;\n  /** Give every option the same width. */\n  equal?: boolean;\n  reducedMotion?: boolean;\n}\n\nexport function Segmented({ defaultValue, value, onValueChange, equal, reducedMotion, className, children, ...rest }: SegmentedProps) {\n  const ref = React.useRef<HTMLDivElement>(null);\n  const apiRef = React.useRef<SegmentedApi | null>(null);\n  const changeRef = React.useRef(onValueChange);\n  changeRef.current = onValueChange;\n\n  React.useEffect(() => {\n    if (!ref.current) return;\n    const api = createSegmented({\n      root: ref.current,\n      selected: value ?? defaultValue,\n      reduced: reducedMotion,\n      onChange: (_i: number, v: string) => changeRef.current?.(v),\n    }) as unknown as SegmentedApi;\n    apiRef.current = api;\n    return () => {\n      api.destroy();\n      apiRef.current = null;\n    };\n    // built once; later values go through select()\n    // eslint-disable-next-line react-hooks/exhaustive-deps\n  }, [reducedMotion]);\n\n  React.useEffect(() => {\n    const api = apiRef.current;\n    if (api && value !== undefined && value !== api.value()) api.select(value);\n  }, [value]);\n\n  return (\n    <div ref={ref} role=\"radiogroup\" data-equal={equal ? '' : undefined} className={cx('am-segmented', className)} {...rest}>\n      <span className=\"am-segmented-thumb\" aria-hidden=\"true\" />\n      {children}\n    </div>\n  );\n}\n\nexport interface SegmentedItemProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {\n  value: string;\n}\n\nexport function SegmentedItem({ value, className, ...rest }: SegmentedItemProps) {\n  return <button type=\"button\" role=\"radio\" data-value={value} className={className} {...rest} />;\n}\n\nexport default Segmented;\n",
+      "type": "registry:ui"
+    }
+  ],
+  "css": {
+    "@layer components": {
+      ".am-segmented": {
+        "position": "relative",
+        "display": "inline-flex",
+        "align-items": "center",
+        "gap": "0.125rem",
+        "max-width": "100%",
+        "padding": "0.25rem",
+        "border-radius": "9999px",
+        "background": "var(--muted, #f5f5f5)",
+        "isolation": "isolate"
+      },
+      ".am-segmented[data-equal]": {
+        "display": "inline-grid",
+        "grid-auto-flow": "column",
+        "grid-auto-columns": "1fr"
+      },
+      ".am-segmented-thumb": {
+        "position": "absolute",
+        "top": "0.25rem",
+        "bottom": "0.25rem",
+        "left": "0",
+        "z-index": "0",
+        "width": "0",
+        "border-radius": "9999px",
+        "background": "var(--background, #ffffff)",
+        "box-shadow": "0 1px 2px rgb(0 0 0 / 0.08), 0 0 0 1px var(--border, #e5e5e5)",
+        "transform-origin": "50% 50%",
+        "pointer-events": "none"
+      },
+      ".am-segmented [role=\"radio\"]": {
+        "position": "relative",
+        "z-index": "1",
+        "min-width": "0",
+        "height": "2rem",
+        "padding": "0 1rem",
+        "border": "0",
+        "border-radius": "9999px",
+        "background": "transparent",
+        "color": "var(--muted-foreground, #737373)",
+        "font": "inherit",
+        "font-size": "0.875rem",
+        "font-weight": "500",
+        "line-height": "2rem",
+        "white-space": "nowrap",
+        "cursor": "pointer",
+        "-webkit-tap-highlight-color": "transparent"
+      },
+      ".am-segmented [role=\"radio\"]:hover, .am-segmented [role=\"radio\"][aria-checked=\"true\"]": {
+        "color": "var(--foreground, #0a0a0a)"
+      },
+      ".am-segmented [role=\"radio\"]:focus-visible": {
+        "outline": "2px solid var(--ring, #a3a3a3)",
+        "outline-offset": "1px"
+      },
+      ".am-segmented [role=\"radio\"]:disabled, .am-segmented [role=\"radio\"][aria-disabled=\"true\"]": {
+        "color": "var(--muted-foreground, #737373)",
+        "opacity": "0.5",
+        "cursor": "not-allowed"
+      }
+    }
+  },
+  "docs": "Segmented control from ARLing Motion (MIT).\nReact: import { Segmented, SegmentedItem } from \"@/components/ui/motion-segmented\".\nThe logic is in lib/arling-motion-segmented.js (typed by the .d.ts next to it) and works without React: createSegmented on your own markup.\nStyles were added to your global CSS under @layer components (Tailwind v4).\nWith Tailwind v3 or no Tailwind, add https://arling.sk/motion/components/segmented/segmented.css to your styles instead.\nLive demo and docs: https://arling.sk/motion/#segmented",
+  "categories": [
+    "motion",
+    "segmented",
+    "toggle-group",
+    "radio",
+    "pricing"
+  ]
+}

@@ -1,0 +1,72 @@
+/* ARLing Motion: Segmented control. The thumb moves by the core (inline styles), no CSS transitions. */
+
+.am-segmented {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.125rem;
+  max-width: 100%;
+  padding: 0.25rem;
+  border-radius: 9999px;
+  background: var(--muted, #f5f5f5);
+  isolation: isolate;
+}
+
+/* Options of equal width, like an iOS segmented control. */
+.am-segmented[data-equal] {
+  display: inline-grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+}
+
+/* The pill under the chosen option: one shape, its position and width come from the core. */
+.am-segmented-thumb {
+  position: absolute;
+  top: 0.25rem;
+  bottom: 0.25rem;
+  left: 0;
+  z-index: 0;
+  width: 0;
+  border-radius: 9999px;
+  background: var(--background, #ffffff);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.08), 0 0 0 1px var(--border, #e5e5e5);
+  transform-origin: 50% 50%;
+  pointer-events: none;
+}
+
+.am-segmented [role="radio"] {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+  height: 2rem;
+  padding: 0 1rem;
+  border: 0;
+  border-radius: 9999px;
+  background: transparent;
+  color: var(--muted-foreground, #737373);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 2rem;
+  white-space: nowrap;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Small elements switch colour at once, never through a blend. */
+.am-segmented [role="radio"]:hover,
+.am-segmented [role="radio"][aria-checked="true"] {
+  color: var(--foreground, #0a0a0a);
+}
+
+.am-segmented [role="radio"]:focus-visible {
+  outline: 2px solid var(--ring, #a3a3a3);
+  outline-offset: 1px;
+}
+
+.am-segmented [role="radio"]:disabled,
+.am-segmented [role="radio"][aria-disabled="true"] {
+  color: var(--muted-foreground, #737373);
+  opacity: 0.5;
+  cursor: not-allowed;
+}
