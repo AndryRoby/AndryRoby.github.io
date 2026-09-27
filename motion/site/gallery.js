@@ -45,12 +45,19 @@ function label(u) {
 }
 
 function live(u) {
+  // A scene whose api has handoff(t) (the carousel) continues from the moment of its demo, so
+  // taking the stage over mid demo does not make it jump back to its first frame.
+  let handoff = null;
+  if (u.mode === 'demo' && u.api && typeof u.api.handoff === 'function' && typeof u.t === 'number') {
+    try { handoff = u.api.handoff(u.t); } catch (e) { console.error(e); }
+  }
+  u.t = undefined;
   clear(u);
   u.mode = 'live';
   u.stage.inert = false;
   u.stage.removeAttribute('data-playing');
   for (const node of SCENES[u.name].build()) u.stage.appendChild(node);
-  try { u.api = SCENES[u.name].create(u.stage, {}); } catch (e) { console.error(e); }
+  try { u.api = SCENES[u.name].create(u.stage, handoff ? { handoff } : {}); } catch (e) { console.error(e); }
   label(u);
 }
 
@@ -77,6 +84,7 @@ function play(u) {
   const dur = s.info.duration;
   const tick = () => {
     const t = (now() - t0) % dur;
+    u.t = t;
     s.seek(t);
     u.cursor.draw(t, s.info);
     u.raf = requestAnimationFrame(tick);

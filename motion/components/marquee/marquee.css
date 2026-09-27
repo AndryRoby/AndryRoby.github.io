@@ -1,26 +1,44 @@
-/* ARLing Motion: Marquee. The track moves by the core (inline transform), no CSS transitions or animations. */
+/* ARLing Motion: Marquee. The track and the pause icon move by the core (an inline transform and one variable), no CSS transitions or animations. */
 
 .am-marquee {
   --am-marquee-gap: 0.75rem;
-  --am-marquee-fade: 2rem;
-  position: relative;
-  display: flex;
-  align-items: center;
+  --am-marquee-fade: clamp(2.5rem, 20%, 6rem);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 0.5rem;
   box-sizing: border-box;
   width: 100%;
   min-width: 0;
 }
 
-/* The window onto the band. The edges fade out, so items come and go softly. */
+/* The row above the band: an optional title on the left, the pause button on the right. Nothing sits on the band. */
+.am-marquee-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.am-marquee-title {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--muted-foreground, #737373);
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The window onto the band. Both edges fade out along an S curve, so items rise out of the edge and sink back into it, never cut. */
 .am-marquee-viewport {
+  --am-marquee-mask: linear-gradient(to right, transparent 0, rgb(0 0 0 / 0.1) calc(var(--am-marquee-fade) * 0.2), rgb(0 0 0 / 0.35) calc(var(--am-marquee-fade) * 0.4), rgb(0 0 0 / 0.65) calc(var(--am-marquee-fade) * 0.6), rgb(0 0 0 / 0.9) calc(var(--am-marquee-fade) * 0.8), #000 var(--am-marquee-fade), #000 calc(100% - var(--am-marquee-fade)), rgb(0 0 0 / 0.9) calc(100% - var(--am-marquee-fade) * 0.8), rgb(0 0 0 / 0.65) calc(100% - var(--am-marquee-fade) * 0.6), rgb(0 0 0 / 0.35) calc(100% - var(--am-marquee-fade) * 0.4), rgb(0 0 0 / 0.1) calc(100% - var(--am-marquee-fade) * 0.2), transparent 100%);
   position: relative;
-  flex: 1 1 auto;
   min-width: 0;
   overflow: hidden;
   padding: 0.375rem 0;
-  -webkit-mask-image: linear-gradient(to right, transparent, #000 var(--am-marquee-fade), #000 calc(100% - var(--am-marquee-fade)), transparent);
-  mask-image: linear-gradient(to right, transparent, #000 var(--am-marquee-fade), #000 calc(100% - var(--am-marquee-fade)), transparent);
+  -webkit-mask-image: var(--am-marquee-mask);
+  mask-image: var(--am-marquee-mask);
 }
 
 /* clip, where supported, also keeps focus from scrolling the viewport */
@@ -28,7 +46,7 @@
   overflow: clip;
 }
 
-/* Reduced motion: the band stands and scrolls sideways like a normal list. */
+/* Reduced motion: the band stands and scrolls sideways like a normal list, without fades. */
 .am-marquee[data-motion="reduced"] .am-marquee-viewport {
   overflow-x: auto;
   -webkit-mask-image: none;
@@ -41,14 +59,15 @@
   will-change: transform;
 }
 
-/* One copy of the content. The space after the last item is part of the group, so the band repeats evenly. */
+/* One copy of the content. The space after the last item is part of the group, so the band repeats evenly;
+   --am-marquee-pad (set by the component, under 4 px) makes one group span whole device pixels. */
 .am-marquee-group {
   display: flex;
   flex: none;
   align-items: center;
   gap: var(--am-marquee-gap);
   margin: 0;
-  padding: 0 var(--am-marquee-gap) 0 0;
+  padding: 0 calc(var(--am-marquee-gap) + var(--am-marquee-pad, 0px)) 0 0;
   list-style: none;
 }
 
@@ -68,42 +87,33 @@
   outline-offset: 2px;
 }
 
-/* Pause and play. The icon is drawn here: two bars while it runs, a triangle while it is paused. */
+/* Pause and play: a small button with an icon and a word, at the end of the header row. */
 .am-marquee-toggle {
-  display: inline-grid;
-  place-items: center;
+  display: inline-flex;
+  align-items: center;
   flex: none;
+  gap: 0.375rem;
   box-sizing: border-box;
-  width: 2rem;
-  height: 2rem;
-  padding: 0;
+  height: 1.75rem;
+  margin-left: auto;
+  padding: 0 0.625rem 0 0.5625rem;
   border: 1px solid var(--border, #e5e5e5);
   border-radius: 9999px;
   background: var(--background, #ffffff);
-  color: var(--foreground, #0a0a0a);
+  color: var(--muted-foreground, #737373);
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }
 
-.am-marquee-toggle::before {
-  content: "";
-  box-sizing: border-box;
-  width: 0.625rem;
-  height: 0.75rem;
-  border-right: 0.1875rem solid currentColor;
-  border-left: 0.1875rem solid currentColor;
-}
-
-.am-marquee-toggle[data-state="paused"]::before {
-  width: 0.6875rem;
-  margin-left: 0.125rem;
-  border: 0;
-  background: currentColor;
-  clip-path: polygon(0 0, 100% 50%, 0 100%);
-}
-
+/* Small elements switch colour at once, never through a blend. */
 .am-marquee-toggle:hover {
   background: var(--accent, #f5f5f5);
+  color: var(--foreground, #0a0a0a);
 }
 
 .am-marquee-toggle:focus-visible {
@@ -113,4 +123,43 @@
 
 .am-marquee-toggle[hidden] {
   display: none;
+}
+
+/* The icon: two halves that are two bars at --am-marquee-play 0 and one triangle at 1, drawn from the variable. */
+.am-marquee-toggle-icon {
+  position: relative;
+  flex: none;
+  width: 0.625rem;
+  height: 0.625rem;
+  transform: translateX(calc(var(--am-marquee-play, 0) * 0.0625rem));
+}
+
+.am-marquee-toggle-icon::before,
+.am-marquee-toggle-icon::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: currentColor;
+}
+
+.am-marquee-toggle-icon::before {
+  clip-path: polygon(0 0, calc(35% + 17% * var(--am-marquee-play, 0)) calc(26% * var(--am-marquee-play, 0)), calc(35% + 17% * var(--am-marquee-play, 0)) calc(100% - 26% * var(--am-marquee-play, 0)), 0 100%);
+}
+
+.am-marquee-toggle-icon::after {
+  clip-path: polygon(calc(65% - 15% * var(--am-marquee-play, 0)) calc(25% * var(--am-marquee-play, 0)), 100% calc(50% * var(--am-marquee-play, 0)), 100% calc(100% - 50% * var(--am-marquee-play, 0)), calc(65% - 15% * var(--am-marquee-play, 0)) calc(100% - 25% * var(--am-marquee-play, 0)));
+}
+
+/* Both words in one cell: the button is as wide as the longer one and does not change width when they swap. */
+.am-marquee-toggle-text {
+  display: grid;
+}
+
+.am-marquee-toggle-text > span {
+  grid-area: 1 / 1;
+}
+
+.am-marquee-toggle[data-state="playing"] .am-marquee-toggle-play,
+.am-marquee-toggle[data-state="paused"] .am-marquee-toggle-pause {
+  visibility: hidden;
 }

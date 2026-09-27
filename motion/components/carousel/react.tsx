@@ -1,6 +1,6 @@
 'use client';
 // ARLing Motion: Carousel for React. A thin wrapper: the vanilla component owns the 1:1 drag,
-// the throw and snap, the buttons, ARIA and the keyboard.
+// the rubber band, the throw and the landing spring, the buttons, the dots, ARIA and the keyboard.
 // In the registry the core lives at '@/lib/arling-motion' and this logic at
 // '@/lib/arling-motion/carousel'.
 import * as React from 'react';
@@ -18,6 +18,8 @@ export interface CarouselProps {
   /** Controlled slide (optional). */
   index?: number;
   onIndexChange?: (index: number) => void;
+  /** Dots under the slides (a pointer shortcut; the buttons and keys do the same). Default true. */
+  dots?: boolean;
   previousLabel?: string;
   nextLabel?: string;
   reducedMotion?: boolean;
@@ -30,12 +32,14 @@ export interface CarouselProps {
 /**
  * <Carousel label="Plans"><PlanCard /><PlanCard /></Carousel>
  * The slides are read once when the carousel mounts; give it a new key when they change.
+ * Slide width: set --am-carousel-slide on the carousel (default min(80%, 18rem)).
  */
 export function Carousel({
   label,
   defaultIndex = 0,
   index,
   onIndexChange,
+  dots = true,
   previousLabel = 'Previous slide',
   nextLabel = 'Next slide',
   reducedMotion,
@@ -52,14 +56,13 @@ export function Carousel({
     if (!ref.current) return;
     const api = createCarousel({
       root: ref.current,
-      index: index ?? defaultIndex,
+      index: apiRef.current ? apiRef.current.index() : index ?? defaultIndex,
       reduced: reducedMotion,
       onChange: (i: number) => changeRef.current?.(i),
     }) as unknown as CarouselApi;
     apiRef.current = api;
     return () => {
       api.destroy();
-      apiRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reducedMotion]);
@@ -73,7 +76,7 @@ export function Carousel({
   return (
     <section ref={ref} className={cx('am-carousel', className)} aria-roledescription="carousel" aria-label={label}>
       <div className="am-carousel-viewport">
-        <div className="am-carousel-track" aria-live="polite">
+        <div className="am-carousel-track">
           {slides.map((slide, i) => (
             <div
               key={i}
@@ -88,9 +91,11 @@ export function Carousel({
         </div>
       </div>
       <div className="am-carousel-controls">
+        {dots ? <div className="am-carousel-dots" aria-hidden="true" /> : null}
         <button type="button" className="am-carousel-prev" aria-label={previousLabel} />
         <button type="button" className="am-carousel-next" aria-label={nextLabel} />
       </div>
+      <div className="am-carousel-status" aria-live="polite" aria-atomic="true" />
     </section>
   );
 }

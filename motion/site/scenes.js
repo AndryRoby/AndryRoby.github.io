@@ -422,11 +422,15 @@ const carousel = {
             slide('04', 'Drawer', 'Keeps the speed of your flick.'),
             slide('05', 'Switch', 'New colour grows as a circle.'))),
         h('div', { class: 'am-carousel-controls' },
+          h('div', { class: 'am-carousel-dots' }),
           h('button', { class: 'am-carousel-prev', type: 'button', 'aria-label': 'Previous slide' }),
           h('button', { class: 'am-carousel-next', type: 'button', 'aria-label': 'Next slide' }))),
     ];
   },
-  create: (stage, o = {}) => createCarousel({ root: q(stage, '.am-carousel'), clock: o.clock, reduced: o.reduced }),
+  // At rest on the second slide, so both neighbours peek out under the fade and both buttons
+  // work. o.handoff: the demo's state when the gallery hands the stage over to you, so the
+  // strip glides on from where the demo was instead of jumping back.
+  create: (stage, o = {}) => createCarousel({ root: q(stage, '.am-carousel'), index: 1, from: o.handoff, clock: o.clock, reduced: o.reduced }),
   demo: carouselDemo,
 };
 
@@ -623,8 +627,9 @@ const morphScene = {
   },
 };
 
-// Tools and games from arling.sk, each a link to its page. Live, the band runs; with reduced
-// motion it stands and scrolls sideways.
+// Tools and games from arling.sk, each a link to its page. Live, the band runs and both edges
+// fade; the title and the Pause button share the row above it, so nothing covers the band. With
+// reduced motion it stands and scrolls sideways.
 const TOOLS = [
   ['Asistent', 'https://arling.sk/asistent/en/'],
   ['pain.001 generator', 'https://arling.sk/sepa-pain001-generator/'],
@@ -643,8 +648,9 @@ const marqueeScene = {
     const id = uid('marquee-label');
     return [
       h('div', { class: 'mo-marquee-scene' },
-        h('span', { class: 'mo-marquee-label', id }, 'Tools and games by ARLing'),
         h('div', { class: 'am-marquee', role: 'group', 'aria-labelledby': id, 'data-speed': '40' },
+          h('div', { class: 'am-marquee-header' },
+            h('span', { class: 'am-marquee-title', id }, 'Tools and games by ARLing')),
           h('div', { class: 'am-marquee-viewport' },
             h('div', { class: 'am-marquee-track' },
               h('ul', { class: 'am-marquee-group' },

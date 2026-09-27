@@ -1,24 +1,33 @@
 /*
  * ARLing Motion: Marquee.
- * An endless horizontal band, like the Marquee of Magic UI or an infinite slider. The position
- * of the band is a pure function of time: the distance so far is the speed times the integral
- * of a rate (1 is full speed, 0 is standing), and that integral is written in closed form for
- * every spring (springArea below), so seek(t) paints any moment exactly. Pointing at the band or
- * moving focus into it adds one spring that takes the rate to 0, so the band coasts to a stop
- * instead of jumping; leaving adds a spring back to 1, so it picks up speed again. Keyboard
- * focus also glides the focused item into the middle of the band on a spring, so what has focus
- * can be read. A button pauses the band for good (WCAG 2.2.2 Pause, Stop, Hide).
+ * An endless horizontal band, like the Marquee of Magic UI or the logo bands of Linear and
+ * Vercel. The position of the band is a pure function of time: the distance so far is the speed
+ * times the integral of a rate (1 is full speed, 0 is standing), and that integral is written in
+ * closed form for every spring (springArea below), so seek(t) paints any moment exactly.
+ * Pointing at the band or moving focus into it adds one spring that takes the rate to 0, so the
+ * band coasts to a stop instead of jumping; leaving adds a spring back to 1, so it picks up speed
+ * again. Keyboard focus also glides the focused item into the middle of the band on a spring, so
+ * what has focus can be read. Both edges fade out (mask-image), so items come and go softly.
+ * A small button in a header row above the band pauses it for good (WCAG 2.2.2 Pause, Stop,
+ * Hide). It never covers the band, it says Pause or Play in words, and its icon turns from two
+ * bars into a triangle on a spring.
  *
  * The content is copied exactly as often as the width needs, so the band never shows a gap:
  * ceil(width / content) copies after the original, and one before it, so that an item near the
  * start can glide to the middle while it has focus and the band still has no gap on the left.
  * The copies are aria-hidden and inert: screen readers and the Tab key meet every item once,
  * in the original, and the original is always the one shown while it has focus.
+ * One group is made to span a whole number of device pixels (up to MAX_PAD px of extra space
+ * after its last item, through --am-marquee-pad), so every copy sits on the pixel grid the same
+ * way and the step from one copy to the next is invisible at any width.
  * With prefers-reduced-motion the band stands at its start, the copies are hidden, the button
  * is hidden and the band scrolls sideways like a normal list.
  *
  * Markup:
- *   <div class="am-marquee" role="group" aria-label="Our tools" data-speed="40">
+ *   <div class="am-marquee" role="group" aria-labelledby="tools-title" data-speed="40">
+ *     <div class="am-marquee-header">
+ *       <span class="am-marquee-title" id="tools-title">Our tools</span>
+ *     </div>
  *     <div class="am-marquee-viewport">
  *       <div class="am-marquee-track">
  *         <ul class="am-marquee-group">
@@ -28,8 +37,10 @@
  *       </div>
  *     </div>
  *   </div>
- * The component adds the parts that are missing (viewport, track, the copies and the pause
- * button .am-marquee-toggle). Options may also come from data-speed (px per second),
+ * The component adds the parts that are missing: the header row, the viewport, the track, the
+ * copies and the pause button .am-marquee-toggle at the end of the header row. A button of your
+ * own may sit anywhere (o.button, or a .am-marquee-toggle deeper inside the root); an empty one
+ * gets the icon and the words. Options may also come from data-speed (px per second),
  * data-direction ("left" or "right") and data-pause-on-hover="false".
  * Horizontal, in a left to right layout. Calls are expected in time order.
  * MIT licence.
@@ -38,18 +49,30 @@ import { track, driver, steps, attr, spring, springDisp, PRESETS } from '../../s
 
 /** Default speed, px per second. */
 export const SPEED = 40;
-/** The rate falls to 0 on this spring: critically damped, so the band never runs backwards. */
-export const STOP = spring(0.62, 1);
-/** The rate climbs back to 1 on this spring: critically damped, so it never runs faster than set. */
-export const START = spring(0.6, 1);
-/** Keyboard focus glides the focused item into view on this spring. */
-export const GLIDE = PRESETS.smooth;
+/**
+ * The rate falls to 0 and climbs back to 1 on one and the same critically damped spring. Its step
+ * only ever rises, so any run of stops and starts adds up to a rate between 0 and 1: however
+ * often the pointer comes and goes, the band never runs backwards and never faster than set.
+ */
+export const STOP = spring(0.6, 1);
+export const START = STOP;
+/** Keyboard focus glides the focused item to the middle on this spring: calm, no visible overshoot. */
+export const GLIDE = PRESETS.gentle;
+/** The pause icon turns from two bars into a triangle, and back, on this spring. */
+export const ICON = PRESETS.snappy;
 export const DIRECTIONS = ['left', 'right'];
-/** aria-label of the button while the band runs (pause) and while it is paused (play). */
-export const LABELS = { pause: 'Pause scrolling', play: 'Resume scrolling' };
+/** aria-label of the button while the band runs (pause) and while it is paused (play). Each begins with the word shown on the button (WCAG 2.5.3). */
+export const LABELS = { pause: 'Pause scrolling', play: 'Play scrolling' };
+/** The words on the button. Both sit in one cell, so the button keeps its width when they swap. */
+export const TEXTS = { pause: 'Pause', play: 'Play' };
+/** At most this many px of extra space after the last item, to put one group on whole device pixels. */
+export const MAX_PAD = 4;
+/** A frame time further than this (seconds) from the time now is stale (nothing was drawn for a while): the time now is used. */
+const FRESH = 0.05;
 
 const TWO_PI = 2 * Math.PI;
 const px = (v) => `${Math.round(v * 100) / 100}px`;
+const clamp01 = (x) => (x < 0 ? 0 : x > 1 ? 1 : x);
 const FOCUSABLE = 'a[href], button, input, select, textarea, [tabindex]';
 
 /** Velocity of springDisp(sp, tau, 1, 0): a unit displacement let go at rest, closed form. */
@@ -90,29 +113,48 @@ export function springArea(sp, tau) {
  * How many groups a viewport W px wide needs with content P px wide, the original included:
  * one copy before it and ceil(W / P) after it. The band shows the track from P + phase. The
  * phase is in [0, P) while it runs and, while an item has keyboard focus, in a window of one
- * group around where that item rests, which stays within [-P / 2, 1.5 P - W / 2). In both cases
+ * group around where that item rests, which stays within [-P, 1.5 P - W / 2). In both cases
  * the groups reach past the right edge of the viewport, so there is never a gap.
  */
 export function copiesFor(W, P) {
   return P > 0 && W > 0 ? Math.ceil(W / P) + 2 : 3;
 }
 
+/**
+ * The smallest step, in layout px, by which the width of one group can grow so that it spans a
+ * whole number of device pixels at `scale` device pixels per layout px and stays a multiple of
+ * 1/64 px (the layout unit of browsers): 1 at scale 1, 0.5 at 2, 1 at 3, 2 at 1.5, 4 at 1.25.
+ * 1 when no such step up to MAX_PAD exists (for example at a zoom of 110 %).
+ */
+export function periodUnit(scale) {
+  if (!(scale > 0)) return 1;
+  for (let m = 1; m / scale <= MAX_PAD + 1e-9; m++) {
+    const u = m / scale;
+    const q = u * 64;
+    if (Math.abs(q - Math.round(q)) < 1e-3) return Math.round(q) / 64;
+  }
+  return 1;
+}
+
 const stoppedBy = (f) => f.paused || f.hovered || f.focused;
 
 /**
- * createMarquee({ root, speed, direction, pauseOnHover, paused, labels, onPauseChange, clock, reduced })
+ * createMarquee({ root, speed, direction, pauseOnHover, paused, labels, texts, button,
+ *   onPauseChange, clock, reduced })
  * speed: px per second (default 40); direction: 'left' (default) or 'right'; paused: start
- * paused; labels: { pause, play } for the button. onPauseChange(paused) runs when the button
- * (or pause, play, toggle without { t }) changes the paused state.
+ * paused; labels: { pause, play }, the aria-labels of the button; texts: { pause, play }, the
+ * words on it; button: a pause button of your own, anywhere on the page. onPauseChange(paused)
+ * runs when the button (or pause, play, toggle without { t }) changes the paused state.
  * hover(on, { t }), focusItem(i, { t, glide }), blur({ t }), pause, play and toggle schedule
  * input for demos; loop(duration) makes a scheduled demo end where it started.
- * Returns { root, viewport, track, button, groups, items, driver, keep, hover, focusItem,
- * blur, pause, play, toggle, paused, loop, measure, refresh, offset, speed, period, seek,
- * settled, destroy }.
+ * Returns { root, header, viewport, track, button, groups, group, items, driver, keep, hover,
+ * focusItem, blur, pause, play, toggle, paused, loop, measure, refresh, offset, speed, period,
+ * pad, seek, settled, destroy }.
  */
 export function createMarquee(o) {
   const root = o.root;
   const doc = root.ownerDocument || document;
+  const view = doc.defaultView || globalThis;
   const data = (k) => (root.hasAttribute(`data-${k}`) ? root.getAttribute(`data-${k}`) : undefined);
   const num = (v, fallback) => (v === undefined || v === null || v === '' || !Number.isFinite(Number(v)) ? fallback : Number(v));
   const make = (cls, tag = 'div') => { const el = doc.createElement(tag); el.className = cls; return el; };
@@ -133,17 +175,39 @@ export function createMarquee(o) {
     viewport.appendChild(trackEl);
   }
   if (group.parentNode !== trackEl) trackEl.insertBefore(group, trackEl.firstElementChild);
-  let button = root.querySelector('.am-marquee-toggle');
-  if (!button) {
-    button = make('am-marquee-toggle', 'button');
-    root.appendChild(button);
+
+  const labels = { ...LABELS, ...(o.labels || {}) };
+  const texts = { ...TEXTS, ...(o.texts || {}) };
+  let header = root.querySelector('.am-marquee-header');
+  let button = o.button || root.querySelector('.am-marquee-toggle');
+  if (!button) button = make('am-marquee-toggle', 'button');
+  // The button belongs to the header row above the band, never next to it or over it. A button
+  // placed right in the root (the markup of v1) moves there too.
+  if (!button.parentNode || button.parentNode === root) {
+    if (!header) {
+      header = make('am-marquee-header');
+      viewport.parentNode.insertBefore(header, viewport);
+    }
+    header.appendChild(button);
   }
   if (button.tagName === 'BUTTON' && !button.hasAttribute('type')) attr(button, 'type', 'button');
+  // an empty button gets the icon and both words (the one not in force is hidden by CSS)
+  if (!button.children.length && !(button.textContent || '').trim()) {
+    const icon = make('am-marquee-toggle-icon', 'span');
+    attr(icon, 'aria-hidden', 'true');
+    const words = make('am-marquee-toggle-text', 'span');
+    attr(words, 'aria-hidden', 'true');
+    const wPause = make('am-marquee-toggle-pause', 'span');
+    wPause.textContent = texts.pause;
+    const wPlay = make('am-marquee-toggle-play', 'span');
+    wPlay.textContent = texts.play;
+    words.append(wPause, wPlay);
+    button.append(icon, words);
+  }
 
   const speed0 = Math.max(0, num(o.speed ?? data('speed'), SPEED));
   const s = (o.direction ?? data('direction')) === 'right' ? -1 : 1;
   const pauseOnHover = o.pauseOnHover ?? data('pause-on-hover') !== 'false';
-  const labels = { ...LABELS, ...(o.labels || {}) };
 
   let items = [];
   let lead = null; // the copy before the original
@@ -183,16 +247,29 @@ export function createMarquee(o) {
   }
 
   // ---------------------------------------------------------------- geometry, per layout change
+  /** Width of the box in layout px, exact to a few decimals where the browser can say it (offsetWidth is rounded). */
+  function layoutWidth(el) {
+    const cs = typeof view.getComputedStyle === 'function' ? view.getComputedStyle(el) : null;
+    const w = cs ? parseFloat(cs.width) : NaN;
+    if (w > 0) {
+      if (cs.boxSizing === 'border-box') return w;
+      const n = (v) => parseFloat(v) || 0;
+      return w + n(cs.paddingLeft) + n(cs.paddingRight) + n(cs.borderLeftWidth) + n(cs.borderRightWidth);
+    }
+    return el.offsetWidth || 0;
+  }
+
   function measureGeo() {
     const vr = viewport.getBoundingClientRect();
     const gr = group.getBoundingClientRect();
-    // k: screen pixels per layout pixel, for a band inside a scaled parent. offsetWidth is a
-    // whole number, so k is only trusted when it is clearly not 1: the loop needs the exact
-    // subpixel width of a group, or the band would jump a little at every round.
-    const lw = group.offsetWidth || 0;
+    // k: screen px per layout px, for a band inside a scaled parent. A k within 1 % of 1 counts
+    // as 1, so an unscaled band uses the exact subpixel width of its box: the loop needs the
+    // exact width of a group, or the band would jump a little at every round.
+    const lw = layoutWidth(group);
     const raw = lw > 0 && gr.width > 0 ? gr.width / lw : 1;
     const k = Math.abs(raw - 1) < 0.01 ? 1 : raw;
     return {
+      k,
       W: vr.width / k,
       P: gr.width / k,
       items: items.map((el) => {
@@ -201,7 +278,33 @@ export function createMarquee(o) {
       }),
     };
   }
+
+  // The extra space after the last item of every group, px (the CSS adds it to the gap).
+  let pad = parseFloat(root.style.getPropertyValue('--am-marquee-pad')) || 0;
+  const dpr = () => (view.devicePixelRatio > 0 ? view.devicePixelRatio : 1);
+  function setPad(v) {
+    pad = v;
+    if (v > 0) root.style.setProperty('--am-marquee-pad', `${+v.toFixed(6)}px`);
+    else root.style.removeProperty('--am-marquee-pad');
+  }
+  /**
+   * Grows the space after the last item so that one group spans whole device pixels; true when
+   * the pad changed (then measure again: the period is always what the layout says).
+   */
+  function snapPad(g) {
+    if (!(g.P > 0)) return false;
+    const u = periodUnit(dpr() * g.k);
+    const extra = u * Math.ceil(g.P / u - 1e-6) - g.P;
+    if (extra < 1e-4) return false;
+    let next = pad + extra;
+    next -= u * Math.floor(next / u + 1e-9);
+    if (Math.abs(next - pad) < 1e-6) return false;
+    setPad(next);
+    return true;
+  }
+
   let geo = measureGeo();
+  if (snapPad(geo)) geo = measureGeo();
   setCopies(copiesFor(geo.W, geo.P));
 
   // ---------------------------------------------------------------- state as functions of time
@@ -214,6 +317,7 @@ export function createMarquee(o) {
   let loopDur = 0;
   let rate;
   let shift;
+  let icon;
   let flagsS;
   let endT = -Infinity;
   let t0 = 0;
@@ -251,10 +355,14 @@ export function createMarquee(o) {
   };
   const wrapSym = (x) => (geo.P > 0 ? x - geo.P * Math.round(x / geo.P) : 0);
 
-  /** Where item j rests when it has keyboard focus: in the middle, or at the start if it is near it. */
+  /**
+   * Where item j rests when it has keyboard focus: its middle in the middle of the band, clear
+   * of both fades. Never further left than half a group, so the copy before the original always
+   * fills the left side.
+   */
   function wantOf(j) {
     const it = geo.items[j];
-    return it ? Math.max(0, it.x + it.w / 2 - geo.W / 2) : null;
+    return it ? Math.max(-geo.P / 2, it.x + it.w / 2 - geo.W / 2) : null;
   }
 
   /**
@@ -285,10 +393,11 @@ export function createMarquee(o) {
     return it.on ? { ...f, focused: true, item: it.item, glide: it.glide } : { ...f, focused: false, item: -1, glide: false };
   }
 
-  /** Builds the rate, the shift and the flags from the input since t0. */
+  /** Builds the rate, the shift, the icon and the flags from the input since t0. */
   function plan() {
     rate = track(stoppedBy(flags0) ? 0 : 1, START);
     shift = track(0, GLIDE);
+    icon = track(flags0.paused ? 1 : 0, ICON);
     flagsS = steps(flags0);
     endT = -Infinity;
     let f = flags0;
@@ -297,6 +406,7 @@ export function createMarquee(o) {
       flagsS.set(it.t, f);
       const want = stoppedBy(f) ? 0 : 1;
       if (want !== rate.target(Infinity)) rate.to(it.t, want, want ? START : STOP);
+      if (it.kind === 'pause') icon.to(it.t, it.on ? 1 : 0);
       if (it.kind === 'focus' && it.on && it.glide) {
         // a scheduled demo plans every glide on the current layout; live glides keep their way
         if (api.keep || it.delta === undefined) it.delta = glideFor(it.item);
@@ -344,6 +454,9 @@ export function createMarquee(o) {
     attr(button, 'aria-label', f.paused ? labels.play : labels.pause);
     attr(button, 'data-state', f.paused ? 'paused' : 'playing');
     attr(button, 'hidden', reduced);
+    // the icon: 0 is two bars (pause), 1 a triangle (play); a spring between them, clamped to the two shapes
+    const p = String(+(reduced ? icon.target(t) : clamp01(icon.at(t))).toFixed(3));
+    if (button.style.getPropertyValue('--am-marquee-play') !== p) button.style.setProperty('--am-marquee-play', p);
     for (const c of copies()) attr(c, 'hidden', reduced);
     // the focus ring of a scheduled keyboard focus (a live one also has :focus-visible)
     const ring = !reduced && f.focused && f.glide ? focusTarget(f.item) : null;
@@ -352,10 +465,10 @@ export function createMarquee(o) {
       if (ring) attr(ring, 'data-focused', true);
       ringed = ring;
     }
-    trackEl.style.transform = reduced || !(geo.P > 0) ? '' : `translateX(${px(-(geo.P + phase(t)))})`;
+    trackEl.style.transform = reduced || !(geo.P > 0) ? '' : `translate3d(${px(-(geo.P + phase(t)))}, 0, 0)`;
   }
 
-  const settledAll = (t) => rate.settled(t) && shift.settled(t);
+  const settledAll = (t) => rate.settled(t) && shift.settled(t) && icon.settled(t);
 
   function draw(t, st) {
     paint(t, st);
@@ -370,13 +483,28 @@ export function createMarquee(o) {
     }
   }
 
+  // Clocks. Input is timed when it happens (performance.now, never going back). Live frames are
+  // drawn at the time of the frame (document.timeline, the same for every callback of one frame),
+  // so a band at constant speed moves in even steps however much work ran before it in that
+  // frame; a frame time that is stale (nothing drawn for a while) is not used. A frame may be
+  // drawn a few ms before an input that came in during it: it then shows the state just before
+  // that input, which the springs continue from, so there is no jump. A given clock (demos,
+  // video) serves both.
+  const eventClock = o.clock || (() => performance.now() / 1000);
+  const frameClock = o.clock || (() => {
+    const now = performance.now() / 1000;
+    const tl = doc.timeline;
+    const ft = tl && typeof tl.currentTime === 'number' ? tl.currentTime / 1000 : NaN;
+    return ft > 0 && Math.abs(now - ft) < FRESH ? ft : now;
+  });
+
   let onScreen = true;
-  const d = driver(draw, { clock: o.clock, reduced: o.reduced });
-  t0 = d.now();
+  const d = driver(draw, { clock: frameClock, reduced: o.reduced });
+  t0 = eventClock();
   const running = (t) => rate.target(t) > 0 && geo.P > 0 && V > 0;
   d.busy = (t) => onScreen && (t < endT || !settledAll(t) || running(t));
   const commit = () => { paint(d.now(), { reduced: d.reduced }); d.kick(); };
-  const when = (opt) => (opt && opt.t !== undefined ? { t: opt.t, live: false } : { t: d.now(), live: true });
+  const when = (opt) => (opt && opt.t !== undefined ? { t: opt.t, live: false } : { t: eventClock(), live: true });
 
   // ---------------------------------------------------------------- input (in time order)
   function push(it, opt) {
@@ -434,9 +562,11 @@ export function createMarquee(o) {
 
   /** Re-measure after a layout change: the copies follow the width; a demo is planned again. */
   function measure() {
-    const g = measureGeo();
-    const near = (a, b) => Math.abs(a - b) < 0.5;
-    const same = near(g.W, geo.W) && near(g.P, geo.P) && g.items.length === geo.items.length
+    let g = measureGeo();
+    if (snapPad(g)) g = measureGeo();
+    // the period must be exact (every round would jump by the error); the rest may be rough
+    const near = (a, b, e = 0.5) => Math.abs(a - b) < e;
+    const same = near(g.W, geo.W) && near(g.P, geo.P, 1e-3) && near(g.k, geo.k, 1e-6) && g.items.length === geo.items.length
       && g.items.every((it, i) => near(it.x, geo.items[i].x) && near(it.w, geo.items[i].w));
     if (same) return api;
     geo = g;
@@ -451,6 +581,7 @@ export function createMarquee(o) {
     readItems();
     clearCopies();
     geo = measureGeo();
+    if (snapPad(geo)) geo = measureGeo();
     setCopies(copiesFor(geo.W, geo.P));
     if (api.keep) { plan(); fit(); }
     commit();
@@ -464,9 +595,10 @@ export function createMarquee(o) {
 
   on(button, 'click', () => setPaused(!flagsS.last.paused));
   if (pauseOnHover) {
-    // a touch has no hover; the button is there for touch screens
-    on(root, 'pointerenter', (e) => { if (e.pointerType !== 'touch') hover(true); });
-    on(root, 'pointerleave', (e) => { if (e.pointerType !== 'touch') hover(false); });
+    // Only the band itself counts: pointing at the header or the button leaves it running, so a
+    // click on Pause visibly stops it. A touch has no hover; the button is there for touch screens.
+    on(viewport, 'pointerenter', (e) => { if (e.pointerType !== 'touch') hover(true); });
+    on(viewport, 'pointerleave', (e) => { if (e.pointerType !== 'touch') hover(false); });
   }
   on(viewport, 'pointerdown', () => { pointerFocus = true; });
   on(viewport, 'pointerup', () => { pointerFocus = false; });
@@ -506,6 +638,8 @@ export function createMarquee(o) {
 
   const api = {
     root,
+    /** The row above the band that holds the pause button (null when your own button sits elsewhere). */
+    header,
     viewport,
     track: trackEl,
     button,
@@ -527,12 +661,14 @@ export function createMarquee(o) {
     loop,
     measure,
     refresh,
-    /** The translateX of the track at time t (now by default), px (the copy before the original included). */
+    /** The x offset of the track at time t (now by default), px (the copy before the original included). */
     offset: (t = d.now()) => (d.reduced || !(geo.P > 0) ? 0 : -(geo.P + phase(t))),
     /** Speed at time t (now by default), px per second in the direction of travel. */
     speed: (t = d.now()) => (d.reduced ? 0 : V * rate.at(t)),
     /** Width of one group, px: the band repeats after this distance. */
     period: () => geo.P,
+    /** The extra space after the last item that puts one group on whole device pixels, px. */
+    pad: () => pad,
     seek: (t) => paint(t, { reduced: d.reduced }),
     settled: (t) => t >= endT && settledAll(t),
     destroy() {
@@ -541,6 +677,7 @@ export function createMarquee(o) {
       if (io) io.disconnect();
       for (const [el, type, fn] of listeners) el.removeEventListener(type, fn);
       clearCopies();
+      setPad(0);
       trackEl.style.transform = '';
       if (ringed) attr(ringed, 'data-focused', null);
     },

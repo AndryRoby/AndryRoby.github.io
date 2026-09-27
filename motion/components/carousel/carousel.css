@@ -1,38 +1,60 @@
-/* ARLing Motion: Carousel. The strip moves by the core (inline transform), no CSS transitions or scroll snapping. */
+/* ARLing Motion: Carousel. The strip and the dots indicator move by the core (an inline transform and two custom properties), no CSS transitions or scroll snapping. */
 
 .am-carousel {
+  --am-carousel-slide: min(80%, 18rem);
+  --am-carousel-gap: 0.75rem;
+  --am-carousel-dot: 0.375rem;
+  --am-carousel-dot-gap: 0.5rem;
+  position: relative;
   display: grid;
-  gap: 0.75rem;
+  gap: 0.875rem;
   width: 100%;
+  min-width: 0;
   color: var(--foreground, #0a0a0a);
 }
 
+/* The middle slide is whole; the room beside it fades out to both edges, so a neighbour only
+   shows as a hint and is never cut off in the middle of a word. The block padding keeps the
+   shadows of the slides inside the clip. */
 .am-carousel-viewport {
+  --am-carousel-fade: calc((100% - var(--am-carousel-slide)) / 2);
+  position: relative;
   overflow: hidden;
-  border-radius: var(--radius, 0.625rem);
+  margin-block: -0.5rem;
+  padding-block: 0.5rem;
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 var(--am-carousel-fade), #000 calc(100% - var(--am-carousel-fade)), transparent);
+  mask-image: linear-gradient(to right, transparent, #000 var(--am-carousel-fade), #000 calc(100% - var(--am-carousel-fade)), transparent);
   /* vertical swipes still scroll the page; sideways ones drag the strip */
   touch-action: pan-y;
+  overscroll-behavior-x: contain;
   cursor: grab;
+  -webkit-user-select: none;
   user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .am-carousel-viewport:active {
   cursor: grabbing;
 }
 
+/* Its own compositor layer for the whole life of the carousel: no repaint of the slides when a
+   motion starts or ends, and no change of text rendering between moving and resting. */
 .am-carousel-track {
   display: flex;
-  gap: 0.75rem;
+  gap: var(--am-carousel-gap);
+  will-change: transform;
 }
 
 .am-carousel-slide {
-  flex: 0 0 min(80%, 18rem);
+  flex: 0 0 var(--am-carousel-slide);
+  box-sizing: border-box;
   min-width: 0;
   padding: 1.25rem;
   border: 1px solid var(--border, #e5e5e5);
   border-radius: var(--radius, 0.625rem);
-  background: var(--background, #ffffff);
-  box-shadow: 0 1px 2px rgb(0 0 0 / 0.04);
+  background: var(--card, var(--background, #ffffff));
+  color: var(--card-foreground, inherit);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.04), 0 6px 16px -10px rgb(0 0 0 / 0.14);
 }
 
 .am-carousel-slide img {
@@ -44,13 +66,55 @@
 
 .am-carousel-controls {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
   gap: 0.5rem;
+}
+
+/* Dots on the left, the buttons on the right. The dots are a pointer shortcut (aria-hidden). */
+.am-carousel-dots {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--am-carousel-dot-gap);
+  margin-right: auto;
+}
+
+.am-carousel-dot {
+  position: relative;
+  flex: none;
+  width: var(--am-carousel-dot);
+  height: var(--am-carousel-dot);
+  border-radius: 9999px;
+  background: var(--input, #e5e5e5);
+  cursor: pointer;
+}
+
+/* A bigger target than the dot itself. */
+.am-carousel-dot::after {
+  content: "";
+  position: absolute;
+  inset: -0.75rem calc(var(--am-carousel-dot-gap) / -2);
+}
+
+/* One pill over the dots; its edges come from the core as --am-carousel-from and
+   --am-carousel-to (in dots), so it stretches across the dots while the strip travels. */
+.am-carousel-indicator {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 100%;
+  height: var(--am-carousel-dot);
+  margin-top: calc(var(--am-carousel-dot) / -2);
+  background: var(--foreground, #0a0a0a);
+  clip-path: inset(0 calc(100% - var(--am-carousel-dot) - var(--am-carousel-to, 0) * (var(--am-carousel-dot) + var(--am-carousel-dot-gap))) 0 calc(var(--am-carousel-from, 0) * (var(--am-carousel-dot) + var(--am-carousel-dot-gap))) round 9999px);
+  pointer-events: none;
 }
 
 .am-carousel-prev,
 .am-carousel-next {
   display: inline-grid;
+  flex: none;
   place-items: center;
   width: 2.25rem;
   height: 2.25rem;
@@ -59,7 +123,14 @@
   border-radius: 9999px;
   background: var(--background, #ffffff);
   color: var(--foreground, #0a0a0a);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.06);
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.am-carousel-prev:hover,
+.am-carousel-next:hover {
+  background: var(--accent, #f5f5f5);
 }
 
 /* Arrows drawn with two borders, so they take the text colour. */
@@ -84,13 +155,31 @@
 
 .am-carousel-prev:focus-visible,
 .am-carousel-next:focus-visible,
+.am-carousel-slide:focus-visible,
 .am-carousel-slide :focus-visible {
   outline: 2px solid var(--ring, #a3a3a3);
   outline-offset: 2px;
 }
 
+/* At an end the button stays where it is and stays focusable: the ring keeps its place, the
+   fill and the shadow go and the arrow turns muted. It reads as "nothing further", not as broken. */
 .am-carousel-prev[aria-disabled="true"],
 .am-carousel-next[aria-disabled="true"] {
-  opacity: 0.4;
+  background: transparent;
+  box-shadow: none;
+  color: var(--muted-foreground, #737373);
   cursor: default;
+}
+
+/* The polite status ("Slide 2 of 5"), for screen readers only. */
+.am-carousel-status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
 }
