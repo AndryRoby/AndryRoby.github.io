@@ -36,11 +36,13 @@ import { zadaniePreDen, zadanieCvicenie, rozbal, tyzden, urovenDna, posunDen, pe
 import { todayBratislava, isValidDate, textIndicie, vetaRozuzlenia, menoKusu, menoKomory, struktura } from './generator.mjs';
 // Which days still have a page of their own and what ?d= may hold: one rule
 // for every game, /games/okno.mjs (the generators read the same file).
-import { denZParametra, adresaDna, trvalaAdresaDna } from '../okno.mjs?v=1';
+import { denZParametra, adresaDna } from '../okno.mjs?v=1';
 import { prazdnaPlocha, kopiaPlochy, jeVyriesene, porovnaj, napoveda, pouziNapovedu, autoKriz, polozKus } from './logika.mjs';
 import { plochaHTML, legendaHTML, obsadenieHTML, indicieHTML, padHTML, uvodText, otazkaText, kusHTML, poznamkyHTML, popisBunky, coMenuje } from './plocha.mjs';
 import * as ucet from '/style/ucet.js';
-import { oslava } from '../oslava.js';
+import { oslava } from '../oslava.js?v=3';
+// The result card to share (../karta.js): the puzzle as it started, the time, the week.
+import { pripojKartu, obrazZadania } from '../karta.js?v=2';
 // The play screen (../hra-ui.js): the rule in one line over the board with a
 // Rules panel and the board sized to the window. The buttons stay in the
 // grid of chips below (.vstup), so they are not pinned here.
@@ -87,6 +89,8 @@ const citacText = $('citac-text');
 const citacPocet = $('citac-pocet');
 
 function track(name, data) { try { if (window.umami && typeof window.umami.track === 'function') window.umami.track(name, data); } catch (e) { /* statistics are not part of the game */ } }
+// Share makes the picture card; its preview comes in with the moment of the solve.
+const karta = pripojKartu({ hra: 'foxes', tlacidlo: zdielajBtn, sprava: zdielanieStav, pole: zdielanieText, blok: zdielanieEl, stav: stavEl, track, data: dataKarty });
 
 /* ── Storage ──────────────────────────────────────────────────────────── */
 function nacitaj(kluc) {
@@ -611,6 +615,7 @@ function prepniRezim() {
 function ukazStav() {
   stavEl.classList.toggle('ok', !!done);
   if (zdielanieEl) zdielanieEl.hidden = !done;
+  if (done) karta.nahlad();                      // the card, also for a day solved before
   if (done) {
     const s = sekundy ? ' in ' + formatCas(sekundy) : '';
     const pomoc = [];
@@ -774,57 +779,34 @@ function skontroluj() {
   ukazPasik();
   ukazTlacidla();
   track('game_solved', { game: 'foxes', day: rezim === 'den' ? datum : sada + '/' + kSada, seconds: sekundy, hints, checks, level: zadanie.uroven });
-  const kontajner = document.querySelector('.hra#hra') || document.querySelector('div.hra');
-  if (kontajner) oslava(kontajner, { redukovany: !nastavenia.oslava || window.matchMedia('(prefers-reduced-motion: reduce)').matches });
+  // The moment on the board (../oslava.js): ink from the cell the last move changed, each piece lands as it passes, then the card.
+  const pokojne = !nastavenia.oslava || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  oslava(doska, {
+    znacky: bunky, pop: { co: '.kus' },
+    veta: stavEl, cas: formatCas(sekundy), nahlad: karta.nahlad({ poVlne: !pokojne }),
+    redukovany: pokojne,
+  });
   return true;
 }
 
 /* ── Share ────────────────────────────────────────────────────────────── *
- * Plain text: the game, the day, the level, the time and the help used, and
- * a link. No grid and no name, so it spoils nothing. Nothing is sent. */
-function odkazNaLair() {
-  const b = 'arling.sk/games/foxes';
-  if (rezim === 'cvicenie') return b + '/practice/' + sada + '/' + (kSada === 1 ? '' : kSada + '/');
-  return jeDnes ? b : trvalaAdresaDna(b + '/', datum);
+ * A voluntary step after the puzzle is finished (ops/spec-hry-ux.md, part 8;
+ * ops/games/denne-karta/SPEC.md). Share makes a picture card in the browser
+ * (../karta.js): the puzzle as it started, never a mark of the answer, the
+ * time, the help used and this week, with a short text and the link. Nothing
+ * goes to a server: the card goes to the system share sheet, or it is saved
+ * and the text copied. Event game_share { how }. */
+function dataKarty() {
+  if (!done || !zadanie) return null;
+  return {
+    hra: 'foxes', datum: rezim === 'den' ? datum : null, dnes,
+    cvicenie: rezim === 'cvicenie' ? { sada, k: kSada, pocet: (SADY.find((x) => x.id === sada) || {}).pocet || 0 } : null,
+    uroven: UROVNE[zadanie.uroven].label, rozmer: n + ' × ' + n, indicie: zadanie.clues.length,
+    sekundy, casovac: nastavenia.casovac, hints, checks,
+    dni: rezim === 'den' ? tyzden(datum) : null,
+    obraz: obrazZadania('foxes', zadanie),
+  };
 }
-function textNaZdielanie() {
-  // "Foxes practice, easy set 1, lair 3", never the internal id easy-1.
-  const kto = rezim === 'cvicenie'
-    ? 'Foxes practice, ' + UROVNE[zadanie.uroven].label.toLowerCase() + ' set ' + sada.split('-')[1] + ', lair ' + kSada
-    : 'Foxes, ' + kratkyDatum(datum) + ', ' + UROVNE[zadanie.uroven].label;
-  return kto + ', ' + formatCas(sekundy || 0) + ', '
-    + hints + (hints === 1 ? ' hint' : ' hints') + ', ' + checks + (checks === 1 ? ' check' : ' checks') + ', ' + odkazNaLair();
-}
-async function skopiruj(text) {
-  try {
-    if (navigator.clipboard && navigator.clipboard.writeText) { await navigator.clipboard.writeText(text); return true; }
-  } catch (e) { /* an old browser, or a page without permission: the box below */ }
-  try {
-    const t = document.createElement('textarea');
-    t.value = text;
-    t.setAttribute('readonly', '');
-    t.style.position = 'fixed'; t.style.top = '-1000px';
-    document.body.appendChild(t);
-    t.select();
-    const ok = document.execCommand('copy');
-    document.body.removeChild(t);
-    return ok;
-  } catch (e) { return false; }
-}
-if (zdielajBtn) zdielajBtn.addEventListener('click', async () => {
-  if (!done || !zadanie) return;
-  const text = textNaZdielanie();
-  const ok = await skopiruj(text);
-  if (zdielanieStav) zdielanieStav.textContent = ok
-    ? 'Copied. It names nobody and no cell, and nothing was sent anywhere.'
-    : 'This browser would not let the page copy for you. Here is the text, take it from the box.';
-  if (zdielanieText) {
-    zdielanieText.value = text;
-    zdielanieText.hidden = ok;
-    if (!ok) { zdielanieText.focus(); zdielanieText.select(); }
-  }
-  track('game_share', { game: 'foxes', copied: ok, level: zadanie.uroven });
-});
 
 /* ── Selection ────────────────────────────────────────────────────────── *
  * A tap picks one cell, a drag picks every cell it runs over, Ctrl (Cmd)
@@ -935,7 +917,8 @@ function stavNaOci() {
   el.scrollIntoView({ block: 'nearest', behavior: pokojne ? 'auto' : 'smooth' });
 }
 if (checkBtn) checkBtn.addEventListener('click', () => { skontrolujStav(); vratFokus(); stavNaOci(); });
-if (hintBtn) hintBtn.addEventListener('click', () => { ukazNapovedu(); vratFokus(); stavNaOci(); });
+// A hint that finishes the lair starts the moment on the board: the page holds still under the wave.
+if (hintBtn) hintBtn.addEventListener('click', () => { ukazNapovedu(); vratFokus(); if (!done) stavNaOci(); });
 if (pauzaBtn) pauzaBtn.addEventListener('click', () => pozastav(false));
 if (pokracujBtn) pokracujBtn.addEventListener('click', pokracuj);
 

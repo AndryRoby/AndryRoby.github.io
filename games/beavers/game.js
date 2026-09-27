@@ -46,10 +46,12 @@ import { zadaniePreDen, zadanieCvicenie, rozbal, tyzden, urovenDna, posunDen, pe
 import { todayBratislava, isValidDate } from './generator.mjs';
 // Which days still have a page of their own and what ?d= may hold: one rule
 // for all the games, /games/okno.mjs (the generators read the same file).
-import { denZParametra, adresaDna, trvalaAdresaDna } from '../okno.mjs?v=1';
+import { denZParametra, adresaDna } from '../okno.mjs?v=1';
 import { jeVyriesene, cislaSedia, porovnaj, napoveda, autoTrava } from './logika.mjs';
 import * as ucet from '/style/ucet.js';
-import { oslava } from '../oslava.js';
+import { oslava } from '../oslava.js?v=3';
+// The result card to share (../karta.js): the puzzle as it started, the time, the week.
+import { pripojKartu, obrazZadania } from '../karta.js?v=2';
 // The play screen (../hra-ui.js): the rule in one line over the board with a
 // Rules panel, the buttons pinned in reach, the board sized to the window.
 import { hraUi } from '../hra-ui.js?v=1';
@@ -80,6 +82,8 @@ const zdielanieStav = $('zdielanie-stav');
 const zdielanieText = $('zdielanie-text');
 
 function track(name, data) { try { if (window.umami && typeof window.umami.track === 'function') window.umami.track(name, data); } catch (e) { /* statistics are not part of the game */ } }
+// Share makes the picture card; its preview comes in with the moment of the solve.
+const karta = pripojKartu({ hra: 'beavers', tlacidlo: zdielajBtn, sprava: zdielanieStav, pole: zdielanieText, blok: zdielanieEl, stav: stavEl, track, data: dataKarty });
 
 /* ── Storage ──────────────────────────────────────────────────────────── */
 function nacitaj(kluc) {
@@ -446,6 +450,7 @@ function zRetazca(s) {
 function ukazStav() {
   stavEl.classList.toggle('ok', !!done);
   if (zdielanieEl) zdielanieEl.hidden = !done;   // Share only after the pond is finished
+  if (done) karta.nahlad();                      // the card, also for a day solved before
   if (done) {
     const s = sekundy ? ' in ' + formatCas(sekundy) : '';
     const pomoc = [];
@@ -604,63 +609,40 @@ function skontroluj() {
   ukazHistoriu();
   ukazPasik();
   track('game_solved', { game: 'beavers', day: rezim === 'den' ? datum : sada + '/' + kSada, seconds: sekundy, hints, checks, level: zadanie.uroven });
-  const kontajner = document.querySelector('.hra');
-  const redukovany = !nastavenia.oslava || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (kontajner) oslava(kontajner, { redukovany });
-  // On a wide screen a twelve by twelve is about 640 px tall, so the result,
-  // Share and the week strip land under the edge of the window: bring the
-  // result into view, scrolling only as far as needed. Only here, at the
-  // moment of solving, never when an already solved day loads.
+  // The moment on the board (../oslava.js): ink from the cell the last move changed, each lodge lands as it passes, then the card.
+  const pokojne = !nastavenia.oslava || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  oslava(doska, {
+    znacky: bunky, pop: { kto: '[data-v="1"]', co: '::after' },
+    veta: stavEl, cas: formatCas(sekundy), nahlad: karta.nahlad({ poVlne: !pokojne }),
+    redukovany: pokojne,
+  });
+  // The result and Share used to be scrolled into view here (a twelve by
+  // twelve is about 640 px tall on a wide screen). Since the solve moment the
+  // pinned bar carries Share with the card (../karta.js) and the play screen
+  // keeps the first line of the result in view (../hra-ui.js), so the page
+  // holds still under the wave on the board.
   ukazStav();
-  const ciel = zdielanieEl && !zdielanieEl.hidden ? zdielanieEl : stavEl;
-  try { requestAnimationFrame(() => ciel.scrollIntoView({ block: 'nearest', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' })); } catch (e) { /* an old browser: the panel is still there below */ }
   return true;
 }
 
 /* ── Share ────────────────────────────────────────────────────────────── *
- * A voluntary step after the pond is finished (ops/spec-hry-ux.md, part 8).
- * The text names the pond, the level, the time and the help used, with no
- * cell of the solution in it. The text itself only goes to the clipboard, and
- * when the browser refuses that, into a box to copy; the statistics get the
- * event game_share (copied or not, and the level), nothing of the text. */
-function textNaZdielanie() {
-  const kto = rezim === 'cvicenie' ? 'Beavers practice ' + sada.replace('-', ' ') + ', pond ' + kSada : 'Beavers, ' + kratkyDatum(datum);
-  const odkaz = rezim === 'cvicenie'
-    ? 'arling.sk/games/beavers/practice/' + sada + '/' + (kSada > 1 ? kSada + '/' : '')
-    : jeDnes ? 'arling.sk/games/beavers' : trvalaAdresaDna('arling.sk/games/beavers/', datum);   // ?d=, so the link still opens after the day's page is gone
-  return kto + ', ' + UROVNE[zadanie.uroven].label + ', ' + formatCas(sekundy || 0) + ', '
-    + hints + (hints === 1 ? ' hint' : ' hints') + ', ' + checks + (checks === 1 ? ' check' : ' checks') + ', ' + odkaz;
+ * A voluntary step after the puzzle is finished (ops/spec-hry-ux.md, part 8;
+ * ops/games/denne-karta/SPEC.md). Share makes a picture card in the browser
+ * (../karta.js): the puzzle as it started, never a mark of the answer, the
+ * time, the help used and this week, with a short text and the link. Nothing
+ * goes to a server: the card goes to the system share sheet, or it is saved
+ * and the text copied. Event game_share { how }. */
+function dataKarty() {
+  if (!done || !zadanie) return null;
+  return {
+    hra: 'beavers', datum: rezim === 'den' ? datum : null, dnes,
+    cvicenie: rezim === 'cvicenie' ? { sada, k: kSada, pocet: (SADY.find((x) => x.id === sada) || {}).pocet || 0 } : null,
+    uroven: UROVNE[zadanie.uroven].label, rozmer: n + ' × ' + n,
+    sekundy, casovac: nastavenia.casovac, hints, checks,
+    dni: rezim === 'den' ? tyzden(datum) : null,
+    obraz: obrazZadania('beavers', zadanie),
+  };
 }
-async function skopiruj(text) {
-  try {
-    if (navigator.clipboard && navigator.clipboard.writeText) { await navigator.clipboard.writeText(text); return true; }
-  } catch (e) { /* an old browser, or a page without permission: the box below */ }
-  try {
-    const t = document.createElement('textarea');
-    t.value = text;
-    t.setAttribute('readonly', '');
-    t.style.position = 'fixed'; t.style.top = '-1000px';
-    document.body.appendChild(t);
-    t.select();
-    const ok = document.execCommand('copy');
-    document.body.removeChild(t);
-    return ok;
-  } catch (e) { return false; }
-}
-if (zdielajBtn) zdielajBtn.addEventListener('click', async () => {
-  if (!done || !zadanie) return;
-  const text = textNaZdielanie();
-  const ok = await skopiruj(text);
-  if (zdielanieStav) zdielanieStav.textContent = ok
-    ? 'Copied. It says nothing about the cells, and the text went only to your clipboard.'
-    : 'This browser would not let the page copy for you. Here is the text, take it from the box.';
-  if (zdielanieText) {
-    zdielanieText.value = text;
-    zdielanieText.hidden = ok;
-    if (!ok) { zdielanieText.focus(); zdielanieText.select(); }
-  }
-  track('game_share', { game: 'beavers', copied: ok, level: zadanie.uroven });
-});
 
 /* ── Moves ────────────────────────────────────────────────────────────── *
  * Every change to the board goes through zmenaStavu: it keeps the whole board

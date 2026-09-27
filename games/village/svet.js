@@ -1,7 +1,7 @@
 /* Puzzle Village: the island, its water, paths and trees.
    Built once from fixed numbers, so the village is the same for everyone. */
-import { iso, RX, RY, tree, bush, flowers, stone, signpost } from './iso.js?v=5';
-import { hash, DUSK, OPT } from './riso.js?v=5';
+import { iso, RX, RY, tree, bush, flowers, stone, signpost } from './iso.js?v=7';
+import { hash, DUSK, OPT } from './riso.js?v=7';
 
 export const C0 = [14.5, 14.5];
 export const DEPTH = 74;
@@ -194,7 +194,66 @@ export function build(places) {
   }
   obj.sort((a, b) => a.y - b.y);
   W.obj = obj;
+  W.lights = lightsOf(places);
+  // the island alone, trees and roots included, without the poster's title and imprint (the card)
+  let ix0 = 1e9, iy0 = 1e9, ix1 = -1e9, iy1 = -1e9;
+  for (const q of top) { ix0 = Math.min(ix0, q[0]); ix1 = Math.max(ix1, q[0]); iy0 = Math.min(iy0, q[1]); }
+  for (const o of obj) { ix0 = Math.min(ix0, o.bb[0]); ix1 = Math.max(ix1, o.bb[2]); iy0 = Math.min(iy0, o.bb[1]); }
+  for (const q of W.drip) iy1 = Math.max(iy1, q[1] + 34);
+  W.island = [ix0 - 8, iy0 - 8, ix1 + 8, iy1 + 8];
   return W;
+}
+
+/* ── The lights of each house ─────────────────────────────────────────
+   A house's windows and lanterns are the shapes its own print marks with
+   p.glow (cottage() in iso.js, lantern() and the rest in miesta.js). They are
+   collected once, by printing every place on a pen that draws nothing, so a
+   window moved in the drawing moves its light with it. A pane may carry its
+   bars (pts.bars: a cottage's mullion, a round window's cross), drawn dark
+   again over any light. The village draws the lit ones over the print
+   (village.js); by day the print keeps every window dark, at dusk it gives
+   every window a low warm light (dusk() below) and a solved one is lit in full
+   over it. */
+export const HALO = 16;                    // the warm ring round a lit window at dusk, world units
+export const TEPLO = Object.freeze([255, 206, 120]);   // the warm light of a lit window
+export const TLMENE = 0.35;               // how much of it every window keeps at dusk, solved or not
+export const PRIECKA = Object.freeze({ farba: [40, 48, 70], a: 0.6 });   // the bars over any light (night ink)
+const WARM = 'rgb(' + TEPLO.join(',') + ')', BAR = 'rgb(' + PRIECKA.farba.join(',') + ')';
+function fillPts(c, pts) { c.beginPath(); pts.forEach((q, k) => (k ? c.lineTo(q[0], q[1]) : c.moveTo(q[0], q[1]))); c.closePath(); c.fill(); }
+/* A pane full of light (a = 1), or a = TLMENE of it, in the warm light or another flat
+   colour (a lit pane by day), with its bars dark over it; the caller sets the composite. */
+export function panel(c, w, a = 1, fill = WARM) {
+  c.globalAlpha = a; c.fillStyle = fill;
+  fillPts(c, w.pts);
+  if (!w.bars || !w.bars.length) return;
+  c.globalAlpha = PRIECKA.a; c.fillStyle = BAR;
+  for (const b of w.bars) fillPts(c, b);
+}
+function blindPen() {
+  const noop = () => {};
+  const c = new Proxy({}, { get: (o, k) => (k in o ? o[k] : noop) });
+  return { glow: [], c, eve: false, s: 1, ox: 0, oy: 0, fs: false, poly: noop, circle: noop, ellipse: noop, line: noop, path: noop, text: noop,
+    ink: () => c, reset: noop, scale: noop, strokePts: noop, fillOutline: noop, textAside: noop, union: () => () => null };
+}
+export function lightsOf(places) {
+  const out = new Map();
+  for (const pl of places) {
+    if (pl.square) continue;
+    const rec = blindPen();
+    pl.static(rec);
+    let b0 = 1e9, b1 = 1e9, b2 = -1e9, b3 = -1e9;
+    const polys = rec.glow.map(pts => {
+      let cx = 0, cy = 0;
+      for (const q of pts) { cx += q[0]; cy += q[1]; }
+      cx /= pts.length; cy /= pts.length;
+      let R = 0;
+      for (const q of pts) { R = Math.max(R, Math.hypot(q[0] - cx, q[1] - cy)); b0 = Math.min(b0, q[0]); b1 = Math.min(b1, q[1]); b2 = Math.max(b2, q[0]); b3 = Math.max(b3, q[1]); }
+      return { pts: pts.map(q => [q[0], q[1]]), cx, cy, R: R + 0.6, bars: (pts.bars || []).map(b => b.map(q => [q[0], q[1]])) };
+    });
+    for (const w of polys) { b0 = Math.min(b0, w.cx - HALO); b1 = Math.min(b1, w.cy - HALO); b2 = Math.max(b2, w.cx + HALO); b3 = Math.max(b3, w.cy + HALO); }
+    out.set(pl.kluc, { kluc: pl.kluc, polys, bb: polys.length ? [b0 - 2, b1 - 2, b2 + 2, b3 + 2] : null });
+  }
+  return out;
 }
 
 /* The name of a house on its signpost. A house whose puzzle is not out yet
@@ -247,12 +306,16 @@ function bridge(p, A, B) {
 /* ── The static print: everything that does not move ─────────────────── */
 export function drawStatic(p, W, rect, eve = false) {
   const c = p.c;
-  p.glow = eve ? [] : null;
+  // the houses' windows are printed dark by day and with a low warm light at dusk
+  // (dusk() below), whatever is solved: a window lights up in full only when its
+  // puzzle is solved today, and the village draws that light over the print
+  // (village.js, W.lights); the print never changes with it
+  p.glow = null;
   // paper
   p.ink('paper', 1);
   c.fillRect(rect[0] - 2, rect[1] - 2, rect[2] - rect[0] + 4, rect[3] - rect[1] + 4);
-  // printer's marks and the imprint, like on a poster
-  marks(p, rect, W);
+  // printer's marks and the imprint, like on a poster (not on the island cut for the card)
+  if (!p.bare) marks(p, rect, W);
 
   // the island's side: soil, a grass lip, a ragged rock bottom
   const ch = W.chain, dr = W.drip;
@@ -349,7 +412,11 @@ export function drawStatic(p, W, rect, eve = false) {
 }
 
 /* Early evening: two more drums, plum and blue, over the whole print, then the
-   lit windows and lamps printed last in warm light, as a hand would add them. */
+   lamps along the paths printed last in warm light, as a hand would add them,
+   and every house window with a low warm light (TLMENE of the full one, no ring):
+   the village is at home in the evening even before anything is solved. A house
+   solved today is lit in full over that, with its warm ring (village.js), so the
+   difference stays plain. */
 function dusk(p, W, rect) {
   const c = p.c;
   for (const [ink, a] of DUSK) { p.ink(ink, a); c.fillRect(rect[0] - 2, rect[1] - 2, rect[2] - rect[0] + 4, rect[3] - rect[1] + 4); }
@@ -361,15 +428,13 @@ function dusk(p, W, rect) {
     c.fillStyle = g; c.beginPath(); c.arc(x, y, r, 0, 6.2832); c.fill();
   };
   for (const [x, y] of W.lamps) if (boxHit(rect, [x - 40, y - 40, x + 40, y + 40])) halo(x, y, 34, 0.55);
-  for (const w of p.glow) {
-    let x = 0, y = 0; for (const q of w) { x += q[0]; y += q[1]; }
-    halo(x / w.length, y / w.length, 16, 0.4);
-  }
   c.globalCompositeOperation = 'source-over';
-  c.fillStyle = 'rgb(255,206,120)';
-  for (const w of p.glow) { c.beginPath(); w.forEach((q, k) => k ? c.lineTo(q[0], q[1]) : c.moveTo(q[0], q[1])); c.closePath(); c.fill(); }
   c.fillStyle = 'rgb(255,236,190)';
   for (const [x, y] of W.lamps) { c.beginPath(); c.arc(x, y - 0.6, 2.2, 0, 6.2832); c.fill(); }
+  if (W.lights) for (const L of W.lights.values()) {
+    if (!L.bb || !boxHit(rect, L.bb)) continue;
+    for (const w of L.polys) panel(c, w, TLMENE);
+  }
   p.reset();
 }
 

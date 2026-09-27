@@ -31,10 +31,12 @@ import { zadaniePreDen, zadanieCvicenie, rozbal, tyzden, denVTyzdni, urovenDna, 
 import { todayBratislava, isValidDate } from './generator.mjs';
 // Which days still have a page of their own and what ?d= may hold: one rule
 // for all eleven games, /games/okno.mjs (the generators read the same file).
-import { denZParametra, adresaDna, trvalaAdresaDna } from '../okno.mjs?v=1';
+import { denZParametra, adresaDna } from '../okno.mjs?v=1';
 import { konflikty, jeVyriesene, porovnaj, napoveda } from './logika.mjs';
 import * as ucet from '/style/ucet.js';
-import { oslava } from '../oslava.js';
+import { oslava } from '../oslava.js?v=3';
+// The result card to share (../karta.js): the garden as it started, the time, the week.
+import { pripojKartu, obrazZadania } from '../karta.js?v=2';
 // The play screen (../hra-ui.js): the rule in one line over the board with a
 // Rules panel, the buttons pinned in reach, the board sized to the window.
 import { hraUi } from '../hra-ui.js?v=1';
@@ -63,6 +65,8 @@ const zdielanieStav = $('zdielanie-stav');
 const zdielanieText = $('zdielanie-text');
 
 function track(name, data) { try { if (window.umami && typeof window.umami.track === 'function') window.umami.track(name, data); } catch (e) { /* statistics are not part of the game */ } }
+// Share makes the picture card; its preview comes in with the moment of the solve.
+const karta = pripojKartu({ hra: 'hedgehogs', tlacidlo: zdielajBtn, sprava: zdielanieStav, pole: zdielanieText, blok: zdielanieEl, stav: stavEl, track, data: dataKarty });
 
 /* ── Storage ──────────────────────────────────────────────────────────── */
 function nacitaj(kluc) {
@@ -302,6 +306,7 @@ function ukazStav() {
   const k = oznacKonflikty();
   stavEl.classList.toggle('ok', !!done);
   if (zdielanieEl) zdielanieEl.hidden = !done;   // Share only after the garden is finished
+  if (done) karta.nahlad();                      // the card, also for a day solved before
   if (done) {
     const s = sekundy ? ' in ' + formatCas(sekundy) : '';
     const pomoc = [];
@@ -387,54 +392,22 @@ function ukazNapovedu() {
 
 /* ── Share ────────────────────────────────────────────────────────────── *
  * A voluntary step after the garden is finished (ops/spec-hry-ux.md, part
- * 8). The text names the garden, the time and the hints and checks used,
- * with no cell of the solution in it, so it cannot spoil the puzzle for
- * whoever reads it. Nothing is sent anywhere; the text only goes to the
- * clipboard, and when the browser refuses that, into a box to copy by hand. */
-function odkazNaZahradu() {
-  const b = 'https://arling.sk/games/hedgehogs/';
-  if (rezim === 'cvicenie') return b + 'practice/' + sada + '/' + (kSada === 1 ? '' : kSada + '/');
-  return jeDnes ? b : trvalaAdresaDna(b, datum);   // ?d=, so the link still opens after the day's page is gone
+ * 8; ops/games/denne-karta/SPEC.md). Share makes a picture card in the
+ * browser (../karta.js): the garden as it started, its flowerbeds and never
+ * a hedgehog, the time, the help used and this week, with a short text and
+ * the link. Nothing goes to a server: the card goes to the system share
+ * sheet, or it is saved and the text copied. Event game_share { how }. */
+function dataKarty() {
+  if (!done || !zadanie) return null;
+  return {
+    hra: 'hedgehogs', datum: rezim === 'den' ? datum : null, dnes,
+    cvicenie: rezim === 'cvicenie' ? { sada, k: kSada, pocet: (SADY.find((x) => x.id === sada) || {}).pocet || 0 } : null,
+    uroven: UROVNE[zadanie.uroven].label, rozmer: n + ' × ' + n,
+    sekundy, casovac: nastavenia.casovac, hints, checks,
+    dni: rezim === 'den' ? tyzden(datum) : null,
+    obraz: obrazZadania('hedgehogs', zadanie),
+  };
 }
-function textNaZdielanie() {
-  const kto = rezim === 'cvicenie' ? 'Hedgehogs practice ' + sada + ', garden ' + kSada : 'Hedgehogs ' + datum;
-  const pomoc = [];
-  if (hints) pomoc.push(hints + (hints === 1 ? ' hint' : ' hints'));
-  if (checks) pomoc.push(checks + (checks === 1 ? ' check' : ' checks'));
-  return kto + ' · ' + UROVNE[zadanie.uroven].label + '\n'
-    + 'Solved' + (sekundy ? ' in ' + formatCas(sekundy) : '') + (pomoc.length ? ' with ' + pomoc.join(' and ') : ', clean: no hint, no check') + '\n'
-    + odkazNaZahradu();
-}
-async function skopiruj(text) {
-  try {
-    if (navigator.clipboard && navigator.clipboard.writeText) { await navigator.clipboard.writeText(text); return true; }
-  } catch (e) { /* an old browser, or a page without permission: the box below */ }
-  try {
-    const t = document.createElement('textarea');
-    t.value = text;
-    t.setAttribute('readonly', '');
-    t.style.position = 'fixed'; t.style.top = '-1000px';
-    document.body.appendChild(t);
-    t.select();
-    const ok = document.execCommand('copy');
-    document.body.removeChild(t);
-    return ok;
-  } catch (e) { return false; }
-}
-if (zdielajBtn) zdielajBtn.addEventListener('click', async () => {
-  if (!done || !zadanie) return;
-  const text = textNaZdielanie();
-  const ok = await skopiruj(text);
-  if (zdielanieStav) zdielanieStav.textContent = ok
-    ? 'Copied. It says nothing about the cells, and nothing was sent anywhere.'
-    : 'This browser would not let the page copy for you. Here is the text, take it from the box.';
-  if (zdielanieText) {
-    zdielanieText.value = text;
-    zdielanieText.hidden = ok;
-    if (!ok) { zdielanieText.focus(); zdielanieText.select(); }
-  }
-  track('game_share', { game: 'hedgehogs', copied: ok, level: zadanie.uroven });
-});
 
 function skontroluj() {
   if (!jeVyriesene(v, zadanie.regions, STARS)) return false;
@@ -451,8 +424,13 @@ function skontroluj() {
   ukazHistoriu();
   ukazPasik();
   track('game_solved', { game: 'hedgehogs', day: rezim === 'den' ? datum : sada + '/' + kSada, seconds: sekundy, hints, checks, level: zadanie.uroven });
-  const kontajner = document.querySelector('.hra');
-  if (kontajner) oslava(kontajner, { redukovany: !nastavenia.oslava || window.matchMedia('(prefers-reduced-motion: reduce)').matches });
+  // The moment on the board (../oslava.js): ink from the cell the last move changed, each hedgehog lands as it passes, then the card.
+  const pokojne = !nastavenia.oslava || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  oslava(doska, {
+    znacky: bunky, pop: { kto: '[data-v="2"]', co: '::after' },
+    veta: stavEl, cas: formatCas(sekundy), nahlad: karta.nahlad({ poVlne: !pokojne }),
+    redukovany: pokojne,
+  });
   return true;
 }
 

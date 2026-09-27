@@ -10,13 +10,29 @@
       life loop (breathing, blinking, ripples, smoke, the walkers) runs on every
       n-th frame of the screen, 30 to 38 frames a second and evenly spaced, and
       stops after forty quiet seconds, like a print. Hidden tab or village
-      scrolled away: nothing.
+      scrolled away: nothing. Scrolling the page never wakes a village at rest;
+      only coming back onto the screen does.
    4. Reduced motion prints one still frame and never starts a loop.
+   5. My village (27 Sep 2026): a house whose puzzle was solved today has its
+      window lit. The lights are drawn over the print only where something is
+      drawn anyway (drawSprites): no sprite is added, and the village still
+      rests after forty quiet seconds. It is not free: every full frame (a drag,
+      a zoom) fills the lit panes and their bars again, at 14 of 14 up to 23 flat
+      fills and 13 bars, plus one warm ring a window at dusk (the gradient is made
+      once per window and kept). A light that comes on while you watch is a
+      spring of 360 ms, on the hand loop, and then stops.
    All module URLs carry the same ?v= so a new engine never meets old drawings;
    bump it in every import and in index.html together. */
-import { Pen, OPT, inksLost } from './riso.js?v=5';
-import { build, drawStatic } from './svet.js?v=5';
-import { PLACES, ambient, ACT } from './miesta.js?v=5';
+import { Pen, OPT, inksLost } from './riso.js?v=7';
+import { build, drawStatic, HALO, panel } from './svet.js?v=7';
+import { PLACES, ambient, ACT, ORDER } from './miesta.js?v=7';
+import {
+  HRY, svetlaDnes, dnesBratislava, msDoPolnoci, najblizsia, noveSvetla, citajVidene, zapisVidene,
+  textSvetiel, textDomu, textZdielania, textOznamu, menoSuboru, rozlozenieKarty, kresliKartu, atrament, rozvrh, CASY,
+  DENNE_SKLO, viditelne, vDohlade
+} from './moja.js?v=7';
+import { PRESETS, cssEasing } from '../../motion/src/core.js';
+import { createNumber } from '../../motion/components/number/number.js';
 
 const $ = s => document.querySelector(s);
 const stage = $('#vl-stage'), cv = $('#vl-canvas');
@@ -81,14 +97,42 @@ function start() {
   const W = build(PLACES);
   const ISLE = W.frame;
   const BOUND = { x0: ISLE.x0 - 200, x1: ISLE.x1 + 200, y0: ISLE.y0 - 160, y1: ISLE.y1 + 160 };
+
+  /* ── My village: today's lights ─────────────────────────────────────
+     Read from the games' own saves in this browser (moja.js says how); nothing
+     leaves it. No storage (a private window, blocked site data) reads as no
+     light at all, and the village draws exactly as it would without them. */
+  const readKey = k => { try { return window.localStorage ? window.localStorage.getItem(k) : null; } catch (e) { return null; } };
+  const writeKey = (k, v) => { try { if (!window.localStorage) return; if (v == null) window.localStorage.removeItem(k); else window.localStorage.setItem(k, v); } catch (e) { /* the lights still show, they only come on again with ink next time */ } };
+  let today = svetlaDnes(readKey, dnesBratislava());
+  // houses solved since the last visit ('vl-seen'): each comes on with ink once the village is on
+  // the screen and the house is in view (checkArrival below); until then its window stays dark
+  let fresh = noveSvetla(today, citajVidene(readKey('vl-seen')));
+  // the lights the row above the poster counts: a new one is counted CASY.start after the village shows,
+  // the number rolling on then (countArrival), while its window may still wait for its house to be seen;
+  // so the row never says less than was solved today once the page has arrived (review 2, V1)
+  const told = new Set(today.svietia.filter(k => !fresh.includes(k)));
+  const glowing = new Map();                // key -> { L: its windows (W.lights), t0: ms the ink starts, null = simply lit }
+  let inkSprites = [], inkUntil = 0;        // while a light comes on: markers that tell the frame loop where to draw
+  for (const k of today.svietia) {
+    // a house whose puzzle is done shows its family's little scene done too (the loop drawn, the walkway laid)
+    ACT.done.add(k);
+    // reduced motion: every light is simply on from the first frame
+    if (reduce || !fresh.includes(k)) glowing.set(k, { L: W.lights.get(k), t0: null });
+  }
+
   const hour = new Date().getHours();
   let eve = hour >= 18 || hour < 6;
   try { const s = localStorage.getItem('vl-light'); if (s === 'day' || s === 'eve') eve = s === 'eve'; } catch (e) {}
+  // every window lit today: the village rests in its early evening (unless the visitor chose day today);
+  // when the last light is only coming on now, the evening follows it (lightsDone below)
+  if (today.vsetky && (reduce || !fresh.length) && readKey('vl-day14') !== today.datum) eve = true;
   let sprites = [];
   function makeSprites() {
     sprites = [];
     for (const pl of PLACES) for (const s of pl.sprites()) { s.pl = pl; sprites.push(s); }
     for (const s of ambient(W, eve)) sprites.push(s);
+    for (const s of inkSprites) sprites.push(s);
     for (const s of sprites) { s.k = null; s.bx = null; }
   }
   makeSprites();
@@ -294,22 +338,72 @@ function start() {
   function drawSprites(r, t) {
     ctx.setTransform(Z(), 0, 0, Z(), OX(), OY());
     pen.scale(Z()); pen.eve = eve;
+    // today's lit windows first, over the print and under everything that moves
+    if (glowing.size) drawLights(pen, r, performance.now());
     const list = [];
     for (const s of sprites) { const b = s.bx || boxOf(s, t); if (hit(b, r)) list.push([b[3], s]); }
     list.sort((a, b) => a[0] - b[0]);
     for (const [, s] of list) s.draw(pen, t);
     pen.reset();
   }
+  /* A lit window. By day its pane is one flat warm colour (DENNE_SKLO); at dusk
+     it is the full warm light over the low one every window keeps (svet.js),
+     with a warm ring round it like the lamps'. Its bars (a cottage's mullion, a
+     round window's cross) stay dark across the light. a < 1: the light is still
+     coming on, a circle of ink growing from the middle of each pane. */
+  function drawLights(p, r, now) {
+    for (const g of glowing.values()) {
+      if (!g.L || !g.L.bb || (r && !hit(g.L.bb, r))) continue;
+      const a = g.t0 == null ? 1 : atrament(now - g.t0, reduce);
+      if (a > 0) lightUp(p, g.L, a, eve);
+    }
+  }
+  // the warm ring of a window lives in world units like the window itself, so the steady one is
+  // made once per window and canvas and kept (a drag or zoom at 14 of 14 no longer makes 23 a frame)
+  let rings = new WeakMap();
+  function haloGrad(c, w, a) {
+    const g = c.createRadialGradient(w.cx, w.cy, 0, w.cx, w.cy, HALO);
+    g.addColorStop(0, 'rgba(255,196,110,' + (0.4 * a).toFixed(3) + ')'); g.addColorStop(1, 'rgba(255,196,110,0)');
+    return g;
+  }
+  function haloKept(c, w) {
+    let m = rings.get(c);
+    if (!m) rings.set(c, m = new Map());
+    let g = m.get(w);
+    if (!g) m.set(w, g = haloGrad(c, w, 1));
+    return g;
+  }
+  const DAYLIT = 'rgb(' + DENNE_SKLO.join(',') + ')';
+  function lightUp(p, L, a, dusk) {
+    const c = p.c;
+    for (const w of L.polys) {
+      if (dusk) {
+        c.globalCompositeOperation = 'screen'; c.globalAlpha = 1;
+        c.fillStyle = a >= 1 ? haloKept(c, w) : haloGrad(c, w, a);
+        c.beginPath(); c.arc(w.cx, w.cy, HALO, 0, 6.2832); c.fill();
+      }
+      // by day, while it comes on, a little warm light spills out round the window and is gone
+      // when it is on (a window is a few pixels across from afar: this is what the eye catches)
+      else if (a < 1) p.circle('sun', 0.34 * Math.sin(Math.PI * a), w.cx, w.cy, HALO * a);
+      c.save();
+      if (a < 1) { c.beginPath(); c.arc(w.cx, w.cy, Math.max(0.01, w.R * a), 0, 6.2832); c.clip(); }
+      c.globalCompositeOperation = 'source-over';
+      if (dusk) panel(c, w, 1); else panel(c, w, 1, DAYLIT);
+      c.restore();
+    }
+    p.reset();
+  }
 
   /* ── Frames ────────────────────────────────────────────────────────── */
-  let full = true, raf = 0, timer = 0, inView = true, lastFrame = 0, shown = false, wasMoving = false, settledAt = 0;
+  let full = true, raf = 0, timer = 0, inView = true, lastFrame = 0, shown = false, wasMoving = false, settledAt = 0, lookedAt = '';
   let lastInput = performance.now();
   let tFrozen = 12.3;                       // reduced motion: one moment, kept
   const clock = now => (reduce ? tFrozen : now / 1000);
   const stats = { frames: 0, fulls: 0, partial: 0, rects: 0, tiles: 0, work: 0, tileN: 0, tileMs: 0, tileMax: 0, hz: 0, tileSize: T, fillStrokes: OPT.fillStrokes };
   window.__village = stats;
-  // a house that has just opened plays its little scene on the hand loop
-  const acting = now => !!ACT.k && !reduce && clock(now) - ACT.t0 < 2.8;
+  // a house that has just opened plays its little scene on the hand loop, and so does
+  // a window whose light is coming on (360 ms at the screen's own rate, then nothing)
+  const acting = now => (!!ACT.k && !reduce && clock(now) - ACT.t0 < 2.8) || now < inkUntil;
 
   function renderFull(t) {
     const r = viewRect(4);
@@ -380,7 +474,7 @@ function start() {
     plateGen++; gen++;
     dropAll();
     while (spare.length) free(spare.pop());
-    inksLost(); pen = new Pen(ctx);
+    inksLost(); pen = new Pen(ctx); rings = new WeakMap();
     calmUntil = performance.now() + 3000;
     stats.recovered = (stats.recovered || 0) + 1;
     full = true; need();
@@ -427,8 +521,13 @@ function start() {
     // tiles (a copy, cheap): nothing the pieces left behind can stay on the plate
     if (moving || dragging || goal || vel || queue.length || now < zoomingUntil) settleDue = true;
     else if (settleDue) { settleDue = false; if (!wasFull) full = true; }
-    if (!shown && !queue.some(q => q[3] === 0)) { shown = true; stage.classList.add('vl-ready'); }
+    if (!shown && !queue.some(q => q[3] === 0)) { shown = true; stage.classList.add('vl-ready'); countArrival(); checkArrival(); prepareCard(); }
     if (wasMoving && !moving && !dragging) placeButtons();
+    // while a light waits to be seen: the view holds still somewhere new, so its house may be in view now
+    if (fresh.length && shown && !moving && !dragging && !goal && !vel) {
+      const at = cam.x.toFixed(1) + ',' + cam.y.toFixed(1) + ',' + cam.z.toFixed(3);
+      if (at !== lookedAt) { lookedAt = at; checkArrival(); }
+    }
     wasMoving = moving || dragging;
     stats.frames++; stats.tiles = tiles.size;
     const w = performance.now() - w0;
@@ -520,6 +619,7 @@ function start() {
     clampCam(cam);
     labW = null;
     wake(true);
+    checkArrival();
   }
   new ResizeObserver(resize).observe(stage);
   window.addEventListener('resize', () => { if (cssW) resize(); });
@@ -571,25 +671,35 @@ function start() {
   const labLayer = document.createElement('div');
   labLayer.className = 'vl-labels'; labLayer.setAttribute('aria-hidden', 'true');
   layer.after(labLayer);
+  // a label is a box placed over its house (s) and its face (f): the face is what lands when the
+  // house's light comes on. A house lit today shows a small warm window before its name, so from
+  // afar, where a window is a few pixels, the lit houses still read at a glance. A house solved
+  // today keeps the window's room from the start, even while its light waits to be seen, so the
+  // box is measured and placed once and never moves when the light comes on (review 2, D1).
   const labs = PLACES.filter(pl => !pl.square).map(pl => {
     const s = document.createElement('span');
     s.className = 'vl-lab' + (pl.soon ? ' vl-lab-soon' : '');
-    s.textContent = pl.name;
-    if (pl.soon) { const e = document.createElement('em'); e.textContent = 'soon'; s.appendChild(e); }
+    const f = document.createElement('span'); f.className = 'vl-lab-in';
+    const win = document.createElement('i'); win.className = 'vl-lab-okno'; win.hidden = true;
+    const nm = document.createElement('span'); nm.textContent = pl.name;
+    f.appendChild(win); f.appendChild(nm);
+    if (pl.soon) { const e = document.createElement('em'); e.textContent = 'soon'; f.appendChild(e); }
+    s.appendChild(f);
     labLayer.appendChild(s);
-    return { pl, s, dy: 0, off: false };
+    return { pl, s, f, win, w: 0, h: 0, dy: 0, off: false };
   });
-  // open houses claim their place first, the ones still to come give way
-  labs.sort((a, b) => (a.pl.soon - b.pl.soon));
   let labW = null, labsOn = null;
+  // houses solved today claim their place first (lit or waiting, so the order never changes when a
+  // light comes on), then the open ones; the ones still to come give way
+  const labRank = l => (today.svietia.includes(l.pl.kluc) ? 0 : 1) + (l.pl.soon ? 2 : 0);
   function placeLabels(settle) {
     const on = cam.z < LAB_Z && !(goal && goal.z >= LAB_Z);
     if (on !== labsOn) { labsOn = on; stage.classList.toggle('vl-labs-on', on); }
     if (!on) return;
-    if (!labW) labW = labs.map(l => [l.s.offsetWidth, l.s.offsetHeight]);
+    if (!labW) { for (const l of labs) { l.w = l.s.offsetWidth; l.h = l.s.offsetHeight; } labW = true; }
     const taken = [];
-    labs.forEach((l, n) => {
-      const [w, h] = labW[n];
+    for (const l of settle ? labs.slice().sort((a, b) => labRank(a) - labRank(b)) : labs) {
+      const w = l.w, h = l.h;
       const [sx, sy] = toScreen(l.pl.top[0], l.pl.top[1]);
       let x = sx - w / 2, y = sy - h - 4;
       if (settle) {
@@ -604,7 +714,23 @@ function start() {
         l.s.style.visibility = l.off ? 'hidden' : '';
       }
       l.s.style.transform = `translate(${x.toFixed(1)}px,${(y + l.dy).toFixed(1)}px)`;
-    });
+    }
+  }
+  /* a house's light came on (land: now, while you watch) or went (a new day): its label shows the
+     warm window or not; seen from afar, the face lands once on the press spring (CASY.stitok).
+     The room for the window changes only when what was solved today changes (a new solve read,
+     a new day); the light coming on only shows the window in it. */
+  const LAND = cssEasing(PRESETS[CASY.stitok.pruzina], 30);
+  function labelLit(k, land) {
+    const l = labs.find(q => q.pl.kluc === k);
+    if (!l) return;
+    const room = today.svietia.includes(k), on = room && glowing.has(k);
+    if (l.win.hidden === room) { l.win.hidden = !room; labW = null; full = true; }
+    l.win.style.visibility = on ? '' : 'hidden';
+    if (!land || !on || !labsOn || reduce || typeof l.f.animate !== 'function') return;
+    const kf = [{ transform: 'scale(' + CASY.stitok.od + ')' }, { transform: 'scale(1)' }];
+    try { l.f.animate(kf, { duration: LAND.duration, easing: LAND.easing }); }
+    catch (e) { try { l.f.animate(kf, { duration: LAND.duration, easing: 'ease-out' }); } catch (e2) { /* the window glyph alone says it */ } }
   }
 
   /* ── Card ──────────────────────────────────────────────────────────── */
@@ -620,6 +746,7 @@ function start() {
     $('#vl-card-name').textContent = pl.name;
     $('#vl-card-scene').textContent = Array.isArray(pl.scene) ? pl.scene[eve ? 1 : 0] : pl.scene;
     $('#vl-card-rule').textContent = pl.rule;
+    updateCardLit();
     const a = $('#vl-card-play');
     a.href = pl.square ? '/games/' : `/games/${pl.kluc}/`;
     a.textContent = pl.square ? 'See every daily puzzle' : 'Play today’s puzzle';
@@ -796,11 +923,48 @@ function start() {
     if (openPl && Array.isArray(openPl.scene)) $('#vl-card-scene').textContent = openPl.scene[eve ? 1 : 0];
   }
   lightBtn.addEventListener('click', () => {
-    eve = !eve;
-    try { localStorage.setItem('vl-light', eve ? 'eve' : 'day'); } catch (e) {}
-    makeSprites(); showLight(); queue = []; wake(true);
+    const v = !eve;
+    try { localStorage.setItem('vl-light', v ? 'eve' : 'day'); } catch (e) {}
+    // with every window lit the evening is the day's own; choosing day keeps day until tomorrow
+    if (today.vsetky) writeKey('vl-day14', v ? null : today.datum);
+    setEve(v, true);
   });
   showLight();
+  /* Day to evening and back. The new light is printed under the old picture,
+     which fades off it once the tiles in view are ready (only opacity), so the
+     change never shows a half printed village. The fade is the gentle spring of
+     calm light (CASY.vecer) as a CSS linear() easing, set here; a browser without
+     linear() keeps the stylesheet's plain 700 ms fade. Reduced motion: at once. */
+  const VECER = cssEasing(PRESETS[CASY.vecer.pruzina], 60);
+  // the veil is a copy of the whole stage (15 MB at 1408 x 684 and DPR 2): once off the page it
+  // gives its memory back at once, like a discarded tile (the rule after the Fold 7, README)
+  const dropVeil = c => { if (!c) return; if (c.remove) c.remove(); c.width = c.height = 0; };
+  function setEve(v, fade) {
+    if (v === eve) return;
+    let veil = null;
+    if (fade && !reduce && cssW && shown) {
+      try {
+        veil = document.createElement('canvas');
+        veil.className = 'vl-veil'; veil.setAttribute('aria-hidden', 'true');
+        veil.width = cv.width; veil.height = cv.height;
+        veil.style.width = cssW + 'px'; veil.style.height = cssH + 'px';
+        veil.style.transition = 'opacity ' + VECER.duration + 'ms ' + VECER.easing;
+        veil.getContext('2d').drawImage(cv, 0, 0);
+        cv.after(veil);
+      } catch (e) { dropVeil(veil); veil = null; }
+    }
+    eve = v;
+    makeSprites(); showLight(); queue = []; wake(true);
+    prepareCard();
+    if (!veil) return;
+    const t0 = performance.now();
+    const lift = () => {
+      if (queue.some(q => q[3] <= 1) && performance.now() - t0 < 1600) { setTimeout(lift, 60); return; }
+      veil.classList.add('vl-veil-out');
+      setTimeout(() => dropVeil(veil), Math.max(VECER.duration, CASY.vecer.ms) + 120);
+    };
+    setTimeout(lift, 60);
+  }
 
   /* ── Sound: a soft chime when a house opens, only if asked for ─────── */
   const soundBtn = $('#vl-sound');
@@ -810,13 +974,25 @@ function start() {
   soundBtn.addEventListener('click', () => { sound = !sound; try { localStorage.setItem('vl-sound', sound ? '1' : '0'); } catch (e) {} showSound(); if (sound) chime(PLACES[0]); });
   showSound();
   const SCALE = [0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24, 26, 28, 31, 33];
-  // only ever called from a click, tap or key press: the AudioContext is born
-  // inside a gesture, never on page load or from a link
-  function chime(pl) {
+  // called from a click, tap or key press, where the browser lets a page make sound;
+  // and when a window lights up on arrival (arrival = true): then only if sound is on
+  // and the browser already lets this page play (a click on the way here). If it does
+  // not, the chime stays silent: it never plays later, out of its moment.
+  function chime(pl, arrival) {
     if (!sound) return;
     try {
       ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+      if (arrival && ac.state !== 'running') {
+        const t0 = performance.now(), r = ac.resume();
+        if (r && r.then) r.then(() => { if (ac.state === 'running' && performance.now() - t0 < 300) ring(pl); }, () => {});
+        return;
+      }
       if (ac.state === 'suspended') ac.resume();
+      ring(pl);
+    } catch (e) {}
+  }
+  function ring(pl) {
+    try {
       const n = SCALE[PLACES.indexOf(pl) % SCALE.length], now = ac.currentTime;
       for (const [semi, delay, vol] of [[n, 0, 0.16], [n + 7, 0.09, 0.09]]) {
         const f = 392 * Math.pow(2, semi / 12);
@@ -832,14 +1008,415 @@ function start() {
     } catch (e) {}
   }
 
+  /* ── My village: the row of lights, the lights coming on, the card ─── */
+  const track = (name, data) => { try { if (window.umami && typeof window.umami.track === 'function') window.umami.track(name, data); } catch (e) { /* statistics are not part of the village */ } };
+  // the statistics script loads last: an event from the loading page waits for it (10 s at most)
+  const trackSoon = (name, data, n = 0) => { if (window.umami && typeof window.umami.track === 'function') track(name, data); else if (n < 20) setTimeout(() => trackSoon(name, data, n + 1), 500); };
+  // a visit that came from a shared card (the card's link carries ?ref=card): counted once, nothing else is read
+  { const ref = Q.get('ref'); if (ref && /^[a-z0-9-]{1,24}$/.test(ref)) trackSoon('village_open_ref', { ref }); }
+  const HOUSES = ORDER.filter(k => HRY.includes(k));          // the village's own order, west to east
+  const POS = {};
+  for (const pl of PLACES) if (!pl.square) POS[pl.kluc] = hitCenter(pl);
+  const placeOf = k => PLACES.find(q => q.kluc === k);
+  const el = (tag, cls) => { const e = document.createElement(tag); if (cls) e.className = cls; return e; };
+  // the windows lit on the screen now: a light whose ink has started counts, one waiting to be seen does not
+  const litCount = () => { const now = performance.now(); let n = 0; for (const g of glowing.values()) if (g.t0 == null || g.t0 <= now) n++; return n; };
+  // the number in the row: every light of today it has counted so far (reduced motion: all of them at once)
+  const rowCount = () => (reduce ? today.pocet : told.size);
+  /* "5 of 14 lights today", the nearest house still dark and the card, in a row right above
+     the village: seen on arrival without scrolling, on a phone too, and never over the print.
+     index.html keeps its place, so nothing shifts when it fills; made here if it is missing. */
+  let chip = $('#vl-lights');
+  if (!chip) { chip = el('div', 'vl-lights'); chip.id = 'vl-lights'; stage.parentNode.insertBefore(chip, stage); }
+  chip.setAttribute('role', 'group'); chip.setAttribute('aria-label', 'Today’s lights');
+  chip.textContent = '';
+  const chipN = el('span', 'vl-lights-n');
+  const chipGlyph = el('span', 'vl-lights-glyph'); chipGlyph.setAttribute('aria-hidden', 'true');
+  const chipText = el('span', 'vl-lights-text');
+  const chipPre = el('span'), chipNum = el('span', 'vl-lights-num'), chipPo = el('span'), chipToday = el('span', 'vl-lights-today');
+  chipText.appendChild(chipPre); chipText.appendChild(chipNum); chipText.appendChild(chipPo); chipText.appendChild(chipToday);
+  chipN.appendChild(chipGlyph); chipN.appendChild(chipText);
+  const chipRow = el('span', 'vl-lights-row');
+  const chipNext = el('a', 'vl-lights-next');
+  const chipShare = el('button', 'vl-lights-share');
+  chipShare.type = 'button';
+  chipRow.appendChild(chipNext); chipRow.appendChild(chipShare);
+  chip.appendChild(chipN); chip.appendChild(chipRow);
+  const chipMsg = el('div', 'vl-lights-msg');
+  chipMsg.setAttribute('role', 'status'); chipMsg.hidden = true;
+  chip.appendChild(chipMsg);
+  // what a screen reader hears when windows come on; the row's own words change quietly
+  const chipSr = el('div', 'vl-sr');
+  chipSr.setAttribute('role', 'status');
+  chip.appendChild(chipSr);
+  chip.classList.add('vl-lights-ready');
+  // on a touch screen the card goes to the phone's own share sheet; elsewhere it is saved as a picture
+  const sheet = () => (matchMedia('(pointer: coarse)').matches || (navigator.maxTouchPoints || 0) > 0) && typeof navigator.share === 'function' && typeof navigator.canShare === 'function';
+  chipShare.innerHTML = sheet()
+    ? '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 10V2.5M5 5.2 8 2.3l3 2.9M3.5 8.5v4.5h9V8.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Share card</span>'
+    : '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.5V10M5 7.2 8 10.1l3-2.9M3.5 11v2.5h9V11" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Save card</span>';
+  // the spoken name starts with the words the button shows (WCAG 2.5.3); the tooltip says more
+  chipShare.setAttribute('aria-label', sheet() ? 'Share card of my village' : 'Save card of my village');
+  chipShare.title = sheet() ? 'Share a picture of my village today' : 'Save a picture of my village today, with its link copied';
+  let msgT = 0;
+  function say(text) { chipMsg.textContent = text; chipMsg.hidden = false; clearTimeout(msgT); msgT = setTimeout(() => { chipMsg.hidden = true; }, CASY.sprava); }
+  // the count rolls to its new number (motion/components/number, CASY.pocet); reduced motion: simply there
+  let num = null, numPlain = false;
+  function setCount(v) {
+    if (numPlain) { chipNum.textContent = String(v); return; }
+    try { if (!num) num = createNumber({ el: chipNum, value: v }); else if (num.value() !== v) num.set(v); }
+    catch (e) { numPlain = true; chipNum.textContent = String(v); }
+  }
+  function updateChip() {
+    const next = najblizsia(today, POS, HOUSES);
+    const n = rowCount();
+    const t = textSvetiel(today, next, n);
+    // the words around the number; the number itself rolls (setCount)
+    chipPre.textContent = t.pred; chipPo.textContent = t.po; chipToday.textContent = t.dnes;
+    chipNum.hidden = t.cislo == null;
+    if (t.cislo != null) setCount(t.cislo);
+    chip.title = t.nazov;
+    chip.classList.toggle('vl-lights-on', n > 0);
+    chip.classList.toggle('vl-lights-all', n >= today.spolu);
+    if (next) {
+      chipNext.hidden = false;
+      chipNext.href = '/games/' + next + '/';
+      chipNext.textContent = t.odkaz;
+      chipNext.setAttribute('aria-label', t.popis);
+      chipNext.dataset.umamiEvent = 'village_to_game'; chipNext.dataset.umamiEventGame = next; chipNext.dataset.umamiEventFrom = 'lights';
+    } else chipNext.hidden = true;
+    chipShare.hidden = !today.pocet;
+  }
+  // the house's card says whether its window is lit; the list below marks the lit houses too
+  const cardLit = $('#vl-card-lit');
+  function updateCardLit() {
+    if (!cardLit) return;
+    if (!openPl || openPl.square) { cardLit.hidden = true; return; }
+    const on = today.svietia.includes(openPl.kluc);
+    cardLit.hidden = false; cardLit.textContent = textDomu(on); cardLit.classList.toggle('vl-on', on);
+  }
+  const listLinks = [];
+  for (const a of document.querySelectorAll('.vl-list a')) {
+    const m = /^\/games\/([a-z]+)\/$/.exec(a.getAttribute('href') || '');
+    if (!m || !HRY.includes(m[1])) continue;
+    listLinks.push([m[1], a]);
+    a.addEventListener('click', () => track('village_to_game', { game: m[1], from: 'list' }));
+  }
+  function updateList() {
+    for (const [k, a] of listLinks) {
+      if (!a.parentNode || a.parentNode.tagName !== 'H3') continue;
+      const on = today.svietia.includes(k);
+      let tag = a.parentNode.querySelector('.vl-lit-tag');
+      if (on && !tag) { tag = el('span', 'vl-lit-tag'); tag.textContent = 'Lit today'; a.parentNode.appendChild(tag); }
+      if (tag) tag.hidden = !on;
+    }
+  }
+  $('#vl-card-play').addEventListener('click', () => { if (openPl && !openPl.square) track('village_to_game', { game: openPl.kluc, from: 'house' }); });
+
+  /* Arrival, in two places. The row above the poster is seen on arrival (it sits
+     over the village, on a phone too), so it tells the truth at once: CASY.start
+     after the village shows, or after the page comes back, the count rolls on to
+     every light solved today, one step a house in the order they were solved
+     (the rhythm of the ink below), and a screen reader hears which (countArrival).
+     The windows come on where they are seen. A house solved since the last visit
+     keeps its window dark until the village is on the screen (CASY.videt of it,
+     looked at on every 5 % step of IntersectionObserver, on scrolling and when
+     the view comes to rest) and the house itself is in that part of it. Then,
+     CASY.start later, its window fills with ink from the middle (CASY.okno,
+     snappy spring), one house after another in the order they were solved: its
+     name label lands and its chime plays if sound is on. A house out of view
+     (below the fold, or zoomed away from) keeps waiting until the view comes to
+     it. Markers (inkSprites) tell the frame loop where to draw while the ink
+     lasts, then the window is simply lit. */
+  let countT = 0, countUntil = 0;
+  const stepping = new Set();               // counted in a wave still under way
+  const toCount = () => noveSvetla(today, { d: today.datum, k: [...told, ...stepping] });
+  function countArrival() {
+    // the village printed its first frame, or is not on the screen at all (then nothing waits for it)
+    if (countT || document.hidden || !(shown || !inView)) return;
+    if (!toCount().length) return;
+    countT = setTimeout(countNew, CASY.start);
+  }
+  function countNew() {
+    clearTimeout(countT); countT = 0;
+    if (document.hidden) return;              // back on the screen, back() asks again
+    const add = toCount();                    // in the order they were solved
+    if (!add.length) return;
+    const at = rozvrh(add, reduce), last = add.length - 1, datum = today.datum;
+    // the number rolls about 400 ms after its last step (motion/components/number)
+    countUntil = performance.now() + at[last] + 700;
+    for (const k of add) stepping.add(k);
+    const step = i => {
+      stepping.delete(add[i]);
+      if (today.datum !== datum) return;      // a new day came meanwhile: it starts dark
+      if (today.svietia.includes(add[i])) told.add(add[i]);
+      updateChip();
+      if (i === last) chipSr.textContent = textOznamu(add.filter(k => told.has(k)), rowCount(), today.spolu);
+    };
+    add.forEach((k, i) => { if (at[i]) setTimeout(() => step(i), at[i]); else step(i); });
+  }
+  let arriveT = 0, scrollOn = false;
+  const seenPart = () => viditelne(stage.getBoundingClientRect(), window.innerWidth || 0, window.innerHeight || 0);
+  function houseSeen(k, v) {
+    const L = W.lights.get(k);
+    if (!L || !L.bb) return true;             // a house with no window: nothing to wait for (lightNew skips it)
+    const [x, y] = toScreen((L.bb[0] + L.bb[2]) / 2, (L.bb[1] + L.bb[3]) / 2);
+    return x >= 0 && y >= 0 && x <= cssW && y <= cssH && vDohlade(v, x, y);
+  }
+  function checkArrival() {
+    watchScroll(fresh.length > 0);
+    if (!fresh.length || !shown || arriveT || !cssW || document.hidden) return;
+    if (!seenPart().dost) return;
+    arriveT = setTimeout(arrive, CASY.start);
+  }
+  function arrive() {
+    arriveT = 0;
+    if (!fresh.length || document.hidden) return;
+    const v = seenPart();
+    if (!v.dost) return;                      // scrolled away meanwhile: the next look brings it
+    // reduced motion: the windows were lit from the first frame, this only chimes
+    const now = reduce ? fresh.slice() : fresh.filter(k => houseSeen(k, v));
+    if (!now.length) return;
+    // the row has counted them by now; if its turn is due in this same moment, it goes first
+    if (countT) countNew();
+    fresh = fresh.filter(k => !now.includes(k));
+    lightNew(now);
+    watchScroll(fresh.length > 0);
+  }
+  // scrolling is watched only while a light is still waiting to be seen
+  function watchScroll(on) {
+    if (on === scrollOn) return;
+    scrollOn = on;
+    if (on) window.addEventListener('scroll', checkArrival, { passive: true });
+    else window.removeEventListener('scroll', checkArrival, { passive: true });
+  }
+  function lightNew(keys) {
+    keys = keys.filter(k => today.svietia.includes(k) && W.lights.get(k) && W.lights.get(k).bb);
+    if (!keys.length) return;
+    const now = performance.now(), at = rozvrh(keys, reduce);
+    keys.forEach((k, i) => {
+      const L = W.lights.get(k);
+      ACT.done.add(k);
+      if (glowing.has(k)) return;                 // reduced motion: lit from the first frame already
+      if (reduce) { glowing.set(k, { L, t0: null }); return; }
+      const t0 = now + at[i];
+      glowing.set(k, { L, t0 });
+      const s = { box: L.bb, st: () => [atrament(performance.now() - t0) * 1000], draw() {}, ink: true, k: null, bx: null };
+      inkSprites.push(s); sprites.push(s);
+    });
+    writeKey('vl-seen', zapisVidene(today, glowing.keys()));
+    // each house in its turn: its label lands (its box keeps its place) and it chimes; reduced
+    // motion: all at once, and only the house solved last chimes
+    const last = keys.length - 1;
+    keys.forEach((k, i) => setTimeout(() => {
+      labelLit(k, true);
+      if (!reduce || i === last) { const pl = placeOf(k); if (pl) chime(pl, true); }
+    }, at[i]));
+    inkUntil = reduce ? 0 : now + at[last] + CASY.okno.ms + 40;
+    full = true;
+    wake(false);
+    setTimeout(lightsDone, reduce ? 0 : at[last] + CASY.okno.ms + 80);
+  }
+  function lightsDone() {
+    if (performance.now() < inkUntil) { setTimeout(lightsDone, 50); return; }
+    for (const g of glowing.values()) g.t0 = null;
+    if (inkSprites.length) { const gone = new Set(inkSprites); sprites = sprites.filter(s => !gone.has(s)); inkSprites = []; }
+    updateChip();
+    // the fourteenth light: the evening comes, once every window is lit here (none still waiting to be seen)
+    if (today.vsetky && !fresh.length && glowing.size >= today.spolu && !eve && readKey('vl-day14') !== today.datum) setTimeout(() => setEve(true, true), CASY.vecer.po);
+    prepareCard();
+  }
+  /* Back from a puzzle in another tab, or past midnight: read the saves again.
+     A new light is counted in the row on arrival and comes on with ink once
+     seen; a new day starts dark. */
+  function refreshLights() {
+    const next = svetlaDnes(readKey, dnesBratislava());
+    if (next.datum === today.datum && next.svietia.join() === today.svietia.join()) return;
+    const was = today.svietia;
+    today = next;
+    for (const k of [...glowing.keys()]) if (!today.svietia.includes(k)) { glowing.delete(k); if (was.includes(k)) ACT.done.delete(k); }
+    for (const k of [...told]) if (!today.svietia.includes(k)) told.delete(k);
+    fresh = fresh.filter(k => today.svietia.includes(k));
+    const add = noveSvetla(today, citajVidene(readKey('vl-seen'))).filter(k => !glowing.has(k) && !fresh.includes(k));
+    // already watched come on (in another tab of the village, say): simply lit, and counted
+    for (const k of today.svietia) if (!add.includes(k) && !fresh.includes(k) && !glowing.has(k)) { glowing.set(k, { L: W.lights.get(k), t0: null }); ACT.done.add(k); told.add(k); }
+    // reduced motion: lit at once (the row counts them at once too, a screen reader hears them on arrival)
+    if (reduce) for (const k of add) glowing.set(k, { L: W.lights.get(k), t0: null });
+    fresh = fresh.concat(add);
+    // every label: a house solved today keeps room for its window, lit or still waiting
+    for (const l of labs) labelLit(l.pl.kluc, false);
+    updateChip(); updateList(); updateCardLit();
+    full = true;
+    wake(true);
+    countArrival();
+    checkArrival();
+    prepareCard();
+  }
+  let midnightT = 0;
+  function armMidnight() { clearTimeout(midnightT); midnightT = setTimeout(() => { refreshLights(); armMidnight(); }, msDoPolnoci()); }
+  armMidnight();
+  // a puzzle solved in another window next to this one lights its house here, once seen
+  window.addEventListener('storage', e => { if (!document.hidden && (!e.key || /^[a-z]+:\d{4}-\d{2}-\d{2}$/.test(e.key))) refreshLights(); });
+  for (const k of today.svietia) labelLit(k, false);
+  updateChip(); updateList();
+
+  /* The card: "My village, <date>: N of 14 lights", 1080 x 1350, in the poster's
+     frame (moja.js). The island on it is printed fresh by this engine at the
+     card's own size, lit as it is now, so it is sharp on any screen. Made on the
+     visitor's device; nothing is sent anywhere. */
+  function drawIslandInto(p, box) {
+    const R = W.island, rw = R[2] - R[0], rh = R[3] - R[1];
+    const s = Math.min(box.w / rw, box.h / rh);
+    const ox = box.x + (box.w - rw * s) / 2 - R[0] * s, oy = box.y + (box.h - rh * s) / 2 - R[1] * s;
+    const g = p.c, keep = { k: ACT.k, t0: ACT.t0 };
+    ACT.k = null;                            // no house card is open on the card
+    g.save();
+    try {
+      g.beginPath(); g.rect(box.x, box.y, box.w, box.h); g.clip();
+      g.setTransform(s, 0, 0, s, ox, oy);
+      p.scale(s); p.eve = false; p.bare = true;
+      drawStatic(p, W, [(box.x - ox) / s, (box.y - oy) / s, (box.x + box.w - ox) / s, (box.y + box.h - oy) / s], eve);
+      p.bare = false;
+      g.setTransform(s, 0, 0, s, ox, oy); p.scale(s); p.eve = eve;
+      for (const k of today.svietia) { const L = W.lights.get(k); if (L && L.bb) lightUp(p, L, 1, eve); }
+      // the animals at a calm moment, like the village at rest (no hare in mid air)
+      const t = Math.floor(performance.now() / 1000 / 2.3) * 2.3 + 1.6;
+      const list = [];
+      for (const sp of sprites) if (!sp.ink) list.push([boxOf(sp, t)[3], sp]);
+      list.sort((a, b) => a[0] - b[0]);
+      for (const [, sp] of list) sp.draw(p, t);
+      p.reset();
+    } finally {
+      g.restore();
+      p.bare = false;
+      ACT.k = keep.k; ACT.t0 = keep.t0;
+    }
+  }
+  /* The card is printed ahead, in a quiet moment (requestIdleCallback, else a timer;
+     never while the page scrolls, the view moves, a light or the count is about to
+     come on or comes on, or the page is hidden), whenever the lights or the light of
+     day change; also while a light still waits to be seen, since the card shows what
+     was solved, and on a phone that light often waits for a scroll. A tap then shares
+     it at once: Safari opens the share sheet only straight from the tap, and printing
+     it in the tap froze the tap itself (100 to 600 ms on a slow phone, estimated, not
+     measured: window.__village.kartaMs keeps the last print). On a computer a hand on
+     the button (the mouse over it, keyboard focus) prints it at once if it is not yet. */
+  let cardJob = null, cardJobKey = '', cardReady = null, prepOn = false, scrolledAt = -1e9;
+  // a scroll is only marked (no layout read): the card is not printed in the middle of one
+  window.addEventListener('scroll', () => { scrolledAt = performance.now(); }, { passive: true });
+  const cardKey = () => today.datum + '|' + today.svietia.join() + '|' + eve;
+  function makeCard() {
+    const key = cardKey();
+    if (cardJob && cardJobKey === key) return cardJob;
+    cardJobKey = key;
+    const name = menoSuboru(today);
+    const job = new Promise(res => {
+      let c = null;
+      // the plate is 5.8 MB: it gives its memory back as soon as its picture is made (as tiles do)
+      const free = () => { if (c) { c.width = c.height = 0; c = null; } };
+      try {
+        const lay = rozlozenieKarty({ datum: today.datum, svietia: today.svietia, eve });
+        c = document.createElement('canvas');
+        c.width = lay.w; c.height = lay.h;
+        const p = new Pen(c.getContext('2d', { alpha: false }));
+        const t0 = performance.now();
+        kresliKartu(p, lay, drawIslandInto);
+        stats.kartaMs = Math.round(performance.now() - t0);
+        c.toBlob(b => { free(); res(b || null); }, 'image/png');
+      } catch (e) { free(); res(null); }
+    }).then(blob => {
+      if (!blob) { if (cardJob === job) { cardJob = null; cardJobKey = ''; } return null; }
+      let file = null;
+      try { file = new File([blob], name, { type: 'image/png' }); } catch (e) { file = null; }
+      const made = { key, blob, file, name };
+      if (cardJobKey === key) cardReady = made;
+      return made;
+    });
+    cardJob = job;
+    return job;
+  }
+  const cardFresh = () => !!(cardReady && cardReady.key === cardKey());
+  function prepareCard() {
+    if (prepOn || !today.pocet || cardFresh()) return;
+    prepOn = true;
+    const later = () => (typeof window.requestIdleCallback === 'function' ? window.requestIdleCallback(go, { timeout: 4000 }) : setTimeout(go, 1200));
+    const go = () => {
+      // hidden, nothing to show or done already: not now (back() and the lights ask again)
+      if (document.hidden || !today.pocet || cardFresh()) { prepOn = false; return; }
+      // a light waiting to be seen does not stop it; the scroll that brings it, the ink and the count do
+      const now = performance.now();
+      if (!shown || dragging || goal || vel || arriveT || countT || now < inkUntil || now < countUntil || now - scrolledAt < 500) { setTimeout(later, 1500); return; }
+      prepOn = false;
+      makeCard();
+    };
+    later();
+  }
+  const cardNow = () => { if (today.pocet && !cardFresh()) makeCard(); };
+  chipShare.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse') cardNow(); });
+  chipShare.addEventListener('focus', () => { if (!sheet()) cardNow(); });
+  function download(blob, name) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = name; a.rel = 'noopener'; a.hidden = true;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+  }
+  let sharing = false;
+  chipShare.addEventListener('click', () => {
+    if (sharing || !today.pocet) return;
+    sharing = true; chipShare.setAttribute('aria-busy', 'true');
+    const done = () => { sharing = false; chipShare.removeAttribute('aria-busy'); };
+    // printed ahead: the sheet opens (or the picture is saved) straight from the tap; else it is
+    // printed now, and a browser that then refuses the sheet gets it with a second tap
+    const job = cardFresh() ? deliver(cardReady, true) : makeCard().then(c => (c ? deliver(c, false) : say('The card could not be made in this browser.')));
+    Promise.resolve(job).then(done, done);
+  });
+  function deliver(c, fromTap) {
+    let can = false;
+    try { can = !!(c.file && sheet() && navigator.canShare({ files: [c.file] })); } catch (e) { can = false; }
+    if (!can) { save(c); return Promise.resolve(); }
+    let p;
+    try { p = navigator.share({ files: [c.file], title: 'My village', text: textZdielania(today) }); } catch (e) { p = Promise.reject(e); }
+    return Promise.resolve(p).then(() => track('village_share', { how: 'image' }), e => {
+      if (e && e.name === 'AbortError') return;                     // the visitor closed the sheet
+      if (e && e.name === 'NotAllowedError' && !fromTap) { say('Your card is ready. Tap Share card again.'); return; }
+      save(c);
+    });
+  }
+  // saved as a picture, with the words and the link on the clipboard (a picture's link cannot be tapped)
+  function save(c) {
+    download(c.blob, c.name);
+    track('village_share', { how: 'download' });
+    const msg = 'Saved as ' + c.name + '.';
+    say(msg);
+    try {
+      if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+        Promise.resolve(navigator.clipboard.writeText(textZdielania(today))).then(() => say(msg + ' Link copied.'), () => { /* no clipboard: the picture alone */ });
+      }
+    } catch (e) { /* no clipboard: the picture alone */ }
+  }
+  // for Fable's checks in a browser and for ops/games/village.test.mjs: the state, and the card as a PNG blob
+  // (svieti = windows lit on the screen, riadok = the number in the row, caka = lights waiting to be seen)
+  stats.lights = () => ({ datum: today.datum, pocet: today.pocet, svietia: today.svietia.slice(), eve, glowing: glowing.size, svieti: litCount(), riadok: rowCount(), caka: fresh.slice(), ink: inkSprites.length, sprity: sprites.length, inkUntil, karta: cardFresh() });
+  stats.karta = () => makeCard().then(c => (c ? c.blob : null));
+
   /* ── Stop when unseen ──────────────────────────────────────────────── */
   const halt = () => { if (raf) cancelAnimationFrame(raf); if (timer) clearTimeout(timer); raf = timer = 0; lastRaf = 0; };
-  new IntersectionObserver(es => { inView = es[0].isIntersecting; if (inView) wake(false); else halt(); }).observe(stage);
+  /* Any of it on the screen: the loop may run. Only coming onto the screen wakes the village; the
+     5 % steps in between only look whether a waiting light may come on, so scrolling the page never
+     wakes a village at rest (27 Sep 2026: every step called wake, a full frame and 40 s more life). */
+  new IntersectionObserver(es => {
+    const e = es[es.length - 1], was = inView;
+    inView = e.isIntersecting;
+    if (!inView) halt(); else if (!was) wake(false);
+    countArrival(); checkArrival();
+  }, { threshold: Array.from({ length: 21 }, (_, i) => i / 20) }).observe(stage);
   /* Back on screen: the picture is laid again whole. A page that was hidden a while (a
      phone keeps a hidden page's canvases off the GPU and may hand them back spoilt), or
      that comes back from the back button, prints its tiles again, quietly. */
   let hiddenAt = 0;
-  function back(again) { lastFrame = 0; if (again) reprint(); wake(true); }
+  // coming back is also when a puzzle solved meanwhile lights its house (refreshLights, once seen)
+  function back(again) { lastFrame = 0; if (again) reprint(); refreshLights(); wake(true); countArrival(); checkArrival(); prepareCard(); }
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) { hiddenAt = performance.now(); halt(); }
     else { back(hiddenAt > 0 && performance.now() - hiddenAt > 1000); hiddenAt = 0; }

@@ -6,8 +6,8 @@
 import {
   iso, RX, RY, box, faceJ, faceI, cottage, tree, bush, flowers, stone, fence, eye, chimneyTop,
   hedgehog, otter, magpie, crane, squirrel, badger, dormouse, hare, heron, swan, vole, beaver, owl, fox
-} from './iso.js?v=5';
-import { hash } from './riso.js?v=5';
+} from './iso.js?v=7';
+import { hash } from './riso.js?v=7';
 
 const TAU = Math.PI * 2;
 const { sin, cos, min, max, abs, hypot, floor } = Math;
@@ -59,14 +59,30 @@ function arch(p, x, y, w, h, frame = 'orange') {
   p.path(frame, 0.9, a(w / 2 + 2, h + 2));
   p.path('night', 0.85, a(w / 2, h));
 }
+/* A house's lantern. Its glass is printed cool and dark: it lights up only when
+   the house's puzzle is solved today (village.js draws the light, p.glow says where). */
 function lantern(p, x, y, hgt = 24) {
   p.line('night', 0.75, 1.5, [[x, y], [x, y - hgt]], 'butt');
   p.line('night', 0.75, 1.2, [[x, y - hgt], [x + 6, y - hgt]]);
   p.poly('night', 0.8, [[x + 3.4, y - hgt + 1], [x + 8.6, y - hgt + 1], [x + 8, y - hgt + 8], [x + 4, y - hgt + 8]]);
   const g = [[x + 4.3, y - hgt + 2], [x + 7.7, y - hgt + 2], [x + 7.3, y - hgt + 7], [x + 4.7, y - hgt + 7]];
-  p.poly('sun', 0.95, g);
+  glass(p, g);
   if (p.glow) p.glow.push(g);
 }
+/* unlit glass: a cool grey pane in its dark frame */
+function glass(p, g) { p.poly('paper', 1, g); p.poly('night', 0.42, g); p.poly('blue', 0.2, g); }
+/* a round (or oval) window or hole as a polygon, for its light */
+function oval(x, y, rx, ry = rx, n = 14) {
+  const out = [];
+  for (let k = 0; k < n; k++) { const a = k / n * TAU; out.push([x + cos(a) * rx, y + sin(a) * ry]); }
+  return out;
+}
+/* a round window's cross, w wide, as two bars that stay dark across its light */
+function cross(x, y, r, w) {
+  const h = w / 2;
+  return [[[x - r, y - h], [x + r, y - h], [x + r, y + h], [x - r, y + h]], [[x - h, y - r], [x + h, y - r], [x + h, y + r], [x - h, y + r]]];
+}
+function glowWith(pts, bars) { pts.bars = bars; return pts; }
 function ripple(x, y, rx, per, ph) {
   const r = t => ((step(t) / per + ph) % 1);
   return S([x - rx * 1.6, y - rx * 0.8, x + rx * 1.6, y + rx * 0.8], t => [floor(t * 12) * 9], (p, t) => {
@@ -308,6 +324,8 @@ function place(o) { o.x = iso(o.i, o.j)[0]; o.y = iso(o.i, o.j)[1]; o.soon = !o.
         else { p.line('pink', 0.95, 1, [[x - 1.7, y - 1.7], [x + 1.7, y + 1.7]]); p.line('pink', 0.95, 1, [[x + 1.7, y - 1.7], [x - 1.7, y + 1.7]]); }
       }
       faceJ(p, 'plum', 0.6, i0 + 0.04, jf, 0, 0.12, 12, 32);
+      // the copse's lantern, right of the board, lit when today's clues are solved
+      lantern(p, ...iso(i + 1.6, j + 0.6), 24);
     },
     sprites() {
       const [nx, ny] = iso(i - 0.15, j - 0.15), [rx, ry] = iso(i + 0.1, j + 0.95), [sx0, sy0] = iso(i - 0.55, j - 0.45);
@@ -348,9 +366,10 @@ function place(o) { o.x = iso(o.i, o.j)[0]; o.y = iso(o.i, o.j)[1]; o.soon = !o.
       mound(p, X, Y, 74, 52, 4);
       arch(p, X - 30, Y + 8, 14, 18);
       arch(p, X + 22, Y + 9, 12, 15);
-      p.circle('paper', 1, X - 4, Y - 26, 5); p.circle('sun', 0.6, X - 4, Y - 26, 5);
-      p.line('night', 0.6, 0.8, [[X - 9, Y - 26], [X + 1, Y - 26]]); p.line('night', 0.6, 0.8, [[X - 4, Y - 31], [X - 4, Y - 21]]);
-      if (p.glow) p.glow.push([[X - 7, Y - 29], [X - 1, Y - 29], [X - 1, Y - 23], [X - 7, Y - 23]]);
+      // the round window of the sett, dark with a light cross until today's sums are solved
+      p.circle('paper', 1, X - 4, Y - 26, 5); p.circle('night', 0.72, X - 4, Y - 26, 5);
+      p.line('paper', 0.75, 0.8, [[X - 9, Y - 26], [X + 1, Y - 26]]); p.line('paper', 0.75, 0.8, [[X - 4, Y - 31], [X - 4, Y - 21]]);
+      if (p.glow) p.glow.push(glowWith(oval(X - 4, Y - 26, 4.2), cross(X - 4, Y - 26, 4.1, 0.8)));
       p.poly('paper', 1, [[X + 30, Y - 42], [X + 38, Y - 42], [X + 38, Y - 26], [X + 30, Y - 28]]);
       p.poly('orange', 0.85, [[X + 30, Y - 42], [X + 38, Y - 42], [X + 38, Y - 26], [X + 30, Y - 28]]);
       p.poly('night', 0.25, [[X + 34, Y - 42], [X + 38, Y - 42], [X + 38, Y - 26], [X + 34, Y - 27]]);
@@ -556,7 +575,7 @@ function place(o) { o.x = iso(o.i, o.j)[0]; o.y = iso(o.i, o.j)[1]; o.soon = !o.
       }
       // a small lantern in the fork, for the night owls
       const g = [[X - 3, Y - 106], [X + 3, Y - 106], [X + 3, Y - 99], [X - 3, Y - 99]];
-      p.poly('night', 0.7, [[X - 4, Y - 107], [X + 4, Y - 107], [X + 4, Y - 98], [X - 4, Y - 98]]); p.poly('sun', 0.95, g);
+      p.poly('night', 0.7, [[X - 4, Y - 107], [X + 4, Y - 107], [X + 4, Y - 98], [X - 4, Y - 98]]); glass(p, g);
       if (p.glow) p.glow.push(g);
       for (let k = 0; k < 9; k++) p.ellipse(k % 2 ? 'orange' : 'sun', 0.7, X - 30 + hash(k, 5) * 60, Y - 2 + hash(k, 6) * 12, 2.4, 1.2, hash(k, 7) * 3);
     },
@@ -650,6 +669,9 @@ function place(o) { o.x = iso(o.i, o.j)[0]; o.y = iso(o.i, o.j)[1]; o.soon = !o.
         p.poly('orange', 0.9, [front[0], front[1], at(1, 1, H - 2), at(0, 1, H - 2)]);
         p.poly('night', 0.3, [front[0], front[1], at(1, 1, H - 2), at(0, 1, H - 2)]);
         p.poly('orange', 0.95, [front[1], front[2], at(1, -1, H - 2), at(1, 1, H - 2)]);
+        // a lantern at the end of the jetty, over the water, lit when today's loop is drawn
+        const [lx, ly] = at(0.94, 0.8, H);
+        lantern(p, lx, ly, 20);
       }
       const [bx, by] = iso(12.3, 15.15);
       p.path('orange', 0.9, (c, ox, oy) => { c.moveTo(bx - 13 + ox, by - 6 + oy); c.lineTo(bx + 13 + ox, by - 1 + oy); c.quadraticCurveTo(bx + 7 + ox, by + 5 + oy, bx - 2 + ox, by + 3 + oy); c.quadraticCurveTo(bx - 11 + ox, by + 1 + oy, bx - 13 + ox, by - 6 + oy); });
@@ -714,6 +736,8 @@ function place(o) { o.x = iso(o.i, o.j)[0]; o.y = iso(o.i, o.j)[1]; o.soon = !o.
         for (let k = 0; k < 4; k++) p.line('green', 0.85, 1, [[x + (k - 1.5) * 2.6, y], [x + (k - 1.5) * 3.4, y - 10 - (k % 2) * 4]]);
         p.ellipse('orange', 0.85, x + 1.4, y - 12, 1.1, 3);
       }
+      // a lantern on the south bank of the pool, lit when today's walkways are laid
+      lantern(p, ...iso(i + 1.85, j + 1.2), 24);
     },
     sprites() {
       const [ax, ay] = at(0), [cx, cy] = at(2);
@@ -746,8 +770,10 @@ function place(o) { o.x = iso(o.i, o.j)[0]; o.y = iso(o.i, o.j)[1]; o.soon = !o.
       arch(p, X - 6, Y + 8, 16, 18, 'orange');
       // the round door, open to one side
       p.ellipse('orange', 0.95, X + 12, Y + 1, 5, 8.4); p.ellipse('night', 0.3, X + 13, Y + 1, 4, 7.4); p.circle('sun', 1, X + 10.5, Y + 1, 0.9);
-      p.circle('paper', 1, X - 30, Y - 14, 4); p.circle('sun', 0.7, X - 30, Y - 14, 4);
-      if (p.glow) p.glow.push([[X - 33, Y - 17], [X - 27, Y - 17], [X - 27, Y - 11], [X - 33, Y - 11]]);
+      // the den's round window, dark with a light cross until today's lair is solved
+      p.circle('paper', 1, X - 30, Y - 14, 4); p.circle('night', 0.72, X - 30, Y - 14, 4);
+      p.line('paper', 0.75, 0.7, [[X - 34, Y - 14], [X - 26, Y - 14]]); p.line('paper', 0.75, 0.7, [[X - 30, Y - 18], [X - 30, Y - 10]]);
+      if (p.glow) p.glow.push(glowWith(oval(X - 30, Y - 14, 3.3), cross(X - 30, Y - 14, 3.2, 0.7)));
       // clue notes pegged on a string
       const a = iso(i + 0.5, j + 0.3), b = iso(i + 1.5, j - 0.2);
       p.line('orange', 0.9, 1.6, [[a[0], a[1]], [a[0], a[1] - 22]], 'butt'); p.line('orange', 0.9, 1.6, [[b[0], b[1]], [b[0], b[1] - 22]], 'butt');
@@ -801,6 +827,12 @@ function place(o) { o.x = iso(o.i, o.j)[0]; o.y = iso(o.i, o.j)[1]; o.soon = !o.
       p.line('orange', 0.6, 1, [iso(I, J + 0.7, 6), iso(I + 0.7, J + 0.7, 20)]); p.line('orange', 0.6, 1, [iso(I + 0.7, J, 6), iso(I + 0.7, J + 0.7, 20)]);
       box(p, I - 0.05, J - 0.05, 0.8, 0.8, 4, ['orange', 0.9], ['orange', 0.75], ['orange', 1], 26);
       faceI(p, 'night', 0.25, I + 0.75, J - 0.05, 0, 0.8, 26, 30);
+      // a little cabin on the platform with one window to the marsh, lit when today's paths are joined
+      faceJ(p, 'paper', 1, I - 0.05, J + 0.75, 0.02, 0.78, 30, 36); faceJ(p, 'teal', 0.26, I - 0.05, J + 0.75, 0.02, 0.78, 30, 36);
+      faceI(p, 'paper', 1, I + 0.75, J - 0.05, 0.02, 0.78, 30, 36); faceI(p, 'teal', 0.26, I + 0.75, J - 0.05, 0.02, 0.78, 30, 36); faceI(p, 'blue', 0.22, I + 0.75, J - 0.05, 0.02, 0.78, 30, 36);
+      { const win = [iso(I + 0.24, J + 0.75, 31), iso(I + 0.5, J + 0.75, 31), iso(I + 0.5, J + 0.75, 35.2), iso(I + 0.24, J + 0.75, 35.2)];
+        p.poly('night', 0.72, win);
+        if (p.glow) p.glow.push(win); }
       const ap = iso(I + 0.35, J + 0.35, 52), e = 0.14;
       for (const [a, b] of [[[I - e, J + 0.75 + e], [I + 0.75 + e, J + 0.75 + e]], [[I + 0.75 + e, J - e], [I + 0.75 + e, J + 0.75 + e]]]) { p.poly('paper', 1, [iso(a[0], a[1], 36), iso(b[0], b[1], 36), ap]); p.poly('teal', 0.9, [iso(a[0], a[1], 36), iso(b[0], b[1], 36), ap]); }
       p.poly('night', 0.25, [iso(I + 0.75 + e, J - e, 36), iso(I + 0.75 + e, J + 0.75 + e, 36), ap]);
@@ -835,7 +867,8 @@ function place(o) { o.x = iso(o.i, o.j)[0]; o.y = iso(o.i, o.j)[1]; o.soon = !o.
     static(p) {
       cottage(p, I, J, 0.9, 0.85, 50, 'blue', 'plum', { rh: 30, door: 0.45, winsJ: [], winsI: [0.42] });
       faceJ(p, 'night', 0.7, I + 0.33, J + 0.85, 0, 0.24, 34, 42); faceJ(p, 'paper', 1, I + 0.44, J + 0.85, 0, 0.02, 34, 42);
-      if (p.glow) p.glow.push([iso(I + 0.33, J + 0.85, 34), iso(I + 0.57, J + 0.85, 34), iso(I + 0.57, J + 0.85, 42), iso(I + 0.33, J + 0.85, 42)]);
+      if (p.glow) p.glow.push(glowWith([iso(I + 0.33, J + 0.85, 34), iso(I + 0.57, J + 0.85, 34), iso(I + 0.57, J + 0.85, 42), iso(I + 0.33, J + 0.85, 42)],
+        [[iso(I + 0.44, J + 0.85, 34), iso(I + 0.46, J + 0.85, 34), iso(I + 0.46, J + 0.85, 42), iso(I + 0.44, J + 0.85, 42)]]));
       board(p, i0, jf, 1.15, 8, 56);
       // clues, as tiny ticks, and the grid
       for (let r = 0; r < 5; r++) { const n = pic[r].split('0').filter(Boolean).length; for (let k = 0; k < n; k++) faceJ(p, 'night', 0.7, i0 + 0.1 + k * 0.06, jf, 0, 0.03, gv - (r + 1) * ch + 2.4, gv - (r + 1) * ch + 3.6); }
@@ -910,6 +943,8 @@ function place(o) { o.x = iso(o.i, o.j)[0]; o.y = iso(o.i, o.j)[1]; o.soon = !o.
       // hollows and their signs
       for (const [dx, dy, n, side] of [[-2, -18, 4, 1], [3, -36, 7, -1], [-1, -52, 3, 1]]) {
         p.ellipse('night', 0.88, X + dx, Y + dy, 4, 5.6); p.ellipse('orange', 0.6, X + dx, Y + dy + 4.4, 4.6, 1.6, 0, 0, Math.PI);
+        // the two upper hollows glow when today's runs are solved (the lowest keeps its acorn)
+        if (p.glow && dy < -20) p.glow.push(oval(X + dx, Y + dy, 3.2, 4.6));
         const sx = X + dx + side * 13, sy = Y + dy - 2;
         p.poly('paper', 1, [[sx - 5, sy - 5], [sx + 5, sy - 5], [sx + 5, sy + 5], [sx - 5, sy + 5]]); p.poly('night', 0.2, [[sx - 5, sy - 5], [sx + 5, sy - 5], [sx + 5, sy + 5], [sx - 5, sy + 5]]);
         p.line('night', 0.6, 0.6, [[sx - 5, sy - 5], [sx + 5, sy + 5]]);
@@ -958,6 +993,12 @@ function place(o) { o.x = iso(o.i, o.j)[0]; o.y = iso(o.i, o.j)[1]; o.soon = !o.
     p.path('orange', 0.9, dome); p.path('night', 0.22, dome);
     for (let k = 0; k < 16; k++) { const a = -Math.PI * (0.08 + hash(k, X | 0) * 0.84), r0 = 0.3 + hash(k, 3) * 0.5; p.line(k % 3 ? 'orange' : 'night', 0.6, 1, [[X + cos(a) * w * r0, Y + sin(a) * h * r0], [X + cos(a) * w * (r0 + 0.35), Y + sin(a) * h * (r0 + 0.35)]]); }
     p.path('night', 0.8, (c, ox, oy) => { c.moveTo(X - 5 + ox, Y + 2 + oy); c.quadraticCurveTo(X + ox, Y - 9 + oy, X + 5 + ox, Y + 2 + oy); c.closePath(); });
+    // the doorway glows from inside when today's lodges are placed
+    if (p.glow) {
+      const arch = [];
+      for (let k = 0; k <= 10; k++) { const t = k / 10, u = 1 - t; arch.push([u * u * (X - 4.2) + 2 * u * t * X + t * t * (X + 4.2), u * u * (Y + 1.6) + 2 * u * t * (Y - 7.8) + t * t * (Y + 1.6)]); }
+      p.glow.push(arch);
+    }
   };
   place({
     kluc: 'beavers', name: 'Beavers', i, j, clear: 2.3, bb: [-120, -90, 110, 56], hit: [0, -12, 92, 56],

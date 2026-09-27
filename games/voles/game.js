@@ -43,10 +43,12 @@ import { zadaniePreDen, zadanieCvicenie, rozbal, tyzden, urovenDna, posunDen, pe
 import { todayBratislava, isValidDate } from './generator.mjs';
 // Which days still have a page of their own and what ?d= may hold: one rule
 // for all eleven games, /games/okno.mjs (the generators read the same file).
-import { denZParametra, adresaDna, trvalaAdresaDna } from '../okno.mjs?v=1';
+import { denZParametra, adresaDna } from '../okno.mjs?v=1';
 import { jeVyriesene, porovnaj, napoveda } from './logika.mjs';
 import * as ucet from '/style/ucet.js';
-import { oslava } from '../oslava.js';
+import { oslava } from '../oslava.js?v=3';
+// The result card to share (../karta.js): the puzzle as it started, the time, the week.
+import { pripojKartu, obrazZadania } from '../karta.js?v=2';
 // The play screen (../hra-ui.js): the rule in one line over the board with a
 // Rules panel, the buttons pinned in reach, the board sized to the window.
 import { hraUi } from '../hra-ui.js?v=1';
@@ -64,7 +66,6 @@ const resetBtn = $('reset');
 const checkBtn = $('check');
 const hintBtn = $('hint');
 const zdielajBtn = $('zdielaj');
-const zdielajStavEl = $('zdielaj-stav');
 const pauzaBtn = $('pauza');
 const pauzaBlok = $('pauza-blok');
 const pokracujBtn = $('pokracuj');
@@ -75,6 +76,8 @@ const historiaEl = $('historia');
 const cislaText = $('cisla-text');
 
 function track(name, data) { try { if (window.umami && typeof window.umami.track === 'function') window.umami.track(name, data); } catch (e) { /* statistics are not part of the game */ } }
+// Share makes the picture card; its preview comes in with the moment of the solve.
+const karta = pripojKartu({ hra: 'voles', tlacidlo: zdielajBtn, stav: stavEl, track, data: dataKarty });
 
 /* ── Storage ──────────────────────────────────────────────────────────── */
 function nacitaj(kluc) {
@@ -600,62 +603,35 @@ function skontroluj() {
   ukazHistoriu();
   ukazPasik();
   track('game_solved', { game: 'voles', day: rezim === 'den' ? datum : sada + '/' + kSada, seconds: sekundy, hints, checks, level: zadanie.uroven });
-  const kontajner = document.querySelector('.hra');
-  if (kontajner) oslava(kontajner, { redukovany: !nastavenia.oslava || window.matchMedia('(prefers-reduced-motion: reduce)').matches });
+  // The moment on the board (../oslava.js): ink from the cell the last move changed, each cell of the meadow lands as it passes, then the card.
+  const pokojne = !nastavenia.oslava || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  oslava(doska, {
+    znacky: [...doska.querySelectorAll('.b, .k')], pop: { kto: '[data-v="2"]', co: '::after' },
+    veta: stavEl, cas: formatCas(sekundy), nahlad: karta.nahlad({ poVlne: !pokojne }),
+    redukovany: pokojne,
+  });
   return true;
 }
 
-/* ── Copy result ──────────────────────────────────────────────────────── *
- * A voluntary step after the meadow is solved (ops/spec-hry-ux.md, part 8).
- * The standard also mentions a grid of the player's own marks; in a shading
- * puzzle that grid IS the answer, so it is left out on purpose. What goes on
- * the clipboard is the meadow, the time, the help used and the link, and none
- * of it tells anybody where the water lies. Nothing is sent anywhere: the text
- * only reaches the clipboard, the player decides where it goes from there. */
-function textNaZdielanie() {
-  const kto = rezim === 'cvicenie'
-    ? UROVNE[zadanie.uroven].label + ' practice ' + sada.split('-')[1] + ', meadow ' + kSada
-    : pekneDatum(datum);
-  const odkaz = rezim === 'cvicenie'
-    ? 'https://arling.sk/games/voles/practice/' + sada + '/' + (kSada > 1 ? kSada + '/' : '')
-    : trvalaAdresaDna('https://arling.sk/games/voles/', datum);   // ?d=, so the link still opens after the day's page is gone
-  const pomoc = [];
-  if (hints) pomoc.push(hints + (hints === 1 ? ' hint' : ' hints'));
-  if (checks) pomoc.push(checks + (checks === 1 ? ' check' : ' checks'));
-  return 'Voles, ' + kto + ' (' + UROVNE[zadanie.uroven].label + ', ' + n + 'x' + n + ')\n'
-    + 'Solved' + (sekundy ? ' in ' + formatCas(sekundy) : '') + (pomoc.length ? ' with ' + zoznamSlov(pomoc) : ', no hint and no check') + '.\n'
-    + odkaz + '\n';
+/* ── Share ────────────────────────────────────────────────────────────── *
+ * A voluntary step after the puzzle is finished (ops/spec-hry-ux.md, part 8;
+ * ops/games/denne-karta/SPEC.md). Share makes a picture card in the browser
+ * (../karta.js): the puzzle as it started, never a mark of the answer, the
+ * time, the help used and this week, with a short text and the link. Nothing
+ * goes to a server: the card goes to the system share sheet, or it is saved
+ * and the text copied. Event game_share { how }. */
+function dataKarty() {
+  if (!done || !zadanie) return null;
+  return {
+    hra: 'voles', datum: rezim === 'den' ? datum : null, dnes,
+    cvicenie: rezim === 'cvicenie' ? { sada, k: kSada, pocet: (SADY.find((x) => x.id === sada) || {}).pocet || 0 } : null,
+    uroven: UROVNE[zadanie.uroven].label, rozmer: n + ' × ' + n,
+    sekundy, casovac: nastavenia.casovac, hints, checks,
+    dni: rezim === 'den' ? tyzden(datum) : null,
+    obraz: obrazZadania('voles', zadanie),
+  };
 }
-// The old way out: clipboard.writeText needs a secure context, and a page
-// opened from a file or over plain http does not have one.
-function skopirujStaro(text) {
-  try {
-    const t = document.createElement('textarea');
-    t.value = text;
-    t.setAttribute('readonly', '');
-    t.style.cssText = 'position:fixed;top:0;left:0;opacity:0';
-    document.body.appendChild(t);
-    t.select();
-    const ok = document.execCommand('copy');
-    document.body.removeChild(t);
-    return ok;
-  } catch (e) { return false; }
-}
-let zdielajCasovac = null;
-async function zdielaj() {
-  if (!done || !zdielajBtn) return;
-  const text = textNaZdielanie();
-  let ok = false;
-  try { await navigator.clipboard.writeText(text); ok = true; } catch (e) { ok = skopirujStaro(text); }
-  zdielajBtn.textContent = ok ? 'Copied' : 'Press Ctrl+C';
-  if (!ok) window.prompt('Copy your result:', text);
-  if (zdielajStavEl) zdielajStavEl.textContent = ok ? 'Your result is on the clipboard.' : 'The clipboard is not available here.';
-  clearTimeout(zdielajCasovac);
-  zdielajCasovac = setTimeout(() => {
-    zdielajBtn.textContent = 'Copy result';
-    if (zdielajStavEl) zdielajStavEl.textContent = '';
-  }, 3000);
-}
+
 
 /* ── Moves ────────────────────────────────────────────────────────────── *
  * Every change to the board goes through zmenaStavu: it keeps the whole board
@@ -669,6 +645,7 @@ function ukazTlacidla() {
   if (znovaBtn) znovaBtn.disabled = !redoStack.length || !!done;
   // Copy result belongs to the finish, so it is not in the row until then.
   if (zdielajBtn) zdielajBtn.hidden = !done;
+  if (done) karta.nahlad();                      // the card, also for a day solved before
 }
 function rovnake(a, b) {
   if (a.length !== b.length) return false;
@@ -848,7 +825,6 @@ if (znovaBtn) znovaBtn.addEventListener('click', znova);
 if (resetBtn) resetBtn.addEventListener('click', reset);
 if (checkBtn) checkBtn.addEventListener('click', skontrolujStav);
 if (hintBtn) hintBtn.addEventListener('click', ukazNapovedu);
-if (zdielajBtn) zdielajBtn.addEventListener('click', zdielaj);
 if (pauzaBtn) pauzaBtn.addEventListener('click', () => pozastav(false));
 if (pokracujBtn) pokracujBtn.addEventListener('click', pokracuj);
 /* Undo and Redo are the scheme every one of these games shares:

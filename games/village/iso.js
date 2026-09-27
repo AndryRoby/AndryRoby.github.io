@@ -68,14 +68,15 @@ export function cottage(p, i, j, w, d, h, roof, wall = 'sun', opt = {}) {
     faceJ(p, 'night', 0.72, i + u - 0.15, j + d, 0, 0.3, h * 0.36, h * 0.72);
     faceJ(p, 'paper', 1, i + u - 0.15, j + d, 0.135, 0.165, h * 0.36, h * 0.72);
     faceJ(p, roof, 0.7, i + u - 0.2, j + d, 0, 0.4, h * 0.3, h * 0.36);
-    if (p.glow) p.glow.push([iso(i + u - 0.15, j + d, h * 0.36), iso(i + u + 0.15, j + d, h * 0.36), iso(i + u + 0.15, j + d, h * 0.72), iso(i + u - 0.15, j + d, h * 0.72)]);
+    // its light, and the mullion that stays dark across it
+    if (p.glow) { const g = [iso(i + u - 0.15, j + d, h * 0.36), iso(i + u + 0.15, j + d, h * 0.36), iso(i + u + 0.15, j + d, h * 0.72), iso(i + u - 0.15, j + d, h * 0.72)]; g.bars = [[iso(i + u - 0.015, j + d, h * 0.36), iso(i + u + 0.015, j + d, h * 0.36), iso(i + u + 0.015, j + d, h * 0.72), iso(i + u - 0.015, j + d, h * 0.72)]]; p.glow.push(g); }
     wins.push({ face: 'j', i: i + u - 0.15, j: j + d, u0: 0, u1: 0.3, v0: h * 0.36, v1: h * 0.72 });
   }
   const wi = opt.winsI || [d * 0.5];
   for (const u of wi) {
     faceI(p, 'night', 0.72, i + w, j + u - 0.15, 0, 0.3, h * 0.36, h * 0.72);
     faceI(p, 'paper', 1, i + w, j + u - 0.15, 0.135, 0.165, h * 0.36, h * 0.72);
-    if (p.glow) p.glow.push([iso(i + w, j + u - 0.15, h * 0.36), iso(i + w, j + u + 0.15, h * 0.36), iso(i + w, j + u + 0.15, h * 0.72), iso(i + w, j + u - 0.15, h * 0.72)]);
+    if (p.glow) { const g = [iso(i + w, j + u - 0.15, h * 0.36), iso(i + w, j + u + 0.15, h * 0.36), iso(i + w, j + u + 0.15, h * 0.72), iso(i + w, j + u - 0.15, h * 0.72)]; g.bars = [[iso(i + w, j + u - 0.015, h * 0.36), iso(i + w, j + u + 0.015, h * 0.36), iso(i + w, j + u + 0.015, h * 0.72), iso(i + w, j + u - 0.015, h * 0.72)]]; p.glow.push(g); }
     wins.push({ face: 'i', i: i + w, j: j + u - 0.15, u0: 0, u1: 0.3, v0: h * 0.36, v1: h * 0.72 });
   }
   // chimney behind the ridge

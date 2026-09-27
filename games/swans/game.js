@@ -44,10 +44,12 @@ import { zadaniePreDen, zadanieCvicenie, rozbal, tyzden, urovenDna, posunDen, pe
 import { todayBratislava, isValidDate, geometria } from './generator.mjs';
 // Which days still have a page of their own and what ?d= may hold: one rule
 // for all eleven games, /games/okno.mjs (the generators read the same file).
-import { denZParametra, adresaDna, trvalaAdresaDna } from '../okno.mjs?v=1';
+import { denZParametra, adresaDna } from '../okno.mjs?v=1';
 import { jeVyriesene, porovnaj, napoveda } from './logika.mjs';
 import * as ucet from '/style/ucet.js';
-import { oslava } from '../oslava.js';
+import { oslava } from '../oslava.js?v=3';
+// The result card to share (../karta.js): the puzzle as it started, the time, the week.
+import { pripojKartu, obrazZadania } from '../karta.js?v=2';
 // The play screen (../hra-ui.js): the rule in one line over the board with a
 // Rules panel, the buttons pinned in reach, the board sized to the window.
 import { hraUi } from '../hra-ui.js?v=1';
@@ -65,7 +67,6 @@ const resetBtn = $('reset');
 const checkBtn = $('check');
 const hintBtn = $('hint');
 const zdielajBtn = $('zdielaj');
-const zdielaneEl = $('zdielane');
 const pauzaBtn = $('pauza');
 const pauzaBlok = $('pauza-blok');
 const pokracujBtn = $('pokracuj');
@@ -76,6 +77,8 @@ const historiaEl = $('historia');
 const labuteText = $('labute-text');
 
 function track(name, data) { try { if (window.umami && typeof window.umami.track === 'function') window.umami.track(name, data); } catch (e) { /* statistics are not part of the game */ } }
+// Share makes the picture card; its preview comes in with the moment of the solve.
+const karta = pripojKartu({ hra: 'swans', tlacidlo: zdielajBtn, stav: stavEl, track, data: dataKarty });
 
 /* ── Storage ──────────────────────────────────────────────────────────── */
 function nacitaj(kluc) {
@@ -653,8 +656,14 @@ function skontroluj() {
   ukazHistoriu();
   ukazPasik();
   track('game_solved', { game: 'swans', day: rezim === 'den' ? datum : sada + '/' + kSada, seconds: sekundy, hints, checks, level: zadanie.uroven });
-  const kontajner = document.querySelector('.hra');
-  if (kontajner) oslava(kontajner, { redukovany: !nastavenia.oslava || window.matchMedia('(prefers-reduced-motion: reduce)').matches });
+  // The moment on the board (../oslava.js): ink from the cell the last move changed, each step of the loop turns and each swan lands as it passes, the water inside fills under the ink, then the card.
+  const pokojne = !nastavenia.oslava || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  oslava(doska, {
+    znacky: [...doska.querySelectorAll('.h[data-v="1"], .labut')], pop: { kto: '.labut' },
+    plochy: [...doska.querySelectorAll('.voda')],
+    veta: stavEl, cas: formatCas(sekundy), nahlad: karta.nahlad({ poVlne: !pokojne }),
+    redukovany: pokojne,
+  });
   return true;
 }
 
@@ -666,51 +675,27 @@ function ukazTlacidla() {
   if (spatBtn) spatBtn.disabled = !undoStack.length || !!done;
   if (znovaBtn) znovaBtn.disabled = !redoStack.length || !!done;
   if (zdielajBtn) zdielajBtn.hidden = !done;
+  if (done) karta.nahlad();                      // the card, also for a day solved before
 }
 
 /* ── Share ────────────────────────────────────────────────────────────── *
- * A voluntary step after the lake is finished. One line: which lake, the time
- * and how much help was taken. Never the board and never a grid of the
- * player's marks: in this game the marks are the loop, so a grid would be the
- * spoiler itself (ops/spec-hry-ux.md, part 8). */
-function textZdielania() {
-  const uroven = zadanie && zadanie.uroven && UROVNE[zadanie.uroven] ? UROVNE[zadanie.uroven].label : '';
-  const kto = rezim === 'cvicenie'
-    ? 'Swans practice, ' + (uroven || sada) + ' no. ' + kSada
-    : 'Swans ' + datum + (uroven ? ', ' + uroven : '');
-  const pomoc = hints || checks
-    ? hints + (hints === 1 ? ' hint' : ' hints') + ', ' + checks + (checks === 1 ? ' check' : ' checks')
-    : 'no hint, no check';
-  const odkaz = rezim === 'cvicenie'
-    ? 'https://arling.sk/games/swans/practice/' + sada + '/' + (kSada === 1 ? '' : kSada + '/')
-    : (jeDnes ? 'https://arling.sk/games/swans/' : trvalaAdresaDna('https://arling.sk/games/swans/', datum));   // ?d=, so the link still opens after the day's page is gone
-  return kto + '\nSolved in ' + formatCas(sekundy) + ', ' + pomoc + '.\n' + odkaz;
+ * A voluntary step after the puzzle is finished (ops/spec-hry-ux.md, part 8;
+ * ops/games/denne-karta/SPEC.md). Share makes a picture card in the browser
+ * (../karta.js): the puzzle as it started, never a mark of the answer, the
+ * time, the help used and this week, with a short text and the link. Nothing
+ * goes to a server: the card goes to the system share sheet, or it is saved
+ * and the text copied. Event game_share { how }. */
+function dataKarty() {
+  if (!done || !zadanie) return null;
+  return {
+    hra: 'swans', datum: rezim === 'den' ? datum : null, dnes,
+    cvicenie: rezim === 'cvicenie' ? { sada, k: kSada, pocet: (SADY.find((x) => x.id === sada) || {}).pocet || 0 } : null,
+    uroven: UROVNE[zadanie.uroven].label, rozmer: n + ' × ' + n,
+    sekundy, casovac: nastavenia.casovac, hints, checks,
+    dni: rezim === 'den' ? tyzden(datum) : null,
+    obraz: obrazZadania('swans', zadanie),
+  };
 }
-function skopiruj(t) {
-  try {
-    const ta = document.createElement('textarea');
-    ta.value = t;
-    ta.setAttribute('readonly', '');
-    ta.style.position = 'fixed';
-    ta.style.top = '0';
-    ta.style.opacity = '0';
-    document.body.appendChild(ta);
-    ta.select();
-    const ok = document.execCommand('copy');
-    document.body.removeChild(ta);
-    return ok;
-  } catch (e) { return false; }
-}
-async function zdielaj() {
-  if (!done) return;
-  const t = textZdielania();
-  let ok = false;
-  try { await navigator.clipboard.writeText(t); ok = true; } catch (e) { ok = skopiruj(t); }
-  if (!zdielaneEl) return;
-  zdielaneEl.textContent = ok ? 'Copied.' : 'Copying is blocked here. Your line: ' + t.split('\n').join(' ');
-  if (ok) setTimeout(() => { if (zdielaneEl.textContent === 'Copied.') zdielaneEl.textContent = ''; }, 4000);
-}
-if (zdielajBtn) zdielajBtn.addEventListener('click', zdielaj);
 function snimka() { return v.slice(); }
 function rovnake(a, b) {
   if (a.length !== b.length) return false;
