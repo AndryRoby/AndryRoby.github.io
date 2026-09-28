@@ -63,6 +63,9 @@ const I18N_ATTRS = {
   'data-i18n-alt': 'alt',
   'data-i18n-aria-label': 'aria-label',
   'data-i18n-title': 'title',
+  // snímka a odkaz na ňu v jazyku stránky (Z-36 pokus 3: anglická stránka má anglický rozhovor v úvode)
+  'data-i18n-src': 'src',
+  'data-i18n-href': 'href',
   // Popis stĺpca v tabuľke cenníka, na mobile sa ukazuje pred bunkou (td::before).
   'data-i18n-th': 'data-th',
 };
@@ -180,7 +183,7 @@ function removeAttr(attrs, name) {
 
 function collectI18n(attrs) {
   const out = [];
-  const re = /\s(data-i18n(?:-html|-placeholder|-alt|-aria-label|-title|-th)?)\s*=\s*"([^"]*)"/g;
+  const re = /\s(data-i18n(?:-html|-placeholder|-alt|-aria-label|-title|-th|-src|-href)?)\s*=\s*"([^"]*)"/g;
   let m;
   while ((m = re.exec(attrs))) out.push({ attr: m[1], key: m[2] });
   return out;
@@ -296,7 +299,20 @@ function transformJsonLd(html, lang, problems) {
         });
       }
     } else if (obj['@type'] === 'FAQPage') {
+      // Z-36 pokus 3 (brána Astry 2): stránka používa kľúče faq.setup.q, objbudget.q…, nie faq.qN, preto EN
+      // FAQPage vychádzal s prázdnym mainEntity. Každá otázka slovenského JSON-LD sa nájde v slovníku podľa
+      // slovenského znenia (kľúč *.q) a preloží sa spolu s odpoveďou (*.a). Chýbajúca otázka = chyba buildu.
       const items = [];
+      for (const q of obj.mainEntity || []) {
+        const kluc = Object.keys(DICT).find((k) => k.endsWith('.q') && textOf(DICT[k].sk || '') === q.name);
+        const klucA = kluc && kluc.slice(0, -2) + '.a';
+        if (!kluc || !DICT[klucA]) { problems.push(`FAQPage: otázka „${q.name}“ nemá kľúč *.q a *.a v i18n.js`); continue; }
+        items.push({
+          '@type': 'Question',
+          name: textOf(tr(kluc, lang, problems)),
+          acceptedAnswer: { '@type': 'Answer', text: textOf(tr(klucA, lang, problems)) },
+        });
+      }
       for (let n = 1; n <= faqCount; n++) {
         if (!DICT[`faq.q${n}`]) break;
         items.push({
@@ -305,6 +321,7 @@ function transformJsonLd(html, lang, problems) {
           acceptedAnswer: { '@type': 'Answer', text: textOf(tr(`faq.a${n}`, lang, problems)) },
         });
       }
+      if (!items.length) problems.push('FAQPage: mainEntity by bol prázdny');
       obj.mainEntity = items;
     }
     return open + '\n' + JSON.stringify(obj, null, 2).replace(/<\//g, '<\\/') + '\n' + close;

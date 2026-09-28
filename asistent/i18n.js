@@ -35,40 +35,95 @@ export const DICT = {
   // ── header / nav / language switch ────────────────────────────────────
   'skip': { sk: 'Skočiť na skúšobnú verziu', en: 'Skip to the trial form' },
   'brand.sub': { sk: 'nástroj ARLing', en: 'an ARLing tool' },
-  'nav.how': { sk: 'Ako to funguje', en: 'How it works' },
+  'nav.how': { sk: 'Ako sa zapína', en: 'Switching on' },
   'nav.try': { sk: 'Vyskúšať', en: 'Try it' },
   'nav.demo': { sk: 'Ukážka', en: 'Demo shop' },
   'nav.pricing': { sk: 'Cenník', en: 'Pricing' },
   'nav.privacy': { sk: 'Súkromie', en: 'Privacy' },
   'nav.faq': { sk: 'Otázky', en: 'FAQ' },
   'lang.switch.aria': { sk: 'Jazyk stránky', en: 'Page language' },
-  'lang.sk.aria': { sk: 'Slovenčina', en: 'Slovak' },
-  'lang.en.aria': { sk: 'English', en: 'English' },
-  'lang.de.aria': { sk: 'Nemčina (samostatná stránka)', en: 'German (separate page)' },
+  // Prístupný názov musí obsahovať viditeľný text tlačidla (SK, EN, DE), inak hlasové ovládanie „klikni SK“ nenájde (Lighthouse label-content-name-mismatch).
+  'lang.sk.aria': { sk: 'SK, slovenčina', en: 'SK, Slovak' },
+  'lang.en.aria': { sk: 'EN, angličtina', en: 'EN, English' },
+  'lang.de.aria': { sk: 'DE, nemčina (samostatná stránka)', en: 'DE, German (separate page)' },
 
   // ── hero ─────────────────────────────────────────────────────────────
   // Nadpis úvodu nesie vlastné lomenie riadkov (<span class="l">), preto ho stránka číta
   // cez data-i18n-html. Mení sa len zápis, slová sú rovnaké ako predtým.
+  // Z-36 (28. 9. 2026): nadpis hovorí výsledok pre zákazníka obchodu, cena je v úvode hneď pod leadom.
   'hero.h1': {
-    sk: '<span class="l">Predajný asistent</span> <span class="l">pre váš e-shop,</span> <span class="l">nastavený za 10</span> <span class="l">minút z feedu.</span>',
-    en: '<span class="l">A sales assistant</span> <span class="l">for your e-shop,</span> <span class="l">set up from your</span> <span class="l">feed in 10 minutes.</span>',
+    sk: '<span class="l">Zákazník sa pýta.</span> <span class="l">Asistent odpovie</span> <span class="l">vašimi produktmi.</span>',
+    en: '<span class="l">A shopper asks.</span> <span class="l">The assistant answers</span> <span class="l">with your products.</span>',
   },
   'hero.lead': {
-    sk: 'Vložíte URL produktového feedu a e-mail. Asistent odpovedá zákazníkom z vašich skutočných produktov, v ich jazyku, a vždy pridá odkazy na konkrétny tovar. Bez ukladania rozhovorov, bez cookies.',
-    en: 'Paste your product feed URL and an email address. The assistant answers customers from your real products, in their language, and always adds links to specific items. No conversations stored, no cookies.',
+    // Z-36 pokus 2: karty sú najviac tri na odpoveď (worker/src/chat.js reconcileProducts, MAX_PRODUCTS_IN_ANSWER)
+    sk: 'Okienko v rohu e-shopu, ktoré radí pri výbere z vášho produktového feedu. Odpovedá v jazyku zákazníka aj večer, keď nikto nie je pri telefóne, a pod odpoveď pridá karty najviac troch odporúčaných produktov s cenou a odkazom.',
+    en: 'A small chat in the corner of your e-shop that helps shoppers choose from your product feed. It answers in the shopper’s language, even in the evening when nobody is at the phone, and adds cards for up to three suggested products, with price and link, below the answer.',
   },
+  'hero.price': {
+    sk: '<b>Zadarmo do 100 rozhovorov mesačne.</b> Potom od 19&nbsp;€ mesačne. Bez karty, zrušíte kedykoľvek.',
+    en: '<b>Free up to 100 conversations a month.</b> Then from 19&nbsp;EUR a month. No card, cancel any time.',
+  },
+  'cta.tryOwn': { sk: 'Vyskúšať na vlastnom feede', en: 'Try it on your own feed' },
+  'cta.tryShort': { sk: 'Vyskúšať', en: 'Try it' },
+  'hero.demo': { sk: 'Opýtať sa v ukážkovom obchode', en: 'Ask the demo shop yourself' },
+  'hero.fact.platforms': { sk: 'WooCommerce · Shoptet · Upgates · Shopify', en: 'WooCommerce · Shoptet · Upgates · Shopify' },
+  'nav.answers': { sk: 'Odpovede', en: 'Answers' },
   'cta.startFree': { sk: 'Začať zadarmo', en: 'Start for free' },
   'hero.source': { sk: 'Zdrojový kód na GitHube', en: 'Source code on GitHub' },
   // Snímka v úvode: alt aj popiska pod ňou sa musia prepnúť spolu so stránkou, inak by
   // anglický návštevník čítal slovenský popis obrázka. Text popisuje presne to, čo na
   // snímke je: ukážkový obchod Dobrá domácnosť s otvoreným chatom.
+  // Z-36 pokus 2: v úvode snímka s kávovarmi (obe odporúčania majú parnú trysku v popise, dva produkty, dve karty);
+  // snímka s hrncami menovala štyri produkty, ukázala tri karty a medzi hrncami panvicu, preto zo stránky zmizla.
+  // Z-36 pokus 3 (brána Astry 2, nález 5): anglická stránka má v úvode skutočný anglický rozhovor (snímka
+  // odpoved-anglicky, ops/asistent/snimky/odpovede.json), nie slovenský. Cesty absolútne: platia v /asistent/ aj /asistent/en/.
+  'hero.shot.src': { sk: '/asistent/snimky/odpoved-kavovar.webp', en: '/asistent/snimky/odpoved-anglicky.webp' },
   'hero.shot.alt': {
-    sk: 'Snímka: v ukážkovom obchode Dobrá domácnosť je otvorený chat ARLing Asistenta. Zákazník sa pýta, ktorý hrniec je vhodný na indukciu, a asistent odpovedá dvoma hrncami z feedu, s kartami výrobkov a cenami 34.90 EUR a 44.90 EUR. Za oknom chatu je zoznam tých istých výrobkov v obchode.',
-    en: 'Screenshot: the ARLing Shopping Assistant chat is open on the Slovak demo shop Dobrá domácnosť. A shopper asks which pot suits an induction hob and the assistant answers with two pots from the feed, with product cards and the prices 34.90 EUR and 44.90 EUR. The same products are listed on the shop page behind the chat window.',
+    sk: 'Snímka chatu v ukážkovom obchode Dobrá domácnosť. Zákazník píše: Chcem si robiť cappuccino doma. Ktorý kávovar má parnú trysku na mlieko? Asistent ponúkne automatický kávovar Orava Uno s mlynčekom za 249 EUR a pákový kávovar Orava 15 bar za 189 EUR, pod odpoveďou sú ich dve karty produktov.',
+    en: 'Screenshot of the chat in the Slovak demo shop Dobrá domácnosť. The shopper writes in English: Do you have a small gift for my grandmother? The assistant answers in English and suggests a honey gift set for 24.90 EUR and a herbal tea gift box for 21.90 EUR, with their two product cards below the answer.',
   },
   'hero.shot.caption': {
-    sk: 'Otázka zákazníka a odpoveď z vášho feedu, s odkazmi na produkty.',
-    en: 'A shopper question and an answer from your own feed, with product links.',
+    sk: 'Skutočná odpoveď z <a href="ukazka/">ukážkového obchodu</a>, 28. 9. 2026',
+    en: 'A real English answer from the <a href="ukazka/">Slovak demo shop</a>, 28 Sep 2026. Product names stay as they are in the shop’s feed.',
+  },
+  'prepis.summary': { sk: 'Prepis rozhovoru', en: 'Transcript' },
+  'prepis.full': { sk: 'Snímka v plnej veľkosti', en: 'Full-size screenshot' },
+  'hero.prepis': {
+    sk: '<dl><dt>Zákazník</dt><dd>Chcem si robiť cappuccino doma. Ktorý kávovar má parnú trysku na mlieko?</dd><dt>Asistent</dt><dd>Na výrobu cappuccina doma s parnou tryskou na mlieko odporúčam kávovar Orava Uno s mlynčekom, ktorý stojí 249.00 EUR, alebo pákový kávovar Orava 15 bar za 189.00 EUR.</dd><dt>Karty produktov</dt><dd>Automatický kávovar Orava Uno s mlynčekom, 249.00 EUR · Pákový kávovar Orava 15 bar, 189.00 EUR</dd></dl>',
+    en: '<dl><dt>Shopper</dt><dd>Do you have a small gift for my grandmother?</dd><dt>Assistant</dt><dd>Yes, I can help you with that. You can consider the Darčeková sada medu z podhoria, 3 × 250 g for 24.90 EUR or the Bylinkový čaj darčekový box, 4 druhy for 21.90 EUR.</dd><dt>Product cards</dt><dd><span lang="sk">Darčeková sada medu z podhoria, 3 × 250 g</span> (honey gift set), 24.90 EUR · <span lang="sk">Bylinkový čaj darčekový box, 4 druhy</span> (herbal tea gift box), 21.90 EUR</dd></dl>',
+  },
+  // ── skutočné odpovede (snímky ops/asistent/snimky-widgetu.mjs, 28. 9. 2026) ──
+  'ans.h2': { sk: 'Takto odpovedá vašim zákazníkom', en: 'How it answers your shoppers' },
+  'ans.sub': {
+    sk: 'Dve ďalšie skutočné snímky z ukážkového obchodu Dobrá domácnosť. Obchod aj jeho 64 výrobkov sú vymyslené, odpovede nie sú upravené, len orezané na okno chatu.',
+    en: 'Two more real screenshots from the same demo shop. The shop and its 64 products are made up; the answers are not edited, only cropped to the chat window. These two were asked in Slovak, so each has an English translation in its transcript.',
+  },
+  'ans.2.t': { sk: 'Tovar nemáte', en: 'You do not sell it' },
+  'ans.2.d': { sk: 'Povie to rovno a pošle zákazníka na váš kontakt. V ukážke je kontaktom náš e-mail.', en: 'It says so plainly and points the shopper to your contact. In the demo the contact is our own e-mail.' },
+  'ans.2.alt': {
+    sk: 'Zákazník píše: Máte aj mikrovlnnú rúru? Asistent odpovedá, že o mikrovlnnej rúre v katalógu nemá informáciu, a odkáže na kontaktný e-mail obchodu. Nezobrazí žiadny produkt.',
+    en: 'The shopper asks (in Slovak) whether the shop also sells a microwave oven. The assistant answers that the catalogue has no microwave and points to the shop’s contact e-mail. No product is shown.',
+  },
+  'ans.2.prepis': {
+    sk: '<dl><dt>Zákazník</dt><dd>Máte aj mikrovlnnú rúru?</dd><dt>Asistent</dt><dd>Nemám informáciu o mikrovlnnej rúre v našom katalógu, môžete sa obrátiť na andrej@arling.sk.</dd><dt>Karty produktov</dt><dd>žiadne</dd></dl>',
+    en: '<dl><dt>Shopper (in Slovak)</dt><dd><span lang="sk">Máte aj mikrovlnnú rúru?</span><br>Translation: Do you also sell a microwave oven?</dd><dt>Assistant (in Slovak)</dt><dd><span lang="sk">Nemám informáciu o mikrovlnnej rúre v našom katalógu, môžete sa obrátiť na andrej@arling.sk.</span><br>Translation: I have no information about a microwave oven in our catalogue, you can contact andrej@arling.sk.</dd><dt>Product cards</dt><dd>none</dd></dl>',
+  },
+  // ans.3: slovenská stránka ukazuje anglický rozhovor, anglická (ten je už v úvode) slovenský s kávovarmi.
+  'ans.3.src': { sk: '/asistent/snimky/odpoved-anglicky.webp', en: '/asistent/snimky/odpoved-kavovar.webp' },
+  'ans.3.t': { sk: 'Píše po anglicky', en: 'Picks by a feature' },
+  'ans.3.d': { sk: 'Odpoveď príde v jazyku zákazníka, produkty a ceny ostanú tie z vášho feedu.', en: 'Asked for a milk steam wand, it names only the two machines whose description has one, each with a product card.' },
+  'ans.3.alt': {
+    sk: 'Zákazník píše po anglicky: Do you have a small gift for my grandmother? Asistent odpovie po anglicky a ponúkne darčekovú sadu medu za 24.90 EUR a darčekový box bylinkových čajov za 21.90 EUR, s kartami produktov.',
+    en: 'The shopper asks in Slovak: I want to make cappuccino at home, which coffee machine has a milk steam wand? The assistant suggests the Orava Uno automatic machine with grinder for 249 EUR and the Orava 15 bar lever machine for 189 EUR, with their two product cards.',
+  },
+  'ans.3.prepis': {
+    sk: '<dl><dt>Zákazník</dt><dd lang="en">Do you have a small gift for my grandmother?</dd><dt>Asistent</dt><dd lang="en">Yes, I can help you with that. You can consider the Darčeková sada medu z podhoria, 3 × 250 g for 24.90 EUR or the Bylinkový čaj darčekový box, 4 druhy for 21.90 EUR.</dd><dt>Karty produktov</dt><dd>Darčeková sada medu z podhoria, 3 × 250 g, 24.90 EUR · Bylinkový čaj darčekový box, 4 druhy, 21.90 EUR</dd></dl>',
+    en: '<dl><dt>Shopper (in Slovak)</dt><dd><span lang="sk">Chcem si robiť cappuccino doma. Ktorý kávovar má parnú trysku na mlieko?</span><br>Translation: I want to make cappuccino at home. Which coffee machine has a milk steam wand?</dd><dt>Assistant (in Slovak)</dt><dd><span lang="sk">Na výrobu cappuccina doma s parnou tryskou na mlieko odporúčam kávovar Orava Uno s mlynčekom, ktorý stojí 249.00 EUR, alebo pákový kávovar Orava 15 bar za 189.00 EUR.</span><br>Translation: For making cappuccino at home with a milk steam wand I recommend the Orava Uno coffee machine with grinder, which costs 249.00 EUR, or the Orava 15 bar lever machine for 189.00 EUR.</dd><dt>Product cards</dt><dd><span lang="sk">Automatický kávovar Orava Uno s mlynčekom</span>, 249.00 EUR · <span lang="sk">Pákový kávovar Orava 15 bar</span>, 189.00 EUR</dd></dl>',
+  },
+  'ans.note': {
+    sk: 'Odpovede tvorí AI nad vašimi produktmi, pri opakovaní sa môžu v znení trochu líšiť. Názov, cena a odkaz na karte sa berú priamo z feedu. <a href="ukazka/" data-umami-event="ukazka_click" data-umami-event-place="odpovede">Opýtajte sa sami v ukážkovom obchode</a>.',
+    en: 'Answers are written by AI over your products, so the wording can differ slightly when asked again. The name, price and link on each card come straight from your feed. <a href="ukazka/" data-umami-event="ukazka_click" data-umami-event-place="odpovede">Ask the demo shop yourself</a>.',
   },
   'hero.shot.source': {
     sk: 'Skutočná snímka z <a href="/asistent/ukazka/" data-umami-event="ukazka_click" data-umami-event-place="hero-caption">ukážkového obchodu</a>',
@@ -90,28 +145,37 @@ export const DICT = {
   },
 
   // ── section 01: how it works ────────────────────────────────────────
-  's1.h2': { sk: 'Ako to funguje', en: 'How it works' },
-  's1.sub': { sk: 'Tri kroky, žiadna inštalácia na strane servera, žiadny obchodník.', en: 'Three steps, no server-side install, no salesperson.' },
-  's1.r1.title': { sk: 'Vložíte URL feedu a e-mail.', en: 'You paste your feed URL and email.' },
+  's1.h2': { sk: 'Ako sa zapína', en: 'How to switch it on' },
+  's1.sub': {
+    // „každú noc“ neplatí všeobecne (worker/src/cron.js: aktívne a neaktívne obchody, rozpočtový limit), brána Z-36 nález 4
+    sk: 'Produkty si Asistent berie z feedu, ktorý váš e-shop už má, a automaticky ich z neho obnovuje. Na stránku ho dostanete jedným z troch spôsobov.',
+    en: 'The assistant takes your products from the feed your e-shop already has and refreshes them from it automatically. You put it on your site in one of three ways.',
+  },
+  // Z-36: tri spôsoby zapnutia namiesto troch technických krokov (staré texty s1.r1 až s1.r3 nahradené).
+  's1.r1.title': { sk: 'WooCommerce', en: 'WooCommerce' },
+  's1.r1.body': {
+    sk: 'Doplnok z wordpress.org: v administrácii Pluginy, Pridať nový, hľadať „ARLing“. Produkty si načíta z obchodu sám. <a href="woocommerce/">Návod pre WooCommerce</a>',
+    en: 'A plugin from wordpress.org: in your admin go to Plugins, Add New and search for &quot;ARLing&quot;. It loads the products from your shop by itself. <a href="woocommerce/">WooCommerce guide</a>',
+  },
+  's1.r2.title': { sk: 'Shoptet a Upgates', en: 'Shoptet and Upgates' },
+  's1.r2.body': {
+    sk: 'Feed pre Heureku, ktorý e-shop generuje sám, a jeden riadok kódu vložený ako HTML kód v administrácii. <a href="shoptet/">Návod pre Shoptet a Upgates</a>',
+    en: 'The Heureka feed your shop already generates, plus one line of code added as HTML code in the admin. <a href="shoptet/">Shoptet and Upgates guide</a> (Slovak)',
+  },
+  's1.r3.title': { sk: 'Akýkoľvek iný e-shop', en: 'Any other e-shop' },
+  's1.r3.body': {
+    sk: 'Jeden riadok pred <code>&lt;/body&gt;</code>. Presný riadok s číslom vášho účtu dostanete po skúške nižšie. Na <a href="shopify/">Shopify</a> rovnako, v šablóne.',
+    en: 'One line before <code>&lt;/body&gt;</code>. You get the exact line with your account number after the trial below. On <a href="shopify/">Shopify</a> the same way, in the theme.',
+  },
+  's1.formats': {
+    sk: 'Formáty feedu: Heureka a Zboží.cz XML, Google Nákupy, Shopify <code>/products.json</code>, WooCommerce a bežný XML, najviac 5 000 produktov. Zdrojový kód widgetu aj servera je <a href="https://github.com/AndryRoby/arling-asistent" target="_blank" rel="noopener" data-umami-event="github_click" data-umami-event-place="how">verejný na GitHube</a>.',
+    en: 'Feed formats: Heureka and Zboží.cz XML, Google Shopping, Shopify <code>/products.json</code>, WooCommerce and generic XML, up to 5,000 products. The source code of the widget and the server is <a href="https://github.com/AndryRoby/arling-asistent" target="_blank" rel="noopener" data-umami-event="github_click" data-umami-event-place="how">public on GitHub</a>.',
+  },
   // Feed formats: Heureka/Zbozi.cz XML is the SHOP/SHOPITEM format
   // (https://sluzby.heureka.sk/napoveda/xml-feed/). Shoptet exports it as a
   // system feed (https://podpora.shoptet.sk/xml-feedy/) and Upgates generates
   // it automatically (https://www.upgates.cz/a/export-produktu-na-heureku);
   // both help pages read 2026-09-05.
-  's1.r1.body': {
-    sk: 'Podporujeme Heureka/Zboží.cz XML (exportuje ho Shoptet aj Upgates), Google Shopping RSS/XML, Shopify <code>/products.json</code>, WooCommerce REST/Store API JSON a bežný XML feed so značkami <code>item/name/price/url</code>.',
-    en: 'We support Heureka/Zboží.cz XML (the feed Shoptet and Upgates export), Google Shopping RSS/XML, Shopify <code>/products.json</code>, WooCommerce REST/Store API JSON, and a generic XML feed with <code>item/name/price/url</code> tags.',
-  },
-  's1.r2.title': { sk: 'Feed sa spracuje na embeddings.', en: 'Your feed is processed into embeddings.' },
-  's1.r2.body': {
-    sk: 'Worker stiahne feed, popisy skráti a rozdelí na časti a uloží do Cloudflare Vectorize (najviac 5000 produktov). Feed sa obnovuje automaticky raz denne.',
-    en: 'A Worker downloads the feed, shortens and splits the descriptions into chunks, and stores them in Cloudflare Vectorize (up to 5,000 products). The feed refreshes automatically once a day.',
-  },
-  's1.r3.title': { sk: 'Vložíte jeden <code>&lt;script&gt;</code> tag.', en: 'You add one <code>&lt;script&gt;</code> tag.' },
-  's1.r3.body': {
-    sk: 'Asistent sa zobrazí vpravo dole na stránke. Odpovedá výhradne z vášho feedu a obchodných kontaktov, nikdy si nič nevymýšľa; ak nevie, odporučí kontaktovať obchod.',
-    en: 'The assistant appears in the bottom right of the page. It answers only from your feed and your shop’s contact details, never makes anything up, and if it does not know, it points to your shop’s contact instead.',
-  },
 
   // ── section 02: pricing ──────────────────────────────────────────────
   's2.h2': { sk: 'Cenník', en: 'Pricing' },
@@ -132,6 +196,25 @@ export const DICT = {
     en: 'Free up to 100 conversations a month, forever, no payment card. Above that, the shop upgrades to Starter (19 EUR a month, up to 1,000 conversations) or Pro (39 EUR a month, up to 3,000) from its account page, linked right after the account is created. Card payment through Stripe, cancel any time. No annual plan yet.',
   },
   's2.objections.label': { sk: 'Predtým, než začnete', en: 'Before you start' },
+  's2.th.action': { sk: 'Začať', en: 'Start' },
+  'obj.h2': { sk: 'Na čo sa nás pýtajú majitelia obchodov', en: 'What shop owners ask us' },
+  'objai.q': { sk: 'Čo keď AI povie hlúposť?', en: 'What if the AI says something wrong?' },
+  // Z-36 pokus 2 (brána Astry 2, nález 2): chyba nie je len v znení; cenový strop má vlastnú otázku objbudget.
+  'objai.a': {
+    sk: 'Môže sa pomýliť, aj vo výbere produktu, preto má pevné mantinely. Odpovedá len z vášho feedu a kontaktu, text produktov berie ako dáta, nie ako pokyny, a keď tovar nemáte, povie to (snímka vyššie). Názov, cena a odkaz na karte produktu idú priamo z feedu, nie z textu, ktorý napíše AI. Najlepšie to posúdite na vlastných produktoch: skúška je zadarmo a na web ho vložíte, až keď sa vám odpovede páčia.',
+    en: 'It can make mistakes, including in which product it picks, so it runs inside firm limits. It answers only from your feed and your contact details, treats product text as data, never as instructions, and when you do not sell something it says so (see the screenshot above). The name, price and link on every product card come straight from your feed, not from the text the AI writes. The best test is your own products: the trial is free and you add it to your site only once you like the answers.',
+  },
+  // Otvorená chyba ops/asistent/chyby-2026-09-25.md bod 2; po jej oprave a overení odpoveď zmeniť.
+  'objbudget.q': { sk: 'Dodrží rozpočet zákazníka?', en: 'Does it stick to the shopper’s budget?' },
+  'objbudget.a': {
+    sk: 'Pri otázke „do 30 €“ môže Asistent odporučiť aj drahší produkt. Cenový strop v bežnom chate zatiaľ nie je spoľahlivý filter. Ceny na produktových kartách preberáme z vášho feedu. Pred zapnutím si odpovede overte na vlastných produktoch.',
+    en: 'When asked for something &quot;under 30 EUR&quot;, the assistant may still suggest a more expensive product. A price cap in the normal chat is not yet a reliable filter. The prices on the product cards come from your feed. Check the answers on your own products before you switch it on.',
+  },
+  'objlang.q': { sk: 'V akých jazykoch odpovedá?', en: 'Which languages does it answer in?' },
+  'objlang.a': {
+    sk: 'Okienko má texty v slovenčine, češtine, angličtine a nemčine. S riadkom kódu z formulára (<code>data-lang="auto"</code>) odpovedá v jazyku, v ktorom zákazník napíše otázku; na snímke vyššie angličtina v slovenskom obchode. Názvy produktov ostávajú tak, ako sú vo vašom feede.',
+    en: 'The chat window has its texts in Slovak, Czech, English and German. With the line of code from the form (<code>data-lang="auto"</code>) it answers in the language the shopper writes in; the screenshot above shows English on a Slovak shop. Product names stay exactly as they are in your feed.',
+  },
 
   'obj1.q': { sk: 'Ukladáte rozhovory zákazníkov?', en: 'Do you store customer conversations?' },
   'obj1.a': {
@@ -150,12 +233,12 @@ export const DICT = {
   },
   'obj4.q': { sk: 'Čo ak môj feed nie je v žiadnom z podporovaných formátov?', en: 'What if my feed is not in any of the supported formats?' },
   'obj4.a': {
-    sk: 'Podporujeme Heureka/Zboží.cz XML (značky <code>SHOP/SHOPITEM</code>, exportuje ho napríklad Shoptet alebo Upgates), Google Shopping RSS/XML (značky <code>g:</code>), Shopify <code>/products.json</code>, WooCommerce REST/Store API JSON a bežný XML feed so značkami <code>item/name/price/url/description/image</code>. Iný formát vyskúšajte vo formulári nižšie; ak ho spracovanie odmietne, napíšte na podpora@arling.sk s ukážkou feedu.',
-    en: 'We support Heureka/Zboží.cz XML (<code>SHOP/SHOPITEM</code> tags, exported by Shoptet or Upgates, for example), Google Shopping RSS/XML (<code>g:</code> tags), Shopify <code>/products.json</code>, WooCommerce REST/Store API JSON, and a generic XML feed with <code>item/name/price/url/description/image</code> tags. Try a different format in the form below; if processing rejects it, write to support@arling.sk with a sample of your feed.',
+    sk: 'Podporujeme Heureka/Zboží.cz XML (značky <code>SHOP/SHOPITEM</code>, exportuje ho napríklad Shoptet alebo Upgates), Google Shopping RSS/XML (značky <code>g:</code>), Shopify <code>/products.json</code>, WooCommerce REST/Store API JSON a bežný XML feed so značkami <code>item/name/price/url/description/image</code>. Iný formát vyskúšajte vo formulári vyššie; ak ho spracovanie odmietne, napíšte na podpora@arling.sk s ukážkou feedu.',
+    en: 'We support Heureka/Zboží.cz XML (<code>SHOP/SHOPITEM</code> tags, exported by Shoptet or Upgates, for example), Google Shopping RSS/XML (<code>g:</code> tags), Shopify <code>/products.json</code>, WooCommerce REST/Store API JSON, and a generic XML feed with <code>item/name/price/url/description/image</code> tags. Try a different format in the form above; if processing rejects it, write to support@arling.sk with a sample of your feed.',
   },
 
   // ── section 03: playground / trial form ─────────────────────────────
-  's3.h2': { sk: 'Vyskúšajte to s vlastným feedom', en: 'Try it with your own feed' },
+  's3.h2': { sk: 'Vyskúšajte na vlastnom feede', en: 'Try it on your own feed' },
   's3.sub': {
     sk: 'Zadajte URL feedu produktov a e-mail. Za pár minút sa vpravo dole na tejto stránke objaví chat s vašimi vlastnými produktmi. Doménu odvodíme automaticky z URL feedu.',
     en: 'Enter your product feed URL and an email address. Within a few minutes a chat with your own products appears in the bottom right of this page. The domain is derived automatically from the feed URL.',
@@ -169,8 +252,9 @@ export const DICT = {
   // Pod formulárom, nie priamo pod poľom: mriežka .trial-grid zarovnáva polia
   // na spodok a riadok navyše pod jedným poľom by rozhodil ostatné.
   's3.emailNote': {
-    sk: 'Na zadaný e-mail najprv pošleme 6-miestny kód na overenie adresy. Až po overení vám k tomuto Asistentovi pošleme najviac štyri e-maily (návod na zapojenie alebo správu, prečo sa produkty nenačítali, potvrdenie zapojenia, jednu pripomienku a upozornenie pri 80 % limitu), každý s odkazom na zastavenie. Nič iné. <a href="#privacy">Čo o vás ukladáme</a>.',
-    en: 'We first send a 6-digit code to this e-mail address to verify it. Only after that do we send at most four e-mails about this assistant (setup instructions or why the products did not load, a live confirmation, one reminder and a notice at 80% of the limit), each with a stop link. Nothing else. <a href="#privacy">What we store about you</a>.',
+    // Z-36 pokus 3 (brána Astry 2): typov je päť, kód pošle najviac štyri, preto „z týchto typov“
+    sk: 'Na zadaný e-mail najprv pošleme 6-miestny kód na overenie adresy. Až po overení vám k tomuto Asistentovi pošleme najviac štyri e-maily z týchto typov: návod na zapojenie alebo správa, prečo sa produkty nenačítali, potvrdenie zapojenia, jedna pripomienka, upozornenie pri 80 % limitu. Každý má odkaz na zastavenie. Nič iné. <a href="#privacy">Čo o vás ukladáme</a>.',
+    en: 'We first send a 6-digit code to this e-mail address to verify it. Only after that do we send at most four e-mails about this assistant, chosen from these types: setup instructions or why the products did not load, a live confirmation, one reminder, a notice at 80% of the limit. Each has a stop link. Nothing else. <a href="#privacy">What we store about you</a>.',
   },
   's3.submit': { sk: 'Spustiť skúšobnú verziu', en: 'Start the trial' },
   's3.hint': {
@@ -197,12 +281,13 @@ export const DICT = {
     en: '<b>Conversations are not stored.</b> The content of messages never persists anywhere, not with us, not in any database. We only keep daily counters of conversations and product clicks, for the monthly limit and billing.',
   },
   's4.item2': {
-    sk: '<b>Žiadne cookies.</b> Widget nepoužíva cookies ani localStorage okrem voliteľného identifikátora relácie, ktorý žije len v pamäti prehliadača a mizne pri zatvorení stránky.',
-    en: '<b>No cookies.</b> The widget uses no cookies and no localStorage, apart from an optional session identifier that lives only in the browser’s memory and disappears when the page is closed.',
+    // widget.js: náhodné id relácie a podpísaný token rozhovoru v sessionStorage (bez obsahu správ), brána Z-36 nález 4
+    sk: '<b>Žiadne cookies ani localStorage.</b> Aby rozhovor v tej istej karte pokračoval, widget si v sessionStorage prehliadača drží len náhodný identifikátor relácie a podpísaný token rozhovoru, nie obsah správ. Po zatvorení karty zmiznú.',
+    en: '<b>No cookies and no localStorage.</b> So that a conversation can continue in the same tab, the widget keeps only a random session identifier and a signed conversation token in the browser’s sessionStorage, not the content of messages. They disappear when the tab is closed.',
   },
   's4.item3': {
-    sk: '<b>Feed produktov je jediný zdroj pravdy.</b> Asistent odpovedá len z toho, čo je vo vašom feede a v kontaktných údajoch, nikdy si nič nevymýšľa a text produktov berie ako dáta, nie ako pokyny.',
-    en: '<b>Your product feed is the single source of truth.</b> The assistant answers only from what is in your feed and your contact details, never makes anything up, and treats product text as data, never as instructions.',
+    sk: '<b>Feed produktov je jediný zdroj pravdy.</b> Asistent odpovedá len z toho, čo je vo vašom feede a v kontaktných údajoch, a text produktov berie ako dáta, nie ako pokyny. Aj tak sa môže pomýliť, preto si odpovede pred zapnutím vyskúšajte.',
+    en: '<b>Your product feed is the single source of truth.</b> The assistant answers only from what is in your feed and your contact details, and treats product text as data, never as instructions. It can still make mistakes, so try the answers before you switch it on.',
   },
   's4.item4': {
     sk: '<b>Zmluva podľa čl. 28 GDPR.</b> ARLing s. r. o. je pri spracúvaní správ návštevníkov vášho e-shopu sprostredkovateľom. Vzor zmluvy: <a href="https://github.com/AndryRoby/arling-asistent/blob/main/legal/dpa-sk.md" target="_blank" rel="noopener">Zmluva o spracúvaní osobných údajov (DPA)</a>.',
@@ -214,8 +299,8 @@ export const DICT = {
   },
   // Údaje o majiteľovi obchodu (životný cyklus, ops/asistent/zivotny-cyklus.md 6.2).
   's4.item6': {
-    sk: '<b>Údaje o vás ako majiteľovi obchodu.</b> Pri vytvorení Asistenta ukladáme váš e-mail, doménu, adresu feedu, zvolený jazyk, odkiaľ účet vznikol (formulár alebo plugin) a udalosti účtu: pripravený, zapojený na webe, prvá otázka, limit, plán, overenie adresy a ktoré e-maily sme poslali. Zapojenie zisťujeme z domény stránky, ktorá Asistenta načíta; o návštevníkoch tým nič neukladáme. <b>E-maily:</b> len na adresu overenú 6-miestnym kódom (alebo firemnú adresu na doméne obchodu), najviac štyri za celý čas: návod na zapojenie, správa, ak sa produkty nenačítajú, potvrdenie zapojenia, jedna pripomienka a upozornenie pri 80 % bezplatného limitu. Odkaz v každom z nich zastaví všetky ďalšie; ak ste Asistenta nevytvárali vy, na tej istej stránke to oznámite a na vašu adresu už nepríde nič. <b>Právny základ:</b> návod a správy o účte, ktorý ste si vytvorili, sú plnenie zmluvy (čl. 6 ods. 1 písm. b GDPR); potvrdenie zapojenia, pripomienka a upozornenie na limit sú náš oprávnený záujem (písm. f), ktorý odkazom v e-maile kedykoľvek odmietnete. <b>Kto údaje spracúva s nami:</b> Cloudflare (beh služby a databáza), Resend, Inc. z USA (odosielanie e-mailov, adresa a obsah e-mailu preto prechádzajú do USA) a náš vlastný CRM na našom serveri. <b>Ako dlho:</b> udalosti účtu 24 mesiacov, účet s e-mailom, kým ho nezrušíte; pri platenom pláne doklady po dobu, ktorú vyžaduje zákon o účtovníctve. Zmazanie účtu a údajov do 7 dní, vrátane záznamu v CRM: napíšte na podpora@arling.sk.',
-    en: '<b>Data about you as the shop owner.</b> When you create an assistant we store your e-mail address, domain, feed URL, chosen language, where the account came from (form or plugin) and account events: ready, live on your site, first question, limit, plan, address verification and which e-mails we sent. We learn that the assistant is live from the domain of the page that loads it; we store nothing about your visitors that way. <b>E-mails:</b> only to an address verified with a 6-digit code (or a company address on the shop’s own domain), at most four in total: setup instructions, a message if the products do not load, a live confirmation, one reminder and a notice at 80% of the free limit. The link in each of them stops all further ones; if you did not create the assistant, you can say so on the same page and nothing more will reach your address. <b>Legal basis:</b> the setup instructions and messages about the account you created are performance of a contract (Art. 6(1)(b) GDPR); the live confirmation, reminder and limit notice are our legitimate interest (Art. 6(1)(f)), which you can refuse at any time with the link in the e-mail. <b>Who processes the data with us:</b> Cloudflare (running the service and the database), Resend, Inc. in the USA (sending e-mails, so the address and the e-mail content are transferred to the USA) and our own CRM on our own server. <b>How long:</b> account events 24 months, the account with your e-mail until you cancel it; for a paid plan, accounting records for as long as the accounting law requires. To have your account and data deleted within 7 days, including the CRM record, write to support@arling.sk.',
+    sk: '<b>Údaje o vás ako majiteľovi obchodu.</b> Pri vytvorení Asistenta ukladáme váš e-mail, doménu, adresu feedu, zvolený jazyk, odkiaľ účet vznikol (formulár alebo plugin) a udalosti účtu: pripravený, zapojený na webe, prvá otázka, limit, plán, overenie adresy a ktoré e-maily sme poslali. Zapojenie zisťujeme z domény stránky, ktorá Asistenta načíta; o návštevníkoch tým nič neukladáme. <b>E-maily:</b> len na adresu overenú 6-miestnym kódom (alebo firemnú adresu na doméne obchodu), najviac štyri za celý čas z týchto typov: návod na zapojenie, správa, ak sa produkty nenačítajú, potvrdenie zapojenia, jedna pripomienka, upozornenie pri 80 % bezplatného limitu. Odkaz v každom z nich zastaví všetky ďalšie; ak ste Asistenta nevytvárali vy, na tej istej stránke to oznámite a na vašu adresu už nepríde nič. <b>Právny základ:</b> návod a správy o účte, ktorý ste si vytvorili, sú plnenie zmluvy (čl. 6 ods. 1 písm. b GDPR); potvrdenie zapojenia, pripomienka a upozornenie na limit sú náš oprávnený záujem (písm. f), ktorý odkazom v e-maile kedykoľvek odmietnete. <b>Kto údaje spracúva s nami:</b> Cloudflare (beh služby a databáza), Resend, Inc. z USA (odosielanie e-mailov, adresa a obsah e-mailu preto prechádzajú do USA) a náš vlastný CRM na našom serveri. <b>Ako dlho:</b> udalosti účtu 24 mesiacov, účet s e-mailom, kým ho nezrušíte; pri platenom pláne doklady po dobu, ktorú vyžaduje zákon o účtovníctve. Zmazanie účtu a údajov do 7 dní, vrátane záznamu v CRM: napíšte na podpora@arling.sk.',
+    en: '<b>Data about you as the shop owner.</b> When you create an assistant we store your e-mail address, domain, feed URL, chosen language, where the account came from (form or plugin) and account events: ready, live on your site, first question, limit, plan, address verification and which e-mails we sent. We learn that the assistant is live from the domain of the page that loads it; we store nothing about your visitors that way. <b>E-mails:</b> only to an address verified with a 6-digit code (or a company address on the shop’s own domain), at most four in total, chosen from these types: setup instructions, a message if the products do not load, a live confirmation, one reminder, a notice at 80% of the free limit. The link in each of them stops all further ones; if you did not create the assistant, you can say so on the same page and nothing more will reach your address. <b>Legal basis:</b> the setup instructions and messages about the account you created are performance of a contract (Art. 6(1)(b) GDPR); the live confirmation, reminder and limit notice are our legitimate interest (Art. 6(1)(f)), which you can refuse at any time with the link in the e-mail. <b>Who processes the data with us:</b> Cloudflare (running the service and the database), Resend, Inc. in the USA (sending e-mails, so the address and the e-mail content are transferred to the USA) and our own CRM on our own server. <b>How long:</b> account events 24 months, the account with your e-mail until you cancel it; for a paid plan, accounting records for as long as the accounting law requires. To have your account and data deleted within 7 days, including the CRM record, write to support@arling.sk.',
   },
 
   // ── FAQ section ──────────────────────────────────────────────────────
@@ -232,8 +317,8 @@ export const DICT = {
   },
   'faq.lang.q': { sk: 'V akom jazyku asistent odpovedá?', en: 'What language does the assistant reply in?' },
   'faq.lang.a': {
-    sk: 'Slovensky, česky, anglicky alebo nemecky, podľa nastavenia widgetu na stránke (<code>data-lang</code>). Odpoveď je vždy len z produktov vo vašom feede, nikdy si nič nevymýšľa.',
-    en: 'Slovak, Czech, English or German, depending on the widget’s <code>data-lang</code> setting on the page. The answer always comes only from the products in your feed and never makes anything up.',
+    sk: 'Slovensky, česky, anglicky alebo nemecky, podľa nastavenia widgetu na stránke (<code>data-lang</code>). Odporúča len produkty z vášho feedu.',
+    en: 'Slovak, Czech, English or German, depending on the widget’s <code>data-lang</code> setting on the page. It suggests only products from your feed.',
   },
   'faq.cantanswer.q': { sk: 'Čo ak asistent nevie odpovedať?', en: 'What if the assistant cannot answer?' },
   'faq.cantanswer.a': {
@@ -262,6 +347,7 @@ export const DICT = {
   },
 
   'subscribe.ask': { sk: 'Chcete e-mail, keď pribudnú nové funkcie ARLing Asistenta?', en: 'Want an email when new ARLing Assistant features arrive?' },
+  'subscribe.label': { sk: 'Váš e-mail', en: 'Your e-mail' },
   'subscribe.email.placeholder': { sk: 'vas@email.sk', en: 'you@email.com' },
   'subscribe.btn': { sk: 'Dajte mi vedieť', en: 'Notify me' },
   'subscribe.privacy': { sk: 'Len e-mail o novinkách k ARLing Asistentovi. Odhlásenie kedykoľvek jedným klikom.', en: 'Only email about ARLing Shopping Assistant news. Unsubscribe any time with one click.' },
@@ -272,6 +358,7 @@ export const DICT = {
   },
 
   // ── closing CTA ──────────────────────────────────────────────────────
+  'closing.h2': { sk: 'Vyskúšajte ho na vlastných produktoch', en: 'Try it on your own products' },
   'closing.sub': { sk: 'Vložte URL feedu a e-mail. Zadarmo do 100 rozhovorov mesačne, bez platobnej karty.', en: 'Paste your feed URL and email. Free up to 100 conversations a month, no payment card.' },
 
   // ── footer ───────────────────────────────────────────────────────────
@@ -501,6 +588,11 @@ export function applyI18n(lang) {
   // data-th nesie popis stĺpca, ktorý tabuľka cenníka ukáže na mobile pred každou bunkou.
   document.querySelectorAll('[data-i18n-th]').forEach((el) => { el.setAttribute('data-th', t(el.getAttribute('data-i18n-th'), l)); });
   document.querySelectorAll('[data-i18n-href]').forEach((el) => { el.setAttribute('href', t(el.getAttribute('data-i18n-href'), l)); });
+  // snímka ukážky v jazyku stránky (Z-36 pokus 3); mení sa len pri inej adrese, aby sa obrázok zbytočne nenačítal znova
+  document.querySelectorAll('[data-i18n-src]').forEach((el) => {
+    const v = t(el.getAttribute('data-i18n-src'), l);
+    if (el.getAttribute('src') !== v) el.setAttribute('src', v);
+  });
 
   document.title = t('meta.title', l);
   setMetaByName('description', t('meta.description', l));

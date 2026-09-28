@@ -35,17 +35,23 @@
     var closeBtn = document.getElementById('sticky-cta-close');
     var hero = document.querySelector('.hero');
     var isClosed = function () { try { return sessionStorage.getItem(KEY) === '1'; } catch (e) { return false; } };
+    // body.ma-listu: stránka si pod viditeľnou lištou nechá miesto (padding v CSS stránky), aby lišta
+    // neprekryla koniec obsahu ani pätičku (Z-36 pokus 3, brána Astry 2, nález 8).
+    var zobraz = function (ano) {
+      bar.hidden = !ano;
+      document.body.classList.toggle('ma-listu', ano);
+    };
     var onScroll = function () {
-      if (isClosed()) { bar.hidden = true; return; }
+      if (isClosed()) { zobraz(false); return; }
       var pastHero = !hero || hero.getBoundingClientRect().bottom <= 0;
-      bar.hidden = !pastHero;
+      zobraz(pastHero);
     };
     window.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
     if (closeBtn) {
       closeBtn.addEventListener('click', function () {
         try { sessionStorage.setItem(KEY, '1'); } catch (e) {}
-        bar.hidden = true;
+        zobraz(false);
       });
     }
   }

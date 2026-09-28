@@ -265,6 +265,50 @@
     });
   }
 
+  var feedErrorEl = document.getElementById('trial-feed-error');
+
+  // aria-invalid len tam, kde prvok atribúty má (zjednodušené prvky v testoch hub-overenie ich nemajú)
+  function nastavNeplatne(el, ano) {
+    if (!el) return;
+    if (ano && typeof el.setAttribute === 'function') el.setAttribute('aria-invalid', 'true');
+    if (!ano && typeof el.removeAttribute === 'function') el.removeAttribute('aria-invalid');
+  }
+  function jeNeplatne(el) {
+    return !!el && typeof el.getAttribute === 'function' && el.getAttribute('aria-invalid') === 'true';
+  }
+
+  function oznacChybuFeedu(text) {
+    nastavNeplatne(feedInput, true);
+    if (feedErrorEl) {
+      feedErrorEl.textContent = text;
+      feedErrorEl.hidden = false;
+    } else {
+      setStatus(text, 'error');
+    }
+    if (typeof feedInput.focus === 'function') feedInput.focus();
+  }
+
+  function zrusChybuFeedu() {
+    nastavNeplatne(feedInput, false);
+    nastavNeplatne(emailInput, false);
+    if (feedErrorEl) {
+      feedErrorEl.hidden = true;
+      feedErrorEl.textContent = '';
+    }
+  }
+
+  // Oprava poľa ruší chybový stav hneď pri písaní, nie až pri ďalšom odoslaní.
+  if (typeof feedInput.addEventListener === 'function') {
+    feedInput.addEventListener('input', function () {
+      if (jeNeplatne(feedInput)) zrusChybuFeedu();
+    });
+  }
+  if (typeof emailInput.addEventListener === 'function') {
+    emailInput.addEventListener('input', function () {
+      if (jeNeplatne(emailInput) && emailInput.checkValidity()) nastavNeplatne(emailInput, false);
+    });
+  }
+
   function setStatus(text, tone) {
     statusEl.textContent = text;
     statusEl.className = 'trial-status' + (tone ? ' trial-status-' + tone : '');
@@ -492,10 +536,14 @@
     var lang = langSelect ? langSelect.value : pageLang();
     var domain = domainFromFeedUrl(feedUrl);
 
-    if (!feedInput.checkValidity()) { feedInput.reportValidity(); return; }
-    if (!emailInput.checkValidity()) { emailInput.reportValidity(); return; }
+    zrusChybuFeedu();
+    if (!feedInput.checkValidity()) { nastavNeplatne(feedInput, true); feedInput.reportValidity(); return; }
+    if (!emailInput.checkValidity()) { nastavNeplatne(emailInput, true); emailInput.reportValidity(); return; }
     if (!domain) {
-      setStatus(T('badUrl'), 'error');
+      // Chyba patrí poľu: text pod formulárom je cez aria-describedby prepojený s poľom URL,
+      // pole má aria-invalid a dostane fokus (Z-36 pokus 3, brána Astry 2, nález 6).
+      // jazyk podľa aktuálneho <html lang> (prepínač SK/EN mení jazyk bez načítania stránky)
+      oznacChybuFeedu((STATUS_TEXT[pageLang()] || {}).badUrl || T('badUrl'));
       return;
     }
 

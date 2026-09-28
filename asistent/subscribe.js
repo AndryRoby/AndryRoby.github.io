@@ -40,15 +40,23 @@
 
     if (!email || !button) return;
 
+    email.addEventListener('input', function () {
+      if (email.getAttribute('aria-invalid') === 'true' && email.checkValidity()) email.removeAttribute('aria-invalid');
+      if (error) error.hidden = true;
+    });
+
     form.addEventListener('submit', function (evt) {
       evt.preventDefault();
 
       if (hp && hp.value) return; // honeypot filled: silently drop, no feedback to the bot
 
+      if (error) error.hidden = true;
       if (!email.checkValidity()) {
+        email.setAttribute('aria-invalid', 'true');
         email.reportValidity();
         return;
       }
+      email.removeAttribute('aria-invalid');
 
       button.disabled = true;
       button.textContent = '...';
@@ -71,9 +79,10 @@
           trackSubscribe(source);
         })
         .catch(function () {
+          // Formulár ostáva viditeľný, aby sa dalo skúsiť znova (Z-36 pokus 3, brána Astry 2, nález 6);
+          // chyba sa zruší pri ďalšom písaní alebo odoslaní.
           button.disabled = false;
           button.textContent = buttonText;
-          form.hidden = true;
           if (error) error.hidden = false;
         });
     });
