@@ -27,9 +27,13 @@ body.nastroj main .th-doc ul+.th-akcie,body.nastroj main .th-akcie{margin-top:24
 /* ── 2. Hlavička hárku: cesty produktu medzi silnou a slabou linkou ─────
    Nahrádza eyebrow nad nadpisom (ten je zakázaný) a je to zároveň jediná
    navigácia nástroja. Hlavička hubu patrí obalu a cudzie odkazy do nej nesmú,
-   preto slabiny a metóda visia tu, hneď nad nadpisom, nie v pätičke. */
+   preto slabiny a metóda visia tu, hneď nad nadpisom, nie v pätičke.
+   Od 27. 9. 2026 bez hornej linky a s vlastným odstupom: silná linka ležala tesne
+   pod spodnou linkou pevnej hlavičky (dvojitá linka s nulovou medzerou) a odstup
+   od hlavičky bol raz s pásom „Na tejto stránke“ a raz bez neho iný (audit 02 D-02).
+   Rovnaký riadok na všetkých 56 podstránkach stráži ops/technologie/postav.test.mjs. */
 .th-masthead{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 22px;
-  padding:9px 0 10px;margin:0;border-top:1px solid var(--linka-silna);border-bottom:1px solid var(--line)}
+  margin:clamp(20px,2.4vw,32px) 0 0;padding:0 0 10px;border-top:0;border-bottom:1px solid var(--line)}
 .th-masthead a{font:500 13px/1.6 var(--ui);color:var(--muted);letter-spacing:.01em;
   text-decoration:none;white-space:nowrap}
 .th-masthead a:first-child{font-weight:600;color:var(--body)}
@@ -282,22 +286,22 @@ body.noc .th-dokazy code{display:block;background:none;border:0;border-radius:0;
 .th-ceny .suma{font:600 18px/1.2 var(--ui);color:var(--ink);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
 .th-ceny .suma small{display:block;font:400 12px/1.4 var(--ui);color:var(--muted)}
 
-/* Zoznam dvojíc na porovnanie: pravítkované riadky, nie mriežka kariet. */
-.th-pary{list-style:none;margin:24px 0 0;padding:0;border-top:1px solid var(--linka-silna);
-  columns:2;column-gap:44px}
-.th-pary li{break-inside:avoid;border-bottom:1px solid var(--line)}
+/* Zoznam dvojíc na porovnanie: pravítkované riadky v dvoch stĺpcoch, rovnako ako
+   „Čo hlásime“ na úvode nástroja (.th-cats). Predtým mal každý riadok pri prejdení
+   myšou zaoblené pozadie presahujúce stĺpec o 10 px, takže pôsobil ako karta. */
+.th-pary{display:grid;grid-template-columns:1fr 1fr;gap:0 40px;margin:24px 0 0;padding:0;list-style:none}
+.th-pary li{border-top:1px solid var(--line);min-width:0}
 .th-pary a{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:2px 16px;
-  padding:12px 10px;margin:0 -10px;border-radius:8px;text-decoration:none;color:inherit;
-  transition:background-color .16s var(--ease)}
-.th-pary a:hover,.th-pary a:focus-visible{background:rgba(255,255,255,.04)}
-.th-pary b{font:600 15.5px/1.35 var(--ui);color:var(--ink)}
+  min-height:44px;padding:12px 0 13px;text-decoration:none;color:inherit}
+.th-pary b{font:600 15.5px/1.35 var(--ui);color:var(--ink);transition:color .16s var(--ease)}
 .th-pary span{font:13px/1.4 var(--ui);color:var(--muted)}
+.th-pary a:hover b,.th-pary a:focus-visible b{color:var(--accent-light)}
 
 /* ── 13. Porovnanie ───────────────────────────────────────────────────── */
 .th-vs{display:grid;grid-template-columns:1fr 1fr;gap:0 clamp(24px,4vw,56px);margin:24px 0 0;
   border-top:1px solid var(--linka-silna)}
 .th-vs>div{padding:18px 0 20px;min-width:0}
-.th-vs h2{font-size:clamp(20px,1.8vw,26px)!important;margin:0 0 4px}
+.th-vs h3{font-size:clamp(20px,1.8vw,26px)!important;margin:0 0 4px}
 .th-vs .velke{font:600 clamp(30px,4vw,44px)/1 var(--ui);color:var(--ink);
   letter-spacing:-.02em;display:block;margin:10px 0 0}
 .th-vs .velke small{font:500 14px/1 var(--ui);color:var(--muted);margin-left:6px;letter-spacing:0}
@@ -366,13 +370,19 @@ body.noc .th-dokazy code{display:block;background:none;border:0;border-radius:0;
   .th-dokazy td:first-child{position:static;box-shadow:none}
 }
 @media (max-width:680px){
-  .th-masthead{font-size:12.5px;gap:3px 14px}
-  .th-masthead span:last-child{width:100%}
+  /* Na telefóne jeden riadok, ktorý sa posúva prstom, rovnako ako pás „Na tejto
+     stránke“ v hlavičke (paper.css); odseknuté slovo na okraji ukazuje, že je tam viac.
+     Zalomený do dvoch riadkov posúval nadpis na každej podstránke inak. Ciele majú
+     44 px. Záporný okraj až po hranu obrazovky zámerne nie: s klasickým posuvníkom
+     (Firefox vo Windows) by stránka pretiekla do strán o šírku posuvníka. */
+  .th-masthead{flex-wrap:nowrap;align-items:center;gap:0 18px;padding:0;
+    overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none}
+  .th-masthead::-webkit-scrollbar{display:none}
+  .th-masthead a{display:inline-flex;align-items:center;min-height:44px;flex:none}
   .th-lead{padding-top:22px}
   .th-lead h1{max-width:none}
   .th-lead-p{font-size:17px}
-  .th-facts,.th-cats,.th-vs{grid-template-columns:1fr}
-  .th-pary{columns:1}
+  .th-facts,.th-cats,.th-vs,.th-pary{grid-template-columns:1fr}
   .th-vs>div+div{border-top:1px solid var(--line)}
   .th-form{max-width:none}
   .th-form .btn{width:100%;justify-content:center}

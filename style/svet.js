@@ -1,21 +1,20 @@
 /* The World in Squares: prehliadač mapy.
    Zdroj: ops/svet/svet.js, do hubu ho kopíruje ops/svet/postav.mjs. Neupravovať v produkte.
 
-   Požiadavka vlastníka: mapa má byť krásna, presná a nesekavá, s hranicami všade.
-   Preto:
-     · jeden canvas, žiadna knižnica (knižnica by aj tak neprešla prísnym CSP hubu),
-     · podklad je vektor z Natural Earth v troch úrovniach podrobnosti; sťahujú sa
-       len dlaždice vo výreze a každá sa raz prevedie na Path2D, ktoré sa potom
-       len posúva a škáluje transformáciou plátna,
-     · pobrežie a hranice štátov sa kreslia AŽ NAD predanými štvorcami, ako svetlé
-       jadro s tmavým lemom: mapa sa dá čítať aj vtedy, keď je predaný celý svet
-       (čísla kontrastu voči všetkým šestnástim farbám sú v ops/svet/hranice.md),
-     · jedna slučka requestAnimationFrame s dirty príznakom, nekreslí sa do prázdna;
-       zotrvačnosť, plynulé priblíženie aj prelet bežia v tej istej slučke,
-     · kreslí sa v zariadeniových pixeloch, devicePixelRatio zastropovaný na 2,
-     · keď snímky pri ťahaní nestíhajú, podklad sa vykreslí raz do zásobného plátna
-       s okrajom a pri posune sa len prekladá,
-     · mriežka sa kreslí ako jedna cesta a až keď má bunka aspoň 6 px.
+   Požiadavka vlastníka: mapa má byť krásna, presná a nesekavá, s hranicami všade. Preto:
+     · jeden canvas, žiadna knižnica (neprešla by prísnym CSP hubu),
+     · podklad je vektor z Natural Earth v troch úrovniach; sťahujú sa len dlaždice
+       vo výreze, každá sa raz prevedie na Path2D a potom sa len transformuje,
+     · pobrežie a hranice štátov sú AŽ NAD predanými štvorcami, svetlé jadro s tmavým
+       lemom, aby sa mapa dala čítať aj pri predanom svete (kontrast: ops/svet/hranice.md),
+     · jedna slučka requestAnimationFrame s dirty príznakom; zotrvačnosť, priblíženie
+       aj prelet bežia v nej; kreslí sa v zariadeniových pixeloch, DPR najviac 2,
+     · keď snímky pri ťahaní nestíhajú, podklad sa kreslí raz do zásobného plátna s okrajom,
+     · mriežka je jedna cesta a až od bunky 6 px,
+     · Firefox kreslí čiaru hrubšiu než pixel procesorom (pobrežie sveta 7 ms, snímka
+       12 až 25 ms, meranie 25. 9. 2026). Tam čiary a mriežku kreslia dve vlákna do
+       obrázka pre presne danú mierku; pri posune sa prekladá o celé pixely, pri zmene
+       mierky sa snímka ukáže až s hotovým obrázkom. Vzhľad je ten istý (kresliHV).
 
    Mapa je v Mercatore. Nie z módy: naša bunka je na zemi štvorec asi 10 × 10 km a
    Mercator je konformný, takže štvorec na zemi je štvorec aj na obrazovke, v každom
@@ -26,6 +25,109 @@
    Ladenie: ?debug=1 vypíše čas kreslenia snímky, ?debug=2 navyše spraví meraný posun. */
 (function () {
   'use strict';
+
+  // Paleta webu: more je presne pozadie stránky, súš o stupeň svetlejšia.
+  //
+  // POBREŽIE A HRANICE SÚ SVETLÉ A MAJÚ TMAVÝ LEM. Nie je to móda. Tieto tri
+  // čiary sa kreslia NAD predanými štvorcami (kresliHranice) a pod nimi môže
+  // ležať ktorákoľvek zo šestnástich farieb kresby, od takmer čiernej #10100e po
+  // takmer bielu #f2ece2. Jedna farba čiary sa na oboch naraz stratiť musí, dve
+  // nie: na tmavom pozadí nesie čitateľnosť svetlé jadro, na svetlom tmavý lem.
+  // Čísla sú spočítané v ops/svet/hranice.md a stráži ich test (najhoršia
+  // šestnástina má kontrast 3,4 : 1, hranica WCAG 1.4.11 je 3 : 1).
+  //
+  // Čiary sú nepriehľadné farby, nie alfa: kde sa na okraji dlaždíc stretnú dva
+  // konce, nevznikne svetlejšia bodka.
+  var FARBY = {
+    more: '#0a0908', sus: '#1b1714', kraj: '#332c27',
+    lem: '#070606', pobrezie: '#e9c9a8', breh: '#c3ccd2', hranica: '#cfc6bd',
+    stat: '#978f86', mesto: '#ddd7d0', bod: '#f2643c', voda: '#6f675f',
+    mriezka: 'rgba(255,255,255,', vyber: '#ffd9c9',
+    predane: 'rgba(242,100,60,.85)', rezervovane: 'rgba(242,100,60,.32)', moje: 'rgba(255,217,201,.92)',
+    ukazka: '#8fc1d4',
+  };
+  /**
+   * Čiary, ktoré sa kreslia nad vlastníctvom: [kľúč cesty, jadro, šírka pri
+   * celom svete, šírka po priblížení, čiarkovaná]. Poradie je poradie kreslenia,
+   * takže pobrežie je navrchu.
+   */
+  var HRANICE = [
+    ['j', 'breh', 0.8, 0.8, false],
+    ['d', 'hranica', 0.9, 0.9, true],
+    ['b', 'hranica', 0.8, 1.1, false],
+    ['c', 'pobrezie', 0.95, 1.15, false],
+  ];
+  // O koľko je lem širší než jadro (v CSS pixeloch, teda pol toho na každú
+  // stranu). Pri celom svete je tenší, inak by z pobrežia bol pás.
+  var LEM = 1.6, LEM_SVET = 1;
+
+  // Vlákno (Worker) s týmto istým súborom: vo Firefoxe kreslí čiary a mriežku (kresliHV).
+  if (typeof document == 'undefined') {
+    var D = {}, P, C;
+    onmessage = function (e) {
+      var m = e.data, g = m.g, i;
+      for (i in D) if (Object.keys(D).length > 40) delete D[i];
+      Promise.all(m.k.map(function (k) {
+        return D[k[0]] || (D[k[0]] = fetch(k[0], { cache: 'force-cache' }).then(function (o) { return o.json(); }).then(function (g) { return cesty({ c: g.c, j: g.j, b: g.b, d: g.d }, {}); }));
+      })).then(function (T) {
+        if (!P || P.width !== m.w || P.height !== m.h) { P = new OffscreenCanvas(m.w, m.h); C = P.getContext('2d'); }
+        C.setTransform(1, 0, 0, 1, 0, 0);
+        C.clearRect(0, 0, m.w, m.h);
+        hranice(C, m.k.map(function (k, i) { return { d: T[i], k: k[1], tx: k[2], ty: k[3], orez: k[4] }; }), m.z, m.d);
+        if (g[0]) {
+          C.strokeStyle = g[0]; C.lineWidth = 1; C.beginPath();
+          for (i = 0, g = g[1]; i < g.length; i += 4) { C.moveTo(g[i], g[i + 1]); C.lineTo(g[i + 2], g[i + 3]); }
+          C.stroke();
+        }
+        postMessage(i = P.transferToImageBitmap(), [i]);
+      }, function () { postMessage(0); });
+    };
+    return;
+  }
+  var ZDROJ = document.currentScript && document.currentScript.src;
+  /** Dlaždica z JSON: plochy ako uzavreté cesty, čiary ako otvorené. */
+  function cesty(g, d) {
+    ['l', 'k'].forEach(function (v) { if (g[v]) d[v] = cestaZ(g[v], true); });
+    ['c', 'j', 'b', 'd', 'a'].forEach(function (v) { if (g[v]) d[v] = cestaZ(g[v], false); });
+    return d;
+  }
+  /** Čiary nad vlastníctvom (kresliHranice): pri každej najprv lem, potom jadro. */
+  function hranice(c, kusy, z, dpr) {
+    var lem = z ? LEM : LEM_SVET;
+    HRANICE.forEach(function (h) {
+      var sirka = z ? h[3] : h[2];
+      vrstva(c, kusy, h[0], FARBY.lem, sirka + lem, h[4], dpr);
+      vrstva(c, kusy, h[0], FARBY[h[1]], sirka, h[4], dpr);
+    });
+    c.setTransform(1, 0, 0, 1, 0, 0);
+  }
+  function cestaZ(zoznam, zavri) {
+    var p = new Path2D();
+    for (var i = 0; i < zoznam.length; i++) {
+      var a = zoznam[i], x = a[0], y = a[1];
+      p.moveTo(x, y);
+      for (var k = 2; k < a.length; k += 2) { x += a[k]; y += a[k + 1]; p.lineTo(x, y); }
+      if (zavri) p.closePath();
+    }
+    return p;
+  }
+  /** Jedna vrstva cez všetky dlaždice: najprv všetky výplne, potom všetky čiary, aby lem susednej dlaždice neprekryl čiaru. */
+  function vrstva(c, kusy, co, farba, hrubka, ciarky, dpr) {
+    if (hrubka) { c.strokeStyle = farba; c.lineJoin = 'round'; c.lineCap = ciarky ? 'butt' : 'round'; } else c.fillStyle = farba;
+    for (var i = 0; i < kusy.length; i++) {
+      var ks = kusy[i], p = ks.d[co];
+      if (!p) continue;
+      if (ks.orez) { c.save(); c.setTransform(1, 0, 0, 1, 0, 0); c.beginPath(); c.rect(ks.orez[0], ks.orez[1], ks.orez[2], ks.orez[3]); c.clip(); }
+      c.setTransform(ks.k, 0, 0, ks.k, ks.tx, ks.ty);
+      if (hrubka) {
+        c.lineWidth = (hrubka * dpr) / ks.k;
+        c.setLineDash(ciarky ? [(5 * dpr) / ks.k, (4 * dpr) / ks.k] : []);
+        c.stroke(p);
+      } else c.fill(p);
+      if (ks.orez) c.restore();
+    }
+    c.setLineDash([]);
+  }
 
   var telo = document.body;
   var T = {};
@@ -59,6 +161,9 @@
     if (p.city) return '<b>' + esc(p.city) + '</b>' + (casti.length ? ', ' + esc(casti.join(', ')) : '');
     return casti.length ? '<b>' + esc(casti.join(', ')) + '</b>' : '';
   }
+  // Ukážka od ARLing (ops/svet/ukazky.md): nikto ju nemá, štvorec je na predaj.
+  function ukazkaHlava(nazov, stitok) { return '<p class="list-stitok">' + esc(T.ukazkaStitok || stitok) + '</p><p class="list-nazov">' + esc(nazov) + '</p>'; }
+  function ukazkaVety(text) { return '<p class="list-ukazka">' + esc(text) + '</p><p class="list-pravne">' + esc(T.ukazkaVeta) + ' ' + esc(T.ukazkaPredaj) + '</p>'; }
   /**
    * Umami. Návšteva, klik na bunku, otvorenie pokladne a návrat z nej sa merajú
    * oddelene; platbu samotnú vidí len služba cez webhook, stránka ju nemeria.
@@ -214,39 +319,6 @@
     sleduj(navratZPokladne === 'paid' ? 'svet_navrat_z_pokladne' : 'svet_pokladna_zrusena');
   }
 
-  // Paleta webu: more je presne pozadie stránky, súš o stupeň svetlejšia.
-  //
-  // POBREŽIE A HRANICE SÚ SVETLÉ A MAJÚ TMAVÝ LEM. Nie je to móda. Tieto tri
-  // čiary sa kreslia NAD predanými štvorcami (kresliHranice) a pod nimi môže
-  // ležať ktorákoľvek zo šestnástich farieb kresby, od takmer čiernej #10100e po
-  // takmer bielu #f2ece2. Jedna farba čiary sa na oboch naraz stratiť musí, dve
-  // nie: na tmavom pozadí nesie čitateľnosť svetlé jadro, na svetlom tmavý lem.
-  // Čísla sú spočítané v ops/svet/hranice.md a stráži ich test (najhoršia
-  // šestnástina má kontrast 3,4 : 1, hranica WCAG 1.4.11 je 3 : 1).
-  //
-  // Čiary sú nepriehľadné farby, nie alfa: kde sa na okraji dlaždíc stretnú dva
-  // konce, nevznikne svetlejšia bodka.
-  var FARBY = {
-    more: '#0a0908', sus: '#1b1714', kraj: '#332c27',
-    lem: '#070606', pobrezie: '#e9c9a8', breh: '#c3ccd2', hranica: '#cfc6bd',
-    stat: '#978f86', mesto: '#ddd7d0', bod: '#f2643c', voda: '#6f675f',
-    mriezka: 'rgba(255,255,255,', vyber: '#ffd9c9',
-    predane: 'rgba(242,100,60,.85)', rezervovane: 'rgba(242,100,60,.32)', moje: 'rgba(255,217,201,.92)',
-  };
-  /**
-   * Čiary, ktoré sa kreslia nad vlastníctvom: [kľúč cesty, jadro, šírka pri
-   * celom svete, šírka po priblížení, čiarkovaná]. Poradie je poradie kreslenia,
-   * takže pobrežie je navrchu.
-   */
-  var HRANICE = [
-    ['j', 'breh', 0.8, 0.8, false],
-    ['d', 'hranica', 0.9, 0.9, true],
-    ['b', 'hranica', 0.8, 1.1, false],
-    ['c', 'pobrezie', 0.95, 1.15, false],
-  ];
-  // O koľko je lem širší než jadro (v CSS pixeloch, teda pol toho na každú
-  // stranu). Pri celom svete je tenší, inak by z pobrežia bol pás.
-  var LEM = 1.6, LEM_SVET = 1;
   // Stavy bunky v /api/chunk, jeden bajt na bunku. Tie isté čísla ako ST_* v
   // products/svet/mriezka.py: 0 zatvorené (pri predaji celého sveta sa nevyskytuje),
   // 1 voľné, 2 práve v pokladni, 3 až 7 zaplatené.
@@ -295,16 +367,6 @@
   // Index dlaždíc príde v mriezka.json. Dlaždica je JSON s celými číslami: prvý bod
   // tvaru a potom rozdiely, v jednotkách úrovne od ľavého horného rohu dlaždice.
   var POD = null, DL = {}, snimokC = 0, PRAZDNA = { ok: true }, nacitaneV = 0;
-  function cestaZ(zoznam, zavri) {
-    var p = new Path2D();
-    for (var i = 0; i < zoznam.length; i++) {
-      var a = zoznam[i], x = a[0], y = a[1];
-      p.moveTo(x, y);
-      for (var k = 2; k < a.length; k += 2) { x += a[k]; y += a[k + 1]; p.lineTo(x, y); }
-      if (zavri) p.closePath();
-    }
-    return p;
-  }
   /** Hotová dlaždica, alebo null, kým sa sťahuje. S lenHotove sa nič nové nepýta. */
   function dlazdicaV(z, i, j, lenHotove) {
     var u = POD.urovne[z];
@@ -312,17 +374,17 @@
     var meno = z + '/' + i + '_' + j, d = DL[meno];
     if (d) { d.pouzita = snimokC; return d.ok ? d : null; }
     if (lenHotove) return null;
-    DL[meno] = d = { ok: false, pouzita: snimokC };
-    fetch(ZAKLAD + 'map/' + meno + '.json?v=' + POD.v, { cache: 'force-cache' })
+    DL[meno] = d = { ok: false, pouzita: snimokC, u: ZAKLAD + 'map/' + meno + '.json?v=' + POD.v };
+    fetch(d.u, { cache: 'force-cache' })
       .then(function (o) { if (!o.ok) throw 0; return o.json(); })
       .then(function (g) {
-        ['l', 'k'].forEach(function (v) { if (g[v]) d[v] = cestaZ(g[v], true); });
-        ['c', 'j', 'b', 'd', 'a'].forEach(function (v) { if (g[v]) d[v] = cestaZ(g[v], false); });
+        cesty(g, d);
         d.p = g.p; d.n = g.n; d.s = g.s;
         d.ok = true;
         nacitaneV = performance.now();
         upratDlazdice();
         kes.plati = false;
+        if (HV) HV.g++;
         ziadaj();
       })
       .catch(function () { setTimeout(function () { delete DL[meno]; ziadaj(); }, 5000); });
@@ -372,24 +434,6 @@
     return von;
   }
 
-  /** Jedna vrstva cez všetky dlaždice: najprv všetky výplne, potom všetky čiary, aby lem susednej dlaždice neprekryl čiaru. */
-  function vrstva(c, kusy, co, farba, hrubka, ciarky) {
-    if (hrubka) { c.strokeStyle = farba; c.lineJoin = 'round'; c.lineCap = ciarky ? 'butt' : 'round'; } else c.fillStyle = farba;
-    for (var i = 0; i < kusy.length; i++) {
-      var ks = kusy[i], p = ks.d[co];
-      if (!p) continue;
-      if (ks.orez) { c.save(); c.setTransform(1, 0, 0, 1, 0, 0); c.beginPath(); c.rect(ks.orez[0], ks.orez[1], ks.orez[2], ks.orez[3]); c.clip(); }
-      c.setTransform(ks.k, 0, 0, ks.k, ks.tx, ks.ty);
-      if (hrubka) {
-        c.lineWidth = (hrubka * dpr) / ks.k;
-        c.setLineDash(ciarky ? [(5 * dpr) / ks.k, (4 * dpr) / ks.k] : []);
-        c.stroke(p);
-      } else c.fill(p);
-      if (ks.orez) c.restore();
-    }
-    c.setLineDash([]);
-  }
-
   var pismoNacitane = false;
   /**
    * Plochy podkladu: súš, vnútorné vody a kraje. Len toto ide POD vlastníctvo,
@@ -401,32 +445,89 @@
     var z = urovenPre(V.s), kusy = kusyPre(V, z);
     vrstva(c, kusy, 'l', FARBY.sus, 0);
     vrstva(c, kusy, 'k', FARBY.more, 0);
-    if (z > 0) vrstva(c, kusy, 'a', FARBY.kraj, z > 1 ? 0.8 : 0.6);
+    if (z > 0) vrstva(c, kusy, 'a', FARBY.kraj, z > 1 ? 0.8 : 0.6, false, dpr);
     c.setTransform(1, 0, 0, 1, 0, 0);
     return kusy;
   }
 
   /**
-   * Pobrežie, brehy vnútorných vôd a hranice štátov. KRESLÍ SA AŽ NAD PREDANÝMI
-   * ŠTVORCAMI, aby sa mapa dala čítať aj vtedy, keď je predaných sto percent.
-   * Predtým sa kreslili v podklade a stačilo pár tisíc predaných štvorcov, aby
-   * pod nimi zmizlo pobrežie; majiteľ sa 22. 9. 2026 pýtal presne na to.
-   *
-   * Každá čiara má dva ťahy: najprv o 1,6 px širší tmavý lem, potom svetlé
-   * jadro. Nie je to obrys navrchu, ktorý by prekryl kresby ľudí: lem aj jadro
-   * sú tenké a spolu majú necelé tri pixely, takže kresba 32 × 32 ostane celá
-   * čitateľná a mapa pod ňou tiež.
+   * Pobrežie, brehy a hranice štátov. KRESLIA SA AŽ NAD PREDANÝMI ŠTVORCAMI, inak
+   * by pri plnej mape pobrežie zmizlo (otázka majiteľa 22. 9. 2026). Dva tenké ťahy,
+   * o 1,6 px širší tmavý lem a svetlé jadro, spolu necelé tri pixely: kresba 32 × 32
+   * aj mapa pod ňou ostanú čitateľné.
    */
   function kresliHranice(c, V, kusy) {
-    if (!kusy || !kusy.length) return;
-    var z = urovenPre(V.s), lem = z ? LEM : LEM_SVET, i, h, sirka;
-    for (i = 0; i < HRANICE.length; i++) {
-      h = HRANICE[i];
-      sirka = z ? h[3] : h[2];
-      vrstva(c, kusy, h[0], FARBY.lem, sirka + lem, h[4]);
-      vrstva(c, kusy, h[0], FARBY[h[1]], sirka, h[4]);
+    if (kusy && kusy.length) hranice(c, kusy, urovenPre(V.s), dpr);
+  }
+
+  // ── Firefox: čiary a mriežka z dvoch vlákien (prečo: hlavička súboru) ────
+  var HV = ZDROJ && /Gecko\/\d/.test(navigator.userAgent) && window.OffscreenCanvas && { v: [], n: 0, g: 0, u: 0, t: 0 };
+  try {
+    while (HV && HV.v.length < 2) HV.v.push(new Worker(ZDROJ));
+  } catch (e) { HV = 0; }
+  if (HV) HV.v.forEach(function (w) {
+    w.onmessage = function (e) {
+      var r = w.r, b = e.data;
+      if (!HV) return;
+      HV.v.push(w);
+      if (!b) HV = 0;       // vlákno nedostalo dlaždicu: ďalej ako v Chrome
+      else if (HV.k && HV.k.n > r.n) b.close();
+      else {
+        if (HV.k) HV.k.b.close();
+        r.b = b; HV.k = r;
+        // Nahrá obrázok do plátna hneď, nie až v snímke (tá potom stíha); na nepriehľadnom plátne destination-over nič nezmení.
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.globalCompositeOperation = 'destination-over';
+        ctx.drawImage(b, 0, 0, 1, 1, 0, 0, 1, 1);
+        ctx.globalCompositeOperation = 'source-over';
+      }
+      ziadaj();
+    };
+    w.onerror = function () { HV = 0; ziadaj(); };
+  });
+  /** Rezerva obrázka R za okrajom okna (záporná: nestačí); R.x, R.y je jeho poloha na celý pixel. */
+  function hvVolno(R) {
+    if (!R || R.V.s !== S.s || R.z !== urovenPre(S.s)) return -1;
+    var d = R.V.lon - S.lon, x, y;
+    d -= 360 * Math.round(d / 360);
+    x = d * S.s + S.stredX - R.V.cx; y = (S.my - R.V.my) * S.s + S.stredY - R.V.cy;
+    R.dx = x - (R.x = Math.round(x)); R.dy = y - (R.y = Math.round(y));
+    return Math.min(-R.x, -R.y, R.x + R.V.w - S.w, R.y + R.V.h - S.h);
+  }
+  /** Pohľad S dočasne nahradí pohľadom V (kresli a mriežka ho čítajú zo S). */
+  function naPohlad(V) {
+    var o = { lon: S.lon, my: S.my, s: S.s, cx: S.stredX, cy: S.stredY, w: S.w, h: S.h };
+    S.lon = V.lon; S.my = V.my; S.s = V.s; S.stredX = V.cx; S.stredY = V.cy; S.w = V.w; S.h = V.h;
+    return o;
+  }
+  function hvZiadaj(V, m) {
+    var w = HV.v.pop(), z = urovenPre(V.s), a = [], g = { beginPath: Object, stroke: Object, moveTo: pridaj, lineTo: pridaj };
+    function pridaj(x, y) { a.push(x, y); }
+    if (!w) return;
+    V = { lon: V.lon, my: V.my, s: V.s, cx: V.cx + m, cy: V.cy + m, w: V.w + 2 * m, h: V.h + 2 * m };
+    var r = HV.p = w.r = { n: ++HV.n, V: V, z: z, m: m, g: HV.g }, o = naPohlad(V);
+    kresliMriezku(g, 60000 * V.w * V.h / o.w / o.h);   // strop úsekov rastie s plochou obrázka
+    naPohlad(o);
+    a = new Float32Array(a);
+    w.postMessage({ w: V.w, h: V.h, d: dpr, z: z, g: [g.strokeStyle, a], k: kusyPre(V, z).map(function (k) { return [new URL(k.d.u, location.href).href, k.k, k.tx, k.ty, k.orez]; }) }, [a.buffer]);
+  }
+  function kresliHV(t) {
+    var K = HV.k, P = HV.p, M = Math.round(Math.min(S.w, S.h) * 0.3), v = hvVolno(K), V = pohlad(), rozmer = S.w + 'x' + S.h;
+    if (v >= 0) { V.lon += K.dx / S.s; V.my -= K.dy / S.s; V.x = K.x; V.y = K.y; }
+    // Nový obrázok: iná mierka, nová dlaždica, posun blízko okraja alebo po priblížení bez okraja.
+    if (!P || P.g !== HV.g || hvVolno(P) < (v >= 0 ? M / 3 : 0) || (v >= 0 && P.m < M)) hvZiadaj(V, v >= 0 || (K && K.V.s === S.s) ? M : 0);
+    if (v < 0) {
+      if (K && K.n > HV.u && K.V.w - 2 * K.m === S.w && K.V.h - 2 * K.m === S.h) V = { lon: K.V.lon, my: K.V.my, s: K.V.s, cx: K.V.cx - K.m, cy: K.V.cy - K.m, x: -K.m, y: -K.m };
+      else if (HV.u && HV.r === rozmer && t - (HV.t = HV.t || t) < 300) return 0;   // počká na vlákno, na plátne ostáva predošlá snímka
+      else { HV.r = rozmer; HV.t = 0; return kresli(t); }
     }
-    c.setTransform(1, 0, 0, 1, 0, 0);
+    V.w = S.w; V.h = S.h;
+    obrazHV = [K.b, V.x, V.y];
+    var o = naPohlad(V), n = kresli(t);
+    naPohlad(o);
+    obrazHV = null;
+    HV.u = K.n; HV.t = 0; HV.r = rozmer;
+    return n;
   }
 
   // ── Menovky: štáty, moria a mestá ────────────────────────────────────────
@@ -577,7 +678,7 @@
     predoslySnimok = t; poslednyCas = t; snimokC++;
     var zije = krokAnimacii(t, dt);
     var t0 = performance.now();
-    var dlazdic = kresli(t);
+    var dlazdic = HV && POD ? kresliHV(t) : kresli(t);
     var cas = performance.now() - t0;
     // Tri meškajúce snímky po sebe pri pohybe: prepni podklad na zásobné plátno.
     // Pol sekundy po načítaní dlaždice sa neráta: vtedy mešká rozbaľovanie dát, nie kreslenie.
@@ -591,18 +692,25 @@
   }
   function zivaAnimacia(t) { return !POKOJ && S.vyberOd && t - S.vyberOd < 240; }
 
+  var obrazHV = null;   // [obrázok čiar a mriežky z vlákna, x, y] počas kresliHV
   function kresli(t) {
+    var b = obrazHV;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.fillStyle = FARBY.more;
     ctx.fillRect(0, 0, S.w, S.h);
     var kusy = podklad();
     kresliPredane();
+    kresliUkazky();
     // Geografia nad vlastníctvom. Bez tohto poradia zmizne pri plnej mape mapa.
-    if (kusy) kresliHranice(ctx, pohlad(), kusy);
-    kresliMriezku();
+    if (b) ctx.drawImage(b[0], b[1], b[2]);
+    else {
+      if (kusy) kresliHranice(ctx, pohlad(), kusy);
+      kresliMriezku(ctx);
+    }
     kresliVyber(t);
     // Mená idú navrch: inak by meno mesta zmizlo pod predaným štvorcom, ktorý na ňom leží.
     if (kusy) kresliMena(ctx, pohlad(), kusy);
+    kresliStitkyUkazok();
     return kusy ? kusy.length : 0;
   }
 
@@ -750,6 +858,65 @@
     }
   }
 
+  // ── Ukážky: nikdy farba predaného, prerušovaný okraj, zďaleka krúžok, štítok pri každej veľkosti.
+  var ukazky = {}, ukazkyLi = null;
+  function ukazkaNaMape(id) {
+    var u = ukazky[id], s = u && stavBunky(u.r, u.c, parcely[id]);
+    return s === 'volna' || s === 'neznamy' ? u : null;
+  }
+  function kresliUkazky() {
+    ctx.strokeStyle = ctx.fillStyle = FARBY.ukazka;
+    ctx.lineWidth = Math.max(1, 1.5 * dpr);
+    ctx.setLineDash([4 * dpr, 3 * dpr]);
+    for (var id in ukazky) {
+      var u = ukazkaNaMape(id), g = u && geometriaBunky(u.r, u.c);
+      if (!g) continue;
+      ctx.beginPath();
+      if (g.w < 10 * dpr) ctx.arc(g.x + g.w / 2, g.y + g.h / 2, 5 * dpr, 0, 6.2832);
+      else {
+        if (u.img.complete && u.img.naturalWidth) {
+          ctx.imageSmoothingEnabled = false;
+          ctx.globalAlpha = 0.85;
+          ctx.drawImage(u.img, g.x, g.y, g.w, g.h);
+          ctx.globalAlpha = 1;
+        }
+        ctx.rect(g.x, g.y, g.w, g.h);
+      }
+      ctx.stroke();
+    }
+    ctx.setLineDash([]);
+  }
+  /**
+   * Štítok „Example by ARLing“ pri každej veľkosti: zďaleka vedľa krúžku, inak
+   * nad bunkou. Kreslí sa po menách miest, na tmavej podložke, aby ho nič neprekrylo;
+   * štítok, ktorý by padol na iný, sa vynechá (ten susedný povie to isté).
+   */
+  function kresliStitkyUkazok() {
+    var v = 11 * dpr, zabrate = [], w;
+    ctx.font = '600 ' + v + 'px ' + PISMO;
+    w = ctx.measureText(T.ukazkaStitok).width + 6 * dpr;
+    for (var id in ukazky) {
+      var u = ukazkaNaMape(id), g = u && geometriaBunky(u.r, u.c);
+      if (!g) continue;
+      var maly = g.w < 10 * dpr, x = maly ? g.x + g.w / 2 + 7 * dpr : g.x, y = maly ? g.y + g.h / 2 - v / 2 - 2 * dpr : g.y - v - 6 * dpr;
+      if (zabrate.some(function (z) { return Math.abs(z[0] - x) < w && Math.abs(z[1] - y) < v + 4 * dpr; })) continue;
+      zabrate.push([x, y]);
+      ctx.fillStyle = FARBY.more;
+      ctx.fillRect(x, y, w, v + 4 * dpr);
+      ctx.fillStyle = FARBY.ukazka;
+      ctx.fillText(T.ukazkaStitok, x + 3 * dpr, y + v);
+    }
+  }
+  /** Ťuk pri krúžku otvorí ukážku len pri celom svete (bunka pod 3 px), a to najbližšiu. */
+  function ukazkaPri(p) {
+    var naj, m = 12 * dpr;
+    for (var id in ukazky) {
+      var u = ukazkaNaMape(id), g = u && geometriaBunky(u.r, u.c), d = g && Math.max(Math.abs(g.x + g.w / 2 - p.x), Math.abs(g.y + g.h / 2 - p.y));
+      if (g && g.w < 3 * dpr && d < m) { m = d; naj = { r: u.r, c: u.c, id: +id }; }
+    }
+    return naj;
+  }
+
   function kresliStav(kluce, od, po, farba, lenMoje) {
     if (lenMoje && !mojePocet) return;
     ctx.fillStyle = farba;
@@ -799,7 +966,7 @@
    * Mriežka sa ukáže, až keď má bunka aspoň 6 px, a nabieha postupne: pri šiestich
    * pixeloch je sotva vidno, pri tridsiatich je zreteľná. Len viditeľné riadky.
    */
-  function kresliMriezku() {
+  function kresliMriezku(k, strop) {
     var yHore = naSvete(zYObr(0)), yDole = naSvete(zYObr(S.h));
     if (yHore <= yDole) return;
     // Len riadky, ktoré Mercator vie ukázať. Za 85. rovnobežkou má riadok pár buniek
@@ -811,27 +978,27 @@
     if (Math.max(360 / STL[rHore], 360 / STL[rDole]) * S.s < prah) return;
     var bunkaPx = bunkaVStrede() / dpr;
     var sila = bunkaPx < 6 ? 0.035 : bunkaPx < 30 ? 0.035 + ((bunkaPx - 6) / 24) * 0.075 : 0.16;
-    ctx.strokeStyle = FARBY.mriezka + sila.toFixed(3) + ')';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
+    k.strokeStyle = FARBY.mriezka + sila.toFixed(3) + ')';
+    k.lineWidth = 1;
+    k.beginPath();
     var useky = 0, predosly = false;
     for (var r = rHore; r <= rDole; r++) {
       var sirkaDeg = 360 / STL[r];
       if (sirkaDeg * S.s < prah) { predosly = false; continue; }
       var yh = Math.round(naY(doY(90 - r * RIADOK))) + 0.5;
       var yd = Math.round(naY(doY(90 - (r + 1) * RIADOK))) + 0.5;
-      if (!predosly) { ctx.moveTo(0, yh); ctx.lineTo(S.w, yh); }
-      ctx.moveTo(0, yd); ctx.lineTo(S.w, yd);
+      if (!predosly) { k.moveTo(0, yh); k.lineTo(S.w, yh); }
+      k.moveTo(0, yd); k.lineTo(S.w, yd);
       predosly = true;
       var prvy = Math.floor((zX(0) + 180) / sirkaDeg);
       var posledny = Math.ceil((zX(S.w) + 180) / sirkaDeg);
       for (var c = prvy; c <= posledny; c++) {
         var x = Math.round(naX(-180 + c * sirkaDeg)) + 0.5;
-        ctx.moveTo(x, yh); ctx.lineTo(x, yd);
-        if (++useky > 60000) { c = posledny; r = rDole; }
+        k.moveTo(x, yh); k.lineTo(x, yd);
+        if (++useky > (strop || 60000)) { c = posledny; r = rDole; }
       }
     }
-    ctx.stroke();
+    k.stroke();
   }
 
   /** Štvorce v košíku a obdĺžnik, ktorý sa práve ťahá so Shiftom. */
@@ -1124,7 +1291,7 @@
         priblizPlynule(p.x, p.y, 2);
       } else {
         poslednyTuk = { x: p.x, y: p.y, t: teraz };
-        var b = bunkaNa(p.x, p.y);
+        var b = (!kosikRezim && ukazkaPri(p)) || bunkaNa(p.x, p.y);
         // V režime košíka ťuknutie štvorec pridáva a odoberá, nie otvára.
         if (b && kosikRezim) prepniVKosiku(b.r, b.c);
         else if (b) vyber(b.r, b.c, false);
@@ -1487,8 +1654,15 @@
     // Rezervácia, ktorú drží tento prehliadač, nie je „niekto iný práve platí“.
     if (stav === 'rezervovana' && jeMojaRezervacia(id)) stav = 'volna';
     var cakam = cakaNaPotvrdenie(id) && stav !== 'predana' && stav !== 'zatvorena';
+    // Štvorec z platby, za ktorú práve prišiel kľúč do panela: tlačidlo na
+    // kreslenie je hlavné. Číslo je z ?p= (píše ho ktokoľvek), preto keď služba
+    // povie, že štvorec zaplatený nie je, „yours“ ani tlačidlo sa neukážu.
+    var mojPoPlatbe = !!(poPlatbe.panel && poPlatbe.stvorec === id
+      && (!p || p.status === 'paid' || p.status === 'hidden'));
+    var ex = stav === 'volna' && !cakam && !mojPoPlatbe && ((p && p.example) || ukazky[id]);
     var h = '<button class="list-zavri" type="button" data-akcia="zavri" aria-label="' + esc(T.zavriet) + '">×</button>';
     h += '<p class="list-cislo">' + esc(T.cislo) + ' ' + cisloText(id) + '</p>';
+    if (ex) h += ukazkaHlava(ex.title);
     // Každý stav má vlastnú vetu. More má meno mora, územie bez krajiny meno územia
     // a keď služba nevie nič, ostanú súradnice. Keď homelab nebeží, povie sa to
     // nahlas, netočí sa „zisťujem miesto“ donekonečna.
@@ -1497,6 +1671,7 @@
         : (S.sluzba === 'nedostupna' || zlyhane[id]) ? esc(T.miestoBezSluzby)
           : p ? '' : esc(T.miestoZistujem));
     h += '<p class="list-miesto">' + miesto + '</p>';
+    if (ex) h += '<img class="list-kresba" alt="' + esc(T.ukazkaKresbaAlt) + '" src="' + esc(ex.art_url) + '" width="88" height="88" decoding="async">' + ukazkaVety(ex.text);
     // Názvy polí sú tie, ktoré naozaj posiela app.py: art_url (hotová adresa
     // obrázka, nie stav kresby) a founder_no.
     if (p && p.art_url) h += '<img class="list-kresba" alt="' + esc(T.kresbaAlt) + '" src="' + esc(p.art_url) + '" width="88" height="88" loading="lazy" decoding="async">';
@@ -1507,11 +1682,6 @@
     if (p && p.founder_no) h += '<div><dt>' + esc(T.zakladatel) + '</dt><dd>' + esc(String(p.founder_no)) + ' / 100</dd></div>';
     h += '</dl>';
 
-    // Štvorec z platby, za ktorú práve prišiel kľúč do panela: tlačidlo na
-    // kreslenie je hlavné. Číslo je z ?p= (píše ho ktokoľvek), preto keď služba
-    // povie, že štvorec zaplatený nie je, „yours“ ani tlačidlo sa neukážu.
-    var mojPoPlatbe = !!(poPlatbe.panel && poPlatbe.stvorec === id
-      && (!p || p.status === 'paid' || p.status === 'hidden'));
     if (stav === 'predana' || mojPoPlatbe) {
       if (moje[id] || mojPoPlatbe) h += '<p class="list-moje">' + esc(T.jeVas) + '</p>';
       if (mojPoPlatbe) h += '<a class="btn btn-solid" href="' + esc(poPlatbe.panel) + '">' + esc(T.poPlatbeTlacidlo) + '</a>';
@@ -1548,7 +1718,7 @@
     list.hidden = false;
     prepocitajStred();
     if (!POKOJ) { list.classList.remove('prichadza'); void list.offsetWidth; list.classList.add('prichadza'); }
-    if (oznam) oznam.textContent = T.cislo + ' ' + cisloText(id) + '. ' + (p ? (p.city || p.area || p.country_name || '') : '') + ' ' + km(sirkaKm(r)) + ' × ' + km(vyskaKm(r)) + ' km.';
+    if (oznam) oznam.textContent = (ex ? T.ukazkaStitok + '. ' : '') + T.cislo + ' ' + cisloText(id) + '. ' + (p ? (p.city || p.area || p.country_name || '') : '') + ' ' + km(sirkaKm(r)) + ' × ' + km(vyskaKm(r)) + ' km.';
   }
 
   /**
@@ -1748,6 +1918,7 @@
       // ktorý v tejto karte prežil obnovenie stránky.
       if (!navratZPokladne && !poPlatbe.panel) skryPas();
       nacitajStav();
+      nacitajUkazky();
       nacitajVrstvu();
       nacitajMoje();
       naplanujBloky();
@@ -1840,6 +2011,34 @@
     }).catch(function () {});
   }
 
+  /** Ukážky nie sú v state.json, takže ich počítadlo predaných nevidí. */
+  function nacitajUkazky() {
+    api('/api/examples.json').then(function (d) {
+      var nove = {}, n = 0;
+      ((d && d.examples) || []).forEach(function (x) {
+        var b = zCisla(Number(x.id)), s = ukazky[x.id];
+        if (!b || !/^data:image\/png;base64,/.test(x.png)) return;
+        var img = s && s.art_url === x.png ? s.img : new Image();
+        if (!img.src) { img.onload = ziadaj; img.src = x.png; }
+        nove[x.id] = { r: b.r, c: b.c, title: x.title, text: x.text, art_url: x.png, img: img };
+        n++;
+      });
+      // List sa prestaví len vtedy, keď sa zmenila ukážka práve vybraného štvorca:
+      // inak by minútové obnovenie znova hralo animáciu, hlásilo čítačke a bralo fokus.
+      var k = S.vybrana && S.vybrana.id, a = ukazky[k], z = nove[k];
+      ukazky = nove;
+      var leg = koren.querySelector('.legenda');
+      if (n && leg && !ukazkyLi) {
+        ukazkyLi = leg.appendChild(document.createElement('li'));
+        ukazkyLi.className = 'l-ukazka';
+        ukazkyLi.textContent = T.legendaUkazka;
+      }
+      if (ukazkyLi) ukazkyLi.hidden = !n;
+      ziadaj();
+      if ((a && a.art_url + a.title + a.text) !== (z && z.art_url + z.title + z.text)) obnovList();
+    }).catch(function () {});
+  }
+
   function nacitajVrstvu() {
     if (S.sluzba !== 'bezi') return;
     fetch(API + '/api/overlay.png', { cache: 'default' })
@@ -1929,7 +2128,7 @@
   function naplanujBloky() { clearTimeout(blokyTimer); blokyTimer = setTimeout(dopytajBloky, 220); }
   setInterval(function () {
     if (document.hidden || S.sluzba !== 'bezi') return;
-    nacitajVrstvu(); nacitajStav();
+    nacitajVrstvu(); nacitajStav(); nacitajUkazky();
     // Bloky si služba drží minútu; po nej sa tie viditeľné vypýtajú znova, aby
     // štvorec, ktorý medzitým niekto kúpil, neostal na mape voľný do obnovenia stránky.
     for (var k in bloky) bloky[k].stare = true;
@@ -2419,9 +2618,10 @@
     var lat = stredRiadku(b.r), lon = -180 + ((b.c + 0.5) * 360) / STL[b.r];
     // Chýbajúce meno miesta je chýbajúce meno miesta, nie stav predaja.
     function vykresli(p, bezSluzby) {
+      var ex = p && p.example && !/paid|hidden/.test(p.status) ? p.example : null, obr = ex ? ex.art_url : p && p.art_url;
       var h = '<div class="parcela-hlava">';
-      h += p && p.art_url ? '<img src="' + esc(p.art_url) + '" width="128" height="128" decoding="async" alt="' + esc(T.kresbaAlt) + '">' : '';
-      h += '<div><p class="list-cislo">' + esc(T.cislo) + ' ' + cisloText(id) + '</p>';
+      h += obr ? '<img src="' + esc(obr) + '" width="128" height="128" decoding="async" alt="' + esc(ex ? T.ukazkaKresbaAlt : T.kresbaAlt) + '">' : '';
+      h += '<div><p class="list-cislo">' + esc(T.cislo) + ' ' + cisloText(id) + '</p>' + (ex ? ukazkaHlava(ex.title, ex.label) : '');
       h += '<p class="list-miesto">' + (miestoHtml(p) || esc(p || bezSluzby ? T.miestoBezSluzby : T.miestoZistujem)) + '</p></div></div>';
       h += '<dl class="list-udaje">';
       h += '<div><dt>' + esc(T.suradnice) + '</dt><dd>' + esc(stupne(lat, lon)) + '</dd></div>';
@@ -2429,6 +2629,7 @@
       if (p && p.name) h += '<div><dt>' + esc(T.meno) + '</dt><dd>' + esc(p.name) + '</dd></div>';
       if (p && p.founder_no) h += '<div><dt>' + esc(T.zakladatel) + '</dt><dd>' + esc(String(p.founder_no)) + ' / 100</dd></div>';
       h += '</dl>';
+      if (ex) h += ukazkaVety(ex.text);
       if (p && p.link) h += '<p><a rel="nofollow ugc noopener noreferrer" target="_blank" href="' + esc(p.link) + '">' + esc(T.otvorOdkaz) + '</a></p>';
       h += '<p><a class="btn btn-solid" href="' + esc(CESTA_MAPY + '?p=' + id) + '">' + esc(T.doMapy) + '</a></p>';
       koren.innerHTML = h;

@@ -171,7 +171,7 @@
     if (nalez('odstupenie')) {
       box.appendChild(el('p', 'fineprint', 'Funkciu na odstúpenie od zmluvy balík GDPR nerieši, tá patrí do samotného e-shopu. Ak ho máte na platforme, pozrite sa najprv, či ju už nepripravila; inak ju doplní ten, kto vám e-shop spravuje.'));
     }
-    box.appendChild(el('p', 'fineprint', 'Predávajúci: ARLing s. r. o., IČO 56583486, Bratislava. Platbu spracuje Stripe. Dokumenty sú vzory vyplnené vašimi údajmi, nie právne poradenstvo.'));
+    box.appendChild(el('p', 'fineprint', 'Obsah a podporu zabezpečuje ARLing s. r. o., IČO 56583486, Bratislava. Predajcom pri platbe je Link (Sold through Link, LLC) cez Stripe, ktorý vám pošle doklad. Dokumenty sú vzory vyplnené vašimi údajmi, nie právne poradenstvo.'));
     return box;
   }
 

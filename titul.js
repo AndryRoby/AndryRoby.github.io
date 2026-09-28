@@ -140,10 +140,19 @@ export function platnyOdkaz(url) {
   return /^https:\/\/buy\.stripe\.com\//.test(u) ? u : '';
 }
 
+/** Kam vedie tlacidlo kupy (data-link, data-link-test). V teste len test_ odkaz, nikdy zivy. */
+export function odkazTlacidla(dataset, test) {
+  const d = dataset || {};
+  const u = platnyOdkaz(test ? d.linkTest : d.link);
+  if (test && !/^https:\/\/buy\.stripe\.com\/test_/.test(u)) return '';
+  return u;
+}
+
 /* Reklama (26. 9. 2026, rovnaky vzor ako sepa-pain001-doctor): UTM z prichodu sa ulozia do
  * sessionStorage a pri kupe idu do odkazu Stripe ako utm_* a client_reference_id
  * (gads_<kampan>_<obsah>), aby sa platba dala priradit kampani. Licencna sluzba pri tituloch
- * client_reference_id nepouziva (app.py ho cita len pri Asistentovi a Feed Monitore).
+ * cita z client_reference_id len predponu ig_<postava>_ (e-mail postavy, tituly.py), gads_ nie.
+ * Aktualne UTM z adresy maju prednost pred ulozenymi (STAV-57).
  * Len pismena, cislice, _ a -; bez UTM sa odkaz nemeni. */
 const UTM_KLUC = 'arling_utm';
 const UTM_POLIA = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'];
@@ -157,12 +166,28 @@ export function utmZAdresy(adresa) {
   return u;
 }
 
-export function sOdkazomReklamy(odkaz, u) {
-  if (!odkaz || !u || !u.utm_campaign) return odkaz;
+/* Obchody postav (STAV-57, posudok ops/ai/kontrola/2026-09-28-stranky-postav-jednoduche.md, nalez P2):
+ * odkaz z detailu na arling.sk/walt|june|olive/ vedie sem s ?postava=<postava>. Kupa potom dostane
+ * client_reference_id ig_<postava>_<titul>, podla ktoreho licencna sluzba (tituly.py) vyberie e-mail
+ * postavy. Instagram bez postavy nedostane gads_ (to je len Google Ads). */
+const POSTAVA_KLUC = 'arling_postava';
+export const POSTAVY = ['walt', 'june', 'olive'];
+
+export function postavaZAdresy(adresa) {
+  try { const p = new URL(adresa).searchParams.get('postava') || ''; return POSTAVY.includes(p) ? p : ''; } catch (e) { return ''; }
+}
+
+export function sOdkazomReklamy(odkaz, u, { postava = '', titul = '' } = {}) {
+  const utm = u && typeof u === 'object' ? u : {};
+  const ig = POSTAVY.includes(postava) && /^[a-z0-9-]+$/.test(titul);
+  if (!odkaz || (!utm.utm_campaign && !ig)) return odkaz;
   try {
     const url = new URL(odkaz);
-    for (const k of Object.keys(u)) url.searchParams.set(k, u[k]);
-    url.searchParams.set('client_reference_id', ('gads_' + u.utm_campaign + (u.utm_content ? '_' + u.utm_content : '')).replace(/[^A-Za-z0-9_-]/g, '').slice(0, 150));
+    for (const k of UTM_POLIA) if (utm[k]) url.searchParams.set(k, utm[k]);
+    let ref = '';
+    if (ig) ref = 'ig_' + postava + '_' + titul;
+    else if (!/^(ig|instagram)$/i.test(utm.utm_source || '')) ref = 'gads_' + utm.utm_campaign + (utm.utm_content ? '_' + utm.utm_content : '');
+    if (ref) url.searchParams.set('client_reference_id', ref.replace(/[^A-Za-z0-9_-]/g, '').slice(0, 150));
     return url.toString();
   } catch (e) { return odkaz; }
 }
@@ -170,12 +195,33 @@ export function sOdkazomReklamy(odkaz, u) {
 function zapamatajUtm() {
   try {
     const u = utmZAdresy(location.href);
-    if (Object.keys(u).length) sessionStorage.setItem(UTM_KLUC, JSON.stringify(u));
+    if (Object.keys(u).length) {
+      // Keď zápis novej kampane zlyhá, stará kampaň sa zmaže, aby ďalšia stránka nepripísala nákup starej
+      // (brána 28. 9., ops/ai/kontrola/2026-09-28-stranky-postav-bez-pamate.md).
+      try { sessionStorage.setItem(UTM_KLUC, JSON.stringify(u)); }
+      catch (e) { try { sessionStorage.removeItem(UTM_KLUC); } catch (e2) { /* uloziste nefunguje, nic sa neobnovi */ } }
+    }
+    // Postava sa od 28. 9. neukladá (brána pokus 3: pri zlyhaní zápisu ostávala stará postava a kradla atribúciu);
+    // nesie ju len adresa (?postava= z odkazov stránky postavy). Starý záznam sa pri prvej príležitosti zmaže.
+    sessionStorage.removeItem(POSTAVA_KLUC);
   } catch (e) { /* bez uloziska sa kampan nepriradi, platba ide normalne */ }
 }
 
 function ulozeneUtm() {
   try { return JSON.parse(sessionStorage.getItem(UTM_KLUC) || 'null'); } catch (e) { return null; }
+}
+
+/** Prichod tejto navstevy: UTM a postava z aktualnej adresy, uloziste len ked v adrese nie su. */
+export function prichod(adresa, ulozene = {}) {
+  const u = utmZAdresy(adresa);
+  // Postava len z adresy, nikdy z úložiska (brány 28. 9., ops/ai/kontrola/2026-09-28-stranky-postav-pokus2.md
+  // a -pokus3.md): uložená postava vedela prepísať neskoršiu kampaň, aj keď zlyhal zápis do úložiska.
+  const postava = postavaZAdresy(adresa);
+  return { utm: Object.keys(u).length ? u : (ulozene.utm && typeof ulozene.utm === 'object' ? ulozene.utm : {}), postava };
+}
+
+function ulozenyPrichod() {
+  return { utm: ulozeneUtm(), postava: '' };
 }
 
 /** Titul z navratovej adresy sa prijme len vtedy, ked patri tejto stranke. */
@@ -205,7 +251,10 @@ export function velkostSuboru(bytes) {
 export function platnaAdresaSuboru(url) {
   const u = String(url || '').trim();
   if (!u) return '';
-  if (/^https:\/\/(api\.arling\.workers\.dev|arling\.sk)\//.test(u)) return u;
+  // files.arling.workers.dev: od 27. 9. 2026 dáva licenčná služba odkazy na sťahovanie cez tento Worker
+  // (ops/workers/files, DOWNLOAD_BASE). Bez neho panel po platbe hlásil „odkazy sa nenačítali“ (paper v3 pokus 4,
+  // integračný testovací nákup detektívnej sady).
+  if (/^https:\/\/(api\.arling\.workers\.dev|files\.arling\.workers\.dev|arling\.sk)\//.test(u)) return u;
   if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(u)) return '';
   if (u.startsWith('//')) return '';
   return u;
@@ -402,16 +451,72 @@ export function nacitajUdaje(doc) {
   try { return JSON.parse(el.textContent || '{}'); } catch (e) { return null; }
 }
 
-/** Je tento prehliadac v testovom rezime Stripe? ?test=1 ho zapne na reláciu. */
+/**
+ * Je tento prehliadac v testovom rezime Stripe? ?test=1 ho zapne na reláciu.
+ * STAV-52 (posudok obchodov postav pokus 2, nalez 1): rozhoduje adresa, uloziste rezim len drzi
+ * medzi strankami. Predtym vynimka zo sessionStorage (sukromne okno, zakazane uloziste) vratila
+ * false aj pri vyslovnom ?test=1 a tlacidlo potom vybralo zivy odkaz.
+ */
+export function testRezimZ(adresa, store) {
+  let q = '';
+  try { q = new URL(String(adresa || '')).searchParams.get('test') || ''; } catch (e) { q = ''; }
+  if (q === '1') { bezpecneUloz(store, KLUC_TEST, '1'); return true; }
+  return bezpecneNacitaj(store, KLUC_TEST) === '1';
+}
+
+function trvaleUloziste() {
+  // Rovnako ako pri sessionStorage: zakazane uloziste vyhodi uz pri citani window.localStorage.
+  try { return typeof localStorage === 'undefined' ? null : localStorage; } catch (e) { return null; }
+}
+
+function relacneUloziste() {
+  // Uz samotne citanie window.sessionStorage vyhodi SecurityError, ked prehliadac uloziste zakaze.
+  try { return typeof sessionStorage === 'undefined' ? null : sessionStorage; } catch (e) { return null; }
+}
+
 export function testRezim() {
-  try {
-    if (new URL(location.href).searchParams.get('test') === '1') sessionStorage.setItem(KLUC_TEST, '1');
-    return sessionStorage.getItem(KLUC_TEST) === '1';
-  } catch (e) { return false; }
+  return testRezimZ(typeof location === 'undefined' ? '' : location.href, relacneUloziste());
+}
+
+/** Odkaz, ktory v testovom rezime nesmie viest nikam: zivy Stripe (nie test_) a kazdy Etsy. */
+export function zivaPlatba(href) {
+  const u = String(href || '').trim();
+  if (/^https:\/\/buy\.stripe\.com\//i.test(u)) return !/^https:\/\/buy\.stripe\.com\/test_/.test(u);
+  return /^https?:\/\/([a-z0-9-]+\.)*etsy\.com(\/|$)/i.test(u);
+}
+
+export const TEST_VYPNUTE = 'Switched off in test mode: this leads to a real payment.';
+
+/**
+ * V testovom rezime vypne kazdy odkaz na stranke, ktory by viedol na zivu platbu (napr. "Or on Etsy"):
+ * bez href, aria-disabled a klik sa zastavi aj keby href niekto vratil. Vracia pocet vypnutych.
+ */
+export function vypniZivePlatby(doc) {
+  const d = doc || doklad();
+  if (!d) return 0;
+  let n = 0;
+  for (const a of d.querySelectorAll('a[href]')) {
+    if (!zivaPlatba(a.getAttribute('href'))) continue;
+    a.removeAttribute('href');
+    a.setAttribute('aria-disabled', 'true');
+    a.setAttribute('title', TEST_VYPNUTE);
+    a.dataset.testVypnute = '1';
+    // viditelne aj bez stylu (CSP stranok nepovoli vlozeny styl): odkaz uz nevyzera ako cesta dalej
+    if (typeof a.textContent === 'string' && !/test mode\)$/.test(a.textContent.trim())) a.textContent = a.textContent.trim() + ' (switched off in test mode)';
+    n++;
+  }
+  if (!d.__testStraz && typeof d.addEventListener === 'function') {
+    d.__testStraz = true;
+    d.addEventListener('click', (e) => {
+      const a = e.target && typeof e.target.closest === 'function' ? e.target.closest('a') : null;
+      if (a && (a.dataset.testVypnute === '1' || zivaPlatba(a.getAttribute('href')))) e.preventDefault();
+    }, true);
+  }
+  return n;
 }
 
 export function odomknute() {
-  return stavZoZaznamu(bezpecneNacitaj(typeof localStorage === 'undefined' ? null : localStorage, KLUC_ODOMKNUTE));
+  return stavZoZaznamu(bezpecneNacitaj(trvaleUloziste(), KLUC_ODOMKNUTE));
 }
 
 export function jeOdomknuty(id) {
@@ -428,7 +533,7 @@ export function odomkni(id, jeTest, sid) {
   if (sid) s.sessions[id] = String(sid);
   if (jeTest) s.test = true;
   s.t = Date.now();
-  bezpecneUloz(typeof localStorage === 'undefined' ? null : localStorage, KLUC_ODOMKNUTE, JSON.stringify(s));
+  bezpecneUloz(trvaleUloziste(), KLUC_ODOMKNUTE, JSON.stringify(s));
 }
 
 /** Ukazka pri tlacidle kupy, aby sa dala po platbe zopakovat ako tichy odkaz. */
@@ -492,6 +597,7 @@ export function nastav(volby = {}) {
   const stavEl = volby.stav || document.getElementById('stav-platby');
   const blok = volby.blokSuborov || document.getElementById('subory-hotovo');
   const test = testRezim();
+  if (test) vypniZivePlatby(document);
 
   const odznak = document.getElementById('test-odznak');
   if (odznak) {
@@ -519,16 +625,18 @@ export function nastav(volby = {}) {
     if (!panelHotovy) panel(sessionTitulu(data.titul), odomknute().test);
   }
 
+  // pred poNavrate, ktory z adresy zmaze dotaz
+  const odkial = prichod(typeof location === 'undefined' ? '' : location.href, ulozenyPrichod());
   zapamatajUtm();
   for (const btn of document.querySelectorAll('[data-titul]')) {
     btn.addEventListener('click', () => {
       track('kupa_click', { titul: btn.dataset.titul, cena: cena, produkt: data.produkt || data.titul });
-      const u = platnyOdkaz(test ? btn.dataset.linkTest : btn.dataset.link);
+      const u = odkazTlacidla(btn.dataset, test);
       if (!u) {
         if (stavEl) { stavEl.textContent = test ? T.testChyba : T.zapina; stavEl.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
         return;
       }
-      location.href = sOdkazomReklamy(u, ulozeneUtm());
+      location.href = sOdkazomReklamy(u, odkial.utm, { postava: odkial.postava, titul: btn.dataset.titul });
     });
   }
   for (const a of document.querySelectorAll('a[data-ukazka]')) {
@@ -555,7 +663,7 @@ export function nastav(volby = {}) {
     const v = posudPlatbu(st, cena);
     if (v.stav === 'zaplatene') {
       odomkni(data.titul, v.test, sid);
-      bezpecneZabudni(typeof localStorage === 'undefined' ? null : localStorage, KLUC_CAKAJUCA);
+      bezpecneZabudni(trvaleUloziste(), KLUC_CAKAJUCA);
       // Panel povie "Paid, thank you" sam a nahlas, riadok stavu uz nema co dodat.
       if (stavEl) { stavEl.textContent = ''; stavEl.innerHTML = ''; }
       track('zaplatene', { titul: data.titul, test: !!v.test, produkt: data.produkt || data.titul });
@@ -566,13 +674,13 @@ export function nastav(volby = {}) {
       return true;
     }
     if (v.stav === 'inaSuma') {
-      bezpecneZabudni(typeof localStorage === 'undefined' ? null : localStorage, KLUC_CAKAJUCA);
+      bezpecneZabudni(trvaleUloziste(), KLUC_CAKAJUCA);
       if (stavEl) stavEl.textContent = T.inaSuma;
       return false;
     }
     // Stripe odpovedal, ze zaplatene nie je, alebo neodpovedal. Payment link
     // vracia spat az po uspesnej platbe, takze je to skoro vzdy oneskorenie.
-    bezpecneUloz(typeof localStorage === 'undefined' ? null : localStorage, KLUC_CAKAJUCA, JSON.stringify({ session: sid, titul: data.titul, test: test, t: Date.now() }));
+    bezpecneUloz(trvaleUloziste(), KLUC_CAKAJUCA, JSON.stringify({ session: sid, titul: data.titul, test: test, t: Date.now() }));
     if (stavEl) {
       stavEl.innerHTML = T.nepotvrdene + ' <button type="button" class="btn btn-line" id="over-znova">' + T.overZnova + '</button>';
       const b = document.getElementById('over-znova');
@@ -595,7 +703,7 @@ export function nastav(volby = {}) {
     // Ked v adrese stoji cudzi titul, je to rucne upravena adresa a nic sa neodomyka.
     if (cudziTitul) return;
     if (!sid) {
-      const c = bezpecneNacitaj(typeof localStorage === 'undefined' ? null : localStorage, KLUC_CAKAJUCA);
+      const c = bezpecneNacitaj(trvaleUloziste(), KLUC_CAKAJUCA);
       let z = null;
       try { z = c ? JSON.parse(c) : null; } catch (e) { z = null; }
       if (z && z.session && z.titul === data.titul && !jeOdomknuty(data.titul)) sid = z.session;

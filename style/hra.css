@@ -18,16 +18,13 @@ header{padding-top:env(safe-area-inset-top,0px)}
 .pauza-blok[hidden]{display:none}
 .pauza-blok p{margin:0;color:var(--body);font-size:15px;line-height:1.5}
 .pauza-blok b{color:var(--ink)}
-.doska.hotovo{border-color:var(--ok);box-shadow:0 0 0 4px rgba(94,207,154,.14)}
+.doska.hotovo{border-color:var(--ok);box-shadow:none}
 .stav{font-family:var(--ui);font-size:15px;line-height:1.5;color:var(--body);margin:12px 0 0;min-height:1.5em}
 .stav b{color:var(--ink)}
 .stav.ok{color:var(--ok)}
 .oslava-streak{display:block;margin-top:8px;font-family:var(--ui);font-size:13px;color:var(--body)}
 .oslava-dalej{display:block;margin-top:6px;font-family:var(--ui);font-size:13px}
 .oslava-dalej a{color:var(--accent-light)}
-.oslava-pulz{animation:oslava-pulz .3s ease}
-@keyframes oslava-pulz{0%{transform:scale(1)}50%{transform:scale(1.02)}100%{transform:scale(1)}}
-@media (prefers-reduced-motion:reduce){ .oslava-pulz{animation:none} }
 .pasik{display:flex;gap:6px;margin-top:14px}
 .den small{font-size:10px;letter-spacing:.08em}
 .den b{font-size:15px;color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
@@ -211,4 +208,84 @@ body.hra-ui .hu-telo .hu-odkaz{margin:18px 0 0;padding-top:14px;border-top:1px s
 }
 @keyframes hu-panel{from{transform:translateY(28px);opacity:0}to{transform:none;opacity:1}}
 @keyframes hu-tien{from{opacity:0}to{opacity:1}}
+
+/* ── Moment vyriešenia a karta (M-plán A, M1) ─────────────────────────────
+   27. 9. 2026: ops/games/VYLEPSENIA-HIER-2026-09-27.md časť 3.5 a 6,
+   špecifikácia ops/games/denne-karta/SPEC.md. Triedy dáva /games/oslava.js
+   (vlna po doske, nie po celej stránke) a /games/karta.js (náhľad karty).
+   Rámik vyriešenej dosky ide na --ok za 120 ms, bez žiary. Každá značka sa
+   zafarbí vo svojom čase (--oslava-d, keď ju čelo atramentu minie) a raz
+   dosadne: mierka 1 na 1,15 na 1 z pružiny press, zastávky počíta
+   krivkaDosadnutia() v oslava.js a test ops/games/oslava.test.mjs ich
+   porovnáva s týmto súborom. Hýbe sa len scale; nič nerozmazáva ani nežiari.
+   Tlačidlá majú 48 px na dotyk (latka hier ARLing). */
+body.hra-ui .ovladanie .btn{min-height:48px}
+body.hra-ui .zdielanie .btn{min-height:48px}
+body.hra-ui .doska.oslava-vlna{transition:border-color 120ms linear}
+body.hra-ui .doska.oslava-vlna *,body.hra-ui .doska.oslava-vlna *::before,body.hra-ui .doska.oslava-vlna *::after{
+  transition-property:background-color,color,fill,stroke,fill-opacity,stroke-opacity,opacity,border-color,visibility;
+  transition-duration:0s;transition-timing-function:linear;transition-delay:var(--oslava-d,0ms)}
+body.hra-ui .doska.oslava-vlna .oslava-z,body.hra-ui .doska.oslava-vlna .oslava-za::after{
+  animation:oslava-dosadni var(--oslava-t,240ms) linear var(--oslava-d,0ms) both}
+body.hra-ui .doska.oslava-vlna .oslava-z{transform-box:fill-box;transform-origin:center}
+@keyframes oslava-dosadni{0%{scale:1}5%{scale:1.0168}10%{scale:1.0509}15%{scale:1.0874}20%{scale:1.1196}25%{scale:1.1452}30%{scale:1.1474}35%{scale:1.1267}40%{scale:1.0992}45%{scale:1.0729}50%{scale:1.0509}55%{scale:1.034}60%{scale:1.0218}65%{scale:1.0133}70%{scale:1.0077}75%{scale:1.0042}80%{scale:1.0021}85%{scale:1.0009}90%{scale:1.0002}95%{scale:0.9999}100%{scale:1}}
+@media (prefers-reduced-motion:reduce){
+  body.hra-ui .doska.oslava-vlna .oslava-z,body.hra-ui .doska.oslava-vlna .oslava-za::after{animation:none}
+}
+/* Čas vo vete výsledku sa dopočítava; konečný čas je hneď vedľa, len pre čítačku. */
+body.hra-ui .oslava-pocet{font-variant-numeric:tabular-nums}
+body.hra-ui .oslava-sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
+
+/* Po vyriešení (kolo 2, ops/games/denne-karta/KONTROLA-1.md nález 2): karta
+   pod vetou býva pod okrajom okna a Undo, Redo, Clear, Hint a Check v
+   prilepenej lište už nič nerobia. Lišta (trieda karta-lista, dáva ju
+   /games/karta.js) preto ukáže len Share s malou kartou, v dosahu palca.
+   Riadok lišty ostane rovnako vysoký, takže doska sa nepohne. Share príde s
+   kartou o 900 ms; pružinu kreslí oslava.js cez inline transform, preto tu
+   nemá prechod na transform a žiaru pri hover (tlačidlá stránky ju majú).
+   --hra-karta hovorí karta.js, že tento súbor je nový (inak lištu nemení). */
+body.hra-ui{--hra-karta:1}
+body.hra-ui .ovladanie.karta-lista > .btn:not(.karta-zdielaj){display:none}
+/* V momente mŕtve tlačidlá najprv odídu: priehľadnosť pružinou exit z
+   motion/src/core.js (cssEasing, 398 ms do úplného pokoja, 95 % za 150 ms),
+   o 200 ms dá karta.js triedu karta-lista a zmiznú z riadku. Share medzitým
+   v riadku nie je, takže sa lišta nezalomí (kontrola 2, nález 13). Test
+   ops/games/hra-ui.test.mjs 8c porovnáva krivku s core.js. Prehliadač bez
+   linear() (Safari pred 17.2) vezme prvý riadok, ease-out 150 ms. */
+body.hra-ui .ovladanie.karta-odchod > .btn:not(.karta-zdielaj){opacity:0;pointer-events:none;
+  transition:opacity 150ms ease-out;
+  transition:opacity 398ms linear(0 0%, 0.2798 8.3%, 0.6164 16.7%, 0.819 25%, 0.92 33.3%, 0.9661 41.7%, 0.986 50%, 0.9944 58.3%, 0.9978 66.7%, 0.9991 75%, 0.9997 83.3%, 0.9999 91.7%, 1 100%)}
+body.hra-ui .ovladanie.karta-odchod > .btn.karta-zdielaj{display:none}
+@media (prefers-reduced-motion:reduce){
+  body.hra-ui .ovladanie.karta-odchod > .btn:not(.karta-zdielaj){transition:none}
+}
+body.hra-ui .ovladanie > .btn.karta-zdielaj{gap:10px;justify-content:center;box-shadow:none;transition:background-color .18s var(--ease)}
+body.hra-ui .ovladanie > .btn.karta-zdielaj:hover{box-shadow:none}
+body.hra-ui .karta-mini{display:block;flex:none;width:24px;height:30px;border-radius:3px;background:#faf9f5;border:1px solid rgba(26,13,7,.3)}
+
+/* Náhľad karty: papierová karta (svetlá, ako výstrižok) pod vetou výsledku.
+   Rodina hier so Share pod vetou výsledku má blok .zdielanie (Share z neho
+   po vyriešení prejde do lišty, blok dostane karta-bez-share), ostatné
+   (Share v lište) dostanú .karta-blok pod #stav. Ťuk na náhľad zdieľa ako
+   Share; klávesnica a čítačka majú len Share (náhľad nie je tlačidlo). Šírku
+   berie inline štýl z --karta-w, aby ju mal náhľad aj so starým hra.css. */
+body.hra-ui .zdielanie.s-kartou,body.hra-ui .karta-blok{display:grid;grid-template-columns:auto minmax(0,1fr);
+  column-gap:16px;row-gap:8px;align-items:center;margin-top:16px}
+body.hra-ui .zdielanie.s-kartou[hidden],body.hra-ui .karta-blok[hidden]{display:none}
+body.hra-ui .zdielanie.s-kartou > .karta-nahlad{grid-row:1 / span 2}
+body.hra-ui .zdielanie.s-kartou.karta-bez-share > .karta-nahlad{grid-row:auto}
+body.hra-ui .zdielanie.s-kartou > .btn{justify-self:start;align-self:end}
+body.hra-ui .zdielanie.s-kartou > span{align-self:start;min-width:0}
+body.hra-ui .zdielanie.s-kartou.karta-bez-share > span{align-self:center}
+body.hra-ui .zdielanie.s-kartou > textarea,body.hra-ui .karta-blok > textarea{grid-column:1 / -1}
+body.hra-ui .karta-blok > textarea{width:100%;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--body);
+  font:12px/1.5 var(--ui);padding:8px 10px;resize:vertical}
+body.hra-ui .karta-blok .karta-popis{margin:0;max-width:none;font:13px/1.45 var(--ui);color:var(--muted)}
+body.hra-ui .karta-nahlad{--karta-w:112px;display:block;width:var(--karta-w);aspect-ratio:4 / 5;margin:0;padding:0;
+  border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#faf9f5;cursor:pointer;touch-action:manipulation}
+body.hra-ui .karta-nahlad canvas{display:block;width:100%;height:100%}
+body.hra-ui .karta-nahlad:hover{border-color:var(--ink)}
+@media (min-width:700px){
+  body.hra-ui .karta-nahlad{--karta-w:128px}
+}
 

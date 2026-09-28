@@ -1,7 +1,7 @@
 /* Technológie webov / Stacklog: jediný skript stránky.
  *
  * Pravidlá, ktoré tento súbor drží:
- *   - žiadny vložený skript, žiadna knižnica, žiadna cudzia doména okrem homelabu,
+ *   - žiadny vložený skript, žiadna knižnica, žiadna cudzia doména okrem api.arling.workers.dev,
  *   - každý reťazec z odpovede prejde cez esc() skôr, než sa dostane do HTML,
  *   - texty sú v <script type="application/json" id="th-txt">, aby preklad ostal
  *     v ops/technologie/data.mjs a skript bol pre oba jazyky jeden,
@@ -59,6 +59,44 @@
      ako útok, len ako nezmysel, ale nezmysel na stránke je tiež chyba. */
   function zo(slovnik, kluc, ak) {
     return (slovnik && Object.prototype.hasOwnProperty.call(slovnik, kluc)) ? slovnik[kluc] : ak;
+  }
+
+  /* ── Vety zo služby v jazyku stránky ──────────────────────────────────────
+     Služba píše dôvod pri každej kontrole a poznámky po anglicky. Na anglickej
+     stránke ostanú tak, ako prišli. Inde ich preložíme podľa kódu kontroly a stavu
+     (C.preco["https:pass"] = [[vzor, veta], …]) a hodnoty z vety (počet dní, kód
+     odpovede) prenesieme. Vetu, ktorú nepoznáme, ukážeme po anglicky s lang="en":
+     radšej pravdivá cudzia veta než vymyslená naša. Zoznam viet je v
+     ops/technologie/data.mjs a test ho porovná s vetami v službe. */
+  function tvar(n, tvary) {
+    var f = String(tvary).split('|');
+    n = Math.abs(n);
+    if (n === 1) return f[0];
+    if (f.length > 2 && n >= 2 && n <= 4 && n % 1 === 0) return f[1];
+    return f[f.length - 1];
+  }
+  function vyplnVetu(sablona, m) {
+    return String(sablona).replace(/\{(\d)(?::([^}]*))?\}/g, function (cela, k, tvary) {
+      var v = m[+k];
+      if (v == null) return '';
+      if (tvary) return tvar(parseFloat(v), tvary);
+      return zo(C.hodnoty, v, v);
+    });
+  }
+  function preloz(vzory, veta) {
+    if (LANG === 'en' || !vzory || typeof veta !== 'string') return null;
+    for (var i = 0; i < vzory.length; i++) {
+      var m = null;
+      try { m = new RegExp(vzory[i][0]).exec(veta); } catch (e) { m = null; }
+      if (m) return vyplnVetu(vzory[i][1], m);
+    }
+    return null;
+  }
+  /* Hotové HTML jednej vety: preložená, alebo pôvodná so značkou jazyka. */
+  function vetaSluzby(vzory, veta) {
+    var p = preloz(vzory, veta);
+    if (p != null) return esc(p);
+    return LANG === 'en' ? esc(veta) : '<span lang="en">' + esc(veta) + '</span>';
   }
   function krivka(body, smer) {
     if (!body || body.length < 2) return '';
@@ -170,13 +208,16 @@
       h.push('<div class="th-rail"><h3>' + esc(T.hygiena) + ' <span class="th-istota">' + cislo(hy.passed) + '/' + cislo(hy.total) + '</span></h3><ul>');
       hy.checks.forEach(function (c) {
         h.push('<li><span class="co">' + esc(zo(C.hyg, c.id, null) || c.id) + '</span><span class="stav ' + esc(c.state || '') + '">' +
-          esc(zo(T, c.state, null) || c.state || '') + '</span>' + (c.why ? '<p class="preco">' + esc(c.why) + '</p>' : '') + '</li>');
+          esc(zo(T, c.state, null) || c.state || '') + '</span>' +
+          (c.why ? '<p class="preco">' + vetaSluzby(zo(C.preco, c.id + ':' + c.state, null), c.why) + '</p>' : '') + '</li>');
       });
       h.push('</ul></div>');
     }
     h.push('</div></div>');
 
-    if (r.notes && r.notes.length) h.push('<p class="th-stav-riadok">' + esc(r.notes.join(' ')) + '</p>');
+    if (r.notes && r.notes.length) {
+      h.push('<p class="th-stav-riadok">' + r.notes.map(function (n) { return vetaSluzby(C.pozn, String(n)); }).join(' ') + '</p>');
+    }
     if (r.quota && typeof r.quota.remaining === 'number') {
       h.push('<p class="th-stav-riadok">' + esc(mnozne(r.quota.remaining).replace('{n}', cislo(r.quota.remaining))) + '</p>');
     }
@@ -188,7 +229,7 @@
     vysl.classList.remove('th-usadenie');
     void vysl.offsetWidth;
     vysl.classList.add('th-usadenie');
-    if (uvodne && !ciastocny) uvodne.hidden = true;
+    // úvodné sekcie ostávajú: vedie na ne horná navigácia (Metóda a slabiny, štatistiky), inak by boli kotvy mŕtve
     stav('');
   }
 
@@ -279,12 +320,19 @@
     riadky.forEach(function (r) { f.appendChild(r); });
     telo.appendChild(f);
   }
+  /* Na úzkom displeji odkryť v hornej navigácii aktuálnu položku (napr. „Metóda a slabiny“ bola mimo obrazovky). */
+  (function () {
+    var n = document.querySelector ? document.querySelector('.th-masthead') : null, a = n && n.querySelector('[aria-current="page"]');
+    if (!a || n.scrollWidth <= n.clientWidth) return;
+    n.scrollLeft += a.getBoundingClientRect().left - n.getBoundingClientRect().left - (n.clientWidth - a.offsetWidth) / 2;
+  })();
   document.addEventListener('click', function (e) {
     var b = e.target.closest ? e.target.closest('.th-sort') : null;
     if (!b) return;
     var th = b.parentNode, tab = th.closest('table'), kluc = b.getAttribute('data-k');
     if (!tab || !kluc) return;
-    var dole = th.getAttribute('aria-sort') !== 'ascending';
+    // prvé kliknutie zostupne, ďalšie striedajú smer (predtým ostalo stále zostupne, Astra 27. 9.)
+    var dole = th.getAttribute('aria-sort') !== 'descending';
     Array.prototype.forEach.call(tab.tHead.rows[0].cells, function (c) { c.removeAttribute('aria-sort'); });
     th.setAttribute('aria-sort', dole ? 'descending' : 'ascending');
     tried(tab, kluc, dole ? -1 : 1);

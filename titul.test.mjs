@@ -94,6 +94,10 @@ test('odkaz na subor smie viest len k nam', () => {
     'https://api.arling.workers.dev/licence/api/file/abc');
   assert.equal(platnaAdresaSuboru('https://arling.sk/classics/ben-hur/files/x.pdf'), 'https://arling.sk/classics/ben-hur/files/x.pdf');
   assert.equal(platnaAdresaSuboru('files/abcdefgh12345678/Ben-Hur-eink.pdf'), 'files/abcdefgh12345678/Ben-Hur-eink.pdf');
+  // Od 27. 9. 2026 dáva licenčná služba odkazy cez Worker files.arling.workers.dev (ops/workers/files).
+  const worker = 'https://files.arling.workers.dev/download?p=detective-kit&f=a4.pdf&exp=1790208000&sig=' + 'b'.repeat(64);
+  assert.equal(platnaAdresaSuboru(worker), worker);
+  assert.equal(platnaAdresaSuboru('https://files.arling.workers.dev.example.com/x.pdf'), '', 'len presne naša doména');
   assert.equal(platnaAdresaSuboru('https://example.com/x.pdf'), '', 'cudzia domena nie');
   assert.equal(platnaAdresaSuboru('http://files.example.org/x.pdf'), '', 'len https');
   assert.equal(platnaAdresaSuboru('javascript:alert(1)'), '');
@@ -378,3 +382,98 @@ test('po platbe: sluzba neodpovie, Try again sa spyta znova a az potom ukaze sub
   assert.equal(sOdkazomReklamy('', u), '');
   console.log('ok reklama utm');
 }
+
+/* STAV-57 (posudok stranok postav, nalez P2): cesta z obchodu postavy cez detail nesie ?postava=,
+   kupa dostane ig_<postava>_<titul> (nie gads_); aktualne UTM maju prednost pred ulozenymi. */
+{
+  const { sOdkazomReklamy, postavaZAdresy, prichod } = await import('./titul.js');
+  const ref = (h) => new URL(h).searchParams.get('client_reference_id');
+  for (const p of ['walt', 'june', 'olive']) {
+    assert.equal(postavaZAdresy(`https://arling.sk/morning-quiet/?postava=${p}`), p);
+    const bez = sOdkazomReklamy('https://buy.stripe.com/abc', {}, { postava: p, titul: 'morning-quiet' });
+    assert.equal(ref(bez), `ig_${p}_morning-quiet`, p + ' bez UTM');
+    const s = sOdkazomReklamy('https://buy.stripe.com/abc', { utm_source: 'ig', utm_campaign: 'reel01' }, { postava: p, titul: 'budget-2027' });
+    assert.equal(ref(s), `ig_${p}_budget-2027`, p + ' s UTM');
+    assert.equal(new URL(s).searchParams.get('utm_campaign'), 'reel01');
+  }
+  assert.equal(postavaZAdresy('https://arling.sk/x/?postava=evil'), '');
+  assert.equal(postavaZAdresy('zla adresa'), '');
+  // instagram bez postavy: UTM ano, gads_ nie
+  const ig = sOdkazomReklamy('https://buy.stripe.com/abc', { utm_source: 'instagram', utm_campaign: 'bio' });
+  assert.equal(ref(ig), null);
+  assert.equal(new URL(ig).searchParams.get('utm_source'), 'instagram');
+  // aktualne UTM a postava z adresy; ulozene UTM len ako doplnok, ulozena postava sa nikdy nepouzije (brana 28. 9. pokus 3)
+  const ulozene = { utm: { utm_source: 'google', utm_campaign: 'stara' }, postava: 'june' };
+  assert.deepEqual(prichod('https://arling.sk/x/?utm_source=ig&utm_campaign=nova&postava=walt', ulozene), { utm: { utm_source: 'ig', utm_campaign: 'nova' }, postava: 'walt' });
+  assert.deepEqual(prichod('https://arling.sk/x/', ulozene), { utm: ulozene.utm, postava: '' });
+  assert.deepEqual(prichod('https://arling.sk/x/?utm_source=google&utm_campaign=ads', ulozene), { utm: { utm_source: 'google', utm_campaign: 'ads' }, postava: '' });
+  assert.deepEqual(prichod('https://arling.sk/x/?utm_campaign=nova', { utm: null, postava: 'zla' }), { utm: { utm_campaign: 'nova' }, postava: '' });
+  assert.deepEqual(prichod('https://arling.sk/x/', { utm: null, postava: '' }), { utm: {}, postava: '' });
+  console.log('ok postava cez detail');
+}
+
+/* STAV-52, pokus 3 brany obchodov postav (posudok pokusu 2, nalez 1): o teste rozhoduje adresa
+   nezavisle od uloziska; tlacidlo v teste nikdy na zivy odkaz; zive platby na stranke sa v teste vypnu. */
+function uloz(stav) {
+  const data = { ...(stav.data || {}) };
+  return {
+    data,
+    getItem(k) { if (stav.cita) throw new Error('SecurityError'); return data[k] ?? null; },
+    setItem(k, v) { if (stav.zapis) throw new Error('QuotaExceededError'); data[k] = String(v); },
+  };
+}
+
+test('test rezim: ?test=1 plati pri kazdom stave uloziska, bez neho len ulozene 1', () => {
+  const stavy = { funkcne: {}, 'citanie aj zapis vyhodi': { cita: 1, zapis: 1 }, 'zapis vyhodi': { zapis: 1 }, 'citanie vyhodi': { cita: 1 } };
+  for (const [meno, st] of Object.entries(stavy)) {
+    for (const adresa of ['https://arling.sk/shop/budget-2027/?test=1', 'https://arling.sk/morning-quiet/?utm_source=ig&test=1', 'https://arling.sk/classics/ben-hur/?test=1#x']) {
+      assert.equal(titul.testRezimZ(adresa, uloz(st)), true, meno + ' ' + adresa);
+    }
+    assert.equal(titul.testRezimZ(adresa0(), uloz(st)), false, meno + ' bez testu');
+    assert.equal(titul.testRezimZ('https://arling.sk/x/?test=0', uloz(st)), false, meno + ' test=0');
+  }
+  assert.equal(titul.testRezimZ('https://arling.sk/x/?test=1', null), true, 'bez uloziska vobec');
+  assert.equal(titul.testRezimZ('https://arling.sk/x/', uloz({ data: { 'titul:test': '1' } })), true, 'ulozene z predchadzajucej stranky');
+  assert.equal(titul.testRezimZ('https://arling.sk/x/', uloz({ data: { 'titul:test': '0' } })), false);
+  assert.equal(titul.testRezimZ('nie je adresa', uloz({})), false);
+  const u = uloz({});
+  titul.testRezimZ('https://arling.sk/x/?test=1', u);
+  assert.equal(u.data['titul:test'], '1', 'rezim sa ulozi pre dalsie stranky');
+});
+function adresa0() { return 'https://arling.sk/shop/budget-2027/'; }
+
+test('tlacidlo kupy: v teste len test_ odkaz, nikdy zivy; mimo testu zivy', () => {
+  const ok = { link: 'https://buy.stripe.com/live1', linkTest: 'https://buy.stripe.com/test_1' };
+  assert.equal(titul.odkazTlacidla(ok, true), 'https://buy.stripe.com/test_1');
+  assert.equal(titul.odkazTlacidla(ok, false), 'https://buy.stripe.com/live1');
+  for (const linkTest of ['', undefined, 'https://buy.stripe.com/live1', 'https://www.etsy.com/listing/1', 'javascript:x'])
+    assert.equal(titul.odkazTlacidla({ link: ok.link, linkTest }, true), '', String(linkTest));
+});
+
+test('ziva platba na stranke titulu: zivy Stripe a Etsy ano, test_ a nase odkazy nie', () => {
+  for (const h of ['https://buy.stripe.com/abc', 'https://www.etsy.com/listing/4577343621/x?utm_source=arling', 'https://etsy.com/'])
+    assert.equal(titul.zivaPlatba(h), true, h);
+  for (const h of ['https://buy.stripe.com/test_abc', '/classics/ben-hur/Ben-Hur-Sample-eink.pdf', 'mailto:support@arling.sk', '', null])
+    assert.equal(titul.zivaPlatba(h), false, String(h));
+});
+
+test('v teste sa vypne kazdy zivy odkaz na stranke a klik nan sa zastavi', () => {
+  const odkazy = ['https://www.etsy.com/listing/1', 'https://buy.stripe.com/live', 'https://buy.stripe.com/test_1', '/shop/'].map((href) => {
+    const a = { attrs: { href }, dataset: {}, getAttribute(k) { return k in this.attrs ? this.attrs[k] : null; },
+      setAttribute(k, v) { this.attrs[k] = String(v); }, removeAttribute(k) { delete this.attrs[k]; }, closest() { return this; } };
+    return a;
+  });
+  const posluchy = [];
+  const doc = { querySelectorAll: () => odkazy.filter((a) => 'href' in a.attrs), addEventListener: (t, f, cap) => posluchy.push({ t, f, cap }) };
+  assert.equal(titul.vypniZivePlatby(doc), 2);
+  assert.deepEqual(odkazy.map((a) => a.getAttribute('href')), [null, null, 'https://buy.stripe.com/test_1', '/shop/']);
+  assert.deepEqual(odkazy.map((a) => a.getAttribute('aria-disabled')), ['true', 'true', null, null]);
+  assert.ok(posluchy.some((p) => p.t === 'click' && p.cap), 'poistka v zachytavacej faze');
+  for (const [i, cakane] of [[0, true], [1, true], [2, false], [3, false]]) {
+    let zastavene = false;
+    posluchy[0].f({ target: odkazy[i], preventDefault: () => { zastavene = true; } });
+    assert.equal(zastavene, cakane, 'odkaz ' + i);
+  }
+  assert.equal(titul.vypniZivePlatby(doc), 0, 'druhe volanie nic nove, poistka sa neprida znova');
+  assert.equal(posluchy.length, 1);
+});

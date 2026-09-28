@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; connect-src 'self' https://api.arling.workers.dev; img-src 'self' data: https:; media-src 'self' blob:; style-src 'self' 'unsafe-inline'; font-src 'self'; base-uri 'self'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex, nofollow">
+<meta name="color-scheme" content="dark"><meta name="theme-color" content="#0a0908">
+<title>ARLing TikTok Publisher</title>
+<meta name="description" content="The tool ARLing s. r. o. uses to publish its own videos to its own TikTok account.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="icon" href="/favicon.ico" sizes="48x48"><link rel="apple-touch-icon" href="/icon-180.png">
+<link rel="preload" href="/fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/style/uvod.css?v=27cb5c63">
+<style>
+/* Stranka pouziva tokeny a zaklad z /style/uvod.css (tmavy hub). Tu su len prvky formulara. */
+.tt{--stlpec:min(780px,92vw)}
+.tt .wrap{width:var(--stlpec)}
+.tt-uvod{padding:clamp(56px,7vw,104px) 0 clamp(32px,4vw,56px)}
+.tt-uvod h1{font-size:clamp(34px,4.2vw,56px);max-width:16ch}
+.tt-uvod .lead{margin-top:20px;max-width:58ch}
+.tt-fakty{list-style:none;margin:28px 0 0;padding:0;display:grid;gap:10px;font-size:16px}
+.tt-fakty li{position:relative;padding-left:22px}
+.tt-fakty li::before{content:"";position:absolute;left:2px;top:.62em;width:7px;height:7px;border-radius:50%;background:var(--med);box-shadow:0 0 0 4px rgba(242,100,60,.16)}
+.krok{border-top:1px solid var(--linka);padding:clamp(40px,5vw,64px) 0}
+.krok-hlava{display:flex;gap:16px;align-items:baseline;margin-bottom:14px}
+.krok-cislo{font:600 13px/1 "ARLing Sans",system-ui,sans-serif;letter-spacing:.08em;color:var(--med);font-variant-numeric:tabular-nums}
+.krok h2{font-size:clamp(24px,2.4vw,32px)}
+.krok>.wrap>p{max-width:62ch}
+.krok .scope{display:inline-block;margin-top:12px;padding:3px 9px;border:1px solid var(--linka-2);border-radius:999px;font-size:13px;color:var(--tichy)}
+.pole{display:grid;gap:8px;margin-top:22px}
+.pole>label,.pole>.nadpis{color:var(--ink);font-weight:600;font-size:15px}
+.pomoc{font-size:14px;color:var(--tichy);line-height:1.5}
+input[type=password],input[type=text],select,textarea{width:100%;font:inherit;font-size:16px;color:var(--ink);background:rgba(255,255,255,.035);border:1px solid var(--linka-2);border-radius:12px;padding:12px 14px;transition:border-color .16s var(--tik)}
+textarea{min-height:96px;resize:vertical;line-height:1.5}
+select{appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--telo) 50%),linear-gradient(135deg,var(--telo) 50%,transparent 50%);background-position:calc(100% - 20px) 55%,calc(100% - 14px) 55%;background-size:6px 6px;background-repeat:no-repeat;padding-right:40px}
+select option{background:#15110f;color:var(--ink)}
+input:focus-visible,select:focus-visible,textarea:focus-visible{outline:none;border-color:var(--med)}
+input:disabled,select:disabled,textarea:disabled{opacity:.5}
+.rad{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.rad input[type=password]{flex:1 1 260px;width:auto}
+.cta:disabled{opacity:.42;cursor:not-allowed;transform:none;box-shadow:none}
+.cta:disabled:hover{background:var(--med)}
+.tlacidlo2{font:inherit;font-size:15px;color:var(--ink);background:transparent;border:1px solid var(--linka-2);border-radius:999px;padding:11px 18px;cursor:pointer;transition:border-color .16s var(--tik),transform .16s var(--tik)}
+.tlacidlo2:hover{border-color:rgba(242,100,60,.55)}
+.tlacidlo2:active{transform:scale(.97)}
+.tlacidlo2:disabled{opacity:.42;cursor:not-allowed}
+.ucet{display:flex;align-items:center;gap:14px;margin-top:22px;padding:14px 16px;border:1px solid var(--linka-2);border-radius:16px;background:rgba(255,255,255,.025)}
+.ucet img{width:44px;height:44px;border-radius:50%;object-fit:cover;background:#1c1714;flex:none}
+.ucet b{color:var(--ink);font-weight:600}
+.ucet .pomoc{display:block}
+.ucet .tlacidlo2{margin-left:auto}
+.sprava{margin-top:16px;padding:12px 14px;border-radius:12px;border:1px solid var(--linka-2);font-size:15px;line-height:1.5;color:var(--ink);background:rgba(255,255,255,.03)}
+.sprava[data-kind=chyba]{border-color:rgba(242,100,60,.6);background:rgba(242,100,60,.08)}
+.sprava[data-kind=ok]{border-color:rgba(120,190,140,.5);background:rgba(120,190,140,.07)}
+.sprava[hidden]{display:none}
+.nahlad{margin-top:14px;display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap}
+.nahlad video{width:min(260px,100%);aspect-ratio:9/16;background:#000;border-radius:14px;border:1px solid var(--linka)}
+.nahlad .pomoc{flex:1 1 200px}
+.volby{display:grid;gap:12px;margin-top:4px}
+.volba{display:flex;gap:12px;align-items:flex-start;cursor:pointer}
+.volba input{width:20px;height:20px;margin:2px 0 0;accent-color:var(--med);flex:none}
+.volba span b{display:block;color:var(--ink);font-weight:600;font-size:15px}
+.volba.vypnuta{opacity:.45;cursor:not-allowed}
+.prepinac{display:flex;gap:14px;align-items:flex-start;justify-content:space-between;cursor:pointer}
+.prepinac input{appearance:none;width:46px;height:28px;border-radius:999px;background:#2a231f;border:1px solid var(--linka-2);position:relative;flex:none;cursor:pointer;transition:background-color .2s var(--tik)}
+.prepinac input::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#d9d4cf;transition:transform .2s var(--pero)}
+.prepinac input:checked{background:var(--med)}
+.prepinac input:checked::after{transform:translateX(18px);background:#1b0e08}
+.prepinac b{display:block;color:var(--ink);font-weight:600;font-size:15px}
+.zverejnenie{margin-top:14px;padding:16px;border:1px solid var(--linka);border-radius:14px;display:grid;gap:14px}
+.zverejnenie[hidden]{display:none}
+.stitok{font-size:14px;color:var(--zhaslo)}
+.vyhlasenie{margin-top:26px;font-size:15px}
+.vyhlasenie a{color:var(--ink);text-decoration:underline;text-decoration-color:rgba(242,100,60,.6);text-underline-offset:3px}
+.odoslat{margin-top:18px;display:grid;gap:10px;justify-items:start}
+.chyba-zoznam{font-size:14px;color:var(--tichy);margin:0;padding-left:18px}
+.tt-pata{padding:40px 0 48px;border-top:1px solid var(--linka);color:var(--tichy);font-size:14px}
+.tt-pata a{color:var(--tichy);text-decoration:none;border-bottom:1px solid var(--linka-2)}
+.tt-pata a:hover{color:var(--ink)}
+.tt-pata p+p{margin-top:8px}
+@media (max-width:760px){.ucet{flex-wrap:wrap}.ucet .tlacidlo2{margin-left:0}.odoslat .cta{width:100%}}
+</style>
+</head>
+<body class="tt">
+<a class="skip" href="#obsah">Skip to content</a>
+<header><div class="wrap pas"><a class="znacka" href="/en/" aria-label="ARLing, home"><svg viewBox="0 0 488 215" width="34" height="15" aria-hidden="true" focusable="false"><path fill="#f4f4f7" fill-rule="evenodd" d="M0.00,213.00L74.00,214.00L181.00,85.00L285.00,214.00L360.00,214.00L206.00,21.00L185.00,4.00L164.00,10.00Z M221.00,0.00L263.00,50.00L395.00,50.00L409.00,55.00L419.00,76.00L401.00,96.00L313.00,98.00L411.00,214.00L487.00,214.00L422.00,139.00L457.00,123.00L482.00,88.00L482.00,48.00L463.00,19.00L417.00,0.00Z"/><path fill="#f2643c" d="M269.00,66.00L269.00,67.00L268.00,68.00L268.00,70.00L267.00,71.00L267.00,76.00L268.00,77.00L268.00,79.00L270.00,81.00L270.00,82.00L271.00,82.00L273.00,84.00L274.00,84.00L277.00,86.00L279.00,86.00L280.00,87.00L287.00,87.00L288.00,86.00L290.00,86.00L291.00,85.00L294.00,84.00L298.00,80.00L298.00,79.00L299.00,78.00L299.00,75.00L300.00,74.00L300.00,72.00L299.00,71.00L299.00,69.00L298.00,68.00L297.00,65.00L295.00,63.00L294.00,63.00L289.00,60.00L278.00,60.00L277.00,61.00L276.00,61.00L275.00,62.00L272.00,63.00Z"/></svg>ARLing</a></div></header>
+
+<main id="obsah">
+<section class="tt-uvod"><div class="wrap">
+<h1>ARLing TikTok Publisher</h1>
+<p class="lead">This is the tool ARLing s. r. o. uses to publish its own short videos to its own TikTok account. It posts only content we made ourselves, and only after the operator checks every post on this page and clicks the button.</p>
+<ul class="tt-fakty">
+<li>It reads your TikTok display name and profile picture, so you can see which account is connected.</li>
+<li>It uploads a video you choose, either straight to your profile or as a draft to your TikTok inbox.</li>
+<li>Nothing is ever posted automatically, and it never posts to any other account.</li>
+<li>Only the ARLing operator can use it. Sign in keys stay on our own server in the EU, never in this page.</li>
+</ul>
+</div></section>
+
+<section class="krok" aria-labelledby="k1"><div class="wrap">
+<div class="krok-hlava"><span class="krok-cislo">01</span><h2 id="k1">Operator key</h2></div>
+<p>Without this key the page cannot connect an account or post anything, so a stranger who finds this page cannot use it. The key is kept only in this browser tab.</p>
+<div class="pole">
+<label for="op">Operator key</label>
+<div class="rad"><input id="op" type="password" autocomplete="off" spellcheck="false" placeholder="Paste the operator key"><button class="tlacidlo2" id="op-uloz" type="button">Use key</button><button class="tlacidlo2" id="op-zabudni" type="button" hidden>Forget key</button></div>
+<p class="pomoc" id="op-stav">No key in this tab yet.</p>
+</div>
+</div></section>
+
+<section class="krok" aria-labelledby="k2"><div class="wrap">
+<div class="krok-hlava"><span class="krok-cislo">02</span><h2 id="k2">Connect TikTok</h2></div>
+<p>You sign in on TikTok's own page and choose what to allow. TikTok then sends you back here.</p>
+<span class="scope">Permissions asked: user.info.basic, video.publish, video.upload</span>
+<div class="odoslat"><button class="cta" id="pripoj" type="button">Connect TikTok</button></div>
+<div class="ucet" id="ucet" hidden>
+<img id="ucet-avatar" alt="" width="44" height="44" referrerpolicy="no-referrer">
+<div><span>Connected as <b id="ucet-meno"></b></span><span class="pomoc" id="ucet-scopes"></span></div>
+<button class="tlacidlo2" id="odpoj" type="button">Disconnect</button>
+</div>
+<p class="sprava" id="pripoj-sprava" role="status" aria-live="polite" hidden></p>
+</div></section>
+
+<section class="krok" aria-labelledby="k3"><div class="wrap">
+<div class="krok-hlava"><span class="krok-cislo">03</span><h2 id="k3">Post to TikTok</h2></div>
+<p>The video goes straight to the profile below once TikTok finishes processing it.</p>
+<span class="scope">Uses video.publish</span>
+
+<div class="ucet" id="tvorca" hidden>
+<img id="tvorca-avatar" alt="" width="44" height="44" referrerpolicy="no-referrer">
+<div><span>Posting to <b id="tvorca-meno"></b></span><span class="pomoc" id="tvorca-limit"></span></div>
+</div>
+<p class="sprava" id="tvorca-sprava" role="status" aria-live="polite" hidden></p>
+
+<div class="pole">
+<label for="d-video">Video</label>
+<select id="d-video" disabled><option value="">Connect TikTok first</option></select>
+<div class="nahlad" id="d-nahlad" hidden><video id="d-prehravac" controls playsinline muted preload="metadata"></video><p class="pomoc" id="d-info"></p></div>
+</div>
+
+<div class="pole">
+<label for="d-titul">Title</label>
+<textarea id="d-titul" maxlength="2200" placeholder="Write the caption. #hashtags and @mentions work."></textarea>
+<p class="pomoc"><span id="d-titul-pocet">0</span> of 2200 characters</p>
+</div>
+
+<div class="pole">
+<label for="d-sukromie">Who can view this video</label>
+<select id="d-sukromie" disabled><option value="">Select who can view this video</option></select>
+<p class="pomoc" id="d-sukromie-pomoc">There is no default. You have to choose.</p>
+</div>
+
+<div class="pole" role="group" aria-labelledby="d-interakcie">
+<span class="nadpis" id="d-interakcie">Allow users to</span>
+<div class="volby">
+<label class="volba" id="v-komentar"><input type="checkbox" id="d-komentar"><span><b>Comment</b><span class="pomoc" data-vypnute></span></span></label>
+<label class="volba" id="v-duet"><input type="checkbox" id="d-duet"><span><b>Duet</b><span class="pomoc" data-vypnute></span></span></label>
+<label class="volba" id="v-stitch"><input type="checkbox" id="d-stitch"><span><b>Stitch</b><span class="pomoc" data-vypnute></span></span></label>
+</div>
+</div>
+
+<div class="pole">
+<label class="prepinac"><span><b>Disclose video content</b><span class="pomoc">Indicate whether this content promotes yourself, a brand, product or service.</span></span><input type="checkbox" role="switch" id="d-zverejni"></label>
+<div class="zverejnenie" id="d-zverejnenie" hidden>
+<label class="volba" id="v-vlastna"><input type="checkbox" id="d-vlastna"><span><b>Your brand</b><span class="pomoc">You are promoting yourself or your own business. This content will be classified as Brand Organic.</span></span></label>
+<label class="volba" id="v-platena"><input type="checkbox" id="d-platena"><span><b>Branded content</b><span class="pomoc" id="d-platena-pomoc">You are promoting another brand or a third party. This content will be classified as Branded Content.</span></span></label>
+<p class="stitok" id="d-stitok" role="status" aria-live="polite"></p>
+</div>
+</div>
+
+<div class="pole">
+<label class="volba"><input type="checkbox" id="d-aigc"><span><b>AI-generated content</b><span class="pomoc">Tick this if the video was made with AI. TikTok adds the label "Creator labeled as AI-generated".</span></span></label>
+</div>
+
+<p class="vyhlasenie" id="d-vyhlasenie"></p>
+<div class="odoslat">
+<button class="cta" id="d-posli" type="button" disabled>Post to TikTok</button>
+<ul class="chyba-zoznam" id="d-chyba"></ul>
+</div>
+<p class="sprava" id="d-sprava" role="status" aria-live="polite" hidden></p>
+</div></section>
+
+<section class="krok" aria-labelledby="k4"><div class="wrap">
+<div class="krok-hlava"><span class="krok-cislo">04</span><h2 id="k4">Send a draft to the TikTok inbox</h2></div>
+<p>The video lands in your TikTok inbox as a draft. You finish editing and posting in the TikTok app yourself.</p>
+<span class="scope">Uses video.upload</span>
+<div class="pole">
+<label for="i-video">Video</label>
+<select id="i-video" disabled><option value="">Connect TikTok first</option></select>
+<div class="nahlad" id="i-nahlad" hidden><video id="i-prehravac" controls playsinline muted preload="metadata"></video><p class="pomoc" id="i-info"></p></div>
+</div>
+<div class="odoslat">
+<button class="cta" id="i-posli" type="button" disabled>Send to TikTok inbox</button>
+<p class="pomoc">After sending, open TikTok and tap the inbox notification to continue editing and post the video.</p>
+</div>
+<p class="sprava" id="i-sprava" role="status" aria-live="polite" hidden></p>
+</div></section>
+</main>
+
+<footer class="tt-pata"><div class="wrap">
+<p>ARLing s. r. o., Ivanská cesta 32E, 821 04 Bratislava, Slovakia. Contact: <a href="mailto:support@arling.sk">support@arling.sk</a></p>
+<p><a href="/privacy/en/">Privacy</a> · <a href="/podmienky/en/">Terms</a> · <a href="/impressum/en/">Impressum</a></p>
+</div></footer>
+<script src="tiktok.js" defer></script>
+</body>
+</html>
