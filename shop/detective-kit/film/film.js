@@ -961,7 +961,9 @@ const film = {
   // štítok s cenou vedie na stránku sady (tam je nákup aj všetkých 15 strán)
   odkazy() {
     const b = L.texty.btn;
-    return [{ x: b.x, y: b.y, w: b.w, h: b.h, href: '/shop/detective-kit/', text: 'The detective kit, 6.90 EUR', od: T.cena, udalost: 'detective_film_to_kit' }];
+    // odkaz, kým je cena nakreslená: v háku (aj na plagáte 1,0 s), kým neodíde (drz + 0,25 - 0,14 oneskorenia
+    // v kresliTexty), a od záveru; obraz filmu sa nemení, len web
+    return [{ x: b.x, y: b.y, w: b.w, h: b.h, href: '/shop/detective-kit/', text: 'The detective kit, 6.90 EUR', casy: [[0, HAK.drz + 0.25 - 0.14], [T.cena, Infinity]], udalost: 'detective_film_to_kit' }];
   },
   zvuk: partitura(),
 };

@@ -1061,10 +1061,12 @@ const film = {
     kresliZrno(x, t, env);
   },
   stredPlagatu() { const S = L.S; return [S.gx + (N * S.c) / 2, S.gy + (N * S.c) / 2]; },
-  // štítok s adresou obchodu vedie na stránke filmu priamo na ponuku knihy na Etsy (jeden krok, ako Advent)
+  // štítok s adresou obchodu vedie na stránke filmu priamo na ponuku knihy na Etsy (jeden krok, ako Advent);
+  // odkaz je aktívny, kým je štítok nakreslený: v háku (aj na plagáte 1,0 s), kým neodíde (drz + 0,25 - 0,12
+  // oneskorenia v kresliTexty), a od záveru do konca. Obraz filmu sa tým nemení, len web.
   odkazy() {
     const b = L.chip, p = L.poz.chip;
-    return [{ x: p.x, y: p.y, w: b.w, h: b.h, href: FAKTY.url, text: `Halloween Logic Puzzle Book on Etsy, ${FAKTY.cena} €`, od: T.chip, udalost: 'halloween_book_film_to_etsy' }];
+    return [{ x: p.x, y: p.y, w: b.w, h: b.h, href: FAKTY.url, text: `Halloween Logic Puzzle Book on Etsy, ${FAKTY.cena} €`, casy: [[0, HAK.drz + 0.25 - 0.12], [T.chip, Infinity]], udalost: 'halloween_book_film_to_etsy' }];
   },
   zvuk: partitura(),
   // pre test.mjs: titulky na plátne, všetky texty filmu, kroky riešiteľa, rozloženie

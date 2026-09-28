@@ -3,6 +3,10 @@
 // a v skrytej karte (document.hidden) sa film aj zvuk pozastavia; devicePixelRatio najviac 2
 // (na slabom zariadení 1.5); prefers-reduced-motion ukáže statický plagát.
 // Render: window.__vykresli(t) kreslí presne snímku v čase t, window.__zvuk() vráti WAV v base64.
+// Ovládače (28. 9. 2026, brána filmov pokus 2): Sound počas pauzy nemení zastavený čas, Resume
+// pokračuje presne odtiaľ; dozvuk po konci ostáva ovládateľný, Sound off aj Play again ho zastavia hneď.
+// Súbehy (pokus 3): po každom await platí len najnovší krok (token), zvukové pauzy a obnovy idú za sebou
+// a keď zvuk medzitým vypli, film pokračuje zo zastaveného času na hodinách výkonu.
 
 import { ZivyZvuk, renderOffline, wav, base64 } from './zvuk.js';
 
@@ -31,16 +35,18 @@ const STYL_ODKAZU = { color: 'transparent', textDecoration: 'none', textShadow: 
  * film = {
  *   dlzka, plagat (čas plagátu pred ťuknutím aj pri zníženom pohybe), zvuk: [udalosti], titulky: [{ od, text }],
  *   pripravit(env) async (písma), vrstvy(W, H, dpr, env), kresli(ctx, t, W, H, env),
- *   odkazy(W, H) -> [{ x, y, w, h, href, text, od, udalost }] (neviditeľné, nad nakresleným tlačidlom),
+ *   odkazy(W, H) -> [{ x, y, w, h, href, text, od, casy, udalost }] (neviditeľné, nad nakresleným tlačidlom;
+ *     casy = [[od, do], ...] okná, keď je tlačidlo nakreslené, inak jedno okno od `od` do konca),
  *   stredPlagatu(W, H) -> [x, y] voliteľne: kam dať tlačidlo prehrať (CSS --kf-play-x, --kf-play-y)
  * }
  * koren = element s [data-kf-platno] canvasom a voliteľnými ovládačmi:
  *   [data-kf-start], [data-kf-pauza], [data-kf-zvuk], [data-kf-znova], [data-kf-odkazy], [data-kf-titulok]
+ * ovladace = voliteľný element, kde sa hľadá ovládač, ktorý nie je v koreni (lišta pod filmom, titulok)
  */
-export async function prehravac(film, koren, { render = false } = {}) {
+export async function prehravac(film, koren, { render = false, ovladace = null } = {}) {
   const platno = koren.querySelector('[data-kf-platno]');
   const ctx = platno.getContext('2d', { alpha: false });
-  const $ = (s) => koren.querySelector(s);
+  const $ = (s) => koren.querySelector(s) ?? ovladace?.querySelector(s) ?? null;
   const ui = { start: $('[data-kf-start]'), pauza: $('[data-kf-pauza]'), zvuk: $('[data-kf-zvuk]'), znova: $('[data-kf-znova]'), odkazy: $('[data-kf-odkazy]'), titulok: $('[data-kf-titulok]') };
   const jadra = navigator.hardwareConcurrency || 8;
   const env = { render, slabe: !render && jadra <= 4, dpr: 1, W: 0, H: 0 };
@@ -48,8 +54,19 @@ export async function prehravac(film, koren, { render = false } = {}) {
   let stav = 'obal'; // obal | hra | pauza | koniec | plagat
   let t = 0, p0 = 0, raf = 0, zvuk = null, zvukZapnuty = true, skryte = false, mimo = false;
   let odkazyEl = [], poslednyTitulok = -1;
+  // doznieva: zvuk po konci filmu, kým nedoznie dozvuk (ovládateľný až do odpojenia);
+  // zvukCaka: Sound on počas pauzy, zvuk sa rozbehne pri pokračovaní; beh: poradie spustení;
+  // krok: token posledného Play, Pause alebo Resume; rozbieha: beh, ktorého zvuk sa ešte rozbieha
+  let doznieva = null, casovacDozvuku = 0, zvukCaka = false, beh = 0, krok = 0, rozbieha = 0;
+  // suspend a resume jedného zvuku za sebou: Resume počká na prebiehajúcu Pause a naopak;
+  // zlyhanie na zavretom kontexte (Sound off počas čakania) film nezastaví
+  let frontaZvuku = Promise.resolve();
+  const doFronty = (z, pauza) => (frontaZvuku = frontaZvuku.then(() => (pauza ? z.pauza() : z.pokracuj())).catch(() => {}));
   const vykon = { snimky: 0, kresbaMs: 0, kresbaMax: 0, intervaly: [], bezi: false };
   Object.defineProperty(vykon, 'slabe', { get: () => env.slabe, enumerable: true });
+  // pre testy ovládačov: filmový čas a stav zvukových kontextov (hrajúci a doznievajúci)
+  Object.defineProperty(vykon, 'cas', { get: () => t, enumerable: true });
+  Object.defineProperty(vykon, 'zvuk', { get: () => ({ hra: zvuk?.ctx?.state ?? null, doznieva: doznieva?.ctx?.state ?? null }), enumerable: true });
   window.__vykon = vykon;
 
   if (film.pripravit) await film.pripravit(env);
@@ -96,12 +113,14 @@ export async function prehravac(film, koren, { render = false } = {}) {
       Object.assign(a.style, STYL_ODKAZU, { position: 'absolute', display: 'block', pointerEvents: 'auto', left: `${(o.x / env.W) * 100}%`, top: `${(o.y / env.H) * 100}%`, width: `${(o.w / env.W) * 100}%`, height: `${(o.h / env.H) * 100}%` });
       a.hidden = true;
       ui.odkazy.appendChild(a);
-      return { a, od: o.od ?? 0 };
+      // casy: [[od, do], ...] okná, keď je tlačidlo nakreslené; bez nich jedno okno od o.od do konca
+      return { a, casy: o.casy ?? [[o.od ?? 0, Infinity]] };
     });
   }
   function ukazOdkazy(cas) {
-    // odkaz len tam, kde je jeho tlačidlo nakreslené (na plagáte teda len ak plagát je po jeho čase)
-    for (const o of odkazyEl) o.a.hidden = !(stav === 'koniec' || (stav !== 'obal' && cas >= o.od));
+    // odkaz len tam, kde je jeho tlačidlo nakreslené (na plagáte teda len ak plagát padne do okna);
+    // aj na plagáte pred ťuknutím: odkaz leží nad tlačidlom spustenia, klik mimo neho film spustí
+    for (const o of odkazyEl) o.a.hidden = !(stav === 'koniec' || o.casy.some(([a, b]) => cas >= a && cas < b));
   }
   function titulky(cas) {
     if (!ui.titulok || !film.titulky) return;
@@ -153,38 +172,72 @@ export async function prehravac(film, koren, { render = false } = {}) {
     if (priemer > 22) env.slabe = true;
   }
 
+  function zastavDozvuk() {
+    clearTimeout(casovacDozvuku);
+    casovacDozvuku = 0;
+    if (doznieva) { doznieva.zastav(); doznieva = null; }
+  }
+
+  // Filmový čas sa z hodín číta len keď film naozaj beží (raf); v pauze platí uložené t.
   async function spusti(odT = 0) {
+    const moj = ++beh;
+    krok++;
+    rozbieha = 0;
     stoj();
+    zastavDozvuk();
+    zvukCaka = false;
     if (zvuk) { zvuk.zastav(); zvuk = null; }
     nastavStav('hra');
     t = odT;
+    p0 = performance.now() - odT * 1000; // kým sa zvuk rozbieha, hodiny výkonu
     if (zvukZapnuty && film.zvuk) {
-      zvuk = new ZivyZvuk(film.zvuk);
-      const ok = await zvuk.spusti(odT).catch(() => false);
-      if (!ok) { zvuk.zastav(); zvuk = null; }
+      const z = new ZivyZvuk(film.zvuk);
+      zvuk = z;
+      rozbieha = moj;
+      const ok = await z.spusti(odT).catch(() => false);
+      if (moj !== beh) { z.zastav(); if (zvuk === z) zvuk = null; return; } // medzitým nové spustenie
+      rozbieha = 0;
+      if (zvuk !== z || !ok) { z.zastav(); if (zvuk === z) zvuk = null; } // medzitým Sound off, alebo zvuk nejde
     }
-    p0 = zvuk ? zvuk.perfNula() : performance.now() - odT * 1000;
+    // medzitým Pause, skrytá karta alebo film mimo obrazovky: čas drží pozastav(), zvuk stojí s filmom
+    if (stav !== 'hra' || skryte || mimo) { if (zvuk) await doFronty(zvuk, true); return; }
+    if (zvukCaka && !zvuk) return spusti(t);
+    p0 = zvuk?.ctx ? zvuk.perfNula() : performance.now() - t * 1000;
     behaj();
   }
   async function pozastav(interne) {
     if (stav !== 'hra') return;
-    t = teraz();
+    krok++;
+    if (raf) t = teraz();
     stoj();
     if (!interne) nastavStav('pauza');
-    if (zvuk) await zvuk.pauza();
+    // počas rozbehu zvuku ho zastaví až spusti(), inak by suspend predbehol jeho resume
+    if (zvuk && !rozbieha) await doFronty(zvuk, true);
   }
-  async function pokracuj() {
-    if (stav === 'pauza') nastavStav('hra');
-    if (stav !== 'hra' || skryte || mimo) return;
-    if (zvuk) { await zvuk.pokracuj(); p0 = zvuk.perfNula(); } else p0 = performance.now() - t * 1000;
+  // interne = návrat karty alebo filmu do obrazovky: pauzu od používateľa nezruší
+  async function pokracuj(interne = false) {
+    if (stav === 'pauza') { if (interne) return; nastavStav('hra'); }
+    if (stav !== 'hra' || skryte || mimo || raf) return;
+    if (rozbieha) return; // zvuk sa ešte rozbieha: film rozbehne spusti() po jeho dokončení
+    if (zvukCaka && !zvuk) return spusti(t); // Sound on počas pauzy: zvuk od zastaveného času
+    const moj = ++krok, z = zvuk;
+    if (z) await doFronty(z, false);
+    // medzitým Pause, Play again, skrytá karta alebo film mimo obrazovky: platí novší krok
+    if (moj !== krok || stav !== 'hra' || skryte || mimo || raf) return;
+    if (zvukCaka && !zvuk) return spusti(t); // medzitým Sound off a Sound on
+    // medzitým Sound off: zvuk je preč, film ide zo zastaveného času na hodinách výkonu
+    p0 = z && zvuk === z && z.ctx ? z.perfNula() : performance.now() - t * 1000;
     behaj();
   }
   function koniec() {
     stoj();
     nastavStav('koniec');
     titulky(film.dlzka);
-    const z = zvuk; zvuk = null;
-    if (z) setTimeout(() => z.zastav(), 3500); // nech doznie dozvuk
+    // nech doznie dozvuk; referencia ostáva, Sound off aj Play again ho zastavia hneď
+    zastavDozvuk();
+    doznieva = zvuk;
+    zvuk = null;
+    if (doznieva) casovacDozvuku = setTimeout(zastavDozvuk, 3500);
   }
 
   // --- ovládače ---
@@ -197,20 +250,29 @@ export async function prehravac(film, koren, { render = false } = {}) {
     ui.zvuk.addEventListener('click', () => {
       zvukZapnuty = !zvukZapnuty;
       nastavZvuk();
-      if (!zvukZapnuty && zvuk) { t = teraz(); zvuk.zastav(); zvuk = null; p0 = performance.now() - t * 1000; }
-      else if (zvukZapnuty && stav === 'hra') spusti(teraz());
+      if (!zvukZapnuty) {
+        zvukCaka = false;
+        zastavDozvuk();
+        if (zvuk) {
+          if (raf) t = teraz(); // v pauze ostáva uložený čas
+          zvuk.zastav();
+          zvuk = null;
+          p0 = performance.now() - t * 1000;
+        }
+      } else if (stav === 'hra' && raf) spusti(teraz());
+      else if (stav === 'hra' || stav === 'pauza') zvukCaka = true;
     });
   }
 
   if (!render) {
     document.addEventListener('visibilitychange', () => {
       skryte = document.hidden;
-      if (skryte) pozastav(true); else pokracuj();
+      if (skryte) pozastav(true); else pokracuj(true);
     });
     if ('IntersectionObserver' in window) {
       new IntersectionObserver((z) => {
         mimo = !z[0].isIntersecting;
-        if (mimo) pozastav(true); else pokracuj();
+        if (mimo) pozastav(true); else pokracuj(true);
       }, { threshold: 0.2 }).observe(platno);
     }
     let casovacRozmeru = 0;
@@ -236,5 +298,5 @@ export async function prehravac(film, koren, { render = false } = {}) {
   } else nastavStav('obal');
   kresli(t);
   window.__pripraveny = true;
-  return { spusti, pozastav: () => pozastav(false), pokracuj, env, vykon };
+  return { spusti, pozastav: () => pozastav(false), pokracuj: () => pokracuj(), env, vykon };
 }

@@ -1213,7 +1213,9 @@ const film = {
   // štítok s cenou vedie na stránku sady (tam je nákup aj náhľad všetkých 16 strán)
   odkazy() {
     const b = L.texty.btn;
-    return [{ x: b.x, y: b.y, w: b.w, h: b.h, href: '/shop/pumpkin-escape-kids/', text: 'The Pumpkin Fair Mix-Up, 6.90 €', od: T.cena, udalost: 'pumpkin_film_to_kit' }];
+    // odkaz, kým je cena nakreslená: v háku (aj na plagáte 1,0 s) do konca zoslabnutia (drz + 0,1, kresliTexty)
+    // a od záveru; obraz filmu sa nemení, len web
+    return [{ x: b.x, y: b.y, w: b.w, h: b.h, href: '/shop/pumpkin-escape-kids/', text: 'The Pumpkin Fair Mix-Up, 6.90 €', casy: [[0, HAK.drz + 0.1], [T.cena, Infinity]], udalost: 'pumpkin_film_to_kit' }];
   },
   zvuk: partitura(),
   // pre test.mjs: titulky na plátne, všetky texty filmu, rozloženie
