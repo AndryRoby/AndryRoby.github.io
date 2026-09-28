@@ -7,7 +7,8 @@
 import { spriteDrahokamu } from '../prism5/film/drahokamy.js';
 
 export const FPS = 60, POCET = 50, SW = 1080, SH = 1920;
-export const PREDMETY = ['drahokam', 'lampas', 'lietadlo', 'kniha', 'kocka', 'lod'];
+// Plachetnica (lod) vypadla 28. 9.: v presnej snímke nesadla do obrysu (ops/ai/kontrola/2026-09-28-stop-frame.md B2); jej miesto berie drahokam, ostatné úrovne ostali rovnaké ako vo videách.
+export const PREDMETY = ['drahokam', 'lampas', 'lietadlo', 'kniha', 'kocka', 'drahokam'];
 export const MENA = { drahokam: 'star gem', lampas: 'lantern', lietadlo: 'paper plane', kniha: 'puzzle book', kocka: 'cube', lod: 'sailboat' };
 export const POLE = { x0: 60, x1: 1020, y0: 470, y1: 1250 }; // hracia plocha (cieľ leží vnútri)
 export const MEDZERA = 24; // snímky medzi prechodmi, keď je predmet mimo obrazu
