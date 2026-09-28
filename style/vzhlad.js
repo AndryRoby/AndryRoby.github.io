@@ -102,6 +102,14 @@ document.documentElement.classList.add('js');
       var s = o.querySelector('summary');
       if (s) s.focus();
     });
+    // Z-47: keď Tab alebo Shift+Tab odvedie fokus z otvoreného details, zatvorí sa;
+    // inak by na mobile fokus skočil na obsah schovaný pod panelom. Bez relatedTarget
+    // (klik na miesto bez fokusu) rozhoduje klik mimo vyššie.
+    hlavicka.addEventListener('focusout', function (e) {
+      var d = e.target.closest && e.target.closest('details[open]');
+      var kam = e.relatedTarget;
+      if (d && kam && !d.contains(kam)) d.open = false;
+    });
     // Na myši sa Produkty otvárajú prejdením: 90 ms, aby nepreblikli pri ceste
     // kurzora inam, a zatvárajú po 180 ms, aby sa dalo prejsť zo slova na panel.
     // Na mobilnej šírke a na dotyku sa menu otvára len kliknutím.
