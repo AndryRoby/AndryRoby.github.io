@@ -1,10 +1,10 @@
 <!doctype html>
 <html lang="sk">
 <head>
-<script src="/style/vzhlad.js?v=8a4019ae"></script>
+<script src="/style/vzhlad.js?v=072ce2c2"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://api.arling.workers.dev 'sha256-ACzsZ9Uf4Dr0ulf+i9tTF7MqSbctoQVAl1cgomsFaYc=' 'sha256-NhVznKRe2MB7sHULr71xYpr0YNIGepMTuoXs/C6dAww=' 'sha256-DZSWQq9anqohFIlDL4j7k8JKdMhkl4AddaE6VFUE59Q=' 'sha256-0PxmtJhfdRRqQ1O7CvviHNLgLWcXX9lDBjeGvirUfHk='; connect-src 'self' https://api.arling.workers.dev; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://api.arling.workers.dev 'sha256-oQgsDO8XQn01YofVn5mp5QrtZ+E41OplxolYES4+8N4=' 'sha256-NhVznKRe2MB7sHULr71xYpr0YNIGepMTuoXs/C6dAww=' 'sha256-5sEc3+XsrKYgf9erQbkmd5x6tSpG+L5fIg91rxCu1hU=' 'sha256-0PxmtJhfdRRqQ1O7CvviHNLgLWcXX9lDBjeGvirUfHk='; connect-src 'self' https://api.arling.workers.dev; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#0a0908">
 <link rel="preconnect" href="https://api.arling.workers.dev" crossorigin>
@@ -28,7 +28,7 @@
   "@type": "Article",
   "headline": "Tatra banka a import hromadného príkazu: čo kontroluje",
   "datePublished": "2026-09-06",
-  "dateModified": "2026-09-06",
+  "dateModified": "2026-09-28",
   "inLanguage": "sk",
   "description": "Presný zoznam toho, čo Tatra banka overuje pri importe pain.001: menný priestor, BIC, dátum splatnosti, limit 500 transakcií, modulo 11.",
   "author": { "@type": "Organization", "name": "ARLing s. r. o.", "url": "https://arling.sk/" },
@@ -69,7 +69,7 @@
       "name": "Prečo Tatra banka odmietla súbor, ktorý inde prešiel bez chyby?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Viaceré kontroly z tohto článku, napríklad limit 500 transakcií na blok PmtInf, formát GrpHdr/InitgPty/Nm alebo rovnaký dátum vo všetkých blokoch, sú zdokumentované práve u Tatra banky a iná banka ich nemusí overovať. Súbor môže formátovo vyhovovať ISO 20022 vo všeobecnosti, a napriek tomu neprejsť konkrétnym pravidlom jednej banky."
+        "text": "Viaceré kontroly z tohto článku, napríklad najviac 500 transakcií v súbore (Tatra banka, strana 3 PDF, stiahnuté 28. 9. 2026; rozdelenie do blokov PmtInf v jednom súbore nestačí), formát GrpHdr/InitgPty/Nm alebo rovnaký dátum vo všetkých blokoch, sú zdokumentované práve u Tatra banky a iná banka ich nemusí overovať. Súbor môže formátovo vyhovovať ISO 20022 vo všeobecnosti, a napriek tomu neprejsť konkrétnym pravidlom jednej banky."
       }
     },
     {
@@ -230,7 +230,7 @@
     <div class="note">
       <div class="hero-note" id="hero">
         <h1 id="h1" class="r d1"><span class="l">Tatra banka a import hromadného príkazu:</span><span class="l">čo kontroluje pri pain.001</span></h1>
-        <p class="byline r d2">ARLing s. r. o., ARLing. 6. septembra 2026.</p>
+        <p class="byline r d2">ARLing s. r. o., ARLing. 6. septembra 2026, opravené 28. septembra 2026 (limit 500 transakcií platí pre celý súbor).</p>
       </div>
       <div class="doc">
         <section class="sec" id="s1">
@@ -248,8 +248,8 @@
 <p class="r d2">Ak hromadný príkaz obsahuje viac blokov <code>PmtInf</code> (napríklad platiteľ posiela z dvoch rôznych účtov v jednom súbore), Tatra banka podľa toho istého dokumentu vyžaduje, aby mali všetky bloky rovnaký dátum <code>ReqdExctnDt</code>. Rôzne dátumy naprieč blokmi v jednom súbore banka nespracuje ako samostatné dávky, ale ako chybu.</p>
         </section>
         <section class="sec" id="s4">
-<h2 class="r">3. Najviac 500 transakcií na jeden blok PmtInf</h2>
-<p class="r d1">Dokument Tatra banky uvádza limit veľkosti dávky doslovne: „Max. 500 transakcií v súbore". V praxi platí tento limit na jeden blok <code>PmtInf</code>: ak účtovný softvér vygeneruje jeden <code>PmtInf</code> s 600 platbami, treba ho rozdeliť na dva bloky alebo dva súbory. Väčšina účtovných programov jeden hromadný príkaz do jedného <code>PmtInf</code> aj tak nezmestí pri takomto objeme, problém sa preto najčastejšie objaví pri hromadných mzdových alebo dodávateľských platbách.</p>
+<h2 class="r">3. Najviac 500 transakcií v jednom súbore</h2>
+<p class="r d1">Dokument Tatra banky uvádza limit veľkosti dávky doslovne: „Max. 500 transakcií v súbore" (Tatra banka, strana 3 PDF, riadok <code>2.0 PaymentInformation</code>, stiahnuté 28. 9. 2026). Limit platí pre celý súbor, teda pre súčet transakcií <code>CdtTrfTxInf</code> vo všetkých blokoch <code>PmtInf</code> spolu. Rozdelenie do blokov v jednom súbore nestačí: súbor s dvoma blokmi po 300 platbách má 600 transakcií a limit prekračuje, hoci každý blok zvlášť je pod 500. Ak účtovný softvér vygeneruje 600 platieb, treba ich rozdeliť do dvoch súborov a každý nahrať zvlášť. Problém sa najčastejšie objaví pri hromadných mzdových alebo dodávateľských platbách.</p>
         </section>
         <section class="sec" id="s5">
 <h2 class="r">4. Zadávateľ súboru: GrpHdr/InitgPty/Nm vo vzore [A-Za-z0-9]{1,10}/[A-Z]{2}</h2>
@@ -271,7 +271,7 @@
   <li><code>PmtMtd</code> je <code>TRF</code>, <code>SvcLvl/Cd</code> je <code>SEPA</code>, <code>ChrgBr</code> je <code>SLEV</code> vo všetkých transakciách.</li>
   <li>BIC platiteľa je presne <code>TATRSKBX</code>, bez medzier a bez inej varianty zápisu.</li>
   <li><code>ReqdExctnDt</code> nie je v minulosti a nie je viac ako 31 dní dopredu, rovnaký vo všetkých blokoch <code>PmtInf</code>.</li>
-  <li>Žiadny blok <code>PmtInf</code> nemá viac ako 500 transakcií <code>CdtTrfTxInf</code>.</li>
+  <li>Súbor má najviac 500 transakcií <code>CdtTrfTxInf</code> spolu vo všetkých blokoch <code>PmtInf</code> (Tatra banka, strana 3 PDF, stiahnuté 28. 9. 2026); rozdelenie do blokov v jednom súbore nestačí, väčší počet patrí do viacerých súborov.</li>
   <li>Ak je vyplnené <code>GrpHdr/InitgPty/Nm</code>, zodpovedá vzoru <code>[A-Za-z0-9]{1,10}/[A-Z]{2}</code>, inak je pole prázdne.</li>
   <li>Každá transakcia má najviac jeden element <code>RmtInf/Ustrd</code>.</li>
   <li>Slovenský IBAN príjemcu prejde aj kontrolou modulo 11 na posledných desať číslic, nielen medzinárodným MOD-97.</li>
@@ -285,7 +285,7 @@
 </details>
 <details>
   <summary>Prečo súbor prešiel inde, ale do Tatra banky nie</summary>
-  <p>Limit 500 transakcií na blok, formát InitgPty/Nm, rovnaký dátum vo všetkých blokoch a modulo 11 kontrola IBAN sú pravidlá, ktoré Tatra banka zdokumentovala sama a iná banka ich mať nemusí. Súbor môže byť formátovo v poriadku podľa všeobecnej normy ISO 20022, a napriek tomu narazí na konkrétne pravidlo jednej banky.</p>
+  <p>Limit najviac 500 transakcií v súbore (rozdelenie do blokov v jednom súbore nestačí), formát InitgPty/Nm, rovnaký dátum vo všetkých blokoch a modulo 11 kontrola IBAN sú pravidlá, ktoré Tatra banka zdokumentovala sama a iná banka ich mať nemusí. Súbor môže byť formátovo v poriadku podľa všeobecnej normy ISO 20022, a napriek tomu narazí na konkrétne pravidlo jednej banky.</p>
 </details>
 <details>
   <summary>Znamená čistý výsledok kontroly, že platba prejde?</summary>
@@ -304,7 +304,7 @@
         <div class="doc">
 <h2 class="r">Zdroje</h2>
 <ol class="sources r d1">
-  <li>Tatra banka: <cite>Prenosový formát pain.001.001.03 v štruktúre XML</cite>. <a href="https://www.tatrabanka.sk/files/sk/personal/ucet-platby/elektronicke-bankovnictvo/internet-banking/davkove-platby/prenosovy_formatpain001.pdf">tatrabanka.sk/.../prenosovy_formatpain001.pdf</a>. Zdroj pre menný priestor, BIC platiteľa TATRSKBX, limit 500 transakcií, okno dátumu ReqdExctnDt (nie spätný, max 31 dní dopredu), rovnaký dátum vo všetkých blokoch PmtInf, vzor GrpHdr/InitgPty/Nm, jednu inštanciu Ustrd a kontrolu modulo 11 slovenského IBAN príjemcu. Overené 6. 9. 2026.</li>
+  <li>Tatra banka: <cite>Prenosový formát pain.001.001.03 v štruktúre XML</cite>. <a href="https://www.tatrabanka.sk/files/sk/personal/ucet-platby/elektronicke-bankovnictvo/internet-banking/davkove-platby/prenosovy_formatpain001.pdf">tatrabanka.sk/.../prenosovy_formatpain001.pdf</a>. Zdroj pre menný priestor, BIC platiteľa TATRSKBX, limit 500 transakcií v súbore (strana 3, znova stiahnuté 28. 9. 2026), okno dátumu ReqdExctnDt (nie spätný, max 31 dní dopredu), rovnaký dátum vo všetkých blokoch PmtInf, vzor GrpHdr/InitgPty/Nm, jednu inštanciu Ustrd a kontrolu modulo 11 slovenského IBAN príjemcu. Overené 6. 9. 2026.</li>
   <li>VÚB, a. s.: <cite>Popis formátu pre SEPA úhrady - SCT</cite>. <a href="https://app.vub.sk/source/files/vubweb/sekundarna-navigacia/informacny-servis/sepa-aplikacie/sct_klient_f.pdf">app.vub.sk/.../sct_klient_f.pdf</a>. Zdroj pre presné hodnoty PmtMtd „TRF", SvcLvl/Cd „SEPA" a ChrgBr „SLEV" v poli pain.001, ako doklad, že ide o hodnoty spoločné viacerým bankám spracúvajúcim ten istý formát, nie o špecifikum jednej z nich. Overené 6. 9. 2026.</li>
   <li>ISO 20022 (<a href="https://www.iso20022.org/">iso20022.org</a>) a EPC SEPA Credit Transfer rulebook (<a href="https://www.europeanpaymentscouncil.eu/">europeanpaymentscouncil.eu</a>): základná schéma pain.001.001.03 a jej menný priestor, pravidlo EUR ako jedinej meny a PmtMtd/SvcLvl/ChrgBr ako schémou fixované hodnoty. Overené 6. 9. 2026.</li>
 </ol>

@@ -1,10 +1,10 @@
 <!doctype html>
 <html lang="sk">
 <head>
-<script src="/style/vzhlad.js?v=8a4019ae"></script>
+<script src="/style/vzhlad.js?v=072ce2c2"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://api.arling.workers.dev 'sha256-thFeqQ/7fKvhkCXiBc0UrKXgDxNM8b4O6aoYs7ryGQY=' 'sha256-rmhxcZ/ZXPxcjYJlyy5lSK/qB4TJ1lk7c4gr6FZTc6U=' 'sha256-FkelHlk9ccrEK0BurXcpzyjDrlPPPGC04H5ZK+h6Kgc=' 'sha256-kHzhLBitzZlfAaUS4VuXMelQQYrrpIhEmCeLW+iUbL4='; connect-src 'self' https://api.arling.workers.dev; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://api.arling.workers.dev 'sha256-thFeqQ/7fKvhkCXiBc0UrKXgDxNM8b4O6aoYs7ryGQY=' 'sha256-rmhxcZ/ZXPxcjYJlyy5lSK/qB4TJ1lk7c4gr6FZTc6U=' 'sha256-C9O7uxWk6FWKa6AKR7hUE6JOCrDRP+OMNv7Eyc8gZr4=' 'sha256-kHzhLBitzZlfAaUS4VuXMelQQYrrpIhEmCeLW+iUbL4='; connect-src 'self' https://api.arling.workers.dev; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#0a0908">
 <link rel="preconnect" href="https://api.arling.workers.dev" crossorigin>
@@ -62,7 +62,7 @@
     {
       "@type": "Question",
       "name": "Čo ak majú platby v jednej dávke rôzny dátum splatnosti?",
-      "acceptedAnswer": { "@type": "Answer", "text": "Generátor rozdelí platby s rôznym dátumom splatnosti automaticky do samostatných blokov PmtInf v jednom súbore, netreba pre každý dátum robiť samostatný import. Tatra banka aj tak obmedzuje jeden takýto blok na 500 transakcií, takže pri veľmi veľkej dávke s viacerými dátumami sa oplatí počet platieb na jeden dátum sledovať." }
+      "acceptedAnswer": { "@type": "Answer", "text": "Generátor rozdelí platby s rôznym dátumom splatnosti automaticky do samostatných blokov PmtInf v jednom súbore, netreba pre každý dátum robiť samostatný import. Pre Tatra banku však platí najviac 500 transakcií v celom súbore, spolu vo všetkých blokoch; väčšiu dávku treba rozdeliť do viacerých súborov." }
     },
     {
       "@type": "Question",
@@ -262,7 +262,7 @@
         </section>
         <section class="sec" id="s6">
   <h2 class="r">5. Čo je iné pri SLSP, VÚB, Tatra banke a ČSOB</h2>
-  <p class="r d1">Všetky štyri banky prijímajú hromadný príkaz vo formáte pain.001.001.03, podľa spoločného SEPA XML štandardu, na ktorom sa dohodli v rámci Slovenskej bankovej asociácie. Rozdiely sú v jednotlivých pravidlách, nie v samotnom formáte: BIC príjemcu je u VÚB podľa jej vlastnej špecifikácie povinný, Tatra banka ho vie odvodiť sama a pri nezhode súbor odmietne, ČSOB ho od roku 2016 nevyžaduje. Tatra banka obmedzuje jeden blok platieb na 500 transakcií a prijíma dátum splatnosti najviac 31 dní dopredu, VÚB vo vlastnom popise formátu uvádza najviac 30 dní dopredu. ČSOB navyše diakritiku v mene a v správe pre príjemcu neprijíma vôbec. Presné číslo dní alebo transakcií pre SLSP nemáme z jej vlastnej verejnej dokumentácie potvrdené, preto ho tu neuvádzame.</p>
+  <p class="r d1">Všetky štyri banky prijímajú hromadný príkaz vo formáte pain.001.001.03, podľa spoločného SEPA XML štandardu, na ktorom sa dohodli v rámci Slovenskej bankovej asociácie. Rozdiely sú v jednotlivých pravidlách, nie v samotnom formáte: BIC príjemcu je u VÚB podľa jej vlastnej špecifikácie povinný, Tatra banka ho vie odvodiť sama a pri nezhode súbor odmietne, ČSOB ho od roku 2016 nevyžaduje. Tatra banka prijme najviac 500 transakcií v celom súbore (rozdelenie do blokov v jednom súbore nepomôže) a prijíma dátum splatnosti najviac 31 dní dopredu, VÚB vo vlastnom popise formátu uvádza najviac 30 dní dopredu. ČSOB navyše diakritiku v mene a v správe pre príjemcu neprijíma vôbec. Presné číslo dní alebo transakcií pre SLSP nemáme z jej vlastnej verejnej dokumentácie potvrdené, preto ho tu neuvádzame.</p>
         </section>
         <section class="sec" id="s7">
   <h2 class="r">Časté otázky</h2>
@@ -272,7 +272,7 @@
   </details>
   <details class="r d2">
     <summary>Čo ak majú platby v jednej dávke rôzny dátum splatnosti?</summary>
-    <p>Generátor rozdelí platby s rôznym dátumom splatnosti automaticky do samostatných blokov PmtInf v jednom súbore, netreba pre každý dátum robiť samostatný import. Tatra banka aj tak obmedzuje jeden takýto blok na 500 transakcií, takže pri veľmi veľkej dávke s viacerými dátumami sa oplatí počet platieb na jeden dátum sledovať.</p>
+    <p>Generátor rozdelí platby s rôznym dátumom splatnosti automaticky do samostatných blokov PmtInf v jednom súbore, netreba pre každý dátum robiť samostatný import. Pre Tatra banku však platí najviac 500 transakcií v celom súbore, spolu vo všetkých blokoch; väčšiu dávku treba rozdeliť do viacerých súborov.</p>
   </details>
   <details class="r d3">
     <summary>Dá sa hromadný príkaz použiť aj na platbu mimo SEPA alebo v inej mene?</summary>
