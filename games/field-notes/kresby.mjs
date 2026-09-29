@@ -2357,6 +2357,712 @@ function opal() {
   };
 }
 
+/* ══ F-03 (29. 9. 2026): spoločné pre tri nové témy ═══════════════════════ */
+
+/* Oblasť elipsy medzi zvislými čiarami x1 a x2 (pruhy na zadočku čmeliaka). */
+function pasElipsy(cx, cy, rx, ry, x1, x2, n = 8) {
+  const y = (x, s) => cy + s * ry * Math.sqrt(Math.max(0, 1 - ((x - cx) / rx) ** 2));
+  const hore = [], dole = [];
+  for (let k = 0; k <= n; k++) { const x = x1 + ((x2 - x1) * k) / n; hore.push([x, y(x, -1)]); dole.push([x, y(x, 1)]); }
+  return mnoho([...hore, ...dole.reverse()]);
+}
+/* Krátke chĺpky kolmo von z obrysu (body krivky), každý krok-tý bod, smerom od stredu. */
+function chlpy(body, dlzka, krok, stred) {
+  let d = '';
+  for (let k = 0; k < body.length; k += krok) {
+    const p = body[k], v = [p[0] - stred[0], p[1] - stred[1]], l = Math.hypot(v[0], v[1]) || 1;
+    d += usecka(p, [p[0] + (v[0] / l) * dlzka, p[1] + (v[1] / l) * dlzka]);
+  }
+  return d;
+}
+/* Lúče kvetu okolo stredu (sedmokráska, púpava). sy < 1 kvet nakloní, uhol ho pootočí. */
+function luceKvetu(cx, cy, n, r1, r2, { sx = 1, sy = 1, posun = 0.1, sirka = 0.9 } = {}) {
+  let luce = '', spicky = '';
+  for (let k = 0; k < n; k++) {
+    const a = (k / n) * Math.PI * 2 + posun, w = (Math.PI / n) * sirka;
+    const bod = (r, da) => [cx + Math.cos(a + da) * r * sx, cy + Math.sin(a + da) * r * sy];
+    // Lúč je pri 81 px široký 1 až 2 px: lomená čiara stačí a cesta je 3x kratšia (strop vektorov appky).
+    luce += mnoho([bod(r1, -w * 0.9), bod(r2 * 0.9, -w * 0.62), bod(r2, 0), bod(r2 * 0.9, w * 0.62), bod(r1, w * 0.9)]);
+    spicky += lomena([bod(r2 * 0.78, -w * 0.3), bod(r2 * 0.95, 0), bod(r2 * 0.78, w * 0.3)]);
+  }
+  return { luce, spicky };
+}
+/* Pás zeme alebo trávy od hornej hrany (body zľava doprava) po spodok plátna, bez prepadu pod plátno. */
+const zemPas = (vrch) => mnoho([[vrch[0][0], 70], ...vrch, [vrch[vrch.length - 1][0], 70]]);
+const dokopy = (zoznam) => zoznam.join('');
+
+/* ══ Garden Minibeasts ════════════════════════════════════════════════════ */
+
+function lienka() {
+  // Pohľad zhora, hlava vľavo, celé pootočené; miestne súradnice okolo stredu krovky.
+  const T = umiestni(52, 36, -12, 1);
+  const krovky = hladka(T(elipsaBody(4, 0, 21, 16.4, 28)));
+  const stit = hladka(T([[-14, -10.4], [-19, -8.6], [-22.4, -4.6], [-23.4, 0], [-22.4, 4.6], [-19, 8.6], [-14, 10.4], [-15.4, 5], [-15.8, 0], [-15.4, -5]]));
+  const hlava = hladka(T(elipsaBody(-25.4, 0, 3.4, 5.4, 16)));
+  const sev = ciara(T([[-15.6, 0], [4, 0.2], [24.6, 0]]));
+  const bodky = [[-12.6, 0, 3], [-4, -8, 3.2], [8, -10, 3.4], [16.4, -4.4, 2.6], [-4, 8, 3.2], [8, 10, 3.4], [16.4, 4.4, 2.6]]
+    .map(([x, y, r]) => { const p = T([[x, y]])[0]; return kruh(p[0], p[1], r); }).join('');
+  let nohy = '', tykadla = '';
+  for (const s of [-1, 1]) {
+    nohy += ciara(T([[-10, s * 12.6], [-13, s * 18], [-17, s * 20.4]])) + ciara(T([[1, s * 16.2], [0, s * 21], [-3, s * 24]])) + ciara(T([[12, s * 15.2], [16, s * 19.6], [20.4, s * 21.4]]));
+    tykadla += ciara(T([[-27.6, s * 2.6], [-31, s * 6.2], [-32.4, s * 9.2]]));
+  }
+  const odlesk = hladka(T(elipsaBody(1, -4.6, 5, 1.7, 12, -6)));
+  const skvrnyStitu = [-5.4, 5.4].map((y) => { const p = T([[-20, y]])[0]; return PAP(elipsa(p[0], p[1], 1.9, 2.5, -12)); });
+  return {
+    w: [W(krovky, 'vermilion', 0.72), W(krovky, 'alizarin', 0.16), W(hladka(T(elipsaBody(11, 6, 12, 8, 16))), 'alizarin', 0.2), PAP(odlesk), W(stit, 'payne', 0.85), W(hlava, 'payne', 0.9)],
+    i: [I(krovky, 1), I(stit, 0.8), I(hlava, 0.7), I(sev, 0.6), I(bodky, 0.4), I(nohy, 0.6), I(tykadla, 0.5)],
+    f: [F(bodky, 'ink'), ...skvrnyStitu],
+  };
+}
+
+function cmeliak() {
+  const hlava = hladka(elipsaBody(22.4, 37.6, 5.6, 6.4, 16));
+  const hrud = hladka(elipsaBody(36, 35.4, 10.4, 9.6, 20));
+  const zadok = hladka(elipsaBody(58, 40, 18, 13, 28));
+  const golier = pasElipsy(36, 35.4, 10.4, 9.6, 25.6, 32.6);
+  const pasy = [[40, 46.6], [46.6, 54.4], [54.4, 65.6], [65.6, 76]].map(([a, b]) => pasElipsy(58, 40, 18, 13, a, b));
+  const hranice = ciara([[46.4, 29.9], [47.6, 40], [46.4, 50.1]]) + ciara([[54.2, 27.3], [55.4, 40], [54.2, 52.7]]) + ciara([[65.4, 28.2], [66.6, 40], [65.4, 51.8]]);
+  const kridlo1 = hladka(elipsaBody(50, 19.4, 14, 5, 20, -18));
+  const kridlo2 = hladka(elipsaBody(44.6, 21.6, 10.6, 4, 18, -40));
+  const zilky = ciara([[39, 25.4], [50, 19], [60, 14.6]]) + ciara([[38.4, 26.6], [45, 20.4], [50, 15.6]]);
+  const nohy = ciara([[31, 44], [28, 51], [25.4, 55.6]]) + ciara([[37, 45], [37.6, 52], [35.4, 57.4]]) + ciara([[43, 43], [48, 50.6], [51.4, 56.4]]);
+  const tykadlo = ciara([[20, 32.4], [17.6, 26.4], [12.4, 23]]);
+  const srst = chlpy(elipsaBody(36, 35.4, 10.4, 9.6, 30), 1.3, 2, [36, 35.4]) + chlpy(elipsaBody(58, 40, 18, 13, 44), 1.3, 2, [58, 40]);
+  return {
+    w: [W(kridlo2, 'cerulean', 0.12), W(kridlo1, 'cerulean', 0.12), W(hlava, 'payne', 0.8), W(hrud, 'payne', 0.75), W(golier, 'lemon', 0.85),
+      W(pasy[0], 'payne', 0.75), W(pasy[1], 'lemon', 0.85), W(pasy[1], 'ochre', 0.22), W(pasy[2], 'payne', 0.75), W(pasy[3], 'ochre', 0.1), WS(nohy, 'payne', 0.5, 1.2)],
+    i: [I(kridlo2, 0.55), I(kridlo1, 0.6), I(zilky, 0.3), I(hlava, 0.8), I(hrud, 0.9), I(zadok, 1), I(hranice, 0.45), I(srst, 0.35), I(nohy, 0.6), I(tykadlo, 0.55)],
+    f: [PAP(kruh(20.6, 35.6, 0.6))],
+  };
+}
+
+function slimak() {
+  const noha = hladka([[10.6, 50.4, 1], [12.6, 45], [16.4, 41], [21.4, 39.6], [26, 41.4], [30, 46.4], [38, 49.4], [52, 50.2], [68, 50.8], [80, 51.8], [90, 55.4, 1], [80, 57.4], [62, 58], [40, 57.8], [22, 57.4], [13.6, 55.4]]);
+  const c = [58, 31.6], R = 19;
+  const ulita = kruh(c[0], c[1], R);
+  const spir = [];
+  for (let k = 0; k <= 60; k++) { const t = (k / 60) * 15.5, r = R * Math.exp(-0.16 * t), a = 2.4 + t; spir.push([c[0] + Math.cos(a) * r, c[1] + Math.sin(a) * r]); }
+  const tykadla = usecka([18, 40.6], [12.4, 27.8]) + usecka([22.4, 39.8], [22, 26.8]) + usecka([14, 45], [9, 42.6]);
+  const vrasky = ciara([[34, 52], [36, 55]]) + ciara([[44, 53], [45.6, 56]]) + ciara([[76, 53.6], [78, 56]]) + ciara([[16, 46], [19, 48]]);
+  const zem = ciara([[4, 58.6], [50, 58.2], [96, 58.8]]);
+  return {
+    w: [W(noha, 'umber', 0.24), W(noha, 'olive', 0.16), PAP(ulita), W(ulita, 'ochre', 0.55), W(ulita, 'sienna', 0.2), W(tien(c[0], c[1], R, 0.55), 'umber', 0.22),
+      WS(ciara(spir.slice(0, 44)), 'umber', 0.4, 2.6), PAP(elipsa(49, 22.6, 3.2, 1.6, -40)), W(zemPas([[4, 58.8], [50, 58.4], [96, 59]]), 'payne', 0.08)],
+    i: [I(noha, 1), I(ulita, 1), I(ciara(spir), 0.7), I(tykadla, 0.6), I(vrasky, 0.35), I(zem, 0.6)],
+    f: [F(kruh(12.2, 27.4, 1.05), 'ink'), F(kruh(22, 26.4, 1.05), 'ink')],
+  };
+}
+
+function slizniak() {
+  // Nízke pretiahnuté telo, ktoré sa k chvostu zužuje do hrotu; štít (plášť) vpredu, tykadlá hore.
+  const telo = hladka([[10, 48, 1], [11.6, 43.6], [15.6, 40.4], [22, 39], [30, 38.4], [42, 38.6], [56, 40.4], [70, 44], [82, 48.6], [93, 53.6, 1], [82, 54.6], [64, 55.2], [44, 55.4], [26, 55.4], [15, 54.4], [10.6, 51.6]]);
+  const plast = hladka([[17, 41.4], [23, 39.4], [33, 39], [42, 40.4], [45, 44], [40, 47.6], [30, 48.2], [21, 47], [16.6, 44.4]]);
+  const kyl = ciara([[46, 40], [60, 42], [74, 45.6], [88, 51]]);
+  const tykadla = usecka([15, 41.4], [9, 29.4]) + usecka([19, 39.6], [17, 27.4]) + usecka([11, 46], [5.6, 44.6]) + usecka([12.4, 49], [7, 49.8]);
+  const pruh = ciara([[46, 44.4], [62, 46.8], [78, 50], [89, 53]]);
+  const nah = rozptyl(311);
+  let skvrny = '';
+  for (let k = 0; k < 12; k++) skvrny += kruh(22 + nah() * 20, 41.4 + nah() * 5, 0.5 + nah() * 0.5);
+  let vrasky = '';
+  for (let k = 0; k < 6; k++) vrasky += ciara([[50 + k * 7, 46.6 + k * 1.1], [51 + k * 7, 50 + k * 0.8], [50 + k * 7, 54 + k * 0.2]]);
+  return {
+    w: [W(telo, 'ochre', 0.32), W(telo, 'umber', 0.2), W(plast, 'umber', 0.3), WS(pruh, 'umber', 0.5, 1.8), WS(ciara([[44, 41.6], [58, 43.4], [72, 47]]), 'papier', 1, 1.2),
+      W(zemPas([[4, 56.4], [50, 56], [96, 56.6]]), 'payne', 0.08)],
+    i: [I(telo, 1), I(plast, 0.6), I(kyl, 0.35), I(tykadla, 0.6), I(vrasky, 0.3), I(ciara([[4, 56.2], [50, 55.8], [96, 56.4]]), 0.6)],
+    f: [F(skvrny, 'umber'), F(elipsa(37.6, 46, 1.3, 1), 'ink'), F(kruh(9, 29, 1), 'ink'), F(kruh(17, 27, 1), 'ink')],
+  };
+}
+
+function ucholak() {
+  const hlava = hladka(elipsaBody(17, 36, 5, 4.2, 16));
+  const stit = hladka([[22, 32], [27, 31.4], [30.4, 32.4], [31, 36], [30.4, 39.6], [27, 40.6], [22, 40], [21.4, 36]]);
+  const krovky = hladka([[30.6, 31.4], [38, 30.6], [42.6, 31.6], [43, 36], [42.6, 40.4], [38, 41.4], [30.6, 40.6]]);
+  const brucho = hladka([[42, 32], [50, 31.4], [60, 32], [68, 33.2], [73, 34.2, 1], [73, 37.8, 1], [68, 38.8], [60, 40], [50, 40.6], [42, 40]]);
+  let clanky = '';
+  for (const x of [48, 53.4, 58.8, 64.2, 69]) clanky += ciara([[x, 31.8 + (x - 42) * 0.07], [x + 0.7, 36], [x, 40.4 - (x - 42) * 0.08]]);
+  const klieste = [1, -1].map((s) => hladka([[72, 36 - s * 1.6], [80, 36 - s * 4], [87.6, 36 - s * 7.4], [92.6, 36 - s * 7.6, 1], [89.4, 36 - s * 5.2], [82.4, 36 - s * 1.8], [74, 36 + s * 0.2]])).join('');
+  const tykadla = ciara([[13, 34], [8.4, 29.6], [5, 23.6], [3.6, 17]]) + ciara([[13, 38], [8.4, 42.4], [5.4, 48.4], [4.6, 55]]);
+  let nohy = '';
+  for (const s of [-1, 1]) nohy += ciara([[26, 36 + s * 4.4], [24, 36 + s * 10], [20, 36 + s * 13]]) + ciara([[33, 36 + s * 5], [34, 36 + s * 11], [31, 36 + s * 15.4]]) + ciara([[40, 36 + s * 5], [46, 36 + s * 11], [48.4, 36 + s * 15.4]]);
+  return {
+    w: [W(hlava, 'sienna', 0.6), W(hlava, 'umber', 0.3), W(stit, 'umber', 0.55), W(krovky, 'ochre', 0.55), W(krovky, 'sienna', 0.2), W(brucho, 'sienna', 0.55), W(brucho, 'umber', 0.3),
+      W(klieste, 'umber', 0.65), WS(nohy, 'ochre', 0.45, 1.1)],
+    i: [I(hlava, 0.9), I(stit, 0.8), I(krovky, 0.85), I(usecka([31, 36], [42.8, 36]), 0.45), I(brucho, 1), I(clanky, 0.4), I(klieste, 0.9), I(tykadla, 0.5), I(nohy, 0.6)],
+    f: [F(kruh(15.4, 33.2, 0.8), 'ink'), F(kruh(15.4, 38.8, 0.8), 'ink')],
+  };
+}
+
+function ziziavka() {
+  const c = [52, 36], rx = 27, ry = 14.6;
+  const telo = hladka(elipsaBody(c[0], c[1], rx, ry, 28));
+  const hrana = (x) => ry * Math.sqrt(Math.max(0, 1 - ((x - c[0]) / rx) ** 2));
+  let clanky = '', nohy = '';
+  for (const x of [30, 35.6, 41.2, 46.8, 52.4, 58, 63.6, 68.4, 72.4]) { const h = hrana(x + 2.2); clanky += ciara([[x + 2.2, c[1] - h + 0.2], [x, c[1]], [x + 2.2, c[1] + h - 0.2]]); }
+  for (let k = 0; k < 7; k++) {
+    const x = 33 + k * 6, h = hrana(x);
+    for (const s of [-1, 1]) nohy += ciara([[x, c[1] + s * (h - 1.4)], [x - 1.2, c[1] + s * (h + 1.4)], [x - 2.4, c[1] + s * (h + 3)]]);
+  }
+  const hlava = pasElipsy(c[0], c[1], rx, ry, 25, 30.6);
+  const tykadla = ciara([[26, 31.4], [20, 27.4], [14, 25.6], [9, 21.6]]) + ciara([[26, 40.6], [20, 44.6], [14, 46.4], [9, 50.4]]);
+  const chvost = usecka([78.4, 33.4], [84, 31.8]) + usecka([78.4, 38.6], [84, 40.2]);
+  const nah = rozptyl(907);
+  let skvrny = '';
+  for (let k = 0; k < 16; k++) { const x = 34 + nah() * 36, h = hrana(x) * 0.7; skvrny += kruh(x, c[1] + (nah() * 2 - 1) * h, 0.55); }
+  return {
+    w: [W(telo, 'payne', 0.42), W(telo, 'umber', 0.16), W(hlava, 'payne', 0.3), W(hladka(elipsaBody(54, 41, 22, 7, 16)), 'payne', 0.14), WS(ciara([[34, 30], [52, 27], [70, 30]]), 'papier', 1, 0.9), WS(nohy, 'payne', 0.3, 1)],
+    i: [I(telo, 1), I(clanky, 0.45), I(tykadla, 0.55), I(chvost, 0.6), I(nohy, 0.5)],
+    f: [F(skvrny, 'ochre'), F(kruh(27.4, 30.4, 0.75), 'ink'), F(kruh(27.4, 41.6, 0.75), 'ink')],
+  };
+}
+
+function stonozka() {
+  const os = [[16, 44], [26, 37.4], [38, 35], [50, 38.6], [62, 42.4], [74, 40.6], [84, 34.4], [90, 28]];
+  const t = rurka(os, (s) => 2.9 - s * 0.7, 6);
+  const n = t.os.length, N = 15;
+  let clanky = '', nohy = '';
+  for (let k = 1; k < N; k++) { const i = Math.round((k * (n - 1)) / N); clanky += usecka(t.A[i], t.B[i]); }
+  for (let k = 0; k < N; k++) {
+    const i = Math.round(((k + 0.5) * (n - 1)) / N), p = t.os[i], q = t.os[Math.min(n - 1, i + 1)];
+    const u = [q[0] - p[0], q[1] - p[1]], l = Math.hypot(u[0], u[1]) || 1, tu = [u[0] / l, u[1] / l];
+    for (const E of [t.A[i], t.B[i]]) {
+      const nn = [E[0] - p[0], E[1] - p[1]], ln = Math.hypot(nn[0], nn[1]) || 1, v = [nn[0] / ln, nn[1] / ln];
+      nohy += lomena([E, [E[0] + v[0] * 2.6, E[1] + v[1] * 2.6], [E[0] + v[0] * 4.6 + tu[0] * 1.8, E[1] + v[1] * 4.6 + tu[1] * 1.8]]);
+    }
+  }
+  const hlava = hladka(elipsaBody(14.2, 45.6, 3.6, 3, 14, -30));
+  const tykadla = ciara([[12, 44], [6.4, 44.6], [2.6, 48.6]]) + ciara([[12.6, 47.6], [8.6, 52], [7, 58]]);
+  const zadne = ciara([[89, 27.4], [91, 21.4], [92.4, 15.4]]) + ciara([[91.4, 29.6], [95.4, 26.4], [98.4, 23.4]]);
+  return {
+    w: [W(t.obrys, 'sienna', 0.55), W(t.obrys, 'ochre', 0.3), W(hlava, 'sienna', 0.7), WS(nohy, 'ochre', 0.5, 0.9)],
+    i: [I(lomena(t.A) + lomena(t.B), 1), I(usecka(t.A[n - 1], t.B[n - 1]), 0.8), I(clanky, 0.45), I(nohy, 0.5), I(hlava, 0.9), I(tykadla, 0.5), I(zadne, 0.5)],
+    f: [F(kruh(12.6, 44.4, 0.6), 'ink'), F(kruh(13.6, 47.4, 0.6), 'ink')],
+  };
+}
+
+function dazdovka() {
+  const os = [[8, 40], [18, 36], [30, 38], [42, 45], [54, 48], [66, 45], [76, 44], [84, 49], [88, 57.6]];
+  const t = rurka(os, (s) => 2.3 + 0.9 * Math.sin(Math.PI * Math.min(1, s * 1.3)), 6);
+  const S0 = 12, S1 = 19; // opasok (sedlo) asi v tretine dĺžky od hlavy
+  const n = t.os.length;
+  const d0 = [t.os[1][0] - t.os[0][0], t.os[1][1] - t.os[0][1]], l0 = Math.hypot(d0[0], d0[1]);
+  const spicka = [t.os[0][0] - (d0[0] / l0) * 2.4, t.os[0][1] - (d0[1] / l0) * 2.4];
+  const hlavicka = ciara([t.A[0], spicka, t.B[0]]);
+  let krUzky = '';
+  for (let i = 2; i < n - 3; i += 2) if (i < S0 || i >= S1) krUzky += lomena([t.A[i], [(t.A[i][0] + t.B[i][0]) / 2 + 0.3, (t.A[i][1] + t.B[i][1]) / 2], t.B[i]]);
+  const sedlo = mnoho([...t.A.slice(S0, S1), ...t.B.slice(S0, S1).reverse()]);
+  const zem = zemPas([[2, 57.8], [50, 57.4], [98, 58]]);
+  return {
+    w: [W(t.obrys, 'rose', 0.55), W(t.obrys, 'sienna', 0.14), W(hladka([t.A[0], spicka, t.B[0]]), 'rose', 0.55), W(sedlo, 'alizarin', 0.34), WS(lomena(t.os.slice(2, 36).map(([x, y]) => [x - 0.4, y - 1.2])), 'papier', 1, 0.8),
+      W(zem, 'umber', 0.3), W(zem, 'ochre', 0.14), W(elipsa(88, 58.4, 4.6, 1.4), 'payne', 0.6)],
+    i: [I(lomena(t.A) + lomena(t.B), 1), I(hlavicka, 1), I(krUzky, 0.35), I(lomena(t.A.slice(S0, S1)) + lomena(t.B.slice(S0, S1)), 0.3), I(ciara([[2, 57.8], [50, 57.4], [98, 58]]), 0.6),
+      I(ciara([[12, 62], [18, 61.6]]) + ciara([[40, 64], [48, 63.4]]) + ciara([[66, 62.4], [72, 62]]), 0.35)],
+    f: [F(kruh(24, 64, 0.8), 'umber'), F(kruh(58, 66, 0.7), 'umber'), F(kruh(34, 60.6, 0.5), 'umber')],
+  };
+}
+
+function mravec() {
+  const hlava = hladka(elipsaBody(21, 30, 6.2, 5, 16, -18));
+  const hrud = hladka([[27, 31], [31, 28.6], [37, 28.4], [42, 30.6], [44.6, 34], [42, 36.4], [36, 36.2], [30, 35], [26.6, 33.4]]);
+  const stopka = hladka(elipsaBody(47.6, 34.4, 1.8, 2.8, 12));
+  const zadocek = hladka(elipsaBody(61, 36.4, 11.6, 8.6, 24, 14));
+  const kusadla = ciara([[15.8, 32], [13, 34.4], [15.4, 35.8]]);
+  const tykadla = ciara([[19, 25.4], [18.4, 17], [11, 12.4], [8, 12.6]]) + ciara([[22, 25], [24, 17.6], [18, 10.4], [15.6, 9.6]]);
+  const blizke = ciara([[31, 35], [27, 42], [22, 49], [19, 53]]) + usecka([19, 53], [16, 54.2]) + ciara([[36, 36], [39, 43], [35, 50], [33, 54]]) + usecka([33, 54], [30.6, 54.8])
+    + ciara([[41, 36], [50, 43], [57, 50], [60, 54]]) + usecka([60, 54], [63.6, 54.6]);
+  const vzdialene = ciara([[30, 34], [24, 40], [18, 46], [15, 49.4]]) + ciara([[37, 35.6], [44, 42], [44, 49], [46, 53.4]]) + ciara([[42, 35], [55, 40], [66, 46], [72, 50.4]]);
+  const zem = ciara([[4, 55], [50, 54.6], [96, 55.4]]);
+  return {
+    w: [WS(vzdialene, 'umber', 0.3, 1), W(hlava, 'payne', 0.75), W(hlava, 'sienna', 0.15), W(hrud, 'sienna', 0.65), W(hrud, 'vermilion', 0.2), W(stopka, 'sienna', 0.55),
+      W(zadocek, 'payne', 0.75), W(zadocek, 'umber', 0.2), PAP(elipsa(59, 31.6, 4.6, 1.3, 12)), WS(blizke, 'sienna', 0.5, 1.2), W(zemPas([[4, 55.2], [50, 54.8], [96, 55.6]]), 'ochre', 0.14)],
+    i: [I(vzdialene, 0.4), I(hlava, 0.9), I(hrud, 0.9), I(stopka, 0.7), I(zadocek, 1), I(kusadla, 0.6), I(tykadla, 0.55), I(blizke, 0.65), I(zem, 0.6)],
+    f: [PAP(kruh(21.8, 28.2, 0.7)), F(kruh(26, 58.6, 0.9), 'umber'), F(kruh(78, 57.6, 0.7), 'umber')],
+  };
+}
+
+function pavuk() {
+  const c = [50, 34];
+  const blizko = (p) => Math.hypot(p[0] - 50, p[1] - 35) < 12;
+  const mimo = (p) => blizko(p) || p[0] < 1 || p[0] > 99 || p[1] < 1 || p[1] > 69;
+  const L = 14, uhly = Array.from({ length: L }, (_, k) => (k / L) * Math.PI * 2 + 0.2);
+  let luce = '', spirala = '';
+  for (const a of uhly) luce += viditelne(Array.from({ length: 12 }, (_, j) => [c[0] + Math.cos(a) * (12 + j * 3.2), c[1] + Math.sin(a) * (12 + j * 3.2)]), mimo);
+  for (let j = 0; j < 6; j++) {
+    const r = 15 + j * 4.3, body = [];
+    for (let k = 0; k <= L; k++) {
+      const a = uhly[k % L], a2 = a + Math.PI / L;
+      body.push([c[0] + Math.cos(a) * r, c[1] + Math.sin(a) * r]);
+      if (k < L) for (const t of [0.35, 0.65]) { const u = a + (a2 - a) * t * 2, rr = r * (1 - 0.05 * Math.sin(Math.PI * t)); body.push([c[0] + Math.cos(u) * rr, c[1] + Math.sin(u) * rr]); }
+    }
+    spirala += viditelne(body, mimo);
+  }
+  const zadocek = hladka(elipsaBody(50, 40, 6.4, 8, 20));
+  const hlavohrud = hladka(elipsaBody(50, 29.6, 3.8, 4.2, 14));
+  let nohy = '';
+  for (const s of [-1, 1]) for (const st of [-62, -24, 16, 52]) {
+    const a = (st * Math.PI) / 180, b = [50 + s * Math.cos(a) * 3.4, 29.6 + Math.sin(a) * 3.6];
+    const k1 = [b[0] + s * Math.cos(a - 0.5) * 8, b[1] + Math.sin(a - 0.5) * 8];
+    const k2 = [k1[0] + s * Math.cos(a + 0.5) * 8.4, k1[1] + Math.sin(a + 0.5) * 8.4];
+    nohy += lomena([b, k1, k2]);
+  }
+  const kriz = [[50, 34.6], [50, 37.4], [50, 40.2], [50, 43], [46.8, 38.4], [53.2, 38.4]].map(([x, y]) => PAP(kruh(x, y, 0.85)));
+  return {
+    w: [W(zadocek, 'ochre', 0.55), W(zadocek, 'sienna', 0.3), W(hlavohrud, 'sienna', 0.55), W(hlavohrud, 'umber', 0.25), WS(nohy, 'umber', 0.4, 1.1)],
+    i: [I(luce, 0.3), I(spirala, 0.3), I(nohy, 0.65), I(zadocek, 0.9), I(hlavohrud, 0.8)],
+    f: [...kriz, F(kruh(49, 27, 0.5), 'ink'), F(kruh(51, 27, 0.5), 'ink')],
+  };
+}
+
+/* ══ Meadow Wildflowers ═══════════════════════════════════════════════════ */
+
+function mak() {
+  // Pohárik zboku: dva zadné plátky hore, predný plátok ako miska zakryje spodok; tobolka nad miskou.
+  const zadBodyL = [[45, 24], [38, 22], [30, 18], [26, 11], [29, 5], [36, 3], [42, 5.4], [45.4, 11]];
+  const zadBodyP = [[46, 24], [53, 22], [61, 18], [65, 11], [62, 5], [55, 3], [49, 5.4], [45.6, 11]];
+  const predBody = [[27, 20.4], [34, 22.6], [40, 23.6], [46, 23.8], [52, 23.6], [58, 22.6], [65, 20.4], [66.6, 27], [62.6, 35], [54, 40.6], [46, 42], [38, 40.6], [29.4, 35], [25.4, 27]];
+  const zadL = hladka(zadBodyL), zadP = hladka(zadBodyP), pred = hladka(predBody);
+  const vPred = vzorky(predBody, 6, true);
+  const skryte = (p) => vnutri(p, vPred);
+  const tobolkaBody = elipsaBody(46, 20.4, 4.4, 3.4, 24);
+  const tobolka = hladka(tobolkaBody);
+  let prasniky = '';
+  for (let k = 0; k < 11; k++) { const a = Math.PI * (1.04 + (k * 0.92) / 10); prasniky += kruh(46 + Math.cos(a) * 6.4, 21.6 + Math.sin(a) * 4.6, 0.55); }
+  const skvrny = hladka([[37, 23.4], [42, 26.4], [46, 27.2], [50, 26.4], [55, 23.4], [46, 24.6]]);
+  const ryhy = ciara([[36, 12], [31.6, 8]]) + ciara([[56, 12], [60.4, 8]]) + ciara([[37, 30], [33, 34]]) + ciara([[55, 30], [59, 34]]) + ciara([[46, 28], [46.2, 35], [46, 40]]);
+  const stonka = ciara([[46, 42], [47, 50], [50, 58], [52, 68]]);
+  const stonka2 = ciara([[62, 68], [66, 56], [72, 44], [78, 36], [81.4, 34.2], [83, 37.2]]);
+  const puk = hladka(elipsaBody(82.6, 42.4, 3.6, 5.4, 14, -15));
+  const lst = list([30, 68], [10, 50], (s) => 5 * Math.sin(Math.PI * s), { zuby: 5, amp: 0.5 });
+  let chlpky = '';
+  for (let k = 0; k < 6; k++) { const y = 46 + k * 3.6, x = 46.2 + (y - 42) * 0.2; chlpky += usecka([x, y], [x + 1.4, y - 0.6]); }
+  return {
+    w: [W(zadL, 'vermilion', 0.62), W(zadL, 'alizarin', 0.3), W(zadP, 'vermilion', 0.62), W(zadP, 'alizarin', 0.3), W(skvrny, 'payne', 0.65), W(tobolka, 'sap', 0.55), W(tobolka, 'olive', 0.3),
+      PAP(pred), W(pred, 'vermilion', 0.74), W(hladka([[27, 20.4], [40, 23.6], [52, 23.6], [65, 20.4], [60, 28], [46, 30], [32, 28]]), 'alizarin', 0.16), WS(stonka + stonka2, 'sap', 0.5, 1.8), W(puk, 'sap', 0.55), W(lst.obrys, 'sap', 0.45)],
+    i: [I(viditelne(vzorky(zadBodyL, 6, true), skryte) + viditelne(vzorky(zadBodyP, 6, true), skryte), 0.9), I(pred, 1), I(viditelne([...tobolkaBody, tobolkaBody[0]], skryte), 0.6), I(ryhy, 0.35),
+      I(stonka, 0.9), I(stonka2, 0.8), I(puk, 0.8), I(chlpky, 0.35), I(lst.obrys, 0.7), I(lst.stred, 0.4)],
+    f: [F(prasniky, 'ink'), F(usecka([44, 19.6], [48, 19.6]) + usecka([46, 17.8], [46, 21.4]), 'ink')],
+  };
+}
+
+function sedmokraska() {
+  const k1 = luceKvetu(38, 26, 21, 4.2, 14);
+  const k2 = luceKvetu(74, 38, 19, 3.6, 11, { sy: 0.46, posun: 0.25 });
+  const stred1 = elipsa(38, 26, 4.4, 4.4), stred2 = elipsa(74, 38, 3.8, 1.9);
+  const stonky = ciara([[38, 40], [39, 52], [41, 64]]) + ciara([[74, 43.2], [71, 54], [66, 64]]);
+  const listy = [[[41, 64], [18, 58]], [[41, 64], [26, 67.6]], [[42, 64], [62, 60]], [[42, 64], [56, 67.4]]].map(([a, b]) => list(a, b, (s) => 3.8 * Math.sin(Math.PI * Math.pow(s, 0.55)), { n: 12 }));
+  const nah = rozptyl(55);
+  let zrnka = '';
+  for (let k = 0; k < 14; k++) { const a = nah() * Math.PI * 2, r = Math.sqrt(nah()) * 3.2; zrnka += kruh(38 + Math.cos(a) * r, 26 + Math.sin(a) * r, 0.42); }
+  return {
+    w: [W(zemPas([[2, 60], [30, 58.6], [60, 59.4], [98, 57.4]]), 'sap', 0.14), ...listy.map((l) => W(l.obrys, 'sap', 0.5)), WS(stonky, 'sap', 0.5, 1.4),
+      WS(k1.spicky, 'rose', 0.5, 1.2), WS(k2.spicky, 'rose', 0.6, 1), W(stred1, 'lemon', 0.85), W(stred1, 'ochre', 0.3), W(stred2, 'lemon', 0.85), W(stred2, 'ochre', 0.3)],
+    i: [I(k1.luce, 0.5), I(k2.luce, 0.5), I(stred1, 0.7), I(stred2, 0.6), I(stonky, 0.8), I(dokopy(listy.map((l) => l.obrys)), 0.65), I(dokopy(listy.map((l) => l.stred)), 0.35)],
+    f: [F(zrnka, 'ochre')],
+  };
+}
+
+function detelina() {
+  const c = [44, 22];
+  const obrys = hladka(elipsaBody(c[0], c[1], 10.4, 11.2, 20).map(([x, y], k) => { const q = k % 2 ? 1 : 0.93; return [c[0] + (x - c[0]) * q, c[1] + (y - c[1]) * q]; }));
+  const nah = rozptyl(1234);
+  let kvietky = '';
+  for (let k = 0; k < 40; k++) {
+    const a = nah() * Math.PI * 2, r = Math.sqrt(nah()) * 0.86, x = c[0] + Math.cos(a) * r * 10, y = c[1] + Math.sin(a) * r * 11;
+    kvietky += lomena([[x - 0.7, y + 1.3], [x, y - 1.2], [x + 0.7, y + 1.3]]);
+  }
+  const trojlist = (x, y, r, rot) => [-90, 30, 150].map((u) => {
+    const a = ((u + rot) * Math.PI) / 180, p = [x + Math.cos(a) * r * 0.98, y + Math.sin(a) * r * 0.98];
+    const lst = hladka(elipsaBody(p[0], p[1], r, r * 0.62, 12, u + rot));
+    const kraj = (t) => [x + Math.cos(a) * r * t, y + Math.sin(a) * r * t], bok = (t, s) => { const q = kraj(t); return [q[0] + Math.cos(a + (s * Math.PI) / 2) * r * 0.36, q[1] + Math.sin(a + (s * Math.PI) / 2) * r * 0.36]; };
+    return { lst, v: ciara([bok(1.3, -1), kraj(0.95), bok(1.3, 1)]) };
+  });
+  const l1 = trojlist(24, 46, 6.2, 0), l2 = trojlist(68, 52, 5.6, 14);
+  const stonky = ciara([[44, 33], [45, 48], [47, 68]]) + ciara([[45.2, 52], [34, 50], [26.6, 47.6]]) + ciara([[46.2, 58], [58, 55], [66, 53.6]]);
+  const listence = hladka([[38, 32], [34, 34.6], [37, 36], [42, 34]]) + hladka([[50, 32], [54, 34.6], [51, 36], [46, 34]]);
+  const listy = [...l1, ...l2];
+  return {
+    w: [W(obrys, 'rose', 0.6), W(obrys, 'violet', 0.26), W(hladka(elipsaBody(44, 16, 8, 5, 16)), 'alizarin', 0.14), W(listence, 'sap', 0.5),
+      ...listy.map((l) => W(l.lst, 'sap', 0.56)), WS(dokopy(listy.map((l) => l.v)), 'papier', 1, 1), WS(stonky, 'sap', 0.5, 1.4)],
+    i: [I(obrys, 0.9), I(kvietky, 0.35), I(listence, 0.6), I(dokopy(listy.map((l) => l.lst)), 0.75), I(stonky, 0.8)],
+    f: [],
+  };
+}
+
+function zvoncek() {
+  const zvon = [[-1.8, 0], [-3.6, 4], [-5, 9], [-6.6, 12.8, 1], [-4.8, 12.2], [-3, 13.8, 1], [-1.2, 12.6], [0, 14.2, 1], [1.2, 12.6], [3, 13.8, 1], [4.8, 12.2], [6.6, 12.8, 1], [5, 9], [3.6, 4], [1.8, 0]];
+  const zily = [[[0, 1.4], [-1.2, 7], [-3, 12.6]], [[0, 1.4], [0, 7], [0, 13]], [[0, 1.4], [1.2, 7], [3, 12.6]]];
+  const zvony = [[30, 21, 25, 1.05], [56, 27, -10, 1.15], [78, 19, -30, 0.95]].map(([x, y, u, m]) => {
+    const T = umiestni(x, y, u, m);
+    return { obrys: hladka(T(zvon)), zily: dokopy(zily.map((z) => ciara(T(z)))), kalich: ciara(T([[-2.6, 1.6], [-1.6, -0.6], [0, -1.2], [1.6, -0.6], [2.6, 1.6]])) };
+  });
+  const stonky = ciara([[40, 68], [34, 44], [31.4, 15.8], [30, 21]]) + ciara([[50, 68], [53, 46], [55, 21], [56, 27]]) + ciara([[58, 68], [70, 40], [77, 14], [78, 19]]);
+  const listky = ciara([[36, 52], [30, 46.6]]) + ciara([[52, 50], [58, 43.4]]) + ciara([[64, 52.4], [70, 50]]) + ciara([[35, 36], [30.4, 32]]);
+  const prizemne = hladka(elipsaBody(40, 65.4, 3, 2.2, 12, -20)) + hladka(elipsaBody(55, 65.8, 2.8, 2, 12, 20));
+  return {
+    w: [...zvony.map((z) => W(z.obrys, 'violet', 0.38)), W(dokopy(zvony.map((z) => z.obrys)), 'ultramarine', 0.26), WS(stonky, 'sap', 0.45, 1), WS(listky, 'sap', 0.5, 1.2), W(prizemne, 'sap', 0.5),
+      W(dokopy(zvony.map((z) => z.kalich)), 'sap', 0.4)],
+    i: [I(dokopy(zvony.map((z) => z.obrys)), 0.9), I(dokopy(zvony.map((z) => z.zily)), 0.35), I(dokopy(zvony.map((z) => z.kalich)), 0.5), I(stonky, 0.7), I(listky, 0.5), I(prizemne, 0.5),
+      I(ciara([[30, 68.4], [50, 68], [70, 68.6]]), 0.4)],
+    f: [],
+  };
+}
+
+function pupava() {
+  const vonk = luceKvetu(28, 28, 26, 4.6, 13.4, { sirka: 1.1 });
+  const vnut = luceKvetu(28, 28, 18, 2.4, 8.8, { posun: 0.3, sirka: 1.1 });
+  const c = [70, 23], R = 12.6;
+  let luce = '', padaky = '';
+  for (let k = 0; k < 28; k++) {
+    const a = (k / 28) * Math.PI * 2 + 0.1, p = [c[0] + Math.cos(a) * R * 0.86, c[1] + Math.sin(a) * R * 0.86];
+    luce += usecka([c[0] + Math.cos(a) * 2.4, c[1] + Math.sin(a) * 2.4], p);
+    for (const da of [-0.5, -0.25, 0, 0.25, 0.5]) padaky += usecka(p, [p[0] + Math.cos(a + da) * 2.2, p[1] + Math.sin(a + da) * 2.2]);
+  }
+  const letiace = usecka([88, 12], [92.6, 5.6]) + [-0.5, -0.25, 0, 0.25, 0.5].map((da) => { const a = -0.95 + da; return usecka([92.6, 5.6], [92.6 + Math.cos(a) * 2.4, 5.6 + Math.sin(a) * 2.4]); }).join('');
+  const stonky = ciara([[28, 41.4], [30, 54], [33, 68]]) + ciara([[70, 34.6], [67, 50], [62, 68]]);
+  const l1 = list([36, 68], [6, 54], (s) => 4.6 * Math.sin(Math.PI * s), { zuby: 5, amp: 0.8 });
+  const l2 = list([44, 68], [90, 58], (s) => 4.4 * Math.sin(Math.PI * s), { zuby: 6, amp: 0.8 });
+  return {
+    w: [W(l1.obrys, 'sap', 0.5), W(l2.obrys, 'sap', 0.5), WS(stonky, 'sap', 0.45, 1.8), W(vonk.luce, 'lemon', 0.8), W(vnut.luce, 'ochre', 0.45),
+      W(kruh(28, 28, 3.2), 'ochre', 0.5), W(kruh(c[0], c[1], R), 'payne', 0.05), W(kruh(c[0], c[1], 2.4), 'olive', 0.4)],
+    i: [I(vonk.luce, 0.55), I(vnut.luce, 0.45), I(luce, 0.3), I(padaky, 0.3), I(letiace, 0.3), I(stonky, 0.8), I(l1.obrys + l2.obrys, 0.65), I(l1.stred + l2.stred, 0.35)],
+    f: [],
+  };
+}
+
+function chrpa() {
+  const kvietok = (L) => [[-0.6, 0, 1], [-1, L * 0.55], [-3.2, L * 0.88], [-3.8, L + 0.6, 1], [-2.2, L - 0.2, 1], [-1.3, L + 1.2, 1], [0, L, 1], [1.3, L + 1.2, 1], [2.2, L - 0.2, 1], [3.8, L + 0.6, 1], [3.2, L * 0.88], [1, L * 0.55], [0.6, 0, 1]];
+  const c = [46, 22];
+  const vonkajsie = [-178, -152, -128, -104, -80, -56, -32, -8, 12].map((phi) => {
+    const a = (phi * Math.PI) / 180;
+    return mnoho(umiestni(c[0] + Math.cos(a) * 3, c[1] + Math.sin(a) * 3, phi - 90, 1)(kvietok(11)));
+  }).join('');
+  const vnutorne = [-130, -105, -80, -55].map((phi) => { const a = (phi * Math.PI) / 180; return mnoho(umiestni(c[0] + Math.cos(a) * 1.5, c[1] + Math.sin(a) * 1.5, phi - 90, 0.8)(kvietok(5))); }).join('');
+  const obal = hladka([[41.4, 23.6], [40.8, 28], [42.2, 32.4], [46, 34.6], [49.8, 32.4], [51.2, 28], [50.6, 23.6]]);
+  let supiny = '';
+  for (const [x, y] of [[43, 26.4], [46, 26], [49, 26.4], [44.4, 29.6], [47.6, 29.6], [46, 32.6]]) supiny += ciara([[x - 1.4, y - 0.8], [x, y + 0.9], [x + 1.4, y - 0.8]]);
+  const stonka = ciara([[46, 34.6], [47, 48], [49, 60], [50, 68]]);
+  const stonka2 = ciara([[48.6, 56], [60, 47], [70, 39], [74, 34.4]]);
+  const puk = hladka([[71.4, 33.6], [71, 30], [72.4, 26.6], [75, 25.4], [77.4, 27], [78, 30.4], [77.2, 33.6], [74.4, 35]]);
+  const lst = list([47.6, 46], [30, 38.6], (s) => 1.3 * Math.sin(Math.PI * s), { n: 16 });
+  const lst2 = list([48.8, 60], [66, 62], (s) => 1.2 * Math.sin(Math.PI * s), { n: 16 });
+  return {
+    w: [W(vonkajsie, 'ultramarine', 0.62), W(vonkajsie, 'cerulean', 0.28), W(vnutorne, 'violet', 0.6), W(obal, 'sap', 0.4), W(obal, 'olive', 0.22), W(puk, 'sap', 0.4),
+      W(elipsa(74.6, 25.6, 2.4, 1.2), 'ultramarine', 0.6), WS(stonka + stonka2, 'sap', 0.4, 1.4), WS(stonka + stonka2, 'payne', 0.12, 1.4), W(lst.obrys + lst2.obrys, 'sap', 0.45)],
+    i: [I(vonkajsie, 0.6), I(vnutorne, 0.45), I(obal, 0.8), I(supiny, 0.35), I(puk, 0.7), I(stonka, 0.8), I(stonka2, 0.7), I(lst.obrys + lst2.obrys, 0.55)],
+    f: [],
+  };
+}
+
+function naprstnik() {
+  const os = [[46, 68], [47, 50], [48, 32], [50, 14], [53, 4]];
+  const naOsi = (y) => { const b = vzorky(os, 12); let best = b[0]; for (const p of b) if (Math.abs(p[1] - y) < Math.abs(best[1] - y)) best = p; return best; };
+  let zvony = '', usta = '', skvrny = '';
+  for (let k = 0; k < 7; k++) {
+    const y = 52 - k * 6.2, s = 1 - k * 0.09, str = k % 2 ? -1 : 1, p = naOsi(y);
+    const L = 11 * s, h = 4 * s;
+    const bod = ([x, yy, r]) => (r ? [str * x, yy, r] : [str * x, yy]);
+    const T = umiestni(p[0] + str * 0.8, p[1], str * 32, 1);
+    zvony += hladka(T([[0, -1.4], [L * 0.4, -2.6 * s], [L * 0.85, -3.6 * s], [L + 0.4, -h - 0.4, 1], [L + 1.4, -0.6 * s], [L + 0.8, h * 0.6], [L * 0.95, h, 1], [L * 0.6, h * 0.7], [L * 0.2, 1.4], [0, 1.4]].map(bod)));
+    const m = T([[str * (L + 0.1), 0]])[0];
+    usta += elipsa(m[0], m[1], 1.3 * s, h * 0.72, str * 32);
+    for (const [dx, dy] of [[-0.3, -1], [0.2, 0.4], [-0.5, 1.6]]) { const q = T([[str * (L - 0.6 + dx), dy * s]])[0]; skvrny += kruh(q[0], q[1], 0.42); }
+  }
+  let puky = '';
+  for (const [x, y, r] of [[49.8, 16, 1.8], [50.6, 11.4, 1.5], [51.8, 7.4, 1.2], [47.4, 19.6, 1.9]]) puky += elipsa(x, y, r, r * 1.4, 20);
+  const l1 = list([45, 68], [16, 60], (s) => 5.4 * Math.sin(Math.PI * Math.pow(s, 0.7)), { n: 14 });
+  const l2 = list([47, 68], [80, 62], (s) => 5 * Math.sin(Math.PI * Math.pow(s, 0.7)), { n: 14 });
+  return {
+    w: [W(l1.obrys, 'sap', 0.5), W(l2.obrys, 'sap', 0.5), WS(ciara(os), 'sap', 0.5, 1.8), W(zvony, 'rose', 0.62), W(zvony, 'violet', 0.3), W(puky, 'sap', 0.45)],
+    i: [I(ciara(os), 0.8), I(zvony, 0.75), I(usta, 0.45), I(puky, 0.55), I(l1.obrys + l2.obrys, 0.7), I(zilky(l1, 4) + zilky(l2, 4), 0.3), I(l1.stred + l2.stred, 0.4)],
+    f: [F(skvrny, 'alizarin')],
+  };
+}
+
+function bodliak() {
+  const hlavicka = (x, y, m) => {
+    const obal = hladka(elipsaBody(x, y, 7.4 * m, 8.4 * m, 20));
+    let supiny = '', tne = '', chocholik = '';
+    for (let r = 0; r < 4; r++) for (let k = 0; k < 4; k++) {
+      const px = x + (-4.8 + k * 3.2 + (r % 2) * 1.6) * m, py = y + (-4.4 + r * 3.4) * m;
+      if (Math.hypot((px - x) / (7 * m), (py - y) / (8 * m)) > 0.95) continue;
+      supiny += lomena([[px - 1.4 * m, py - 1 * m], [px, py + 1 * m], [px + 1.4 * m, py - 1 * m]]);
+    }
+    for (let k = 0; k < 12; k++) {
+      const a = Math.PI * (0.05 + (k * 0.9) / 11), p = [x + Math.cos(a) * 7.4 * m, y + Math.sin(a) * 8.4 * m];
+      tne += usecka(p, [p[0] + Math.cos(a - 0.4) * 3 * m, p[1] + Math.sin(a - 0.4) * 3 * m]);
+    }
+    for (let k = 0; k < 17; k++) {
+      const a = Math.PI * (-0.86 + (k * 0.72) / 16), Lk = (9 + (k % 3) * 1.6) * m;
+      chocholik += lomena([[x + Math.cos(a) * 3 * m, y - 6.6 * m + Math.sin(a) * 1.6 * m], [x + Math.cos(a) * Lk * 0.6, y - 7 * m + Math.sin(a) * Lk * 0.6], [x + Math.cos(a) * Lk, y - 6.6 * m + Math.sin(a) * Lk]]);
+    }
+    return { obal, supiny, tne, chocholik };
+  };
+  const h1 = hlavicka(44, 36, 1), h2 = hlavicka(76, 44, 0.66);
+  const stonky = ciara([[44, 44.4], [45, 56], [46, 68]]) + ciara([[45.2, 57], [58, 53], [70, 50.4], [75, 49.6]]);
+  const lst = list([45, 62], [14, 52], (s) => 5 * Math.sin(Math.PI * s), { zuby: 5, amp: 0.7 });
+  const lst2 = list([46, 66], [84, 62], (s) => 4 * Math.sin(Math.PI * s), { zuby: 4, amp: 0.7 });
+  const ostne = (l, z) => { let d = ''; for (let k = 1; k < z * 2; k += 2) for (const str of [1, -1]) { const s = k / (z * 2), p = l.os(s), w = l.sirka(s) * 1.7; const t = [p[0] + l.nn[0] * w * str, p[1] + l.nn[1] * w * str]; d += usecka(t, [t[0] + l.nn[0] * 2.2 * str, t[1] + l.nn[1] * 2.2 * str]); } return d; };
+  return {
+    w: [W(lst.obrys, 'sap', 0.52), W(lst2.obrys, 'sap', 0.52), WS(stonky, 'sap', 0.5, 2), W(h1.obal, 'sap', 0.45), W(h1.obal, 'olive', 0.2), W(h2.obal, 'sap', 0.45),
+      WS(h1.chocholik, 'violet', 0.6, 1.6), WS(h1.chocholik, 'rose', 0.35, 1), WS(h2.chocholik, 'violet', 0.6, 1.3), WS(h2.chocholik, 'rose', 0.35, 0.8)],
+    i: [I(h1.obal, 0.85), I(h1.supiny, 0.35), I(h1.tne, 0.45), I(h1.chocholik, 0.35), I(h2.obal, 0.75), I(h2.supiny, 0.3), I(h2.tne, 0.4), I(h2.chocholik, 0.3), I(stonky, 0.8),
+      I(lst.obrys + lst2.obrys, 0.7), I(lst.stred + lst2.stred, 0.35), I(ostne(lst, 5) + ostne(lst2, 4), 0.4)],
+    f: [],
+  };
+}
+
+function prvosienka() {
+  // Okolík ovisnutých kvetov na jednej stonke: dlhý bledý kalich, krátka žltá koruna.
+  const vrch = [46, 15];
+  const kalich = [[0, -1.2], [4, -2.4], [8.6, -2.6], [9.2, 0], [8.6, 2.6], [4, 2.4], [0, 1.2]];
+  const koruna = [[8.6, -2.2], [10, -3], [11.6, -4, 1], [12.2, -2.4], [12.8, -2.8, 1], [13, -1], [13.4, 0, 1], [13, 1], [12.8, 2.8, 1], [12.2, 2.4], [11.6, 4, 1], [10, 3], [8.6, 2.2]];
+  let kalichy = '', koruny = '', stopky = '', bodky = '';
+  // Kvety visia na jednu stranu a nie sú rovnako ďaleko, aby okolík nevyzeral ako vejár.
+  for (const [phi, dl] of [[26, 4.4], [44, 7.6], [62, 4.8], [80, 8.4], [100, 5.2], [122, 7]]) {
+    const a = (phi * Math.PI) / 180, zac = [vrch[0] + Math.cos(a) * dl, vrch[1] + Math.sin(a) * dl];
+    stopky += ciara([vrch, [vrch[0] + Math.cos(a - 0.3) * 3, vrch[1] + Math.sin(a - 0.3) * 3 - 0.8], zac]);
+    const T = umiestni(zac[0], zac[1], phi, 1);
+    kalichy += hladka(T(kalich));
+    koruny += mnoho(T(koruna));
+    const b = T([[10.6, 0]])[0];
+    bodky += kruh(b[0], b[1], 0.55);
+  }
+  const stonka = ciara([[46, 68], [46, 50], [46.6, 32], [46, 15]]);
+  const listy = [[[46, 68], [18, 60]], [[47, 68], [78, 60]], [[46.4, 68], [36, 50]]].map(([a, b]) => list(a, b, (s) => 5.4 * Math.sin(Math.PI * Math.pow(s, 0.7)), { n: 14 }));
+  return {
+    w: [...listy.map((l) => W(l.obrys, 'sap', 0.5)), WS(stonka, 'sap', 0.45, 1.8), W(kalichy, 'sap', 0.42), W(koruny, 'lemon', 0.9)],
+    i: [I(dokopy(listy.map((l) => l.obrys)), 0.7), I(dokopy(listy.map((l) => zilky(l, 5))), 0.3), I(dokopy(listy.map((l) => l.stred)), 0.4), I(stonka, 0.8), I(stopky, 0.5), I(kalichy, 0.6), I(koruny, 0.75)],
+    f: [F(bodky, 'vermilion')],
+  };
+}
+
+function rebricek() {
+  const nah = rozptyl(4242);
+  const kvety = [];
+  for (let k = 0; kvety.length < 34 && k < 400; k++) {
+    const x = 29 + nah() * 42, y = 12 + nah() * 13;
+    if (y < 12.6 + ((x - 50) / 21) ** 2 * 7) continue;
+    if (kvety.some(([a, b]) => Math.hypot(a - x, b - y) < 3.2)) continue;
+    kvety.push([x, y]);
+  }
+  const kruzky = kvety.map(([x, y]) => kruh(x, y, 1.45)).join('');
+  const stredy = kvety.map(([x, y]) => kruh(x, y, 0.42)).join('');
+  const oblak = hladka([[27, 25], [29, 17], [37, 12.2], [50, 10.6], [63, 12.2], [71, 17], [73, 25], [61, 27.4], [50, 27.8], [39, 27.4]]);
+  const vetvy = [[34, 25], [42, 25.6], [50, 26], [58, 25.6], [66, 25]].map((p) => ciara([[50, 40], [(50 + p[0]) / 2, (40 + p[1]) / 2 + 2], p])).join('');
+  const stonka = ciara([[50, 40], [50.4, 52], [51, 68]]);
+  const perovy = (os) => {
+    const b = vzorky(os, 8);
+    let d = '';
+    for (let k = 1; k < b.length - 1; k += 1) {
+      const u = [b[k + 1][0] - b[k - 1][0], b[k + 1][1] - b[k - 1][1]], l = Math.hypot(u[0], u[1]) || 1, n = [-u[1] / l, u[0] / l], dl = 2.8 * (1 - k / b.length) + 0.8;
+      for (const s of [1, -1]) d += usecka(b[k], [b[k][0] + n[0] * dl * s + (u[0] / l) * 1.2, b[k][1] + n[1] * dl * s + (u[1] / l) * 1.2]);
+    }
+    return { os: ciara(os), d };
+  };
+  const p1 = perovy([[50.4, 50], [38, 45], [26, 43.4], [18, 44.4]]), p2 = perovy([[50.8, 58], [64, 53], [78, 52.6], [86, 54]]);
+  return {
+    w: [W(zemPas([[2, 62], [30, 60.6], [60, 61.4], [98, 60]]), 'sap', 0.14), W(oblak, 'rose', 0.1), W(oblak, 'ochre', 0.08), PAP(kruzky),
+      WS(stonka + vetvy, 'sap', 0.45, 1.4), WS(p1.d + p2.d, 'sap', 0.55, 1), WS(p1.os + p2.os, 'sap', 0.5, 1.2)],
+    i: [I(kruzky, 0.45), I(vetvy, 0.45), I(stonka, 0.8), I(p1.os + p2.os, 0.6), I(p1.d + p2.d, 0.35)],
+    f: [F(stredy, 'ochre')],
+  };
+}
+
+/* ══ Woodland Mammals ═════════════════════════════════════════════════════ */
+
+function jazvec() {
+  const telo = hladka([[9, 41, 1], [14, 37.6], [20, 34], [26, 30.8], [29.6, 27], [31.6, 25.6, 1], [33.4, 27.4], [40, 25.4], [52, 23.4], [64, 23.2], [75, 25.2], [84, 29.6], [89, 34.6], [93, 37.4, 1], [89.6, 39.6],
+    [88, 45], [86.4, 52], [86.6, 58.4, 1], [80, 58.8, 1], [80.2, 53.6], [76.4, 50.6], [62, 51.4], [50, 51.4], [44.6, 52.6], [43.6, 58.4, 1], [37, 58.8, 1], [37.2, 53], [34.6, 47.6], [28, 46], [20, 45.2], [13, 43.6]]);
+  const hlava = hladka([[9, 41, 1], [14, 37.6], [20, 34], [26, 30.8], [29.6, 27], [33.4, 27.4], [38, 30], [38.6, 40], [34.6, 47.6], [28, 46], [20, 45.2], [13, 43.6]]);
+  const pruh = hladka([[13.6, 38.8], [20, 35.8], [26, 32.4], [30.4, 29.2], [33.4, 29.6], [34.8, 32.8], [30, 35.6], [24, 38.8], [18, 40.8], [14.4, 40.6]]);
+  const predna = hladka([[37.2, 53], [37, 58.8, 1], [43.6, 58.4, 1], [44.6, 52.6], [44, 46], [38, 45]]);
+  const zadna = hladka([[76.4, 50.6], [80.2, 53.6], [80, 58.8, 1], [86.6, 58.4, 1], [86.4, 52], [84, 45], [78, 44]]);
+  let srst = '';
+  for (let k = 0; k < 9; k++) { const x = 44 + k * 5, y = 24.6 + Math.abs(x - 60) * 0.06; srst += usecka([x, y + 1.6], [x + 2, y + 4]); }
+  const pazury = usecka([37.4, 58.8], [36, 60]) + usecka([39.4, 58.8], [38.4, 60.2]) + usecka([41.4, 58.8], [40.8, 60.2]);
+  const dalsie = ciara([[48, 51.6], [49.4, 56], [49, 59]]) + ciara([[74, 50.6], [74.6, 55.4], [73.6, 59]]);
+  return {
+    w: [WS(dalsie, 'payne', 0.5, 2.4), W(telo, 'payne', 0.34), W(telo, 'umber', 0.12), W(hladka([[36, 48], [50, 51], [76, 50.4], [84, 46], [70, 44], [50, 44], [38, 44]]), 'payne', 0.4), W(predna, 'payne', 0.55), W(zadna, 'payne', 0.55),
+      PAP(hlava), W(hlava, 'ochre', 0.06), W(pruh, 'payne', 0.85), W(zemPas([[4, 59.4], [50, 59], [96, 59.6]]), 'sap', 0.14)],
+    i: [I(telo, 1), I(pruh, 0.85), I(ciara([[34.6, 27.6], [37.6, 32], [38.6, 40], [36, 46]]), 0.35), I(srst, 0.35), I(pazury, 0.45), I(dalsie, 0.5), I(ciara([[4, 59.2], [50, 58.8], [96, 59.4]]), 0.55)],
+    f: [F(elipsa(9.6, 41.4, 1.3, 1.1), 'ink'), PAP(kruh(22.4, 36.6, 0.55)), PAP(kruh(31.4, 26.4, 0.7))],
+  };
+}
+
+function jez() {
+  const obrys = hladka([[11.6, 47.4, 1], [15, 44], [20, 41], [26, 36], [32, 29.4], [40, 24.4], [50, 21], [60, 20.2], [70, 22.4], [79, 27.6], [86, 35], [89.6, 43], [89, 50], [85, 54.6], [78, 56.4], [66, 57], [52, 57], [40, 56.6], [30, 55.6], [22, 53.4], [16, 51], [12.4, 49.4]]);
+  const tvar = hladka([[11.6, 47.4, 1], [15, 44], [20, 41], [26, 37], [30.6, 38], [33, 44], [32, 51], [28, 55.4], [22, 53.4], [16, 51], [12.4, 49.4]]);
+  const nah = rozptyl(23);
+  let ihly = '';
+  const c = [58, 54], rx = 31, ry = 34;
+  for (const [f, n] of [[0.56, 15], [0.7, 18], [0.83, 21], [0.93, 24]]) for (let k = 0; k < n; k++) {
+    const a = Math.PI * (1.15 + (0.88 * (k + nah() * 0.6)) / n);
+    const z = [c[0] + Math.cos(a) * rx * f, c[1] + Math.sin(a) * ry * f], dl = 6 + nah() * 1.6;
+    const q = otoc([z[0] + Math.cos(a) * dl, z[1] + Math.sin(a) * dl], z, 14);
+    if (q[1] > 55 || z[0] < 31) continue;
+    ihly += usecka(z, q);
+  }
+  const labky = ciara([[26, 54.6], [25, 58.4], [29, 58.6]]) + ciara([[70, 56.8], [70.4, 59], [74, 59]]);
+  const lst = list([68, 64.6], [88, 61], (s) => 2.8 * Math.sin(Math.PI * s), { n: 20 });
+  return {
+    w: [W(obrys, 'umber', 0.42), W(obrys, 'ochre', 0.22), WS(ihly, 'umber', 0.3, 0.9), PAP(tvar), W(tvar, 'ochre', 0.4), W(tvar, 'sienna', 0.1), W(lst.obrys, 'sienna', 0.5), W(lst.obrys, 'ochre', 0.3),
+      W(zemPas([[4, 59.2], [50, 58.6], [96, 59.4]]), 'sap', 0.12)],
+    i: [I(obrys, 1), I(ihly, 0.4), I(ciara([[26, 37], [30.6, 38], [33, 44], [32, 51], [28, 55.4]]), 0.45), I(ciara([[28.6, 37.4], [30.6, 35.4], [32.4, 37.8]]), 0.5), I(labky, 0.6), I(lst.obrys, 0.6), I(lst.stred, 0.35),
+      I(ciara([[4, 59], [50, 58.4], [96, 59.2]]), 0.55)],
+    f: [F(kruh(12.6, 48.2, 1.35), 'ink'), ...oko(23.6, 42.6, 1.1)],
+  };
+}
+
+function liska() {
+  const telo = hladka([[8, 34, 1], [14, 32], [20, 28.6], [22, 24], [24, 16.4, 1], [27.4, 23], [30, 24.6], [31.6, 18, 1], [33.4, 25.6], [36, 29], [46, 30.6], [60, 30.2], [70, 31.4], [76, 33],
+    [84, 30], [93, 31.6], [97, 35, 1], [93, 39.4], [84, 41.4], [76, 40.4], [74, 43], [75, 50], [77, 57], [78.6, 62.4, 1], [74.6, 62.6, 1], [72.6, 56], [68.4, 49], [64, 46.6], [50, 46], [42, 46.4],
+    [40.4, 52], [40.6, 62.4, 1], [36.4, 62.6, 1], [36, 54], [33.6, 46.6], [30, 42], [24, 38.2], [18, 37], [12, 36.4]]);
+  const hrud = hladka([[12, 36.4], [18, 37], [24, 38.2], [30, 42], [33.6, 46.6], [36, 50], [38, 46], [34.6, 40], [28, 35], [22, 33.4], [16, 33.8]]);
+  const spicka = hladka([[91, 31.4], [93, 31.6], [97, 35, 1], [93, 39.4], [90.6, 39.8], [92, 35.6]]);
+  const cierne = hladka([[36.4, 53], [36.4, 62.6, 1], [40.6, 62.4, 1], [40.4, 53]]) + hladka([[73.4, 54], [74.6, 62.6, 1], [78.6, 62.4, 1], [76.6, 54]]);
+  const vzdialene = ciara([[44, 46], [46, 55], [45.6, 62.4]]) + ciara([[66, 47], [64.4, 55], [66, 62.4]]);
+  const usi = hladka([[22.6, 23], [24, 18.6], [26, 22.6]]) + hladka([[30.6, 24], [31.6, 20.4], [32.8, 24.6]]);
+  return {
+    w: [WS(vzdialene, 'sienna', 0.5, 2.6), W(telo, 'vermilion', 0.45), W(telo, 'ochre', 0.34), W(hladka([[76, 33], [84, 30], [90, 31.2], [90, 39.8], [84, 41.4], [76, 40.4]]), 'sienna', 0.3), PAP(hrud), PAP(spicka),
+      W(hrud, 'ochre', 0.06), W(cierne, 'payne', 0.75), W(usi, 'payne', 0.6), W(zemPas([[4, 63], [50, 62.6], [96, 63.2]]), 'sap', 0.14)],
+    i: [I(telo, 1), I(ciara([[16, 33.8], [22, 33.4], [28, 35], [34.6, 40], [38, 46]]), 0.35), I(usecka([90.4, 32], [90.6, 39.6]), 0.35), I(vzdialene, 0.5), I(ciara([[74, 43], [76, 40.4]]), 0.4),
+      I(ciara([[80, 34.4], [88, 35.6]]) + ciara([[82, 38], [90, 37.4]]), 0.3), I(ciara([[4, 62.8], [50, 62.4], [96, 63]]), 0.55)],
+    f: [F(kruh(8.8, 33.8, 1), 'ink'), ...oko(19.6, 29.4, 0.9)],
+  };
+}
+
+function veverica() {
+  const telo = [[24.4, 27.6, 1], [25.6, 24], [28.6, 21], [31, 19.6], [32.6, 13.4, 1], [34.8, 19], [36.6, 15.6, 1], [37.6, 21.6], [39, 26], [42, 32], [48, 38], [54, 44], [57.6, 51], [57, 57], [52.6, 60.6],
+    [46, 61.4, 1], [36, 61], [35, 58], [38, 54], [39, 48], [36, 42], [32, 38], [29.6, 34], [27, 31], [25, 29.6]];
+  const obrys = hladka(telo);
+  const bodyTela = vzorky(telo, 6, true);
+  const chvost = rurka([[56, 58], [68, 54], [75, 44], [76, 32], [72, 20], [65, 11], [57, 9], [52, 12]], (s) => 3.5 + 5 * Math.sin(Math.PI * Math.min(1, s * 1.1)), 5);
+  const skryte = (p) => vnutri(p, bodyTela);
+  const brucho = hladka([[29.6, 32], [33, 36], [36.6, 42], [39.6, 50], [40, 57], [36.6, 58.4], [35, 52], [33, 44], [29, 36]]);
+  const ruka = ciara([[37, 38], [32, 40], [28.6, 40.4]]);
+  const orech = elipsa(27, 40.6, 2.6, 2.2, -20);
+  const konar = rurka([[4, 64], [40, 62.6], [70, 63.4], [98, 62]], 1.4, 3);
+  let chlpy2 = '';
+  for (let k = 3; k < chvost.os.length - 3; k += 4) { const p = chvost.os[k], q = chvost.A[k]; chlpy2 += usecka([(p[0] + q[0]) / 2, (p[1] + q[1]) / 2], [q[0] + (q[0] - p[0]) * 0.18, q[1] + (q[1] - p[1]) * 0.18]); }
+  return {
+    w: [W(konar.obrys, 'umber', 0.45), W(chvost.obrys, 'sienna', 0.5), W(chvost.obrys, 'vermilion', 0.2), PAP(obrys), W(obrys, 'sienna', 0.55), W(obrys, 'vermilion', 0.22), PAP(brucho), W(brucho, 'ochre', 0.08),
+      W(orech, 'ochre', 0.6), W(orech, 'umber', 0.2)],
+    i: [I(viditelne(chvost.A, skryte) + viditelne(chvost.B, skryte), 0.9), I(chlpy2, 0.35), I(obrys, 1), I(ciara([[29.6, 32], [33, 36], [36.6, 42], [39.6, 50], [40, 57]]), 0.35), I(ruka, 0.6), I(orech, 0.7),
+      I(lomena(konar.A) + lomena(konar.B), 0.7), I(ciara([[36, 61], [37.6, 62.4]]) + ciara([[44, 61.2], [45.4, 62.6]]), 0.5)],
+    f: [...oko(29.6, 24.6, 1.05), F(kruh(24.8, 27.4, 0.6), 'ink')],
+  };
+}
+
+function plch() {
+  const telo = hladka([[14, 33, 1], [16, 29], [20, 25.4], [26, 23.4], [28, 19.6], [29.4, 17.6], [31.6, 17.4], [33, 19.2], [33.4, 21.4], [38, 22.4], [48, 23], [56, 26], [61, 31], [62, 37], [59, 42], [54, 44.6], [48, 45.6], [40, 46], [32, 45.2], [25, 43], [19, 39.4], [15.4, 36]]);
+  const brucho = hladka([[19, 39.4], [25, 43], [32, 45.2], [40, 46], [42, 41.6], [34, 40], [26, 37], [21, 35.4]]);
+  const chvost = rurka([[61, 37], [67, 44], [71, 52], [73.6, 60], [77, 66]], (s) => 2.4 + 1.6 * Math.sin(Math.PI * s * 0.8), 5);
+  const konar = rurka([[2, 54.6], [30, 49], [60, 41.6], [98, 31]], 1.6, 3);
+  const l1 = list([62, 40.6], [72, 54], (s) => 5.4 * Math.sin(Math.PI * Math.pow(s, 0.8)), { zuby: 6, amp: 0.12 });
+  const l2 = list([86, 34], [97, 22], (s) => 4.6 * Math.sin(Math.PI * Math.pow(s, 0.8)), { zuby: 5, amp: 0.12 });
+  const orechy = elipsa(38, 55, 2.6, 3.2, -10) + elipsa(43.6, 55.4, 2.5, 3.1, 12);
+  const obaly = hladka([[35, 51.6], [36.4, 49], [40, 48.2], [43, 48], [46.4, 49.4], [46.8, 52.4, 1], [44, 51], [41, 52.6, 1], [38.6, 51.2], [35.8, 53.2, 1]]);
+  const labky = ciara([[26, 43], [26.4, 47.4], [29, 48.6]]) + ciara([[50, 45], [52, 46.2], [55, 44.8]]);
+  const fuzy = usecka([14.4, 32], [8, 29.6]) + usecka([14.4, 33], [8, 34]) + usecka([15, 34], [9, 37]);
+  return {
+    w: [W(konar.obrys, 'umber', 0.45), W(l1.obrys + l2.obrys, 'sap', 0.5), W(chvost.obrys, 'ochre', 0.55), W(chvost.obrys, 'sienna', 0.3), W(telo, 'ochre', 0.6), W(telo, 'sienna', 0.2), PAP(brucho), W(brucho, 'lemon', 0.22),
+      W(orechy, 'ochre', 0.6), W(orechy, 'umber', 0.25), W(obaly, 'sap', 0.55)],
+    i: [I(lomena(konar.A) + lomena(konar.B), 0.7), I(l1.obrys + l2.obrys, 0.65), I(l1.stred + l2.stred, 0.35), I(lomena(chvost.A) + lomena(chvost.B), 0.8), I(telo, 1), I(ciara([[21, 35.4], [26, 37], [34, 40], [42, 41.6]]), 0.35),
+      I(orechy, 0.6), I(obaly, 0.6), I(labky, 0.6), I(fuzy, 0.3), I(ciara([[29.6, 20.4], [31.4, 19.4], [32.4, 21]]), 0.4)],
+    f: [F(elipsa(22.4, 29.6, 2.1, 2.4), 'ink'), PAP(kruh(23, 28.8, 0.6)), F(kruh(14.4, 33, 0.8), 'ink')],
+  };
+}
+
+function piskor() {
+  const telo = hladka([[6, 42, 1], [12, 39.6], [18, 36], [24, 32.4], [32, 29.4], [44, 28.4], [56, 30], [64, 34], [68, 40], [67, 46], [62, 49], [50, 50], [36, 49.6], [26, 47.4], [18, 45], [11, 43.4]]);
+  const bok = hladka([[20, 42], [30, 38], [44, 37], [58, 39], [66, 43], [62, 49], [50, 50], [36, 49.6], [26, 47.4]]);
+  const chvost = rurka([[66, 44], [76, 46], [86, 47], [95, 50]], (s) => 1.3 - s * 0.5, 4);
+  const nohy = ciara([[26, 47], [24.6, 51.4], [22, 52]]) + ciara([[58, 49], [60, 52.6], [63, 53]]);
+  const fuzy = usecka([9, 41], [3, 37.6]) + usecka([9, 41.6], [2.6, 42.6]) + usecka([10, 42], [5, 46]);
+  const l1 = list([30, 60], [52, 55.4], (s) => 3.4 * Math.sin(Math.PI * s), { n: 20 });
+  const l2 = list([60, 60.4], [80, 58], (s) => 3 * Math.sin(Math.PI * s), { n: 20 });
+  return {
+    w: [W(l1.obrys, 'sienna', 0.45), W(l2.obrys, 'ochre', 0.5), W(chvost.obrys, 'umber', 0.5), W(telo, 'umber', 0.58), W(telo, 'payne', 0.12), PAP(bok), W(bok, 'ochre', 0.35), W(bok, 'sienna', 0.1),
+      W(zemPas([[2, 53.4], [50, 53], [98, 53.6]]), 'umber', 0.14)],
+    i: [I(telo, 1), I(ciara([[20, 42], [30, 38], [44, 37], [58, 39], [66, 43]]), 0.35), I(lomena(chvost.A) + lomena(chvost.B), 0.7), I(nohy, 0.6), I(fuzy, 0.3), I(ciara([[26.6, 31.6], [28.6, 30], [30.4, 31.4]]), 0.45),
+      I(l1.obrys + l2.obrys, 0.6), I(l1.stred + l2.stred, 0.35), I(ciara([[2, 53.2], [50, 52.8], [98, 53.4]]), 0.5)],
+    f: [F(kruh(20.6, 36.6, 0.75), 'ink'), F(kruh(6.4, 42, 0.7), 'rose')],
+  };
+}
+
+function krt() {
+  const kopcek = hladka([[4, 68, 1], [14, 56], [30, 48], [50, 46], [68, 49], [84, 58], [96, 68, 1]]);
+  const telo = hladka([[36, 49], [36.6, 40], [42, 33], [50, 30], [58, 31.6], [64, 36], [66.4, 44], [64.6, 49.4]]);
+  const nos = hladka([[37.4, 37.4], [31.4, 33], [27.6, 32, 1], [28.6, 35.4], [34.6, 41]]);
+  const labka = (x, y, s) => ({
+    dlan: hladka([[x, y], [x - s * 4, y - 4.6], [x - s * 7, y - 3.4], [x - s * 8.2, y + 0.6], [x - s * 6, y + 3.6], [x - s * 1.6, y + 3]]),
+    pazury: dokopy([0, 1, 2, 3, 4].map((k) => { const a = (-150 + k * 22) * (Math.PI / 180), p = [x - s * 5 + s * Math.cos(a) * 3.4 * -1, y + Math.sin(a) * 3.4]; return usecka(p, [p[0] - s * Math.cos(a) * 2.6, p[1] + Math.sin(a) * 2.6]); })),
+  });
+  const lL = labka(38, 47, 1), lP = labka(64, 46, -1);
+  const fuzy = usecka([30, 34], [25, 29]) + usecka([30.4, 35], [24, 34]) + usecka([31, 36], [26, 39]);
+  const nah = rozptyl(88);
+  let hrudky = '';
+  for (let k = 0; k < 14; k++) { const x = 12 + nah() * 76, y = 54 + nah() * 12; if (y < 48 + Math.abs(x - 50) * 0.4) continue; hrudky += kruh(x, y, 0.6 + nah() * 0.7); }
+  return {
+    w: [W(kopcek, 'umber', 0.42), W(kopcek, 'sienna', 0.16), W(telo, 'payne', 0.82), PAP(elipsa(51, 34.4, 5, 1.6, -8)), W(elipsa(51, 34.4, 5, 1.6, -8), 'payne', 0.3), W(nos, 'rose', 0.65),
+      PAP(lL.dlan), PAP(lP.dlan), W(lL.dlan + lP.dlan, 'rose', 0.5), W(lL.dlan + lP.dlan, 'ochre', 0.14)],
+    i: [I(kopcek, 0.8), I(telo, 1), I(nos, 0.7), I(lL.dlan + lP.dlan, 0.8), I(lL.pazury + lP.pazury, 0.5), I(fuzy, 0.3)],
+    f: [F(hrudky, 'umber'), F(kruh(28, 33.4, 0.5), 'ink')],
+  };
+}
+
+function diviak() {
+  const telo = hladka([[5.6, 39.6, 1], [6.2, 44.4, 1], [12, 45.4], [20, 48.2], [27, 50.6], [33, 51], [35, 53], [35.4, 58], [35, 63.2, 1], [39.6, 63.4, 1], [40, 57], [41, 53.4], [48, 54.6], [62, 54.6], [68, 53.6], [69, 58],
+    [68.4, 63.2, 1], [73, 63.4, 1], [73.4, 58], [76, 52], [79, 46], [81, 40], [81.4, 36], [79, 29], [70, 24], [56, 20.6], [44, 19], [38, 20.4], [33, 23.6], [30, 22.8], [28.2, 17, 1], [25.6, 23.4], [20, 28], [13, 33], [8, 36.6]]);
+  const kel = hladka([[14.6, 45.2], [14, 41.6], [15.6, 38.6, 1], [16.4, 41.8], [16.6, 45.6]]);
+  const ucho = hladka([[26.6, 22.8], [28.2, 18.4], [29.4, 22.8]]);
+  let hriva = '';
+  for (let k = 0; k < 12; k++) { const x = 34 + k * 3.4, y = x < 44 ? 20.4 - (x - 38) * 0.23 : 19 + (x - 44) * 0.19; hriva += usecka([x, y + 1.2], [x + 0.6, y - 1.8]); }
+  const vzdialene = ciara([[45, 54.6], [46.6, 59], [45.8, 63.2]]) + ciara([[64, 54.6], [63, 59], [64, 63.2]]);
+  const chvost = ciara([[81, 38], [84.4, 40], [85.4, 44]]);
+  return {
+    w: [WS(vzdialene, 'payne', 0.5, 2.6), W(telo, 'umber', 0.52), W(telo, 'payne', 0.4), W(hladka([[5.6, 39.6], [6.2, 44.4], [9, 44.6], [9, 39.8]]), 'rose', 0.4), PAP(kel), W(kel, 'ochre', 0.14), W(ucho, 'payne', 0.4),
+      W(zemPas([[4, 63.8], [50, 63.4], [96, 64]]), 'sap', 0.14)],
+    i: [I(telo, 1), I(kel, 0.7), I(ucho, 0.5), I(hriva, 0.45), I(vzdialene, 0.5), I(chvost, 0.5), I(usecka([9, 39.8], [9, 44.6]), 0.45), I(ciara([[4, 63.6], [50, 63.2], [96, 63.8]]), 0.55)],
+    f: [PAP(kruh(21.6, 31.4, 0.8)), F(kruh(21.6, 31.4, 0.45), 'ink'), F(kruh(7.2, 41, 0.45), 'ink'), F(kruh(7.2, 43, 0.45), 'ink')],
+  };
+}
+
+function kuna() {
+  const telo = hladka([[10, 31, 1], [14, 28], [18, 25.6], [21, 23], [21.4, 19.6], [23.4, 18.4], [25.2, 20.4], [25, 21.6], [28, 24], [34, 28], [44, 28.6], [56, 27.6], [66, 29], [72, 33], [74, 36], [72, 40], [73, 44.6], [72, 48.4, 1],
+    [67.4, 48.6, 1], [68.4, 44.6], [64, 40.6], [50, 40], [40, 40.4], [36, 41.4], [36.6, 46.4], [35, 48.6, 1], [30.6, 48.4, 1], [31.6, 45], [30, 39], [24, 34.4], [18, 33.6], [13, 33]]);
+  const nakrcnik = hladka([[13, 33], [18, 33.6], [24, 34.4], [30, 39], [31, 36], [27, 31], [21, 29], [15, 30.4]]);
+  const chvost = rurka([[72, 36], [79, 42], [85, 50], [91, 58], [95, 65]], (s) => 3 + 2.2 * Math.sin(Math.PI * s), 5);
+  const konar = rurka([[3, 51], [40, 50], [70, 50.4], [98, 48]], 1.8, 3);
+  const fuzy = usecka([11, 30.6], [5, 28]) + usecka([11, 31.4], [4.6, 32.4]);
+  return {
+    w: [W(konar.obrys, 'umber', 0.45), W(chvost.obrys, 'umber', 0.6), W(chvost.obrys, 'sienna', 0.22), W(telo, 'umber', 0.55), W(telo, 'sienna', 0.25), PAP(nakrcnik), W(nakrcnik, 'lemon', 0.45), W(nakrcnik, 'ochre', 0.2),
+      W(hladka([[21.6, 20], [23.4, 18.8], [24.6, 20.6], [23, 22]]), 'ochre', 0.4)],
+    i: [I(lomena(konar.A) + lomena(konar.B), 0.7), I(lomena(chvost.A) + lomena(chvost.B), 0.8), I(telo, 1), I(ciara([[15, 30.4], [21, 29], [27, 31], [31, 36], [30, 39]]), 0.5), I(fuzy, 0.3)],
+    f: [...oko(18, 26.6, 1), F(kruh(10.4, 31, 0.7), 'ink')],
+  };
+}
+
+function divaMacka() {
+  const telo = hladka([[12, 30.6, 1], [14.6, 27.4], [16, 24], [18, 20.6], [19.6, 15.6, 1], [23.2, 19.4], [26, 19.8], [28, 15.8, 1], [29.4, 21], [31, 25], [40, 27.4], [56, 27], [68, 28.6], [74, 31],
+    [80, 31.4], [90, 34], [95.6, 38.6, 1], [94.6, 42.6, 1], [88, 40.6], [78, 38], [76, 42], [77, 50], [78.6, 59.6, 1], [73.6, 60, 1], [72.6, 52], [68, 45], [54, 45.6], [42, 45], [38, 48], [38.4, 59.6, 1], [33.4, 60, 1], [33, 50], [30, 42],
+    [24, 36.6], [18, 34.6], [14, 33]]);
+  let pasy = '';
+  for (const x of [42, 48, 54, 60, 66]) pasy += ciara([[x, 27.6], [x - 1.4, 33], [x - 0.6, 38.4]]);
+  const kruzky = ciara([[82.6, 31.8], [82, 35], [81.6, 38.6]]) + ciara([[87, 33], [86.4, 36.4], [86, 39.8]]);
+  const koniec = hladka([[90.6, 34.6], [95.6, 38.6, 1], [94.6, 42.6, 1], [90, 41]]);
+  const vzdialene = ciara([[44, 45], [45.6, 52], [44.8, 59.6]]) + ciara([[70, 45.6], [68, 52], [69, 59.6]]);
+  const tvar = ciara([[17.6, 28.4], [20, 26.6]]) + ciara([[22.6, 22.6], [23.4, 26]]) + ciara([[25.4, 22.6], [25.4, 26.2]]);
+  const fuzy = usecka([13, 31], [5, 28.6]) + usecka([13, 31.8], [4.6, 33]) + usecka([13.6, 32.4], [6, 36.4]);
+  return {
+    w: [WS(vzdialene, 'umber', 0.4, 2.6), W(telo, 'ochre', 0.4), W(telo, 'umber', 0.3), W(hladka([[30, 42], [42, 45], [54, 45.6], [68, 45], [60, 40], [42, 40]]), 'ochre', 0.2), WS(pasy, 'umber', 0.5, 1.4),
+      WS(kruzky, 'payne', 0.75, 1.8), W(koniec, 'payne', 0.8), W(hladka([[18.6, 19.4], [19.6, 16.6], [21.6, 19.4]]) + hladka([[27, 20.6], [28, 17.4], [28.6, 20.6]]), 'payne', 0.5),
+      W(zemPas([[4, 60.4], [50, 60], [96, 60.6]]), 'sap', 0.14)],
+    i: [I(telo, 1), I(pasy, 0.4), I(kruzky, 0.45), I(koniec, 0.5), I(vzdialene, 0.5), I(tvar, 0.35), I(fuzy, 0.3), I(ciara([[4, 60.2], [50, 59.8], [96, 60.4]]), 0.55)],
+    f: [F(elipsa(19.4, 26, 1.3, 1.1), 'olive'), F(elipsa(19.6, 26, 0.4, 0.9), 'ink'), F(kruh(12.4, 31, 0.7), 'ink')],
+  };
+}
+
 /* ── Register ──────────────────────────────────────────────────────────── */
 
 const TVORCA = {
@@ -2370,6 +3076,10 @@ const TVORCA = {
   everest, matterhorn, fuji, etna, elbrus, denali, aconcagua, olympus: olymp, uluru, vesuvius: vezuv,
   carrot: mrkva, potato: zemiak, tomato: paradajka, onion: cibula, pea: hrach, cabbage: kapusta, pumpkin: tekvica, beetroot: cvikla, broccoli: brokolica, aubergine: baklazan,
   quartz: kremen, diamond: diamant, ruby: rubin, emerald: smaragd, sapphire: zafir, amethyst: ametyst, pyrite: pyrit, malachite: malachit, turquoise: tyrkys, opal,
+  // F-03 (29. 9. 2026): pripravované témy (temy.mjs PRIPRAVOVANE), na webe sa zatiaľ nekreslia.
+  ladybird: lienka, bumblebee: cmeliak, snail: slimak, slug: slizniak, earwig: ucholak, woodlouse: ziziavka, centipede: stonozka, earthworm: dazdovka, ant: mravec, spider: pavuk,
+  poppy: mak, daisy: sedmokraska, clover: detelina, harebell: zvoncek, dandelion: pupava, cornflower: chrpa, foxglove: naprstnik, thistle: bodliak, cowslip: prvosienka, yarrow: rebricek,
+  badger: jazvec, hedgehog: jez, fox: liska, squirrel: veverica, dormouse: plch, shrew: piskor, mole: krt, boar: diviak, marten: kuna, wildcat: divaMacka,
 };
 
 const cache = new Map();

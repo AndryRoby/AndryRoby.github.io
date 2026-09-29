@@ -804,12 +804,16 @@ function desatinneMiesta(ctx) {
 
 // ---------------------------------------------------------------- BR-CL kodovniky
 
-function kodovnik(ctx, kod, uzol, hodnota, nazovKodovnika, kdeSk, kdeCs, kdeDe, kdeEn, nazovEn) {
+// nazov je slovenský názov číselníka alebo objekt { sk, cs, de } s prekladmi (audit jazykov 29. 9. 2026: české
+// a nemecké hlásenia dostávali slovenský názov); nazovEn je anglický a ostáva posledný (test 35 číta anglický
+// slot podľa arity 9). Holý názov bez slov („UNTDID 1153“) môže ostať reťazcom.
+function kodovnik(ctx, kod, uzol, hodnota, nazov, kdeSk, kdeCs, kdeDe, kdeEn, nazovEn) {
+  const n = typeof nazov === 'string' ? { sk: nazov } : nazov;
   pridaj(ctx, kod, CH, uzol, hodnota,
-    kdeSk + ' má neplatnú hodnotu "' + hodnota + '". Použite kód z kódovníka ' + nazovKodovnika + '.',
-    kdeCs + ' má neplatnou hodnotu "' + hodnota + '". Použijte kód z číselníku ' + nazovKodovnika + '.',
-    kdeDe + ' hat den ungültigen Wert "' + hodnota + '". Verwenden Sie einen Code aus der Codeliste ' + nazovKodovnika + '.',
-    (kdeEn || kdeSk) + ' has the invalid value "' + hodnota + '". Use a code from the ' + (nazovEn || nazovKodovnika) + ' code list.');
+    kdeSk + ' má neplatnú hodnotu "' + hodnota + '". Použite kód z číselníka ' + n.sk + '.',
+    kdeCs + ' má neplatnou hodnotu "' + hodnota + '". Použijte kód z číselníku ' + (n.cs || n.sk) + '.',
+    kdeDe + ' hat den ungültigen Wert "' + hodnota + '". Verwenden Sie einen Code aus der Codeliste ' + (n.de || n.sk) + '.',
+    (kdeEn || kdeSk) + ' has the invalid value "' + hodnota + '". Use a code from the ' + (nazovEn || n.sk) + ' code list.');
 }
 
 function kodovniky(ctx) {
@@ -819,7 +823,7 @@ function kodovniky(ctx) {
   for (const n of deti(d, 'cbc:InvoiceTypeCode')) {
     const v = txt(n);
     if (v !== '' && !K.UNTDID_1001_FAKTURA.has(v)) {
-      kodovnik(ctx, 'BR-CL-01', n, v, 'UNTDID 1001 pre faktúru (napríklad 380)',
+      kodovnik(ctx, 'BR-CL-01', n, v, { sk: 'UNTDID 1001 pre faktúru (napríklad 380)', cs: 'UNTDID 1001 pro fakturu (například 380)', de: 'UNTDID 1001 für Rechnungen (zum Beispiel 380)' },
         'Kód typu dokladu (BT-3)', 'Kód typu dokladu (BT-3)', 'Der Rechnungstyp-Code (BT-3)', 'The invoice type code (BT-3)',
         'UNTDID 1001 for invoices (for example 380)');
     }
@@ -827,7 +831,7 @@ function kodovniky(ctx) {
   for (const n of deti(d, 'cbc:CreditNoteTypeCode')) {
     const v = txt(n);
     if (v !== '' && !K.UNTDID_1001_DOBROPIS.has(v)) {
-      kodovnik(ctx, 'BR-CL-01', n, v, 'UNTDID 1001 pre dobropis (napríklad 381)',
+      kodovnik(ctx, 'BR-CL-01', n, v, { sk: 'UNTDID 1001 pre dobropis (napríklad 381)', cs: 'UNTDID 1001 pro dobropis (například 381)', de: 'UNTDID 1001 für Gutschriften (zum Beispiel 381)' },
         'Kód typu dokladu (BT-3)', 'Kód typu dokladu (BT-3)', 'Der Rechnungstyp-Code (BT-3)', 'The credit note type code (BT-3)',
         'UNTDID 1001 for credit notes (for example 381)');
     }
@@ -841,8 +845,8 @@ function kodovniky(ctx) {
   for (const n of sCurrency) {
     const v = n.atr.currencyID;
     if (!K.ISO_4217.has(String(v).trim())) {
-      kodovnik(ctx, 'BR-CL-03', n, v, 'ISO 4217 alfa-3 (napriklad EUR)',
-        'Atribut currencyID prvku ' + n.meno, 'Atribut currencyID prvku ' + n.meno, 'Das Attribut currencyID von ' + n.meno, 'The currencyID attribute of ' + n.meno,
+      kodovnik(ctx, 'BR-CL-03', n, v, { sk: 'ISO 4217 alfa-3 (napríklad EUR)', cs: 'ISO 4217 alfa-3 (například EUR)', de: 'ISO 4217 Alpha-3 (zum Beispiel EUR)' },
+        'Atribút currencyID prvku ' + n.meno, 'Atribut currencyID prvku ' + n.meno, 'Das Attribut currencyID von ' + n.meno, 'The currencyID attribute of ' + n.meno,
         'ISO 4217 alpha-3 (for example EUR)');
     }
   }
@@ -850,15 +854,15 @@ function kodovniky(ctx) {
   for (const n of deti(d, 'cbc:DocumentCurrencyCode')) {
     const v = txt(n);
     if (v !== '' && !K.ISO_4217.has(v)) {
-      kodovnik(ctx, 'BR-CL-04', n, v, 'ISO 4217 alfa-3 (napriklad EUR)',
-        'Mena faktury (BT-5)', 'Mena faktury (BT-5)', 'Die Rechnungswährung (BT-5)', 'The invoice currency code (BT-5)',
+      kodovnik(ctx, 'BR-CL-04', n, v, { sk: 'ISO 4217 alfa-3 (napríklad EUR)', cs: 'ISO 4217 alfa-3 (například EUR)', de: 'ISO 4217 Alpha-3 (zum Beispiel EUR)' },
+        'Mena faktúry (BT-5)', 'Měna faktury (BT-5)', 'Die Rechnungswährung (BT-5)', 'The invoice currency code (BT-5)',
         'ISO 4217 alpha-3 (for example EUR)');
     }
   }
   for (const n of deti(d, 'cbc:TaxCurrencyCode')) {
     const v = txt(n);
     if (v !== '' && !K.ISO_4217.has(v)) {
-      kodovnik(ctx, 'BR-CL-05', n, v, 'ISO 4217 alfa-3',
+      kodovnik(ctx, 'BR-CL-05', n, v, { sk: 'ISO 4217 alfa-3', cs: 'ISO 4217 alfa-3', de: 'ISO 4217 Alpha-3' },
         'Mena účtovania DPH (BT-6)', 'Měna účtování DPH (BT-6)', 'Der Steuerwährungscode (BT-6)', 'The VAT accounting currency code (BT-6)',
         'ISO 4217 alpha-3');
     }
@@ -868,7 +872,7 @@ function kodovniky(ctx) {
     for (const n of deti(ob, 'cbc:DescriptionCode')) {
       const v = txt(n);
       if (v !== '' && !K.UNTDID_2005.has(v)) {
-        kodovnik(ctx, 'BR-CL-06', n, v, 'UNTDID 2005 v rozsahu 3, 35, 432',
+        kodovnik(ctx, 'BR-CL-06', n, v, { sk: 'UNTDID 2005 v rozsahu 3, 35, 432', cs: 'UNTDID 2005 v rozsahu 3, 35 a 432', de: 'UNTDID 2005, nur 3, 35 und 432' },
           'Kód dátumu vzniku daňovej povinnosti (BT-8)', 'Kód data uskutečnění plnění (BT-8)', 'Der Code des Steuerstichtags (BT-8)', 'The value added tax point date code (BT-8)',
           'UNTDID 2005 limited to 3, 35 and 432');
       }
@@ -932,7 +936,7 @@ function kodovniky(ctx) {
     for (const n of deti(kr, 'cbc:IdentificationCode')) {
       const v = txt(n);
       if (v !== '' && !K.ISO_3166_1.has(v)) {
-        kodovnik(ctx, 'BR-CL-14', n, v, 'ISO 3166-1 alfa-2 (napriklad SK, CZ, DE)',
+        kodovnik(ctx, 'BR-CL-14', n, v, { sk: 'ISO 3166-1 alfa-2 (napríklad SK, CZ, DE)', cs: 'ISO 3166-1 alfa-2 (například CZ, SK, DE)', de: 'ISO 3166-1 Alpha-2 (zum Beispiel DE, AT, SK)' },
           'Kód krajiny', 'Kód země', 'Der Ländercode', 'The country code',
           'ISO 3166-1 alpha-2 (for example IE, NL, DE)');
       }
@@ -942,7 +946,7 @@ function kodovniky(ctx) {
     for (const n of deti(kr, 'cbc:IdentificationCode')) {
       const v = txt(n);
       if (v !== '' && !K.ISO_3166_1.has(v)) {
-        kodovnik(ctx, 'BR-CL-15', n, v, 'ISO 3166-1 alfa-2',
+        kodovnik(ctx, 'BR-CL-15', n, v, { sk: 'ISO 3166-1 alfa-2', cs: 'ISO 3166-1 alfa-2', de: 'ISO 3166-1 Alpha-2' },
           'Kód krajiny pôvodu položky (BT-159)', 'Kód země původu položky (BT-159)', 'Der Ursprungslandcode (BT-159)', 'The item country of origin code (BT-159)',
           'ISO 3166-1 alpha-2');
       }
@@ -953,7 +957,7 @@ function kodovniky(ctx) {
     for (const n of deti(pm, 'cbc:PaymentMeansCode')) {
       const v = txt(n);
       if (v !== '' && !K.UNTDID_4461.has(v)) {
-        kodovnik(ctx, 'BR-CL-16', n, v, 'UNTDID 4461 (napríklad 58 pre SEPA prevod)',
+        kodovnik(ctx, 'BR-CL-16', n, v, { sk: 'UNTDID 4461 (napríklad 58 pre SEPA prevod)', cs: 'UNTDID 4461 (například 58 pro převod SEPA)', de: 'UNTDID 4461 (zum Beispiel 58 für eine SEPA-Überweisung)' },
           'Kód spôsobu platby (BT-81)', 'Kód způsobu platby (BT-81)', 'Der Zahlungsmittelcode (BT-81)', 'The payment means code (BT-81)',
           'UNTDID 4461 (for example 58 for a SEPA credit transfer)');
       }
@@ -994,7 +998,7 @@ function kodovniky(ctx) {
   for (const n of vsetky(d, 'cbc:TaxExemptionReasonCode')) {
     const v = txt(n).toUpperCase();
     if (v !== '' && !K.VATEX.has(v)) {
-      kodovnik(ctx, 'BR-CL-22', n, txt(n), 'CEF VATEX (napriklad VATEX-EU-AE)',
+      kodovnik(ctx, 'BR-CL-22', n, txt(n), { sk: 'CEF VATEX (napríklad VATEX-EU-AE)', cs: 'CEF VATEX (například VATEX-EU-AE)', de: 'CEF VATEX (zum Beispiel VATEX-EU-AE)' },
         'Kód dôvodu oslobodenia od DPH (BT-121)', 'Kód důvodu osvobození od DPH (BT-121)', 'Der Code des Steuerbefreiungsgrundes (BT-121)', 'The VAT exemption reason code (BT-121)',
         'CEF VATEX (for example VATEX-EU-AE)');
     }
@@ -1008,8 +1012,8 @@ function kodovniky(ctx) {
   for (const n of sUnit) {
     const v = String(n.atr.unitCode).trim();
     if (!K.REC20.has(v)) {
-      kodovnik(ctx, 'BR-CL-23', n, v, 'UN/ECE Rec. 20 (napríklad C62 pre kus, HUR pre hodinu)',
-        'Atribut unitCode prvku ' + n.meno, 'Atribut unitCode prvku ' + n.meno, 'Das Attribut unitCode von ' + n.meno, 'The unitCode attribute of ' + n.meno,
+      kodovnik(ctx, 'BR-CL-23', n, v, { sk: 'UN/ECE Rec. 20 (napríklad C62 pre kus, HUR pre hodinu)', cs: 'UN/ECE Rec. 20 (například C62 pro kus, HUR pro hodinu)', de: 'UN/ECE Rec. 20 (zum Beispiel C62 für ein Stück, HUR für eine Stunde)' },
+        'Atribút unitCode prvku ' + n.meno, 'Atribut unitCode prvku ' + n.meno, 'Das Attribut unitCode von ' + n.meno, 'The unitCode attribute of ' + n.meno,
         'UN/ECE Rec. 20 (for example C62 for one piece, HUR for an hour)');
     }
   }
@@ -1025,7 +1029,7 @@ function kodovniky(ctx) {
   for (const n of vsetky(d, 'cbc:EndpointID')) {
     const v = n.atr.schemeID;
     if (v !== undefined && !K.EAS.has(String(v).trim())) {
-      kodovnik(ctx, 'BR-CL-25', n, v, 'CEF EAS (napríklad 0245 pre slovenské DIČ, 9930 pre nemecké USt-IdNr.)',
+      kodovnik(ctx, 'BR-CL-25', n, v, { sk: 'CEF EAS (napríklad 0245 pre slovenské DIČ, 9930 pre nemecké USt-IdNr.)', cs: 'CEF EAS (například 0245 pro slovenské DIČ, 9930 pro německé USt-IdNr.)', de: 'CEF EAS (zum Beispiel 9930 für die deutsche USt-IdNr., 0245 für die slowakische Steuernummer DIČ)' },
         'Atribút schemeID elektronickej adresy', 'Atribut schemeID elektronické adresy', 'Das Attribut schemeID der elektronischen Adresse', 'The schemeID attribute of the electronic address',
         'CEF EAS (for example 0088 for a GS1 GLN, 9930 for a German VAT number, 0245 for a Slovak tax number)');
     }

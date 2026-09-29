@@ -171,3 +171,51 @@ export const TEMY = [
 ];
 
 export const TEMA = Object.fromEntries(TEMY.map((t) => [t.id, t]));
+
+/* F-03 (29. 9. 2026): pripravované témy pre výpravy Word Search (kapitoly 3, 7, 8). Slová, mená
+   a kresby sú hotové, FAKTY NIE: v relácii nebolo povolené načítať zdroj (WebFetch), a fakt bez
+   načítaného zdroja sa nepíše. zdrojNavrh je len stránka, z ktorej sa fakt načíta; kým nemá slovo
+   `fakt` a `zdroj` so záznamom v ZDROJE.md, téma nejde do TEMY (web) ani do exportu appky.
+   Presun do TEMY: na koniec zoznamu (dnešná strana a strany 1 až 8 sa tým nezmenia). */
+const PRIPRAVOVANA = (id, nazov, podtitul, slova) => ({
+  id, nazov, podtitul,
+  slova: slova.map(([slovo, meno, kresba, stranka]) => ({ slovo, meno, kresba, fakt: null, zdroj: null, zdrojNavrh: W + stranka })),
+});
+export const PRIPRAVOVANE = [
+  PRIPRAVOVANA('minibeasts', 'Garden Minibeasts', 'Small creatures under leaves and stones', [
+    ['LADYBIRD', 'Seven-spot ladybird', 'ladybird', 'Coccinella_septempunctata'],
+    ['BUMBLEBEE', 'Bumblebee', 'bumblebee', 'Bumblebee'],
+    ['SNAIL', 'Garden snail', 'snail', 'Cornu_aspersum'],
+    ['SLUG', 'Leopard slug', 'slug', 'Limax_maximus'],
+    ['EARWIG', 'Earwig', 'earwig', 'Forficula_auricularia'],
+    ['WOODLOUSE', 'Woodlouse', 'woodlouse', 'Woodlouse'],
+    ['CENTIPEDE', 'Centipede', 'centipede', 'Centipede'],
+    ['EARTHWORM', 'Earthworm', 'earthworm', 'Lumbricus_terrestris'],
+    ['ANT', 'Wood ant', 'ant', 'Formica_rufa'],
+    ['SPIDER', 'Garden spider', 'spider', 'Araneus_diadematus'],
+  ]),
+  PRIPRAVOVANA('wildflowers', 'Meadow Wildflowers', 'Ten flowers of fields and verges', [
+    ['POPPY', 'Common poppy', 'poppy', 'Papaver_rhoeas'],
+    ['DAISY', 'Daisy', 'daisy', 'Bellis_perennis'],
+    ['CLOVER', 'Red clover', 'clover', 'Trifolium_pratense'],
+    ['HAREBELL', 'Harebell', 'harebell', 'Campanula_rotundifolia'],
+    ['DANDELION', 'Dandelion', 'dandelion', 'Taraxacum_officinale'],
+    ['CORNFLOWER', 'Cornflower', 'cornflower', 'Centaurea_cyanus'],
+    ['FOXGLOVE', 'Foxglove', 'foxglove', 'Digitalis_purpurea'],
+    ['THISTLE', 'Spear thistle', 'thistle', 'Cirsium_vulgare'],
+    ['COWSLIP', 'Cowslip', 'cowslip', 'Primula_veris'],
+    ['YARROW', 'Yarrow', 'yarrow', 'Achillea_millefolium'],
+  ]),
+  PRIPRAVOVANA('mammals', 'Woodland Mammals', 'Ten animals of the wood, big and small', [
+    ['BADGER', 'Badger', 'badger', 'European_badger'],
+    ['HEDGEHOG', 'Hedgehog', 'hedgehog', 'European_hedgehog'],
+    ['FOX', 'Red fox', 'fox', 'Red_fox'],
+    ['SQUIRREL', 'Red squirrel', 'squirrel', 'Red_squirrel'],
+    ['DORMOUSE', 'Hazel dormouse', 'dormouse', 'Hazel_dormouse'],
+    ['SHREW', 'Common shrew', 'shrew', 'Common_shrew'],
+    ['MOLE', 'Mole', 'mole', 'European_mole'],
+    ['BOAR', 'Wild boar', 'boar', 'Wild_boar'],
+    ['MARTEN', 'Pine marten', 'marten', 'European_pine_marten'],
+    ['WILDCAT', 'Wildcat', 'wildcat', 'European_wildcat'],
+  ]),
+];

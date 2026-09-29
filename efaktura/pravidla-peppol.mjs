@@ -457,7 +457,7 @@ export function pravidlaPeppol(ctx) {
         const v = txt(n);
         if (v !== '' && !zoznam.has(v)) {
           pridaj(ctx, kod, CH, n, v,
-            'Kód dôvodu "' + v + '" nie je v kódovníku ' + nazovKod + '.',
+            'Kód dôvodu "' + v + '" nie je v číselníku ' + nazovKod + '.',
             'Kód důvodu "' + v + '" není v číselníku ' + nazovKod + '.',
             'Der Grundcode "' + v + '" steht nicht in der Codeliste ' + nazovKod + '.',
             'The reason code "' + v + '" is not in the ' + nazovKod + ' code list.');

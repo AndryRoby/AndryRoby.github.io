@@ -541,7 +541,9 @@ console.log('Testy e-faktury\n');
 {
   const v = skontroluj(F11_PRAZDNY);
   ok('11. prazdny subor: hlasi XML-01', kody(v).includes('XML-01'));
-  ok('11. prazdny subor: sprava hovori o prazdnom subore', v.nalezy[0].sprava.sk.toLowerCase().includes('prazdny'));
+  ok('11. prazdny subor: sprava hovori o prazdnom subore', v.nalezy[0].sprava.sk.toLowerCase().includes('prázdny'));
+  // Audit jazykov 29. 9. 2026: hlásenia parsera mali byť s diakritikou a prehláskami, nie „Subor je prazdny“, „Fuegen“.
+  ok('11. prazdny subor: hlasenie s diakritikou v sk, cs a de', v.nalezy[0].sprava.sk.startsWith('Súbor je prázdny') && v.nalezy[0].sprava.cs.startsWith('Soubor je prázdný') && v.nalezy[0].sprava.de.includes('Fügen'), JSON.stringify(v.nalezy[0].sprava));
 }
 
 // --- fixtura 12
@@ -1180,6 +1182,13 @@ const PRIPADY = [
   const zleEn = vp.nalezy.filter((n) => DIAK.test(n.sprava.en)).map((n) => n.kod + ': ' + n.sprava.en.slice(0, 70));
   ok('35. pokazeny anglicky vzor hlasi kodovniky po anglicky', zleEn.length === 0, zleEn.slice(0, 3).join(' | '));
   ok('35. pokazeny anglicky vzor hlasi kodovnikove pravidla', kody(vp).some((k) => k.startsWith('BR-CL-')), kody(vp).join(', '));
+  // Audit jazykov 29. 9. 2026: české a nemecké hlásenia číselníkov niesli slovenský názov („pre faktúru (napríklad 380)“).
+  const SK_SLOVA = /(?:^|[^\p{L}])(?:pre|napríklad|napriklad|kódovník\p{L}*)(?![\p{L}])/u;
+  const clNalezy = vp.nalezy.filter((n) => n.kod.startsWith('BR-CL-'));
+  const zleCsDe = clNalezy.filter((n) => SK_SLOVA.test(n.sprava.cs) || SK_SLOVA.test(n.sprava.de)).map((n) => n.kod + ': ' + n.sprava.cs.slice(0, 60) + ' / ' + n.sprava.de.slice(0, 60));
+  ok('35. hlasenia ciselnikov v cestine a nemcine bez slovenskych slov', clNalezy.length > 0 && zleCsDe.length === 0, zleCsDe.slice(0, 3).join(' | '));
+  const zleSk = clNalezy.filter((n) => /napriklad|kódovník/.test(n.sprava.sk)).map((n) => n.kod);
+  ok('35. slovenske hlasenia ciselnikov s dlznom a slovom ciselnik', zleSk.length === 0, zleSk.join(', '));
 }
 
 // ------------------------------------------- Leitweg-ID: tvar a prufziffer (A-101)

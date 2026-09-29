@@ -8,14 +8,16 @@
 (function () {
   var q = new URLSearchParams(location.search);
   var tenant = (q.get('t') || '').replace(/[^A-Za-z0-9-]/g, '');
-  var shop = (q.get('shop') || '').replace(/[^A-Za-z0-9.-]/g, '');
+  // Meno obchodu len overené workerom (live.js, udalosť arling-live:obchod), nikdy z odkazu
+  // (bezpečnostná kontrola 29. 9. 2026, nález 4).
+  var shop = '';
   var nav = (navigator.language || 'en').slice(0, 2).toLowerCase();
   var lang = ['sk', 'cs', 'de', 'en'].indexOf(nav) >= 0 ? nav : 'en';
 
   var V = {
     sk: {
       kicker: 'Živá ukážka ARLing Asistenta',
-      h1: ['Asistent pre ', ' je pripravený'], h1Bez: 'Váš Asistent je pripravený', h1Chyba: 'Tento odkaz na ukážku nie je celý',
+      h1: ['Asistent pre ', ' je pripravený'], h1Bez: 'Váš Asistent je pripravený', h1Chyba: 'Tento odkaz na ukážku nie je celý', h1Nepovolena: 'Túto ukážku tu nevieme ukázať',
       titul: 'Asistent pre {shop}: živá ukážka', titulBez: 'Živá ukážka ARLing Asistenta',
       oknoPod: 'Odpovedá z produktov obchodu',
       heroPozn: 'Feed a e-mail, potom vložíte riadok kódu.',
@@ -56,7 +58,7 @@
     },
     cs: {
       kicker: 'Živá ukázka ARLing Asistenta',
-      h1: ['Asistent pro ', ' je připravený'], h1Bez: 'Váš Asistent je připravený', h1Chyba: 'Tento odkaz na ukázku není celý',
+      h1: ['Asistent pro ', ' je připravený'], h1Bez: 'Váš Asistent je připravený', h1Chyba: 'Tento odkaz na ukázku není celý', h1Nepovolena: 'Tuto ukázku tu neumíme zobrazit',
       titul: 'Asistent pro {shop}: živá ukázka', titulBez: 'Živá ukázka ARLing Asistenta',
       oknoPod: 'Odpovídá z produktů obchodu',
       heroPozn: 'Feed a e-mail, potom vložíte řádek kódu. Formulář je ve slovenštině.',
@@ -97,7 +99,7 @@
     },
     de: {
       kicker: 'Live-Demo von ARLing Shopping Assistant',
-      h1: ['Der Assistent für ', ' ist bereit'], h1Bez: 'Ihr Assistent ist bereit', h1Chyba: 'Dieser Demo-Link ist nicht vollständig',
+      h1: ['Der Assistent für ', ' ist bereit'], h1Bez: 'Ihr Assistent ist bereit', h1Chyba: 'Dieser Demo-Link ist nicht vollständig', h1Nepovolena: 'Diese Demo können wir hier nicht zeigen',
       titul: 'Assistent für {shop}: Live-Demo', titulBez: 'Live-Demo von ARLing Shopping Assistant',
       oknoPod: 'Antwortet aus den Produkten des Shops',
       heroPozn: 'Feed und E-Mail, dann eine Zeile Code einfügen. Das Formular ist auf Englisch.',
@@ -138,7 +140,7 @@
     },
     en: {
       kicker: 'Live demo of ARLing Shopping Assistant',
-      h1: ['The assistant for ', ' is ready'], h1Bez: 'Your assistant is ready', h1Chyba: 'This demo link is incomplete',
+      h1: ['The assistant for ', ' is ready'], h1Bez: 'Your assistant is ready', h1Chyba: 'This demo link is incomplete', h1Nepovolena: 'We cannot show this demo here',
       titul: 'Assistant for {shop}: live demo', titulBez: 'Live demo of ARLing Shopping Assistant',
       oknoPod: 'Answers from the shop’s products',
       heroPozn: 'Feed and email, then paste one line of code.',
@@ -205,35 +207,50 @@
     if (v[k] != null) el.setAttribute('aria-label', v[k]);
   });
 
-  // nadpis: názov obchodu z parametra shop, inak všeobecný, bez ukážky chybový stav
+  // nadpis: kým worker obchod neoverí, všeobecný; po overení s názvom obchodu zo servera
+  // (live.js arling-live:obchod); bez ukážky alebo keď ju obchod nedovolí, chybový stav
   var kicker = document.getElementById('title');
   if (kicker) kicker.textContent = v.kicker;
   var h1 = document.getElementById('h1-obchod');
-  if (!tenant) {
-    h1.textContent = v.h1Chyba;
+
+  function chybovyStav(text) {
+    h1.textContent = text;
     document.title = v.titulBez;
     body.classList.add('lv-stav-chyba', 'lv-stav-snimka');
     document.getElementById('akcie-chyba').hidden = false;
+  }
+
+  function sObchodom(meno) {
+    shop = String(meno || '').replace(/[^A-Za-z0-9.-]/g, '');
+    if (!shop) return;
+    h1.textContent = '';
+    h1.appendChild(document.createTextNode(v.h1[0]));
+    var b = document.createElement('span');
+    b.className = 'lv-obchod';
+    b.textContent = shop;
+    h1.style.setProperty('--dlzka', String(Math.max(shop.length, 8)));
+    h1.appendChild(b);
+    h1.appendChild(document.createTextNode(v.h1[1]));
+    // Titulok karty ostáva bez domény obchodu: Umami posiela document.title pri každej udalosti
+    // (brána oslovení 29. 9., pokus 4, nález 4).
+    var meno2 = document.getElementById('okno-meno');
+    if (meno2) meno2.textContent = shop;
+    var p1 = document.getElementById('poctivo-1');
+    if (p1) p1.textContent = sShop(v.p1pShop);
+    var zaver = document.getElementById('zapnut-h2');
+    if (zaver) zaver.textContent = sShop(v.zaverH2Shop);
+  }
+
+  if (!tenant) {
+    chybovyStav(v.h1Chyba);
     return;
   }
-  if (!shop) {
-    h1.textContent = v.h1Bez;
-    document.title = v.titulBez;
-    return;
-  }
-  h1.textContent = '';
-  h1.appendChild(document.createTextNode(v.h1[0]));
-  var b = document.createElement('span');
-  b.className = 'lv-obchod';
-  b.textContent = shop;
-  h1.style.setProperty('--dlzka', String(Math.max(shop.length, 8)));
-  h1.appendChild(b);
-  h1.appendChild(document.createTextNode(v.h1[1]));
-  document.title = sShop(v.titul);
-  var meno = document.getElementById('okno-meno');
-  if (meno) meno.textContent = shop;
-  var p1 = document.getElementById('poctivo-1');
-  if (p1) p1.textContent = sShop(v.p1pShop);
-  var zaver = document.getElementById('zapnut-h2');
-  if (zaver) zaver.textContent = sShop(v.zaverH2Shop);
+  h1.textContent = v.h1Bez;
+  document.title = v.titulBez;
+  document.addEventListener('arling-live:obchod', function (e) { sObchodom(e && e.detail && e.detail.shop); });
+  document.addEventListener('arling-live:nepovolena', function () { chybovyStav(v.h1Nepovolena); });
+  // live.js mohol výsledok oznámiť skôr, než tento súbor začal počúvať.
+  var uz = window.__arlingLive;
+  if (uz && uz.stav === 'obchod') sObchodom(uz.detail && uz.detail.shop);
+  if (uz && uz.stav === 'nepovolena') chybovyStav(v.h1Nepovolena);
 })();

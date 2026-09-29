@@ -418,7 +418,7 @@ export function pravidlaXrechnung(ctx) {
       const v = n.atr.schemeID;
       if (v !== undefined && !K.EAS.has(String(v).trim())) {
         pridaj(ctx, 'BR-DEX-07', CH, n, v,
-          'V rozšírení XRechnung musí byť schemeID elektronickej adresy z kódovníka CEF EAS. V súbore je "' + v + '".',
+          'V rozšírení XRechnung musí byť schemeID elektronickej adresy z číselníka CEF EAS. V súbore je "' + v + '".',
           'V rozšíření XRechnung musí být schemeID elektronické adresy z číselníku CEF EAS. V souboru je "' + v + '".',
           'In der XRechnung-Extension muss die schemeID der elektronischen Adresse aus der CEF-EAS-Liste stammen. In der Datei steht "' + v + '".',
           'In the XRechnung extension, the schemeID of the electronic address has to come from the CEF EAS code list. The file says "' + v + '".');

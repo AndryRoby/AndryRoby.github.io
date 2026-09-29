@@ -366,9 +366,9 @@ export const DICT = {
   },
   'faq.cantanswer.q': { sk: 'Čo ak asistent nevie odpovedať?', en: 'What if the assistant cannot answer?', de: 'Was, wenn der Assistent nicht antworten kann?' },
   'faq.cantanswer.a': {
-    sk: 'Ak sa vo feede nenájde nič, čo k otázke patrí, asistent to jasne povie a odporučí zákazníkovi kontaktovať obchod priamo, na e-mail zadaný pri nastavení.',
-    en: 'If nothing in the feed fits the question, the assistant says so clearly and suggests contacting the shop directly, at the e-mail address given during setup.',
-    de: 'Passt nichts im Feed zur Frage, sagt der Assistent das klar und empfiehlt, den Shop direkt zu kontaktieren, unter der bei der Einrichtung angegebenen E-Mail-Adresse.',
+    sk: 'Ak sa vo feede nenájde nič, čo k otázke patrí, asistent to jasne povie a odporučí zákazníkovi napísať obchodu cez kontaktnú stránku na jeho webe. E-mail, ktorý zadáte pri nastavení, zákazníkom neukazuje.',
+    en: 'If nothing in the feed fits the question, the assistant says so clearly and suggests contacting the shop through the contact page on its website. The e-mail address you give during setup is never shown to shoppers.',
+    de: 'Passt nichts im Feed zur Frage, sagt der Assistent das klar und empfiehlt, den Shop über die Kontaktseite auf seiner Website zu kontaktieren. Die E-Mail-Adresse, die Sie bei der Einrichtung angeben, sehen Kunden nie.',
   },
   'faq.platforms.q': { sk: 'Funguje to na Shoptete, WooCommerce alebo Shopify?', en: 'Does it work on Shoptet, WooCommerce or Shopify?', de: 'Funktioniert es mit Shoptet, WooCommerce oder Shopify?' },
   'faq.platforms.a': {

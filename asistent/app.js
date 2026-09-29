@@ -46,6 +46,8 @@
       verifyExpired: 'Kód už neplatí. Odošlite formulár znova, pošleme nový.',
       verifyFailed: 'Adresu sa nepodarilo overiť. Asistent funguje aj tak, kód na vloženie nájdete nižšie.',
       codeFailed: 'Kód na overenie adresy sa nepodarilo poslať. Asistent funguje aj tak, kód na vloženie nájdete nižšie; ak chcete návod e-mailom, napíšte na podpora@arling.sk.',
+      feedNotSaved: 'Novú adresu feedu sme neuložili: tento obchod už Asistenta má a feed z inej adresy mu takto zmeniť nevieme. Ak je obchod váš, napíšte na podpora@arling.sk.',
+      domainTaken: 'Tento obchod už má Asistenta, založeného s inou e-mailovou adresou. Pripojiť ho alebo zmeniť feed môže len majiteľ tej adresy: zadá ju do formulára a potvrdí ju kódom, ktorý mu na ňu pošleme. Ak je obchod váš a adresu nepoznáte, napíšte na podpora@arling.sk.',
     },
     en: {
       slow: 'Processing your feed is taking longer than usual. Submit the form again in a moment and we will check the status, or write to support@arling.sk.',
@@ -64,6 +66,8 @@
       verifyExpired: 'The code has expired. Submit the form again and we will send a new one.',
       verifyFailed: 'We could not verify the address. The assistant works anyway; the embed code is below.',
       codeFailed: 'We could not send the verification code. The assistant works anyway and the embed code is below; if you want the instructions by e-mail, write to support@arling.sk.',
+      feedNotSaved: 'We did not save the new feed URL: this shop already has an assistant and we cannot switch it to a feed from another address this way. If the shop is yours, write to support@arling.sk.',
+      domainTaken: 'This shop already has an assistant, set up with a different e-mail address. Only the owner of that address can connect it or change the feed: they enter it in this form and confirm it with the code we send there. If the shop is yours and you do not know the address, write to support@arling.sk.',
     },
     de: {
       slow: 'Die Verarbeitung des Feeds dauert länger als üblich. Senden Sie das Formular gleich erneut ab, dann prüfen wir den Stand, oder schreiben Sie an support@arling.sk.',
@@ -82,12 +86,25 @@
       verifyExpired: 'Der Code ist abgelaufen. Senden Sie das Formular erneut ab, wir schicken einen neuen.',
       verifyFailed: 'Die Adresse konnte nicht bestätigt werden. Der Assistent funktioniert trotzdem, den Einbindungscode finden Sie unten.',
       codeFailed: 'Der Bestätigungscode konnte nicht gesendet werden. Der Assistent funktioniert trotzdem, den Einbindungscode finden Sie unten; wenn Sie die Anleitung per E-Mail möchten, schreiben Sie an support@arling.sk.',
+      feedNotSaved: 'Die neue Feed-URL haben wir nicht gespeichert: Dieser Shop hat bereits einen Assistenten, und auf einen Feed von einer anderen Adresse können wir ihn so nicht umstellen. Wenn der Shop Ihnen gehört, schreiben Sie an support@arling.sk.',
+      domainTaken: 'Für diesen Shop gibt es bereits einen Assistenten, eingerichtet mit einer anderen E-Mail-Adresse. Verbinden oder den Feed ändern kann nur der Inhaber dieser Adresse: Er gibt sie in dieses Formular ein und bestätigt sie mit dem Code, den wir dorthin senden. Wenn der Shop Ihnen gehört und Sie die Adresse nicht kennen, schreiben Sie an support@arling.sk.',
     },
   };
   function T(key) {
     var d = STATUS_TEXT[PAGE_LANG] || STATUS_TEXT.en;
     return d[key] || STATUS_TEXT.en[key];
   }
+
+  // 400 feed_other_domain (worker onboarding.js, druhé kolo bezpečnostnej kontroly 29. 9. 2026):
+  // adresa feedu musí byť na doméne obchodu alebo jej subdoméne. Formulár berie doménu z adresy
+  // feedu, takže sem príde len adresa na spoločnej doméne platformy (napríklad myshopify.com,
+  // github.io) alebo bez bodky. Veta patrí poľu URL feedu, v jazyku stránky (sk, cs, en, de).
+  var FEED_INA_DOMENA = {
+    sk: 'Adresa feedu musí byť na vlastnej doméne obchodu, napríklad https://vasobchod.sk/feed.xml. Adresa na spoločnej doméne platformy (napríklad myshopify.com alebo github.io) nestačí, lebo pod ňou majú weby rôzni majitelia. Ak váš feed vytvára iná služba, napíšte na podpora@arling.sk.',
+    cs: 'Adresa feedu musí být na vlastní doméně obchodu, například https://vasobchod.cz/feed.xml. Adresa na společné doméně platformy (například myshopify.com nebo github.io) nestačí, protože pod ní mají weby různí majitelé. Pokud váš feed vytváří jiná služba, napište na podpora@arling.sk.',
+    en: 'The feed URL must be on the shop\'s own domain, for example https://yourshop.com/feed.xml. An address on a platform\'s shared domain (such as myshopify.com or github.io) is not enough, because websites under it belong to different owners. If another service creates your feed, write to support@arling.sk.',
+    de: 'Die Feed-URL muss auf der eigenen Domain des Shops liegen, zum Beispiel https://ihrshop.de/feed.xml. Eine Adresse auf der gemeinsamen Domain einer Plattform (etwa myshopify.com oder github.io) reicht nicht, weil Websites darunter verschiedenen Inhabern gehören. Wenn ein anderer Dienst Ihren Feed erstellt, schreiben Sie an support@arling.sk.',
+  };
 
   var DEFAULT_ENDPOINT = 'https://arling-asistent.arling.workers.dev';
   var ENDPOINT = (new URLSearchParams(window.location.search).get('endpoint') || DEFAULT_ENDPOINT).replace(/\/$/, '');
@@ -108,6 +125,8 @@
       payload_too_large: 'Požiadavka je príliš veľká.',
       quota_exceeded: 'Dnešný limit skúšobných účtov bol dosiahnutý.',
       internal_error: 'Nastala chyba na strane servera.',
+      domain_taken: STATUS_TEXT.sk.domainTaken,
+      feed_other_domain: FEED_INA_DOMENA.sk,
     },
     en: {
       invalid_json: 'Invalid request (the form data is damaged).',
@@ -117,6 +136,8 @@
       payload_too_large: 'The request is too large.',
       quota_exceeded: 'Today\'s limit of trial accounts has been reached.',
       internal_error: 'Something went wrong on our server.',
+      domain_taken: STATUS_TEXT.en.domainTaken,
+      feed_other_domain: FEED_INA_DOMENA.en,
     },
     de: {
       invalid_json: 'Ungültige Anfrage (die Formulardaten sind beschädigt).',
@@ -126,6 +147,8 @@
       payload_too_large: 'Die Anfrage ist zu groß.',
       quota_exceeded: 'Das heutige Limit für Testkonten ist erreicht.',
       internal_error: 'Auf unserem Server ist ein Fehler aufgetreten.',
+      domain_taken: STATUS_TEXT.de.domainTaken,
+      feed_other_domain: FEED_INA_DOMENA.de,
     },
   };
 
@@ -136,7 +159,8 @@
     if (!code) return null;
     var spravy = TENANT_ERROR_MESSAGES[pageLang()] || TENANT_ERROR_MESSAGES.en;
     var text = spravy[code] || code;
-    var issues = err && Array.isArray(err.issues) && err.issues.length ? ' (' + err.issues.join(', ') + ')' : '';
+    // domain_taken a feed_other_domain: worker posiela v issues to isté vysvetlenie (pre plugin), tu je už v texte.
+    var issues = code !== 'domain_taken' && code !== 'feed_other_domain' && err && Array.isArray(err.issues) && err.issues.length ? ' (' + err.issues.join(', ') + ')' : '';
     return text + issues;
   }
 
@@ -414,6 +438,23 @@
   // stránke funguje aj bez overenia.
   var TOKEN_KEY = 'arling_asistent_overenie';
 
+  // Id skúšok vytvorených v tomto prehliadači: živá ukážka (live/live.js) ukáže
+  // taký obchod aj bez ďalšieho overenia (bezpečnostná kontrola 29. 9. 2026,
+  // cudzie id z odkazu už nie). Len id, najviac SKUSKY_MAX posledných.
+  var SKUSKY_KEY = 'arling_asistent_skusky';
+  var SKUSKY_MAX = 10;
+
+  function zapamatajSkusku(tenantId) {
+    if (!tenantId) return;
+    try {
+      var zoznam = JSON.parse(window.localStorage.getItem(SKUSKY_KEY) || '[]');
+      if (!Array.isArray(zoznam)) zoznam = [];
+      zoznam = zoznam.filter(function (x) { return x !== tenantId; });
+      zoznam.push(String(tenantId));
+      window.localStorage.setItem(SKUSKY_KEY, JSON.stringify(zoznam.slice(-SKUSKY_MAX)));
+    } catch (e) { /* súkromné okno: ukážka potom len pre obchody, ktoré to dovolia */ }
+  }
+
   function ulozenyToken(email) {
     try {
       var z = JSON.parse(window.localStorage.getItem(TOKEN_KEY) || 'null');
@@ -456,9 +497,14 @@
     });
   }
 
-  function zobrazOverenie(tenantId, email, lang) {
+  // Pole na kód patrí jednému odoslaniu formulára (gen). Oneskorená odpoveď staršieho pokusu
+  // nesmie zmeniť nové pole, jeho hlásenie ani ovládanie (brána 29. 9., pokus 2, nález 2).
+  function jeAktualne(gen, box) { return gen === pollGen && (box === undefined || box === verifyBox); }
+
+  function zobrazOverenie(tenantId, email, lang, gen) {
     odstranOverenie();
     verifyBox = document.createElement('div');
+    var box = verifyBox;
     verifyBox.className = 'trial-verify';
     var intro = document.createElement('p');
     intro.textContent = T('verifyIntro').replace('{email}', email);
@@ -500,6 +546,7 @@
       var kod = input.value.replace(/\D/g, '');
       if (kod.length !== 6) { input.focus(); return; }
       btn.disabled = true;
+      var sprava = function (text, tone) { if (jeAktualne(gen, box)) overenieSprava(text, tone); };
       fetch(ENDPOINT + '/v1/ucet/over', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -507,35 +554,38 @@
       })
         .then(function (res) { return res.json().then(function (body) { return { ok: res.ok, body: body }; }); })
         .then(function (r) {
+          if (!jeAktualne(gen, box)) return null;
           if (!r.ok || !r.body || !r.body.token) {
             var chyba = r.body && r.body.error;
             var vyprsal = chyba === 'no_code' || (chyba === 'bad_code' && r.body.remaining === 0);
-            overenieSprava(T(vyprsal ? 'verifyExpired' : 'verifyBad'), 'error');
+            sprava(T(vyprsal ? 'verifyExpired' : 'verifyBad'), 'error');
             if (vyprsal) submitBtn.disabled = false; // nový kód príde po opätovnom odoslaní formulára
             btn.disabled = false;
             return null;
           }
           ulozToken(email, r.body.token);
           return potvrdVerejne(tenantId, email, r.body.token).then(function (ok) {
+            if (!jeAktualne(gen, box)) return;
             if (ok) {
               f.hidden = true;
-              overenieSprava(T('verifyOk'), 'ok');
+              sprava(T('verifyOk'), 'ok');
               track('trial_verified', { lang: lang });
             } else {
-              overenieSprava(T('verifyFailed'), 'warn');
+              sprava(T('verifyFailed'), 'warn');
               btn.disabled = false;
             }
           });
         })
         .catch(function () {
-          overenieSprava(T('verifyFailed'), 'warn');
+          if (!jeAktualne(gen, box)) return;
+          sprava(T('verifyFailed'), 'warn');
           btn.disabled = false;
         });
     });
   }
 
   /** Po vytvorení účtu: ak worker adresu už overil (platný uložený token), nič; inak pošle kód a ukáže pole na jeho zadanie. */
-  function overAdresu(tenantId, email, lang, uzOvereny) {
+  function overAdresu(tenantId, email, lang, uzOvereny, gen) {
     if (uzOvereny) return;
     fetch(ENDPOINT + '/v1/ucet/kod', {
       method: 'POST',
@@ -543,11 +593,13 @@
       body: JSON.stringify({ email: email, jazyk: lang }),
     })
       .then(function (res) {
+        if (!jeAktualne(gen)) return;
         if (!res.ok) throw new Error('kod_' + res.status);
-        zobrazOverenie(tenantId, email, lang);
+        zobrazOverenie(tenantId, email, lang, gen);
         track('trial_code_sent', { lang: lang });
       })
       .catch(function () {
+        if (!jeAktualne(gen)) return;
         odstranOverenie();
         verifyBox = document.createElement('div');
         verifyBox.className = 'trial-verify';
@@ -603,13 +655,41 @@
         return res.json();
       })
       .then(function (tenant) {
-        poll(tenant.id, lang, POLL_MAX_TRIES, gen);
+        if (!jeAktualne(gen)) return;
+        zapamatajSkusku(tenant.id);
         // Uložený token mohol medzitým prestať platiť (odhlásenie všade): worker
         // vtedy vráti overeny: false a pýtame kód znova.
         if (token && tenant.overeny !== true) zabudniToken();
-        overAdresu(tenant.id, emailNorm, lang, tenant.overeny === true);
+        if (tenant.feed_treba_overit) {
+          // Nový feed sa neuložil (worker onboarding.js, druhé kolo kontroly 29. 9. 2026:
+          // feed na doméne obchodu sa ukladá bez kódu, toto príde len pre feed z iného
+          // servera a ten nepomôže uložiť ani kód). Stav sa nesleduje, inak by „Asistent
+          // už beží“ zakrylo, že nový feed uložený nie je; kód sa nepýta, nič by nezmenil.
+          setStatus(T('feedNotSaved'), 'warn');
+          submitBtn.disabled = false;
+          track('trial_feed_not_saved', { lang: lang });
+          return;
+        }
+        poll(tenant.id, lang, POLL_MAX_TRIES, gen);
+        overAdresu(tenant.id, emailNorm, lang, tenant.overeny === true, gen);
       })
       .catch(function (err) {
+        if (!jeAktualne(gen)) return;
+        if (err && err.error === 'domain_taken') {
+          // Doménu má obchod s iným e-mailom: celá veta s ďalším krokom, bez predpony o skúšobnom účte.
+          setStatus(T('domainTaken'), 'error');
+          submitBtn.disabled = false;
+          track('trial_domain_taken', { lang: lang });
+          return;
+        }
+        if (err && err.error === 'feed_other_domain') {
+          // Chyba patrí poľu URL feedu (ako zlá adresa): veta v jazyku stránky, pole označené, bez sledovania stavu.
+          setStatus('', '');
+          oznacChybuFeedu(FEED_INA_DOMENA[pageLang()] || FEED_INA_DOMENA.en);
+          submitBtn.disabled = false;
+          track('trial_feed_other_domain', { lang: lang });
+          return;
+        }
         var detail = describeTenantError(err);
         var message = detail
           ? T('createFailed') + detail
