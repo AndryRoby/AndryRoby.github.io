@@ -66,11 +66,13 @@
     var q = new URLSearchParams(location.search);
     var farba = /^[0-9a-fA-F]{6}$/.test(q.get('farba') || '') ? '#' + q.get('farba') : '#E0582A';
     var rezim = /^(tmavy|svetly|auto)$/.test(q.get('rezim') || '') ? q.get('rezim') : 'svetly';
+    // Jazyk rozhrania widgetu pre snímky úvodu v EN a DE (29. 9. 2026); obchod aj feed ostávajú slovenské.
+    var ui = /^(sk|en|de|cs)$/.test(q.get('ui') || '') ? q.get('ui') : 'sk';
     var s = document.createElement('script');
     var attrs = {
       'data-tenant': TENANT,
       'data-endpoint': ENDPOINT,
-      'data-lang': 'sk',
+      'data-lang': ui,
       'data-answer-lang': 'auto',
       'data-gift': '1',
       'data-farba': farba,

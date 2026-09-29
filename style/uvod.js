@@ -56,7 +56,7 @@
       requestAnimationFrame(function () { koren.classList.remove('pred'); });
     });
   }
-  var hlavna = document.querySelector('.hero .ramec img');
+  var hlavna = document.querySelector('.hero .panel img, .hero .ramec img');
   if (!hlavna || hlavna.complete) spusti();
   else {
     hlavna.addEventListener('load', spusti, { once: true });
