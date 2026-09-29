@@ -64,7 +64,7 @@ export function prejdi(odpovede) {
 // v products/arling-sk/efaktura/index.html (SK) alebo en/index.html (EN).
 export const DOKUMENTY = {
   faq: 'https://www.financnasprava.sk/_img/pfsedit/Dokumenty_PFS/Zverejnovanie_dok/Aktualne/DPH/2026/2026.09.15_eFak_FaQ.pdf',
-  zakon385: 'https://www.slov-lex.sk/ezbierky/pravne-predpisy/SK/ZZ/2025/385/',
+  zakon385: 'https://static.slov-lex.sk/static/SK/ZZ/2025/385/20270101.html',
   zakon222: 'https://www.slov-lex.sk/ezbierky/pravne-predpisy/SK/ZZ/2004/222/?ucinnost=01.01.2027#paragraf-85o.nadpis',
   bmf: 'https://www.bundesfinanzministerium.de/Content/DE/FAQ/e-rechnung.html',
   kosit: 'https://xeinkauf.de/xrechnung/',
@@ -130,14 +130,15 @@ export const ZDROJE = {
   arling_bez_peppol: { dok: 'arling', kotva: '#pre-koho' },
   arling_nahlad: { dok: 'arling', kotva: '#nahlad' },
   arling_xrechnung: { dok: 'arling', kotva: '#pre-koho' },
+  arling_poskytovatelia: { dok: 'arling', kotva: '#poskytovatelia' },
 };
 
 // ── Výzvy ────────────────────────────────────────────────────────────────────
 // Kam výsledok vedie. cena je najnižšia cena v eurách bez DPH ako reťazec kvôli meraniu
 // ('0' = zadarmo). 'znova' nie je odkaz, ale tlačidlo, ktoré spustí kvíz od začiatku.
 // Žiadny vlastný checkout: platené výzvy vedú na existujúci formulár (NAVRH časť 1).
-export const CIELE = ['kontrola', 'nahlad', 'vytvorit_jedna', 'vytvorit_30', 'vytvorit_xrechnung', 'info', 'znova'];
-export const CENA_CIELA = { kontrola: '0', nahlad: '0', vytvorit_jedna: '2.90', vytvorit_30: '9.90', vytvorit_xrechnung: '2.90', info: '0', znova: '0' };
+export const CIELE = ['kontrola', 'nahlad', 'poskytovatelia', 'vytvorit_xrechnung', 'info', 'znova'];
+export const CENA_CIELA = { kontrola: '0', nahlad: '0', poskytovatelia: '0', vytvorit_jedna: '2.90', vytvorit_30: '9.90', vytvorit_xrechnung: '2.90', info: '0', znova: '0' };
 
 // ── Výsledky ─────────────────────────────────────────────────────────────────
 // odseky: pre každý odsek textu (v tom istom poradí ako v texty.mjs a texts.mjs) zoznam zdrojov.
@@ -150,22 +151,22 @@ export const TYKA_SA_UVOD = [
 ];
 
 export const SEGMENTY = {
-  nie_platitel: { istota: 'iste', uvod: false, odseky: [['faq_57'], ['faq_7', 'faq_63'], ['arling_nahlad']], ciele: ['nahlad', 'info'] },
-  registracia_7a: { istota: 'overit', uvod: false, odseky: [['faq_38', 'zakon_85o'], ['faq_7']], ciele: ['nahlad', 'info'] },
+  nie_platitel: { istota: 'iste', uvod: false, odseky: [['faq_57'], ['faq_7', 'faq_63'], ['arling_nahlad']], ciele: ['poskytovatelia', 'nahlad'] },
+  registracia_7a: { istota: 'overit', uvod: false, odseky: [['faq_38', 'zakon_85o'], ['faq_7']], ciele: ['poskytovatelia', 'nahlad'] },
   registracia_5: { istota: 'iste', uvod: false, odseky: [['faq_ii29_par5', 'zakon_85o'], []], ciele: ['nahlad', 'info'] },
   neviem_status: { istota: 'overit', uvod: false, odseky: [['faq_uvod', 'faq_57'], ['faq_7'], []], ciele: ['znova', 'info'] },
-  len_spotrebitelia: { istota: 'iste', uvod: false, odseky: [['faq_4', 'faq_62_spotrebitelia'], ['faq_17'], ['faq_7', 'arling_nahlad']], ciele: ['nahlad', 'info'] },
+  len_spotrebitelia: { istota: 'iste', uvod: false, odseky: [['faq_4', 'faq_62_spotrebitelia'], ['faq_17'], ['faq_7', 'arling_nahlad']], ciele: ['nahlad', 'poskytovatelia'] },
   len_zahranicie: { istota: 'overit', uvod: false, odseky: [['faq_ii29_tuzemske', 'faq_16', 'faq_62_2030'], ['faq_7'], ['arling_xrechnung']], ciele: ['kontrola', 'nahlad'] },
-  tyka_sa_riesenie: { istota: 'iste', uvod: true, odseky: [['faq_14_softver'], ['arling_kontrola']], ciele: ['kontrola', 'info'] },
-  tyka_sa_malo: { istota: 'iste', uvod: true, odseky: [['arling_cena_jedna']], ciele: ['vytvorit_jedna', 'kontrola'] },
-  tyka_sa_stredne: { istota: 'iste', uvod: true, odseky: [['arling_cena_30', 'arling_cennik']], ciele: ['vytvorit_30', 'kontrola'] },
-  tyka_sa_vela: { istota: 'iste', uvod: true, odseky: [['arling_cena_30', 'arling_cennik'], ['faq_14_maly']], ciele: ['vytvorit_30', 'kontrola'] },
+  tyka_sa_riesenie: { istota: 'iste', uvod: true, odseky: [['faq_14_softver'], ['arling_kontrola']], ciele: ['kontrola', 'poskytovatelia'] },
+  tyka_sa_malo: { istota: 'iste', uvod: true, odseky: [['arling_poskytovatelia', 'faq_14_softver']], ciele: ['poskytovatelia', 'kontrola'] },
+  tyka_sa_stredne: { istota: 'iste', uvod: true, odseky: [['arling_poskytovatelia', 'faq_14_softver']], ciele: ['poskytovatelia', 'kontrola'] },
+  tyka_sa_vela: { istota: 'iste', uvod: true, odseky: [['arling_poskytovatelia', 'faq_14_softver'], ['faq_14_maly']], ciele: ['poskytovatelia', 'kontrola'] },
 };
 
 // Poznámky pripojené k výsledku podľa odpovedí (každá je jeden odsek).
 export const POZNAMKY = {
   vynimky: { zdroje: ['faq_51', 'faq_66', 'faq_83'] },
-  postar: { zdroje: ['faq_6', 'arling_bez_peppol', 'faq_10', 'faq_14_softver'] },
+  postar: { zdroje: ['faq_6', 'arling_bez_peppol', 'arling_poskytovatelia', 'faq_14_softver'] },
   aj_spotrebitelia: { zdroje: ['faq_4', 'faq_62_spotrebitelia'] },
   zahranicie: { zdroje: ['faq_ii29_tuzemske', 'faq_62_2030'] },
   nemecko: { zdroje: ['bmf_prijem', 'kosit_xrechnung', 'arling_xrechnung'] },
@@ -207,8 +208,8 @@ export function vyhodnot(odpovede) {
   for (const b of bloky) for (const id of b.zdroje) if (!zdroje.includes(id)) zdroje.push(id);
 
   let ciele = def.ciele.slice();
-  // Kto fakturuje aj do Nemecka a vytvára si faktúry sám, dostane ako druhú výzvu XRechnung.
-  if (q.q3 === 'sk_de' && ciele[0].startsWith('vytvorit')) ciele = [ciele[0], 'vytvorit_xrechnung', ...ciele.slice(1)];
+  // XRechnung je samostatná ponuka pre nemeckého odberateľa, nie doručenie v SR.
+  if (q.q3 === 'sk_de') ciele = [ciele[0], 'vytvorit_xrechnung', ...ciele.slice(1)];
 
   return {
     segment,

@@ -11,7 +11,7 @@ import {
   MAX_OTAZOK, ZDROJE, DOKUMENTY, EXPERIMENT, KONTROLNA,
   prejdi, vyhodnot, otazka, udalostOtazky, UDALOSTI, cistyZdroj,
   priradVariantu, noveId, platneId, vynutenaVarianta,
-} from './logika.mjs';
+} from './logika.mjs?v=2';
 
 const KLUC_ID = 'arling_kviz_id';
 

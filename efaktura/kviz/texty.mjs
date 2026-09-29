@@ -155,21 +155,21 @@ export default {
       nadpis: 'Áno, e-faktúra sa vás týka od 1. januára 2027.',
       uvod: true,
       odseky: [
-        'Pri 1 až 3 faktúrach mesačne vám vyjde lacnejšie platiť po jednej: XML jednej faktúry stojí u nás 2,90 € bez DPH, tri faktúry teda 8,70 € bez DPH, kým 30 dní stojí 9,90 € bez DPH. Formulár a náhľad sú zadarmo, platíte až pri stiahnutí hotového XML.',
+        'Pri 1 až 3 faktúrach mesačne najprv porovnajte bezplatné plány poskytovateľov a ich limity. Faktúru vystavte cez svoj účtovný program alebo poskytovateľa. Ak ju poskytovateľ vystaví aj odošle, samostatné XML od nás nepotrebujete. Kontrola a náhľad sú u nás zadarmo.',
       ],
     },
     tyka_sa_stredne: {
       nadpis: 'Áno, e-faktúra sa vás týka od 1. januára 2027.',
       uvod: true,
       odseky: [
-        'Pri 4 a viac faktúrach mesačne vám vyjde lacnejšie 30 dní bez obmedzenia počtu faktúr za 9,90 € bez DPH. Štyri faktúry po jednej by stáli 11,60 € bez DPH. Je to jednorazová platba, bez predplatného. Formulár a náhľad sú zadarmo.',
+        'Pri 4 až 20 faktúrach mesačne porovnajte bezplatné limity a paušály poskytovateľov. Faktúry vystavujte cez svoj účtovný program alebo poskytovateľa, ktorý zabezpečí aj doručenie. Kontrolu a náhľad XML máte u nás zadarmo.',
       ],
     },
     tyka_sa_vela: {
       nadpis: 'Áno, e-faktúra sa vás týka od 1. januára 2027.',
       uvod: true,
       odseky: [
-        'Pri viac ako 20 faktúrach mesačne sa oplatí 30 dní za 9,90 € bez DPH, vrátane dávky z CSV do jedného ZIP. Je to jednorazová platba, bez predplatného.',
+        'Pri viac ako 20 faktúrach mesačne zvážte účtovný program alebo poskytovateľa, ktorý faktúry vystaví aj odošle. Porovnajte limity, cenu a napojenie na svoje účtovníctvo. Kontrolu a náhľad XML máte u nás zadarmo.',
         'Finančná správa pri podnikoch s pár desiatkami faktúr píše, že drahý automatický systém netreba. Ak ich máte oveľa viac a pribúdajú, zvážte účtovný program, ktorý e-faktúru vytvorí aj odošle sám.',
       ],
     },
@@ -183,7 +183,7 @@ export default {
     },
     postar: {
       nadpis: 'Na odoslanie potrebujete Digitálneho poštára',
-      text: 'Digitálneho poštára si vyberiete sami. Náš nástroj XML vytvorí a skontroluje, do siete Peppol ho však neposiela. Finančná správa odhaduje predplatné jednoduchej aplikácie Digitálneho poštára najviac na priemer EÚ, 5 až 12 € mesačne, a opisuje aj postup, keď XML vytvoríte inde a v aplikácii poštára ho len nahráte a pošlete. Či to váš poštár umožňuje, overte u neho.',
+      text: 'Prijímanie e-faktúr si môžete zabezpečiť zadarmo u poskytovateľa; overte si podmienky a limity jeho plánu. Faktúry vystavujte cez svoj účtovný program alebo poskytovateľa. Kontrolu a náhľad XML u nás máte zadarmo. Náš nástroj XML vytvorí a skontroluje, do siete Peppol ho však neposiela. Pred kúpou XML si u poskytovateľa overte, či ho vie prijať a či faktúru nevystaví priamo vo svojom pláne.',
     },
     aj_spotrebitelia: {
       nadpis: 'Faktúry súkromným osobám',
@@ -204,6 +204,7 @@ export default {
   },
 
   ciele: {
+    poskytovatelia: { href: NASTROJ + '?z=kviz#poskytovatelia', text: 'Vybrať poskytovateľa', popis: 'Prijímanie zadarmo, vystavovanie cez program alebo poskytovateľa. Overte si podmienky plánu.' },
     kontrola: { href: NASTROJ + '?z=kviz#kontrola', text: 'Skontrolovať XML zadarmo', popis: 'Bez registrácie, súbor ostáva vo vašom prehliadači.' },
     nahlad: { href: NASTROJ + '?z=kviz#nahlad', text: 'Prečítať e-faktúru zadarmo', popis: 'Súbor XML od dodávateľa uvidíte ako bežný doklad a uložíte do PDF.' },
     vytvorit_jedna: { href: NASTROJ + '?z=kviz#vytvorit', text: 'Vytvoriť faktúru vo formulári', popis: 'Formulár a náhľad zadarmo. XML jednej faktúry 2,90 € bez DPH.' },
@@ -225,6 +226,7 @@ export default {
 
   // Texty k zdrojom bez citátu vo FAQ. citat pri arling_* je doslovne z products/arling-sk/efaktura/index.html (test).
   zdroje: {
+    arling_poskytovatelia: { citat: 'Prijímanie e-faktúr si môžete zabezpečiť zadarmo u poskytovateľa; overte si podmienky a limity jeho plánu. Faktúry vystavujte cez svoj účtovný program alebo poskytovateľa. Kontrolu a náhľad XML u nás máte zadarmo.' },
     bmf_prijem: { popis: 'Firmy v Nemecku musia vedieť e-faktúru prijať od 1. 1. 2025.' },
     kosit_xrechnung: { popis: 'XRechnung je nemecká špecifikácia e-faktúry nad normou EN 16931.' },
     zakon_385: { popis: 'Novela zákona o DPH, účinnosť 1. 1. 2027.' },

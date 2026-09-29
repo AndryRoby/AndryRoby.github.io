@@ -154,21 +154,21 @@ export default {
       nadpis: 'Yes, the e-invoice applies to you from 1 January 2027.',
       uvod: true,
       odseky: [
-        'With 1 to 3 invoices a month, paying per invoice is cheaper: the XML of one invoice costs 2.90 € excl. VAT here, so three invoices cost 8.70 € excl. VAT, while 30 days cost 9.90 € excl. VAT. The form and the preview are free; you only pay when you download the finished XML.',
+        'With 1 to 3 invoices a month, compare free provider plans and their limits first. Issue invoices through your accounting software or provider. If the provider creates and sends the invoice, you do not need separate XML from us. Our check and preview are free.',
       ],
     },
     tyka_sa_stredne: {
       nadpis: 'Yes, the e-invoice applies to you from 1 January 2027.',
       uvod: true,
       odseky: [
-        'With 4 or more invoices a month, 30 days with no limit on the number of invoices for 9.90 € excl. VAT is cheaper. Four invoices paid one by one would cost 11.60 € excl. VAT. It is a one-time payment, no subscription. The form and the preview are free.',
+        'With 4 to 20 invoices a month, compare free allowances and provider subscriptions. Issue invoices through your accounting software or a provider that also handles delivery. Our XML check and preview are free.',
       ],
     },
     tyka_sa_vela: {
       nadpis: 'Yes, the e-invoice applies to you from 1 January 2027.',
       uvod: true,
       odseky: [
-        'With more than 20 invoices a month, 30 days for 9.90 € excl. VAT is the better deal, including a CSV batch in one ZIP. It is a one-time payment, no subscription.',
+        'With more than 20 invoices a month, consider accounting software or a provider that creates and sends invoices. Compare limits, prices and integration with your accounts. Our XML check and preview are free.',
         'For businesses with a few dozen invoices, the Financial Administration writes that an expensive automated system is not needed. If you have many more and the number grows, consider accounting software that creates and sends e-invoices by itself.',
       ],
     },
@@ -182,7 +182,7 @@ export default {
     },
     postar: {
       nadpis: 'To send, you need a Digital Postman',
-      text: 'You choose the Digital Postman yourself. Our tool creates and checks the XML, but it does not send it into the Peppol network. The Financial Administration estimates that a simple Digital Postman app will cost no more than the EU average of 5 to 12 € a month, and it describes the route where you create the XML elsewhere and simply upload and send it in the postman’s app. Whether your postman allows that, ask them.',
+      text: 'You can arrange free receipt of e-invoices with a provider; check the terms and limits of its plan. Issue invoices through your accounting software or provider. Our XML check and preview are free. Our tool creates and checks XML but does not send it into Peppol. Before buying XML, ask the provider whether it accepts imported files and whether its plan already creates invoices.',
     },
     aj_spotrebitelia: {
       nadpis: 'Invoices to private individuals',
@@ -203,6 +203,7 @@ export default {
   },
 
   ciele: {
+    poskytovatelia: { href: TOOL + '?z=quiz#poskytovatelia', text: 'Choose a provider for Slovakia', popis: 'Free receipt, issuing through your software or provider. Check the plan terms.' },
     kontrola: { href: TOOL + '?z=quiz#kontrola', text: 'Check your XML free', popis: 'No account, the file stays in your browser.' },
     nahlad: { href: TOOL + '?z=quiz#nahlad', text: 'Read an e-invoice free', popis: 'See a supplier’s XML as an ordinary document and save it as a PDF.' },
     vytvorit_jedna: { href: TOOL + '?z=quiz#vytvorit', text: 'Build an invoice in the form', popis: 'Form and preview free. XML of one invoice 2.90 € excl. VAT.' },
@@ -251,6 +252,7 @@ export default {
 
   // Sources without an FAQ quote. citat for arling_* is verbatim from products/arling-sk/efaktura/en/index.html (tested).
   zdroje: {
+    arling_poskytovatelia: { citat: 'You can arrange free receipt of e-invoices with a provider; check the terms and limits of its plan. Issue invoices through your accounting software or provider. Our XML check and preview are free.' },
     bmf_prijem: { popis: 'Businesses in Germany must be able to receive e-invoices from 1 January 2025.' },
     kosit_xrechnung: { popis: 'XRechnung is the German e-invoice specification based on EN 16931.' },
     zakon_385: { popis: 'Amendment to the VAT Act, in force from 1 January 2027.' },
