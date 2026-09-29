@@ -1,0 +1,9 @@
+// Vzorka 0: Claude, 29. 9. 2026, prototyp/vzorka-ai-en.txt.
+// Vzorky 1 až 4 sú syntetické testovacie vzorky napísané Astrou, nie kalibrácia ani skutoční ľudskí autori.
+export default [
+  "Why small businesses should not wait on e-invoicing\n\nIn today's fast-paced digital landscape, e-invoicing is no longer optional. It's not just a compliance requirement, it's an opportunity to take your business to the next level.\n\nMany small businesses still rely on paper invoices or PDF files. This leads to unnecessary errors, wasted time, and administrative burden. Switching to e-invoicing brings speed, accuracy, and transparency.\n\nThe key is to start early. Businesses that prepare ahead of time gain a competitive edge and avoid last-minute stress. All it takes is choosing the right tool, setting up your processes, and training your team.\n\nUltimately, e-invoicing isn't a threat but an investment in your future. Remember: success belongs to those who prepare before everyone else.\n",
+  "Maya brought 3 boxes this morning. One had no instructions and another was wet. I called Tom, who said the driver had left them by the gate. I don't know who signed the delivery slip. Can we open the store early tomorrow?",
+  "On Monday Ben and I fixed the steps behind the house. We bought 12 boards and left two in the car. Our neighbour Ruth brought coffee. Rain got into the toolbox, so we stopped. Can you help on Saturday? Bring your own gloves.",
+  "I sent you the September rota. Emma swapped her shift with James and we still need 2 people on Tuesday. Can you come? If not, I'll ask Nora. I slept badly this week and may have missed another swap. Check the last line.",
+  "Put a short letter, a blue notebook and clean paper on the table. Then call Eva about the date. I leave at four today, so the keys will be with our neighbour at number 18."
+];

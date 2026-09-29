@@ -1,0 +1,9 @@
+// Vzorka 0: Claude, 29. 9. 2026, prototyp/vzorka-ai-sk.txt.
+// Vzorky 1 až 4 sú syntetické testovacie vzorky napísané Astrou, nie kalibrácia ani skutoční ľudskí autori.
+export default [
+  "Prečo by malé firmy nemali odkladať e-faktúru\n\nV dnešnej dobe sa digitalizácia stáva neoddeliteľnou súčasťou podnikania. Elektronická fakturácia nie je len povinnosť, je to príležitosť posunúť vašu firmu na ďalšiu úroveň.\n\nMnohé malé firmy stále spoliehajú na papierové faktúry alebo PDF súbory. To so sebou prináša zbytočné chyby, časové straty a administratívnu záťaž. Prechod na e-faktúru prináša rýchlosť, presnosť a transparentnosť.\n\nKľúčové je začať včas. Firmy, ktoré sa na zmenu pripravia vopred, získajú konkurenčnú výhodu a vyhnú sa stresu na poslednú chvíľu. Stačí si vybrať vhodný nástroj, nastaviť procesy a zaškoliť tím.\n\nNa záver: e-faktúra nie je hrozba, ale investícia do budúcnosti. Nezabúdajte, že úspech patrí tým, ktorí sa na zmenu pripravia skôr ako ostatní.\n",
+  "Dnes mi Petra priniesla 3 krabice. V jednej chýbal návod a druhá bola mokrá. Volal som Ivanovi, vraj ich nechali pri bráne. Neviem, kto podpísal dodací list. Máme zajtra otvoriť sklad skôr? Ja tam viem byť o siedmej.",
+  "V pondelok sme s Martinom opravili schody za domom. Kúpili sme 12 dosiek, dve ešte zostali v aute. Susedka Zuzana doniesla kávu. Pršalo nám do náradia, tak sme skončili skôr. Prídeš v sobotu pomôcť? Kladivo mám, rukavice si vezmi svoje.",
+  "Posielam ti rozpis na september. Eva si vymenila službu s Jurajom a na utorok potrebujeme ešte 2 ľudí. Môžeš prísť? Ak nie, ozvem sa Nine. Tento týždeň som spal málo a možno som prehliadol ďalšiu výmenu. Pozri najmä posledný riadok.",
+  "Na stôl polož krátky list, modrý zošit a čistý papier. Potom zavolaj Eve a spýtaj sa jej na termín. Ja dnes odchádzam o štvrtej, preto kľúče nechám u suseda. Má číslo 18."
+];
