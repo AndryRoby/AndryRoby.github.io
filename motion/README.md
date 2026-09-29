@@ -2,7 +2,7 @@
 
 Motion components that also render as video.
 
-Each component is a real UI component for your product that follows the WAI-ARIA pattern for keyboard and screen readers (roles, states, focus, reduced motion), with a short demo timeline written into it. The same file runs live on your site and carries a demo timeline that a headless browser can render frame by frame, so it can become a clip for Shorts, Reels or a launch post. This repository has no render script; one is planned for ARLing Motion Pro, which is not on sale yet.
+Each component is a real UI component for your product that follows the WAI-ARIA pattern for keyboard and screen readers (roles, states, focus, reduced motion), with a short demo timeline written into it. The same file runs live on your site and carries a demo timeline that a headless browser can render frame by frame, so it can become a clip for Shorts, Reels or a launch post. This repository has no render script; the render script is part of ARLing Motion Pro, a paid kit at 49 € one-time: https://arling.sk/motion/#pro
 
 Status: early. The core (`src/core.js`) and twenty components are built and tested in Node with a simulated DOM; checks in real browsers and with screen readers are in progress. Site: https://arling.sk/motion/
 

@@ -10,7 +10,7 @@ export function kusky(text, hits) {
     pridaj(h.od,h.typ,1); pridaj(h.do,h.typ,-1);
   }
   const body = [...udalosti.keys()].sort((a,b)=>a-b), aktivne = new Map(), out = [];
-  const poradie = ['pointa','trojica','fraza','nominalizacia','pomlcka','konkretnost','otvorenost'];
+  const poradie = ['pointa','trojica','fraza','nominalizacia','pomlcka','konkretnost','otvorenost','mimo'];
   for(let i=0;i<body.length-1;i++) {
     const od=body[i], koniec=body[i+1];
     for(const [typ,n] of udalosti.get(od)) aktivne.set(typ,(aktivne.get(typ)||0)+n);

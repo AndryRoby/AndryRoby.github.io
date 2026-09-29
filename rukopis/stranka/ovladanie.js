@@ -20,13 +20,13 @@ export function zapojRytmus(koren,navod) {
     zobrazena=b;
     const detail=koren.querySelector('#rytmus-detail');
     if(!detail) return;
-    for(const x of koren.querySelectorAll('[data-veta]')) x.setAttribute('aria-pressed',String(x===b));
+    for(const x of koren.querySelectorAll('[data-veta],[data-kos]')) x.setAttribute('aria-pressed',String(x===b));
     if(b) detail.replaceChildren(...b.querySelector('.rk-sr').cloneNode(true).childNodes);
-    else detail.textContent=navod;
+    else detail.textContent=detail.dataset?.navod ?? navod;
   };
   for(const event of ['focusin','click','pointerover']) koren.addEventListener(event,e=>{
     if(event==='pointerover' && e.pointerType==='touch') return;
-    const b=e.target.closest('[data-veta]');
+    const b=e.target.closest('[data-veta],[data-kos]');
     if(b && koren.contains(b)) ukaz(b);
   });
   koren.addEventListener('keydown',e=>{if(e.key==='Escape')ukaz(null);});

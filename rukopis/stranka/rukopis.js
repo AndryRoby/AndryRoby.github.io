@@ -1,11 +1,11 @@
-import { slova } from '../jadro/delenie.js';
-import { merajText } from '../jadro/meranie.js';
+import { slova } from '../jadro/delenie.js?v=1.3';
+import { merajText } from '../jadro/meranie.js?v=1.3';
 import ukazky from './ukazky.js';
-import { texty, jazyky } from './texty.js?v=1.2';
-import { suhrn, oznaceny, opravy, podrobnosti, sprava, pasmoText, typy, meraniaTypov } from './zobrazenie.js?v=1.2';
+import { texty, jazyky } from './texty.js?v=1.3';
+import { suhrn, oznaceny, opravy, podrobnosti, sprava, spravaHtml, pasmoText, typy, meraniaTypov } from './zobrazenie.js?v=1.3';
 import { ziveMeranie, kopiruj } from './zive.js';
 import { zaznamenaj } from './analytika.js';
-import { oznacTyp, zapojRytmus } from './ovladanie.js?v=1.2';
+import { oznacTyp, zapojRytmus } from './ovladanie.js?v=1.3';
 
 const $=id=>document.getElementById(id), lang=document.documentElement.lang, t=texty[lang];
 const text=$('text'), jazyk=$('jazyk'), stav=$('stav'), tip=$('bublina');
@@ -19,9 +19,11 @@ const html=(id,markup)=>{
 function zavri() { clearTimeout(zatvorCas); tip.hidden=true; aktivny=null; pripnuty=false; }
 function ukazTip(button,pin=false) {
   clearTimeout(zatvorCas); aktivny=button; pripnuty=pin; tip.replaceChildren();
+  // Rovnaké vysvetlenie ako v zozname nálezov: čo to je a čo s tým.
   for(const typ of button.dataset.typy.split(' ')) {
-    const i=typy.indexOf(typ), h=document.createElement('strong'), p=document.createElement('p');
-    h.textContent=t.types[i]; p.textContent=t.advice[meraniaTypov[i]].join(' '); tip.append(h,p);
+    const i=typy.indexOf(typ), [co,rada]=t.advice[meraniaTypov[i]];
+    const h=document.createElement('strong'), p=document.createElement('p'), q=document.createElement('p'), b=document.createElement('b');
+    h.textContent=t.types[i]; p.textContent=co; b.textContent=t.todo+': '; q.append(b,rada); tip.append(h,p,q);
   }
   tip.hidden=false;
   umiestniTip();
@@ -43,7 +45,7 @@ function zmeraj(explicitne=false) {
   if(r) chyba=r.chyba==='vyber_jazyk'?(slova(text.value).length<30?t.low:t.choose):r.chyba?t.low:'';
   $('chyba').hidden=!chyba; $('chyba').textContent=chyba;
   text.setAttribute('aria-invalid',chyba?'true':'false');
-  $('vysledok').hidden=!!chyba; $('dalsie').hidden=!!chyba; $('kopirovat').disabled=!!chyba;
+  $('vysledok').hidden=!!chyba; $('dalsie').hidden=!!chyba; $('kopirovat').disabled=!!chyba; $('stiahnut').disabled=!!chyba;
   $('jazyk-stav').textContent=r?.jazyk?(jazyk.value==='auto'?t.detected:t.selected)+': '+jazyky[r.jazyk]:t.choose;
   $('povod').textContent=texty[prikladJazyk].provenance; $('povod').hidden=!priklad; $('povod-stitok').hidden=!priklad; $('okno-stitok').hidden=!priklad;
   if(chyba) { r=null; if(explicitne) (jazyk.value==='auto'&&chyba===t.choose?jazyk:text).focus(); return; }
@@ -51,7 +53,7 @@ function zmeraj(explicitne=false) {
   html('oznaceny-text',oznaceny(text.value,r,t));
   if(!oznacTyp($('suhrn'),$('oznaceny-text'),zvolenyTyp)) zvolenyTyp=null;
   $('oznaceny-text').lang=r.jazyk;
-  html('opravy',opravy(r,t)); html('podrobnosti',podrobnosti(r,t));
+  html('opravy',opravy(r,t,text.value)); html('podrobnosti',podrobnosti(r,t));
   $('orezanie').hidden=!r.orezane;
   // Len vlastný vstup, raz pre kombináciu metadát. Príklad nie je použitie nástroja.
   if(!priklad) {
@@ -134,6 +136,18 @@ $('kopirovat').addEventListener('click',async()=>{
   });
   if(ok) {stav.textContent=t.copied;posledneHlasenie='';}
 });
-for(const id of ['zmerat','vlastny','ukazka','kopirovat']) $(id).disabled=false;
+// Stiahnuť správu (29. 9. 2026): HTML súbor vytvorí prehliadač, text nikam neodchádza.
+$('stiahnut').addEventListener('click',()=>{
+  if(!r) return;
+  const d=new Date();
+  const blob=new Blob([spravaHtml(r,t,text.value,d.toLocaleString(lang),lang)],{type:'text/html;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob); a.download=t.reportFile+'-'+d.toISOString().slice(0,10)+'.html';
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+  stav.textContent=t.downloaded; posledneHlasenie='';
+  if(!priklad) zaznamenaj('rukopis_stiahnutie',{jazyk:r.jazyk});
+});
+for(const id of ['zmerat','vlastny','ukazka','kopirovat','stiahnut']) $(id).disabled=false;
 // SSR ukážka je viditeľná aj bez JS. Hydratácia ju znovu zmeria bez hlásenia a analytiky.
 zmeraj();

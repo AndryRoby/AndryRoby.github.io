@@ -2,8 +2,8 @@ import sk from './jazyky/sk.js';
 import en from './jazyky/en.js';
 import cs from './jazyky/cs.js';
 import de from './jazyky/de.js';
-import { MERANIE_VERZIA } from './verzia.js';
-import { normalizuj, priprav, slova, unik, odhadJazyka } from './delenie.js';
+import { MERANIE_VERZIA } from './verzia.js?v=1.3';
+import { normalizuj, priprav, slova, unik, odhadJazyka } from './delenie.js?v=1.3';
 
 export const JAZYKY = { sk, cs, en, de };
 const priemer = a => a.length ? a.reduce((s, n) => s + n, 0) / a.length : 0;
@@ -33,9 +33,11 @@ export function merajText(original, { jazyk } = {}) {
   const zaklad = { verzia: MERANIE_VERZIA, jazyk, kalibracia: 'orientacne_prahy_nekalibrovane' };
   if (!jazyk) return { ...zaklad, chyba: 'vyber_jazyk', index: null, pasmo: null, merania: {}, zvyraznenia: [] };
   const j = JAZYKY[jazyk], p = priprav(norm.text, j), W = p.slova.length;
-  const rozsah = norm.rozsah(0, p.koniec);
+  const merane_do = p.orezane ? norm.rozsah(0, p.koniec).do : original.length;
+  // Riadky z PDF alebo Wordu, ktoré nie sú súvislý text, a rozdelené zlepené slová.
+  const vynechane = norm.vynechane.filter(v => v.od < merane_do);
   const vysledok = { ...zaklad, slov: W, povodne_slov: p.povodneSlov, viet: p.rytmus.length,
-    orezane: p.orezane, merane_do: rozsah.do, ciastocny: W < 80, index: null, pasmo: null, merania: {}, zvyraznenia: [], vektor: {} };
+    orezane: p.orezane, merane_do, vynechane, zlepene: norm.zlepene, ciastocny: W < 80, index: null, pasmo: null, merania: {}, zvyraznenia: [], vektor: {} };
   if (W < 30) return { ...vysledok, chyba: 'malo_slov', sprava: ({ sk: 'Na meranie treba aspoň 30 slov.', cs: 'K měření je třeba alespoň 30 slov.', en: 'At least 30 words are needed.', de: 'Mindestens 30 Wörter sind erforderlich.' })[jazyk] };
 
   const text = norm.text.slice(0, p.koniec);
