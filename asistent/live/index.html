@@ -1,10 +1,10 @@
 <!doctype html>
 <html lang="sk">
 <head>
-<script src="/style/vzhlad.js?v=072ce2c2"></script>
+<script src="/style/vzhlad.js?v=bc1efad3"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://api.arling.workers.dev 'sha256-GeNkQbAC/aMoE3yZ1kbKyEIUsqQO1vCURXy3a4/+FnU='; connect-src 'self' https://arling-asistent.arling.workers.dev https://api.arling.workers.dev; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://api.arling.workers.dev https://arling-asistent.arling.workers.dev 'sha256-GeNkQbAC/aMoE3yZ1kbKyEIUsqQO1vCURXy3a4/+FnU='; connect-src 'self' https://arling-asistent.arling.workers.dev https://api.arling.workers.dev; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="origin">
 <meta name="color-scheme" content="dark">
@@ -15,30 +15,15 @@
 <link rel="apple-touch-icon" href="../../icon-180.png">
 <title>Živá ukážka ARLing Asistenta</title>
 <link rel="preload" href="/fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="/fonts/arling-serif.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/style/paper.css?v=704b28ed">
+<link rel="preload" href="/asistent/pismo/ARLingDrawText-VF.woff2?v=684e70c1" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/style/paper.css?v=6b343130">
 <link rel="stylesheet" href="/style/nastroj.css?v=c9081cae">
+<!-- Vzhľad tejto stránky (28. 9. 2026): všetko vlastné je v live.css, texty nových častí v stranka.js. -->
+<link rel="stylesheet" href="live.css?v=20260928c">
 <script src="/style/prepinac.js?v=668e98c9" defer></script>
-<style>
-  [hidden]{display:none !important}
-
-  /* Only this page's own parts. Everything else comes from /style/paper.css. */
-  .hero h1{font-size:clamp(30px,4.6vw,64px)}
-  .missing{margin:18px 0 0;padding:12px 14px;border:1px solid var(--accent);background:var(--card);
-    border-radius:12px;font-size:15px;color:var(--ink);max-width:70ch}
-  .try,.getit{font-size:clamp(16.5px,1.35vw,20px);max-width:40em;margin:0}
-  /* Ukážka pre konkrétny obchod (27. 9. 2026): namiesto obrázka cudzieho obchodu otázky na jedno ťuknutie. */
-  .otazky{align-self:center;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:24px}
-  .otazky-nadpis{font:600 13px/1.3 var(--ui);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:0 0 14px}
-  .otazky-zoznam{display:flex;flex-direction:column;gap:10px}
-  .otazky-zoznam button{text-align:left;font:500 17px/1.4 var(--ui);color:var(--ink);background:transparent;border:1px solid var(--line);
-    border-radius:12px;padding:14px 16px;cursor:pointer;transition:border-color .15s}
-  .otazky-zoznam button:hover,.otazky-zoznam button:focus-visible{border-color:var(--accent)}
-  .otazky-pozn{margin:16px 0 0;font-size:14px;line-height:1.5;color:var(--muted)}
-</style>
 <script defer src="https://api.arling.workers.dev/script.js" data-website-id="09cc54da-8172-43b3-8aa2-84e3ab5a17f1" data-exclude-search="true"></script>
 </head>
-<body class="noc nastroj">
+<body class="noc nastroj lv">
 <div class="wash" aria-hidden="true"><i></i><i></i></div>
 
 <a class="skip site-skip" href="#arling-obsah" data-site-label="skip">Prejsť na obsah</a>
@@ -59,36 +44,184 @@
 </header>
 
 <main id="arling-obsah" tabindex="-1">
-  <div class="wrap hero" id="hero">
-    <div>
-      <h1 id="title" class="r">Live demo of ARLing Shopping Assistant</h1>
-      <p class="lead r d3" id="lead">The assistant below answers from this shop's public product feed. Nothing you type is stored.</p>
-      <p class="missing r d4" id="missing" hidden>No tenant id in the link. Open the demo from the page that created it, or start your own at <a href="https://arling.sk/asistent/">arling.sk/asistent</a>.</p>
-    </div>
-    <div class="otazky r d3" id="otazky" hidden>
-      <p class="otazky-nadpis" id="otazky-nadpis"></p>
-      <div class="otazky-zoznam" id="otazky-zoznam"></div>
-      <p class="otazky-pozn" id="otazky-pozn" hidden></p>
-    </div>
-    <div class="shot r d3" id="shot">
-      <div class="chrome" aria-hidden="true"><i></i><i></i><i></i></div>
-      <img src="/press/asistent-6-widget-ukazka.webp" width="1052" height="980" loading="lazy" decoding="async"
-           alt="Screenshot: the ARLing Shopping Assistant chat is open on the Slovak demo shop Dobrá domácnosť. A shopper asks which pot suits an induction hob and the assistant answers with two pots from the feed, with product cards and the prices 34.90 EUR and 44.90 EUR. The same products are listed on the shop page behind the chat window.">
+  <!-- Úvod (pokus 2 brány, 28. 9. 2026): vľavo obchod, cena a zapnutie, vpravo JEDEN rozhovor. Okno je skutočný
+       widget vložený do stránky (widget.js data-mount), nie maketa, ktorá otvára druhé okno. Kým sa widget načíta,
+       je v okne stav načítavania; keď sa nenačíta, chyba s opakovaním a kontaktom (live.js).
+       Id title, lead, try, cta, missing, okno-* plní live.js; h1-obchod, data-v a data-v-href plní stranka.js. -->
+  <div class="lv-hero" id="hero">
+    <div class="lv-wrap lv-hero-mriezka">
+      <div class="lv-hero-text">
+        <p class="lv-kicker"><i aria-hidden="true"></i><span id="title">Živá ukážka ARLing Asistenta</span></p>
+        <h1 id="h1-obchod" class="lv-h1">Asistent pre váš e-shop je pripravený</h1>
+        <p class="lv-lead" id="lead">Odpovedá z verejného zoznamu produktov vášho obchodu. Nič, čo napíšete, sa neukladá.</p>
+        <p class="lv-chyba" id="missing" role="status" hidden></p>
+      </div>
+
+      <div class="lv-hero-dalsie">
+        <p class="lv-cena" data-v-html="cenaHero"><b>Zadarmo do 100 rozhovorov mesačne.</b> Potom od 19&nbsp;€ mesačne. Bez karty, zrušíte kedykoľvek.</p>
+        <div class="lv-akcie" id="akcie-ukazka">
+          <a class="lv-cta" id="cta-hero" href="https://arling.sk/asistent/#playground" data-v-href="odkazZapnut" data-umami-event="live_cta" data-umami-event-place="hero"><span data-v="zaverCta">Zapnúť Asistenta zadarmo</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a>
+          <a class="lv-odkaz" href="#kroky"><span data-v="akoZapnut">Ako ho zapnete</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v13M6 13l6 6 6-6"/></svg></a>
+        </div>
+        <p class="lv-akcie-pozn" id="akcie-pozn" data-v="heroPozn">Feed a e-mail, potom vložíte riadok kódu.</p>
+        <div class="lv-akcie" id="akcie-chyba" hidden>
+          <a class="lv-cta" href="https://arling.sk/asistent/#playground" data-v-href="odkazZapnut" data-umami-event="live_cta" data-umami-event-place="chyba"><span data-v="chybaCta">Vyskúšať na vlastnom feede</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a>
+          <a class="lv-odkaz" href="/asistent/ukazka/" data-umami-event="ukazka_click" data-umami-event-place="live-chyba"><span data-v="chybaUkazka">Opýtať sa v ukážkovom obchode</span></a>
+        </div>
+        <ul class="lv-fakty">
+          <li data-v="fakt1">WooCommerce · Shoptet · Upgates · Shopify</li>
+          <li data-v="fakt2">SK · CS · EN · DE</li>
+        </ul>
+      </div>
+
+      <div class="lv-scena">
+        <div class="lv-lampa" aria-hidden="true"></div>
+        <!-- Jedno okno rozhovoru: widget.js sa vloží do #asistent-miesto (data-mount) a nahradí stav načítavania. -->
+        <div class="lv-okno" id="otazky" hidden>
+          <div class="lv-okno-miesto" id="asistent-miesto">
+            <div class="lv-okno-stav" id="okno-stav" data-stav="nacitava">
+              <div class="lv-okno-hlava">
+                <span class="lv-okno-znak" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5h16v10H9.5L5 19.5z"/><path d="M8.5 10.5h.01M12 10.5h.01M15.5 10.5h.01"/></svg></span>
+                <span class="lv-okno-meno"><b id="okno-meno">váš e-shop</b><small data-v="oknoPod">Odpovedá z produktov obchodu</small></span>
+              </div>
+              <div class="lv-okno-telo" aria-live="polite">
+                <p class="lv-nacitava" id="okno-nacitava"><span class="lv-body" aria-hidden="true"><i></i><i></i><i></i></span><span id="okno-nacitava-text">Načítavam asistenta…</span></p>
+                <div class="lv-okno-chyba" id="okno-chyba" hidden>
+                  <p class="lv-okno-chyba-text" id="okno-chyba-text">Asistenta sa teraz nepodarilo načítať.</p>
+                  <div class="lv-okno-chyba-akcie">
+                    <button type="button" class="lv-znova" id="okno-znova">Skúsiť znova</button>
+                    <a class="lv-odkaz" id="okno-mail" href="mailto:andrej@arling.sk">andrej@arling.sk</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <figure class="lv-snimka" id="shot">
+          <div class="lv-snimka-ram">
+            <img src="snimky/odpoved-kavovar.webp" width="560" height="784" decoding="async" data-v-alt="shotAlt"
+                 alt="Snímka chatu v ukážkovom obchode Dobrá domácnosť. Zákazník píše: Chcem si robiť cappuccino doma. Ktorý kávovar má parnú trysku na mlieko? Asistent ponúkne automatický kávovar Orava Uno s mlynčekom za 249 EUR a pákový kávovar Orava 15 bar za 189 EUR, pod odpoveďou sú ich dve karty produktov.">
+          </div>
+          <figcaption data-v="shotPopis">Skutočná odpoveď ukážkového obchodu Dobrá domácnosť z 28. 9. 2026 v súčasnom okne Asistenta</figcaption>
+        </figure>
+
+        <p class="lv-okno-rada" id="try">Pri pripravených otázkach ukazujeme vopred skontrolované, uložené odpovede. Vlastnú otázku spracuje asistent naživo.</p>
+      </div>
     </div>
   </div>
 
-  <section class="deep">
-    <div class="wrap">
-      <p class="try r" id="try">Try it: ask about a product, a price, or what fits your need. Chat opens in the bottom right corner.</p>
+  <!-- Tri kroky zapnutia: čas a cena z hlavnej stránky Asistenta (asistent/index.html, meta a cenník). -->
+  <section class="lv-sek" id="kroky" aria-labelledby="kroky-h2">
+    <div class="lv-wrap">
+      <div class="lv-hlava">
+        <p class="lv-cislo">01</p>
+        <h2 id="kroky-h2" data-v="krokyH2">Na vašom webe za 10 minút</h2>
+        <p data-v="krokySub">Produkty si Asistent berie z feedu, ktorý váš e-shop už má, a sám ich z neho obnovuje.</p>
+      </div>
+      <ol class="lv-kroky">
+        <li>
+          <span class="lv-krok-c" aria-hidden="true">1</span>
+          <p class="lv-krok-cas" data-v="k1cas">pár minút</p>
+          <h3 data-v="k1h">Feed a e-mail</h3>
+          <p data-v="k1p">Vložíte adresu produktového feedu a e-mail. Heureka a Zboží.cz XML, Google Nákupy, Shopify, WooCommerce aj bežný XML, najviac 5 000 produktov.</p>
+        </li>
+        <li>
+          <span class="lv-krok-c" aria-hidden="true">2</span>
+          <p class="lv-krok-cas" data-v="k2cas">jeden riadok</p>
+          <h3 data-v="k2h">Jeden riadok kódu</h3>
+          <p data-v-html="k2p">Vložíte ho pred <code>&lt;/body&gt;</code> alebo ako HTML kód v administrácii Shoptetu či Upgates. Na WooCommerce stačí doplnok z wordpress.org.</p>
+          <pre class="lv-riadok" tabindex="0" aria-label="Ukážka riadku kódu" data-v-aria="riadokAria"><code>&lt;script src="https://arling-asistent.arling.workers.dev/widget.js" data-tenant="…" data-lang="auto" defer&gt;&lt;/script&gt;</code></pre>
+        </li>
+        <li>
+          <span class="lv-krok-c lv-krok-hotovo" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></span>
+          <p class="lv-krok-cas" data-v="k3cas">hneď</p>
+          <h3 data-v="k3h">Hotovo</h3>
+          <p data-v="k3p">Okienko vpravo dole odpovedá vašimi produktmi, s cenou a odkazom na kartu.</p>
+          <p class="lv-krok-cena" data-v-html="k3cena"><b>0 €</b> do 100 rozhovorov mesačne<br><b>19 €</b> mesačne do 1 000 · <b>39 €</b> do 3 000</p>
+        </li>
+      </ol>
+      <p class="lv-viac" id="cta"><a href="https://arling.sk/asistent/">Celý popis, cenník a otázky na stránke Asistenta</a></p>
     </div>
   </section>
 
-  <section class="band">
-    <div class="wrap">
-      <p class="getit r" id="cta"><a href="https://arling.sk/asistent/">Get ARLing Shopping Assistant for your own shop</a>: set up from your feed in 10 minutes, free up to 100 conversations a month.</p>
+  <!-- Čo uvidia zákazníci a majiteľ: skutočné odpovede ukážkového obchodu z 28. 9. 2026 v súčasnom okne (live/snimky/, ops/druhy-ucet/dokazy-30/snimky-okna.mjs). -->
+  <section class="lv-sek lv-sek-hlbka" id="vidite" aria-labelledby="vidite-h2">
+    <div class="lv-wrap lv-vidite">
+      <div class="lv-vidite-text">
+        <p class="lv-cislo">02</p>
+        <h2 id="vidite-h2" data-v="viditeH2">Čo uvidia zákazníci a čo vy</h2>
+        <ul class="lv-zoznam">
+          <li><h3 data-v="v1h">Zákazník</h3><p data-v="v1p">Okienko v rohu stránky. Odpoveď príde v jazyku, v ktorom píše, a pod ňou karty najviac troch vašich produktov s cenou a odkazom. Keď tovar nemáte, povie to.</p></li>
+          <li><h3 data-v="v2h">Vy</h3><p data-v="v2p">Stránku účtu s počtom rozhovorov v mesiaci, počtom produktov v indexe, posledným obnovením feedu a plánom. Plán zmeníte cez Stripe, zrušíte kedykoľvek.</p></li>
+          <li><h3 data-v="v3h">E-mail</h3><p data-v="v3p">Po vytvorení vám príde váš riadok kódu a návod na zapojenie. Najviac štyri e-maily, každý s odkazom na zastavenie.</p></li>
+        </ul>
+      </div>
+      <div class="lv-snimky-stlpec">
+      <div class="lv-snimky">
+        <figure class="lv-tel lv-tel-1">
+          <div class="lv-snimka-ram"><img src="snimky/odpoved-anglicky.webp" width="560" height="784" loading="lazy" decoding="async" data-v-alt="s1Alt"
+            alt="Zákazník píše po anglicky: Do you have a small gift for my grandmother? Asistent odpovie po anglicky a ponúkne darčekovú sadu medu za 24.90 EUR a darčekový box bylinkových čajov za 21.90 EUR, s kartami produktov."></div>
+          <figcaption data-v="s1Popis">Píše po anglicky, odpoveď príde po anglicky</figcaption>
+        </figure>
+        <figure class="lv-tel lv-tel-2">
+          <div class="lv-snimka-ram"><img src="snimky/odpoved-nevie.webp" width="560" height="784" loading="lazy" decoding="async" data-v-alt="s2Alt"
+            alt="Zákazník sa pýta: Máte aj mikrovlnnú rúru? Asistent odpovie, že o mikrovlnnej rúre v katalógu nemá informáciu, a odkáže na e-mail obchodu. Karty produktov nie sú žiadne."></div>
+          <figcaption data-v="s2Popis">Tovar, ktorý obchod nemá: povie to a odkáže na kontakt</figcaption>
+        </figure>
+      </div>
+      <p class="lv-snimky-zdroj" data-v="snimkyZdroj">Skutočné odpovede ukážkového obchodu Dobrá domácnosť z 28. 9. 2026, zobrazené v súčasnom okne Asistenta.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Poctivé vety: z hlavnej stránky Asistenta (obj1.a, objai.a, objbudget.a, ans.note). -->
+  <section class="lv-sek" id="poctivo" aria-labelledby="poctivo-h2">
+    <div class="lv-wrap">
+      <div class="lv-hlava">
+        <p class="lv-cislo">03</p>
+        <h2 id="poctivo-h2" data-v="poctivoH2">Čo je dobré vedieť</h2>
+      </div>
+      <div class="lv-poctivo">
+        <div><h3 data-v="p1h">Odpovedá z verejného feedu</h3><p id="poctivo-1" data-v="p1p">Pozná len produkty z verejného zoznamu vášho obchodu. Názov, cena a odkaz na karte idú priamo z feedu, nie z textu, ktorý napíše AI.</p></div>
+        <div><h3 data-v="p2h">Nič sa neukladá</h3><p data-v="p2p">Obsah rozhovoru sa nikde neukladá, ani u nás, ani v databáze. Počítame len, koľko rozhovorov a kliknutí na produkt sa za deň udialo.</p></div>
+        <div><h3 data-v="p3h">Môže sa pomýliť</h3><p data-v="p3p">Na vlastné otázky odpovedá AI, pri opakovaní sa odpovede môžu trochu líšiť a môže sa pomýliť aj vo výbere produktu. Pri otázke „do 30 €“ môže ponúknuť aj drahší. Pripravené otázky v tejto ukážke majú vopred skontrolované, uložené odpovede.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Záver: jedno hlavné tlačidlo (existujúci formulár na hlavnej stránke Asistenta) a kontakt. -->
+  <section class="lv-zaver" id="zapnut" aria-labelledby="zapnut-h2">
+    <div class="lv-wrap">
+      <div class="lv-zaver-karta">
+        <h2 id="zapnut-h2" data-v="zaverH2">Zapnite Asistenta na svojom e-shope</h2>
+        <p class="lv-zaver-sub" data-v="zaverSub">Vlastný účet s vaším feedom. Zadarmo do 100 rozhovorov mesačne, bez platobnej karty.</p>
+        <a class="lv-cta lv-cta-velke" id="cta-zapnut" href="https://arling.sk/asistent/#playground" data-v-href="odkazZapnut" data-umami-event="live_cta" data-umami-event-place="zaver"><span data-v="zaverCta">Zapnúť Asistenta zadarmo</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a>
+        <p class="lv-zaver-pozn" data-v="zaverPozn">Otvorí formulár: adresa feedu a e-mail. Riadok kódu dostanete hneď potom.</p>
+        <p class="lv-ukazka-pozn" id="otazky-pozn" hidden></p>
+        <div class="lv-kontakt">
+          <span class="lv-kontakt-znak" aria-hidden="true">AL</span>
+          <div>
+            <p class="lv-kontakt-meno">Andrej Róbert Lauko</p>
+            <p class="lv-kontakt-firma" data-v="kontaktFirma">ARLing s. r. o., Bratislava. Radi ho zapneme spolu s vami.</p>
+            <p class="lv-kontakt-odkazy"><a href="mailto:andrej@arling.sk">andrej@arling.sk</a><a href="tel:+421940785225">+421 940 785 225</a></p>
+          </div>
+        </div>
+      </div>
     </div>
   </section>
 </main>
+
+<footer class="site-footer">
+  <div class="wrap foot">
+    <div class="site-foot-top"><div><a class="site-brand" href="https://arling.sk/" aria-label="ARLing: úvod" data-site-home><svg viewBox="0 0 488 215" width="38" height="15" aria-hidden="true" focusable="false"><path fill="#f4f4f7" fill-rule="evenodd" d="M0.00,213.00L74.00,214.00L181.00,85.00L285.00,214.00L360.00,214.00L206.00,21.00L185.00,4.00L164.00,10.00Z M221.00,0.00L263.00,50.00L395.00,50.00L409.00,55.00L419.00,76.00L401.00,96.00L313.00,98.00L411.00,214.00L487.00,214.00L422.00,139.00L457.00,123.00L482.00,88.00L482.00,48.00L463.00,19.00L417.00,0.00Z"/><path fill="#f2643c" d="M269.00,66.00L269.00,67.00L268.00,68.00L268.00,70.00L267.00,71.00L267.00,76.00L268.00,77.00L268.00,79.00L270.00,81.00L270.00,82.00L271.00,82.00L273.00,84.00L274.00,84.00L277.00,86.00L279.00,86.00L280.00,87.00L287.00,87.00L288.00,86.00L290.00,86.00L291.00,85.00L294.00,84.00L298.00,80.00L298.00,79.00L299.00,78.00L299.00,75.00L300.00,74.00L300.00,72.00L299.00,71.00L299.00,69.00L298.00,68.00L297.00,65.00L295.00,63.00L294.00,63.00L289.00,60.00L278.00,60.00L277.00,61.00L276.00,61.00L275.00,62.00L272.00,63.00Z"/></svg><b>ARLing</b></a><p class="site-foot-firma">ARLing s. r. o., IČO <span class="num">56583486</span>, Bratislava. Vlastný server v Európskej únii. Softvér pre firmy, živnostníkov aj jednotlivcov.</p></div><a class="site-cta" href="https://arling.sk/efaktura/" data-umami-event="shell_footer_cta">Skontrolovať e-faktúru zadarmo<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></div>
+    <div class="site-foot-cols"><div data-skupina="firmy" data-blok="firemne"><p>Firmy a účtovníci</p><ul><li><a href="https://arling.sk/vsetko/#firmy" aria-label="Všetko v skupine: Firmy a účtovníci">Všetko v skupine</a></li></ul></div><div data-skupina="eshopy" data-blok="firemne"><p>E-shopy a weby</p><ul><li><a href="https://arling.sk/vsetko/#eshopy" aria-label="Všetko v skupine: E-shopy a weby">Všetko v skupine</a></li></ul></div><div data-skupina="hry" data-blok="spotrebitelske"><p>Hry a hlavolamy</p><ul><li><a href="https://arling.sk/vsetko/#hry" aria-label="Všetko v skupine: Hry a hlavolamy">Všetko v skupine</a></li></ul></div><div data-skupina="knihy" data-blok="spotrebitelske"><p>Knihy a darčeky</p><ul><li><a href="https://arling.sk/vsetko/#knihy" aria-label="Všetko v skupine: Knihy a darčeky">Všetko v skupine</a></li></ul></div><div><p>Firma</p><ul><li><a href="https://arling.sk/how-we-work/">Ako pracujeme</a></li><li><a href="https://arling.sk/notes/">Návody</a></li><li><a href="https://arling.sk/kontakt/">Kontakt</a></li><li><a href="https://arling.sk/ucet/">Účet</a></li><li><a href="https://arling.sk/brand/">Značka</a></li><li><a href="https://arling.sk/podmienky/">Podmienky</a></li><li><a href="https://arling.sk/privacy/">Ochrana údajov</a></li><li><a href="https://arling.sk/odstupenie/">Odstúpiť od zmluvy tu</a></li><li><a href="https://arling.sk/impressum/">Impressum</a></li></ul></div></div>
+    <p class="site-all"><a href="https://arling.sk/vsetko/" data-umami-event="shell_footer_all">Všetko na jednej stránke<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></p>
+    <p class="site-dev" data-site-vyvojari><span>Pre vývojárov</span><em>Bezplatné diagnostiky chýb v CORS, JWT, OAuth, Supabase a Stripe webhookoch.</em><a href="https://arling.sk/vsetko/#vyvojari">Všetky nástroje pre vývojárov<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></p>
+    <div class="site-foot-bottom"><p>ARLing s. r. o., Ivanská cesta 32E, 821 04 Bratislava, Slovensko. IČO 56583486, IČ DPH SK2122352100. <a href="mailto:podpora@arling.sk">podpora@arling.sk</a></p><p><a href="https://arling.sk/impressum/">Impressum</a> · <a href="https://arling.sk/llms.txt">llms.txt</a> · <a href="https://arling.sk/sitemap-index.xml">Sitemap</a></p></div>
+    <p class="site-foot-legal">Nástroje sú poskytované tak, ako sú, bez záruky. Anonymné počty návštev cez vlastné Umami. <a href="https://arling.sk/privacy/">Ochrana údajov</a> · <a href="https://arling.sk/podmienky/">Podmienky</a> · <a href="https://arling.sk/gdpr/">GDPR</a> · <a href="https://arling.sk/odstupenie/">Odstúpiť od zmluvy tu</a></p>
+  </div>
+</footer>
 <script>
 (function () {
   var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -141,6 +274,8 @@
   Array.prototype.forEach.call(document.querySelectorAll('.hero, section'), function (s) { io.observe(s); });
 })();
 </script>
-<script src="live.js" defer></script>
+<script src="live.js?v=20260928b" defer></script>
+<script src="stranka.js?v=20260928b" defer></script>
+<script src="/style/paper-pohyb.js?v=390cc609" defer></script>
 </body>
 </html>

@@ -1,0 +1,173 @@
+/* ukazka.css: Dobrá domácnosť, vymyslený obchod na ukážku ARLing Asistenta (SPEC v2, časť 9).
+   Vlastný vzhľad obchodu, nie papierový systém ARLing: widget musí pôsobiť ako na cudzom e-shope. */
+
+@font-face {
+  font-family: 'ARLing Sans';
+  src: url('/fonts/arling-sans.woff2') format('woff2');
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+:root {
+  --pozadie: #FBFAF7;
+  --povrch: #FFFFFF;
+  --text: #1B1A17;
+  --jemny: #6B6760;
+  --ciara: #ECE8E1;
+  --znacka: #E0582A;
+  --tlacidlo: #CA4F26;
+  --odkaz: #B84822;
+  --ok: #15803D;
+  --caka: #B45309;
+  --pismo: 'ARLing Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+  --hlavicka: 121px;
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-padding-top: calc(var(--hlavicka) + 16px); }
+body { margin: 0; background: var(--pozadie); color: var(--text); font: 400 16px/1.55 var(--pismo); }
+img { max-width: 100%; height: auto; display: block; }
+a { color: var(--odkaz); text-underline-offset: 3px; }
+button, input { font: inherit; color: inherit; }
+[hidden] { display: none !important; }
+h1, h2, h3 { margin: 0; letter-spacing: -.015em; line-height: 1.2; }
+:focus-visible { outline: 2px solid var(--tlacidlo); outline-offset: 2px; }
+
+.obal { width: 100%; max-width: 1200px; margin: 0 auto; padding: 0 32px; }
+
+.preskocit { position: absolute; left: 16px; top: -60px; z-index: 50; padding: 10px 14px; background: var(--text); color: #fff; border-radius: 8px; text-decoration: none; }
+.preskocit:focus { top: 8px; }
+
+/* 1. Pás ukážky: pravda hneď hore */
+.pas-ukazky { background: #18181B; color: #fff; font-size: 13.5px; line-height: 1.4; }
+.pas-ukazky .obal { min-height: 40px; display: flex; align-items: center; justify-content: space-between; gap: 8px 24px; padding-top: 8px; padding-bottom: 8px; flex-wrap: wrap; }
+.pas-ukazky p { margin: 0; }
+.pas-ukazky a { color: #fff; font-weight: 600; white-space: nowrap; }
+
+/* 2. Hlavička obchodu */
+.hlavicka { position: sticky; top: 0; z-index: 20; background: var(--povrch); border-bottom: 1px solid var(--ciara); }
+.hlavicka .riadok { height: 72px; display: flex; align-items: center; gap: 32px; }
+.logo { flex: none; display: flex; align-items: center; min-height: 44px; }
+.logo img { width: 206px; height: 40px; }
+.hladanie { flex: 1; max-width: 520px; margin-left: auto; position: relative; }
+.hladanie label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.hladanie input { width: 100%; height: 44px; padding: 0 16px 0 44px; border: 1px solid #CFC9BF; border-radius: 12px; background: var(--pozadie); font-size: 16px; }
+.hladanie input:focus { outline: none; border-color: var(--tlacidlo); box-shadow: 0 0 0 3px #FCEEEA; background: #fff; }
+.hladanie svg { position: absolute; left: 14px; top: 12px; width: 20px; height: 20px; color: var(--jemny); pointer-events: none; }
+.menu-kategorii { border-top: 1px solid var(--ciara); }
+.menu-kategorii ul { list-style: none; margin: 0; padding: 0; height: 48px; display: flex; align-items: center; gap: 4px; overflow-x: auto; scrollbar-width: none; }
+.menu-kategorii ul::-webkit-scrollbar { display: none; }
+.menu-kategorii a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 12px; border-radius: 10px; color: var(--text); text-decoration: none; font-size: 15px; font-weight: 500; white-space: nowrap; }
+.menu-kategorii a:hover, .menu-kategorii a[aria-current="true"] { background: #F3EFE8; }
+
+/* 3. Úvodný pás */
+.uvod { padding: 48px 0 56px; }
+.uvod .obal { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 48px; align-items: center; }
+.uvod h1 { font-size: 36px; line-height: 1.15; font-weight: 700; max-width: 14ch; }
+.uvod p { margin: 16px 0 0; font-size: 17px; color: #3E3B35; max-width: 44ch; }
+.akcie { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 24px; }
+.btn { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 0 22px; border-radius: 12px; font-weight: 600; font-size: 15.5px; text-decoration: none; cursor: pointer; border: 1px solid transparent; }
+.btn-plne { background: var(--tlacidlo); color: #fff; }
+.btn-plne:hover { background: #B84822; }
+.btn-obrys { background: var(--povrch); border-color: #CFC9BF; color: var(--text); }
+.btn-obrys:hover { border-color: var(--text); }
+.kolaz { display: grid; grid-template-columns: 1.3fr 1fr; grid-template-rows: 1fr 1fr; gap: 16px; }
+.kolaz img, .kolaz .miesto { width: 100%; height: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 16px; }
+.kolaz > :first-child { grid-row: 1 / span 2; }
+/* miesta rovnakého tvaru, kým sa načíta feed: bez posunu obsahu (Lighthouse CLS 0,203 29. 9. 2026) */
+.kolaz .miesto, .kategorie .kat-obr { display: block; background: #EFEBE4; }
+.kategorie .kat-obr { width: 100%; aspect-ratio: 1; border-radius: 16px; }
+
+/* sekcie */
+.sekcia { padding: 48px 0; }
+.sekcia h2 { font-size: 26px; font-weight: 700; }
+.sekcia .pod { margin: 6px 0 0; color: var(--jemny); }
+.hlava-sekcie { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
+
+/* 4. Kategórie */
+.kategorie { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 16px; list-style: none; padding: 0; margin: 0; }
+.kategorie a { display: block; color: var(--text); text-decoration: none; }
+.kategorie img { width: 100%; aspect-ratio: 1; border-radius: 16px; object-fit: cover; }
+.kategorie b { display: block; margin-top: 10px; font-weight: 600; font-size: 15.5px; }
+.kategorie span { display: block; color: var(--jemny); font-size: 14px; }
+.kategorie a:hover b { color: var(--odkaz); }
+
+/* 5. Všetky výrobky */
+.filtre { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding: 2px; margin: 0 -2px 24px; }
+.filtre::-webkit-scrollbar { display: none; }
+.filtre button { flex: none; min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid #CFC9BF; background: var(--povrch); cursor: pointer; font-size: 15px; font-weight: 500; }
+.filtre button[aria-pressed="true"] { background: var(--text); border-color: var(--text); color: #fff; }
+.mriezka { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px 20px; list-style: none; margin: 0; padding: 0; }
+.karta { display: flex; flex-direction: column; min-width: 0; }
+/* v2.2: fotky výrobkov (vytvorené AI, pás hore to hovorí) majú vlastné svetlé pozadie; podložka len počas načítania. */
+.karta img, .kategorie img, .kolaz img, .detail-vyrobku > img { background: #EFEBE4; }
+.karta img { width: 100%; aspect-ratio: 1; border-radius: 12px; }
+/* Názov vždy na dva riadky: cena, dostupnosť a Detail sú v rade kariet v jednej línii (overenie 2). */
+.karta h3 { margin-top: 12px; min-height: calc(2em * 1.35); font-size: 15.5px; font-weight: 500; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.karta h3 a { color: var(--text); text-decoration: none; }
+.karta h3 a:hover { text-decoration: underline; }
+.cena { font-weight: 700; font-size: 17px; margin-top: 6px; }
+.dostupnost { font-size: 13.5px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; margin-top: 2px; }
+.dostupnost::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.dost-ok { color: var(--ok); }
+.dost-caka { color: var(--caka); }
+.karta .detail { margin-top: 8px; display: inline-flex; align-items: center; min-height: 44px; font-weight: 600; font-size: 14.5px; }
+.prazdne { padding: 32px; text-align: center; color: var(--jemny); border: 1px dashed #CFC9BF; border-radius: 16px; }
+
+/* 6. Detail výrobku */
+.drobceky { font-size: 14px; color: var(--jemny); margin: 0 0 24px; }
+.drobceky a { color: var(--jemny); }
+.detail-vyrobku { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 48px; align-items: start; }
+.detail-vyrobku > img { width: 100%; aspect-ratio: 1; border-radius: 20px; }
+.detail-vyrobku h1 { font-size: 30px; font-weight: 700; line-height: 1.2; }
+.detail-vyrobku h1:focus { outline: none; }
+.detail-vyrobku .znacka { color: var(--jemny); margin: 8px 0 0; font-size: 15px; }
+.detail-vyrobku .cena { font-size: 26px; margin-top: 16px; }
+.detail-vyrobku .popis { margin: 20px 0 0; font-size: 16.5px; line-height: 1.6; color: #34312C; max-width: 60ch; }
+.parametre { margin-top: 24px; border-collapse: collapse; width: 100%; max-width: 520px; font-size: 15px; }
+.parametre th, .parametre td { text-align: left; padding: 10px 0; border-bottom: 1px solid var(--ciara); vertical-align: top; }
+.parametre th { font-weight: 500; color: var(--jemny); width: 40%; padding-right: 16px; }
+.nedakupit { color: var(--jemny); font-size: 14px; margin: 12px 0 0; }
+.spat { display: inline-flex; align-items: center; min-height: 44px; margin-top: 16px; font-weight: 600; }
+
+/* 7. Doprava, 8. päta */
+.doprava { background: #F3EFE8; }
+.doprava p { max-width: 60ch; margin: 12px 0 0; }
+.pata { padding: 32px 0 120px; font-size: 14px; color: var(--jemny); }
+.pata p { margin: 0 0 8px; max-width: 70ch; }
+.pata a { color: var(--jemny); }
+
+@media (max-width: 1023.98px) {
+  .mriezka { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .kategorie { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 719.98px) {
+  .obal { padding: 0 16px; }
+  :root { --hlavicka: 109px; }
+  .hlavicka .riadok { height: 60px; gap: 12px; }
+  .logo img { width: 165px; height: 32px; }
+  .menu-kategorii ul { -webkit-mask-image: linear-gradient(90deg, #000 85%, transparent); mask-image: linear-gradient(90deg, #000 85%, transparent); padding-right: 24px; }
+  .hladanie { margin-left: 0; }
+  .hladanie input { padding-left: 40px; }
+  .hladanie svg { left: 12px; }
+  .uvod { padding: 28px 0 36px; }
+  .uvod .obal, .detail-vyrobku { grid-template-columns: minmax(0, 1fr); gap: 28px; }
+  .uvod h1 { font-size: 30px; }
+  .akcie .btn { flex: 1 1 100%; }
+  .mriezka { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 12px; }
+  .kategorie { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .sekcia { padding: 36px 0; }
+  .detail-vyrobku h1 { font-size: 25px; }
+}
+@media (max-width: 479.98px) {
+  .hlavicka .riadok { gap: 10px; }
+  .logo img { width: 139px; height: 27px; }
+  .hladanie input { padding-right: 8px; }
+}
+@media (max-width: 359.98px) {
+  .logo img { width: 36px; height: 36px; object-fit: cover; object-position: left center; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  html { scroll-behavior: smooth; }
+}

@@ -1,0 +1,316 @@
+/* ARLing Asistent: svetlá stránka (28. 9. 2026, prerábka po Andrejovej kritike „nie je to pekné, takto to robí ragnetiq“).
+
+   Prečo takto:
+   - Paper v3 (/style/paper.css) je celý pod body.noc a obal.mjs dáva body.noc každej stránke. Hlavička a päta
+     sú rám celého webu (tmavé, rovnaké ako všade), obsah Asistenta je svetlý. Preto sa tu NEPREPISUJÚ komponenty,
+     len tokeny v3 v obale .sv: tlačidlá, fokus, svit kariet ([data-svit]), otvorenie otázok a vstup blokov
+     (paper-pohyb.js) sú tie isté pravidlá v3, len nad svetlými tokenmi. Päta je mimo .sv, ostáva tmavá.
+   - Čo v3 pre svetlú plochu nemá (a čo sa preto dopĺňa tu, len z tokenov a kriviek v3: --s*, --r-*, --pero,
+     --tik, --pu-*): svetlé tiene (tiene v3 sú čierne pre noc), výplň vedľajšieho tlačidla, kód, polia
+     formulára, pás CTA bez tmavého prechodu. Zapísané v ops/asistent/v2/stranka/POSTUP.md.
+   - Vzor: widget Ragnetiq, ktorý poslal Andrej (svetlé #fafafa, biele karty, jemné tiene, veľa vzduchu).
+     Preberá sa úroveň remesla, nie ich farby ani písmo: meď #f2643c a Draw Text sú naše. */
+
+/* ── 1. Svetlé tokeny len pre obsah stránky ─────────────────────────────── */
+body.noc .sv{
+  --paper:#fbfaf7;--paper-deep:#f4f1ea;--card:#fff;--card-plna:#fff;
+  --ink:#161412;--body:#46423d;--muted:#6b665f;
+  --line:#e8e3d9;--line-silna:#d8d0c2;
+  --accent:#f2643c;--accent-light:#b23a1d;--accent-dark:#8f2e17;
+  --ok:#3d6b3a;
+  --linka-2:rgba(22,20,18,.14);--linka-3:rgba(22,20,18,.3);
+  --tien-1:0 1px 2px rgba(22,20,18,.08),0 6px 16px -8px rgba(22,20,18,.24);
+  --tien-2:0 2px 4px rgba(22,20,18,.08),0 12px 24px -10px rgba(22,20,18,.28);
+  --sv-tien:0 1px 2px rgba(22,20,18,.04),0 12px 32px -16px rgba(22,20,18,.18);
+  --sv-tien-panel:0 2px 8px rgba(22,20,18,.06),0 44px 80px -34px rgba(70,44,20,.38);
+  --sv-piesok:#f3ece2;--sv-piesok-2:#ece2d4;--sv-piesok-linka:#e6d9c6;
+  --sv-med-plocha:#fbece6;
+  --pu-prsten:rgba(242,100,60,.24);--pu-chyba:#b3261e;--pu-chyba-prsten:rgba(179,38,30,.16);
+  color-scheme:light}
+/* Obsah stránky (nie spodná lišta, tá má tiež .sv kvôli tokenom, ale vlastné umiestnenie). */
+body.noc main>.sv{position:relative;z-index:2;background:var(--paper);color:var(--body);font-size:17px;line-height:1.6}
+body.noc .sv ::selection{background:rgba(242,100,60,.22);color:var(--ink)}
+body.noc .sv [hidden]{display:none !important}
+body.noc .sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+body.noc .sv section[id],body.noc .sv [id="privacy"]{scroll-margin-top:calc(var(--hlavicka,70px) + 56px)}
+body.noc .sv p{color:var(--body)}
+body.noc .sv a{color:var(--ink)}
+body.noc .sv code{font:500 .86em/1.4 var(--mono);background:var(--paper-deep);border:1px solid var(--line);border-radius:6px;padding:1px 6px;color:var(--ink);overflow-wrap:anywhere}
+body.noc .sv h2{margin:0 0 var(--s3)}
+body.noc .sv h3{font:600 clamp(18px,1.4vw,20px)/1.3 var(--display);color:var(--ink);letter-spacing:-.01em;margin:0 0 6px}
+
+/* Sekcie: jeden papier, rytmus robí vzduch a vlasová linka, nie pruhy farieb. */
+body.noc .sv .sv-sekcia{padding:clamp(72px,9vw,128px) 0;border-top:1px solid var(--line);background:none}
+body.noc .sv-hlava{max-width:720px;margin:0 0 clamp(36px,4.5vw,64px)}
+body.noc .sv-hlava .kicker{margin-bottom:var(--s4)}
+body.noc .sv-hlava p{font-size:clamp(17px,1.3vw,19px);max-width:60ch;margin:0}
+body.noc .sv .kicker{color:var(--accent-light);font:600 12.5px/1 var(--ui);letter-spacing:.12em}
+
+/* Tlačidlá v3 na svetle: medená pilulka ostáva, vedľajšia je biela pilulka s linkou. */
+body.noc .sv .btn{height:52px;padding:0 26px;font-size:16px}
+body.noc .sv .btn-line{background:#fff;border-color:var(--linka-2);color:var(--ink);box-shadow:0 1px 2px rgba(22,20,18,.05)}
+body.noc .sv .btn-line:hover{background:#fff;border-color:var(--linka-3);color:var(--ink)}
+@media (hover:none){ body.noc .sv .btn-line:hover{background:#fff;border-color:var(--linka-2)} }
+
+/* ── 2. Úvod ─────────────────────────────────────────────────────────────── */
+body.noc .sv-hero{position:relative;overflow:hidden;padding:clamp(40px,5.5vw,88px) 0 clamp(64px,7vw,112px)}
+body.noc .sv-hero::before{content:"";position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(44% 56% at 80% 34%,rgba(242,100,60,.11) 0%,transparent 70%),
+             radial-gradient(38% 40% at 4% 0%,rgba(236,170,90,.10) 0%,transparent 72%)}
+body.noc .sv .sv-hero .hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,540px);gap:clamp(40px,5vw,88px);align-items:center;padding:0;border:0}
+body.noc .sv-hero-text{min-width:0}
+body.noc .sv-stitok{display:inline-flex;align-items:center;gap:10px;margin:0 0 var(--s5);padding:7px 14px 7px 12px;border-radius:var(--r-pill);
+  background:#fff;border:1px solid var(--line);box-shadow:0 1px 2px rgba(22,20,18,.05);font:500 14px/1.2 var(--ui);color:var(--ink)}
+body.noc .sv-stitok i{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px rgba(242,100,60,.16);flex:none}
+body.noc .sv .h1-asistent{margin:0 0 28px;max-width:15ch}
+body.noc .h1-asistent .l{display:block}
+/* Nemčina má dlhé slová (Der Assistent antwortet): nadpis o stupeň menší a bez obmedzenia na 15 znakov, inak by mal päť riadkov. */
+html[lang="de"] body.noc .sv .h1-asistent{max-width:none;font-size:clamp(2.125rem,3.9vw,3.5rem)}
+body.noc .sv-hero .lead{font:400 clamp(18px,1.5vw,21px)/1.55 var(--ui);color:var(--body);max-width:44ch;margin:0 0 var(--s4)}
+body.noc .sv-cena{font:400 17px/1.55 var(--ui);color:var(--body);max-width:46ch;margin:0 0 var(--s6)}
+body.noc .sv-cena b{color:var(--ink);font-weight:600}
+body.noc .sv-akcie{display:flex;flex-wrap:wrap;gap:var(--s3)}
+body.noc .sv-fakty{list-style:none;margin:var(--s6) 0 0;padding:0;display:flex;flex-wrap:wrap;gap:var(--s2) var(--s5);font:500 14px/1.4 var(--ui);color:var(--muted)}
+body.noc .sv-fakty li{display:inline-flex;align-items:center;gap:var(--s2)}
+body.noc .sv-fakty li::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--accent);flex:none}
+body.noc .sv-fakty b{color:var(--ink);font-weight:600}
+
+/* Scéna so skutočným widgetom v2: záložky sú komponent Tabs z /motion/ (stranka.js), snímky sú výrezy panela. */
+body.noc .sv-scena{margin:0;min-width:0}
+body.noc .sv-scena-plocha{position:relative;display:grid;justify-items:center;gap:var(--s5);padding:var(--s5) var(--s5) var(--s6);
+  border-radius:28px;background:linear-gradient(168deg,var(--sv-piesok) 0%,var(--sv-piesok-2) 100%);border:1px solid var(--sv-piesok-linka)}
+body.noc .sv-tabs{position:relative;display:inline-flex;align-items:center;gap:2px;padding:4px;max-width:100%;overflow-x:auto;scrollbar-width:none;
+  border-radius:var(--r-pill);background:rgba(255,255,255,.62);border:1px solid rgba(22,20,18,.07)}
+body.noc .sv-tabs::-webkit-scrollbar{display:none}
+body.noc .sv-tabs [role="tab"]{position:relative;z-index:1;flex:none;height:44px;padding:0 16px;border:0;border-radius:var(--r-pill);background:transparent;
+  color:var(--muted);font:500 15px/1 var(--ui);letter-spacing:-.005em;white-space:nowrap;cursor:pointer;-webkit-tap-highlight-color:transparent;
+  transition:color .16s var(--tik)}
+body.noc .sv-tabs [role="tab"]:hover{color:var(--ink)}
+body.noc .sv-tabs [role="tab"][aria-selected="true"]{color:var(--ink)}
+/* Pilulka za vybranou záložkou: tvar a poloha idú z jadra /motion/ (dva okraje na dvoch pružinách). */
+body.noc .sv-tabs .am-tabs-indicator{position:absolute;top:4px;bottom:4px;left:0;width:0;border-radius:var(--r-pill);background:#fff;
+  box-shadow:0 1px 2px rgba(22,20,18,.08),0 0 0 1px rgba(22,20,18,.06);pointer-events:none}
+/* Kým sa skript nenačíta (alebo keď nebeží), vybraná záložka má pilulku sama. */
+body.noc .sv-tabs:not(:has(.am-tabs-indicator)) [aria-selected="true"]{background:#fff;box-shadow:0 1px 2px rgba(22,20,18,.08),0 0 0 1px rgba(22,20,18,.06)}
+body.noc .sv-tabs [role="tab"]:focus-visible{outline:2px solid var(--accent-light);outline-offset:-2px}
+body.noc .sv-panely{display:grid;width:min(100%,372px)}
+body.noc .sv-panely>[role="tabpanel"]{grid-area:1/1;margin:0;min-width:0;border-radius:20px}
+body.noc .sv-panely>[role="tabpanel"]:focus-visible{outline:2px solid var(--accent-light);outline-offset:4px}
+body.noc .sv-panely img{display:block;width:100%;height:auto;border-radius:20px;box-shadow:var(--sv-tien-panel)}
+body.noc .sv-popis{margin:var(--s4) auto 0;max-width:56ch;text-align:center;font:400 13.5px/1.55 var(--ui);color:var(--muted)}
+body.noc .sv-popis a{color:var(--body)}
+
+/* ── 3. Ako to funguje: tri kroky ako časová os, riadok kódu ako predmet (karta s kódom) ── */
+body.noc .sv-kroky{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s6) clamp(24px,3vw,48px)}
+body.noc .sv-kroky li{position:relative;padding-top:var(--s6);border-top:1px solid var(--line-silna);min-width:0}
+body.noc .sv-kroky li::before{content:"";position:absolute;left:0;top:-4px;width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 5px var(--paper)}
+body.noc .sv-cislo{display:block;margin:0 0 var(--s3);font:600 15px/1 var(--ui);color:var(--accent-light);font-variant-numeric:tabular-nums}
+body.noc .sv-kroky p{font-size:16px;margin:0}
+body.noc .sv-kod{margin:clamp(40px,5vw,64px) 0 0;padding:var(--s5);border-radius:var(--r-l);background:#fff;border:1px solid var(--line);box-shadow:var(--sv-tien)}
+body.noc .sv-kod p{margin:0 0 var(--s3);font:500 13.5px/1.4 var(--ui);color:var(--muted)}
+body.noc .sv-kod pre{margin:0;padding:14px 16px;border-radius:var(--r-s);background:#1d1a17;border:0;color:#f3ede6;font:400 13.5px/1.6 var(--mono);white-space:pre-wrap;overflow-wrap:anywhere}
+body.noc .sv-kod pre code{background:none;border:0;padding:0;color:inherit;font:inherit}
+body.noc .sv-kod .t{color:#ffb59d}body.noc .sv-kod .a{color:#e8c9bd}body.noc .sv-kod .v{color:#b7d9a8}
+
+/* ── 4. Karty výrobkov: telefón vľavo, vlastnosti vpravo ───────────────────── */
+body.noc .sv-karty{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:clamp(40px,6vw,104px);align-items:center}
+body.noc .sv-telefon{margin:0;justify-self:center;width:min(100%,332px);padding:9px;border-radius:44px;background:#1f1b18;
+  box-shadow:0 0 0 1px rgba(22,20,18,.12),var(--sv-tien-panel)}
+body.noc .sv-telefon-sklo{overflow:hidden;border-radius:36px;background:#f7f7f5}
+body.noc .sv-telefon img{display:block;width:100%;height:auto}
+body.noc .sv-vlastnosti{list-style:none;margin:0;padding:0;display:grid;gap:0}
+body.noc .sv-vlastnosti li{display:grid;grid-template-columns:44px minmax(0,1fr);gap:var(--s4);align-items:start;padding:var(--s5) 0;border-top:1px solid var(--line)}
+body.noc .sv-vlastnosti li:first-child{border-top:0;padding-top:0}
+body.noc .sv-ikona{display:grid;place-items:center;width:44px;height:44px;border-radius:14px;background:var(--sv-med-plocha);color:var(--accent-light)}
+body.noc .sv-ikona svg{width:22px;height:22px}
+body.noc .sv-vlastnosti p{margin:0;font-size:16px}
+body.noc .sv-upoutavka{display:grid;grid-template-columns:minmax(0,300px) minmax(0,1fr);gap:var(--s6);align-items:center;margin-top:clamp(48px,6vw,80px);
+  padding-top:clamp(40px,5vw,64px);border-top:1px solid var(--line)}
+body.noc .sv-upoutavka img{display:block;width:100%;height:auto}
+body.noc .sv-upoutavka p{margin:0;font-size:16px}
+
+/* ── 5. Jazyky a súkromie ───────────────────────────────────────────────── */
+body.noc .sv-dva{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(48px,6vw,104px);align-items:start}
+body.noc .sv-dva .sv-hlava{margin-bottom:var(--s6)}
+body.noc .sv-jazyky{list-style:none;margin:0;padding:0;border-radius:var(--r-l);background:#fff;border:1px solid var(--line);box-shadow:var(--sv-tien);overflow:hidden}
+body.noc .sv-jazyky li{display:grid;grid-template-columns:52px minmax(0,1fr);gap:4px var(--s4);align-items:center;padding:var(--s4) var(--s5);border-top:1px solid var(--line)}
+body.noc .sv-jazyky li:first-child{border-top:0}
+body.noc .sv-kod-jazyka{grid-row:span 2;display:grid;place-items:center;height:36px;border-radius:10px;background:var(--paper-deep);font:600 13px/1 var(--ui);color:var(--ink);letter-spacing:.04em}
+body.noc .sv-jazyky .nazov{font:500 13px/1.3 var(--ui);color:var(--muted)}
+body.noc .sv-jazyky q{font:500 16px/1.4 var(--ui);color:var(--ink);quotes:none}
+body.noc .sv-sukromie{list-style:none;margin:0;padding:0;display:grid;gap:var(--s5)}
+body.noc .sv-sukromie li{display:grid;grid-template-columns:28px minmax(0,1fr);gap:var(--s3);align-items:start}
+body.noc .sv-fajka{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:#e8f0e3;color:var(--ok);margin-top:1px}
+body.noc .sv-fajka svg{width:15px;height:15px}
+body.noc .sv-sukromie h3{font-size:17px;margin:0 0 2px}
+body.noc .sv-sukromie p{margin:0;font-size:16px}
+body.noc .sv-sukromie a{color:var(--ink)}
+body.noc .sv details.sv-viac{margin:var(--s6) 0 0;padding:0;border:1px solid var(--line);border-radius:var(--r-m);background:#fff}
+body.noc .sv details.sv-viac>summary{display:flex;align-items:center;justify-content:space-between;gap:var(--s3);min-height:52px;padding:var(--s3) var(--s4);cursor:pointer;
+  list-style:none;font:600 15px/1.35 var(--ui);color:var(--ink)}
+body.noc .sv details.sv-viac>summary::-webkit-details-marker{display:none}
+body.noc .sv details.sv-viac>summary::after{content:"+";flex:none;font:400 22px/1 var(--ui);color:var(--accent-light)}
+body.noc .sv details.sv-viac[open]>summary::after{content:"\2212"}
+body.noc .sv details.sv-viac>p{margin:0;padding:0 var(--s4) var(--s4);font-size:14.5px;line-height:1.6}
+
+/* ── 6. Cenník: plán je predmet, preto karta; okraj za kurzorom je svit v3 ([data-svit]) ── */
+body.noc .sv-plany{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s5)}
+body.noc .sv-plan{position:relative;display:flex;flex-direction:column;min-width:0;padding:var(--s6) var(--s6) var(--s5);border-radius:22px;background:#fff;border:1px solid var(--line);box-shadow:var(--sv-tien)}
+body.noc .sv-plan-meno{margin:0 0 var(--s4);font:600 13px/1 var(--ui);letter-spacing:.12em;text-transform:uppercase;color:var(--accent-light)}
+body.noc .sv .sv-plan .price{display:flex;align-items:baseline;gap:8px;margin:0 0 var(--s2);font:700 clamp(40px,3.6vw,52px)/1 var(--nadpis);color:var(--ink);letter-spacing:-.02em}
+body.noc .sv-plan .price span{font:500 15px/1 var(--ui);color:var(--muted);letter-spacing:0}
+body.noc .sv-plan-limit{margin:0 0 var(--s2);font:600 16px/1.4 var(--ui);color:var(--ink)}
+body.noc .sv-plan-pozn{margin:0 0 var(--s6);font:400 14.5px/1.5 var(--ui);color:var(--muted)}
+body.noc .sv-plan .btn{margin-top:auto;width:100%;justify-content:center}
+body.noc .sv-plany-pozn{margin:var(--s5) 0 0;max-width:72ch;font:400 15px/1.55 var(--ui);color:var(--muted)}
+
+/* ── 7. Inštalácia: index riadkov, nie mriežka kariet ─────────────────────── */
+body.noc .sv-platformy{list-style:none;margin:0;padding:0;border-radius:22px;background:#fff;border:1px solid var(--line);box-shadow:var(--sv-tien);overflow:hidden}
+body.noc .sv-platformy li{border-top:1px solid var(--line)}
+body.noc .sv-platformy li:first-child{border-top:0}
+body.noc .sv-riadok{display:grid;grid-template-columns:minmax(0,220px) minmax(0,1fr) auto;gap:var(--s3) var(--s6);align-items:center;padding:var(--s5) var(--s6);text-decoration:none;color:inherit;
+  transition:background-color .16s var(--tik)}
+body.noc a.sv-riadok:hover{background:#fdfbf8}
+body.noc .sv-riadok b{font:600 18px/1.3 var(--ui);color:var(--ink);letter-spacing:-.01em}
+body.noc .sv-riadok span{font:400 15.5px/1.5 var(--ui);color:var(--body)}
+body.noc .sv-riadok em{display:inline-flex;align-items:center;gap:6px;min-height:44px;font:600 15px/1 var(--ui);font-style:normal;color:var(--accent-light);white-space:nowrap}
+body.noc .sv-riadok em svg{width:16px;height:16px;transition:transform .2s var(--pero)}
+body.noc a.sv-riadok:hover em svg{transform:translateX(3px)}
+body.noc .sv-zdroj{margin:var(--s5) 0 0;font:400 15px/1.55 var(--ui);color:var(--muted)}
+
+/* ── 8. Skúška: formulár je jediné miesto, kde návštevník niečo píše ─────────── */
+body.noc .sv-skuska{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:clamp(40px,6vw,96px);align-items:start}
+body.noc .sv-skuska .sv-hlava{margin:0}
+body.noc .sv .trial{padding:clamp(24px,3vw,36px);border-radius:24px;background:#fff;border:1px solid var(--line);box-shadow:var(--sv-tien);min-width:0}
+body.noc .sv .trial p{margin:0 0 var(--s3)}
+body.noc .sv .trial-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s4)}
+body.noc .sv .trial-grid .field-cely{grid-column:1/-1}
+body.noc .sv .trial .field{display:flex;flex-direction:column;gap:6px;min-width:0}
+body.noc .sv .trial label{font:500 14px/1.3 var(--ui);color:var(--ink)}
+body.noc .sv .trial input,body.noc .sv .trial select{width:100%;height:52px;padding:0 14px;border:1px solid var(--line-silna);border-radius:12px;background:#fff;color:var(--ink);font:400 16px/1.3 var(--ui)}
+body.noc .sv .trial select{appearance:none;-webkit-appearance:none;padding-right:40px;
+  background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%236b665f' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 16px center}
+body.noc .sv .trial input::placeholder{color:#6b665f;opacity:1}
+body.noc .sv .trial input:focus,body.noc .sv .trial select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 4px var(--pu-prsten)}
+body.noc .sv .trial input[aria-invalid="true"]{border-color:var(--pu-chyba)}
+body.noc .sv .trial .btn{width:100%;justify-content:center}
+body.noc .sv .field-error{margin:var(--s3) 0 0;font:600 14px/1.4 var(--ui);color:var(--pu-chyba)}
+body.noc .sv .trial-hint{margin:var(--s4) 0 0;font:400 13.5px/1.55 var(--ui);color:var(--muted)}
+body.noc .sv .trial-hint a{color:var(--body)}
+body.noc .sv .trial-status{margin-top:var(--s4);padding:12px 14px;border-radius:12px;font:400 15px/1.5 var(--ui);border:1px solid var(--line);background:var(--paper)}
+body.noc .sv .trial-status-pending{color:var(--muted)}
+body.noc .sv .trial-status-ok{color:var(--ok);border-color:#b9cdb0;background:#f3f7f0}
+body.noc .sv .trial-status-warn{color:#7a5a12;border-color:#e3cf9c;background:#fdf8ea}
+body.noc .sv .trial-status-error{color:var(--pu-chyba);border-color:#e7b7b2;background:#fdf3f2}
+body.noc .sv .trial-verify{margin-top:var(--s4)}
+body.noc .sv .trial-verify>p:first-child{margin:0 0 var(--s3)}
+body.noc .sv .trial-verify-form{display:flex;flex-wrap:wrap;gap:var(--s3);align-items:end;margin:0}
+body.noc .sv .trial-verify-form .field{flex:1 1 180px;min-width:0}
+body.noc .sv .trial-verify-form .btn{width:auto}
+body.noc .sv .trial-verify-msg{margin-top:var(--s3)}
+body.noc .sv .trial-widget-note{margin-top:var(--s4);padding:12px 14px;border-radius:12px;background:var(--sv-med-plocha);border:1px solid #f1c7b8;font:400 15px/1.5 var(--ui);color:var(--ink)}
+body.noc .sv .embed-block{margin-top:var(--s4);padding:var(--s4);border-radius:14px;background:var(--paper);border:1px solid var(--line)}
+body.noc .sv .embed-block-title{margin:0 0 var(--s3);font:600 16px/1.3 var(--ui);color:var(--ink)}
+body.noc .sv .embed-field{margin:0 0 var(--s4)}
+body.noc .sv .embed-field:last-of-type{margin-bottom:0}
+body.noc .sv .embed-field label,body.noc .sv .embed-field-label{display:block;margin:0 0 6px;font:500 13px/1.3 var(--ui);color:var(--muted)}
+body.noc .sv .embed-row{display:flex;gap:var(--s2)}
+body.noc .sv .embed-row input{flex:1 1 auto;min-width:0;height:44px;font:400 13px/1.3 var(--mono)}
+body.noc .sv .embed-snippet{margin:0 0 var(--s2);padding:12px 14px;border-radius:10px;background:#1d1a17;border:0;color:#f3ede6;font:400 12.5px/1.55 var(--mono);white-space:pre-wrap;word-break:break-all}
+body.noc .sv .embed-copy{flex:none;width:auto;height:44px;padding:0 18px;font-size:14px}
+body.noc .sv .embed-note{margin:var(--s3) 0 0;font:400 13px/1.5 var(--ui);color:var(--muted)}
+@media (max-width:560px){ body.noc .sv .trial-grid{grid-template-columns:minmax(0,1fr)} body.noc .sv .embed-row{flex-wrap:wrap} body.noc .sv .embed-row input{flex-basis:100%} }
+
+/* ── 9. Otázky ─────────────────────────────────────────────────────────────── */
+body.noc .sv-otazky{max-width:880px}
+body.noc .sv .sv-otazky details{border:0;border-top:1px solid var(--line);padding:0}
+body.noc .sv .sv-otazky details:last-of-type{border-bottom:1px solid var(--line)}
+body.noc .sv .sv-otazky summary{display:flex;align-items:center;justify-content:space-between;gap:var(--s4);min-height:64px;padding:var(--s4) 0;cursor:pointer;list-style:none;
+  font:600 clamp(17px,1.35vw,19px)/1.4 var(--ui);color:var(--ink);letter-spacing:-.01em}
+body.noc .sv .sv-otazky summary::-webkit-details-marker{display:none}
+body.noc .sv .sv-otazky summary::after{content:"";flex:none;width:32px;height:32px;border-radius:50%;background:var(--paper-deep) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M6 1v10M1 6h10' fill='none' stroke='%23b23a1d' stroke-width='1.7' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat center;
+  transition:transform .3s var(--pero)}
+body.noc .sv .sv-otazky details[open] summary::after{transform:rotate(45deg)}
+body.noc .sv .sv-otazky details p{margin:0 0 var(--s5);max-width:72ch;font-size:16.5px}
+body.noc .sv-odber{margin-top:clamp(48px,6vw,72px);max-width:880px;padding:var(--s6);border-radius:22px;background:#fff;border:1px solid var(--line);box-shadow:var(--sv-tien)}
+body.noc .sv-odber>p{margin:0 0 var(--s4);font:600 18px/1.4 var(--ui);color:var(--ink)}
+body.noc .subscribe-form{display:flex;flex-wrap:wrap;gap:var(--s3);align-items:flex-end}
+body.noc .subscribe-label{flex:1 0 100%;margin:0 0 -4px;font:500 14px/1.3 var(--ui);color:var(--ink)}
+body.noc .sv .subscribe-form input[type="email"]{height:52px;flex:1 1 240px;min-width:0;padding:0 14px;border:1px solid var(--line-silna);border-radius:12px;background:#fff;color:var(--ink);font:400 16px/1 var(--ui)}
+body.noc .sv .subscribe-form input[type="email"]:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 4px var(--pu-prsten)}
+body.noc .subscribe-form .btn{flex:none;justify-content:center}
+body.noc .subscribe-privacy{flex:1 0 100%;margin:0;font:400 13.5px/1.5 var(--ui);color:var(--muted)}
+body.noc .hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+#subscribe-thanks{color:var(--ok);font-weight:600;margin:var(--s3) 0 0}
+#subscribe-error{color:var(--pu-chyba);font-weight:600;margin:var(--s3) 0 0}
+@media (max-width:480px){ body.noc .sv .subscribe-form input[type="email"],body.noc .subscribe-form .btn{width:100%;flex-basis:100%} }
+
+/* ── 10. Záver: svetlý pás so svetlom zospodu (statická podoba Shine z v3, bez tmavého prechodu) ── */
+body.noc .sv-zaver{position:relative;overflow:hidden;padding:clamp(56px,7vw,96px) var(--s5);border-radius:32px;text-align:center;
+  background:linear-gradient(170deg,var(--sv-piesok) 0%,var(--sv-piesok-2) 100%);border:1px solid var(--sv-piesok-linka)}
+body.noc .sv-zaver::before{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(60% 90% at 50% 120%,rgba(242,100,60,.22) 0%,transparent 70%)}
+body.noc .sv-zaver::after{content:"";position:absolute;left:14%;right:14%;top:-1px;height:1px;pointer-events:none;
+  background:linear-gradient(90deg,transparent,rgba(242,100,60,.55) 50%,transparent)}
+body.noc .sv-zaver>*{position:relative}
+body.noc .sv-zaver h2{margin:0 auto var(--s3);max-width:20ch}
+body.noc .sv-zaver p{margin:0 auto var(--s6);max-width:48ch;font-size:18px}
+body.noc .sv-zaver .sv-akcie{justify-content:center}
+body.noc .sv .sv-sekcia.sv-sekcia-zaver{border-top:0;padding-top:0}
+
+/* ── 11. Hlavička: prepínač jazyka (odkazy na /asistent/, /en/, /de/) na tmavom ráme webu ── */
+body.noc .lang-switch{display:flex;align-items:center;flex:none}
+body.noc .lang-switch a{display:inline-flex;align-items:center;justify-content:center;min-width:44px;min-height:40px;padding:0 10px;
+  font:600 12.5px/1 var(--ui);letter-spacing:.02em;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.03);color:#a8a4a0;text-decoration:none}
+body.noc .lang-switch>:first-child{border-radius:10px 0 0 10px}
+body.noc .lang-switch>:last-child{border-radius:0 10px 10px 0}
+body.noc .lang-switch>*+*{margin-left:-1px}
+body.noc .lang-switch a:hover{border-color:#f2643c;color:#fafafa;position:relative;z-index:1}
+body.noc .lang-switch .lang-active,body.noc .lang-switch [aria-current="true"]{background:#fafafa;border-color:#fafafa;color:#0a0908;position:relative;z-index:1}
+
+/* ── 12. Spodná lišta na telefóne (sell.js) ─────────────────────────────────── */
+body.noc .sticky-cta{position:fixed;left:0;right:0;bottom:0;z-index:30;background:#fff;border-top:1px solid var(--line);
+  box-shadow:0 -10px 30px -12px rgba(22,20,18,.2);padding-bottom:env(safe-area-inset-bottom,0px)}
+body.noc .sticky-cta-inner{display:flex;align-items:center;gap:var(--s3);width:var(--wrap);margin:0 auto;padding:10px 0}
+body.noc .sticky-cta-text{flex:1 1 auto;min-width:0;font:500 14px/1.35 var(--ui);color:var(--ink)}
+body.noc .sticky-cta .btn{flex:none;height:44px;min-height:44px;padding:0 18px;font-size:15px}
+body.noc .sticky-cta-close{flex:none;width:44px;height:44px;padding:0;border:1px solid var(--line);border-radius:12px;background:#fff;color:var(--body);font:22px/1 var(--ui);cursor:pointer}
+body.noc .sticky-cta-close:hover{border-color:var(--linka-3);color:var(--ink)}
+@media (max-width:760px){ body.ma-listu{padding-bottom:calc(68px + env(safe-area-inset-bottom,0px))} }
+@media (min-width:761px){ body.noc .sticky-cta{display:none !important} }
+@media print{ body.noc .sticky-cta{display:none !important} }
+
+/* ── 13. Šírky ─────────────────────────────────────────────────────────────── */
+@media (max-width:1080px){
+  body.noc .sv .sv-sekcia .sv-karty{gap:48px}
+  body.noc .sv-riadok{grid-template-columns:minmax(0,170px) minmax(0,1fr) auto;gap:var(--s3) var(--s5)}
+}
+@media (max-width:980px){
+  body.noc .sv .sv-hero .hero{grid-template-columns:minmax(0,1fr);gap:56px}
+  body.noc .sv-hero-text{max-width:640px}
+  body.noc .sv-karty,body.noc .sv-dva,body.noc .sv-skuska{grid-template-columns:minmax(0,1fr)}
+  body.noc .sv-karty .sv-telefon{order:2}
+  body.noc .sv-plany{grid-template-columns:minmax(0,1fr);max-width:520px}
+}
+@media (max-width:760px){
+  body.noc main>.sv{font-size:16px}
+  body.noc .sv-kroky{grid-template-columns:minmax(0,1fr);gap:var(--s6)}
+  body.noc .sv-riadok{grid-template-columns:minmax(0,1fr) auto;padding:var(--s4) var(--s5)}
+  body.noc .sv-riadok span{grid-column:1/-1;grid-row:2}
+  body.noc .sv-riadok em{grid-row:1;grid-column:2;min-height:0}
+  body.noc .sv-upoutavka{grid-template-columns:minmax(0,1fr);gap:var(--s4)}
+  body.noc .sv-upoutavka img{max-width:300px}
+}
+@media (max-width:560px){
+  body.noc .sv-akcie .btn{width:100%;justify-content:center}
+  body.noc .sv-scena-plocha{padding:var(--s4) var(--s3) var(--s5);border-radius:22px;gap:var(--s4)}
+  body.noc .sv-tabs{gap:0}
+  body.noc .sv-tabs [role="tab"]{padding:0 11px;font-size:14px}
+  body.noc .sv-plan{padding:var(--s5)}
+  body.noc .sv-odber{padding:var(--s5)}
+  body.noc .sv-zaver{border-radius:24px;padding:48px var(--s4)}
+  body.noc .sv .sv-otazky summary{min-height:56px}
+}
+@media (prefers-reduced-motion:reduce){
+  body.noc .sv .sv-otazky summary::after,body.noc .sv-riadok em svg,body.noc a.sv-riadok{transition:none}
+  body.noc a.sv-riadok:hover em svg{transform:none}
+}

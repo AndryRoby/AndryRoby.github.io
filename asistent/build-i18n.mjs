@@ -42,10 +42,9 @@ const SITE = 'https://arling.sk';
 // tu nie je package.json, z ktorého camt053 berie svoje meno.
 export const TOOL = 'asistent';
 export const ROOT_URL = `${SITE}/${TOOL}/`;
-// Len angličtina. Nemecká stránka /asistent/de/ je písaná ručne a tento
-// skript ju nesmie prepísať; slovník i18n.js nemecké preklady ani nemá
-// (LANGS = ['sk', 'en']).
-export const STATIC_LANGS = ['en'];
+// Od 28. 9. 2026 (svetlá prerábka) má slovník i18n.js aj nemčinu a /asistent/de/
+// vzniká tu z toho istého zdroja ako /asistent/en/; predtým bola ručne písaná.
+export const STATIC_LANGS = ['en', 'de'];
 
 /** JSON-LD Offer names of the Slovak source, translated for the static pages. */
 // Názvy balíkov sú v JSON-LD už po anglicky a tak aj zostávajú: Free,
@@ -76,8 +75,8 @@ export function langUrl(lang) {
   return lang === 'sk' ? ROOT_URL : `${ROOT_URL}${lang}/`;
 }
 
-// Asistent má tri jazykové adresy, ale slovník pozná len sk a en: nemecká
-// /asistent/de/ je písaná ručne. Do zväzku musí patriť aj tak, inak Google
+// Asistent má tri jazykové adresy (sk koreň, en, de) a všetky tri patria do
+// jedného zväzku hreflang, inak Google
 // vidí tri stránky, ktoré sa naň neodkazujú navzájom, a zväzok zahodí.
 // x-default mieri na angličtinu: Asistent je nástroj pre e-shopy a
 // návštevníkovi, ktorého jazyk nepokrývame, je bližšia než slovenčina.
@@ -290,7 +289,8 @@ function transformJsonLd(html, lang, problems) {
     if (obj['@type'] === 'SoftwareApplication') {
       obj.name = tr('meta.title', lang, problems);
       obj.url = langUrl(lang);
-      if (lang !== 'en') obj.description = tr('meta.description', lang, problems);
+      // Popis vždy v jazyku stránky (do 28. 9. 2026 ostával na /en/ slovenský text zdroja).
+      obj.description = tr('meta.description', lang, problems);
       if (Array.isArray(obj.offers)) {
         obj.offers.forEach((o) => {
           const tl = OFFER_NAMES[o.name];
@@ -431,6 +431,29 @@ export function outputPath(lang) {
   return join(HERE, lang, 'index.html');
 }
 
+/** Slovenský zdroj: FAQPage v JSON-LD sa skladá zo slovníka v poradí otázok na stránke
+ * (summary data-i18n="faq.X.q"), aby sa text v JSON-LD nerozišiel s tým, čo stránka ukazuje,
+ * a CSP odtlačky sa prepočítajú (JSON-LD je vložený skript). Vracia nové HTML. */
+export function synchronizujZdroj(html) {
+  const kluce = [...html.matchAll(/<summary[^>]*\sdata-i18n="(faq\.[a-z0-9]+\.q)"/g)].map((m) => m[1]);
+  const obj = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: kluce.filter((k) => DICT[k] && DICT[k.slice(0, -2) + '.a']).map((k) => ({
+      '@type': 'Question',
+      name: textOf(DICT[k].sk),
+      acceptedAnswer: { '@type': 'Answer', text: textOf(DICT[k.slice(0, -2) + '.a'].sk) },
+    })),
+  };
+  const out = html.replace(/(<script type="application\/ld\+json">)([\s\S]*?)(<\/script>)/g, (m, open, body, close) => {
+    let o;
+    try { o = JSON.parse(body); } catch (e) { return m; }
+    if (o['@type'] !== 'FAQPage') return m;
+    return open + '\n' + JSON.stringify(obj, null, 2).replace(/<\//g, '<\\/') + '\n' + close;
+  });
+  return prepocitajCsp(out);
+}
+
 export function buildAll(write) {
   const out = {};
   for (const lang of STATIC_LANGS) {
@@ -447,6 +470,10 @@ const here = fileURLToPath(import.meta.url);
 const argv1 = process.argv[1] ? resolve(process.argv[1]) : '';
 const isMain = argv1 && (process.platform === 'win32' ? argv1.toLowerCase() === here.toLowerCase() : argv1 === here);
 if (isMain) {
+  const zdrojCesta = join(HERE, 'index.html');
+  const zdroj = readFileSync(zdrojCesta, 'utf8');
+  const novyZdroj = synchronizujZdroj(zdroj);
+  if (novyZdroj !== zdroj) { writeFileSync(zdrojCesta, novyZdroj, 'utf8'); console.log('index.html: FAQPage a CSP zosynchronizované so slovníkom'); }
   const out = buildAll(true);
   for (const lang of STATIC_LANGS) {
     const rel = `${lang}/index.html`;

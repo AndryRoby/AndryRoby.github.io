@@ -1,21 +1,21 @@
 <!doctype html>
 <html lang="sk">
 <head>
-<script src="/style/vzhlad.js?v=072ce2c2"></script>
+<script src="/style/vzhlad.js?v=bc1efad3"></script>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://api.arling.workers.dev 'sha256-XEn2zUecc+GamNzSfFEqMhwapRrK0Hai8NJ9oUweSrI=' 'sha256-3IlNQzfSGa2Be/TyDcOABbmRRXD/9u5E7ffXymtPiJo='; connect-src 'self' https://api.arling.workers.dev https://arling-asistent.arling.workers.dev; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
-<meta name="color-scheme" content="dark">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://api.arling.workers.dev 'sha256-njH5WmSkloYqKsb2IaS/NvlUWRLwdu1i47LNb2BQGMc=' 'sha256-g7Ms9QC0hYKFmFZ/ioGJonLfeB/cTw8N1HLlZZY8qNw='; connect-src 'self' https://api.arling.workers.dev https://arling-asistent.arling.workers.dev; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta name="color-scheme" content="light">
 <meta name="theme-color" content="#0a0908">
 <link rel="preconnect" href="https://api.arling.workers.dev" crossorigin>
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
 <link rel="icon" href="../favicon.ico" sizes="48x48">
 <link rel="apple-touch-icon" href="../icon-180.png">
 <title>ARLing Asistent: AI predajný asistent pre e-shopy</title>
-<meta name="description" content="Predajný asistent pre váš e-shop, nastavený za 10 minút z produktového feedu. Beží na Cloudflare Workers, neukladá rozhovory zákazníkov. Zadarmo do 100 rozhovorov mesačne, potom od 19 EUR mesačne." />
+<meta name="description" content="AI predajný asistent pre váš e-shop, nastavený z produktového feedu za pár minút. Odpovedá v jazyku zákazníka, ukazuje výrobky s fotkou a cenou a neukladá rozhovory. Zadarmo do 100 rozhovorov mesačne, potom od 19 EUR mesačne." />
 <meta property="og:type" content="website" />
 <meta property="og:title" content="ARLing Asistent: AI predajný asistent pre e-shopy" />
-<meta property="og:description" content="Predajný asistent pre váš e-shop, nastavený za 10 minút z produktového feedu. Beží na Cloudflare Workers, neukladá rozhovory zákazníkov. Zadarmo do 100 rozhovorov mesačne, potom od 19 EUR mesačne." />
+<meta property="og:description" content="AI predajný asistent pre váš e-shop, nastavený z produktového feedu za pár minút. Odpovedá v jazyku zákazníka, ukazuje výrobky s fotkou a cenou a neukladá rozhovory. Zadarmo do 100 rozhovorov mesačne, potom od 19 EUR mesačne." />
 <meta property="og:url" content="https://arling.sk/asistent/" />
 <meta property="og:locale" content="sk_SK" />
 <link rel="canonical" href="https://arling.sk/asistent/" />
@@ -35,10 +35,10 @@
   "@type": "SoftwareApplication",
   "name": "ARLing Asistent",
   "url": "https://arling.sk/asistent/",
-  "description": "AI predajný asistent pre e-shopy: nastaví sa z produktového feedu (Heureka/Zboží.cz XML, Google Shopping XML, Shopify, WooCommerce, generický XML) za 10 minút, beží na Cloudflare Workers a neukladá obsah rozhovorov, len počítadlá.",
+  "description": "AI predajný asistent pre e-shopy: nastaví sa z produktového feedu (Heureka/Zboží.cz XML, Google Shopping XML, Shopify, WooCommerce, generický XML) za pár minút, odpovedá v jazyku zákazníka s kartami výrobkov z feedu a neukladá obsah rozhovorov, len počítadlá.",
   "applicationCategory": "BusinessApplication",
   "operatingSystem": "Any (web browser, jeden <script> tag)",
-  "inLanguage": ["sk", "en"],
+  "inLanguage": ["sk", "cs", "en", "de"],
   "offers": [
     { "@type": "Offer", "name": "Free", "price": "0", "priceCurrency": "EUR", "url": "https://arling.sk/asistent/#cennik" },
     { "@type": "Offer", "name": "Starter", "price": "19", "priceCurrency": "EUR", "url": "https://arling.sk/asistent/#cennik", "priceSpecification": { "@type": "UnitPriceSpecification", "price": "19", "priceCurrency": "EUR", "billingDuration": "P1M", "unitCode": "MON" } },
@@ -61,299 +61,111 @@
   "mainEntity": [
     {
       "@type": "Question",
-      "name": "Ako dlho trvá nastavenie?",
-      "acceptedAnswer": { "@type": "Answer", "text": "Vložíte URL feedu produktov a e-mail. Worker feed stiahne, rozdelí na časti a uloží ako embeddings, zvyčajne do pár minút podľa veľkosti katalógu (limit je 5000 produktov). Potom stačí vložiť jeden <script> tag do e-shopu." }
-    },
-    {
-      "@type": "Question",
-      "name": "Aké formáty feedu podporujete?",
-      "acceptedAnswer": { "@type": "Answer", "text": "Heureka/Zboží.cz XML (značky SHOP/SHOPITEM, exportuje ho napríklad Shoptet alebo Upgates), Google Shopping RSS/XML (značky g:), Shopify /products.json, WooCommerce REST/Store API JSON a bežný XML feed so značkami item/name/price/url/description/image." }
-    },
-    {
-      "@type": "Question",
-      "name": "Ukladáte rozhovory zákazníkov?",
-      "acceptedAnswer": { "@type": "Answer", "text": "Nie. Obsah rozhovoru sa nikde neukladá, ani u nás, ani v databáze. Ukladáme len počítadlá: koľko rozhovorov a kliknutí na produkt sa za deň udialo, kvôli fakturácii a mesačnému limitu." }
-    },
-    {
-      "@type": "Question",
-      "name": "V akom jazyku asistent odpovedá?",
-      "acceptedAnswer": { "@type": "Answer", "text": "Slovensky, česky, anglicky alebo nemecky, podľa nastavenia widgetu na stránke (data-lang). Odporúča len produkty z vášho feedu." }
+      "name": "Čo keď AI povie hlúposť?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Môže sa pomýliť, aj vo výbere výrobku, preto má pevné mantinely. Odpovedá len z vášho feedu a kontaktu, text výrobkov berie ako dáta, nie ako pokyny, a keď tovar nemáte, povie to. Názov, cena a odkaz na karte idú priamo z feedu, nie z textu, ktorý napíše AI. Najlepšie to posúdite na vlastných výrobkoch: skúška je zadarmo a na web ho vložíte, až keď sa vám odpovede páčia."
+      }
     },
     {
       "@type": "Question",
       "name": "Dodrží rozpočet zákazníka?",
-      "acceptedAnswer": { "@type": "Answer", "text": "Pri otázke „do 30 €“ môže Asistent odporučiť aj drahší produkt. Cenový strop v bežnom chate zatiaľ nie je spoľahlivý filter. Ceny na produktových kartách preberáme z vášho feedu. Pred zapnutím si odpovede overte na vlastných produktoch." }
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Pri otázke „do 30 €“ môže Asistent odporučiť aj drahší výrobok. Cenový strop v bežnom chate zatiaľ nie je spoľahlivý filter. Ceny na kartách výrobkov preberáme z vášho feedu. Pred zapnutím si odpovede overte na vlastných výrobkoch."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Ako dlho trvá nastavenie?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Vložíte adresu feedu a e-mail. Server feed stiahne, rozdelí na časti a pripraví na vyhľadávanie, zvyčajne do pár minút podľa veľkosti katalógu (najviac 5 000 výrobkov). Potom vložíte jeden riadok <script> do e-shopu alebo nainštalujete doplnok pre WooCommerce."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Aké formáty feedu podporujete?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Heureka a Zboží.cz XML (značky SHOP/SHOPITEM, exportuje ho napríklad Shoptet alebo Upgates), Google Nákupy RSS alebo XML (značky g:), Shopify /products.json, WooCommerce REST alebo Store API JSON a bežný XML feed so značkami item/name/price/url/description/image. Iný formát vyskúšajte vo formulári; ak ho spracovanie odmietne, napíšte na podpora@arling.sk s ukážkou feedu."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Ukladáte rozhovory zákazníkov?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Nie. Obsah rozhovoru sa nikde neukladá, ani u nás, ani v databáze. Ukladáme len počítadlá: koľko rozhovorov a kliknutí na výrobok sa za deň udialo, kvôli fakturácii a mesačnému limitu."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "V akých jazykoch odpovedá?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Okno má texty v slovenčine, češtine, angličtine a nemčine. S riadkom kódu z formulára (data-lang=\"auto\") odpovedá v jazyku, v ktorom zákazník napíše otázku. Názvy výrobkov ostávajú tak, ako sú vo vašom feede."
+      }
     },
     {
       "@type": "Question",
       "name": "Čo ak asistent nevie odpovedať?",
-      "acceptedAnswer": { "@type": "Answer", "text": "Ak sa vo feede nenájde nič relevantné k otázke, asistent to jasne povie a odporučí zákazníkovi kontaktovať obchod priamo, na e-mail zadaný pri nastavení." }
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Ak sa vo feede nenájde nič, čo k otázke patrí, asistent to jasne povie a odporučí zákazníkovi kontaktovať obchod priamo, na e-mail zadaný pri nastavení."
+      }
     },
     {
       "@type": "Question",
-      "name": "Funguje to aj na Shoptete, WooCommerce alebo Shopify?",
-      "acceptedAnswer": { "@type": "Answer", "text": "Skript funguje na akomkoľvek e-shope hneď, stačí vložiť jeden <script> tag do administrácie alebo šablóny. Samostatný WooCommerce plugin je schválený na wordpress.org, nainštalujete ho priamo v administrácii cez Plugins, Add New, vyhľadaním ARLing. Na Shopify sa asistent pridáva rovnako, jedným script tagom v šablóne; aplikáciu v Shopify App Store nemáme. Pre Shoptet a Upgates je samostatný návod (Heureka XML feed z administrácie, script tag cez HTML kód) na arling.sk/asistent/shoptet/. Ako widget vyzerá na slovenskom e-shope, ukazuje ukážkový obchod Dobrá domácnosť na arling.sk/asistent/ukazka/." }
+      "name": "Funguje to na Shoptete, WooCommerce alebo Shopify?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Áno. Riadok kódu funguje na akomkoľvek e-shope, vložíte ho v administrácii alebo v šablóne. Doplnok pre WooCommerce je schválený na wordpress.org. Na Shopify sa asistent pridáva jedným riadkom v šablóne; aplikáciu v Shopify App Store nemáme. Pre Shoptet a Upgates je samostatný návod: feed pre Heureku z administrácie a riadok kódu ako HTML kód."
+      }
     },
     {
       "@type": "Question",
-      "name": "Čo je zadarmo?",
-      "acceptedAnswer": { "@type": "Answer", "text": "Do 100 rozhovorov mesačne, navždy, bez platobnej karty. Vyskúšať si to môžete priamo na tejto stránke s vlastným feedom, chat sa objaví vpravo dole." }
+      "name": "Máte zmluvu podľa čl. 28 GDPR?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Áno. ARLing s. r. o. je pri spracúvaní správ návštevníkov vášho e-shopu sprostredkovateľom. Vzor zmluvy: Zmluva o spracúvaní osobných údajov (DPA)."
+      }
     },
     {
       "@type": "Question",
       "name": "Kde bežia dáta?",
-      "acceptedAnswer": { "@type": "Answer", "text": "Na globálnej sieti Cloudflare (Workers, Vectorize, D1). Presná EU-only lokalita spracovania nie je Cloudflare verejne garantovaná, preto zmluva o spracúvaní osobných údajov (DPA) medzi ARLingom a e-shopom počíta so štandardnými zmluvnými doložkami (SCC) a Cloudflare EU Cloud Code of Conduct." }
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Na globálnej sieti Cloudflare (Workers, Vectorize, D1). Presnú lokalitu spracovania len v EÚ Cloudflare verejne negarantuje, preto zmluva o spracúvaní osobných údajov (DPA) medzi ARLingom a e-shopom počíta so štandardnými zmluvnými doložkami (SCC) a Cloudflare EU Cloud Code of Conduct."
+      }
     },
     {
       "@type": "Question",
       "name": "Ako funguje platba a fakturácia?",
-      "acceptedAnswer": { "@type": "Answer", "text": "Do 100 rozhovorov mesačne je používanie úplne zadarmo, bez karty. Nad tento limit prejde e-shop na plán Starter (19 EUR mesačne, do 1 000 rozhovorov) alebo Pro (39 EUR mesačne, do 3 000 rozhovorov) zo stránky svojho účtu, ktorej odkaz dostane hneď po vytvorení účtu. Platí sa kartou cez Stripe, zrušiť sa dá kedykoľvek." }
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Do 100 rozhovorov mesačne je používanie úplne zadarmo, bez karty. Nad tento limit prejdete na plán Starter (19 € mesačne, do 1 000 rozhovorov) alebo Pro (39 € mesačne, do 3 000 rozhovorov) zo stránky svojho účtu, ktorej odkaz dostanete hneď po vytvorení účtu. Platíte kartou cez Stripe, potvrdenie a faktúru pošle Stripe e-mailom, zrušiť sa dá kedykoľvek."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Ako zrušiť, keď mi to nesadne?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Voľný plán do 100 rozhovorov mesačne nemá žiadny záväzok ani kartu, jednoducho ho prestanete používať. Platený plán nad týmto limitom je predplatné cez Stripe. Zrušíte alebo zmeníte ho kedykoľvek na portáli Stripe (prihlásenie e-mailom, ktorým ste platili); platí do konca zaplateného obdobia."
+      }
     }
   ]
 }
 </script>
 
 <link rel="preload" href="/fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="/asistent/pismo/ARLingDrawText-VF.woff2?v=684e70c1" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/style/paper.css?v=704b28ed">
-<link rel="stylesheet" href="/style/nastroj.css?v=c9081cae">
+<link rel="stylesheet" href="/style/paper.css?v=6b343130">
+<!-- Svetlá stránka Asistenta (28. 9. 2026): tokeny paper v3 na svetle, komponenty v3 a /motion/. Všetko vlastné je v stranka.css. -->
+<link rel="stylesheet" href="stranka.css?v=20260929c">
 <script src="/style/prepinac.js?v=668e98c9" defer></script>
-<style>
-  /* Vlastné len pre túto stránku. Farby, písma, nadpisy, tlačidlá, hlavička,
-     pätička, karty a tabuľky sú v /style/paper.css, ktorý sa načítal vyššie. */
-  :root { color-scheme:light; }
-  [hidden] { display:none !important; }
-  section[id] { scroll-margin-top:78px; }
-  code { background:var(--paper-deep); border:1px solid var(--line); border-radius:4px; padding:1px 5px; overflow-wrap:anywhere; }
-  pre code { border:0; padding:0; background:transparent; }
-  pre { white-space:pre-wrap; overflow-wrap:anywhere; }
-  .sub { max-width:64ch; margin:0 0 24px; }
-
-  /* hlavička: druhý odkaz značky a segmentový prepínač jazyka */
-  .brandline { display:flex; align-items:center; gap:12px; min-width:0; }
-  .wordmark-sub { font-family:var(--ui); font-size:13px; color:var(--muted); text-decoration:none; white-space:nowrap; }
-  .wordmark-sub:hover { color:var(--accent); }
-  .lang-switch { display:flex; align-items:center; flex:none; }
-  .lang-switch button, .lang-switch a { font:600 12px/1 var(--ui); padding:8px 10px; border:1px solid var(--line);
-    background:var(--card); color:var(--muted); cursor:pointer; text-decoration:none; appearance:none; -webkit-appearance:none; }
-  .lang-switch > :first-child { border-radius:10px 0 0 10px; }
-  .lang-switch > :last-child { border-radius:0 10px 10px 0; }
-  .lang-switch > * + * { margin-left:-1px; }
-  .lang-switch button:hover, .lang-switch a:hover { border-color:var(--accent); color:var(--accent); position:relative; z-index:1; }
-  .lang-switch .lang-active, .lang-switch [aria-pressed="true"], .lang-switch [aria-current="page"] {
-    background:var(--ink); border-color:var(--ink); color:var(--paper); position:relative; z-index:1; }
-  @media (max-width:1024px) { .wordmark-sub { display:none; } }
-  @media (max-width:900px) { .bar nav { gap:16px; } .bar nav a { font-size:14px; } }
-
-  /* riadok faktov pod úvodom */
-  .facts { list-style:none; margin:22px 0 0; padding:0; display:flex; flex-wrap:wrap; gap:4px 0; }
-  .facts li:not(:last-child)::after { content:"\00b7"; margin:0 10px; color:var(--line); }
-  .facts b { color:var(--ink); font-weight:600; }
-
-  /* úvod: skutočná snímka widgetu v ráme, celá a bez orezu. Orez 4:3 tu bol predtým a odrezal
-     z nej pätinu zľava; teraz sa ukazuje tak, ako bola odfotená, aby bolo vidieť aj obchod pod chatom.
-     Rám, tri krúžky a tieň sú v paper.css (.shot). Bočný register tiež, sekcia 15. */
-  .live { margin:0; }
-  .live figcaption { display:flex; justify-content:space-between; align-items:flex-end; gap:12px; margin:10px 2px 0;
-    font-family:var(--ui); font-size:12.5px; color:var(--muted); }
-  .live figcaption span:last-child { white-space:nowrap; }
-  @media (max-width:640px) { .live figcaption { flex-direction:column; gap:2px; } }
-
-  /* číslované kroky */
-  .rules { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(240px,100%),1fr)); gap:26px 32px;
-    margin:0; padding:0; list-style:none; counter-reset:r; }
-  .rules li { padding-top:14px; border-top:1px solid var(--line); min-width:0; }
-  /* bez cisla: styri nezavisle pravidla nie su postupnost */
-  .rules li > b { display:block; font-family:var(--display); font-weight:600; color:var(--ink); margin-bottom:4px; }
-  .rules p { margin:0 0 8px; font-size:15px; overflow-wrap:anywhere; max-width:none; }
-  .rules p:last-child { margin-bottom:0; }
-
-  /* zoznam o súkromí */
-  .privacy-list { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:14px; }
-  .privacy-list li { display:flex; gap:12px; align-items:flex-start; }
-  .privacy-list li::before { content:"\2022"; color:var(--accent); flex-shrink:0; line-height:1.5; }
-  .privacy-list p { margin:0; }
-  .privacy-list b { color:var(--ink); }
-  .band .privacy-list b { color:#fffdf8; }
-
-  /* cenník: bunky tabuľky nesú plán a cenu */
-  td.plan { font-family:var(--display); font-weight:600; color:var(--ink); }
-  td.price { font:600 clamp(22px,1.9vw,28px)/1 var(--display); color:var(--ink); white-space:nowrap; }
-  td.price span { font:400 13px/1 var(--ui); color:var(--muted); }
-  .pricing-note { font-size:15px; margin:16px 0 0; }
-  @media (max-width:600px) {
-    /* posledná bunka nesie tlačidlo, stĺpec nemá názov, tak nepíšeme prázdny štítok */
-    .tablewrap td:not([data-th])::before { content:none; }
-    .tablewrap td:not([data-th]) .btn { display:flex; justify-content:center; }
-  }
-
-  /* otázky */
-  .pro-objections { margin-top:28px; }
-  .objections-label { margin:0 0 4px; font:500 12px/1 var(--ui); letter-spacing:0; text-transform:none; color:var(--accent); }
-  details { border-top:1px solid var(--line); padding:14px 0; }
-  details:last-of-type { border-bottom:1px solid var(--line); }
-  summary { cursor:pointer; font:600 clamp(17px,1.4vw,19px)/1.35 var(--display); color:var(--ink);
-    list-style:none; display:flex; justify-content:space-between; gap:12px; }
-  summary::-webkit-details-marker { display:none; }
-  summary::after { content:"+"; color:var(--accent); flex:none; font-family:var(--ui); }
-  details[open] summary::after { content:"\2013"; }
-  details p { margin:10px 0 0; max-width:70ch; overflow-wrap:anywhere; }
-
-  /* prihlásenie na novinky */
-  .hp { position:absolute; width:1px; height:1px; margin:-1px; padding:0; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
-  .subscribe-ask { border-top:1px solid var(--line); margin-top:24px; padding-top:24px; }
-  .subscribe-form { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
-  .subscribe-form input[type="email"] { height:46px; min-width:0; flex:1 1 240px; padding:0 14px;
-    border:1px solid var(--line); border-radius:12px; background:var(--card); color:var(--ink); font:15px/1 var(--ui); }
-  .subscribe-form .btn { flex:none; }
-  .subscribe-label { flex:1 0 100%; margin:0 0 -4px; font:500 13px/1.3 var(--ui); color:var(--body); }
-  .field-error { margin:10px 0 0; font:600 14px/1.4 var(--ui); color:var(--accent-light, var(--accent)); }
-  .trial input[aria-invalid="true"] { border-color:var(--accent); }
-  #subscribe-thanks { color:var(--ok); font-weight:600; }
-  #subscribe-error { color:var(--accent); font-weight:600; }
-  .subscribe-privacy { flex:1 0 100%; margin:0; font-family:var(--ui); font-size:13px; color:var(--muted); }
-  @media (max-width:480px) { .subscribe-form input[type="email"], .subscribe-form button { width:100%; } }
-
-  /* pätička */
-  footer .cols { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr)); gap:20px 32px; }
-  footer b { color:var(--ink); font-weight:600; }
-  .footer-note { margin-top:14px; font-size:12.5px; }
-
-  /* spodná lišta na telefóne. Z-36 pokus 3 (brána Astry 2, nález 8): --card je v noci rgba(…, .55) a text
-     pod lištou presvital; lišta má plné pozadie --card-plna, zatvárací terč 44 px a stránka pod ňou
-     odsadenie (sell.js pridá body.ma-listu, keď je lišta viditeľná), aby neprekryla koniec obsahu. */
-  .sticky-cta { position:fixed; left:0; right:0; bottom:0; z-index:30; background:var(--card-plna, var(--paper));
-    border-top:1px solid var(--line-silna, var(--line)); box-shadow:0 -8px 24px rgba(0,0,0,.35);
-    padding-bottom:env(safe-area-inset-bottom, 0px); }
-  .sticky-cta-inner { display:flex; align-items:center; gap:10px; width:var(--wrap); margin:0 auto; padding:10px 0; }
-  .sticky-cta-text { flex:1 1 auto; min-width:0; font-family:var(--ui); font-size:13px; color:var(--body); overflow-wrap:anywhere; }
-  .sticky-cta .btn { flex:none; min-height:44px; padding:0 16px; font-size:14px; }
-  .sticky-cta-close { flex:none; width:44px; height:44px; border:1px solid var(--line); background:var(--paper);
-    color:var(--body); border-radius:12px; cursor:pointer; font:20px/1 var(--ui); padding:0; }
-  .sticky-cta-close:hover { border-color:var(--accent); color:var(--accent); }
-  @media (max-width:760px) { body.ma-listu { padding-bottom:calc(72px + env(safe-area-inset-bottom, 0px)); } }
-  @media (min-width:761px) { .sticky-cta { display:none !important; } }
-  @media print { .sticky-cta { display:none !important; } }
-
-  /* skúšobný formulár: vlastná logika tejto stránky */
-  .trial { border:1px solid var(--line); background:var(--card); border-radius:var(--radius); padding:24px; min-width:0; }
-  .trial p { margin:0 0 14px; }
-  .trial-grid { display:grid; grid-template-columns:2fr 2fr 1fr auto; gap:12px; align-items:end; }
-  @media (max-width:760px) { .trial-grid { grid-template-columns:minmax(0,1fr); } }
-  .trial .field { display:flex; flex-direction:column; gap:5px; min-width:0; }
-  .trial label { font-family:var(--ui); font-size:12px; color:var(--muted); }
-  .trial input, .trial select { background:var(--paper); color:var(--ink); border:1px solid var(--line);
-    border-radius:10px; padding:11px 12px; font:15px/1.3 var(--ui); width:100%; }
-  .trial input:focus, .trial select:focus { border-color:var(--accent); outline:none; }
-  .trial-hint { font-family:var(--ui); font-size:12.5px; color:var(--muted); margin:12px 0 0; }
-  .trial-status { margin-top:16px; padding:10px 14px; border-radius:10px; font-size:15px; border:1px solid var(--line); background:var(--paper); }
-  .trial-status-pending { color:var(--muted); }
-  .trial-status-ok { color:var(--ok); border-color:var(--ok); }
-  .trial-status-warn { color:#8a6a1e; border-color:#8a6a1e; }
-  .trial-status-error { color:var(--accent); border-color:var(--accent); }
-  .trial-verify { margin-top:16px; }
-  .trial-verify > p:first-child { margin:0 0 10px; }
-  .trial-verify-form { display:flex; flex-wrap:wrap; gap:12px; align-items:end; margin:0; }
-  .trial-verify-form .field { flex:1 1 180px; min-width:0; }
-  .trial-verify-msg { margin-top:12px; }
-  .trial-widget-note { margin-top:14px; padding:10px 14px; background:#f7e8e2; border:1px solid var(--accent);
-    border-radius:10px; font-size:15px; color:var(--ink); }
-
-  /* vygenerovaný embed kód */
-  .embed-block { margin-top:14px; padding:16px; border:1px solid var(--line); background:var(--paper); border-radius:12px; }
-  .embed-block-title { margin:0 0 12px; font:600 15px/1.3 var(--display); color:var(--ink); }
-  .embed-field { margin:0 0 14px; }
-  .embed-field:last-of-type { margin-bottom:0; }
-  .embed-field label, .embed-field-label { display:block; font-family:var(--ui); font-size:12px; color:var(--muted); margin:0 0 5px; }
-  .embed-row { display:flex; gap:8px; }
-  .embed-row input { flex:1 1 auto; min-width:0; background:var(--card); color:var(--ink); border:1px solid var(--line);
-    border-radius:10px; padding:10px 11px; font:13px/1.3 var(--mono); }
-  .embed-snippet { margin:0 0 8px; font-size:12.5px; white-space:pre-wrap; word-break:break-all; }
-  .embed-copy { flex:none; }
-  .embed-note { margin:10px 0 0; font-family:var(--ui); font-size:12.5px; color:var(--muted); }
-  @media (max-width:480px) { .embed-row { flex-wrap:wrap; } .embed-row input { flex-basis:100%; } }
-
-  /* ── Z-36 (28. 9. 2026): predajnejšia stránka. Písmo ARLing Draw Text len na nadpisy a otázky
-     (ops/design/PISMO-PRAVIDLA.md: statická sadzba, jeden súbor 34,8 kB, font-display optional,
-     rovnaká URL ako preload). Telo ostáva ARLing Sans z paper.css. */
-  @font-face { font-family:"ARLing Draw Text"; src:url("/asistent/pismo/ARLingDrawText-VF.woff2?v=684e70c1") format("woff2");
-    font-weight:200 800; font-style:normal; font-display:optional; }
-  body.noc { --display:"ARLing Draw Text","ARLing Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
-    /* #74716e malo na #0a0908 kontrast 4,1 : 1 (PRINCIPY-UI-600K N6); #8d8884 má 5,7 : 1 */
-    --muted:#8d8884; }
-  .sr { position:absolute; width:1px; height:1px; margin:-1px; padding:0; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
-  h2 { font-size:clamp(1.625rem,2.5vw,2.25rem); line-height:1.24; letter-spacing:-.01em; }
-
-  /* úvod: text vľavo, skutočná snímka chatu v ráme telefónu vpravo; na mobile snímka pod výzvou */
-  .hero-asistent { align-items:center; }
-  .h1-asistent { font:680 clamp(2.125rem,4.5vw,4rem)/1.14 var(--display); letter-spacing:-.02em; max-width:15ch; margin:0 0 clamp(16px,2vw,28px); }
-  .h1-asistent .l { display:block; }
-  .hero-asistent .lead { max-width:46ch; }
-  .hero-cena { margin:0 0 24px; font:400 17px/1.5 var(--ui); color:var(--body); max-width:46ch; }
-  .hero-cena b { color:var(--ink); font-weight:600; }
-  .hero-asistent .cta { display:flex; flex-wrap:wrap; align-items:center; gap:12px 24px; }
-  .hero-druhy { display:inline-flex; align-items:center; min-height:48px; font:500 16px/1.3 var(--ui); color:var(--ink);
-    text-decoration:underline; text-decoration-color:var(--accent); text-underline-offset:5px; text-decoration-thickness:2px; }
-  .hero-druhy:hover { color:var(--accent-light); }
-  .telefon { margin:0; justify-self:center; width:min(300px,82vw); }
-  .telefon-ram { padding:8px; border-radius:30px; background:#161311; border:1px solid rgba(255,255,255,.14);
-    box-shadow:0 24px 60px rgba(0,0,0,.45), 0 0 0 1px rgba(242,100,60,.10); }
-  .telefon-ram img { display:block; width:100%; height:auto; border-radius:22px; }
-  .telefon figcaption { margin:12px 4px 0; text-align:center; font:400 14px/1.4 var(--ui); color:var(--muted); }
-  .telefon figcaption a { color:var(--body); }
-  @media (max-width:760px) {
-    .hero-asistent .cta .btn { width:100%; justify-content:center; min-height:48px; }
-    .hero-asistent .telefon { margin-top:8px; }
-  }
-
-  /* skutočné odpovede: na mobile vodorovný rad so zachytením (nie posun celej stránky), od 820 px dva stĺpce
-     (Z-36 pokus 2: snímka s kávovarmi prešla do úvodu, v rade ostali dve) */
-  .odpovede { list-style:none; margin:0; padding:0 0 8px; display:grid; grid-auto-flow:column; grid-auto-columns:min(78%,300px);
-    gap:16px; overflow-x:auto; scroll-snap-type:x mandatory; overscroll-behavior-x:contain; scrollbar-width:thin; }
-  .odpoved { scroll-snap-align:start; min-width:0; }
-  .odpoved figure { margin:0; }
-  .odpoved img { display:block; width:100%; height:auto; border-radius:18px; border:1px solid var(--line);
-    box-shadow:0 12px 32px rgba(0,0,0,.35); }
-  .odpoved figcaption { margin-top:14px; font:400 15px/1.5 var(--ui); color:var(--body); }
-  .odpoved figcaption b { display:block; margin-bottom:4px; font:600 18px/1.3 var(--display); color:var(--ink); letter-spacing:-.005em; }
-  @media (min-width:820px) {
-    /* snímka telefónu vyše 320 px široká pôsobí ako zväčšenina; dva stĺpce po 320 px od ľavého okraja textu */
-    .odpovede { grid-auto-flow:row; grid-template-columns:repeat(2,minmax(0,320px)); justify-content:start; overflow:visible; gap:64px; }
-  }
-  .odpovede-pozn { margin:24px 0 0; max-width:68ch; font:400 15px/1.55 var(--ui); color:var(--body); }
-
-  /* prepis snímky (Z-36 pokus 3, brána Astry 2, nález 5): text snímky čitateľný bez zväčšovania, v jazyku stránky,
-     a odkaz na snímku v plnej veľkosti. Prepíše všeobecný štýl details z otázok nižšie. */
-  details.prepis, details.prepis:last-of-type { border:0; padding:0; margin:8px 0 0; }
-  details.prepis summary { font:500 14px/1.3 var(--ui); color:var(--ink); justify-content:flex-start; align-items:center;
-    min-height:44px; gap:8px; text-decoration:underline; text-decoration-color:var(--accent); text-underline-offset:4px; }
-  details.prepis summary::after { font-size:16px; }
-  details.prepis dl { margin:4px 0 10px; font:400 14px/1.5 var(--ui); color:var(--body); }
-  details.prepis dt { margin-top:8px; font-weight:600; color:var(--ink); }
-  details.prepis dd { margin:2px 0 0; overflow-wrap:anywhere; }
-  .prepis-plna { display:inline-flex; align-items:center; min-height:44px; font:500 14px/1.3 var(--ui); color:var(--accent-light); }
-  .telefon details.prepis { text-align:left; margin:4px 4px 0; }
-
-  /* ako sa zapína: tri spôsoby, riadok kódu */
-  .zapnutie { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(260px,100%),1fr)); gap:24px 32px;
-    margin:0; padding:0; list-style:none; }
-  .zapnutie li { padding-top:16px; border-top:1px solid var(--line); min-width:0; }
-  .zapnutie li > b { display:block; margin-bottom:8px; font:600 20px/1.3 var(--display); color:var(--ink); }
-  .zapnutie p { margin:0 0 12px; font-size:16px; max-width:none; }
-  .zapnutie p a { color:var(--accent-light); }
-  .riadok { margin:0; padding:12px 14px; border-radius:12px; background:#161311; border:1px solid var(--line);
-    font:400 13px/1.55 var(--mono); color:var(--ink); white-space:pre-wrap; overflow-wrap:anywhere; }
-  .riadok code { display:block; background:none !important; border:0; padding:0; box-shadow:none; }
-  .formaty { margin:24px 0 0; font:400 15px/1.55 var(--ui); color:var(--body); max-width:72ch; }
-
-  /* námietky: prvá otázka otvorená, lebo je najčastejšia */
-  #namietky .pro-objections { margin-top:8px; max-width:78ch; }
-  .zaver-h2 { color:#fffdf8; margin:0 auto 10px; }
-  /* .band a { color:#fffdf8 } v paper.css prebilo tmavý text tlačidla: biela na #f2643c má 3,1 : 1 (Lighthouse) */
-  body.noc .band .btn-solid, body.noc .band .btn-solid:hover { color:#1a0d07; }
-</style>
 </head>
-<body class="noc nastroj">
+<body class="noc">
 <div class="wash" aria-hidden="true"><i></i><i></i></div>
 
 <a class="skip site-skip" href="#arling-obsah" data-site-label="skip">Prejsť na obsah</a>
@@ -370,128 +182,262 @@
     <nav id="hlavne-menu" class="site-main-nav" aria-label="Hlavná navigácia" data-site-aria="nav"><a href="https://arling.sk/#nastroje" data-site-nav="0">Nástroje</a><a href="https://arling.sk/#piloty" data-site-nav="1">Piloty</a><a href="https://arling.sk/notes/" data-site-nav="2">Návody</a><a href="https://arling.sk/how-we-work/" data-site-nav="3">O firme</a></nav>
     <a class="site-cta" href="https://arling.sk/asistent/#playground" data-site-cta="vlastne" data-cta-sk="https://arling.sk/asistent/#playground|Vyskúšať Asistenta zadarmo" data-cta-en="https://arling.sk/asistent/en/#playground|Try the Assistant free" data-cta-de="https://arling.sk/asistent/de/#playground|Assistenten kostenlos testen" data-cta-cs="https://arling.sk/asistent/#playground|Vyzkoušet Asistenta zdarma" data-umami-event="shell_cta">Vyskúšať Asistenta zadarmo</a>
     <div class="site-locales"><div class="lang-switch" role="group" aria-label="Jazyk stránky" data-i18n-aria-label="lang.switch.aria">
-      <button type="button" data-set-lang="sk" aria-pressed="true" aria-label="SK, slovenčina" data-i18n-aria-label="lang.sk.aria">SK</button>
-      <button type="button" data-set-lang="en" aria-pressed="false" aria-label="EN, angličtina" data-i18n-aria-label="lang.en.aria">EN</button>
-      <a class="lang-link" href="de/" hreflang="de" lang="de" aria-label="DE, nemčina (samostatná stránka)" data-i18n-aria-label="lang.de.aria">DE</a>
+      <a href="./" hreflang="sk" lang="sk" data-set-lang="sk" class="lang-active" aria-current="true" aria-label="SK, slovenčina" data-i18n-aria-label="lang.sk.aria">SK</a>
+      <a href="en/" hreflang="en" lang="en" data-set-lang="en" aria-label="EN, angličtina" data-i18n-aria-label="lang.en.aria">EN</a>
+      <a href="de/" hreflang="de" lang="de" data-set-lang="de" aria-label="DE, nemčina" data-i18n-aria-label="lang.de.aria">DE</a>
     </div></div>
   </div>
-  <div class="site-page-links"><div class="wrap"><p data-site-label="stranka">Na tejto stránke</p><nav aria-label="Na tejto stránke" data-site-aria="stranka"><a href="#odpovede" data-i18n="nav.answers">Odpovede</a><a href="#how" data-i18n="nav.how">Ako sa zapína</a><a href="#playground" data-i18n="nav.try">Vyskúšať</a><a href="#cennik" data-i18n="nav.pricing">Cenník</a><a href="#namietky" data-i18n="nav.faq">Otázky</a></nav></div></div>
+  <div class="site-page-links"><div class="wrap"><p data-site-label="stranka">Na tejto stránke</p><nav aria-label="Na tejto stránke" data-site-aria="stranka"><a href="#ako" data-i18n="nav.how">Ako to funguje</a><a href="#cennik" data-i18n="nav.pricing">Cenník</a><a href="#instalacia" data-i18n="nav.install">Inštalácia</a><a href="#playground" data-i18n="nav.try">Vyskúšať</a><a href="#otazky" data-i18n="nav.faq">Otázky</a></nav></div></div>
   <script src="/style/menu-sk.js" defer></script>
 </header>
 
 <main id="arling-obsah" tabindex="-1">
-  <div class="wrap hero hero-asistent" id="hero">
-    <div>
-      <!-- Z-36 (28. 9. 2026): produktové hero je statické (ops/design/PISMO-PRAVIDLA.md, časť 2), preto h1 nemá id="h1",
-           ktoré paper-motion.js rozkladá na slová a odkrýva. Písmo ARLing Draw Text zo súboru pismo/. -->
-      <h1 class="h1-asistent" data-i18n-html="hero.h1"><span class="l">Zákazník sa pýta.</span> <span class="l">Asistent odpovie</span> <span class="l">vašimi produktmi.</span></h1>
-      <p class="lead" data-i18n="hero.lead">Okienko v rohu e-shopu, ktoré radí pri výbere z vášho produktového feedu. Odpovedá v jazyku zákazníka aj večer, keď nikto nie je pri telefóne, a pod odpoveď pridá karty najviac troch odporúčaných produktov s cenou a odkazom.</p>
-      <p class="hero-cena" data-i18n-html="hero.price"><b>Zadarmo do 100 rozhovorov mesačne.</b> Potom od 19&nbsp;€ mesačne. Bez karty, zrušíte kedykoľvek.</p>
-      <div class="cta">
-        <a class="btn btn-solid" href="#playground" data-umami-event="trial_click" data-umami-event-place="hero" data-i18n="cta.tryOwn">Vyskúšať na vlastnom feede</a>
-        <a class="hero-druhy" href="ukazka/" data-umami-event="ukazka_click" data-umami-event-place="hero" data-i18n="hero.demo">Opýtať sa v ukážkovom obchode</a>
+<div class="sv">
+
+  <!-- 1. Úvod: text vľavo, vpravo skutočný widget v2 v štyroch stavoch (záložky = komponent Tabs z /motion/). -->
+  <div class="sv-hero">
+    <div class="wrap hero" id="hero">
+      <div class="sv-hero-text">
+        <p class="sv-stitok"><i aria-hidden="true"></i><span data-i18n="hero.kicker">AI predajný asistent pre e-shopy</span></p>
+        <h1 class="h1-asistent" data-i18n-html="hero.h1"><span class="l">Zákazník sa pýta.</span> <span class="l">Asistent odpovie</span> <span class="l">vašimi produktmi.</span></h1>
+        <p class="lead" data-i18n="hero.lead">Okno na okraji vášho e-shopu, ktoré radí pri výbere z vášho produktového feedu. Odpovie v jazyku zákazníka, aj večer, a pod odpoveď pridá výrobky s fotkou, cenou a odkazom.</p>
+        <p class="sv-cena" data-i18n-html="hero.price"><b>Zadarmo do 100 rozhovorov mesačne.</b> Potom od 19&nbsp;€ mesačne. Bez karty, zrušíte kedykoľvek.</p>
+        <div class="sv-akcie">
+          <a class="btn btn-solid" href="#playground" data-umami-event="trial_click" data-umami-event-place="hero" data-i18n="cta.tryOwn">Vyskúšať na vlastnom feede</a>
+          <a class="btn btn-line" href="ukazka/" data-umami-event="ukazka_click" data-umami-event-place="hero" data-i18n="cta.demo">Opýtať sa v ukážkovom obchode</a>
+        </div>
+        <ul class="sv-fakty">
+          <li data-i18n="hero.fact.platforms">WooCommerce · Shoptet · Upgates · Shopify</li>
+          <li data-i18n="hero.fact.langs">SK · CS · EN · DE</li>
+          <li data-i18n-html="hero.fact.stored"><b>0</b> uložených rozhovorov</li>
+        </ul>
       </div>
-      <ul class="facts proof">
-        <li data-i18n="hero.fact.platforms">WooCommerce · Shoptet · Upgates · Shopify</li>
-        <li data-i18n-html="hero.fact.stored"><b>0</b> rozhovorov sa ukladá</li>
-        <li data-i18n="hero.fact.langs">SK · CS · EN · DE</li>
-      </ul>
+
+      <figure class="sv-scena">
+        <div class="sv-scena-plocha am-tabs" data-snimky data-v3-bez>
+          <div class="sv-tabs am-tabs-list" role="tablist" aria-label="Stavy widgetu" data-i18n-aria-label="shots.aria">
+            <button type="button" role="tab" id="tab-odpoved" aria-controls="snimka-odpoved" aria-selected="true" data-i18n="shots.tab.answer">Odpoveď</button>
+            <button type="button" role="tab" id="tab-darcek" aria-controls="snimka-darcek" aria-selected="false" tabindex="-1" data-i18n="shots.tab.gift">Darček</button>
+            <button type="button" role="tab" id="tab-porovnanie" aria-controls="snimka-porovnanie" aria-selected="false" tabindex="-1" data-i18n="shots.tab.compare">Porovnanie</button>
+            <button type="button" role="tab" id="tab-uvod" aria-controls="snimka-uvod" aria-selected="false" tabindex="-1" data-i18n="shots.tab.welcome">Úvod</button>
+          </div>
+          <div class="sv-panely am-tabs-panels">
+            <div role="tabpanel" id="snimka-odpoved" aria-labelledby="tab-odpoved" tabindex="0">
+              <!-- LCP: výrez panela widgetu v2 (2x, ops/asistent/v2/stranka/POSTUP.md), 840 x 1600, 83 kB -->
+              <img src="/asistent/snimky/v2/panel-odpoved.webp" width="840" height="1600" loading="eager" fetchpriority="high" decoding="async" data-i18n-alt="shots.alt.answer"
+                   alt="Panel asistenta v ukážkovom obchode Dobrá domácnosť. Zákazník sa pýta: Mám indukčnú platňu. Ktorý hrniec mi bude na nej fungovať? Asistent odpovie, že na indukcii budú fungovať hrnce Ferrum Hron Inox FH-20 za 34,90 € a FH-24 za 44,90 € aj liatinová panvica za 49,90 €, a pod odpoveďou sú ich karty s fotkou, cenou a odkazom Pozrieť.">
+            </div>
+            <div role="tabpanel" id="snimka-darcek" aria-labelledby="tab-darcek" tabindex="0" hidden>
+              <img src="/asistent/snimky/v2/panel-darcek.webp" width="840" height="1600" loading="lazy" decoding="async" data-i18n-alt="shots.alt.gift"
+                   alt="Hľadač darčekov v paneli asistenta: pre mamu do 50 €. Päť návrhov s fotkou, cenou a krátkou vetou, prečo poteší: ručný mlynček na kávu za 34,90 €, dvojstenné poháre za 22,90 €, ručne točená keramická miska za 32,90 €, bylinkový čaj za 21,90 € a sada medu za 24,90 €.">
+            </div>
+            <div role="tabpanel" id="snimka-porovnanie" aria-labelledby="tab-porovnanie" tabindex="0" hidden>
+              <img src="/asistent/snimky/v2/panel-porovnanie.webp" width="840" height="1600" loading="lazy" decoding="async" data-i18n-alt="shots.alt.compare"
+                   alt="Porovnanie dvoch hrncov v paneli: odpoveď uvádza priemer, objem a cenu oboch a pod ňou sú Ferrum Hron Inox FH-20 za 34,90 € a FH-24 za 44,90 € vedľa seba s fotkami, pod lacnejším štítok o 10,00 € lacnejší.">
+            </div>
+            <div role="tabpanel" id="snimka-uvod" aria-labelledby="tab-uvod" tabindex="0" hidden>
+              <img src="/asistent/snimky/v2/panel-uvod.webp" width="840" height="1600" loading="lazy" decoding="async" data-i18n-alt="shots.alt.welcome"
+                   alt="Úvod panela asistenta: pozdrav obchodu, veta Odpovedám len z produktov tohto obchodu, rozhovor sa neukladá, dlaždice Nájsť darček, Porovnať a Doprava, kategórie s fotkami a príklady otázok.">
+            </div>
+          </div>
+        </div>
+        <figcaption class="sv-popis" data-i18n-html="shots.caption">Widget v2 v <a href="/asistent/ukazka/">ukážkovom obchode Dobrá domácnosť</a>. Obchod je vymyslený a fotky výrobkov vytvorila AI. Na snímkach sú skutočné odpovede Asistenta z 29. 9. 2026 zo 64 výrobkov feedu ukážky. Vlastné otázky si vyskúšate v ukážkovom obchode.</figcaption>
+      </figure>
     </div>
-    <figure class="telefon">
-      <div class="telefon-ram">
-        <!-- LCP obrázok: skutočná snímka chatu (ops/asistent/snimky-widgetu.mjs, 28. 9. 2026), 560 x 784, 34 kB. -->
-        <!-- Z-36 pokus 2: snímka s kávovarmi (dva produkty s parnou tryskou v popise, dve karty); hrnce s panvicou zo stránky preč. -->
-        <!-- Z-36 pokus 3 (brána Astry 2, nález 5): EN stránka má v úvode skutočnú anglickú odpoveď (data-i18n-src). -->
-        <img src="/asistent/snimky/odpoved-kavovar.webp" data-i18n-src="hero.shot.src" width="560" height="784" loading="eager" fetchpriority="high" decoding="async" data-i18n-alt="hero.shot.alt"
-             alt="Snímka chatu v ukážkovom obchode Dobrá domácnosť. Zákazník píše: Chcem si robiť cappuccino doma. Ktorý kávovar má parnú trysku na mlieko? Asistent ponúkne automatický kávovar Orava Uno s mlynčekom za 249 EUR a pákový kávovar Orava 15 bar za 189 EUR, pod odpoveďou sú ich dve karty produktov.">
-      </div>
-      <figcaption data-i18n-html="hero.shot.caption">Skutočná odpoveď z <a href="ukazka/">ukážkového obchodu</a>, 28. 9. 2026</figcaption>
-      <details class="prepis">
-        <summary data-i18n="prepis.summary">Prepis rozhovoru</summary>
-        <div data-i18n-html="hero.prepis"><dl><dt>Zákazník</dt><dd>Chcem si robiť cappuccino doma. Ktorý kávovar má parnú trysku na mlieko?</dd><dt>Asistent</dt><dd>Na výrobu cappuccina doma s parnou tryskou na mlieko odporúčam kávovar Orava Uno s mlynčekom, ktorý stojí 249.00 EUR, alebo pákový kávovar Orava 15 bar za 189.00 EUR.</dd><dt>Karty produktov</dt><dd>Automatický kávovar Orava Uno s mlynčekom, 249.00 EUR · Pákový kávovar Orava 15 bar, 189.00 EUR</dd></dl></div>
-        <a class="prepis-plna" href="/asistent/snimky/odpoved-kavovar.webp" data-i18n-href="hero.shot.src" data-i18n="prepis.full">Snímka v plnej veľkosti</a>
-      </details>
-    </figure>
   </div>
 
-  <section id="odpovede" class="deep">
+  <!-- 2. Ako to funguje -->
+  <section id="ako" class="sv-sekcia">
     <div class="wrap">
-      <h2 class="r" data-i18n="ans.h2">Takto odpovedá vašim zákazníkom</h2>
-      <div class="rule"></div>
-      <p class="sub r d1" data-i18n="ans.sub">Dve ďalšie skutočné snímky z ukážkového obchodu Dobrá domácnosť. Obchod aj jeho 64 výrobkov sú vymyslené, odpovede nie sú upravené, len orezané na okno chatu.</p>
-      <ol class="odpovede" role="list">
-        <li class="odpoved r d1">
-          <figure>
-            <img src="/asistent/snimky/odpoved-nevie.webp" width="560" height="784" loading="lazy" decoding="async" data-i18n-alt="ans.2.alt"
-                 alt="Zákazník píše: Máte aj mikrovlnnú rúru? Asistent odpovedá, že o mikrovlnnej rúre v katalógu nemá informáciu, a odkáže na kontaktný e-mail obchodu. Nezobrazí žiadny produkt.">
-            <figcaption><b data-i18n="ans.2.t">Tovar nemáte</b> <span data-i18n="ans.2.d">Povie to rovno a pošle zákazníka na váš kontakt. V ukážke je kontaktom náš e-mail.</span></figcaption>
-            <details class="prepis">
-              <summary data-i18n="prepis.summary">Prepis rozhovoru</summary>
-              <div data-i18n-html="ans.2.prepis"><dl><dt>Zákazník</dt><dd>Máte aj mikrovlnnú rúru?</dd><dt>Asistent</dt><dd>Nemám informáciu o mikrovlnnej rúre v našom katalógu, môžete sa obrátiť na andrej@arling.sk.</dd><dt>Karty produktov</dt><dd>žiadne</dd></dl></div>
-              <a class="prepis-plna" href="/asistent/snimky/odpoved-nevie.webp" data-i18n="prepis.full">Snímka v plnej veľkosti</a>
-            </details>
-          </figure>
+      <div class="sv-hlava">
+        <p class="kicker" data-i18n="how.kicker">Ako to funguje</p>
+        <h2 data-i18n="how.h2">Z feedu, ktorý už máte, za pár minút</h2>
+      </div>
+      <ol class="sv-kroky">
+        <li>
+          <span class="sv-cislo">01</span>
+          <h3 data-i18n="how.1.t">Vložíte adresu feedu</h3>
+          <p data-i18n="how.1.d">Heureka a Zboží.cz XML, Google Nákupy, Shopify, WooCommerce alebo bežný XML. Najviac 5 000 výrobkov.</p>
         </li>
-        <li class="odpoved r d2">
-          <figure>
-            <img src="/asistent/snimky/odpoved-anglicky.webp" data-i18n-src="ans.3.src" width="560" height="784" loading="lazy" decoding="async" data-i18n-alt="ans.3.alt"
-                 alt="Zákazník píše po anglicky: Do you have a small gift for my grandmother? Asistent odpovie po anglicky a ponúkne darčekovú sadu medu za 24.90 EUR a darčekový box bylinkových čajov za 21.90 EUR, s kartami produktov.">
-            <figcaption><b data-i18n="ans.3.t">Píše po anglicky</b> <span data-i18n="ans.3.d">Odpoveď príde v jazyku zákazníka, produkty a ceny ostanú tie z vášho feedu.</span></figcaption>
-            <details class="prepis">
-              <summary data-i18n="prepis.summary">Prepis rozhovoru</summary>
-              <div data-i18n-html="ans.3.prepis"><dl><dt>Zákazník</dt><dd lang="en">Do you have a small gift for my grandmother?</dd><dt>Asistent</dt><dd lang="en">Yes, I can help you with that. You can consider the Darčeková sada medu z podhoria, 3 × 250 g for 24.90 EUR or the Bylinkový čaj darčekový box, 4 druhy for 21.90 EUR.</dd><dt>Karty produktov</dt><dd>Darčeková sada medu z podhoria, 3 × 250 g, 24.90 EUR · Bylinkový čaj darčekový box, 4 druhy, 21.90 EUR</dd></dl></div>
-              <a class="prepis-plna" href="/asistent/snimky/odpoved-anglicky.webp" data-i18n-href="ans.3.src" data-i18n="prepis.full">Snímka v plnej veľkosti</a>
-            </details>
-          </figure>
+        <li>
+          <span class="sv-cislo">02</span>
+          <h3 data-i18n="how.2.t">Asistent si výrobky načíta</h3>
+          <p data-i18n="how.2.d">Rozdelí ich na časti a pripraví na vyhľadávanie, zvyčajne za pár minút. Z feedu ich potom sám obnovuje.</p>
+        </li>
+        <li>
+          <span class="sv-cislo">03</span>
+          <h3 data-i18n="how.3.t">Vložíte jeden riadok kódu</h3>
+          <p data-i18n-html="how.3.d">Pred <code>&lt;/body&gt;</code>, alebo doplnok pre WooCommerce. Farbu tlačidla a logo obchodu nastavíte v tom istom riadku.</p>
         </li>
       </ol>
-      <p class="odpovede-pozn r d2" data-i18n-html="ans.note">Odpovede tvorí AI nad vašimi produktmi, pri opakovaní sa môžu v znení trochu líšiť. Názov, cena a odkaz na karte sa berú priamo z feedu. <a href="ukazka/" data-umami-event="ukazka_click" data-umami-event-place="odpovede">Opýtajte sa sami v ukážkovom obchode</a>.</p>
+      <div class="sv-kod">
+        <p data-i18n="how.code.label">Riadok kódu, číslo účtu dostanete po skúške</p>
+        <pre aria-label="Ukážka riadku kódu" data-i18n-aria-label="how.code.aria"><code><span class="t">&lt;script</span> <span class="a">src</span>=<span class="v">"https://arling-asistent.arling.workers.dev/widget.js"</span> <span class="a">data-tenant</span>=<span class="v">"…"</span> <span class="a">data-lang</span>=<span class="v">"auto"</span> <span class="a">data-farba</span>=<span class="v">"#E0582A"</span> <span class="a">data-logo</span>=<span class="v">"https://vasobchod.sk/logo.svg"</span> <span class="a">defer</span><span class="t">&gt;&lt;/script&gt;</span></code></pre>
+      </div>
     </div>
   </section>
 
-  <section id="how">
+  <!-- 3. Odpoveď s kartami výrobkov -->
+  <section id="karty" class="sv-sekcia">
     <div class="wrap">
-      <h2 class="r" data-i18n="s1.h2">Ako sa zapína</h2>
-      <div class="rule"></div>
-      <p class="sub r d1" data-i18n="s1.sub">Produkty si Asistent berie z feedu, ktorý váš e-shop už má, a automaticky ich z neho obnovuje. Na stránku ho dostanete jedným z troch spôsobov.</p>
-      <ol class="zapnutie">
-        <li class="r d1">
-          <b data-i18n="s1.r1.title">WooCommerce</b>
-          <p data-i18n-html="s1.r1.body">Doplnok z wordpress.org: v administrácii Pluginy, Pridať nový, hľadať „ARLing“. Produkty si načíta z obchodu sám. <a href="woocommerce/">Návod pre WooCommerce</a></p>
-        </li>
-        <li class="r d2">
-          <b data-i18n="s1.r2.title">Shoptet a Upgates</b>
-          <p data-i18n-html="s1.r2.body">Feed pre Heureku, ktorý e-shop generuje sám, a jeden riadok kódu vložený ako HTML kód v administrácii. <a href="shoptet/">Návod pre Shoptet a Upgates</a></p>
-        </li>
-        <li class="r d3">
-          <b data-i18n="s1.r3.title">Akýkoľvek iný e-shop</b>
-          <p data-i18n-html="s1.r3.body">Jeden riadok pred <code>&lt;/body&gt;</code>. Presný riadok s číslom vášho účtu dostanete po skúške nižšie. Na <a href="shopify/">Shopify</a> rovnako, v šablóne.</p>
-          <pre class="riadok" aria-label="Ukážka riadku kódu"><code>&lt;script src="https://arling-asistent.arling.workers.dev/widget.js" data-tenant="…" data-lang="auto" defer&gt;&lt;/script&gt;</code></pre>
-        </li>
-      </ol>
-      <p class="formaty r d2" data-i18n-html="s1.formats">Formáty feedu: Heureka a Zboží.cz XML, Google Nákupy, Shopify <code>/products.json</code>, WooCommerce a bežný XML, najviac 5 000 produktov. Zdrojový kód widgetu aj servera je <a href="https://github.com/AndryRoby/arling-asistent" target="_blank" rel="noopener" data-umami-event="github_click" data-umami-event-place="how">verejný na GitHube</a>.</p>
+      <div class="sv-karty">
+        <figure class="sv-telefon">
+          <div class="sv-telefon-sklo">
+            <img src="/asistent/snimky/v2/mobil-karty.webp" width="660" height="1408" loading="lazy" decoding="async" data-i18n-alt="cards.phone.alt"
+                 alt="Asistent na telefóne ako list zospodu obrazovky: otázka Mám indukčnú platňu. Ktorý hrniec mi bude na nej fungovať?, odpoveď s cenami a pod ňou veľké karty hrncov s fotkou, cenou a odkazom Pozrieť. Pole na písanie je dole a nič ho neprekrýva.">
+          </div>
+        </figure>
+        <div>
+          <div class="sv-hlava">
+            <p class="kicker" data-i18n="cards.kicker">V rozhovore</p>
+            <h2 data-i18n="cards.h2">Odpoveď s fotkou, cenou a odkazom</h2>
+            <p data-i18n="cards.sub">Zákazník nemusí nič hľadať. Výrobky, o ktorých asistent hovorí, sú hneď pod odpoveďou a jedným klikom vedú na vašu stránku výrobku.</p>
+          </div>
+          <ul class="sv-vlastnosti">
+            <li>
+              <span class="sv-ikona" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3.5" width="16" height="17" rx="3"/><path d="M4 13.5h16M8 17h5"/></svg></span>
+              <div><h3 data-i18n="cards.1.t">Karty výrobkov priamo z feedu</h3><p data-i18n="cards.1.d">Názov, fotka, cena a odkaz sa berú z vášho feedu, nie z textu, ktorý napíše AI.</p></div>
+            </li>
+            <li>
+              <span class="sv-ikona" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h13l-3.5-3.5M19 16H6l3.5 3.5"/></svg></span>
+              <div><h3 data-i18n="cards.2.t">Porovnanie dvoch výrobkov</h3><p data-i18n="cards.2.d">Na požiadanie postaví dva výrobky vedľa seba a ukáže rozdiel v cene.</p></div>
+            </li>
+            <li>
+              <span class="sv-ikona" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="8" width="17" height="4.5" rx="1"/><path d="M5.5 12.5V20h13v-7.5M12 8v12M12 8C10.5 5 7 4.6 7 6.6 7 8 9.6 8 12 8zM12 8c1.5-3 5-3.4 5-1.4C17 8 14.4 8 12 8z"/></svg></span>
+              <div><h3 data-i18n="cards.3.t">Hľadač darčekov</h3><p data-i18n="cards.3.d">Pre koho a za koľko, potom päť návrhov s krátkym dôvodom.</p></div>
+            </li>
+            <li>
+              <span class="sv-ikona" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8.5a2 2 0 0 1-2 2h-7.5L6 20v-3.5A2 2 0 0 1 4 14.5z"/><path d="M8.5 8.5h7M8.5 12h4.5"/></svg></span>
+              <div><h3 data-i18n="cards.4.t">Keď tovar nemáte, povie to</h3><p data-i18n="cards.4.d">Odpovedá z vášho feedu a zákazníka pošle na váš kontakt. AI sa môže pomýliť, preto si odpovede pred zapnutím vyskúšajte.</p></div>
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="sv-upoutavka">
+        <img src="/asistent/snimky/v2/zatvoreny.webp" width="664" height="380" loading="lazy" decoding="async" data-i18n-alt="teaser.alt"
+             alt="Zatvorený asistent: medené tlačidlo Odpovedá AI v rohu obchodu a nad ním biela karta Poradiť vám s výberom? Odpovedám z produktov tohto obchodu, s krížikom na zavretie.">
+        <div>
+          <h3 data-i18n="teaser.t">Kým ho nikto nepotrebuje, je to jedno tlačidlo</h3>
+          <p data-i18n-html="teaser.d">Upútavka sa ukáže najviac raz za návštevu, dá sa zavrieť a po chvíli sama zmizne. Nič nebliká a nič neodpočítava. Ak ju nechcete, vypnete ju atribútom <code>data-upoutavka="0"</code>.</p>
+        </div>
+      </div>
     </div>
   </section>
 
-  <section id="playground" class="deep">
-    <div class="wrap">
-      <h2 class="r" data-i18n="s3.h2">Vyskúšajte na vlastnom feede</h2>
-      <div class="rule"></div>
-      <p class="sub r d1" data-i18n="s3.sub">Zadajte URL feedu produktov a e-mail. Za pár minút sa vpravo dole na tejto stránke objaví chat s vašimi vlastnými produktmi. Doménu odvodíme automaticky z URL feedu.</p>
+  <!-- 4. Jazyky a súkromie -->
+  <section id="jazyky" class="sv-sekcia">
+    <div class="wrap sv-dva">
+      <div>
+        <div class="sv-hlava">
+          <p class="kicker" data-i18n="langs.kicker">Jazyky</p>
+          <h2 data-i18n="langs.h2">Po slovensky, česky, anglicky aj nemecky</h2>
+          <p data-i18n-html="langs.sub">Okno má texty v štyroch jazykoch. S nastavením <code>data-lang="auto"</code> odpovedá v jazyku, v ktorom zákazník napíše. Názvy výrobkov ostávajú tak, ako sú vo feede.</p>
+        </div>
+        <ul class="sv-jazyky">
+          <li><span class="sv-kod-jazyka">SK</span><span class="nazov" data-i18n="langs.sk">slovenčina</span><q lang="sk">Aký kávovar do 100 eur?</q></li>
+          <li><span class="sv-kod-jazyka">CS</span><span class="nazov" data-i18n="langs.cs">čeština</span><q lang="cs">Jaký kávovar do 100 eur?</q></li>
+          <li><span class="sv-kod-jazyka">EN</span><span class="nazov" data-i18n="langs.en">angličtina</span><q lang="en">Which coffee maker is under 100 euros?</q></li>
+          <li><span class="sv-kod-jazyka">DE</span><span class="nazov" data-i18n="langs.de">nemčina</span><q lang="de">Welche Kaffeemaschine gibt es unter 100 Euro?</q></li>
+        </ul>
+      </div>
+      <div id="privacy">
+        <div class="sv-hlava">
+          <p class="kicker" data-i18n="privacy.kicker">Súkromie</p>
+          <h2 data-i18n="privacy.h2">Rozhovory sa neukladajú</h2>
+        </div>
+        <ul class="sv-sukromie">
+          <li><span class="sv-fajka" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <div><h3 data-i18n="privacy.1.t">Obsah správ nikde nepretrváva</h3><p data-i18n="privacy.1.d">Ani u nás, ani v databáze. Ukladáme len denné počítadlá rozhovorov a kliknutí na výrobok, kvôli limitu a fakturácii.</p></div></li>
+          <li><span class="sv-fajka" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <div><h3 data-i18n="privacy.2.t">Žiadne cookies ani localStorage</h3><p data-i18n="privacy.2.d">V sessionStorage karty prehliadača je len náhodný identifikátor relácie, podpísaný token rozhovoru a značka, že upútavka už bola. Po zatvorení karty zmiznú.</p></div></li>
+          <li><span class="sv-fajka" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <div><h3 data-i18n="privacy.3.t">Zmluva podľa čl. 28 GDPR</h3><p data-i18n-html="privacy.3.d">ARLing s. r. o. je pri správach návštevníkov vášho e-shopu sprostredkovateľom. <a href="https://github.com/AndryRoby/arling-asistent/blob/main/legal/dpa-sk.md" target="_blank" rel="noopener">Vzor zmluvy (DPA)</a>.</p></div></li>
+          <li><span class="sv-fajka" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <div><h3 data-i18n="privacy.4.t">Beh na sieti Cloudflare</h3><p data-i18n="privacy.4.d">Spracovanie len v EÚ Cloudflare verejne negarantuje, zmluva preto počíta so štandardnými zmluvnými doložkami (SCC) a EU Cloud Code of Conduct.</p></div></li>
+        </ul>
+        <details class="sv-viac">
+          <summary data-i18n="privacy.owner.summary">Čo ukladáme o vás ako majiteľovi obchodu</summary>
+          <p data-i18n-html="privacy.owner">Pri vytvorení Asistenta ukladáme váš e-mail, doménu, adresu feedu, zvolený jazyk, odkiaľ účet vznikol (formulár alebo doplnok) a udalosti účtu: pripravený, zapojený na webe, prvá otázka, limit, plán, overenie adresy a ktoré e-maily sme poslali. Zapojenie zisťujeme z domény stránky, ktorá Asistenta načíta; o návštevníkoch tým nič neukladáme. <b>E-maily:</b> len na adresu overenú 6-miestnym kódom (alebo firemnú adresu na doméne obchodu), najviac štyri za celý čas z týchto typov: návod na zapojenie, správa, ak sa výrobky nenačítajú, potvrdenie zapojenia, jedna pripomienka, upozornenie pri 80 % bezplatného limitu. Odkaz v každom z nich zastaví všetky ďalšie; ak ste Asistenta nevytvárali vy, na tej istej stránke to oznámite a na vašu adresu už nepríde nič. <b>Právny základ:</b> návod a správy o účte, ktorý ste si vytvorili, sú plnenie zmluvy (čl. 6 ods. 1 písm. b GDPR); potvrdenie zapojenia, pripomienka a upozornenie na limit sú náš oprávnený záujem (písm. f), ktorý odkazom v e-maile kedykoľvek odmietnete. <b>Kto údaje spracúva s nami:</b> Cloudflare (beh služby a databáza), Resend, Inc. z USA (odosielanie e-mailov, adresa a obsah e-mailu preto prechádzajú do USA) a náš vlastný CRM na našom serveri. <b>Ako dlho:</b> udalosti účtu 24 mesiacov, účet s e-mailom, kým ho nezrušíte; pri platenom pláne doklady po dobu, ktorú vyžaduje zákon o účtovníctve. Zmazanie účtu a údajov do 7 dní, vrátane záznamu v CRM: napíšte na podpora@arling.sk.</p>
+        </details>
+      </div>
+    </div>
+  </section>
 
-      <div class="trial r d2">
+  <!-- 5. Cenník -->
+  <section id="cennik" class="sv-sekcia">
+    <div class="wrap">
+      <div class="sv-hlava">
+        <p class="kicker" data-i18n="pricing.kicker">Cenník</p>
+        <h2 data-i18n="pricing.h2">Platíte podľa počtu rozhovorov</h2>
+        <p data-i18n="pricing.sub">Zadarmo navždy do 100 rozhovorov mesačne, bez karty. Nad tento limit mesačné predplatné, ročné zatiaľ neponúkame.</p>
+      </div>
+      <ul class="sv-plany">
+        <li class="sv-plan" data-svit>
+          <p class="sv-plan-meno">Free</p>
+          <p class="price">0&nbsp;€</p>
+          <p class="sv-plan-limit" data-i18n="plan.free.limit">do 100 rozhovorov mesačne</p>
+          <p class="sv-plan-pozn" data-i18n="plan.free.note">Navždy, bez platobnej karty.</p>
+          <a class="btn btn-solid" href="#playground" data-umami-event="trial_click" data-umami-event-place="pricing" data-i18n="cta.startFree">Začať zadarmo</a>
+        </li>
+        <li class="sv-plan" data-svit>
+          <p class="sv-plan-meno">Starter</p>
+          <p class="price">19&nbsp;€ <span data-i18n="pricing.perMonth">mesačne</span></p>
+          <p class="sv-plan-limit" data-i18n="plan.starter.limit">do 1 000 rozhovorov mesačne</p>
+          <p class="sv-plan-pozn" data-i18n="plan.paid.note">Kartou cez Stripe, zrušíte kedykoľvek.</p>
+          <!-- Platený plán sa kupuje na stránke účtu (tenant/?t=ID): Stripe potrebuje id účtu v client_reference_id, preto tu tlačidlo spúšťa skúšku. -->
+          <a class="btn btn-line" id="btn-plan-starter" href="#playground" data-umami-event="trial_click" data-umami-event-place="pricing-starter" data-i18n="cta.startFree">Začať zadarmo</a>
+        </li>
+        <li class="sv-plan" data-svit>
+          <p class="sv-plan-meno">Pro</p>
+          <p class="price">39&nbsp;€ <span data-i18n="pricing.perMonth">mesačne</span></p>
+          <p class="sv-plan-limit" data-i18n="plan.pro.limit">do 3 000 rozhovorov mesačne</p>
+          <p class="sv-plan-pozn" data-i18n="plan.paid.note">Kartou cez Stripe, zrušíte kedykoľvek.</p>
+          <a class="btn btn-line" id="btn-plan-pro" href="#playground" data-umami-event="trial_click" data-umami-event-place="pricing-pro" data-i18n="cta.startFree">Začať zadarmo</a>
+        </li>
+      </ul>
+      <p class="sv-plany-pozn" data-i18n="pricing.note">Každý plán začína skúškou zadarmo. Na platený plán prejdete zo stránky svojho účtu, jej odkaz dostanete hneď po vytvorení Asistenta.</p>
+    </div>
+  </section>
+
+  <!-- 6. Inštalácia -->
+  <section id="instalacia" class="sv-sekcia">
+    <div class="wrap">
+      <div class="sv-hlava">
+        <p class="kicker" data-i18n="install.kicker">Inštalácia</p>
+        <h2 data-i18n="install.h2">Na vašej platforme</h2>
+      </div>
+      <ul class="sv-platformy">
+        <li><a class="sv-riadok" href="/asistent/woocommerce/" data-i18n-href="install.woo.href"><b>WooCommerce</b><span data-i18n="install.woo.d">Doplnok z wordpress.org: Pluginy, Pridať nový, hľadať ARLing. Výrobky si načíta z obchodu sám.</span><em><span data-i18n="install.guide">Návod</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></em></a></li>
+        <li><a class="sv-riadok" href="/asistent/shoptet/"><b>Shoptet</b><span data-i18n="install.shoptet.d">Feed pre Heureku, ktorý obchod generuje sám, a jeden riadok vložený ako HTML kód v administrácii.</span><em><span data-i18n="install.guide.sk">Návod</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></em></a></li>
+        <li><a class="sv-riadok" href="/asistent/shoptet/"><b>Upgates</b><span data-i18n="install.upgates.d">Rovnaký postup ako Shoptet: feed pre Heureku a riadok kódu v administrácii.</span><em><span data-i18n="install.guide.sk">Návod</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></em></a></li>
+        <li><a class="sv-riadok" href="/asistent/shopify/" data-i18n-href="install.shopify.href"><b>Shopify</b><span data-i18n-html="install.shopify.d">Jeden riadok v šablóne, výrobky z <code>/products.json</code>. Aplikáciu v Shopify App Store nemáme.</span><em><span data-i18n="install.guide">Návod</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></em></a></li>
+        <li><a class="sv-riadok" href="#playground" data-umami-event="trial_click" data-umami-event-place="install"><b data-i18n="install.other.t">Iný e-shop</b><span data-i18n-html="install.other.d">Jeden riadok pred <code>&lt;/body&gt;</code>. Presný riadok s číslom vášho účtu dostanete po skúške.</span><em><span data-i18n="install.try">Vyskúšať</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></em></a></li>
+      </ul>
+      <p class="sv-zdroj" data-i18n-html="install.source">Zdrojový kód widgetu aj servera je <a href="https://github.com/AndryRoby/arling-asistent" target="_blank" rel="noopener">verejný na GitHube</a>.</p>
+    </div>
+  </section>
+
+  <!-- 7. Skúška na vlastnom feede (ids a správanie v app.js) -->
+  <section id="playground" class="sv-sekcia">
+    <div class="wrap sv-skuska">
+      <div class="sv-hlava">
+        <p class="kicker" data-i18n="s3.kicker">Skúška zadarmo</p>
+        <h2 data-i18n="s3.h2">Vyskúšajte na vlastnom feede</h2>
+        <p data-i18n="s3.sub">Zadajte adresu feedu a e-mail. Za pár minút sa vpravo dole na tejto stránke objaví asistent s vašimi vlastnými výrobkami. Doménu odvodíme z adresy feedu.</p>
+      </div>
+      <div class="trial">
         <form id="trial-form" novalidate>
           <div class="trial-grid">
-            <div class="field">
-              <label for="trial-feed-url" data-i18n="s3.label.feed">URL feedu produktov</label>
+            <div class="field field-cely">
+              <label for="trial-feed-url" data-i18n="s3.label.feed">Adresa feedu produktov</label>
               <input type="url" id="trial-feed-url" name="feed_url" placeholder="https://vasobchod.sk/feed.xml" data-i18n-placeholder="s3.placeholder.feed" aria-describedby="trial-feed-error" required>
             </div>
             <div class="field">
               <label for="trial-email" data-i18n="s3.label.email">E-mail</label>
-              <input type="email" id="trial-email" name="email" placeholder="vy@vasobchod.sk" data-i18n-placeholder="s3.placeholder.email" required>
+              <input type="email" id="trial-email" name="email" autocomplete="email" placeholder="vy@vasobchod.sk" data-i18n-placeholder="s3.placeholder.email" required>
             </div>
             <div class="field">
-              <label for="trial-lang" data-i18n="s3.label.lang">Jazyk Asistenta a e-mailov</label>
+              <label for="trial-lang" data-i18n="s3.label.lang">Jazyk asistenta a e-mailov</label>
               <select id="trial-lang" name="lang">
                 <option value="sk">Slovenčina</option>
                 <option value="cs">Čeština</option>
@@ -499,19 +445,19 @@
                 <option value="de">Deutsch</option>
               </select>
             </div>
-            <div class="field">
+            <div class="field field-cely">
               <button class="btn btn-solid" id="trial-submit" type="submit" data-umami-event="trial_submit" data-umami-event-place="playground" data-i18n="s3.submit">Spustiť skúšobnú verziu</button>
             </div>
           </div>
           <!-- chyba URL feedu patrí poľu (aria-describedby a aria-invalid v app.js), nie len stavovému riadku -->
           <p class="field-error" id="trial-feed-error" role="alert" hidden></p>
         </form>
-        <p class="trial-hint" data-i18n="s3.hint">Feed sa použije len na vytvorenie skúšobného asistenta pre túto ukážku. Samotný rozhovor v chate sa nikde neukladá. Zadarmo do 100 rozhovorov mesačne, žiadna platobná karta.</p>
-        <p class="trial-hint" data-i18n-html="s3.emailNote">Na zadaný e-mail najprv pošleme 6-miestny kód na overenie adresy. Až po overení vám k tomuto Asistentovi pošleme najviac štyri e-maily (návod na zapojenie alebo správu, prečo sa produkty nenačítali, potvrdenie zapojenia, jednu pripomienku a upozornenie pri 80 % limitu), každý s odkazom na zastavenie. Nič iné. <a href="#privacy">Čo o vás ukladáme</a>.</p>
+        <p class="trial-hint" data-i18n="s3.hint">Feed sa použije len na vytvorenie skúšobného asistenta. Samotný rozhovor v chate sa nikde neukladá. Zadarmo do 100 rozhovorov mesačne, žiadna platobná karta.</p>
+        <p class="trial-hint" data-i18n-html="s3.emailNote">Na zadaný e-mail najprv pošleme 6-miestny kód na overenie adresy. Až po overení vám k tomuto Asistentovi pošleme najviac štyri e-maily z týchto typov: návod na zapojenie alebo správa, prečo sa výrobky nenačítali, potvrdenie zapojenia, jedna pripomienka, upozornenie pri 80 % limitu. Každý má odkaz na zastavenie. Nič iné. <a href="#privacy">Čo o vás ukladáme</a>.</p>
         <p class="trial-status" id="trial-status" role="status" hidden></p>
-        <p class="trial-widget-note" id="trial-widget-note" hidden data-i18n="s3.widgetNote">Asistent je pripravený. Hľadajte okrúhle tlačidlo vpravo dole na tejto stránke.</p>
+        <p class="trial-widget-note" id="trial-widget-note" hidden data-i18n="s3.widgetNote">Asistent je pripravený. Hľadajte tlačidlo vpravo dole na tejto stránke.</p>
         <div class="embed-block" id="trial-embed" hidden>
-          <p class="embed-block-title" data-i18n="s3.embed.title">Váš embed kód</p>
+          <p class="embed-block-title" data-i18n="s3.embed.title">Váš kód na vloženie</p>
           <div class="embed-field">
             <label for="trial-embed-id" data-i18n="s3.embed.idLabel">ID skúšobného účtu</label>
             <div class="embed-row">
@@ -524,155 +470,43 @@
             <pre class="embed-snippet" id="trial-embed-snippet"></pre>
             <button type="button" class="btn btn-line embed-copy" id="trial-embed-copy-snippet" data-i18n="s3.embed.copy">Kopírovať</button>
           </div>
-          <p class="embed-note" data-i18n="s3.embed.note">Vložte pred &lt;/body&gt; vo vašej šablóne, alebo použite WooCommerce plugin.</p>
+          <p class="embed-note" data-i18n="s3.embed.note">Vložte pred &lt;/body&gt; vo vašej šablóne, alebo použite doplnok pre WooCommerce.</p>
           <p class="embed-note"><span data-i18n="s3.embed.tenantPage">Používanie a prechod na platený plán:</span> <a id="trial-tenant-link" href="tenant/">arling.sk/asistent/tenant/</a></p>
         </div>
       </div>
     </div>
   </section>
 
-  <section id="cennik">
+  <!-- 8. Otázky (FAQPage v JSON-LD sa skladá z tých istých kľúčov faq.*.q a faq.*.a) -->
+  <section id="otazky" class="sv-sekcia">
     <div class="wrap">
-      <h2 class="r" data-i18n="s2.h2">Cenník</h2>
-      <div class="rule"></div>
-      <p class="sub r d1" data-i18n="s2.sub">Zadarmo navždy do 100 rozhovorov mesačne, bez karty. Nad tento limit jednoduchá cena podľa počtu rozhovorov za mesiac. Ročné predplatné zatiaľ neponúkame, len mesačné.</p>
-      <div class="tablewrap r d2">
-        <table>
-          <thead>
-            <tr><th data-i18n="s2.th.plan">Plán</th><th data-i18n="s2.th.price">Cena</th><th data-i18n="s2.th.conversations">Rozhovory / mesiac</th><th><span class="sr" data-i18n="s2.th.action">Začať</span></th></tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td class="plan" data-th="Plán" data-i18n-th="s2.th.plan">Free</td>
-              <td class="price" data-th="Cena" data-i18n-th="s2.th.price">0&nbsp;&euro;</td>
-              <td data-i18n="pricing.limit.free" data-th="Rozhovory / mesiac" data-i18n-th="s2.th.conversations">do 100</td>
-              <td><a class="btn btn-line" href="#playground" data-umami-event="trial_click" data-umami-event-place="pricing" data-i18n="cta.startFree">Začať zadarmo</a></td>
-            </tr>
-            <tr>
-              <td class="plan" data-th="Plán" data-i18n-th="s2.th.plan">Starter</td>
-              <td class="price" data-th="Cena" data-i18n-th="s2.th.price">19 &euro;<span data-i18n="pricing.perMonth"> / mesiac</span></td>
-              <td data-i18n="pricing.limit.starter" data-th="Rozhovory / mesiac" data-i18n-th="s2.th.conversations">do 1&nbsp;000</td>
-              <!-- Paid plans are bought from the tenant page (tenant/?t=ID, linked after trial creation): the Stripe Payment Link needs the tenant id in client_reference_id, so here the button starts the free trial. -->
-              <td><a class="btn btn-line" id="btn-plan-starter" href="#playground" data-umami-event="trial_click" data-umami-event-place="pricing-starter" data-i18n="cta.startFree">Začať zadarmo</a></td>
-            </tr>
-            <tr>
-              <td class="plan" data-th="Plán" data-i18n-th="s2.th.plan">Pro</td>
-              <td class="price" data-th="Cena" data-i18n-th="s2.th.price">39 &euro;<span data-i18n="pricing.perMonth"> / mesiac</span></td>
-              <td data-i18n="pricing.limit.growth" data-th="Rozhovory / mesiac" data-i18n-th="s2.th.conversations">do 3&nbsp;000</td>
-              <td><a class="btn btn-line" id="btn-plan-pro" href="#playground" data-umami-event="trial_click" data-umami-event-place="pricing-pro" data-i18n="cta.startFree">Začať zadarmo</a></td>
-            </tr>
-          </tbody>
-        </table>
+      <div class="sv-hlava">
+        <p class="kicker" data-i18n="faq.kicker">Otázky</p>
+        <h2 data-i18n="faq.h2">Na čo sa pýtajú majitelia obchodov</h2>
       </div>
-      <p class="pricing-note" data-i18n="s2.note">Do 100 rozhovorov mesačne zadarmo, navždy, bez platobnej karty. Nad tento limit prejde e-shop na plán Starter (19 € mesačne, do 1 000 rozhovorov) alebo Pro (39 € mesačne, do 3 000) zo stránky svojho účtu, ktorej odkaz dostane hneď po vytvorení účtu. Platba kartou cez Stripe, zrušiť kedykoľvek. Ročné predplatné zatiaľ nie je v ponuke.</p>
-
-    </div>
-  </section>
-
-  <section id="namietky" class="deep">
-    <div class="wrap">
-      <h2 class="r" data-i18n="obj.h2">Na čo sa nás pýtajú majitelia obchodov</h2>
-      <div class="rule"></div>
-      <div class="pro-objections r d1">
-        <details open>
-          <summary data-i18n="objai.q">Čo keď AI povie hlúposť?</summary>
-          <p data-i18n-html="objai.a">Môže sa pomýliť, aj vo výbere produktu, preto má pevné mantinely. Odpovedá len z vášho feedu a kontaktu, text produktov berie ako dáta, nie ako pokyny, a keď tovar nemáte, povie to (snímka vyššie). Názov, cena a odkaz na karte produktu idú priamo z feedu, nie z textu, ktorý napíše AI. Najlepšie to posúdite na vlastných produktoch: skúška je zadarmo a na web ho vložíte, až keď sa vám odpovede páčia.</p>
-        </details>
-        <details open>
-          <summary data-i18n="objbudget.q">Dodrží rozpočet zákazníka?</summary>
-          <p data-i18n-html="objbudget.a">Pri otázke „do 30 €“ môže Asistent odporučiť aj drahší produkt. Cenový strop v bežnom chate zatiaľ nie je spoľahlivý filter. Ceny na produktových kartách preberáme z vášho feedu. Pred zapnutím si odpovede overte na vlastných produktoch.</p>
-        </details>
-        <details>
-          <summary data-i18n="obj1.q">Ukladáte rozhovory zákazníkov?</summary>
-          <p data-i18n="obj1.a">Nie. Obsah rozhovoru sa nikde neukladá, ani u nás, ani v databáze. Ukladáme len počítadlá: koľko rozhovorov a kliknutí na produkt sa za deň udialo, kvôli fakturácii a mesačnému limitu.</p>
-        </details>
-        <details>
-          <summary data-i18n="objlang.q">V akých jazykoch odpovedá?</summary>
-          <p data-i18n-html="objlang.a">Okienko má texty v slovenčine, češtine, angličtine a nemčine. S riadkom kódu z formulára (<code>data-lang="auto"</code>) odpovedá v jazyku, v ktorom zákazník napíše otázku; na snímke vyššie angličtina v slovenskom obchode. Názvy produktov ostávajú tak, ako sú vo vašom feede.</p>
-        </details>
-        <details>
-          <summary data-i18n="obj2.q">Máte zmluvu podľa čl. 28 GDPR?</summary>
-          <p data-i18n-html="obj2.a">Áno. ARLing s. r. o. je pri spracúvaní správ návštevníkov vášho e-shopu sprostredkovateľom. Vzor zmluvy: <a href="https://github.com/AndryRoby/arling-asistent/blob/main/legal/dpa-sk.md" target="_blank" rel="noopener">Zmluva o spracúvaní osobných údajov (DPA)</a>.</p>
-        </details>
-        <details>
-          <summary data-i18n="obj3.q">Ako zrušiť, keď mi to nesadne?</summary>
-          <p data-i18n-html="obj3.a">Voľný plán do 100 rozhovorov mesačne nemá žiadny záväzok ani kartu, jednoducho ho prestanete používať. Platený plán nad týmto limitom je predplatné cez Stripe. Predplatné zrušíte alebo zmeníte kedykoľvek na <a href="https://billing.stripe.com/p/login/3cIaER9M63hNeFcg8B4ko00">portáli Stripe</a> (prihlásenie e-mailom, ktorým ste platili); platí do konca zaplateného obdobia.</p>
-        </details>
-        <details>
-          <summary data-i18n="obj4.q">Čo ak môj feed nie je v žiadnom z podporovaných formátov?</summary>
-          <p data-i18n-html="obj4.a">Podporujeme Heureka/Zboží.cz XML (značky <code>SHOP/SHOPITEM</code>, exportuje ho napríklad Shoptet alebo Upgates), Google Shopping RSS/XML (značky <code>g:</code>), Shopify <code>/products.json</code>, WooCommerce REST/Store API JSON a bežný XML feed so značkami <code>item/name/price/url/description/image</code>. Iný formát vyskúšajte vo formulári vyššie; ak ho spracovanie odmietne, napíšte na podpora@arling.sk s ukážkou feedu.</p>
-        </details>
+      <div class="sv-otazky">
+        <details open><summary data-i18n="faq.ai.q">Čo keď AI povie hlúposť?</summary><p data-i18n-html="faq.ai.a">Môže sa pomýliť, aj vo výbere výrobku, preto má pevné mantinely. Odpovedá len z vášho feedu a kontaktu, text výrobkov berie ako dáta, nie ako pokyny, a keď tovar nemáte, povie to. Názov, cena a odkaz na karte idú priamo z feedu, nie z textu, ktorý napíše AI. Najlepšie to posúdite na vlastných výrobkoch: skúška je zadarmo a na web ho vložíte, až keď sa vám odpovede páčia.</p></details>
+        <details><summary data-i18n="faq.budget.q">Dodrží rozpočet zákazníka?</summary><p data-i18n-html="faq.budget.a">Pri otázke „do 30 €“ môže Asistent odporučiť aj drahší výrobok. Cenový strop v bežnom chate zatiaľ nie je spoľahlivý filter. Ceny na kartách výrobkov preberáme z vášho feedu. Pred zapnutím si odpovede overte na vlastných výrobkoch.</p></details>
+        <details><summary data-i18n="faq.setup.q">Ako dlho trvá nastavenie?</summary><p data-i18n-html="faq.setup.a">Vložíte adresu feedu a e-mail. Server feed stiahne, rozdelí na časti a pripraví na vyhľadávanie, zvyčajne do pár minút podľa veľkosti katalógu (najviac 5 000 výrobkov). Potom vložíte jeden riadok <code>&lt;script&gt;</code> do e-shopu alebo nainštalujete doplnok pre WooCommerce.</p></details>
+        <details><summary data-i18n="faq.formats.q">Aké formáty feedu podporujete?</summary><p data-i18n-html="faq.formats.a">Heureka a Zboží.cz XML (značky <code>SHOP/SHOPITEM</code>, exportuje ho napríklad Shoptet alebo Upgates), Google Nákupy RSS alebo XML (značky <code>g:</code>), Shopify <code>/products.json</code>, WooCommerce REST alebo Store API JSON a bežný XML feed so značkami <code>item/name/price/url/description/image</code>. Iný formát vyskúšajte vo formulári; ak ho spracovanie odmietne, napíšte na podpora@arling.sk s ukážkou feedu.</p></details>
+        <details><summary data-i18n="faq.stored.q">Ukladáte rozhovory zákazníkov?</summary><p data-i18n-html="faq.stored.a">Nie. Obsah rozhovoru sa nikde neukladá, ani u nás, ani v databáze. Ukladáme len počítadlá: koľko rozhovorov a kliknutí na výrobok sa za deň udialo, kvôli fakturácii a mesačnému limitu.</p></details>
+        <details><summary data-i18n="faq.lang.q">V akých jazykoch odpovedá?</summary><p data-i18n-html="faq.lang.a">Okno má texty v slovenčine, češtine, angličtine a nemčine. S riadkom kódu z formulára (<code>data-lang="auto"</code>) odpovedá v jazyku, v ktorom zákazník napíše otázku. Názvy výrobkov ostávajú tak, ako sú vo vašom feede.</p></details>
+        <details><summary data-i18n="faq.cantanswer.q">Čo ak asistent nevie odpovedať?</summary><p data-i18n-html="faq.cantanswer.a">Ak sa vo feede nenájde nič, čo k otázke patrí, asistent to jasne povie a odporučí zákazníkovi kontaktovať obchod priamo, na e-mail zadaný pri nastavení.</p></details>
+        <details><summary data-i18n="faq.platforms.q">Funguje to na Shoptete, WooCommerce alebo Shopify?</summary><p data-i18n-html="faq.platforms.a">Áno. Riadok kódu funguje na akomkoľvek e-shope, vložíte ho v administrácii alebo v šablóne. <a href="/asistent/woocommerce/">Doplnok pre WooCommerce</a> je schválený na wordpress.org. Na <a href="/asistent/shopify/">Shopify</a> sa asistent pridáva jedným riadkom v šablóne; aplikáciu v Shopify App Store nemáme. Pre Shoptet a Upgates je <a href="/asistent/shoptet/">samostatný návod</a>: feed pre Heureku z administrácie a riadok kódu ako HTML kód.</p></details>
+        <details><summary data-i18n="faq.gdpr.q">Máte zmluvu podľa čl. 28 GDPR?</summary><p data-i18n-html="faq.gdpr.a">Áno. ARLing s. r. o. je pri spracúvaní správ návštevníkov vášho e-shopu sprostredkovateľom. Vzor zmluvy: <a href="https://github.com/AndryRoby/arling-asistent/blob/main/legal/dpa-sk.md" target="_blank" rel="noopener">Zmluva o spracúvaní osobných údajov (DPA)</a>.</p></details>
+        <details><summary data-i18n="faq.datalocation.q">Kde bežia dáta?</summary><p data-i18n-html="faq.datalocation.a">Na globálnej sieti Cloudflare (Workers, Vectorize, D1). Presnú lokalitu spracovania len v EÚ Cloudflare verejne negarantuje, preto zmluva o spracúvaní osobných údajov (DPA) medzi ARLingom a e-shopom počíta so štandardnými zmluvnými doložkami (SCC) a Cloudflare EU Cloud Code of Conduct.</p></details>
+        <details><summary data-i18n="faq.billing.q">Ako funguje platba a fakturácia?</summary><p data-i18n-html="faq.billing.a">Do 100 rozhovorov mesačne je používanie úplne zadarmo, bez karty. Nad tento limit prejdete na plán Starter (19 € mesačne, do 1 000 rozhovorov) alebo Pro (39 € mesačne, do 3 000 rozhovorov) zo stránky svojho účtu, ktorej odkaz dostanete hneď po vytvorení účtu. Platíte kartou cez Stripe, potvrdenie a faktúru pošle Stripe e-mailom, zrušiť sa dá kedykoľvek.</p></details>
+        <details><summary data-i18n="faq.cancel.q">Ako zrušiť, keď mi to nesadne?</summary><p data-i18n-html="faq.cancel.a">Voľný plán do 100 rozhovorov mesačne nemá žiadny záväzok ani kartu, jednoducho ho prestanete používať. Platený plán nad týmto limitom je predplatné cez Stripe. Zrušíte alebo zmeníte ho kedykoľvek na <a href="https://billing.stripe.com/p/login/3cIaER9M63hNeFcg8B4ko00">portáli Stripe</a> (prihlásenie e-mailom, ktorým ste platili); platí do konca zaplateného obdobia.</p></details>
       </div>
-    </div>
-  </section>
 
-  <section id="privacy">
-    <div class="wrap">
-      <h2 class="r" data-i18n="s4.h2">Súkromie ako vlastnosť, nie dodatok</h2>
-      <div class="rule"></div>
-      <p class="sub r d1" data-i18n="s4.sub">Widget je postavený tak, aby o návštevníkoch vášho e-shopu vedel čo najmenej.</p>
-      <ul class="privacy-list">
-        <li class="r d1"><p data-i18n-html="s4.item1"><b>Rozhovory sa neukladajú.</b> Obsah správ nikde nepretrváva, ani u nás, ani v databáze. Ukladáme len denné počítadlá rozhovorov a kliknutí na produkt, kvôli mesačnému limitu a fakturácii.</p></li>
-        <li class="r d2"><p data-i18n-html="s4.item2"><b>Žiadne cookies ani localStorage.</b> Aby rozhovor v tej istej karte pokračoval, widget si v sessionStorage prehliadača drží len náhodný identifikátor relácie a podpísaný token rozhovoru, nie obsah správ. Po zatvorení karty zmiznú.</p></li>
-        <li class="r d3"><p data-i18n-html="s4.item3"><b>Feed produktov je jediný zdroj pravdy.</b> Asistent odpovedá len z toho, čo je vo vašom feede a v kontaktných údajoch, a text produktov berie ako dáta, nie ako pokyny. Aj tak sa môže pomýliť, preto si odpovede pred zapnutím vyskúšajte.</p></li>
-        <li class="r d4"><p data-i18n-html="s4.item4"><b>Zmluva podľa čl. 28 GDPR.</b> ARLing s. r. o. je pri spracúvaní správ návštevníkov vášho e-shopu sprostredkovateľom. Vzor zmluvy: <a href="https://github.com/AndryRoby/arling-asistent/blob/main/legal/dpa-sk.md" target="_blank" rel="noopener">Zmluva o spracúvaní osobných údajov (DPA)</a>.</p></li>
-        <li class="r d5"><p data-i18n-html="s4.item5"><b>Beh na globálnej sieti Cloudflare.</b> Presná EU-only lokalita spracovania Workers AI nie je Cloudflare verejne garantovaná; DPA preto počíta so štandardnými zmluvnými doložkami (SCC) a certifikáciou Cloudflare podľa EU Cloud Code of Conduct.</p></li>
-        <li class="r d5"><p data-i18n-html="s4.item6"><b>Údaje o vás ako majiteľovi obchodu.</b> Pri vytvorení Asistenta ukladáme váš e-mail, doménu, adresu feedu, zvolený jazyk, odkiaľ účet vznikol (formulár alebo plugin) a udalosti účtu: pripravený, zapojený na webe, prvá otázka, limit, plán, overenie adresy a ktoré e-maily sme poslali. Zapojenie zisťujeme z domény stránky, ktorá Asistenta načíta; o návštevníkoch tým nič neukladáme. <b>E-maily:</b> len na adresu overenú 6-miestnym kódom (alebo firemnú adresu na doméne obchodu), najviac štyri za celý čas: návod na zapojenie, správa, ak sa produkty nenačítajú, potvrdenie zapojenia, jedna pripomienka a upozornenie pri 80 % bezplatného limitu. Odkaz v každom z nich zastaví všetky ďalšie; ak ste Asistenta nevytvárali vy, na tej istej stránke to oznámite a na vašu adresu už nepríde nič. <b>Právny základ:</b> návod a správy o účte, ktorý ste si vytvorili, sú plnenie zmluvy (čl. 6 ods. 1 písm. b GDPR); potvrdenie zapojenia, pripomienka a upozornenie na limit sú náš oprávnený záujem (písm. f), ktorý odkazom v e-maile kedykoľvek odmietnete. <b>Kto údaje spracúva s nami:</b> Cloudflare (beh služby a databáza), Resend, Inc. z USA (odosielanie e-mailov, adresa a obsah e-mailu preto prechádzajú do USA) a náš vlastný CRM na našom serveri. <b>Ako dlho:</b> udalosti účtu 24 mesiacov, účet s e-mailom, kým ho nezrušíte; pri platenom pláne doklady po dobu, ktorú vyžaduje zákon o účtovníctve. Zmazanie účtu a údajov do 7 dní, vrátane záznamu v CRM: napíšte na podpora@arling.sk.</p></li>
-      </ul>
-    </div>
-  </section>
-
-  <section id="faq" class="deep">
-    <div class="wrap">
-      <h2 class="r" data-i18n="faqs.h2">Otázky</h2>
-<div class="rule"></div>
-
-      <details>
-        <summary data-i18n="faq.setup.q">Ako dlho trvá nastavenie?</summary>
-        <p data-i18n-html="faq.setup.a">Vložíte URL feedu produktov a e-mail. Worker feed stiahne, rozdelí na časti a uloží ako embeddings, zvyčajne do pár minút podľa veľkosti katalógu (limit je 5000 produktov). Potom stačí vložiť jeden <code>&lt;script&gt;</code> tag do e-shopu.</p>
-      </details>
-      <details>
-        <summary data-i18n="faq.formats.q">Aké formáty feedu podporujete?</summary>
-        <p data-i18n-html="faq.formats.a">Heureka/Zboží.cz XML (značky <code>SHOP/SHOPITEM</code>, exportuje ho napríklad Shoptet alebo Upgates), Google Shopping RSS/XML (značky <code>g:</code>), Shopify <code>/products.json</code>, WooCommerce REST/Store API JSON a bežný XML feed so značkami <code>item/name/price/url/description/image</code>.</p>
-      </details>
-      <details>
-        <summary data-i18n="obj1.q">Ukladáte rozhovory zákazníkov?</summary>
-        <p data-i18n="obj1.a">Nie. Obsah rozhovoru sa nikde neukladá, ani u nás, ani v databáze. Ukladáme len počítadlá: koľko rozhovorov a kliknutí na produkt sa za deň udialo, kvôli fakturácii a mesačnému limitu.</p>
-      </details>
-      <details>
-        <summary data-i18n="faq.lang.q">V akom jazyku asistent odpovedá?</summary>
-        <p data-i18n-html="faq.lang.a">Slovensky, česky, anglicky alebo nemecky, podľa nastavenia widgetu na stránke (<code>data-lang</code>). Odporúča len produkty z vášho feedu.</p>
-      </details>
-      <details>
-        <summary data-i18n="faq.cantanswer.q">Čo ak asistent nevie odpovedať?</summary>
-        <p data-i18n="faq.cantanswer.a">Ak sa vo feede nenájde nič relevantné k otázke, asistent to jasne povie a odporučí zákazníkovi kontaktovať obchod priamo, na e-mail zadaný pri nastavení.</p>
-      </details>
-      <details>
-        <summary data-i18n="faq.platforms.q">Funguje to aj na Shoptete, WooCommerce alebo Shopify?</summary>
-        <p data-i18n-html="faq.platforms.a">Skript funguje na akomkoľvek e-shope hneď, stačí vložiť jeden <code>&lt;script&gt;</code> tag do administrácie alebo šablóny. Samostatný <a href="woocommerce/">WooCommerce plugin</a> je schválený na wordpress.org, nainštalujete ho priamo v administrácii cez Plugins, Add New, vyhľadaním „ARLing“. Na <a href="shopify/">Shopify</a> sa asistent pridáva rovnako, jedným script tagom v šablóne; aplikáciu v Shopify App Store nemáme. Pre Shoptet a Upgates je samostatný <a href="shoptet/">návod</a>: Heureka XML feed z administrácie a script tag cez HTML kód. Ako widget vyzerá na slovenskom e-shope, ukazuje <a href="ukazka/">ukážkový obchod Dobrá domácnosť</a>.</p>
-      </details>
-      <details>
-        <summary data-i18n="faq.free.q">Čo je zadarmo?</summary>
-        <p data-i18n="faq.free.a">Do 100 rozhovorov mesačne, navždy, bez platobnej karty. Vyskúšať si to môžete priamo na tejto stránke s vlastným feedom, chat sa objaví vpravo dole.</p>
-      </details>
-      <details>
-        <summary data-i18n="faq.datalocation.q">Kde bežia dáta?</summary>
-        <p data-i18n="faq.datalocation.a">Na globálnej sieti Cloudflare (Workers, Vectorize, D1). Presná EU-only lokalita spracovania nie je Cloudflare verejne garantovaná, preto zmluva o spracúvaní osobných údajov (DPA) medzi ARLingom a e-shopom počíta so štandardnými zmluvnými doložkami (SCC) a Cloudflare EU Cloud Code of Conduct.</p>
-      </details>
-      <details>
-        <summary data-i18n="faq.billing.q">Ako funguje platba a fakturácia?</summary>
-        <p data-i18n="faq.billing.a">Do 100 rozhovorov mesačne je používanie úplne zadarmo, bez karty. Nad tento limit prejdete na plán Starter (19 € mesačne, do 1 000 rozhovorov) alebo Pro (39 € mesačne, do 3 000 rozhovorov) zo stránky svojho účtu (arling.sk/asistent/tenant/?t=id účtu), ktorej odkaz dostanete hneď po vytvorení účtu. Platíte kartou cez Stripe, potvrdenie a faktúru pošle Stripe e-mailom, zrušiť sa dá kedykoľvek.</p>
-      </details>
-
-      <div class="subscribe-ask r d1">
-        <p class="sub r d1" style="margin-bottom:14px" data-i18n="subscribe.ask">Chcete e-mail, keď pribudnú nové funkcie ARLing Asistenta?</p>
+      <div class="sv-odber">
+        <p data-i18n="subscribe.ask">Chcete e-mail, keď pribudnú nové funkcie ARLing Asistenta?</p>
         <form class="subscribe-form" data-subscribe data-source="asistent" data-lang="sk" data-thanks="subscribe-thanks" data-error="subscribe-error">
-          <input type="text" name="website" class="hp" tabindex="-1" autocomplete="off" aria-label="Toto pole nevypĺňajte">
-          <!-- Z-36 pokus 3 (brána Astry 2, nález 6): trvalá viditeľná menovka, placeholder ju nenahrádza -->
+          <input type="text" name="website" class="hp" tabindex="-1" autocomplete="off" aria-label="Toto pole nevypĺňajte" data-i18n-aria-label="subscribe.hp.aria">
           <label class="subscribe-label" for="subscribe-email" data-i18n="subscribe.label">Váš e-mail</label>
           <input type="email" id="subscribe-email" name="email" autocomplete="email" placeholder="vas@email.sk" data-i18n-placeholder="subscribe.email.placeholder" aria-describedby="subscribe-privacy" required>
-          <button class="btn btn-solid" type="submit" data-umami-event="subscribe_submit" data-umami-event-place="faq" data-i18n="subscribe.btn">Dajte mi vedieť</button>
-          <p class="subscribe-privacy trial-hint" id="subscribe-privacy" data-i18n="subscribe.privacy">Len e-mail o novinkách k ARLing Asistentovi. Odhlásenie kedykoľvek jedným klikom.</p>
+          <button class="btn btn-line" type="submit" data-umami-event="subscribe_submit" data-umami-event-place="faq" data-i18n="subscribe.btn">Dajte mi vedieť</button>
+          <p class="subscribe-privacy" id="subscribe-privacy" data-i18n="subscribe.privacy">Len e-mail o novinkách k ARLing Asistentovi. Odhlásenie kedykoľvek jedným klikom.</p>
         </form>
         <p id="subscribe-thanks" role="status" hidden data-i18n="subscribe.thanks">Ďakujeme, ozveme sa.</p>
         <p id="subscribe-error" role="alert" hidden data-i18n="subscribe.error">Niečo sa pokazilo, skúste to prosím znova alebo napíšte na podpora@arling.sk.</p>
@@ -680,13 +514,21 @@
     </div>
   </section>
 
-  <section id="closing-cta" class="band">
-    <div class="wrap" style="text-align:center;">
-      <h2 class="zaver-h2" data-i18n="closing.h2">Vyskúšajte ho na vlastných produktoch</h2>
-      <p class="sub" style="margin:0 auto 18px;" data-i18n="closing.sub">Vložte URL feedu a e-mail. Zadarmo do 100 rozhovorov mesačne, bez platobnej karty.</p>
-      <a class="btn btn-solid" href="#playground" data-umami-event="trial_click" data-umami-event-place="closing" data-i18n="cta.tryOwn">Vyskúšať na vlastnom feede</a>
+  <!-- 9. Záver -->
+  <section id="closing-cta" class="sv-sekcia sv-sekcia-zaver">
+    <div class="wrap">
+      <div class="sv-zaver">
+        <h2 data-i18n="closing.h2">Vyskúšajte ho na vlastných výrobkoch</h2>
+        <p data-i18n="closing.sub">Vložte adresu feedu a e-mail. Zadarmo do 100 rozhovorov mesačne, bez platobnej karty.</p>
+        <div class="sv-akcie">
+          <a class="btn btn-solid" href="#playground" data-umami-event="trial_click" data-umami-event-place="closing" data-i18n="cta.tryOwn">Vyskúšať na vlastnom feede</a>
+          <a class="btn btn-line" href="ukazka/" data-umami-event="ukazka_click" data-umami-event-place="closing" data-i18n="cta.demo">Opýtať sa v ukážkovom obchode</a>
+        </div>
+      </div>
     </div>
   </section>
+
+</div>
 
   <footer class="site-footer">
   <div class="wrap foot">
@@ -701,7 +543,7 @@
 </main>
 
 
-<div class="sticky-cta" id="sticky-cta" hidden>
+<div class="sticky-cta sv" id="sticky-cta" hidden>
   <div class="sticky-cta-inner">
     <span class="sticky-cta-text" data-i18n="sticky.text">Zadarmo do 100 rozhovorov mesačne.</span>
     <a class="btn btn-solid" href="#playground" data-umami-event="trial_click" data-umami-event-place="sticky" data-i18n="cta.tryShort">Vyskúšať</a>
@@ -711,9 +553,10 @@
 
 <script defer src="https://api.arling.workers.dev/script.js" data-website-id="09cc54da-8172-43b3-8aa2-84e3ab5a17f1"></script>
 <script type="module" src="i18n.js"></script>
+<script type="module" src="stranka.js"></script>
 <script src="subscribe.js" defer></script>
 <script src="app.js" defer></script>
 <script src="sell.js" defer></script>
-<script src="paper-motion.js" defer></script>
+<script src="/style/paper-pohyb.js?v=390cc609" defer></script>
 </body>
 </html>

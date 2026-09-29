@@ -30,10 +30,10 @@
   var PAGE_LANG = ((document.documentElement.getAttribute('lang') || 'sk').slice(0, 2)).toLowerCase();
   var STATUS_TEXT = {
     sk: {
-      slow: 'Spracovanie feedu trvá dlhšie ako obvykle. Skúste obnoviť stránku o chvíľu, alebo napíšte na podpora@arling.sk.',
+      slow: 'Spracovanie feedu trvá dlhšie ako obvykle. O chvíľu odošlite formulár znova a skontrolujeme stav, alebo napíšte na podpora@arling.sk.',
       ready: 'Hotovo. Chat s vaším asistentom je vpravo dole na tejto stránke (okrúhle tlačidlo). Opýtajte sa ho niečo o vašich produktoch.',
       readyAgain: 'Váš asistent už beží vpravo dole na tejto stránke (okrúhle tlačidlo). Stačí naň kliknúť.',
-      failed: 'Feed sa nepodarilo spracovať. Skontrolujte URL feedu, alebo napíšte na podpora@arling.sk.',
+      failed: 'Feed sa nepodarilo spracovať. Opravte URL feedu a odošlite formulár znova, alebo napíšte na podpora@arling.sk.',
       badUrl: 'URL feedu musí byť platná adresa (https://vaseshop.sk/feed.xml).',
       working: 'Sťahujeme a spracúvame váš feed produktov...',
       createFailed: 'Nepodarilo sa vytvoriť skúšobný účet: ',
@@ -48,10 +48,10 @@
       codeFailed: 'Kód na overenie adresy sa nepodarilo poslať. Asistent funguje aj tak, kód na vloženie nájdete nižšie; ak chcete návod e-mailom, napíšte na podpora@arling.sk.',
     },
     en: {
-      slow: 'Processing your feed is taking longer than usual. Reload the page in a moment, or write to support@arling.sk.',
+      slow: 'Processing your feed is taking longer than usual. Submit the form again in a moment and we will check the status, or write to support@arling.sk.',
       ready: 'Done. Your assistant is in the bottom right corner of this page (the round button). Ask it something about your products.',
       readyAgain: 'Your assistant is already running in the bottom right corner of this page (the round button). Just click it.',
-      failed: 'We could not process the feed. Check the feed URL, or write to support@arling.sk.',
+      failed: 'We could not process the feed. Correct the feed URL and submit the form again, or write to support@arling.sk.',
       badUrl: 'The feed URL must be a valid address (https://yourshop.com/feed.xml).',
       working: 'Downloading and processing your product feed...',
       createFailed: 'Could not create the trial account: ',
@@ -66,10 +66,10 @@
       codeFailed: 'We could not send the verification code. The assistant works anyway and the embed code is below; if you want the instructions by e-mail, write to support@arling.sk.',
     },
     de: {
-      slow: 'Die Verarbeitung des Feeds dauert länger als üblich. Laden Sie die Seite gleich neu oder schreiben Sie an support@arling.sk.',
+      slow: 'Die Verarbeitung des Feeds dauert länger als üblich. Senden Sie das Formular gleich erneut ab, dann prüfen wir den Stand, oder schreiben Sie an support@arling.sk.',
       ready: 'Fertig. Ihr Assistent ist unten rechts auf dieser Seite (der runde Knopf). Fragen Sie ihn etwas zu Ihren Produkten.',
       readyAgain: 'Ihr Assistent läuft bereits unten rechts auf dieser Seite (der runde Knopf). Einfach anklicken.',
-      failed: 'Der Feed konnte nicht verarbeitet werden. Prüfen Sie die Feed-URL oder schreiben Sie an support@arling.sk.',
+      failed: 'Der Feed konnte nicht verarbeitet werden. Korrigieren Sie die Feed-URL und senden Sie das Formular erneut ab, oder schreiben Sie an support@arling.sk.',
       badUrl: 'Die Feed-URL muss eine gültige Adresse sein (https://ihrshop.de/feed.xml).',
       working: 'Ihr Produktfeed wird geladen und verarbeitet...',
       createFailed: 'Das Testkonto konnte nicht erstellt werden: ',
@@ -100,13 +100,33 @@
   // wrong instead of always showing the same generic "check the fields"
   // text regardless of cause.
   var TENANT_ERROR_MESSAGES = {
-    invalid_json: 'Neplatná požiadavka (poškodené dáta formulára).',
-    validation_failed: 'Skontrolujte polia formulára.',
-    origin_not_allowed: 'Táto stránka nemá povolený prístup k API (CORS).',
-    rate_limited: 'Príliš veľa požiadaviek naraz. Skúste to o chvíľu.',
-    payload_too_large: 'Požiadavka je príliš veľká.',
-    quota_exceeded: 'Dnešný limit skúšobných účtov bol dosiahnutý.',
-    internal_error: 'Nastala chyba na strane servera.',
+    sk: {
+      invalid_json: 'Neplatná požiadavka (poškodené dáta formulára).',
+      validation_failed: 'Skontrolujte polia formulára.',
+      origin_not_allowed: 'Táto stránka nemá povolený prístup k API (CORS).',
+      rate_limited: 'Príliš veľa požiadaviek naraz. Skúste to o chvíľu.',
+      payload_too_large: 'Požiadavka je príliš veľká.',
+      quota_exceeded: 'Dnešný limit skúšobných účtov bol dosiahnutý.',
+      internal_error: 'Nastala chyba na strane servera.',
+    },
+    en: {
+      invalid_json: 'Invalid request (the form data is damaged).',
+      validation_failed: 'Check the form fields.',
+      origin_not_allowed: 'This page is not allowed to use the API (CORS).',
+      rate_limited: 'Too many requests at once. Try again in a moment.',
+      payload_too_large: 'The request is too large.',
+      quota_exceeded: 'Today\'s limit of trial accounts has been reached.',
+      internal_error: 'Something went wrong on our server.',
+    },
+    de: {
+      invalid_json: 'Ungültige Anfrage (die Formulardaten sind beschädigt).',
+      validation_failed: 'Prüfen Sie die Formularfelder.',
+      origin_not_allowed: 'Diese Seite darf die API nicht verwenden (CORS).',
+      rate_limited: 'Zu viele Anfragen auf einmal. Versuchen Sie es gleich noch einmal.',
+      payload_too_large: 'Die Anfrage ist zu groß.',
+      quota_exceeded: 'Das heutige Limit für Testkonten ist erreicht.',
+      internal_error: 'Auf unserem Server ist ein Fehler aufgetreten.',
+    },
   };
 
   /** Turn a POST /v1/tenants error response body into a Slovak-language detail string, or null if there is nothing usable to show. */
@@ -114,7 +134,8 @@
     if (!err) return null;
     var code = typeof err === 'string' ? err : err.error;
     if (!code) return null;
-    var text = TENANT_ERROR_MESSAGES[code] || code;
+    var spravy = TENANT_ERROR_MESSAGES[pageLang()] || TENANT_ERROR_MESSAGES.en;
+    var text = spravy[code] || code;
     var issues = err && Array.isArray(err.issues) && err.issues.length ? ' (' + err.issues.join(', ') + ')' : '';
     return text + issues;
   }
@@ -345,9 +366,15 @@
     return true;
   }
 
-  function poll(tenantId, lang, triesLeft) {
+  // Opätovné odoslanie formulára (oprava feedu, nový kód) začne nové sledovanie;
+  // staré sa zastaví, aby jeho neskorá odpoveď neprepísala nový stav.
+  var pollGen = 0;
+
+  function poll(tenantId, lang, triesLeft, gen) {
+    if (gen !== pollGen) return;
     if (triesLeft <= 0) {
       setStatus(T('slow'), 'warn');
+      submitBtn.disabled = false;
       return;
     }
     fetch(ENDPOINT + '/v1/tenants/' + encodeURIComponent(tenantId) + '/status')
@@ -356,6 +383,7 @@
         return res.json();
       })
       .then(function (data) {
+        if (gen !== pollGen) return;
         if (data.status === 'ready') {
           var novy = injectWidget(tenantId, lang);
           setStatus(T(novy ? 'ready' : 'readyAgain'), 'ok');
@@ -363,13 +391,16 @@
           showEmbedCode(tenantId);
         } else if (data.status === 'error') {
           setStatus(T('failed'), 'error');
+          submitBtn.disabled = false;
+          nastavNeplatne(feedInput, true);
+          feedInput.focus();
           track('trial_error', { lang: lang });
         } else {
-          setTimeout(function () { poll(tenantId, lang, triesLeft - 1); }, POLL_INTERVAL_MS);
+          setTimeout(function () { poll(tenantId, lang, triesLeft - 1, gen); }, POLL_INTERVAL_MS);
         }
       })
       .catch(function () {
-        setTimeout(function () { poll(tenantId, lang, triesLeft - 1); }, POLL_INTERVAL_MS);
+        setTimeout(function () { poll(tenantId, lang, triesLeft - 1, gen); }, POLL_INTERVAL_MS);
       });
   }
 
@@ -478,7 +509,9 @@
         .then(function (r) {
           if (!r.ok || !r.body || !r.body.token) {
             var chyba = r.body && r.body.error;
-            overenieSprava(T(chyba === 'no_code' || (chyba === 'bad_code' && r.body.remaining === 0) ? 'verifyExpired' : 'verifyBad'), 'error');
+            var vyprsal = chyba === 'no_code' || (chyba === 'bad_code' && r.body.remaining === 0);
+            overenieSprava(T(vyprsal ? 'verifyExpired' : 'verifyBad'), 'error');
+            if (vyprsal) submitBtn.disabled = false; // nový kód príde po opätovnom odoslaní formulára
             btn.disabled = false;
             return null;
           }
@@ -548,6 +581,7 @@
     }
 
     submitBtn.disabled = true;
+    var gen = ++pollGen;
     setStatus(T('working'), 'pending');
     track('trial_start', { lang: lang });
     odstranOverenie();
@@ -569,7 +603,7 @@
         return res.json();
       })
       .then(function (tenant) {
-        poll(tenant.id, lang, POLL_MAX_TRIES);
+        poll(tenant.id, lang, POLL_MAX_TRIES, gen);
         // Uložený token mohol medzitým prestať platiť (odhlásenie všade): worker
         // vtedy vráti overeny: false a pýtame kód znova.
         if (token && tenant.overeny !== true) zabudniToken();
