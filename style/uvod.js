@@ -64,6 +64,39 @@
     setTimeout(spusti, 1800);
   }
 
+  /* Lightbox snímky Asistenta v hero (Andrej 29. 9. 2026: „lightbox, nie prepojenie na obrázok“).
+     Bez JS ostáva obyčajný odkaz na snímku; s JS sa otvorí <dialog> nad stránkou. Beží aj pri
+     zníženom pohybe, preto stojí pred návratom nižšie. */
+  var panelHero = document.querySelector('.hero a.ramec-odkaz');
+  if (panelHero && typeof HTMLDialogElement === 'function') {
+    var lb = document.createElement('dialog');
+    lb.className = 'lightbox';
+    lb.setAttribute('aria-label', panelHero.getAttribute('aria-label') || '');
+    var lbZavri = document.createElement('button');
+    lbZavri.type = 'button';
+    lbZavri.className = 'lightbox-zavri';
+    lbZavri.setAttribute('aria-label', panelHero.getAttribute('data-zavri') || 'Zavrieť');
+    lbZavri.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>';
+    var lbObr = document.createElement('img');
+    lbObr.alt = (panelHero.querySelector('img') || {}).alt || '';
+    lbObr.decoding = 'async';
+    lb.appendChild(lbZavri);
+    lb.appendChild(lbObr);
+    document.body.appendChild(lb);
+    panelHero.addEventListener('click', function (e) {
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.button > 0) return;
+      e.preventDefault();
+      var mobil = window.matchMedia('(max-width: 760px)').matches && panelHero.getAttribute('data-mobil');
+      lbObr.src = mobil || panelHero.getAttribute('href');
+      // Udalosť ručne: s data-umami-event na odkaze by Umami po odoslaní samo prešlo na href a lightbox obišlo.
+      try { if (window.umami && typeof window.umami.track === 'function') window.umami.track('hub_hero_zoom'); } catch (err) { /* meranie nesmie zhodiť lightbox */ }
+      lb.showModal();
+      lbZavri.focus();
+    });
+    lbZavri.addEventListener('click', function () { lb.close(); });
+    lb.addEventListener('click', function (e) { if (e.target === lb) lb.close(); });
+  }
+
   if (ticho.matches) {
     document.querySelectorAll('.zjav').forEach(function (el) { el.classList.add('je'); });
     return;

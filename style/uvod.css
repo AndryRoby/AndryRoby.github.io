@@ -277,8 +277,7 @@ footer{border-top:1px solid var(--linka);background:var(--noc-2);padding:60px 0 
 .hero .karta{transition:opacity .6s var(--pero) var(--d,0s),transform .6s var(--pero) var(--d,0s)}
 .pred .hero .karta{opacity:0;transform:translateY(12px) scale(.97)}
 .hero .k1{--d:.32s}.hero .k2{--d:.40s}.hero .k3{--d:.48s}
-.hero .panel{transition:opacity .7s var(--pero) .12s,transform .7s var(--pero) .12s}
-.pred .hero .panel{opacity:0;transform:translateY(22px)}
+
 
 /* Light Rays: sedem medených lúčov zhora, 2D rotate a opacity. */
 .luce{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0;isolation:isolate;--luc-farba:rgba(255,170,120,.22)}
@@ -307,7 +306,8 @@ footer{border-top:1px solid var(--linka);background:var(--noc-2);padding:60px 0 
 .pilulka:hover{border-color:rgba(242,100,60,.5)}
 .pilulka:active{transform:scale(.97);transition-duration:.1s}
 .pilulka i{width:6px;height:6px;border-radius:50%;background:var(--med);box-shadow:0 0 0 4px rgba(242,100,60,.18)}
-.pilulka b{font-weight:500;color:var(--telo)}
+.pilulka b{font-weight:500;background:linear-gradient(90deg,var(--telo) 0%,var(--telo) 40%,#fff 50%,var(--telo) 60%,var(--telo) 100%);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:lesk 3.2s linear infinite}
+@keyframes lesk{from{background-position:180% 0}to{background-position:-20% 0}}
 .pilulka svg{width:14px;height:14px;transition:transform .2s var(--tik)}
 .pilulka:hover svg{transform:translateX(3px)}
 
@@ -425,18 +425,19 @@ footer{border-top:1px solid var(--linka);background:var(--noc-2);padding:60px 0 
 
 /* Hero Asistenta (29. 9. 2026, ops/hub/2026-09-29-hero/ROZHODNUTIE.md): vľavo sľub, cena a jedno tlačidlo,
    vpravo skutočná snímka panelu widgetu orezaná pod kartami výrobkov, pod ňou poctivý podpis. */
-.hero-mriezka{grid-template-columns:minmax(0,1fr) minmax(300px,440px);column-gap:clamp(40px,6vw,110px)}
-html[lang="de"] .hero h1{font-size:clamp(34px,3.9vw,56px)}
-html[lang="en"] .hero h1{font-size:clamp(36px,4.4vw,64px)}
+.hero h1{font-size:clamp(36px,3.7vw,58px)}
+html[lang="de"] .hero h1{font-size:clamp(34px,3.3vw,52px)}
+html[lang="en"] .hero h1{font-size:clamp(36px,3.5vw,56px)}
+/* Rám so snímkou obchodu presahuje wrap, ale končí 24 px pred okrajom okna: panel Asistenta je na pravom okraji snímky a nesmie sa odrezať. */
+.hero .scena{margin-right:calc((100vw - var(--wrap)) / -2 + 24px)}
 .hero-text .lead{max-width:48ch}
 .cena{margin-top:18px;font-size:17px;line-height:1.5;color:var(--telo);max-width:48ch}
 .cena b{color:var(--ink);font-weight:600}
 .hero .akcie{margin-top:28px}
-.scena{margin:0}
-.hero .scena{margin-right:0;justify-self:end;width:100%}
-.panel{display:block;position:relative;z-index:1;border-radius:22px;cursor:zoom-in;overflow:hidden;aspect-ratio:840/1140;background:#f7f5f2;border:1px solid rgba(255,255,255,.18);box-shadow:0 1px 0 rgba(255,255,255,.10) inset,0 40px 90px -30px rgba(0,0,0,.95),0 0 0 8px rgba(255,255,255,.025)}
-.panel img{display:block;width:100%;height:100%;object-fit:cover;object-position:top}
-.panel::after{content:"";position:absolute;left:0;right:0;bottom:0;height:14px;pointer-events:none;background:linear-gradient(180deg,rgba(247,245,242,0),rgba(247,245,242,.92))}
+.scena{margin-top:0;margin-bottom:0;margin-left:0}
+.ramec-odkaz{display:block;cursor:zoom-in;color:inherit;text-decoration:none}
+.ramec-odkaz picture{display:block}
+.hero .ramec-odkaz .hero-obr{display:block;width:100%;height:auto}
 .hero .podpis{position:relative;z-index:1;margin-top:16px;font-size:13.5px;line-height:1.5;color:#cfc9c3}
 .ceny{display:flex;align-items:baseline;gap:10px 22px;flex-wrap:wrap}
 .ceny-stitok{flex:none;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--tichy)}
@@ -446,16 +447,26 @@ html[lang="en"] .hero h1{font-size:clamp(36px,4.4vw,64px)}
 .hero .tichy-odkaz:hover{text-decoration-color:var(--zhaslo)}
 @media (max-width:1180px){
   .hero-mriezka{grid-template-columns:1fr}
-  .hero .scena{order:2;justify-self:start;max-width:440px}
+  .hero .scena{order:2}
   .hero .ceny{order:3}
   .ceny ul{display:grid;grid-template-columns:repeat(2,minmax(0,max-content));gap:6px 40px}
   .ceny li+li::before{display:none}
 }
 @media (max-width:760px){
   .hero h1 .riadok{display:block}
-  .hero .scena{order:2;max-width:none}
+  .hero .scena{order:2}
+  .hero .ramec{max-height:none}
+  .hero .ramec-odkaz .hero-obr{width:100%;max-width:100%;aspect-ratio:var(--panel-pomer);object-fit:cover;object-position:top;background:#f7f5f2}
   .hero .ceny{order:3;margin-top:8px;display:block}
   .ceny-stitok{margin-bottom:8px}
   .ceny ul{grid-template-columns:1fr}
   .cena{font-size:16px}
 }
+/* Lightbox snímky v hero (style/uvod.js). */
+.lightbox{padding:0;border:0;background:transparent;overflow:visible;max-width:94vw;max-height:94vh}
+.lightbox::backdrop{background:rgba(8,7,6,.88)}
+.lightbox img{display:block;width:auto;height:auto;max-width:94vw;max-height:88vh;border-radius:22px;box-shadow:0 40px 90px -30px rgba(0,0,0,.95)}
+.lightbox-zavri{position:absolute;top:-16px;right:-16px;width:44px;height:44px;border-radius:50%;border:1px solid var(--linka-2);background:#15110f;color:var(--ink);cursor:pointer;display:grid;place-items:center;padding:0}
+.lightbox-zavri svg{width:18px;height:18px}
+.lightbox-zavri:focus-visible{outline:2px solid var(--zhaslo);outline-offset:2px}
+@media (max-width:560px){.lightbox-zavri{top:10px;right:10px}}
