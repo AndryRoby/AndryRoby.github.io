@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://api.arling.workers.dev 'sha256-Au66Kqzz483LGTiXhM4+ulP0lNsHTYA+uNqtS5jS1fc='; connect-src 'self' https://api.arling.workers.dev https://arling-asistent.arling.workers.dev; style-src 'self'; img-src 'self' data:; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://api.arling.workers.dev; connect-src 'self' https://api.arling.workers.dev https://arling-asistent.arling.workers.dev; style-src 'self'; img-src 'self' data:; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
 <meta name="color-scheme" content="light">
 <meta name="theme-color" content="#E0582A">
 <link rel="preconnect" href="https://arling-asistent.arling.workers.dev" crossorigin>
@@ -19,6 +19,8 @@
 <meta property="og:image" content="https://arling.sk/asistent/icon-512.png">
 <link rel="canonical" href="https://arling.sk/asistent/ukazka/">
 <link rel="alternate" hreflang="sk" href="https://arling.sk/asistent/ukazka/">
+<link rel="alternate" hreflang="en" href="https://arling.sk/asistent/ukazka/en/">
+<link rel="alternate" hreflang="de" href="https://arling.sk/asistent/ukazka/de/">
 <link rel="alternate" hreflang="x-default" href="https://arling.sk/asistent/ukazka/">
 <link rel="manifest" href="../manifest.json">
 <!--
@@ -27,33 +29,8 @@
   Stránku vykresľuje ukazka.js z feed.xml (Heureka XML); ten istý feed spracoval worker pre demo tenanta.
   Widget vkladá ukazka.js (parametre adresy ?farba=, ?rezim=, ?upoutavka= len na predvádzanie).
 -->
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "WebPage",
-  "name": "Dobrá domácnosť: ukážkový obchod ARLing Asistenta",
-  "url": "https://arling.sk/asistent/ukazka/",
-  "inLanguage": "sk",
-  "description": "Vymyslený slovenský e-shop so 64 výrobkami v 6 kategóriách, na ktorom si návštevník vyskúša AI predavača ARLing Asistent. Výrobky nie sú skutočné, fotky výrobkov vytvorila AI a nedá sa tu nakupovať.",
-  "isPartOf": { "@type": "WebSite", "name": "ARLing Asistent", "url": "https://arling.sk/asistent/" },
-  "about": {
-    "@type": "SoftwareApplication",
-    "name": "ARLing Asistent",
-    "url": "https://arling.sk/asistent/",
-    "applicationCategory": "BusinessApplication",
-    "operatingSystem": "Any (web browser, jeden <script> tag)"
-  },
-  "publisher": {
-    "@type": "Organization",
-    "name": "ARLing s. r. o.",
-    "url": "https://arling.sk/",
-    "email": "podpora@arling.sk",
-    "address": { "@type": "PostalAddress", "streetAddress": "Ivanská cesta 19112/32E", "addressLocality": "Bratislava", "postalCode": "821 04", "addressCountry": "SK" }
-  }
-}
-</script>
 <link rel="preload" href="/fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="ukazka.css">
+<link rel="stylesheet" href="ukazka.css?v=20260929-i18n">
 </head>
 <body>
 <a class="preskocit" href="#obsah">Prejsť na obsah</a>
@@ -68,6 +45,7 @@
 <header class="hlavicka">
   <div class="obal riadok">
     <a class="logo" href="./" aria-label="Dobrá domácnosť, úvod obchodu"><img src="img/logo.svg" width="204" height="40" alt=""></a>
+    <nav class="jazyky" aria-label="Jazyk obchodu"><a href="/asistent/ukazka/" lang="sk" hreflang="sk" aria-label="SK, Slovenčina" aria-current="page">SK</a><a href="/asistent/ukazka/en/" lang="en" hreflang="en" aria-label="EN, English">EN</a><a href="/asistent/ukazka/de/" lang="de" hreflang="de" aria-label="DE, Deutsch">DE</a></nav>
     <div class="hladanie" role="search">
       <label for="hladat">Hľadať výrobky</label>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
@@ -87,8 +65,8 @@
           <h1 id="nadpis-uvod">Veci do domácnosti, ktoré vydržia</h1>
           <p>Hrnce, kávovary, náradie do záhrady a darčeky, ku každému poctivý popis, cena a dostupnosť. Keď neviete, čo vybrať, opýtajte sa predavača vpravo dole.</p>
           <div class="akcie">
-            <a class="btn btn-plne" href="#vyrobky" id="pozriet-kavovary" data-umami-event="ukazka_kavovary">Pozrieť kávovary</a>
-            <button class="btn btn-obrys" type="button" id="opytat-sa" data-umami-event="demo_sk_open">Opýtať sa predavača</button>
+            <a class="btn btn-plne" href="#vyrobky" id="pozriet-kavovary" data-umami-event="ukazka_kavovary" data-umami-event-lang="sk">Pozrieť kávovary</a>
+            <button class="btn btn-obrys" type="button" id="opytat-sa" data-umami-event="demo_sk_open" data-umami-event-lang="sk">Opýtať sa predavača</button>
           </div>
         </div>
         <div class="kolaz" id="kolaz" aria-hidden="true"><span class="miesto"></span><span class="miesto"></span><span class="miesto"></span></div>
@@ -131,7 +109,7 @@
   </div>
 </footer>
 
-<script src="ukazka.js" defer></script>
+<script src="ukazka.js?v=20260929-i18n" defer></script>
 <script defer src="https://api.arling.workers.dev/script.js" data-website-id="09cc54da-8172-43b3-8aa2-84e3ab5a17f1"></script>
 </body>
 </html>

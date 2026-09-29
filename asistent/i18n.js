@@ -65,6 +65,7 @@ export const DICT = {
     de: '<b>Kostenlos bis 100 Gespräche im Monat.</b> Danach ab 19&nbsp;€ im Monat. Ohne Karte, jederzeit kündbar.',
   },
   'cta.tryOwn': { sk: 'Vyskúšať na vlastnom feede', en: 'Try it on your own feed', de: 'Mit eigenem Feed testen' },
+  'cta.demo.href': { sk: '/asistent/ukazka/', en: '/asistent/ukazka/en/', de: '/asistent/ukazka/de/' },
   'cta.demo': { sk: 'Opýtať sa v ukážkovom obchode', en: 'Ask in the demo shop', de: 'Im Demoshop fragen' },
   'hero.fact.platforms': { sk: 'WooCommerce · Shoptet · Upgates · Shopify', en: 'WooCommerce · Shoptet · Upgates · Shopify', de: 'WooCommerce · Shoptet · Upgates · Shopify' },
   'hero.fact.langs': { sk: 'SK · CS · EN · DE', en: 'SK · CS · EN · DE', de: 'SK · CS · EN · DE' },
@@ -98,8 +99,8 @@ export const DICT = {
   },
   'shots.caption': {
     sk: 'Widget v2 v <a href="/asistent/ukazka/">ukážkovom obchode Dobrá domácnosť</a>. Obchod je vymyslený a fotky výrobkov vytvorila AI. Na snímkach sú skutočné odpovede Asistenta z 29. 9. 2026 zo 64 výrobkov feedu ukážky. Vlastné otázky si vyskúšate v ukážkovom obchode.',
-    en: 'Widget v2 in our Slovak <a href="/asistent/ukazka/">demo shop Dobrá domácnosť</a>. The shop is made up and the product photos were made with AI. The screenshots show real answers of the assistant from 29 September 2026, drawn from the demo feed of 64 products. Try your own questions in the demo shop.',
-    de: 'Widget v2 in unserem slowakischen <a href="/asistent/ukazka/">Demoshop Dobrá domácnosť</a>. Der Shop ist erfunden und die Produktfotos hat eine KI erstellt. Die Aufnahmen zeigen echte Antworten des Assistenten vom 29. September 2026 aus dem Demo-Feed mit 64 Produkten. Eigene Fragen probieren Sie im Demoshop aus.',
+    en: 'The screenshots show real answers in Slovak from 29 September 2026, using the 64 products in our fictional demo shop Dobrá domácnosť. The product photos were made with AI. Try your own questions in English in <a href="/asistent/ukazka/en/">Good Home, the English demo shop</a>.',
+    de: 'Die Aufnahmen zeigen echte Antworten auf Slowakisch vom 29. September 2026 zu den 64 Produkten unseres erfundenen Demoshops Dobrá domácnosť. Die Produktfotos wurden mit KI erstellt. Stellen Sie eigene Fragen auf Deutsch in <a href="/asistent/ukazka/de/">Gutes Zuhause, dem deutschen Demoshop</a>.',
   },
 
   // ── how it works ─────────────────────────────────────────────────────

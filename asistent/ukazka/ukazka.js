@@ -1,5 +1,5 @@
 /*
- * ukazka.js: obchod "Dobrá domácnosť", vymyslený slovenský e-shop na ukážku ARLing Asistenta
+ * ukazka.js: obchod "Dobrá domácnosť", vymyslený e-shop v SK, EN a DE na ukážku ARLing Asistenta
  * (ops/asistent/v2/SPEC.md, časť 9). Vykreslí katalóg z feed.xml (ten istý Heureka feed, ktorý
  * spracoval worker pre demo tenanta), skutočné vyhľadávanie a filter, detail výrobku na #p-ID
  * (s JSON-LD Product, z ktorého widget berie kontext) a vloží widget.
@@ -17,6 +17,69 @@
   // Výstup scripts/kategorie-z-feedu.mjs pre feed.xml (test ukazka-v2 ho porovná s feedom).
   var KATEGORIE = [{"nazov":"Darčeky","obrazok":"https://arling.sk/asistent/ukazka/img/DAR-001.svg"},{"nazov":"Kávovary a čaj","obrazok":"https://arling.sk/asistent/ukazka/img/KAV-001.svg"},{"nazov":"Kuchyňa","obrazok":"https://arling.sk/asistent/ukazka/img/KUC-001.svg"}];
   var ZIVY = 'https://arling.sk/asistent/ukazka/';
+
+
+  var JAZYK = /^(en|de)$/.test(document.documentElement.lang) ? document.documentElement.lang : 'sk';
+  var ZAKLAD = new URL(JAZYK === 'sk' ? './' : '../', location.href);
+  var TEXTY = {
+    sk: {
+      obchod: 'Dobrá domácnosť', vsetko: 'Všetko', detail: 'Detail', obchodLink: 'Obchod',
+      skladom: 'Skladom', objednavka: 'Na objednávku',
+      dodanie: function (n) { return 'Do ' + n + (n === '1' ? ' dňa' : ' dní'); },
+      pocet: function (n) { return n + (n === 1 ? ' výrobok' : n >= 2 && n <= 4 ? ' výrobky' : ' výrobkov'); },
+      spolu: function (n, k) { return this.pocet(n) + ' v ' + k + ' kategóriách, všetko z jedného feedu.'; },
+      hladanie: function (q) { return ' pre „' + q + '“'; },
+      opytat: 'Opýtať sa predavača na tento výrobok',
+      otazka: function (n) { return 'Čo treba vedieť o produkte ' + n + ' pred kúpou?'; },
+      nedakupit: 'Do košíka sa tu pridať nedá, obchod je vymyslený.',
+      spat: 'Späť na všetky výrobky', ukazka: 'ukážka',
+      chyba: 'Výrobky sa nepodarilo načítať. Skúste stránku obnoviť, alebo otvorte feed.xml priamo.'
+    },
+    en: {
+      tenant: '75354c54-c99a-4853-8c23-de9aa6ff13c5', obchod: 'Good Home',
+      poradie: ['Kitchen', 'Coffee and tea', 'Garden', 'Cleaning', 'Children', 'Gifts'],
+      pozdrav: 'Hello, how can I help? Ask about a product, compare two items or find a gift. I will answer using the Good Home catalogue.',
+      otazky: ['Which coffee machine costs under €100?', 'Do you have a gift for grandma?', 'Which pot works on induction?', 'Which garden products are in stock?'],
+      vsetko: 'All', detail: 'Details', obchodLink: 'Shop', skladom: 'In stock', objednavka: 'Available to order',
+      dodanie: function (n) { return 'Dispatch within ' + n + (n === '1' ? ' day' : ' days'); },
+      pocet: function (n) { return n + (n === 1 ? ' product' : ' products'); },
+      spolu: function (n, k) { return this.pocet(n) + ' in ' + k + ' categories, all from one feed.'; },
+      hladanie: function (q) { return ' for “' + q + '”'; },
+      opytat: 'Ask the assistant about this product',
+      otazka: function (n) { return 'What should I know about ' + n + ' before buying?'; },
+      nedakupit: 'You cannot add items to a basket here. This shop is fictional.',
+      spat: 'Back to all products', ukazka: 'demo',
+      chyba: 'Products could not be loaded. Refresh the page or open feed.xml directly.'
+    },
+    de: {
+      tenant: '080e07bb-37b9-40e3-8c3b-14e4d24b79c8', obchod: 'Gutes Zuhause',
+      poradie: ['Küche', 'Kaffee und Tee', 'Garten', 'Reinigung', 'Kinder', 'Geschenke'],
+      pozdrav: 'Guten Tag, wie kann ich Ihnen helfen? Fragen Sie nach einem Produkt, vergleichen Sie zwei Artikel oder suchen Sie ein Geschenk. Ich antworte anhand des Sortiments von Gutes Zuhause.',
+      otazky: ['Welche Kaffeemaschine kostet unter 100 €?', 'Haben Sie ein Geschenk für Oma?', 'Welcher Topf eignet sich für Induktion?', 'Welche Gartenprodukte sind auf Lager?'],
+      vsetko: 'Alle', detail: 'Details', obchodLink: 'Shop', skladom: 'Auf Lager', objednavka: 'Auf Bestellung',
+      dodanie: function (n) { return 'Versand innerhalb von ' + n + (n === '1' ? ' Tag' : ' Tagen'); },
+      pocet: function (n) { return n + (n === 1 ? ' Produkt' : ' Produkte'); },
+      spolu: function (n, k) { return this.pocet(n) + ' in ' + k + ' Kategorien, alle aus einem Feed.'; },
+      hladanie: function (q) { return ' für „' + q + '“'; },
+      opytat: 'Den Assistenten zu diesem Produkt fragen',
+      otazka: function (n) { return 'Was sollte ich vor dem Kauf über ' + n + ' wissen?'; },
+      nedakupit: 'Hier gibt es keinen Warenkorb. Dieser Shop ist erfunden.',
+      spat: 'Zurück zu allen Produkten', ukazka: 'Demo',
+      chyba: 'Die Produkte konnten nicht geladen werden. Laden Sie die Seite neu oder öffnen Sie feed.xml direkt.'
+    }
+  };
+  var T = TEXTY[JAZYK];
+  if (JAZYK !== 'sk') {
+    TENANT = T.tenant;
+    PORADIE = T.poradie;
+    POZDRAV = T.pozdrav;
+    OTAZKY = T.otazky;
+    KATEGORIE = [5, 1, 0].map(function (i, n) {
+      return { nazov: PORADIE[i], obrazok: ZIVY + 'img/' + ['DAR-001', 'KAV-001', 'KUC-001'][n] + '.svg' };
+    });
+  }
+  var FEED = new URL((JAZYK === 'sk' ? '' : JAZYK + '/') + 'feed.xml', ZAKLAD).href;
+  var LOGO = new URL(JAZYK === 'sk' ? 'img/logo.svg' : JAZYK + '/logo.svg', ZAKLAD).href;
 
   var vyrobky = [];
   var filter = '';
@@ -39,23 +102,23 @@
 
   function cena(raw) {
     var n = Number(String(raw).replace(',', '.'));
-    return isFinite(n) ? n.toFixed(2).replace('.', ',') + ' €' : String(raw);
+    return isFinite(n) ? (JAZYK === 'en' ? '€' + n.toFixed(2) : n.toFixed(2).replace('.', ',') + ' €') : String(raw);
   }
 
   function dostupnost(d) {
     d = String(d || '').trim();
-    if (d === '0') return { text: 'Skladom', trieda: 'dost-ok' };
-    if (/^\d+$/.test(d)) return { text: 'Do ' + d + (d === '1' ? ' dňa' : ' dní'), trieda: 'dost-caka' };
-    return { text: 'Na objednávku', trieda: 'dost-caka' };
+    if (d === '0') return { text: T.skladom, trieda: 'dost-ok' };
+    if (/^\d+$/.test(d)) return { text: T.dodanie(d), trieda: 'dost-caka' };
+    return { text: T.objednavka, trieda: 'dost-caka' };
   }
 
   function pocetSlovom(n) {
-    return n + (n === 1 ? ' výrobok' : n >= 2 && n <= 4 ? ' výrobky' : ' výrobkov');
+    return T.pocet(n);
   }
 
   /** Na živom webe adresy z feedu, lokálne (náhľad, snímky) tie isté súbory z tohto priečinka. */
   function lokalne(url) {
-    return location.origin + location.pathname.replace(/[^/]*$/, '') === ZIVY ? url : String(url).replace(ZIVY, new URL('./', location.href).href);
+    return String(url).replace(ZIVY, ZAKLAD.href);
   }
 
   // ------------------------------------------------------------------
@@ -66,19 +129,17 @@
     var q = new URLSearchParams(location.search);
     var farba = /^[0-9a-fA-F]{6}$/.test(q.get('farba') || '') ? '#' + q.get('farba') : '#E0582A';
     var rezim = /^(tmavy|svetly|auto)$/.test(q.get('rezim') || '') ? q.get('rezim') : 'svetly';
-    // Jazyk rozhrania widgetu pre snímky úvodu v EN a DE (29. 9. 2026); obchod aj feed ostávajú slovenské.
-    var ui = /^(sk|en|de|cs)$/.test(q.get('ui') || '') ? q.get('ui') : 'sk';
     var s = document.createElement('script');
     var attrs = {
       'data-tenant': TENANT,
       'data-endpoint': ENDPOINT,
-      'data-lang': ui,
+      'data-lang': JAZYK,
       'data-answer-lang': 'auto',
       'data-gift': '1',
       'data-farba': farba,
       'data-rezim': rezim,
-      'data-obchod': 'Dobrá domácnosť',
-      'data-logo': 'img/logo.svg',
+      'data-obchod': T.obchod,
+      'data-logo': LOGO,
       // Bez data-meno: spúšťač nesie predvolené „Odpovedá AI“ (overenie 1: „Predavač“ patril k starému vzhľadu).
       'data-greeting': POZDRAV,
       'data-doprava': '#doprava',
@@ -89,6 +150,7 @@
     if (q.get('upoutavka') === 'hned') attrs['data-upoutavka-oneskorenie'] = '0';
     Object.keys(attrs).forEach(function (k) { s.setAttribute(k, attrs[k]); });
     s.src = '../widget.js';
+    if (JAZYK !== 'sk') s.src = '../../widget.js';
     document.body.appendChild(s);
   }
 
@@ -121,7 +183,7 @@
         kategoria: kat[0] || '',
         podkategoria: kat[1] || '',
         dodanie: text(it, 'DELIVERY_DATE'),
-        obrazok: 'img/' + encodeURIComponent(text(it, 'ITEM_ID')) + '.svg',
+        obrazok: new URL('img/' + encodeURIComponent(text(it, 'ITEM_ID')) + '.svg', ZAKLAD).href,
         parametre: Array.prototype.map.call(it.getElementsByTagName('PARAM'), function (p) {
           return [text(p, 'PARAM_NAME'), text(p, 'VAL')];
         }).filter(function (p) { return p[0] && p[1]; }),
@@ -132,8 +194,8 @@
   /** Fotka výrobku (v2.2): štvorec 640 x 640, podložku počas načítania dáva ukazka.css. */
   function obrazok(src, alt, lenivo) {
     var i = el('img');
-    i.src = src;
-    i.alt = alt || '';
+    i.setAttribute('src', src);
+    i.setAttribute('alt', alt || '');
     i.width = 640;
     i.height = 640;
     i.decoding = 'async';
@@ -159,20 +221,20 @@
     menu.textContent = '';
     dlazdice.textContent = '';
     filtre.textContent = '';
-    var vsetky = el('button', null, 'Všetko');
+    var vsetky = el('button', null, T.vsetko);
     vsetky.type = 'button';
     vsetky.setAttribute('data-kategoria', '');
     filtre.appendChild(vsetky);
     kat.forEach(function (k) {
       var li = el('li');
       var a = el('a', null, k.nazov);
-      a.href = '#k-' + slug(k.nazov);
+      a.setAttribute('href', '#k-' + slug(k.nazov));
       li.appendChild(a);
       menu.appendChild(li);
 
       var d = el('li');
       var da = el('a');
-      da.href = '#k-' + slug(k.nazov);
+      da.setAttribute('href', '#k-' + slug(k.nazov));
       da.appendChild(obrazok(k.vyrobky[0].obrazok, '', true));
       da.appendChild(el('b', null, k.nazov));
       da.appendChild(el('span', null, pocetSlovom(k.vyrobky.length)));
@@ -190,7 +252,7 @@
       filter = b.getAttribute('data-kategoria') || '';
       vykresliMriezku();
     });
-    document.getElementById('pocet-spolu').textContent = pocetSlovom(vyrobky.length) + ' v ' + kat.length + ' kategóriách, všetko z jedného feedu.';
+    document.getElementById('pocet-spolu').textContent = T.spolu(vyrobky.length, kat.length);
     var kolaz = document.getElementById('kolaz');
     kolaz.textContent = '';
     ['KAV-001', 'KUC-009', 'DAR-004'].forEach(function (id) {
@@ -212,20 +274,20 @@
       li.appendChild(obrazok(v.obrazok, '', true));
       var h = el('h3');
       var a = el('a', null, v.nazov);
-      a.href = '#p-' + v.id;
+      a.setAttribute('href', '#p-' + v.id);
       h.appendChild(a);
       li.appendChild(h);
       li.appendChild(el('div', 'cena', cena(v.cena)));
       var d = dostupnost(v.dodanie);
       li.appendChild(el('div', 'dostupnost ' + d.trieda, d.text));
-      var det = el('a', 'detail', 'Detail');
-      det.href = '#p-' + v.id;
-      det.setAttribute('aria-label', 'Detail: ' + v.nazov);
+      var det = el('a', 'detail', T.detail);
+      det.setAttribute('href', '#p-' + v.id);
+      det.setAttribute('aria-label', T.detail + ': ' + v.nazov);
       li.appendChild(det);
       mriezka.appendChild(li);
     });
     document.getElementById('prazdne').hidden = zoznam.length > 0;
-    document.getElementById('pocet-zobrazenych').textContent = (filter ? filter + ': ' : '') + pocetSlovom(zoznam.length) + (q ? ' pre „' + hladane.trim() + '“' : '');
+    document.getElementById('pocet-zobrazenych').textContent = (filter ? filter + ': ' : '') + pocetSlovom(zoznam.length) + (q ? T.hladanie(hladane.trim()) : '');
     Array.prototype.forEach.call(document.querySelectorAll('#filtre button'), function (b) {
       b.setAttribute('aria-pressed', String((b.getAttribute('data-kategoria') || '') === filter));
     });
@@ -249,10 +311,10 @@
     var obsah = document.getElementById('detail-obsah');
     obsah.textContent = '';
     var cesta = el('p', 'drobceky');
-    var a1 = el('a', null, 'Obchod');
+    var a1 = el('a', null, T.obchodLink);
     a1.href = '#vyrobky';
     var a2 = el('a', null, v.kategoria);
-    a2.href = '#k-' + slug(v.kategoria);
+    a2.setAttribute('href', '#k-' + slug(v.kategoria));
     cesta.appendChild(a1);
     cesta.appendChild(document.createTextNode(' › '));
     cesta.appendChild(a2);
@@ -286,16 +348,17 @@
       pravy.appendChild(t);
     }
     var akcie = el('div', 'akcie');
-    var opytat = el('button', 'btn btn-plne', 'Opýtať sa predavača na tento výrobok');
+    var opytat = el('button', 'btn btn-plne', T.opytat);
     opytat.type = 'button';
     opytat.setAttribute('data-umami-event', 'ukazka_detail_otazka');
+    opytat.setAttribute('data-umami-event-lang', JAZYK);
     opytat.addEventListener('click', function () {
-      api(function (a) { a.ask('Čo treba vedieť o produkte ' + v.nazov + ' pred kúpou?'); }, 10);
+      api(function (a) { a.ask(T.otazka(v.nazov)); }, 10);
     });
     akcie.appendChild(opytat);
     pravy.appendChild(akcie);
-    pravy.appendChild(el('p', 'nedakupit', 'Do košíka sa tu pridať nedá, obchod je vymyslený.'));
-    var spat = el('a', 'spat', 'Späť na všetky výrobky');
+    pravy.appendChild(el('p', 'nedakupit', T.nedakupit));
+    var spat = el('a', 'spat', T.spat);
     spat.href = '#vyrobky';
     pravy.appendChild(spat);
     mriezka.appendChild(pravy);
@@ -308,11 +371,13 @@
       '@context': 'https://schema.org',
       '@type': 'Product',
       name: v.nazov,
+      description: v.popis,
+      sku: v.id,
       image: new URL(v.obrazok, location.href).href,
       offers: { '@type': 'Offer', price: v.cena, priceCurrency: 'EUR' },
     });
     document.head.appendChild(ldProdukt);
-    document.title = v.nazov + ': Dobrá domácnosť (ukážka)';
+    document.title = v.nazov + ': ' + T.obchod + ' (' + T.ukazka + ')';
     return h1;
   }
 
@@ -356,6 +421,21 @@
   // Štart
   // ------------------------------------------------------------------
 
+
+  // Štruktúrované dáta sú nevykonateľný JSON, vložený externým skriptom.
+  var ldStranka = document.createElement('script');
+  ldStranka.type = 'application/ld+json';
+  ldStranka.textContent = JSON.stringify({
+    '@context': 'https://schema.org', '@type': 'WebPage',
+    name: document.title,
+    url: document.querySelector('link[rel="canonical"]').href,
+    inLanguage: JAZYK,
+    description: document.querySelector('meta[name="description"]').content,
+    isPartOf: { '@type': 'WebSite', name: 'ARLing Asistent', url: 'https://arling.sk/asistent/' + (JAZYK === 'sk' ? '' : JAZYK + '/') },
+    publisher: { '@type': 'Organization', name: 'ARLing s. r. o.', url: 'https://arling.sk/' }
+  });
+  document.head.appendChild(ldStranka);
+
   vlozWidget();
 
   document.getElementById('opytat-sa').addEventListener('click', function () {
@@ -363,7 +443,7 @@
   });
   document.getElementById('pozriet-kavovary').addEventListener('click', function (e) {
     e.preventDefault();
-    location.hash = '#k-' + slug('Kávovary a čaj');
+    location.hash = '#k-' + slug(PORADIE[1]);
   });
   var hladat = document.getElementById('hladat');
   hladat.addEventListener('input', function () {
@@ -378,7 +458,7 @@
   });
   window.addEventListener('hashchange', function () { podlaAdresy(false); });
 
-  fetch('feed.xml', { cache: 'no-cache' })
+  fetch(FEED, { cache: 'no-cache' })
     .then(function (res) {
       if (!res.ok) throw new Error('feed_http_' + res.status);
       return res.text();
@@ -393,6 +473,6 @@
     .catch(function () {
       var p = document.getElementById('prazdne');
       p.hidden = false;
-      p.textContent = 'Výrobky sa nepodarilo načítať. Skúste stránku obnoviť, alebo otvorte feed.xml priamo.';
+      p.textContent = T.chyba;
     });
 })();
