@@ -1,11 +1,12 @@
-import { slova } from '../jadro/delenie.js?v=1.3';
-import { merajText } from '../jadro/meranie.js?v=1.3';
-import ukazky from './ukazky.js';
-import { texty, jazyky } from './texty.js?v=1.3';
-import { suhrn, oznaceny, opravy, podrobnosti, sprava, spravaHtml, pasmoText, typy, meraniaTypov } from './zobrazenie.js?v=1.3';
-import { ziveMeranie, kopiruj } from './zive.js';
-import { zaznamenaj } from './analytika.js';
-import { oznacTyp, zapojRytmus } from './ovladanie.js?v=1.3';
+import { slova } from '../jadro/delenie.js?v=1.4';
+import { merajText } from '../jadro/meranie.js?v=1.4';
+import ukazky from './ukazky.js?v=1.4';
+import { texty, jazyky } from './texty.js?v=1.4';
+import { suhrn, oznaceny, opravy, podrobnosti, sprava, pasmoText, typy, meraniaTypov } from './zobrazenie.js?v=1.4';
+import { ziveMeranie, kopiruj } from './zive.js?v=1.4';
+import { zaznamenaj } from './analytika.js?v=1.4';
+import { oznacTyp, zapojRytmus } from './ovladanie.js?v=1.4';
+import { pdfKniznica } from './pdf-nacitanie.js?v=1.4';
 
 const $=id=>document.getElementById(id), lang=document.documentElement.lang, t=texty[lang];
 const text=$('text'), jazyk=$('jazyk'), stav=$('stav'), tip=$('bublina');
@@ -35,25 +36,58 @@ function umiestniTip() {
   tip.style.top=Math.max(12,Math.min(b.bottom+8,innerHeight-w.height-12))+'px';
 }
 function ohlas() {
-  const s=chyba || (r ? t.done+' '+t.index+': '+r.index+'/100, '+pasmoText(r,t)+'.' : '');
+  const s=cakam ? t.measuring : chyba || (r ? t.done+' '+t.index+': '+r.index+'/100, '+pasmoText(r,t)+'.' : '');
   if(s!==posledneHlasenie) { stav.textContent=s; posledneHlasenie=s; }
+}
+// v1.4: bez limitu 5 000 slov. Text od DLHY znakov meria Web Worker, stránka pri písaní nezamrzne.
+// Ak Worker nie je dostupný alebo zlyhá, meriame priamo ako doteraz.
+const DLHY=20000;
+let pracovnik=null, poziadavka=0, cakam=false, rText='', odoslany='';
+function worker() {
+  if(pracovnik!==null) return pracovnik;
+  try {
+    pracovnik=new Worker(new URL('./meranie-worker.js?v=1.4',import.meta.url),{type:'module'});
+    pracovnik.addEventListener('message',e=>{
+      if(e.data.id!==poziadavka) return;
+      cakam=false;
+      dokonci(e.data.chyba?undefined:e.data.r,odoslany,e.data.explicitne);
+      ohlas();
+    });
+    pracovnik.addEventListener('error',()=>{
+      pracovnik=false;
+      if(cakam) { cakam=false; zmeraj(true); }
+    });
+  } catch { pracovnik=false; }
+  return pracovnik;
 }
 function zmeraj(explicitne=false) {
   zavri();
-  try { r=merajText(text.value,jazyk.value==='auto'?{}:{jazyk:jazyk.value}); }
-  catch { r=null; chyba=t.error; }
-  if(r) chyba=r.chyba==='vyber_jazyk'?(slova(text.value).length<30?t.low:t.choose):r.chyba?t.low:'';
+  const moznosti=jazyk.value==='auto'?{}:{jazyk:jazyk.value}, id=++poziadavka;
+  if(text.value.length>=DLHY && worker()) {
+    cakam=true; odoslany=text.value; stav.textContent=t.measuring; posledneHlasenie=t.measuring;
+    pracovnik.postMessage({id,text:odoslany,moznosti,explicitne});
+    return;
+  }
+  cakam=false;
+  let vysledok;
+  try { vysledok=merajText(text.value,moznosti); } catch { vysledok=undefined; }
+  dokonci(vysledok,text.value,explicitne);
+}
+function dokonci(vysledok,merany,explicitne) {
+  r=vysledok ?? null; rText=merany;
+  chyba=vysledok===undefined?t.error:'';
+  if(r) chyba=r.chyba==='vyber_jazyk'?(slova(merany).length<30?t.low:t.choose):r.chyba?t.low:'';
   $('chyba').hidden=!chyba; $('chyba').textContent=chyba;
   text.setAttribute('aria-invalid',chyba?'true':'false');
   $('vysledok').hidden=!!chyba; $('dalsie').hidden=!!chyba; $('kopirovat').disabled=!!chyba; $('stiahnut').disabled=!!chyba;
   $('jazyk-stav').textContent=r?.jazyk?(jazyk.value==='auto'?t.detected:t.selected)+': '+jazyky[r.jazyk]:t.choose;
   $('povod').textContent=texty[prikladJazyk].provenance; $('povod').hidden=!priklad; $('povod-stitok').hidden=!priklad; $('okno-stitok').hidden=!priklad;
   if(chyba) { r=null; if(explicitne) (jazyk.value==='auto'&&chyba===t.choose?jazyk:text).focus(); return; }
-  html('suhrn',suhrn(r,t,text.value,prvyIndex)); prvyIndex=false;
-  html('oznaceny-text',oznaceny(text.value,r,t));
+  html('suhrn',suhrn(r,t,merany,prvyIndex)); prvyIndex=false;
+  html('oznaceny-text',oznaceny(merany,r,t));
   if(!oznacTyp($('suhrn'),$('oznaceny-text'),zvolenyTyp)) zvolenyTyp=null;
   $('oznaceny-text').lang=r.jazyk;
-  html('opravy',opravy(r,t,text.value)); html('podrobnosti',podrobnosti(r,t));
+  html('opravy',opravy(r,t,merany)); html('podrobnosti',podrobnosti(r,t));
   $('orezanie').hidden=!r.orezane;
   // Len vlastný vstup, raz pre kombináciu metadát. Príklad nie je použitie nástroja.
   if(!priklad) {
@@ -137,16 +171,29 @@ $('kopirovat').addEventListener('click',async()=>{
   if(ok) {stav.textContent=t.copied;posledneHlasenie='';}
 });
 // Stiahnuť správu (29. 9. 2026): HTML súbor vytvorí prehliadač, text nikam neodchádza.
-$('stiahnut').addEventListener('click',()=>{
+// v1.4: PDF správu skladá prehliadač (pdf.js). Knižnica jsPDF a písmo sa načítajú z vlastného servera až po
+// kliknutí (pdf-nacitanie.js), text sa nikam neposiela. Pri chybe sa dá správu skopírovať ako doteraz.
+$('stiahnut').addEventListener('click',async()=>{
   if(!r) return;
-  const d=new Date();
-  const blob=new Blob([spravaHtml(r,t,text.value,d.toLocaleString(lang),lang)],{type:'text/html;charset=utf-8'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob); a.download=t.reportFile+'-'+d.toISOString().slice(0,10)+'.html';
-  document.body.append(a); a.click(); a.remove();
-  setTimeout(()=>URL.revokeObjectURL(a.href),5000);
-  stav.textContent=t.downloaded; posledneHlasenie='';
-  if(!priklad) zaznamenaj('rukopis_stiahnutie',{jazyk:r.jazyk});
+  const tlacidlo=$('stiahnut'), rr=r, merany=rText;
+  tlacidlo.disabled=true; tlacidlo.setAttribute('aria-busy','true');
+  stav.textContent=t.pdfPreparing; posledneHlasenie='';
+  try {
+    const {jsPDF,pisma,spravaPdf}=await pdfKniznica();
+    const d=new Date();
+    const {doc}=spravaPdf(jsPDF,pisma,rr,t,merany,d.toLocaleString(lang,{dateStyle:'medium',timeStyle:'short'}));
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(doc.output('blob')); a.download=t.reportFile+'-'+[d.getFullYear(),d.getMonth()+1,d.getDate()].map(n=>String(n).padStart(2,'0')).join('-')+'.pdf';
+    document.body.append(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(a.href),10000);
+    stav.textContent=t.downloaded; posledneHlasenie='';
+    if(!priklad) zaznamenaj('rukopis_stiahnutie',{jazyk:rr.jazyk});
+  } catch {
+    stav.textContent=t.pdfError; posledneHlasenie='';
+    $('chyba').hidden=false; $('chyba').textContent=t.pdfError;
+  } finally {
+    tlacidlo.disabled=!r; tlacidlo.removeAttribute('aria-busy');
+  }
 });
 for(const id of ['zmerat','vlastny','ukazka','kopirovat','stiahnut']) $(id).disabled=false;
 // SSR ukážka je viditeľná aj bez JS. Hydratácia ju znovu zmeria bez hlásenia a analytiky.

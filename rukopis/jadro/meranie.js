@@ -1,9 +1,9 @@
-import sk from './jazyky/sk.js';
-import en from './jazyky/en.js';
-import cs from './jazyky/cs.js';
-import de from './jazyky/de.js';
-import { MERANIE_VERZIA } from './verzia.js?v=1.3';
-import { normalizuj, priprav, slova, unik, odhadJazyka } from './delenie.js?v=1.3';
+import sk from './jazyky/sk.js?v=1.4';
+import en from './jazyky/en.js?v=1.4';
+import cs from './jazyky/cs.js?v=1.4';
+import de from './jazyky/de.js?v=1.4';
+import { MERANIE_VERZIA } from './verzia.js?v=1.4';
+import { normalizuj, priprav, slova, unik, odhadJazyka } from './delenie.js?v=1.4';
 
 export const JAZYKY = { sk, cs, en, de };
 const priemer = a => a.length ? a.reduce((s, n) => s + n, 0) / a.length : 0;
@@ -13,11 +13,34 @@ const cv = a => {
 };
 export const lin = (x, a0, a100) => Math.max(0, Math.min(1, (x - a0) / (a100 - a0))) * 100;
 export const pasmo = (n, jazyk = sk) => n < jazyk.PASMA[0] ? 'zivy' : n < jazyk.PASMA[1] ? 'zmiesany' : 'prilis_uhladeny';
+// v1.4 po bráne 1: bežné podstatné mená (business, informácia, náměstí, Regierung) nie sú dej namiesto slovesa.
+// Základ zo zoznamu BEZNE + najviac 4 znaky koncovky; v nemčine aj ako koniec zloženého slova.
+export const bezne = (s, j) => (j.BEZNE ?? []).some(b => {
+  const i = s.lastIndexOf(b);
+  return i >= 0 && s.length - i - b.length <= 4 && (i === 0 || s[i - 1] === '-' || j.SKLADANE === true);
+});
+// v1.4 po bráne 1: pomlčka s medzerami je v slovenčine, češtine aj nemčine správna interpunkcia
+// (STN 01 6910 a Pravidlá slovenského pravopisu; ČSN 01 6910 a Internetová jazyková příručka ÚJČ AV ČR, heslo
+// Pomlčka; Duden, Rechtschreibregeln, Gedankenstrich: Halbgeviertstrich s medzerami). Tam počítame len dlhú
+// pomlčku z anglickej sadzby (em dash) a dva spojovníky, ktoré ju nahrádzajú. V angličtine sú správne oba
+// zápisy: americký em dash bez medzier (The Chicago Manual of Style, kapitola 6, em dashes) aj britská
+// en dash s medzerami (New Hart's Rules, Oxford, kapitola 4, dashes; The Guardian and Observer style guide,
+// heslo dashes). Preto v angličtine počítame obe; nález hovorí o častom použití, nie o chybe.
+const POMLCKY_EM = /\u2014|(?<= )--(?= )/gu;
+const POMLCKY = { sk: POMLCKY_EM, cs: POMLCKY_EM, de: POMLCKY_EM, en: /\u2014|(?<=\s)\u2013(?=\s)|(?<= )--(?= )/gu };
 
-const regexZhody = (text, re) => [...text.matchAll(new RegExp(re.source, re.flags.includes('g') ? re.flags : re.flags + 'g'))]
+const regexZhody = (text, re) => [...text.matchAll(re.global ? re : new RegExp(re.source, re.flags + 'g'))]
   .map(m => ({ od: m.index, do: m.index + m[0].length, text: m[0] }));
+// v1.4: regex každej frázy sa zostaví raz; frázu, ktorej prvé slovo v texte nie je, ani nehľadáme.
+const regexFrazy = new Map();
+const frazaRe = s => {
+  let re = regexFrazy.get(s);
+  if (!re) regexFrazy.set(s, re = new RegExp("(?<![\\p{L}\\p{N}'-])" + unik(s).replace(/ /g, '\\s+') + "(?![\\p{L}\\p{N}'-])", 'giu'));
+  return re;
+};
 export function zhody(text, zoznam, konstrukcie = []) {
-  const kandidati = zoznam.flatMap(s => regexZhody(text, new RegExp("(?<![\\p{L}\\p{N}'-])" + unik(s).replace(/ /g, '\\s+') + "(?![\\p{L}\\p{N}'-])", 'giu')));
+  const male = text.toLowerCase();
+  const kandidati = zoznam.flatMap(s => male.includes(s.toLowerCase().split(' ')[0]) ? regexZhody(text, frazaRe(s)) : []);
   kandidati.push(...konstrukcie.flatMap(re => regexZhody(text, re)));
   kandidati.sort((a, b) => (b.do - b.od) - (a.do - a.od) || a.od - b.od);
   const vybrate = [];
@@ -56,12 +79,12 @@ export function merajText(original, { jazyk } = {}) {
   const frazy = zhody(telo, j.FRAZY, j.KONSTRUKCIE);
   for (const m of frazy) pridaj(m, 'fraza', start);
   meranie('M6', percent(frazy.length), { pocet: frazy.length });
-  const pomlcky = regexZhody(telo, /\u2014|(?<=\s)\u2013(?=\s)|(?<= )--(?= )/gu);
+  const pomlcky = regexZhody(telo, POMLCKY[jazyk]);
   for (const m of pomlcky) pridaj(m, 'pomlcka', start);
   meranie('M7', percent(pomlcky.length), { pocet: pomlcky.length });
   const nominalizacie = p.slova.filter(w => {
     const s = w.text.toLowerCase();
-    return [...s].length >= 7 && !j.VYNIMKY.includes(s) && j.PRIPONY.some(k => s.endsWith(k));
+    return [...s].length >= 7 && !j.VYNIMKY.includes(s) && j.PRIPONY.some(k => s.endsWith(k)) && !bezne(s, j);
   });
   for (const m of nominalizacie) pridaj(m, 'nominalizacia');
   meranie('M8', percent(nominalizacie.length), { pocet: nominalizacie.length });
@@ -127,7 +150,10 @@ export function merajText(original, { jazyk } = {}) {
   vysledok.ciastocny = polozky.length < 9;
   vysledok.zvyraznenia = highlights.sort((a, b) => a.od - b.od || a.do - b.do || (a.typ < b.typ ? -1 : a.typ > b.typ ? 1 : 0));
   const pocet = re => (telo.match(re) || []).length;
-  const osobne = zoznam => percent(p.slova.filter(w => zoznam.map(x => x.toLowerCase()).includes(w.text.toLowerCase())).length);
+  // v1.4: počty slov raz, nie 50 prechodov textom (30 000 slov).
+  const pocetSlov = new Map();
+  for (const w of p.slova) { const s = w.text.toLowerCase(); pocetSlov.set(s, (pocetSlov.get(s) ?? 0) + 1); }
+  const osobne = zoznam => percent([...new Set(zoznam.map(x => x.toLowerCase()))].reduce((s, x) => s + (pocetSlov.get(x) ?? 0), 0));
   const zaciatky = Object.create(null);
   for (const v of p.rytmus) {
     const s = slova(v.text).slice(0, 2).map(w => w.text.toLowerCase()).join(' ');
@@ -141,7 +167,7 @@ export function merajText(original, { jazyk } = {}) {
     ja: osobne(j.JA), ty: osobne(j.TY), nominalizacie: merania.M8.hodnota,
     konkretnosti: merania.M4?.hodnota ?? null, frazy: merania.M6.hodnota,
     zaciatky: Object.fromEntries(Object.entries(zaciatky).sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1)).slice(0, 10)),
-    funkcne: Object.fromEntries(j.FUNKCNE.slice(0, 50).map(w => [w, p.slova.filter(s => s.text.toLowerCase() === w.toLowerCase()).length / W]))
+    funkcne: Object.fromEntries(j.FUNKCNE.slice(0, 50).map(w => [w, (pocetSlov.get(w.toLowerCase()) ?? 0) / W]))
   };
   vysledok.dlzky_viet = dlzky;
   vysledok.dlzky_odsekov = p.dlzkyOdsekov;

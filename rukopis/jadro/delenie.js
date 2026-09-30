@@ -9,7 +9,14 @@ export const slova = s => [...s.matchAll(/[\p{L}\p{N}]+(?:['-][\p{L}\p{N}]+)*/gu
 export function normalizuj(original) {
   let text = '';
   let od = [], konce = [];
-  for (const m of original.matchAll(/\r\n|[\u1100-\u11ff\uac00-\ud7a3]+\p{M}*|[^\r]\p{M}*|\r/gu)) {
+  // v1.4: r\u00fdchla cesta pre be\u017en\u00fd text (u\u017e v NFC, bez CR, typografick\u00fdch apostrofov a samostatn\u00fdch znamienok).
+  // Mapa poz\u00edci\u00ed je vtedy identita, v\u00fdsledok je rovnak\u00fd ako v pomalej vetve.
+  if (!/[\r\u2019\u2018\p{M}]/u.test(original) && original.normalize('NFC') === original) {
+    text = original;
+    od = new Array(original.length);
+    konce = new Array(original.length);
+    for (let i = 0; i < original.length; i++) { od[i] = i; konce[i] = i + 1; }
+  } else for (const m of original.matchAll(/\r\n|[\u1100-\u11ff\uac00-\ud7a3]+\p{M}*|[^\r]\p{M}*|\r/gu)) {
     const s = m[0].normalize('NFC').replace(/\r\n/g, '\n').replace(/[’‘]/g, "'");
     text += s;
     for (let i = 0; i < s.length; i++) {
@@ -23,8 +30,9 @@ export function normalizuj(original) {
   for (const m of text.matchAll(ZLEPENE)) {
     const i = m.index + (m[1] ?? m[2]).length;
     vlozit.add(i);
-    const zaciatok = text.slice(0, i).search(/[\p{L}\p{N}.!?]*$/u);
-    zlepene.push(text.slice(zaciatok, i) + text.slice(i).match(/^[\p{L}\p{N}]*/u)[0]);
+    // Príklad slova stačí z okolia 80 znakov; celý text by pri 30 000 slovách spomalil meranie.
+    const zaciatok = Math.max(0, i - 80) + text.slice(Math.max(0, i - 80), i).search(/[\p{L}\p{N}.!?]*$/u);
+    zlepene.push(text.slice(zaciatok, i) + text.slice(i, i + 80).match(/^[\p{L}\p{N}]*/u)[0]);
   }
   if (vlozit.size) {
     let t = '';
@@ -74,6 +82,7 @@ const CISLOVANY = /^(\d{1,2}(?:\.\d{1,2}){0,4})\.?\s+(\p{L}.*)$/u;
 const KAPITOLA = /^(?:kapitola|chapter|kapitel|časť|část|part|teil)\s+\d{1,3}(?!\p{L})/iu;
 const MATEMATIKA = /[=±×÷∑∏√∫≤≥∞∆Δπ∂→⇒∈≈≠^]/u;
 export const DOVODY = ['obsah', 'strana', 'titul', 'nadpis', 'vzorec'];
+export const TITUL_STROP = 25;
 
 // Vráti riadky, ktoré nie sú súvislý text, s dôvodom. Koniec intervalu obsahuje aj \n.
 export function sumRiadky(text) {
@@ -106,7 +115,9 @@ export function sumRiadky(text) {
     let dovod = null;
     if (OBSAH.test(t) || (/\t+\d{1,4}\s*$/.test(t) && w <= 15)) dovod = 'obsah';
     else if (STRANA.test(t)) dovod = 'strana';
-    else if (titul && ((w <= 14 && bezBodky) || titul >= 2 || (t.match(/:/g) || []).length >= 2 || (t.includes(':') && slova(t.split(':')[0]).length <= 5 && TITUL_JEDEN.test(t.split(':')[0])))) dovod = 'titul';
+    // v1.4 po bráne 1: dve slová z titulnej strany alebo dve dvojbodky vyradia riadok len do TITUL_STROP slov;
+    // súvislý odsek o univerzitách a fakultách je text práce a meria sa.
+    else if (titul && ((w <= 14 && bezBodky) || (w <= TITUL_STROP && (titul >= 2 || (t.match(/:/g) || []).length >= 2)) || (t.includes(':') && slova(t.split(':')[0]).length <= 5 && TITUL_JEDEN.test(t.split(':')[0])))) dovod = 'titul';
     else if (KAPITOLA.test(t) && w <= 12) dovod = 'nadpis';
     else if (CISLOVANY.test(t)) {
       const [, cislo, zvysok] = t.match(CISLOVANY);
@@ -175,14 +186,17 @@ export function vety(text, jazyk, posun = 0) {
   return out;
 }
 
+// v1.4: limit 5 000 slov zrušený. Strop je len poistka pre knihy nad 100 000 slov tela.
+export const STROP_SLOV = 100000;
+
 export function priprav(text, jazyk) {
   const povodne = odseky(text);
   const prvy = povodne[0];
   const nadpis = prvy && slova(prvy.text).length <= 12 && !/[.!?]["'“”»]*$/u.test(prvy.text) ? prvy : null;
   let telo = povodne.slice(nadpis ? 1 : 0);
   const slovaTela = telo.flatMap(p => slova(p.text).map(w => ({ ...w, od: w.od + p.od, do: w.do + p.od })));
-  const orezane = slovaTela.length > 5000;
-  const koniec = orezane ? slovaTela[4999].do : text.length;
+  const orezane = slovaTela.length > STROP_SLOV;
+  const koniec = orezane ? slovaTela[STROP_SLOV - 1].do : text.length;
   telo = telo.filter(p => p.od < koniec).map(p => ({ ...p, do: Math.min(p.do, koniec), text: text.slice(p.od, Math.min(p.do, koniec)) }));
   const vsetky = [], rytmus = [], dlzkyOdsekov = [];
   for (const p of telo) {
@@ -205,7 +219,7 @@ export function priprav(text, jazyk) {
     vloz();
     if (pocet) dlzkyOdsekov.push(pocet);
   }
-  return { nadpis, telo, vsetky, rytmus, dlzkyOdsekov, slova: slovaTela.slice(0, 5000), orezane, povodneSlov: slovaTela.length, koniec };
+  return { nadpis, telo, vsetky, rytmus, dlzkyOdsekov, slova: orezane ? slovaTela.slice(0, STROP_SLOV) : slovaTela, orezane, povodneSlov: slovaTela.length, koniec };
 }
 
 export function odhadJazyka(text, jazyky) {

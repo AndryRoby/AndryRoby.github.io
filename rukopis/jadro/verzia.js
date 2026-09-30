@@ -1,1 +1,1 @@
-export const MERANIE_VERZIA = '1.3';
+export const MERANIE_VERZIA = '1.4';
