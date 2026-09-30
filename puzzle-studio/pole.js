@@ -9,8 +9,9 @@
  * Rules it keeps, in the order they matter:
  *   1. prefers-reduced-motion: reduce  ->  ONE frame, the loop never starts.
  *   2. no WebGL (old browser, blocked context, lost context) -> the canvas is
- *      removed and a still PNG of the same field takes its place. The PNG is
- *      a screenshot of this very canvas, so the fallback is the real thing.
+ *      removed; a still .pole-zaloha image takes its place if the page has
+ *      one (a screenshot of this very canvas), otherwise the band and its
+ *      caption are hidden. Today the page has no such image.
  *   3. off screen -> nothing is drawn (IntersectionObserver).
  *   4. tab hidden -> nothing is drawn (visibilitychange).
  *   5. 30 frames a second, never 60: the field moves about six points a
@@ -31,9 +32,15 @@
   var zaloha = band.querySelector('.pole-zaloha');
   if (!canvas) return;
 
+  // 30. 9. 2026 (audit hubu N-11): pole.png v repozitári nikdy nebolo, záložný <img> vracal 404.
+  // Kým niekto nevyrenderuje skutočnú snímku tohto plátna, bez WebGL sa pás aj jeho popis skryjú,
+  // aby popis „The band above…“ neopisoval prázdne miesto.
   function nechajZalohu() {
     canvas.remove();
-    if (zaloha) zaloha.hidden = false;
+    if (zaloha) { zaloha.hidden = false; return; }
+    band.hidden = true;
+    var popis = document.querySelector('.pole-popis');
+    if (popis) popis.hidden = true;
   }
 
   var gl = null;
