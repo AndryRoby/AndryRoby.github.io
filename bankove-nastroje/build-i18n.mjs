@@ -261,6 +261,13 @@ export function relocateUrls(html, lang) {
         attrs = setAttr(attrs, name, `../${clean}`);
       }
     }
+    // srcset too, candidate by candidate (audit 30. 9. 2026): the mobile <source> of the
+    // Payment matcher picture kept "press/..." and asked for /en/press/..., a 404 on phones.
+    const set = getAttr(attrs, 'srcset');
+    if (set !== null) {
+      const moved = set.replace(/(^|,)(\s*)([^\s,]+)/g, (m, sep, ws, url) => sep + ws + (isRelativeUrl(url) ? `../${url.replace(/^\.\//, '')}` : url));
+      if (moved !== set) attrs = setAttr(attrs, 'srcset', moved);
+    }
     return attrs === tag.attrs ? null : { attrs };
   });
   // Module imports inside inline scripts: './x.js' -> '../x.js'.
