@@ -93,6 +93,7 @@ const T = {
     sadzbaNeznama: 'Pre túto krajinu dodávateľa sadzby DPH neponúkame, lebo ich nemáme overené na oficiálnom zdroji. Sadzbu zapíšte sami, v percentách.',
     sadzbaNeistota: 'Sadzby pre krajinu {k} v ponuke sú z odborných zdrojov, nie z priamo načítanej vládnej stránky. Pred odoslaním faktúry si sadzbu overte sami. Slovenské sadzby máme overené priamo na financnasprava.sk.',
     napovedaEndpoint: 'Adresa v sieti Peppol. Pri kóde 0245 je to slovenské DIČ, presne 10 číslic bez predpony SK. Pri kóde 9930 nemecké USt-IdNr.',
+    napovedaPredchadzajuca: 'Číslo faktúry, ktorú dobropis alebo oprava mení. Zákon o DPH ho na opravnej faktúre vyžaduje (§ 74 ods. 3 písm. c)). V XML ako BT-25.',
     suctyZaklad: 'Základ', suctyDph: 'DPH', suctySpolu: 'Spolu s DPH', suctyUhrada: 'Na úhradu',
     ulozDodavatela: 'Uložiť dodávateľa do prehliadača',
     ulozOdberatela: 'Uložiť odberateľa do adresára',
@@ -183,6 +184,7 @@ const T = {
     sadzbaNeznama: 'Pro tuto zemi dodavatele sazby DPH nenabízíme, protože je nemáme ověřené na oficiálním zdroji. Sazbu zapište sami, v procentech.',
     sadzbaNeistota: 'Sazby pro zemi {k} v nabídce pocházejí z odborných zdrojů, ne z přímo načtené vládní stránky. Před odesláním faktury si sazbu ověřte sami. Slovenské sazby máme ověřené přímo na financnasprava.sk.',
     napovedaEndpoint: 'Adresa v síti Peppol. U kódu 0245 je to slovenské DIČ, přesně 10 číslic bez předpony SK. U kódu 9930 německé USt-IdNr.',
+    napovedaPredchadzajuca: 'Číslo faktury, kterou dobropis nebo oprava mění. Slovenský zákon o DPH ho na opravné faktuře vyžaduje (§ 74 odst. 3 písm. c)). V XML jako BT-25.',
     suctyZaklad: 'Základ', suctyDph: 'DPH', suctySpolu: 'Celkem s DPH', suctyUhrada: 'K úhradě',
     ulozDodavatela: 'Uložit dodavatele do prohlížeče',
     ulozOdberatela: 'Uložit odběratele do adresáře',
@@ -273,6 +275,7 @@ const T = {
     sadzbaNeznama: 'Für dieses Land des Verkäufers bieten wir keine Steuersätze an, weil wir sie nicht an einer amtlichen Quelle geprüft haben. Bitte tragen Sie den Satz selbst in Prozent ein.',
     sadzbaNeistota: 'Die angebotenen Sätze für das Land {k} stammen aus Fachquellen, nicht aus einer direkt abgerufenen amtlichen Seite. Bitte prüfen Sie den Satz vor dem Versand der Rechnung selbst. Die slowakischen Sätze haben wir direkt bei financnasprava.sk geprüft.',
     napovedaEndpoint: 'Adresse im Peppol-Netz. Beim Code 0245 ist es die slowakische Steuernummer DIČ, genau 10 Ziffern ohne Präfix SK. Beim Code 9930 die deutsche USt-IdNr.',
+    napovedaPredchadzajuca: 'Nummer der Rechnung, die die Gutschrift oder Korrektur ändert. Das slowakische Umsatzsteuergesetz verlangt sie auf der Korrekturrechnung (§ 74 Abs. 3 Buchst. c). Im XML als BT-25.',
     suctyZaklad: 'Netto', suctyDph: 'USt.', suctySpolu: 'Brutto', suctyUhrada: 'Zahlbetrag',
     ulozDodavatela: 'Verkäufer im Browser speichern',
     ulozOdberatela: 'Käufer im Adressbuch speichern',
@@ -364,6 +367,7 @@ const T = {
     sadzbaNeznama: 'We do not offer VAT rates for this country of the seller, because we have not verified them at an official source. Enter the rate yourself, in percent.',
     sadzbaNeistota: 'The rates offered for {k} come from expert sources, not from a government page we fetched ourselves. Check the rate yourself before you send the invoice. The Slovak rates we verified directly at financnasprava.sk.',
     napovedaEndpoint: 'Your address in the Peppol network. With code 0088 it is a GS1 GLN, with 0245 the Slovak tax number DIC (exactly 10 digits, no SK prefix), with 9930 the German VAT number. For other countries look the code up in the CEF EAS code list.',
+    napovedaPredchadzajuca: 'Number of the invoice this credit note or correction changes. Slovak VAT law requires it on a correcting invoice (Section 74(3)(c)). In the XML as BT-25.',
     suctyZaklad: 'Net', suctyDph: 'VAT', suctySpolu: 'Total with VAT', suctyUhrada: 'Amount due',
     ulozDodavatela: 'Save the seller in this browser',
     ulozOdberatela: 'Save the buyer to the address book',
@@ -435,6 +439,7 @@ const MENOVKY = {
     referenciaOdberatela: 'Referencia odberateľa', poznamka: 'Poznámka', sposobPlatby: 'Spôsob platby',
     profil: 'Profil (CustomizationID)', zaplatene: 'Zaplatená záloha',
     platobnePodmienky: 'Platobné podmienky (text na doklade)',
+    predchadzajucaCislo: 'Číslo pôvodnej faktúry', datumPredchadzajucej: 'Dátum vystavenia pôvodnej faktúry',
   },
   cs: {
     nazov: 'Název', ico: 'IČO', icDph: 'DIČ (plátce DPH)', ulica: 'Ulice a číslo', mesto: 'Město', psc: 'PSČ',
@@ -445,6 +450,7 @@ const MENOVKY = {
     referenciaOdberatela: 'Reference odběratele', poznamka: 'Poznámka', sposobPlatby: 'Způsob platby',
     profil: 'Profil (CustomizationID)', zaplatene: 'Zaplacená záloha',
     platobnePodmienky: 'Platební podmínky (text na dokladu)',
+    predchadzajucaCislo: 'Číslo původní faktury', datumPredchadzajucej: 'Datum vystavení původní faktury',
   },
   de: {
     nazov: 'Name', ico: 'Registernummer', icDph: 'USt-IdNr.', ulica: 'Straße und Nummer', mesto: 'Ort', psc: 'PLZ',
@@ -455,6 +461,7 @@ const MENOVKY = {
     referenciaOdberatela: 'Leitweg-ID / Käuferreferenz', poznamka: 'Hinweis', sposobPlatby: 'Zahlungsart',
     profil: 'Profil (CustomizationID)', zaplatene: 'Anzahlung',
     platobnePodmienky: 'Zahlungsbedingungen (Text auf dem Beleg)',
+    predchadzajucaCislo: 'Nummer der ursprünglichen Rechnung', datumPredchadzajucej: 'Datum der ursprünglichen Rechnung',
   },
   en: {
     nazov: 'Name', ico: 'Registration number', icDph: 'VAT number', ulica: 'Street and number', mesto: 'City', psc: 'Post code',
@@ -465,6 +472,7 @@ const MENOVKY = {
     referenciaOdberatela: 'Buyer reference', poznamka: 'Note', sposobPlatby: 'Payment means',
     profil: 'Profile (CustomizationID)', zaplatene: 'Amount already paid',
     platobnePodmienky: 'Payment terms (text on the document)',
+    predchadzajucaCislo: 'Original invoice number', datumPredchadzajucej: 'Original invoice issue date',
   },
 }[LANG];
 
@@ -1513,7 +1521,18 @@ function postavFormular() {
   const fsF = el('fieldset');
   fsF.appendChild(el('legend', null, T.legendaFaktura));
   for (const m of POLIA_FAKTURA) {
-    fsF.appendChild(polePodla(m, faktura[m], (v) => { faktura[m] = v; zmena(); }));
+    // pri zmene typu dokladu sa formulár prekreslí, aby sa ukázali alebo skryli polia pôvodnej faktúry
+    fsF.appendChild(polePodla(m, faktura[m], (v) => { faktura[m] = v; if (m === 'typ') postavFormular(); zmena(); }));
+    // Dobropis (381) a opravná faktúra (384): číslo a dátum pôvodnej faktúry (BT-25, BT-26) hneď pod typom dokladu.
+    // Zákon o DPH žiada na opravnej faktúre poradové číslo pôvodnej faktúry (§ 74 ods. 3 písm. c));
+    // ubl.js ich zapíše do cac:BillingReference.
+    if (m === 'typ' && (String(faktura.typ) === '381' || String(faktura.typ) === '384')) {
+      const pf = faktura.predchadzajucaFaktura || (faktura.predchadzajucaFaktura = { cislo: '', datum: '' });
+      const lc = polePodla('predchadzajucaCislo', pf.cislo, (v) => { pf.cislo = v; zmena(); });
+      lc.appendChild(el('small', 'pole-napoveda', T.napovedaPredchadzajuca));
+      fsF.appendChild(lc);
+      fsF.appendChild(polePodla('datumPredchadzajucej', pf.datum, (v) => { pf.datum = v; zmena(); }));
+    }
   }
   form.appendChild(fsF);
 
