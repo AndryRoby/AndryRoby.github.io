@@ -601,10 +601,31 @@ describe('I. stranka.js v náhradnom DOM', () => {
     assert.deepEqual(cisla(), ['17', '9', '8']);
     assert.equal($('prijat').textContent, 'All suggestions on');
     mock.timers.tick(2000);
-    assert.equal($('prijat').textContent, 'Accept all suggestions');
+    // Andrej 1. 10. 2026: tlačidlo nesmie ostať mŕtve, keď sú návrhy zapnuté; ponúkne zmeniť aj ponechané.
+    assert.match($('prijat').textContent, /^Change the \d+ kept ones too$/);
+    assert.equal($('prijat').disabled, false);
     cb.checked = false;
     vyvolaj(cb, 'change');
     assert.deepEqual(cisla(), ['17', '8', '9']);
+  });
+  test('„Accept all“ zmení aj ponechané, okrem webovej adresy, potom je neaktívne; ručne sa dá vrátiť', () => {
+    const pred = cisla();
+    assert.match($('prijat').textContent, /^Change the \d+ kept ones too$/);
+    vyvolaj($('prijat'), 'click');
+    assert.equal($('prijat').textContent, 'Changed');
+    const po = cisla();
+    assert.equal(po[0], pred[0]);
+    assert.ok(Number(po[1]) > Number(pred[1]), 'zmení viac nálezov');
+    const adresa = tlacidla().find((b) => b.getAttribute('data-dovod') === 'odkaz');
+    assert.ok(adresa, 'ukážka má webovú adresu');
+    assert.equal(adresa.getAttribute('aria-pressed'), 'false', 'webová adresa sa nikdy nezmení');
+    mock.timers.tick(2000);
+    assert.equal($('prijat').textContent, 'All suggestions accepted');
+    assert.equal($('prijat').disabled, true);
+    // späť do predvoleného stavu pre ďalšie testy: ponechané znova vypnúť ťukom
+    for (const b of tlacidla()) if (b.getAttribute('data-dovod') && b.getAttribute('aria-pressed') === 'true') vyvolaj(b.childNodes[0], 'click');
+    assert.deepEqual(cisla(), pred);
+    assert.match($('prijat').textContent, /^Change the \d+ kept ones too$/);
   });
   test('kopírovať dá do schránky výsledok, voľba malých písmen ho zmení', async () => {
     vyvolaj($('kopirovat'), 'click');

@@ -47,7 +47,33 @@ function potvrd(b, veta) {
   clearTimeout(b.siCas);
   if (b.dataset.popis === undefined) b.dataset.popis = b.textContent;
   b.textContent = veta;
-  b.siCas = setTimeout(() => { b.textContent = b.dataset.popis; delete b.dataset.popis; }, 1800);
+  b.siCas = setTimeout(() => { b.textContent = b.dataset.popis; delete b.dataset.popis; if (b.id === 'prijat') oznacPrijat(); }, 1800);
+}
+// Andrej 1. 10. 2026: „nech funguje Accept all suggestions“. Návrhy sú zapnuté hneď po kontrole, takže tlačidlo
+// väčšinou nemalo čo zapnúť („All 4 suggestions were already on“) a pôsobilo mŕtvo. Teraz robí vždy to, čo hovorí:
+// keď je niektorý návrh vypnutý, zapne všetky návrhy; keď sú zapnuté, ponúkne zmeniť aj ponechané na kontrolu
+// (názvy zákonov, mená, citáty, skoršie dokumenty, iný význam); webové adresy, hashtagy a účty a samotnú definíciu
+// nezmení nikdy, lebo zmena by ich pokazila; keď už nie je čo zmeniť, povie to a je neaktívne.
+const NIKDY_NEMENIT = new Set(['odkaz', 'identifikator']);
+function mozeZmenitPonechany(n, vyraz) { return !!n.ponechat && !NIKDY_NEMENIT.has(n.ponechat) && !(vyraz && jeSamaDefinicia(n, vyraz)); }
+function stavPrijat() {
+  const vyraz = nalezy.map(definiciaZDovodu).find(Boolean) || null;
+  let vypnuteNavrhy = 0, vypnutePonechane = 0;
+  nalezy.forEach((n, i) => {
+    if (zapnute[i]) return;
+    if (!n.ponechat) vypnuteNavrhy++;
+    else if (mozeZmenitPonechany(n, vyraz)) vypnutePonechane++;
+  });
+  return { vypnuteNavrhy, vypnutePonechane, vyraz };
+}
+function oznacPrijat() {
+  const b = $('prijat');
+  if (!b || b.dataset.popis !== undefined) return;
+  const s = stavPrijat();
+  b.disabled = !s.vypnuteNavrhy && !s.vypnutePonechane;
+  b.textContent = s.vypnuteNavrhy ? 'Accept all suggestions'
+    : s.vypnutePonechane ? `Change the ${cislo.format(s.vypnutePonechane)} kept ${s.vypnutePonechane === 1 ? 'one' : 'ones'} too`
+      : 'All suggestions accepted';
 }
 function ukazChybu(veta, vPoli = false) {
   chyba.textContent = veta;
@@ -144,7 +170,7 @@ function obnovDefiniciu() {
     : `Your text defines AI as “${vyraz}”, so every AI is kept for your review. If the other ${cislo.format(ine.length)} mean the technology, change them in one tap; the definition stays.`;
   const nicSaNemeni = nalezy.length > 0 && !nalezy.some((n) => !n.ponechat) && !zapnute.some(Boolean);
   const napoveda = $('napoveda-text').firstChild;
-  if (napoveda && napoveda.nodeType === 3) napoveda.textContent = nicSaNemeni ? 'Every finding here is kept for your review, so Accept all has nothing to switch on. Tap a highlight to change it. ' : 'Tap a highlight to switch between the change and your original wording.';
+  if (napoveda && napoveda.nodeType === 3) napoveda.textContent = nicSaNemeni ? 'Every finding here is kept for your review. Tap a highlight to change one, or change them all with the button below. ' : 'Tap a highlight to switch between the change and your original wording.';
 }
 function vykresliPocty() {
   const p = pocty(nalezy, zapnute);
@@ -154,6 +180,7 @@ function vykresliPocty() {
   $('suhrn-riadok').hidden = !text.trim();
   $('suhrn-veta').textContent = suhrnVeta();
   if (nalezy.length) obnovDefiniciu();
+  oznacPrijat();
 }
 function vykresli() {
   const ukazka = text === UKAZKA;
@@ -162,7 +189,6 @@ function vykresli() {
     $(id).disabled = !text;
     $(id).dataset.umamiEventVstup = ukazka ? 'ukazka' : 'vlastny';
   }
-  $('prijat').disabled = !nalezy.some((n) => !n.ponechat);
   obnovDefiniciu();
   $('moznost-velke').hidden = !nalezy.some((n) => n.navrhVelke);
   const pozor = $('si-pozor');
@@ -385,17 +411,35 @@ $('zmenit-definicia').addEventListener('click', () => {
   ohlas(zmenene ? `${cislo.format(zmenene)} changed to SI. The definition “${vyraz} (AI)” stays.` : 'Those AIs were already changed.');
 });
 $('prijat').addEventListener('click', () => {
-  let zapnutych = 0, navrhov = 0;
+  const s = stavPrijat();
+  if (s.vypnuteNavrhy) {
+    let navrhov = 0;
+    nalezy.forEach((n, i) => {
+      if (n.ponechat) return;
+      navrhov++;
+      zapnute[i] = true;
+      volby.delete(klucePoli[i]);
+    });
+    aktualizujStavy();
+    potvrd($('prijat'), 'All suggestions on');
+    ohlas(`All ${cislo.format(navrhov)} suggestions are on.` + (s.vypnutePonechane
+      ? ` ${cislo.format(s.vypnutePonechane)} kept for review stay as they are; press the button again to change those too.` : ''));
+    return;
+  }
+  if (!s.vypnutePonechane) return;
+  let zmenene = 0;
   nalezy.forEach((n, i) => {
-    if (n.ponechat) return;
-    navrhov++;
-    if (!zapnute[i]) zapnutych++;
+    if (zapnute[i] || !mozeZmenitPonechany(n, s.vyraz)) return;
     zapnute[i] = true;
-    volby.delete(klucePoli[i]);
+    volby.set(klucePoli[i], true);
+    zmenene++;
   });
+  const ostava = zapnute.filter((z) => !z).length;
   aktualizujStavy();
-  potvrd($('prijat'), 'All suggestions on');
-  ohlas(zapnutych ? `All ${cislo.format(navrhov)} suggestions are on.` : `All ${cislo.format(navrhov)} suggestions were already on.`);
+  potvrd($('prijat'), 'Changed');
+  ohlas(`${cislo.format(zmenene)} kept ${zmenene === 1 ? 'one' : 'ones'} changed too.`
+    + (ostava ? ` ${cislo.format(ostava)} stay unchanged: web addresses, hashtags and the definition itself would break.` : '')
+    + ' Tap any highlight to undo it.');
 });
 for (const r of document.querySelectorAll('input[name="velke"]')) {
   r.addEventListener('change', () => {
