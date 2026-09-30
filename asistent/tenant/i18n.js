@@ -107,8 +107,8 @@ export const DICT = {
   // section 03: paid plan
   's3.h2': { sk: 'Platený plán', en: 'Paid plan' },
   's3.sub': {
-    sk: 'Zadarmo do 100 rozhovorov mesačne. Nad tento limit si vyberiete plán nižšie: platba kartou cez Stripe, potvrdenie a faktúru pošle Stripe e-mailom, zrušiť sa dá kedykoľvek.',
-    en: 'Free up to 100 conversations a month. Above that, pick a plan below: card payment through Stripe, Stripe e-mails the receipt and invoice, cancel any time.',
+    sk: 'Zadarmo do 100 rozhovorov mesačne. Nad tento limit si vyberiete plán nižšie: platba kartou cez Stripe, potvrdenie a faktúru pošle e-mailom Link (Sold through Link, LLC), predajca pri platbe, zrušiť sa dá kedykoľvek.',
+    en: 'Free up to 100 conversations a month. Above that, pick a plan below: card payment through Stripe, Link (Sold through Link, LLC), the merchant of record, e-mails the receipt and invoice, cancel any time.',
   },
   's3.th.plan': { sk: 'Plán', en: 'Plan' },
   's3.th.price': { sk: 'Cena', en: 'Price' },

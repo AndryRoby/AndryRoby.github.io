@@ -69,6 +69,10 @@ const T = {
     ucetPrihlaseny: 'Prihlásený, kontrolujem vaše nákupy…',
     ucetOdomknute: '<b>Prihlásený, balík je odomknutý</b> podľa vášho nákupu.',
     ucetBezNakupu: 'Prihlásený, ale k tomuto e-mailu nevidíme nákup tohto balíka. Ak ste platili, napíšte na podpora@arling.sk.',
+    ucetPristupChyba: 'Prihlásený, nákup balíka vidíme, ale prístup k nemu sa teraz nepodarilo otvoriť. Skúste to znova, alebo napíšte na podpora@arling.sk.',
+    ucetZamok: (cas) => 'Pre túto adresu bolo zadaných priveľa nesprávnych kódov, preto sme prihlásenie zastavili najviac na 24 hodín, do ' + cas + '. Vaše nákupy ostávajú nedotknuté. Ak ste to neboli vy alebo sa potrebujete prihlásiť skôr, napíšte na podpora@arling.sk.',
+    ucetStrop: 'Dnes sme už poslali najviac prihlasovacích kódov, koľko vieme bezpečne poslať. Skúste to zajtra, alebo napíšte na podpora@arling.sk.',
+    ucetSiet: 'Do tejto siete sme dnes poslali najviac prihlasovacích kódov, koľko jedna sieť za deň dostane. Skúste to zajtra alebo z inej siete (napríklad mobilné dáta namiesto Wi-Fi), alebo napíšte na podpora@arling.sk.',
   },
   cs: {
     lehoty: { objednavky: 'Objednávky a doklady', kontakt: 'Dotazy a kontaktní formulář', newsletter: 'Newsletter', ucty: 'Uživatelské účty', uchadzaci: 'Uchazeči o zaměstnání', zamestnanci: 'Zaměstnanci', kamery: 'Kamerový záznam' },
@@ -115,6 +119,10 @@ const T = {
     ucetPrihlaseny: 'Přihlášen, kontroluji vaše nákupy…',
     ucetOdomknute: '<b>Přihlášen, balíček je odemčený</b> podle vašeho nákupu.',
     ucetBezNakupu: 'Přihlášen, ale k tomuto e-mailu nevidíme nákup tohoto balíčku. Pokud jste platili, napište na podpora@arling.sk.',
+    ucetPristupChyba: 'Přihlášen, nákup balíčku vidíme, ale přístup k němu se teď nepodařilo otevřít. Zkuste to znovu, nebo napište na podpora@arling.sk.',
+    ucetZamok: (cas) => 'Pro tuto adresu bylo zadáno příliš mnoho nesprávných kódů, proto jsme přihlášení zastavili nejvýše na 24 hodin, do ' + cas + '. Vaše nákupy zůstávají nedotčené. Pokud jste to nebyli vy nebo se potřebujete přihlásit dřív, napište na podpora@arling.sk.',
+    ucetStrop: 'Dnes jsme už poslali nejvíc přihlašovacích kódů, kolik umíme bezpečně poslat. Zkuste to zítra, nebo napište na podpora@arling.sk.',
+    ucetSiet: 'Do této sítě jsme dnes poslali nejvíc přihlašovacích kódů, kolik jedna síť za den dostane. Zkuste to zítra nebo z jiné sítě (například mobilní data místo Wi-Fi), nebo napište na podpora@arling.sk.',
   },
   de: {
     lehoty: { objednavky: 'Bestellungen und Belege', kontakt: 'Anfragen und Kontaktformular', newsletter: 'Newsletter', ucty: 'Benutzerkonten', uchadzaci: 'Bewerberinnen und Bewerber', zamestnanci: 'Beschäftigte', kamery: 'Videoaufzeichnung' },
@@ -161,6 +169,10 @@ const T = {
     ucetPrihlaseny: 'Angemeldet, wir prüfen Ihre Käufe…',
     ucetOdomknute: '<b>Angemeldet, das Paket ist freigeschaltet</b> entsprechend Ihrem Kauf.',
     ucetBezNakupu: 'Angemeldet, aber zu dieser E-Mail-Adresse sehen wir keinen Kauf dieses Pakets. Falls Sie bezahlt haben, schreiben Sie an support@arling.sk.',
+    ucetPristupChyba: 'Angemeldet, wir sehen den Kauf des Pakets, aber der Zugang konnte gerade nicht geöffnet werden. Versuchen Sie es erneut oder schreiben Sie an support@arling.sk.',
+    ucetZamok: (cas) => 'Für diese Adresse wurden zu viele falsche Codes eingegeben, deshalb haben wir die Anmeldung für höchstens 24 Stunden angehalten, bis ' + cas + '. Ihre Käufe sind davon nicht betroffen. Wenn Sie das nicht waren oder sich früher anmelden müssen, schreiben Sie an support@arling.sk.',
+    ucetStrop: 'Wir haben heute bereits so viele Anmeldecodes verschickt, wie wir sicher verschicken können. Bitte versuchen Sie es morgen erneut oder schreiben Sie an support@arling.sk.',
+    ucetSiet: 'An dieses Netzwerk haben wir heute bereits so viele Anmeldecodes verschickt, wie ein Netzwerk pro Tag bekommt. Bitte versuchen Sie es morgen erneut oder aus einem anderen Netzwerk (zum Beispiel mobile Daten statt WLAN), oder schreiben Sie an support@arling.sk.',
   },
 }[LANG];
 const KLUC_FORM = 'gdpr:formular:' + LANG;
@@ -476,10 +488,47 @@ kupaBtn.addEventListener('click', () => {
  * Stripe session na ten e-mail, takže tu stačí zavolať ja() a pozrieť sa,
  * či je medzi nákupmi GDPR balík. Bez účtu funguje stránka úplne ako doteraz;
  * chyby siete (worker ešte nie je nasadený) sa ukážu poctivo, nič nespadne. */
+/* Od O-04 (30. 9. 2026) worker pri rate_limited povie aj dôvod (zámok adresy
+ * do času until, denný strop kódov, denný limit siete). Vety sú tu v jazyku
+ * stránky; starý worker dôvod neposiela a platí pôvodná veta. */
+function ucetCasZamku(iso) {
+  const t = Date.parse(iso || '');
+  if (Number.isNaN(t)) return '';
+  try { return new Date(t).toLocaleString(T.locale, { day: 'numeric', month: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }); }
+  catch (e) { return new Date(t).toISOString().slice(0, 16).replace('T', ' ') + ' UTC'; }
+}
+function ucetChybaLimitu(d) {
+  const dovod = d && d.dovod;
+  if (dovod === 'zamok' && ucetCasZamku(d.until)) return T.ucetZamok(ucetCasZamku(d.until));
+  if (dovod === 'denny_strop') return T.ucetStrop;
+  if (dovod === 'siet_den') return T.ucetSiet;
+  return T.ucetLimit;
+}
+/* session_id nákupu: starý worker ho dá v ja(), nový (O-04) len cez
+ * POST /v1/ucet/nakup-pristup s Bearer tokenom. Keby prehliadač držal z pamäte
+ * starší /style/ucet.js bez pristupNakupu, to isté volanie urobí stránka sama. */
+async function ucetSessionNakupu(nakup) {
+  if (nakup.session_id) return nakup.session_id;
+  if (!nakup.id) return '';
+  let d = null;
+  if (typeof ucet.pristupNakupu === 'function') {
+    d = await ucet.pristupNakupu(nakup.id);
+  } else {
+    const t = ucet.token();
+    if (!t) return '';
+    const r = await fetch(API + '/v1/ucet/nakup-pristup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + t },
+      body: JSON.stringify({ id: nakup.id }),
+    });
+    if (r.ok) d = await r.json();
+  }
+  return (d && typeof d.session_id === 'string') ? d.session_id : '';
+}
 function ucetChybaKod(chyba) {
   const kod = chyba && chyba.data && chyba.data.error;
   if (kod === 'bad_email') return T.ucetZlyEmail;
-  if (kod === 'rate_limited') return T.ucetLimit;
+  if (kod === 'rate_limited') return ucetChybaLimitu(chyba.data);
   if (kod === 'mail_unavailable') return T.ucetNedostupne;
   return T.ucetChybaOdoslanie;
 }
@@ -487,7 +536,7 @@ function ucetChybaOver(chyba) {
   const d = chyba && chyba.data;
   const kod = d && d.error;
   if (kod === 'no_code') return T.ucetBezKodu;
-  if (kod === 'rate_limited') return T.ucetLimit;
+  if (kod === 'rate_limited') return ucetChybaLimitu(d);
   if (kod === 'bad_code') return d.remaining ? T.ucetZlyKod(d.remaining) : T.ucetVycerpane;
   return T.ucetChybaPrihlasenie;
 }
@@ -518,9 +567,18 @@ if (ucetOverBtn) ucetOverBtn.addEventListener('click', async () => {
       const u = await ucet.ja();
       const nakup = ((u && u.nakupy) || []).find((x) => x && x.livemode && typeof x.produkt === 'string' && /gdpr/i.test(x.produkt));
       if (nakup) {
-        uloz('gdpr:zaplatene', { session: nakup.session_id, t: Date.now(), ucet: true });
-        prekresli();
-        ucetStav.innerHTML = T.ucetOdomknute;
+        // Balík sa odomkne len so skutočnou session (odomknute() ju vyžaduje);
+        // bez nej stránka netvrdí „odomknutý“, ale povie, čo sa stalo.
+        let sid = '';
+        try { sid = await ucetSessionNakupu(nakup); } catch (e3) { sid = ''; }
+        if (sid) {
+          uloz('gdpr:zaplatene', { session: sid, t: Date.now(), ucet: true });
+          prekresli();
+          ucetStav.innerHTML = T.ucetOdomknute;
+        } else {
+          ucetStav.textContent = T.ucetPristupChyba;
+          track('gdpr_ucet_pristup_chyba', { jazyk: LANG });
+        }
       } else {
         ucetStav.textContent = T.ucetBezNakupu;
       }

@@ -30,6 +30,9 @@ const T = {
     odosielam: 'Posielam kód…',
     kodOdoslany: 'Kód sme poslali na e-mail, platí 15 minút.',
     limit: 'Priveľa pokusov, skúste to o hodinu.',
+    zamok: (cas) => 'Pre túto adresu bolo zadaných priveľa nesprávnych kódov, preto sme prihlásenie zastavili najviac na 24 hodín, do ' + cas + '. Vaše nákupy ostávajú nedotknuté. Ak ste to neboli vy alebo sa potrebujete prihlásiť skôr, napíšte na podpora@arling.sk.',
+    strop: 'Dnes sme už poslali najviac prihlasovacích kódov, koľko vieme bezpečne poslať. Skúste to zajtra, alebo napíšte na podpora@arling.sk.',
+    siet: 'Do tejto siete sme dnes poslali najviac prihlasovacích kódov, koľko jedna sieť za deň dostane. Skúste to zajtra alebo z inej siete (napríklad mobilné dáta namiesto Wi-Fi), alebo napíšte na podpora@arling.sk.',
     mailNedostupny: 'Odosielanie kódov sa ešte zapína, napíšte na podpora@arling.sk.',
     chybaOdoslanie: 'Kód sa nepodarilo odoslať (sieť). Skúste to znova alebo napíšte na podpora@arling.sk.',
     bezKodu: 'Najprv si vyžiadajte kód.',
@@ -58,9 +61,10 @@ const T = {
     akciaKontrola: 'Zobraziť stav kontroly',
     akciaOprava: 'Opravený súbor sa nedá stiahnuť znova, u nás nie je uložený.',
     akciaIne: 'Doklad a podrobnosti nájdete v portáli Stripe nižšie.',
-    zabudnutPotvrdenie: 'Naozaj chcete zmazať účet? Vymaže sa e-mail a postup vo hrách; nákupy ostávajú kvôli zákonu o účtovníctve. Toto sa nedá vrátiť späť.',
-    zabudavam: 'Mažem účet…',
-    zabudnuteHotovo: 'Účet bol vymazaný. Nákupy ostávajú v účtovníctve; ak ste chceli len odísť, stačilo sa odhlásiť.',
+    akciaChyba: 'Prístup k tomuto nákupu sa teraz nepodarilo otvoriť. Skúste to znova, prípadne sa odhláste a znova prihláste, alebo napíšte na podpora@arling.sk.',
+    zabudnutPotvrdenie: 'Naozaj použiť Zabudnite ma? Zmaže sa postup vo všetkých hrách a odhlásia sa všetky zariadenia; e-mail a nákupy ostávajú, aby ste sa k súborom dostali aj naďalej. Postup v hrách sa nedá vrátiť späť.',
+    zabudavam: 'Mažem postup v hrách…',
+    zabudnuteHotovo: 'Postup v hrách je zmazaný a všetky zariadenia sú odhlásené. E-mail a nákupy ostali; ak chcete zmazať aj tie, napíšte na podpora@arling.sk.',
     zabudniChyba: 'Zmazanie zlyhalo (sieť). Skúste to znova alebo napíšte na podpora@arling.sk.',
     locale: 'sk-SK',
   },
@@ -69,6 +73,9 @@ const T = {
     odosielam: 'Sending code…',
     kodOdoslany: 'We sent a code to your e-mail, it is valid for 15 minutes.',
     limit: 'Too many attempts, try again in an hour.',
+    zamok: (cas) => 'Too many wrong codes were entered for this address, so we have paused sign-in for up to 24 hours, until ' + cas + '. Your purchases are not affected. If this was not you, or you need to sign in sooner, write to support@arling.sk.',
+    strop: 'We have already sent as many sign-in codes today as we can safely send. Please try again tomorrow or write to support@arling.sk.',
+    siet: 'We have already sent as many sign-in codes to this network today as one network gets per day. Please try again tomorrow or from another network (for example mobile data instead of Wi-Fi), or write to support@arling.sk.',
     mailNedostupny: 'Sending codes is still being switched on, please e-mail support@arling.sk.',
     chybaOdoslanie: 'The code could not be sent (network). Try again or e-mail support@arling.sk.',
     bezKodu: 'Request a code first.',
@@ -97,9 +104,10 @@ const T = {
     akciaKontrola: 'View check status',
     akciaOprava: 'The fixed file cannot be downloaded again, we do not keep it on our side.',
     akciaIne: 'Find the receipt and details in the Stripe portal below.',
-    zabudnutPotvrdenie: 'Delete your account? This removes your e-mail and game progress; purchases remain because of accounting law. This cannot be undone.',
-    zabudavam: 'Deleting your account…',
-    zabudnuteHotovo: 'Your account was deleted. Purchases remain for accounting reasons; if you only wanted to leave, signing out would have been enough.',
+    akciaChyba: 'We could not open access to this purchase just now. Try again, or sign out and in again, or write to support@arling.sk.',
+    zabudnutPotvrdenie: 'Use Forget me? This deletes your progress in every game and signs out every device; your e-mail and purchases stay so you can still reach your files. Game progress cannot be restored.',
+    zabudavam: 'Deleting your game progress…',
+    zabudnuteHotovo: 'Your game progress is deleted and every device is signed out. Your e-mail and purchases stayed; to delete those too, write to support@arling.sk.',
     zabudniChyba: 'Deleting the account failed (network). Try again or e-mail support@arling.sk.',
     locale: 'en-US',
   },
@@ -108,6 +116,9 @@ const T = {
     odosielam: 'Code wird gesendet…',
     kodOdoslany: 'Wir haben einen Code an Ihre E-Mail-Adresse gesendet, er gilt 15 Minuten.',
     limit: 'Zu viele Versuche, versuchen Sie es in einer Stunde erneut.',
+    zamok: (cas) => 'Für diese Adresse wurden zu viele falsche Codes eingegeben, deshalb haben wir die Anmeldung für höchstens 24 Stunden angehalten, bis ' + cas + '. Ihre Käufe sind davon nicht betroffen. Wenn Sie das nicht waren oder sich früher anmelden müssen, schreiben Sie an support@arling.sk.',
+    strop: 'Wir haben heute bereits so viele Anmeldecodes verschickt, wie wir sicher verschicken können. Bitte versuchen Sie es morgen erneut oder schreiben Sie an support@arling.sk.',
+    siet: 'An dieses Netzwerk haben wir heute bereits so viele Anmeldecodes verschickt, wie ein Netzwerk pro Tag bekommt. Bitte versuchen Sie es morgen erneut oder aus einem anderen Netzwerk (zum Beispiel mobile Daten statt WLAN), oder schreiben Sie an support@arling.sk.',
     mailNedostupny: 'Der Versand von Codes wird gerade erst eingerichtet, schreiben Sie bitte an support@arling.sk.',
     chybaOdoslanie: 'Der Code konnte nicht gesendet werden (Netzwerk). Versuchen Sie es erneut oder schreiben Sie an support@arling.sk.',
     bezKodu: 'Fordern Sie zuerst einen Code an.',
@@ -136,9 +147,10 @@ const T = {
     akciaKontrola: 'Prüfstatus ansehen',
     akciaOprava: 'Die korrigierte Datei kann nicht erneut heruntergeladen werden, wir speichern sie nicht bei uns.',
     akciaIne: 'Beleg und Details finden Sie im Stripe-Portal unten.',
-    zabudnutPotvrdenie: 'Konto wirklich löschen? Das entfernt Ihre E-Mail-Adresse und den Spielstand; Käufe bleiben wegen des Buchhaltungsgesetzes erhalten. Das lässt sich nicht rückgängig machen.',
-    zabudavam: 'Konto wird gelöscht…',
-    zabudnuteHotovo: 'Ihr Konto wurde gelöscht. Käufe bleiben aus buchhalterischen Gründen erhalten; wollten Sie sich nur abmelden, hätte das Abmelden gereicht.',
+    akciaChyba: 'Der Zugang zu diesem Kauf konnte gerade nicht geöffnet werden. Versuchen Sie es erneut, melden Sie sich ab und wieder an, oder schreiben Sie an support@arling.sk.',
+    zabudnutPotvrdenie: '„Vergessen Sie mich“ wirklich ausführen? Das löscht Ihren Fortschritt in allen Spielen und meldet alle Geräte ab; E-Mail-Adresse und Käufe bleiben, damit Sie Ihre Dateien weiter erreichen. Der Spielfortschritt lässt sich nicht wiederherstellen.',
+    zabudavam: 'Spielfortschritt wird gelöscht…',
+    zabudnuteHotovo: 'Ihr Spielfortschritt ist gelöscht und alle Geräte sind abgemeldet. E-Mail-Adresse und Käufe sind geblieben; wenn Sie auch diese löschen möchten, schreiben Sie an support@arling.sk.',
     zabudniChyba: 'Löschen fehlgeschlagen (Netzwerk). Versuchen Sie es erneut oder schreiben Sie an support@arling.sk.',
     locale: 'de-DE',
   },
@@ -188,10 +200,27 @@ function maskEmail(email) {
 /* Chybu z /style/ucet.js nesie e.data (JSON telo odpovede workera, viď
  * ops/spec-ucet.md, časť A); pri chybe siete e.data neexistuje a spadne
  * sa na poctivú všeobecnú vetu. */
+/* Od O-04 (30. 9. 2026) worker pri rate_limited povie aj dôvod: zámok adresy
+ * na 24 h (until), denný strop kódov alebo denný limit siete. Vety sú tu v
+ * jazyku stránky (over() jazyk workeru neposiela); starý worker dôvod
+ * neposiela a platí pôvodná veta T.limit. */
+function casZamku(iso) {
+  const t = Date.parse(iso || '');
+  if (Number.isNaN(t)) return '';
+  try { return new Date(t).toLocaleString(T.locale, { day: 'numeric', month: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }); }
+  catch (e) { return new Date(t).toISOString().slice(0, 16).replace('T', ' ') + ' UTC'; }
+}
+function chybaLimitu(d) {
+  const dovod = d && d.dovod;
+  if (dovod === 'zamok' && casZamku(d.until)) return T.zamok(casZamku(d.until));
+  if (dovod === 'denny_strop') return T.strop;
+  if (dovod === 'siet_den') return T.siet;
+  return T.limit;
+}
 function chybaPosliKod(e) {
   const kod = e && e.data && e.data.error;
   if (kod === 'bad_email') return T.zlyEmail;
-  if (kod === 'rate_limited') return T.limit;
+  if (kod === 'rate_limited') return chybaLimitu(e.data);
   if (kod === 'mail_unavailable') return T.mailNedostupny;
   return T.chybaOdoslanie;
 }
@@ -199,7 +228,7 @@ function chybaOver(e) {
   const d = e && e.data;
   const kod = d && d.error;
   if (kod === 'no_code') return T.bezKodu;
-  if (kod === 'rate_limited') return T.limit;
+  if (kod === 'rate_limited') return chybaLimitu(d);
   if (kod === 'bad_code') return d.remaining ? T.zlyKod(d.remaining) : T.vycerpane;
   return T.chybaPrihlasenie;
 }
@@ -265,6 +294,59 @@ function odkazTitulu(t, sessionId) {
   return t.url + '?titul=' + encodeURIComponent(t.id) + '&session_id=' + encodeURIComponent(sessionId);
 }
 
+/* session_id jedného nákupu (O-04, 30. 9. 2026): /style/ucet.js ho pýta cez
+ * POST /v1/ucet/nakup-pristup s Bearer tokenom. Keby prehliadač ešte držal
+ * z pamäte starší /style/ucet.js bez pristupNakupu, to isté volanie urobí
+ * stránka sama (rovnaký token, rovnaká adresa ako v CSP connect-src). */
+const API_UCTU = 'https://arling-asistent.arling.workers.dev';
+async function pristupNakupu(id) {
+  if (typeof ucet.pristupNakupu === 'function') return ucet.pristupNakupu(id);
+  const t = ucet.token();
+  if (!t) throw new Error('neprihlaseny');
+  const r = await fetch(API_UCTU + '/v1/ucet/nakup-pristup', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + t },
+    body: JSON.stringify({ id }),
+  });
+  let d = null;
+  try { d = await r.json(); } catch (e) { /* prázdna odpoveď */ }
+  if (!r.ok) { const err = new Error((d && d.error) || 'chyba'); err.status = r.status; err.data = d; throw err; }
+  return d;
+}
+
+/* Odkaz so session: starší worker ju dá rovno v ja(), nový (O-04) len na
+ * požiadanie, preto až pri kliknutí. Pri chybe stránka neodíde na titul bez
+ * session (tam by zákazník videl len tlačidlo kúpy a mohol zaplatiť druhýkrát),
+ * ale povie pri tlačidle, čo sa stalo. */
+function odomkniKlikom(a, obal, nakup, sSession) {
+  if (nakup.session_id) { a.href = sSession(nakup.session_id); return; }
+  if (!nakup.id) return;
+  let bezi = false;
+  a.addEventListener('click', async (ev) => {
+    ev.preventDefault();
+    if (bezi) return;
+    bezi = true;
+    a.setAttribute('aria-busy', 'true');
+    const stara = obal.querySelector('.nakupy-chyba');
+    if (stara) stara.remove();
+    try {
+      const d = await pristupNakupu(nakup.id);
+      if (!d || !d.session_id) throw new Error('bez session');
+      location.href = sSession(d.session_id);
+    } catch (e) {
+      const p = document.createElement('p');
+      p.className = 'nakupy-poznamka nakupy-chyba';
+      p.setAttribute('role', 'alert');
+      p.textContent = T.akciaChyba;
+      obal.appendChild(p);
+      track('ucet_pristup_chyba', { status: (e && e.status) || 0 });
+    } finally {
+      bezi = false;
+      a.removeAttribute('aria-busy');
+    }
+  });
+}
+
 function druhProduktu(produkt) {
   const p = String(produkt || '').toLowerCase();
   if (p.indexOf('gdpr') !== -1) return 'gdpr';
@@ -284,8 +366,9 @@ function akciaBunka(nakup) {
     // so súbormi), predplatné len na stránku produktu: súbory chodia e-mailom.
     const a = document.createElement('a');
     a.className = 'btn btn-line';
-    a.href = stranka.jednorazovy ? odkazTitulu(stranka, nakup.session_id) : stranka.url;
+    a.href = stranka.url;
     a.textContent = stranka.jednorazovy ? T.akciaStiahnut : T.akciaOtvorit;
+    if (stranka.jednorazovy) odomkniKlikom(a, obal, nakup, (sid) => odkazTitulu(stranka, sid));
     obal.appendChild(a);
   } else if (druh === 'gdpr') {
     const a = document.createElement('a');
@@ -297,11 +380,12 @@ function akciaBunka(nakup) {
     cs.href = '/gdpr-dokumenty/cs/?ucet=1'; cs.textContent = T.akciaGdprCesky;
     p.appendChild(cs);
     obal.appendChild(p);
-  } else if (druh === 'kontrola' && nakup.session_id) {
+  } else if (druh === 'kontrola' && (nakup.session_id || nakup.id)) {
     const a = document.createElement('a');
     a.className = 'btn btn-line';
-    a.href = '/kontrola-suboru/' + KONTROLA_PREFIX + 'nahrat/?session_id=' + encodeURIComponent(nakup.session_id);
+    a.href = '/kontrola-suboru/' + KONTROLA_PREFIX + 'nahrat/';
     a.textContent = T.akciaKontrola;
+    odomkniKlikom(a, obal, nakup, (sid) => '/kontrola-suboru/' + KONTROLA_PREFIX + 'nahrat/?session_id=' + encodeURIComponent(sid));
     obal.appendChild(a);
   } else if (druh === 'oprava') {
     const p = document.createElement('p');

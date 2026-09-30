@@ -4,7 +4,7 @@
 <script src="/style/vzhlad.js?v=97575009"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://api.arling.workers.dev 'sha256-ajgAyPMVPHET1emYxyRoYPcpRbPlhz7KR4RjqyueEoc='; connect-src 'self' https://api.arling.workers.dev https://arling-asistent.arling.workers.dev; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://api.arling.workers.dev 'sha256-0RfdLqyDijpqMpjqYR7S3qDNT+UVocfl1+FZC5FoCQ0='; connect-src 'self' https://api.arling.workers.dev https://arling-asistent.arling.workers.dev; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#0a0908">
 <link rel="preconnect" href="https://api.arling.workers.dev" crossorigin>
@@ -34,7 +34,7 @@
 <link rel="preload" href="/fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/style/paper.css?v=92056f10">
 <script src="/style/prepinac.js?v=71e7f906" defer></script>
-<script type="module" src="/efaktura/app.js?v=7075713f"></script>
+<script type="module" src="/efaktura/app.js?v=d5de2286"></script>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -131,7 +131,7 @@
           "name": "Stojí kontrola niečo?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Nie, kontrola aj náhľad dokladu sú zadarmo, bez účtu a bez limitu. Platí sa len vtedy, keď v generátore postavíte novú faktúru a chcete stiahnuť hotové XML: 2,90 € bez DPH za jednu faktúru alebo 9,90 € bez DPH na 30 dní."
+            "text": "Nie, kontrola aj náhľad dokladu sú zadarmo, bez účtu a bez limitu. Platí sa len vtedy, keď v generátore postavíte novú faktúru a chcete stiahnuť hotové XML: 2,90 € bez DPH (3,57 € s 23 % DPH) za jednu faktúru alebo 9,90 € bez DPH (12,18 € s 23 % DPH) na 30 dní."
           }
         }
       ]
@@ -326,6 +326,7 @@
   .rule { transform:scaleX(1) !important; }
 </style></noscript>
 <link rel="stylesheet" href="/efaktura/davka.css?v=ca33dc1c">
+<link rel="stylesheet" href="/efaktura/efaktura-v4.css?v=a67288f4">
 </head>
 <body class="noc">
 <div class="wash" aria-hidden="true"><i></i><i></i></div>
@@ -362,8 +363,8 @@
       <span class="suma">0 €</span>
       <p class="zaco">Kontrola a náhľad XML zadarmo. <a href="/efaktura/#poskytovatelia">Prijímanie cez poskytovateľa, vystavovanie vo vašom programe alebo u poskytovateľa</a>.</p>
       <p class="pomoc">Platené XML je určené najmä pre XRechnung do Nemecka a Peppol mimo Slovenska. Náš nástroj XML neodosiela. Na doručenie cez Peppol potrebujete poskytovateľa, ktorý môže faktúru aj vystaviť v bezplatnom pláne. Pred kúpou si overte, či potrebujete samostatné XML a či ho poskytovateľ vie prijať.</p>
-      <p class="pomoc">Voliteľné stiahnutie XML: 2,90 € bez DPH za jednu faktúru alebo 9,90 € bez DPH na 30 dní.</p>
-      <p class="pomoc dan-platby">Ceny sú bez DPH. Stripe pripočíta príslušnú daň podľa údajov zákazníka a konečnú sumu ukáže pred zaplatením.</p>
+      <p class="pomoc">Voliteľné stiahnutie XML: 2,90 € bez DPH (3,57 € s 23 % DPH) za jednu faktúru alebo 9,90 € bez DPH (12,18 € s 23 % DPH) na 30 dní.</p>
+      <p class="pomoc dan-platby">Ceny sú bez DPH. Pokladňa Stripe pripočíta DPH podľa krajiny kupujúceho, pri kupujúcom zo Slovenska 23 %: jedna faktúra 3,57 €, 30 dní 12,18 €. Konečnú sumu ukáže pokladňa pred zaplatením.</p>
       <ul>
         <li>vyplníte formulár a vidíte doklad naživo</li>
         <li>XML vzniká v prehliadači, neposiela sa na server</li>
@@ -389,6 +390,12 @@
         <p class="sub r d1">Načítajte súbor UBL 2.1 (Invoice alebo CreditNote) a povieme vám, čo v ňom nesedí. Pri každom náleze uvidíte kód pravidla, vetu po slovensky, cestu k prvku a pod rozbaľovacím odkazom pôvodné anglické znenie pravidla. Podľa poľa CustomizationID si sami vyberieme, či platia pravidlá EN 16931, Peppol BIS Billing 3.0 alebo nemecký XRechnung.</p>
         <div class="vstup-slot"></div>
         <div id="sumar"></div>
+                <div class="kupa-vysledok" id="kupa-vysledok-blok" hidden>
+          <p class="pomoc">Kontrola aj náhľad ostávajú zadarmo. Platí sa len stiahnutie XML jednej faktúry, ktorú tu vytvoríte vo formulári: 2,90 € bez DPH (3,57 € s 23 % DPH).</p>
+          <div class="cta">
+            <button type="button" class="btn btn-solid" id="kupa-vysledok" data-link="https://buy.stripe.com/9B614h2jE05BgNk7C54ko0k" data-link-test="https://buy.stripe.com/test_eVq8wJ4rMg4z68Gf4x4ko0c">Kúpiť jednu faktúru za 2,90 € bez DPH (3,57 € s 23 % DPH)</button>
+          </div>
+        </div>
         <div class="akcie" id="akcie" hidden>
           <button type="button" class="btn btn-line" id="protokol">Stiahnuť protokol</button>
           <button type="button" class="btn btn-line" id="kopirovat">Skopírovať</button>
@@ -422,13 +429,13 @@
             <div class="doklad-obal" id="nahlad-zivy"></div>
             <div class="brana" id="brana">
               <h3>Stiahnutie XML</h3>
-              <p class="pomoc">Formulár aj náhľad sú zadarmo. Za stiahnutie hotového XML sa platí: 2,90 € bez DPH za jednu faktúru (odomknuté v tomto prehliadači 24 hodín, aby ste ju stihli opraviť a stiahnuť znova) alebo 9,90 € bez DPH na 30 dní bez obmedzenia počtu faktúr. XML vzniká vo vašom prehliadači a neposiela sa na server, my ho nikdy nevidíme.</p>
+              <p class="pomoc">Formulár aj náhľad sú zadarmo. Za stiahnutie hotového XML sa platí: 2,90 € bez DPH (3,57 € s 23 % DPH) za jednu faktúru (odomknuté v tomto prehliadači 24 hodín, aby ste ju stihli opraviť a stiahnuť znova) alebo 9,90 € bez DPH (12,18 € s 23 % DPH) na 30 dní bez obmedzenia počtu faktúr. XML vzniká vo vašom prehliadači a neposiela sa na server, my ho nikdy nevidíme.</p>
               <p class="pomoc">Platené XML je určené najmä pre XRechnung do Nemecka a Peppol mimo Slovenska. Náš nástroj XML neodosiela. Na doručenie cez Peppol potrebujete poskytovateľa, ktorý môže faktúru aj vystaviť v bezplatnom pláne. Pred kúpou si overte, či potrebujete samostatné XML a či ho poskytovateľ vie prijať. <a href="/efaktura/#poskytovatelia">Ako vybrať poskytovateľa</a>.</p>
               <div class="cta">
-                <button type="button" class="btn btn-solid" id="kupa-jedna" data-link="https://buy.stripe.com/9B614h2jE05BgNk7C54ko0k" data-link-test="https://buy.stripe.com/test_eVq8wJ4rMg4z68Gf4x4ko0c">Kúpiť jednu faktúru za 2,90 € bez DPH</button>
-                <button type="button" class="btn btn-line" id="kupa-30dni" data-link="https://buy.stripe.com/aFa3cpgau6tZ7cK7C54ko0n" data-link-test="https://buy.stripe.com/test_14AbIV3nI6tZgNk1dH4ko0g">Odomknúť na 30 dní za 9,90 € bez DPH</button>
+                <button type="button" class="btn btn-solid" id="kupa-jedna" data-link="https://buy.stripe.com/9B614h2jE05BgNk7C54ko0k" data-link-test="https://buy.stripe.com/test_eVq8wJ4rMg4z68Gf4x4ko0c">Kúpiť jednu faktúru za 2,90 € bez DPH (3,57 € s 23 % DPH)</button>
+                <button type="button" class="btn btn-line" id="kupa-30dni" data-link="https://buy.stripe.com/aFa3cpgau6tZ7cK7C54ko0n" data-link-test="https://buy.stripe.com/test_14AbIV3nI6tZgNk1dH4ko0g">Odomknúť na 30 dní za 9,90 € bez DPH (12,18 € s 23 % DPH)</button>
               </div>
-              <p class="pomoc">Predaj zabezpečuje Stripe cez Managed Payments ako obchodník záznamu (merchant of record), obsah dodáva ARLing. Na pokladni uvidíte „Sold through Link“, na výpise z účtu LINK.COM* ARLING a doklad vám pošle Link. Ako spotrebiteľ môžete od zmluvy odstúpiť do 14 dní bez udania dôvodu (naše podmienky, časť 5). <a href="https://arling.sk/podmienky/">Podmienky</a> · <a href="https://arling.sk/odstupenie/">Odstúpenie</a></p>
+              <p class="pomoc">Predávajúcim (merchant of record) je Link (Sold through Link, LLC) cez službu Stripe Managed Payments; produkt dodáva ARLing s. r. o. Na pokladni uvidíte „Sold through Link“, na výpise z účtu LINK.COM* ARLING a doklad vám pošle Link. Ako spotrebiteľ môžete od zmluvy odstúpiť do 14 dní bez udania dôvodu (naše podmienky, časť 5). <a href="https://arling.sk/podmienky/">Podmienky</a> · <a href="https://arling.sk/odstupenie/">Odstúpenie</a></p>
             </div>
             <div class="odomknute" id="odomknute" hidden></div>
             <p class="stav-platby" id="stav-platby" aria-live="polite"></p>
@@ -491,7 +498,7 @@
       <details class="otazka"><summary>Ako validátor vie, ktoré pravidlá platia?</summary><p>Z poľa CustomizationID, čo je prvok BT-24. Pre Peppol BIS Billing 3.0 má hodnotu urn:cen.eu:en16931:2017#compliant#urn:fdc:peppol.eu:2017:poacc:billing:3.0, pre nemecký XRechnung 3.0 hodnotu končiacu na xrechnung_3.0. Podľa tohto poľa si validátor sadu pravidiel vyberie sám, nič nenastavujete.</p></details>
       <details class="otazka"><summary>Čo nekontrolujeme?</summary><p>Nekontrolujeme schému XSD pre UBL 2.1, teda ani poradie prvkov, ani dátové typy. Nekontrolujeme 755 pravidiel skupín UBL-CR, UBL-SR a UBL-DT, ktoré väčšinou upozorňujú na prvky navyše. Na syntax CII nespúšťame žiadne pravidlá: taký súbor rozpoznáme a povieme vám to. Úspešná kontrola u nás preto nie je záruka, že príjemca faktúru prijme.</p></details>
       <details class="otazka"><summary>Prečo validátor hlási BR-CO-15?</summary><p>BR-CO-15 hovorí, že suma s DPH (BT-112) sa musí rovnať sume bez DPH (BT-109) plus celková DPH (BT-110). Býva to o jeden cent: účtovný program počíta DPH z každého riadku zvlášť a zaokrúhľuje, zatiaľ čo norma chce jednu daň na jednu sadzbu z celého základu. Opravte súčet v hlavičke faktúry, nie jednotlivé riadky.</p></details>
-      <details class="otazka"><summary>Stojí kontrola niečo?</summary><p>Nie, kontrola aj náhľad dokladu sú zadarmo, bez účtu a bez limitu. Platí sa len vtedy, keď v generátore postavíte novú faktúru a chcete stiahnuť hotové XML: 2,90 € bez DPH za jednu faktúru alebo 9,90 € bez DPH na 30 dní.</p></details>
+      <details class="otazka"><summary>Stojí kontrola niečo?</summary><p>Nie, kontrola aj náhľad dokladu sú zadarmo, bez účtu a bez limitu. Platí sa len vtedy, keď v generátore postavíte novú faktúru a chcete stiahnuť hotové XML: 2,90 € bez DPH (3,57 € s 23 % DPH) za jednu faktúru alebo 9,90 € bez DPH (12,18 € s 23 % DPH) na 30 dní.</p></details>
     </div>
   </section>
 
@@ -530,7 +537,7 @@
     <p class="site-all"><a href="https://arling.sk/vsetko/" data-umami-event="shell_footer_all">Všetko na jednej stránke<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></p>
     <p class="site-dev" data-site-vyvojari><span>Pre vývojárov</span><em>Bezplatné diagnostiky chýb v CORS, JWT, OAuth, Supabase a Stripe webhookoch.</em><a href="https://arling.sk/vsetko/#vyvojari">Všetky nástroje pre vývojárov<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a></p>
     <div class="site-foot-bottom"><p>ARLing s. r. o., Ivanská cesta 32E, 821 04 Bratislava, Slovensko. IČO 56583486, IČ DPH SK2122352100. <a href="mailto:podpora@arling.sk">podpora@arling.sk</a></p><p><a href="https://arling.sk/impressum/">Impressum</a> · <a href="https://arling.sk/llms.txt">llms.txt</a> · <a href="https://arling.sk/sitemap-index.xml">Sitemap</a></p></div>
-    <p class="site-foot-legal">Nástroje sú poskytované tak, ako sú, bez záruky. Anonymné počty návštev cez vlastné Umami. <a href="https://arling.sk/privacy/">Ochrana údajov</a> · <a href="https://arling.sk/podmienky/">Podmienky</a> · <a href="https://arling.sk/gdpr/">GDPR</a> · <a href="https://arling.sk/odstupenie/">Odstúpiť od zmluvy tu</a></p>
+    <p class="site-foot-legal">Nástroje sú poskytované tak, ako sú, bez záruky. Počty návštev cez vlastné Umami, pseudonymne a bez cookies. <a href="https://arling.sk/privacy/">Ochrana údajov</a> · <a href="https://arling.sk/podmienky/">Podmienky</a> · <a href="https://arling.sk/gdpr/">GDPR</a> · <a href="https://arling.sk/odstupenie/">Odstúpiť od zmluvy tu</a></p>
   </div>
 </footer>
 

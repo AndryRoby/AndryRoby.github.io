@@ -391,9 +391,9 @@ export const DICT = {
   },
   'faq.billing.q': { sk: 'Ako funguje platba a fakturácia?', en: 'How do payment and invoicing work?', de: 'Wie funktionieren Zahlung und Rechnung?' },
   'faq.billing.a': {
-    sk: 'Do 100 rozhovorov mesačne je používanie úplne zadarmo, bez karty. Nad tento limit prejdete na plán Starter (19 € mesačne, do 1 000 rozhovorov) alebo Pro (39 € mesačne, do 3 000 rozhovorov) zo stránky svojho účtu, ktorej odkaz dostanete hneď po vytvorení účtu. Platíte kartou cez Stripe, potvrdenie a faktúru pošle Stripe e-mailom, zrušiť sa dá kedykoľvek.',
-    en: 'Up to 100 conversations a month it is completely free, no card. Above that limit you move to Starter (€19 a month, up to 1,000 conversations) or Pro (€39 a month, up to 3,000 conversations) from your account page, whose link you get right after creating the account. You pay by card via Stripe, Stripe e-mails the receipt and invoice, and you can cancel any time.',
-    de: 'Bis 100 Gespräche im Monat ist die Nutzung völlig kostenlos, ohne Karte. Darüber wechseln Sie auf Ihrer Kontoseite, deren Link Sie direkt nach dem Anlegen bekommen, zu Starter (19 € im Monat, bis 1.000 Gespräche) oder Pro (39 € im Monat, bis 3.000 Gespräche). Sie zahlen per Karte über Stripe, Bestätigung und Rechnung schickt Stripe per E-Mail, kündbar jederzeit.',
+    sk: 'Do 100 rozhovorov mesačne je používanie úplne zadarmo, bez karty. Nad tento limit prejdete na plán Starter (19 € mesačne, do 1 000 rozhovorov) alebo Pro (39 € mesačne, do 3 000 rozhovorov) zo stránky svojho účtu, ktorej odkaz dostanete hneď po vytvorení účtu. Platíte kartou cez Stripe, potvrdenie a faktúru pošle e-mailom Link (Sold through Link, LLC), predajca pri platbe, zrušiť sa dá kedykoľvek.',
+    en: 'Up to 100 conversations a month it is completely free, no card. Above that limit you move to Starter (€19 a month, up to 1,000 conversations) or Pro (€39 a month, up to 3,000 conversations) from your account page, whose link you get right after creating the account. You pay by card via Stripe, Link (Sold through Link, LLC), the merchant of record, e-mails the receipt and invoice, and you can cancel any time.',
+    de: 'Bis 100 Gespräche im Monat ist die Nutzung völlig kostenlos, ohne Karte. Darüber wechseln Sie auf Ihrer Kontoseite, deren Link Sie direkt nach dem Anlegen bekommen, zu Starter (19 € im Monat, bis 1.000 Gespräche) oder Pro (39 € im Monat, bis 3.000 Gespräche). Sie zahlen per Karte über Stripe, Bestätigung und Rechnung schickt Link (Sold through Link, LLC), der Verkäufer der Zahlung, per E-Mail, kündbar jederzeit.',
   },
   'faq.cancel.q': { sk: 'Ako zrušiť, keď mi to nesadne?', en: 'How do I cancel if it is not for me?', de: 'Wie kündige ich, wenn es nicht passt?' },
   'faq.cancel.a': {
@@ -408,9 +408,9 @@ export const DICT = {
   'subscribe.email.placeholder': { sk: 'vas@email.sk', en: 'you@email.com', de: 'sie@email.de' },
   'subscribe.btn': { sk: 'Dajte mi vedieť', en: 'Notify me', de: 'Benachrichtigen' },
   'subscribe.privacy': {
-    sk: 'Len e-mail o novinkách k ARLing Asistentovi. Odhlásenie kedykoľvek jedným klikom.',
-    en: 'Only e-mail about ARLing Shopping Assistant news. Unsubscribe any time with one click.',
-    de: 'Nur E-Mails zu Neuigkeiten des ARLing Shopping Assistant. Abmeldung jederzeit mit einem Klick.',
+    sk: 'Len e-mail o novinkách k ARLing Asistentovi. Odhlásite sa odpoveďou na ktorýkoľvek náš e-mail.',
+    en: 'Only e-mail about ARLing Shopping Assistant news. Unsubscribe by replying to any of our e-mails.',
+    de: 'Nur E-Mails zu Neuigkeiten des ARLing Shopping Assistant. Abmelden können Sie sich mit einer Antwort auf eine beliebige E-Mail von uns.',
   },
   'subscribe.thanks': { sk: 'Ďakujeme, ozveme sa.', en: 'Thanks, we’ll be in touch.', de: 'Danke, wir melden uns.' },
   'subscribe.error': {
