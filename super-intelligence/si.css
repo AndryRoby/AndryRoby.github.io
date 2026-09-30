@@ -1,0 +1,194 @@
+/* AI to SI checker: len rozloženie nástroja a značky v texte. Farby, písma, tlačidlá a obal: paper.css.
+   Vzor: /rukopis/stranka/rukopis.css (pole vľavo, okno s výsledkom vpravo, zvýraznenia v texte). */
+.si-nastroj{--si-zmena:var(--ok);--si-posudit:var(--accent);--si-ponechane:var(--body)}
+.si-nastroj [hidden]{display:none!important}
+.si-nastroj .si-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+
+/* Úvod: formulár vľavo, výsledok vpravo; na telefóne pod sebou. */
+.si-nastroj .hero{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start;padding-block:32px;gap:32px}
+.si-nastroj .hero>.si-vstup{grid-column:1;grid-row:1;min-width:0}
+.si-nastroj .hero>.si-okno{grid-column:2;grid-row:1;min-width:0}
+.si-nastroj .hero>noscript{grid-column:1/-1}
+.si-nastroj .si-pill{display:inline-flex;border:1px solid var(--line);border-radius:var(--r-pill);padding:6px 12px;background:var(--card);font-size:13px;letter-spacing:0;text-transform:none}
+.si-nastroj .hero h1{font-size:clamp(32px,3.6vw,52px);max-width:18ch}
+.si-nastroj .hero .lead{font-size:18px;max-width:48ch;margin-bottom:20px}
+.si-nastroj .si-label{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px}
+.si-nastroj label{font-weight:600;color:var(--ink)}
+.si-nastroj .si-stitok{font:500 13px/1.3 var(--ui);border:1px solid var(--line);border-radius:var(--r-pill);padding:4px 8px;color:var(--ink)}
+.si-nastroj #text{box-sizing:border-box;display:block;width:100%;min-width:0;min-height:200px;resize:vertical;font:16px/1.5 var(--ui);padding:12px;border-radius:var(--r-s)}
+.si-nastroj #text.si-nad{border-color:var(--accent);box-shadow:0 0 0 3px rgba(242,100,60,.18)}
+.si-nastroj #napoveda{margin:8px 0 0}
+.si-nastroj .si-chyba{margin:8px 0 0;font:500 15px/1.45 var(--ui);color:var(--pu-chyba,#ff8a70)}
+.si-nastroj #subor-info{margin:8px 0 0;color:var(--body)}
+.si-nastroj .btn{min-height:48px;height:auto;padding-block:10px;white-space:normal;line-height:1.2;justify-content:center;text-align:center}
+/* Zdroje textu nad poľom (brána pokus 1, nález 11): na počítači v prvej obrazovke, aj keď pole siaha po spodok okna. */
+.si-nastroj .si-zdroj{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 10px}
+.si-nastroj .si-zdroj .btn{flex:0 1 auto}
+.si-nastroj .si-tlacidla{margin-top:12px;gap:8px}
+.si-nastroj label.btn{cursor:pointer;font-weight:500}
+.si-nastroj #subor:focus-visible+label{outline:2px solid var(--accent-light);outline-offset:3px}
+.si-nastroj #subor:disabled+label{cursor:not-allowed;opacity:.55}
+.si-nastroj .si-suhrn{margin:12px 0 0;font:500 15px/1.45 var(--ui);color:var(--ink)}
+.si-nastroj .si-suhrn a{display:inline-flex;align-items:center;min-height:48px;color:var(--ink);text-underline-offset:4px}
+
+/* Okno výsledku. */
+.si-nastroj .si-okno{overflow:visible}
+.si-nastroj .si-okno:focus{outline:none}
+.si-nastroj .si-okno:focus-visible{outline:2px solid var(--accent-light);outline-offset:3px}
+.si-nastroj .chrome{align-items:center;flex-wrap:wrap;min-height:44px}
+.si-nastroj .chrome h2{font:600 14px/1.3 var(--ui);margin:0;flex:1}
+.si-nastroj .si-bodky{display:flex;gap:6px}
+.si-nastroj .si-vnutro{padding:20px}
+.si-nastroj .si-pocty{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin:0 0 var(--s4);border-block:1px solid var(--line)}
+/* Čísla na jednej línii aj keď sa popis „Kept for review“ na telefóne zalomí (brána pokus 1, nález 9). */
+.si-nastroj .si-pocty>div{display:flex;flex-direction:column;justify-content:space-between;min-width:0;padding:var(--s3) var(--s3) var(--s3) 0}
+.si-nastroj .si-pocty>div+div{padding-left:var(--s3);border-left:1px solid var(--line)}
+.si-nastroj .si-pocty dt{font:500 13px/1.3 var(--ui);color:var(--body);overflow-wrap:break-word}
+.si-nastroj .si-pocty dd{margin:4px 0 0;font:600 32px/1.1 var(--nadpis);color:var(--ink);font-variant-numeric:tabular-nums}
+.si-nastroj .si-pocty [data-typ="posudit"] dt::before{content:"";display:inline-block;width:8px;height:8px;margin-right:6px;border-radius:2px;border:1px solid var(--si-posudit);vertical-align:.05em}
+.si-nastroj .si-volba{margin:0 0 var(--s4);padding:0;border:0;min-width:0}
+.si-nastroj .si-volba legend{padding:0;margin:0 0 var(--s2);font:500 14px/1.4 var(--ui);color:var(--ink)}
+.si-nastroj .si-moznosti{display:flex;flex-wrap:wrap;gap:var(--s2)}
+.si-nastroj .si-moznosti label{display:inline-flex;align-items:center;gap:10px;min-height:48px;padding:6px 16px 6px 14px;border:1px solid var(--linka-2,var(--line));border-radius:var(--r-pill);background:rgba(255,255,255,.03);font:500 15px/1.25 var(--ui);cursor:pointer}
+.si-nastroj .si-moznosti label:has(input:checked){border-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.si-nastroj .si-moznosti label:has(input:focus-visible){outline:2px solid var(--accent-light);outline-offset:2px}
+.si-nastroj .si-moznosti input{flex:none;width:18px;height:18px;margin:0}
+.si-nastroj .si-pozor{margin:0 0 var(--s4);padding:10px 14px;border-left:2px solid var(--accent);background:color-mix(in srgb,var(--accent) 8%,transparent);font:15px/1.5 var(--ui);color:var(--ink)}
+.si-nastroj .si-akcie{display:flex;flex-wrap:wrap;gap:var(--s2);margin:0 0 var(--s5)}
+.si-nastroj .si-akcie .btn{flex:1 1 10rem}
+.si-nastroj .si-nadpis-textu{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:var(--s2) var(--s4);margin-bottom:var(--s2)}
+.si-nastroj .si-nadpis-textu h3{margin:0}
+.si-nastroj #napoveda-text{margin:0 0 var(--s2)}
+.si-nastroj .si-legenda{display:flex;flex-wrap:wrap;gap:var(--s2) var(--s4);margin:0 0 var(--s3)}
+.si-nastroj .si-legenda>span{display:inline-flex;align-items:center;gap:6px}
+.si-nastroj #oznaceny-text{white-space:pre-wrap;overflow-wrap:anywhere;max-height:420px;overflow:auto;overscroll-behavior:contain;scroll-padding:16px;padding:var(--s4);border:1px solid var(--line);border-radius:var(--r-s);font:16px/1.85 var(--ui);color:var(--ink);background:var(--paper-deep)}
+.si-nastroj #oznaceny-text:empty{display:none}
+.si-nastroj #oznaceny-text:focus-visible{outline:2px solid var(--accent-light);outline-offset:2px}
+.si-nastroj .si-prazdne{margin:var(--s2) 0 0;color:var(--body)}
+.si-nastroj #vela,.si-nastroj #povod{margin:12px 0 0}
+
+/* Nález v texte je span s role="button" (brána pokus 1, nález 8): skutočne inline, dlhý nález sa zalomí s vetou
+   a box-decoration-break zopakuje rám na každom riadku. Stav nie je len farbou: zmena = preškrtnuté a nové slovo,
+   na posúdenie = plný rám, ponechané = čiarkovaný rám. Rám má 1 px vždy (priehľadný pri zmene), aby prepnutie neposunulo riadky. */
+.si-nastroj .si-nalez,.si-nastroj .si-vzor{display:inline;vertical-align:baseline;margin:0;padding:0 3px;border:1px solid transparent;border-radius:4px;font:inherit;color:var(--ink);text-align:start;white-space:pre-wrap;overflow-wrap:anywhere;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+.si-nastroj .si-nalez{background:transparent;cursor:pointer;scroll-margin:24px}
+.si-nastroj .si-nalez[aria-pressed="true"],.si-nastroj .si-vzor-zmena{background:color-mix(in srgb,var(--si-zmena) 15%,var(--paper-deep));box-shadow:inset 0 -2px var(--si-zmena)}
+.si-nastroj .si-nalez[aria-pressed="false"],.si-nastroj .si-vzor-ponechane{border-style:dashed;border-color:color-mix(in srgb,var(--si-ponechane) 70%,transparent)}
+.si-nastroj .si-nalez[aria-pressed="false"][data-dovod],.si-nastroj .si-vzor-posudit{border-style:solid;border-color:var(--si-posudit);background:color-mix(in srgb,var(--si-posudit) 10%,var(--paper-deep))}
+.si-nastroj .si-stare{color:var(--muted);text-decoration:none;background:linear-gradient(currentColor,currentColor) 0 55%/100% 1.5px no-repeat;margin-inline-end:.3em}
+/* Brána pokus 2, nález B: text-decoration line-through kreslí Firefox pri tomto písme skoro pri spodku písmen, takže vyzeralo ako podčiarknutie; čiara cez pozadie je v oboch prehliadačoch v 55 % výšky riadku. */
+.si-nastroj .si-definicia{margin:12px 0 18px;display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;font:14px/1.5 var(--ui);color:var(--ink)}
+@media (max-width:480px){.si-nastroj .si-definicia .btn{flex:1 1 100%;padding-inline:12px}}
+.si-nastroj .si-definicia span{flex:1 1 260px;min-width:0}
+.si-nastroj .si-nove{font-weight:600}
+.si-nastroj .si-legenda .si-vzor{font:500 14px/1.6 var(--ui)}
+@media (hover:hover) and (pointer:fine){
+  .si-nastroj .si-nalez:hover{border-color:var(--accent-light)}
+}
+.si-nastroj .si-nalez:focus-visible{outline:2px solid var(--accent-light);outline-offset:2px}
+
+/* Pás faktov a doplnky pod úvodom. */
+.si-nastroj .si-fakty{display:flex;flex-wrap:wrap;gap:8px 24px;max-width:none;margin:0;padding-block:16px;border-block:1px solid var(--line);font:14px/1.5 var(--ui)}
+.si-nastroj .si-fakty span{display:inline-flex;align-items:center;gap:8px}
+.si-nastroj .si-fakty span::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--accent);flex:none}
+/* Jedna veta s cestou ďalej za zoznamom (brána pokus 1, nález 15), mimo hlavnej časti nástroja (R57). */
+.si-nastroj .si-dalej{max-width:68ch;margin:var(--s5) 0 0;color:var(--body)}
+.si-nastroj .si-dalej a{color:var(--ink);text-underline-offset:4px}
+.si-nastroj .si-aktualne{margin:0 0 var(--s3)}
+.si-nastroj section>h3{margin-top:var(--s5)}
+
+/* Zoznam ponechaných nálezov: úryvok, dôvod, prepínač a skok do textu. Oddelené linkou, nie kartami. */
+.si-nastroj .si-uvod{max-width:68ch;margin:0 0 var(--s4)}
+.si-nastroj .si-zoznam{margin:0;padding:0;list-style:none}
+.si-nastroj .si-polozka{padding:var(--s4) 0;border-top:1px solid var(--line)}
+.si-nastroj .si-polozka:last-child{border-bottom:1px solid var(--line)}
+.si-nastroj .si-kontext{max-width:72ch;margin:0 0 var(--s2);font:16px/1.6 var(--ui);color:var(--ink);overflow-wrap:anywhere}
+.si-nastroj .si-kontext mark{padding:1px 3px;border-radius:3px;color:var(--ink);background:color-mix(in srgb,var(--si-posudit) 20%,var(--paper-deep));box-shadow:inset 0 -2px var(--si-posudit);box-decoration-break:clone;-webkit-box-decoration-break:clone}
+.si-nastroj .si-dovod{max-width:72ch;margin:0 0 var(--s3);font:15px/1.5 var(--ui);color:var(--body)}
+.si-nastroj .si-riadok{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s2) var(--s5)}
+.si-nastroj .si-prepnut{display:inline-flex;align-items:center;gap:10px;min-height:48px;padding:6px 18px 6px 14px;border:1px solid var(--linka-2,var(--line));border-radius:var(--r-pill);background:rgba(255,255,255,.03);font:500 15px/1.25 var(--ui);cursor:pointer}
+.si-nastroj .si-prepnut input{flex:none;width:20px;height:20px;margin:0;accent-color:var(--accent)}
+.si-nastroj .si-prepnut:has(input:checked){border-color:var(--si-zmena)}
+.si-nastroj .si-prepnut:has(input:focus-visible){outline:2px solid var(--accent-light);outline-offset:2px}
+.si-nastroj .si-skok{display:inline-flex;align-items:center;min-height:48px;color:var(--ink);font:500 15px/1.25 var(--ui);text-underline-offset:4px}
+
+/* Pravidlá a príkaz. */
+.si-nastroj .si-tabulka{overflow-x:auto;margin:var(--s4) 0 var(--s5);border:1px solid var(--line);border-radius:var(--r-m)}
+.si-nastroj .si-tabulka table{width:100%;border-collapse:collapse;font:15px/1.5 var(--ui)}
+.si-nastroj .si-tabulka th,.si-nastroj .si-tabulka td{padding:12px 16px;text-align:left;vertical-align:top}
+.si-nastroj .si-tabulka tbody tr:last-child td{border-bottom:0}
+.si-nastroj .si-tabulka td:first-child{width:45%;color:var(--ink)}
+.si-nastroj .si-term{font-weight:600;color:var(--ink)}
+.si-nastroj .si-cele{white-space:nowrap}
+.si-nastroj blockquote{max-width:68ch;margin:var(--s4) 0;padding:var(--s3) var(--s4);border-left:2px solid var(--accent);background:var(--paper-deep);border-radius:0 var(--r-s) var(--r-s) 0}
+.si-nastroj blockquote p{margin:0;color:var(--ink);font:17px/1.6 var(--ui)}
+.si-nastroj .si-body{max-width:68ch;margin:0 0 var(--s4);padding-left:1.2em}
+.si-nastroj .si-body li{margin:0 0 var(--s2)}
+.si-nastroj .si-body strong,.si-nastroj .si-pravne strong{color:var(--ink)}
+.si-nastroj .si-pravne{margin-top:var(--s4)}
+.si-nastroj .si-zdroje a{display:inline-flex;align-items:center;min-height:44px}
+
+/* Otázky ako v Rukopise. */
+.si-nastroj main details{border-top:1px solid var(--line);padding-block:12px}
+.si-nastroj main summary{min-height:48px;cursor:pointer;padding:12px 0;color:var(--ink)}
+.si-nastroj main details>p{max-width:68ch}
+
+/* Náhradné kopírovanie bez schránky. */
+.si-nastroj dialog{width:min(640px,calc(100% - 32px));max-height:90vh;overflow:auto;border:1px solid var(--line);border-radius:var(--radius);padding:24px;background:var(--paper-deep);color:var(--ink)}
+.si-nastroj dialog textarea{display:block;width:100%;margin-block:12px;font:15px/1.5 var(--ui);padding:12px;resize:vertical}
+
+/* Rám stránky ako v Rukopise: svetlo cez celú šírku okna, ovládanie hlavičky a päty na dotyk. */
+body.noc.si-nastroj{overflow-x:clip}
+body.noc.si-nastroj main::before{left:calc(50% - var(--sirka-okna,100vw) / 2);right:auto;width:var(--sirka-okna,100vw)}
+.si-nastroj header.site-header .bar .langsel>summary,.si-nastroj header.site-header .site-menu>summary,.si-nastroj header.site-header .site-cta{min-height:44px;min-width:44px}
+.si-nastroj footer.site-footer a{min-height:44px;display:inline-flex;align-items:center}
+
+@media (min-width:861px){
+  /* Pole na text siaha po spodok okna s výsledkom (rovnako ako Rukopis). */
+  .si-nastroj .hero{align-items:stretch}
+  .si-nastroj .hero>.si-okno{align-self:start}
+  .si-nastroj .hero>.si-vstup{display:flex;flex-direction:column}
+  .si-nastroj .hero>.si-vstup>#formular{display:flex;flex-direction:column;flex:1 1 auto;min-height:0}
+  .si-nastroj .hero>.si-vstup>#formular>#text{flex:1 1 auto;min-height:280px;resize:none}
+  /* Súhrn pod tlačidlami je pre telefón, kde je výsledok až pod formulárom; na počítači je okno hneď vedľa. */
+  .si-nastroj .si-suhrn{display:none}
+}
+@media (max-width:860px){
+  .si-nastroj .hero{grid-template-columns:minmax(0,1fr);gap:20px;padding-top:20px}
+  .si-nastroj .hero>.si-vstup{grid-column:1;grid-row:1}
+  .si-nastroj .hero>.si-okno{grid-column:1;grid-row:2}
+  .si-nastroj .hero h1{max-width:22ch}
+  .si-nastroj #oznaceny-text{max-height:360px}
+  /* Telefón: ovládanie nástroja má 48 px. Spoločná hlavička a päta ostávajú 44 px ako na celom webe (paper.css). */
+  .si-nastroj .si-zdroje a{min-height:48px}
+}
+@media (max-width:480px){
+  .si-nastroj .hero h1{font-size:30px;line-height:1.1;margin-bottom:10px}
+  .si-nastroj .hero .lead{font-size:16px;line-height:1.45;margin-bottom:12px}
+  .si-nastroj .si-pill{margin-bottom:10px}
+  .si-nastroj #text{min-height:160px}
+  .si-nastroj .si-zdroj{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .si-nastroj .si-tlacidla .btn{flex:1 1 100%}
+  .si-nastroj .si-vnutro{padding:14px}
+  .si-nastroj .si-pocty dd{font-size:26px}
+  .si-nastroj .si-moznosti label{flex:1 1 100%}
+  .si-nastroj .si-nadpis-textu .btn{flex:1 1 100%}
+  .si-nastroj .si-tabulka th,.si-nastroj .si-tabulka td{padding:10px 12px}
+  .si-nastroj dialog textarea{height:230px}
+}
+/* Tabuľka ostáva tabuľkou aj pri 600 px a menej (brána pokus 1, nález 7). paper.css tam z tabuliek robí karty
+   s popisom z data-th; tu by vznikli karty v karte bez hlavičiek. Dva stĺpce sa do 328 px zmestia. */
+@media (max-width:600px){
+  .si-nastroj .si-tabulka{overflow-x:auto;border:1px solid var(--line);background:none}
+  .si-nastroj .si-tabulka table{display:table;width:100%}
+  .si-nastroj .si-tabulka thead{display:table-header-group}
+  .si-nastroj .si-tabulka tbody{display:table-row-group}
+  .si-nastroj .si-tabulka tr{display:table-row;width:auto;margin:0;padding:0;border:0;border-radius:0;background:none}
+  .si-nastroj .si-tabulka th,.si-nastroj .si-tabulka td{display:table-cell;width:auto;border-bottom:1px solid var(--line)}
+  .si-nastroj .si-tabulka td:first-child{width:auto}
+  .si-nastroj .si-tabulka td::before{content:none}
+  .si-nastroj .si-tabulka tbody tr:last-child td{border-bottom:0}
+}
+@media (prefers-reduced-motion:reduce){
+  .si-nastroj *,.si-nastroj *::before,.si-nastroj *::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+}

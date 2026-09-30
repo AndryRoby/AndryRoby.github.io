@@ -10,6 +10,26 @@ import { hak, format, zona, sprite, spriteNazvu, spriteRiadku, vyvazZalom, minPi
 import { spriteDrahokamu, iskra, FARBA } from './drahokamy.js';
 
 const DLZKA = 14;
+// Verzia pre záznam v Google Play (render.html?obchod): „Coming soon“ je v samotnom obchode nepravda a odznak je výzva,
+// preto vecná veta bez výzvy (ops/video/PLAY-VIDEA.md, tretí záver).
+// ---------- záver: prepínač pre deň spustenia (ops/video/kodfilm/DOSTUPNE-V-OBCHODE.md, ako Duel a Quiet Grids) ----------
+// Andrej 30. 9. 2026: „sprav také aj, že to je na google play, keď to vyjde“. 'coming-soon' na webe, kým obchod nevráti 200;
+// 'google-play' v deň vydania (ops/games/play/verejne.mjs prepne ZAVER_PREDVOLENY); 'obchod' (aj ?obchod) do záznamu v Play.
+export const ZAVERY = ['coming-soon', 'google-play', 'obchod'];
+const ZAVER_PREDVOLENY = 'coming-soon';
+let ZAVER = (() => {
+  try {
+    const q = new URLSearchParams(globalThis.location?.search || '');
+    if (q.has('obchod')) return 'obchod';
+    const z = q.get('zaver');
+    return ZAVERY.includes(z) ? z : ZAVER_PREDVOLENY;
+  } catch { return ZAVER_PREDVOLENY; }
+})();
+export function nastavZaver(z) { if (ZAVERY.includes(z)) ZAVER = z; }
+const PLAY_URL = 'https://play.google.com/store/apps/details?id=sk.arling.prism5';
+// Appka má štyri denné mriežky (store-listing-en.md overený proti kódu); webová hra na arling.sk jednu.
+const appka = () => ZAVER !== 'coming-soon';
+const TEXT_ZAVERU = { 'coming-soon': 'Coming soon to Google Play', 'google-play': 'Get it on Google Play', obchod: 'Endless levels. Never guessed.' };
 
 // Platný latinský štvorec 5 x 5: každý drahokam raz v každom riadku aj stĺpci.
 // C Circle, D Diamond, Q Square, S Star, T Triangle.
@@ -204,11 +224,15 @@ function stavTexty(W, H, dpr, R) {
     }) };
   });
   const nazov = spriteNazvu(dpr, 'Prism 5', s * (R.stred ? 0.16 : 0.15), R.ew, { zarovnanie: zar });
-  const veta = spriteRiadku(dpr, 'Five gems. One daily grid.', s * (R.stred ? 0.06 : 0.056), R.ew, { zarovnanie: zar, maxRiadkov: 1 });
+  const veta = spriteRiadku(dpr, appka() ? 'Five gems. Four daily grids.' : 'Five gems. One daily grid.', s * (R.stred ? 0.06 : 0.056), R.ew, { zarovnanie: zar, maxRiadkov: 1 });
   const veta2 = spriteRiadku(dpr, 'Each gem once in every row and column.', Math.max(s * 0.04, minPismo(W, H)), R.ew, { vaha: 400, farba: '#b3bbe0', zarovnanie: zar, maxRiadkov: 2 });
   // Appka ešte nie je v Google Play: len nápis bez pilulky a bez ▶ (nesmie vyzerať ako odznak obchodu),
   // pod ním čitateľná adresa (aspoň 40 px pri 1080). Veta pre vývojárov vypadla.
-  const TXT = 'Coming soon to Google Play';
+  // Tvrdenia podľa textu obchodu overeného proti kódu (ops/games/prism5/obchod/store-listing-en.md: „Four daily 5x5 gem
+  // sudoku grids and endless levels. Reasoned, never guessed.“).
+  // 30. 9. 2026: plná veta „Endless levels. Reasoned, never guessed.“ sa pri najmenšom povolenom písme do stĺpca
+  // nezmestila a orezala sa na „never gue“ (kontrolné snímky 1920 x 1080); kratšia veta hovorí to isté.
+  const TXT = TEXT_ZAVERU[ZAVER];
   const mer = platno(4, 4).getContext('2d');
   mer.font = pismo(700, 100);
   const kB = mer.measureText(TXT).width / 100;
@@ -540,7 +564,7 @@ const film = {
     { od: 3.75, text: 'Where can the star go in this row?' },
     { od: 5.6, text: 'Only one place for the star. The other free cells share a column with a star.' },
     { od: 8.15, text: 'The grid is solved and a wave of light runs across it.' },
-    { od: 9.55, text: 'Prism 5. Five gems. One daily grid. Each gem once in every row and column. Coming soon to Google Play. arling.sk' },
+    { od: 9.55, text: 'Prism 5. ' + (appka() ? 'Five gems. Four daily grids.' : 'Five gems. One daily grid.') + ' Each gem once in every row and column. ' + TEXT_ZAVERU[ZAVER].replace(/\.?$/, '.') + ' arling.sk' },
   ],
   async pripravit() {
     if (document.fonts && document.fonts.load) {
@@ -570,10 +594,11 @@ const film = {
   },
   // tlačidlo prehrať na plagáte: stred dosky v koncovej polohe
   stredPlagatu() { const R = L.R; return [R.bx2 + R.B2 / 2, R.by2 + R.B2 / 2]; },
-  // Prism 5 ešte nie je v Google Play: štítok nevedie do obchodu, ale na odsek o appke na tejto stránke.
+  // Kým Prism 5 nie je v Google Play, štítok vedie na odsek o appke; v deň vydania (zaver google-play) do obchodu.
   odkazy() {
     const b = L.texty.btn;
-    return [{ x: b.x, y: b.y, w: b.w, h: b.h, href: '#about', text: 'Coming soon to Google Play. About Prism 5', od: T.tlacidlo, udalost: 'prism5_film_about' }];
+    const doObchodu = ZAVER === 'google-play';
+    return [{ x: b.x, y: b.y, w: b.w, h: b.h, href: doObchodu ? PLAY_URL + '&utm_source=arling.sk&utm_medium=film&utm_campaign=prism5-film' : '#about', text: doObchodu ? 'Get it on Google Play' : 'Coming soon to Google Play. About Prism 5', od: T.tlacidlo, udalost: doObchodu ? 'prism5_film_play' : 'prism5_film_about' }];
   },
   zvuk: partitura(),
 };
