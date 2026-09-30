@@ -4,7 +4,7 @@
 // zoznam slov ako čipy, karta dokončenej úrovne s mincami, ktoré sa počítajú nahlas.
 // Scény: hák (hotová doska, prst ťahom nájde DAISY, názov od snímky 0), doska sa vyprázdni, prst
 // nájde TULIP (vodorovne) a FERN (šikmo), potom ROSE (nahor) a DAISY, konfety a karta +15 coins,
-// zvýraznenia prejdú štýlmi Chalk, Marker, Stitch, Ribbon, záver „Coming soon to Google Play“ a arling.sk.
+// zvýraznenia prejdú štýlmi Chalk, Marker, Stitch, Ribbon, záver s ikonou appky (FUN / ART / SEA), „Get it on Google Play“ a arling.sk (hra je v obchode od 26. 9., verejná stránka vracia 200).
 
 import { okno, obmedz, lerp, ease, hash, obalka } from './engine/cas.js';
 import { platno, zrno, zaoblene, zalom } from './engine/kresba.js';
@@ -83,6 +83,10 @@ const TITULKY = [
 
 // ---------- stav vrstiev (prestavia sa pri zmene rozmeru) ----------
 let L = null;
+// Ikona appky (FUN / ART / SEA, Andrej 30. 9. 2026: „keď zmeníš logo, musíš zmeniť … videá“): nad názvom v záverečnej
+// karte aj v háku, ako na karte appky v obchode. Načíta ju pripravit(); bez nej film beží ďalej bez ikony.
+let IKONA = null;
+const OBCHOD = typeof location !== 'undefined' && new URLSearchParams(location.search).has('obchod');
 
 /** Rozloženie: 9:16, 4:5 a 1:1 pod sebou (hlavička, doska, čipy, titulok), 16:9 doska vľavo, zvyšok vpravo. */
 function rozlozenie(W, H) {
@@ -316,12 +320,23 @@ function stavTexty(W, H, dpr, R) {
 
   // --- záver (a hák v rovnakom zložení): názov, vety, tlačidlo, tiráž ---
   const nazov = spriteNazvu(dpr, 'Word Search', s * (R.stred ? 0.15 : 0.13), R.ew, zar);
+  const iw = s * (R.stred ? 0.2 : 0.17), ip = Math.ceil(iw * 0.12);
+  const ikona = IKONA ? sprite(dpr, iw + ip * 2, iw + ip * 2, (x) => {
+    x.translate(ip, ip);
+    x.save();
+    x.shadowColor = rgba(FARBA.ink, 0.3); x.shadowBlur = iw * 0.08; x.shadowOffsetY = iw * 0.035;
+    zaoblene(x, 0, 0, iw, iw, iw * 0.22); x.fillStyle = FARBA.ink; x.fill();
+    x.restore();
+    x.save(); zaoblene(x, 0, 0, iw, iw, iw * 0.22); x.clip(); x.drawImage(IKONA, 0, 0, iw, iw); x.restore();
+  }) : null;
   const veta = spriteRiadku(dpr, 'Find a word. Find your flow.', s * (R.stred ? 0.058 : 0.054), R.ew, { zarovnanie: zar, maxRiadkov: 1 });
   const mp = minPismo(W, H);
   const veta2 = spriteRiadku(dpr, 'Calm word puzzles in 150 topics.', Math.max(s * 0.04, mp), R.ew, { vaha: 600, farba: FARBA.green, zarovnanie: zar, maxRiadkov: 2 });
-  // Appka ešte nie je v Google Play: len nápis bez pilulky a bez ▶ (nesmie vyzerať ako odznak obchodu),
+  // Nápis „Get it on Google Play“ bez pilulky a bez ▶ (nie je to oficiálny odznak, ten má vlastné pravidlá),
   // pod ním čitateľná adresa (aspoň 40 px pri 1080). Veta pre vývojárov vypadla.
-  const TXT = 'Coming soon to Google Play';
+  // Verzia pre záznam v Google Play (?obchod): „Coming soon to Google Play“ je v samotnom obchode nepravda a odznak je
+  // výzva, preto len vecná veta bez výzvy (ops/video/PLAY-VIDEA.md, tretí záver).
+  const TXT = OBCHOD ? 'Daily puzzle. Plays offline.' : 'Get it on Google Play';
   m.font = nun(800, 100);
   const kB = m.measureText(TXT).width / 100;
   const velB = Math.max(mp * 1.1, Math.min(s * (R.stred ? 0.046 : 0.042), R.ew / kB));
@@ -335,7 +350,7 @@ function stavTexty(W, H, dpr, R) {
   const tiraz = spriteRiadku(dpr, 'arling.sk', Math.max(s * 0.07, mp * 1.25), R.ew, { vaha: 800, farba: FARBA.green, zarovnanie: zar, maxRiadkov: 1 });
 
   const gap = s * 0.03;
-  const blokH = nazov.h + gap * 0.4 + veta.h + gap * 0.15 + veta2.h + gap + tlacidlo.h + gap * 0.4 + tiraz.h;
+  const blokH = (ikona ? iw + gap * 0.6 : 0) + nazov.h + gap * 0.4 + veta.h + gap * 0.15 + veta2.h + gap + tlacidlo.h + gap * 0.4 + tiraz.h;
   let ey;
   if (R.stred) {
     const gB = s * 0.05;
@@ -349,13 +364,15 @@ function stavTexty(W, H, dpr, R) {
   }
   const pozicie = {};
   let y = ey;
+  pozicie.ikona = y - ip; if (ikona) y += iw + gap * 0.6;
   pozicie.nazov = y; y += nazov.h + gap * 0.4;
   pozicie.veta = y; y += veta.h + gap * 0.15;
   pozicie.veta2 = y; y += veta2.h + gap;
   pozicie.tlacidlo = y; y += tlacidlo.h + gap * 0.4;
   pozicie.tiraz = y;
   const btnX = R.stred ? (W - bw) / 2 : R.ex;
-  return { titulky, nadpis, pocty, pilulky, stitok, mince, cipy, polohyCipov, karta, plus, nazov, veta, veta2, tiraz, tlacidlo, pozicie, btn: { x: btnX, y: pozicie.tlacidlo + 4, w: bw, h: bh } };
+  const ikonaX = (R.stred ? R.ex + (R.ew - iw) / 2 : R.ex) - ip;
+  return { titulky, nadpis, pocty, pilulky, stitok, mince, cipy, polohyCipov, karta, plus, ikona, ikonaX, nazov, veta, veta2, tiraz, tlacidlo, pozicie, btn: { x: btnX, y: pozicie.tlacidlo + 4, w: bw, h: bh } };
 }
 
 // ---------- stav v čase t (čisté funkcie) ----------
@@ -600,6 +617,7 @@ function kresliTexty(x, t) {
   const { titulky, pozicie } = texty;
   // hák: názov a vety od prvej snímky na mieste záverečného bloku
   if (t < HAK.koniec) {
+    if (texty.ikona) HAK.kresliRiadok(x, t, texty.ikona, texty.ikonaX, pozicie.ikona);
     HAK.kresliNazov(x, t, texty.nazov, R.ex, pozicie.nazov);
     HAK.kresliRiadok(x, t, texty.veta, R.ex, pozicie.veta);
     HAK.kresliRiadok(x, t, texty.veta2, R.ex, pozicie.veta2, 0.14);
@@ -622,6 +640,15 @@ function kresliTexty(x, t) {
     x.drawImage(sp.c, R.ex, y + (1 - p) * sp.h * 0.9, sp.w, sp.h);
     x.restore();
   };
+  // ikona príde tesne pred názvom: jemné zväčšenie z 86 % s malým prekmitom, bez rotácie
+  const pi = okno(t, T.nazov - 0.2, T.nazov + 0.35);
+  if (texty.ikona && pi > 0) {
+    const ik = texty.ikona, sc = 0.86 + 0.14 * ease.outBack(pi, 1.6);
+    const cx = texty.ikonaX + ik.w / 2, cy = pozicie.ikona + ik.h / 2;
+    x.globalAlpha = obmedz(pi * 2.2);
+    x.drawImage(ik.c, cx - (ik.w * sc) / 2, cy - (ik.h * sc) / 2, ik.w * sc, ik.h * sc);
+    x.globalAlpha = 1;
+  }
   vyjdi(texty.nazov, T.nazov, pozicie.nazov, 0.75);
   vyjdi(texty.veta, T.veta, pozicie.veta);
   vyjdi(texty.veta2, T.veta2, pozicie.veta2);
@@ -661,10 +688,16 @@ const film = {
     { od: 7.4, text: 'Rose runs upward, then daisy across the top. Every word is found.' },
     { od: 9.35, text: 'Level complete. Finish a level, earn coins: plus 15 coins, counted out one by one.' },
     { od: 12.15, text: 'Coins unlock new highlighter styles: Chalk, Marker, Stitch and Ribbon, then Classic again.' },
-    { od: 16.15, text: 'Word Search. Find a word. Find your flow. Calm word puzzles in 150 topics. Coming soon to Google Play. arling.sk' },
+    { od: 16.15, text: 'The Word Search app icon, letter tiles spelling fun, art and sea. Word Search. Find a word. Find your flow. Calm word puzzles in 150 topics. ' + (OBCHOD ? 'Daily puzzle. Plays offline.' : 'Get it on Google Play.') + ' arling.sk' },
   ],
   async pripravit() {
     await nacitajPisma(import.meta.url);
+    IKONA = await new Promise((ok) => {
+      const im = new Image();
+      im.onload = () => ok(im); im.onerror = () => ok(null);
+      im.src = new URL('ikona.webp', import.meta.url).href;
+    });
+    if (IKONA && IKONA.decode) await IKONA.decode().catch(() => {});
     if (document.fonts && document.fonts.load) {
       await Promise.all([400, 600, 700, 800].map((v) => document.fonts.load(nun(v, 40)))).catch(() => {});
     }
@@ -690,10 +723,10 @@ const film = {
   },
   // tlačidlo prehrať na plagáte: stred dosky v koncovej polohe
   stredPlagatu() { const R = L.R; return [R.bx2 + R.B2 / 2, R.by2 + R.B2 / 2]; },
-  // Word Search ešte nie je v Google Play: tlačidlo nevedie do obchodu, ale na odsek o appke na tejto stránke.
+  // Word Search je v Google Play (verejná stránka 200 od 30. 9. 2026 overená curl): tlačidlo vedie do obchodu.
   odkazy() {
     const b = L.texty.btn;
-    return [{ x: b.x, y: b.y, w: b.w, h: b.h, href: '#about', text: 'Coming soon to Google Play. About Word Search', od: T.tlacidlo, udalost: 'word_search_film_about' }];
+    return [{ x: b.x, y: b.y, w: b.w, h: b.h, href: 'https://play.google.com/store/apps/details?id=sk.arling.wordsearch&utm_source=arling.sk&utm_medium=film&utm_campaign=word-search-film', text: 'Get it on Google Play', od: T.tlacidlo, udalost: 'word_search_film_play' }];
   },
   zvuk: partitura(),
 };
