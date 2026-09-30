@@ -83,11 +83,11 @@ for (const [jazyk, j, vzorky] of [['sk',sk,skVzorky], ['en',en,enVzorky]]) {
     assert.equal(osemdesiat.merania.M1,undefined);
     assert.equal(osemdesiat.merania.M2,undefined);
     assert.equal(meraj(vzorky[0]).ciastocny,false);
+    // v1.4 (30. 9. 2026): bez limitu 5 000 slov, dlhý text sa meria celý.
     const dlhe = meraj(vypln(jazyk,5001));
-    assert.equal(dlhe.slov,5000);
+    assert.equal(dlhe.slov,5001);
     assert.equal(dlhe.povodne_slov,5001);
-    assert.equal(dlhe.orezane,true);
-    assert.equal(meraj(vypln(jazyk,5000)).orezane,false);
+    assert.equal(dlhe.orezane,false);
   });
   test(jazyk + ': 5 najdlhšie frázy, hranice slov a opakovanie', () => {
     assert.ok(j.FRAZY.length >= 80);
@@ -117,7 +117,8 @@ for (const [jazyk, j, vzorky] of [['sk',sk,skVzorky], ['en',en,enVzorky]]) {
     if(jazyk==='en') assert.equal(meraj('science audience comment ' + vypln(jazyk,30)).merania.M8.pocet,0);
   });
   test(jazyk + ': pomlčky a otázka s explicitnou odpoveďou', () => {
-    assert.equal(meraj('Text\u2014text 2\u20133 text \u2013 text -- text. ' + vypln(jazyk,80)).merania.M7.pocet,3);
+    // v1.4: v sloven\u010dine a \u010de\u0161tine je poml\u010dka s medzerami (\u201e \u2013 \u201c) spr\u00e1vny pravopis, nepo\u010d\u00edta sa; v angli\u010dtine \u00e1no.
+    assert.equal(meraj('Text\u2014text 2\u20133 text \u2013 text -- text. ' + vypln(jazyk,80)).merania.M7.pocet,jazyk==='sk'?2:3);
     const ano = jazyk === 'sk' ? 'Áno' : 'Yes';
     assert.equal(meraj('Test? '+ano+'. '+vypln(jazyk,80)).merania.M5.otazky,0);
     assert.equal(meraj(vypln(jazyk,80)+' Test?').merania.M5.otazky,1);
@@ -137,7 +138,8 @@ test('jazyk a vstupné chyby', () => {
   assert.equal(merajText(vypln('en',30)).chyba,'vyber_jazyk');
   assert.equal(merajText('the and of '.repeat(15)).jazyk,'en');
   assert.equal(merajText('a že sa '.repeat(15)).jazyk,'sk');
-  assert.throws(()=>merajText('x',{jazyk:'de'}),RangeError);
+  // v1.4 meria aj nemčinu (jadro/jazyky/de.js); neznámy jazyk je chyba.
+  assert.throws(()=>merajText('x',{jazyk:'xx'}),RangeError);
   assert.throws(()=>merajText(null),TypeError);
 });
 

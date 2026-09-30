@@ -31,9 +31,19 @@ function ukazTip(button,pin=false) {
 }
 function umiestniTip() {
   if(!aktivny) return;
-  const b=aktivny.getBoundingClientRect(), w=tip.getBoundingClientRect();
-  tip.style.left=Math.max(12,Math.min(b.left,innerWidth-w.width-12))+'px';
-  tip.style.top=Math.max(12,Math.min(b.bottom+8,innerHeight-w.height-12))+'px';
+  // 30. 9. 2026 (Andrej, snímka „Poučenie na konci“): bublina visela ďaleko pod textom, keď bolo zvýraznenie
+  // v posúvanom rámčeku mimo viditeľnej časti. Teraz stojí pri viditeľnom riadku zvýraznenia, pri nedostatku
+  // miesta dole nad ním, a keď zvýraznenie v rámčeku vidno nie je, bublina sa skryje (vráti sa pri posune).
+  const ram=area.getBoundingClientRect();
+  const riadky=[...aktivny.getClientRects()].filter(q=>q.bottom>ram.top+1&&q.top<ram.bottom-1);
+  if(!riadky.length) { tip.hidden=true; return; }
+  tip.hidden=false;
+  const prvy=riadky[0], w=tip.getBoundingClientRect();
+  const hore=Math.max(prvy.top,ram.top), dole=Math.min(riadky[riadky.length-1].bottom,ram.bottom);
+  let y=dole+8;
+  if(y+w.height>innerHeight-12&&hore-8-w.height>=12) y=hore-8-w.height;
+  tip.style.left=Math.max(12,Math.min(prvy.left,innerWidth-w.width-12))+'px';
+  tip.style.top=Math.max(12,Math.min(y,innerHeight-w.height-12))+'px';
 }
 function ohlas() {
   const s=cakam ? t.measuring : chyba || (r ? t.done+' '+t.index+': '+r.index+'/100, '+pasmoText(r,t)+'.' : '');
