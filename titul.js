@@ -186,7 +186,12 @@ export function sOdkazomReklamy(odkaz, u, { postava = '', titul = '' } = {}) {
     for (const k of UTM_POLIA) if (utm[k]) url.searchParams.set(k, utm[k]);
     let ref = '';
     if (ig) ref = 'ig_' + postava + '_' + titul;
-    else if (!/^(ig|instagram)$/i.test(utm.utm_source || '')) ref = 'gads_' + utm.utm_campaign + (utm.utm_content ? '_' + utm.utm_content : '');
+    else if (!/^(ig|instagram)$/i.test(utm.utm_source || '')) {
+      // gads_ len pre Google Ads (google a cpc); iný zdroj nesie vlastné meno, napríklad youtube_f3_stars ako /puzzle-books/utm.js (1. 10. 2026)
+      const zdroj = String(utm.utm_source || '').toLowerCase();
+      const reklama = /^(google|gads|adwords)$/.test(zdroj) || /^(cpc|ppc|paid)$/i.test(utm.utm_medium || '');
+      ref = (reklama ? 'gads' : (zdroj || 'web')) + '_' + utm.utm_campaign + (utm.utm_content ? '_' + utm.utm_content : '');
+    }
     if (ref) url.searchParams.set('client_reference_id', ref.replace(/[^A-Za-z0-9_-]/g, '').slice(0, 150));
     return url.toString();
   } catch (e) { return odkaz; }

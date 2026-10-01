@@ -376,6 +376,11 @@ test('po platbe: sluzba neodpovie, Try again sa spyta znova a az potom ukaze sub
   assert.equal(u.utm_content, 'abc');
   const s = new URL(sOdkazomReklamy('https://buy.stripe.com/abc', u));
   assert.equal(s.searchParams.get('client_reference_id'), 'gads_sady-en_abc');
+  // iný zdroj ako Google Ads nedostane gads_ (1. 10. 2026: YouTube F3 sa pripisoval ako reklama)
+  const yt = new URL(sOdkazomReklamy('https://buy.stripe.com/abc', utmZAdresy('https://arling.sk/x/?utm_source=youtube&utm_medium=shorts&utm_campaign=f3&utm_content=stars')));
+  assert.equal(yt.searchParams.get('client_reference_id'), 'youtube_f3_stars');
+  const pin = new URL(sOdkazomReklamy('https://buy.stripe.com/abc', utmZAdresy('https://arling.sk/x/?utm_source=pinterest&utm_medium=social&utm_campaign=eink')));
+  assert.equal(pin.searchParams.get('client_reference_id'), 'pinterest_eink');
   assert.equal(s.searchParams.get('utm_campaign'), 'sady-en');
   assert.equal(sOdkazomReklamy('https://buy.stripe.com/abc', { utm_source: 'x' }), 'https://buy.stripe.com/abc');
   assert.equal(sOdkazomReklamy('https://buy.stripe.com/abc', null), 'https://buy.stripe.com/abc');
