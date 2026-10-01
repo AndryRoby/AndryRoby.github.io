@@ -20,6 +20,13 @@
  * Udalosti do Umami (ak beží) podľa ops/spec-puzzle-books.md: books_ukazka,
  * books_kupa_click, books_zaplatene, books_stiahnute; plus cena_videna, ktoré
  * majú spoločné meno s ostatnými produktmi kvôli reportu EUR na 100 návštev.
+ *
+ * Pôvod kúpy (od 1. 10. 2026): UTM z príchodu (video, pin) zachytáva utm.js, ktorý beží aj na
+ * stránkach jednotlivých kníh, kde tlačidlo kúpy vedie sem bez UTM. Pri kliknutí na kúpu sa k odkazu
+ * Stripe (živému aj testovému) pridá client_reference_id <zdroj>_<kampan>_<obsah>, napríklad
+ * youtube_f3_stars; bez UTM sa nepridá nič. books_kupa_click nesie aj utm_campaign a utm_content.
+ * utm.js sa načíta dynamicky a jeho chyba sa zahodí: pôvod je pomocná vec, takže keď súbor chýba
+ * (nenasadený, blokátor, výpadok), polica funguje ďalej a kúpa ide bez referencie.
  */
 
 import { API } from '../titul.js';
@@ -27,6 +34,12 @@ import {
   KNIHY, VSETKY, KLUC_RELACIE, KLUC_STARE, jeKniha, relacieZoZaznamu, pridajRelaciu,
   poradieRelacii, pokryta, stavKnihy, odkazyPlatby,
 } from './knihy.js';
+
+/* Pôvod kúpy (utm.js) nie je podmienka predaja, preto dynamický import s chybou zahodenou do prázdna: statický
+   import by pri chýbajúcom súbore zhodil celú policu vrátane tlačidiel kúpy. Kým sa nenačíta (prakticky hneď),
+   alebo keď zlyhá, je povod null a kúpa ide bez referencie. */
+let povod = null;
+import('./utm.js').then((m) => { povod = m; }, () => { /* bez pôvodu kúpy */ });
 
 const CENA_KNIHA = 490;   // centy, jedna kniha
 const CENA_VSETKY = 1990; // centy, všetkých desať
@@ -194,8 +207,21 @@ ukazTestOdznak();
 for (const btn of document.querySelectorAll('[data-link]')) {
   btn.addEventListener('click', () => {
     const kniha = btn.dataset.kniha || VSETKY;
-    track('books_kupa_click', { kniha: kniha, cena: kniha === VSETKY ? CENA_VSETKY : CENA_KNIHA, produkt: 'books' });
-    const u = odkazNaKupu(btn);
+    let utm = {};
+    let u = odkazNaKupu(btn);
+    // client_reference_id z UTM príchodu; bez UTM, pri inom ako buy.stripe.com, alebo keď utm.js chýba či zlyhá,
+    // ostáva odkaz nezmenený a kúpa ide ďalej
+    try {
+      if (povod) {
+        utm = povod.utmNavstevy() || {};
+        const s = povod.odkazSReferenciou(u, utm);
+        if (typeof s === 'string' && s) u = s;
+      }
+    } catch (e) { /* kúpa ide bez referencie */ }
+    track('books_kupa_click', {
+      kniha: kniha, cena: kniha === VSETKY ? CENA_VSETKY : CENA_KNIHA, produkt: 'books',
+      utm_campaign: utm.utm_campaign || '', utm_content: utm.utm_content || '',
+    });
     if (!u) { stavPlatby.textContent = testRezim() ? T.testChyba : T.zapina; stavPlatby.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
     location.href = u;
   });
