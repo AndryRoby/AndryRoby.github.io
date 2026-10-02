@@ -402,7 +402,9 @@ test('desat kniznych stranok je medzi nimi a vsetky ich tlacidla kupy vedu stale
     assert.ok(rel.has(slug + '/index.html'), slug);
     const h = readFileSync(join(TU, slug, 'index.html'), 'utf8');
     assert.ok(!h.includes('buy.stripe.com'), slug + ': stranka knihy ma odkaz priamo na Stripe; ten by musel niest client_reference_id (odkazSReferenciou z utm.js), dnes platbu robi polica');
-    assert.match(h, /<a class="btn btn-solid" href="\/puzzle-books\/#[a-z]+">Buy [A-Za-z]+ for \d+\.\d{2} €<\/a>/, slug + ': tlacidlo kupy vedie na policu');
+    // B1 (2. 10. 2026, ops/etsy/b1-buy-on-etsy/STAVBA.md): plné tlačidlo je „Buy on Etsy“, kúpa na hube je tichý odkaz
+    // na policu (class="tichy"); podstatné ostáva, že vedie na policu, nie na Stripe.
+    assert.match(h, /<a class="(?:btn btn-solid|tichy)" href="\/puzzle-books\/#[a-z]+">Buy [A-Za-z]+ for \d+\.\d{2} €<\/a>/, slug + ': tlacidlo kupy vedie na policu');
   }
 });
 

@@ -133,6 +133,22 @@
   .cesty p { margin:5px 0 0; font-family:var(--ui); font-size:14px; color:var(--body); max-width:70ch; }
 </style>
 <style>:root,body.noc{--muted:#908d89}</style>
+<style data-b1-etsy>
+  /* B1 Buy on Etsy (2. 10. 2026, oprava po kontrole 2): odporúčaná je kúpa tu (cena s DPH), Etsy je tichý odkaz do novej karty. Vkladá ops/etsy/b1-buy-on-etsy/vloz-etsy.mjs. */
+  .etsy-kup::after { content:""; flex:none; width:6px; height:6px; margin:0 0 0 7px; border-top:1.5px solid currentColor;
+                     border-right:1.5px solid currentColor; transform:translateY(-2px); }
+  .etsy-kup[aria-disabled="true"]::after { content:none; }
+  #b1-nove-okno { display:none; }
+
+  /* Veta nad regálom je poznámka ku kúpe, nie próza: písmo rozhrania ako veta pri cene. */
+  #knihy .etsy-veta-knihy { margin-top:-14px; font-family:var(--ui); font-size:14px; line-height:1.55; color:var(--body); }
+  /* Meno knihy pre čítačku obrazovky: desať odkazov „Buy on Etsy“ sa v zozname odkazov inak nedá rozlíšiť. */
+  .b1-vh { position:absolute; width:1px; height:1px; margin:-1px; padding:0; border:0; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+  /* Po zaplatení app.js skryje tlačidlo platby knihy; Etsy pri kúpenej knihe nemá čo ponúkať. */
+  .regal li:has([data-link][hidden]) .etsy-kup { display:none; }
+  /* Testový režim (?test=1): odznak sľubuje Stripe test mód pri každom tlačidle kúpy, živé Etsy preto zmizne. */
+  body:has(#test-odznak:not([hidden])) .etsy-kup, body:has(#test-odznak:not([hidden])) .etsy-veta-knihy { display:none; }
+</style>
 </head>
 <body class="noc predaj">
 <div class="wash" aria-hidden="true"><i></i><i></i></div>
@@ -176,7 +192,7 @@
         <li>solutions for all one hundred at the back</li>
       </ul>
       <p class="stav-platby" id="stav-platby" aria-live="polite"></p>
-        <p class="zaco">A single book is <b data-cena="kniha-hedgehogs">4.90 &euro;</b> with VAT included, so <span data-cena="desat-jednotlivo uspora-vsetky">the ten of them one by one would come to 49 &euro; and the bundle saves you 29.10 &euro;</span>. Every book has a buy button of its own below.</p>
+        <p class="zaco">Bought here, a single book is <b data-cena="kniha-hedgehogs">4.90 &euro;</b> with VAT included, so <span data-cena="desat-jednotlivo uspora-vsetky">the ten of them one by one would come to 49 &euro; and the bundle saves you 29.10 &euro;</span>. Every book has a buy button of its own below.</p>
     </div>
     <ul class="facts proof r d5">
       <li>100 puzzles a book, <b>25 easy, 30 medium, 30 hard, 15 challenge</b></li>
@@ -189,6 +205,8 @@
     <div class="wrap uzsie">
       <h2 class="r">One kind of puzzle in each.</h2>
       <p class="sub r d1">The picture beside every book is a real page out of it, the first page of puzzles, exactly as it prints. The sample is a five puzzle PDF taken from four difficulty levels, so you can see what the hard end looks like before you pay.</p>
+      <p class="sub etsy-veta-knihy r d1" data-b1-etsy>Each book is also in our Etsy shop. In the EU, Etsy adds local VAT (23 percent in Slovakia); here VAT is included. Handy if you already use Etsy.</p>
+      <span id="b1-nove-okno" hidden data-b1-etsy>Opens in a new tab.</span>
       <div class="rule"></div>
       <ul class="regal r d2">
 
@@ -202,6 +220,7 @@
             <p class="akcie">
               <button type="button" class="tichy tichy-kup" data-cena="kniha-hedgehogs" data-umami-event="kupa_click" data-umami-event-produkt="puzzle-books" data-umami-event-kniha="otters" data-kniha="otters" data-link="https://buy.stripe.com/7sYfZb8I2f0v2Wu1dH4ko0x" data-link-test="https://buy.stripe.com/test_aFa3cpgau6tZ7cK7C54ko0n">Buy for 4.90 &euro;</button>
               <a class="tichy" href="ukazka/otters.pdf" data-ukazka="otters" data-umami-event="ukazka" data-umami-event-produkt="puzzle-books" data-umami-event-kniha="otters">Free sample (5 puzzles)</a>
+              <a class="tichy etsy-kup" href="https://www.etsy.com/listing/4573945496?utm_source=arling.sk&amp;utm_medium=web&amp;utm_campaign=buy_on_etsy&amp;utm_content=puzzle-books" target="_blank" rel="noopener" aria-describedby="b1-nove-okno" data-b1-etsy data-umami-event="etsy_klik" data-umami-event-produkt="otters" data-umami-event-stranka="/puzzle-books/" data-umami-event-miesto="riadok">Buy on Etsy<span class="b1-vh">, Otters</span></a>
             </p>
             <p class="stiahnut" hidden><b>Unlocked.</b> Download <a href="#" data-format="a4">Otters, A4 PDF</a> or <a href="#" data-format="letter">Otters, US Letter PDF</a>.</p>
           </div>
@@ -217,6 +236,7 @@
             <p class="akcie">
               <button type="button" class="tichy tichy-kup" data-cena="kniha-hedgehogs" data-umami-event="kupa_click" data-umami-event-produkt="puzzle-books" data-umami-event-kniha="magpies" data-kniha="magpies" data-link="https://buy.stripe.com/5kQ5kx8I29GbeFc1dH4ko0w" data-link-test="https://buy.stripe.com/test_9B65kx1fA8C7aoW7C54ko0m">Buy for 4.90 &euro;</button>
               <a class="tichy" href="ukazka/magpies.pdf" data-ukazka="magpies" data-umami-event="ukazka" data-umami-event-produkt="puzzle-books" data-umami-event-kniha="magpies">Free sample (5 puzzles)</a>
+              <a class="tichy etsy-kup" href="https://www.etsy.com/listing/4573945426?utm_source=arling.sk&amp;utm_medium=web&amp;utm_campaign=buy_on_etsy&amp;utm_content=puzzle-books" target="_blank" rel="noopener" aria-describedby="b1-nove-okno" data-b1-etsy data-umami-event="etsy_klik" data-umami-event-produkt="magpies" data-umami-event-stranka="/puzzle-books/" data-umami-event-miesto="riadok">Buy on Etsy<span class="b1-vh">, Magpies</span></a>
             </p>
             <p class="stiahnut" hidden><b>Unlocked.</b> Download <a href="#" data-format="a4">Magpies, A4 PDF</a> or <a href="#" data-format="letter">Magpies, US Letter PDF</a>.</p>
           </div>
@@ -232,6 +252,7 @@
             <p class="akcie">
               <button type="button" class="tichy tichy-kup" data-cena="kniha-hedgehogs" data-umami-event="kupa_click" data-umami-event-produkt="puzzle-books" data-umami-event-kniha="squirrels" data-kniha="squirrels" data-link="https://buy.stripe.com/14AeV7e2m3hN2Wu6y14ko0y" data-link-test="https://buy.stripe.com/test_dRmbIVf6q9GbfJg9Kd4ko0o">Buy for 4.90 &euro;</button>
               <a class="tichy" href="ukazka/squirrels.pdf" data-ukazka="squirrels" data-umami-event="ukazka" data-umami-event-produkt="puzzle-books" data-umami-event-kniha="squirrels">Free sample (5 puzzles)</a>
+              <a class="tichy etsy-kup" href="https://www.etsy.com/listing/4573927131?utm_source=arling.sk&amp;utm_medium=web&amp;utm_campaign=buy_on_etsy&amp;utm_content=puzzle-books" target="_blank" rel="noopener" aria-describedby="b1-nove-okno" data-b1-etsy data-umami-event="etsy_klik" data-umami-event-produkt="squirrels" data-umami-event-stranka="/puzzle-books/" data-umami-event-miesto="riadok">Buy on Etsy<span class="b1-vh">, Squirrels</span></a>
             </p>
             <p class="stiahnut" hidden><b>Unlocked.</b> Download <a href="#" data-format="a4">Squirrels, A4 PDF</a> or <a href="#" data-format="letter">Squirrels, US Letter PDF</a>.</p>
           </div>
@@ -247,6 +268,7 @@
             <p class="akcie">
               <button type="button" class="tichy tichy-kup" data-cena="kniha-hedgehogs" data-umami-event="kupa_click" data-umami-event-produkt="puzzle-books" data-umami-event-kniha="cranes" data-kniha="cranes" data-link="https://buy.stripe.com/28E3cpgau5pV8gO3lP4ko0z" data-link-test="https://buy.stripe.com/test_28E28l7DY19F40y4pT4ko0p">Buy for 4.90 &euro;</button>
               <a class="tichy" href="ukazka/cranes.pdf" data-ukazka="cranes" data-umami-event="ukazka" data-umami-event-produkt="puzzle-books" data-umami-event-kniha="cranes">Free sample (5 puzzles)</a>
+              <a class="tichy etsy-kup" href="https://www.etsy.com/listing/4573945662?utm_source=arling.sk&amp;utm_medium=web&amp;utm_campaign=buy_on_etsy&amp;utm_content=puzzle-books" target="_blank" rel="noopener" aria-describedby="b1-nove-okno" data-b1-etsy data-umami-event="etsy_klik" data-umami-event-produkt="cranes" data-umami-event-stranka="/puzzle-books/" data-umami-event-miesto="riadok">Buy on Etsy<span class="b1-vh">, Cranes</span></a>
             </p>
             <p class="stiahnut" hidden><b>Unlocked.</b> Download <a href="#" data-format="a4">Cranes, A4 PDF</a> or <a href="#" data-format="letter">Cranes, US Letter PDF</a>.</p>
           </div>
@@ -262,6 +284,7 @@
             <p class="akcie">
               <button type="button" class="tichy tichy-kup" data-cena="kniha-hedgehogs" data-umami-event="kupa_click" data-umami-event-produkt="puzzle-books" data-umami-event-kniha="swans" data-kniha="swans" data-link="https://buy.stripe.com/4gM5kx3nIf0veFcbSl4ko0A" data-link-test="https://buy.stripe.com/test_eVq8wJbUecSndB84pT4ko0q">Buy for 4.90 &euro;</button>
               <a class="tichy" href="ukazka/swans.pdf" data-ukazka="swans" data-umami-event="ukazka" data-umami-event-produkt="puzzle-books" data-umami-event-kniha="swans">Free sample (5 puzzles)</a>
+              <a class="tichy etsy-kup" href="https://www.etsy.com/listing/4573945736?utm_source=arling.sk&amp;utm_medium=web&amp;utm_campaign=buy_on_etsy&amp;utm_content=puzzle-books" target="_blank" rel="noopener" aria-describedby="b1-nove-okno" data-b1-etsy data-umami-event="etsy_klik" data-umami-event-produkt="swans" data-umami-event-stranka="/puzzle-books/" data-umami-event-miesto="riadok">Buy on Etsy<span class="b1-vh">, Swans</span></a>
             </p>
             <p class="stiahnut" hidden><b>Unlocked.</b> Download <a href="#" data-format="a4">Swans, A4 PDF</a> or <a href="#" data-format="letter">Swans, US Letter PDF</a>.</p>
           </div>
@@ -277,6 +300,7 @@
             <p class="akcie">
               <button type="button" class="tichy tichy-kup" data-cena="kniha-hedgehogs" data-umami-event="kupa_click" data-umami-event-produkt="puzzle-books" data-umami-event-kniha="voles" data-kniha="voles" data-link="https://buy.stripe.com/3cI8wJ9M62dJaoWg8B4ko0B" data-link-test="https://buy.stripe.com/test_14A14h3nI3hNcx45tX4ko0r">Buy for 4.90 &euro;</button>
               <a class="tichy" href="ukazka/voles.pdf" data-ukazka="voles" data-umami-event="ukazka" data-umami-event-produkt="puzzle-books" data-umami-event-kniha="voles">Free sample (5 puzzles)</a>
+              <a class="tichy etsy-kup" href="https://www.etsy.com/listing/4573945796?utm_source=arling.sk&amp;utm_medium=web&amp;utm_campaign=buy_on_etsy&amp;utm_content=puzzle-books" target="_blank" rel="noopener" aria-describedby="b1-nove-okno" data-b1-etsy data-umami-event="etsy_klik" data-umami-event-produkt="voles" data-umami-event-stranka="/puzzle-books/" data-umami-event-miesto="riadok">Buy on Etsy<span class="b1-vh">, Voles</span></a>
             </p>
             <p class="stiahnut" hidden><b>Unlocked.</b> Download <a href="#" data-format="a4">Voles, A4 PDF</a> or <a href="#" data-format="letter">Voles, US Letter PDF</a>.</p>
           </div>
@@ -292,6 +316,7 @@
             <p class="akcie">
               <button type="button" class="tichy tichy-kup" data-cena="kniha-hedgehogs" data-umami-event="kupa_click" data-umami-event-produkt="puzzle-books" data-umami-event-kniha="badgers" data-kniha="badgers" data-link="https://buy.stripe.com/fZu3cp6zU8C768Gf4x4ko0C" data-link-test="https://buy.stripe.com/test_dRm3cp9M6g4z2Wuf4x4ko0s">Buy for 4.90 &euro;</button>
               <a class="tichy" href="ukazka/badgers.pdf" data-ukazka="badgers" data-umami-event="ukazka" data-umami-event-produkt="puzzle-books" data-umami-event-kniha="badgers">Free sample (5 puzzles)</a>
+              <a class="tichy etsy-kup" href="https://www.etsy.com/listing/4573944950?utm_source=arling.sk&amp;utm_medium=web&amp;utm_campaign=buy_on_etsy&amp;utm_content=puzzle-books" target="_blank" rel="noopener" aria-describedby="b1-nove-okno" data-b1-etsy data-umami-event="etsy_klik" data-umami-event-produkt="badgers" data-umami-event-stranka="/puzzle-books/" data-umami-event-miesto="riadok">Buy on Etsy<span class="b1-vh">, Badgers</span></a>
             </p>
             <p class="stiahnut" hidden><b>Unlocked.</b> Download <a href="#" data-format="a4">Badgers, A4 PDF</a> or <a href="#" data-format="letter">Badgers, US Letter PDF</a>.</p>
           </div>
@@ -307,6 +332,7 @@
             <p class="akcie">
               <button type="button" class="tichy tichy-kup" data-cena="kniha-hedgehogs" data-umami-event="kupa_click" data-umami-event-produkt="puzzle-books" data-umami-event-kniha="herons" data-kniha="herons" data-link="https://buy.stripe.com/3cI9ANf6qf0veFc8G94ko0D" data-link-test="https://buy.stripe.com/test_5kQcMZ3nI3hNbt03lP4ko0t">Buy for 4.90 &euro;</button>
               <a class="tichy" href="ukazka/herons.pdf" data-ukazka="herons" data-umami-event="ukazka" data-umami-event-produkt="puzzle-books" data-umami-event-kniha="herons">Free sample (5 puzzles)</a>
+              <a class="tichy etsy-kup" href="https://www.etsy.com/listing/4573945860?utm_source=arling.sk&amp;utm_medium=web&amp;utm_campaign=buy_on_etsy&amp;utm_content=puzzle-books" target="_blank" rel="noopener" aria-describedby="b1-nove-okno" data-b1-etsy data-umami-event="etsy_klik" data-umami-event-produkt="herons" data-umami-event-stranka="/puzzle-books/" data-umami-event-miesto="riadok">Buy on Etsy<span class="b1-vh">, Herons</span></a>
             </p>
             <p class="stiahnut" hidden><b>Unlocked.</b> Download <a href="#" data-format="a4">Herons, A4 PDF</a> or <a href="#" data-format="letter">Herons, US Letter PDF</a>.</p>
           </div>
@@ -322,6 +348,7 @@
             <p class="akcie">
               <button type="button" class="tichy tichy-kup" data-cena="kniha-hedgehogs" data-umami-event="kupa_click" data-umami-event-produkt="puzzle-books" data-umami-event-kniha="hares" data-kniha="hares" data-link="https://buy.stripe.com/00weV75vQ6tZeFcaOh4ko0E" data-link-test="https://buy.stripe.com/test_3cI4gtcYif0vcx46y14ko0u">Buy for 4.90 &euro;</button>
               <a class="tichy" href="ukazka/hares.pdf" data-ukazka="hares" data-umami-event="ukazka" data-umami-event-produkt="puzzle-books" data-umami-event-kniha="hares">Free sample (5 puzzles)</a>
+              <a class="tichy etsy-kup" href="https://www.etsy.com/listing/4573945922?utm_source=arling.sk&amp;utm_medium=web&amp;utm_campaign=buy_on_etsy&amp;utm_content=puzzle-books" target="_blank" rel="noopener" aria-describedby="b1-nove-okno" data-b1-etsy data-umami-event="etsy_klik" data-umami-event-produkt="hares" data-umami-event-stranka="/puzzle-books/" data-umami-event-miesto="riadok">Buy on Etsy<span class="b1-vh">, Hares</span></a>
             </p>
             <p class="stiahnut" hidden><b>Unlocked.</b> Download <a href="#" data-format="a4">Hares, A4 PDF</a> or <a href="#" data-format="letter">Hares, US Letter PDF</a>.</p>
           </div>
@@ -337,6 +364,7 @@
             <p class="akcie">
               <button type="button" class="tichy tichy-kup" data-cena="kniha-hedgehogs" data-umami-event="kupa_click" data-umami-event-produkt="puzzle-books" data-umami-event-kniha="hedgehogs" data-kniha="hedgehogs" data-link="https://buy.stripe.com/4gM9AN7DY8C7eFc3lP4ko0v" data-link-test="https://buy.stripe.com/test_aFa5kx6zUcSncx43lP4ko0l">Buy for 4.90 &euro;</button>
               <a class="tichy" href="ukazka/hedgehogs.pdf" data-ukazka="hedgehogs" data-umami-event="ukazka" data-umami-event-produkt="puzzle-books" data-umami-event-kniha="hedgehogs">Free sample (5 puzzles)</a>
+              <a class="tichy etsy-kup" href="https://www.etsy.com/listing/4573926879?utm_source=arling.sk&amp;utm_medium=web&amp;utm_campaign=buy_on_etsy&amp;utm_content=puzzle-books" target="_blank" rel="noopener" aria-describedby="b1-nove-okno" data-b1-etsy data-umami-event="etsy_klik" data-umami-event-produkt="hedgehogs" data-umami-event-stranka="/puzzle-books/" data-umami-event-miesto="riadok">Buy on Etsy<span class="b1-vh">, Hedgehogs</span></a>
             </p>
             <p class="stiahnut" hidden><b>Unlocked.</b> Download <a href="#" data-format="a4">Hedgehogs, A4 PDF</a> or <a href="#" data-format="letter">Hedgehogs, US Letter PDF</a>.</p>
           </div>
@@ -410,6 +438,7 @@
         <summary>I lost the unlock: new computer, cleared browser.</summary>
         <p>The unlock lives in this browser only, so clearing it or moving to another machine loses it. Write to support@arling.sk with the order number or the e-mail address from the Stripe payment and we will send you the links again. You pay nothing more.</p>
       </details>
+      <details data-b1-etsy><summary>Can I buy a book on Etsy instead?</summary><p>Yes, each of the ten books is in our Etsy shop on its own, as the same two PDFs; the bundle of all ten is sold only here. Here the price is final, VAT included. On Etsy, buyers in the EU pay local VAT on top (23 percent in Slovakia), and elsewhere Etsy may add local tax. Etsy takes the payment and sends the receipt, and any refund goes through Etsy too. The files wait in Purchases and reviews on etsy.com, or behind the link in the Etsy receipt e-mail if you check out as a guest; open them in a web browser, as the Etsy app does not currently support downloading digital purchases. You can ask us through Etsy messages or at support@arling.sk. Etsy suits you if you already shop there; in the EU, buying here costs less.</p></details>
     </div>
   </section>
   <section id="related" class="deep">
