@@ -207,8 +207,8 @@ export const DICT = {
   'privacy.3.t': { sk: 'Zmluva podľa čl. 28 GDPR', en: 'GDPR Article 28 agreement', de: 'Vertrag nach Art. 28 DSGVO' },
   'privacy.3.d': {
     sk: `ARLing s. r. o. je pri správach návštevníkov vášho e-shopu sprostredkovateľom. <a href="${DPA}" target="_blank" rel="noopener">Vzor zmluvy (DPA)</a>.`,
-    en: `ARLing s. r. o. is the processor for messages from your shop’s visitors. <a href="${DPA}" target="_blank" rel="noopener">Template agreement (DPA)</a>, in Slovak; an English translation on request.`,
-    de: `ARLing s. r. o. ist für die Nachrichten Ihrer Shop-Besucher Auftragsverarbeiter. <a href="${DPA}" target="_blank" rel="noopener">Vorlage (AVV, DPA)</a>, auf Slowakisch; eine englische Übersetzung auf Anfrage.`,
+    en: `ARLing s. r. o. is the processor for messages from your shop’s visitors. <a href="${DPA}" target="_blank" rel="noopener">Template agreement (DPA)</a> in Slovak, with an <a href="/asistent/dpa/en/" target="_blank" rel="noopener">English translation</a>.`,
+    de: `ARLing s. r. o. ist für die Nachrichten Ihrer Shop-Besucher Auftragsverarbeiter. <a href="${DPA}" target="_blank" rel="noopener">Vorlage (AVV, DPA)</a> auf Slowakisch, mit <a href="/asistent/dpa/en/" target="_blank" rel="noopener">englischer Übersetzung</a>.`,
   },
   'privacy.4.t': { sk: 'Beh na sieti Cloudflare', en: 'Runs on Cloudflare’s network', de: 'Läuft im Netz von Cloudflare' },
   'privacy.4.d': {
@@ -380,8 +380,8 @@ export const DICT = {
   'faq.gdpr.q': { sk: 'Máte zmluvu podľa čl. 28 GDPR?', en: 'Do you have a GDPR Article 28 agreement?', de: 'Haben Sie einen Vertrag nach Art. 28 DSGVO?' },
   'faq.gdpr.a': {
     sk: `Áno. ARLing s. r. o. je pri spracúvaní správ návštevníkov vášho e-shopu sprostredkovateľom. Vzor zmluvy: <a href="${DPA}" target="_blank" rel="noopener">Zmluva o spracúvaní osobných údajov (DPA)</a>.`,
-    en: `Yes. ARLing s. r. o. acts as processor for the messages your shop’s visitors send. Template: <a href="${DPA}" target="_blank" rel="noopener">Data Processing Agreement (DPA)</a>, written in Slovak; an English translation is available on request at support@arling.sk.`,
-    de: `Ja. ARLing s. r. o. ist bei der Verarbeitung der Nachrichten Ihrer Shop-Besucher Auftragsverarbeiter. Vorlage: <a href="${DPA}" target="_blank" rel="noopener">Auftragsverarbeitungsvertrag (AVV, DPA)</a>, auf Slowakisch verfasst; eine englische Übersetzung erhalten Sie auf Anfrage unter support@arling.sk.`,
+    en: `Yes. ARLing s. r. o. acts as processor for the messages your shop’s visitors send. Template: <a href="${DPA}" target="_blank" rel="noopener">Data Processing Agreement (DPA)</a>, written in Slovak, with an <a href="/asistent/dpa/en/" target="_blank" rel="noopener">English translation</a> (the Slovak version prevails).`,
+    de: `Ja. ARLing s. r. o. ist bei der Verarbeitung der Nachrichten Ihrer Shop-Besucher Auftragsverarbeiter. Vorlage: <a href="${DPA}" target="_blank" rel="noopener">Auftragsverarbeitungsvertrag (AVV, DPA)</a>, auf Slowakisch verfasst, mit <a href="/asistent/dpa/en/" target="_blank" rel="noopener">englischer Übersetzung</a> (maßgeblich ist die slowakische Fassung).`,
   },
   'faq.datalocation.q': { sk: 'Kde bežia dáta?', en: 'Where does the data run?', de: 'Wo laufen die Daten?' },
   'faq.datalocation.a': {
