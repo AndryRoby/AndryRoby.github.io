@@ -129,6 +129,12 @@
     /* Mimo obrazovky sa nič nehýbe. */
     new IntersectionObserver(function (z) { hero.classList.toggle('spi', !z[0].isIntersecting); }, { threshold: 0 }).observe(hero);
   }
+  /* Shine Border záverečnej karty (background-position) beží na hlavnom vlákne aj mimo okna: stojí, kým karta
+     nie je do 200 px od okna, a pokračuje z toho istého miesta (výkon 2. 10. 2026, ops/design/vykon-2026-10). */
+  var zaver = document.querySelector('.zaver');
+  if (zaver) {
+    new IntersectionObserver(function (z) { zaver.classList.toggle('spi', !z[z.length - 1].isIntersecting); }, { threshold: 0, rootMargin: '200px 0px' }).observe(zaver);
+  }
 
   /* Magic Card: svetlo sleduje kurzor, zapisuje sa len v rAF. */
   document.querySelectorAll('.dl').forEach(function (dl) {

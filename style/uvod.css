@@ -248,6 +248,8 @@ section{position:relative}
 .zaver-karta{position:relative;border-radius:22px;padding:clamp(40px,5vw,72px) clamp(22px,4vw,64px);background:linear-gradient(180deg,rgba(24,20,18,.88),rgba(14,12,10,.92));border:1px solid var(--linka)}
 .zaver-karta::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;padding:1px;background-image:radial-gradient(transparent,transparent,#ffb59d,#f2643c,transparent,transparent);background-size:300% 300%;-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;animation:shine 14s linear infinite}
 @keyframes shine{0%{background-position:0% 0%}50%{background-position:100% 100%}100%{background-position:0% 0%}}
+/* Shine Border beží na hlavnom vlákne (background-position): kým karta nie je pri okne, stojí a po návrate pokračuje z toho istého miesta (uvod.js, výkon 2. 10. 2026). */
+.zaver.spi .zaver-karta::before{animation-play-state:paused}
 .zaver h2{max-width:20ch;margin-inline:auto}
 .zaver p{margin:18px auto 0;max-width:48ch;color:var(--telo)}
 .zaver .akcie{justify-content:center;margin-top:34px}
@@ -292,6 +294,8 @@ footer{border-top:1px solid var(--linka);background:var(--noc-2);padding:60px 0 
 .luc{position:absolute;top:-12%;left:var(--l);width:var(--w);height:78vh;max-height:760px;transform-origin:top center;translate:-50% 0;border-radius:999px;opacity:0;background:linear-gradient(180deg,color-mix(in srgb,var(--luc-farba) 70%,transparent),transparent);mix-blend-mode:screen;filter:blur(34px);will-change:transform,opacity;animation:luc var(--t) ease-in-out var(--d) infinite}
 @keyframes luc{0%{opacity:0;transform:rotate(calc(var(--r) - var(--s)))}50%{opacity:var(--i);transform:rotate(calc(var(--r) + var(--s)))}100%{opacity:0;transform:rotate(calc(var(--r) - var(--s)))}}
 .hero.spi .luc,.hero.spi .meteor{animation-play-state:paused}
+/* Border Beam a Shiny Text bežia na hlavnom vlákne (offset-distance, background-position): mimo obrazovky stoja tiež (výkon 2. 10. 2026). */
+.hero.spi .beam::after,.hero.spi .pilulka b{animation-play-state:paused}
 /* Meteors: šesť pomalých čiarok svetla. */
 .meteor{position:absolute;top:var(--y);left:var(--x);width:2px;height:2px;border-radius:50%;background:#d8cbc2;box-shadow:0 0 0 1px rgba(255,255,255,.06);pointer-events:none;z-index:0;transform:rotate(215deg);opacity:0;animation:meteor var(--t) linear var(--d) infinite}
 .meteor::before{content:"";position:absolute;top:50%;left:0;width:60px;height:1px;translate:0 -50%;background:linear-gradient(90deg,#d8cbc2,transparent)}

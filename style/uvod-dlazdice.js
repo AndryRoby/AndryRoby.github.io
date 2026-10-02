@@ -2,7 +2,11 @@
  * bodka dopadne na hlavné tlačidlo a vlna prebehne dlaždicami; prst (mobil) alebo klik spustí vlnu,
  * myš na PC jemne nadvihne dlaždice pod sebou. Jeden shader, jeden draw call, bez knižníc a siete.
  * Kreslí sa len počas pohybu (inak 0 snímok), mimo obrazovky a v skrytej karte nič.
- * prefers-reduced-motion alebo šetrenie dát: nič sa nespustí, stránka vyzerá rovnako ako bez plátna. */
+ * prefers-reduced-motion alebo šetrenie dát: nič sa nespustí, stránka vyzerá rovnako ako bez plátna.
+ * Výkon (2. 10. 2026, ops/design/vykon-2026-10/1-rozbor.md, P1): kontext a preklad shadera pri udalosti load
+ * držali hlavné vlákno 110 až 340 ms, kým GPU ešte kreslil prvé snímky stránky. Svet sa preto pripraví až
+ * 2,5 s po načítaní (po príchode rámu) v nečinnosti, alebo hneď pri prvom dotyku v hero; preklad beží
+ * paralelne (KHR_parallel_shader_compile) a na výsledok sa pýtame, až keď je hotový. Vzhľad je ten istý. */
 (function () {
   'use strict';
   var platno = document.querySelector('[data-uv-dlazdice]');
@@ -18,6 +22,7 @@
   var bodka = null; // { x, y, t } pád na tlačidlo
   var dalsia = 0;
   var MAX_VLN = 4, TRVANIE = 4.2;
+  var paralelne = null, zacate = false, nacitane = 0, prvyDotyk = null, otazky = 0;
 
   var VS = 'attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}';
   var FS = [
@@ -68,18 +73,24 @@
     ' gl_FragColor=o;}'
   ].join('\n');
 
+  // Preklad sa len zadá; chybný shader sa prejaví v LINK_STATUS v priprav() (program sa nespojí).
   function shader(typ, zdroj) {
     var s = gl.createShader(typ); gl.shaderSource(s, zdroj); gl.compileShader(s);
-    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error('shader');
     return s;
   }
-  function priprav() {
+  // Prvý krok: kontext, preklad a spojenie programu zadané bez synchrónnej otázky na GPU.
+  function zadaj() {
     gl = platno.getContext('webgl', { alpha: true, premultipliedAlpha: true, antialias: false, depth: false, stencil: false, powerPreference: 'low-power' });
     if (!gl) return false;
+    paralelne = gl.getExtension('KHR_parallel_shader_compile');
     prog = gl.createProgram();
     gl.attachShader(prog, shader(gl.VERTEX_SHADER, VS));
     gl.attachShader(prog, shader(gl.FRAGMENT_SHADER, FS));
     gl.linkProgram(prog);
+    return true;
+  }
+  // Druhý krok: výsledok spojenia (bez rozšírenia tu čaká na GPU ako predtým), buffer a uniformy.
+  function priprav() {
     if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) return false;
     gl.useProgram(prog);
     buf = gl.createBuffer();
@@ -151,13 +162,16 @@
     rozmer();
     platno.setAttribute('data-uv-dlazdice-ready', '');
     var cta = hero.querySelector('.hero-text .cta');
-    // bodka dopadne na hlavné tlačidlo chvíľu po načítaní
+    // bodka dopadne na hlavné tlačidlo 0,9 s po načítaní; pri neskoršom štarte hneď po ňom
     setTimeout(function () {
       if (!cta) return;
       var b = bod(cta);
       bodka = { x: b.x, y: b.y, t: cas(), el: cta };
       spusti();
-    }, 900);
+    }, Math.max(0, 900 - (nacitane ? performance.now() - nacitane : 0)));
+    // dotyk pred štartom: vlna z miesta, kde prst bol, hneď ako je svet pripravený
+    hero.removeEventListener('pointerdown', skoryDotyk);
+    if (prvyDotyk) { vlna(prvyDotyk[0] * mierka, prvyDotyk[1] * mierka, prvyDotyk[2]); prvyDotyk = null; }
     // prst alebo klik v hero: vlna z miesta dotyku
     hero.addEventListener('pointerdown', function (e) {
       var r = platno.getBoundingClientRect();
@@ -182,5 +196,33 @@
     if (pohyb && pohyb.addEventListener) pohyb.addEventListener('change', function () { if (pohyb.matches) { koniec = true; clearInterval(dalsia); gl.clear(gl.COLOR_BUFFER_BIT); } });
     spusti();
   }
-  if (document.readyState === 'complete') start(); else window.addEventListener('load', start, { once: true });
+
+  // Preklad beží paralelne: pýtame sa len, či je hotový (otázka na LINK_STATUS by čakala na GPU).
+  // Najviac asi 5 s, potom priprav() overí výsledok priamo; pri stratenom kontexte priprav() vráti false.
+  function cakaj() {
+    if (koniec) return;
+    try {
+      if (paralelne && !gl.isContextLost() && otazky++ < 150 && !gl.getProgramParameter(prog, paralelne.COMPLETION_STATUS_KHR)) { setTimeout(cakaj, 32); return; }
+    } catch (e) { return; }
+    start();
+  }
+  function zacni() {
+    if (koniec || (pohyb && pohyb.matches)) return;
+    try { if (!zadaj()) return; } catch (e) { return; }
+    setTimeout(cakaj, 0);
+  }
+  function raz() {
+    if (zacate) return;
+    zacate = true;
+    if (window.requestIdleCallback) window.requestIdleCallback(zacni, { timeout: 1000 }); else setTimeout(zacni, 0);
+  }
+  // Prvý dotyk v hero pred štartom: zapamätá si miesto (v px plátna bez mierky) a spustí prípravu hneď.
+  function skoryDotyk(e) {
+    var r = platno.getBoundingClientRect();
+    prvyDotyk = [e.clientX - r.left, e.clientY - r.top, e.pointerType === 'mouse' ? 0.7 : 0.9];
+    raz();
+  }
+  function poNacitani() { nacitane = performance.now(); setTimeout(raz, 2500); }
+  hero.addEventListener('pointerdown', skoryDotyk, { passive: true });
+  if (document.readyState === 'complete') poNacitani(); else window.addEventListener('load', poNacitani, { once: true });
 })();
