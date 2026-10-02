@@ -1,0 +1,46 @@
+// Vygenerované: node products/arling-sk/shop/murder-lantern-ball/film/postav-data.mjs (neupravovať ručne).
+// Zdroj: products/eliminacia (generátor), zhoda s pripad-1/kontrola/register.csv a tlac.json.
+// Bez páchateľa a bez riadkov, ktoré prežijú indíciu 8.
+export const DATA = {
+ pripad: "Case File No. 1",
+ hosti: 5000,
+ priebeh: [5000,3456,2013,1176,673,417,222,114,64,39,23,9,6,4,3,2,1],
+ indicie: [
+  {"c":1,"zdroj":"A half-burnt place card in the Winter Garden fireplace","text":"Surname starts with a letter from A to P."},
+  {"c":2,"zdroj":"The seating plan","text":"Table is less than 24."},
+  {"c":3,"zdroj":"A torn ticket stub in the Winter Garden","text":"Ticket does not contain the digit 4."},
+  {"c":4,"zdroj":"The head waiter","text":"Table is more than 10."},
+  {"c":5,"zdroj":"The doorman's ledger","text":"Arrived between 20:45 and 22:30."},
+  {"c":6,"zdroj":"A membership card dropped in the corridor","text":"Age is an even number."},
+  {"c":7,"zdroj":"The box office roll","text":"The digits of Ticket add up to an even number."},
+  {"c":8,"zdroj":"The bar's tally sheet","text":"Drink is Cider, Punch, Lemonade or Water."},
+  {"c":9,"zdroj":"The coat check slips","text":"Arrived later than 21:15."},
+  {"c":10,"zdroj":"A waitress carrying a tray of punch","text":"Mask is none of these: Black, White, Purple."},
+  {"c":11,"zdroj":"The address on a dropped envelope","text":"Street ends in the word Street."},
+  {"c":12,"zdroj":"The sweet stall's order book","text":"Sweet is none of these: Licorice, Lollipop."},
+  {"c":13,"zdroj":"The house doctor, who saw the killer hurry past","text":"Age is less than 60."},
+  {"c":14,"zdroj":"A taxi driver's logbook","text":"Street is not Hill Street."},
+  {"c":15,"zdroj":"Miss Pruett at the cloakroom","text":"Costume is Cat or Pirate."},
+  {"c":16,"zdroj":"The bandleader, from the stage","text":"Mask is Orange."},
+ ],
+ oknoA: { odRiadku: 3453, riadky: [
+  {"meno":"Price, Ruth","vek":"64","stol":"17","vstupenka":"14475","prichod":"20:23","napoj":"Punch","vyradena":3},
+  {"meno":"Price, Scott","vek":"44","stol":"30","vstupenka":"84083","prichod":"20:53","napoj":"Punch","vyradena":2},
+  {"meno":"Price, Ursula","vek":"50","stol":"4","vstupenka":"94765","prichod":"20:47","napoj":"Lemonade","vyradena":3},
+  {"meno":"Price, Zachary","vek":"51","stol":"39","vstupenka":"97237","prichod":"21:31","napoj":"Cider","vyradena":2},
+  {"meno":"Quinn, Alice","vek":"42","stol":"9","vstupenka":"61254","prichod":"20:46","napoj":"Tea","vyradena":1},
+  {"meno":"Quinn, Allison","vek":"50","stol":"35","vstupenka":"56895","prichod":"21:39","napoj":"Water","vyradena":1},
+  {"meno":"Quinn, Amanda","vek":"46","stol":"40","vstupenka":"92796","prichod":"20:52","napoj":"Cocoa","vyradena":1},
+  {"meno":"Quinn, Audrey","vek":"60","stol":"31","vstupenka":"16353","prichod":"21:29","napoj":"Cider","vyradena":1},
+ ] },
+ oknoB: { odRiadku: 1675, riadky: [
+  {"meno":"Harper, Grace","vek":"52","stol":"3","vstupenka":"17709","prichod":"19:54","napoj":"Punch","vyradena":4},
+  {"meno":"Harper, Henry","vek":"55","stol":"11","vstupenka":"50656","prichod":"21:31","napoj":"Cider","vyradena":6},
+  {"meno":"Harper, Jacob","vek":"63","stol":"4","vstupenka":"30116","prichod":"21:30","napoj":"Cider","vyradena":4},
+  {"meno":"Harper, Jason","vek":"44","stol":"5","vstupenka":"33768","prichod":"21:18","napoj":"Water","vyradena":4},
+  {"meno":"Harper, Joseph","vek":"61","stol":"17","vstupenka":"61999","prichod":"19:15","napoj":"Punch","vyradena":5},
+  {"meno":"Harper, Laura","vek":"51","stol":"1","vstupenka":"51636","prichod":"19:30","napoj":"Cider","vyradena":4},
+  {"meno":"Harper, Margaret","vek":"55","stol":"20","vstupenka":"73196","prichod":"21:22","napoj":"Cider","vyradena":6},
+  {"meno":"Harper, Martha","vek":"55","stol":"19","vstupenka":"79057","prichod":"21:11","napoj":"Cider","vyradena":6},
+ ] },
+};
