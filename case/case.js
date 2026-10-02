@@ -23,7 +23,9 @@
           out.className = 'case-vysledok hotovo';
           out.textContent = '';
           var h = document.createElement('p');
-          h.textContent = 'Your case is ready. Download all three files and keep them; the links work until ' + d.expires + '.';
+          var dt = new Date(d.expires + 'T12:00:00Z');
+          var kedy = isNaN(dt) ? d.expires : dt.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+          h.textContent = 'Your case is ready. Download all three files and keep them; the links work until ' + kedy + '.';
           out.appendChild(h);
           var ul = document.createElement('ul');
           d.files.forEach(function (f) {
@@ -40,13 +42,13 @@
           });
           out.appendChild(ul);
         } else if (d.status === 'pending') {
-          text('We are building your case. It will be here within 24 hours of your order.');
+          text('We are building your case. It will be here within 48 hours of your order.');
         } else if (d.status === 'needs_help') {
-          text('We could not use one of the names you typed. We will message you on Etsy.', 'zle');
+          text('We could not read at least 3 names (first name and surname) from your order. We will message you on Etsy.', 'zle');
         } else if (d.status === 'invalid') {
           text('Please check the order number (digits only) and the surname.', 'zle');
         } else {
-          text('We cannot find this order yet. New orders show up here within a few hours, always within 24 hours. Please check the order number and the surname of the first guest you typed at checkout.');
+          text('We cannot find this order yet. Your case is ready within 48 hours of your order. Please check the order number and the surname of the first guest you typed when you ordered.');
         }
       })
       .catch(function () { text('The download service did not answer. Please try again in a minute.', 'zle'); })
