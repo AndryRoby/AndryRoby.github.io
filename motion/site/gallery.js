@@ -2,9 +2,16 @@
  * arling.sk/motion: the live gallery.
  * Every stage holds a real component you can use. At most one stage plays its demo at a time:
  * the one most in view (IntersectionObserver, at least 60 % visible). A playing stage is inert
- * and draws the demo cursor; pointing at it, touching it or pressing Stop hands it back to you
+ * and draws the demo cursor; pointing at it, tapping it or pressing Stop hands it back to you
  * as a live component. With prefers-reduced-motion nothing plays; the components still work and
  * show every state at once.
+ *
+ * Kept smooth on slow devices (measured 3. 10. 2026 with the CPU slowed 4 times):
+ *  - a stage is built only when it comes within one screen of the viewport, in idle time, so the
+ *    page does not build 21 components in one long task while it loads;
+ *  - nothing is rebuilt while the page scrolls: the demo in view keeps playing, one that left the
+ *    view only pauses, and the next one starts once scrolling has stopped;
+ *  - a touch that starts a scroll does not take a stage over, only a tap does.
  * MIT licence.
  */
 import { SCENES, copyText, tabsStrip, fontsLoaded } from './scenes.js';
@@ -14,6 +21,11 @@ import { createCursor } from './cursor.js';
 const mq = typeof matchMedia === 'function' ? matchMedia('(prefers-reduced-motion: reduce)') : null;
 const reduced = () => !!(mq && mq.matches);
 const now = () => performance.now() / 1000;
+const hasIO = typeof IntersectionObserver === 'function';
+// one screen above and below the viewport counts as near
+const NEAR = '100% 0px 100% 0px';
+// scrolling has stopped when no scroll event came for this long
+const SCROLL_REST = 140;
 
 // ------------------------------------------------------------------ stages
 
@@ -22,12 +34,14 @@ for (const stage of document.querySelectorAll('.mo-stage[data-scene]')) {
   const name = stage.getAttribute('data-scene');
   if (!SCENES[name]) continue;
   const wrap = stage.closest('.mo-stage-wrap') || stage;
-  units.push({ stage, wrap, name, button: wrap.querySelector('.mo-play'), mode: null, api: null, raf: 0, cursor: null, held: false, touched: false, ratio: 0 });
+  units.push({ stage, wrap, name, button: wrap.querySelector('.mo-play'), mode: null, api: null, raf: 0, tick: null, cursor: null, held: false, touched: false, ratio: 0 });
 }
+const unitOf = new Map(units.map((u) => [u.stage, u]));
 
 function clear(u) {
   if (u.raf) cancelAnimationFrame(u.raf);
   u.raf = 0;
+  u.tick = null;
   if (u.api) {
     try { u.api.destroy(); } catch (e) { console.error(e); }
     u.api = null;
@@ -39,9 +53,12 @@ function clear(u) {
 function label(u) {
   if (!u.button) return;
   const on = u.mode === 'demo';
-  u.button.textContent = on ? 'Stop demo' : 'Play demo';
-  u.button.setAttribute('aria-pressed', String(on));
-  u.button.hidden = reduced();
+  const text = on ? 'Stop demo' : 'Play demo';
+  if (u.button.textContent !== text) u.button.textContent = text;
+  const pressed = String(on);
+  if (u.button.getAttribute('aria-pressed') !== pressed) u.button.setAttribute('aria-pressed', pressed);
+  const hide = reduced();
+  if (u.button.hidden !== hide) u.button.hidden = hide;
 }
 
 function live(u) {
@@ -82,15 +99,54 @@ function play(u) {
   u.cursor = createCursor(u.stage);
   const t0 = now();
   const dur = s.info.duration;
-  const tick = () => {
+  u.tick = () => {
     const t = (now() - t0) % dur;
     u.t = t;
     s.seek(t);
     u.cursor.draw(t, s.info);
-    u.raf = requestAnimationFrame(tick);
+    u.raf = requestAnimationFrame(u.tick);
   };
-  u.raf = requestAnimationFrame(tick);
+  u.raf = requestAnimationFrame(u.tick);
   label(u);
+}
+
+// A demo that scrolled out of view stops drawing but keeps its DOM, so nothing is rebuilt
+// during the scroll; it draws again if it comes back before scrolling stops.
+function pause(u) {
+  if (u.raf) cancelAnimationFrame(u.raf);
+  u.raf = 0;
+}
+function resume(u) {
+  if (!u.raf && u.mode === 'demo' && u.tick) u.raf = requestAnimationFrame(u.tick);
+}
+
+// ------------------------------------------------------------------ building near the viewport
+
+const idle = typeof requestIdleCallback === 'function'
+  ? (fn) => requestIdleCallback(fn, { timeout: 300 })
+  : (fn) => setTimeout(fn, 60);
+const queue = [];
+let building = false;
+
+function build(u) {
+  if (!u.mode) live(u);
+}
+
+// One stage per idle period: building one measures its layout, and two in a row would be
+// a visible pause on a slow phone.
+function buildSome() {
+  building = false;
+  // what is on screen first, then the order of the page
+  queue.sort((a, b) => b.ratio - a.ratio);
+  const u = queue.shift();
+  if (u) build(u);
+  if (queue.length) { building = true; idle(buildSome); }
+}
+
+function buildSoon(u) {
+  if (u.mode || queue.includes(u)) return;
+  queue.push(u);
+  if (!building) { building = true; idle(buildSome); }
 }
 
 // ------------------------------------------------------------------ which one plays
@@ -100,10 +156,16 @@ let forced = null;
 // Nothing is built before the fonts have loaded: demos measure the layout when they are
 // scheduled, and widths taken with the fallback font are wrong after the swap.
 let started = false;
+let scrolling = false;
+let scrollTimer = 0;
 
 function pick() {
   document.documentElement.classList.toggle('mo-reduced', reduced());
   if (!started) return;
+  if (scrolling) {
+    if (current) { if (current.ratio > 0 && !document.hidden) resume(current); else pause(current); }
+    return;
+  }
   let best = null;
   if (!reduced() && !document.hidden) {
     if (forced && forced.ratio > 0 && !forced.touched) best = forced;
@@ -116,27 +178,44 @@ function pick() {
       }
     }
   }
-  if (best === current) { for (const u of units) label(u); return; }
+  if (best === current) { if (current) resume(current); for (const u of units) label(u); return; }
   if (current) live(current);
   current = best;
   if (best) play(best);
   for (const u of units) label(u);
 }
 
+addEventListener('scroll', () => {
+  scrolling = true;
+  clearTimeout(scrollTimer);
+  scrollTimer = setTimeout(() => { scrolling = false; pick(); }, SCROLL_REST);
+}, { passive: true });
+
 for (const u of units) {
   u.wrap.addEventListener('pointerenter', (e) => {
+    // a finger that lands on a stage usually starts a scroll; only a tap (click below) takes over
+    if (e.pointerType === 'touch') return;
     u.held = true;
-    if (e.pointerType === 'touch') u.touched = true;
     if (current === u && forced !== u) pick();
   });
-  u.wrap.addEventListener('pointerleave', () => {
+  u.wrap.addEventListener('pointerleave', (e) => {
+    if (e.pointerType === 'touch') return;
     u.held = false;
     if (!current) pick();
+  });
+  // a tap or click on a playing stage hands it over (the stage is inert, so the wrap gets the click)
+  u.wrap.addEventListener('click', (e) => {
+    if (u.mode !== 'demo' || (u.button && u.button.contains(e.target))) return;
+    u.touched = true;
+    forced = null;
+    if (current === u) { current = null; live(u); }
+    pick();
   });
   // using the component, not just passing over it, keeps it live until Play is pressed
   for (const type of ['pointerdown', 'keydown', 'focusin']) {
     u.stage.addEventListener(type, () => {
-      if (u.mode === 'live' && !u.touched) u.touched = true;    });
+      if (u.mode === 'live' && !u.touched) u.touched = true;
+    });
   }
   if (u.button) {
     u.button.addEventListener('click', () => {
@@ -146,26 +225,19 @@ for (const u of units) {
         if (current === u) { current = null; live(u); }
         pick();
       } else {
+        build(u);
         u.touched = false;
         forced = u;
         // the button sits under the stage, so the stage is in view; the observer corrects this later
         u.ratio = Math.max(u.ratio, 0.01);
+        // pressing Play is a clear wish: it starts even while the page still glides
+        scrolling = false;
         pick();
       }
     });
   }
 }
 
-if (typeof IntersectionObserver === 'function') {
-  const io = new IntersectionObserver((entries) => {
-    for (const e of entries) {
-      const u = units.find((x) => x.stage === e.target);
-      if (u) u.ratio = e.isIntersecting ? e.intersectionRatio : 0;
-    }
-    pick();
-  }, { threshold: [0, 0.3, 0.6, 0.75, 0.9, 1] });
-  for (const u of units) io.observe(u.stage);
-}
 document.addEventListener('visibilitychange', pick);
 if (mq && mq.addEventListener) mq.addEventListener('change', pick);
 pick();
@@ -174,6 +246,7 @@ pick();
 
 function stills() {
   for (const frame of document.querySelectorAll('.mo-frame-stage[data-t]')) {
+    if (frame.firstChild) continue;
     const t = parseFloat(frame.getAttribute('data-t'));
     frame.appendChild(tabsStrip());
     try {
@@ -192,9 +265,35 @@ function stills() {
 
 fontsLoaded(units.length ? units[0].stage : document.body).then(() => {
   started = true;
-  for (const u of units) if (!u.mode) live(u);
-  stills();
-  pick();
+  const frames = document.querySelector('.mo-frames');
+  if (!hasIO) {
+    for (const u of units) build(u);
+    stills();
+    pick();
+    return;
+  }
+  // how much of each stage is in view: decides which demo plays; a stage in view is built at once
+  const seen = new IntersectionObserver((entries) => {
+    for (const e of entries) {
+      const u = unitOf.get(e.target);
+      if (!u) continue;
+      u.ratio = e.isIntersecting ? e.intersectionRatio : 0;
+      if (u.ratio > 0) build(u);
+    }
+    pick();
+  }, { threshold: [0, 0.3, 0.6, 0.75, 0.9, 1] });
+  // a stage within one screen of the viewport is built ahead, in idle time
+  const near = new IntersectionObserver((entries) => {
+    for (const e of entries) {
+      if (!e.isIntersecting) continue;
+      near.unobserve(e.target);
+      if (e.target === frames) { idle(stills); continue; }
+      const u = unitOf.get(e.target);
+      if (u) buildSoon(u);
+    }
+  }, { rootMargin: NEAR });
+  for (const u of units) { seen.observe(u.stage); near.observe(u.stage); }
+  if (frames) near.observe(frames);
 });
 
 // ------------------------------------------------------------------ copy buttons
@@ -204,7 +303,7 @@ const say = (text) => { if (status) { status.textContent = ''; setTimeout(() => 
 
 for (const btn of document.querySelectorAll('button[data-copy]')) {
   const text = btn.getAttribute('data-copy');
-  const idle = btn.textContent;
+  const idleText = btn.textContent;
   let timer = 0;
   btn.addEventListener('click', () => {
     copyText(text).then((ok) => {
@@ -224,7 +323,7 @@ for (const btn of document.querySelectorAll('button[data-copy]')) {
         btn.textContent = 'Press Ctrl+C';
         say('The command is selected. Press Ctrl+C or Cmd+C to copy it.');
       }
-      timer = setTimeout(() => { btn.textContent = idle; }, 1800);
+      timer = setTimeout(() => { btn.textContent = idleText; }, 1800);
     });
   });
 }

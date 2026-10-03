@@ -2,6 +2,15 @@
    Calm and quiet: one live stage plays at a time, no gradients, no glow, no equal card grids.
    Everything is fluid: at 390 px the wrap is 347 px and nothing has a fixed width above that. */
 
+/* The fixed header of this page has two rows (the bar and the links of the page): 98 px tall, and
+   112 px from the width where the bar shows the full navigation. /style/vzhlad.js measures it
+   only after the scripts run; without the right value here the first paint used the 66 px default
+   and the whole page jumped down by 32 px a moment later (measured 3. 10. 2026).
+   html:root, not :root: the full paper.css loads at the end of the body, after site/critical.css,
+   and its own :root value must not win in the moment before this file has loaded again. */
+html:root { --hlavicka: 98px; }
+@media (min-width: 47.5625em) { html:root { --hlavicka: 112px; } }
+
 .mo-main { overflow-x: clip; }
 /* grid and flex children may shrink below their longest code line; pre blocks scroll inside */
 .mo-main :is(.mo-hero-grid, .mo-rows, .mo-row, .mo-outputs, .mo-output, .mo-steps, .mo-pro, .mo-faq) > * { min-width: 0; }
@@ -82,6 +91,12 @@ body.noc a.mo-link { color: var(--ink); font: 500 15px/1.4 var(--ui); text-decor
 .mo-reduced .mo-reduced-note { display: inline; }
 .mo-reduced .mo-motion-note { display: none; }
 body.noc .mo-stage { box-shadow: inset 0 0 0 1px rgb(28 27 24 / 0.06), 0 24px 48px -28px rgb(0 0 0 / 0.8); }
+/* The card of the hero demo enters without the blur the Dialog has everywhere else (it still fades,
+   rises and scales). The blur is a filter on the whole content, and the browser then counts the small
+   description inside as a painted area the size of the card: on a wide screen that made it the largest
+   contentful paint of the page, 1.1 to 1.7 s after the real content (h1) was already there
+   (Lighthouse desktop and our own trace, 3. 10. 2026). Only on this page; demo.html and the video keep the blur. */
+.mo-hero .mo-stage .am-dialog-content { filter: none !important; }
 .mo-stage[data-playing] { cursor: default; }
 .mo-noscript { color: var(--muted); font: 500 14px/1.5 var(--ui); }
 
