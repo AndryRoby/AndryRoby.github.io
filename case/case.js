@@ -2,7 +2,10 @@
  * spustením 3. 10.): pýta sa case.arling.workers.dev na stav objednávky, kým sa prípad stavia, pýta sa znova sama,
  * pri "ready" ukáže odkazy na PDF, počet použitých mien a vynechané mená, pri "needs_help" formulár na mená.
  * Objednávka môže mať viac prípadov (cases); hotový prípad sa dá raz opraviť (pôvodné súbory platia, kým nie sú
- * nové). Výsledok sa po akcii posunie do zorného poľa (na mobile bol pod okrajom). Nič sa neukladá v prehliadači. */
+ * nové). Výsledok sa po akcii posunie do zorného poľa (na mobile bol pod okrajom). Nič sa neukladá v prehliadači.
+ * Dve ponuky (Claude 2, relácia 99, 3. 10. 2026): /status vracia pri každom prípade theme (halloween | vianoce) a
+ * title; kicker a štítok hore sa nastavia podľa nich, pri viacerých prípadoch má každý blok názov svojho prípadu.
+ * Bez theme (starší worker) ostáva neutrálny nadpis „Your friends as witnesses“. */
 (function () {
   var API = 'https://case.arling.workers.dev';
   var form = document.getElementById('case-form');
@@ -11,8 +14,16 @@
   var opravaUvod = document.getElementById('oprava-uvod');
   var opravaStav = document.getElementById('oprava-vysledok');
   var casEl = document.getElementById('case-cas');
+  var kickEl = document.getElementById('case-kick');
+  var miestoEl = document.getElementById('case-miesto');
   if (!form || !out) return;
   var FORMATY = { a4: 'A4', letter: 'US Letter', eink: 'E-ink' };
+  // témy ako v products/eliminacia/vyzdvihnutie/temy.mjs; title príde z /status, miesto je len na stránke
+  var TEMY = {
+    halloween: { title: 'Murder at the Lantern Ball', miesto: 'Grand Marlowe Hotel · Lantern Ball' },
+    vianoce: { title: 'Murder at the Mistletoe Ball', miesto: 'Royal Alder Hotel · Mistletoe Ball' }
+  };
+  var NEUTRALNE = { kick: 'Your friends as witnesses', miesto: 'Personalized case file' };
   // kódy dôvodov z products/eliminacia/vlastne.mjs (DOVODY) a MALO_MIEN
   var DOVODY = {
     JEDNO_SLOVO: 'it was only one word (we need a first name and a surname, like Emma Walsh)',
@@ -66,6 +77,20 @@
 
   function fokus(el) { if (el) { try { el.focus({ preventScroll: true }); } catch (e) { el.focus(); } } }
 
+  /* Názov prípadu: z /status (title), inak podľa témy, inak nič (starší worker bez theme). */
+  function nazovPripadu(c) {
+    if (c.title) return c.title;
+    return c.theme && TEMY[c.theme] ? TEMY[c.theme].title : '';
+  }
+  /* Kicker a štítok hore podľa prípadov objednávky: jedna téma = jej názov a hotel; rôzne témy alebo bez témy = neutrálne. */
+  function hlavicka(cases) {
+    var temy = [];
+    cases.forEach(function (c) { if (c.theme && TEMY[c.theme] && temy.indexOf(c.theme) < 0) temy.push(c.theme); });
+    var jedna = temy.length === 1 ? TEMY[temy[0]] : null;
+    if (kickEl) kickEl.textContent = jedna ? (nazovPripadu(cases[0]) || jedna.title) + ' · ' + NEUTRALNE.kick : NEUTRALNE.kick;
+    if (miestoEl) miestoEl.textContent = jedna ? jedna.miesto : NEUTRALNE.miesto;
+  }
+
   /* Formulár na mená pod výsledkom: pre prípad, ktorý čaká na mená, alebo pre jednu opravu hotového prípadu.
    * akcia: 'fokus' (kurzor do prvého poľa), 'skok' (aj posun k formuláru, po ťuknutí na odkaz), inak nič. */
   function otvorOpravu(c, order, viac, akcia) {
@@ -74,7 +99,7 @@
     oprava.hidden = false;
     oprava.elements.order.value = order;
     oprava.elements['case'].value = c.id || '';
-    var ktory = viac && c.number ? ' for personalized case ' + c.number : '';
+    var ktory = viac && c.number ? ' for personalized case ' + c.number + (nazovPripadu(c) ? ' (' + nazovPripadu(c) + ')' : '') : '';
     if (opravaUvod) {
       opravaUvod.textContent = c.status === 'ready'
         ? 'Type the full list of guests again' + ktory + ', the way it should be in your case. Your current files stay on this page and keep working until the new ones are ready. You can do this once.'
@@ -104,6 +129,7 @@
       a.setAttribute('download', f.name);
       a.setAttribute('data-umami-event', 'case_download');
       a.setAttribute('data-umami-event-format', f.format);
+      if (c.theme) a.setAttribute('data-umami-event-theme', c.theme);
       li.appendChild(a);
       li.appendChild(prvok('span', '', mb(f.bytes)));
       ul.appendChild(li);
@@ -140,11 +166,13 @@
       return cakat && uplynulo < CAKAJ_HOTOVE;
     }
     podpis = novy;
+    hlavicka(cases);
     out.className = 'case-vysledok';
     out.textContent = '';
     cases.forEach(function (c, i) {
       var blok = prvok('div', 'pripad');
-      if (viac) blok.appendChild(prvok('h2', 'pripad-nazov', 'Personalized case ' + (c.number || i + 1) + ' of ' + cases.length));
+      // pri viacerých prípadoch (aj Halloween a Vianoce v jednej objednávke) má každý blok názov svojho prípadu
+      if (viac) blok.appendChild(prvok('h2', 'pripad-nazov', 'Personalized case ' + (c.number || i + 1) + ' of ' + cases.length + (nazovPripadu(c) ? ' · ' + nazovPripadu(c) : '')));
       if (c.status === 'ready') { hotovyBlok(blok, c, order, viac); if (c.fixing) cakat = true; }
       else if (c.status === 'needs_help') { pomocBlok(blok, c, order, viac); if (!pomoc) pomoc = c; }
       else if (c.status === 'delayed') {
@@ -226,6 +254,7 @@
     var tlacidlo = form.querySelector('button');
     tlacidlo.disabled = true;
     if (oprava) oprava.hidden = true;
+    hlavicka([]); // nové hľadanie: neutrálny nadpis, kým /status nepovie tému
     zaciatok = Date.now();
     sprava('Looking for your case...');
     zisti(order, surname, tlacidlo, true);
