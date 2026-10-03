@@ -1,0 +1,230 @@
+/* Your friends as witnesses (/shop/your-friends-as-witnesses/), 3. 10. 2026.
+   Len to, čo paper.css a hub.css nemajú. Rodina predajných stránok body.noc.predaj, vzor
+   shop/murder-lantern-ball. Všetko je pod triedou .svedkovia, aby sa nič nebilo s inými stránkami.
+   Nákup je len na Etsy (jediné plné tlačidlo), na stránke nie je Stripe ani vlastný skript.
+   Medzery v násobkoch 8 (DESIGN.md, ZNALOSTI-UI R64: skupiny linkou papiera, nie mriežkou kariet). */
+
+/* ── 1. Úvod: nadpis, cena, obálka, dôkazy ──────────────────────────────────
+   Telefón: nadpis, veta, cena s tlačidlom, až potom obálka (nad ohybom 844 bodov je akcia, nie obrázok).
+   Od 900 bodov: vľavo text, cena a dôkazy, vpravo obálka cez všetky tri riadky. */
+body.svedkovia .sv-hero { display:grid; grid-template-columns:minmax(0,1fr);
+  grid-template-areas:"text" "cena" "obalka" "dokazy"; gap:32px; align-items:start;
+  padding-bottom:clamp(48px,6vw,96px); }
+body.svedkovia .sv-hero > .text { grid-area:text; min-width:0; }
+body.svedkovia .sv-hero > .cena { grid-area:cena; }
+body.svedkovia .sv-hero > .sv-obalka { grid-area:obalka; }
+body.svedkovia .sv-hero > .sv-dokazy { grid-area:dokazy; }
+@media (min-width:900px) {
+  body.svedkovia .sv-hero { grid-template-columns:minmax(0,1.08fr) minmax(0,.92fr);
+    grid-template-areas:"text obalka" "cena obalka" "dokazy obalka"; grid-template-rows:auto auto 1fr;
+    column-gap:clamp(48px,5.5vw,96px); row-gap:32px; }
+}
+body.svedkovia .sv-hero h1 { margin:0; }
+body.svedkovia .sv-hero .lead { margin:16px 0 0; }
+
+/* Cenový box: vzhľad z hub.css (.predaj .cena), tu len šírka, poradie a tiché odkazy. */
+body.svedkovia .sv-hero > .cena { width:100%; max-width:560px; }
+body.svedkovia .cena .zaco { margin:12px 0 20px; font-size:15px; line-height:1.55; }
+body.svedkovia .cena .akcie { gap:8px; }
+body.svedkovia .cena .akcie .tichy { align-self:center; }
+body.svedkovia .cena .pomoc { margin:16px 0 0; }
+
+/* Šípka von pri tlačidle Etsy: tvar z paper.css (.ext), menšia medzera v tlačidle. */
+body.svedkovia .btn.ext::after { margin-left:0; width:.62em; height:.62em; }
+
+/* Dôkazy: tri riadky s linkou, nie karty. */
+body.svedkovia .sv-dokazy { list-style:none; margin:0; padding:0; width:100%; max-width:560px;
+  border-top:1px solid var(--line); }
+body.svedkovia .sv-dokazy li { margin:0; padding:16px 0; border-bottom:1px solid var(--line);
+  font:400 15px/1.55 var(--ui); color:var(--body); }
+body.svedkovia .sv-dokazy b { display:block; margin:0 0 4px; font:600 16.5px/1.35 var(--display);
+  letter-spacing:-.01em; color:var(--ink); }
+
+/* ── 2. Skutočné strany ──────────────────────────────────────────────────────
+   Biela strana na nočnom stole: tieň artefaktu a mäkká žiara z DESIGN.md, časť 1. */
+body.svedkovia .sv-strana { margin:0; min-width:0; }
+body.svedkovia .sv-strana > a { display:block; border-radius:3px; text-decoration:none; }
+body.svedkovia .sv-strana > a:focus-visible { outline:2px solid var(--accent-light); outline-offset:5px; }
+body.svedkovia .sv-strana img { display:block; width:100%; height:auto; border-radius:3px; background:#f4efe4;
+  box-shadow:0 26px 60px -20px rgba(0,0,0,.75), 0 0 0 1px rgba(255,255,255,.06), 0 0 90px -30px rgba(255,190,140,.22); }
+body.svedkovia .sv-strana figcaption { margin:16px 0 0; font:400 13.5px/1.55 var(--ui); color:var(--muted); }
+body.svedkovia .sv-strana figcaption b { color:var(--body); font-weight:600; }
+
+body.svedkovia .sv-obalka { width:100%; max-width:420px; justify-self:start; }
+@media (min-width:900px) { body.svedkovia .sv-obalka { max-width:540px; justify-self:end; } }
+/* Jediný autorský pohyb stránky: obálka si pri načítaní sadne na stôl. Pri zníženom pohybe nič. */
+@media (prefers-reduced-motion:no-preference) {
+  body.svedkovia .sv-obalka img { animation:sv-usad .9s var(--pero) .05s both; }
+}
+@keyframes sv-usad { from { opacity:.001; transform:translate3d(0,16px,0) rotate(-1.2deg); } }
+
+/* ── 3. Sekcie: podnadpis a dva stĺpce ──────────────────────────────────── */
+body.svedkovia .sub { margin:16px 0 0; font:400 17px/1.55 var(--ui); color:var(--body); max-width:60ch; }
+@media (max-width:560px) { body.svedkovia .sub { font-size:16px; } }
+
+body.svedkovia .sv-dvojica { display:grid; grid-template-columns:minmax(0,1fr); gap:40px; align-items:start; }
+@media (min-width:900px) {
+  body.svedkovia .sv-dvojica { grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr); gap:clamp(48px,6vw,96px); }
+}
+body.svedkovia .sv-vyrez { width:100%; max-width:520px; }
+
+/* Štyri kroky: veľké číslo v ľavom okraji, riadky s linkou (vzor .sada-kroky z Lantern Ball). */
+body.svedkovia .sv-kroky { list-style:none; margin:0; padding:0; counter-reset:sv-krok; max-width:62ch;
+  border-top:1px solid var(--line); }
+body.svedkovia .sv-kroky li { counter-increment:sv-krok; position:relative; margin:0; padding:20px 0 20px 56px;
+  border-bottom:1px solid var(--line); font:400 16px/1.6 var(--ui); color:var(--body); }
+body.svedkovia .sv-kroky li::before { content:counter(sv-krok); position:absolute; left:0; top:16px; width:40px;
+  font:600 28px/1.2 var(--display); color:var(--accent-light); font-variant-numeric:tabular-nums; }
+body.svedkovia .sv-kroky b { display:block; margin:0 0 4px; font:600 17px/1.4 var(--display); color:var(--ink); }
+
+/* ── 4. Register: výpis z papiera a celá strana vedľa ───────────────────── */
+body.svedkovia .sv-register { display:grid; grid-template-columns:minmax(0,1fr); gap:40px; align-items:start; }
+@media (min-width:1000px) {
+  body.svedkovia .sv-register { grid-template-columns:minmax(0,1fr) minmax(200px,240px); gap:48px; }
+}
+body.svedkovia .sv-register > .sv-strana { width:100%; max-width:240px; }
+body.svedkovia .sv-pokracovanie { margin:32px 0 0; max-width:64ch; font:400 16px/1.6 var(--ui); color:var(--body); }
+
+/* Výpis prvých riadkov strany 13 ako biely papier, ten istý vzhľad ako strana PDF.
+   Pozor na tri pravidlá paper.css, ktoré by výpis rozbili:
+     - do 600 bodov robí z každej tabuľky karty (display:block, thead skrytý, td::before s popisom),
+     - body.noc b dáva tučnému písmu farbu --ink (#fafafa), na bielom papieri by meno zmizlo,
+     - body.noc th, td a riadky tbody majú farby a linky pre tmavú plochu.
+   Stĺpce sa skrývajú podľa šírky výpisu (container query), nie podľa okna; bez podpory ostanú všetky
+   a výpis sa posúva vo vlastnom ráme (overflow-x), stránka nikdy. */
+body.svedkovia .sv-vypis { margin:0; min-width:0; container-type:inline-size; }
+body.svedkovia .sv-papier { overflow-x:auto; padding:20px 22px 12px; border-radius:3px; background:#fbf9f4; color:#1f1d1a;
+  box-shadow:0 26px 60px -20px rgba(0,0,0,.75), 0 0 0 1px rgba(255,255,255,.06), 0 0 90px -30px rgba(255,190,140,.22); }
+body.svedkovia .sv-papier-hlava { display:flex; flex-wrap:wrap; justify-content:space-between; gap:4px 16px;
+  margin:0 0 12px; font:700 12.5px/1.3 var(--mono); letter-spacing:.12em; text-transform:uppercase; color:#1f1d1a; }
+body.svedkovia .sv-papier-hlava span + span { letter-spacing:.02em; text-transform:none; color:#a8331a; }
+body.svedkovia .sv-papier table { display:table; width:100%; margin:0; border-collapse:collapse;
+  font:400 14px/1.35 var(--ui); font-variant-numeric:tabular-nums; color:#1f1d1a; }
+body.svedkovia .sv-papier thead { display:table-header-group; }
+body.svedkovia .sv-papier tbody { display:table-row-group; }
+body.svedkovia .sv-papier tr,
+body.svedkovia .sv-papier tbody tr:hover { display:table-row; width:auto; margin:0; padding:0; border:0;
+  border-radius:0; background:transparent; }
+body.svedkovia .sv-papier tbody tr:nth-child(even),
+body.svedkovia .sv-papier tbody tr:nth-child(even):hover { background:#f1ece2; }
+body.svedkovia .sv-papier th,
+body.svedkovia .sv-papier td { display:table-cell; width:auto; padding:7px 8px; border:0; border-bottom:1px solid #e4ddd0;
+  background:none; color:#1f1d1a; text-align:left; vertical-align:baseline; white-space:nowrap; }
+body.svedkovia .sv-papier th { padding-top:4px; padding-bottom:7px; border-bottom:1.5px solid #1f1d1a;
+  font:700 11.5px/1.3 var(--ui); letter-spacing:.05em; text-transform:uppercase; }
+body.svedkovia .sv-papier td::before { content:none; display:none; }
+body.svedkovia .sv-papier tbody tr:last-child td { border-bottom:0; }
+body.svedkovia .sv-papier b { color:inherit; font-weight:700; }
+body.svedkovia .sv-papier .sv-c-cislo { text-align:right; }
+body.svedkovia .sv-papier td.sv-c-meno { white-space:normal; }
+body.svedkovia .sv-meno { white-space:nowrap; }
+
+/* Indícia 1 ceruzkou: preškrtnuté riadky (stav aj slovom pre čítačky, .sv-skryte) a svedkyňa
+   zvýraznená ako na obrázku 3 ponuky Etsy. Štítok je inline-block, preto ho čiara nepreškrtne. */
+body.svedkovia .sv-papier tr.sv-von td { color:#6c665c; text-decoration:line-through;
+  text-decoration-color:#b23a1d; text-decoration-thickness:1.5px; }
+body.svedkovia .sv-papier tbody tr.sv-von.sv-svedok,
+body.svedkovia .sv-papier tbody tr.sv-von.sv-svedok:hover { background:#f4d867; }
+body.svedkovia .sv-papier tr.sv-von.sv-svedok td { color:#3a342b; }
+body.svedkovia .sv-stitok { display:inline-block; margin:2px 0 2px 10px; padding:3px 8px; border-radius:3px;
+  background:#b23a1d; color:#fff; font:700 11.5px/1.3 var(--mono); letter-spacing:.02em; white-space:nowrap;
+  vertical-align:1px; }
+body.svedkovia .sv-skryte { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+body.svedkovia .sv-vypis figcaption { margin:16px 0 0; max-width:64ch; font:400 13.5px/1.55 var(--ui); color:var(--muted); }
+body.svedkovia .sv-vypis figcaption b { color:var(--body); font-weight:600; }
+body.svedkovia .sv-uzke { display:none; }
+
+/* Hranice so zálohou asi 10 % na šírku písma: všetkých desať stĺpcov potrebuje asi 920 bodov výpisu,
+   osem asi 710, päť asi 470, štyri asi 335 (vrátane okraja papiera). Pri 1440 má výpis asi 990 bodov. */
+@container (max-width:940px) {
+  body.svedkovia .sv-papier .sv-c-ulica, body.svedkovia .sv-papier .sv-c-sladkost { display:none; }
+  body.svedkovia .sv-uzke { display:inline; }
+}
+@container (max-width:740px) {
+  body.svedkovia .sv-papier .sv-c-kostym, body.svedkovia .sv-papier .sv-c-napoj,
+  body.svedkovia .sv-papier .sv-c-listok { display:none; }
+}
+@container (max-width:500px) {
+  body.svedkovia .sv-papier .sv-c-maska { display:none; }
+  body.svedkovia .sv-papier { padding:16px 12px 8px; }
+  body.svedkovia .sv-papier table { font-size:13.5px; }
+  body.svedkovia .sv-papier th { letter-spacing:.02em; }
+  body.svedkovia .sv-papier th, body.svedkovia .sv-papier td { padding-left:6px; padding-right:6px; }
+  body.svedkovia .sv-stitok { margin-left:0; padding:2px 6px; font-size:10.5px; }
+}
+/* Telefón 360 bodov (výpis asi 320): ostane meno, príchod a stôl, na ktorom stojí indícia 1. */
+@container (max-width:340px) {
+  body.svedkovia .sv-papier .sv-c-vek { display:none; }
+}
+
+/* ── 5. Čo dostanete: dva prípady v riadkoch, zoznam strán ──────────────── */
+body.svedkovia .sv-dodanie { list-style:none; margin:0; padding:0; border-top:1px solid var(--rule-strong); max-width:1060px; }
+body.svedkovia .sv-dodanie > li { display:grid; grid-template-columns:minmax(0,1fr); gap:8px 32px; margin:0; padding:20px 0;
+  border-bottom:1px solid var(--line); }
+@media (min-width:760px) {
+  body.svedkovia .sv-dodanie > li { grid-template-columns:minmax(0,1.15fr) minmax(0,1fr) minmax(0,.85fr); align-items:baseline; }
+}
+body.svedkovia .sv-dodanie p { margin:0; max-width:none; }
+body.svedkovia .sv-dod-nazov { font:400 15px/1.5 var(--ui); color:var(--body); }
+body.svedkovia .sv-dod-nazov b { display:block; font:600 20px/1.3 var(--display); letter-spacing:-.01em; color:var(--ink); }
+body.svedkovia .sv-dod-kedy { font:600 15px/1.5 var(--ui); color:var(--accent-light); }
+body.svedkovia .sv-dod-format { font:400 15px/1.6 var(--ui); color:var(--body); font-variant-numeric:tabular-nums; }
+
+body.svedkovia .sv-strany { list-style:none; margin:40px 0 0; padding:0; max-width:72ch; border-top:1px solid var(--line); }
+body.svedkovia .sv-strany li { display:grid; grid-template-columns:5.6em minmax(0,1fr); gap:12px; margin:0; padding:10px 0;
+  border-bottom:1px solid var(--line); font:400 15px/1.55 var(--ui); color:var(--body); }
+body.svedkovia .sv-cislo { font:600 15px/1.55 var(--ui); color:var(--ink); white-space:nowrap; font-variant-numeric:tabular-nums; }
+body.svedkovia .sv-pozn { margin:16px 0 0; max-width:64ch; font:400 14px/1.6 var(--ui); color:var(--muted); }
+
+/* ── 6. Kontrola pred vydaním: odpočet z kontrolných zastávok ukážky ────── */
+body.svedkovia .sv-text { margin:0; max-width:64ch; font:400 16.5px/1.6 var(--ui); color:var(--body); }
+body.svedkovia .sv-odpocet { list-style:none; margin:40px 0 0; padding:0; max-width:1060px; border-top:1px solid var(--rule-strong); }
+body.svedkovia .sv-odpocet li { display:grid; grid-template-columns:5.2em minmax(0,1fr); align-items:baseline; gap:16px;
+  margin:0; padding:12px 0; border-bottom:1px solid var(--line); }
+body.svedkovia .sv-odpocet b { font:600 clamp(28px,3.2vw,44px)/1.05 var(--display); letter-spacing:-.02em; color:var(--ink);
+  font-variant-numeric:tabular-nums; }
+body.svedkovia .sv-odpocet span { font:500 14px/1.4 var(--ui); color:var(--muted); }
+body.svedkovia .sv-odpocet li:last-child b { color:var(--accent); }
+@media (min-width:700px) {
+  body.svedkovia .sv-odpocet { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); }
+  body.svedkovia .sv-odpocet li { grid-template-columns:minmax(0,1fr); gap:8px; padding:20px 16px 20px 0; }
+  body.svedkovia .sv-odpocet li + li { padding-left:16px; border-left:1px solid var(--line); }
+}
+body.svedkovia .sv-odpocet-popis { margin:16px 0 0; max-width:64ch; font:400 13.5px/1.55 var(--ui); color:var(--muted); }
+
+/* ── 7. Mená: riadky dt a dd (vzor .sada-fakty) ─────────────────────────── */
+body.svedkovia .sv-fakty { margin:0; max-width:880px; }
+body.svedkovia .sv-fakty > div { display:grid; grid-template-columns:10em minmax(0,1fr); gap:16px; padding:14px 0;
+  border-top:1px solid var(--line); }
+body.svedkovia .sv-fakty > div:last-child { border-bottom:1px solid var(--line); }
+body.svedkovia .sv-fakty dt { padding-top:2px; font:600 12.5px/1.6 var(--ui); letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
+body.svedkovia .sv-fakty dd { margin:0; font:400 16px/1.6 var(--ui); color:var(--body); }
+@media (max-width:480px) { body.svedkovia .sv-fakty > div { grid-template-columns:minmax(0,1fr); gap:4px; } }
+
+/* ── 8. Komu sa hodí a komu nie ─────────────────────────────────────────── */
+body.svedkovia .sv-pre-koho { display:grid; grid-template-columns:minmax(0,1fr); gap:40px; max-width:1060px; }
+@media (min-width:800px) { body.svedkovia .sv-pre-koho { grid-template-columns:repeat(2,minmax(0,1fr)); gap:56px; } }
+body.svedkovia .sv-pre-koho h3 { margin:0 0 12px; }
+body.svedkovia .sv-zoznam { list-style:none; margin:0; padding:0; border-top:1px solid var(--line); }
+body.svedkovia .sv-zoznam li { position:relative; margin:0; padding:12px 0 12px 22px; border-bottom:1px solid var(--line);
+  font:400 16px/1.55 var(--ui); color:var(--body); }
+body.svedkovia .sv-zoznam li::before { content:""; position:absolute; left:2px; top:21px; width:8px; height:8px; border-radius:50%;
+  background:var(--accent); }
+body.svedkovia .sv-zoznam.sv-nie li::before { border-radius:0; height:2px; top:24px; width:10px; left:1px; background:var(--muted); }
+body.svedkovia .sv-odporucanie { margin:32px 0 0; max-width:64ch; font:400 16.5px/1.6 var(--ui); color:var(--body); }
+body.svedkovia .sv-odporucanie b { color:var(--ink); }
+
+/* ── 9. Záver: druhé tlačidlo Etsy a odbočky ────────────────────────────── */
+body.svedkovia .sv-zaver-blok { display:grid; grid-template-columns:minmax(0,1fr); gap:24px 64px; align-items:center;
+  max-width:1060px; padding:clamp(24px,3vw,40px); border:1px solid var(--line); border-left:3px solid var(--accent);
+  border-radius:var(--radius); background:var(--card); }
+@media (min-width:860px) { body.svedkovia .sv-zaver-blok { grid-template-columns:minmax(0,1.2fr) minmax(0,1fr); } }
+body.svedkovia .sv-zaver-blok h2 { margin:0; }
+body.svedkovia .sv-zaver-kupa { display:flex; flex-direction:column; align-items:stretch; gap:12px; min-width:0; }
+body.svedkovia .sv-zaver-cena { margin:0; font:500 15px/1.35 var(--ui); color:var(--muted); }
+body.svedkovia .sv-zaver-cena b { margin-right:8px; font:600 clamp(30px,3vw,40px)/1 var(--display); letter-spacing:-.02em; color:var(--ink); }
+body.svedkovia .sv-zaver-kupa .btn { width:100%; height:auto; min-height:52px; justify-content:center; font-size:16px; }
+body.svedkovia .sv-drobne { margin:0; font:400 13px/1.55 var(--ui); color:var(--muted); }
+body.svedkovia .sv-odbocky { list-style:none; margin:32px 0 0; padding:0; max-width:1060px; border-top:1px solid var(--line); }
+body.svedkovia .sv-odbocky li { margin:0; padding:14px 0; border-bottom:1px solid var(--line); font:400 16px/1.55 var(--ui); color:var(--body); }
+body.svedkovia .sv-odbocky li span { color:var(--ink); font-weight:600; margin-right:6px; }
