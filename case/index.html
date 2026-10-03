@@ -9,29 +9,37 @@
 <meta name="robots" content="noindex, nofollow">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon.ico" sizes="48x48">
-<title>Download your case &middot; ARLing Puzzles</title>
-<meta name="description" content="Download page for the personalized Your friends as witnesses case bought on Etsy: Murder at the Lantern Ball (Halloween) or Murder at the Mistletoe Ball (Christmas).">
+<title>Download your files &middot; ARLing Puzzles</title>
+<meta name="description" content="Download page for personalized files bought from ARLing Puzzles on Etsy: the Your friends as witnesses mystery case (Halloween or Christmas) and the custom crossword from your words.">
 <link rel="canonical" href="https://arling.sk/case/">
 <link rel="preload" href="/fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/case/case.css?v=6">
-<script src="/case/case.js?v=6" defer></script>
+<link rel="stylesheet" href="/case/case.css?v=7">
+<script src="/case/case.js?v=7" defer></script>
 </head>
 <body>
 <!-- Stránka vyzdvihnutia personalizovaného prípadu (Fable, 2. 10. 2026; podľa brány pokus 1 bez menu obchodu,
      papierový spis ako produkt). Kupujúci prichádza z Etsy; nič tu ho neposiela do vlastného obchodu.
      Dve ponuky (Claude 2, relácia 99, 3. 10. 2026): kicker a štítok hore sú neutrálne, kým /status nepovie tému
-     (theme a title); potom ich case.js nastaví na Lantern Ball alebo Mistletoe Ball. Pomocné texty bez názvu plesu. -->
+     (theme a title); potom ich case.js nastaví na Lantern Ball alebo Mistletoe Ball. Pomocné texty bez názvu plesu.
+     Druhý produkt (Claude 2, relácia 105, 3. 10. 2026): krížovka z vlastných slov. Voľba hore (alebo odkaz
+     /case/?p=crossword) prepne nadpis, druhé pole, pomoc (bloky data-len) a formulár na slová. Bez skriptu ostáva
+     stránka v stave detektívky ako doteraz. -->
 <header class="case-top"><span class="znak">ARLing Puzzles</span><span class="stitok" id="case-miesto">Personalized case file</span></header>
 <main id="obsah" class="case">
   <div class="spis">
     <div class="pecat" aria-hidden="true">YOUR FILE</div>
     <p class="case-kick" id="case-kick">Your friends as witnesses</p>
-    <h1>Download your case</h1>
-    <p class="case-lead">Bought the personalized case on Etsy? Enter your Etsy order number and the surname of the first guest on your list (or your own surname from the order).</p>
+    <h1 id="case-nadpis">Download your case</h1>
+    <p class="case-lead" id="case-lead">Bought the personalized case on Etsy? Enter your Etsy order number and the surname of the first guest on your list (or your own surname from the order).</p>
     <form id="case-form" class="case-form" novalidate>
+      <fieldset class="case-volba">
+        <legend>What did you buy?</legend>
+        <label><input type="radio" name="produkt" value="mystery" checked><span>Mystery case</span></label>
+        <label><input type="radio" name="produkt" value="crossword"><span>Custom crossword</span></label>
+      </fieldset>
       <label for="case-order">Etsy order number</label>
       <input id="case-order" name="order" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="for example 4190123456" required>
-      <label for="case-surname">Surname of the first guest on your list, or yours</label>
+      <label for="case-surname" id="case-surname-label">Surname of the first guest on your list, or yours</label>
       <input id="case-surname" name="surname" autocomplete="off" spellcheck="false" placeholder="for example Walsh" required>
       <button type="submit" data-umami-event="case_status">Find my case</button>
     </form>
@@ -51,18 +59,51 @@
       <p id="oprava-vysledok" class="oprava-stav" role="status" aria-live="polite"></p>
       <button type="submit" data-umami-event="case_fix">Build my case</button>
     </form>
+    <form id="krizovka-oprava" class="case-form case-oprava" novalidate hidden>
+      <input type="hidden" name="order">
+      <input type="hidden" name="case">
+      <p id="krizovka-uvod" class="oprava-uvod"></p>
+      <label for="krizovka-buyer">Your surname, as on your Etsy order</label>
+      <input id="krizovka-buyer" name="buyer" autocomplete="family-name" spellcheck="false" placeholder="for example Turner" required>
+      <label for="krizovka-words">Words and clues 1 to 13</label>
+      <textarea id="krizovka-words" name="words" rows="8" maxlength="1024" spellcheck="true" placeholder="PARIS: Where we got engaged&#10;BISCUIT: Name of our first dog" required></textarea>
+      <label for="krizovka-words2">Words and clues 14 to 25 (optional)</label>
+      <textarea id="krizovka-words2" name="words2" rows="5" maxlength="1024" spellcheck="true" placeholder="Leave empty if you have 13 words or fewer"></textarea>
+      <p class="case-tip">One per line, each as WORD: clue. Words can have up to 15 letters; spaces, hyphens and accents are fine. Shorter clues leave more room for bigger squares.</p>
+      <p id="krizovka-pocet" class="case-tip case-pocet" role="status" aria-live="polite"></p>
+      <label for="krizovka-title">Title and date for the frame page (optional)</label>
+      <input id="krizovka-title" name="title" maxlength="80" spellcheck="true" placeholder="Our Story / est. 2019">
+      <label for="krizovka-dedication">Dedication (optional)</label>
+      <input id="krizovka-dedication" name="dedication" maxlength="80" spellcheck="true" placeholder="For Daniel, on our 7th anniversary">
+      <p id="krizovka-vysledok" class="oprava-stav" role="status" aria-live="polite"></p>
+      <button type="submit" data-umami-event="case_fix" data-umami-event-product="crossword">Build my crossword</button>
+    </form>
   </div>
   <div class="case-pomoc">
     <h2>Where is my order number?</h2>
     <p>On Etsy, open <b>Purchases and reviews</b>, or open the receipt e-mail from Etsy. It is the long number next to &ldquo;Order&rdquo;.</p>
-    <h2>How long does it take?</h2>
-    <p>Usually a few minutes. Your case is built automatically as soon as the payment goes through on Etsy, and this page checks again by itself while you wait. Case No. 1 of your listing (Halloween or Christmas) is already in your Etsy download.</p>
-    <h2>Two listings, one page</h2>
-    <p>This page serves both personalized cases, Murder at the Lantern Ball (Halloween) and Murder at the Mistletoe Ball (Christmas). The title above your files tells you which one you are looking at. If you bought both, both appear here under the same order number.</p>
-    <h2>Your friends&rsquo; names</h2>
-    <p>We use the names only to build your case. Your files contain them and are deleted automatically 30 days after they are ready, so please save your files. More in our <a href="/privacy/en/#s8b">privacy policy</a>.</p>
-    <h2>Something wrong?</h2>
-    <p>A name is wrong? Next to your files is a link to fix the names once; your current files keep working until the new ones are ready. If your case is not here within 30 minutes, or anything else is wrong, message us on Etsy (ARLing Puzzles); we reply within 24 hours.</p>
+    <div data-len="mystery">
+      <h2>How long does it take?</h2>
+      <p>Usually a few minutes. Your case is built automatically as soon as the payment goes through on Etsy, and this page checks again by itself while you wait. Case No. 1 of your listing (Halloween or Christmas) is already in your Etsy download.</p>
+      <h2>Two listings, one page</h2>
+      <p>This page serves both personalized cases, Murder at the Lantern Ball (Halloween) and Murder at the Mistletoe Ball (Christmas). The title above your files tells you which one you are looking at. If you bought both, both appear here under the same order number.</p>
+      <h2>Your friends&rsquo; names</h2>
+      <p>We use the names only to build your case. Your files contain them and are deleted automatically 30 days after they are ready, so please save your files. More in our <a href="/privacy/en/#s8b">privacy policy</a>.</p>
+      <h2>Something wrong?</h2>
+      <p>A name is wrong? Next to your files is a link to fix the names once; your current files keep working until the new ones are ready. If your case is not here within 30 minutes, or anything else is wrong, message us on Etsy (ARLing Puzzles); we reply within 24 hours.</p>
+    </div>
+    <div data-len="crossword" hidden>
+      <h2>Which word do I type?</h2>
+      <p>The first word on the list you sent with your order: the word before the first colon in the first box. Capital letters and spaces do not matter. Your own surname from the Etsy order works too.</p>
+      <h2>How long does it take?</h2>
+      <p>Usually a few minutes. Your crossword is built automatically as soon as the payment goes through on Etsy, and this page checks again by itself while you wait.</p>
+      <h2>What do I get?</h2>
+      <p>Two PDF files with the same crossword, one in A4 and one in US Letter. Each has 5 pages: a cover, how to play, the puzzle, the solution, and a keepsake page with the filled grid, your title and date, ready for a frame.</p>
+      <h2>Your words and clues</h2>
+      <p>We use your words and clues only to build your crossword. Your files contain them and are deleted automatically 30 days after they are ready, so please save your files. More in our <a href="/privacy/en/#s8b">privacy policy</a>.</p>
+      <h2>Something wrong?</h2>
+      <p>A word or a clue is wrong? Next to your files is a link to fix your list once; your current files keep working until the new ones are ready. If your crossword is not here within 30 minutes, or anything else is wrong, message us on Etsy (ARLing Puzzles); we reply within 24 hours.</p>
+    </div>
   </div>
 </main>
 <footer class="case-pata">
