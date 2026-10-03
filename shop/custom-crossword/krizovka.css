@@ -1,0 +1,140 @@
+/* Custom crossword (/shop/custom-crossword/), 3. 10. 2026, Claude 2, relácia 106.
+   Len to, čo paper.css a hub.css nemajú. Rodina predajných stránok body.noc.predaj, vzor
+   shop/your-friends-as-witnesses (svedkovia.css). Všetko je pod triedou .krizovka, aby sa nič nebilo s inými stránkami.
+   Nákup je len na Etsy (jediné plné tlačidlo), na stránke nie je Stripe ani vlastný skript.
+   Medzery v násobkoch 8 (DESIGN.md, ZNALOSTI-UI R64: skupiny linkou papiera, nie mriežkou kariet). */
+
+/* ── 1. Úvod: nadpis, cena, strana do rámu, dôkazy ──────────────────────────
+   Telefón: nadpis, veta, cena s tlačidlom, až potom strana (nad ohybom je akcia, nie obrázok).
+   Od 900 bodov: vľavo text, cena a dôkazy, vpravo strana cez všetky tri riadky. */
+body.krizovka .kr-hero { display:grid; grid-template-columns:minmax(0,1fr);
+  grid-template-areas:"text" "cena" "strana" "dokazy"; gap:32px; align-items:start;
+  padding-bottom:clamp(32px,4vw,56px); }
+body.krizovka .kr-hero > .text { grid-area:text; min-width:0; }
+body.krizovka .kr-hero > .cena { grid-area:cena; }
+body.krizovka .kr-hero > .kr-ram { grid-area:strana; }
+body.krizovka .kr-hero > .kr-dokazy { grid-area:dokazy; }
+@media (min-width:900px) {
+  body.krizovka .kr-hero { grid-template-columns:minmax(0,1.08fr) minmax(0,.92fr);
+    grid-template-areas:"text strana" "cena strana" "dokazy strana"; grid-template-rows:auto auto 1fr;
+    column-gap:clamp(48px,5.5vw,96px); row-gap:32px; }
+}
+body.krizovka .kr-hero h1 { margin:0; }
+body.krizovka .kr-hero .lead { margin:16px 0 0; }
+
+/* Cenový box: vzhľad z hub.css (.predaj .cena), tu len šírka, poradie a tiché odkazy. */
+body.krizovka .kr-hero > .cena { width:100%; max-width:560px; }
+body.krizovka .cena .zaco { margin:12px 0 20px; font-size:15px; line-height:1.55; }
+body.krizovka .cena .akcie { gap:8px; }
+body.krizovka .cena .akcie .tichy { align-self:center; }
+body.krizovka .cena .pomoc { margin:16px 0 0; }
+
+/* Šípka von pri tlačidle Etsy: tvar z paper.css (.ext), menšia medzera v tlačidle. */
+body.krizovka .btn.ext::after { margin-left:0; width:.62em; height:.62em; }
+
+/* Dôkazy: tri riadky s linkou, nie karty. */
+body.krizovka .kr-dokazy { list-style:none; margin:0; padding:0; width:100%; max-width:560px;
+  border-top:1px solid var(--line); }
+body.krizovka .kr-dokazy li { margin:0; padding:16px 0; border-bottom:1px solid var(--line);
+  font:400 15px/1.55 var(--ui); color:var(--body); }
+body.krizovka .kr-dokazy b { display:block; margin:0 0 4px; font:600 16.5px/1.35 var(--display);
+  letter-spacing:-.01em; color:var(--ink); }
+
+/* ── 2. Skutočné strany ──────────────────────────────────────────────────────
+   Biela strana na nočnom stole: tieň artefaktu a mäkká žiara z DESIGN.md, časť 1. */
+body.krizovka .kr-strana { margin:0; min-width:0; }
+body.krizovka .kr-strana > a { display:block; border-radius:3px; text-decoration:none; }
+body.krizovka .kr-strana > a:focus-visible { outline:2px solid var(--accent-light); outline-offset:5px; }
+body.krizovka .kr-strana img { display:block; width:100%; height:auto; border-radius:3px; background:#fff;
+  box-shadow:0 26px 60px -20px rgba(0,0,0,.75), 0 0 0 1px rgba(255,255,255,.06), 0 0 90px -30px rgba(255,190,140,.22); }
+body.krizovka .kr-strana figcaption { margin:16px 0 0; font:400 13.5px/1.55 var(--ui); color:var(--muted); }
+body.krizovka .kr-strana figcaption b { color:var(--body); font-weight:600; }
+
+body.krizovka .kr-ram { width:100%; max-width:420px; justify-self:start; }
+@media (min-width:900px) { body.krizovka .kr-ram { max-width:540px; justify-self:end; } }
+/* Jediný autorský pohyb stránky: strana si pri načítaní sadne na stôl. Pri zníženom pohybe nič. */
+@media (prefers-reduced-motion:no-preference) {
+  body.krizovka .kr-ram img { animation:kr-usad .9s var(--pero) .05s both; }
+}
+@keyframes kr-usad { from { opacity:.001; transform:translate3d(0,16px,0) rotate(-1.2deg); } }
+
+/* ── 3. Sekcie: podnadpis a dva stĺpce ──────────────────────────────────── */
+body.krizovka .sub { margin:16px 0 0; font:400 17px/1.55 var(--ui); color:var(--body); max-width:60ch; }
+@media (max-width:560px) { body.krizovka .sub { font-size:16px; } }
+
+body.krizovka .kr-dvojica { display:grid; grid-template-columns:minmax(0,1fr); gap:40px; align-items:start; }
+@media (min-width:900px) {
+  body.krizovka .kr-dvojica { grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr); gap:clamp(48px,6vw,96px); }
+}
+body.krizovka .kr-ukazka { display:grid; grid-template-columns:minmax(0,1fr); gap:24px; width:100%; max-width:520px; min-width:0; }
+
+/* Štyri kroky: veľké číslo v ľavom okraji, riadky s linkou (vzor .sv-kroky). */
+body.krizovka .kr-kroky { list-style:none; margin:0; padding:0; counter-reset:kr-krok; max-width:62ch;
+  border-top:1px solid var(--line); }
+body.krizovka .kr-kroky li { counter-increment:kr-krok; position:relative; margin:0; padding:20px 0 20px 56px;
+  border-bottom:1px solid var(--line); font:400 16px/1.6 var(--ui); color:var(--body); }
+body.krizovka .kr-kroky li::before { content:counter(kr-krok); position:absolute; left:0; top:16px; width:40px;
+  font:600 28px/1.2 var(--display); color:var(--accent-light); font-variant-numeric:tabular-nums; }
+body.krizovka .kr-kroky b { display:block; margin:0 0 4px; font:600 17px/1.4 var(--display); color:var(--ink); }
+
+/* Čo napíšete: tri riadky z ukážky ako lístok papiera. Farby sú pevné (papier), nie z nočnej témy;
+   body.noc b by dalo tučnému písmu farbu --ink, preto slovo dostáva vlastnú farbu.
+   Dlhý riadok sa láme na medzere a pokračuje odsadený, lístok sa nikdy neposúva do strany. */
+body.krizovka .kr-vstup { margin:0; min-width:0; padding:16px 20px 18px; border-radius:3px; background:#fbf9f4; color:#1f1d1a;
+  box-shadow:0 26px 60px -20px rgba(0,0,0,.75), 0 0 0 1px rgba(255,255,255,.06); }
+body.krizovka .kr-vstup-hlava { margin:0 0 10px; font:700 12px/1.3 var(--mono); letter-spacing:.12em; text-transform:uppercase;
+  color:#a8331a; }
+body.krizovka .kr-vstup ul { list-style:none; margin:0; padding:0; }
+body.krizovka .kr-vstup li { margin:0; padding:5px 0 5px 1.2em; text-indent:-1.2em; border-top:1px solid #e4ddd0;
+  font:400 14px/1.5 var(--mono); color:#1f1d1a; overflow-wrap:anywhere; }
+body.krizovka .kr-vstup li b { color:#1f1d1a; font-weight:700; }
+
+/* ── 4. Päť strán: skutočné strany ukážky v rade ────────────────────────── */
+body.krizovka .kr-pat { list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:32px 20px; }
+@media (min-width:600px) { body.krizovka .kr-pat { grid-template-columns:repeat(3,minmax(0,1fr)); gap:32px 24px; } }
+@media (min-width:960px) { body.krizovka .kr-pat { grid-template-columns:repeat(5,minmax(0,1fr)); gap:24px; } }
+body.krizovka .kr-pat li { margin:0; min-width:0; }
+body.krizovka .kr-pat .kr-strana img { box-shadow:0 16px 36px -16px rgba(0,0,0,.75), 0 0 0 1px rgba(255,255,255,.06); }
+body.krizovka .kr-pat figcaption { margin:12px 0 0; font:400 13.5px/1.5 var(--ui); color:var(--muted); }
+body.krizovka .kr-pat figcaption b { display:block; margin:0 0 2px; font:600 15px/1.4 var(--display); color:var(--ink); }
+body.krizovka .kr-pat .kr-c { margin-right:6px; color:var(--accent-light); font-variant-numeric:tabular-nums; }
+body.krizovka .kr-pozn { margin:32px 0 0; max-width:64ch; font:400 14px/1.6 var(--ui); color:var(--muted); }
+
+/* ── 5. Slová a nápovedy: riadky dt a dd (vzor .sv-fakty) ───────────────── */
+body.krizovka .kr-fakty { margin:0; max-width:880px; }
+body.krizovka .kr-fakty > div { display:grid; grid-template-columns:10em minmax(0,1fr); gap:16px; padding:14px 0;
+  border-top:1px solid var(--line); }
+body.krizovka .kr-fakty > div:last-child { border-bottom:1px solid var(--line); }
+body.krizovka .kr-fakty dt { padding-top:2px; font:600 12.5px/1.6 var(--ui); letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
+body.krizovka .kr-fakty dd { margin:0; font:400 16px/1.6 var(--ui); color:var(--body); }
+body.krizovka .kr-fakty code { font:400 .92em/1.4 var(--mono); color:var(--ink); background:none; padding:0; overflow-wrap:anywhere; }
+@media (max-width:480px) { body.krizovka .kr-fakty > div { grid-template-columns:minmax(0,1fr); gap:4px; } }
+
+/* ── 6. Komu sa hodí a komu nie ─────────────────────────────────────────── */
+body.krizovka .kr-pre-koho { display:grid; grid-template-columns:minmax(0,1fr); gap:40px; max-width:1060px; }
+@media (min-width:800px) { body.krizovka .kr-pre-koho { grid-template-columns:repeat(2,minmax(0,1fr)); gap:56px; } }
+body.krizovka .kr-pre-koho h3 { margin:0 0 12px; }
+body.krizovka .kr-zoznam { list-style:none; margin:0; padding:0; border-top:1px solid var(--line); }
+body.krizovka .kr-zoznam li { position:relative; margin:0; padding:12px 0 12px 22px; border-bottom:1px solid var(--line);
+  font:400 16px/1.55 var(--ui); color:var(--body); }
+body.krizovka .kr-zoznam li::before { content:""; position:absolute; left:2px; top:21px; width:8px; height:8px; border-radius:50%;
+  background:var(--accent); }
+body.krizovka .kr-zoznam.kr-nie li::before { border-radius:0; height:2px; top:24px; width:10px; left:1px; background:var(--muted); }
+body.krizovka .kr-odporucanie { margin:32px 0 0; max-width:64ch; font:400 16.5px/1.6 var(--ui); color:var(--body); }
+body.krizovka .kr-odporucanie b { color:var(--ink); }
+
+/* ── 7. Záver: druhé tlačidlo Etsy a odbočky ────────────────────────────── */
+body.krizovka .kr-zaver-blok { display:grid; grid-template-columns:minmax(0,1fr); gap:24px 64px; align-items:center;
+  max-width:1060px; padding:clamp(24px,3vw,40px); border:1px solid var(--line); border-left:3px solid var(--accent);
+  border-radius:var(--radius); background:var(--card); }
+@media (min-width:860px) { body.krizovka .kr-zaver-blok { grid-template-columns:minmax(0,1.2fr) minmax(0,1fr); } }
+body.krizovka .kr-zaver-blok h2 { margin:0; }
+body.krizovka .kr-zaver-kupa { display:flex; flex-direction:column; align-items:stretch; gap:12px; min-width:0; }
+body.krizovka .kr-zaver-cena { margin:0; font:500 15px/1.35 var(--ui); color:var(--muted); }
+body.krizovka .kr-zaver-cena b { margin-right:8px; font:600 clamp(30px,3vw,40px)/1 var(--display); letter-spacing:-.02em; color:var(--ink); }
+body.krizovka .kr-zaver-kupa .btn { width:100%; height:auto; min-height:52px; justify-content:center; font-size:16px; }
+body.krizovka .kr-drobne { margin:0; font:400 13px/1.55 var(--ui); color:var(--muted); }
+body.krizovka .kr-odbocky { list-style:none; margin:32px 0 0; padding:0; max-width:1060px; border-top:1px solid var(--line); }
+body.krizovka .kr-odbocky li { margin:0; padding:14px 0; border-bottom:1px solid var(--line); font:400 16px/1.55 var(--ui); color:var(--body); }
+body.krizovka .kr-odbocky li span { color:var(--ink); font-weight:600; margin-right:6px; }
