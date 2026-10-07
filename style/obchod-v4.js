@@ -30,26 +30,32 @@
     });
   }
 
-  /* Príchod pri rolovaní. Raz a dosť. Najprv sa všetko zmeria, až potom sa zapisuje. */
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || !('IntersectionObserver' in window)) return;
-  var hranica = (window.innerHeight || 800) * 0.92;
-  var podOknom = Array.prototype.filter.call(document.querySelectorAll('.zjav'), function (el) {
-    return el.getBoundingClientRect().top > hranica;
-  });
-  if (!podOknom.length) return;
-  var oko = new IntersectionObserver(function (zaznamy) {
-    zaznamy.forEach(function (z) {
-      if (!z.isIntersecting) return;
-      z.target.classList.remove('caka');
-      z.target.classList.add('je');
-      oko.unobserve(z.target);
+  /* Príchod pri rolovaní. Raz a dosť. Najprv sa všetko zmeria, až potom sa zapisuje.
+     Stránka s kritickým CSS v hlave zapína plné štýly až po prvom vykreslení (vzhlad.js: trieda css na <html>
+     a udalosť arling:css); meranie pred nimi by videlo stránku bez plných štýlov, preto na ne čaká. */
+  function prichod() {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || !('IntersectionObserver' in window)) return;
+    var hranica = (window.innerHeight || 800) * 0.92;
+    var podOknom = Array.prototype.filter.call(document.querySelectorAll('.zjav'), function (el) {
+      return el.getBoundingClientRect().top > hranica;
     });
-  }, { rootMargin: '0px 0px -8% 0px', threshold: 0.06 });
-  podOknom.forEach(function (el) { el.classList.add('caka'); oko.observe(el); });
+    if (!podOknom.length) return;
+    var oko = new IntersectionObserver(function (zaznamy) {
+      zaznamy.forEach(function (z) {
+        if (!z.isIntersecting) return;
+        z.target.classList.remove('caka');
+        z.target.classList.add('je');
+        oko.unobserve(z.target);
+      });
+    }, { rootMargin: '0px 0px -8% 0px', threshold: 0.06 });
+    podOknom.forEach(function (el) { el.classList.add('caka'); oko.observe(el); });
 
-  /* Poistka: návrat z histórie alebo skok na kotvu nesmie nechať nič skryté. */
-  window.addEventListener('pageshow', function (e) {
-    if (!e.persisted) return;
-    podOknom.forEach(function (el) { el.classList.remove('caka'); });
-  });
+    /* Poistka: návrat z histórie alebo skok na kotvu nesmie nechať nič skryté. */
+    window.addEventListener('pageshow', function (e) {
+      if (!e.persisted) return;
+      podOknom.forEach(function (el) { el.classList.remove('caka'); });
+    });
+  }
+  if (document.documentElement.classList.contains('css') || !document.querySelector('link[data-async]')) prichod();
+  else document.addEventListener('arling:css', prichod, { once: true });
 })();

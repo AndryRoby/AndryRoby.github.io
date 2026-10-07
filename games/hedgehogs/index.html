@@ -50,9 +50,24 @@
          font-family:var(--ui);font-size:14px;color:var(--muted)}
 
   .horna #cas-blok{white-space:nowrap}
-  @media (max-width:480px){ .horna .uroven{display:block;margin:2px 0 0} }
+  /* Prázdny riadok úrovne drží svoju výšku, kým ho skript naplní (118c: inak doska skočila o 19 px). */
+  @media (max-width:480px){ .horna .uroven{display:block;margin:2px 0 0} .horna .uroven:empty::before{content:"\a0"} }
 
   .doska-obal{position:relative}
+  /* 118c (8. 10. 2026): miesto pre hru je rezervované už v HTML a CSS, nie až keď ju postaví skript.
+     Lighthouse naostro meral na PC CLS 0,63: prázdna doska mala 4 px a po postavení 640 px, takže všetko pod ňou
+     skočilo; modul hra-ui k tomu po načítaní vkladal riadok s pravidlom (60 px) a zapínal triedy hra-ui a hu-lista
+     (vyššie tlačidlá). Preto: doska je štvorec (aspect-ratio), triedy hra-ui a hu-lista aj riadok .hu-pravidlo sú
+     v šablóne (hra-ui.js ich použije, keď ich nájde), týždenný pásik má výšku svojich dlaždíc a na PC (dva stĺpce)
+     má doska hneď šírku podľa výšky okna, ktorú by inak dopočítal modul (sirkaDosky: okno mínus začiatok hry pod
+     hlavičkou mínus 200 px ostatných riadkov hracej obrazovky a medzery). Meranie: ops/druhy-ucet/rychlost-118/cls.mjs. */
+  .doska{aspect-ratio:1}
+  .pasik{min-height:53px}
+  @media (min-width:1100px){
+    body.hra-ui .hero .hra .doska-obal:not(.hu-vyska){margin-left:auto;margin-right:auto;
+      width:min(100%,max(240px,calc(100vh - var(--hlavicka,71px) - clamp(26px,3.2vw,48px) - 200px)));
+      width:min(100%,max(240px,calc(100svh - var(--hlavicka,71px) - clamp(26px,3.2vw,48px) - 200px)))}
+  }
   .pauza-blok{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
      background:rgba(10,9,8,.9);border:2px solid var(--line);border-radius:8px;text-align:center;font-family:var(--ui);padding:20px;z-index:2}
 
@@ -134,7 +149,7 @@
   .rule { transform:scaleX(1) !important; }
 </style></noscript>
 </head>
-<body class="noc obsah hra">
+<body class="noc obsah hra hra-ui">
 <a class="skip site-skip" href="#arling-obsah" data-site-label="skip">Skip to content</a>
 <header class="site-header">
   <div class="wrap bar">
@@ -164,13 +179,14 @@
     <div class="r d2">
       <div class="hra">
         <div class="horna"><span><span id="datum">Today's garden</span><span class="uroven" id="uroven"></span></span><span id="cas-blok">Time <b id="cas">0:00</b><button type="button" class="pauza-btn" id="pauza" hidden>Pause</button></span></div>
+        <p class="hu-pravidlo"><span class="hu-veta">Two hedgehogs in every row, column and flowerbed. No two may touch, not even at a corner.</span> <button type="button" class="hu-pravidla-btn">Rules</button></p>
         <div class="doska-obal">
           <div class="doska" id="doska" role="grid" aria-label="Garden grid 9 by 9">
             <noscript><p>This game needs JavaScript: the puzzle is generated right in your browser.</p></noscript>
           </div>
           <div class="pauza-blok" id="pauza-blok" hidden><p><b>Paused.</b> <span id="pauza-cas"></span></p><button type="button" class="btn btn-solid" id="pokracuj">Resume</button></div>
         </div>
-        <div class="ovladanie">
+        <div class="ovladanie hu-lista">
           <button type="button" class="btn btn-line" id="spat">Undo</button>
           <button type="button" class="btn btn-line" id="reset">Clear</button>
           <button type="button" class="btn btn-line" id="hint">Hint</button>
