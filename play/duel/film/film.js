@@ -24,7 +24,7 @@ import { FARBA, rgba, nun, nacitajPisma, IKONY, ikona, sprite, spriteTextu, spri
 // zmeniť ZAVER_PREDVOLENY na 'google-play' (alebo renderovať render.html?zaver=google-play).
 // 'obchod' je verzia do samotného záznamu v Google Play: bez výzvy a bez „coming soon“.
 export const ZAVERY = ['coming-soon', 'google-play', 'obchod'];
-const ZAVER_PREDVOLENY = 'coming-soon';
+const ZAVER_PREDVOLENY = 'google-play';
 let ZAVER = (() => {
   try {
     const q = new URLSearchParams(globalThis.location?.search || '').get('zaver');

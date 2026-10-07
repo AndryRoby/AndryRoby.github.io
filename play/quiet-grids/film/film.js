@@ -19,7 +19,7 @@ import { ZAZNAMY, PRAVIDLA, rozbal, retaz, cesty, mosty, obrazok } from './hlavo
 
 // ---------- záver: prepínač pre deň spustenia (ops/video/kodfilm/DOSTUPNE-V-OBCHODE.md) ----------
 export const ZAVERY = ['coming-soon', 'google-play', 'obchod'];
-const ZAVER_PREDVOLENY = 'coming-soon'; // v deň, keď verejná stránka obchodu vráti 200: 'google-play'
+const ZAVER_PREDVOLENY = 'google-play'; // v deň, keď verejná stránka obchodu vráti 200: 'google-play'
 let ZAVER = (() => {
   try {
     const q = new URLSearchParams(globalThis.location?.search || '').get('zaver');
