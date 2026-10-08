@@ -16,7 +16,7 @@ const DLZKA = 14;
 // Andrej 30. 9. 2026: „sprav také aj, že to je na google play, keď to vyjde“. 'coming-soon' na webe, kým obchod nevráti 200;
 // 'google-play' v deň vydania (ops/games/play/verejne.mjs prepne ZAVER_PREDVOLENY); 'obchod' (aj ?obchod) do záznamu v Play.
 export const ZAVERY = ['coming-soon', 'google-play', 'obchod'];
-const ZAVER_PREDVOLENY = 'coming-soon';
+const ZAVER_PREDVOLENY = 'google-play';
 let ZAVER = (() => {
   try {
     const q = new URLSearchParams(globalThis.location?.search || '');
