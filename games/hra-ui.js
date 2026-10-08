@@ -69,8 +69,18 @@ export function hraUi(volby = {}) {
       document.documentElement.classList.remove('hra-ui');
     }
   };
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', spusti, { once: true });
-  else spusti();
+  // Stránka s kritickým CSS v hlave (118d, ops/design/kriticke.mjs) má plné štýly odložené za prvé vykreslenie
+  // (link[data-async]); vzhlad.js ich zapne a dá <html> triedu css a udalosť arling:css. Meranie dosky pred tým by
+  // videlo stránku bez hra.css a paper.css a po príchode štýlov by ju prestavalo (CLS 0,07 na PC, 118c).
+  const poStyloch = () => {
+    const root = document.documentElement;
+    if (!document.querySelector('link[data-async]') || (root.classList && root.classList.contains('css'))) { spusti(); return; }
+    document.addEventListener('arling:css', spusti, { once: true });
+    // Poistka: keby udalosť neprišla (starý vzhlad.js z pamäte), modul sa aj tak spustí.
+    setTimeout(spusti, 4000);
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', poStyloch, { once: true });
+  else poStyloch();
   return api;
 }
 

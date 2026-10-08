@@ -16,6 +16,13 @@
     import(new URL('gallery.js', here).href).catch(function (e) { console.error(e); });
     import(new URL('pro.js', here).href).catch(function (e) { console.error(e); });
   }
-  if (document.documentElement.classList.contains('css')) go();
-  else document.addEventListener('arling:css', go, { once: true });
+  // Since 8 Oct 2026 (118d): the full styles and this script arrive together right after the first paint
+  // (inline loader in <head>); the gallery starts in the next idle moment so that the style recalculation of
+  // the whole page and the first scene build are separate tasks (Lighthouse TBT on a 4x slower CPU).
+  function neskor() {
+    if (window.requestIdleCallback) window.requestIdleCallback(go, { timeout: 1200 });
+    else setTimeout(go, 0);
+  }
+  if (document.documentElement.classList.contains('css')) neskor();
+  else document.addEventListener('arling:css', neskor, { once: true });
 })();
