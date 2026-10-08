@@ -95,7 +95,7 @@
   };
   var POLICKA_ADVENT = { 1: 'the names box', 2: 'the hiding spots box', 3: 'the letter box', 4: 'the siblings box' };
   var ADVENT_CAST = { game: 'Clue cards', guide: 'Grown-ups Guide' };
-  var ETSY = 'message us on Etsy (ARLing Puzzles); we reply within 24 hours';
+  var ETSY = 'message us on Etsy (ARLing Puzzles); we reply within one working day';
   var CAKANIE = 15000, CAKAJ_HOTOVE = 15 * 60000, CAKAJ_NEZNAME = 5 * 60000;
   var casovac = null, zaciatok = 0, podpis = '';
   var ticho = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
@@ -389,7 +389,7 @@
       else if (c.status === 'needs_help') { pomocBlok(blok, c, order, viac); if (!pomoc) pomoc = c; }
       else if (c.status === 'delayed') {
         blok.classList.add('zle');
-        blok.appendChild(prvok('p', '', 'Something went wrong while building your ' + vec + ', and we have been notified. We will build it again within 24 hours, and your files will appear on this page. You can also ' + ETSY + '.'));
+        blok.appendChild(prvok('p', '', 'Something went wrong while building your ' + vec + ', and we have been notified. We will build it again within one working day, and your files will appear on this page. You can also ' + ETSY + '.'));
       } else if (uplynulo < CAKAJ_HOTOVE) {
         blok.appendChild(prvok('p', '', 'We are building your ' + vec + ' right now. This usually takes a few minutes. This page checks again by itself, so you can leave it open.'));
         cakat = true;
