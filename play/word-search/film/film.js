@@ -87,6 +87,10 @@ let L = null;
 // karte aj v háku, ako na karte appky v obchode. Načíta ju pripravit(); bez nej film beží ďalej bez ikony.
 let IKONA = null;
 const OBCHOD = typeof location !== 'undefined' && new URLSearchParams(location.search).has('obchod');
+// Tlačidlo do Google Play vo filme na webe (Andrej 8. 10. 2026: odkaz do Play ostáva). false = záver vecnou vetou
+// ako verzia pre obchod a ťuk na odsek o appke, ak by bolo treba ľudí do obchodu dočasne neposielať.
+const DO_OBCHODU = true;
+const PLAY_URL = 'https://play.google.com/store/apps/details?id=sk.arling.wordsearch&referrer=utm_source%3Darling.sk%26utm_medium%3Dfilm%26utm_campaign%3Dword-search%26utm_content%3Dfilm-zaver';
 
 /** Rozloženie: 9:16, 4:5 a 1:1 pod sebou (hlavička, doska, čipy, titulok), 16:9 doska vľavo, zvyšok vpravo. */
 function rozlozenie(W, H) {
@@ -336,7 +340,7 @@ function stavTexty(W, H, dpr, R) {
   // pod ním čitateľná adresa (aspoň 40 px pri 1080). Veta pre vývojárov vypadla.
   // Verzia pre záznam v Google Play (?obchod): „Coming soon to Google Play“ je v samotnom obchode nepravda a odznak je
   // výzva, preto len vecná veta bez výzvy (ops/video/PLAY-VIDEA.md, tretí záver).
-  const TXT = OBCHOD ? 'Daily puzzle. Plays offline.' : 'Get it on Google Play';
+  const TXT = OBCHOD || !DO_OBCHODU ? 'Daily puzzle. Plays offline.' : 'Get it on Google Play';
   m.font = nun(800, 100);
   const kB = m.measureText(TXT).width / 100;
   const velB = Math.max(mp * 1.1, Math.min(s * (R.stred ? 0.046 : 0.042), R.ew / kB));
@@ -688,7 +692,7 @@ const film = {
     { od: 7.4, text: 'Rose runs upward, then daisy across the top. Every word is found.' },
     { od: 9.35, text: 'Level complete. Finish a level, earn coins: plus 15 coins, counted out one by one.' },
     { od: 12.15, text: 'Coins unlock new highlighter styles: Chalk, Marker, Stitch and Ribbon, then Classic again.' },
-    { od: 16.15, text: 'The Word Search app icon, letter tiles spelling fun, art and sea. Word Search. Find a word. Find your flow. Calm word puzzles in 150 topics. ' + (OBCHOD ? 'Daily puzzle. Plays offline.' : 'Get it on Google Play.') + ' arling.sk' },
+    { od: 16.15, text: 'The Word Search app icon, letter tiles spelling fun, art and sea. Word Search. Find a word. Find your flow. Calm word puzzles in 150 topics. ' + (OBCHOD || !DO_OBCHODU ? 'Daily puzzle. Plays offline.' : 'Get it on Google Play.') + ' arling.sk' },
   ],
   async pripravit() {
     await nacitajPisma(import.meta.url);
@@ -723,10 +727,10 @@ const film = {
   },
   // tlačidlo prehrať na plagáte: stred dosky v koncovej polohe
   stredPlagatu() { const R = L.R; return [R.bx2 + R.B2 / 2, R.by2 + R.B2 / 2]; },
-  // Word Search je v Google Play (verejná stránka 200 od 30. 9. 2026 overená curl): tlačidlo vedie do obchodu.
+  // Do obchodu pri DO_OBCHODU, inak na odsek o appke.
   odkazy() {
     const b = L.texty.btn;
-    return [{ x: b.x, y: b.y, w: b.w, h: b.h, href: 'https://play.google.com/store/apps/details?id=sk.arling.wordsearch&utm_source=arling.sk&utm_medium=film&utm_campaign=word-search-film', text: 'Get it on Google Play', od: T.tlacidlo, udalost: 'word_search_film_play' }];
+    return [{ x: b.x, y: b.y, w: b.w, h: b.h, href: DO_OBCHODU ? PLAY_URL : '#about', text: DO_OBCHODU ? 'Get it on Google Play' : 'About Word Search', od: T.tlacidlo, udalost: DO_OBCHODU ? 'word_search_film_play' : 'word_search_film_about' }];
   },
   zvuk: partitura(),
 };

@@ -18,8 +18,10 @@ import { FARBA, ZVIERATA, meno, rgba, nun, nacitajPisma, nacitajZvierata, sprite
 import { ZAZNAMY, PRAVIDLA, rozbal, retaz, cesty, mosty, obrazok } from './hlavolamy.js';
 
 // ---------- záver: prepínač pre deň spustenia (ops/video/kodfilm/DOSTUPNE-V-OBCHODE.md) ----------
-export const ZAVERY = ['coming-soon', 'google-play', 'obchod'];
-const ZAVER_PREDVOLENY = 'google-play'; // v deň, keď verejná stránka obchodu vráti 200: 'google-play'
+export const ZAVERY = ['coming-soon', 'google-play', 'obchod', 'about'];
+// 'about': záver vecnou vetou bez výzvy a ťuk na odsek o appke, ak by bolo treba ľudí do obchodu dočasne
+// neposielať. Predvolený je obchod (Andrej 8. 10. 2026: odkaz do Play ostáva).
+const ZAVER_PREDVOLENY = 'google-play';
 let ZAVER = (() => {
   try {
     const q = new URLSearchParams(globalThis.location?.search || '').get('zaver');
@@ -33,6 +35,7 @@ const TEXT_ZAVERU = {
   'google-play': 'Get it on Google Play',
   // store-listing-en.md: „nothing needs the internet to play“, „There is no account“
   obchod: 'Plays offline. No account.',
+  about: 'Plays offline. No account.',
 };
 
 const DLZKA = 18.3;
@@ -636,7 +639,7 @@ const film = {
     { od: 4.95, text: 'Cranes, also called Hashi. Each island takes the number of bridges it shows. The 4 in the corner has only two neighbours, so both get double bridges: the finger draws them twice.' },
     { od: 8.65, text: 'Magpies, also called Nonogram. The clues count the filled blocks in order. The bottom row and the right column both say 8, so the finger fills them from end to end.' },
     { od: 11.85, text: 'Eleven logic puzzles a day: Badgers, Hares, Squirrels, Cranes, Swans, Magpies, Herons, Voles, Otters, Hedgehogs and Dormice, each with its classic name.' },
-    { od: 14.45, text: 'Quiet Grids. Draw, reason, solve. No countdowns, no rush. Coming soon to Google Play. arling.sk' },
+    { od: 14.45, text: 'Quiet Grids. Draw, reason, solve. No countdowns, no rush. ' + TEXT_ZAVERU[ZAVER].replace(/\.?$/, '.') + ' arling.sk' },
   ],
   async pripravit() {
     await Promise.all([nacitajPisma(import.meta.url), nacitajZvierata(import.meta.url)]);
@@ -668,7 +671,7 @@ const film = {
     const { R, texty } = L, s = texty.cta;
     const w = Math.min(s.textW + 8, R.tw), x0 = R.zar === 'center' ? R.tx + (R.tw - w) / 2 : R.tx;
     const doObchodu = ZAVER === 'google-play';
-    return [{ x: x0, y: texty.poz.cta, w, h: s.h, href: doObchodu ? PLAY_URL : '#about', text: doObchodu ? 'Get it on Google Play' : 'About Quiet Grids', od: T.tlacidlo, udalost: doObchodu ? 'quiet_grids_film_play' : 'quiet_grids_film_about' }];
+    return [{ x: x0, y: texty.poz.cta, w, h: s.h, href: doObchodu ? PLAY_URL + '&referrer=utm_source%3Darling.sk%26utm_medium%3Dfilm%26utm_campaign%3Dquiet-grids%26utm_content%3Dfilm-zaver' : '#about', text: doObchodu ? 'Get it on Google Play' : 'About Quiet Grids', od: T.tlacidlo, udalost: doObchodu ? 'quiet_grids_film_play' : 'quiet_grids_film_about' }];
   },
   zvuk: [],
   kontrola: {

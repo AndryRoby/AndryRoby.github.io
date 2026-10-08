@@ -19,11 +19,10 @@ import { pridajNastroj } from './engine/zvuk.js';
 import { FARBA, rgba, nun, nacitajPisma, IKONY, ikona, sprite, spriteTextu, spriteFarebny, spritePalca } from './kresby.js';
 
 // ---------- záver: prepínač pre deň spustenia ----------
-// Dnes appka nie je verejne v obchode: záver „Coming soon to Google Play“ bez pilulky a bez ▶, odkaz na
-// #about (ops/video/kodfilm/DOSTUPNE-V-OBCHODE.md). V deň, keď verejná stránka obchodu vráti 200, stačí
-// zmeniť ZAVER_PREDVOLENY na 'google-play' (alebo renderovať render.html?zaver=google-play).
+// Duel je v Google Play od 6. 10. 2026; predvolený záver vedie do obchodu (Andrej 8. 10. 2026: odkaz do Play ostáva).
+// 'about' je záver vecnou vetou a ťuk na odsek o appke, ak by bolo treba ľudí do obchodu dočasne neposielať.
 // 'obchod' je verzia do samotného záznamu v Google Play: bez výzvy a bez „coming soon“.
-export const ZAVERY = ['coming-soon', 'google-play', 'obchod'];
+export const ZAVERY = ['coming-soon', 'google-play', 'obchod', 'about'];
 const ZAVER_PREDVOLENY = 'google-play';
 let ZAVER = (() => {
   try {
@@ -38,6 +37,7 @@ const TEXT_ZAVERU = {
   'google-play': 'Get it on Google Play',
   // store-listing-en.md: „NO ACCOUNTS, NO INTERNET, NO PURCHASES“
   obchod: 'No account. Nothing to buy.',
+  about: 'No account needed.',
 };
 
 const DLZKA = 19;
@@ -770,7 +770,7 @@ const film = {
     { od: 3.3, text: 'Next round, Odd One Out. Orange is on match point. Three starting lights, then go. Both halves get the same round: nine arrows, one points a different way.' },
     { od: 7.26, text: 'Orange taps a wrong arrow. A wrong tap gives the point away: the blue half lights up, the right arrow is ringed and the wrong one crossed out. Look first, tap second. Cool as ice. One all.' },
     { od: 9.06, text: 'Decider! Bigger Circle. Orange taps the bigger circle first. Nailed it! 580 ms. Almost! 27 quick games for two players.' },
-    { od: 15.26, text: 'Orange wins the match two to one. Winner. So close. Rematch. Duel. One phone. Two thumbs. 27 mini-games. Plays offline. Coming soon to Google Play. arling.sk' },
+    { od: 15.26, text: 'Orange wins the match two to one. Winner. So close. Rematch. Duel. One phone. Two thumbs. 27 mini-games. Plays offline. ' + TEXT_ZAVERU[ZAVER].replace(/\.?$/, '.') + ' arling.sk' },
   ],
   async pripravit() {
     await nacitajPisma(import.meta.url);
@@ -798,12 +798,12 @@ const film = {
     const tel = telefon(film.plagat), ppd = tel.w / BW;
     return [tel.x + tel.w / 2, tel.y + (RAM + PAS_Y0 * 0.5) * ppd];
   },
-  // Duel ešte nie je v Google Play: nápis nevedie do obchodu, ale na odsek o appke na tejto stránke.
+  // Do obchodu so záverom google-play (predvolený), pri 'about' a 'coming-soon' na odsek o appke.
   odkazy() {
     const { R, texty } = L, s = texty.cta;
     const w = Math.min(s.textW + 8, R.tw), x0 = R.zar === 'center' ? R.tx + (R.tw - w) / 2 : R.tx;
     const doObchodu = ZAVER === 'google-play';
-    return [{ x: x0, y: texty.poz.cta, w, h: s.h, href: doObchodu ? PLAY_URL : '#about', text: doObchodu ? 'Get it on Google Play' : 'About Duel', od: T.tlacidlo, udalost: doObchodu ? 'duel_film_play' : 'duel_film_about' }];
+    return [{ x: x0, y: texty.poz.cta, w, h: s.h, href: doObchodu ? PLAY_URL + '&referrer=utm_source%3Darling.sk%26utm_medium%3Dfilm%26utm_campaign%3Dduel%26utm_content%3Dfilm-zaver' : '#about', text: doObchodu ? 'Get it on Google Play' : 'About Duel', od: T.tlacidlo, udalost: doObchodu ? 'duel_film_play' : 'duel_film_about' }];
   },
   zvuk: [],
   // pre test.mjs: čo sa na obraze číta a fakty, ktoré musia sedieť s kódom appky

@@ -15,7 +15,9 @@ const DLZKA = 14;
 // ---------- záver: prepínač pre deň spustenia (ops/video/kodfilm/DOSTUPNE-V-OBCHODE.md, ako Duel a Quiet Grids) ----------
 // Andrej 30. 9. 2026: „sprav také aj, že to je na google play, keď to vyjde“. 'coming-soon' na webe, kým obchod nevráti 200;
 // 'google-play' v deň vydania (ops/games/play/verejne.mjs prepne ZAVER_PREDVOLENY); 'obchod' (aj ?obchod) do záznamu v Play.
-export const ZAVERY = ['coming-soon', 'google-play', 'obchod'];
+export const ZAVERY = ['coming-soon', 'google-play', 'obchod', 'about'];
+// 'about': záver vecnou vetou bez výzvy a ťuk na odsek o appke, ak by bolo treba ľudí do obchodu dočasne
+// neposielať. Predvolený je obchod (Andrej 8. 10. 2026: odkaz do Play ostáva).
 const ZAVER_PREDVOLENY = 'google-play';
 let ZAVER = (() => {
   try {
@@ -28,8 +30,10 @@ let ZAVER = (() => {
 export function nastavZaver(z) { if (ZAVERY.includes(z)) ZAVER = z; }
 const PLAY_URL = 'https://play.google.com/store/apps/details?id=sk.arling.prism5';
 // Appka má štyri denné mriežky (store-listing-en.md overený proti kódu); webová hra na arling.sk jednu.
-const appka = () => ZAVER !== 'coming-soon';
-const TEXT_ZAVERU = { 'coming-soon': 'Coming soon to Google Play', 'google-play': 'Get it on Google Play', obchod: 'Endless levels. Never guessed.' };
+// Živá verzia 0.4.0 má jednu dennú mriežku (W6); „Four daily grids“ až so zostavou, ktorá ich naozaj má.
+const STYRI_MRIEZKY = false;
+const appka = () => STYRI_MRIEZKY && ZAVER !== 'coming-soon';
+const TEXT_ZAVERU = { 'coming-soon': 'Coming soon to Google Play', 'google-play': 'Get it on Google Play', obchod: 'Endless levels. Never guessed.', about: 'Never timed against you.' };
 
 // Platný latinský štvorec 5 x 5: každý drahokam raz v každom riadku aj stĺpci.
 // C Circle, D Diamond, Q Square, S Star, T Triangle.
@@ -594,11 +598,11 @@ const film = {
   },
   // tlačidlo prehrať na plagáte: stred dosky v koncovej polohe
   stredPlagatu() { const R = L.R; return [R.bx2 + R.B2 / 2, R.by2 + R.B2 / 2]; },
-  // Kým Prism 5 nie je v Google Play, štítok vedie na odsek o appke; v deň vydania (zaver google-play) do obchodu.
+  // Do obchodu so záverom google-play (predvolený), pri 'about' a 'coming-soon' na odsek o appke.
   odkazy() {
     const b = L.texty.btn;
     const doObchodu = ZAVER === 'google-play';
-    return [{ x: b.x, y: b.y, w: b.w, h: b.h, href: doObchodu ? PLAY_URL + '&utm_source=arling.sk&utm_medium=film&utm_campaign=prism5-film' : '#about', text: doObchodu ? 'Get it on Google Play' : 'Coming soon to Google Play. About Prism 5', od: T.tlacidlo, udalost: doObchodu ? 'prism5_film_play' : 'prism5_film_about' }];
+    return [{ x: b.x, y: b.y, w: b.w, h: b.h, href: doObchodu ? PLAY_URL + '&referrer=utm_source%3Darling.sk%26utm_medium%3Dfilm%26utm_campaign%3Dprism5%26utm_content%3Dfilm-zaver' : '#about', text: doObchodu ? 'Get it on Google Play' : 'About Prism 5', od: T.tlacidlo, udalost: doObchodu ? 'prism5_film_play' : 'prism5_film_about' }];
   },
   zvuk: partitura(),
 };
