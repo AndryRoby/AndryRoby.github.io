@@ -10,7 +10,10 @@
  * (alebo príde odkazom /case/?p=crossword zo súboru Start here); podľa toho sa zmení nadpis, druhé pole (prvé slovo
  * zoznamu namiesto priezviska prvého hosťa) a pomoc. Výsledok sa vždy kreslí podľa poľa product z /status
  * (crossword; bez neho detektívka), takže objednávka s oboma produktmi ukáže oba. Krížovka má vlastný formulár na
- * slová (#krizovka-oprava, /fix s poľami words, words2, title, dedication). Texty detektívky ostávajú doslova. */
+ * slová (#krizovka-oprava, /fix s poľami words, words2, title, dedication). Texty detektívky ostávajú doslova.
+ * Tretí produkt (Claude 2, relácia 115b, 8. 10. 2026): adventná hra na poklad (product advent, odkaz /case/?p=advent).
+ * Overenie menom prvého dieťaťa; štyri súbory (part game | guide, každý v A4 a US Letter); formulár #advent-oprava
+ * (/fix s poľami kids, spots, letter, siblings), dôvody KIDS, AGE, NAME, FEW_SPOTS, NO_KIDS, NO_SPOTS, TOO_LONG. */
 (function () {
   var API = 'https://case.arling.workers.dev';
   var form = document.getElementById('case-form');
@@ -22,6 +25,10 @@
   var kUvod = document.getElementById('krizovka-uvod');
   var kStav = document.getElementById('krizovka-vysledok');
   var kPocet = document.getElementById('krizovka-pocet');
+  var aOprava = document.getElementById('advent-oprava');
+  var aUvod = document.getElementById('advent-uvod');
+  var aStav = document.getElementById('advent-vysledok');
+  var aPocet = document.getElementById('advent-pocet');
   var casEl = document.getElementById('case-cas');
   var kickEl = document.getElementById('case-kick');
   var miestoEl = document.getElementById('case-miesto');
@@ -49,6 +56,12 @@
       lead: 'Bought the custom crossword on Etsy? Enter your Etsy order number and the first word on your list (or your own surname from the order).',
       label: 'First word on your list, or your surname', priklad: 'for example Lisbon', co: 'word',
       over: 'use the first word on your list (the word before the first colon), or your own surname as it appears on the Etsy order'
+    },
+    advent: {
+      kick: 'Personalized advent treasure hunt', miesto: 'December 1 to 24', nadpis: 'Download your hunt', vec: 'hunt', tlacidlo: 'Find my hunt',
+      lead: 'Bought the personalized advent treasure hunt on Etsy? Enter your Etsy order number and the first name of the first child on your list (or your own surname from the order).',
+      label: 'First name of the first child on your list, or your surname', priklad: 'for example Emma', co: 'name',
+      over: 'use the first name of the first child on your list, as you typed it with your order, or your own surname as it appears on the Etsy order'
     }
   };
   var ZMIESANE = { kick: 'Your personalized files', miesto: 'Personalized files' };
@@ -75,6 +88,13 @@
     neda_sa_prekrizit: 'it could not be connected to the other words in the grid'
   };
   var POLICKA = { 1: 'the first box', 2: 'the second box', 3: 'the title box', 4: 'the dedication box' };
+  // adventná hra: kódy z products/eliminacia/vyzdvihnutie/krizovka/vstup-etsy.mjs (DOVODY) pri číslach úkrytov
+  var DOVODY_MIEST = {
+    miesto_neexistuje: 'it is not a number from the Hiding Spot Menu (1 to 50)',
+    zopakovane: 'the same number is already on your list'
+  };
+  var POLICKA_ADVENT = { 1: 'the names box', 2: 'the hiding spots box', 3: 'the letter box', 4: 'the siblings box' };
+  var ADVENT_CAST = { game: 'Clue cards', guide: 'Grown-ups Guide' };
   var ETSY = 'message us on Etsy (ARLing Puzzles); we reply within 24 hours';
   var CAKANIE = 15000, CAKAJ_HOTOVE = 15 * 60000, CAKAJ_NEZNAME = 5 * 60000;
   var casovac = null, zaciatok = 0, podpis = '';
@@ -124,6 +144,15 @@
   }
   function stav(t, trieda) { stavDo(opravaStav, t, trieda); }
   function kStavNapis(t, trieda) { stavDo(kStav, t, trieda); }
+  function aStavNapis(t, trieda) { stavDo(aStav, t, trieda); }
+  /* Vynechané čísla úkrytov: „entry 4 in the hiding spots box, because it is not a number from the menu“. */
+  function vynechaneMiesta(zoznam) {
+    return zoznam.map(function (v) {
+      var kde = POLICKA_ADVENT[v.box] || 'your answers';
+      if (!v.position || v.reason === 'odpoved_orezana') return 'the end of ' + kde + ', because the text was longer than the box allows';
+      return 'entry ' + v.position + ' in ' + kde + ', because ' + (DOVODY_MIEST[v.reason] || 'we could not read it');
+    }).join('; ');
+  }
 
   function fokus(el) { if (el) { try { el.focus({ preventScroll: true }); } catch (e) { el.focus(); } } }
 
@@ -134,6 +163,11 @@
     return PRODUKTY[k] ? k : 'mystery';
   }
   var jeKrizovka = function (c) { return c && c.product === 'crossword'; };
+  var jeAdvent = function (c) { return c && c.product === 'advent'; };
+  var jeProdukt = function (c) { return jeKrizovka(c) || jeAdvent(c); };
+  function skryOpravy(okrem) {
+    [oprava, kOprava, aOprava].forEach(function (f) { if (f && f !== okrem && !f.hidden) f.hidden = true; });
+  }
   function nastavVolbu() {
     var P = PRODUKTY[zvoleny()];
     if (nadpisEl) nadpisEl.textContent = P.nadpis;
@@ -154,11 +188,12 @@
   /* Kicker a štítok hore podľa prípadov objednávky: jedna téma = jej názov a hotel; rôzne témy alebo bez témy = neutrálne.
    * Krížovka: vlastný kicker; detektívka aj krížovka v jednej objednávke: „Your personalized files“. Bez prípadov podľa voľby hore. */
   function hlavicka(cases) {
-    var krizovky = cases.filter(jeKrizovka).length;
+    var krizovky = cases.filter(jeKrizovka).length, adventy = cases.filter(jeAdvent).length;
     var text;
     if (!cases.length) text = PRODUKTY[zvoleny()];
     else if (krizovky === cases.length) text = PRODUKTY.crossword;
-    else if (krizovky) text = ZMIESANE;
+    else if (adventy === cases.length) text = PRODUKTY.advent;
+    else if (krizovky || adventy) text = ZMIESANE;
     else {
       var temy = [];
       cases.forEach(function (c) { if (c.theme && TEMY[c.theme] && temy.indexOf(c.theme) < 0) temy.push(c.theme); });
@@ -173,15 +208,22 @@
    * akcia: 'fokus' (kurzor do prvého poľa), 'skok' (aj posun k formuláru, po ťuknutí na odkaz), inak nič.
    * Krížovka má vlastný formulár na slová; naraz je otvorený len jeden. */
   function otvorOpravu(c, order, viac, akcia) {
-    var f = jeKrizovka(c) ? kOprava : oprava;
-    var iny = jeKrizovka(c) ? oprava : kOprava;
+    var f = jeKrizovka(c) ? kOprava : jeAdvent(c) ? aOprava : oprava;
     if (!f) return;
-    if (iny) iny.hidden = true;
+    skryOpravy(f);
     var ten = f.elements['case'].value === (c.id || '') && !f.hidden;
     f.hidden = false;
     f.elements.order.value = order;
     f.elements['case'].value = c.id || '';
-    if (jeKrizovka(c)) {
+    if (jeAdvent(c)) {
+      var ktora2 = viac && c.number ? ' for hunt ' + c.number : '';
+      if (aUvod) {
+        aUvod.textContent = c.status === 'ready'
+          ? 'Type all your answers again' + ktora2 + ', the way they should be in your hunt. Tip: copy them from your Etsy order and correct them here. Your current files stay on this page and keep working until the new ones are ready. You can do this once.'
+          : 'Type your answers' + ktora2 + ' below. Tip: copy them from your Etsy order and correct them here. Your hunt is built right away, in about a minute.';
+      }
+      if (aStav && !ten) { aStav.textContent = ''; aStav.className = 'oprava-stav'; }
+    } else if (jeKrizovka(c)) {
       var ktora = viac && c.number ? ' for crossword ' + c.number : '';
       if (kUvod) {
         kUvod.textContent = c.status === 'ready'
@@ -214,13 +256,15 @@
     var ul = prvok('ul');
     (c.files || []).forEach(function (f) {
       var li = prvok('li');
-      var a = prvok('a', '', (FORMATY[f.format] || f.format) + ' PDF');
+      // adventná hra má dve časti v každom formáte: „Clue cards, A4 PDF“ a „Grown-ups Guide, A4 PDF“
+      var a = prvok('a', '', (f.part && ADVENT_CAST[f.part] ? ADVENT_CAST[f.part] + ', ' : '') + (FORMATY[f.format] || f.format) + ' PDF');
       a.href = f.url;
       a.setAttribute('download', f.name);
       a.setAttribute('data-umami-event', 'case_download');
       a.setAttribute('data-umami-event-format', f.format);
       if (c.theme) a.setAttribute('data-umami-event-theme', c.theme);
       if (c.product) a.setAttribute('data-umami-event-product', c.product);
+      if (f.part) a.setAttribute('data-umami-event-part', f.part);
       li.appendChild(a);
       li.appendChild(prvok('span', '', mb(f.bytes)));
       ul.appendChild(li);
@@ -230,6 +274,7 @@
   function hotovyBlok(blok, c, order, viac) {
     blok.classList.add('hotovo');
     if (jeKrizovka(c)) { hotovaKrizovka(blok, c, order, viac); return; }
+    if (jeAdvent(c)) { hotovyAdvent(blok, c, order, viac); return; }
     blok.appendChild(prvok('p', '', 'Your case is ready. Download all three files and keep them; the links work until ' + datum(c.expires) + '.'));
     odkazy(blok, c);
     var skip = c.skipped || [];
@@ -254,6 +299,19 @@
     else blok.appendChild(prvok('p', 'pozn', 'You have already fixed this crossword once. If something is still wrong, ' + ETSY + '.'));
   }
 
+  function hotovyAdvent(blok, c, order, viac) {
+    blok.appendChild(prvok('p', '', 'Your advent treasure hunt is ready. Download the clue cards and the Grown-ups Guide in one paper size and keep them; the links work until ' + datum(c.expires) + '.'));
+    odkazy(blok, c);
+    var skip = c.skipped || [];
+    var t = 'The clue cards have 7 pages: cover, how to play, 24 cards to cut out and the Day 24 letter. The Grown-ups Guide has 3 pages: where to hide each card, and the answers. Keep the guide away from the children.';
+    if (c.kids != null && c.spots != null) t += ' Your hunt is for ' + c.kids + (c.kids === 1 ? ' child' : ' children') + ' and uses ' + c.spots + (c.defaultSpots ? ' everyday hiding spots (you left the box empty); your guide lists them.' : ' hiding spots.');
+    blok.appendChild(prvok('p', 'pozn', t));
+    if (skip.length) blok.appendChild(prvok('p', 'pozn', 'We left out ' + vynechaneMiesta(skip) + '.' + (c.fixable ? ' You can correct your answers once with the link below.' : '')));
+    if (c.fixing) blok.appendChild(prvok('p', 'pozn', 'We are building your corrected hunt now. Your current files stay here and keep working until the new ones are ready.'));
+    else if (c.fixable) blok.appendChild(tlacidloOpravy('A name, age or spot is wrong? You can fix your answers once', c, order, viac));
+    else blok.appendChild(prvok('p', 'pozn', 'You have already fixed this hunt once. If something is still wrong, ' + ETSY + '.'));
+  }
+
   var POMOC = {
     INTERRUPTED: 'Your last try did not finish, so this case was not built. Please type the names again below; it takes about a minute.',
     BUILD_FAILED: 'Building this case from the names you typed failed, and we have been notified. Please try once more below. If it fails again, ' + ETSY + '.'
@@ -273,8 +331,32 @@
     if (skip.length) t += ' We could not use ' + vynechaneSlova(skip) + '.';
     return t;
   }
+  var POMOC_ADVENT = {
+    INTERRUPTED: 'Your last try did not finish, so this hunt was not built. Please send your answers again below; it takes about a minute.',
+    BUILD_FAILED: 'Building this hunt from your answers failed, and we have been notified. Please try once more below. If it fails again, ' + ETSY + '.',
+    NO_KIDS: 'We did not find the children’s names and ages in your order, so there is nothing to build yet.',
+    NO_SPOTS: 'We did not find any hiding spot numbers in your order, so there is nothing to build yet.',
+    KIDS: 'A hunt is for 1 to 4 children, each written as a first name and an age (for example Emma 5, Leo 8).',
+    AGE: 'Every child needs an age from 4 to 12 right after the name (for example Emma 5, Leo 8).',
+    NAME: 'A name was longer than 20 letters or had characters we cannot print (letters, spaces, apostrophes and hyphens work).',
+    TOO_LONG: 'The names together did not fit on the clue cards. Please try shorter names, for example nicknames. If your names are already short, ' + ETSY + ' and we will fix it.'
+  };
+  /* Prečo adventná hra čaká na kupujúceho: dôvod, počet platných úkrytov a čísla, ktoré sa nedali použiť. */
+  function dovodAdventu(d) {
+    var t = d.reason === 'FEW_SPOTS'
+      ? 'A hunt needs at least 12 different numbers from the Hiding Spot Menu' + (d.valid != null ? '; we could use ' + d.valid + ' from your order.' : '.') + ' Or leave the box empty and we use our 16 everyday spots.'
+      : (POMOC_ADVENT[d.reason] || 'We could not build a hunt from the answers in your order.');
+    var skip = d.skipped || [];
+    if (skip.length) t += ' We could not use ' + vynechaneMiesta(skip) + '.';
+    return t;
+  }
   function pomocBlok(blok, c, order, viac) {
     blok.classList.add('zle');
+    if (jeAdvent(c)) {
+      blok.appendChild(prvok('p', '', dovodAdventu(c) + ' Send your answers again below and your hunt is built right away.'));
+      if (viac) blok.appendChild(tlacidloOpravy('Type the answers for this hunt', c, order, viac));
+      return;
+    }
     if (jeKrizovka(c)) {
       blok.appendChild(prvok('p', '', dovodSlov(c) + ' Send your list again below and your crossword is built right away.'));
       if (viac) blok.appendChild(tlacidloOpravy('Type the words for this crossword', c, order, viac));
@@ -300,9 +382,9 @@
     out.textContent = '';
     cases.forEach(function (c, i) {
       var blok = prvok('div', 'pripad');
-      var vec = jeKrizovka(c) ? 'crossword' : 'case';
+      var vec = jeKrizovka(c) ? 'crossword' : jeAdvent(c) ? 'hunt' : 'case';
       // pri viacerých prípadoch (aj Halloween a Vianoce v jednej objednávke) má každý blok názov svojho prípadu
-      if (viac) blok.appendChild(prvok('h2', 'pripad-nazov', (jeKrizovka(c) ? 'Personalized file ' : 'Personalized case ') + (c.number || i + 1) + ' of ' + cases.length + (nazovPripadu(c) ? ' · ' + nazovPripadu(c) : '')));
+      if (viac) blok.appendChild(prvok('h2', 'pripad-nazov', (jeProdukt(c) ? 'Personalized file ' : 'Personalized case ') + (c.number || i + 1) + ' of ' + cases.length + (nazovPripadu(c) ? ' · ' + nazovPripadu(c) : '')));
       if (c.status === 'ready') { hotovyBlok(blok, c, order, viac); if (c.fixing) cakat = true; }
       else if (c.status === 'needs_help') { pomocBlok(blok, c, order, viac); if (!pomoc) pomoc = c; }
       else if (c.status === 'delayed') {
@@ -317,16 +399,13 @@
       out.appendChild(blok);
     });
     if (d.others) {
-      out.appendChild(prvok('p', 'pozn', cases.some(jeKrizovka)
+      out.appendChild(prvok('p', 'pozn', cases.some(jeProdukt)
         ? 'This order has ' + d.others + ' more personalized file' + (d.others > 1 ? 's' : '') + '. To see ' + (d.others > 1 ? 'them' : 'it') + ' too, use your own surname as it appears on the Etsy order.'
         : 'This order has ' + d.others + ' more personalized case' + (d.others > 1 ? 's' : '') + '. To see ' + (d.others > 1 ? 'them' : 'it') + ' too, use your own surname as it appears on the Etsy order, or the surname of the first guest on that list.'));
     }
     // jediný prípad, ktorý čaká na mená: formulár hneď (ako doteraz); pri viacerých tlačidlom pri prípade
     if (pomoc && !viac) otvorOpravu(pomoc, order, false, sFokusom ? 'fokus' : '');
-    else if (!pomoc && !cases.some(function (c) { return c.status === 'ready' && c.fixable; })) {
-      if (oprava && !oprava.hidden) oprava.hidden = true;
-      if (kOprava && !kOprava.hidden) kOprava.hidden = true;
-    }
+    else if (!pomoc && !cases.some(function (c) { return c.status === 'ready' && c.fixable; })) skryOpravy(null);
     return cakat && uplynulo < CAKAJ_HOTOVE;
   }
 
@@ -389,8 +468,7 @@
     if (order.length < 6 || surname.length < 2) { sprava('Please enter the order number (digits only) and the ' + PRODUKTY[zvoleny()].co + '.', 'zle'); ukaz(out); return; }
     var tlacidlo = form.querySelector('button[type="submit"]');
     tlacidlo.disabled = true;
-    if (oprava) oprava.hidden = true;
-    if (kOprava) kOprava.hidden = true;
+    skryOpravy(null);
     hlavicka([]); // nové hľadanie: neutrálny nadpis, kým /status nepovie tému
     zaciatok = Date.now();
     sprava('Looking for your ' + PRODUKTY[zvoleny()].vec + '...');
@@ -514,19 +592,87 @@
     });
   }
 
-  /* Voľba produktu: odkaz /case/?p=crossword (zo súboru Start here krížovky) ju predvolí; zmena voľby vyčistí výsledok. */
+  /* Adventná hra: počítadlo rôznych čísel úkrytov 1 až 50 pod políčkom (aspoň 12), aby kupujúci videl počet skôr, než odošle. */
+  function pocetMiest() {
+    if (!aOprava || !aPocet) return 0;
+    var cisla = [];
+    (String(aOprava.elements.spots.value || '').match(/\d+/g) || []).forEach(function (k) {
+      var n = Number(k);
+      if (n >= 1 && n <= 50 && cisla.indexOf(n) < 0) cisla.push(n);
+    });
+    var n = cisla.length;
+    var prazdne = !String(aOprava.elements.spots.value || '').trim();
+    // prázdne pole = 16 predvolených úkrytov (worker, PREDVOLENE_MIESTA); vyplnené potrebuje aspoň 12 čísel
+    aPocet.textContent = prazdne
+      ? 'Empty: we use our 16 everyday spots.'
+      : n + (n === 1 ? ' different spot' : ' different spots') + ' from the menu so far. A hunt needs at least 12, or leave the box empty.';
+    aPocet.className = 'case-tip case-pocet' + (prazdne || n >= 12 ? ' dost' : '');
+    return n;
+  }
+  if (aOprava) {
+    aOprava.elements.spots.addEventListener('input', pocetMiest);
+    pocetMiest();
+    aOprava.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var telo = {
+        order: String(aOprava.elements.order.value || '').replace(/\D/g, ''),
+        'case': String(aOprava.elements['case'].value || ''),
+        buyer: String(aOprava.elements.buyer.value || '').trim(),
+        kids: String(aOprava.elements.kids.value || '').trim(),
+        spots: String(aOprava.elements.spots.value || '').trim(),
+        letter: String(aOprava.elements.letter.value || ''),
+        siblings: String(aOprava.elements.siblings.value || '')
+      };
+      if (telo.buyer.length < 2 || !telo.kids) { aStavNapis('Please fill in your surname and the children’s names and ages.', 'zle'); return; }
+      var tlacidlo = aOprava.querySelector('button[type="submit"]');
+      tlacidlo.disabled = true;
+      zastav();
+      cas('');
+      aStavNapis('Building your hunt. This takes about a minute; please keep this page open.');
+      fetch(API + '/fix', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(telo) })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          if (d.status === 'ready') {
+            aOprava.hidden = true;
+            zaciatok = Date.now();
+            sprava('Your hunt is ready.');
+            zisti(telo.order, telo.buyer, null, true, d);
+            fokus(out);
+            return;
+          }
+          if (d.status === 'wrong_buyer') aStavNapis('That surname does not match the name on this Etsy order. Type your own surname exactly as it appears on the Etsy receipt, not a child’s name. If you ordered it as a gift, or it still does not match, ' + ETSY + ', and we will unlock this form for you.', 'zle');
+          else if (d.status === 'already_fixed') aStavNapis('You have already used the one fix for this hunt, so it cannot be built again here. If something is still wrong, ' + ETSY + '.', 'zle');
+          else if (d.status === 'answers') aStavNapis(dovodAdventu(d) + (d.kept ? ' Your current files are unchanged and still work.' : '') + ' Please correct it above and press Build my hunt again.', 'zle');
+          else if (d.status === 'pending') {
+            aStavNapis('This hunt is already being built. It appears above as soon as it is ready.');
+            zaciatok = Date.now();
+            zisti(telo.order, telo.buyer, null, true);
+          } else if (d.status === 'unknown') aStavNapis('We cannot find a hunt waiting for answers under this order number anymore. Please press Find my hunt again.', 'zle');
+          else if (d.status === 'invalid') aStavNapis('Please check your surname and your answers.', 'zle');
+          else if (d.kept) aStavNapis('Building your corrected hunt failed, and we have been notified. Your current files are unchanged and still work. Please try again in a few minutes; if it fails again, ' + ETSY + '.', 'zle');
+          else aStavNapis('Building your hunt failed, and we have been notified. Please press Build my hunt once more. If it fails again, ' + ETSY + '.', 'zle');
+        })
+        .catch(function () {
+          aStavNapis('We lost the connection while your hunt was being built. Checking where it stands...');
+          zaciatok = Date.now();
+          casovac = setTimeout(function () { zisti(telo.order, telo.buyer, null, true); }, 5000);
+        })
+        .then(function () { tlacidlo.disabled = false; });
+    });
+  }
+
+  /* Voľba produktu: odkaz /case/?p=crossword alebo ?p=advent (zo súboru Start here) ju predvolí; zmena voľby vyčistí výsledok. */
   var volby = form.querySelectorAll('input[name="produkt"]');
-  var zOdkazu = /[?&]p=crossword\b/.test(location.search) || location.hash === '#crossword';
+  var zOdkazu = (location.search.match(/[?&]p=(crossword|advent)\b/) || [])[1] || (location.hash === '#crossword' ? 'crossword' : location.hash === '#advent' ? 'advent' : '');
   for (var i = 0; i < volby.length; i++) {
-    if (zOdkazu && volby[i].value === 'crossword') volby[i].checked = true;
+    if (zOdkazu && volby[i].value === zOdkazu) volby[i].checked = true;
     volby[i].addEventListener('change', function () {
       zastav();
       cas('');
       podpis = '';
       out.className = 'case-vysledok';
       out.textContent = '';
-      if (oprava) oprava.hidden = true;
-      if (kOprava) kOprava.hidden = true;
+      skryOpravy(null);
       nastavVolbu();
     });
   }

@@ -10,11 +10,11 @@
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon.ico" sizes="48x48">
 <title>Download your files &middot; ARLing Puzzles</title>
-<meta name="description" content="Download page for personalized files bought from ARLing Puzzles on Etsy: the Your friends as witnesses mystery case (Halloween or Christmas) and the custom crossword from your words.">
+<meta name="description" content="Download page for personalized files bought from ARLing Puzzles on Etsy: the Your friends as witnesses mystery case (Halloween or Christmas), the custom crossword from your words and the personalized advent treasure hunt.">
 <link rel="canonical" href="https://arling.sk/case/">
 <link rel="preload" href="/fonts/arling-sans.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/case/case.css?v=7">
-<script src="/case/case.js?v=7" defer></script>
+<link rel="stylesheet" href="/case/case.css?v=9">
+<script src="/case/case.js?v=9" defer></script>
 </head>
 <body>
 <!-- Stránka vyzdvihnutia personalizovaného prípadu (Fable, 2. 10. 2026; podľa brány pokus 1 bez menu obchodu,
@@ -23,7 +23,9 @@
      (theme a title); potom ich case.js nastaví na Lantern Ball alebo Mistletoe Ball. Pomocné texty bez názvu plesu.
      Druhý produkt (Claude 2, relácia 105, 3. 10. 2026): krížovka z vlastných slov. Voľba hore (alebo odkaz
      /case/?p=crossword) prepne nadpis, druhé pole, pomoc (bloky data-len) a formulár na slová. Bez skriptu ostáva
-     stránka v stave detektívky ako doteraz. -->
+     stránka v stave detektívky ako doteraz.
+     Tretí produkt (Claude 2, relácia 115b, 8. 10. 2026): adventná hra na poklad (voľba advent, odkaz /case/?p=advent,
+     formulár #advent-oprava, pomoc data-len="advent"). Overenie menom prvého dieťaťa alebo priezviskom kupujúceho. -->
 <header class="case-top"><span class="znak">ARLing Puzzles</span><span class="stitok" id="case-miesto">Personalized case file</span></header>
 <main id="obsah" class="case">
   <div class="spis">
@@ -36,6 +38,7 @@
         <legend>What did you buy?</legend>
         <label><input type="radio" name="produkt" value="mystery" checked><span>Mystery case</span></label>
         <label><input type="radio" name="produkt" value="crossword"><span>Custom crossword</span></label>
+        <label><input type="radio" name="produkt" value="advent"><span>Advent treasure hunt</span></label>
       </fieldset>
       <label for="case-order">Etsy order number</label>
       <input id="case-order" name="order" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="for example 4190123456" required>
@@ -78,6 +81,32 @@
       <p id="krizovka-vysledok" class="oprava-stav" role="status" aria-live="polite"></p>
       <button type="submit" data-umami-event="case_fix" data-umami-event-product="crossword">Build my crossword</button>
     </form>
+    <form id="advent-oprava" class="case-form case-oprava" novalidate hidden>
+      <input type="hidden" name="order">
+      <input type="hidden" name="case">
+      <p id="advent-uvod" class="oprava-uvod"></p>
+      <label for="advent-buyer">Your surname, as on your Etsy order</label>
+      <input id="advent-buyer" name="buyer" autocomplete="family-name" spellcheck="false" placeholder="for example Turner" required>
+      <label for="advent-kids">Children&rsquo;s names and ages</label>
+      <input id="advent-kids" name="kids" maxlength="100" spellcheck="false" placeholder="Emma 5, Leo 8" required>
+      <p class="case-tip">1 to 4 children aged 4 to 12, each as a first name and an age, separated by commas. Names up to 20 letters.</p>
+      <label for="advent-spots">Hiding spot numbers (optional)</label>
+      <textarea id="advent-spots" name="spots" rows="2" maxlength="200" spellcheck="false" autocomplete="off" placeholder="1, 3, 5, 8, 14, 17, 21, 24, 26, 33, 38, 42"></textarea>
+      <p class="case-tip">12 or more different numbers from the Hiding Spot Menu (1 to 50) in your Start here file, separated by commas. With fewer than 24, some spots are used twice, never two days in a row. Leave it empty and we use our 16 everyday spots, starred in the menu.</p>
+      <p id="advent-pocet" class="case-tip case-pocet" role="status" aria-live="polite"></p>
+      <label for="advent-letter">Letter on Day 24 from</label>
+      <select id="advent-letter" name="letter">
+        <option>Holly the Elf</option>
+        <option>Santa</option>
+      </select>
+      <label for="advent-siblings">Siblings play (only with 2 or more children)</label>
+      <select id="advent-siblings" name="siblings">
+        <option value="Take turns">Take turns, clues for each age</option>
+        <option value="Together">Together, clues for the youngest</option>
+      </select>
+      <p id="advent-vysledok" class="oprava-stav" role="status" aria-live="polite"></p>
+      <button type="submit" data-umami-event="case_fix" data-umami-event-product="advent">Build my hunt</button>
+    </form>
   </div>
   <div class="case-pomoc">
     <h2>Where is my order number?</h2>
@@ -103,6 +132,20 @@
       <p>We use your words and clues only to build your crossword. Your files contain them and are deleted automatically 30 days after they are ready, so please save your files. More in our <a href="/privacy/en/#s8b">privacy policy</a>.</p>
       <h2>Something wrong?</h2>
       <p>A word or a clue is wrong? Next to your files is a link to fix your list once; your current files keep working until the new ones are ready. If your crossword is not here within 30 minutes, or anything else is wrong, message us on Etsy (ARLing Puzzles); we reply within 24 hours.</p>
+    </div>
+    <div data-len="advent" hidden>
+      <h2>Which name do I type?</h2>
+      <p>The first name of the first child on your list, as you typed it with your order (for example Emma). Capital letters do not matter. Your own surname from the Etsy order works too.</p>
+      <h2>How long does it take?</h2>
+      <p>Usually a few minutes. Your hunt is built automatically as soon as the payment goes through on Etsy, and this page checks again by itself while you wait.</p>
+      <h2>What do I get?</h2>
+      <p>Four PDF files: the clue cards and the Grown-ups Guide, each in A4 and in US Letter. The clue cards have 7 pages: a cover, how to play, 24 cards to cut out (6 per page) and the Day 24 letter. The Grown-ups Guide has 3 pages: where to hide each card, and the answers to the codes. Keep the guide away from the children. Print one paper size at 100% scale.</p>
+      <h2>Hiding spots</h2>
+      <p>If you left the hiding spots empty, your hunt uses our 16 everyday spots: 1 under your pillow, 2 under the blanket at the foot of your bed, 3 inside a slipper, 4 folded in your pajamas, 5 with your favorite stuffed animal, 6 in your sock drawer, 14 in the pocket of your winter coat, 15 inside your winter hat, 16 inside a mitten or glove, 17 inside a boot by the door, 18 inside one of your shoes, 20 rolled up in a scarf, 21 under a couch cushion, 29 inside a big picture book, 37 on the seat of a dining chair pushed under the table, 43 in the toy box. The Grown-ups Guide lists the spot for every day.</p>
+      <h2>Your children&rsquo;s names</h2>
+      <p>We use the names and ages only to build your hunt. Your files contain them and are deleted automatically 30 days after they are ready; if you order before December, they stay until at least December 27. Please save your files. More in our <a href="/privacy/en/#s8b">privacy policy</a>.</p>
+      <h2>Something wrong?</h2>
+      <p>A name, an age or a spot is wrong? Next to your files is a link to fix your answers once; your current files keep working until the new ones are ready. If your hunt is not here within 30 minutes, or anything else is wrong, message us on Etsy (ARLing Puzzles); we reply within one working day.</p>
     </div>
   </div>
 </main>
