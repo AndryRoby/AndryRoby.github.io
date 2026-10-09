@@ -320,7 +320,7 @@
     INTERRUPTED: 'Your last try did not finish, so this crossword was not built. Please send your words again below; it takes about a minute.',
     BUILD_FAILED: 'Building this crossword from the words you sent failed, and we have been notified. Please try once more below. If it fails again, ' + ETSY + '.',
     EMPTY: 'We did not find any words and clues in your order, so there is nothing to build yet.',
-    TOO_LONG: 'Your words and clues do not fit on one page. Please shorten the longest clues (up to about 60 characters works well) or send fewer words.'
+    TOO_LONG: 'Your words and clues do not fit on one page. Try shortening each clue to 40 characters or fewer for 21 to 25 words, or 60 characters or fewer for 10 to 20 words, including spaces and punctuation. If it still does not fit, send fewer words.'
   };
   /* Prečo krížovka čaká na kupujúceho: dôvod, počet použiteľných slov a položky, ktoré sa nedali použiť. */
   function dovodSlov(d) {
