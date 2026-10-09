@@ -35,8 +35,8 @@ const PLAY_URL = 'https://play.google.com/store/apps/details?id=sk.arling.duel';
 const TEXT_ZAVERU = {
   'coming-soon': 'Coming soon to Google Play',
   'google-play': 'Get it on Google Play',
-  // store-listing-en.md: „NO ACCOUNTS, NO INTERNET, NO PURCHASES“
-  obchod: 'No account. Nothing to buy.',
+  // Duel 0.1.10 predáva mince a Remove ads (9. 10. 2026), preto už nie „Nothing to buy“
+  obchod: 'No account. Plays offline.',
   about: 'No account needed.',
 };
 

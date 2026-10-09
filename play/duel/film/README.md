@@ -65,7 +65,7 @@ dp; hlášky kola 1 v háku 42 px, v príbehu 54 px, kolá 2 a 3 42 px; na konci
 |---|---|---|---|
 | `coming-soon` | Coming soon to Google Play | `#about` na tej istej stránke | dnes |
 | `google-play` | Get it on Google Play | `https://play.google.com/store/apps/details?id=sk.arling.duel` | až keď verejná stránka obchodu vráti 200 |
-| `obchod` | No account. Nothing to buy. | `#about` | video v samotnom zázname Google Play (bez výzvy a bez „coming soon“) |
+| `obchod` | No account. Plays offline. | `#about` | video v samotnom zázname Google Play (bez výzvy a bez „coming soon“) |
 
 Render bez zmeny kódu: `render.html?zaver=google-play`. Film nekreslí napodobeninu odznaku Google Play (odznak sa
 nesmie meniť); ak má byť v zázname oficiálny odznak, pridá ho Fable ako obrázok podľa
@@ -101,7 +101,7 @@ Cesty sú v `products/duel-android/app/src/main/java/sk/arling/duel/`, ak nie je
 | zvuky: tón C5 0,32 s, akord C5 E5 G5 0,65 s, zvonkohra 1,2 s, sínus s oktávou 12 %, nábeh 8 ms, doznievanie e^(-5x) | `ops/games/word-search/prepare-sounds.py:6-22`, WAV v `app/src/main/res/raw/` (README appky: tie isté ako Word Search) |
 | kedy znejú: intro kola na pentatonike (index kolo + 2), tri tiky a tón Go, tik pri ťuku, výhra = akord na C a G naraz, prehra tón o kvartu nižšie a o 300 ms výhra, koniec zápasu zvonkohra | `DuelSounds.kt:11-28`, `DuelSounds.kt:53-59`, `MainActivity.kt:249`, `MainActivity.kt:262-264`, `MainActivity.kt:337-341`, `MainActivity.kt:362`, `MainActivity.kt:409-411` |
 | „Lay the phone flat between you“ | `Words.kt:100` |
-| „One phone. Two thumbs.“, „Both halves get the same round.“ (appka: „dealt the same task from the same seed“), „27 mini-games“, „No account. Nothing to buy.“ | `ops/games/duel/store-listing-en.md:38`, `:55`, `:42`, `:73` |
+| „One phone. Two thumbs.“, „Both halves get the same round.“ (appka: „dealt the same task from the same seed“), „27 mini-games“, „No account. Plays offline.“ (od 0.1.10 sú v hre mince a Remove ads) | `ops/games/duel/store-listing-en.md:38`, `:55`, `:42`, `:73` |
 | „Plays offline“ | `Words.kt:187` („It plays offline on one phone, with no account.“) |
 | „27 quick games for two players“ | `ops/games/duel/store-listing-en.md:114` (What's new 0.1.5) |
 | „A wrong tap gives the point away.“ | `Round.kt:95` a `RuleBook.kt:7` (odznak „Wrong tap loses“) |
