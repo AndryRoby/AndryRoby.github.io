@@ -30,9 +30,16 @@ let ZAVER = (() => {
 export function nastavZaver(z) { if (ZAVERY.includes(z)) ZAVER = z; }
 const PLAY_URL = 'https://play.google.com/store/apps/details?id=sk.arling.prism5';
 // Appka má štyri denné mriežky (store-listing-en.md overený proti kódu); webová hra na arling.sk jednu.
-// Živá verzia 0.4.0 má jednu dennú mriežku (W6); „Four daily grids“ až so zostavou, ktorá ich naozaj má.
-const STYRI_MRIEZKY = false;
-const appka = () => STYRI_MRIEZKY && ZAVER !== 'coming-soon';
+// Kedysi: živá verzia 0.4.0 mala jednu dennú mriežku (W6), preto tu bolo false.
+// 9. 10. 2026 (relácia 161): v Google Play je 0.5.5 (products/prism5-android/app/build.gradle.kts:54) so štyrmi
+// dennými mriežkami Easy, Medium, Hard, Expert: products/prism5-engine/src/main/kotlin/sk/arling/prism5/Generator.kt:20
+// (enum Band) a :167 (Generator.daily(date, band)), domov DayRows v products/prism5-android/app/src/main/java/sk/arling/prism5/app/Screens.kt:243
+// a :260 (riadok za každý Band), About Screens.kt:726 „The four daily grids are the same for everyone …“.
+// Hra je vydaná, preto veta už nezávisí od záveru (ani 'coming-soon' nesmie povedať, že je mriežka jedna);
+// náhradná veta pre false netvrdí počet.
+const STYRI_MRIEZKY = true;
+const appka = () => STYRI_MRIEZKY;
+const VETA_MRIEZOK = () => (appka() ? 'Five gems. Four daily grids.' : 'Five gems. New grids every day.');
 const TEXT_ZAVERU = { 'coming-soon': 'Coming soon to Google Play', 'google-play': 'Get it on Google Play', obchod: 'Endless levels. Never guessed.', about: 'Never timed against you.' };
 
 // Platný latinský štvorec 5 x 5: každý drahokam raz v každom riadku aj stĺpci.
@@ -228,7 +235,7 @@ function stavTexty(W, H, dpr, R) {
     }) };
   });
   const nazov = spriteNazvu(dpr, 'Prism 5', s * (R.stred ? 0.16 : 0.15), R.ew, { zarovnanie: zar });
-  const veta = spriteRiadku(dpr, appka() ? 'Five gems. Four daily grids.' : 'Five gems. One daily grid.', s * (R.stred ? 0.06 : 0.056), R.ew, { zarovnanie: zar, maxRiadkov: 1 });
+  const veta = spriteRiadku(dpr, VETA_MRIEZOK(), s * (R.stred ? 0.06 : 0.056), R.ew, { zarovnanie: zar, maxRiadkov: 1 });
   const veta2 = spriteRiadku(dpr, 'Each gem once in every row and column.', Math.max(s * 0.04, minPismo(W, H)), R.ew, { vaha: 400, farba: '#b3bbe0', zarovnanie: zar, maxRiadkov: 2 });
   // Appka ešte nie je v Google Play: len nápis bez pilulky a bez ▶ (nesmie vyzerať ako odznak obchodu),
   // pod ním čitateľná adresa (aspoň 40 px pri 1080). Veta pre vývojárov vypadla.
@@ -562,13 +569,13 @@ const film = {
   dlzka: DLZKA,
   plagat: 1.0,
   titulky: [
-    { od: 0, text: 'Prism 5. Gems drop into a 5 by 5 grid and build a solved board, and a wave of light runs across it. Five gems. One daily grid. Each gem once in every row and column.' },
+    { od: 0, text: 'Prism 5. Gems drop into a 5 by 5 grid and build a solved board, and a wave of light runs across it. ' + VETA_MRIEZOK() + ' Each gem once in every row and column.' },
     { od: 1.3, text: 'Nine gems pop out and sixteen stay: the puzzle.' },
     { od: 1.45, text: 'Every row and every column holds each gem once.' },
     { od: 3.75, text: 'Where can the star go in this row?' },
     { od: 5.6, text: 'Only one place for the star. The other free cells share a column with a star.' },
     { od: 8.15, text: 'The grid is solved and a wave of light runs across it.' },
-    { od: 9.55, text: 'Prism 5. ' + (appka() ? 'Five gems. Four daily grids.' : 'Five gems. One daily grid.') + ' Each gem once in every row and column. ' + TEXT_ZAVERU[ZAVER].replace(/\.?$/, '.') + ' arling.sk' },
+    { od: 9.55, text: 'Prism 5. ' + VETA_MRIEZOK() + ' Each gem once in every row and column. ' + TEXT_ZAVERU[ZAVER].replace(/\.?$/, '.') + ' arling.sk' },
   ],
   async pripravit() {
     if (document.fonts && document.fonts.load) {

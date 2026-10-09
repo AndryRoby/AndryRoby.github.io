@@ -34,6 +34,12 @@ Oproti verzii 2 (18 s) vypadlo státie hotovej dosky 0 až 1,3 s, prázdna mrie�
 | 8,15 až 9,25 | svetelná vlna po doske | nádych a zvonkohra |
 | 8,9 až 14 | doska do koncovej polohy, názov, vety, nápis „Coming soon to Google Play“ (bez pilulky a bez ▶, nevyzerá ako odznak obchodu), adresa arling.sk (69 px pri 1080x1920) | akord C, zvon C4 |
 
+Zmena 9. 10. 2026 (relácia 161): tabuľka vyššie je história. Prism 5 0.5.5 je v Google Play so štyrmi
+dennými mriežkami (Easy, Medium, Hard, Expert; dôkaz v komentári pri `STYRI_MRIEZKY` vo `film.js`),
+preto je `STYRI_MRIEZKY = true` a veta v háku, v závere aj v titulkoch je pri každom závere
+„Five gems. Four daily grids.“ (už nie „One daily grid“). Predvolený záver je `google-play`
+(„Get it on Google Play“). `nahlad-4x5.jpg` a `og.jpg` ešte nesú starú vetu, kým ich niekto neprerenderuje.
+
 Kritik (25. 9.): za tento film neplatiť v Meta Ads, kým appka nie je v Google Play; organicky ho
 zverejniť až v deň vydania s odkazom na Play.
 
