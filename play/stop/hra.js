@@ -1,6 +1,7 @@
 // Stop at the right frame: hra v prehliadači. Rovnaké jadro ako videá (jadro.js), predmet sa kreslí po celých
 // snímkach pri 60 fps (aj na 120 Hz displeji), ťuk zastaví práve zobrazenú snímku, takže čo vidíš, to sa hodnotí.
 import { uroven, poloha, vyhodnot, vetaVysledku, kresliPredmet, kresliObrys, POCET, FPS, SW, MENA } from './jadro.js';
+import { adresaUrovne } from './adresa.js?v=1';
 
 const Y0 = 380, VYSKA = 920; // výrez sveta 1080 x 920 (y 380 až 1300, všetky ciele ležia vnútri)
 const $ = (s) => document.querySelector(s);
@@ -8,8 +9,10 @@ const platno = $('#stop-platno'), ctx = platno.getContext('2d');
 const el = {
   uroven: $('#stop-uroven'), obt: $('#stop-obt'), stop: $('#stop-tlacidlo'), vysledok: $('#stop-vysledok'), veta: $('#stop-veta'),
   pod: $('#stop-pod'), znova: $('#stop-znova'), dalsia: $('#stop-dalsia'), zdielaj: $('#stop-zdielaj'), pred: $('#stop-pred'), po: $('#stop-po'),
-  zvuk: $('#stop-zvuk'), skore: $('#stop-skore'),
+  zvuk: $('#stop-zvuk'), skore: $('#stop-skore'), dalej: $('#stop-dalej'),
 };
+// Veta a dva odkazy na cenu (kniha, Prism 5) sú mimo aria-live a ukážu sa len spolu s výsledkom.
+const ukazDalej = (ano) => { if (el.dalej) el.dalej.hidden = !ano; };
 
 const KLUC = 'arling-stop-v1';
 let ulozene = { najlepsie: {} };
@@ -73,15 +76,15 @@ function kresli(f) {
 }
 
 // ---------- priebeh ----------
-function nacitaj(k) {
+function nacitaj(k, prve = false) {
   n = k; U = uroven(n); zastavena = null; zobrazena = -1; poslednyZvuk = -1;
   el.uroven.textContent = `Level ${n}`; el.obt.textContent = U.obtiaznost; el.obt.dataset.obt = U.obtiaznost.toLowerCase();
   el.pred.disabled = n <= 1; el.po.disabled = n >= POCET;
-  const url = new URL(location.href); url.searchParams.set('l', n); history.replaceState(null, '', url);
+  history.replaceState(null, '', adresaUrovne(location.href, n, prve));
   skore(); spusti();
 }
 function spusti() {
-  el.vysledok.hidden = true; el.stop.hidden = false; zastavena = null;
+  el.vysledok.hidden = true; ukazDalej(false); el.stop.hidden = false; zastavena = null;
   bezi = true; t0 = performance.now() + 450; requestAnimationFrame(slucka);
 }
 function slucka(now) {
@@ -106,7 +109,7 @@ function zastav() {
   const v = vyhodnot(U, zastavena);
   if (v.sadne) { zvon(1318.5, 0.13); setTimeout(() => zvon(1975.5, 0.1), 70); } else ton(180, 0.2, 0.18, 'sine', 90);
   kresli(zastavena);
-  el.stop.hidden = true; el.vysledok.hidden = false;
+  el.stop.hidden = true; el.vysledok.hidden = false; ukazDalej(true);
   el.vysledok.dataset.sadne = v.sadne ? '1' : '0';
   el.veta.textContent = !na ? `The ${MENA[U.predmet]} was not even on screen.` : vetaVysledku(v.od);
   el.pod.textContent = v.presne ? 'That is the one frame. Screenshot it.' : v.sadne ? `Inside the window. ${U.tolerancia ? 'Three frames fit on Easy.' : ''}` : U.tolerancia ? 'Three frames fit on Easy. Try again.' : 'Only one frame fits on Impossible.';
@@ -161,6 +164,6 @@ el.pred.addEventListener('click', () => nacitaj(Math.max(1, n - 1)));
 el.po.addEventListener('click', () => nacitaj(Math.min(POCET, n + 1)));
 el.zdielaj.addEventListener('click', zdielaj);
 el.zvuk.addEventListener('click', () => { zvukZap = !zvukZap; el.zvuk.setAttribute('aria-pressed', String(zvukZap)); el.zvuk.textContent = zvukZap ? 'Sound on' : 'Sound off'; });
-document.addEventListener('visibilitychange', () => { if (document.hidden && bezi) { bezi = false; el.vysledok.hidden = true; } else if (!document.hidden && !bezi && zastavena == null) spusti(); });
+document.addEventListener('visibilitychange', () => { if (document.hidden && bezi) { bezi = false; el.vysledok.hidden = true; ukazDalej(false); } else if (!document.hidden && !bezi && zastavena == null) spusti(); });
 window.addEventListener('resize', rozmer);
-document.fonts.load('700 40px "ARLing Sans"').finally(() => { nacitaj(n); rozmer(); });
+document.fonts.load('700 40px "ARLing Sans"').finally(() => { nacitaj(n, true); rozmer(); });

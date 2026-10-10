@@ -14,7 +14,7 @@ doplní Fable pri nasadení). Engine: `ops/video/kodfilm/` (tu je jeho kópia v 
 | `render.html`, `render.js` | len plátno na celé okno pre `render.mjs` (noindex) |
 | `film.js` | film: časová os, vrstvy, scény, partitúra |
 | `drahokamy.js` | päť drahokamov kódom (fazety, lesk, žiara) |
-| `og.jpg` | 1200x630, snímka STAREJ verzie filmu (s oblasťami); treba nahradiť snímkou z novej (napr. 16 s z 1920x1080, orezanou) |
+| `og.jpg` | 1200x630, záverečné zloženie filmu so štyrmi dennými mriežkami („Five gems. Four daily grids.“), prerenderované 9. 10. 2026 (relácia 161) |
 
 ## Časová os (14 s, verzia 3 z 25. 9. 2026 v noci: hák bez „slidu“, bez prázdnej mriežky)
 
@@ -38,15 +38,15 @@ Zmena 9. 10. 2026 (relácia 161): tabuľka vyššie je história. Prism 5 0.5.5 
 dennými mriežkami (Easy, Medium, Hard, Expert; dôkaz v komentári pri `STYRI_MRIEZKY` vo `film.js`),
 preto je `STYRI_MRIEZKY = true` a veta v háku, v závere aj v titulkoch je pri každom závere
 „Five gems. Four daily grids.“ (už nie „One daily grid“). Predvolený záver je `google-play`
-(„Get it on Google Play“). `nahlad-4x5.jpg` a `og.jpg` ešte nesú starú vetu, kým ich niekto neprerenderuje.
+(„Get it on Google Play“). `nahlad-4x5.jpg` a `og.jpg` sú prerenderované 9. 10. 2026 a nesú „Four daily grids“.
 
 Kritik (25. 9.): za tento film neplatiť v Meta Ads, kým appka nie je v Google Play; organicky ho
 zverejniť až v deň vydania s odkazom na Play.
 
 Riešenie `QTDCS / DCSTQ / CSTQD / TDQSC / SQCDT` je platný latinský štvorec (film.js to pri načítaní
-overí); nie je to denná mriežka appky, lebo appka nové pravidlá ešte nemá (`ops/games/prism5/rs-stav.md`).
+overí); nie je to denná mriežka appky, ale mriežka zvolená pre film podľa rovnakých pravidiel (`ops/games/prism5/rs-stav.md`).
 Poradie dopadu je naše, dedukcia hviezdy je platná pre stav, ktorý film ukazuje.
-Štítok „Coming soon to Google Play“ nevedie do obchodu (appka tam nie je), ale na `#about`.
+Pri závere `google-play` (predvolený) vedie nápis „Get it on Google Play“ do obchodu; pri `coming-soon` a `about` na `#about`.
 Veta „Reasoned, not guessed“ vypadla: pre pravidlá bez oblastí zatiaľ nie je overené, že každá denná
 mriežka sa dá vyriešiť bez hádania.
 

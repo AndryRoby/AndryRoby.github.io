@@ -1,9 +1,9 @@
 # Word Search: film nakreslený kódom
 
-25. 9. 2026, Fable. Stránka `https://arling.sk/play/word-search/film/` (zatiaľ bez odkazov z iných stránok,
-nenasadená). Engine: `ops/video/kodfilm/` (kópia v `engine/`, obnoví ju
+25. 9. 2026, Fable. Stránka `https://arling.sk/play/word-search/film/` (nasadená,
+odkaz z /play/ a presmerovanie z /play/word-search/). Engine: `ops/video/kodfilm/` (kópia v `engine/`, obnoví ju
 `node ops/video/kodfilm/kopiruj.mjs products/arling-sk/play/word-search/film`).
-Predmet: Android hra Word Search: Calm Word Puzzles (`products/word-search-android`), ešte nie je v Google Play.
+Predmet: Android hra Word Search: Calm Word Puzzles (`products/word-search-android`), v Google Play od 26. 9. 2026 (záver filmu „Get it on Google Play“, `DO_OBCHODU = true` vo `film.js`).
 
 ## Súbory
 
