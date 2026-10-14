@@ -15,6 +15,8 @@
   var SLUG = 'asistent';
 
   function pingOwner(evt, plan) {
+    // Andrejove zariadenia (arling.sk/ja/ nastaví umami.disabled) nehlásia kliky do ntfy (15. 10. 2026).
+    try { if (localStorage.getItem('umami.disabled')) return; } catch (e) {}
     try {
       var url = 'https://api.arling.workers.dev/subscribe/api/ping?e=' + encodeURIComponent(evt) + '&t=' + SLUG + (plan ? '&p=' + encodeURIComponent(plan) : '');
       if (navigator.sendBeacon) { navigator.sendBeacon(url); }
