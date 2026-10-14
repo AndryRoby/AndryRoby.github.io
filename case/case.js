@@ -95,7 +95,7 @@
   };
   var POLICKA_ADVENT = { 1: 'the names box', 2: 'the hiding spots box', 3: 'the letter box', 4: 'the siblings box' };
   var ADVENT_CAST = { game: 'Clue cards', guide: 'Grown-ups Guide' };
-  var ETSY = 'message us on Etsy (ARLing Puzzles); we reply within one working day';
+  var ETSY = 'message us on Etsy (ARLing Studio); we reply within one working day';
   var CAKANIE = 15000, CAKAJ_HOTOVE = 15 * 60000, CAKAJ_NEZNAME = 5 * 60000;
   var casovac = null, zaciatok = 0, podpis = '';
   var ticho = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
