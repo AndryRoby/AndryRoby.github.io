@@ -153,10 +153,11 @@ export const DICT = {
     de: 'Auf Wunsch stellt er zwei Produkte nebeneinander und zeigt den Preisunterschied.',
   },
   'cards.3.t': { sk: 'Hľadač darčekov', en: 'Gift finder', de: 'Geschenkefinder' },
+  // 9. 10. 2026 (indexácia, ops/seo/2026-10-09-indexacia/ZMENY.md Z11a): statický odkaz na hľadač darčekov.
   'cards.3.d': {
-    sk: 'Pre koho a za koľko, potom päť návrhov s krátkym dôvodom.',
-    en: 'Who it is for and how much to spend, then five suggestions with a short reason.',
-    de: 'Für wen und wie viel, dann fünf Vorschläge mit kurzer Begründung.',
+    sk: 'Pre koho a za koľko, potom päť návrhov s krátkym dôvodom. <a href="/asistent/gift-finder/">Ako hľadač darčekov funguje</a>.',
+    en: 'Who it is for and how much to spend, then five suggestions with a short reason. <a href="/asistent/gift-finder/en/">How the gift finder works</a>.',
+    de: 'Für wen und wie viel, dann fünf Vorschläge mit kurzer Begründung. <a href="/asistent/gift-finder/en/">So funktioniert der Geschenkefinder (auf Englisch)</a>.',
   },
   'cards.4.t': { sk: 'Keď tovar nemáte, povie to', en: 'When you do not stock it, it says so', de: 'Wenn Sie etwas nicht führen, sagt er es' },
   'cards.4.d': {
@@ -282,6 +283,12 @@ export const DICT = {
     sk: 'Zdrojový kód widgetu aj servera je <a href="https://github.com/AndryRoby/arling-asistent" target="_blank" rel="noopener">verejný na GitHube</a>.',
     en: 'The source code of the widget and the server is <a href="https://github.com/AndryRoby/arling-asistent" target="_blank" rel="noopener">public on GitHub</a>.',
     de: 'Der Quellcode von Widget und Server ist <a href="https://github.com/AndryRoby/arling-asistent" target="_blank" rel="noopener">öffentlich auf GitHub</a>.',
+  },
+  // 9. 10. 2026 (indexácia, ZMENY.md Z11a): statické odkazy na tri porovnania, dovtedy bez odkazu dnu.
+  'compare.links': {
+    sk: 'Ako sa Asistent líši od iných chatov pre e-shopy, rozoberajú tri porovnania: <a href="/asistent/compare/tidio-alternative/">alternatíva k&nbsp;Tidiu</a>, <a href="/asistent/compare/gorgias-alternative/">alternatíva ku Gorgiasu</a> a <a href="/asistent/compare/smartsupp-alternative/">alternatíva k&nbsp;Smartsuppu</a>.',
+    en: 'Three comparisons explain how Asistent differs from other shop chats: <a href="/asistent/compare/tidio-alternative/en/">Tidio alternative</a>, <a href="/asistent/compare/gorgias-alternative/en/">Gorgias alternative</a> and <a href="/asistent/compare/smartsupp-alternative/en/">Smartsupp alternative</a>.',
+    de: 'Worin sich Asistent von anderen Shop-Chats unterscheidet, zeigen drei Vergleiche auf Englisch: <a href="/asistent/compare/tidio-alternative/en/">Tidio-Alternative</a>, <a href="/asistent/compare/gorgias-alternative/en/">Gorgias-Alternative</a> und <a href="/asistent/compare/smartsupp-alternative/en/">Smartsupp-Alternative</a>.',
   },
 
   // ── trial form (ids and wiring in app.js) ────────────────────────────

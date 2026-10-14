@@ -266,7 +266,7 @@ export function translateMarkup(html, lang, problems) {
 export function relocateUrls(html, lang) {
   const out = walk(html, (tag, tn) => {
     let attrs = tag.attrs;
-    for (const name of ['href', 'src']) {
+    for (const name of ['href', 'src', 'data-href']) { // data-href: odložené štýly z kriticke.mjs (10. 10. 2026, inak 404 v /en/ a /de/)
       const v = getAttr(attrs, name);
       if (v === null) continue;
       if (v === ROOT_URL) { if (tn === 'a') attrs = setAttr(attrs, name, langUrl(lang)); }
