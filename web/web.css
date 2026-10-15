@@ -1,0 +1,216 @@
+/* Rýchly web pre malú firmu (/web/), 8. 10. 2026, Fable.
+   Len to, čo paper.css a hub.css nemajú. Rodina predajných stránok body.noc.predaj, vzor
+   shop/custom-crossword (krizovka.css). Všetko je pod triedou .web-ponuka, aby sa nič nebilo s inými stránkami.
+   Stránka nemá vlastný skript ani formulár: jediná akcia je e-mail na andrej@arling.sk.
+   Medzery v násobkoch 8, skupiny linkou papiera, nie mriežkou kariet. */
+
+/* ── 1. Úvod: nadpis, cena, schéma stránky, dôkazy ─────────────────────────
+   Telefón: nadpis, veta, cena s tlačidlom, až potom schéma (nad ohybom je akcia, nie obrázok).
+   Od 900 bodov: vľavo text, cena a dôkazy, vpravo schéma cez všetky tri riadky. */
+body.web-ponuka .wp-hero { display:grid; grid-template-columns:minmax(0,1fr);
+  grid-template-areas:"text" "cena" "schema" "dokazy"; gap:32px; align-items:start;
+  padding:clamp(40px,5vw,88px) 0 clamp(32px,4vw,56px); }
+body.web-ponuka .wp-hero > .text { grid-area:text; min-width:0; }
+body.web-ponuka .wp-hero > .cena { grid-area:cena; width:100%; max-width:560px; }
+body.web-ponuka .wp-hero > .wp-schema { grid-area:schema; }
+body.web-ponuka .wp-hero > .wp-dokazy { grid-area:dokazy; }
+@media (min-width:900px) {
+  body.web-ponuka .wp-hero { grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);
+    grid-template-areas:"text schema" "cena schema" "dokazy schema"; grid-template-rows:auto auto 1fr;
+    column-gap:clamp(48px,5.5vw,96px); row-gap:32px; }
+}
+body.web-ponuka .wp-hero h1 { margin:0; }
+body.web-ponuka .wp-hero .lead { margin:20px 0 0; }
+/* Na počítači má nadpis riadkovanie 1,0 a dotiahnuté písmená, preto väčšia medzera k odseku. */
+@media (min-width:900px) { body.web-ponuka .wp-hero .lead { margin-top:28px; } }
+
+/* Cenový box: vzhľad z hub.css (.predaj .cena), tu len texty a adresa na skopírovanie. */
+body.web-ponuka .cena .zaco { margin:12px 0 20px; font-size:15px; line-height:1.55; }
+body.web-ponuka .cena .akcie { gap:12px; }
+body.web-ponuka .cena .akcie .btn { height:auto; min-height:52px; font-size:16px; }
+body.web-ponuka .cena .pomoc { margin:16px 0 0; }
+/* Odkaz na ukážkový web vymyslenej firmy (/web/ukazka/, brána web 1, nález V1) hneď pod úvodným odsekom, aby bol
+   na prvej obrazovke telefónu. Nahradil ponuku bezplatného merania, ktorú dnes nestráži žiadna úloha (nález B2).
+   Odkaz má zvislú výplň, takže dotyková plocha má aj na telefóne aspoň 44 px. */
+body.web-ponuka .wp-hero .wp-ukazka-hore { margin:12px 0 0; font:400 16px/1.6 var(--ui); color:var(--muted); }
+body.web-ponuka .wp-hero .wp-ukazka-hore a { padding:11px 0; font-weight:600; color:var(--ink);
+  text-decoration:underline; text-decoration-thickness:1px; text-underline-offset:4px; }
+
+/* Tlačidlo e-mailu v hlavičke aj pod 520 px (nález D3): obal ho tam skrýva kvôli prepínaču jazyka, ktorý /web/ nemá.
+   Logo asi 105 px, tlačidlo asi 125 px, menu 40 px: pri 360 px sa zmestí. Rovnaké pravidlo je v kritickom CSS stránky. */
+@media (max-width:32.5em) {
+  body.web-ponuka header.site-header .bar > .site-cta { display:inline-flex; min-height:44px; padding:0 14px; font-size:14px; }
+}
+
+/* Adresa ako text: jedným ťuknutím sa označí celá, potom stačí kopírovať. Bez skriptu. */
+body.web-ponuka .wp-adresa { margin:0; }
+body.web-ponuka .wp-adresa span { display:block; margin:0 0 4px; font:500 13px/1.4 var(--ui); color:var(--muted); }
+body.web-ponuka .wp-adresa code { display:block; padding:12px 16px; border:1px dashed var(--rule-strong,var(--line));
+  border-radius:12px; font:500 17px/1.4 var(--mono); color:var(--ink); background:none;
+  -webkit-user-select:all; user-select:all; overflow-wrap:anywhere; cursor:text; }
+
+/* Dôkazy: tri riadky s linkou, nie karty. */
+body.web-ponuka .wp-dokazy { list-style:none; margin:0; padding:0; width:100%; max-width:560px;
+  border-top:1px solid var(--line); }
+body.web-ponuka .wp-dokazy li { margin:0; padding:16px 0; border-bottom:1px solid var(--line);
+  font:400 15px/1.55 var(--ui); color:var(--body); }
+body.web-ponuka .wp-dokazy b { display:block; margin:0 0 4px; font:600 16.5px/1.35 var(--display);
+  letter-spacing:-.01em; color:var(--ink); }
+
+/* ── 2. Schéma jednostránkového webu na telefóne ────────────────────────────
+   Nakreslené v CSS, nie snímka klienta (nijakého ešte nemáme). Svetlý papier na nočnom stole,
+   rovnaký tieň ako strany krížovky. Popisy sú pevné farby, lebo papier je vždy svetlý. */
+body.web-ponuka .wp-schema { margin:0; width:100%; max-width:360px; justify-self:start; min-width:0; }
+@media (min-width:900px) { body.web-ponuka .wp-schema { justify-self:end; } }
+body.web-ponuka .wp-tel { margin:0; padding:12px; border-radius:32px; background:#1a1715;
+  box-shadow:0 26px 60px -20px rgba(0,0,0,.75), 0 0 0 1px rgba(255,255,255,.08), 0 0 90px -30px rgba(255,190,140,.22); }
+body.web-ponuka .wp-obrazovka { display:flex; flex-direction:column; border-radius:22px; overflow:hidden;
+  background:#fbf9f4; color:#1f1d1a; font-family:var(--ui); }
+body.web-ponuka .wp-b { padding:12px 16px; border-top:1px solid #e4ddd0; }
+body.web-ponuka .wp-b:first-child { border-top:0; }
+body.web-ponuka .wp-b > i { display:block; margin:0 0 8px; font:700 11.5px/1.3 var(--mono); font-style:normal;
+  letter-spacing:.1em; text-transform:uppercase; color:#a8331a; }
+body.web-ponuka .wp-hlava { display:flex; align-items:center; justify-content:space-between; gap:12px; background:#f1ece2; }
+body.web-ponuka .wp-hlava b { font:700 15px/1.2 var(--display); color:#1f1d1a; }
+body.web-ponuka .wp-tlac { display:inline-block; padding:6px 12px; border-radius:999px; background:#a8331a; color:#fff;
+  font:600 12.5px/1.2 var(--ui); white-space:nowrap; }
+body.web-ponuka .wp-ciara { display:block; height:7px; margin:6px 0 0; border-radius:4px; background:#ddd5c6; }
+body.web-ponuka .wp-ciara.k { width:62%; }
+body.web-ponuka .wp-riadok { display:flex; justify-content:space-between; gap:12px; padding:4px 0;
+  font:400 12.5px/1.4 var(--ui); color:#4a4540; border-top:1px dotted #d8d0c0; }
+body.web-ponuka .wp-riadok:first-of-type { border-top:0; }
+body.web-ponuka .wp-fotky { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; }
+body.web-ponuka .wp-fotky span { display:block; aspect-ratio:1; border-radius:6px;
+  background:#ddd2bf; }
+body.web-ponuka .wp-kontakt { margin:0; padding:0; list-style:none; font:400 12.5px/1.6 var(--ui); color:#4a4540; }
+body.web-ponuka .wp-kontakt u { text-decoration:underline; text-underline-offset:2px; color:#1f1d1a; }
+body.web-ponuka .wp-pata { background:#f1ece2; font:400 11.5px/1.5 var(--ui); color:#5e5850; }
+body.web-ponuka .wp-schema figcaption { margin:16px 0 0; font:400 13.5px/1.55 var(--ui); color:var(--muted); }
+body.web-ponuka .wp-schema figcaption b { color:var(--body); font-weight:600; }
+@media (prefers-reduced-motion:no-preference) {
+  body.web-ponuka .wp-tel { animation:wp-usad .9s var(--pero) .05s both; }
+}
+@keyframes wp-usad { from { opacity:.001; transform:translate3d(0,16px,0); } }
+
+/* ── 3. Sekcie: podnadpis, riadky faktov, cenník ────────────────────────── */
+body.web-ponuka .sub { margin:16px 0 0; font:400 17px/1.55 var(--ui); color:var(--body); max-width:60ch; }
+@media (max-width:560px) { body.web-ponuka .sub { font-size:16px; } }
+
+body.web-ponuka .wp-fakty { margin:0; max-width:880px; }
+body.web-ponuka .wp-fakty > div { display:grid; grid-template-columns:11em minmax(0,1fr); gap:16px; padding:16px 0;
+  border-top:1px solid var(--line); }
+body.web-ponuka .wp-fakty > div:last-child { border-bottom:1px solid var(--line); }
+body.web-ponuka .wp-fakty dt { padding-top:2px; font:600 12.5px/1.6 var(--ui); letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
+body.web-ponuka .wp-fakty dd { margin:0; font:400 16px/1.6 var(--ui); color:var(--body); }
+@media (max-width:480px) { body.web-ponuka .wp-fakty > div { grid-template-columns:minmax(0,1fr); gap:4px; } }
+
+/* Cenník: dva riadky pod sebou, suma vľavo, obsah vpravo. Nie karty vedľa seba. */
+body.web-ponuka .wp-cennik { list-style:none; margin:0; padding:0; max-width:980px; border-top:1px solid var(--line); }
+body.web-ponuka .wp-cennik > li { display:grid; grid-template-columns:minmax(0,1fr); gap:12px 48px; padding:24px 0;
+  border-bottom:1px solid var(--line); }
+@media (min-width:760px) { body.web-ponuka .wp-cennik > li { grid-template-columns:15em minmax(0,1fr); } }
+/* .wp-cennik pred .wp-suma: suma je <p> a pravidlo .wp-cennik p by ju inak zmenšilo na 16 px. */
+body.web-ponuka .wp-cennik .wp-suma { margin:0; font:600 clamp(30px,3vw,40px)/1 var(--display); letter-spacing:-.02em; color:var(--ink);
+  font-variant-numeric:proportional-nums; }
+body.web-ponuka .wp-cennik .wp-suma small { display:block; margin:8px 0 0; font:500 14.5px/1.4 var(--ui); letter-spacing:0; color:var(--muted); }
+body.web-ponuka .wp-cennik h3 { margin:0 0 8px; font-size:clamp(18px,1.4vw,21px); }
+body.web-ponuka .wp-cennik p { margin:0 0 8px; font:400 16px/1.6 var(--ui); color:var(--body); max-width:64ch; }
+body.web-ponuka .wp-cennik p:last-child { margin-bottom:0; }
+
+/* Štyri kroky: veľké číslo v ľavom okraji, riadky s linkou (vzor .kr-kroky). */
+body.web-ponuka .wp-kroky { list-style:none; margin:0; padding:0; counter-reset:wp-krok; max-width:72ch;
+  border-top:1px solid var(--line); }
+body.web-ponuka .wp-kroky li { counter-increment:wp-krok; position:relative; margin:0; padding:20px 0 20px 56px;
+  border-bottom:1px solid var(--line); font:400 16px/1.6 var(--ui); color:var(--body); }
+body.web-ponuka .wp-kroky li::before { content:counter(wp-krok); position:absolute; left:0; top:16px; width:40px;
+  font:600 28px/1.2 var(--display); color:var(--accent-light); font-variant-numeric:tabular-nums; }
+body.web-ponuka .wp-kroky b { display:block; margin:0 0 4px; font:600 17px/1.4 var(--display); color:var(--ink); }
+
+/* ── 4. Meranie: tabuľka s našimi vlastnými číslami ─────────────────────── */
+body.web-ponuka .wp-tab-obal { max-width:980px; overflow-x:auto; -webkit-overflow-scrolling:touch; }
+body.web-ponuka .wp-tab { width:100%; border-collapse:collapse; font:400 15px/1.5 var(--ui); color:var(--body); }
+body.web-ponuka .wp-tab caption { text-align:left; padding:0 0 12px; font:400 14px/1.55 var(--ui); color:var(--muted); }
+body.web-ponuka .wp-tab th, body.web-ponuka .wp-tab td { padding:12px 16px 12px 0; text-align:left; vertical-align:baseline;
+  border-bottom:1px solid var(--line); }
+body.web-ponuka .wp-tab thead th { font:600 12.5px/1.4 var(--ui); letter-spacing:.06em; text-transform:uppercase; color:var(--muted);
+  border-bottom-color:var(--rule-strong,var(--line)); }
+body.web-ponuka .wp-tab td.n { font-variant-numeric:tabular-nums; white-space:nowrap; }
+body.web-ponuka .wp-tab td.skore { font:600 22px/1.2 var(--display); color:var(--ink); }
+body.web-ponuka .wp-pozn { margin:24px 0 0; max-width:68ch; font:400 15px/1.6 var(--ui); color:var(--body); }
+body.web-ponuka .wp-pozn + .wp-pozn { margin-top:12px; }
+@media (max-width:560px) {
+  body.web-ponuka .wp-tab { font-size:14px; }
+  body.web-ponuka .wp-tab th, body.web-ponuka .wp-tab td { padding-right:10px; }
+  body.web-ponuka .wp-tab td.skore { font-size:19px; }
+}
+/* paper.css do 600 px rozkladá každú tabuľku na karty (display:block, popisy z data-th). Táto má štyri krátke
+   stĺpce, ktoré sa zmestia aj na 320 px, a čísla sa majú dať porovnať v riadku, preto ostáva tabuľkou. */
+@media (max-width:600px) {
+  body.web-ponuka .wp-tab { display:table; width:100%; }
+  body.web-ponuka .wp-tab caption { display:table-caption; width:auto; }
+  body.web-ponuka .wp-tab thead { display:table-header-group; }
+  body.web-ponuka .wp-tab tbody { display:table-row-group; }
+  body.web-ponuka .wp-tab tr { display:table-row; margin:0; padding:0; border:0; border-radius:0; background:none; }
+  body.web-ponuka .wp-tab th, body.web-ponuka .wp-tab td { display:table-cell; width:auto; padding:10px 10px 10px 0;
+    border-bottom:1px solid var(--line); }
+  body.web-ponuka .wp-tab thead th { font-size:11.5px; letter-spacing:.04em; vertical-align:bottom; }
+  body.web-ponuka .wp-tab td::before { content:none; }
+}
+
+/* ── 5. Komu sa hodí a komu nie (vzor .kr-pre-koho) ─────────────────────── */
+body.web-ponuka .wp-pre-koho { display:grid; grid-template-columns:minmax(0,1fr); gap:40px; max-width:1060px; }
+@media (min-width:800px) { body.web-ponuka .wp-pre-koho { grid-template-columns:repeat(2,minmax(0,1fr)); gap:56px; } }
+body.web-ponuka .wp-pre-koho h3 { margin:0 0 12px; }
+body.web-ponuka .wp-zoznam { list-style:none; margin:0; padding:0; border-top:1px solid var(--line); }
+body.web-ponuka .wp-zoznam li { position:relative; margin:0; padding:12px 0 12px 22px; border-bottom:1px solid var(--line);
+  font:400 16px/1.55 var(--ui); color:var(--body); }
+body.web-ponuka .wp-zoznam li::before { content:""; position:absolute; left:2px; top:21px; width:8px; height:8px; border-radius:50%;
+  background:var(--accent); }
+body.web-ponuka .wp-zoznam.wp-nie li::before { border-radius:0; height:2px; top:24px; width:10px; left:1px; background:var(--muted); }
+
+/* ── 6. Záver: e-mail ako jediná akcia ──────────────────────────────────── */
+body.web-ponuka .wp-zaver { display:grid; grid-template-columns:minmax(0,1fr); gap:24px 64px; align-items:center;
+  max-width:1060px; padding:clamp(24px,3vw,40px); border:1px solid var(--line); border-left:3px solid var(--accent);
+  border-radius:var(--radius); background:var(--card); }
+@media (min-width:860px) { body.web-ponuka .wp-zaver { grid-template-columns:minmax(0,1.15fr) minmax(0,1fr); } }
+body.web-ponuka .wp-zaver h2 { margin:0; }
+body.web-ponuka .wp-zaver-akcia { display:flex; flex-direction:column; align-items:stretch; gap:12px; min-width:0; }
+body.web-ponuka .wp-zaver-akcia .btn { width:100%; height:auto; min-height:52px; justify-content:center; font-size:16px; }
+body.web-ponuka .wp-co-napisat { margin:16px 0 0; padding:0 0 0 20px; font:400 16px/1.6 var(--ui); color:var(--body); max-width:56ch; }
+body.web-ponuka .wp-co-napisat li { margin:0 0 4px; }
+body.web-ponuka .wp-drobne { margin:0; font:400 13.5px/1.55 var(--ui); color:var(--muted); }
+
+@media (max-width:560px) {
+  body.web-ponuka .wp-hero .lead { font-size:16.5px; line-height:1.5; }
+  body.web-ponuka .wp-kroky li { padding-left:44px; }
+  body.web-ponuka .wp-kroky li::before { width:32px; font-size:24px; }
+}
+
+/* ── 7. Opravy po bráne web 1 (15. 10. 2026) ─────────────────────────────
+   D1: po .rule nasledoval zoznam s vlastnou hornou linkou, boli to dve rovnobežné čiary rôznej dĺžky (.rule ide cez
+   celú šírku, zoznamy majú max-width). Linku nesie zoznam, takže všetky jeho linky sú rovnako dlhé; .rule pred ním
+   ostáva len ako medzera. */
+body.web-ponuka .rule:has(+ .wp-fakty),
+body.web-ponuka .rule:has(+ .wp-cennik),
+body.web-ponuka .rule:has(+ .wp-kroky) { background:none; }
+
+/* D2: otázky sa otvárajú ťukom na summary, preto výplň patrí jemu (cieľ aspoň 44 px), nie riadku details.
+   Riadok otázky má 23 px, so 11 px hore a dole 45 px; s 5 px na details je rytmus 55 px namiesto 58 px. */
+body.web-ponuka #otazky details { padding:5px 0; }
+body.web-ponuka #otazky details:first-of-type { padding-top:0; }
+body.web-ponuka #otazky summary { padding-top:11px; padding-bottom:11px; }
+
+/* Druhá tabuľka merania (naša predajná stránka) pod tabuľkou ukážkového webu. */
+body.web-ponuka .wp-tab-dalsia { margin-top:32px; }
+
+/* V2: päta bez katalógu produktov. Na stránku služby pre firmy chodia ľudia zo studeného e-mailu; katalóg hier a kníh
+   a veta päty o nástrojoch „bez záruky“ tu riedili dôveru. Ostáva riadok firmy s tlačidlom e-mailu, stĺpec Firma
+   s právnymi odkazmi a spodný riadok so sídlom. Údaj o meraní návštev z vety päty je v tiráži stránky (riadok Návštevy).
+   Čistejšie by to bolo vo spoločnom obale (ops/design/obal.mjs), ten však nie je v rozsahu tejto opravy. */
+body.web-ponuka footer.site-footer .site-foot-cols > [data-skupina],
+body.web-ponuka footer.site-footer > .wrap > .site-all,
+body.web-ponuka footer.site-footer > .wrap > .site-dev,
+body.web-ponuka footer.site-footer .site-foot-legal { display:none; }
+body.web-ponuka footer.site-footer .site-foot-cols { grid-template-columns:minmax(0,1fr); }
+body.web-ponuka footer.site-footer .site-foot-cols ul { display:flex; flex-wrap:wrap; gap:4px 24px; }
+body.web-ponuka footer.site-footer .site-foot-cols ul a { display:inline-block; padding:10px 0; }
