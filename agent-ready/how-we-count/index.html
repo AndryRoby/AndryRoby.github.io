@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; font-src 'self'; img-src 'self' data:; base-uri 'none'; form-action 'none'">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#faf9f5">
+<title>How we count: Agentic Product Check</title>
+<meta name="description" content="Every rule ARLing: Agentic Product Check uses, where it comes from, what makes it fail, how the score and coverage are counted and what the check cannot see.">
+<link rel="canonical" href="https://arling.sk/agent-ready/how-we-count/">
+<style>
+@font-face{font-family:"ARLing Sans";src:url(/fonts/arling-sans.woff2) format("woff2");font-weight:400 700;font-display:optional}
+@font-face{font-family:"ARLing Serif";src:url(/fonts/arling-serif.woff2) format("woff2");font-weight:400 600;font-display:optional}
+:root{--paper:#faf9f5;--paper-deep:#f0eee6;--ink:#141413;--body:#3d3d3a;--muted:#5e5d59;--line:#e4e2d8;--accent:#b23a1d;--accent-dark:#8f2e17;--ok:#4a6b3f;
+--display:"ARLing Sans",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;--text:"ARLing Serif",Georgia,"Times New Roman",serif;--mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+--wrap:min(1120px,calc(100vw - 32px))}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:none;text-size-adjust:none}
+body{margin:0;background:var(--paper);color:var(--body);font:clamp(17px,1.2vw,19px)/1.55 var(--text);-webkit-font-smoothing:antialiased;overflow-wrap:break-word}
+.wrap{width:var(--wrap);margin:0 auto}
+a{color:var(--ink);text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px}
+a:hover{color:var(--accent-dark)}
+:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+.skip{position:absolute;left:-9999px}
+.skip:focus{left:16px;top:12px;background:var(--paper);border:1px solid var(--ink);padding:8px 12px;z-index:9;font-family:var(--display)}
+header{border-bottom:1px solid var(--line)}
+.bar{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:64px;flex-wrap:wrap;padding:10px 0}
+.brand{display:flex;align-items:baseline;gap:10px;color:var(--ink);text-decoration:none;min-width:0}
+.brand b{font:700 21px/1 var(--display);letter-spacing:-.01em}
+.brand span{font:15px/1.2 var(--display);color:var(--muted);border-left:1px solid var(--line);padding-left:10px}
+.bar nav{display:flex;gap:6px 20px;flex-wrap:wrap}
+.bar nav a{font:15px/1 var(--display);color:var(--body);text-decoration:none;padding:14px 0;display:inline-block}
+.bar nav a[aria-current]{color:var(--ink);box-shadow:inset 0 -2px 0 var(--accent)}
+.hero{padding:clamp(40px,6vw,88px) 0 clamp(28px,4vw,48px)}
+.kicker{font:600 13px/1.2 var(--display);letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin:0 0 14px}
+h1{font:700 clamp(34px,4.6vw,58px)/1.08 var(--display);color:var(--ink);letter-spacing:-.02em;margin:0 0 18px;max-width:22ch}
+h2{font:600 clamp(22px,2.2vw,30px)/1.2 var(--display);color:var(--ink);letter-spacing:-.01em;margin:0 0 12px}
+h1,h2,h3,summary{text-wrap:balance}
+h3{font:600 19px/1.3 var(--display);color:var(--ink);margin:0 0 6px}
+p,li{max-width:68ch}
+p{margin:0 0 12px}
+.lede{font-size:clamp(19px,1.5vw,22px);color:var(--body);max-width:60ch}
+.fakty{display:flex;flex-wrap:wrap;gap:6px 18px;margin:20px 0 0;padding:0;list-style:none;font:15px/1.4 var(--display);color:var(--muted)}
+.fakty li{max-width:none}
+section{border-top:1px solid var(--line);padding:clamp(32px,4.5vw,64px) 0}
+.sec{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,9fr);gap:12px clamp(24px,4vw,64px)}
+.n{font:600 15px/1.6 var(--display);color:var(--accent);letter-spacing:.06em}
+.sec>div{min-width:0}
+.pravidlo{display:grid;grid-template-columns:minmax(0,4fr) minmax(0,8fr);gap:6px 28px;padding:18px 0;border-top:1px solid var(--line)}
+.pravidlo:first-of-type{border-top:0;padding-top:4px}
+.pravidlo dl{margin:0;display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 14px}
+.pravidlo dt{font:14px/1.6 var(--display);color:var(--muted)}
+.pravidlo dd{margin:0;min-width:0}
+.vrstva{margin-top:28px}
+.vrstva:first-child{margin-top:0}
+.stitok{display:inline-block;font:600 13px/1 var(--display);letter-spacing:.04em;color:var(--ink);border:1px solid var(--ink);border-radius:4px;padding:6px 8px;margin:0 0 10px}
+.kod{font:13px/1.4 var(--mono);color:var(--muted)}
+.zdroj{overflow-wrap:anywhere}
+ul.linky{list-style:none;padding:0;margin:0 0 12px;max-width:46rem}
+ul.linky li{max-width:none}
+ul.linky li{padding:10px 0;border-top:1px solid var(--line)}
+ul.linky li:first-child{border-top:0}
+.vzorec{font:16px/1.6 var(--mono);color:var(--ink);background:var(--paper-deep);border-left:2px solid var(--accent);padding:12px 14px;margin:8px 0 16px;overflow-wrap:anywhere}
+footer{border-top:1px solid var(--line);padding:32px 0 48px;font:15px/1.6 var(--display);color:var(--muted)}
+footer p{max-width:none;margin:0 0 6px}
+footer a{color:var(--muted)}
+@media (max-width:720px){
+.sec{grid-template-columns:minmax(0,1fr)}
+.pravidlo{grid-template-columns:minmax(0,1fr)}
+.bar nav a{padding:12px 0}
+}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<a class="skip" href="#obsah">Skip to content</a>
+<header>
+<div class="wrap bar">
+<a class="brand" href="https://arling.sk/"><b>ARLing</b><span>Agentic Product Check</span></a>
+<nav aria-label="App pages">
+<a href="../how-we-count/" aria-current="page">How we count</a>
+<a href="../support/">Support</a>
+<a href="../privacy/">Privacy</a>
+</nav>
+</div>
+</header>
+<main id="obsah">
+<div class="wrap hero">
+<p class="kicker">Methodology</p>
+<h1>How we count</h1>
+<p class="lede">Every rule the app uses, where it comes from, what makes it fail and how to fix it. The app only reads product data. It does not predict sales or visibility.</p>
+<ul class="fakty">
+<li>Methodology version 2026-10-15</li>
+<li>Last changed 15 October 2026</li>
+<li>Rule logic version 1.0.0</li>
+</ul>
+</div>
+
+<section>
+<div class="wrap sec">
+<p class="n">01</p>
+<div>
+<h2>What is checked</h2>
+<p>The app reads every product in your store with the read_products permission. Active and unlisted products are checked. Draft and archived products are counted and shown as out of scope, because they cannot appear anywhere a shopper sees them.</p>
+<p>Each rule gives one of three results for each product:</p>
+<ul class="linky">
+<li><strong>Pass:</strong> the data is there and meets the rule.</li>
+<li><strong>Fail:</strong> the data is missing or does not meet the rule. The product is listed under that issue with an Open in admin link.</li>
+<li><strong>Unknown:</strong> the app could not read the data, for example when the store did not allow reading a metafield or a product has more variants or media than one request reads. Unknown is never counted as a pass.</li>
+</ul>
+</div>
+</div>
+</section>
+
+<section>
+<div class="wrap sec">
+<p class="n">02</p>
+<div>
+<h2>Where each rule comes from</h2>
+<p>Every rule carries its origin, so you can tell a published requirement from our own advice.</p>
+<ul class="linky">
+<li><strong>Catalog requirement:</strong> a condition from the published Shopify Catalog requirements. A product that fails one of these may be left out of the catalog.</li>
+<li><strong>Catalog risk:</strong> not a requirement, but a known risk: without a category the product may be classified as Uncategorized.</li>
+<li><strong>Recommended field:</strong> a field Shopify recommends filling in for better product data.</li>
+<li><strong>ARLing heuristic:</strong> our own check with our own threshold. It is not a platform requirement.</li>
+</ul>
+</div>
+</div>
+</section>
+
+<section>
+<div class="wrap sec">
+<p class="n">03</p>
+<div>
+<h2>The rules</h2>
+
+<div class="vrstva">
+<p class="stitok">Catalog requirement</p>
+
+<div class="pravidlo" id="cat_nazov">
+<div><h3>Product title</h3><p class="kod">Rule code (same as in the CSV export): cat_nazov</p></div>
+<dl>
+<dt>Fails when</dt><dd>The product needs a title of at least 3 characters.</dd>
+<dt>Fix</dt><dd>Give the product a descriptive title, not just a code.</dd>
+<dt>Threshold</dt><dd>3 characters</dd>
+<dt>Weight</dt><dd>3</dd>
+<dt>Source</dt><dd class="zdroj"><a href="https://help.shopify.com/en/manual/shopify-catalog/requirements">Shopify Help Center: Shopify Catalog requirements</a></dd>
+</dl>
+</div>
+
+<div class="pravidlo" id="cat_obrazok">
+<div><h3>Product image</h3><p class="kod">Rule code (same as in the CSV export): cat_obrazok</p></div>
+<dl>
+<dt>Fails when</dt><dd>The product needs at least one image with a secure https address.</dd>
+<dt>Fix</dt><dd>Upload at least one product image in your admin.</dd>
+<dt>Weight</dt><dd>3</dd>
+<dt>Source</dt><dd class="zdroj"><a href="https://help.shopify.com/en/manual/shopify-catalog/requirements">Shopify Help Center: Shopify Catalog requirements</a></dd>
+</dl>
+</div>
+
+<div class="pravidlo" id="cat_cena">
+<div><h3>Price above zero</h3><p class="kod">Rule code (same as in the CSV export): cat_cena</p></div>
+<dl>
+<dt>Fails when</dt><dd>Every variant needs a price greater than zero.</dd>
+<dt>Fix</dt><dd>Set a price greater than zero for every variant.</dd>
+<dt>Weight</dt><dd>3</dd>
+<dt>Source</dt><dd class="zdroj"><a href="https://help.shopify.com/en/manual/shopify-catalog/requirements">Shopify Help Center: Shopify Catalog requirements</a></dd>
+</dl>
+</div>
+
+<div class="pravidlo" id="cat_publikovanie">
+<div><h3>Published to the online store</h3><p class="kod">Rule code (same as in the CSV export): cat_publikovanie</p></div>
+<dl>
+<dt>Fails when</dt><dd>The product is not published to the online store sales channel. This check cannot see Hydrogen or headless storefronts.</dd>
+<dt>Fix</dt><dd>Publish the product to your online store sales channel.</dd>
+<dt>Weight</dt><dd>3</dd>
+<dt>Source</dt><dd class="zdroj"><a href="https://help.shopify.com/en/manual/shopify-catalog/requirements">Shopify Help Center: Shopify Catalog requirements</a></dd>
+</dl>
+</div>
+
+<div class="pravidlo" id="cat_status">
+<div><h3>Not unlisted</h3><p class="kod">Rule code (same as in the CSV export): cat_status</p></div>
+<dl>
+<dt>Fails when</dt><dd>Unlisted products can only be opened with a direct link and do not meet the catalog requirements.</dd>
+<dt>Fix</dt><dd>Change the product status from Unlisted to Active.</dd>
+<dt>Weight</dt><dd>3</dd>
+<dt>Source</dt><dd class="zdroj"><a href="https://help.shopify.com/en/manual/shopify-catalog/requirements">Shopify Help Center: Shopify Catalog requirements</a></dd>
+</dl>
+</div>
+
+<div class="pravidlo" id="cat_seo_skryty">
+<div><h3>Not hidden from search engines</h3><p class="kod">Rule code (same as in the CSV export): cat_seo_skryty</p></div>
+<dl>
+<dt>Fails when</dt><dd>The seo.hidden metafield is set to 1, which hides the product from search engines.</dd>
+<dt>Fix</dt><dd>Remove the seo.hidden metafield or set it to 0 if the product should be found.</dd>
+<dt>Weight</dt><dd>3</dd>
+<dt>Source</dt><dd class="zdroj"><a href="https://help.shopify.com/en/manual/promoting-marketing/seo/hide-a-page-from-search-engines">Shopify Help Center: hide a page from search engines</a></dd>
+</dl>
+</div>
+</div>
+
+<div class="vrstva">
+<p class="stitok">Catalog risk</p>
+
+<div class="pravidlo" id="cat_kategoria">
+<div><h3>Category set</h3><p class="kod">Rule code (same as in the CSV export): cat_kategoria</p></div>
+<dl>
+<dt>Fails when</dt><dd>Category not set: the product may be classified as Uncategorized, which the catalog excludes. Its own classification can still differ from the category you set.</dd>
+<dt>Fix</dt><dd>Choose a standard product category in the product details.</dd>
+<dt>Weight</dt><dd>1</dd>
+<dt>Source</dt><dd class="zdroj"><a href="https://help.shopify.com/en/manual/shopify-catalog/requirements">Shopify Help Center: Shopify Catalog requirements</a></dd>
+</dl>
+</div>
+</div>
+
+<div class="vrstva">
+<p class="stitok">Recommended field</p>
+
+<div class="pravidlo" id="rec_typ">
+<div><h3>Product type</h3><p class="kod">Rule code (same as in the CSV export): rec_typ</p></div>
+<dl>
+<dt>Fails when</dt><dd>The product type field is empty. It is a recommended field, separate from the category.</dd>
+<dt>Fix</dt><dd>Fill in the product type.</dd>
+<dt>Weight</dt><dd>1</dd>
+<dt>Source</dt><dd class="zdroj"><a href="https://help.shopify.com/en/manual/shopify-catalog/optimizing-products">Shopify Help Center: optimizing products for Shopify Catalog</a></dd>
+</dl>
+</div>
+
+<div class="pravidlo" id="rec_vyrobca">
+<div><h3>Vendor or brand</h3><p class="kod">Rule code (same as in the CSV export): rec_vyrobca</p></div>
+<dl>
+<dt>Fails when</dt><dd>The vendor field is empty.</dd>
+<dt>Fix</dt><dd>Add the true manufacturer or brand. Never invent one.</dd>
+<dt>Weight</dt><dd>1</dd>
+<dt>Source</dt><dd class="zdroj"><a href="https://help.shopify.com/en/manual/shopify-catalog/optimizing-products">Shopify Help Center: optimizing products for Shopify Catalog</a></dd>
+</dl>
+</div>
+
+<div class="pravidlo" id="rec_moznosti">
+<div><h3>Named variant options</h3><p class="kod">Rule code (same as in the CSV export): rec_moznosti</p></div>
+<dl>
+<dt>Fails when</dt><dd>A product with several variants needs option names (such as Size or Color) and values for each option.</dd>
+<dt>Fix</dt><dd>Name every option and give it values that tell the variants apart.</dd>
+<dt>Weight</dt><dd>2</dd>
+<dt>Source</dt><dd class="zdroj"><a href="https://help.shopify.com/en/manual/shopify-catalog/optimizing-products">Shopify Help Center: optimizing products for Shopify Catalog</a></dd>
+</dl>
+</div>
+
+<div class="pravidlo" id="rec_popis">
+<div><h3>Description</h3><p class="kod">Rule code (same as in the CSV export): rec_popis</p></div>
+<dl>
+<dt>Fails when</dt><dd>The product has no description text.</dd>
+<dt>Fix</dt><dd>Describe material, size and use in the product description.</dd>
+<dt>Weight</dt><dd>2</dd>
+<dt>Source</dt><dd class="zdroj"><a href="https://help.shopify.com/en/manual/shopify-catalog/optimizing-products">Shopify Help Center: optimizing products for Shopify Catalog</a></dd>
+</dl>
+</div>
+
+<div class="pravidlo" id="rec_barcode">
+<div><h3>Valid barcode</h3><p class="kod">Rule code (same as in the CSV export): rec_barcode</p></div>
+<dl>
+<dt>Fails when</dt><dd>A barcode has an invalid GTIN check digit. A missing barcode is not an error.</dd>
+<dt>Fix</dt><dd>Correct the barcode from the manufacturer, or remove it. If the manufacturer assigned one, add it; never invent one.</dd>
+<dt>Weight</dt><dd>0 (shown as an issue, not counted in the score)</dd>
+<dt>Source</dt><dd class="zdroj"><a href="https://shopify.dev/docs/api/liquid/objects/variant">Shopify developer docs: the variant object</a></dd>
+</dl>
+</div>
+</div>
+
+<div class="vrstva">
+<p class="stitok">ARLing heuristic</p>
+
+<div class="pravidlo" id="heu_popis_dlzka">
+<div><h3>Description of 80 characters or more</h3><p class="kod">Rule code (same as in the CSV export): heu_popis_dlzka</p></div>
+<dl>
+<dt>Fails when</dt><dd>The description has fewer than 80 characters of plain text. This is our own threshold, not a platform requirement.</dd>
+<dt>Fix</dt><dd>Add material, size and use details to the description.</dd>
+<dt>Threshold</dt><dd>80 characters of plain text, after HTML tags are removed and entities decoded</dd>
+<dt>Weight</dt><dd>1</dd>
+<dt>Source</dt><dd class="zdroj"><a href="https://help.shopify.com/en/manual/online-sales-channels/agentic-storefronts/products">Shopify Help Center: products in agentic storefronts</a></dd>
+</dl>
+</div>
+
+<div class="pravidlo" id="heu_alt_text">
+<div><h3>Image alt text</h3><p class="kod">Rule code (same as in the CSV export): heu_alt_text</p></div>
+<dl>
+<dt>Fails when</dt><dd>The first product image has no alt text. This is our own check, not a platform requirement.</dd>
+<dt>Fix</dt><dd>Describe the product in the alt text of the first image.</dd>
+<dt>Weight</dt><dd>1</dd>
+<dt>Source</dt><dd class="zdroj"><a href="https://shopify.dev/docs/api/liquid/objects/product">Shopify developer docs: the product object</a></dd>
+</dl>
+</div>
+
+<div class="pravidlo" id="heu_kolekcia">
+<div><h3>In a collection</h3><p class="kod">Rule code (same as in the CSV export): heu_kolekcia</p></div>
+<dl>
+<dt>Fails when</dt><dd>The product is not in any collection. This is our own check, not a platform requirement.</dd>
+<dt>Fix</dt><dd>Add the product to at least one collection.</dd>
+<dt>Weight</dt><dd>1</dd>
+<dt>Source</dt><dd class="zdroj"><a href="https://help.shopify.com/en/manual/shopify-catalog/optimizing-products">Shopify Help Center: optimizing products for Shopify Catalog</a></dd>
+</dl>
+</div>
+</div>
+</div>
+</div>
+</section>
+
+<section>
+<div class="wrap sec">
+<p class="n">04</p>
+<div>
+<h2>The numbers on the overview</h2>
+<p><strong>X of Y products pass all checks.</strong> Y is the number of active and unlisted products. A product passes when none of its rules fails. A rule with an unknown result does not make a product fail, but the product is listed under that rule so you can see what could not be read.</p>
+<p><strong>Score</strong> shows how much of the checked data meets the rules, from 0 to 100. Every rule has a weight. Across all products in scope:</p>
+<p class="vzorec">score = 100 × weight of passed rules ÷ weight of rules that passed or failed</p>
+<p><strong>Coverage</strong> shows how much the app could actually check, from 0 to 100. A rule with an unknown result is left out of the score and lowers coverage instead:</p>
+<p class="vzorec">coverage = 100 × weight of rules that passed or failed ÷ weight of all rules</p>
+<p>The app always shows the score together with its coverage, because a high score from little readable data means little. Both are rounded to whole numbers.</p>
+</div>
+</div>
+</section>
+
+<section>
+<div class="wrap sec">
+<p class="n">05</p>
+<div>
+<h2>What the check cannot see</h2>
+<ul class="linky">
+<li>Whether the catalog places the product in a prohibited category. It uses its own classification.</li>
+<li>Whether the product counts as sensitive content.</li>
+<li>The status and history of your store account.</li>
+<li>A noindex tag added in your theme code. The app has no access to your theme.</li>
+<li>Publication to Hydrogen or headless storefronts.</li>
+</ul>
+<p>Known limits: for each product the app reads the first 10 collections, so a product in more collections is counted with those 10 in the collection overview. A product with more variants or media than one request reads gets unknown for the rules that need all of them.</p>
+</div>
+</div>
+</section>
+
+<section>
+<div class="wrap sec">
+<p class="n">06</p>
+<div>
+<h2>When this page changes</h2>
+<p>When a rule, a weight or a threshold changes, the methodology version and the date at the top change with it. Questions about a rule: <a href="../support/">Support</a>.</p>
+</div>
+</div>
+</section>
+</main>
+<footer>
+<div class="wrap">
+<p>ARLing s. r. o., Ivanská cesta 19112/32E, 821 04 Bratislava, Slovakia</p>
+<p>Company ID 56583486 · VAT ID SK2122352100 · <a href="mailto:support@arling.sk">support@arling.sk</a></p>
+<p><a href="../privacy/">Privacy policy</a> · <a href="../support/">Support</a> · <a href="https://arling.sk/">arling.sk</a></p>
+</div>
+</footer>
+</body>
+</html>
