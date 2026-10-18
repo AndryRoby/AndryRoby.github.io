@@ -52,31 +52,81 @@ export function decodeEntities(s) {
     return n>0 && n<=0x10ffff && !(n>=0xd800 && n<=0xdfff) ? String.fromCodePoint(n) : '\ufffd';
   });
 }
-export function plain(s) { return decodeEntities(String(s||'').replace(/<[^>]*>/g,' ')).replace(/\s+/g,' ').trim(); }
+/* Linear-time scanners (18. 10. 2026). Shop markup is attacker-controlled; the former
+   regular expressions could backtrack quadratically and burn a whole Worker CPU limit.
+   Each scanner returns exactly what its former expression returned (see core.test.mjs). */
+// Former: s.replace(/<[^>]*>/g,' ')
+function stripTags(s){let out='',i=0;for(;;){const lt=s.indexOf('<',i);if(lt<0)break;const gt=s.indexOf('>',lt+1);if(gt<0)break;out+=s.slice(i,lt)+' ';i=gt+1;}return out+s.slice(i);}
+// Former: s.replace(/<!--[\s\S]*?-->/g,'')
+function stripComments(s){let out='',i=0;for(;;){const a=s.indexOf('<!--',i);if(a<0)break;const b=s.indexOf('-->',a+4);if(b<0)break;out+=s.slice(i,a);i=b+3;}return out+s.slice(i);}
+// Former: s.replace(/<(script|style|template|noscript)\b[^>]*>[\s\S]*?<\/\1\s*>/gi,'')
+function stripRawBlocks(s){
+  const open=/<(script|style|template|noscript)\b/gi,unclosed=Object.create(null);
+  let out='',pos=0,gtFrom=-1,gtAt=-1,m;
+  while((m=open.exec(s))){
+    const from=open.lastIndex;
+    if(!(gtAt>=from&&gtFrom<=from)){gtFrom=from;gtAt=s.indexOf('>',from);}
+    if(gtAt<0)break; // no '>' left: no later block can match either
+    const name=m[1].toLowerCase();
+    if(name in unclosed&&unclosed[name]<=gtAt+1){open.lastIndex=m.index+1;continue;}
+    const close=new RegExp('</'+name+'\\s*>','ig');close.lastIndex=gtAt+1;const e=close.exec(s);
+    if(!e){unclosed[name]=gtAt+1;open.lastIndex=m.index+1;continue;}
+    out+=s.slice(pos,m.index);pos=close.lastIndex;open.lastIndex=pos;
+  }
+  return out+s.slice(pos);
+}
+export function plain(s) { return decodeEntities(stripTags(String(s||''))).replace(/\s+/g,' ').trim(); }
 export function httpUrl(s, base) { try {const u=new URL(s,base); return /^https?:$/.test(u.protocol)&&!u.username&&!u.password ? u.href : null;}catch{return null;} }
 export function validGtin(value) {
   const s=String(value||''); if(!/^(\d{8}|\d{12}|\d{13}|\d{14})$/.test(s)) return false;
   let sum=0; for(let i=s.length-2,w=3;i>=0;i--,w=4-w) sum+=Number(s[i])*w;
   return (10-sum%10)%10===Number(s.at(-1));
 }
+/* Former tokenizer: /<!--[\s\S]*?(?:-->|$)|<![^>]*>|<\/?[a-z][^>"']*(?:(?:"[^"]*"|'[^']*')[^>"']*)*>/gi
+   with exec(). Same matches in linear time: a tag scan that runs into the end of input
+   fails, and every (position, quote state) of a failed scan is remembered, so no later
+   scan walks it again. Positions behind a successful match are never scanned again. */
+const isLetter=c=>c>=65&&c<=90||c>=97&&c<=122;
+function tagScanner(html){
+  const n=html.length,dead=new Uint8Array(n+1);
+  return function next(from){
+    for(let i=from;;){
+      const lt=html.indexOf('<',i);if(lt<0)return null;
+      if(html.startsWith('<!--',lt)){const e=html.indexOf('-->',lt+4);return {start:lt,end:e<0?n:e+3,bang:true};}
+      if(html.charCodeAt(lt+1)===33){const g=html.indexOf('>',lt+2);if(g>=0)return {start:lt,end:g+1,bang:true};i=lt+1;continue;}
+      let p=lt+1;if(html.charCodeAt(p)===47)p++;
+      if(!isLetter(html.charCodeAt(p))){i=lt+1;continue;}
+      let state=0,end=-1; // 0 outside quotes, 1 inside "", 2 inside ''
+      for(let q=p+1;q<n;q++){
+        const bit=1<<state;if(dead[q]&bit)break;dead[q]|=bit;
+        const c=html.charCodeAt(q);
+        if(state===0){if(c===62){end=q+1;break;}if(c===34)state=1;else if(c===39)state=2;}
+        else if(c===(state===1?34:39))state=0;
+      }
+      if(end>0)return {start:lt,end,bang:false};
+      i=lt+1;
+    }
+  };
+}
 /* Bounded HTML tokenizer: quoted >, comments, raw script/style and inert template
    contents are handled. It extracts data only; fetched markup is never rendered. */
 export function extractHtml(html, url) {
   html=String(html||''); if(html.length>2_100_000) throw new Error('html_limit');
   const tags=[], blocks=[], links=[]; let invalid=0, inert=0;
-  const re=/<!--[\s\S]*?(?:-->|$)|<![^>]*>|<\/?[a-z][^>"']*(?:(?:"[^"]*"|'[^']*')[^>"']*)*>/gi;
-  let m;
-  while((m=re.exec(html))){
-    if(m[0].startsWith('<!'))continue;
-    const name=/^<\/?([^\s/>]+)/.exec(m[0])[1].toLowerCase(), closing=m[0][1]==='/';
+  const next=tagScanner(html);
+  for(let t=next(0),pos=0;t;t=next(pos)){
+    pos=t.end;
+    if(t.bang)continue;
+    const tag=html.slice(t.start,t.end);
+    const name=/^<\/?([^\s/>]+)/.exec(tag)[1].toLowerCase(), closing=tag[1]==='/';
     if(name==='template'||name==='noscript'){inert=Math.max(0,inert+(closing?-1:1));continue;}
     if(closing)continue;
     const attrs=Object.create(null), ar=/([^\s=<>/]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+)))?/g;
-    const body=m[0].slice(name.length+1,-1); let a;
+    const body=tag.slice(name.length+1,-1); let a;
     while((a=ar.exec(body))){const k=a[1].toLowerCase();if(!(k in attrs))attrs[k]=decodeEntities(a[2]??a[3]??a[4]??'');}
     if(name==='script'||name==='style'||name==='textarea'||name==='title'){
-      const end=new RegExp('</'+name+'\\s*>','ig');end.lastIndex=re.lastIndex;const e=end.exec(html);
-      const raw=html.slice(re.lastIndex,e?e.index:html.length);re.lastIndex=e?end.lastIndex:html.length;
+      const end=new RegExp('</'+name+'\\s*>','ig');end.lastIndex=pos;const e=end.exec(html);
+      const raw=html.slice(pos,e?e.index:html.length);pos=e?end.lastIndex:html.length;
       if(!inert&&name==='script'&&clean(attrs.type).toLowerCase()==='application/ld+json'){
         try{blocks.push(JSON.parse(raw));}catch{invalid++;}
       }
@@ -103,26 +153,56 @@ export function extractHtml(html, url) {
   const ratings=products.flatMap(n=>list(n.aggregateRating)).map(resolve);
   const noindex=tags.some(t=>t.name==='meta'&&/^(robots|googlebot)$/i.test(t.attrs.name||'')&&/\bnoindex\b/i.test(t.attrs.content||''));
   return {blocks:blocks.length,invalid,products,productOffers,offers,returns,shipping,ratings,links:[...new Set(links)],noindex,
-    textLength:plain(html.replace(/<!--[\s\S]*?-->/g,'').replace(/<(script|style|template|noscript)\b[^>]*>[\s\S]*?<\/\1\s*>/gi,'')).length};
+    textLength:plain(stripRawBlocks(stripComments(html))).length};
 }
 const typed=(x,type)=>list(x?.['@type']).some(t=>String(t).replace(/^https?:\/\/schema.org\//,'')===type);
 
 function robotsPath(s){return s.replace(/%[\da-f]{2}/gi,m=>{const n=parseInt(m.slice(1),16);return /[A-Za-z0-9._~-]/.test(String.fromCharCode(n))?String.fromCharCode(n):m.toUpperCase();}).replace(/[^\x00-\x7F]/gu,c=>encodeURIComponent(c));}
-export function robotsAllows(text, agent, path='/') {
-  const groups=[];let current=null, directives=false;
-  for(const line of String(text).split(/\r?\n/)){
-    const m=/^\s*([\w-]+)\s*:\s*(.*?)\s*$/.exec(line.split('#')[0]);if(!m)continue;
-    const key=m[1].toLowerCase(),value=m[2];
+/* robots.txt is parsed once per text (the scan asks about 35 times) and matched without
+   regular expressions: '*' segments are found left to right, which is exact for '*'-only
+   patterns, so hostile rules cannot backtrack. Files over 500 KiB (RFC 9309 section 2.5
+   requires parsing at least that much) or with more than 5000 rules are not evaluated:
+   robotsReadable() is false and callers treat robots as unknown, never as allowed. */
+const ROBOTS_MAX_CHARS=512_000, ROBOTS_MAX_RULES=5_000;
+let robotsMemo=null;
+function parseRobots(text){
+  const src=String(text);
+  if(robotsMemo&&robotsMemo.src===src)return robotsMemo.parsed;
+  const groups=[];let current=null, directives=false, rules=0, readable=src.length<=ROBOTS_MAX_CHARS;
+  if(readable)for(const line of src.split(/\r?\n/)){
+    // Former: /^\s*([\w-]+)\s*:\s*(.*?)\s*$/ on the part before '#'.
+    const before=line.split('#')[0],colon=before.indexOf(':');if(colon<0)continue;
+    const name=before.slice(0,colon).trim(),value=before.slice(colon+1).trim();
+    if(!/^[\w-]+$/.test(name)||/[\r\u2028\u2029]/.test(value))continue;
+    const key=name.toLowerCase();
     if(key==='user-agent') {if(!current||directives){current={agents:[],rules:[]};groups.push(current);directives=false;}current.agents.push(value.toLowerCase());}
-    else if(current&&(key==='allow'||key==='disallow')){directives=true;if(value)current.rules.push({allow:key==='allow',path:robotsPath(value)});}
+    else if(current&&(key==='allow'||key==='disallow')){directives=true;if(value){
+      if(++rules>ROBOTS_MAX_RULES){readable=false;break;}
+      const path=robotsPath(value),anchored=path.endsWith('$'),raw=anchored?path.slice(0,-1):path;
+      current.rules.push({allow:key==='allow',anchored,parts:raw.split('*'),size:new TextEncoder().encode(raw.replace(/\*/g,'')).length});
+    }}
   }
+  const parsed={readable,groups:readable?groups:[]};
+  robotsMemo={src,parsed};return parsed;
+}
+// Former: new RegExp('^'+parts.map(escape).join('.*')+(anchored?'$':'')).test(path)
+function robotsMatch(rule,path){
+  const parts=rule.parts,last=parts.length-1;
+  if(!path.startsWith(parts[0]))return false;
+  if(last===0)return !rule.anchored||path.length===parts[0].length;
+  const end=rule.anchored?path.length-parts[last].length:path.length;let pos=parts[0].length;
+  if(rule.anchored&&(end<pos||!path.endsWith(parts[last])))return false;
+  for(let i=1;i<last;i++){const at=path.indexOf(parts[i],pos);if(at<0||at+parts[i].length>end)return false;pos=at+parts[i].length;}
+  return rule.anchored||path.indexOf(parts[last],pos)>=0;
+}
+export function robotsReadable(text){return parseRobots(text).readable;}
+export function robotsAllows(text, agent, path='/') {
+  const {groups}=parseRobots(text);
   const specific=groups.filter(g=>g.agents.includes(agent.toLowerCase()));
   const selected=specific.length?specific:groups.filter(g=>g.agents.includes('*'));
   let best=-1,allowed=true;path=robotsPath(path);
-  for(const r of selected.flatMap(g=>g.rules)){
-    const anchored=r.path.endsWith('$');const raw=anchored?r.path.slice(0,-1):r.path;
-    const pattern='^'+raw.split('*').map(s=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('.*')+(anchored?'$':'');
-    if(new RegExp(pattern).test(path)){const size=new TextEncoder().encode(raw.replace(/\*/g,'')).length;if(size>best||(size===best&&r.allow)){best=size;allowed=r.allow;}}
+  for(const g of selected)for(const r of g.rules){
+    if(robotsMatch(r,path)&&(r.size>best||(r.size===best&&r.allow))){best=r.size;allowed=r.allow;}
   }
   return allowed;
 }
@@ -173,7 +253,7 @@ export function analyzeStore(snapshot) {
     const r=evidence[kind];put('policy_'+kind,r?[r]:[],x=>goodResource(x)&&extractHtml(x.text,x.url).textLength>=80,{unavailable:r&&![200,404,410].includes(r.status)});
   }
   const robots=evidence.robots;
-  const robotsKnown=goodResource(robots)||[404,410].includes(robots?.status);
+  const robotsKnown=goodResource(robots)&&robotsReadable(robots.text)||[404,410].includes(robots?.status);
   const paths=pageResources.map(r=>{try{const u=new URL(r.url);return u.pathname+u.search;}catch{return '/';}});
   if(!paths.length)paths.push('/');
   const access={};
@@ -190,7 +270,15 @@ export function analyzeStore(snapshot) {
   const pageCoverage=pageResources.length?pages.length/pageResources.length:0;
   const effectiveWeight=r=>r.weight*(r.code.startsWith('jsonld_')?pageCoverage:1);
   const covered=checked.reduce((n,r)=>n+effectiveWeight(r),0), passed=checked.filter(r=>r.status==='pass').reduce((n,r)=>n+effectiveWeight(r),0);
+  // Shopify signals, only from evidence already read (18. 10. 2026): a Shopify-shaped public export,
+  // Shopify's default robots.txt line, or one store page carrying both Shopify CDN files and the
+  // store's myshopify.com name. A text mention alone is not a signal. Plain includes(): linear.
+  const shopify=[];
+  if(products.some(p=>typeof p.handle==='string'&&Array.isArray(p.variants)&&['body_html','product_type','vendor','published_at'].some(k=>Object.hasOwn(p,k))))shopify.push('export');
+  if(goodResource(robots)&&/^#\s*we use shopify as our ecommerce platform/im.test(robots.text))shopify.push('robots');
+  if([evidence.home,evidence.returns,evidence.shipping,evidence.contact,...pageResources].some(r=>goodResource(r)&&r.text.includes('cdn.shopify.com')&&r.text.includes('.myshopify.com')))shopify.push('assets');
   return {version:VERSION,at:snapshot.at,storeUrl:snapshot.storeUrl,platform:products.length?'shopify-public-feed':'html-only',
+    shopify:{detected:shopify.length>0,signals:shopify},
     score:covered&&(products.length||pages.length)?Math.round(100*passed/covered):null,coverage:Math.round(100*covered/total),
     sample:{products:products.length,pages:pages.length,attemptedPages:pageResources.length,limit:20,pageLimit:3},
     rules,access,noindexPages:pages.filter(p=>p.noindex).map(p=>p.url),
