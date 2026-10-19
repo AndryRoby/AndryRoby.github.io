@@ -26,7 +26,7 @@ export const RULES = [
   ['feed_alt','info',0,'product','Image descriptions','Where the public feed exposes alt text, describe the product image. An omitted alt field is unknown; an empty field needs review.'],
   ['jsonld_parse','error',2,'merchant','Readable JSON-LD','Repair invalid application/ld+json blocks. JSON-LD added only by JavaScript is outside this check.'],
   ['jsonld_product','error',3,'merchant','Product structured data','Include a Product or ProductGroup in the initial HTML of the sampled product page. This checker does not inspect Microdata or RDFa.'],
-  ['jsonld_identity','warning',2,'merchant','Product name and image','Give every sampled Product a name and an HTTP(S) image URL that describe that product.'],
+  ['jsonld_identity','warning',2,'merchant','Product name and image','Give every sampled Product, variants included, a name and an HTTP(S) image URL that describe that product. A ProductGroup needs only a name; its variants carry the images.'],
   ['jsonld_offer','error',3,'merchant','Product offers','Attach Offer or AggregateOffer data to the sampled Product, including through @id references or hasVariant.'],
   ['jsonld_price','error',3,'merchant','Price and currency','Use a numeric price and a three-letter currency on each offer. AggregateOffer needs a lowPrice; valid priceSpecification is supported.'],
   ['jsonld_availability','warning',2,'merchant','Offer availability','Use a recognized schema.org availability value on each Offer. AggregateOffer availability is not required here.'],
@@ -237,7 +237,9 @@ export function analyzeStore(snapshot) {
   const pages=pageResources.filter(goodResource).map(r=>({...extractHtml(r.text,r.url),url:r.url}));
   put('jsonld_parse',pages,p=>p.invalid===0);
   put('jsonld_product',pages,p=>p.products.length>0);
-  put('jsonld_identity',pages.filter(p=>p.products.length),p=>p.products.every(x=>clean(x.name)&&list(x.image).some(i=>httpUrl(typeof i==='string'?i:i?.url))));
+  // Google requires only name on a ProductGroup; image belongs to its variant Product nodes, which are
+  // checked here as Products (19. 10. 2026, developers.google.com product-variants, updated 2026-09-08).
+  put('jsonld_identity',pages.filter(p=>p.products.length),p=>p.products.every(x=>clean(x.name)&&(typed(x,'ProductGroup')&&!typed(x,'Product')||list(x.image).some(i=>httpUrl(typeof i==='string'?i:i?.url)))));
   put('jsonld_offer',pages.filter(p=>p.products.length),p=>p.productOffers.every(offers=>offers.length>0));
   put('jsonld_price',pages.filter(p=>p.offers.length),p=>p.offers.every(o=>{
     const price=o.price??(typed(o,'AggregateOffer')?o.lowPrice:undefined);
@@ -275,7 +277,8 @@ export function analyzeStore(snapshot) {
   // store's myshopify.com name. A text mention alone is not a signal. Plain includes(): linear.
   const shopify=[];
   if(products.some(p=>typeof p.handle==='string'&&Array.isArray(p.variants)&&['body_html','product_type','vendor','published_at'].some(k=>Object.hasOwn(p,k))))shopify.push('export');
-  if(goodResource(robots)&&/^#\s*we use shopify as our ecommerce platform/im.test(robots.text))shopify.push('robots');
+  // Older default line, and the current default header "# Shopify storefront. ..." (19. 10. 2026 study: 94 of 113).
+  if(goodResource(robots)&&/^#\s*(?:we use shopify as our ecommerce platform|shopify storefront\.)/im.test(robots.text))shopify.push('robots');
   if([evidence.home,evidence.returns,evidence.shipping,evidence.contact,...pageResources].some(r=>goodResource(r)&&r.text.includes('cdn.shopify.com')&&r.text.includes('.myshopify.com')))shopify.push('assets');
   return {version:VERSION,at:snapshot.at,storeUrl:snapshot.storeUrl,platform:products.length?'shopify-public-feed':'html-only',
     shopify:{detected:shopify.length>0,signals:shopify},
