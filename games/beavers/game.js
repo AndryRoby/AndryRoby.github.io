@@ -1,4 +1,4 @@
-import '../kniha.mjs?v=1';
+import { ponukaPoVyrieseni } from '../kniha.mjs?v=2';
 /* Beavers: the game page. One script for the daily pond, the archive days and
  * the practice sets; the page says which one it is:
  *
@@ -616,6 +616,10 @@ function skontroluj() {
     veta: stavEl, cas: formatCas(sekundy), nahlad: karta.nahlad({ poVlne: !pokojne }),
     redukovany: pokojne,
   });
+  // A book of the same puzzle type, offered only now that the puzzle is solved (../kniha.mjs): one line and
+  // one button under the result, at most once a day per device, never with the celebration turned off in Settings.
+  // Never part of the game: a failure changes nothing.
+  try { ponukaPoVyrieseni('beavers', { bezOslavy: nastavenia.oslava === false }); } catch (e) { /* the offer is not part of the game */ }
   // The result and Share used to be scrolled into view here (a twelve by
   // twelve is about 640 px tall on a wide screen). Since the solve moment the
   // pinned bar carries Share with the card (../karta.js) and the play screen

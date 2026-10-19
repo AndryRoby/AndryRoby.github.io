@@ -1,4 +1,4 @@
-import '../kniha.mjs?v=1';
+import { ponukaPoVyrieseni } from '../kniha.mjs?v=2';
 /* Squirrels: the game page. One script for the daily wood, the archive days
  * and the practice sets; the page says which one it is:
  *
@@ -866,6 +866,10 @@ function skontroluj() {
     veta: stavEl, cas: formatCas(sekundy), nahlad: karta.nahlad({ poVlne: !pokojne }),
     redukovany: pokojne,
   });
+  // A book of the same puzzle type, offered only now that the puzzle is solved (../kniha.mjs): one line and
+  // one button under the result, at most once a day per device, never with the celebration turned off in Settings.
+  // Never part of the game: a failure changes nothing.
+  try { ponukaPoVyrieseni('squirrels', { bezOslavy: nastavenia.oslava === false }); } catch (e) { /* the offer is not part of the game */ }
   return true;
 }
 
