@@ -43,7 +43,7 @@ function render(data,sample,app=null){
   report.focus({preventScroll:true});report.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'start'});
 }
 async function run(sample=false){const request=latest.begin();busy(true);status.textContent=copy.busy;report.hidden=true;let timer;
- transition.then(t=>t?.live()); // HEAD /agent-ready/ starts with the check, so the result renders once, without a late jump
+ transition.then(t=>t?.live()); // GET /agent-ready/stranka.json starts with the check, so the result renders once, without a late jump
  try{let url;
   if(sample)url=new URL('./sample-report.json',import.meta.url);
   else{let value=$('store-url').value.trim();if(!/^https?:\/\//i.test(value))value='https://'+value;const store=new URL(value);if(store.protocol!=='https:'||store.username||store.password||store.hash||store.search)throw new Error('invalid_url');$('store-url').value=store.href;url=new URL(API);url.searchParams.set('url',store.href);const product=$('product-url').value.trim();if(product){const p=new URL(product);if(p.origin!==store.origin||p.protocol!=='https:'||p.username||p.password||p.hash)throw new Error('invalid_url');url.searchParams.set('product',p.href);}}
