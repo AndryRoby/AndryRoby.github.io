@@ -1,7 +1,8 @@
-// ARLing Live: one place that turns data.json, financie.json and experimenty.json into HTML.
+// ARLing Live: one place that turns data.json and experimenty.json into HTML.
 // Used twice: by the browser (live.js, when the 7/30 day switch changes) and by ops/riadenie/globus/stranka.mjs,
 // which writes the same HTML into index.html, so the numbers are readable without JavaScript and by search engines.
 // Every value from the JSON files goes through esc(); numbers are formatted here, never with the visitor's locale.
+// Company finances are not part of this page and never go through this file (A-182, 20 October 2026).
 
 export const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 
@@ -15,13 +16,6 @@ export function pocet(n) {
 }
 /** Value used for sorting and bar length: "<5" counts as 2.5 (somewhere between 1 and 4). */
 export const hodnota = (n) => (typeof n === 'number' ? n : typeof n === 'string' && /^<\d+$/.test(n) ? Number(n.slice(1)) / 2 : 0);
-
-/** 1291.89 -> "€1,291.89", -1266.57 -> "−€1,266.57" (minus sign U+2212, not a dash). */
-export function eur(x) {
-  if (typeof x !== 'number' || !Number.isFinite(x)) return 'not measured';
-  const [cele, centy] = Math.abs(x).toFixed(2).split('.');
-  return (x < 0 ? '−' : '') + '€' + tisice(cele) + '.' + centy;
-}
 
 const MESIACE = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 /** "2026-09-30" -> "30 Sep 2026" with non-breaking spaces, so a date never breaks over two lines. */
@@ -94,47 +88,6 @@ export function htmlTabulka(data) {
 <thead><tr><th scope="col">Country</th><th scope="col">Last 7 days</th><th scope="col">Last 30 days</th></tr></thead>
 <tbody>${riadky.map((k) => `<tr><th scope="row">${esc(k.nazov)}</th><td>${esc(pocet(k.d7))}</td><td>${esc(pocet(k.d30))}</td></tr>`).join('')}</tbody>
 </table>`;
-}
-
-const riadok = (meno, suma, text) => `<li><span class="lr-m">${meno}</span><span class="lr-c">${suma}</span><span class="lr-p">${text}</span></li>`;
-const obdobieCasti = (c) => (c.od && c.do ? `, ${esc(den(c.od))} to ${esc(den(c.do))}` : c.ku ? `, as of ${esc(den(c.ku))}` : c.do ? `, until ${esc(den(c.do))}` : '');
-/** Sentence end without a double full stop ("ARLing s. r. o." already ends with one). */
-const veta = (t) => (/[.!?]$/.test(String(t)) ? String(t) : String(t) + '.');
-
-export function htmlPeniaze(f) {
-  const kanaly = f.trzby.kanaly.map((k) => {
-    const obj = typeof k.objednavky === 'number' && k.objednavky > 0 ? ` ${k.objednavky === 1 ? '1 order' : pocet(k.objednavky) + ' orders'}.` : '';
-    const kedy = k.datum ? ` Source: ${esc(k.zdroj)}, ${esc(den(k.datum))}.` : ` Source: ${esc(k.zdroj)}.`;
-    const dalej = k.odkaz ? ` ${odkazNaProdukt(k.odkaz.url, k.odkaz.text, k.odkaz.produkt)}` : '';
-    return riadok(esc(k.nazov), eur(k.suma), `${esc(k.poznamka)}${obj}${kedy}${dalej}`);
-  }).join('');
-  const casti = f.vydavky.casti.map((c) => {
-    const text = [
-      c.ai ? `AI tools ${eur(c.ai)} of it.` : '',
-      c.odhad ? 'Estimate.' : c.odhadom ? `${eur(c.odhadom)} of it is an estimate.` : '',
-      c.poznamka ? esc(c.poznamka) : '',
-      `Source: ${esc(veta(c.zdroj))}`,
-    ].filter(Boolean).join(' ');
-    return riadok(`${esc(c.nazov)}${obdobieCasti(c)}`, eur(c.suma), text);
-  }).join('');
-  const p = f.predtym;
-  const predtym = p ? `<h3>Before the name ARLing</h3>
-<ul class="live-riadky">${riadok(`The same company, then called ${esc(p.nazov)}, ${esc(den(p.od))} to ${esc(den(p.do))}`, eur(p.suma),
-    `Mostly tax, accounting, registration and ads. ${esc(p.poznamka)} Source: bank statements.`)}</ul>
-<p class="live-pozn">Result including these years: ${eur(f.vysledok.vratanePredtym)}.</p>` : '';
-  return `<div class="live-peniaze">
-<div class="live-velke"><p>Revenue, what customers paid</p><p class="lv-v">${eur(f.trzby.spolu)}</p><p class="lv-p">All time, without tax.</p></div>
-<div class="live-velke"><p>Spent</p><p class="lv-v">${eur(f.vydavky.spolu)}</p><p class="lv-p">AI tools ${eur(f.vydavky.ai)} of it.${f.vydavky.odhadom ? ` ${eur(f.vydavky.odhadom)} is an estimate.` : ''}</p></div>
-<div class="live-velke zle"><p>Result</p><p class="lv-v">${eur(f.vysledok.suma)}</p><p class="lv-p">A loss${f.vysledok.najmenej ? ', at least this much' : ''}. What is not counted yet is listed below.</p></div>
-</div>
-<p class="live-pozn live-pre-vas">What this means for you: our free tools stay free, a company rule since 18${NBSP}October 2026. So far the founder has covered the loss.</p>
-<h3>Revenue by channel</h3>
-<ul class="live-riadky">${kanaly}</ul>
-<p class="live-pozn">${f.trzby.nemerane.map(esc).join(' ')}</p>
-<h3>Where the money went</h3>
-<ul class="live-riadky">${casti}</ul>
-${(f.vydavky.nezapocitane || []).length ? `<p class="live-pozn">Not counted yet: ${f.vydavky.nezapocitane.map(esc).join(' ')}</p>` : ''}
-${predtym}`;
 }
 
 const STAVY = { running: 'Running', waiting: 'Waiting', reworking: 'Being rebuilt', stopped: 'Stopped', failed: 'Did not work', worked: 'Worked', planned: 'Next' };
