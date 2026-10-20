@@ -63,3 +63,48 @@ body.rychlost h1::before,body.rychlost h1::after{content:none}
 @media(max-width:1000px){.rw-cisla{align-items:flex-start;flex-direction:column;gap:32px}.rw-metriky{width:100%}.rw-ponuka{gap:32px}.rw-vysledok-hlava{flex-direction:column;gap:8px}}
 @media(max-width:600px){.rw-uvod{padding:40px 0 40px}.rw-oznacenie{font-size:11px;letter-spacing:.08em;margin-bottom:20px!important}.rw-lead{font-size:18px}.rw-vstup{flex-direction:column}.rw-btn{width:100%;min-height:52px;padding:14px 16px}.rw-info{font-size:13px!important}.rw-cakanie{gap:12px}.rw-cakanie>.rw-text-btn{margin-left:36px}.rw-cakanie>div{max-width:calc(100% - 40px)}.rw-vysledok{padding:32px 0}.rw-kruh{width:112px;height:112px}.rw-cisla{gap:24px;padding:24px 0}.rw-metriky{flex-direction:column;gap:0}.rw-metriky>div{display:grid;grid-template-columns:1fr auto;border-top:1px solid var(--line);padding:16px 0;align-items:baseline}.rw-metriky dd{font-size:24px;margin:0}.rw-metriky p{grid-column:1 / -1;margin:4px 0 0!important}.rw-nalezy{padding-top:24px}.rw-nalezy h3{font-size:22px}#nalezy li{padding-left:36px}.rw-ponuka{display:block;padding-top:32px}.rw-ponuka form{margin-top:32px}.rw-ponuka h3{font-size:26px}.rw-novy-web h3{font-size:18px}.rw-faq{padding:40px 0 48px}}
 @media(prefers-reduced-motion:reduce){.rw-spinner{animation:none}.rw-btn{transition:none}.rw-btn:active{transform:none}}
+/* Pravý stĺpec od 1024 px (20. 10. 2026, Andrej: „chýba mi tam niečo vpravo“): telefón so skutočným výsledkom merania
+   nášho ukážkového webu /web/ukazka/ týmto nástrojom (API 20. 10. 2026 15:03, ops/design/rychlost-webu-2026-10-20.md).
+   Kreslené v CSS a vloženom SVG, bez obrázka a skriptu; pod 1024 px sa vôbec nekreslí. Počas merania ustúpi (stlmí sa),
+   pri výsledku návštevníka zmizne cez visibility, teda bez posunu rozloženia, aby sa ukážka nedala zameniť s jeho číslom. */
+.rw-ukazka{display:none}
+@media(min-width:1024px){.rw-wrap{display:grid;grid-template-columns:minmax(0,880px) clamp(272px,22vw,296px);justify-content:space-between;column-gap:clamp(48px,6vw,96px)}
+.rw-wrap>*{min-width:0;grid-column:1 / -1}
+.rw-wrap>.rw-uvod{grid-column:1;grid-row:1}
+.rw-wrap>.rw-ukazka{display:block;grid-column:2;grid-row:1;align-self:start;margin:clamp(56px,8vw,112px) 0 56px}}
+.rw-wrap:has(#meranie-stav:not([hidden]))>.rw-ukazka .rw-tel{opacity:.32}
+.rw-wrap:has(#vysledok:not([hidden]))>.rw-ukazka{visibility:hidden}
+.rw-ukazka figcaption{margin:0 0 16px;font:400 13.5px/1.55 var(--ui);color:#b5ada6}
+.rw-ukazka figcaption b{display:block;font-weight:600;color:#fafafa}
+.rw-ukazka figcaption a{color:#fafafa;text-decoration:underline;text-decoration-thickness:1px;text-decoration-color:rgba(255,255,255,.3);text-underline-offset:3px;white-space:nowrap;transition:color .16s var(--tik),text-decoration-color .16s var(--tik)}
+.rw-ukazka figcaption a:hover{color:var(--accent-light);text-decoration-color:currentColor}
+.rw-ukazka .rw-tel{padding:10px;border-radius:36px;background:#1c1916;box-shadow:inset 0 0 0 1px rgba(255,255,255,.09),0 0 0 1px #000,0 28px 56px -28px #000;transition:opacity .3s var(--ease)}
+.rw-ukazka .rw-tel-obrazovka{overflow:hidden;padding:0 16px 20px;border-radius:26px;background:#0a0908;font:400 11.5px/1.4 var(--ui);color:#c6c0ba}
+.rw-ukazka .rw-tel-obrazovka::before{content:"";display:block;width:64px;height:18px;margin:8px auto 4px;border-radius:999px;background:#000}
+.rw-ukazka .rw-tel-lista{display:flex;align-items:center;justify-content:space-between;margin:0 -16px;padding:4px 16px 12px;border-bottom:1px solid rgba(255,255,255,.1)}
+.rw-ukazka .rw-tel-lista b{font:700 14px/1 var(--ui);letter-spacing:-.01em;color:#fafafa}
+.rw-ukazka .rw-tel-lista i{position:relative;display:block;width:26px;height:26px;border:1px solid rgba(255,255,255,.16);border-radius:50%}
+.rw-ukazka .rw-tel-lista i::before{content:"";position:absolute;left:7.5px;top:11.5px;width:9px;height:1px;background:#c6c0ba;box-shadow:0 -3px 0 #c6c0ba,0 3px 0 #c6c0ba}
+.rw-ukazka .rw-tel-oznacenie{margin:18px 0 8px;font:600 11px/1.4 var(--ui);letter-spacing:.06em;color:#f2643c}
+.rw-ukazka .rw-tel-domena{font:700 21px/1.15 var(--ui);letter-spacing:-.015em;color:#fafafa}
+.rw-ukazka .rw-tel-url{margin-top:4px;font-size:11px;color:#a6a3a0}
+.rw-ukazka .rw-tel-skore{display:flex;align-items:center;gap:16px;margin:18px 0 16px}
+.rw-ukazka .rw-tel-kruh{position:relative;display:flex;flex:none;flex-direction:column;align-items:center;justify-content:center;width:80px;height:80px}
+.rw-ukazka .rw-tel-kruh svg{position:absolute;inset:0;width:100%;height:100%;fill:none;stroke:rgba(145,189,139,.2);stroke-width:4}
+.rw-ukazka .rw-tel-kruh .rw-tel-oblok{stroke:#91bd8b;transform:rotate(-90deg);transform-origin:center}
+.rw-ukazka .rw-tel-kruh b{position:relative;font:600 27px/1 var(--ui);letter-spacing:-.04em;color:#fafafa}
+.rw-ukazka .rw-tel-kruh small{position:relative;margin-top:4px;font-size:11px;color:#d3c9c1}
+.rw-ukazka .rw-tel-pasmo b{display:block;font:700 15px/1.3 var(--ui);color:#fafafa}
+.rw-ukazka .rw-tel-pasmo small{display:block;margin-top:2px;font-size:11.5px;color:#a6a3a0}
+.rw-ukazka .rw-tel-metriky{margin:0;border-bottom:1px solid rgba(255,255,255,.1)}
+.rw-ukazka .rw-tel-metriky div{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:8px 0;border-top:1px solid rgba(255,255,255,.1)}
+.rw-ukazka .rw-tel-metriky dt{color:#c6c0ba}
+.rw-ukazka .rw-tel-metriky dd{margin:0;font-size:16px;line-height:1.2;color:#fafafa;white-space:nowrap}
+.rw-ukazka .rw-tel-merane{margin:8px 0 16px;font-size:11px;color:#b5ada6}
+.rw-ukazka .rw-tel-nalezy{display:grid;grid-template-columns:24px minmax(0,1fr)}
+.rw-ukazka .rw-tel-nalezy>b{grid-column:1 / -1;margin-bottom:10px;font:700 13.5px/1.3 var(--ui);color:#fafafa}
+.rw-ukazka .rw-tel-cislo{font:400 11px/1.6 var(--mono);color:#b5ada6}
+.rw-ukazka .rw-tel-nazov{font:600 12.5px/1.4 var(--ui);color:#fafafa}
+.rw-ukazka .rw-tel-nalezy small{grid-column:2;margin-top:4px;font-size:11px;color:#c7b79f}
+@media(prefers-reduced-motion:no-preference){.rw-ukazka .rw-tel-kruh .rw-tel-oblok{animation:rw-tel-skore 1.1s var(--ease) .3s both}}
+@keyframes rw-tel-skore{0%{stroke-dasharray:100;stroke-dashoffset:100}99.9%{stroke-dasharray:100;stroke-dashoffset:0}100%{stroke-dasharray:none;stroke-dashoffset:0}}
