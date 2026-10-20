@@ -343,3 +343,30 @@ async function start() {
 }
 
 start();
+
+// Right now (Andrej, 20 Oct 2026): people active on any arling.sk page in the last 5 minutes. The homelab counts them every
+// 30 seconds with the same filters as the globe (no bots, no visits from our own computers) and only that number leaves it,
+// through api.arling.workers.dev/live/teraz. No data or an old count (more than 3 minutes) hides the line.
+const TERAZ = 'https://api.arling.workers.dev/live/teraz';
+function terazVeta(n) {
+  const b = document.createElement('b');
+  if (n === 0) { b.textContent = 'nobody else'; return ['Right now ', b, ' is on arling.sk.']; }
+  b.textContent = n === 1 ? '1 person' : `${n} people`;
+  return n === 1 ? ['Right now ', b, ' is on arling.sk. That may be you.'] : ['Right now ', b, ' are on arling.sk, probably including you.'];
+}
+async function obnovTeraz() {
+  const el = $('teraz');
+  if (!el || document.hidden) return;
+  try {
+    const r = await fetch(TERAZ, { cache: 'no-store' });
+    const d = r.ok ? await r.json() : null;
+    if (!d || !Number.isInteger(d.teraz) || d.teraz < 0) { el.hidden = true; return; }
+    const pozn = document.createElement('small');
+    pozn.textContent = 'Active in the last 5 minutes on any page, counted like the map: no bots and no visits from our own computers.';
+    el.replaceChildren(...terazVeta(d.teraz), pozn);
+    el.hidden = false;
+  } catch { el.hidden = true; }
+}
+obnovTeraz();
+setInterval(obnovTeraz, 30 * 1000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) obnovTeraz(); });
