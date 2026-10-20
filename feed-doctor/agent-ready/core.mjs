@@ -30,8 +30,8 @@ export const RULES = [
   ['jsonld_offer','error',3,'merchant','Product offers','Attach Offer or AggregateOffer data to the sampled Product, including through @id references or hasVariant.'],
   ['jsonld_price','error',3,'merchant','Price and currency','Use a numeric price and a three-letter currency on each offer. AggregateOffer needs a lowPrice; valid priceSpecification is supported.'],
   ['jsonld_availability','warning',2,'merchant','Offer availability','Use a recognized schema.org availability value on each Offer. AggregateOffer availability is not required here.'],
-  ['jsonld_returns','warning',1,'merchant','Structured return policy','Publish a MerchantReturnPolicy on the product offer or Organization. Include applicableCountry and a returnPolicyCategory. Account-level settings cannot be read here.'],
-  ['jsonld_shipping','warning',1,'merchant','Structured shipping','Add OfferShippingDetails with destination and shippingRate, or configure shipping in the merchant platform. This check cannot read private account settings.'],
+  ['jsonld_returns','warning',1,'merchant','Structured return policy','Publish a MerchantReturnPolicy in JSON-LD, either on the offer or on your Organization (hasMerchantReturnPolicy), which Google recommends for a policy that covers your whole shop. Include applicableCountry and returnPolicyCategory, plus merchantReturnDays for a finite window, or a merchantReturnLink on the Organization. If an offer carries its own policy, Google uses it instead of the store-wide one, so it must be complete too. We read the initial HTML of the sampled product pages and, where they open, of your home, return, shipping and contact pages. We cannot see return settings made in Google Merchant Center or Search Console; Google gives those precedence over markup, so this finding does not mean Google lacks your policy.'],
+  ['jsonld_shipping','warning',1,'merchant','Structured shipping','Publish shipping terms in JSON-LD, either as OfferShippingDetails on the offer (shippingDestination, shippingRate and deliveryTime, which Google requires for its shipping details enhancement) or as a ShippingService on your Organization (hasShippingService with shippingConditions and a shippingRate), which Google recommends for terms that cover your whole shop. If an offer carries its own shipping terms, Google uses them instead of the store-wide ones, so they must be complete too. We read the initial HTML of the sampled product pages and, where they open, of your home, return, shipping and contact pages. We cannot see shipping settings made in Google Merchant Center or Search Console; Google gives those precedence over markup, so this finding does not mean Google lacks your shipping terms.'],
   ['jsonld_rating','info',0,'reviews','Review claims need evidence','If you publish AggregateRating, keep the rating and positive review count valid and backed by real reviews visible to shoppers. We cannot authenticate reviews. No rating is required.'],
   ['policy_returns','warning',1,'catalog','Return information','Link to a readable return or refund policy on this shop. We check access and a minimum body, not legal sufficiency.'],
   ['policy_shipping','warning',1,'catalog','Delivery information','Link to readable shipping information on this shop. We do not verify its accuracy or delivery promises.'],
@@ -109,8 +109,11 @@ function tagScanner(html){
   };
 }
 /* Bounded HTML tokenizer: quoted >, comments, raw script/style and inert template
-   contents are handled. It extracts data only; fetched markup is never rendered. */
-export function extractHtml(html, url) {
+   contents are handled. It extracts data only; fetched markup is never rendered.
+   scanHtml also hands back the JSON-LD nodes (store-wide policies are read from them);
+   extractHtml keeps the public shape unchanged, which the test oracle compares. */
+export function extractHtml(html, url) { return scanHtml(html, url).page; }
+function scanHtml(html, url) {
   html=String(html||''); if(html.length>2_100_000) throw new Error('html_limit');
   const tags=[], blocks=[], links=[]; let invalid=0, inert=0;
   const next=tagScanner(html);
@@ -136,8 +139,10 @@ export function extractHtml(html, url) {
     if(tags.length<15000)tags.push({name,attrs});
     if(name==='a'&&attrs.href&&links.length<2000){const href=httpUrl(attrs.href,url);if(href)links.push(href);}
   }
+  // Breadth first, at most 5000 objects. The queue is read by an index: Array.shift() on a long array moves every element, which made
+  // a graph of many small references (about 90 000 queued) cost seconds.
   const nodes=[],candidates=[]; const queue=blocks.map(x=>({x,depth:0,ancillary:false}));
-  while(queue.length&&nodes.length<5000){const {x,depth,ancillary}=queue.shift();if(!x||typeof x!=='object'||depth>32)continue;
+  for(let head=0;head<queue.length&&nodes.length<5000;){const {x,depth,ancillary}=queue[head++];if(!x||typeof x!=='object'||depth>32)continue;
     if(!Array.isArray(x)){nodes.push(x);if(!ancillary)candidates.push(x);}
     for(const [key,value] of Object.entries(x))if(value&&typeof value==='object')queue.push({x:value,depth:depth+1,ancillary:ancillary||['itemListElement','isRelatedTo','isSimilarTo','isVariantOf','itemReviewed'].includes(key)});
   }
@@ -152,8 +157,8 @@ export function extractHtml(html, url) {
   const shipping=offers.flatMap(n=>list(n.shippingDetails)).map(resolve);
   const ratings=products.flatMap(n=>list(n.aggregateRating)).map(resolve);
   const noindex=tags.some(t=>t.name==='meta'&&/^(robots|googlebot)$/i.test(t.attrs.name||'')&&/\bnoindex\b/i.test(t.attrs.content||''));
-  return {blocks:blocks.length,invalid,products,productOffers,offers,returns,shipping,ratings,links:[...new Set(links)],noindex,
-    textLength:plain(stripRawBlocks(stripComments(html))).length};
+  return {nodes,page:{blocks:blocks.length,invalid,products,productOffers,offers,returns,shipping,ratings,links:[...new Set(links)],noindex,
+    textLength:plain(stripRawBlocks(stripComments(html))).length}};
 }
 const typed=(x,type)=>list(x?.['@type']).some(t=>String(t).replace(/^https?:\/\/schema.org\//,'')===type);
 
@@ -210,7 +215,198 @@ const numeric=v=>(typeof v==='number'||typeof v==='string'&&/^\d+(?:\.\d+)?$/.te
 const available=new Set(['BackOrder','Discontinued','InStock','InStoreOnly','LimitedAvailability','OnlineOnly','OutOfStock','PreOrder','PreSale','SoldOut']);
 const goodResource=r=>r?.status===200&&typeof r.text==='string';
 
-export function analyzeStore(snapshot) {
+/* Store-wide policy markup (20. 10. 2026, gate fixes 20. 10. 2026). Google recommends one return policy and one shipping policy
+   for the whole shop under Organization (hasMerchantReturnPolicy; hasShippingService holding a ShippingService), written on "a
+   single page" of the site, and treats Offer-level markup as the override: an offer that carries a policy of its own is judged by
+   that policy, never by the store-wide one ("If you provide both organization-level and product-level return policy markup, Google
+   defaults to the product-level return policy"). An Offer may point to the global policy on another page with a bare {"@id"}.
+   Return and shipping settings in Merchant Center, Search Console or the Content API outrank all markup and are not public.
+   Sources, all last updated 2026-09-08: developers.google.com/search/docs/appearance/structured-data/ merchant-listing,
+   return-policy, shipping-policy and organization. Only pages the scan already holds are read (product pages, home, return,
+   shipping and contact page); nothing is requested.
+   Markup is foreign input, so following references is bounded (the same care as the linear parsers above): a reference list
+   is read at most POLICY_CAP entries long and each distinct @id once, a bare reference is looked up once per reader and page, every
+   node (an offer's policy, a ShippingService, each ShippingConditions, a deliveryTime) is judged once per reader, and one
+   analyzeStore call may spend POLICY_BUDGET units in all: LOOKUP_COST for each @id looked up, ENTRY_COST for each list entry
+   walked, one unit for each key of a definition that is copied into a reference. Walking a list from memory is cheap but not free,
+   so it is counted too. When the units run out, what is still undecided is "unverifiable". */
+// Organization and its subtypes: Corporation, LocalBusiness and the Store and Shop kinds (OnlineStore, ClothingStore, ...).
+const isOrganization=n=>list(n['@type']).some(t=>/^(?:\w*Organization|Corporation|\w*Business|\w*Store|\w*Shop)$/.test(String(t).replace(/^https?:\/\/schema.org\//,'')));
+const POLICY_CAP=200; // entries taken from any one list, so hostile markup stays cheap
+const POLICY_BUDGET=2_000_000; // units of work per analyzeStore call (about 0.7 s at the worst); when they run out the rule is "unverifiable", never ok or missing
+const LOOKUP_COST=16; // an @id lookup parses an IRI, searches pages and may merge nodes (a few microseconds)
+const ENTRY_COST=1; // one list entry walked (a Set and a Map probe)
+const OUT_OF_BUDGET=Symbol('policy_budget');
+const REF_KEYS=new Set(['@id','@type','@context']);
+const hasContent=n=>{for(const k in n)if(!REF_KEYS.has(k))return true;return false;};
+const iri=(id,base)=>{try{return new URL(id,base).href;}catch{return String(id);}};
+const keyOf=(g,id)=>{let k=g.keys.get(id);if(k===undefined){k=iri(id,g.url);g.keys.set(id,k);}return k;};
+// The nodes of one page by absolute @id, so a reference can be found on another page of the same shop. Nodes sharing an @id are
+// merged (the later one wins). An entry is "full" when it holds more than @id and @type; a lookup prefers a full definition on
+// any page to an empty typed stub, and a bare {"@id"} is only a reference.
+function nodeGraph(nodes,url){
+  const g={nodes,url,index:new Map(),known:new WeakSet(),keys:new Map()};
+  for(const n of nodes){
+    const id=n['@id'];if(typeof id!=='string')continue;
+    let more=false;for(const k in n)if(k!=='@id'){more=true;break;}
+    if(!more)continue;
+    const key=keyOf(g,id),old=g.index.get(key),full=hasContent(n);
+    if(!old)g.index.set(key,{node:n,full,own:false,size:-1});
+    else{
+      // The merged node is one copy of our own that every later definition is added to in place (never the page's own objects), so the work
+      // stays linear in the markup however many nodes share an @id; copying the whole node for each of them took 83 s for 1 MB.
+      if(!old.own){old.node={...old.node};old.own=true;}
+      for(const k in n){if(k==='__proto__')Object.defineProperty(old.node,k,{value:n[k],writable:true,enumerable:true,configurable:true});else old.node[k]=n[k];}
+      old.full=old.full||full;old.size=-1;
+    }
+    g.known.add(n);
+  }
+  return g;
+}
+// Google's Option A (applicableCountry and returnPolicyCategory, plus merchantReturnDays for a finite window). Option B,
+// a merchantReturnLink, is documented for the Organization-level policy only.
+const returnPolicyOk=(r,g,storeWide)=>typed(r,'MerchantReturnPolicy')&&(
+  !!r.applicableCountry&&/^https?:\/\/schema.org\/MerchantReturn(?:FiniteReturnWindow|NotPermitted|UnlimitedWindow)$/.test(r.returnPolicyCategory||'')&&(String(r.returnPolicyCategory).endsWith('FiniteReturnWindow')?numeric(r.merchantReturnDays):true)
+  ||storeWide&&typeof r.merchantReturnLink==='string'&&!!httpUrl(r.merchantReturnLink,g.url));
+// An offer's shippingRate is a MonetaryAmount with value or maxValue and a currency; the conditions of a ShippingService
+// may also use ShippingRateSettings (orderPercentage or weightPercentage).
+const moneyRateOk=r=>!!r&&typeof r==='object'&&(numeric(r.value)||numeric(r.maxValue))&&/^[A-Z]{3}$/.test(r.currency||'');
+const conditionRateOk=r=>moneyRateOk(r)||!!r&&typeof r==='object'&&(numeric(r.orderPercentage)||numeric(r.weightPercentage));
+// Shipping times in OfferShippingDetails.deliveryTime: a QuantitativeValue needs minValue, maxValue (whole, non-negative) and unitCode DAY or d.
+const daysOk=q=>!!q&&typeof q==='object'&&[q.minValue,q.maxValue].every(v=>numeric(v)&&Number.isInteger(Number(v)))&&(q.unitCode==='DAY'||q.unitCode==='d');
+const unique=offers=>{const seen=new Set();return offers.filter(o=>{const id=o['@id'];if(typeof id!=='string')return true;if(seen.has(id))return false;seen.add(id);return true;});};
+function policyEngine(budgetStart=POLICY_BUDGET){
+  let budget=budgetStart;
+  // x with its definition merged in when it is a reference; null for a bare {"@id"} that no page we read defines.
+  function follow(x,g,others){
+    const id=x['@id'];
+    if(typeof id!=='string')return {node:x,g,ref:false};
+    if((budget-=LOOKUP_COST)<0)throw OUT_OF_BUDGET;
+    const key=keyOf(g,id),empty=!hasContent(x);
+    let stub=null;
+    for(let i=-1;i<others.length;i++){
+      const h=i<0?g:others[i],e=h.index.get(key);if(!e)continue;
+      // The stored node already holds what x says when x is one of the page's own nodes (and for a mere reference, unless it adds a type).
+      const same=h.known.has(x)||empty&&(!x['@type']||e.node['@type']);
+      // Merging copies the whole definition, so it costs one unit for each of its keys (a huge definition named by many references would otherwise take minutes).
+      if(!same&&(budget-=e.size<0?(e.size=Object.keys(e.node).length):e.size)<0)throw OUT_OF_BUDGET;
+      const f={node:same?e.node:{...e.node,...x},g:h,ref:empty};
+      if(e.full)return f;
+      stub??=f;
+    }
+    if(stub)return stub;
+    return empty&&Object.keys(x).length===1?null:{node:x,g,ref:empty};
+  }
+  // Each distinct @id once per list (equal ids are one node), each resolved node once; null (one entry) stands for references nobody
+  // defines. A bare reference is looked up once per reader and page (`refs`), however many lists name it.
+  const isBare=x=>{for(const k in x)if(k!=='@id')return false;return true;};
+  function followAll(v,g,others,refs){
+    const out=[],ids=new Set(),nodes=new Set(),items=list(v).slice(0,POLICY_CAP);let open=false,cache=refs.get(g);
+    if((budget-=items.length*ENTRY_COST)<0)throw OUT_OF_BUDGET;
+    if(!cache)refs.set(g,cache=new Map());
+    for(const x of items){
+      if(!x||typeof x!=='object')continue;
+      const id=x['@id'];let f;
+      if(typeof id==='string'){
+        if(ids.has(id))continue;ids.add(id);
+        if(isBare(x)){f=cache.get(id);if(f===undefined){f=follow(x,g,others);cache.set(id,f);}}
+        else f=follow(x,g,others);
+      }else f=follow(x,g,others);
+      if(!f){if(!open){open=true;out.push(null);}continue;}
+      if(nodes.has(f.node))continue;
+      nodes.add(f.node);out.push(f);
+    }
+    return out;
+  }
+  const orgCache=new WeakMap();
+  function orgsOf(g){
+    let orgs=orgCache.get(g);
+    if(!orgs){
+      orgs=[];const seen=new Set();
+      if((budget-=g.nodes.length*ENTRY_COST)<0)throw OUT_OF_BUDGET;
+      for(const n of g.nodes){
+        if(orgs.length>=POLICY_CAP)break;
+        if(!isOrganization(n))continue;
+        const f=follow(n,g,[]);
+        if(f&&!seen.has(f.node)){seen.add(f.node);orgs.push(f.node);}
+      }
+      orgCache.set(g,orgs);
+    }
+    return orgs;
+  }
+  // A reader looks up references in a page and in `others` (the other pages of the shop); what it has judged it remembers per node and
+  // what it has looked up per page. There is one reader per set of other pages, shared by every page of the call.
+  const readers=new Map();
+  function makeReader(others){
+    const memo={ret:[new WeakMap(),new WeakMap()],svc:new WeakMap(),cond:new WeakMap(),time:new WeakMap(),det:new WeakMap(),sw:new WeakMap(),po:new WeakMap()};
+    const once=(m,node,compute)=>{let v=m.get(node);if(v===undefined){v=compute();m.set(node,v);}return v;};
+    const refs=new Map();
+    const all=(v,g)=>followAll(v,g,others,refs);
+    const returnOk=(f,storeWide)=>once(memo.ret[storeWide?1:0],f.node,()=>returnPolicyOk(f.node,f.g,storeWide));
+    // ShippingConditions: a destination is optional (all destinations when missing) but needs a country when given; a rate is needed.
+    // Judged once per node, however many services name it.
+    const conditionOk=c=>once(memo.cond,c.node,()=>{
+      const to=all(c.node.shippingDestination,c.g);
+      return (!to.length||to.some(d=>d&&d.node.addressCountry))&&all(c.node.shippingRate,c.g).some(r=>r&&conditionRateOk(r.node));
+    });
+    // ShippingService: shippingConditions is required.
+    const serviceOk=f=>once(memo.svc,f.node,()=>typed(f.node,'ShippingService')&&all(f.node.shippingConditions,f.g).some(c=>c&&conditionOk(c)));
+    // deliveryTime: handlingTime and transitTime are each optional, at least one is given, and every one given is valid.
+    const timeOk=t=>once(memo.time,t.node,()=>{const parts=['handlingTime','transitTime'].map(k=>all(t.node[k],t.g));return parts.some(p=>p.length)&&parts.every(p=>!p.length||p.some(q=>q&&daysOk(q.node)));});
+    const inlineOk=d=>all(d.node.shippingDestination,d.g).some(x=>x&&x.node.addressCountry)&&all(d.node.shippingRate,d.g).some(r=>r&&moneyRateOk(r.node))&&all(d.node.deliveryTime,d.g).some(t=>t&&timeOk(t));
+    // OfferShippingDetails: ok with destination, rate and deliveryTime, or when it points to a valid ShippingService; "open" when that service is nowhere defined.
+    const detailsOk=d=>once(memo.det,d.node,()=>{
+      if(!typed(d.node,'OfferShippingDetails'))return 'bad';
+      if(inlineOk(d))return 'ok';
+      let open=false;
+      for(const s of all(d.node.hasShippingService,d.g)){if(!s)open=true;else if(serviceOk(s))return 'ok';}
+      return open?'open':'bad';
+    });
+    // A policy of an offer's own: an object with content, or a typed object without an @id (an empty MerchantReturnPolicy is an incomplete one).
+    const isOwn=f=>!f||hasContent(f.node)||typeof f.node['@id']!=='string'&&f.node['@type']!=null;
+    return {
+      // The offers whose policies count. Google: "merchant listings require an Offer" (merchant-listing), so an AggregateOffer is left out when
+      // the page has an Offer; with none, the Offers inside AggregateOffer nodes count, and a page with nothing but bare AggregateOffer
+      // nodes keeps judging them (the store-wide policy decides).
+      policyOffers(g,offers){
+        return once(memo.po,offers,()=>{
+          const plain=offers.filter(o=>typed(o,'Offer'));
+          if(plain.length)return plain;
+          const nested=[],seen=new Set();
+          for(const o of offers)for(const f of all(o.offers,g))if(f&&typed(f.node,'Offer')&&!seen.has(f.node)){seen.add(f.node);nested.push(f.node);}
+          return nested.length?nested:offers;
+        });
+      },
+      // What one offer says of its own: 'none' (no policy of this kind), 'ok', 'bad' (it has one and it is not valid), 'open' (it points to one nobody defines).
+      // An offer that has a policy of its own is judged by it alone; the store-wide policy never rescues it.
+      offerStatus(kind,g,o){
+        const entries=all(kind==='returns'?o.hasMerchantReturnPolicy:o.shippingDetails,g).filter(isOwn);
+        if(!entries.length)return 'none';
+        let open=false;
+        for(const f of entries){
+          if(!f){open=true;continue;}
+          if(kind==='returns'){if(returnOk(f,f.ref))return 'ok';}
+          else{const s=detailsOk(f);if(s==='ok')return 'ok';if(s==='open')open=true;}
+        }
+        return open?'open':'bad';
+      },
+      // The store-wide policies on the Organization nodes of one page: valid ones (ok) and references nobody defines (open).
+      storeWide(g){
+        return once(memo.sw,g,()=>{
+          const ok={returns:false,shipping:false},open={returns:false,shipping:false};
+          for(const org of orgsOf(g)){
+            for(const f of all(org.hasMerchantReturnPolicy,g)){if(!f)open.returns=true;else if(returnOk(f,true))ok.returns=true;}
+            for(const f of all(org.hasShippingService,g)){if(!f)open.shipping=true;else if(serviceOk(f))ok.shipping=true;}
+          }
+          return {ok,open};
+        });
+      },
+    };
+  }
+  return {reader(others){let r=readers.get(others);if(!r){r=makeReader(others);readers.set(others,r);}return r;}};
+}
+
+export function analyzeStore(snapshot, options = {}) {
   const evidence=snapshot.resources||{}; const results=new Map();
   const put=(code,items,predicate,{unavailable=false,info=false}={})=>{
     const known=items.filter(x=>x!=null);const affected=known.filter(x=>!predicate(x));
@@ -234,7 +430,11 @@ export function analyzeStore(snapshot) {
   put('feed_alt',images,i=>plain(i.alt).length>0,{info:true});
 
   const pageResources=(snapshot.productPages||[]).slice(0,3);
-  const pages=pageResources.filter(goodResource).map(r=>({...extractHtml(r.text,r.url),url:r.url}));
+  // One parse per resource, shared by the product-page rules, the policy pages and the store-wide policy lookup.
+  const scanned=new Map();
+  const scan=r=>{let s=scanned.get(r);if(!s){s=scanHtml(r.text,r.url);s.url=r.url;scanned.set(r,s);}return s;};
+  const graphOf=s=>s.graph??(s.graph=nodeGraph(s.nodes,s.url));
+  const pages=pageResources.filter(goodResource).map(r=>{const s=scan(r);return {...s.page,url:r.url,scan:s,uniqueOffers:unique(s.page.offers)};});
   put('jsonld_parse',pages,p=>p.invalid===0);
   put('jsonld_product',pages,p=>p.products.length>0);
   // Google requires only name on a ProductGroup; image belongs to its variant Product nodes, which are
@@ -247,12 +447,65 @@ export function analyzeStore(snapshot) {
     return list(o.priceSpecification).some(s=>numeric(s?.price)&&/^[A-Z]{3}$/.test(s?.priceCurrency||'')&&!s.priceType&&!s.validForMemberTier);
   }));
   put('jsonld_availability',pages.filter(p=>p.offers.some(o=>!typed(o,'AggregateOffer'))),p=>p.offers.filter(o=>!typed(o,'AggregateOffer')).every(o=>available.has(String(o.availability||'').replace(/^https?:\/\/schema.org\//,''))));
-  put('jsonld_returns',pages.filter(p=>p.products.length),p=>p.returns.some(r=>typed(r,'MerchantReturnPolicy')&&r.applicableCountry&&/^https?:\/\/schema.org\/MerchantReturn(?:FiniteReturnWindow|NotPermitted|UnlimitedWindow)$/.test(r.returnPolicyCategory||'')&&(String(r.returnPolicyCategory).endsWith('FiniteReturnWindow')?numeric(r.merchantReturnDays):true)));
-  put('jsonld_shipping',pages.filter(p=>p.offers.length),p=>p.shipping.some(s=>typed(s,'OfferShippingDetails')&&s.shippingDestination?.addressCountry&&s.shippingRate&&numeric(s.shippingRate.value)&&/^[A-Z]{3}$/.test(s.shippingRate.currency||'')));
+  // Returns and shipping (20. 10. 2026): an offer that carries a policy of its own is judged by that policy alone; an offer without one
+  // is covered by a valid policy on an Organization node of the product page or of the home, return, shipping or contact page, which
+  // are read only when a product page needs them. A page is "missing" the policy when one of its offers plainly lacks it, and
+  // "unverifiable" when that cannot be told: a page we tried and could not read (a timeout, an HTTP error other than 404 or 410, a
+  // redirect we do not follow, a page robots.txt closes to us but not to Googlebot), a reference to a policy no page we read defines,
+  // or the reference budget spent. A page that does not exist, has no link, or that robots.txt closes to every crawler cannot carry
+  // markup Google would use. Settings in Merchant Center or Search Console are never visible here.
+  const engine=policyEngine(options?.policyBudget),NO_GRAPHS=[]; // one reader for the product page alone, one for the page with the shop's other pages
+  const googlebotMayRead=r=>{const ro=evidence.robots;try{const u=new URL(r.url);return goodResource(ro)&&robotsReadable(ro.text)&&robotsAllows(ro.text,'Googlebot',u.pathname+u.search);}catch{return false;}};
+  let siteMemo=null;
+  const site=()=>{
+    if(siteMemo)return siteMemo;
+    const graphs=[],unread={returns:false,shipping:false};
+    for(const kind of ['home','returns','shipping','contact']){
+      const r=evidence[kind];if(!r)continue;
+      let g=null;
+      if(goodResource(r)){try{g=graphOf(scan(r));}catch{}}
+      else if([404,410].includes(r.status)||r.error==='policy_link_not_found'||r.error==='robots_prevented_fetch'&&!googlebotMayRead(r))continue;
+      if(g){graphs.push(g);continue;}
+      if(kind==='home'||kind==='returns')unread.returns=true;
+      if(kind==='home'||kind==='shipping')unread.shipping=true;
+    }
+    const found={ok:{returns:false,shipping:false},open:{returns:false,shipping:false}};
+    try{
+      const rd=engine.reader(graphs);
+      for(const g of graphs){const w=rd.storeWide(g);for(const k of ['returns','shipping']){found.ok[k]=found.ok[k]||w.ok[k];found.open[k]=found.open[k]||w.open[k];}}
+    }catch(e){if(e!==OUT_OF_BUDGET)throw e;found.open.returns=found.open.shipping=true;}
+    return siteMemo={graphs,unread,found};
+  };
+  const verdict=(kind,p)=>{
+    try{
+      const g=graphOf(p.scan);
+      let rd=engine.reader(NO_GRAPHS),s=null;
+      let offers=rd.policyOffers(g,p.uniqueOffers),states=offers.map(o=>rd.offerStatus(kind,g,o));
+      let needStore=!states.length||states.includes('none'),sw=needStore?rd.storeWide(g):null;
+      if(states.includes('open')||needStore&&!sw.ok[kind]){
+        s=site();rd=engine.reader(s.graphs);
+        offers=rd.policyOffers(g,p.uniqueOffers);states=offers.map(o=>rd.offerStatus(kind,g,o));
+        needStore=!states.length||states.includes('none');sw=needStore?rd.storeWide(g):null;
+      }
+      let covered='ok';
+      if(needStore&&!sw.ok[kind]){
+        s??=site();
+        covered=s.found.ok[kind]?'ok':sw.open[kind]||s.found.open[kind]||s.unread[kind]?'open':'bad';
+      }
+      const judged=(states.length?states:['none']).map(x=>x==='none'?covered:x);
+      return judged.includes('bad')?'missing':judged.includes('open')?'unverifiable':'ok';
+    }catch(e){if(e!==OUT_OF_BUDGET)throw e;return 'unverifiable';}
+  };
+  const policyRule=(code,kind,items)=>{
+    const verdicts=new Map(items.map(p=>[p,verdict(kind,p)])),all=[...verdicts.values()];
+    put(code,items,p=>verdicts.get(p)!=='missing',{unavailable:!all.includes('missing')&&all.includes('unverifiable')});
+  };
+  policyRule('jsonld_returns','returns',pages.filter(p=>p.products.length));
+  policyRule('jsonld_shipping','shipping',pages.filter(p=>p.offers.length));
   const ratings=pages.flatMap(p=>p.ratings);
   put('jsonld_rating',ratings,r=>{const n=Number(r.ratingValue),max=Number(r.bestRating??5),min=Number(r.worstRating??1),count=Number(r.reviewCount??r.ratingCount);return Number.isFinite(n)&&min<=n&&n<=max&&max>min&&Number.isInteger(count)&&count>0;},{info:true});
   for(const kind of ['returns','shipping','contact']){
-    const r=evidence[kind];put('policy_'+kind,r?[r]:[],x=>goodResource(x)&&extractHtml(x.text,x.url).textLength>=80,{unavailable:r&&![200,404,410].includes(r.status)});
+    const r=evidence[kind];put('policy_'+kind,r?[r]:[],x=>goodResource(x)&&scan(x).page.textLength>=80,{unavailable:r&&![200,404,410].includes(r.status)});
   }
   const robots=evidence.robots;
   const robotsKnown=goodResource(robots)&&robotsReadable(robots.text)||[404,410].includes(robots?.status);

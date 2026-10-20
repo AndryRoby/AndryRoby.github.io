@@ -82,6 +82,9 @@
 
       button.disabled = true;
       button.textContent = '...';
+      // Stará chyba zmizne pri novom pokuse. Inak po chybe siete a úspešnom opakovaní svietila chyba aj poďakovanie
+      // naraz (brána AI fix P10, 20. 10. 2026, Chrome aj Firefox). Pri novej chybe sa nižšie ukáže znova.
+      if (chyba) chyba.hidden = true;
 
       fetch(ENDPOINT, {
         method: 'POST',
@@ -101,6 +104,7 @@
           // Formulár s vloženým style="display:grid" by atribút hidden ignoroval a ostal by viditeľný
           // s tlačidlom „...“ nad potvrdením (paper v3 pokus 3, dokazy-p3/predaj, platilo aj pred v3).
           form.style.display = 'none';
+          if (chyba) chyba.hidden = true;
           if (vdaka) {
             vdaka.hidden = false;
             // Potvrdenie má tabindex="-1": fokus naň, aby ho čítačka ohlásila a bolo v okne.
