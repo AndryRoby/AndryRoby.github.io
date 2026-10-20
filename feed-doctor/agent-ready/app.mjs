@@ -1,12 +1,16 @@
 import {RULES} from './core.mjs';
-import {UI,localRule} from './i18n.mjs';
+import {UI,localRule,EU_UI} from './i18n.mjs?v=2';
 import {createLatest} from './controller.mjs';
-const lang=document.documentElement.lang,copy=UI[lang]||UI.en;
+const lang=document.documentElement.lang,copy=UI[lang]||UI.en,euCopy=EU_UI[lang]||EU_UI.en;
 const $=id=>document.getElementById(id),form=$('check-form'),report=$('report'),status=$('status'),latest=createLatest();
 const API='https://feed-monitor.arling.workers.dev/v1/agent-ready/check';
 let currentReport=null;
 // Optional module: if prechod.mjs is missing or fails, only the next step for Shopify stores is hidden.
 const transition=import('./prechod.mjs').then(m=>({m,live:m.createAppPageCheck()}),()=>null);
+// EU 2026 findings (A-189, 20. 10. 2026) and the Pro waitlist: optional modules too; without them the check works as before.
+// cakacia.mjs also wires the waitlist form already on the page as soon as it loads.
+const euModule=import('./eu-zobraz.mjs').catch(()=>null);
+const waitlist=import('./cakacia.mjs').catch(()=>null);
 function node(tag,text,cls){const el=document.createElement(tag);if(text!=null)el.textContent=String(text);if(cls)el.className=cls;return el;}
 function track(name,data){if(new URLSearchParams(location.search).has('test'))return;try{window.umami?.track(name,data);}catch{}}
 function safeLink(url){try{const u=new URL(url);return u.protocol==='https:'&&!u.username&&!u.password?u.href:null;}catch{return null;}}
@@ -25,7 +29,42 @@ function appBlock(app,sample){const c=copy.app,box=node('div',null,'ar-next'),ti
   const why=app.signals.map(s=>c.signals?.[s]).filter(Boolean);
   const reason=sample?c.sampleWhy:why.length?c.why+' '+why.join(', ')+'.':'';
   box.append(title,node('p',c.text),node('p',c.terms,'ar-muted'),link);if(reason)box.append(node('p',reason,'ar-muted ar-why'));return box;}
-function render(data,sample,app=null){
+const quote=s=>lang==='en'?`“${s}”`:`„${s}“`;
+function outLink(text,href){const a=node('a',text);a.href=href;a.rel='noopener';a.target='_blank';return a;}
+// EU rules for online shops, 2026: one row per finding, each with what we found, a manual check, the law and its link.
+function euBlock(rows){
+  const box=node('section',null,'ar-eu');box.setAttribute('aria-labelledby','ar-eu-nadpis');
+  const h=node('h3',euCopy.title);h.id='ar-eu-nadpis';box.append(h);
+  if(!Array.isArray(rows)){box.append(node('p',rows==='failed'?euCopy.failed:euCopy.missing,'ar-status'));return box;}
+  box.append(node('p',euCopy.intro,'ar-eu-intro'));
+  const list=node('ol',null,'ar-eu-list');
+  for(const r of rows){
+    const li=node('li',null,'ar-eu-item'),head=node('div',null,'ar-eu-head');
+    const badge=node('span',r.badge,'ar-eu-badge');badge.dataset.tone=r.tone;
+    head.append(node('h4',r.title),badge);li.append(head,node('p',r.applies,'ar-eu-applies'),node('p',r.what,'ar-eu-what'));
+    const result=node('div',null,'ar-eu-result');
+    for(const l of r.lines){
+      if(l.finding){const f=l.finding,p=node('div',null,'ar-eu-finding');
+        p.append(node('p',quote(f.term),'ar-eu-term'),node('p',f.where,'ar-eu-where'));
+        if(f.context)p.append(node('p',f.context,'ar-eu-context'));
+        p.append(node('p',f.example,'ar-muted'));for(const n of f.notes)p.append(node('p',n,'ar-muted'));
+        result.append(p);continue;}
+      const p=node('p',l.text,l.muted?'ar-muted':null);
+      if(l.href){p.append(' ');p.append(outLink(l.href.replace(/^https:\/\//,'').slice(0,80),l.href));}
+      result.append(p);
+    }
+    li.append(result);
+    if(r.manual){const m=node('p',null,'ar-eu-manual');m.append(node('strong',euCopy.manual+':'),' '+r.manual);li.append(m);}
+    const law=node('p',null,'ar-eu-law');law.append(node('span',euCopy.law+': '));
+    r.law.forEach(([text,href],i)=>{if(i)law.append('; ');law.append(outLink(text,href));});
+    li.append(law);list.append(li);
+  }
+  box.append(list,node('p',euCopy.footer,'ar-muted ar-eu-footer'));
+  const cal=node('a',euCopy.calendar[0],'ar-eu-calendar');cal.href=euCopy.calendar[1];cal.dataset.umamiEvent='ar_check_to_calendar';
+  box.append(cal);
+  return box;
+}
+function render(data,sample,app=null,eu=null,wl=null,platform='unknown'){
   if(!data||data.version!=='1.0.0'||!Array.isArray(data.rules)||!data.sample||!data.rules.every(r=>RULES.some(def=>def.code===r.code)&&['pass','fail','unknown','info'].includes(r.status)&&Number.isInteger(r.checked)&&Number.isInteger(r.affected)))throw new Error('invalid_report');
   currentReport=data;report.replaceChildren();report.hidden=false;
   if(sample)report.append(node('p',copy.sample,'ar-status'));
@@ -36,6 +75,9 @@ function render(data,sample,app=null){
   const failing=data.rules.filter(r=>r.status==='fail').sort((a,b)=>RULES.find(r=>r.code===b.code).weight-RULES.find(r=>r.code===a.code).weight);
   report.append(node('h3',copy.fixes));const ul=node('ul',null,'ar-list');for(const r of failing)ul.append(ruleElement(r));if(!failing.length)report.append(node('p',copy.empty));else report.append(ul);
   if(copy.readsTitle)report.append(limitsBlock());
+  if(eu){const state=eu.euState(data);report.append(euBlock(state==='ok'?eu.euView(data.eu,euCopy):state));}
+  // Pro je appka pre Shopify: obchod bez znakov Shopify dostane vetu namiesto formulára (brána A-189 pokus 1, nález 9b).
+  if(wl)report.append(platform==='no'?wl.buildNote(lang):wl.buildWaitlist(lang,sample?'sample':'result',platform));
   if(app&&copy.app)report.append(appBlock(app,sample));
   const all=node('details');all.append(node('summary',copy.all));const allList=node('ul',null,'ar-list');for(const r of data.rules)allList.append(ruleElement(r));all.append(allList);report.append(all);
   const proof=node('details');proof.append(node('summary',copy.proof));const urls=node('ul',null,'ar-proof');for(const e of data.evidence||[]){const li=node('li');const href=safeLink(e.url),a=node(href?'a':'span',e.url||'');if(href){a.href=href;a.rel='noopener';a.target='_blank';}li.append(a,node('span',` · HTTP ${e.status||'?'}${e.error?' · '+e.error:''}`));urls.append(li);}proof.append(urls);report.append(proof);
@@ -46,16 +88,24 @@ async function run(sample=false){const request=latest.begin();busy(true);status.
  transition.then(t=>t?.live()); // GET /agent-ready/stranka.json starts with the check, so the result renders once, without a late jump
  try{let url;
   if(sample)url=new URL('./sample-report.json',import.meta.url);
-  else{let value=$('store-url').value.trim();if(!/^https?:\/\//i.test(value))value='https://'+value;const store=new URL(value);if(store.protocol!=='https:'||store.username||store.password||store.hash||store.search)throw new Error('invalid_url');$('store-url').value=store.href;url=new URL(API);url.searchParams.set('url',store.href);const product=$('product-url').value.trim();if(product){const p=new URL(product);if(p.origin!==store.origin||p.protocol!=='https:'||p.username||p.password||p.hash)throw new Error('invalid_url');url.searchParams.set('product',p.href);}}
+  else{let value=$('store-url').value.trim();if(!/^https?:\/\//i.test(value))value='https://'+value;const store=new URL(value);if(store.protocol!=='https:'||store.username||store.password||store.hash||store.search)throw new Error('invalid_url');$('store-url').value=store.href;url=new URL(API);url.searchParams.set('url',store.href);const product=$('product-url').value.trim();if(product){const p=new URL(product);if(p.origin!==store.origin||p.protocol!=='https:'||p.username||p.password||p.hash)throw new Error('invalid_url');url.searchParams.set('product',p.href);}
+   // Umami: a check that was sent (not the sample, not an invalid address); language only, never the store address.
+   track('ar_check_start',{lang});}
   timer=setTimeout(()=>{if(request.current()){latest.cancel();busy(false);status.textContent=copy.error;}},65000);
   const response=await fetch(url,{signal:request.signal,credentials:'omit',cache:'no-store'});if(!request.current())return;
   if(!response.ok)throw new Error(response.status===503?'unavailable':response.status===429?'rate':'fetch');
   const data=await response.json();if(!request.current())return;
   const t=await transition,next=t?t.m.shopifyEvidence(data):{shopify:false,signals:[]};
   const showApp=next.shopify&&Boolean(copy.app)&&await t.live();if(!request.current())return;
-  render(data,sample,showApp?{...next,url:t.m.APP_URL,clickData:t.m.appClickData}:null);status.textContent='';track(sample?'agent_ready_sample':'agent_ready_check',{score:data.score,coverage:data.coverage,products:data.sample.products,pages:data.sample.pages,lang});
+  const [eu,wl]=await Promise.all([euModule,waitlist]);if(!request.current())return;
+  const platform=t?(next.shopify?'yes':'no'):'unknown';
+  render(data,sample,showApp?{...next,url:t.m.APP_URL,clickData:t.m.appClickData}:null,eu,wl,platform);status.textContent='';
+  const euEvent=eu?eu.euEvent(data.eu,lang):null;
+  track(sample?'agent_ready_sample':'agent_ready_check',{score:data.score,coverage:data.coverage,products:data.sample.products,pages:data.sample.pages,lang,eu:euEvent?'yes':'no'});
+  // Umami: EU findings that need a look (statuses and their count only); the sample is never counted.
+  if(!sample&&euEvent&&euEvent.review>0)track('ar_eu_finding',euEvent);
  }catch(e){if(request.current()){status.textContent=copy[e.message]||copy.error;report.hidden=true;}}finally{clearTimeout(timer);if(request.current())busy(false);}}
 form.addEventListener('submit',e=>{e.preventDefault();run();});$('sample').addEventListener('click',()=>run(true));
 $('cancel').addEventListener('click',()=>{latest.cancel();busy(false);status.textContent=copy.cancelled;report.hidden=true;});
 for(const id of ['store-url','product-url'])$(id).addEventListener('input',()=>{latest.cancel();busy(false);status.textContent='';report.hidden=true;});
-document.querySelector('[data-pro-link]').addEventListener('click',()=>track('kupa_click',{product:'feed-monitor-pro',place:'agent-ready',lang}));
+document.querySelector('[data-pro-link]')?.addEventListener('click',()=>track('kupa_click',{product:'feed-monitor-pro',place:'agent-ready',lang}));

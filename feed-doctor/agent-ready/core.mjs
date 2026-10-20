@@ -113,9 +113,18 @@ function tagScanner(html){
    scanHtml also hands back the JSON-LD nodes (store-wide policies are read from them);
    extractHtml keeps the public shape unchanged, which the test oracle compares. */
 export function extractHtml(html, url) { return scanHtml(html, url).page; }
+// EU 2026 checks (20. 10. 2026) read three more things in the same pass: the labels of links and buttons (with aria-label, title and
+// the value of submit inputs), the alt text of images and the visible text. They are kept outside `page`, so extractHtml keeps its shape.
+// Bounded like the rest: a label is read only when its element spans at most CONTROL_SPAN characters, at most CONTROL_CAP labels and
+// ALT_CAP alt texts per page, each cut to LABEL_CAP characters, and at most EU_TEXT_CAP characters of visible text.
+const CONTROL_SPAN=2000, CONTROL_CAP=3000, ALT_CAP=500, LABEL_CAP=200, EU_TEXT_CAP=400_000;
+const cut=(s,n)=>{s=String(s||'').replace(/\s+/g,' ').trim();return s.length>n?s.slice(0,n):s;};
 function scanHtml(html, url) {
   html=String(html||''); if(html.length>2_100_000) throw new Error('html_limit');
-  const tags=[], blocks=[], links=[]; let invalid=0, inert=0;
+  const tags=[], blocks=[], links=[], controls=[], alts=[]; let invalid=0, inert=0;
+  // One open link and one open button at a time: a nested or unclosed one replaces the older, so each character is sliced at most twice.
+  const open={a:null,button:null};
+  const control=(tag,attrs,text)=>{if(controls.length<CONTROL_CAP)controls.push({tag,text:cut(text,LABEL_CAP),aria:cut(attrs['aria-label'],LABEL_CAP),title:cut(attrs.title,LABEL_CAP),href:tag==='a'?String(attrs.href||'').slice(0,2048):''});};
   const next=tagScanner(html);
   for(let t=next(0),pos=0;t;t=next(pos)){
     pos=t.end;
@@ -123,7 +132,11 @@ function scanHtml(html, url) {
     const tag=html.slice(t.start,t.end);
     const name=/^<\/?([^\s/>]+)/.exec(tag)[1].toLowerCase(), closing=tag[1]==='/';
     if(name==='template'||name==='noscript'){inert=Math.max(0,inert+(closing?-1:1));continue;}
-    if(closing)continue;
+    if(closing){
+      const o=(name==='a'||name==='button')&&open[name];
+      if(o){open[name]=null;if(t.start-o.at<=CONTROL_SPAN)control(name,o.attrs,plain(html.slice(o.at,t.start)));}
+      continue;
+    }
     const attrs=Object.create(null), ar=/([^\s=<>/]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+)))?/g;
     const body=tag.slice(name.length+1,-1); let a;
     while((a=ar.exec(body))){const k=a[1].toLowerCase();if(!(k in attrs))attrs[k]=decodeEntities(a[2]??a[3]??a[4]??'');}
@@ -138,6 +151,9 @@ function scanHtml(html, url) {
     if(inert)continue;
     if(tags.length<15000)tags.push({name,attrs});
     if(name==='a'&&attrs.href&&links.length<2000){const href=httpUrl(attrs.href,url);if(href)links.push(href);}
+    if(name==='a'||name==='button')open[name]={at:pos,attrs};
+    else if(name==='input'&&/^(?:submit|button)$/i.test(clean(attrs.type))&&attrs.value)control('input',attrs,attrs.value);
+    else if(name==='img'&&attrs.alt&&alts.length<ALT_CAP)alts.push(cut(attrs.alt,LABEL_CAP));
   }
   // Breadth first, at most 5000 objects. The queue is read by an index: Array.shift() on a long array moves every element, which made
   // a graph of many small references (about 90 000 queued) cost seconds.
@@ -157,8 +173,9 @@ function scanHtml(html, url) {
   const shipping=offers.flatMap(n=>list(n.shippingDetails)).map(resolve);
   const ratings=products.flatMap(n=>list(n.aggregateRating)).map(resolve);
   const noindex=tags.some(t=>t.name==='meta'&&/^(robots|googlebot)$/i.test(t.attrs.name||'')&&/\bnoindex\b/i.test(t.attrs.content||''));
-  return {nodes,page:{blocks:blocks.length,invalid,products,productOffers,offers,returns,shipping,ratings,links:[...new Set(links)],noindex,
-    textLength:plain(stripRawBlocks(stripComments(html))).length}};
+  const text=plain(stripRawBlocks(stripComments(html)));
+  return {nodes,eu:{controls,alts,text:text.length>EU_TEXT_CAP?text.slice(0,EU_TEXT_CAP):text},
+    page:{blocks:blocks.length,invalid,products,productOffers,offers,returns,shipping,ratings,links:[...new Set(links)],noindex,textLength:text.length}};
 }
 const typed=(x,type)=>list(x?.['@type']).some(t=>String(t).replace(/^https?:\/\/schema.org\//,'')===type);
 
@@ -406,6 +423,211 @@ function policyEngine(budgetStart=POLICY_BUDGET){
   return {reader(others){let r=readers.get(others);if(!r){r=makeReader(others);readers.set(others,r);}return r;}};
 }
 
+/* EU rules for online shops, 2026 (20. 10. 2026). Three deterministic findings, separate from the score and its weights: each says only
+   what we found or did not find in the pages already read (no extra request, no AI), never whether a shop complies with the law.
+   Whatever public pages cannot show reliably (a function behind a login, a notice drawn in an image, a claim backed by an ecolabel) is
+   left to a manual check, never reported as an error. Sources, read in the Official Journal texts on 20. 10. 2026:
+   - eu_withdrawal: Art. 11a of Directive 2011/83/EU, inserted by Art. 1(3) of Directive (EU) 2023/2673, applied from 19. 6. 2026
+     (Art. 2(1)); the labels are the words of Art. 11a(1) and 11a(3) in each language version. SK: § 20a of Act No. 108/2024 Coll.,
+     inserted by Act No. 311/2025 Coll.
+   - eu_guarantee_notice: Art. 6(1)(l) and Art. 22a of Directive 2011/83/EU as amended by Art. 2(3)(b) and 2(5) of Directive (EU) 2024/825,
+     applied from 27. 9. 2026 (Art. 4(1)); design and content in Annex I of Commission Implementing Regulation (EU) 2025/1960, applied from
+     27. 9. 2026 (Art. 3). The sentences and addresses below are read from the notice images of its EN, DE, SK and CS versions.
+     SK: § 5(1)(f) of Act No. 108/2024 Coll. as amended by Act No. 310/2025 Coll.
+   - eu_green_claims: point 4a (generic environmental claims) and 4c (neutral, reduced or positive impact based on offsetting) of Annex I
+     of Directive 2005/29/EC, inserted by Directive (EU) 2024/825 (Art. 1(4) and its Annex), applied from 27. 9. 2026. The phrases are the
+     examples of recitals 9 and 12 in the EN, DE, SK and CS versions, with their inflected forms. Left out on purpose: "green", "grün",
+     "zelené" alone (in product data mostly a colour) and "bio" alone (a protected organic term, Art. 30 and Annex IV of Regulation (EU)
+     2018/848). SK: Annex 1 point 6 of Act No. 108/2024 Coll. as amended by Act No. 310/2025 Coll. */
+export const EU_VERSION = 1;
+export const EU_RULES = Object.freeze([
+  Object.freeze({code:'eu_withdrawal',from:'2026-06-19',celex:['32023L2673','32011L0083'],sk:'https://www.slov-lex.sk/ezbierky/pravne-predpisy/SK/ZZ/2024/108/'}),
+  Object.freeze({code:'eu_guarantee_notice',from:'2026-09-27',celex:['32024L0825','32025R1960'],sk:'https://www.slov-lex.sk/ezbierky/pravne-predpisy/SK/ZZ/2024/108/'}),
+  Object.freeze({code:'eu_green_claims',from:'2026-09-27',celex:['32024L0825','32005L0029'],sk:'https://www.slov-lex.sk/ezbierky/pravne-predpisy/SK/ZZ/2024/108/'}),
+]);
+// Art. 11a(1) "withdraw from contract here" and Art. 11a(3) "confirm withdrawal" in the language versions of Directive (EU) 2023/2673.
+export const WITHDRAWAL_LABELS = Object.freeze({
+  en:['withdraw from contract here','confirm withdrawal'], de:['Vertrag widerrufen','Widerruf bestätigen'],
+  sk:['odstúpiť od zmluvy tu','potvrdiť odstúpenie od zmluvy'], cs:['zde odstoupit od smlouvy','potvrdit odstoupení od smlouvy'],
+  pl:['odstąp od umowy tutaj','potwierdź odstąpienie od umowy'], fr:['renoncer au contrat ici','confirmer la rétractation'],
+  it:['recedere dal contratto qui','conferma recesso'], es:['desistir del contrato aquí','confirmar desistimiento'],
+  nl:['hier de overeenkomst herroepen','herroeping bevestigen'],
+});
+// The main sentence of the harmonised notice (Annex I of Implementing Regulation (EU) 2025/1960) and the Your Europe address printed under its QR code.
+export const NOTICE_SENTENCES = Object.freeze({
+  en:'Minimum two-year legal guarantee protection for goods sold in the European Union.',
+  de:'Mindestens zwei Jahre gesetzliche Gewährleistung der Vertragsmäßigkeit für Waren, die in der Europäischen Union verkauft werden.',
+  sk:'Minimálne dvojročná zákonná záruka na tovar predávaný v Európskej únii.',
+  cs:'Ochrana poskytovaná minimálně dvouletou zákonnou zárukou na zboží prodávané v Evropské unii.',
+});
+export const NOTICE_ADDRESSES = Object.freeze(['europa.eu/youreurope/guarantees','europa.eu/youreurope/garantien','europa.eu/youreurope/záruky_sk','europa.eu/youreurope/záruky_cs']);
+// [language(s), example as the directive words it, point of Annex I, pattern on text without diacritics, protected organic term].
+// Patterns are written without diacritics because the text is folded (á to a, š to s; ß stays) before matching.
+const L='\\p{L}*', CO2='co[2\\u2082]';
+export const GREEN_TERMS = Object.freeze([
+  ['en','environmentally friendly','4a','environment(?:al(?:ly)?)?[\\s-]*friendly'],
+  ['en','eco-friendly','4a','eco[\\s-]*friendly'],
+  ['en',"nature's friend",'4a',"nature['\\u2019]?s[\\s-]+friend"],
+  ['en','ecological','4a','ecological(?:ly)?'],
+  ['en','environmentally correct','4a','environmentally[\\s-]+correct'],
+  ['en','climate friendly','4a','climate[\\s-]*friendly'],
+  ['en','gentle on the environment','4a','gentle\\s+on\\s+the\\s+environment'],
+  ['en','carbon friendly','4a','carbon[\\s-]*friendly'],
+  ['en','energy efficient','4a','energy[\\s-]*efficient'],
+  ['en','biodegradable','4a','bio[\\s-]?degradable'],
+  ['en','biobased','4a','bio[\\s-]?based'],
+  ['en','climate neutral','4c','climate[\\s-]*neutral'],
+  ['en','CO2 neutral certified','4c',`(?:${CO2}|carbon)[\\s-]*neutral`],
+  ['en','carbon positive','4c','carbon[\\s-]*positive'],
+  ['en','climate net zero','4c','climate\\s+net[\\s-]*zero'],
+  ['en','climate compensated','4c','climate[\\s-]*compensated'],
+  ['en','reduced climate impact','4c','reduced\\s+climate\\s+impact'],
+  ['en','limited CO2 footprint','4c',`limited\\s+(?:${CO2}|carbon)\\s+footprint`],
+  ['de','umweltfreundlich','4a','umweltfreundlich'+L],
+  ['de','umweltschonend','4a','umweltschonend'+L],
+  ['de','naturfreundlich','4a','naturfreundlich'+L],
+  ['de','ökologisch','4a','o(?:e)?kologisch'+L,true],
+  ['de','umweltgerecht','4a','umweltgerecht'+L],
+  ['de','klimafreundlich','4a','klimafreundlich'+L],
+  ['de','umweltverträglich','4a','umweltvertr(?:a|ae)glich'+L],
+  ['de','CO2-freundlich','4a',`${CO2}[\\s-]*freundlich`+L],
+  ['de','energieeffizient','4a','energieeffizient'+L],
+  ['de','biologisch abbaubar','4a','biologisch\\s+abbaubar'+L],
+  ['de','biobasiert','4a','bio[\\s-]?basiert'+L],
+  ['de','klimaneutral','4c','klimaneutral'+L],
+  ['de','zertifiziert CO2-neutral','4c',`${CO2}[\\s-]*neutral`+L],
+  ['de','CO2-positiv','4c',`${CO2}[\\s-]*positiv`+L],
+  ['de','mit Klimaausgleich','4c','klimaausgleich'+L],
+  ['de','klimaschonend','4c','klimaschonend'+L],
+  ['de','mit reduziertem CO2-Fußabdruck','4c',`reduziert${L}\\s+${CO2}[\\s-]*fu(?:\\u00df|ss)abdruck`+L],
+  ['sk','šetrné k životnému prostrediu','4a',`setrn${L}\\s+k\\s+(?:zivotnemu\\s+prostrediu|zp)`],
+  ['sk','environmentálne vhodné','4a','environmentalne\\s+vhodn'+L],
+  ['sk','priateľské k prírode','4a',`priatelsk${L}\\s+k\\s+prirode`],
+  ['sk cs','ekologické','4a','ekologick'+L,true],
+  ['sk','environmentálne správne','4a','environmentalne\\s+spravn'+L],
+  ['sk','šetrné ku klíme','4a',`setrn${L}\\s+ku?\\s+klim`+L],
+  ['sk','neškodiace životnému prostrediu','4a',`neskodiac${L}\\s+zivotnemu\\s+prostrediu`],
+  ['sk','nízkouhlíkové','4a','nizkouhlikov'+L],
+  ['sk','energeticky účinné','4a','energeticky\\s+ucinn'+L],
+  ['sk cs','biologicky rozložiteľné','4a','biologicky\\s+rozlozitel'+L],
+  ['sk cs','klimaticky neutrálne','4c','klimaticky\\s+neutraln'+L],
+  ['sk cs','certifikované CO2 neutrálne','4c',`(?:${CO2}[\\s-]*|uhlikov[oe]\\s+)neutraln`+L],
+  ['sk cs','uhlíkovo pozitívne','4c','uhlikov[oe]\\s+pozitiv'+L],
+  ['sk','s kompenzáciou vo vzťahu ku klíme','4c',`kompenzaci${L}\\s+vo\\s+vztahu\\s+ku\\s+klime`],
+  ['sk','znížený vplyv na klímu','4c',`znizen${L}\\s+vplyv${L}\\s+na\\s+klimu`],
+  ['sk','znížená stopa CO2','4c',`znizen${L}\\s+(?:stop${L}\\s+${CO2}|uhlikov${L}\\s+stop${L})`],
+  ['cs','environmentálně šetrné','4a','environmentalne\\s+setrn'+L],
+  ['cs','ekologicky šetrné','4a','ekologicky\\s+setrn'+L,true],
+  ['cs','přátelské k přírodě','4a',`pratelsk${L}\\s+k\\s+prirode`],
+  ['cs','šetrné k životnímu prostředí','4a',`setrn${L}\\s+k\\s+(?:zivotnimu\\s+prostredi|zp)`],
+  ['cs','šetrné ke klimatu','4a',`setrn${L}\\s+ke\\s+klimatu`],
+  ['cs','jemné k životnímu prostředí','4a',`jemn${L}\\s+k\\s+zivotnimu\\s+prostredi`],
+  ['cs','uhlíkově šetrné','4a','uhlikove\\s+setrn'+L],
+  ['cs','energeticky úsporné','4a','energeticky\\s+usporn'+L],
+  ['cs','na biologické bázi','4a','na\\s+biologicke\\s+bazi'],
+  ['cs','bez dopadu na klima','4c','bez\\s+dopadu\\s+na\\s+klima'],
+  ['cs','vykompenzované z hlediska klimatu','4c',`vykompenzovan${L}\\s+z\\s+hlediska\\s+klimatu`],
+  ['cs','se sníženým dopadem na klima','4c','snizenym\\s+dopadem\\s+na\\s+klima'],
+  ['cs','s omezenou uhlíkovou stopou','4c','omezenou\\s+uhlikovou\\s+stopou'],
+  ['cs','certifikované jako neutrální z hlediska CO2','4c',`neutraln${L}\\s+z\\s+hlediska\\s+${CO2}`],
+].map(([lang,example,point,pattern,organic=false])=>Object.freeze({lang,example,point,organic,
+  re:new RegExp('(?<![\\p{L}\\p{N}])(?:'+pattern+')(?![\\p{L}\\p{N}])','giu')})));
+const GREEN_TEXT_CAP=20_000, GREEN_FINDINGS_CAP=12, EU_EVIDENCE_CAP=3;
+// Fold Latin letters to their base letter one by one (á to a, ő to o), so indices in the folded text match the original text.
+const foldLatin=s=>String(s).normalize('NFC').replace(/[\u00c0-\u024f\u1e00-\u1eff]/g,c=>{const f=c.normalize('NFD').replace(/[\u0300-\u036f]/g,'');return f.length===1?f:c;});
+// Dashes and spaces that shop markup uses inside words (non-breaking hyphen, en dash, soft hyphen, no-break space) become plain ones;
+// a soft hyphen written as &shy; survives decodeEntities (which the Shopify app shares character for character), so it goes here.
+const unify=s=>String(s).replace(/\u00ad|&shy;/gi,'').replace(/[\u2010-\u2015\u2212]/g,'-').replace(/[\u00a0\u2007\u202f]/g,' ');
+const words=s=>foldLatin(unify(s)).toLowerCase().replace(/[^\p{L}\p{N}]+/gu,' ').trim();
+const LABELS=Object.entries(WITHDRAWAL_LABELS).flatMap(([lang,[label,confirm]])=>[[lang,'function',words(label).split(' ')],[lang,'confirm',words(confirm).split(' ')]]);
+// Consent and cookie controls ("withdraw consent", "Einwilligung widerrufen", "Confirm withdrawal of consent") are never about the contract
+// (gate A-189 pokus 1, nález 2): neither an official label nor a similar link.
+const CONSENT=/consent|cookie|einwilligung|zustimmung|datenschutz|suhlas|souhlas|zgod|consentement|consenso|consentimiento|toestemming/;
+// An official label: its words in order, with at most two other words around or between them ("withdraw from the contract here").
+function officialLabel(text){
+  const t=words(text);if(CONSENT.test(t))return null;
+  const w=t.split(' ').filter(Boolean);if(!w.length||w.length>12)return null;
+  for(const [lang,kind,p] of LABELS){if(w.length>p.length+2)continue;let i=0;for(const x of w)if(x===p[i])i++;if(i===p.length)return {lang,kind};}
+  return null;
+}
+// Words about withdrawal that are not the label of the function (a policy page, the model form); consent and cookie links are left out.
+const SIMILAR=/withdraw|widerruf|odstup|odstoup|odstap|retract|renoncer au contrat|recess|reced|desist|herroep/;
+const similarLabel=text=>{const t=words(text);return t.length>0&&t.length<=80&&SIMILAR.test(t)&&!CONSENT.test(t);};
+const NOTICE_WORDS=Object.entries(NOTICE_SENTENCES).map(([lang,s])=>[lang,words(s)]);
+const ADDRESS_WORDS=NOTICE_ADDRESSES.map(a=>foldLatin(a).toLowerCase());
+// A link to the Your Europe pages on the legal guarantee (where the QR code of the notice leads), whatever the language section.
+const youreuropeLink=href=>{let u;try{u=new URL(href);}catch{return false;}if(!/(^|\.)europa\.eu$/i.test(u.hostname))return false;
+  let p=u.pathname;try{p=decodeURIComponent(p);}catch{}p=foldLatin(p).toLowerCase();return p.includes('/youreurope/')&&/guarantee|garanti|garanz|zaruk|gwaranc|garanc/.test(p);};
+function analyzeEu(snapshot,scan,pages,products){
+  const ev=snapshot.resources||{};
+  // Pages already read: home, the sampled product pages, return, shipping and contact page. Nothing new is requested.
+  const read=[];
+  const add=(kind,r)=>{if(!goodResource(r))return;try{read.push({kind,url:r.url,s:scan(r)});}catch{}};
+  add('home',ev.home);for(const p of pages)read.push({kind:'product',url:p.url,s:p.scan});for(const k of ['returns','shipping','contact'])add(k,ev[k]);
+  const out=[];
+  // (a) withdrawal function
+  {
+    const found=[],similar=[];
+    scan:for(const {kind,url,s} of read)for(const c of s.eu.controls){
+      if(found.length>=EU_EVIDENCE_CAP&&similar.length>=EU_EVIDENCE_CAP)break scan; // nothing more would be kept
+      for(const label of [c.text,c.aria,c.title]){
+        if(!label)continue;const o=officialLabel(label);
+        if(o){if(found.length<EU_EVIDENCE_CAP&&!found.some(f=>f.label===label&&f.kind===o.kind))found.push({page:kind,url,label,kind:o.kind,lang:o.lang,href:c.href?httpUrl(c.href,url):null});break;}
+        if(similarLabel(label)&&similar.length<EU_EVIDENCE_CAP&&!similar.some(f=>f.label===label)){similar.push({page:kind,url,label,href:c.href?httpUrl(c.href,url):null});break;}
+      }
+    }
+    out.push({code:'eu_withdrawal',status:!read.length?'unknown':found.length?'found':'not_found',pages:read.length,found,similar});
+  }
+  // (b) harmonised notice on the legal guarantee
+  {
+    const found=[],links=[];
+    for(const {kind,url,s} of read){
+      // Visible text first, then image alt texts and aria-labels (a notice shown as an image can only be read through them).
+      const hay=[[s.eu.text,'text'],...s.eu.alts.map(a=>[a,'alt']),...s.eu.controls.map(c=>[c.aria,'alt'])].filter(([h])=>h).map(([h,where])=>[words(h),where]);
+      for(const [lang,sentence] of NOTICE_WORDS){
+        const hit=hay.find(([h])=>h.includes(sentence));
+        if(hit&&found.length<EU_EVIDENCE_CAP){found.push({page:kind,url,lang,in:hit[1]});break;}
+      }
+      const text=foldLatin(s.eu.text).toLowerCase();
+      const printed=ADDRESS_WORDS.find(a=>text.includes(a));
+      if(printed&&links.length<EU_EVIDENCE_CAP)links.push({page:kind,url,address:printed});
+      for(const href of s.page.links)if(youreuropeLink(href)&&links.length<EU_EVIDENCE_CAP&&!links.some(l=>l.href===href))links.push({page:kind,url,href});
+    }
+    // Goods or not, from the public export: Shopify marks each variant that needs shipping (requires_shipping).
+    const flags=products.flatMap(p=>Array.isArray(p.variants)?p.variants:[]).map(v=>v?.requires_shipping).filter(x=>typeof x==='boolean');
+    const goods=flags.includes(true)?true:flags.length?false:null;
+    const status=!read.length?'unknown':found.length?'found':goods===false?'not_applicable':'not_found';
+    out.push({code:'eu_guarantee_notice',status,pages:read.length,goods,found,links});
+  }
+  // (c) generic environmental claims and offsetting claims in product titles and descriptions
+  {
+    const texts=[];
+    for(const p of products){const id=String(p.handle??p.id??'').slice(0,120)||null;
+      if(clean(p.title))texts.push({source:'feed',product:id,name:cut(p.title,120),field:'title',text:String(p.title).slice(0,500)});
+      const d=plain(p.body_html);if(d)texts.push({source:'feed',product:id,name:cut(p.title,120),field:'description',text:d.slice(0,GREEN_TEXT_CAP)});}
+    // Without a public export (other platforms): the name and description of the Product nodes on the sampled product pages.
+    if(!products.length)for(const p of pages)for(const n of p.products.slice(0,5)){
+      for(const field of ['name','description']){const v=typeof n[field]==='string'?plain(n[field]):'';if(v)texts.push({source:'page',product:p.url,name:cut(typeof n.name==='string'?plain(n.name):'',120),field:field==='name'?'title':'description',text:v.slice(0,GREEN_TEXT_CAP)});}
+    }
+    const findings=[];let total=0;const withClaims=new Set();
+    for(const t of texts){
+      const original=unify(t.text).normalize('NFC'),folded=foldLatin(original);
+      // Every match of every phrase, then the longest of overlapping ones ("ekologicky šetrné" rather than "ekologicky").
+      const hits=[];
+      for(const term of GREEN_TERMS){term.re.lastIndex=0;let m;while((m=term.re.exec(folded))){if(!m[0])break;hits.push({at:m.index,end:m.index+m[0].length,term});if(hits.length>500)break;}}
+      hits.sort((a,b)=>a.at-b.at||(b.end-b.at)-(a.end-a.at));
+      let last=-1;
+      for(const h of hits){if(h.at<last)continue;last=h.end;total++;withClaims.add(t.product+'|'+t.source);
+        if(findings.length<GREEN_FINDINGS_CAP){const a=Math.max(0,h.at-60),b=Math.min(original.length,h.end+60);
+          findings.push({term:original.slice(h.at,h.end),example:h.term.example,point:h.term.point,lang:h.term.lang,organic:h.term.organic,
+            source:t.source,product:t.product,name:t.name,field:t.field,context:(a?'…':'')+original.slice(a,b).trim()+(b<original.length?'…':'')});}}
+    }
+    out.push({code:'eu_green_claims',status:!texts.length?'unknown':findings.length?'found':'not_found',products:new Set(texts.map(t=>t.product+'|'+t.source)).size,
+      withClaims:withClaims.size,total,findings});
+  }
+  return {version:EU_VERSION,rules:out};
+}
+
 export function analyzeStore(snapshot, options = {}) {
   const evidence=snapshot.resources||{}; const results=new Map();
   const put=(code,items,predicate,{unavailable=false,info=false}={})=>{
@@ -539,5 +761,8 @@ export function analyzeStore(snapshot, options = {}) {
     sample:{products:products.length,pages:pages.length,attemptedPages:pageResources.length,limit:20,pageLimit:3},
     rules,access,noindexPages:pages.filter(p=>p.noindex).map(p=>p.url),
     evidence:Object.entries(evidence).map(([kind,r])=>({kind,url:r?.url,status:r?.status??0,error:r?.error||null})).concat(pageResources.map(r=>({kind:'product',url:r.url,status:r.status,error:r.error||null}))),
+    // EU 2026 findings: separate from rules, score and coverage (they carry no weight), see analyzeEu above. An error in this optional
+    // part never breaks the check (gate A-189 pokus 1, nález 13): eu is then null and the page says the EU checks could not be evaluated.
+    eu:(()=>{try{return analyzeEu(snapshot,scan,pages,products);}catch{return null;}})(),
   };
 }
