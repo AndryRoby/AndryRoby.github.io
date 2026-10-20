@@ -1,7 +1,7 @@
 // Pohyb úvodu v7 nad knižnicou ARLing Motion (arling.sk/motion, MIT): pružiny ako čisté funkcie času.
-// Štyri momenty, nič navyše: rolujúce číslice počítadla katalógu, rast pruhov a čísel zo štúdie pri posune,
-// prepínač obrazoviek appky s pružinovým indikátorom a jemné vstupy sekcií (rozmazanie, posun, mierka).
-// Bez JS a pri obmedzenom pohybe je všetko hneď v koncovom stave.
+// Päť momentov, nič navyše: rolujúce číslice počítadla katalógu, rast pruhov a čísel zo štúdie pri posune,
+// prepínač obrazoviek appky s pružinovým indikátorom, jemné vstupy sekcií (rozmazanie, posun, mierka) a postup krokov
+// od nálezu k oprave (20. 10. 2026). Bez JS a pri obmedzenom pohybe je všetko hneď v koncovom stave.
 import { track, presence, driver, PRESETS } from '/motion/src/core.js';
 import { createNumber } from '/motion/components/number/number.js';
 import { createSegmented } from '/motion/components/segmented/segmented.js';
@@ -71,6 +71,22 @@ if (vizual && prepinac) {
     }, { threshold: 0.5 });
     io.observe(vizual);
   }
+}
+
+// 5) Postup krokov (Andrej 20. 10.: „viac animácií“, s mierou; jediný nový zámerný moment): keď je polovica zoznamu krokov
+//    v obraze, prejde ním raz signál od „Skontroluje“ po „Overí znova“ (CSS v sekcie.css: uzol krátko zažiari, čiara
+//    k ďalšiemu kroku sa dokreslí, asi 2,4 s); prepínač z bodu 3 potom ukáže obrazovku po oprave. Koncový stav = statický.
+const kroky = d.querySelector('.kroky');
+// Len keď zoznam ešte nie je v obraze: viditeľné čiary by inak zmizli a kreslili sa znova.
+if (kroky && !reduced && 'IntersectionObserver' in window && kroky.getBoundingClientRect().top > innerHeight) {
+  kroky.classList.add('pred');
+  const io = new IntersectionObserver((e) => {
+    if (!e.some((x) => x.isIntersecting)) return;
+    io.disconnect();
+    kroky.classList.remove('pred');
+    kroky.classList.add('hra');
+  }, { threshold: 0.5 });
+  io.observe(kroky);
 }
 
 // 4) Vstupy sekcií: nadpis, text a hlavný obraz každej sekcie, s krokom 70 ms, raz.
