@@ -992,3 +992,104 @@ test('W4 v DOM: blok feedu bez skóre, s počtami, najčastejšími problémami 
     assert.deepEqual(th,['Dátum','Produkty','Chyby','Upozornenia']);
   }finally{env.obnov();}
 });
+
+/* ---------------- relácia 208: odkaz na stránku objednávky platformy (zmluva 208, bod F) ---------------- */
+// Worker (report-mail.mjs euRules) pri Shoptet odkaze „Odstúpenie od zmluvy“ na /moja-objednavka/ pošle stav link_found s link {label, page}.
+const ODKAZ_EU=[{code:'eu_withdrawal',state:'link_found',link:{label:'Odstúpenie od zmluvy',page:'home'}},{code:'eu_guarantee_notice',state:'not_found'},{code:'eu_green_claims',state:'not_found'}];
+const NIKDY=/undefined|\{label\}|\{page\}/;
+test('208: euRiadky pri link_found ukáže „Odkaz nájdený, funkčnosť neoverená“, tón unknown a vetu z r.link; zmena s link_found nie je pokazené ani opravené', ()=>{
+  for(const lang of A.JAZYKY){
+    const t=EU_UI[lang],x=t.rules.eu_withdrawal,r=A.euRiadky(ODKAZ_EU,lang,zdroje)[0];
+    assert.equal(r.code,'eu_withdrawal');assert.equal(r.badge,x.status.link_found,lang);assert.equal(r.tone,'unknown',lang);
+    assert.equal(r.veta,x.linkFound.replace('{label}','Odstúpenie od zmluvy').replace('{page}',t.pages.home),lang);
+    assert.ok(!NIKDY.test(JSON.stringify(r)),lang);
+  }
+  assert.equal(A.euRiadky(ODKAZ_EU,'sk',zdroje)[0].badge,'Odkaz nájdený, funkčnosť neoverená');
+  // Bez r.link žiadna veta; zlý tvar, neznáma stránka a riadiace znaky nič nepokazia; link_found pri inom pravidle sa zahodí.
+  const bez=A.euRiadky([{code:'eu_withdrawal',state:'link_found'}],'sk',zdroje)[0];assert.equal(bez.tone,'unknown');assert.equal(bez.veta,undefined);
+  assert.equal(A.euRiadky([{code:'eu_withdrawal',state:'link_found',link:'zle'}],'sk',zdroje)[0].veta,undefined);
+  const zvlastny=A.euRiadky([{code:'eu_withdrawal',state:'link_found',link:[{label:'A'+String.fromCharCode(0)+'B',page:'constructor'}]}],'sk',zdroje)[0];
+  assert.ok(zvlastny.veta.startsWith('Na stránke produktu sme našli odkaz s textom „A B“.'),zvlastny.veta);
+  assert.deepEqual(A.euRiadky([{code:'eu_green_claims',state:'link_found'}],'sk',zdroje),[]);
+  assert.deepEqual(A.najdenyOdkaz({link:{label:'x',page:'<x>'}}),{label:'x',page:''});assert.equal(A.najdenyOdkaz({}),null);
+  // Zmeny: link_found a not_found alebo found v ľubovoľnom smere nikdy nie sú Pokazilo sa ani Opravilo sa.
+  for(const [from,to] of [['link_found','not_found'],['not_found','link_found'],['found','link_found'],['link_found','found'],[null,'link_found']]){
+    assert.deepEqual(A.zmenyPodlaSmeru([{code:'eu_withdrawal',from,to}],'sk',zdroje,{eu:ODKAZ_EU}),{pokazene:[],opravene:[]},`${from} -> ${to}`);
+  }
+  // Aj keby toneOf (iná verzia eu-zobraz.mjs) dal link_found inú farbu, Stráž mu dá tón unknown.
+  const ina={...zdroje,toneOf:(c,s)=>s==='link_found'?'ok':toneOf(c,s)};
+  assert.deepEqual(A.zmenyPodlaSmeru([{code:'eu_withdrawal',from:'link_found',to:'not_found'}],'sk',ina),{pokazene:[],opravene:[]});
+  assert.equal(A.euRiadky(ODKAZ_EU,'sk',ina)[0].tone,'unknown');
+  // Bez link_found ostáva staré pravidlo: found -> not_found sa pokazilo.
+  assert.equal(A.zmenyPodlaSmeru([{code:'eu_withdrawal',from:'found',to:'not_found'}],'sk',zdroje).pokazene.length,1);
+});
+test('208: so starým i18n.mjs?v=2 z vyrovnávacej pamäte (bez kľúčov link_found) Stráž ukáže „Overte odkaz“ a vetu o podobnom odkaze, nikdy undefined', ()=>{
+  for(const lang of A.JAZYKY){
+    const stare=structuredClone(EU_UI),x=stare[lang].rules.eu_withdrawal;
+    delete stare[lang].status.link_found;delete x.status.link_found;delete x.linkFound;delete x.linkFoundNote;delete x.manualLinkFound;
+    const r=A.euRiadky(ODKAZ_EU,lang,{...zdroje,EU_UI:stare})[0];
+    assert.equal(r.badge,x.status.check,lang);assert.equal(r.tone,'unknown',lang);
+    assert.equal(r.veta,x.similar.replace('{label}','Odstúpenie od zmluvy').replace('{page}',stare[lang].pages.home),lang);
+    assert.ok(!NIKDY.test(JSON.stringify(r)),lang);
+  }
+});
+test('208 v DOM: odkaz na stránku objednávky má štítok link_found s tónom unknown a vetu o odkaze, nikdy „nenašli“ ani Pokazilo sa', async ()=>{
+  const weekly={status:'done',at:'2026-10-22T10:00:00Z',score:null,coverage:null,eu:ODKAZ_EU,failing:[],changed:[{code:'eu_withdrawal',from:'found',to:'link_found'}]};
+  for(const lang of A.JAZYKY){
+    const env=await spravaPre(`?id=${ID}&key=${KEY}`,z=>z.method==='GET'?{data:zaklad({weekly,lang,store_url:'https://www.obchod-a.sk/'})}:null,{lang});
+    try{
+      const s=TEXTY[lang].sprava,t=EU_UI[lang],x=t.rules.eu_withdrawal,text=env.doc.body.textContent;
+      const badge=env.doc.vsetky().find(e=>e.className==='ar-eu-badge'&&e.textContent===x.status.link_found);
+      assert.ok(badge,lang);assert.equal(badge.dataset.tone,'unknown',lang);
+      assert.ok(text.includes(x.linkFound.replace('{label}','Odstúpenie od zmluvy').replace('{page}',t.pages.home)),lang);
+      assert.ok(!text.includes(x.status.not_found),lang);assert.ok(!NIKDY.test(text),lang);
+      assert.ok(!env.doc.vsetky().some(e=>e.tagName==='H4'&&(e.textContent===s.pokaziloNadpis||e.textContent===s.opraviloNadpis)),lang);
+    }finally{env.obnov();}
+  }
+});
+
+/* ---------------- relácia 208, agent M2: odkaz „Moja objednávka“ na stránku objednávky Shoptetu (weekly.eu[].order) ---------------- */
+// Worker (report-mail.mjs euRules) pri not_found s orderPage pošle order {label, page}. Stráž ukáže vetu orderPage so štítkom a tónom
+// not_found ako stránka kontroly; s podobným odkazom „Overte odkaz“, tón unknown a obe vety v poradí riadkov stránky kontroly.
+const OBJ_EU=[{code:'eu_withdrawal',state:'not_found',order:{label:'Moja objednávka',page:'home'}},{code:'eu_guarantee_notice',state:'not_found'},{code:'eu_green_claims',state:'not_found'}];
+test('208 M2: euRiadky pri not_found s order ukáže vetu o odkaze na stránku objednávky; s podobným odkazom „Overte odkaz“ a obe vety; starý i18n.mjs vetu vynechá', ()=>{
+  for(const lang of A.JAZYKY){
+    const t=EU_UI[lang],x=t.rules.eu_withdrawal,r=A.euRiadky(OBJ_EU,lang,zdroje)[0];
+    const veta=x.orderPage.replace('{label}','Moja objednávka').replace('{page}',t.pages.home);
+    assert.equal(r.badge,x.status.not_found,lang);assert.equal(r.tone,'review',lang);assert.equal(r.veta,veta,lang);
+    const oba=A.euRiadky([{...OBJ_EU[0],similar:{label:'Reklamácie a vrátenie tovaru',page:'home'}},OBJ_EU[1],OBJ_EU[2]],lang,zdroje)[0];
+    assert.equal(oba.badge,x.status.check,lang);assert.equal(oba.tone,'unknown',lang);
+    assert.equal(oba.veta,veta+' '+x.similar.replace('{label}','Reklamácie a vrátenie tovaru').replace('{page}',t.pages.home),lang);
+    assert.ok(!NIKDY.test(JSON.stringify([r,oba])),lang);
+    // Prehliadač so starým i18n.mjs?v=2 (bez orderPage): veta o objednávke chýba, podobný odkaz ostane, nikdy undefined.
+    const stare=structuredClone(EU_UI),s=stare[lang].rules.eu_withdrawal;delete s.orderPage;delete s.manualOrderPage;
+    const r2=A.euRiadky(OBJ_EU,lang,{...zdroje,EU_UI:stare})[0],oba2=A.euRiadky([{...OBJ_EU[0],similar:{label:'Vrátenie tovaru',page:'home'}}],lang,{...zdroje,EU_UI:stare})[0];
+    assert.equal(r2.veta,undefined,lang);assert.equal(r2.badge,s.status.not_found,lang);
+    assert.equal(oba2.veta,s.similar.replace('{label}','Vrátenie tovaru').replace('{page}',stare[lang].pages.home),lang);
+    assert.ok(!NIKDY.test(JSON.stringify([r2,oba2])),lang);
+  }
+  assert.equal(A.euRiadky(OBJ_EU,'sk',zdroje)[0].veta,'Na úvodnej stránke sme však našli odkaz s textom „Moja objednávka“. Vedie na stránku objednávky platformy Shoptet, kde sa načítava formulár na odstúpenie od zmluvy. Text odkazu o odstúpení nehovorí, preto ho zákazník, ktorý chce odstúpiť, nemusí nájsť.');
+  // Zlý tvar, riadiace znaky a neznáma stránka nič nepokazia; order pri inom stave alebo pravidle sa nepoužije.
+  assert.deepEqual(A.odkazObjednavky({order:{label:'x',page:'<x>'}}),{label:'x',page:''});assert.equal(A.odkazObjednavky({}),null);
+  const zvlastny=A.euRiadky([{code:'eu_withdrawal',state:'not_found',order:[{label:'A'+String.fromCharCode(0)+'B',page:'constructor'}]}],'sk',zdroje)[0];
+  assert.ok(zvlastny.veta.startsWith('Na stránke produktu sme však našli odkaz s textom „A B“.'),zvlastny.veta);
+  for(const r of [{code:'eu_withdrawal',state:'not_found',order:'zle'},{code:'eu_withdrawal',state:'not_found',order:{label:'  '}},{code:'eu_withdrawal',state:'found',order:OBJ_EU[0].order}])
+    assert.equal(A.euRiadky([r],'sk',zdroje)[0].veta,undefined,JSON.stringify(r));
+  assert.equal(A.euRiadky([{code:'eu_green_claims',state:'not_found',order:OBJ_EU[0].order}],'sk',zdroje)[0].veta,undefined);
+  // Porovnanie týždňov: order nemení pokazené ani opravené, tón not_found ostáva review.
+  assert.deepEqual(A.zmenyPodlaSmeru([{code:'eu_withdrawal',from:'found',to:'not_found'}],'sk',zdroje,{eu:OBJ_EU}).pokazene.map(p=>p.code),['eu_withdrawal']);
+  assert.deepEqual(A.zmenyPodlaSmeru([{code:'eu_withdrawal',from:'not_found',to:'found'}],'sk',zdroje,{eu:OBJ_EU}).opravene.map(p=>p.code),['eu_withdrawal']);
+});
+test('208 M2 v DOM: „Moja objednávka“ má štítok not_found s tónom review a pod ním vetu o odkaze na stránku objednávky', async ()=>{
+  const weekly={status:'done',at:'2026-10-22T10:00:00Z',score:null,coverage:null,eu:OBJ_EU,failing:[],changed:[]};
+  for(const lang of A.JAZYKY){
+    const env=await spravaPre(`?id=${ID}&key=${KEY}`,z=>z.method==='GET'?{data:zaklad({weekly,lang,store_url:'https://www.obchod-a.sk/'})}:null,{lang});
+    try{
+      const t=EU_UI[lang],x=t.rules.eu_withdrawal,text=env.doc.body.textContent;
+      const badge=env.doc.vsetky().find(e=>e.className==='ar-eu-badge'&&e.textContent===x.status.not_found);
+      assert.ok(badge,lang);assert.equal(badge.dataset.tone,'review',lang);
+      assert.ok(text.includes(x.orderPage.replace('{label}','Moja objednávka').replace('{page}',t.pages.home)),lang);
+      assert.ok(!NIKDY.test(text),lang);
+    }finally{env.obnov();}
+  }
+});

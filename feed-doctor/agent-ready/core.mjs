@@ -1,5 +1,11 @@
 /* Agent Ready v1. Pure, bounded inspection of public evidence, never an AI ranking. */
 export const VERSION = '1.0.0';
+// The version of what this check reads and how (F2, relation 208), in the report as sample.scan: 2 since relation 208 (Microdata, the
+// sitemap, product tiles, one redirect of the home page); reports from before have none and count as 1. Raise it with every change of
+// reading that changes results while the store stays the same: the weekly comparison (monitor src/report-mail.mjs compareReports) then
+// reports no change between two versions. It lives in sample because the weekly report keeps sample whole but only some other fields
+// (monitor src/agent-ready-weekly.mjs). VERSION stays: the Shopify app copies functions of this version (ar-parita-jadra.test.mjs).
+export const SCAN = 2;
 export const SOURCES = Object.freeze({
   catalog: 'https://help.shopify.com/en/manual/online-sales-channels/agentic-storefronts/products',
   product: 'https://shopify.dev/docs/api/liquid/objects/product',
@@ -25,7 +31,7 @@ export const RULES = [
   ['feed_images','warning',2,'catalog','Product images','Publish at least one HTTPS image URL for each product. We check the URL, not the image contents.'],
   ['feed_alt','info',0,'product','Image descriptions','Where the public feed exposes alt text, describe the product image. An omitted alt field is unknown; an empty field needs review.'],
   ['jsonld_parse','error',2,'merchant','Readable JSON-LD','Repair invalid application/ld+json blocks. JSON-LD added only by JavaScript is outside this check.'],
-  ['jsonld_product','error',3,'merchant','Product structured data','Include a Product or ProductGroup in the initial HTML of the sampled product page. This checker does not inspect Microdata or RDFa.'],
+  ['jsonld_product','error',3,'merchant','Product structured data','We recommend a Product or ProductGroup in JSON-LD in the initial HTML of the sampled product page. This checker reads Microdata only as a fallback when the page has no JSON-LD Product or ProductGroup, and it does not read RDFa.'],
   ['jsonld_identity','warning',2,'merchant','Product name and image','Give every sampled Product, variants included, a name and an HTTP(S) image URL that describe that product. A ProductGroup needs only a name; its variants carry the images.'],
   ['jsonld_offer','error',3,'merchant','Product offers','Attach Offer or AggregateOffer data to the sampled Product, including through @id references or hasVariant.'],
   ['jsonld_price','error',3,'merchant','Price and currency','Use a numeric price and a three-letter currency on each offer. AggregateOffer needs a lowPrice; valid priceSpecification is supported.'],
@@ -45,6 +51,24 @@ export const RULES = [
 
 export const clean = x => typeof x === 'string' ? x.trim() : '';
 const list = x => x == null ? [] : Array.isArray(x) ? x : [x];
+/* Foreign JSON (JSON-LD blocks and the public export) keeps no key of its own named toString, valueOf or toJSON (F2, relation 208): a node
+   {"toString":"x"} made String(), Number(), a RegExp test or Array.join throw a TypeError, and one such node broke the whole check of a store.
+   JSON has no functions or symbols, so without these keys every conversion of a parsed value works; nothing else changes. The keys are
+   dropped by one iterative walk after JSON.parse (about a tenth more time), not by a reviver: a reviver made parsing 4 to 40 times slower
+   (a 2 MB array of 300 000 numbers 250 ms against 6.5 ms, a 2.7 MB graph 170 ms against 22 ms, Node 22) and threw RangeError past
+   1600 levels of nesting, which would have turned valid deep JSON-LD into invalid (measured by
+   ops/druhy-ucet/208/overenie/pokusy/f2/meranie-json.mjs). Microdata skips the same names (microName). */
+const CONVERSION_KEYS=['toString','valueOf','toJSON'];
+function parseForeign(text){
+  const root=JSON.parse(text),stack=root&&typeof root==='object'?[root]:[];
+  while(stack.length){
+    const x=stack.pop();
+    if(Array.isArray(x)){for(const v of x)if(v&&typeof v==='object')stack.push(v);continue;}
+    for(const k of CONVERSION_KEYS)if(Object.hasOwn(x,k))delete x[k];
+    for(const k in x){const v=x[k];if(v&&typeof v==='object')stack.push(v);}
+  }
+  return root;
+}
 export function decodeEntities(s) {
   return String(s).replace(/&(#x[\da-f]+|#\d+|amp|quot|apos|lt|gt|nbsp);/gi, (_,v) => {
     if(v[0]!=='#') return {amp:'&',quot:'"',apos:"'",lt:'<',gt:'>',nbsp:' '}[v.toLowerCase()];
@@ -108,6 +132,88 @@ function tagScanner(html){
     }
   };
 }
+/* Microdata (relation 208, agent M1, 22. 10. 2026). Shoptet, which runs most Slovak shops, puts no JSON-LD Product on its product pages:
+   the product, its offers and shipping terms are Microdata (div.p-detail itemscope itemtype="https://schema.org/Product", an Offer with
+   meta price and priceCurrency and link availability, OfferShippingDetails) on 7 of 7 measured shops; PrestaShop 1.6 and 1.7 pages were
+   the same (ops/druhy-ucet/208/zber/C1-shoptet.md, C2-woo-ine.md). scanHtml reads the items in its one pass over the tags and turns them
+   into objects shaped like JSON-LD nodes: itemtype is '@type' (one token a string, more a list), each itemprop name a key, a repeated
+   name a list in document order, an itemprop with itemscope a nested object. Values: meta content; a, area and link href, img, audio,
+   embed, iframe, source, track and video src and object data, resolved against the page by httpUrl ('' when that fails); data and meter
+   value; time datetime; any other element its content attribute when it has one (schema.org allows it on any element, and the
+   default themes of PrestaShop write the price so, with the formatted price as text: 1.6 themes/default-bootstrap/product.tpl
+   <span itemprop="price" content="{$productPrice}">, 1.7.6.9 themes/classic/templates/catalog/_partials/product-prices.tpl
+   <span itemprop="price" content="{$product.price_amount}">), else its text by plain(), cut to MICRO_TEXT_CAP characters and read
+   from at most MICRO_SPAN characters of markup. itemref and itemid are not followed; names that start with '@' (JSON-LD keywords) or exist on Object.prototype
+   (__proto__, toString) are skipped. Open elements are a stack: void and self-closing ones never open, a closing tag closes the nearest
+   open element of its name and everything opened inside it (a list of open positions per name finds it, the stack is never walked), a
+   stray one is ignored, and what is still open closes at the end. Inside template and noscript, and in script, style, textarea and
+   title, nothing is read.
+   Foreign markup is bounded like the parsers above: every element is pushed and popped once, so a tag costs O(1) amortised; at most
+   MICRO_DEPTH open elements (deeper ones are neither tracked nor read), MICRO_ITEMS items, MICRO_TYPES types an item and MICRO_PROPS
+   values a page; the texts of one page read at most MICRO_TEXT_BUDGET characters in all, later ones are '' (plain() on 3000 texts of
+   16 000 characters took 1 to 3.5 s). */
+const MICRO_DEPTH=4096, MICRO_ITEMS=300, MICRO_TYPES=32, MICRO_PROPS=3000, MICRO_TEXT_CAP=2000, MICRO_SPAN=16_000, MICRO_TEXT_BUDGET=1_000_000;
+const MICRO_VOID=new Set(['meta','link','img','br','hr','input','source','track','wbr','area','base','col','embed','param']);
+const MICRO_URL=new Map([['a','href'],['area','href'],['link','href'],['img','src'],['audio','src'],['embed','src'],['iframe','src'],['source','src'],['track','src'],['video','src'],['object','data']]);
+const microTokens=s=>String(s??'').split(/[\t\n\f\r ]+/).filter(Boolean);
+// F2: and toJSON, which is not on Object.prototype (CONVERSION_KEYS, as parseForeign drops them from JSON).
+const microName=n=>n[0]!=='@'&&!(n in Object.prototype)&&!CONVERSION_KEYS.includes(n);
+// The value an element gives by its attributes, or undefined when its value is its text.
+function microValue(name,attrs,url){
+  if(name==='meta')return attrs.content??'';
+  const k=MICRO_URL.get(name);if(k)return k in attrs?httpUrl(attrs[k],url)??'':'';
+  if(name==='data'||name==='meter')return attrs.value??'';
+  if(name==='time'&&'datetime' in attrs)return attrs.datetime;
+  return 'content' in attrs?attrs.content:undefined;
+}
+function microdataReader(html,url){
+  // order: the place of each item in the document (F1), so scanHtml can tell the first product item.
+  const stack=[],byName=new Map(),scopes=[],top=[],order=new Map();let items=0,props=0,budget=MICRO_TEXT_BUDGET;
+  // A value under a name: the first stays a single value, a second turns the property into a list. Returns its index, -1 past MICRO_PROPS.
+  const add=(item,name,value)=>{
+    if(props>=MICRO_PROPS)return -1;props++;
+    const old=item[name];
+    if(old===undefined){item[name]=value;return 0;}
+    if(Array.isArray(old))return old.push(value)-1;
+    item[name]=[old,value];return 1;
+  };
+  const text=(from,to)=>{const n=Math.min(to-from,MICRO_SPAN,budget);if(n<=0)return '';budget-=n;const s=plain(html.slice(from,from+n));return s.length>MICRO_TEXT_CAP?s.slice(0,MICRO_TEXT_CAP):s;};
+  const pop=end=>{
+    const e=stack.pop(),open=byName.get(e.name);open.pop();if(!open.length)byName.delete(e.name);
+    if(e.scope)scopes.pop();
+    if(e.fill){const v=text(e.at,end);for(const [item,name,i] of e.fill){const old=item[name];if(Array.isArray(old))old[i]=v;else item[name]=v;}}
+  };
+  return {
+    // An opening tag outside inert content; `at` is where its content starts.
+    open(name,attrs,at,tag){
+      if(stack.length>=MICRO_DEPTH)return;
+      const self=MICRO_VOID.has(name)||tag.charCodeAt(tag.length-2)===47&&(tag.length===name.length+3||/[\s"']/.test(tag[tag.length-3]));
+      const scope='itemscope' in attrs,hasProp='itemprop' in attrs,owner=scopes.length?scopes[scopes.length-1]:null;
+      const names=hasProp&&owner?microTokens(attrs.itemprop).filter(microName):[];
+      let item=null,fill=null;
+      if(scope){
+        // A top-level item has no itemprop; one with itemprop is a value of the item around it, or nothing when there is none.
+        if(items<MICRO_ITEMS&&(!hasProp||names.length)){
+          item={};order.set(item,items++);const types=microTokens(attrs.itemtype).slice(0,MICRO_TYPES);
+          if(types.length)item['@type']=types.length===1?types[0]:types;
+          if(hasProp)for(const n of names)add(owner,n,item);else top.push(item);
+        }
+      }else if(names.length){
+        const v=microValue(name,attrs,url);
+        // A text is known only at the closing tag; its place in a list is held by '' until then.
+        if(v!==undefined||self)for(const n of names)add(owner,n,v??'');
+        else for(const n of names){const i=add(owner,n,'');if(i>=0)(fill??=[]).push([owner,n,i]);}
+      }
+      if(self)return;
+      let open=byName.get(name);if(!open)byName.set(name,open=[]);open.push(stack.length);
+      stack.push({name,at,scope,fill});
+      if(scope)scopes.push(item); // null when no item was made: what is inside it belongs to nothing
+    },
+    // A closing tag outside inert content at position `at`.
+    close(name,at){const open=byName.get(name);if(!open)return;const i=open[open.length-1];while(stack.length>i)pop(at);},
+    end(){while(stack.length)pop(html.length);return {top,items,order};},
+  };
+}
 /* Bounded HTML tokenizer: quoted >, comments, raw script/style and inert template
    contents are handled. It extracts data only; fetched markup is never rendered.
    scanHtml also hands back the JSON-LD nodes (store-wide policies are read from them);
@@ -125,7 +231,7 @@ function scanHtml(html, url) {
   // One open link and one open button at a time: a nested or unclosed one replaces the older, so each character is sliced at most twice.
   const open={a:null,button:null};
   const control=(tag,attrs,text)=>{if(controls.length<CONTROL_CAP)controls.push({tag,text:cut(text,LABEL_CAP),aria:cut(attrs['aria-label'],LABEL_CAP),title:cut(attrs.title,LABEL_CAP),href:tag==='a'?String(attrs.href||'').slice(0,2048):''});};
-  const next=tagScanner(html);
+  const next=tagScanner(html),micro=microdataReader(html,url); // Microdata (relation 208): see microdataReader
   for(let t=next(0),pos=0;t;t=next(pos)){
     pos=t.end;
     if(t.bang)continue;
@@ -133,6 +239,7 @@ function scanHtml(html, url) {
     const name=/^<\/?([^\s/>]+)/.exec(tag)[1].toLowerCase(), closing=tag[1]==='/';
     if(name==='template'||name==='noscript'){inert=Math.max(0,inert+(closing?-1:1));continue;}
     if(closing){
+      if(!inert)micro.close(name,t.start);
       const o=(name==='a'||name==='button')&&open[name];
       if(o){open[name]=null;if(t.start-o.at<=CONTROL_SPAN)control(name,o.attrs,plain(html.slice(o.at,t.start)));}
       continue;
@@ -144,11 +251,12 @@ function scanHtml(html, url) {
       const end=new RegExp('</'+name+'\\s*>','ig');end.lastIndex=pos;const e=end.exec(html);
       const raw=html.slice(pos,e?e.index:html.length);pos=e?end.lastIndex:html.length;
       if(!inert&&name==='script'&&clean(attrs.type).toLowerCase()==='application/ld+json'){
-        try{blocks.push(JSON.parse(raw));}catch{invalid++;}
+        try{blocks.push(parseForeign(raw));}catch{invalid++;}
       }
       continue;
     }
     if(inert)continue;
+    micro.open(name,attrs,pos,tag);
     if(tags.length<15000)tags.push({name,attrs});
     if(name==='a'&&attrs.href&&links.length<2000){const href=httpUrl(attrs.href,url);if(href)links.push(href);}
     if(name==='a'||name==='button')open[name]={at:pos,attrs};
@@ -157,15 +265,32 @@ function scanHtml(html, url) {
   }
   // Breadth first, at most 5000 objects. The queue is read by an index: Array.shift() on a long array moves every element, which made
   // a graph of many small references (about 90 000 queued) cost seconds.
-  const nodes=[],candidates=[]; const queue=blocks.map(x=>({x,depth:0,ancillary:false}));
-  for(let head=0;head<queue.length&&nodes.length<5000;){const {x,depth,ancillary}=queue[head++];if(!x||typeof x!=='object'||depth>32)continue;
+  const nodes=[],candidates=[]; const queue=blocks.map(x=>({x,depth:0,ancillary:false})); let head=0;
+  const walk=()=>{for(;head<queue.length&&nodes.length<5000;){const {x,depth,ancillary}=queue[head++];if(!x||typeof x!=='object'||depth>32)continue;
     if(!Array.isArray(x)){nodes.push(x);if(!ancillary)candidates.push(x);}
     for(const [key,value] of Object.entries(x))if(value&&typeof value==='object')queue.push({x:value,depth:depth+1,ancillary:ancillary||['itemListElement','isRelatedTo','isSimilarTo','isVariantOf','itemReviewed'].includes(key)});
-  }
+  }};
+  walk();
+  const typed=(x,type)=>list(x?.['@type']).some(t=>String(t).replace(/^https?:\/\/schema.org\//,'')===type);
+  // Microdata is a fallback, never a second source (relation 208): its top-level items join the same walk, and so become products, offers,
+  // organizations and policy nodes exactly as JSON-LD does, only when the JSON-LD gave no Product or ProductGroup candidate. A page with a
+  // JSON-LD Product (for this path or another) gives exactly the result it gave before.
+  const md=micro.end(),walked=nodes.length,fromMicro=candidates.length;
+  if(md.top.length&&!candidates.some(n=>typed(n,'Product')||typed(n,'ProductGroup'))){for(const x of md.top)queue.push({x,depth:0,ancillary:false});walk();}
+  const microUsed=nodes.length>walked;
   const ids=new Map(nodes.filter(n=>typeof n['@id']==='string'&&Object.keys(n).length>1).map(n=>[n['@id'],n]));
   const resolve=x=>x&&typeof x==='object'&&x['@id']&&ids.has(x['@id']) ? {...ids.get(x['@id']),...x} : x;
-  const typed=(x,type)=>list(x?.['@type']).some(t=>String(t).replace(/^https?:\/\/schema.org\//,'')===type);
-  const products=candidates.filter(n=>(typed(n,'Product')||typed(n,'ProductGroup'))&&(!n.url||(()=>{try{return new URL(n.url,url).pathname===new URL(url).pathname;}catch{return false;}})()));
+  const isProduct=n=>typed(n,'Product')||typed(n,'ProductGroup');
+  const onPath=n=>{try{return new URL(n.url,url).pathname===new URL(url).pathname;}catch{return false;}};
+  // Microdata products (F1, relation 208): the default theme classic of PrestaShop 1.7 marks every related product of a product page
+  // (accessories, products of the same category) as a top-level Product without url and offer. So with microdata as the fallback the
+  // products of the page are the Product or ProductGroup items whose url names this path; when none does, only the first in document
+  // order, and only when it has no url. The others are side items, as JSON-LD nodes under isRelatedTo: they stay nodes, not products.
+  // JSON-LD keeps its rule: every Product or ProductGroup candidate without url or with this path. (Every candidate from fromMicro on
+  // is a microdata item: the second walk adds nodes only when the first one emptied its queue.)
+  const own=microUsed?candidates.slice(fromMicro).filter(isProduct):[],named=own.filter(n=>n.url&&onPath(n));
+  const first=own.reduce((a,n)=>a&&md.order.get(a)<=md.order.get(n)?a:n,null);
+  const products=microUsed?(named.length?named:first&&!first.url?[first]:[]):candidates.filter(n=>isProduct(n)&&(!n.url||onPath(n)));
   const productOffers=products.map(p=>[...list(p.offers),...list(p.hasVariant).map(resolve).flatMap(v=>list(v?.offers))].map(resolve).filter(o=>typed(o,'Offer')||typed(o,'AggregateOffer')));
   const offers=productOffers.flat();
   const organizations=nodes.filter(n=>typed(n,'Organization')||typed(n,'OnlineStore'));
@@ -175,6 +300,8 @@ function scanHtml(html, url) {
   const noindex=tags.some(t=>t.name==='meta'&&/^(robots|googlebot)$/i.test(t.attrs.name||'')&&/\bnoindex\b/i.test(t.attrs.content||''));
   const text=plain(stripRawBlocks(stripComments(html)));
   return {nodes,eu:{controls,alts,text:text.length>EU_TEXT_CAP?text.slice(0,EU_TEXT_CAP):text},
+    // Microdata items read, whether they were used (no JSON-LD Product) and how many products came from them; outside page, which keeps its shape.
+    micro:{items:md.items,used:microUsed,products:microUsed?products.length:0},
     page:{blocks:blocks.length,invalid,products,productOffers,offers,returns,shipping,ratings,links:[...new Set(links)],noindex,textLength:text.length}};
 }
 const typed=(x,type)=>list(x?.['@type']).some(t=>String(t).replace(/^https?:\/\/schema.org\//,'')===type);
@@ -544,39 +671,130 @@ const LABELS=Object.entries(WITHDRAWAL_LABELS).flatMap(([lang,[label,confirm]])=
 // (gate A-189 pokus 1, nález 2): neither an official label nor a similar link.
 const CONSENT=/consent|cookie|einwilligung|zustimmung|datenschutz|suhlas|souhlas|zgod|consentement|consenso|consentimiento|toestemming/;
 // An official label: its words in order, with at most two other words around or between them ("withdraw from the contract here").
-function officialLabel(text){
-  const t=words(text);if(CONSENT.test(t))return null;
+// t is the label already folded by words(): analyzeEu folds each label once for both checks (relation 208, 22. 10. 2026).
+function officialLabel(text,t=words(text)){
+  if(CONSENT.test(t))return null;
   const w=t.split(' ').filter(Boolean);if(!w.length||w.length>12)return null;
   for(const [lang,kind,p] of LABELS){if(w.length>p.length+2)continue;let i=0;for(const x of w)if(x===p[i])i++;if(i===p.length)return {lang,kind};}
   return null;
 }
 // Words about withdrawal that are not the label of the function (a policy page, the model form); consent and cookie links are left out.
-const SIMILAR=/withdraw|widerruf|odstup|odstoup|odstap|retract|renoncer au contrat|recess|reced|desist|herroep/;
-const similarLabel=text=>{const t=words(text);return t.length>0&&t.length<=80&&SIMILAR.test(t)&&!CONSENT.test(t);};
+// Relation 208 (22. 10. 2026) adds the Slovak and Czech words for returning goods ("Vrátenie tovaru", "Výmena a vrátenie", "Vrácení
+// zboží", "Vrátiť tovar"). Left out on purpose, in labels and in paths (SIMILAR_PATHS below): obchodné podmienky (obchodne-podmienky,
+// obchodni-podminky), reklamačný poriadok (reklamacny-poriadok, reklamacni-rad) and doprava a platba (doprava-a-platba). They are not
+// about withdrawal; the worker reads those pages (POLICY_WORDS in products/feed-doctor/monitor/src/agent-ready-fetch.mjs), so an
+// official label or a similar link inside them is found the usual way.
+// Agent M2 (relation 208) adds the Hungarian words, because the Hungarian Shoptet order page /rendelesem/ is an order page now: "elállás"
+// (withdrawal) at the start of a word only ("felállítás", assembly, has the same letters) and "visszaküldés" (sending goods back).
+// Without them a Hungarian label about withdrawal on that page would read as orderPage, a label that does not mention withdrawal.
+const SIMILAR=/withdraw|widerruf|odstup|odstoup|odstap|retract|renoncer au contrat|recess|reced|desist|herroep|vratenie|vraceni|vratit tovar|vratit zbozi|(?:^| )elall|visszakuld/;
+const similarLabel=(text,t=words(text))=>t.length>0&&t.length<=80&&SIMILAR.test(t)&&!CONSENT.test(t);
+/* Order pages of shop platforms (relation 208, 22. 10. 2026). Shoptet has the withdrawal function built in: the owner puts a link such
+   as "Odstúpenie od zmluvy" into the menu or the footer, it leads to the system page /moja-objednavka/ and the form is drawn there by
+   JavaScript (an empty widget reactWidget-orderWithdraw that posts to /action/OrderWithdraw/create), so a check without JavaScript and
+   without an order cannot see it. A link to such a page on the host of the page it is on (a leading www. aside) whose text,
+   aria-label or title is a similar label goes to `system` and the finding is `link_found` (link found, function not verified), never
+   `not_found`; with an official label it stays `found`. Paths are compared decoded, in lower case and without a trailing slash; query
+   and hash are ignored. The Czech path is still being verified: this constant is the only place to change.
+   Agent M2 (relation 208, 22. 10. 2026): an order page counts only when the pages read show its platform (analyzeStore hands analyzeEu
+   `platforms`, today {shoptet}: cdn.myshoptet.com or the Shoptet data layer); without that evidence a link to /moja-objednavka/ is an
+   ordinary link, as before relation 208. A link to the order page whose labels are neither official nor similar ("Moja objednávka",
+   the name of the system page, which cannot be renamed) goes to `orderPage` and changes no status. Entries in `system` and `orderPage`
+   are unique by host (a leading www. aside) and path. Paths by language from podpora.shoptet.sk/vratenie-tovaru-a-odstupenie-od-zmluvy/:
+   SK /moja-objednavka/, CZ /moje-objednavka/, HU /rendelesem/. */
+export const ORDER_PAGES=Object.freeze({shoptet:Object.freeze(['/moja-objednavka','/moje-objednavka','/rendelesem'])});
+const ORDER_PATH=new Map(Object.entries(ORDER_PAGES).flatMap(([platform,paths])=>paths.map(p=>[p.toLowerCase(),platform])));
+// Paths of links about withdrawal or returning goods, read decoded, without diacritics and in lower case: a link with any readable
+// label to /odstupenie-od-zmluvy/ is similar. What is left out on purpose is written at SIMILAR above.
+const SIMILAR_PATHS=['odstupenie','odstupit','odstoupeni','odstoupit','vratenie','vraceni','vymena-a-vrat'];
+// Diacritics off a whole path at once (one NFD pass, linear; foldLatin folds letter by letter to keep indices, which a path does not need).
+const foldPath=s=>s.normalize('NFD').replace(/\p{Mn}/gu,'').toLowerCase();
+// Reading links is bounded like the rest (shop markup is foreign input): an href over LINK_HREF_CAP characters is not read by its path
+// (a real order or policy link is far shorter; its labels still count), and the URL is parsed only when the href as written, decoded
+// and folded, names the last segment of an order path or a word of SIMILAR_PATHS. So a link that only inherits the page's own path
+// (#top, ?page=2, a relative "formular" on /odstupenie-od-zmluvy/) is never read as a link about withdrawal.
+const LINK_HREF_CAP=300;
+const LINK_TOKENS=[...new Set([...[...ORDER_PATH.keys()].map(p=>foldPath(p.split('/').filter(Boolean).pop()||'')),...SIMILAR_PATHS])].filter(Boolean);
+const bareHost=h=>h.startsWith('www.')?h.slice(4):h;
+const hostOf=url=>{try{return bareHost(new URL(url).host);}catch{return null;}};
+// Where a link leads when it stays on `host`: {href, id: host without www. and the path as compared (one entry per page, M2), order: the
+// platform of an order page or null, similar: its path is about withdrawal or returns}; null for another host, a non-http(s), overlong or
+// unnamed href. The URL parser drops tab and newline anywhere in an href.
+function linkTarget(raw,pageUrl,host){
+  if(!raw||!host||raw.length>LINK_HREF_CAP)return null;
+  let written=raw.replace(/[\t\n\r]/g,'');if(written.includes('%'))try{written=decodeURIComponent(written);}catch{}
+  written=foldPath(written);if(!LINK_TOKENS.some(w=>written.includes(w)))return null;
+  let u;try{u=new URL(raw,pageUrl);}catch{return null;}
+  if(!/^https?:$/.test(u.protocol)||u.username||u.password||bareHost(u.host)!==host)return null;
+  let p=u.pathname;if(p.includes('%'))try{p=decodeURIComponent(p);}catch{}
+  const lower=p.toLowerCase(),key=lower.length>1&&lower.endsWith('/')?lower.slice(0,-1):lower,folded=foldPath(p);
+  return {href:u.href,id:bareHost(u.host)+key,order:ORDER_PATH.get(key)||null,similar:SIMILAR_PATHS.some(w=>folded.includes(w)&&written.includes(w))&&!CONSENT.test(folded)};
+}
 const NOTICE_WORDS=Object.entries(NOTICE_SENTENCES).map(([lang,s])=>[lang,words(s)]);
 const ADDRESS_WORDS=NOTICE_ADDRESSES.map(a=>foldLatin(a).toLowerCase());
 // A link to the Your Europe pages on the legal guarantee (where the QR code of the notice leads), whatever the language section.
 const youreuropeLink=href=>{let u;try{u=new URL(href);}catch{return false;}if(!/(^|\.)europa\.eu$/i.test(u.hostname))return false;
   let p=u.pathname;try{p=decodeURIComponent(p);}catch{}p=foldLatin(p).toLowerCase();return p.includes('/youreurope/')&&/guarantee|garanti|garanz|zaruk|gwaranc|garanc/.test(p);};
-function analyzeEu(snapshot,scan,pages,products){
+// platforms: the shop platforms the pages read show (analyzeStore, M2), today {shoptet: true|false}.
+function analyzeEu(snapshot,scan,pages,products,platforms={}){
   const ev=snapshot.resources||{};
   // Pages already read: home, the sampled product pages, return, shipping and contact page. Nothing new is requested.
   const read=[];
   const add=(kind,r)=>{if(!goodResource(r))return;try{read.push({kind,url:r.url,s:scan(r)});}catch{}};
   add('home',ev.home);for(const p of pages)read.push({kind:'product',url:p.url,s:p.scan});for(const k of ['returns','shipping','contact'])add(k,ev[k]);
   const out=[];
-  // (a) withdrawal function
+  // (a) withdrawal function: official labels (found), links to a platform's order page with a similar label (system, relation 208,
+  // see ORDER_PAGES) and other links about withdrawal (similar, by label or by path). Each list keeps EU_EVIDENCE_CAP entries.
+  // Agent M2 (relation 208): system and orderPage only on a platform the pages read show (`platforms`); orderPage holds links to that
+  // order page whose labels are neither official nor similar ("Moja objednávka"). system and orderPage keep one entry per host and path.
   {
-    const found=[],similar=[];
-    scan:for(const {kind,url,s} of read)for(const c of s.eu.controls){
-      if(found.length>=EU_EVIDENCE_CAP&&similar.length>=EU_EVIDENCE_CAP)break scan; // nothing more would be kept
-      for(const label of [c.text,c.aria,c.title]){
-        if(!label)continue;const o=officialLabel(label);
-        if(o){if(found.length<EU_EVIDENCE_CAP&&!found.some(f=>f.label===label&&f.kind===o.kind))found.push({page:kind,url,label,kind:o.kind,lang:o.lang,href:c.href?httpUrl(c.href,url):null});break;}
-        if(similarLabel(label)&&similar.length<EU_EVIDENCE_CAP&&!similar.some(f=>f.label===label)){similar.push({page:kind,url,label,href:c.href?httpUrl(c.href,url):null});break;}
+    const found=[],similar=[],system=[],orderPage=[],CAP=EU_EVIDENCE_CAP,inSystem=new Set(),inOrder=new Set();
+    // The platform of an order page counts only with evidence of that platform; without it a link to such a path is an ordinary link.
+    const orderOf=x=>x&&x.order&&platforms[x.order]===true?x.order:null;
+    const onPlatform=Object.keys(ORDER_PAGES).some(p=>platforms[p]===true);
+    scan:for(const {kind,url,s} of read){
+      const host=hostOf(url);
+      for(const c of s.eu.controls){
+        // Nothing more would be kept: found and similar are full and, on a platform with an order page, system and orderPage as well.
+        if(found.length>=CAP&&similar.length>=CAP&&(!onPlatform||system.length>=CAP&&orderPage.length>=CAP))break scan;
+        // Where the link leads is read at most once per control, and only when a label or the path asks for it.
+        let target;const to=()=>target===undefined?(target=c.href?linkTarget(c.href,url,host):null):target;
+        // With found and similar full only a link to an order page can still be kept: any other control is passed over before a label is folded.
+        if(found.length>=CAP&&similar.length>=CAP&&!orderOf(to()))continue;
+        const labels=[c.text,c.aria,c.title],folded=[];let done=false;
+        for(let i=0;i<3;i++){
+          const label=labels[i];if(!label)continue;const t=folded[i]=words(label),o=officialLabel(label,t);
+          if(o){if(found.length<CAP&&!found.some(f=>f.label===label&&f.kind===o.kind))found.push({page:kind,url,label,kind:o.kind,lang:o.lang,href:c.href?httpUrl(c.href,url):null});done=true;break;}
+          if(!similarLabel(label,t))continue;
+          // A link to the platform's order page belongs to `system`, never to `similar`, also when `system` is full or has its page.
+          const x=to(),order=orderOf(x);
+          if(order){if(system.length<CAP&&!inSystem.has(x.id)){inSystem.add(x.id);system.push({page:kind,url,label,href:x.href,platform:order});}done=true;break;}
+          if(similar.length<CAP&&!similar.some(f=>f.label===label)){similar.push({page:kind,url,label,href:c.href?httpUrl(c.href,url):null});done=true;break;}
+        }
+        if(done)continue;
+        // Without a platform and with similar full nothing below can be kept, so the address is not read (as before M2).
+        const x=onPlatform||similar.length<CAP?to():null,order=orderOf(x);
+        // M2: a link to the order page whose labels are neither official nor similar is orderPage, with its first readable label (text,
+        // aria-label or title, the first with a letter or digit), never when one of its labels has consent or cookie words, never similar.
+        if(order){
+          if(orderPage.length<CAP&&!inOrder.has(x.id)){
+            for(let i=0;i<3;i++)if(labels[i]&&folded[i]===undefined)folded[i]=words(labels[i]);
+            const first=folded.findIndex(t=>t);
+            if(first>=0&&!folded.some(t=>t&&CONSENT.test(t))){inOrder.add(x.id);orderPage.push({page:kind,url,label:labels[first],href:x.href,platform:order});}
+          }
+          continue;
+        }
+        // A link whose path is about withdrawal or returns (/odstupenie-od-zmluvy/) is similar whatever its label says ("Formulár"): it
+        // needs a readable text, aria-label or title (the first one is kept as the label), and no consent or cookie words in any of them.
+        if(similar.length>=CAP||!x||!x.similar)continue;
+        for(let i=0;i<3;i++)if(labels[i]&&folded[i]===undefined)folded[i]=words(labels[i]);
+        if(folded.some(t=>t&&CONSENT.test(t)))continue;
+        const first=folded.findIndex(t=>t);
+        if(first>=0&&!similar.some(f=>f.label===labels[first]))similar.push({page:kind,url,label:labels[first],href:x.href});
       }
     }
-    out.push({code:'eu_withdrawal',status:!read.length?'unknown':found.length?'found':'not_found',pages:read.length,found,similar});
+    const status=!read.length?'unknown':found.length?'found':system.length?'link_found':'not_found';
+    out.push({code:'eu_withdrawal',status,pages:read.length,found,similar,system,orderPage});
   }
   // (b) harmonised notice on the legal guarantee
   {
@@ -630,12 +848,16 @@ function analyzeEu(snapshot,scan,pages,products){
 
 export function analyzeStore(snapshot, options = {}) {
   const evidence=snapshot.resources||{}; const results=new Map();
+  // The id of an affected item (F1, relation 208): the first string or number of handle, id, url, src and barcode, or the item itself,
+  // else the fixed text '[object Object]' (what String() gave for a plain object). String() of a foreign node with a toString of its own
+  // (an aggregateRating, a feed product) threw and broke the whole check.
+  const idOf=x=>{for(const v of [x?.handle,x?.id,x?.url,x?.src,x?.barcode,x])if(typeof v==='string'||typeof v==='number')return String(v);return '[object Object]';};
   const put=(code,items,predicate,{unavailable=false,info=false}={})=>{
     const known=items.filter(x=>x!=null);const affected=known.filter(x=>!predicate(x));
     const state=unavailable||!known.length?'unknown':affected.length?'fail':info?'info':'pass';
-    results.set(code,{code,status:state,checked:known.length,affected:affected.length,affectedIds:affected.slice(0,5).map(x=>String(x?.handle??x?.id??x?.url??x?.src??x?.barcode??x)).map(x=>x.slice(0,200))});
+    results.set(code,{code,status:state,checked:known.length,affected:affected.length,affectedIds:affected.slice(0,5).map(idOf).map(x=>x.slice(0,200))});
   };
-  let feed=null; if(goodResource(evidence.feed)){try{feed=JSON.parse(evidence.feed.text);}catch{}}
+  let feed=null; if(goodResource(evidence.feed)){try{feed=parseForeign(evidence.feed.text);}catch{}}
   const products=Array.isArray(feed?.products)?feed.products.slice(0,20).filter(p=>p&&typeof p==='object'):[];
   const variants=products.flatMap(p=>Array.isArray(p.variants)?p.variants:[null]);
   put('feed_title',products,p=>clean(p.title).length>=3);
@@ -755,14 +977,23 @@ export function analyzeStore(snapshot, options = {}) {
   // Older default line, and the current default header "# Shopify storefront. ..." (19. 10. 2026 study: 94 of 113).
   if(goodResource(robots)&&/^#\s*(?:we use shopify as our ecommerce platform|shopify storefront\.)/im.test(robots.text))shopify.push('robots');
   if([evidence.home,evidence.returns,evidence.shipping,evidence.contact,...pageResources].some(r=>goodResource(r)&&r.text.includes('cdn.shopify.com')&&r.text.includes('.myshopify.com')))shopify.push('assets');
+  // Shoptet signals (relation 208, agent M2, 22. 10. 2026), only from the pages already read (home, product, returns, shipping and contact
+  // page), plain includes() (linear): files of the Shoptet CDN (cdn.myshoptet.com) and the Shoptet data layer, an object with the key
+  // "shoptet" in dataLayer (developers.shoptet.com, data layer). Both were on 7 of 7 measured Shoptet stores (ops/druhy-ucet/208/zber/
+  // C1-shoptet.md, 3.6). A mention of Shoptet or a link to shoptet.sk is not a signal. analyzeEu counts the Shoptet order page only with one.
+  const shoptet=[],readPages=[evidence.home,evidence.returns,evidence.shipping,evidence.contact,...pageResources].filter(goodResource);
+  if(readPages.some(r=>r.text.includes('cdn.myshoptet.com')))shoptet.push('assets');
+  if(readPages.some(r=>r.text.includes('dataLayer')&&r.text.includes('{"shoptet":')))shoptet.push('datalayer');
   return {version:VERSION,at:snapshot.at,storeUrl:snapshot.storeUrl,platform:products.length?'shopify-public-feed':'html-only',
-    shopify:{detected:shopify.length>0,signals:shopify},
+    shopify:{detected:shopify.length>0,signals:shopify},shoptet:{detected:shoptet.length>0,signals:shoptet},
     score:covered&&(products.length||pages.length)?Math.round(100*passed/covered):null,coverage:Math.round(100*covered/total),
-    sample:{products:products.length,pages:pages.length,attemptedPages:pageResources.length,limit:20,pageLimit:3},
+    // microdata (relation 208): read product pages whose products came from Microdata because they had no JSON-LD Product.
+    // scan (F2): the version of reading, see SCAN.
+    sample:{products:products.length,pages:pages.length,attemptedPages:pageResources.length,limit:20,pageLimit:3,microdata:pages.filter(p=>p.scan.micro.products>0).length,scan:SCAN},
     rules,access,noindexPages:pages.filter(p=>p.noindex).map(p=>p.url),
     evidence:Object.entries(evidence).map(([kind,r])=>({kind,url:r?.url,status:r?.status??0,error:r?.error||null})).concat(pageResources.map(r=>({kind:'product',url:r.url,status:r.status,error:r.error||null}))),
     // EU 2026 findings: separate from rules, score and coverage (they carry no weight), see analyzeEu above. An error in this optional
     // part never breaks the check (gate A-189 pokus 1, nález 13): eu is then null and the page says the EU checks could not be evaluated.
-    eu:(()=>{try{return analyzeEu(snapshot,scan,pages,products);}catch{return null;}})(),
+    eu:(()=>{try{return analyzeEu(snapshot,scan,pages,products,{shoptet:shoptet.length>0});}catch{return null;}})(),
   };
 }

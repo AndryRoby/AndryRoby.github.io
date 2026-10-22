@@ -21,7 +21,8 @@ export const KEY_RE=/^[0-9a-f]{64}$/;
 export const JAZYKY=['sk','en','de'];
 export const jazyk=x=>JAZYKY.includes(x)?x:'sk';
 export const POLLING={interval:3000,limit:120000};
-const EU_STAVY=['found','not_found','not_applicable','unknown'];
+// link_found (zmluva 208): odkaz na stránku objednávky platformy pri funkcii na odstúpenie, funkčnosť neoverená.
+const EU_STAVY=['found','not_found','not_applicable','unknown','link_found'];
 const WEEKLY_STAVY=['pending','running','done','failed','not_configured'];
 
 export const vypln=(s,v)=>String(s).replace(/\{(\w+)\}/g,(m,k)=>Object.hasOwn(v,k)?String(v[k]):m);
@@ -159,26 +160,48 @@ export function datumCas(iso,lang){
   try{return d.toLocaleString(LOKALY[jazyk(lang)],{day:'numeric',month:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit',timeZone:'Europe/Bratislava'});}
   catch{return d.toISOString().slice(0,16).replace('T',' ');}
 }
-/** Zmena zmluvy C1: podobný odkaz pri funkcii na odstúpenie z weekly.eu[].similar {label, page}. Prijme aj pole (prvý prvok),
- * iný tvar je null. label je očistený text, page len známy kľúč stránky (inak '' a text povie „stránke produktu“). */
-export function podobnyOdkaz(r){
-  let s=r&&typeof r==='object'?r.similar:null;if(Array.isArray(s))s=s[0];
+// Odkaz {label, page} zo stavu weekly.eu (similar alebo link); spoločné čistenie pre podobnyOdkaz a najdenyOdkaz (zmluva 208).
+const odkazZ=s=>{
+  if(Array.isArray(s))s=s[0];
   if(!s||typeof s!=='object'||Array.isArray(s))return null;
   return {label:cistyText(s.label,120),page:typeof s.page==='string'&&/^[a-z]{1,20}$/.test(s.page)?s.page:''};
-}
+};
+/** Zmena zmluvy C1: podobný odkaz pri funkcii na odstúpenie z weekly.eu[].similar {label, page}. Prijme aj pole (prvý prvok),
+ * iný tvar je null. label je očistený text, page len známy kľúč stránky (inak '' a text povie „stránke produktu“). */
+export function podobnyOdkaz(r){return odkazZ(r&&typeof r==='object'?r.similar:null);}
 const jePodobny=(code,state,r)=>code==='eu_withdrawal'&&state==='not_found'&&podobnyOdkaz(r)!==null;
-/** Riadky troch nálezov EÚ zo stavu weekly.eu [{code,state,similar?}]: len známe kódy a stavy, texty z EU_UI (i18n.mjs), tón z eu-zobraz.mjs.
+/** Zmluva 208 (bod F): odkaz na stránku objednávky platformy (Shoptet /moja-objednavka/) pri funkcii na odstúpenie zo stavu link_found,
+ * weekly.eu[].link {label, page} (worker report-mail.mjs euRules). Rovnaké čistenie a tvar ako podobnyOdkaz, iný tvar je null. */
+export function najdenyOdkaz(r){return odkazZ(r&&typeof r==='object'?r.link:null);}
+const jeOdkaz=(code,state)=>code==='eu_withdrawal'&&state==='link_found';
+/** Relácia 208, agent M2: odkaz na stránku objednávky platformy s textom bez odstúpenia (Shoptet „Moja objednávka“) pri odstúpení
+ * not_found, weekly.eu[].order {label, page} (worker report-mail.mjs euRules). Rovnaké čistenie a tvar ako podobnyOdkaz, iný tvar je null. */
+export function odkazObjednavky(r){return odkazZ(r&&typeof r==='object'?r.order:null);}
+/** Riadky troch nálezov EÚ zo stavu weekly.eu [{code,state,similar?,link?,order?}]: len známe kódy a stavy, texty z EU_UI (i18n.mjs), tón z eu-zobraz.mjs.
  * Pri odstúpení not_found s podobným odkazom rovnaké pravidlo ako bezplatná kontrola (eu-zobraz.mjs riadky 55 a 56): štítok
- * „Overte odkaz“, tón unknown a veta o odkaze s iným znením (veta), nikdy červené „Označenie sme nenašli“. */
+ * „Overte odkaz“, tón unknown a veta o odkaze s iným znením (veta), nikdy červené „Označenie sme nenašli“.
+ * Zmluva 208: link_found (len pri odstúpení) má štítok „Odkaz nájdený, funkčnosť neoverená“, tón unknown a vetu o odkaze z r.link
+ * (bez r.link žiadna veta). Prehliadač môže mať starý i18n.mjs?v=2 bez nových kľúčov: vtedy „Overte odkaz“ a veta o podobnom
+ * odkaze, nikdy undefined.
+ * Relácia 208, agent M2: not_found s r.order (odkaz „Moja objednávka“ na stránku objednávky Shoptetu) má vetu orderPage; štítok a tón
+ * ako pri not_found (s podobným odkazom „Overte odkaz“, unknown a obe vety: najprv o objednávke, potom o podobnom odkaze). */
 export function euRiadky(eu,lang,{EU_UI,toneOf,EU_CODES}){
   if(!Array.isArray(eu))return [];
-  const t=EU_UI[jazyk(lang)]||EU_UI.en;
+  const t=EU_UI[jazyk(lang)]||EU_UI.en,stranka=p=>p&&Object.hasOwn(t.pages,p)?t.pages[p]:t.pages.product;
   return EU_CODES.map(code=>{
     const r=eu.find(x=>x&&typeof x==='object'&&x.code===code);
-    if(!r||!EU_STAVY.includes(r.state))return null;
-    const x=t.rules[code],podobny=jePodobny(code,r.state,r);
-    const out={code,title:x.title,badge:podobny&&x.status?.check?x.status.check:x.status?.[r.state]||t.status[r.state],tone:podobny?'unknown':toneOf(code,r.state)};
-    if(podobny){const p=podobnyOdkaz(r);if(p.label)out.veta=vypln(x.similar,{label:p.label,page:p.page&&Object.hasOwn(t.pages,p.page)?t.pages[p.page]:t.pages.product});}
+    if(!r||!EU_STAVY.includes(r.state)||(r.state==='link_found'&&!jeOdkaz(code,r.state)))return null;
+    const x=t.rules[code],podobny=jePodobny(code,r.state,r),odkaz=jeOdkaz(code,r.state);
+    const badge=odkaz?x.status?.link_found||x.status?.check||t.status.link_found||t.status.unknown
+      :podobny&&x.status?.check?x.status.check:x.status?.[r.state]||t.status[r.state];
+    const out={code,title:x.title,badge,tone:podobny||odkaz?'unknown':toneOf(code,r.state)};
+    // Agent M2: pri not_found najprv veta o odkaze na stránku objednávky (r.order), potom o podobnom odkaze, v poradí riadkov stránky
+    // kontroly (eu-zobraz.mjs); štítok a tón ostávajú. Starý i18n.mjs?v=2 bez orderPage: veta o objednávke chýba, nikdy undefined.
+    const vety=[],o=code==='eu_withdrawal'&&r.state==='not_found'?odkazObjednavky(r):null;
+    if(o&&o.label&&typeof x.orderPage==='string')vety.push(vypln(x.orderPage,{label:o.label,page:stranka(o.page)}));
+    if(podobny){const p=podobnyOdkaz(r);if(p.label)vety.push(vypln(x.similar,{label:p.label,page:stranka(p.page)}));}
+    if(vety.length)out.veta=vety.join(' ');
+    if(odkaz){const p=najdenyOdkaz(r);if(p&&p.label)out.veta=vypln(typeof x.linkFound==='string'?x.linkFound:x.similar,{label:p.label,page:stranka(p.page)});}
     return out;
   }).filter(Boolean);
 }
@@ -212,7 +235,8 @@ export function nazvyPravidiel(kody,lang,{RULES,localRule}){
  * na 'review' sa pokazil, z 'review' na 'ok' opravil (eu-zobraz.mjs toneOf). Ostatné zmeny, neznáme kódy a starý tvar bez
  * from a to sa vynechajú, rovnako ako v e-maile.
  * Zmena zmluvy C1: odstúpenie not_found s podobným odkazom (v zmene alebo v aktuálnom weekly.eu) má tón unknown, nie pokazené.
- * Zmena zmluvy C2: pri pokazenom pravidle aj prvá veta opravy a adresa miesta z aktuálneho weekly.failing. */
+ * Zmena zmluvy C2: pri pokazenom pravidle aj prvá veta opravy a adresa miesta z aktuálneho weekly.failing.
+ * Zmluva 208: link_found má tón unknown, takže zmena medzi link_found a not_found alebo found nie je pokazené ani opravené. */
 export function zmenyPodlaSmeru(zmeny,lang,zdroje,{eu=[],failing=[]}={}){
   const out={pokazene:[],opravene:[]};if(!Array.isArray(zmeny))return out;
   const t=zdroje.EU_UI[jazyk(lang)]||zdroje.EU_UI.en,videne=new Set(),str=x=>typeof x==='string'?x:null;
@@ -224,7 +248,8 @@ export function zmenyPodlaSmeru(zmeny,lang,zdroje,{eu=[],failing=[]}={}){
     if(zdroje.EU_CODES.includes(code)){
       if(!to||!EU_STAVY.includes(to)||(from&&!EU_STAVY.includes(from)))continue;
       const podobny=jePodobny(code,to,z)||(teraz&&teraz.state===to&&jePodobny(code,to,teraz));
-      const pred=from?zdroje.toneOf(code,from):'unknown',po=podobny?'unknown':zdroje.toneOf(code,to);
+      const ton=s=>jeOdkaz(code,s)?'unknown':zdroje.toneOf(code,s);
+      const pred=from?ton(from):'unknown',po=podobny?'unknown':ton(to);
       smer=pred==='ok'&&po==='review'?'pokazene':pred==='review'&&po==='ok'?'opravene':null;polozka={code,title:t.rules[code].title};
     }else{
       const p=nazvyPravidiel([code],lang,zdroje);if(!p.length)continue;
