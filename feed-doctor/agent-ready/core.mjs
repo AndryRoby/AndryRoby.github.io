@@ -883,7 +883,10 @@ export function analyzeStore(snapshot, options = {}) {
   put('jsonld_product',pages,p=>p.products.length>0);
   // Google requires only name on a ProductGroup; image belongs to its variant Product nodes, which are
   // checked here as Products (19. 10. 2026, developers.google.com product-variants, updated 2026-09-08).
-  put('jsonld_identity',pages.filter(p=>p.products.length),p=>p.products.every(x=>clean(x.name)&&(typed(x,'ProductGroup')&&!typed(x,'Product')||list(x.image).some(i=>httpUrl(typeof i==='string'?i:i?.url)))));
+  // The image may be a relative address, resolved against the product page (relation 208, live check 22. 10. 2026: a Shoptet store
+  // serves <meta itemprop="image" content="/user/shop/big/..."> to Cloudflare's addresses and an absolute CDN address elsewhere);
+  // an empty or blank value never counts.
+  put('jsonld_identity',pages.filter(p=>p.products.length),p=>p.products.every(x=>clean(x.name)&&(typed(x,'ProductGroup')&&!typed(x,'Product')||list(x.image).some(i=>{const s=typeof i==='string'?i:i?.url;return typeof s==='string'&&s.trim()!==''&&httpUrl(s,p.url);}))));
   put('jsonld_offer',pages.filter(p=>p.products.length),p=>p.productOffers.every(offers=>offers.length>0));
   put('jsonld_price',pages.filter(p=>p.offers.length),p=>p.offers.every(o=>{
     const price=o.price??(typed(o,'AggregateOffer')?o.lowPrice:undefined);
