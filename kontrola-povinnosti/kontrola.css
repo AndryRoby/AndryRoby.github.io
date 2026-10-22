@@ -1,0 +1,134 @@
+/* Stránky povinností EÚ s kontrolou jedného pravidla (relácia 213). Doplnok k /style/paper.css a /feed-doctor/agent-ready/style.css:
+   triedy ar-* odtiaľ sa tu nepredefinujú, všetko vlastné má predponu pk-. Mobil 390 px prvý; rozostupy 8, 16, 24, 32, 48 (mikro 4 a 12);
+   ciele dotyku aspoň 44 px, hlavné tlačidlo 48 px; stav výsledku vždy aj textom odznaku, farba len dopĺňa; bez prechodov farieb. */
+
+.pk-main{max-width:100%}
+/* Nadpisy stránok povinností sú dlhé (69 znakov v CS): menší stupeň než .ar-page h1, aby mal 3 až 4 riadky a kontrola bola bližšie (zostava Z1). */
+.ar-page.pk-stranka h1{font-size:clamp(30px,3.4vw,50px);max-width:26ch;hyphens:manual;overflow-wrap:normal}
+.pk-uvod-text>.ar-intro{max-width:64ch}
+/* Skok na kontrolu za prvou vetou odpovede (mobil a tablet); od 1100 px je formulár vpravo nad ohybom. */
+.pk-skok{margin:16px 0 24px}
+.pk-skok .ar-next-link{margin:0}
+.pk-skok a{display:flex;align-items:center;justify-content:center;width:100%;min-height:48px}
+@media(min-width:600px){.pk-skok a{display:inline-flex;width:auto}}
+.pk-overene{margin:0 0 8px}
+.pk-overene-koniec{margin-top:48px}
+
+/* Kontrola */
+.pk-kontrola{margin:32px 0 48px;max-width:760px;scroll-margin-top:calc(var(--hlavicka,71px) + 16px)}
+.pk-kontrola>h2{margin-bottom:8px}
+.pk-popis{margin:0 0 24px}
+.pk-form{margin:0}
+.pk-akcie{display:flex;flex-direction:column;gap:12px;margin:16px 0 0}
+.pk-akcie button{width:100%;min-height:48px}
+/* Okraje odsekov kontroly s predponou .ar-page .pk-kontrola: inak ich prebije .ar-page p (margin 0 0 20px, brána kolo 2). */
+.ar-page .pk-kontrola .pk-stav{margin:16px 0 0}
+.ar-page .pk-kontrola .pk-hranice,.ar-page .pk-kontrola .pk-sukromie{margin:8px 0 0;max-width:68ch}
+.ar-page .pk-kontrola .pk-hranice{margin-top:16px}
+.ar-page .pk-kontrola .pk-stav:empty{margin:0}
+/* Stavová veta dostáva fokus programom len na dotyku po chybe; obrys len pri klávesnici. */
+.pk-stav:focus{outline:none}
+.pk-stav:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
+/* Chyba sa nesmie dať zameniť s behom: oranžový pruh vľavo (stav je aj vetou, farba len dopĺňa). */
+.pk-stav[data-tone=chyba]{border-left:3px solid var(--accent);padding-left:16px}
+.ar-page .pk-kontrola .pk-dokaz{margin:24px 0 0;padding-left:16px;border-left:3px solid var(--line-silna,var(--line));font-size:16px;max-width:68ch}
+.ar-page .pk-kontrola .pk-plna{margin:16px 0 0}
+/* Dotyk: hover po ťuknutí ostáva, tlačidlo by po výsledku vyzeralo tmavé ako zakázané (brána kolo 2). Farba ostane základná. */
+@media(hover:none){
+  .ar-page .pk-akcie button:hover{background:var(--accent-dark)}
+  .ar-page .pk-akcie .ar-quiet:hover{background:transparent}
+}
+/* Po výsledku je odkaz na celú kontrolu už v ňom; druhý rovnaký odkaz pod dôkazom sa skryje. */
+.pk-vysledok:not([hidden])~.pk-plna{display:none}
+.pk-plna a,.pk-v-plna a{display:inline-flex;align-items:center;min-height:44px;font-weight:650}
+/* Odkaz uprostred vety: inline, cieľ dotyku dáva padding (inline-flex robil nerovné riadky a osirelú „; “). */
+.pk-v-vedlajsi a{display:inline;padding:12px 0;font-weight:650}
+.pk-noscript{margin:16px 0 0}
+
+/* Výsledok pravidla stránky */
+.pk-vysledok{margin:24px 0 0;scroll-margin-top:calc(var(--hlavicka,71px) + 16px)}
+.pk-vysledok:focus{outline:none}
+.pk-vysledok:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
+.pk-v{border-top:2px solid var(--ink);padding:24px 0 8px 16px;border-left:4px solid var(--muted)}
+.pk-v[data-tone=ok]{border-left-color:var(--ok)}
+.pk-v[data-tone=review]{border-left-color:var(--accent)}
+.pk-v-hlava{display:flex;flex-direction:column;align-items:flex-start;gap:8px;margin:0 0 8px}
+.ar-page .pk-v-nadpis{font:650 20px/1.35 var(--ui);margin:0;text-wrap:balance}
+.pk-odznak{display:inline-block;max-width:100%;font:650 14px/1.35 var(--ui);padding:4px 12px;border:1px solid currentColor;border-radius:999px;color:var(--ink)}
+.pk-odznak[data-tone=ok]{color:var(--ok)}
+.pk-odznak[data-tone=review]{color:var(--accent-light);border-width:2px}
+.pk-odznak[data-tone=unknown]{border-style:dashed}
+.ar-page .pk-v p{font-size:16px;margin:0 0 8px;max-width:70ch;overflow-wrap:anywhere}
+.ar-page .pk-v p.ar-muted{font-size:14px}
+.pk-v-obchod,.pk-v-plati{margin:0}
+.pk-v-riadky{margin:16px 0}
+.pk-v-riadky>p:not(.ar-muted){color:var(--ink)}
+.pk-v-riadky a,.pk-v-predpis a{display:inline;padding:12px 0}
+.ar-page .pk-v-shoptet{padding:12px 16px;background:var(--paper-deep);border-radius:6px}
+.ar-page .pk-v .pk-v-rucne{margin:16px 0;padding:4px 0 4px 16px;border-left:3px solid var(--accent);font-size:15px;line-height:1.6}
+.pk-v-rucne strong{color:var(--ink)}
+.ar-page .pk-v .pk-v-predpis{font-size:14px;line-height:1.7;color:var(--muted)}
+.pk-v-vedlajsi,.pk-v-plna{border-top:1px solid var(--line);padding-top:16px;margin-top:16px}
+.ar-page .pk-v .pk-v-straz-jazyk{margin-top:24px;font-size:15px}
+.pk-v .ar-straz{margin-top:24px}
+
+/* Obsah stránky */
+.pk-sekcia{margin-top:48px;max-width:76ch;scroll-margin-top:calc(var(--hlavicka,71px) + 16px)}
+.pk-sekcia h3{margin-top:32px}
+.pk-sekcia ul,.pk-sekcia ol{padding-left:24px;margin:0 0 24px}
+.ar-page .pk-sekcia li{font-size:17px;line-height:1.65;margin:8px 0}
+.ar-page .pk-pozn{font-size:15px;color:var(--muted)}
+/* Citácie bez oranžovej (oranžová patrí hlavnej akcii, arling-dizajn časť 3). */
+.pk-citat{margin:24px 0;padding:0 0 0 16px;border-left:3px solid var(--line-silna,var(--line))}
+.pk-citat sup{font-size:.7em;line-height:0}
+.pk-citat blockquote{margin:0}
+.ar-page .pk-citat blockquote p{font-family:var(--text);font-size:17px;color:var(--ink);margin:0 0 8px}
+.ar-page .pk-citat figcaption{font-size:14px;color:var(--muted);overflow-wrap:anywhere}
+.ar-page .pk-zdroj{font-size:14px;line-height:1.7;color:var(--muted);overflow-wrap:anywhere}
+.pk-zdroj a,.pk-citat figcaption a,.pk-zdroje a{display:inline;padding:12px 0}
+.pk-tabulka{overflow-x:auto;margin:0 0 24px;max-width:100%}
+.pk-tabulka:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
+.pk-tabulka table{width:100%;border-collapse:collapse;font-size:15px;line-height:1.5}
+.pk-tabulka th,.pk-tabulka td{text-align:left;vertical-align:top;padding:12px 8px;border-bottom:1px solid var(--line)}
+.pk-tabulka th{font-weight:650;color:var(--ink);border-bottom-color:var(--ink)}
+.pk-platforma{border-top:1px solid var(--line);padding-top:16px;margin-top:24px}
+.pk-platforma h3{margin-top:0}
+/* Mobil: riadok tabuľky je karta (paper.css); prvá bunka je názov riadku, nie hodnota. */
+@media(max-width:600px){.ar-page .pk-tabulka td:first-child{color:var(--ink);font-weight:650}}
+
+/* Stráž e-shopu (statická ponuka, odkrytá len keď je naživo) */
+.pk-straz{margin-top:48px;padding-top:24px;border-top:2px solid var(--ink);max-width:76ch}
+.pk-straz-cena{font-size:17px}
+.pk-straz .ar-next-link{width:100%}
+
+/* FAQ, zdroje, právna veta */
+.pk-faq{max-width:76ch}
+/* Druhý riadok dlhej otázky začína pod textom, nie pod šípkou. */
+.pk-faq summary{list-style-position:outside;margin-left:1.2em}
+.pk-zdroje{margin-top:48px;max-width:76ch}
+.pk-zdroje ol{padding-left:24px;margin:0 0 16px}
+.ar-page .pk-zdroje li{font-size:15px;line-height:1.65;margin:8px 0;overflow-wrap:anywhere}
+.pk-pravna{margin-top:32px}
+
+@media(min-width:600px){
+  .pk-akcie{flex-direction:row;flex-wrap:wrap;align-items:center;gap:16px}
+  .pk-akcie button{width:auto}
+  .pk-v-hlava{flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 16px}
+  .pk-v{padding-left:24px}
+  .pk-straz .ar-next-link{width:auto}
+}
+/* Počítač: priama odpoveď vľavo, kontrola vpravo, aby formulár bol nad ohybom (arling-dizajn časť 1 bod 3); poradie v DOM ostáva. */
+@media(min-width:1100px){
+  .pk-uvod{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:48px;align-items:start}
+  body.noc .pk-uvod>.pk-kontrola{margin:0 0 48px;max-width:none;padding-top:0;border-top:0}
+  .pk-uvod>.pk-kontrola>h2{margin-top:0;font-size:30px;line-height:1.2}
+  .pk-uvod-text{padding-bottom:48px}
+  /* h1 cez oba stĺpce (inak končil v pravom stĺpci a robil schod) a pod ním odstup, h2 kontroly je o stupeň menší. */
+  .ar-page.pk-stranka h1{max-width:none}
+  .pk-uvod{margin-top:24px}
+  .pk-skok{display:none}
+}
+@media(prefers-reduced-motion:reduce){
+  .pk-kontrola *,.pk-vysledok *{transition:none!important;animation:none!important}
+  .pk-vysledok,.pk-kontrola{scroll-behavior:auto}
+}
