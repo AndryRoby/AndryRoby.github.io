@@ -6,7 +6,7 @@
 // údaje vo formulári ostanú; všetko zo servera ide do stránky len cez textContent, odkazy len po kontrole adresy.
 // Čistá logika je exportovaná a testovaná v app.test.mjs (node --test); DOM sa spustí len v prehliadači.
 import {createLatest} from '../feed-doctor/agent-ready/controller.mjs';
-import {TEXTY} from './texty.mjs?v=3';
+import {TEXTY} from './texty.mjs?v=5';
 
 export const API='https://feed-monitor.arling.workers.dev';
 export const STAV_URL='/straz-eshopu/stav.json';
@@ -249,11 +249,48 @@ export function weeklyStav(w){
  * celý ISO čas, db.js historyEntry), na stránku ide cez datumKratky. */
 export function historiaFeedu(h){
   if(!Array.isArray(h))return [];
-  return h.slice(-10).reverse().map(r=>r&&typeof r==='object'?{datum:cistyText(r.date,40)||cistyText(r.at,40),skore:cele(r.score,0,100),chyby:cele(r.error),upozornenia:cele(r.warning)}:null).filter(r=>r&&r.datum);
+  return h.slice(-10).reverse().map(r=>r&&typeof r==='object'?{datum:cistyText(r.date,40)||cistyText(r.at,40),produkty:cele(r.products,1),chyby:cele(r.error),upozornenia:cele(r.warning)}:null).filter(r=>r&&r.datum);
+}
+/** W4 (22. 10. 2026): stĺpce histórie feedu. Skóre feedu sa neukazuje (computeScore odpočítava za každý výskyt, skutočný
+ * Shoptet feed má 0); stĺpec Produkty len vtedy, keď ho má aspoň jeden riadok (staré kontroly bez products ho nemajú). */
+export function stlpceHistorie(hist){
+  const sProduktmi=Array.isArray(hist)&&hist.some(r=>r&&r.produkty!=null);
+  return sProduktmi?['datum','produkty','chyby','upozornenia']:['datum','chyby','upozornenia'];
+}
+/** Celé číslo podľa jazyka: 1 282 (sk), 1,282 (en), 1.282 (de). */
+export function cislo(n,lang){
+  try{return new Intl.NumberFormat(LOKALY[jazyk(lang)],{maximumFractionDigits:0}).format(n);}catch{return String(n);}
+}
+/** W4: hlavná veta feedu, počty namiesto skóre: chyby a upozornenia pri N produktoch (last_products), bez N, keď ho nepoznáme.
+ * '' pri starom texty.mjs bez feedPocty. s = TEXTY[lang].sprava. */
+export function vetaFeedu(d,s,lang){
+  const t=s&&s.feedPocty&&typeof s.feedPocty==='object'?s.feedPocty:null;if(!t||!d||typeof d!=='object')return '';
+  const c=d.last_counts&&typeof d.last_counts==='object'?d.last_counts:{},n=cele(d.last_products,1);
+  const forma=n==null?'bez':n===1?'jeden':'vela',vzor=typeof t[forma]==='string'?t[forma]:t.bez;
+  return typeof vzor==='string'?vypln(vzor,{datum:datum(d.last_check_at,lang)||'?',chyby:cislo(cele(c.error)??0,lang),upozornenia:cislo(cele(c.warning)??0,lang),produkty:n==null?'':cislo(n,lang)}):'';
+}
+/** W4: najčastejšie problémy feedu z last_top_issues: najviac päť chýb a upozornení s názvom pravidla v jazyku a počtom.
+ * nazvy = Map id -> názov (checkProducts z hubovej kópie Feed Doctora); pravidlo bez názvu sa vynechá, surové id nikdy. */
+export function problemyFeedu(top,lang,nazvy){
+  if(!Array.isArray(top)||!(nazvy instanceof Map))return [];
+  return top.filter(i=>i&&typeof i==='object'&&(i.severity==='error'||i.severity==='warning')&&typeof i.rule==='string'&&nazvy.has(i.rule))
+    .slice(0,5).map(i=>({nazov:nazvy.get(i.rule),pocet:cislo(cele(i.count)??0,lang),zavaznost:i.severity}));
+}
+/** Názvy pravidiel feedu v jazyku z modulu Feed Doctor (checkProducts([], lang).table); prázdna mapa pri chybe. */
+export function nazvyPravidielFeedu(fd,lang){
+  try{return new Map(fd.checkProducts([],jazyk(lang)).table.map(r=>[r.id,r.title]));}catch{return new Map();}
+}
+/** W3 (22. 10. 2026): veta pri feede nad 8 MB, ktorý worker vyhodnotil len na prvých N produktoch (last_sample, last_products).
+ * Len pri last_sample === true a celom kladnom počte; inak '' (aj pri starom texty.mjs bez feedVzorka). s = TEXTY[lang].sprava. */
+export function vetaVzorky(d,s){
+  if(!d||typeof d!=='object'||d.last_sample!==true)return '';
+  const n=cele(d.last_products,1),t=s&&s.feedVzorka&&typeof s.feedVzorka==='object'?s.feedVzorka:null;if(!n||!t)return '';
+  const forma=n===1?'jeden':n<=4?'malo':'vela',vzor=typeof t[forma]==='string'?t[forma]:t.vela;
+  return typeof vzor==='string'?vypln(vzor,{pocet:n}):'';
 }
 /** Riadok tabuľky histórie na zobrazenie: dátum podľa jazyka (pri nečitateľnom dátume prvých 10 znakov), čísla alebo ''. */
-export function bunkyHistorie(r,lang){
-  return [datumKratky(r.datum,lang)||r.datum.slice(0,10),r.skore??'',r.chyby??'',r.upozornenia??''].map(String);
+export function bunkyHistorie(r,lang,stlpce=['datum','produkty','chyby','upozornenia']){
+  return stlpce.map(k=>k==='datum'?datumKratky(r.datum,lang)||r.datum.slice(0,10):r[k]==null?'':cislo(r[k],lang)).map(String);
 }
 
 /** Odpoveď POST /v1/agent-ready/monitors/:id/run (zmena zmluvy Z4): {text, chyba?, obnov?, neskor?}.
@@ -405,6 +442,8 @@ export async function spustSpravu(t,lang,par,rez,tracker,opt={}){
   hlavny.textContent=s.nacitavam;
   const zdrojePromise=Promise.all([import('../feed-doctor/agent-ready/eu-zobraz.mjs'),import('../feed-doctor/agent-ready/core.mjs'),import('../feed-doctor/agent-ready/i18n.mjs?v=2')])
     .then(([eu,core,i18n])=>({EU_UI:i18n.EU_UI,toneOf:eu.toneOf,EU_CODES:eu.EU_CODES,RULES:core.RULES,localRule:i18n.localRule}),()=>null);
+  // W4: názvy pravidiel feedu (hubová kópia Feed Doctora); bez nej sa zoznam najčastejších problémov vynechá, počty ostanú.
+  const feedNazvyPromise=import('../feed-doctor/feed-doctor.js').then(fd=>nazvyPravidielFeedu(fd,lang),()=>new Map());let feedNazvy=null;
 
   async function nacitaj(){
     const req=nacitanie.begin();
@@ -443,7 +482,7 @@ export async function spustSpravu(t,lang,par,rez,tracker,opt={}){
   const vseobecna=st=>({text:st===503?s.hlasenia.nedostupne:st===402?s.hlasenia.proRequired:s.hlasenia.chyba,chyba:true});
 
   async function vykresli(d){
-    aktualne=d;const z=zdroje||(zdroje=await zdrojePromise);if(aktualne!==d||zmazane)return;
+    aktualne=d;const z=zdroje||(zdroje=await zdrojePromise);const fn=feedNazvy||(feedNazvy=await feedNazvyPromise);if(aktualne!==d||zmazane)return;
     const ps=planStav(d),pro=ps==='pro'||ps==='pro_zrusene',store=cistyText(d.store_url,300),feed=cistyText(d.feed_url,500);
     if(hlavny.dataset.drzat!=='1')hlavny.textContent='';
     if(h1){let host='';try{host=store?new URL(store).host:'';}catch{host='';}h.textContent=host;h.hidden=!host;}
@@ -505,11 +544,15 @@ export async function spustSpravu(t,lang,par,rez,tracker,opt={}){
     const fb=node('section',null,'st-blok');fb.setAttribute('aria-labelledby','st-feed-nadpis');const fh=node('h3',s.feedNadpis);fh.id='st-feed-nadpis';fb.append(fh);
     if(!feed)fb.append(node('p',s.feedZiadny));
     else{
-      const sk=cele(d.last_score,0,100),c=d.last_counts&&typeof d.last_counts==='object'?d.last_counts:{};
-      fb.append(node('p',sk==null?s.feedZiadnaKontrola:vypln(s.feedSkore,{datum:datum(d.last_check_at,lang)||'?',skore:sk,chyby:cele(c.error)??0,upozornenia:cele(c.warning)??0})));
-      const hist=historiaFeedu(d.history);
-      if(hist.length){const wrap=node('div',null,'st-tabulka');const tab=node('table');tab.append(node('caption',s.historia.popis));const th=node('tr');for(const k of ['datum','skore','chyby','upozornenia'])th.append(node('th',s.historia[k]));const thead=node('thead');thead.append(th);const tb=node('tbody');
-        for(const r of hist){const tr=node('tr');for(const v of bunkyHistorie(r,lang))tr.append(node('td',v));tb.append(tr);}tab.append(thead,tb);wrap.append(tab);fb.append(wrap);}
+      // W4: skóre feedu sa neukazuje, last_score slúži len ako znak, že posledná kontrola feed vyhodnotila (stav ok).
+      const vyhodnoteny=cele(d.last_score,0,100)!=null,veta=vyhodnoteny?vetaFeedu(d,s,lang):'';
+      fb.append(node('p',veta||s.feedZiadnaKontrola));
+      const vzorka=veta?vetaVzorky(d,s):'';if(vzorka)fb.append(node('p',vzorka,'ar-muted st-feed-vzorka'));
+      const problemy=veta?problemyFeedu(d.last_top_issues,lang,fn):[];
+      if(problemy.length){fb.append(node('h4',s.feedProblemyNadpis));const ul=node('ul',null,'st-zoznam st-feed-problemy');for(const p of problemy)ul.append(node('li',`${p.nazov} (${p.pocet})`));fb.append(ul);}
+      const hist=historiaFeedu(d.history),stlpce=stlpceHistorie(hist);
+      if(hist.length){const wrap=node('div',null,'st-tabulka');const tab=node('table');tab.append(node('caption',s.historia.popis));const th=node('tr');for(const k of stlpce)th.append(node('th',s.historia[k]));const thead=node('thead');thead.append(th);const tb=node('tbody');
+        for(const r of hist){const tr=node('tr');for(const v of bunkyHistorie(r,lang,stlpce))tr.append(node('td',v));tb.append(tr);}tab.append(thead,tb);wrap.append(tab);fb.append(wrap);}
     }
     obsah.append(fb);
 

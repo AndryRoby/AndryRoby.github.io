@@ -8,7 +8,7 @@ import {createHash} from 'node:crypto';
 import {fileURLToPath} from 'node:url';
 import * as A from './app.mjs';
 import vm from 'node:vm';
-import {TEXTY} from './texty.mjs?v=3';
+import {TEXTY} from './texty.mjs?v=5';
 import * as N from '../feed-doctor/monitor/navrat.mjs';
 import {EU_UI,localRule} from '../feed-doctor/agent-ready/i18n.mjs?v=2';
 import {toneOf,EU_CODES} from '../feed-doctor/agent-ready/eu-zobraz.mjs';
@@ -325,7 +325,7 @@ for(const [lang,cesta,canonical,zadarmo,sukromie,podmienky,priklad] of STRANKY){
     for(const [,obsah] of vlozene.slice(1))JSON.parse(obsah);
     assert.ok(t.includes('"price":"9.00","priceCurrency":"EUR"')&&t.includes('"@type":"FAQPage"'));
     assert.doesNotMatch(t,/\sstyle="/);assert.doesNotMatch(t,/\son[a-z]+="/);
-    assert.ok(t.includes('<script type="text/plain" data-odlozene="module" src="/straz-eshopu/app.mjs?v=3"></script>'));
+    assert.ok(t.includes('<script type="text/plain" data-odlozene="module" src="/straz-eshopu/app.mjs?v=4"></script>'));
     assert.ok(t.includes('/straz-eshopu/straz.css?v=4')&&t.includes('<h1 id="st-nadpis">'));
     assert.ok(t.includes(`/style/menu-${lang}.js`));assert.ok(t.includes('class="site-footer"'));
     assert.ok(t.includes(`href="${zadarmo}"`));assert.ok(t.includes(`href="${sukromie}"`));assert.ok(t.includes(`href="${podmienky}"`));
@@ -403,10 +403,12 @@ test('Z1: 403 test_not_allowed má vlastnú vetu v SK, EN, DE (testovací režim
 });
 
 test('história feedu: celý ISO čas zo servera sa ukáže ako dátum podľa jazyka, nikdy orezaný ISO reťazec', ()=>{
-  const h=A.historiaFeedu([{date:'2026-10-22T05:00:00.000Z',score:91,error:2,warning:0}]);
+  // W4: stĺpec Produkty namiesto Skóre; skóre feedu sa do bunky nikdy nedostane.
+  const h=A.historiaFeedu([{date:'2026-10-22T05:00:00.000Z',score:91,error:2,warning:0,products:7}]);
   assert.equal(h[0].datum,'2026-10-22T05:00:00.000Z');
-  assert.deepEqual(A.bunkyHistorie(h[0],'sk'),['22. 10. 2026','91','2','0']);
-  assert.deepEqual(A.bunkyHistorie(h[0],'de'),['22.10.2026','91','2','0']);
+  assert.deepEqual(A.bunkyHistorie(h[0],'sk'),['22. 10. 2026','7','2','0']);
+  assert.deepEqual(A.bunkyHistorie(h[0],'de'),['22.10.2026','7','2','0']);
+  assert.ok(!A.bunkyHistorie(h[0],'sk').includes('91'));
   assert.equal(A.bunkyHistorie(h[0],'en')[0],'22/10/2026');
   for(const l of A.JAZYKY)assert.doesNotMatch(A.bunkyHistorie(h[0],l)[0],/T05|\.$/);
   assert.equal(A.bunkyHistorie({datum:'zle',skore:null,chyby:null,upozornenia:null},'sk')[0],'zle');
@@ -894,4 +896,99 @@ test('nález 13: zásady súkromia časť 4 bez rozporu (zrušenie Stráže nič
   }
   // Snímky kolo 2: „Bez e-mailu.“ pod tlačidlom v článku sa nerozdelí na dva riadky.
   assert.ok(subor('../oznamenie-o-zakonnej-zaruke-eshop/index.html').includes('vášho obchodu. <span class="ar-nowrap">Bez e-mailu.</span></p>'));
+});
+
+// W3 (22. 10. 2026): feed nad 8 MB worker vyhodnotí na prvých N produktoch (last_sample, last_products z GET /v1/monitors/:id).
+test('W3: veta o vzorke feedu len pri last_sample true a kladnom počte, v SK, EN, DE bez pomlčiek, slovenské tvary čísla', ()=>{
+  for(const l of ['sk','en','de']){
+    const s=TEXTY[l].sprava,v=A.vetaVzorky({last_sample:true,last_products:12000},s);
+    assert.ok(v.includes('12000')&&v.includes('8 MB'),l+': '+v);assert.doesNotMatch(v,/[–—]/);
+    assert.equal(A.vetaVzorky({last_sample:false,last_products:12000},s),'');
+    assert.equal(A.vetaVzorky({last_products:12000},s),'');
+    assert.equal(A.vetaVzorky({last_sample:'true',last_products:12000},s),'');
+    assert.equal(A.vetaVzorky({last_sample:true,last_products:0},s),'');
+    assert.equal(A.vetaVzorky({last_sample:true,last_products:'12000'},s),'');
+    assert.equal(A.vetaVzorky({last_sample:true,last_products:null},s),'');
+  }
+  const s=TEXTY.sk.sprava;
+  assert.equal(A.vetaVzorky({last_sample:true,last_products:1},s),'Vyhodnotili sme prvý produkt z feedu, ktorý má viac ako 8 MB.');
+  assert.equal(A.vetaVzorky({last_sample:true,last_products:3},s),'Vyhodnotili sme prvé 3 produkty z feedu, ktorý má viac ako 8 MB.');
+  assert.equal(A.vetaVzorky({last_sample:true,last_products:5},s),'Vyhodnotili sme prvých 5 produktov z feedu, ktorý má viac ako 8 MB.');
+  // Starý texty.mjs z vyrovnávacej pamäte (bez feedVzorka): nič, nikdy „undefined“.
+  assert.equal(A.vetaVzorky({last_sample:true,last_products:5},{}),'');
+});
+
+test('W3 v DOM: pri last_sample veta pri feede pod skóre, bez vzorky nie; ostatné časti bloku feedu ostanú', async ()=>{
+  const feed={feed_url:'https://obchod.sk/google/export/products.xml',last_score:88,last_counts:{error:1,warning:3},last_check_at:'2026-10-22T05:00:00Z'};
+  const veta=A.vetaVzorky({last_sample:true,last_products:2400},S_SK);
+  let env=await spravaPre(`?id=${ID}&key=${KEY}`,z=>z.method==='GET'?{data:zaklad({...feed,last_sample:true,last_products:2400})}:null);
+  try{
+    const p=env.doc.vsetky().filter(e=>e.tagName==='P'&&e.isConnected);
+    // W4: hlavná veta feedu má počty pri N produktoch, nie skóre.
+    const i=p.findIndex(e=>e.textContent.startsWith('Posledná kontrola ')&&e.textContent.includes(`chyby 1 a upozornenia 3 pri ${A.cislo(2400,'sk')} produktoch`));
+    assert.ok(i>=0,'veta s počtami feedu');assert.equal(p[i+1].textContent,veta);assert.ok(p[i+1].className.includes('ar-muted'));
+    assert.ok(!env.doc.body.textContent.includes('88 zo 100'));
+  }finally{env.obnov();}
+  env=await spravaPre(`?id=${ID}&key=${KEY}`,z=>z.method==='GET'?{data:zaklad({...feed,last_sample:false,last_products:2400})}:null);
+  try{const text=env.doc.body.textContent;assert.ok(text.includes('chyby 1 a upozornenia 3'));assert.ok(!text.includes('88 zo 100'));assert.ok(!text.includes('8 MB'));}finally{env.obnov();}
+  // Bez skóre (napr. feed sa nenačítal) sa veta o vzorke neukáže ani pri last_sample true.
+  env=await spravaPre(`?id=${ID}&key=${KEY}`,z=>z.method==='GET'?{data:zaklad({...feed,last_score:null,last_sample:true,last_products:2400})}:null);
+  try{const text=env.doc.body.textContent;assert.ok(text.includes(S_SK.feedZiadnaKontrola));assert.ok(!text.includes(veta));}finally{env.obnov();}
+});
+
+test('W4: app.mjs a test načítajú texty.mjs?v=5 (feedPocty a stĺpec Produkty nesmú prísť zo starej kópie)', ()=>{
+  const app=readFileSync(new URL('./app.mjs',import.meta.url),'utf8');
+  assert.ok(app.includes("from './texty.mjs?v=5'"));assert.ok(!/texty\.mjs\?v=[34]'/.test(app));
+});
+
+test('W4: veta feedu s počtami pri N produktoch v SK, EN, DE, bez N pri starej kontrole; texty bez skóre feedu', ()=>{
+  const d={last_check_at:'2026-10-22T05:00:00Z',last_score:0,last_counts:{error:209,warning:1282},last_products:1282};
+  const sk=A.vetaFeedu(d,TEXTY.sk.sprava,'sk'),en=A.vetaFeedu(d,TEXTY.en.sprava,'en'),de=A.vetaFeedu(d,TEXTY.de.sprava,'de');
+  assert.ok(sk.endsWith(`chyby 209 a upozornenia ${A.cislo(1282,'sk')} pri ${A.cislo(1282,'sk')} produktoch.`),sk);
+  assert.ok(en.endsWith('209 errors and 1,282 warnings across 1,282 products.'),en);
+  assert.ok(de.endsWith('209 Fehler und 1.282 Warnungen bei 1.282 Produkten.'),de);
+  for(const v of [sk,en,de])assert.doesNotMatch(v,/0 zo 100|0 of 100|0 von 100|skóre|score|Bewertung/i);
+  const stara={...d,last_products:null};
+  assert.ok(A.vetaFeedu(stara,TEXTY.sk.sprava,'sk').endsWith(`: chyby 209 a upozornenia ${A.cislo(1282,'sk')}.`));
+  assert.doesNotMatch(A.vetaFeedu(stara,TEXTY.en.sprava,'en'),/across/);
+  assert.match(A.vetaFeedu({...d,last_products:1,last_counts:{error:0,warning:1}},TEXTY.de.sprava,'de'),/bei 1 Produkt\.$/);
+  assert.equal(A.vetaFeedu(d,{},'sk'),'');
+  for(const l of A.JAZYKY){const s=TEXTY[l].sprava;assert.equal(s.feedSkore,undefined);assert.equal(s.historia.skore,undefined);assert.ok(s.historia.produkty&&s.feedProblemyNadpis);}
+});
+
+test('W4: stĺpce histórie feedu: Produkty len keď ho má aspoň jeden riadok, Skóre nikdy', ()=>{
+  const s=A.historiaFeedu([{date:'2026-10-21T05:00:00Z',score:0,error:3,warning:9},{date:'2026-10-22T05:00:00Z',score:0,error:209,warning:1282,products:1282}]);
+  assert.deepEqual(A.stlpceHistorie(s),['datum','produkty','chyby','upozornenia']);
+  assert.deepEqual(A.bunkyHistorie(s[0],'en',A.stlpceHistorie(s)),['22/10/2026','1,282','209','1,282']);
+  assert.deepEqual(A.bunkyHistorie(s[1],'en',A.stlpceHistorie(s)),['21/10/2026','','3','9']);
+  const bez=A.historiaFeedu([{date:'2026-10-21T05:00:00Z',score:0,error:3,warning:9}]);
+  assert.deepEqual(A.stlpceHistorie(bez),['datum','chyby','upozornenia']);
+  assert.deepEqual(A.bunkyHistorie(bez[0],'sk',A.stlpceHistorie(bez)),['21. 10. 2026','3','9']);
+});
+
+test('W4: najčastejšie problémy feedu s názvom a počtom, len chyby a upozornenia so známym názvom', async ()=>{
+  const fd=await import('../feed-doctor/feed-doctor.js');
+  const top=[{rule:'missing_price',severity:'error',count:209},{rule:'missing_brand',severity:'warning',count:1282},{rule:'shipping_missing',severity:'info',count:40},{rule:'nezname',severity:'error',count:3}];
+  const en=A.problemyFeedu(top,'en',A.nazvyPravidielFeedu(fd,'en'));
+  assert.deepEqual(en.map(p=>`${p.nazov} (${p.pocet})`),['Missing price (209)','Missing brand (1,282)']);
+  const sk=A.problemyFeedu(top,'sk',A.nazvyPravidielFeedu(fd,'sk'));
+  assert.deepEqual(sk.map(p=>p.nazov),['Chýba cena','Chýba značka']);
+  assert.deepEqual(A.problemyFeedu(top,'sk',null),[]);assert.deepEqual(A.problemyFeedu('zle','sk',new Map()),[]);
+});
+
+test('W4 v DOM: blok feedu bez skóre, s počtami, najčastejšími problémami a stĺpcom Produkty', async ()=>{
+  const history=[{date:'2026-10-21T05:00:00.000Z',score:0,error:201,warning:1280,products:1280},{date:'2026-10-22T05:00:00.000Z',score:0,error:209,warning:1282,products:1282}];
+  const data=zaklad({history,feed_url:'https://obchod.sk/google/export/products.xml',last_score:0,last_counts:{error:209,warning:1282},last_products:1282,last_check_at:'2026-10-22T05:00:00Z',
+    last_top_issues:[{rule:'missing_price',severity:'error',count:209},{rule:'missing_brand',severity:'warning',count:1282}]});
+  const env=await spravaPre(`?id=${ID}&key=${KEY}`,z=>z.method==='GET'?{data}:null);
+  try{
+    const text=env.doc.body.textContent;
+    assert.ok(text.includes(`chyby 209 a upozornenia ${A.cislo(1282,'sk')} pri ${A.cislo(1282,'sk')} produktoch`),text);
+    assert.ok(!text.includes('0 zo 100'));
+    const h4=env.doc.vsetky().filter(e=>e.tagName==='H4'&&e.isConnected).map(e=>e.textContent);assert.ok(h4.includes(S_SK.feedProblemyNadpis));
+    const li=env.doc.vsetky().filter(e=>e.tagName==='LI'&&e.isConnected).map(e=>e.textContent);
+    assert.ok(li.includes('Chýba cena (209)')&&li.includes(`Chýba značka (${A.cislo(1282,'sk')})`),JSON.stringify(li));
+    const th=env.doc.vsetky().filter(e=>e.tagName==='TH'&&e.isConnected).map(e=>e.textContent);
+    assert.deepEqual(th,['Dátum','Produkty','Chyby','Upozornenia']);
+  }finally{env.obnov();}
 });
