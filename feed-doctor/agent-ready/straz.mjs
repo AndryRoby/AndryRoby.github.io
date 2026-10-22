@@ -12,8 +12,10 @@
  * pošle sa Umami ar_straz_subscribe_click {lang, place, finding?}, počká sa na jeho odoslanie najviac 400 ms a location.assign(checkout_url).
  * Umami nikdy nedostane adresu obchodu, feedu ani e-mail; pri ?test alebo sessionStorage 'straz:test' sa nepošle nič.
  * Kolo 1 (PRODUKT.md časť 6b): Z2 dopyt nesie prev_id a prev_key zo 'straz:navrat', ak je mladší ako 24 h; Z1 403 test_not_allowed
- * povie, že testovací režim je len pre ARLing; Z3 pri skóre null alebo 0 stránkach box povie, že údaje pre AI sa nedali vyhodnotiť;
- * Z5 kontakt SK podpora@arling.sk, EN a DE support@arling.sk.
+ * povie, že testovací režim je len pre ARLing; Z3 pri skóre null alebo 0 stránkach box povie, že údaje pre AI sa nedali vyhodnotiť
+ * (raz, v druhom bode Čo sleduje); Z5 kontakt SK podpora@arling.sk, EN a DE support@arling.sk.
+ * Kolo 2 (brána pokus 1): veta o platforme nesľubuje „každú platformu“ (nález 9). Neutrálnu vetu výsledku bez prečítanej
+ * produktovej stránky (nález 6) má app.mjs, lebo platí aj bez Stráže.
  *
  * AGENTS.md bod 12: naraz beží jeden dopyt (polia len na čítanie, tlačidlo vypnuté), každý dopyt má poradové číslo a odpoveď, ktorá
  * nepatrí poslednému, alebo prišla do boxu, ktorý už nie je na stránke (nová kontrola), sa zahodí; časový limit; chyba nič neukáže
@@ -35,13 +37,12 @@ export const T={
  sk:{
   title:'Stráž e-shopu: táto kontrola znova každý týždeň',
   lead:'Stráž zopakuje túto kontrolu každý týždeň a napíše vám, keď sa výsledok zmení: keď sa niečo pokazí alebo keď sa oprava prejaví.',
-  shopify:'Stráž funguje na každej platforme vrátane Shopify a do obchodu sa nič neinštaluje. Je to samostatná služba, nie Pro v našej appke pre Shopify.',
+  shopify:'Stráž číta len verejné stránky, preto funguje aj pri Shopify a do obchodu sa nič neinštaluje. Je to samostatná služba, nie Pro v našej appke pre Shopify.',
   watchTitle:'Čo sleduje',
   watch:['Povinnosti EÚ na verejných stránkach obchodu, raz týždenne: funkciu na odstúpenie od zmluvy online, oznámenie o zákonnej záruke a všeobecné environmentálne tvrdenia.',
    'Údaje pre AI nákupných asistentov, raz týždenne: cenu, dostupnosť, dopravu a vrátenie v údajoch produktov a v zásadách obchodu (najviac 20 produktov a 3 produktové stránky).',
    'Chyby produktového feedu, každý deň, ak zadáte jeho adresu.'],
-  noAi:'Údaje pre AI nákupných asistentov sa pri tomto obchode nedali vyhodnotiť, lebo sme nenašli čitateľné produktové stránky. Stráž bude každý týždeň sledovať povinnosti EÚ a údaje pre AI vyhodnotí, keď budú produktové stránky čitateľné.',
-  watchNoAi:'Údaje pre AI nákupných asistentov, raz týždenne, keď budú produktové stránky čitateľné: cenu, dostupnosť, dopravu a vrátenie v údajoch produktov (najviac 20 produktov a 3 produktové stránky). Teraz sa nedali vyhodnotiť.',
+  watchNoAi:'Údaje pre AI nákupných asistentov, raz týždenne: cenu, dostupnosť, dopravu a vrátenie v údajoch produktov (najviac 20 produktov a 3 produktové stránky). Pri tomto obchode sa teraz nedali vyhodnotiť, lebo sme nenašli čitateľné produktové stránky; vyhodnotíme ich, keď budú čitateľné.',
   often:'Prvá kontrola prebehne hneď po zaplatení. Potom obchod raz týždenne a feed každý deň.',
   mail:'E-mail príde hneď po zapnutí s prvými výsledkami a potom len pri zmene. Keď sa nič nezmení, nepíšeme.',
   limits:'Číta len verejné stránky, bez prihlásenia a bez spúšťania JavaScriptu; nič sa neinštaluje. Je to technická kontrola, nie právna rada.',
@@ -71,13 +72,12 @@ export const T={
  en:{
   title:'Shop Guard: this check again every week',
   lead:'Shop Guard repeats this check every week and emails you when the result changes: when something breaks or when a fix shows up.',
-  shopify:'Shop Guard works on every platform, Shopify included, and nothing is installed in your store. It is a separate service, not Pro in our Shopify app.',
+  shopify:'Shop Guard reads public pages only, so it works with Shopify too and nothing is installed in your store. It is a separate service, not Pro in our Shopify app.',
   watchTitle:'What it watches',
   watch:['EU duties on the public pages of your store, once a week: the online withdrawal function, the notice on the legal guarantee and generic environmental claims.',
    'Data for AI shopping assistants, once a week: price, availability, shipping and returns in your product data and store policies (up to 20 products and 3 product pages).',
    'Errors in your product feed, every day, if you add its address.'],
-  noAi:'Data for AI shopping assistants could not be evaluated for this store, because we found no readable product pages. Shop Guard will watch the EU duties every week and will evaluate the data for AI once the product pages are readable.',
-  watchNoAi:'Data for AI shopping assistants, once a week as soon as the product pages are readable: price, availability, shipping and returns in your product data (up to 20 products and 3 product pages). It could not be evaluated now.',
+  watchNoAi:'Data for AI shopping assistants, once a week: price, availability, shipping and returns in your product data (up to 20 products and 3 product pages). For this store it could not be evaluated now, because we found no readable product pages; we will evaluate it once they are readable.',
   often:'The first check runs right after payment. Then the store once a week and the feed every day.',
   mail:'You get an email right after it starts, with the first results, and after that only when something changes. No change, no email.',
   limits:'Reads public pages only, without logging in and without running JavaScript; nothing is installed. A technical check, not legal advice.',
@@ -107,13 +107,12 @@ export const T={
  de:{
   title:'Shop-Wächter: diese Prüfung jede Woche erneut',
   lead:'Der Shop-Wächter wiederholt diese Prüfung jede Woche und schreibt Ihnen, wenn sich das Ergebnis ändert: wenn etwas kaputtgeht oder eine Korrektur sichtbar wird.',
-  shopify:'Der Shop-Wächter funktioniert auf jeder Plattform, auch mit Shopify, und in Ihrem Shop wird nichts installiert. Er ist ein eigener Dienst, nicht Pro in unserer Shopify-App.',
+  shopify:'Der Shop-Wächter liest nur öffentliche Seiten, daher funktioniert er auch mit Shopify, und in Ihrem Shop wird nichts installiert. Er ist ein eigener Dienst, nicht Pro in unserer Shopify-App.',
   watchTitle:'Was er beobachtet',
   watch:['EU-Pflichten auf den öffentlichen Seiten Ihres Shops, einmal pro Woche: die Online-Widerrufsfunktion, den Hinweis auf die gesetzliche Gewährleistung und allgemeine Umweltaussagen.',
    'Daten für KI-Einkaufsassistenten, einmal pro Woche: Preis, Verfügbarkeit, Versand und Rückgabe in Ihren Produktdaten und Shop-Richtlinien (bis zu 20 Produkte und 3 Produktseiten).',
    'Fehler in Ihrem Produktfeed, jeden Tag, wenn Sie seine Adresse angeben.'],
-  noAi:'Die Daten für KI-Einkaufsassistenten ließen sich für diesen Shop nicht auswerten, weil wir keine lesbaren Produktseiten gefunden haben. Der Shop-Wächter beobachtet jede Woche die EU-Pflichten und wertet die Daten für KI aus, sobald die Produktseiten lesbar sind.',
-  watchNoAi:'Daten für KI-Einkaufsassistenten, einmal pro Woche, sobald die Produktseiten lesbar sind: Preis, Verfügbarkeit, Versand und Rückgabe in Ihren Produktdaten (bis zu 20 Produkte und 3 Produktseiten). Jetzt ließen sie sich nicht auswerten.',
+  watchNoAi:'Daten für KI-Einkaufsassistenten, einmal pro Woche: Preis, Verfügbarkeit, Versand und Rückgabe in Ihren Produktdaten (bis zu 20 Produkte und 3 Produktseiten). Für diesen Shop ließen sie sich jetzt nicht auswerten, weil wir keine lesbaren Produktseiten gefunden haben; wir werten sie aus, sobald die Seiten lesbar sind.',
   often:'Die erste Prüfung läuft direkt nach der Zahlung. Danach der Shop einmal pro Woche und der Feed jeden Tag.',
   mail:'Sie bekommen direkt nach dem Start eine E-Mail mit den ersten Ergebnissen und danach nur, wenn sich etwas ändert. Ohne Änderung keine E-Mail.',
   limits:'Liest nur öffentliche Seiten, ohne Anmeldung und ohne JavaScript; nichts wird installiert. Eine technische Prüfung, keine Rechtsberatung.',
@@ -263,9 +262,9 @@ export function buildStrazBox(lang,place,platform,report){
   const box=el('section',null,'ar-straz');box.id=BOX_ID;box.tabIndex=-1;box.setAttribute('aria-labelledby',BOX_ID+'-nadpis');box.dataset.place=miesto;
   const h=el('h3',t.title);h.id=BOX_ID+'-nadpis';box.append(h,el('p',t.lead,'ar-straz-lead'));
   const bezAi=miesto!=='sample'&&bezUdajovAi(report);
-  if(bezAi)box.append(el('p',t.noAi,'ar-straz-bez-ai'));
   if(plat==='yes')box.append(el('p',t.shopify,'ar-straz-platforma'));
-  const co=el('ul',null,'ar-straz-co');t.watch.forEach((w,i)=>co.append(el('li',bezAi&&i===1?t.watchNoAi:w)));
+  // Nevyhodnotené údaje pre AI povie box len raz, v druhom bode Čo sleduje (snímky kolo 2, postreh 5).
+  const co=el('ul',null,'ar-straz-co');t.watch.forEach((w,i)=>co.append(bezAi&&i===1?el('li',t.watchNoAi,'ar-straz-bez-ai'):el('li',w)));
   box.append(el('h4',t.watchTitle),co,el('p',t.often+' '+t.mail,'ar-straz-ako'),el('p',t.limits,'ar-muted ar-straz-hranice'));
   const cena=()=>{const p=el('p',null,'ar-straz-cena');p.append(el('strong',t.name+': '+t.price));return p;};
   if(miesto==='sample'){

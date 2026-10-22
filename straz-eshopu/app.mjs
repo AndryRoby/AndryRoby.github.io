@@ -6,7 +6,7 @@
 // údaje vo formulári ostanú; všetko zo servera ide do stránky len cez textContent, odkazy len po kontrole adresy.
 // Čistá logika je exportovaná a testovaná v app.test.mjs (node --test); DOM sa spustí len v prehliadači.
 import {createLatest} from '../feed-doctor/agent-ready/controller.mjs';
-import {TEXTY} from './texty.mjs?v=2';
+import {TEXTY} from './texty.mjs?v=3';
 
 export const API='https://feed-monitor.arling.workers.dev';
 export const STAV_URL='/straz-eshopu/stav.json';
@@ -159,46 +159,79 @@ export function datumCas(iso,lang){
   try{return d.toLocaleString(LOKALY[jazyk(lang)],{day:'numeric',month:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit',timeZone:'Europe/Bratislava'});}
   catch{return d.toISOString().slice(0,16).replace('T',' ');}
 }
-/** Riadky troch nálezov EÚ zo stavu weekly.eu [{code,state}]: len známe kódy a stavy, texty z EU_UI (i18n.mjs), tón z eu-zobraz.mjs. */
+/** Zmena zmluvy C1: podobný odkaz pri funkcii na odstúpenie z weekly.eu[].similar {label, page}. Prijme aj pole (prvý prvok),
+ * iný tvar je null. label je očistený text, page len známy kľúč stránky (inak '' a text povie „stránke produktu“). */
+export function podobnyOdkaz(r){
+  let s=r&&typeof r==='object'?r.similar:null;if(Array.isArray(s))s=s[0];
+  if(!s||typeof s!=='object'||Array.isArray(s))return null;
+  return {label:cistyText(s.label,120),page:typeof s.page==='string'&&/^[a-z]{1,20}$/.test(s.page)?s.page:''};
+}
+const jePodobny=(code,state,r)=>code==='eu_withdrawal'&&state==='not_found'&&podobnyOdkaz(r)!==null;
+/** Riadky troch nálezov EÚ zo stavu weekly.eu [{code,state,similar?}]: len známe kódy a stavy, texty z EU_UI (i18n.mjs), tón z eu-zobraz.mjs.
+ * Pri odstúpení not_found s podobným odkazom rovnaké pravidlo ako bezplatná kontrola (eu-zobraz.mjs riadky 55 a 56): štítok
+ * „Overte odkaz“, tón unknown a veta o odkaze s iným znením (veta), nikdy červené „Označenie sme nenašli“. */
 export function euRiadky(eu,lang,{EU_UI,toneOf,EU_CODES}){
   if(!Array.isArray(eu))return [];
   const t=EU_UI[jazyk(lang)]||EU_UI.en;
   return EU_CODES.map(code=>{
     const r=eu.find(x=>x&&typeof x==='object'&&x.code===code);
     if(!r||!EU_STAVY.includes(r.state))return null;
-    const x=t.rules[code];
-    return {code,title:x.title,badge:x.status?.[r.state]||t.status[r.state],tone:toneOf(code,r.state)};
+    const x=t.rules[code],podobny=jePodobny(code,r.state,r);
+    const out={code,title:x.title,badge:podobny&&x.status?.check?x.status.check:x.status?.[r.state]||t.status[r.state],tone:podobny?'unknown':toneOf(code,r.state)};
+    if(podobny){const p=podobnyOdkaz(r);if(p.label)out.veta=vypln(x.similar,{label:p.label,page:p.page&&Object.hasOwn(t.pages,p.page)?t.pages[p.page]:t.pages.product});}
+    return out;
   }).filter(Boolean);
 }
-/** Názvy pravidiel RULES (core.mjs) pre zoznam kódov; neznáme kódy sa zahodia, poradie podľa váhy ako na stránke kontroly. */
+/** Adresa miesta z weekly.failing[].where (zmena zmluvy C2): len https bez prihlasovacích údajov, inak ''. Prijme aj pole (prvý prvok). */
+export function adresaMiesta(w){
+  if(Array.isArray(w))w=w[0];
+  if(typeof w!=='string'||!w||w.length>2048)return '';
+  try{const u=new URL(w);return u.protocol==='https:'&&!u.username&&!u.password?u.href:'';}catch{return '';}
+}
+/** Prvá veta opravy (localRule(...).fix): krátka veta pod názvom pravidla, najviac 300 znakov. */
+export function prvaVeta(s){
+  const t=cistyText(s,2000);if(!t)return '';
+  const m=/^[\s\S]*?[.!?](?=\s|$)/.exec(t),v=m?m[0]:t;
+  return v.length>300?v.slice(0,299).replace(/\s+\S*$/,'')+'…':v;
+}
+/** Pravidlá RULES (core.mjs) pre zoznam kódov: názov, prvá veta opravy a adresa miesta (C2: {code, where?}; starý tvar reťazec
+ * kódu bez miesta). Neznáme kódy sa zahodia, poradie podľa váhy ako na stránke kontroly. */
 export function nazvyPravidiel(kody,lang,{RULES,localRule}){
   if(!Array.isArray(kody))return [];
   const videne=new Set(),out=[];
   for(const k of kody.slice(0,60)){
     const code=typeof k==='string'?k:k&&typeof k==='object'?k.code:null;if(typeof code!=='string'||videne.has(code))continue;
-    const i=RULES.findIndex(r=>r.code===code);if(i<0)continue;videne.add(code);out.push({code,weight:RULES[i].weight||0,title:localRule(RULES[i],i,jazyk(lang)).title});
+    const i=RULES.findIndex(r=>r.code===code);if(i<0)continue;videne.add(code);
+    const lr=localRule(RULES[i],i,jazyk(lang));
+    out.push({code,weight:RULES[i].weight||0,title:lr.title,fix:prvaVeta(lr.fix),where:k&&typeof k==='object'?adresaMiesta(k.where):''});
   }
-  return out.sort((a,b)=>b.weight-a.weight).map(({code,title})=>({code,title}));
+  return out.sort((a,b)=>b.weight-a.weight).map(({code,title,fix,where})=>({code,title,fix,where}));
 }
 /** Zmeny oproti minulej kontrole zo weekly.changed [{code, from, to}] rozdelené ako v e-maile (report-mail.mjs compareReports):
  * pravidlo, ktoré teraz zlyháva (to 'fail', predtým nie), sa pokazilo; z 'fail' na 'pass' sa opravilo. Nález EÚ: tón z 'ok'
  * na 'review' sa pokazil, z 'review' na 'ok' opravil (eu-zobraz.mjs toneOf). Ostatné zmeny, neznáme kódy a starý tvar bez
- * from a to sa vynechajú, rovnako ako v e-maile. */
-export function zmenyPodlaSmeru(zmeny,lang,zdroje){
+ * from a to sa vynechajú, rovnako ako v e-maile.
+ * Zmena zmluvy C1: odstúpenie not_found s podobným odkazom (v zmene alebo v aktuálnom weekly.eu) má tón unknown, nie pokazené.
+ * Zmena zmluvy C2: pri pokazenom pravidle aj prvá veta opravy a adresa miesta z aktuálneho weekly.failing. */
+export function zmenyPodlaSmeru(zmeny,lang,zdroje,{eu=[],failing=[]}={}){
   const out={pokazene:[],opravene:[]};if(!Array.isArray(zmeny))return out;
   const t=zdroje.EU_UI[jazyk(lang)]||zdroje.EU_UI.en,videne=new Set(),str=x=>typeof x==='string'?x:null;
+  const teraz=Array.isArray(eu)?eu.find(x=>x&&typeof x==='object'&&x.code==='eu_withdrawal'):null;
+  const miesta=new Map(nazvyPravidiel(failing,lang,zdroje).map(r=>[r.code,r.where]));
   for(const z of zmeny.slice(0,60)){
     if(!z||typeof z!=='object'||typeof z.code!=='string'||videne.has(z.code))continue;
-    const code=z.code,from=str(z.from),to=str(z.to);let smer=null,title=null;
+    const code=z.code,from=str(z.from),to=str(z.to);let smer=null,polozka=null;
     if(zdroje.EU_CODES.includes(code)){
       if(!to||!EU_STAVY.includes(to)||(from&&!EU_STAVY.includes(from)))continue;
-      const pred=from?zdroje.toneOf(code,from):'unknown',po=zdroje.toneOf(code,to);
-      smer=pred==='ok'&&po==='review'?'pokazene':pred==='review'&&po==='ok'?'opravene':null;title=t.rules[code].title;
+      const podobny=jePodobny(code,to,z)||(teraz&&teraz.state===to&&jePodobny(code,to,teraz));
+      const pred=from?zdroje.toneOf(code,from):'unknown',po=podobny?'unknown':zdroje.toneOf(code,to);
+      smer=pred==='ok'&&po==='review'?'pokazene':pred==='review'&&po==='ok'?'opravene':null;polozka={code,title:t.rules[code].title};
     }else{
-      const p=nazvyPravidiel([code],lang,zdroje);if(!p.length)continue;title=p[0].title;
+      const p=nazvyPravidiel([code],lang,zdroje);if(!p.length)continue;
       smer=to==='fail'&&from!=='fail'?'pokazene':from==='fail'&&to==='pass'?'opravene':null;
+      polozka=smer==='pokazene'?{code,title:p[0].title,fix:p[0].fix,where:miesta.get(code)||''}:{code,title:p[0].title};
     }
-    if(!smer)continue;videne.add(code);out[smer].push({code,title});
+    if(!smer)continue;videne.add(code);out[smer].push(polozka);
   }
   return out;
 }
@@ -282,6 +315,15 @@ export function createTracker(win,{merat,cista=false}){
 /* ---------------- DOM (len v prehliadači) ---------------- */
 function node(tag,text,cls){const e=document.createElement(tag);if(text!=null)e.textContent=String(text);if(cls)e.className=cls;return e;}
 function tlacidlo(text,cls){const b=node('button',text,cls);b.type='button';return b;}
+/** Položka Na opravu alebo Pokazilo sa (nález brány 8, C2): názov, prvá veta opravy a odkaz na miesto. Všetko cez textContent,
+ * odkaz len na https adresu z adresaMiesta (javascript:, data: ani http sa sem nedostanú). Bez opravy a miesta len názov. */
+function polozkaPravidla(r,s){
+  const li=node('li');li.append(node('span',r.title,'st-pravidlo-nazov'));
+  if(r.fix)li.append(node('p',r.fix,'ar-muted st-pravidlo-oprava'));
+  const href=adresaMiesta(r.where);
+  if(href){const p=node('p',null,'st-pravidlo-miesto');p.append(s.kde+' ');const a=node('a',href.replace(/^https:\/\//,'').slice(0,120));a.href=href;a.rel='noopener noreferrer';p.append(a);li.append(p);}
+  return li;
+}
 const spi=ms=>new Promise(r=>setTimeout(r,ms));
 const init={credentials:'omit',cache:'no-store',referrerPolicy:'no-referrer'};
 
@@ -343,7 +385,12 @@ export function spustPredaj(t,lang,rez,tracker){
 export async function spustSpravu(t,lang,par,rez,tracker,opt={}){
   const s=t.sprava,predaj=document.getElementById('predaj'),sekcia=document.getElementById('sprava');
   if(predaj)predaj.hidden=true;if(!sekcia)return;sekcia.hidden=false;sekcia.replaceChildren();
-  const h=node('h2',s.nadpis);h.id='sprava-nadpis';h.tabIndex=-1;
+  // Nález brány 10: hlavný nadpis stránky povie „Vaša Stráž e-shopu“ a h2 pod ním je adresa obchodu (skrytý, kým ju nepoznáme),
+  // nie ten istý názov dvakrát pod sebou. Bez h1 (iná stránka) ostane h2 s názvom ako doteraz.
+  const h1=document.getElementById('st-nadpis');
+  const h=node('h2',h1?null:s.nadpis,h1?'st-adresa':null);h.id='sprava-nadpis';h.tabIndex=-1;
+  if(h1){h1.textContent=s.nadpis;h1.tabIndex=-1;h.hidden=true;sekcia.setAttribute('aria-labelledby','st-nadpis');}
+  const ciel=h1||h;
   const hlavny=node('p',null,'ar-status st-hlavny-stav');hlavny.setAttribute('role','status');hlavny.setAttribute('aria-live','polite');
   const obsah=node('div',null,'st-sprava-obsah');
   const spat=node('p',null,'st-spat');const a=node('a',s.spatNaPredaj);a.href=cestaStraze(lang);spat.append(a);
@@ -352,8 +399,9 @@ export async function spustSpravu(t,lang,par,rez,tracker,opt={}){
   if(!par.platne){hlavny.textContent=s.zlaAdresa;return;}
   const {id,key}=par,nacitanie=createLatest(),hlasenia=new Map();let aktualne=null,zdroje=null,zmazane=false;
   // Po návrate zo Stripe (paid=1) sa počas overovania ani po vypršaní 120 s nikdy neukáže výzva na platbu (riziko dvojitej
-  // platby); vypne sa až pri pláne pro.
-  let overujem=par.paid===true;
+  // platby); vypne sa až pri pláne pro. Nález brány 7: plán „Platba sa overuje“ a veta o prvej kontrole po potvrdení platby
+  // (overujem); Zmazať je skryté len kým beží overovanie (najviac 120 s), aby zákazník nezmazal monitor, ktorý webhook o chvíľu zapne.
+  let overujem=par.paid===true,overovanieBezi=par.paid===true;
   hlavny.textContent=s.nacitavam;
   const zdrojePromise=Promise.all([import('../feed-doctor/agent-ready/eu-zobraz.mjs'),import('../feed-doctor/agent-ready/core.mjs'),import('../feed-doctor/agent-ready/i18n.mjs?v=2')])
     .then(([eu,core,i18n])=>({EU_UI:i18n.EU_UI,toneOf:eu.toneOf,EU_CODES:eu.EU_CODES,RULES:core.RULES,localRule:i18n.localRule}),()=>null);
@@ -398,10 +446,11 @@ export async function spustSpravu(t,lang,par,rez,tracker,opt={}){
     aktualne=d;const z=zdroje||(zdroje=await zdrojePromise);if(aktualne!==d||zmazane)return;
     const ps=planStav(d),pro=ps==='pro'||ps==='pro_zrusene',store=cistyText(d.store_url,300),feed=cistyText(d.feed_url,500);
     if(hlavny.dataset.drzat!=='1')hlavny.textContent='';
+    if(h1){let host='';try{host=store?new URL(store).host:'';}catch{host='';}h.textContent=host;h.hidden=!host;}
     obsah.replaceChildren();
     const dl=node('dl',null,'st-udaje');
     const riadok=(k,v)=>{const w=node('div');w.append(node('dt',k),node('dd',v));dl.append(w);};
-    riadok(s.udaje.plan,s.plan[ps]);riadok(s.udaje.obchod,store||s.obchodNie);riadok(s.udaje.feed,feed||s.feedNie);
+    riadok(s.udaje.plan,!pro&&overujem?s.plan.overuje:s.plan[ps]);riadok(s.udaje.obchod,store||s.obchodNie);riadok(s.udaje.feed,feed||s.feedNie);
     if(cistyText(d.email_masked,120))riadok(s.udaje.email,cistyText(d.email_masked,120));
     riadok(s.udaje.emaily,d.mail_off===true?s.emailyVyp:s.emailyZap);
     if(pro)riadok(s.udaje.predplatne,ps==='pro'?s.predplatneBezi:datum(d.cancel_at,lang)?vypln(s.predplatneKonci,{datum:datum(d.cancel_at,lang)}):s.predplatneKonciBez);
@@ -421,7 +470,7 @@ export async function spustSpravu(t,lang,par,rez,tracker,opt={}){
     // Posledná kontrola obchodu
     const ob=node('section',null,'st-blok');ob.setAttribute('aria-labelledby','st-obchod-nadpis');const oh=node('h3',s.obchodNadpis);oh.id='st-obchod-nadpis';ob.append(oh);
     const w=weeklyStav(d.weekly);
-    if(!pro)ob.append(node('p',s.weekly.none,'ar-muted'));
+    if(!pro)ob.append(node('p',overujem?s.weekly.poPlatbe:s.weekly.none,'ar-muted'));
     else if(!w)ob.append(node('p',store?s.weekly.pending:s.weekly.not_configured));
     else if(w.status!=='done')ob.append(node('p',s.weekly[w.status]));
     else{
@@ -432,11 +481,11 @@ export async function spustSpravu(t,lang,par,rez,tracker,opt={}){
       // Bez modulov agent-ready (chyba načítania) ostane len skóre; nič sa neukáže ako „bez nálezov“.
       if(z){
       const eu=euRiadky(w.eu,lang,z);
-      if(eu.length){ob.append(node('h4',s.euNadpis));const ul=node('ul',null,'st-eu');for(const r of eu){const li=node('li');const b=node('span',r.badge,'ar-eu-badge');b.dataset.tone=r.tone;li.append(node('span',r.title,'st-eu-nazov'),b);ul.append(li);}ob.append(ul);}
+      if(eu.length){ob.append(node('h4',s.euNadpis));const ul=node('ul',null,'st-eu');for(const r of eu){const li=node('li');const b=node('span',r.badge,'ar-eu-badge');b.dataset.tone=r.tone;li.append(node('span',r.title,'st-eu-nazov'),b);if(r.veta)li.append(node('p',r.veta,'ar-muted st-eu-veta'));ul.append(li);}ob.append(ul);}
       if(!bezSkore){const zly=nazvyPravidiel(w.failing,lang,z);ob.append(node('h4',s.zlyhaneNadpis));
-      if(zly.length){const ul=node('ul',null,'st-zoznam');for(const r of zly)ul.append(node('li',r.title));ob.append(ul);}else ob.append(node('p',s.zlyhaneZiadne));}
-      const zm=zmenyPodlaSmeru(w.changed,lang,z);
-      for(const [k,nadpis] of [['pokazene',s.pokaziloNadpis],['opravene',s.opraviloNadpis]])if(zm[k].length){ob.append(node('h4',nadpis));const ul=node('ul',null,'st-zoznam');for(const r of zm[k])ul.append(node('li',r.title));ob.append(ul);}
+      if(zly.length){const ul=node('ul',null,'st-zoznam st-pravidla');for(const r of zly)ul.append(polozkaPravidla(r,s));ob.append(ul);}else ob.append(node('p',s.zlyhaneZiadne));}
+      const zm=zmenyPodlaSmeru(w.changed,lang,z,{eu:w.eu,failing:w.failing});
+      for(const [k,nadpis] of [['pokazene',s.pokaziloNadpis],['opravene',s.opraviloNadpis]])if(zm[k].length){ob.append(node('h4',nadpis));const ul=node('ul',null,'st-zoznam st-pravidla');for(const r of zm[k])ul.append(polozkaPravidla(r,s));ob.append(ul);}
       }
     }
     if(pro&&d.status==='active'&&store){
@@ -467,7 +516,7 @@ export async function spustSpravu(t,lang,par,rez,tracker,opt={}){
     // Nastavenia
     const nb=node('section',null,'st-blok');nb.setAttribute('aria-labelledby','st-nast-nadpis');const nh=node('h3',s.nastaveniaNadpis);nh.id='st-nast-nadpis';nb.append(nh);
     if(pro&&d.status==='active'){
-      const otvor=tlacidlo(store?s.zmenitObchod:s.nastavitObchod,'ar-quiet');const form=node('form',null,'ar-form st-uprava');form.hidden=true;form.noValidate=true;
+      const otvor=tlacidlo(store?s.zmenitObchod:s.nastavitObchod,'ar-quiet st-plna');const form=node('form',null,'ar-form st-uprava');form.hidden=true;form.noValidate=true;
       const lab=node('label',s.poleObchod);const inp=node('input');inp.id='st-uprava-obchod';lab.htmlFor=inp.id;inp.type='text';inp.inputMode='url';inp.autocomplete='url';inp.spellcheck=false;inp.maxLength=2048;inp.value=store;inp.placeholder=lang==='de'?'https://ihr-shop.de':lang==='en'?'https://your-shop.com':'https://vas-obchod.sk';
       const ulozit=node('button',s.ulozit);ulozit.type='submit';const nie=tlacidlo(s.zrusitUpravu,'ar-quiet');const fa=node('div',null,'ar-actions');fa.append(ulozit,nie);form.append(lab,inp,fa);
       otvor.addEventListener('click',()=>{form.hidden=false;otvor.hidden=true;inp.focus();});
@@ -505,7 +554,8 @@ export async function spustSpravu(t,lang,par,rez,tracker,opt={}){
       return vseobecna(r.status);}));nakc.append(b);}
     nb.append(nakc);if(ps==='pro')nb.append(node('p',s.zrusitVeta,'ar-muted'));nb.append(miestoHlasenia('nastavenia'));obsah.append(nb);
 
-    // Zmazanie s potvrdením (#zmazat z e-mailu otvorí rovno otázku)
+    // Zmazanie s potvrdením (#zmazat z e-mailu otvorí rovno otázku). Počas overovania platby (paid=1, ešte nie pro) skryté.
+    if(!pro&&overovanieBezi)return;
     const zb=node('section',null,'st-blok st-zmazat');zb.id='zmazat';zb.setAttribute('aria-labelledby','st-zmazat-nadpis');const zh=node('h3',s.zmazatNadpis);zh.id='st-zmazat-nadpis';
     const riadokZ=node('div',null,'ar-actions');const zmaz=tlacidlo(s.zmazat,'ar-quiet st-nebezpecne');riadokZ.append(zmaz);
     // Veta o Zrušiť predplatné len pri bežiacom predplatnom (po zrušení alebo bez predplatného by nebola pravdivá).
@@ -518,10 +568,10 @@ export async function spustSpravu(t,lang,par,rez,tracker,opt={}){
         const v=vysledokZmazania(res.status,data);
         if(v&&v.zmazane){zmazane=true;nacitanie.cancel();try{const n=JSON.parse(localStorage.getItem(NAVRAT_KLUC)||'null');if(n&&n.id===id)localStorage.removeItem(NAVRAT_KLUC);}catch{}
           try{history.replaceState(null,'',location.pathname);}catch{}
-          obsah.replaceChildren();hlavny.dataset.drzat='1';hlavny.textContent=s.hlasenia.zmazane;
+          obsah.replaceChildren();if(h1)h.hidden=true;hlavny.dataset.drzat='1';hlavny.textContent=s.hlasenia.zmazane;
           // Server zmazal monitor, ale predplatné nezrušil: povedať to a dať odkaz na portál, inak by platba bežala ďalej potichu.
           if(v.nezrusene){const p=node('p');p.setAttribute('role','alert');napisHlasenie(p,{text:s.hlasenia.zmazaneNezrusene,chyba:true,odkaz:{href:PORTAL,text:s.hlasenia.portal}});obsah.append(p);}
-          h.focus();return null;}
+          ciel.focus();return null;}
         if(v&&v.portal)return {text:s.hlasenia.zmazanieZlyhalo,chyba:true,odkaz:{href:PORTAL,text:s.hlasenia.portal}};
         return vseobecna(res.status);}));
       riadokZ.append(otazka,ano,nie);otazka.focus();}
@@ -539,9 +589,10 @@ export async function spustSpravu(t,lang,par,rez,tracker,opt={}){
     try{const n=JSON.parse(localStorage.getItem(NAVRAT_KLUC)||'null');if(n&&n.id===id)localStorage.removeItem(NAVRAT_KLUC);}catch{}
     try{history.replaceState(null,'',bezPaid(location.href));}catch{}
   }else if(r.vysledok==='cas'){
-    hlavny.textContent=t3.caka;
+    hlavny.textContent=t3.caka;overovanieBezi=false;
     try{await fetch(adresaAkcie(id,key,'paid-return'),{...init,method:'POST'});}catch{}
-    if(!r.data)await obnov();
+    // Po 120 s sa vráti Zmazať: prekreslí sa posledný zobrazený stav (nikdy starší než ten, čo už je na stránke), bez ďalšieho GET.
+    if(!zmazane){if(aktualne)await vykresli(aktualne);else await obnov();}
   }
 }
 

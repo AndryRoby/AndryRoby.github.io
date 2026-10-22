@@ -12,7 +12,7 @@ const transition=import('./prechod.mjs').then(m=>({m,live:m.createAppPageCheck()
 const euModule=import('./eu-zobraz.mjs').catch(()=>null);
 const waitlist=import('./cakacia.mjs').catch(()=>null);
 // Stráž e-shopu (relácia 209): optional; null unless /straz-eshopu/stav.json is live or the test mode is on.
-const strazModule=import('./straz.mjs?v=1').then(m=>m.strazOn().then(on=>on?m:null)).catch(()=>null);
+const strazModule=import('./straz.mjs?v=2').then(m=>m.strazOn().then(on=>on?m:null)).catch(()=>null);
 function node(tag,text,cls){const el=document.createElement(tag);if(text!=null)el.textContent=String(text);if(cls)el.className=cls;return el;}
 function track(name,data){if(new URLSearchParams(location.search).has('test'))return;try{window.umami?.track(name,data);}catch{}}
 function safeLink(url){try{const u=new URL(url);return u.protocol==='https:'&&!u.username&&!u.password?u.href:null;}catch{return null;}}
@@ -31,6 +31,11 @@ function appBlock(app,sample){const c=copy.app,box=node('div',null,'ar-next'),ti
   const why=app.signals.map(s=>c.signals?.[s]).filter(Boolean);
   const reason=sample?c.sampleWhy:why.length?c.why+' '+why.join(', ')+'.':'';
   box.append(title,node('p',c.text),node('p',c.terms,'ar-muted'),link);if(reason)box.append(node('p',reason,'ar-muted ar-why'));return box;}
+// Result without a single product page read (score null or 0 pages); kept here, i18n.mjs belongs to session 208.
+const NO_PAGES={
+ sk:['Neprečítali sme žiadnu produktovú stránku, preto údaje pre AI asistentov nehodnotíme.','Povinnosti EÚ nižšie sme skontrolovali.'],
+ en:['We could not read any product page, so we do not evaluate the data for AI assistants.','We did check the EU duties below.'],
+ de:['Wir konnten keine Produktseite lesen, daher bewerten wir die Daten für KI-Assistenten nicht.','Die EU-Pflichten unten haben wir geprüft.']};
 const quote=s=>lang==='en'?`“${s}”`:`„${s}“`;
 function outLink(text,href){const a=node('a',text);a.href=href;a.rel='noopener';a.target='_blank';return a;}
 // EU rules for online shops, 2026: one row per finding, each with what we found, a manual check, the law and its link.
@@ -72,10 +77,13 @@ function render(data,sample,app=null,eu=null,wl=null,platform='unknown',sz=null)
   if(sample)report.append(node('p',copy.sample,'ar-status'));
   report.append(node('h2',copy.result),node('p',`${data.storeUrl} · ${new Date(data.at).toLocaleString(lang)}`,'ar-context'));
   const scoreline=node('dl',null,'ar-scoreline');for(const [label,value,cls] of [[copy.score,data.score==null?'?':data.score+'/100',''],[copy.coverage,data.coverage+'%',''],[copy.scope,`${data.sample.products} ${copy.products}, ${data.sample.pages}/${data.sample.attemptedPages} ${copy.pages}`,'ar-scope']]){const group=node('div',null,cls);group.append(node('dt',label),node('dd',value));scoreline.append(group);}report.append(scoreline,node('p',data.score==null?copy.noScore:copy.limit,'ar-muted'));
-  if(data.coverage<100||data.sample.pages<data.sample.attemptedPages)report.append(node('p',copy.unknown,'ar-status'));
+  const noPages=data.score==null||data.sample.pages===0;
+  if(!noPages&&(data.coverage<100||data.sample.pages<data.sample.attemptedPages))report.append(node('p',copy.unknown,'ar-status'));
   if(data.noindexPages?.length)report.append(node('p',copy.noindex,'ar-status'));
   const failing=data.rules.filter(r=>r.status==='fail').sort((a,b)=>RULES.find(r=>r.code===b.code).weight-RULES.find(r=>r.code===a.code).weight);
-  report.append(node('h3',copy.fixes));const ul=node('ul',null,'ar-list');for(const r of failing){const li=ruleElement(r);if(sz&&li)li.append(sz.strazLink(r.code,lang));ul.append(li);}if(!failing.length)report.append(node('p',copy.empty));else report.append(ul);
+  // No product page read: one neutral sentence instead of "no failing checks" and the high-score warning (gate 209, finding 6).
+  if(noPages&&!failing.length){const t=NO_PAGES[lang]||NO_PAGES.en,euOk=Boolean(eu&&eu.euState(data)==='ok');report.append(node('p',euOk?t[0]+' '+t[1]:t[0],'ar-status ar-no-pages'));}
+  else{report.append(node('h3',copy.fixes));const ul=node('ul',null,'ar-list');for(const r of failing){const li=ruleElement(r);if(sz&&li)li.append(sz.strazLink(r.code,lang));ul.append(li);}if(!failing.length)report.append(node('p',copy.empty));else report.append(ul);}
   if(copy.readsTitle)report.append(limitsBlock());
   if(eu){const state=eu.euState(data);report.append(euBlock(state==='ok'?eu.euView(data.eu,euCopy):state,sz));}
   if(sz){const box=sz.buildStrazBox(lang,sample?'sample':'result',platform,data);if(box)report.append(box);}

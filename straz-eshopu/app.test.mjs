@@ -8,7 +8,7 @@ import {createHash} from 'node:crypto';
 import {fileURLToPath} from 'node:url';
 import * as A from './app.mjs';
 import vm from 'node:vm';
-import {TEXTY} from './texty.mjs?v=2';
+import {TEXTY} from './texty.mjs?v=3';
 import * as N from '../feed-doctor/monitor/navrat.mjs';
 import {EU_UI,localRule} from '../feed-doctor/agent-ready/i18n.mjs?v=2';
 import {toneOf,EU_CODES} from '../feed-doctor/agent-ready/eu-zobraz.mjs';
@@ -325,7 +325,8 @@ for(const [lang,cesta,canonical,zadarmo,sukromie,podmienky,priklad] of STRANKY){
     for(const [,obsah] of vlozene.slice(1))JSON.parse(obsah);
     assert.ok(t.includes('"price":"9.00","priceCurrency":"EUR"')&&t.includes('"@type":"FAQPage"'));
     assert.doesNotMatch(t,/\sstyle="/);assert.doesNotMatch(t,/\son[a-z]+="/);
-    assert.ok(t.includes('<script type="text/plain" data-odlozene="module" src="/straz-eshopu/app.mjs?v=2"></script>'));
+    assert.ok(t.includes('<script type="text/plain" data-odlozene="module" src="/straz-eshopu/app.mjs?v=3"></script>'));
+    assert.ok(t.includes('/straz-eshopu/straz.css?v=4')&&t.includes('<h1 id="st-nadpis">'));
     assert.ok(t.includes(`/style/menu-${lang}.js`));assert.ok(t.includes('class="site-footer"'));
     assert.ok(t.includes(`href="${zadarmo}"`));assert.ok(t.includes(`href="${sukromie}"`));assert.ok(t.includes(`href="${podmienky}"`));
     assert.ok(t.includes(`<p class="st-priklad-stitok">${priklad}</p>`));
@@ -344,11 +345,19 @@ test('texty.mjs a app.mjs bez pomlčiek em a en', ()=>{
 
 test('stará stránka monitora: navrat.mjs načítaný, tlačidlo Shop Guard, odtlačok vloženého modulu sedí s CSP', ()=>{
   const t=subor('../feed-doctor/monitor/index.html');
-  assert.ok(t.includes('<script type="module" src="/feed-doctor/monitor/navrat.mjs?v=2"></script>'));
+  // Nález brány 4: skutočný tvar je odložený načítavač (type text/plain, data-odlozene module), nie priamy modul.
+  assert.ok(t.includes('<script type="text/plain" data-odlozene="module" src="/feed-doctor/monitor/navrat.mjs?v=2"></script>'));
+  assert.ok(!t.includes('<script type="module" src="/feed-doctor/monitor/navrat.mjs'));
   assert.ok(t.includes('>Upgrade to Shop Guard, 9 EUR / month</a>'));assert.ok(!t.includes('Upgrade to Pro, 9 EUR'));
   const csp=t.match(/http-equiv="Content-Security-Policy" content="([^"]+)"/)[1];
   for(const [,obsah] of t.matchAll(/<script(?: type="module")?>([\s\S]*?)<\/script>/g))
     assert.ok(csp.includes(`'sha256-${createHash('sha256').update(obsah,'utf8').digest('base64')}'`));
+  // Načítavač, ktorý z data-odlozene="module" urobí type module, je vložený skript s odtlačkom v CSP; bez neho by navrat.mjs nebežal.
+  const nacitavac=[...t.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m=>m[1]).find(x=>x.includes('arlingNacitavac'));
+  assert.ok(nacitavac,'načítavač chýba');
+  assert.ok(nacitavac.includes(`getAttribute('data-odlozene')==='module')s.type='module'`));
+  assert.ok(csp.includes(`'sha256-${createHash('sha256').update(nacitavac,'utf8').digest('base64')}'`),'odtlačok načítavača nie je v CSP');
+  assert.ok(t.indexOf('<script>'+nacitavac)<t.indexOf('navrat.mjs?v=2'));
 });
 
 test('zásady súkromia časť 4: veta o Stráži v SK, EN, DE a dátum 22. 10. 2026', ()=>{
@@ -538,8 +547,9 @@ const zaklad=(x={})=>({id:ID,plan:'pro',status:'active',cancel_at:null,store_url
 const odkazyNaPlatbu=doc=>doc.vsetky().filter(e=>e.tagName==='A'&&String(e.href).startsWith('https://buy.stripe.com/'));
 const tlacidloS=(doc,text)=>doc.vsetky().find(e=>e.tagName==='BUTTON'&&e.textContent===text&&e.isConnected);
 const tichyTracker=()=>A.createTracker({},{merat:false});
-async function spravaPre(search,router,{opt={},lang='sk',test=false,ulozene}={}){
+async function spravaPre(search,router,{opt={},lang='sk',test=false,ulozene,nadpis=false}={}){
   const env=prostredie({search,router,ulozene});
+  if(nadpis)env.h1=env.doc.el('h1',{id:'st-nadpis',textContent:TEXTY[lang].nazov});
   env.doc.el('div',{id:'predaj'});env.doc.el('section',{id:'sprava',hidden:true});
   env.beh=A.spustSpravu(TEXTY[lang],lang,A.parametre(search),{test,merat:false},tichyTracker(),opt);
   await env.beh;await pockaj(20);
@@ -727,4 +737,161 @@ test('stará stránka monitora: veta, meta a banner o Shop Guard; po platbe bez 
   assert.ok(!poPlatbe.includes('upgrade-btn')&&!poPlatbe.includes('buy.stripe.com'));
   assert.ok(poPlatbe.includes('there is no need to pay again'));
   assert.ok((await staraStranka(`?id=${ID}&key=${KEY}&paid=1`,{...free,plan:'pro'})).includes('Thanks. Shop Guard is now active on this monitor.'));
+});
+
+/* ---------------- kolo 2 opráv (brána pokus 1, zmeny zmluvy C1 až C3) ---------------- */
+// Shoptet: odkaz <a href="/moja-objednavka/">Odstúpenie od zmluvy</a> nemá znenie smernice, analýza ho vráti ako podobný.
+const SHOPTET_EU=[{code:'eu_withdrawal',state:'not_found',similar:{label:'Odstúpenie od zmluvy',page:'home'}},{code:'eu_guarantee_notice',state:'not_found'},{code:'eu_green_claims',state:'not_found'}];
+test('nález 1 (C1): odstúpenie not_found s podobným odkazom ukáže Overte odkaz a tón unknown ako bezplatná kontrola (eu-zobraz.mjs)', async ()=>{
+  const {euView}=await import('../feed-doctor/agent-ready/eu-zobraz.mjs');
+  for(const lang of A.JAZYKY){
+    const t=EU_UI[lang],r=A.euRiadky(SHOPTET_EU,lang,zdroje)[0];
+    assert.equal(r.badge,t.rules.eu_withdrawal.status.check,lang);assert.equal(r.tone,'unknown',lang);
+    assert.notEqual(r.badge,t.rules.eu_withdrawal.status.not_found,lang);
+    assert.equal(r.veta,t.rules.eu_withdrawal.similar.replace('{label}','Odstúpenie od zmluvy').replace('{page}',t.pages.home),lang);
+    // Rovnaký štítok a tón ako bezplatná kontrola pre ten istý obchod.
+    const plna=euView({version:1,rules:[{code:'eu_withdrawal',status:'not_found',similar:[{label:'Odstúpenie od zmluvy',page:'home',href:'https://obchod.sk/moja-objednavka/'}]},{code:'eu_guarantee_notice',status:'not_found'},{code:'eu_green_claims',status:'not_found'}]},t)[0];
+    assert.deepEqual([r.badge,r.tone],[plna.badge,plna.tone],lang);
+  }
+  // Bez podobného odkazu ostáva Označenie sme nenašli; pole similar, neznáma stránka a zlý tvar nič nepokazia.
+  assert.equal(A.euRiadky([{code:'eu_withdrawal',state:'not_found'}],'sk',zdroje)[0].tone,'review');
+  assert.equal(A.euRiadky([{code:'eu_withdrawal',state:'not_found',similar:[{label:'Odstúpenie',page:'constructor'}]}],'sk',zdroje)[0].veta.includes(EU_UI.sk.pages.product),true);
+  assert.equal(A.euRiadky([{code:'eu_withdrawal',state:'not_found',similar:'zle'}],'sk',zdroje)[0].tone,'review');
+  assert.equal(A.euRiadky([{code:'eu_withdrawal',state:'found',similar:{label:'x'}}],'sk',zdroje)[0].tone,'ok');
+  assert.equal(A.euRiadky([{code:'eu_green_claims',state:'not_found',similar:{label:'x'}}],'sk',zdroje)[0].badge,EU_UI.sk.rules.eu_green_claims.status.not_found);
+  assert.equal(A.podobnyOdkaz({similar:{label:'a\u0000b',page:'<x>'}}).page,'');
+  // Porovnanie týždňov: found -> not_found s podobným odkazom nie je Pokazilo sa.
+  const zmena=[{code:'eu_withdrawal',from:'found',to:'not_found'}];
+  assert.deepEqual(A.zmenyPodlaSmeru(zmena,'sk',zdroje,{eu:SHOPTET_EU}).pokazene,[]);
+  assert.deepEqual(A.zmenyPodlaSmeru([{...zmena[0],similar:{label:'x',page:'home'}}],'sk',zdroje).pokazene,[]);
+  assert.equal(A.zmenyPodlaSmeru(zmena,'sk',zdroje,{eu:[{code:'eu_withdrawal',state:'not_found'}]}).pokazene.length,1);
+});
+
+test('nález 1 v DOM: Shoptet bez skóre nikdy neukáže „nenašli“ pri odstúpení ani Pokazilo sa, štítok má tón unknown', async ()=>{
+  const weekly={status:'done',at:'2026-10-22T10:00:00Z',score:null,coverage:null,eu:SHOPTET_EU,failing:[],changed:[{code:'eu_withdrawal',from:'found',to:'not_found'}]};
+  for(const lang of A.JAZYKY){
+    const env=await spravaPre(`?id=${ID}&key=${KEY}`,z=>z.method==='GET'?{data:zaklad({weekly,lang})}:null,{lang});
+    try{
+      const s=TEXTY[lang].sprava,t=EU_UI[lang].rules.eu_withdrawal,text=env.doc.body.textContent;
+      assert.ok(text.includes(t.status.check),lang);assert.ok(!text.includes(t.status.not_found),lang);
+      assert.ok(text.includes('Odstúpenie od zmluvy'),lang);
+      const badge=env.doc.vsetky().find(e=>e.className==='ar-eu-badge'&&e.textContent===t.status.check);assert.equal(badge.dataset.tone,'unknown',lang);
+      assert.ok(!env.doc.vsetky().some(e=>e.tagName==='H4'&&e.textContent===s.pokaziloNadpis),lang);
+    }finally{env.obnov();}
+  }
+});
+
+test('nález 8 (C2): Na opravu a Pokazilo sa nesú prvú vetu opravy z localRule a len https adresu miesta; starý tvar reťazca ostáva', ()=>{
+  const out=A.nazvyPravidiel([{code:'policy_shipping',where:'https://obchod.sk/doprava'},{code:'jsonld_offer',where:'javascript:alert(1)'},'feed_title',{code:'policy_contact',where:'http://obchod.sk/kontakt'},{code:'policy_returns',where:'https://u:p@obchod.sk/x'}],'sk',zdroje);
+  const po=c=>out.find(x=>x.code===c);
+  const i=RULES.findIndex(r=>r.code==='policy_shipping');
+  assert.equal(po('policy_shipping').fix,'Odkážte na čitateľné informácie o doprave.');
+  assert.ok(localRule(RULES[i],i,'sk').fix.startsWith(po('policy_shipping').fix));
+  assert.equal(po('policy_shipping').where,'https://obchod.sk/doprava');
+  for(const c of ['jsonld_offer','feed_title','policy_contact','policy_returns'])assert.equal(po(c).where,'',c);
+  assert.ok(po('feed_title').fix.length>0);
+  assert.equal(A.nazvyPravidiel(['policy_shipping'],'en',zdroje)[0].fix,'Link to readable shipping information on this shop.');
+  assert.equal(A.prvaVeta('Prvá veta. Druhá veta.'),'Prvá veta.');assert.equal(A.prvaVeta('Bez bodky'),'Bez bodky');assert.equal(A.prvaVeta(null),'');
+  assert.ok(A.prvaVeta('x'.repeat(400)).length<=300);
+  assert.equal(A.adresaMiesta(['https://obchod.sk/p/1']),'https://obchod.sk/p/1');assert.equal(A.adresaMiesta(42),'');
+  // Pokazilo sa: veta opravy a miesto z aktuálneho weekly.failing.
+  const z=A.zmenyPodlaSmeru([{code:'policy_shipping',from:'pass',to:'fail'},{code:'policy_returns',from:'fail',to:'pass'}],'sk',zdroje,{failing:[{code:'policy_shipping',where:'https://obchod.sk/doprava'}]});
+  assert.equal(z.pokazene[0].fix,po('policy_shipping').fix);assert.equal(z.pokazene[0].where,'https://obchod.sk/doprava');
+  assert.ok(!('fix' in z.opravene[0]));
+});
+
+test('nález 8 v DOM: položka ukáže vetu opravy a odkaz len na https, javascript: nikdy ako odkaz', async ()=>{
+  const weekly={status:'done',at:'2026-10-22T10:00:00Z',score:70,coverage:90,eu:[],
+    failing:[{code:'policy_shipping',where:'https://obchod.sk/doprava'},{code:'policy_contact',where:'javascript:alert(1)'}],changed:[{code:'policy_shipping',from:'pass',to:'fail'}]};
+  const env=await spravaPre(`?id=${ID}&key=${KEY}`,z=>z.method==='GET'?{data:zaklad({weekly})}:null);
+  try{
+    const text=env.doc.body.textContent,odkazy=env.doc.vsetky().filter(e=>e.tagName==='A'&&e.href==='https://obchod.sk/doprava');
+    assert.ok(text.includes('Odkážte na čitateľné informácie o doprave.'));assert.ok(text.includes(S_SK.kde));
+    assert.equal(odkazy.length,2,'Na opravu aj Pokazilo sa');assert.equal(odkazy[0].textContent,'obchod.sk/doprava');
+    assert.ok(!env.doc.vsetky().some(e=>e.tagName==='A'&&/javascript/i.test(String(e.href))));assert.ok(!text.includes('javascript:'));
+  }finally{env.obnov();}
+});
+
+test('nález 5: veta skóre hovorí skóre a pokrytie, nie počet splnených kontrol zo 100', ()=>{
+  const v={datum:'22. 10. 2026',skore:62,pokrytie:80};
+  assert.equal(A.vypln(TEXTY.sk.sprava.skore,v),'22. 10. 2026: skóre 62 zo 100, pokrytie 80 %.');
+  assert.equal(A.vypln(TEXTY.en.sprava.skore,v),'22. 10. 2026: score 62 of 100, coverage 80%.');
+  assert.equal(A.vypln(TEXTY.de.sprava.skore,v),'22. 10. 2026: Bewertung 62 von 100, Abdeckung 80 %.');
+  for(const l of A.JAZYKY)assert.doesNotMatch(TEXTY[l].sprava.skore,/splnené kontroly|checks passed|Prüfungen erfüllt/);
+  for(const l of A.JAZYKY)assert.ok(TEXTY[l].sprava.skoreVysvetlenie,l);
+});
+
+test('nález 7: počas overovania platby plán Platba sa overuje, veta o prvej kontrole a bez Zmazať; po 120 s sa Zmazať vráti', async ()=>{
+  const h=hodiny(),pohlady=[];
+  const env=await spravaPre(`?id=${ID}&key=${KEY}&paid=1`,(z,doc)=>{
+    if(z.url.includes('/paid-return'))return {data:{ok:true,plan:'free'}};
+    if(z.method==='GET'){pohlady.push({text:doc.body.textContent,zmazat:Boolean(tlacidloS(doc,S_SK.zmazat)),sekcia:Boolean(doc.getElementById('zmazat'))});return {data:zaklad({plan:'free',status:'pending_payment',weekly:null})};}
+  },{opt:{interval:3000,limit:6000,now:h.now,spi:async ms=>{h.posun(ms);await pockaj(15);}}});
+  try{
+    assert.equal(pohlady.length,3);
+    for(const p of pohlady.slice(1)){
+      assert.ok(p.text.includes(S_SK.plan.overuje)&&!p.text.includes(S_SK.plan.caka));
+      assert.ok(p.text.includes(S_SK.weekly.poPlatbe)&&!p.text.includes(S_SK.weekly.none));
+      assert.equal(p.zmazat,false);assert.equal(p.sekcia,false);
+    }
+    assert.ok(tlacidloS(env.doc,S_SK.zmazat),'po vypršaní overovania je Zmazať späť');
+    assert.equal(env.volania.filter(z=>z.method==='GET').length,3,'bez ďalšieho GET');
+    assert.equal(odkazyNaPlatbu(env.doc).length,0);
+  }finally{env.obnov();}
+  // Bez paid=1 je čakajúci monitor ako doteraz: Čaká na platbu a Zmazať.
+  const env2=await spravaPre(`?id=${ID}&key=${KEY}`,z=>z.method==='GET'?{data:zaklad({plan:'free',status:'pending_payment'})}:null);
+  try{const text=env2.doc.body.textContent;assert.ok(text.includes(S_SK.plan.caka)&&text.includes(S_SK.weekly.none));assert.ok(tlacidloS(env2.doc,S_SK.zmazat));}
+  finally{env2.obnov();}
+  for(const l of A.JAZYKY)assert.ok(TEXTY[l].sprava.plan.overuje&&TEXTY[l].sprava.weekly.poPlatbe&&TEXTY[l].sprava.kde,l);
+});
+
+test('nález 10: h1 je Vaša Stráž e-shopu, h2 je adresa obchodu; Zmeniť adresu má plnú šírku; dátum v histórii písmom ARLing Sans', async ()=>{
+  const env=await spravaPre(`?id=${ID}&key=${KEY}`,z=>z.method==='GET'?{data:zaklad()}:null,{nadpis:true});
+  try{
+    assert.equal(env.h1.textContent,S_SK.nadpis);
+    const h2=env.doc.getElementById('sprava-nadpis');assert.equal(h2.textContent,'obchod.sk');assert.equal(h2.hidden,false);assert.notEqual(h2.textContent,S_SK.nadpis);
+    assert.equal(env.doc.getElementById('sprava').getAttribute('aria-labelledby'),'st-nadpis');
+    assert.ok(tlacidloS(env.doc,S_SK.zmenitObchod).className.split(' ').includes('st-plna'));
+  }finally{env.obnov();}
+  const c=subor('./straz.css'),m760=c.slice(c.indexOf('@media(max-width:760px){'));
+  assert.ok(c.includes('.ar-page .st-tabulka td,.ar-page .st-tabulka th{font-family:var(--ui);font-variant-numeric:tabular-nums'));
+  assert.ok(m760.includes('.ar-page .st-blok>button.st-plna{display:block;width:100%}'));
+  assert.ok(c.includes('.ar-page .st-sprava .st-test{margin:16px 0 0}'));
+  // Snímky kolo 2 bod 9: štítky EÚ v každom riadku rovnako (mriežka, do 760 px vždy pod názvom).
+  assert.ok(c.includes('.st-eu li{display:grid;grid-template-columns:minmax(0,1fr) auto'));
+  assert.ok(m760.includes('.st-eu li{grid-template-columns:minmax(0,1fr)}'));
+});
+
+test('nález 12: panel na starej stránke monitora píše o e-mailoch Shop Guard s odkazom na stránku Stráže a pri score null nie „null/100“', async ()=>{
+  let n=0;
+  async function panel(report){
+    const env=prostredie({search:`?id=${ID}&key=${KEY}`,pathname:'/feed-doctor/monitor/',router:z=>z.url.includes('/v1/agent-ready/monitors/')?{data:{settings:{store_url:'https://obchod.sk/',revision:1},report}}:null});
+    const main=env.doc.el('main');env.doc.querySelector=s=>s==='main'?main:null;
+    try{await import('../feed-doctor/agent-ready/monitor.mjs?t='+(++n));await pockaj(30);
+      const p=env.doc.getElementById('agent-ready-weekly');return {text:p.textContent,odkazy:[...p.vsetky()].filter(e=>e.tagName==='A').map(e=>e.href)};}
+    finally{env.obnov();}
+  }
+  const bez=await panel({at:'2026-10-22T05:00:00Z',score:null,coverage:null,rules:[]});
+  assert.ok(bez.text.includes('Shop Guard sends an e-mail when the result changes; settings and results are on the Shop Guard page.'));
+  assert.ok(!bez.text.includes('No report emails are sent'));
+  assert.ok(!bez.text.includes('null/100')&&!bez.text.includes('null%'));assert.ok(bez.text.includes('data for AI assistants could not be evaluated'));
+  assert.deepEqual(bez.odkazy,[`/straz-eshopu/en/?id=${ID}&key=${KEY}`]);
+  const so=await panel({at:'2026-10-22T05:00:00Z',score:80,coverage:90,rules:[]});
+  assert.ok(so.text.includes('80/100, 90% coverage'));
+  assert.doesNotMatch(subor('../feed-doctor/agent-ready/monitor.mjs'),/[–—]/);
+});
+
+test('nález 13: zásady súkromia časť 4 bez rozporu (zrušenie Stráže nič nemaže, odpoveď na e-mail nič neruší); FAQ Feed Doctor bez mono pri cene', ()=>{
+  for(const [p,zle,veta] of [['../privacy/index.html','odpoveďou na upozornenie','Pri Stráži e-shopu zrušenie predplatného nič nemaže'],
+    ['../privacy/en/index.html','by replying to an alert','For Shop Guard, cancelling the subscription deletes nothing'],
+    ['../privacy/de/index.html','per Antwort auf eine Warn-E-Mail','Beim Shop-Wächter löscht die Kündigung des Abos nichts']]){
+    const t=subor(p),s4=t.slice(t.indexOf('<h2 id="s4"'),t.indexOf('<h2 id="s5"'));
+    assert.ok(!s4.includes(zle),p);assert.ok(s4.includes(veta),p);assert.doesNotMatch(s4,/[–—]/,p);
+    assert.ok(!/zrušením sa zmaže|deleting removes the e-mail, feed URL and history\.<\/p>\s*<p>Shop/.test(s4),p);
+  }
+  for(const [p,veta] of [['../feed-doctor/index.html','a stojí 9 € mesačne'],['../feed-doctor/en/index.html','costs 9 EUR a month'],['../feed-doctor/de/index.html','kostet 9 EUR im Monat']]){
+    const t=subor(p);assert.ok(t.includes(veta),p);assert.ok(!t.includes('<span class="mono">9'),p);
+  }
+  // Snímky kolo 2: „Bez e-mailu.“ pod tlačidlom v článku sa nerozdelí na dva riadky.
+  assert.ok(subor('../oznamenie-o-zakonnej-zaruke-eshop/index.html').includes('vášho obchodu. <span class="ar-nowrap">Bez e-mailu.</span></p>'));
 });

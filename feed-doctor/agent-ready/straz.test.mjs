@@ -49,7 +49,7 @@ globalThis.location = { search: '', hostname: 'arling.sk', origin: 'https://arli
 globalThis.document = falosnyDoc('sk');
 globalThis.matchMedia = () => ({ matches: true });
 
-const S = await import('./straz.mjs?v=1'); // tá istá inštancia, ktorú načíta app.mjs
+const S = await import('./straz.mjs?v=2'); // tá istá inštancia, ktorú načíta app.mjs
 const { deps, T, API, BOX_ID, NAVRAT, buildStrazBox, strazLink, strazOn, platnaOdpoved, pocetNalezov } = S;
 const VZORKA = JSON.parse(readFileSync(new URL('./sample-report.json', import.meta.url), 'utf8'));
 const povodne = { ...deps };
@@ -446,18 +446,91 @@ test('Z3: pri skóre null alebo 0 produktových stránkach box povie, že údaje
       nastav({ fetch: async () => odpoved(200, SPRAVNA) });
       const ui = box({ lang, data });
       const pozn = triedy(ui.box, 'ar-straz-bez-ai');
-      assert.equal(pozn.length, 1, lang); assert.equal(pozn[0].textContent, T[lang].noAi);
+      assert.equal(pozn.length, 1, lang); assert.equal(pozn[0].tagName, 'LI'); assert.equal(pozn[0].textContent, T[lang].watchNoAi);
       const body = prve(ui.box, 'ar-straz-co').children.map((li) => li.textContent);
       assert.deepEqual(body, [T[lang].watch[0], T[lang].watchNoAi, T[lang].watch[2]], lang);
       assert.ok(!body.includes(T[lang].watch[1]), lang + ': bez sľubu, že údaje pre AI sleduje už teraz');
     }
-    assert.match(T[lang].noAi, /EU|EÚ/); assert.ok(T[lang].noAi.length > 40);
   }
-  assert.match(T.sk.noAi, /sme nenašli čitateľné produktové stránky/);
+  assert.match(T.sk.watchNoAi, /sme nenašli čitateľné produktové stránky/);
   // bežný výsledok so skóre a stránkami: pôvodný zoznam, bez poznámky
   nastav({ fetch: async () => odpoved(200, SPRAVNA) });
   const ui = box();
   assert.equal(triedy(ui.box, 'ar-straz-bez-ai').length, 0);
   assert.deepEqual(prve(ui.box, 'ar-straz-co').children.map((li) => li.textContent), T.sk.watch);
   assert.equal(S.bezUdajovAi(VZORKA), false); assert.equal(S.bezUdajovAi(null), false);
+});
+
+// ---------- 5. kolo 2 (brána pokus 1, ops/druhy-ucet/209/overenie/brana-1-nalezy.md; snímky-2/zoznam.md) ----------
+const { UI } = await import('./i18n.mjs?v=2');
+const NEVYHODNOTENE = /\b(AI|KI)\b[\s\S]*(nedali vyhodnotiť|nehodnotíme|could not be evaluated|do not evaluate|nicht auswerten|nicht bewerten)/;
+test('nález 9: veta o platforme nesľubuje každú platformu, hovorí, že Stráž číta len verejné stránky (SK, EN, DE)', () => {
+  assert.equal(T.sk.shopify, 'Stráž číta len verejné stránky, preto funguje aj pri Shopify a do obchodu sa nič neinštaluje. Je to samostatná služba, nie Pro v našej appke pre Shopify.');
+  for (const [lang, verejne] of [['sk', /číta len verejné stránky/], ['en', /reads public pages only/], ['de', /liest nur öffentliche Seiten/]]) {
+    assert.ok(!/každej platforme|every platform|jeder Plattform/i.test(T[lang].shopify), lang + ': ' + T[lang].shopify);
+    assert.match(T[lang].shopify, verejne, lang); assert.match(T[lang].shopify, /Shopify/, lang); assert.match(T[lang].shopify, /Pro/, lang);
+  }
+});
+test('postreh snímok 5: box bez skóre hovorí o nevyhodnotených údajoch pre AI len na jednom mieste', () => {
+  for (const lang of ['sk', 'en', 'de']) {
+    nastav({ fetch: async () => odpoved(200, SPRAVNA) });
+    const ui = box({ lang, data: { ...report(), score: null, sample: { ...VZORKA.sample, pages: 0, attemptedPages: 0 } } });
+    const miesta = ui.box.all((e) => e.childNodes.some((c) => !(c instanceof El) && NEVYHODNOTENE.test(c.textContent)));
+    assert.equal(miesta.length, 1, lang + ': ' + miesta.map((e) => e.textContent).join(' | '));
+    assert.ok(!('noAi' in T[lang]), lang + ': samostatný odsek noAi už nie je');
+  }
+});
+// Shoptet bez rozpoznaných produktových stránok: skóre null, 0 produktov, 0/0 stránok, pravidlá neoverené, EÚ platné.
+const shoptet = (eu = VZORKA.eu) => {
+  const v = { ...VZORKA, storeUrl: 'https://obchod.example.org', platform: 'html', shopify: { detected: false, signals: [] }, score: null, coverage: 0,
+    sample: { ...VZORKA.sample, products: 0, pages: 0, attemptedPages: 0 }, rules: VZORKA.rules.map((r) => ({ ...r, status: 'unknown', affected: 0, checked: 0, affectedIds: [] })) };
+  if (eu === 'bez') delete v.eu; else v.eu = eu;
+  return v;
+};
+const NEUTRALNA = {
+  sk: 'Neprečítali sme žiadnu produktovú stránku, preto údaje pre AI asistentov nehodnotíme. Povinnosti EÚ nižšie sme skontrolovali.',
+  en: 'We could not read any product page, so we do not evaluate the data for AI assistants. We did check the EU duties below.',
+  de: 'Wir konnten keine Produktseite lesen, daher bewerten wir die Daten für KI-Assistenten nicht. Die EU-Pflichten unten haben wir geprüft.',
+};
+test('nález 6: výsledok bez prečítanej produktovej stránky nemá vetu o nevyšlej chybnej kontrole ani o vysokom skóre, len jednu neutrálnu vetu (SK, EN, DE)', async () => {
+  for (const live of [false, true]) for (const lang of ['sk', 'en', 'de']) {
+    const { rep } = await spustiApp({ live, lang, vysledok: shoptet(), sample: false });
+    assert.equal(rep.hidden, false, lang);
+    const texty = rep.all((e) => e.tagName === 'P').map((p) => p.textContent);
+    assert.ok(!texty.includes(UI[lang].empty), lang + ': veta „nevyšla chybná kontrola“');
+    assert.ok(!texty.includes(UI[lang].unknown), lang + ': veta o vysokom skóre');
+    assert.ok(!rep.all((e) => e.tagName === 'H3').some((h) => h.textContent === UI[lang].fixes), lang + ': nadpis Čo opraviť najskôr bez obsahu');
+    const vety = triedy(rep, 'ar-no-pages');
+    assert.equal(vety.length, 1, lang); assert.equal(vety[0].textContent, NEUTRALNA[lang], lang);
+    assert.ok(!/[–—]/.test(vety[0].textContent));
+    assert.equal(triedy(rep, 'ar-eu').length, 1, lang + ': EÚ ostáva');
+    // poradie: neutrálna veta je pred blokom EÚ, ku ktorému odkazuje slovom nižšie
+    assert.ok(rep.children.indexOf(vety[0]) < rep.children.findIndex((e) => ma(e, 'ar-eu')), lang);
+  }
+});
+test('nález 6: bez platného bloku EÚ neutrálna veta netvrdí, že sme EÚ skontrolovali; so skóre a 0 stránkami a s chybami ostane zoznam na opravu', async () => {
+  for (const eu of ['bez', { version: 'x' }]) {
+    const { rep } = await spustiApp({ live: false, lang: 'sk', vysledok: shoptet(eu), sample: false });
+    const vety = triedy(rep, 'ar-no-pages');
+    assert.equal(vety.length, 1); assert.equal(vety[0].textContent, 'Neprečítali sme žiadnu produktovú stránku, preto údaje pre AI asistentov nehodnotíme.');
+  }
+  // 0 prečítaných stránok, ale pravidlá z feedu zlyhali: zoznam ostane, veta o vysokom skóre nie, neutrálna veta nie (nebola by pravdivá)
+  const s = { ...VZORKA, storeUrl: 'https://obchod.example.org', platform: 'html', shopify: { detected: false, signals: [] }, coverage: 60, sample: { ...VZORKA.sample, pages: 0, attemptedPages: 3 } };
+  const { rep } = await spustiApp({ live: false, lang: 'sk', vysledok: s, sample: false });
+  const texty = rep.all((e) => e.tagName === 'P').map((p) => p.textContent);
+  assert.ok(!texty.includes(UI.sk.unknown)); assert.equal(triedy(rep, 'ar-no-pages').length, 0);
+  assert.ok(rep.children.some((e) => e.tagName === 'H3' && e.textContent === UI.sk.fixes));
+  assert.ok(rep.children.find((e) => e.tagName === 'UL' && ma(e, 'ar-list')).children.length > 0);
+  // bežný výsledok s prečítanou stránkou a pokrytím pod 100: veta o pokrytí ostáva ako predtým
+  const b = { ...VZORKA, storeUrl: 'https://obchod.example.org', platform: 'html', shopify: { detected: false, signals: [] }, coverage: 80 };
+  const r2 = (await spustiApp({ live: false, lang: 'sk', vysledok: b, sample: false })).rep;
+  assert.ok(r2.all((e) => e.tagName === 'P').some((p) => p.textContent === UI.sk.unknown)); assert.equal(triedy(r2, 'ar-no-pages').length, 0);
+});
+test('medzera pred čiarkou v riadku vzorky nevzniká v texte (app.mjs ani i18n.mjs): „0 produktov vo feede, 0/0“', async () => {
+  for (const lang of ['sk', 'en', 'de']) {
+    const { rep } = await spustiApp({ live: false, lang, vysledok: shoptet(), sample: false });
+    const dd = prve(rep, 'ar-scope').all((e) => e.tagName === 'DD')[0].textContent;
+    assert.ok(!dd.includes(' ,'), lang + ': ' + dd);
+    assert.equal(dd, `0 ${UI[lang].products}, 0/0 ${UI[lang].pages}`);
+  }
 });
