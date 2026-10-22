@@ -5,7 +5,7 @@
 <script type="text/plain" data-odlozene src="/style/vzhlad.js?v=da076a5a"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://api.arling.workers.dev 'sha256-7FSdfmrl+5QSgl6IKPQIurtZ+JQz6W0uhhvFm3YWalc=' 'sha256-BLCDjhgr59m14AL8ggbnj+hwWshWwznlBtjMfj1GlEo=' 'sha256-S/yX6TY+hzrtsYv8xITCLWzoyEXoFxaJ3TNAKvF95i4='; connect-src 'self' https:; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://api.arling.workers.dev 'sha256-7FSdfmrl+5QSgl6IKPQIurtZ+JQz6W0uhhvFm3YWalc=' 'sha256-tqY1VTDNi2jqUnVENlv1ulh/prNjviEg1I7OdDTTtjA=' 'sha256-S/yX6TY+hzrtsYv8xITCLWzoyEXoFxaJ3TNAKvF95i4='; connect-src 'self' https:; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#0a0908">
 <link rel="preconnect" href="https://api.arling.workers.dev" crossorigin>
@@ -13,7 +13,7 @@
 <link rel="icon" href="../../favicon.ico" sizes="48x48">
 <link rel="apple-touch-icon" href="../../icon-180.png">
 <title>Feed Doctor Monitor</title>
-<meta name="description" content="Manage your Feed Doctor Monitor: score history, issue counts, upgrade to Pro, or delete the monitor.">
+<meta name="description" content="Manage your Feed Doctor Monitor: score history, issue counts, turn on Shop Guard for 9 EUR a month, or delete the monitor.">
 <meta name="robots" content="noindex, nofollow">
 
 
@@ -278,6 +278,9 @@ body.nastroj h1 .l+.l::before{content:" "}
   .delete-row{border-top:1px solid var(--line);margin-top:28px;padding-top:18px}
   .delete-row p{margin:0 0 10px;font-family:var(--ui);font-size:13px;color:var(--muted)}
   .confirm-row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+  /* #zmazat from an e-mail (navrat.mjs): the delete button is scrolled to, focused and marked. */
+  .delete-row.navrat-ciel{border-top-color:var(--accent)}
+  #delete-btn.navrat-ciel{outline:3px solid var(--accent);outline-offset:3px}
 </style>
 <style data-kriticke>
 
@@ -439,7 +442,11 @@ html:not(.css) body>footer{visibility:hidden;animation:arling-odkry 1ms 6s forwa
 
     const banners = [];
     if (isDemo) banners.push('<div class="notice demo">This is sample data for preview only. No monitor is running and no data was fetched.</div>');
-    if (opts.paid) banners.push('<div class="notice paid">Thanks. Pro is now active on this monitor.</div>');
+    // After a payment the button to pay is never shown again: until the plan is pro the page says the payment is being confirmed.
+    const confirming = !!opts.paid && !isPro;
+    if (opts.paid) banners.push(isPro
+      ? '<div class="notice paid">Thanks. Shop Guard is now active on this monitor.</div>'
+      : '<div class="notice paid">Thanks. We are confirming your payment with Stripe; there is no need to pay again. If Shop Guard is not on within an hour, write to <a href="mailto:support@arling.sk">support@arling.sk</a>.</div>');
 
     app.innerHTML = `
       ${banners.join('')}
@@ -479,10 +486,12 @@ html:not(.css) body>footer{visibility:hidden;animation:arling-odkry 1ms 6s forwa
       <div class="actions-row">
         ${isPro
           ? `<button class="btn btn-line" id="check-now-btn" type="button" data-umami-event="monitor_check_now">Check now</button>`
-          : `<a class="btn btn-solid" id="upgrade-btn" href="${esc(data.upgrade_url || '#')}" data-umami-event="monitor_upgrade_click">Upgrade to Pro, 9 EUR / month</a>`
+          : confirming
+            ? ''
+            : `<a class="btn btn-solid" id="upgrade-btn" href="${esc(data.upgrade_url || '#')}" data-umami-event="monitor_upgrade_click">Upgrade to Shop Guard, 9 EUR / month</a>`
         }
       </div>
-      ${!isPro ? '<p class="action-note">Pro: daily checks, an alert on every change, and 90 days of history.</p>' : ''}
+      ${!isPro && !confirming ? '<p class="action-note">Shop Guard: your store checked once a week for EU obligations and the data AI shopping assistants read (you add the store address on the Shop Guard page), this feed every day, and an e-mail only when something changes. 9 EUR a month, VAT included. Cancel any time with one click. In the Stripe checkout the item is called Feed Doctor Monitor.</p>' : ''}
       <p class="action-status" id="action-status" hidden></p>
 
       <div class="delete-row">
@@ -692,5 +701,6 @@ html:not(.css) body>footer{visibility:hidden;animation:arling-odkry 1ms 6s forwa
 <script type="text/plain" data-odlozene src="/style/prepinac.js?v=71e7f906"></script>
 <script type="text/plain" data-odlozene src="/style/paper-pohyb.js?v=2b5c7533"></script>
 <script type="text/plain" data-odlozene="module" src="/feed-doctor/agent-ready/monitor.mjs?v=1"></script>
+<script type="text/plain" data-odlozene="module" src="/feed-doctor/monitor/navrat.mjs?v=2"></script>
 </body>
 </html>

@@ -11,6 +11,8 @@ const transition=import('./prechod.mjs').then(m=>({m,live:m.createAppPageCheck()
 // cakacia.mjs also wires the waitlist form already on the page as soon as it loads.
 const euModule=import('./eu-zobraz.mjs').catch(()=>null);
 const waitlist=import('./cakacia.mjs').catch(()=>null);
+// Stráž e-shopu (relácia 209): optional; null unless /straz-eshopu/stav.json is live or the test mode is on.
+const strazModule=import('./straz.mjs?v=1').then(m=>m.strazOn().then(on=>on?m:null)).catch(()=>null);
 function node(tag,text,cls){const el=document.createElement(tag);if(text!=null)el.textContent=String(text);if(cls)el.className=cls;return el;}
 function track(name,data){if(new URLSearchParams(location.search).has('test'))return;try{window.umami?.track(name,data);}catch{}}
 function safeLink(url){try{const u=new URL(url);return u.protocol==='https:'&&!u.username&&!u.password?u.href:null;}catch{return null;}}
@@ -32,7 +34,7 @@ function appBlock(app,sample){const c=copy.app,box=node('div',null,'ar-next'),ti
 const quote=s=>lang==='en'?`“${s}”`:`„${s}“`;
 function outLink(text,href){const a=node('a',text);a.href=href;a.rel='noopener';a.target='_blank';return a;}
 // EU rules for online shops, 2026: one row per finding, each with what we found, a manual check, the law and its link.
-function euBlock(rows){
+function euBlock(rows,sz=null){
   const box=node('section',null,'ar-eu');box.setAttribute('aria-labelledby','ar-eu-nadpis');
   const h=node('h3',euCopy.title);h.id='ar-eu-nadpis';box.append(h);
   if(!Array.isArray(rows)){box.append(node('p',rows==='failed'?euCopy.failed:euCopy.missing,'ar-status'));return box;}
@@ -57,14 +59,14 @@ function euBlock(rows){
     if(r.manual){const m=node('p',null,'ar-eu-manual');m.append(node('strong',euCopy.manual+':'),' '+r.manual);li.append(m);}
     const law=node('p',null,'ar-eu-law');law.append(node('span',euCopy.law+': '));
     r.law.forEach(([text,href],i)=>{if(i)law.append('; ');law.append(outLink(text,href));});
-    li.append(law);list.append(li);
+    li.append(law);if(sz&&(r.tone==='review'||r.tone==='unknown'))li.append(sz.strazLink(r.code,lang));list.append(li);
   }
   box.append(list,node('p',euCopy.footer,'ar-muted ar-eu-footer'));
   const cal=node('a',euCopy.calendar[0],'ar-eu-calendar');cal.href=euCopy.calendar[1];cal.dataset.umamiEvent='ar_check_to_calendar';
   box.append(cal);
   return box;
 }
-function render(data,sample,app=null,eu=null,wl=null,platform='unknown'){
+function render(data,sample,app=null,eu=null,wl=null,platform='unknown',sz=null){
   if(!data||data.version!=='1.0.0'||!Array.isArray(data.rules)||!data.sample||!data.rules.every(r=>RULES.some(def=>def.code===r.code)&&['pass','fail','unknown','info'].includes(r.status)&&Number.isInteger(r.checked)&&Number.isInteger(r.affected)))throw new Error('invalid_report');
   currentReport=data;report.replaceChildren();report.hidden=false;
   if(sample)report.append(node('p',copy.sample,'ar-status'));
@@ -73,9 +75,10 @@ function render(data,sample,app=null,eu=null,wl=null,platform='unknown'){
   if(data.coverage<100||data.sample.pages<data.sample.attemptedPages)report.append(node('p',copy.unknown,'ar-status'));
   if(data.noindexPages?.length)report.append(node('p',copy.noindex,'ar-status'));
   const failing=data.rules.filter(r=>r.status==='fail').sort((a,b)=>RULES.find(r=>r.code===b.code).weight-RULES.find(r=>r.code===a.code).weight);
-  report.append(node('h3',copy.fixes));const ul=node('ul',null,'ar-list');for(const r of failing)ul.append(ruleElement(r));if(!failing.length)report.append(node('p',copy.empty));else report.append(ul);
+  report.append(node('h3',copy.fixes));const ul=node('ul',null,'ar-list');for(const r of failing){const li=ruleElement(r);if(sz&&li)li.append(sz.strazLink(r.code,lang));ul.append(li);}if(!failing.length)report.append(node('p',copy.empty));else report.append(ul);
   if(copy.readsTitle)report.append(limitsBlock());
-  if(eu){const state=eu.euState(data);report.append(euBlock(state==='ok'?eu.euView(data.eu,euCopy):state));}
+  if(eu){const state=eu.euState(data);report.append(euBlock(state==='ok'?eu.euView(data.eu,euCopy):state,sz));}
+  if(sz){const box=sz.buildStrazBox(lang,sample?'sample':'result',platform,data);if(box)report.append(box);}
   // Pro je appka pre Shopify: obchod bez znakov Shopify dostane vetu namiesto formulára (brána A-189 pokus 1, nález 9b).
   if(wl)report.append(platform==='no'?wl.buildNote(lang):wl.buildWaitlist(lang,sample?'sample':'result',platform));
   if(app&&copy.app)report.append(appBlock(app,sample));
@@ -97,9 +100,9 @@ async function run(sample=false){const request=latest.begin();busy(true);status.
   const data=await response.json();if(!request.current())return;
   const t=await transition,next=t?t.m.shopifyEvidence(data):{shopify:false,signals:[]};
   const showApp=next.shopify&&Boolean(copy.app)&&await t.live();if(!request.current())return;
-  const [eu,wl]=await Promise.all([euModule,waitlist]);if(!request.current())return;
+  const [eu,wl,sz]=await Promise.all([euModule,waitlist,strazModule]);if(!request.current())return;
   const platform=t?(next.shopify?'yes':'no'):'unknown';
-  render(data,sample,showApp?{...next,url:t.m.APP_URL,clickData:t.m.appClickData}:null,eu,wl,platform);status.textContent='';
+  render(data,sample,showApp?{...next,url:t.m.APP_URL,clickData:t.m.appClickData}:null,eu,wl,platform,sz);status.textContent='';
   const euEvent=eu?eu.euEvent(data.eu,lang):null;
   track(sample?'agent_ready_sample':'agent_ready_check',{score:data.score,coverage:data.coverage,products:data.sample.products,pages:data.sample.pages,lang,eu:euEvent?'yes':'no'});
   // Umami: EU findings that need a look (statuses and their count only); the sample is never counted.
@@ -108,4 +111,5 @@ async function run(sample=false){const request=latest.begin();busy(true);status.
 form.addEventListener('submit',e=>{e.preventDefault();run();});$('sample').addEventListener('click',()=>run(true));
 $('cancel').addEventListener('click',()=>{latest.cancel();busy(false);status.textContent=copy.cancelled;report.hidden=true;});
 for(const id of ['store-url','product-url'])$(id).addEventListener('input',()=>{latest.cancel();busy(false);status.textContent='';report.hidden=true;});
-document.querySelector('[data-pro-link]')?.addEventListener('click',()=>track('kupa_click',{product:'feed-monitor-pro',place:'agent-ready',lang}));
+// Link to the Stráž e-shopu page; not a purchase, so not kupa_click (that one counts as a buy click in the morning report).
+document.querySelector('[data-pro-link]')?.addEventListener('click',()=>track('ar_straz_link',{lang,place:'result'}));
