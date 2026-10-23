@@ -1,0 +1,163 @@
+/* Mord im Club Juniper (krimidinner-mafia, relacia 222): len to, co paper.css a hub.css nemaju.
+   Art Deco 1927: zlata na ciernom papieri (body.noc), tenke dvojite linky, vejar kresleny kodom.
+   Hlavne tlacidlo a cenovy box ostavaju v akcente systemu (ZNALOSTI-UI R67: rovnaka funkcia,
+   rovnaky vzhlad); zlata je len ozdoba, nazov hry, mena roli a cislice.
+   Kontrast #d4b46a na #0a0908 je asi 10 : 1 (vypocet v ops/druhy-ucet/222/ODOVZDANIE-STRANKA.md).
+   Ziadna mriezka kariet: skupiny drzia linky papiera (R64). Ziadna vlastna animacia. */
+
+.juniper { --j-zlato:#d4b46a; --j-zlato-linka:rgba(212,180,106,.42); --j-zlato-jemne:rgba(212,180,106,.16); }
+
+/* ── Uvod: na mobile text, cena, obalka s popisom a dokazy pod sebou; od 861 px cena vpravo cez dva riadky
+   a vlavo pod perexom obalka PDF vedla dokazov. Brana 23. 10. 2026, nalez 2: obraz produktu pri rozhodovani
+   (ZNALOSTI-UI R9, R29). Obalka ide na mobile az pod cenovu kartu, aby tlacidlo ostalo nad ohybom (R59). */
+@media (min-width:861px) {
+  .juniper .hero { grid-template-columns:minmax(0,7fr) minmax(0,5fr); grid-template-areas:"text cena" "dole cena";
+                   align-items:start; row-gap:clamp(24px,3vw,40px); }
+  .juniper .hero > .text { grid-area:text; }
+  .juniper .hero > .cena { grid-area:cena; }
+  .juniper .hero > .j-uvod-dole { grid-area:dole; }
+}
+/* Obalka, popis a dokazy: na mobile obalka vlavo, popis vedla nej dole, dokazy pod nimi; od 861 px obalka vlavo cez
+   dva riadky, vpravo dokazy a pod nimi popis, takze popis nepridava vysku pod obalkou (prva obrazovka 1440 x 900).
+   Jedna obalka, nie mriezka kariet (R64); odkaz vedie na #vorschau. */
+.j-uvod-dole { display:grid; grid-template-columns:minmax(0,min(52%,220px)) minmax(0,1fr);
+               grid-template-areas:"obal popis" "dokazy dokazy"; gap:24px 18px; align-items:end; min-width:0; }
+.j-uvod-dole > .j-obal { grid-area:obal; }
+.j-uvod-dole > .dokazy { grid-area:dokazy; }
+.juniper .j-obal-popis { grid-area:popis; margin:0; max-width:34ch; font:400 14px/1.55 var(--ui); color:var(--muted); }
+.juniper .j-obal-popis b { color:var(--body); font-weight:600; }
+.juniper .j-obal-popis a { color:var(--body); }
+.j-obal img { border-radius:4px; }
+@media (min-width:861px) {
+  .j-uvod-dole { grid-template-columns:minmax(0,clamp(140px,14vw,200px)) minmax(0,1fr); grid-template-rows:auto 1fr;
+                 grid-template-areas:"obal dokazy" "obal popis"; gap:14px 32px; align-items:start; }
+  .juniper .j-obal-popis { align-self:end; max-width:52ch; }
+}
+
+.juniper .j-krest { display:block; width:min(240px,64vw); height:auto; margin:0 0 18px; color:var(--j-zlato); }
+
+.juniper .j-h1 { margin:0; }
+/* Velkost: "MORD IM CLUB" sa zmesti do jedneho riadku na 390 px (34 px) aj v textovom stlpci na 1280 px (60 px),
+   takze nazov ma vzdy dva riadky; odhad sirky velkych pismen 0,72 em + .045 em rozostup. */
+.juniper .j-meno { display:block; font:600 clamp(34px,4.8vw,60px)/1.04 var(--nadpis,var(--display));
+                   letter-spacing:.045em; text-transform:uppercase; color:var(--j-zlato); text-wrap:balance; }
+.juniper .j-druh { display:block; margin-top:clamp(14px,1.6vw,20px); padding-top:clamp(12px,1.4vw,16px);
+                   border-top:3px double var(--j-zlato-linka); font:600 clamp(19px,2vw,28px)/1.25 var(--nadpis,var(--display));
+                   letter-spacing:-.01em; text-transform:none; color:var(--ink); text-wrap:balance; }
+.juniper .j-sr { position:absolute; width:1px; height:1px; margin:-1px; padding:0; overflow:hidden;
+                 clip:rect(0 0 0 0); white-space:nowrap; border:0; }
+.juniper .hero .text > .lead { margin-top:clamp(20px,2.2vw,28px); }
+
+.juniper .dokazy { list-style:none; margin:0; padding:0; border-top:1px solid var(--j-zlato-linka); }
+.juniper .dokazy li { margin:0; padding:14px 0; border-bottom:1px solid var(--line);
+                      font:400 15.5px/1.55 var(--ui); color:var(--body); }
+.juniper .dokazy li::before { content:none; }
+.juniper .dokazy b { color:var(--ink); font-weight:600; }
+
+/* hub.css dava .predaj .test-odznak display:block; atribut hidden musi platit. */
+.juniper .test-odznak[hidden] { display:none; }
+
+/* ── Linka pod nadpisom sekcie v zlatej (ten isty prvok .rule ako na inych strankach). */
+.juniper .rule { background:var(--j-zlato-linka); }
+/* Snimky 23. 10.: zoznam hned pod .rule mal vlastnu hornu linku, takze pod nadpisom boli dve rovnobezne
+   linky s prazdnym pasom medzi nimi. Hornu linku drzi .rule, zoznam ju uz nekresli. */
+.juniper .rule + .j-abend .j-ablauf, .juniper .rule + .j-osoby, .juniper .rule + .j-roly,
+.juniper .rule + .j-obsah { border-top:0; }
+.juniper .rule + .j-fakty > div:first-child { border-top:0; }
+
+/* ── So laeuft der Abend: kroky a vedla nich menu ako karta z roku 1927 (jedna, nie mriezka). */
+.j-abend { display:grid; grid-template-columns:1fr; gap:clamp(28px,4vw,56px); align-items:start; }
+@media (min-width:900px) { .j-abend { grid-template-columns:minmax(0,1fr) minmax(0,340px); } }
+.j-ablauf { list-style:none; margin:0; padding:0; counter-reset:abend; max-width:72ch; border-top:1px solid var(--line); }
+.j-ablauf li { counter-increment:abend; position:relative; margin:0; padding:18px 0 18px 64px;
+               border-bottom:1px solid var(--line); font:400 16px/1.6 var(--ui); color:var(--body); }
+.j-ablauf li::before { content:counter(abend); position:absolute; left:6px; top:20px; width:32px; height:32px;
+                       display:grid; place-items:center; border:1px solid var(--j-zlato);
+                       outline:1px solid var(--j-zlato-linka); outline-offset:3px;
+                       font:600 15px/1 var(--ui); color:var(--j-zlato); }
+.j-ablauf b { display:block; margin:0 0 4px; font:600 17px/1.35 var(--nadpis,var(--display)); color:var(--ink); }
+/* .juniper pred p triedami: body.noc p (0,1,2) z paper.css inak prepise okraj na 0 0 14px. */
+.juniper .j-poznamka { margin:24px 0 0; max-width:64ch; font:400 15.5px/1.6 var(--ui); color:var(--body); }
+
+.j-karta { max-width:380px; padding:28px 24px 22px; text-align:center;
+           border:1px solid var(--j-zlato-linka); outline:1px solid var(--j-zlato-jemne); outline-offset:-8px; }
+.j-karta .j-krest { width:180px; margin:0 auto 10px; }
+/* Verzalkove stitky najmenej 13 px (arling-dizajn bod 4, PISMO-PRAVIDLA), rozostup len kvoli ozdobe karty. */
+.j-karta-hlava { margin:0 0 12px; font:600 13px/1.4 var(--ui); letter-spacing:.16em; text-transform:uppercase; color:var(--j-zlato); }
+.j-karta dl { margin:0; }
+.j-karta dl > div { padding:10px 0; border-top:1px solid var(--j-zlato-jemne); }
+.j-karta dt { font:600 13px/1.4 var(--ui); letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
+.j-karta dd { margin:3px 0 0; font:600 17px/1.35 var(--nadpis,var(--display)); color:var(--ink); }
+
+/* ── Fuer 6, 7 oder 8 Personen: velka zlata cislica a text, riadky pod sebou. */
+.j-osoby { list-style:none; margin:0; padding:0; border-top:1px solid var(--line); max-width:860px; }
+.j-osoby li { display:grid; grid-template-columns:3.2rem minmax(0,1fr); gap:0 18px; margin:0; padding:20px 0;
+              border-bottom:1px solid var(--line); }
+.j-osoby li::before { content:none; }
+.j-cislo { font:400 clamp(44px,5vw,58px)/.9 var(--nadpis,var(--display)); color:var(--j-zlato); }
+.j-osoby h3 { margin:2px 0 6px; }
+.j-osoby p { margin:0; font:400 16px/1.6 var(--ui); color:var(--body); }
+
+/* ── Rollen: meno vlavo, verejny opis a kostym vpravo; na mobile pod sebou. */
+.j-roly { list-style:none; margin:0; padding:0; border-top:1px solid var(--j-zlato-linka); }
+.j-roly li { display:grid; grid-template-columns:minmax(0,1fr); gap:6px 32px; margin:0; padding:18px 0;
+             border-bottom:1px solid var(--line); }
+@media (min-width:760px) { .j-roly li { grid-template-columns:minmax(0,17rem) minmax(0,1fr); } }
+.j-roly li::before { content:none; }
+/* .juniper pred menom: body.noc b (0,1,2) z paper.css inak prefarbi mena na bielo. */
+.juniper .j-figura b { display:block; font:600 18px/1.3 var(--nadpis,var(--display)); color:var(--j-zlato); }
+.j-figura span { display:block; margin-top:3px; font:500 14px/1.45 var(--ui); color:var(--muted); }
+.j-figura em { display:inline-block; margin-top:8px; padding:1px 10px; border:1px solid var(--j-zlato-linka);
+               border-radius:999px; font:600 13px/1.6 var(--ui); font-style:normal; color:var(--body); }
+.j-citat { margin:0; font:400 16px/1.55 var(--ui); color:var(--ink); }
+.j-kostym { margin:6px 0 0; font:400 14.5px/1.55 var(--ui); color:var(--body); }
+.j-kostym i { font-style:normal; font-weight:600; color:var(--muted); }
+
+/* ── Was im PDF steckt: zoznam v jednom, od 860 px v dvoch stlpcoch textu (nie karty). */
+.j-obsah { list-style:none; margin:0; padding:0; columns:1; column-gap:40px; border-top:1px solid var(--line); }
+@media (min-width:860px) { .j-obsah { columns:2; } }
+.j-obsah li { break-inside:avoid; margin:0; padding:11px 0; border-bottom:1px solid var(--line);
+              font:400 15px/1.55 var(--ui); color:var(--body); }
+.j-obsah li::before { content:none; }
+.j-obsah b { color:var(--ink); font-weight:600; }
+.juniper .j-rozsah { margin:24px 0 0; max-width:64ch; font:500 14.5px/1.6 var(--ui); color:var(--body); }
+
+/* ── Kostenlose Vorschau: obalka velka, dve strany vedla seba; od 760 px tri v rade. */
+.j-nahlady { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; margin:clamp(20px,2.4vw,32px) 0 0; }
+.j-nahlady > :first-child { grid-column:1 / -1; max-width:420px; }
+@media (min-width:760px) {
+  .j-nahlady { grid-template-columns:repeat(3,minmax(0,1fr)); gap:28px; }
+  .j-nahlady > :first-child { grid-column:auto; max-width:none; }
+}
+.j-nahlady .tabla img { border-radius:4px; }
+.juniper .j-ukazka { display:flex; flex-wrap:wrap; align-items:center; gap:12px 22px; margin:28px 0 0; max-width:none; }
+@media (max-width:560px) { .j-ukazka .btn { width:100%; justify-content:center; } }
+.j-meta { font:400 13.5px/1.5 var(--ui); color:var(--muted); }
+
+/* ── Fuer wen: fakty ako v rodine predajnych stranok, vlastna trieda. */
+.j-fakty { margin:0; padding:0; max-width:80ch; }
+.j-fakty > div { display:grid; grid-template-columns:10em minmax(0,1fr); gap:12px; padding:12px 0; border-top:1px solid var(--line); }
+.j-fakty > div:last-child { border-bottom:1px solid var(--line); }
+.j-fakty dt { padding-top:2px; font:700 13px/1.5 var(--ui); letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
+.j-fakty dd { margin:0; font:400 15.5px/1.55 var(--ui); color:var(--body); }
+.j-fakty .j-upozornenie dd { color:var(--ink); }
+@media (max-width:480px) { .j-fakty > div { grid-template-columns:1fr; gap:4px; } }
+
+/* ── Silvester a Weihnachten: dva bloky vedla seba od 860 px. Nadpis Weihnachten ma dva riadky, Silvester
+   jeden; nadpis s vyskou dvoch riadkov drzi linku a prvy odsek oboch stlpcov na spolocnej osi (snimka 1440 px,
+   23. 10.). Podmriezka zarovnala aj druhe odseky a v kratsom stlpci nechala dieru, preto nie. */
+.j-sviatky { display:grid; grid-template-columns:1fr; gap:clamp(36px,5vw,64px); }
+@media (min-width:860px) {
+  .j-sviatky { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .j-sviatky h2 { min-height:2lh; }
+}
+.j-sviatky h2 { margin-top:0; }
+.j-sviatky p { max-width:60ch; }
+
+/* ── Vor dem Kauf: cely riadok otazky je ciel dotyku aspon 44 px (kontrola-vzhladu bod 5); hub.css dava
+   summary len min-height 26 px. Odstup od linky ostava 16 px (6 + 10), sipka na stred riadku ako .shop-faq. */
+.juniper #otazky details { padding:6px 0; }
+.juniper #otazky details:first-of-type { padding-top:0; }
+.juniper #otazky summary { min-height:44px; padding-top:10px; padding-bottom:10px; }
+.juniper #otazky summary::after { top:50%; margin-top:-7px; }
+.juniper #otazky details[open] summary::after { top:50%; margin-top:-3px; }
