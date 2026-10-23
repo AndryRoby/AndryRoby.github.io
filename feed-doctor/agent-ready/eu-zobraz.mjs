@@ -15,6 +15,9 @@ export function safeHttps(url){try{const u=new URL(url);return u.protocol==='htt
 export function validEu(eu){return Boolean(eu&&typeof eu==='object'&&eu.version===1&&Array.isArray(eu.rules)&&eu.rules.length===EU_CODES.length
   &&eu.rules.every((r,i)=>r&&r.code===EU_CODES[i]&&STATUSES.includes(r.status)));}
 const ENERGY=/^(?:energy efficient|energieeffizient|energeticky účinné|energeticky úsporné)$/;
+/** Relácia 218: odstúpenie not_found na obchode, ktorého stránky ukazujú Shoptet (r.platform === 'shoptet' z core.mjs), bez odkazu na
+ * stránku objednávky (orders = počet použiteľných záznamov orderPage), a texty majú vetu shoptetNoLink (starý i18n.mjs ju nemá). */
+export const shoptetBezOdkazu=(r,x,orders)=>Boolean(r&&r.code==='eu_withdrawal'&&r.status==='not_found'&&r.platform==='shoptet'&&!orders&&x&&typeof x.shoptetNoLink==='string');
 
 /** Stav časti EÚ v správe: missing (správa pole eu nemá, starý worker), failed (eu je null alebo neznámeho tvaru), ok. */
 export const euState=(report)=>!report||typeof report!=='object'||!Object.hasOwn(report,'eu')?'missing':validEu(report.eu)?'ok':'failed';
@@ -36,8 +39,14 @@ export function euView(eu,t){
         // ostane manualNotFound, nikdy undefined ani {label}.
         const orders=typeof x.orderPage==='string'?(Array.isArray(r.orderPage)?r.orderPage:[]).filter(f=>f&&typeof f==='object'&&str(f.label,120)).slice(0,3):[];
         for(const f of orders)lines.push({text:fill(x.orderPage,{label:str(f.label,120),page:page(f.page)}),href:safeHttps(f.href)});
+        // Relácia 218: stránky ukazujú Shoptet (r.platform z core.mjs) a odkaz na stránku objednávky sme nenašli: veta, že Shoptet má
+        // funkciu zabudovanú na stránke Moja objednávka, hneď po notFound, aj keď je nájdený podobný odkaz (rozhodnutie Fable), a ručná
+        // kontrola s cestou v administrácii. Odznak a tón ostávajú. Starý i18n.mjs bez týchto kľúčov: nič navyše, manualNotFound.
+        // Odkaz na stránku objednávky sa počíta zo správy, nie z textov: so starým i18n.mjs bez orderPage by inak veta tvrdila, že odkaz nie je.
+        const shoptet=shoptetBezOdkazu(r,x,(Array.isArray(r.orderPage)?r.orderPage:[]).filter(f=>f&&typeof f==='object'&&str(f.label,120)).length);
+        if(shoptet)lines.push({text:x.shoptetNoLink});
         for(const f of similar)lines.push({text:fill(x.similar,{label:str(f.label,120),page:page(f.page)}),href:safeHttps(f.href),muted:true});
-        manual=orders.length&&typeof x.manualOrderPage==='string'?x.manualOrderPage:x.manualNotFound;
+        manual=orders.length&&typeof x.manualOrderPage==='string'?x.manualOrderPage:shoptet&&typeof x.manualShoptetNoLink==='string'?x.manualShoptetNoLink:x.manualNotFound;
       }
       else if(r.status==='link_found'){
         // Odkaz na stránku objednávky platformy (relácia 208): formulár sa tam načítava JavaScriptom, preto „odkaz nájdený, funkčnosť

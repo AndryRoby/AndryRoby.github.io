@@ -13,7 +13,7 @@
  * myši a klávesnici v poli adresy, na dotyku (pointer: coarse) na stavovej vete, aby softvérová klávesnica neprekryla stav.
  * Testy: kontrola.test.mjs (node --test).
  */
-import {texty,STRANKY_PRAVIDIEL,PRAVIDLA} from './texty.mjs?v=2';
+import {texty,STRANKY_PRAVIDIEL,PRAVIDLA} from './texty.mjs?v=3';
 import {createLatest} from '../feed-doctor/agent-ready/controller.mjs';
 
 export const API='https://feed-monitor.arling.workers.dev/v1/agent-ready/check';
@@ -130,14 +130,21 @@ export function vyhodnot(r,lang){
     m.lines.push({text:x.notFound});
     const orders=typeof x.orderPage==='string'?sNapisom(r.orderPage):[];
     for(const f of orders)m.lines.push(riadok(x.orderPage,f));
+    // Relácia 218: stránky ukazujú Shoptet (r.platform z jadra) a odkaz na stránku objednávky nie je: veta, že Shoptet má funkciu
+    // zabudovanú, aj pri podobnom odkaze (rozhodnutie Fable), a ručná kontrola s cestou v administrácii; podmienená poznámka T.shoptet
+    // sa vtedy neukáže. Starý i18n.mjs?v=2 bez kľúča shoptetNoLink: ako doteraz.
+    // Odkaz na stránku objednávky sa počíta zo správy (sNapisom), nie podľa toho, či texty majú vetu orderPage.
+    const shoptet=r.platform==='shoptet'&&!sNapisom(r.orderPage).length&&typeof x.shoptetNoLink==='string';
+    if(shoptet)m.lines.push({text:x.shoptetNoLink,href:null,muted:false});
     for(const f of obdobna)m.lines.push(riadok(T.obdobna,f));
     for(const f of similar)if(!obdobna.includes(f))m.lines.push(riadok(x.similar,f,true));
     // Relácia 220 (de, en): čo s podobným odkazom urobiť, raz pod všetkými, nie v každom riadku (pri troch nálezoch trikrát).
     if(similar.length&&typeof x.similarNote==='string')m.lines.push({text:x.similarNote,muted:true});
     if(similar.length){m.tone='unknown';m.badge=st('check');m.podobny=true;}else{m.tone='review';m.badge=st('not_found');}
-    m.manual=orders.length&&typeof x.manualOrderPage==='string'?x.manualOrderPage:x.manualNotFound;
-    // Pri podobnom nápise by odsek o Shoptete výsledok len zväčšil; pri odkaze na stránku objednávky (208) to isté už hovorí orderPage.
-    if(T.shoptet&&!similar.length&&!orders.length)m.shoptet=T.shoptet;
+    m.manual=orders.length&&typeof x.manualOrderPage==='string'?x.manualOrderPage:shoptet&&typeof x.manualShoptetNoLink==='string'?x.manualShoptetNoLink:x.manualNotFound;
+    // Pri podobnom nápise by odsek o Shoptete výsledok len zväčšil; pri odkaze na stránku objednávky (208) to isté už hovorí orderPage,
+    // pri zistenom Shoptete (218) veta shoptetNoLink.
+    if(T.shoptet&&!similar.length&&!orders.length&&!shoptet)m.shoptet=T.shoptet;
     return m;
   }
   // eu_guarantee_notice

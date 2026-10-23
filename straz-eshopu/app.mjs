@@ -177,14 +177,15 @@ const jeOdkaz=(code,state)=>code==='eu_withdrawal'&&state==='link_found';
 /** Relácia 208, agent M2: odkaz na stránku objednávky platformy s textom bez odstúpenia (Shoptet „Moja objednávka“) pri odstúpení
  * not_found, weekly.eu[].order {label, page} (worker report-mail.mjs euRules). Rovnaké čistenie a tvar ako podobnyOdkaz, iný tvar je null. */
 export function odkazObjednavky(r){return odkazZ(r&&typeof r==='object'?r.order:null);}
-/** Riadky troch nálezov EÚ zo stavu weekly.eu [{code,state,similar?,link?,order?}]: len známe kódy a stavy, texty z EU_UI (i18n.mjs), tón z eu-zobraz.mjs.
+/** Riadky troch nálezov EÚ zo stavu weekly.eu [{code,state,similar?,link?,order?,shoptet?}]: len známe kódy a stavy, texty z EU_UI (i18n.mjs), tón z eu-zobraz.mjs.
  * Pri odstúpení not_found s podobným odkazom rovnaké pravidlo ako bezplatná kontrola (eu-zobraz.mjs riadky 55 a 56): štítok
  * „Overte odkaz“, tón unknown a veta o odkaze s iným znením (veta), nikdy červené „Označenie sme nenašli“.
  * Zmluva 208: link_found (len pri odstúpení) má štítok „Odkaz nájdený, funkčnosť neoverená“, tón unknown a vetu o odkaze z r.link
  * (bez r.link žiadna veta). Prehliadač môže mať starý i18n.mjs?v=2 bez nových kľúčov: vtedy „Overte odkaz“ a veta o podobnom
  * odkaze, nikdy undefined.
  * Relácia 208, agent M2: not_found s r.order (odkaz „Moja objednávka“ na stránku objednávky Shoptetu) má vetu orderPage; štítok a tón
- * ako pri not_found (s podobným odkazom „Overte odkaz“, unknown a obe vety: najprv o objednávke, potom o podobnom odkaze). */
+ * ako pri not_found (s podobným odkazom „Overte odkaz“, unknown a obe vety: najprv o objednávke, potom o podobnom odkaze).
+ * Relácia 218 (r.shoptet): veta shoptetNoLink na začiatku vety a postup v administrácii v poli postup s nadpisom postupNadpis. */
 export function euRiadky(eu,lang,{EU_UI,toneOf,EU_CODES}){
   if(!Array.isArray(eu))return [];
   const t=EU_UI[jazyk(lang)]||EU_UI.en,stranka=p=>p&&Object.hasOwn(t.pages,p)?t.pages[p]:t.pages.product;
@@ -199,8 +200,15 @@ export function euRiadky(eu,lang,{EU_UI,toneOf,EU_CODES}){
     // kontroly (eu-zobraz.mjs); štítok a tón ostávajú. Starý i18n.mjs?v=2 bez orderPage: veta o objednávke chýba, nikdy undefined.
     const vety=[],o=code==='eu_withdrawal'&&r.state==='not_found'?odkazObjednavky(r):null;
     if(o&&o.label&&typeof x.orderPage==='string')vety.push(vypln(x.orderPage,{label:o.label,page:stranka(o.page)}));
+    // Relácia 218: Shoptet bez odkazu na stránku objednávky (r.shoptet z workera, len pri not_found a bez r.order): veta, že Shoptet má
+    // funkciu zabudovanú, pred podobným odkazom. Postup v administrácii je samostatné pole postup s nadpisom ručnej kontroly z EU_UI
+    // (postupNadpis, „Overte ručne“), nie koniec tlmenej vety (brána 218 D1: veta, podobný odkaz a postup sa zliali do jedného tlmeného
+    // odseku s asi 800 znakmi). Starý i18n.mjs?v=2 bez týchto kľúčov: nič navyše.
+    const shoptet=code==='eu_withdrawal'&&r.state==='not_found'&&r.shoptet===true&&!(o&&o.label)&&typeof x.shoptetNoLink==='string';
+    if(shoptet)vety.push(x.shoptetNoLink);
     if(podobny){const p=podobnyOdkaz(r);if(p.label)vety.push(vypln(x.similar,{label:p.label,page:stranka(p.page)}));}
     if(vety.length)out.veta=vety.join(' ');
+    if(shoptet&&typeof x.manualShoptetNoLink==='string'){out.postup=x.manualShoptetNoLink;if(typeof t.manual==='string'&&t.manual)out.postupNadpis=t.manual;}
     if(odkaz){const p=najdenyOdkaz(r);if(p&&p.label)out.veta=vypln(typeof x.linkFound==='string'?x.linkFound:x.similar,{label:p.label,page:stranka(p.page)});}
     return out;
   }).filter(Boolean);
@@ -465,7 +473,7 @@ export async function spustSpravu(t,lang,par,rez,tracker,opt={}){
   // (overujem); Zmazať je skryté len kým beží overovanie (najviac 120 s), aby zákazník nezmazal monitor, ktorý webhook o chvíľu zapne.
   let overujem=par.paid===true,overovanieBezi=par.paid===true;
   hlavny.textContent=s.nacitavam;
-  const zdrojePromise=Promise.all([import('../feed-doctor/agent-ready/eu-zobraz.mjs'),import('../feed-doctor/agent-ready/core.mjs'),import('../feed-doctor/agent-ready/i18n.mjs?v=2')])
+  const zdrojePromise=Promise.all([import('../feed-doctor/agent-ready/eu-zobraz.mjs'),import('../feed-doctor/agent-ready/core.mjs'),import('../feed-doctor/agent-ready/i18n.mjs?v=3')])
     .then(([eu,core,i18n])=>({EU_UI:i18n.EU_UI,toneOf:eu.toneOf,EU_CODES:eu.EU_CODES,RULES:core.RULES,localRule:i18n.localRule}),()=>null);
   // W4: názvy pravidiel feedu (hubová kópia Feed Doctora); bez nej sa zoznam najčastejších problémov vynechá, počty ostanú.
   const feedNazvyPromise=import('../feed-doctor/feed-doctor.js').then(fd=>nazvyPravidielFeedu(fd,lang),()=>new Map());let feedNazvy=null;
@@ -545,7 +553,9 @@ export async function spustSpravu(t,lang,par,rez,tracker,opt={}){
       // Bez modulov agent-ready (chyba načítania) ostane len skóre; nič sa neukáže ako „bez nálezov“.
       if(z){
       const eu=euRiadky(w.eu,lang,z);
-      if(eu.length){ob.append(node('h4',s.euNadpis));const ul=node('ul',null,'st-eu');for(const r of eu){const li=node('li');const b=node('span',r.badge,'ar-eu-badge');b.dataset.tone=r.tone;li.append(node('span',r.title,'st-eu-nazov'),b);if(r.veta)li.append(node('p',r.veta,'ar-muted st-eu-veta'));ul.append(li);}ob.append(ul);}
+      // Postup Shoptetu (relácia 218, brána D1) ako vlastný odsek pod vetou, nie tlmený, s nadpisom „Overte ručne:“ ako na stránke kontroly.
+      if(eu.length){ob.append(node('h4',s.euNadpis));const ul=node('ul',null,'st-eu');for(const r of eu){const li=node('li');const b=node('span',r.badge,'ar-eu-badge');b.dataset.tone=r.tone;li.append(node('span',r.title,'st-eu-nazov'),b);if(r.veta)li.append(node('p',r.veta,'ar-muted st-eu-veta'));
+        if(r.postup){const p=node('p',null,'st-eu-postup');if(r.postupNadpis)p.append(node('strong',r.postupNadpis+':'),' ');p.append(r.postup);li.append(p);}ul.append(li);}ob.append(ul);}
       if(!bezSkore){const zly=nazvyPravidiel(w.failing,lang,z);ob.append(node('h4',s.zlyhaneNadpis));
       if(zly.length){const ul=node('ul',null,'st-zoznam st-pravidla');for(const r of zly)ul.append(polozkaPravidla(r,s));ob.append(ul);}else ob.append(node('p',s.zlyhaneZiadne));}
       const zm=zmenyPodlaSmeru(w.changed,lang,z,{eu:w.eu,failing:w.failing});

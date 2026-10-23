@@ -1,5 +1,5 @@
 import {RULES} from './core.mjs';
-import {UI,localRule,EU_UI} from './i18n.mjs?v=4';
+import {UI,localRule,EU_UI} from './i18n.mjs?v=5';
 import {createLatest} from './controller.mjs';
 const lang=document.documentElement.lang,copy=UI[lang]||UI.en,euCopy=EU_UI[lang]||EU_UI.en;
 const $=id=>document.getElementById(id),form=$('check-form'),report=$('report'),status=$('status'),latest=createLatest();
@@ -43,8 +43,12 @@ function skryEmail(){const m=miestoEmailu;miestoEmailu=null;if(m&&vysledokModul)
 const OPRAVA_KODY=['feed_type','jsonld_returns','jsonld_shipping'];
 const oprava=$('fix-service'),opravaPovodne=oprava?oprava.hidden:false;
 function opravaPoVysledku(platform,failing){if(oprava)oprava.hidden=!(platform==='yes'&&failing.some(r=>OPRAVA_KODY.includes(r.code)));}
-// Nový beh, chyba, zrušenie alebo úprava vstupu: výsledok, blok e-mailu aj stav ponuky opravy patria k starému výsledku.
-function zrusVysledok(){report.hidden=true;skryEmail();if(oprava)oprava.hidden=opravaPovodne;}
+// Statická čakacia listina Pro pre Shopify (#pro, relácia 208 nález S1): obchod bez znakov Shopify ju nedostane ani vo výsledku
+// (brána 218 D2), preto sa vtedy skryje. Pri Shopify a pri neznámej platforme (prechod.mjs chýba) ostane taká ako v HTML.
+const pro=$('pro'),proPovodne=pro?pro.hidden:false;
+function proPoVysledku(platform){if(pro)pro.hidden=proPovodne||platform==='no';}
+// Nový beh, chyba, zrušenie alebo úprava vstupu: výsledok, blok e-mailu, stav ponuky opravy aj čakacej listiny patria k starému výsledku.
+function zrusVysledok(){report.hidden=true;skryEmail();if(oprava)oprava.hidden=opravaPovodne;if(pro)pro.hidden=proPovodne;}
 // Rovnaké pravidlo pre pole aj pre odkaz #url=: https (bez schémy sa doplní), bez mena, hesla, ? a #; inak null.
 function normalizujObchod(raw){let value=String(raw??'').trim();if(!value)return null;if(!/^https?:\/\//i.test(value))value='https://'+value;
   try{const s=new URL(value);return s.protocol==='https:'&&!s.username&&!s.password&&!s.hash&&!s.search?s:null;}catch{return null;}}
@@ -123,19 +127,22 @@ function render(data,sample,app=null,eu=null,wl=null,platform='unknown',sz=null)
   // No product page read: one neutral sentence instead of "no failing checks" and the high-score warning (gate 209, finding 6).
   if(noPages&&!failing.length){const t=NO_PAGES[lang]||NO_PAGES.en,euOk=Boolean(eu&&eu.euState(data)==='ok');report.append(node('p',euOk?t[0]+' '+t[1]:t[0],'ar-status ar-no-pages'));}
   else{report.append(node('h3',copy.fixes));const ul=node('ul',null,'ar-list');for(const r of failing){const li=ruleElement(r);if(sz&&li)li.append(sz.strazLink(r.code,lang));ul.append(li);}if(!failing.length)report.append(node('p',copy.empty));else report.append(ul);}
-  // Prázdne miesto pre blok „Poslať si výsledok e-mailom“ (SPEC 205 7.1, Z2 M1): za opravami, pred limitmi; pri vzorke nie.
-  miestoEmailu=null;if(!sample){miestoEmailu=node('div',null,'ar-vysledok-miesto');report.append(miestoEmailu);}
   if(copy.readsTitle)report.append(limitsBlock());
   if(eu){const state=eu.euState(data);report.append(euBlock(state==='ok'?eu.euView(data.eu,euCopy):state,sz));}
   if(sz){const box=sz.buildStrazBox(lang,sample?'sample':'result',platform,data);if(box)report.append(box);}
-  // Pro je appka pre Shopify: obchod bez znakov Shopify dostane vetu namiesto formulára (brána A-189 pokus 1, nález 9b).
-  if(wl)report.append(platform==='no'?wl.buildNote(lang):wl.buildWaitlist(lang,sample?'sample':'result',platform));
+  // Pro je appka pre Shopify: obchod bez znakov Shopify nedostane nič o nej (brána 218 D2, rozhodnutie Fable: veta o appke za
+  // 9,99 USD hneď pod boxom Stráže za 9 € Shoptetu nič neponúkala a pôsobila ako druhá cena; predtým veta namiesto formulára podľa
+  // brány A-189 pokus 1, nález 9b). Pri Shopify a neznámej platforme čakacia listina ako doteraz.
+  if(wl&&platform!=='no')report.append(wl.buildWaitlist(lang,sample?'sample':'result',platform));
   if(app&&copy.app)report.append(appBlock(app,sample));
+  // Prázdne miesto pre blok „Poslať si výsledok e-mailom“ (SPEC 205 7.1; Z-392, brána 205 O1): za boxom Stráže, čakacou listinou
+  // a appkou, pred zoznamom všetkých kontrol, aby nestál nad platenou ponukou; pri vzorke nie.
+  miestoEmailu=null;if(!sample){miestoEmailu=node('div',null,'ar-vysledok-miesto');report.append(miestoEmailu);}
   const all=node('details');all.append(node('summary',copy.all));const allList=node('ul',null,'ar-list');for(const r of data.rules)allList.append(ruleElement(r));all.append(allList);report.append(all);
   const proof=node('details');proof.append(node('summary',copy.proof));const urls=node('ul',null,'ar-proof');for(const e of data.evidence||[]){const li=node('li');const href=safeLink(e.url),a=node(href?'a':'span',e.url||'');if(href){a.href=href;a.rel='noopener';a.target='_blank';}li.append(a,node('span',` · HTTP ${e.status||'?'}${e.error?' · '+e.error:''}`));urls.append(li);}proof.append(urls);report.append(proof);
   const download=node('button',copy.download,'ar-quiet');download.type='button';download.addEventListener('click',()=>{const url=URL.createObjectURL(new Blob([JSON.stringify(currentReport,null,2)],{type:'application/json'}));const a=node('a');a.href=url;a.download='agent-ready-report.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});const actions=node('div',null,'ar-actions');actions.append(download);report.append(actions);
   report.focus({preventScroll:true});report.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'start'});
-  opravaPoVysledku(platform,failing);
+  opravaPoVysledku(platform,failing);proPoVysledku(platform);
   if(miestoEmailu)ukazEmail(miestoEmailu,data);
 }
 async function run(sample=false){const request=latest.begin();busy(true);status.textContent=copy.busy;zrusVysledok();let timer;
@@ -146,7 +153,7 @@ async function run(sample=false){const request=latest.begin();busy(true);status.
    // Umami: a check that was sent (not the sample, not an invalid address); language only, never the store address.
    track('ar_check_start',{lang});
    // P5: modul bloku sa sťahuje, kým beží kontrola obchodu (2 až 20 s); render ho potom vloží v tej istej úlohe ako výsledok, takže
-   // obsah pod blokom (limity, EÚ, čakacia listina) pri prvom výsledku neposkočí o výšku bloku. Nič sa tým nevykreslí (len render).
+   // obsah pod blokom (všetky kontroly, dôkazy, stiahnutie) pri prvom výsledku neposkočí o výšku bloku. Nič sa tým nevykreslí (len render).
    nacitajVysledok();}
   timer=setTimeout(()=>{if(request.current()){latest.cancel();busy(false);status.textContent=copy.error;}},65000);
   const response=await fetch(url,{signal:request.signal,credentials:'omit',cache:'no-store'});if(!request.current())return;

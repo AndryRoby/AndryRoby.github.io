@@ -1,11 +1,13 @@
 /* Agent Ready v1. Pure, bounded inspection of public evidence, never an AI ranking. */
 export const VERSION = '1.0.0';
-// The version of what this check reads and how (F2, relation 208), in the report as sample.scan: 2 since relation 208 (Microdata, the
-// sitemap, product tiles, one redirect of the home page); reports from before have none and count as 1. Raise it with every change of
-// reading that changes results while the store stays the same: the weekly comparison (monitor src/report-mail.mjs compareReports) then
-// reports no change between two versions. It lives in sample because the weekly report keeps sample whole but only some other fields
-// (monitor src/agent-ready-weekly.mjs). VERSION stays: the Shopify app copies functions of this version (ar-parita-jadra.test.mjs).
-export const SCAN = 2;
+// The version of what this check reads and how (F2, relation 208), in the report as sample.scan: 3 since relation 218 (Irish statutory
+// labels found, the Austrian and Shopware labels similar), 2 since relation 208 (Microdata, the sitemap, product tiles, one redirect of
+// the home page); reports from before have none and count as 1. Raise it with every change that changes results while the store stays
+// the same, in reading or in judging what was read (gate 218 V1: new labels moved "Cancel contract here" from not_found to found): the
+// weekly comparison (monitor src/report-mail.mjs compareReports) then reports no change between two versions. It lives in sample because
+// the weekly report keeps sample whole but only some other fields (monitor src/agent-ready-weekly.mjs). VERSION stays: the Shopify app
+// copies functions of this version (ar-parita-jadra.test.mjs).
+export const SCAN = 3;
 export const SOURCES = Object.freeze({
   catalog: 'https://help.shopify.com/en/manual/online-sales-channels/agentic-storefronts/products',
   product: 'https://shopify.dev/docs/api/liquid/objects/product',
@@ -573,8 +575,13 @@ export const EU_RULES = Object.freeze([
   Object.freeze({code:'eu_green_claims',from:'2026-09-27',celex:['32024L0825','32005L0029'],sk:'https://www.slov-lex.sk/ezbierky/pravne-predpisy/SK/ZZ/2024/108/'}),
 ]);
 // Art. 11a(1) "withdraw from contract here" and Art. 11a(3) "confirm withdrawal" in the language versions of Directive (EU) 2023/2673.
+// A language holds one pair [function, confirmation] or a list of pairs. Relation 218 (23. 10. 2026, decision of Fable after the
+// collection 218/zber/Z3-220.md part C): English also has the Irish statutory labels "cancel contract here" and "confirm cancellation"
+// (section 115A(1)(a) and (3) of the Consumer Rights Act 2022, inserted by S.I. No. 309 of 2026); they are found as the function and
+// the confirmation, with lang 'en'. The pairs of the nine languages are unchanged.
 export const WITHDRAWAL_LABELS = Object.freeze({
-  en:['withdraw from contract here','confirm withdrawal'], de:['Vertrag widerrufen','Widerruf bestätigen'],
+  en:Object.freeze([Object.freeze(['withdraw from contract here','confirm withdrawal']),Object.freeze(['cancel contract here','confirm cancellation'])]),
+  de:['Vertrag widerrufen','Widerruf bestätigen'],
   sk:['odstúpiť od zmluvy tu','potvrdiť odstúpenie od zmluvy'], cs:['zde odstoupit od smlouvy','potvrdit odstoupení od smlouvy'],
   pl:['odstąp od umowy tutaj','potwierdź odstąpienie od umowy'], fr:['renoncer au contrat ici','confirmer la rétractation'],
   it:['recedere dal contratto qui','conferma recesso'], es:['desistir del contrato aquí','confirmar desistimiento'],
@@ -666,7 +673,9 @@ const foldLatin=s=>String(s).normalize('NFC').replace(/[\u00c0-\u024f\u1e00-\u1e
 // a soft hyphen written as &shy; survives decodeEntities (which the Shopify app shares character for character), so it goes here.
 const unify=s=>String(s).replace(/\u00ad|&shy;/gi,'').replace(/[\u2010-\u2015\u2212]/g,'-').replace(/[\u00a0\u2007\u202f]/g,' ');
 const words=s=>foldLatin(unify(s)).toLowerCase().replace(/[^\p{L}\p{N}]+/gu,' ').trim();
-const LABELS=Object.entries(WITHDRAWAL_LABELS).flatMap(([lang,[label,confirm]])=>[[lang,'function',words(label).split(' ')],[lang,'confirm',words(confirm).split(' ')]]);
+// One pair ['label','confirm'] or a list of pairs per language (relation 218); the order of the languages and of their pairs is kept.
+const pairsOf=v=>typeof v[0]==='string'?[v]:v;
+const LABELS=Object.entries(WITHDRAWAL_LABELS).flatMap(([lang,v])=>pairsOf(v).flatMap(([label,confirm])=>[[lang,'function',words(label).split(' ')],[lang,'confirm',words(confirm).split(' ')]]));
 // Consent and cookie controls ("withdraw consent", "Einwilligung widerrufen", "Confirm withdrawal of consent") are never about the contract
 // (gate A-189 pokus 1, nález 2): neither an official label nor a similar link.
 const CONSENT=/consent|cookie|einwilligung|zustimmung|datenschutz|suhlas|souhlas|zgod|consentement|consenso|consentimiento|toestemming/;
@@ -687,7 +696,11 @@ function officialLabel(text,t=words(text)){
 // Agent M2 (relation 208) adds the Hungarian words, because the Hungarian Shoptet order page /rendelesem/ is an order page now: "elállás"
 // (withdrawal) at the start of a word only ("felállítás", assembly, has the same letters) and "visszaküldés" (sending goods back).
 // Without them a Hungarian label about withdrawal on that page would read as orderPage, a label that does not mention withdrawal.
-const SIMILAR=/withdraw|widerruf|odstup|odstoup|odstap|retract|renoncer au contrat|recess|reced|desist|herroep|vratenie|vraceni|vratit tovar|vratit zbozi|(?:^| )elall|visszakuld/;
+// Relation 218 (23. 10. 2026, decision of Fable, 218/zber/Z3-220.md part C): the Austrian alternative "Vom Vertrag zurücktreten" and
+// "Rücktritt bestätigen" (only in the explanatory notes to RV 498 d.B., not in § 13a FAGG; in Germany "Rücktritt" is another right) and
+// the English Shopware default "Revoke a contract" and "Confirm revocation" (a platform text, not a statutory label) are similar,
+// never found. The text is folded first (ü to u), hence "zurucktret" and "rucktritt"; consent and cookie labels stay out (CONSENT).
+const SIMILAR=/withdraw|widerruf|odstup|odstoup|odstap|retract|renoncer au contrat|recess|reced|desist|herroep|vratenie|vraceni|vratit tovar|vratit zbozi|(?:^| )elall|visszakuld|zurucktret|rucktritt|revok|revoc/;
 const similarLabel=(text,t=words(text))=>t.length>0&&t.length<=80&&SIMILAR.test(t)&&!CONSENT.test(t);
 /* Order pages of shop platforms (relation 208, 22. 10. 2026). Shoptet has the withdrawal function built in: the owner puts a link such
    as "Odstúpenie od zmluvy" into the menu or the footer, it leads to the system page /moja-objednavka/ and the form is drawn there by
@@ -794,7 +807,11 @@ function analyzeEu(snapshot,scan,pages,products,platforms={}){
       }
     }
     const status=!read.length?'unknown':found.length?'found':system.length?'link_found':'not_found';
-    out.push({code:'eu_withdrawal',status,pages:read.length,found,similar,system,orderPage});
+    // Relation 218 (finding of gate 208, 2026-10-22-kontrola-shoptet-208.md nález 1): `platform` names the shop platform with an order
+    // page that the pages read show (today only 'shoptet'), in every status; without that evidence the key is absent. The page, the
+    // e-mail and Shop Guard use it for not_found without a link to the order page: Shoptet has the withdrawal function built in.
+    const platform=Object.keys(ORDER_PAGES).find(p=>platforms[p]===true);
+    out.push({code:'eu_withdrawal',status,pages:read.length,found,similar,system,orderPage,...(platform?{platform}:{})});
   }
   // (b) harmonised notice on the legal guarantee
   {

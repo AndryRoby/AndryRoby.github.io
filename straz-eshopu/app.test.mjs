@@ -10,7 +10,7 @@ import * as A from './app.mjs';
 import vm from 'node:vm';
 import {TEXTY} from './texty.mjs?v=5';
 import * as N from '../feed-doctor/monitor/navrat.mjs';
-import {EU_UI,localRule} from '../feed-doctor/agent-ready/i18n.mjs?v=2';
+import {EU_UI,localRule} from '../feed-doctor/agent-ready/i18n.mjs?v=3';
 import {toneOf,EU_CODES} from '../feed-doctor/agent-ready/eu-zobraz.mjs';
 import {RULES} from '../feed-doctor/agent-ready/core.mjs';
 import {createLatest} from '../feed-doctor/agent-ready/controller.mjs';
@@ -326,8 +326,9 @@ for(const [lang,cesta,canonical,zadarmo,sukromie,podmienky,priklad] of STRANKY){
     for(const [,obsah] of vlozene.slice(1))JSON.parse(obsah);
     assert.ok(t.includes('"price":"9.00","priceCurrency":"EUR"')&&t.includes('"@type":"FAQPage"'));
     assert.doesNotMatch(t,/\sstyle="/);assert.doesNotMatch(t,/\son[a-z]+="/);
-    assert.ok(t.includes('<script type="text/plain" data-odlozene="module" src="/straz-eshopu/app.mjs?v=4"></script>'));
-    assert.ok(t.includes('/straz-eshopu/straz.css?v=4')&&t.includes('<h1 id="st-nadpis">'));
+    assert.ok(t.includes('<script type="text/plain" data-odlozene="module" src="/straz-eshopu/app.mjs?v=5"></script>'));
+    // straz.css?v=5: relácia 218, brána D1 (pravidlo st-eu-postup).
+    assert.ok(t.includes('/straz-eshopu/straz.css?v=5')&&t.includes('<h1 id="st-nadpis">'));
     assert.ok(t.includes(`/style/menu-${lang}.js`));assert.ok(t.includes('class="site-footer"'));
     assert.ok(t.includes(`href="${zadarmo}"`));assert.ok(t.includes(`href="${sukromie}"`));assert.ok(t.includes(`href="${podmienky}"`));
     assert.ok(t.includes(`<p class="st-priklad-stitok">${priklad}</p>`));
@@ -864,6 +865,8 @@ test('nález 10: h1 je Vaša Stráž e-shopu, h2 je adresa obchodu; Zmeniť adre
   // Snímky kolo 2 bod 9: štítky EÚ v každom riadku rovnako (mriežka, do 760 px vždy pod názvom).
   assert.ok(c.includes('.st-eu li{display:grid;grid-template-columns:minmax(0,1fr) auto'));
   assert.ok(m760.includes('.st-eu li{grid-template-columns:minmax(0,1fr)}'));
+  // Relácia 218, brána D1: postup Shoptetu je vlastný odsek cez celú šírku riadku mriežky (inak by stál len v prvom stĺpci).
+  assert.ok(c.includes('.ar-page .st-eu-postup{grid-column:1/-1;margin:8px 0 0;'));
 });
 
 test('nález 12: panel na starej stránke monitora píše o e-mailoch Shop Guard s odkazom na stránku Stráže a pri score null nie „null/100“', async ()=>{
@@ -1092,6 +1095,29 @@ test('208 M2 v DOM: „Moja objednávka“ má štítok not_found s tónom revie
       assert.ok(badge,lang);assert.equal(badge.dataset.tone,'review',lang);
       assert.ok(text.includes(x.orderPage.replace('{label}','Moja objednávka').replace('{page}',t.pages.home)),lang);
       assert.ok(!NIKDY.test(text),lang);
+    }finally{env.obnov();}
+  }
+});
+
+// Relácia 218, brána D1 (ops/ai/kontrola/2026-10-23-218-po-spusteni.md): veta o Shoptete, podobný odkaz a postup sa zliali do jedného
+// tlmeného odseku (asi 800 znakov). Postup je teraz vlastný odsek st-eu-postup bez ar-muted, s nadpisom ručnej kontroly z EU_UI.
+const SHOPTET_BEZ_EU=[{code:'eu_withdrawal',state:'not_found',similar:{label:'Vrátenie tovaru',page:'home'},shoptet:true},{code:'eu_guarantee_notice',state:'not_found'},{code:'eu_green_claims',state:'not_found'}];
+test('218 D1 v DOM: Shoptet bez odkazu má pod tlmenou vetou vlastný odsek s postupom a nadpisom „Overte ručne:“ (SK, EN, DE)', async ()=>{
+  const weekly={status:'done',at:'2026-10-23T10:00:00Z',score:null,coverage:null,eu:SHOPTET_BEZ_EU,failing:[],changed:[]};
+  for(const lang of A.JAZYKY){
+    const env=await spravaPre(`?id=${ID}&key=${KEY}`,z=>z.method==='GET'?{data:zaklad({weekly,lang,store_url:'https://www.obchod-a.sk/'})}:null,{lang});
+    try{
+      const t=EU_UI[lang],x=t.rules.eu_withdrawal;
+      const veta=env.doc.vsetky().find(e=>e.className==='ar-muted st-eu-veta'),postup=env.doc.vsetky().filter(e=>e.className==='st-eu-postup');
+      assert.ok(veta,lang);assert.equal(postup.length,1,lang);assert.equal(postup[0].tagName,'P',lang);
+      assert.equal(veta.textContent,`${x.shoptetNoLink} ${x.similar.replace('{label}','Vrátenie tovaru').replace('{page}',t.pages.home)}`,lang);
+      assert.ok(!veta.textContent.includes(x.manualShoptetNoLink),lang+': postup nie je v tlmenej vete');
+      assert.equal(postup[0].textContent,`${t.manual}: ${x.manualShoptetNoLink}`,lang);
+      assert.equal(postup[0].childNodes[0].tagName,'STRONG',lang);assert.equal(postup[0].childNodes[0].textContent,t.manual+':',lang);
+      // Ten istý riadok zoznamu, hneď za vetou.
+      const li=veta.parentNode;assert.equal(postup[0].parentNode,li,lang);
+      assert.equal(li.childNodes.indexOf(postup[0]),li.childNodes.indexOf(veta)+1,lang);
+      assert.ok(!NIKDY.test(env.doc.body.textContent),lang);
     }finally{env.obnov();}
   }
 });

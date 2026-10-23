@@ -1,6 +1,6 @@
 // Testy Stráže e-shopu vo výsledku kontroly (relácia 209, ops/druhy-ucet/209/PRODUKT.md; AGENTS.md bod 12) s malým falošným DOM:
 // ponuka len pri live alebo test móde, odkazy „Sledovať ďalej“ len pri neúspešných pravidlách prvého zoznamu a nálezoch EÚ s tónom
-// review alebo unknown, box za blokom EÚ a pred čakacou listinou, dvojklik pošle jeden dopyt, stará odpoveď ani odpoveď do
+// review alebo unknown, box za blokom EÚ a pred čakacou listinou, blok e-mailu až za nimi (Z-392), dvojklik pošle jeden dopyt, stará odpoveď ani odpoveď do
 // vymeneného boxu nič neprepíše, chyby 400, 409, 429, 500 a sieť nechajú údaje a nič neukážu ako hotové, nebezpečná odpoveď sa
 // odmietne, Umami nikdy nedostane adresu obchodu, feedu ani e-mail a v test móde nedostane nič.
 // cd products/arling-sk/feed-doctor/agent-ready && node --test straz.test.mjs
@@ -173,7 +173,7 @@ test('app.mjs pri live: odkazy len pri neúspešných pravidlách prvého zoznam
   assert.equal(triedy(boxy[0], 'ar-straz-platforma')[0].textContent, T.sk.shopify);
   assert.deepEqual(udalosti.filter(([n]) => n.startsWith('ar_straz')), [['ar_straz_offer_view', { lang: 'sk', place: 'sample', platform: 'yes', findings: 6 }]]);
 });
-test('app.mjs pri live, skutočná kontrola bez znakov Shopify: formulár s adresou obchodu ako text, bez vety o Shopify, pred vetou pre iné platformy', async () => {
+test('app.mjs pri live, skutočná kontrola bez znakov Shopify: formulár s adresou obchodu ako text, bez vety o Shopify, bez bloku appky, hneď nad blokom e-mailu', async () => {
   const vysledok = { ...VZORKA, storeUrl: 'https://obchod.example.org', platform: 'html', shopify: { detected: false, signals: [] } };
   const { rep, kontroly } = await spustiApp({ live: true, lang: 'de', vysledok, sample: false });
   assert.equal(kontroly.length, 1);
@@ -181,7 +181,10 @@ test('app.mjs pri live, skutočná kontrola bez znakov Shopify: formulár s adre
   assert.equal(prve(b, 'ar-straz-obchod').textContent, T.de.store + ' https://obchod.example.org');
   assert.equal(triedy(b, 'ar-straz-platforma').length, 0);
   assert.equal(b.all((e) => e.tagName === 'FORM').length, 1);
-  assert.equal(rep.children.indexOf(b) + 1, rep.children.findIndex((e) => ma(e, 'ar-pro-poznamka')));
+  // Brána 218 D2: pod boxom Stráže nie je blok čakacej listiny appky pre Shopify (ani veta o nej, predtým ar-pro-poznamka).
+  assert.equal(triedy(rep, 'ar-pro-poznamka').length, 0); assert.equal(triedy(rep, 'ar-pro-cakacia').length, 0);
+  // Z-392 (relácia 218): blok „Poslať si výsledok e-mailom“ až za boxom Stráže, nie nad platenou ponukou
+  assert.equal(rep.children.indexOf(b) + 1, rep.children.findIndex((e) => ma(e, 'ar-vysledok-miesto')));
   assert.equal(b.all((e) => e.tagName === 'A' && e.href === '/straz-eshopu/de/')[0].textContent, T.de.more);
   assert.deepEqual(udalosti.filter(([n]) => n.startsWith('ar_straz')), [['ar_straz_offer_view', { lang: 'de', place: 'result', platform: 'no', findings: 6 }]]);
   bezOsobnych(udalosti);
@@ -462,7 +465,7 @@ test('Z3: pri skóre null alebo 0 produktových stránkach box povie, že údaje
 });
 
 // ---------- 5. kolo 2 (brána pokus 1, ops/druhy-ucet/209/overenie/brana-1-nalezy.md; snímky-2/zoznam.md) ----------
-const { UI } = await import('./i18n.mjs?v=4'); // tá istá inštancia, ktorú načíta app.mjs
+const { UI } = await import('./i18n.mjs?v=5'); // tá istá inštancia, ktorú načíta app.mjs
 const NEVYHODNOTENE = /\b(AI|KI)\b[\s\S]*(nedali vyhodnotiť|nehodnotíme|could not be evaluated|do not evaluate|nicht auswerten|nicht bewerten)/;
 test('nález 9: veta o platforme nesľubuje každú platformu, hovorí, že Stráž číta len verejné stránky (SK, EN, DE)', () => {
   assert.equal(T.sk.shopify, 'Stráž číta len verejné stránky, preto funguje aj pri Shopify a do obchodu sa nič neinštaluje. Je to samostatná služba, nie Pro v našej appke pre Shopify.');

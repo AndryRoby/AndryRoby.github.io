@@ -6,7 +6,7 @@
  * podľa PLAN.md časť 3 a krátke texty šablóny stránky (nadpisy FAQ a zdrojov), ktoré používa aj generátor ops/seo/povinnosti-eu/.
  * Texty sa na stránke vkladajú len cez textContent (kontrola.mjs).
  */
-import {UI,EU_UI} from '../feed-doctor/agent-ready/i18n.mjs?v=2';
+import {UI,EU_UI} from '../feed-doctor/agent-ready/i18n.mjs?v=3';
 
 export const JAZYKY=['sk','cs','de','en'];
 export const PRAVIDLA=['eu_withdrawal','eu_guarantee_notice'];
@@ -43,6 +43,12 @@ const CS_EU={
       manualLinkFound:'Klikněte na odkaz jako zákazník, zadejte číslo a e-mail zkušební objednávky, odstupte od smlouvy a ověřte, že vám e-mailem přijde potvrzení s datem a časem.',
       orderPage:'Na {page} jsme našli odkaz s nápisem „{label}“. Vede na stránku objednávky platformy Shoptet, kde se načítá formulář pro odstoupení od smlouvy. Nápis o odstoupení nemluví, a tak ho zákazník, který chce odstoupit, nemusí najít.',
       manualOrderPage:'V administraci Shoptetu přidejte do menu nebo patičky odkaz na stránku Moje objednávka s nápisem, který mluví o odstoupení, například „Odstoupit od smlouvy“. Pak ho vyzkoušejte jako zákazník se zkušební objednávkou.',
+      // Relácia 218: stránky ukazujú Shoptet (eu_withdrawal.platform z jadra) a odkaz na /moje-objednavka/ sme nenašli. Cesty podľa
+      // podpora.shoptet.cz/vraceni-zbozi-a-odstoupeni-od-smlouvy/ (čítané 23. 10. 2026, 218/zber/Z1-208.md časť b.4).
+      // Brána 218: V2 (najprv Externí odkaz s nápisom podľa zákona, potom že systémovú stránku premenovať nemožno), D7 (funkciu zákazník
+      // otvorí cez stránku Moje objednávka, nie je „na“ nej) a D8 (maďarská cesta /rendelesem/ z core.mjs ORDER_PAGES).
+      shoptetNoLink:'Stránky ukazují platformu Shoptet. Shoptet má funkci pro odstoupení od smlouvy vestavěnou; zákazník ji otevře přes systémovou stránku Moje objednávka (/moje-objednavka/, na slovenském Shoptetu /moja-objednavka/, na maďarském /rendelesem/). Odkaz na tuto stránku jsme nenašli, a tak zákazník, který chce odstoupit, funkci nemusí najít.',
+      manualShoptetNoLink:'V administraci Shoptetu přidejte do menu odkaz s nápisem podle zákona: Vzhled a obsah → Menu → Přidat, typ položky Externí odkaz, název „Odstoupit od smlouvy“ a URL adresa vašeho obchodu s /moje-objednavka/ na konci. Samotnou systémovou stránku Moje objednávka (Stránka → Systémové stránky) přejmenovat nelze a její název o odstoupení nemluví. Lhůtu pro odstoupení nastavíte v části Nastavení → Objednávky → Ostatní nastavení. Pak odkaz vyzkoušejte jako zákazník se zkušební objednávkou.',
       law:[['§ 1830a občanského zákoníku ve znění zákona č. 159/2026 Sb., účinný od 1. 1. 2027','https://www.zakonyprolidi.cz/cs/2026-159'],['čl. 11a směrnice 2011/83/EU ve znění směrnice (EU) 2023/2673',EURLEX_CS('32023L2673')]],
     },
     eu_guarantee_notice:{
@@ -81,7 +87,8 @@ const DE_ZAKON={
 // Brána 220 pokus 1 (ops/ai/kontrola/2026-10-23-220-widerrufsbutton.md G1 a 2026-10-23-220-pravo-jazyk.md G2; nové kľúče len de a en,
 // sk a cs sa nemenia): podobný odkaz krátkym riadkom a poznámka raz s ďalším krokom (G1 2, § 356a Abs. 2 BGB a čl. 11a ods. 2 smernice);
 // notFound menuje oba zákonné nápisy a čo kontrola nepozná: rakúske „Vom Vertrag zurücktreten“ (Erläuterungen 498 d.B., 220/zber/
-// pravo-de-at.md 3) a írske „cancel contract here“ (§ 115A ods. 1 Consumer Rights Act 2022) (G1 5); unknown s dôvodom a ďalším krokom
+// pravo-de-at.md 3) a írske „cancel contract here“ (§ 115A ods. 1 Consumer Rights Act 2022) (G1 5; od relácie 218 jadro írske nápisy
+// nájde a rakúske ukáže ako podobný odkaz, vety de a en to hovoria); unknown s dôvodom a ďalším krokom
 // (G1 3); manualFound s obsahom vyhlásenia v potvrdení (G2 23, § 356a Abs. 4 BGB, čl. 11a ods. 4); manualNotFound s odkazom na sekciu
 // platforiem stránky (G1 2) a v de „geladen werden“ (G2 24); en applies s dátumami štátov z tabuľky stránky (Malta reg. 1 ods. 3
 // L.N. 145/2026, Írsko 30. 6. 2026; G1 5 a G2 22). Názvy sekcií v „…“ a “…” sú nadpisy stránok odstúpenia de a en
@@ -91,7 +98,8 @@ const PREPISY_EU={
   de:{eu_withdrawal:{
     // Rakúsko: § 13a FAGG (BGBl. I Nr. 59/2026) pre zmluvy uzavreté po 30. 9. 2026, § 20 Abs. 5 FAGG (220/zber/pravo-de-at.md časť 3).
     applies:'In Deutschland gilt § 356a BGB seit dem 19. Juni 2026, in Österreich § 13a FAGG seit dem 1. Oktober 2026.',
-    notFound:'Einen Link oder Button mit der Beschriftung „Vertrag widerrufen“ oder „Widerruf bestätigen“ haben wir auf den gelesenen Seiten nicht gefunden. Wir suchen den Wortlaut der Richtlinie in neun EU-Sprachen, auf Deutsch wie im Gesetz; die österreichische Alternative „Vom Vertrag zurücktreten“ erkennt die Prüfung nicht.',
+    // Relácia 218: rakúska alternatíva je v jadre podobný odkaz („Link prüfen“), nie neznáma.
+    notFound:'Einen Link oder Button mit der Beschriftung „Vertrag widerrufen“ oder „Widerruf bestätigen“ haben wir auf den gelesenen Seiten nicht gefunden. Wir suchen den Wortlaut der Richtlinie in neun EU-Sprachen, auf Deutsch wie im Gesetz; die österreichische Alternative „Vom Vertrag zurücktreten“ zeigt die Prüfung als ähnlichen Link.',
     similar:'Ähnlicher Link auf {page}: „{label}“.',
     // Raz pod všetkými podobnými odkazmi (kontrola.mjs), nie v každom riadku.
     similarNote:'Prüfen Sie, wohin ein solcher Link führt. Führt er nur zur Widerrufsbelehrung oder zu einem Formular zum Herunterladen, ist er keine Widerrufsfunktion (§ 356a Abs. 2 BGB). Öffnet er ein Online-Formular, über das Kunden ihre Widerrufserklärung an Sie absenden, beschriften Sie ihn am sichersten mit „Vertrag widerrufen“.',
@@ -105,13 +113,18 @@ const PREPISY_EU={
     eu_guarantee_notice:{applies:'Applies in Slovakia and Germany since 27 September 2026; in Czechia the law was not yet in force on 22 October 2026.',unknown:'We could not read any page of the shop.',links:'On {page} we found a link to the EU guarantee page on Your Europe, where the notice’s QR code leads.'},
     eu_withdrawal:{
       applies:'Member States had to apply their rules from 19 June 2026, but start dates differ: Germany, Malta and Slovakia since that date, Ireland since 30 June 2026, Austria since 1 October 2026, Czechia from 1 January 2027.',
-      notFound:'In the pages we read, we did not find a link or button labelled “withdraw from contract here” or “confirm withdrawal”, or with the same words in another of the nine EU languages we check. The Irish wording “cancel contract here” is not recognised yet; if you sell under Irish law, check by hand.',
+      // Relácia 218: írske zákonné nápisy jadro hľadá (WITHDRAWAL_LABELS.en), veta už netvrdí, že ich nepozná.
+      notFound:'In the pages we read, we did not find a link or button labelled “withdraw from contract here” or “confirm withdrawal”, with the same words in another of the nine EU languages we check, or with the Irish wording “cancel contract here” or “confirm cancellation”.',
       similar:'Similar link on {page}: “{label}”.',
       similarNote:'Check where such a link leads. If it leads only to the withdrawal instructions or to a form to download, it is not a withdrawal function (Art. 11a(2)). If it opens an online form where customers send their withdrawal statement, the safest label is “withdraw from contract here” or the wording of your national law.',
       unknown:'We could not read any page of the shop, for example because robots.txt disallows it or the server blocked our request. This says nothing about the withdrawal function; check your shop by hand with the steps under “How to check it yourself” below.',
       manualFound:'Click it as a customer, send a withdrawal statement for a test order and check that an acknowledgement with the content of the statement and the date and time of submission arrives by email without undue delay.',
       manualNotFound:'Open your shop as a customer and look in the footer, on the order confirmation and in the customer account. The function may load with JavaScript or appear only after login, which this check cannot see. If it is missing, the section “How to add it on your platform” below shows how to switch it on or add it.',
       manualOrderPage:'In the Shoptet administration, put an external link to the order page in the menu or the footer, labelled with words about withdrawal in the language of your shop, for example “Withdraw from contract here”. Then try it as a customer with a test order.',
+      // Brána 218 D6: írske zákonné nápisy („cancel contract here“, „confirm cancellation“) jadro od relácie 218 nájde, preto výsledok
+      // cituje aj írsky predpis: § 115A Consumer Rights Act 2022, vložený reguláciou 6 S.I. No. 309/2026 (ops/druhy-ucet/220/zber/raw/
+      // irishstatutebook-si-309-2026, čítané 23. 10. 2026). Predpisy z PREPISY_EU euTexty pridá za predpisy EU_UI, nenahradí ich.
+      law:[['section 115A of the Consumer Rights Act 2022, inserted by S.I. No. 309 of 2026 (Ireland)','https://www.irishstatutebook.ie/eli/2026/si/309/made/en/print']],
     },
   },
 };
@@ -233,11 +246,12 @@ const VLASTNE={
 };
 
 const kopia=(law)=>Array.isArray(law)?law.map(([t,h])=>[t,h]):[];
-/** Výsledkové texty EÚ v jazyku stránky (sk, en, de z EU_UI; cs vlastné). Vždy nový objekt, EU_UI sa nemení. */
+/** Výsledkové texty EÚ v jazyku stránky (sk, en, de z EU_UI; cs vlastné). Vždy nový objekt, EU_UI sa nemení.
+ *  Predpisy: nemecký zákon (de) pred predpismi EU_UI, predpisy z PREPISY_EU (en: írsky, brána 218 D6) za nimi. */
 export function euTexty(lang){
   if(lang==='cs')return CS_EU;
   const z=EU_UI[lang]||EU_UI.en,rules={};
-  for(const kod of PRAVIDLA){const x=z.rules[kod];rules[kod]={...x,...(PREPISY_EU[lang]?.[kod]||{}),status:{...x.status},law:lang==='de'?[DE_ZAKON[kod],...kopia(x.law)]:kopia(x.law)};}
+  for(const kod of PRAVIDLA){const x=z.rules[kod],p=PREPISY_EU[lang]?.[kod]||{};rules[kod]={...x,...p,status:{...x.status},law:[...(lang==='de'?[DE_ZAKON[kod]]:[]),...kopia(x.law),...kopia(p.law)]};}
   return {status:z.status,pages:z.pages,manual:z.manual,law:z.law,rules};
 }
 /** Všetky texty jazyka: eu (výsledok), ostatné z VLASTNE, busy a cancelled z UI celej kontroly (sk, en, de). */

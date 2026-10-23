@@ -1,5 +1,5 @@
 // Testy relácie 205 pre kontrolu e-shopu (ops/druhy-ucet/205/SPEC.md časti 3, 5.2 a 7.1; AGENTS.md bod 12) s malým falošným DOM:
-// miesto pre blok „Poslať si výsledok e-mailom“ za opravami a pred limitmi, ukaz so zhrnutím bez adries stránok, handle a textov
+// miesto pre blok „Poslať si výsledok e-mailom“ za čakacou listinou (bez Shopify za EÚ, brána 218 D2) a pred všetkými kontrolami (Z-392, relácia 218), ukaz so zhrnutím bez adries stránok, handle a textov
 // z obchodu, pri vzorke nič, skry pri novom behu, chybe, zrušení a úprave vstupu, neskorý import nič nevykreslí do starého miesta,
 // chýbajúci modul hubu nič nerozbije; #url= len predvyplní pole; trenie (a) ponuka opravy 149 USD, (b) vety chýb, (c) riadok rozsahu.
 // cd products/arling-sk/feed-doctor/agent-ready && node --test vysledok-blok.test.mjs
@@ -54,7 +54,7 @@ const volania = [], nacitania = [];
 globalThis.__vysledok = { volania, nacitania };
 
 const VZORKA = JSON.parse(readFileSync(new URL('./sample-report.json', import.meta.url), 'utf8'));
-const { UI } = await import('./i18n.mjs?v=4'); // tá istá inštancia, ktorú načíta app.mjs
+const { UI } = await import('./i18n.mjs?v=5'); // tá istá inštancia, ktorú načíta app.mjs
 const odpoved = (status, data) => ({ ok: status >= 200 && status < 300, status, json: async () => data });
 const pockaj = (ms) => new Promise((r) => setTimeout(r, ms));
 async function cakajNa(pred, popis = 'podmienka') { for (let i = 0; i < 400; i++) { if (pred()) return; await pockaj(5); } assert.fail('nesplnené: ' + popis); }
@@ -116,14 +116,15 @@ const bezCudzieho = (zhrnutie) => {
     assert.ok(!s.includes(x), 'zhrnutie nesmie obsahovať ' + x + ': ' + s);
   assert.equal(s.split('https://').length - 1, 1, 'jediná adresa je pôvod obchodu');
 };
-test('skutočná kontrola: miesto za zoznamom opráv a pred limitmi; ukaz raz s nástrojom, jazykom a zhrnutím podľa SPEC časť 3', async () => {
+test('skutočná kontrola: miesto za zoznamom opráv, limitmi, EÚ a čakacou listinou, tesne pred všetkými kontrolami (Z-392); ukaz raz s nástrojom, jazykom a zhrnutím podľa SPEC časť 3', async () => {
   const { rep, posli } = await app({ lang: 'sk' });
   await posli(); await hotovo(rep); await cakajNa(() => ukazy().length === 1, 'ukaz');
   const deti = rep.children, miesto = triedy(rep, 'ar-vysledok-miesto');
   assert.equal(miesto.length, 1); const i = deti.indexOf(miesto[0]);
-  assert.ok(deti[i - 1].tagName === 'UL' && ma(deti[i - 1], 'ar-list'), 'hneď za zoznamom opráv');
-  assert.ok(ma(deti[i + 1], 'ar-limits'), 'hneď pred limitmi');
-  assert.ok(i < deti.findIndex((e) => ma(e, 'ar-eu')), 'pred EÚ');
+  assert.ok(i > deti.findIndex((e) => e.tagName === 'UL' && ma(e, 'ar-list')), 'za zoznamom opráv');
+  assert.ok(i > deti.findIndex((e) => ma(e, 'ar-limits')) && i > deti.findIndex((e) => ma(e, 'ar-eu')), 'za limitmi a EÚ');
+  assert.ok(ma(deti[i - 1], 'ar-pro-cakacia'), 'hneď za čakacou listinou (platená ponuka je nad blokom)');
+  assert.equal(deti[i + 1].tagName, 'DETAILS', 'hneď pred zoznamom všetkých kontrol');
   const [[, m, o]] = ukazy();
   assert.equal(m, miesto[0]);
   assert.deepEqual(Object.keys(o).sort(), ['jazyk', 'nastroj', 'vysledok']);
@@ -133,16 +134,20 @@ test('skutočná kontrola: miesto za zoznamom opráv a pred limitmi; ukaz raz s 
   assert.equal(skrytia().length, 0);
   assert.ok(!JSON.stringify(udalosti).includes('obchod.example.org'), 'Umami bez adresy obchodu');
 });
-test('miesto aj pri výsledku bez chýb (za vetou bez chýb) a bez prečítanej produktovej stránky (za neutrálnou vetou); jazyk EN a DE', async () => {
-  for (const [lang, data, trieda] of [
-    ['en', vysledokObchodu({ rules: VZORKA.rules.map((r) => ({ ...r, status: r.status === 'fail' ? 'pass' : r.status })) }), null],
-    ['de', bezShopify({ score: null, coverage: 0, sample: { ...VZORKA.sample, products: 0, pages: 0, attemptedPages: 0 }, rules: VZORKA.rules.map((r) => ({ ...r, status: 'unknown' })) }), 'ar-no-pages'],
+test('miesto aj pri výsledku bez chýb (za vetou bez chýb) a bez prečítanej produktovej stránky (za neutrálnou vetou; bez Shopify hneď za EÚ, bez bloku appky); jazyk EN a DE', async () => {
+  // Brána 218 D2: obchod bez Shopify nemá pod EÚ (a boxom Stráže, tu nie je živý) blok čakacej listiny appky ani vetu o nej.
+  for (const [lang, data, trieda, listina] of [
+    ['en', vysledokObchodu({ rules: VZORKA.rules.map((r) => ({ ...r, status: r.status === 'fail' ? 'pass' : r.status })) }), null, 'ar-pro-cakacia'],
+    ['de', bezShopify({ score: null, coverage: 0, sample: { ...VZORKA.sample, products: 0, pages: 0, attemptedPages: 0 }, rules: VZORKA.rules.map((r) => ({ ...r, status: 'unknown' })) }), 'ar-no-pages', 'ar-eu'],
   ]) {
     odpovedKontroly = () => odpoved(200, data);
     const { rep, posli } = await app({ lang });
     await posli(); await hotovo(rep); await cakajNa(() => ukazy().length === 1, 'ukaz ' + lang);
     const deti = rep.children, i = deti.findIndex((e) => ma(e, 'ar-vysledok-miesto'));
-    if (trieda) assert.ok(ma(deti[i - 1], trieda), lang); else assert.equal(deti[i - 1].textContent, UI[lang].empty, lang);
+    const veta = trieda ? deti.findIndex((e) => ma(e, trieda)) : deti.findIndex((e) => e.tagName === 'P' && e.textContent === UI[lang].empty);
+    assert.ok(veta >= 0 && veta < i, lang + ': veta bez chýb alebo neutrálna veta nad miestom');
+    assert.ok(ma(deti[i - 1], listina), lang + ': hneď za čakacou listinou (Shopify) alebo za EÚ (bez Shopify)'); assert.equal(deti[i + 1].tagName, 'DETAILS', lang);
+    if (lang === 'de') assert.equal(triedy(rep, 'ar-pro-cakacia').length, 0, 'bez Shopify žiadny blok appky');
     const o = ukazy()[0][2]; assert.equal(o.jazyk, lang);
     if (lang === 'en') assert.deepEqual(o.vysledok.pravidla, []);
     else { assert.equal(o.vysledok.skore, null); assert.equal(o.vysledok.pokrytie, 0); assert.deepEqual(o.vysledok.pravidla, []); }
@@ -388,20 +393,21 @@ test('trenie c: obchod bez verejného exportu nemá „0 produktov vo feede“, 
 });
 
 // ---------- 9. texty, verzie a tri HTML ----------
-test('nové texty v SK, EN, DE bez pomlčiek em a en; i18n.mjs má rovnaké ?v v app.mjs aj cakacia.mjs; tri HTML: Umami s data-exclude-hash, app.mjs?v=5', () => {
+test('nové texty v SK, EN, DE bez pomlčiek em a en; i18n.mjs má rovnaké ?v v app.mjs aj cakacia.mjs; tri HTML: Umami s data-exclude-hash, app.mjs?v=6 (relácia 218)', () => {
   for (const lang of ['sk', 'en', 'de']) for (const k of ['invalid_url', 'invalid_product', 'noFeed', 'rate']) {
     assert.equal(typeof UI[lang][k], 'string', lang + ' ' + k); assert.ok(!/[–—]/.test(UI[lang][k]), lang + ' ' + k + ': pomlčka');
   }
   const subor = (p) => readFileSync(new URL(p, import.meta.url), 'utf8');
   const verzia = (t) => [...t.matchAll(/\.\/i18n\.mjs\?v=(\d+)/g)].map((m) => m[1]);
-  // O3a: i18n.mjs zmenený (veta privacy, O2) = ?v=4 v oboch importoch aj v straz.test.mjs (tá istá inštancia ako app.mjs)
-  assert.deepEqual(verzia(subor('./app.mjs')), ['4']); assert.deepEqual(verzia(subor('./cakacia.mjs')), ['4']); assert.deepEqual(verzia(subor('./straz.test.mjs')), ['4']);
+  // O3a: i18n.mjs zmenený (veta privacy, O2) = ?v=4; relácia 218 (veta o Shoptete v EU_UI) = ?v=5 v oboch importoch aj v
+  // straz.test.mjs (tá istá inštancia ako app.mjs)
+  assert.deepEqual(verzia(subor('./app.mjs')), ['5']); assert.deepEqual(verzia(subor('./cakacia.mjs')), ['5']); assert.deepEqual(verzia(subor('./straz.test.mjs')), ['5']);
   assert.ok(subor('./app.mjs').includes("'/vysledok/vysledok-email.js?v=1'"));
   for (const p of ['./index.html', './sk/index.html', './de/index.html']) {
     const html = subor(p), umami = html.split('\n').filter((r) => r.includes('api.arling.workers.dev/script.js'));
     assert.equal(umami.length, 1, p);
     assert.match(umami[0], /data-exclude-hash="true"/, p); assert.ok(!umami[0].includes('data-exclude-search'), p + ': UTM sa merajú ďalej');
-    assert.equal((html.match(/\/feed-doctor\/agent-ready\/app\.mjs\?v=5"/g) || []).length, 1, p);
+    assert.equal((html.match(/\/feed-doctor\/agent-ready\/app\.mjs\?v=6"/g) || []).length, 1, p);
     assert.ok(!html.includes('\r\n'), p + ': konce riadkov LF');
   }
 });

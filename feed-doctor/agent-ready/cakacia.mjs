@@ -15,7 +15,7 @@
  * pri live sa formulár skryje a ukáže sa odkaz na appku (prechod.mjs createAppPageCheck, pri chybe ostane stav „čaká“).
  * Bez vložených skriptov a štýlov (CSP script-src 'self'); texty sa vkladajú cez textContent.
  */
-import {EU_UI} from './i18n.mjs?v=4';
+import {EU_UI} from './i18n.mjs?v=5';
 
 export const SOURCE='agent-ready-pro';
 // Odkaz na appku po schválení nesie miesto (result, sample, page, calendar) v utm_medium, aby meranie rozlíšilo, odkiaľ prechod prišiel
@@ -67,7 +67,8 @@ export function buildWaitlist(lang=jazykStranky(),place='result',shopify='unknow
   wire(form);
   return box;
 }
-/** Vo výsledku obchodu bez znakov Shopify: veta namiesto formulára (Pro je appka pre Shopify, nález 9b). */
+/** Veta namiesto formulára pre obchod bez znakov Shopify (Pro je appka pre Shopify, nález 9b). Od relácie 218 (brána D2) ju app.mjs
+ *  nevkladá; ostáva pre staršie app.mjs z vyrovnávacej pamäte prehliadača, ktoré ju volajú (bez nej by výsledok zlyhal). */
 export function buildNote(lang=jazykStranky()){
   const t=(EU_UI[lang]||EU_UI.en).pro,box=el('section',null,'ar-pro-cakacia ar-pro-poznamka');
   box.append(el('h3',t.title),el('p',t.noShopify));

@@ -244,9 +244,10 @@ const D2=odstDe('not_found',[],[nap('Widerrufsbelehrung'),nap('Widerrufsformular
 const D0=odstDe('not_found',[],[]);
 const JAZYKY_RICHTLINIE={de:'Den Wortlaut der Richtlinie suchen wir auf Deutsch, Englisch, Slowakisch, Tschechisch, Polnisch, Französisch, Italienisch, Spanisch und Niederländisch.',
   en:'We look for the wording of the directive in English, German, Slovak, Czech, Polish, French, Italian, Spanish and Dutch.'};
-test('de not_found: veta menuje oba nápisy zákona, deväť jazykov bez zoznamu a rakúsku alternatívu, ktorú kontrola nepozná (brána 220 G1 5)', ()=>{
+test('de not_found: veta menuje oba nápisy zákona, deväť jazykov bez zoznamu a rakúsku alternatívu ako podobný odkaz (brána 220 G1 5, relácia 218)', ()=>{
   for(const data of [D0,D2]){const m=K.vyhodnot(odst(data),'de'),nf=m.lines[0].text;
-    assert.equal(nf,'Einen Link oder Button mit der Beschriftung „Vertrag widerrufen“ oder „Widerruf bestätigen“ haben wir auf den gelesenen Seiten nicht gefunden. Wir suchen den Wortlaut der Richtlinie in neun EU-Sprachen, auf Deutsch wie im Gesetz; die österreichische Alternative „Vom Vertrag zurücktreten“ erkennt die Prüfung nicht.');
+    // Relácia 218: jadro ukáže rakúsku alternatívu ako podobný odkaz, veta už netvrdí, že ju nepozná.
+    assert.equal(nf,'Einen Link oder Button mit der Beschriftung „Vertrag widerrufen“ oder „Widerruf bestätigen“ haben wir auf den gelesenen Seiten nicht gefunden. Wir suchen den Wortlaut der Richtlinie in neun EU-Sprachen, auf Deutsch wie im Gesetz; die österreichische Alternative „Vom Vertrag zurücktreten“ zeigt die Prüfung als ähnlichen Link.');
     assert.ok(!/diese Beschriftung/.test(nf));assert.ok(!nf.includes(JAZYKY_RICHTLINIE.de),'zoznam deviatich jazykov už nie je najvýraznejší riadok výsledku');}
   const m=K.vyhodnot(odst(D0),'de');
   assert.equal(m.tone,'review');assert.equal(m.badge,'Beschriftung nicht gefunden');assert.equal(m.lines.length,1);assert.equal(m.shoptet,null);
@@ -310,7 +311,8 @@ test('de a en „Nicht lesbar“ a „Could not read“: dôvod a ďalší krok,
 });
 test('en not_found, similar a found: oba nápisy smernice, írske znenie, krátky riadok a poznámka s ďalším krokom (brána 220 G1 2 a 5)', ()=>{
   for(const data of [D0,D2]){const nf=K.vyhodnot(odst(data),'en').lines[0].text;
-    assert.equal(nf,'In the pages we read, we did not find a link or button labelled “withdraw from contract here” or “confirm withdrawal”, or with the same words in another of the nine EU languages we check. The Irish wording “cancel contract here” is not recognised yet; if you sell under Irish law, check by hand.');
+    // Relácia 218: jadro írske zákonné nápisy nájde, veta ich menuje ako hľadané.
+    assert.equal(nf,'In the pages we read, we did not find a link or button labelled “withdraw from contract here” or “confirm withdrawal”, with the same words in another of the nine EU languages we check, or with the Irish wording “cancel contract here” or “confirm cancellation”.');
     assert.ok(!/that label/.test(nf));assert.ok(!nf.includes(JAZYKY_RICHTLINIE.en),'zoznam deviatich jazykov už nie je najvýraznejší riadok výsledku');}
   const m=K.vyhodnot(odst(D2),'en'),podobne=m.lines.filter((l)=>l.muted);
   assert.equal(m.tone,'unknown');assert.equal(m.badge,EU_UI.en.rules.eu_withdrawal.status.check);assert.equal(podobne.length,4,'3 odkazy a 1 poznámka');
