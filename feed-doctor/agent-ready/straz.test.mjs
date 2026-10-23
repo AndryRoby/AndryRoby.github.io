@@ -471,6 +471,20 @@ test('nález 9: veta o platforme nesľubuje každú platformu, hovorí, že Str�
     assert.match(T[lang].shopify, verejne, lang); assert.match(T[lang].shopify, /Shopify/, lang); assert.match(T[lang].shopify, /Pro/, lang);
   }
 });
+// Brána pokus 2 nález D1 (ops/ai/kontrola/2026-10-22-straz-eshopu-pokus2.md): nález 9 sa vrátil v statickej sekcii monitor-pro.
+test('D1: sekcia monitor-pro v troch HTML nesľubuje každú platformu, hovorí, že Stráž číta len verejné stránky (SK, EN, DE)', () => {
+  for (const [subor, veta] of [
+    ['./sk/index.html', 'Číta len verejné stránky, preto funguje aj pri Shopify a nič sa neinštaluje.'],
+    ['./index.html', 'It reads public pages only, so it works with Shopify too and nothing is installed.'],
+    ['./de/index.html', 'Er liest nur öffentliche Seiten, funktioniert daher auch mit Shopify, und nichts wird installiert.'],
+  ]) {
+    const html = readFileSync(new URL(subor, import.meta.url), 'utf8');
+    const sekcia = (/<section class="ar-pro" id="monitor-pro">[\s\S]*?<\/section>/.exec(html) || [''])[0];
+    assert.ok(sekcia, subor + ': sekcia monitor-pro');
+    assert.ok(!/každej platforme|every platform|jeder Plattform/i.test(sekcia), subor);
+    assert.ok(sekcia.includes(veta), subor + ': ' + veta);
+  }
+});
 test('postreh snímok 5: box bez skóre hovorí o nevyhodnotených údajoch pre AI len na jednom mieste', () => {
   for (const lang of ['sk', 'en', 'de']) {
     nastav({ fetch: async () => odpoved(200, SPRAVNA) });

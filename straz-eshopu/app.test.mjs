@@ -52,14 +52,14 @@ test('ponuka: len live === true alebo test; iný tvar stav.json ju skryje', ()=>
   assert.equal(A.ponukaViditelna(null,true),true);
 });
 
-test('stav.json: chyba, 404, zlý JSON aj pomalá odpoveď dajú null; prvé nasadenie má live false', async ()=>{
+test('stav.json: chyba, 404, zlý JSON aj pomalá odpoveď dajú null; od spustenia (relácia 218, 23. 10. 2026) live true', async ()=>{
   assert.deepEqual(await A.nacitajStav(async()=>({ok:true,json:async()=>({live:true})})),{live:true});
   assert.equal(await A.nacitajStav(async()=>{throw new Error('net');}),null);
   assert.equal(await A.nacitajStav(async()=>({ok:false,json:async()=>({live:true})})),null);
   assert.equal(await A.nacitajStav(async()=>({ok:true,json:async()=>{throw new SyntaxError('x');}})),null);
   let spust;const pomaly=A.nacitajStav(()=>new Promise(()=>{}),'/x',4000,fn=>{spust=fn;});spust();
   assert.equal(await pomaly,null);
-  assert.deepEqual(JSON.parse(subor('./stav.json')),{live:false});
+  assert.deepEqual(JSON.parse(subor('./stav.json')),{live:true});
 });
 
 test('adresa obchodu: voľný vstup, výstup presne (pôvod s https), nebezpečné a súkromné adresy odmietne', ()=>{
@@ -308,10 +308,11 @@ const STRANKY=[['sk','./index.html','https://arling.sk/straz-eshopu/','/feed-doc
   ['de','./de/index.html','https://arling.sk/straz-eshopu/de/','/feed-doctor/agent-ready/de/','/privacy/de/#s4','/podmienky/de/','Beispiel']];
 
 for(const [lang,cesta,canonical,zadarmo,sukromie,podmienky,priklad] of STRANKY){
-  test(`stránka ${lang}: noindex, canonical, hreflang, CSP, rám, odkazy a texty`, ()=>{
+  test(`stránka ${lang}: indexovateľná po spustení, canonical, hreflang, CSP, rám, odkazy a texty`, ()=>{
     const t=subor(cesta);
     assert.match(t,new RegExp(`<html lang="${lang}">`));
-    assert.match(t,/<meta name="robots" content="noindex">/);
+    // Spustenie naostro (relácia 218, 23. 10. 2026): noindex preč, stránka ide do sitemap-pages.xml.
+    assert.doesNotMatch(t,/<meta name="robots"[^>]*noindex/);
     assert.ok(t.includes(`<link rel="canonical" href="${canonical}">`));
     for(const [h,u] of [['sk','https://arling.sk/straz-eshopu/'],['en','https://arling.sk/straz-eshopu/en/'],['de','https://arling.sk/straz-eshopu/de/'],['x-default','https://arling.sk/straz-eshopu/en/']])
       assert.ok(t.includes(`<link rel="alternate" hreflang="${h}" href="${u}">`),h);
