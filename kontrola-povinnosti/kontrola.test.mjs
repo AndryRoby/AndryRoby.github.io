@@ -142,7 +142,8 @@ test('slovenská stránka: „Odstúpiť od zmluvy“ bez „tu“ je obdobná f
 test('iný podobný nápis: podobný odkaz, overte (de a en bez osobitných prípadov)', ()=>{
   for(const lang of ['de','en']){const m=K.vyhodnot(odst(fx('odstupenie-podobny.json')),lang);
     assert.equal(m.tone,'unknown');assert.equal(m.badge,EU_UI[lang].rules.eu_withdrawal.status.check);
-    assert.equal(m.lines.filter((l)=>l.muted).length,3);assert.ok(!/1830a|20a/.test(vsetkyTexty(m)));}
+    // 3 podobné odkazy a od relácie 220 jedna poznámka pod nimi (similarNote).
+    assert.equal(m.lines.filter((l)=>l.muted).length,4);assert.ok(!/1830a|20a/.test(vsetkyTexty(m)));}
 });
 test('link_found (relácia 208) a unknown', ()=>{
   const m=K.vyhodnot(odst(INE.link_found),'sk');
@@ -175,12 +176,15 @@ test('všetky stavy vo všetkých jazykoch: žiadny prázdny text, žiadne {labe
 });
 test('sk, en, de hovoria slovo od slova ako celá kontrola (EU_UI a UI); EU_UI sa nemení', ()=>{
   const pred=JSON.stringify(EU_UI);
-  for(const lang of ['sk','en','de']){const e=euTexty(lang),t=texty(lang);
-    // Výnimky kola 1: sk notFound (netvrdí neprítomnosť) a en applies (výhrada pre Česko); ostatné slovo od slova.
-    if(lang!=='sk')assert.equal(e.rules.eu_withdrawal.notFound,EU_UI[lang].rules.eu_withdrawal.notFound);
+  // Výnimky kola 1: sk notFound (netvrdí neprítomnosť) a en applies záruky (výhrada pre Česko). Relácia 220 (stránky odstúpenia
+  // de a en): notFound menuje nápis, similar, applies a v en „shop“ (unknown, manualNotFound, manualOrderPage); brána 220 pokus 1:
+  // de unknown, manualFound a manualNotFound, en manualFound (dôvod, ďalší krok, obsah potvrdenia). Ostatné slovo od slova.
+  const VYNIMKY={sk:['notFound'],de:['notFound','similar','applies','unknown','manualFound','manualNotFound'],en:['notFound','similar','applies','unknown','manualFound','manualNotFound','manualOrderPage']};
+  for(const lang of ['sk','en','de']){const e=euTexty(lang),t=texty(lang),x=EU_UI[lang].rules.eu_withdrawal;
+    for(const k of Object.keys(x))if(typeof x[k]==='string'&&!VYNIMKY[lang].includes(k))assert.equal(e.rules.eu_withdrawal[k],x[k],lang+' '+k);
+    for(const k of VYNIMKY[lang])assert.notEqual(e.rules.eu_withdrawal[k],x[k],lang+' '+k+' je prepísané');
     assert.equal(e.rules.eu_guarantee_notice.manual,EU_UI[lang].rules.eu_guarantee_notice.manual);
     if(lang!=='en')assert.equal(e.rules.eu_guarantee_notice.applies,EU_UI[lang].rules.eu_guarantee_notice.applies);
-    assert.equal(e.rules.eu_withdrawal.applies,EU_UI[lang].rules.eu_withdrawal.applies);
     assert.equal(t.busy,UI[lang].busy);assert.equal(t.cancelled,UI[lang].cancelled);}
   euTexty('de').rules.eu_withdrawal.law.push(['x','https://x.example']);
   assert.equal(JSON.stringify(EU_UI),pred);
@@ -230,6 +234,124 @@ test('en stránka záruky: výsledok vo všetkých stavoch píše „shop“, ni
   assert.equal(K.vyhodnot(zar(INE.nedalo_sa),'en').lines[0].text,'We could not read any page of the shop.');
 });
 
+/* ---------- 3c. relácia 220: stránky odstúpenia de a en ---------- */
+// Tvar podľa živých odpovedí z ops/druhy-ucet/220/overenie/naostro-1.json (D1 found, D2 not_found s tromi podobnými), fiktívne domény.
+const odstDe=(status,found,similar)=>({version:'1.0.0',storeUrl:'https://kerzen.example.de/',rules:[],sample:{products:0,pages:0,attemptedPages:0},
+  eu:{version:1,rules:[{code:'eu_withdrawal',status,pages:5,found,similar},{code:'eu_guarantee_notice',status:'not_found',pages:5,goods:null,found:[],links:[]}]}});
+const nap=(label,page='home')=>({page,url:'https://kerzen.example.de/',label,href:'https://kerzen.example.de/'+encodeURIComponent(label.toLowerCase())+'/'});
+const D1=odstDe('found',[{...nap('Vertrag widerrufen'),kind:'function',lang:'de'}],[nap('Widerrufsbelehrung')]);
+const D2=odstDe('not_found',[],[nap('Widerrufsbelehrung'),nap('Widerrufsformular'),nap('Widerruf')]);
+const D0=odstDe('not_found',[],[]);
+const JAZYKY_RICHTLINIE={de:'Den Wortlaut der Richtlinie suchen wir auf Deutsch, Englisch, Slowakisch, Tschechisch, Polnisch, Französisch, Italienisch, Spanisch und Niederländisch.',
+  en:'We look for the wording of the directive in English, German, Slovak, Czech, Polish, French, Italian, Spanish and Dutch.'};
+test('de not_found: veta menuje oba nápisy zákona, deväť jazykov bez zoznamu a rakúsku alternatívu, ktorú kontrola nepozná (brána 220 G1 5)', ()=>{
+  for(const data of [D0,D2]){const m=K.vyhodnot(odst(data),'de'),nf=m.lines[0].text;
+    assert.equal(nf,'Einen Link oder Button mit der Beschriftung „Vertrag widerrufen“ oder „Widerruf bestätigen“ haben wir auf den gelesenen Seiten nicht gefunden. Wir suchen den Wortlaut der Richtlinie in neun EU-Sprachen, auf Deutsch wie im Gesetz; die österreichische Alternative „Vom Vertrag zurücktreten“ erkennt die Prüfung nicht.');
+    assert.ok(!/diese Beschriftung/.test(nf));assert.ok(!nf.includes(JAZYKY_RICHTLINIE.de),'zoznam deviatich jazykov už nie je najvýraznejší riadok výsledku');}
+  const m=K.vyhodnot(odst(D0),'de');
+  assert.equal(m.tone,'review');assert.equal(m.badge,'Beschriftung nicht gefunden');assert.equal(m.lines.length,1);assert.equal(m.shoptet,null);
+  assert.equal(m.manual,euTexty('de').rules.eu_withdrawal.manualNotFound);
+});
+test('de similar: krátky riadok na každý podobný odkaz a raz poznámka s ďalším krokom, bez nádeje pri poučení (brána 220 G1 2)', ()=>{
+  const m=K.vyhodnot(odst(D2),'de'),podobne=m.lines.filter((l)=>l.muted);
+  assert.equal(m.tone,'unknown');assert.equal(m.badge,'Link prüfen');assert.equal(m.podobny,true);assert.equal(podobne.length,4,'3 odkazy a 1 poznámka');
+  for(const [i,label] of ['Widerrufsbelehrung','Widerrufsformular','Widerruf'].entries()){const t=podobne[i].text;
+    assert.equal(t,`Ähnlicher Link auf der Startseite: „${label}“.`);assert.equal(podobne[i].href,nap(label).href);}
+  // Do pokusu 1 sa pri troch nálezoch trikrát opakovala dlhá veta „Wir haben einen Link zum Widerruf …“.
+  assert.ok(m.lines.every((l)=>!l.text.startsWith('Wir haben einen Link zum Widerruf')));
+  // Poznámka raz, posledná, bez odkazu: poučenie alebo formulár na stiahnutie nie je funkcia (§ 356a Abs. 2 BGB), ďalší krok je nápis zákona.
+  const pozn=podobne[3];assert.equal(pozn.text,texty('de').eu.rules.eu_withdrawal.similarNote);assert.equal(pozn.href,undefined);
+  assert.match(pozn.text,/^Prüfen Sie, wohin ein solcher Link führt\. /);
+  assert.match(pozn.text,/Führt er nur zur Widerrufsbelehrung oder zu einem Formular zum Herunterladen, ist er keine Widerrufsfunktion \(§ 356a Abs\. 2 BGB\)\./);
+  assert.match(pozn.text,/beschriften Sie ihn am sichersten mit „Vertrag widerrufen“\.$/);
+  assert.ok(!/eindeutige Formulierung sein/.test(pozn.text),'pri „Widerrufsbelehrung“ žiadna zbytočná nádej');
+  assert.equal(m.lines.filter((l)=>l.text===pozn.text).length,1,'poznámka len raz');
+  // Jeden podobný odkaz: poznámka tiež raz; bez podobného (D0) a pri found (D1) žiadna.
+  assert.equal(K.vyhodnot(odst(odstDe('not_found',[],[nap('Widerruf')])),'de').lines.filter((l)=>l.text===pozn.text).length,1);
+  for(const data of [D0,D1])assert.ok(!K.vyhodnot(odst(data),'de').lines.some((l)=>l.text===pozn.text));
+  // Slovenčina a čeština poznámku nemajú (ich texty sa nemenia).
+  for(const lang of ['sk','cs'])assert.equal(euTexty(lang).rules.eu_withdrawal.similarNote,undefined,lang);
+});
+test('de found a platnosť: nápis „Vertrag widerrufen“ nájdený, podobný sa pri found neukáže, § 356a BGB od 19. 6. 2026', ()=>{
+  const m=K.vyhodnot(odst(D1),'de');
+  assert.equal(m.tone,'ok');assert.equal(m.badge,'Beschriftung gefunden');
+  assert.deepEqual(m.lines.map((l)=>l.text),['Auf der Startseite haben wir einen Link oder Button mit der Beschriftung „Vertrag widerrufen“ gefunden.',EU_UI.de.rules.eu_withdrawal.foundNote]);
+  assert.equal(m.applies,'In Deutschland gilt § 356a BGB seit dem 19. Juni 2026, in Österreich § 13a FAGG seit dem 1. Oktober 2026.');
+  assert.ok(m.law[0][0].startsWith('§ 356a BGB'));
+  // Brána 220 G2 23: ručné overenie menuje obsah potvrdenia podľa § 356a Abs. 4 BGB, nie len dátum a čas.
+  assert.equal(m.manual,'Klicken Sie als Kunde darauf, senden Sie mit einer Testbestellung eine Widerrufserklärung ab und prüfen Sie, ob unverzüglich eine Eingangsbestätigung mit dem Inhalt der Erklärung sowie Datum und Uhrzeit des Eingangs per E-Mail ankommt.');
+  assert.notEqual(m.manual,EU_UI.de.rules.eu_withdrawal.manualFound);
+  for(const data of [D0,D2,INE.nedalo_sa])assert.equal(K.vyhodnot(odst(data),'de').applies,m.applies);
+});
+test('de a en ďalší krok pri „Link prüfen“ aj „Beschriftung nicht gefunden“: ručné overenie ukazuje na sekciu platforiem (brána 220 G1 2, G2 24)', ()=>{
+  const NA={de:' Fehlt sie, steht unten im Abschnitt „Shopsysteme“, wie Sie sie in Ihrem System einschalten oder einrichten.',
+    en:' If it is missing, the section “How to add it on your platform” below shows how to switch it on or add it.'};
+  for(const lang of ['de','en'])for(const data of [D0,D2]){const m=K.vyhodnot(odst(data),lang);
+    assert.equal(m.manual,euTexty(lang).rules.eu_withdrawal.manualNotFound,lang);assert.ok(m.manual.endsWith(NA[lang]),lang+' '+m.manual);}
+  const de=euTexty('de').rules.eu_withdrawal.manualNotFound;
+  assert.match(de,/Die Funktion kann erst per JavaScript geladen werden oder nur nach dem Login sichtbar sein; das sieht diese Prüfung nicht\./,'„geladen werden“, nie „laden“ bez predmetu');
+  // Slovenčina a čeština bez zmeny.
+  assert.equal(euTexty('sk').rules.eu_withdrawal.manualNotFound,EU_UI.sk.rules.eu_withdrawal.manualNotFound);
+  assert.match(euTexty('cs').rules.eu_withdrawal.manualNotFound,/^Otevřete obchod jako zákazník a podívejte se do patičky/);
+});
+test('de a en „Nicht lesbar“ a „Could not read“: dôvod a ďalší krok, nie slepá ulička (brána 220 G1 3)', ()=>{
+  const de=K.vyhodnot(odst(INE.nedalo_sa),'de'),en=K.vyhodnot(odst(INE.nedalo_sa),'en');
+  assert.equal(de.badge,'Nicht lesbar');assert.equal(en.badge,'Could not read');
+  for(const m of [de,en]){assert.equal(m.tone,'unknown');assert.equal(m.lines.length,1);assert.equal(m.manual,null);}
+  assert.equal(de.lines[0].text,'Wir konnten keine Seite des Shops lesen, etwa weil robots.txt das Lesen verbietet oder der Server unseren Abruf abweist. Über die Widerrufsfunktion sagt das nichts; prüfen Sie Ihren Shop selbst mit den Schritten unten im Abschnitt „So prüfen Sie selbst“.');
+  assert.equal(en.lines[0].text,'We could not read any page of the shop, for example because robots.txt disallows it or the server blocked our request. This says nothing about the withdrawal function; check your shop by hand with the steps under “How to check it yourself” below.');
+  // Vo výsledku na stránke veta raz (riadok počtu prečítaných stránok sa pri unknown nepridá).
+  const {obsah}=K.vysledokObsah(strankaDom('de','eu_withdrawal').d,INE.nedalo_sa,'eu_withdrawal','de');
+  assert.equal(obsah.textContent.split('Wir konnten keine Seite des Shops lesen').length-1,1);
+  // Záruka (en) ani slovenčina a čeština sa nemenia.
+  assert.equal(K.vyhodnot(zar(INE.nedalo_sa),'en').lines[0].text,'We could not read any page of the shop.');
+  assert.equal(K.vyhodnot(odst(INE.nedalo_sa),'sk').lines[0].text,EU_UI.sk.rules.eu_withdrawal.unknown);
+  assert.equal(K.vyhodnot(odst(INE.nedalo_sa),'cs').lines[0].text,'Nepodařilo se přečíst žádnou stránku obchodu.');
+});
+test('en not_found, similar a found: oba nápisy smernice, írske znenie, krátky riadok a poznámka s ďalším krokom (brána 220 G1 2 a 5)', ()=>{
+  for(const data of [D0,D2]){const nf=K.vyhodnot(odst(data),'en').lines[0].text;
+    assert.equal(nf,'In the pages we read, we did not find a link or button labelled “withdraw from contract here” or “confirm withdrawal”, or with the same words in another of the nine EU languages we check. The Irish wording “cancel contract here” is not recognised yet; if you sell under Irish law, check by hand.');
+    assert.ok(!/that label/.test(nf));assert.ok(!nf.includes(JAZYKY_RICHTLINIE.en),'zoznam deviatich jazykov už nie je najvýraznejší riadok výsledku');}
+  const m=K.vyhodnot(odst(D2),'en'),podobne=m.lines.filter((l)=>l.muted);
+  assert.equal(m.tone,'unknown');assert.equal(m.badge,EU_UI.en.rules.eu_withdrawal.status.check);assert.equal(podobne.length,4,'3 odkazy a 1 poznámka');
+  for(const [i,label] of ['Widerrufsbelehrung','Widerrufsformular','Widerruf'].entries())
+    assert.equal(podobne[i].text,`Similar link on the home page: “${label}”.`);
+  const pozn=podobne[3].text;assert.equal(pozn,texty('en').eu.rules.eu_withdrawal.similarNote);
+  assert.match(pozn,/^Check where such a link leads\. /);
+  assert.match(pozn,/If it leads only to the withdrawal instructions or to a form to download, it is not a withdrawal function \(Art\. 11a\(2\)\)\./);
+  assert.match(pozn,/the safest label is “withdraw from contract here” or the wording of your national law\.$/);
+  assert.ok(!/equally clear wording/.test(pozn),'brána 220 G2 21: nie voľné „equally clear wording“ namiesto pojmu smernice');
+  assert.equal(m.lines.filter((l)=>l.text===pozn).length,1,'poznámka len raz');
+  const f=K.vyhodnot(odst(D1),'en');
+  assert.equal(f.tone,'ok');assert.equal(f.lines[0].text,'We found a link or button labelled “Vertrag widerrufen” on the home page.');assert.equal(f.lines.length,2);
+  // Brána 220 G2 23: obsah potvrdenia podľa čl. 11a ods. 4.
+  assert.equal(f.manual,'Click it as a customer, send a withdrawal statement for a test order and check that an acknowledgement with the content of the statement and the date and time of submission arrives by email without undue delay.');
+});
+test('en platnosť odstúpenia: dátumy štátov z tabuľky stránky vrátane Malty a Írska, Česko až od 1. 1. 2027 (brána 220 G1 5, G2 22)', ()=>{
+  const a=K.vyhodnot(odst(D0),'en').applies;
+  assert.notEqual(a,EU_UI.en.rules.eu_withdrawal.applies);
+  assert.equal(a,'Member States had to apply their rules from 19 June 2026, but start dates differ: Germany, Malta and Slovakia since that date, Ireland since 30 June 2026, Austria since 1 October 2026, Czechia from 1 January 2027.');
+  assert.ok(!/apply it|must apply/.test(a),'bez „it“ bez predmetu a bez „must“ pri uplynutom termíne');
+  assert.equal(K.vyhodnot(odst(D0),'sk').applies,EU_UI.sk.rules.eu_withdrawal.applies,'slovenská veta sa nemení');
+  assert.equal(K.vyhodnot(odst(D0),'cs').applies,'V Česku platí od 1. ledna 2027 (§ 1830a občanského zákoníku).','česká veta sa nemení');
+});
+test('en stránka odstúpenia: výsledok vo všetkých stavoch píše „shop“, nikdy „store“ (ako stránka záruky, jazyk kolo 2)', ()=>{
+  const objednavka=kopia(D0);objednavka.eu.rules[0].orderPage=[{page:'home',label:'My order',href:'https://shop.example.com/my-order/'}];
+  const pripady=[fx('odstupenie-najdene.json'),fx('odstupenie-podobny.json'),fx('zaruka-najdena.json'),INE.link_found,INE.nedalo_sa,D0,D1,D2,objednavka];
+  for(const data of pripady){const {d}=strankaDom('en','eu_withdrawal');const {obsah}=K.vysledokObsah(d,data,'eu_withdrawal','en');
+    assert.ok(!/\bstores?\b/i.test(obsah.textContent),obsah.textContent);}
+  assert.match(K.vyhodnot(odst(INE.nedalo_sa),'en').lines[0].text,/^We could not read any page of the shop, /);
+  assert.match(K.vyhodnot(odst(objednavka),'en').manual,/in the language of your shop/);
+});
+test('de a en vety odstúpenia bez pomlčiek em a en a bez zástupných znakov po doplnení', ()=>{
+  const P=new RegExp('['+String.fromCharCode(0x2013,0x2014)+']');
+  for(const lang of ['de','en']){const x=euTexty(lang).rules.eu_withdrawal;
+    for(const k of ['applies','notFound','similar','similarNote','unknown','manualFound','manualNotFound','manualOrderPage'])assert.ok(typeof x[k]==='string'&&x[k]&&!P.test(x[k]),lang+' '+k);
+    assert.ok(!/\{\w+\}/.test(x.similarNote),lang+' poznámka bez zástupných znakov');
+    assert.deepEqual(x.similar.match(/\{\w+\}/g).sort(),['{label}','{page}'],lang);
+    for(const data of [D0,D1,D2]){const t=vsetkyTexty(K.vyhodnot(odst(data),lang));assert.ok(!/\{(label|page)\}|undefined|null/.test(t)&&!P.test(t),lang+t);}}
+});
+
 /* ---------- 4. vkladanie ---------- */
 test('škodlivý nápis ostane textom, odkaz len https, adresa obchodu len https', ()=>{
   const {d}=strankaDom('sk','eu_withdrawal');
@@ -264,13 +386,24 @@ test('platná adresa: GET s credentials omit a cache no-store, výsledok, tlači
   s.vysledok.potomkovia().find((n)=>n.className==='pk-v-plna').children.at(-1).dispatch('click');
   assert.deepEqual(env.udalosti.at(-1),['ar_duty_to_check',{rule:'eu_withdrawal',lang:'cs'}]);
 });
-test('nemecká stránka záruky: vedľajší riadok s § 356a BGB a celou kontrolou', async()=>{
-  const env=prostredie();const s=strankaDom('de','eu_guarantee_notice');K.spusti(s.d);
-  s.input.value='https://kerzen.example.de';s.form.dispatch('submit');env.dopyty[0].ok(odpoved(fx('zaruka-najdena.json')));await pockaj();
-  const ved=s.vysledok.potomkovia().find((n)=>n.className==='pk-v-vedlajsi');
-  const a=ved.children.filter((n)=>n.tagName==='A');assert.equal(a[0].href,'https://www.gesetze-im-internet.de/bgb/__356a.html');assert.equal(a[1].href,'/feed-doctor/agent-ready/de/');
-  assert.deepEqual(env.udalosti.at(-1)[1],{rule:'eu_guarantee_notice',lang:'de',status:'found',podobny:'nie'});
-});
+// Relácia 220: odstúpenie má stránku aj po nemecky a anglicky, vedľajší riadok na stránkach de a en vedie na stránku druhého
+// pravidla v tom istom jazyku (do 220 viedol na § 356a BGB a celú kontrolu s textom „In der vollständigen Prüfung ansehen“).
+for(const [lang,kod,ciel,text,riadok] of [
+  ['de','eu_guarantee_notice','/kontrola-tlacidla-na-odstupenie-od-zmluvy/de/','Mehr zu dieser Pflicht','Widerrufsfunktion: Beschriftung nicht gefunden. '],
+  ['en','eu_guarantee_notice','/kontrola-tlacidla-na-odstupenie-od-zmluvy/en/','More about this rule','Withdrawal function: Label not found. '],
+  ['de','eu_withdrawal','/kontrola-oznamenia-o-zakonnej-zaruke/de/','Mehr zu dieser Pflicht','Hinweis zur gesetzlichen Gewährleistung: Hinweis gefunden. '],
+  ['en','eu_withdrawal','/kontrola-oznamenia-o-zakonnej-zaruke/en/','More about this rule','Notice on the legal guarantee: Notice found. '],
+]){
+  test(`stránka ${kod} ${lang}: vedľajší riadok vedie na stránku druhého pravidla v jazyku ${lang}, nie na celú kontrolu`, async()=>{
+    const env=prostredie();const s=strankaDom(lang,kod);K.spusti(s.d);
+    s.input.value='https://kerzen.example.de';s.form.dispatch('submit');env.dopyty[0].ok(odpoved(fx('zaruka-najdena.json')));await pockaj();
+    const ved=s.vysledok.potomkovia().find((n)=>n.className==='pk-v-vedlajsi');
+    const a=ved.children.filter((n)=>n.tagName==='A');
+    assert.equal(a.length,1);assert.equal(a[0].href,ciel);assert.equal(a[0].textContent,text);assert.equal(a[0].dataset.pkPravidlo,kod==='eu_withdrawal'?'eu_guarantee_notice':'eu_withdrawal');
+    assert.equal(a[0].dataset.pkPlna,undefined,'nie je to odkaz na celú kontrolu');assert.equal(ved.textContent,riadok+text);
+    assert.deepEqual(env.udalosti.at(-1)[1],{rule:kod,lang,status:kod==='eu_withdrawal'?'not_found':'found',podobny:'nie'});
+  });
+}
 for(const poradie of ['nová prvá','stará prvá']){
   test(`súbeh: dve odpovede, ${poradie}, stará nič neprepíše`, async()=>{
     const env=prostredie();const s=strankaDom('sk','eu_withdrawal');K.spusti(s.d);
@@ -461,8 +594,30 @@ test('zdrojové súbory: žiadne pomlčky em a en, žiadne innerHTML ani eval', 
   }
   for(const lang of JAZYKY){const t=JSON.stringify(sablonaTexty(lang))+JSON.stringify(euTexty(lang));assert.ok(!POMLCKY.test(t),lang);}
 });
+test('noscript de a en netvrdí, že celá kontrola ide bez JavaScriptu (brána 220 G2 25)', ()=>{
+  // Celá kontrola /feed-doctor/agent-ready/ je tiež formulár, ktorý obsluhuje JavaScript (form bez action).
+  assert.equal(sablonaTexty('de').noscript,'Diese Prüfung braucht JavaScript, die vollständige Prüfung ebenfalls. Aktivieren Sie JavaScript und laden Sie die Seite neu.');
+  assert.equal(sablonaTexty('en').noscript,'This check needs JavaScript, and so does the full check. Turn on JavaScript and reload the page.');
+});
+test('kontrola.css: odstup h3 v sekciách prebije body.noc h3{margin:0 0 8px} z /style/paper.css (brána 220 G1 4)', ()=>{
+  const css=readFileSync(TU+'kontrola.css','utf8');
+  // Špecifickosť [triedy, prvky] jednoduchého selektora (bez id a pseudotried): body.noc h3 je [1,2].
+  const spec=(sel)=>[(sel.match(/\.[\w-]+/g)||[]).length,(sel.replace(/\.[\w-]+/g,' ').match(/(?:^|[\s>+~])[a-z][a-z0-9]*/g)||[]).length];
+  const vyssia=(a,b)=>a[0]!==b[0]?a[0]>b[0]:a[1]>b[1],PAPER=spec('body.noc h3');
+  assert.deepEqual(PAPER,[1,2]);
+  const pravidla=[['.ar-page.pk-stranka .pk-sekcia h3','{margin-top:32px}'],['.ar-page.pk-stranka .pk-sekcia h2+h3','{margin-top:20px}'],['.ar-page.pk-stranka .pk-platforma h3','{margin-top:0}']];
+  let pred=-1;
+  for(const [sel,telo] of pravidla){const i=css.indexOf(sel+telo);assert.ok(i>pred,sel+' existuje a je v poradí');pred=i;assert.ok(vyssia(spec(sel),PAPER),sel);}
+  // Stará podoba so špecifickosťou [1,1] by prehrala (32 px neplatilo nikde).
+  assert.ok(!/(?:^|\})\s*\.pk-sekcia h3\{/m.test(css)&&!/(?:^|\})\s*\.pk-platforma h3\{/m.test(css));
+});
 test('mapy stránok a celej kontroly', ()=>{
   assert.deepEqual(PLNA_KONTROLA,{sk:'/feed-doctor/agent-ready/sk/',cs:'/feed-doctor/agent-ready/sk/',de:'/feed-doctor/agent-ready/de/',en:'/feed-doctor/agent-ready/'});
-  assert.deepEqual(Object.keys(STRANKY_PRAVIDIEL.eu_withdrawal),['sk','cs']);assert.deepEqual(Object.keys(STRANKY_PRAVIDIEL.eu_guarantee_notice),['sk','cs','de','en']);
+  // Relácia 220: odstúpenie aj po nemecky a anglicky; obe pravidlá vo všetkých štyroch jazykoch stránok.
+  assert.deepEqual(STRANKY_PRAVIDIEL,{
+    eu_withdrawal:{sk:'/kontrola-tlacidla-na-odstupenie-od-zmluvy/',cs:'/kontrola-tlacidla-na-odstupenie-od-zmluvy/cs/',de:'/kontrola-tlacidla-na-odstupenie-od-zmluvy/de/',en:'/kontrola-tlacidla-na-odstupenie-od-zmluvy/en/'},
+    eu_guarantee_notice:{sk:'/kontrola-oznamenia-o-zakonnej-zaruke/',cs:'/kontrola-oznamenia-o-zakonnej-zaruke/cs/',de:'/kontrola-oznamenia-o-zakonnej-zaruke/de/',en:'/kontrola-oznamenia-o-zakonnej-zaruke/en/'},
+  });
+  for(const m of Object.values(STRANKY_PRAVIDIEL))assert.deepEqual(Object.keys(m),JAZYKY);
   assert.equal(K.STRAZ_MODUL,'/feed-doctor/agent-ready/straz.mjs?v=2');
 });

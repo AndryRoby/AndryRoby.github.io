@@ -13,7 +13,7 @@
  * myši a klávesnici v poli adresy, na dotyku (pointer: coarse) na stavovej vete, aby softvérová klávesnica neprekryla stav.
  * Testy: kontrola.test.mjs (node --test).
  */
-import {texty,STRANKY_PRAVIDIEL,PRAVIDLA} from './texty.mjs?v=1';
+import {texty,STRANKY_PRAVIDIEL,PRAVIDLA} from './texty.mjs?v=2';
 import {createLatest} from '../feed-doctor/agent-ready/controller.mjs';
 
 export const API='https://feed-monitor.arling.workers.dev/v1/agent-ready/check';
@@ -132,6 +132,8 @@ export function vyhodnot(r,lang){
     for(const f of orders)m.lines.push(riadok(x.orderPage,f));
     for(const f of obdobna)m.lines.push(riadok(T.obdobna,f));
     for(const f of similar)if(!obdobna.includes(f))m.lines.push(riadok(x.similar,f,true));
+    // Relácia 220 (de, en): čo s podobným odkazom urobiť, raz pod všetkými, nie v každom riadku (pri troch nálezoch trikrát).
+    if(similar.length&&typeof x.similarNote==='string')m.lines.push({text:x.similarNote,muted:true});
     if(similar.length){m.tone='unknown';m.badge=st('check');m.podobny=true;}else{m.tone='review';m.badge=st('not_found');}
     m.manual=orders.length&&typeof x.manualOrderPage==='string'?x.manualOrderPage:x.manualNotFound;
     // Pri podobnom nápise by odsek o Shoptete výsledok len zväčšil; pri odkaze na stránku objednávky (208) to isté už hovorí orderPage.

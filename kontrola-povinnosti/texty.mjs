@@ -12,9 +12,10 @@ export const JAZYKY=['sk','cs','de','en'];
 export const PRAVIDLA=['eu_withdrawal','eu_guarantee_notice'];
 /** Celá bezplatná kontrola: čeština ide na slovenskú verziu (českej niet, rovnako to robí obal hubu). */
 export const PLNA_KONTROLA={sk:'/feed-doctor/agent-ready/sk/',cs:'/feed-doctor/agent-ready/sk/',de:'/feed-doctor/agent-ready/de/',en:'/feed-doctor/agent-ready/'};
-/** Stránky pravidiel (PLAN.md časť 3); generátor overuje, že jeho tabuľka STRANKY sedí s touto mapou. */
+/** Stránky pravidiel (PLAN.md časť 3, odstúpenie de a en od relácie 220); generátor overuje, že jeho tabuľka STRANKY sedí s touto mapou.
+ *  Vedľajší riadok výsledku odkazuje na stránku druhého pravidla v jazyku stránky; obe pravidlá ju majú vo všetkých štyroch jazykoch. */
 export const STRANKY_PRAVIDIEL={
-  eu_withdrawal:{sk:'/kontrola-tlacidla-na-odstupenie-od-zmluvy/',cs:'/kontrola-tlacidla-na-odstupenie-od-zmluvy/cs/'},
+  eu_withdrawal:{sk:'/kontrola-tlacidla-na-odstupenie-od-zmluvy/',cs:'/kontrola-tlacidla-na-odstupenie-od-zmluvy/cs/',de:'/kontrola-tlacidla-na-odstupenie-od-zmluvy/de/',en:'/kontrola-tlacidla-na-odstupenie-od-zmluvy/en/'},
   eu_guarantee_notice:{sk:'/kontrola-oznamenia-o-zakonnej-zaruke/',cs:'/kontrola-oznamenia-o-zakonnej-zaruke/cs/',de:'/kontrola-oznamenia-o-zakonnej-zaruke/de/',en:'/kontrola-oznamenia-o-zakonnej-zaruke/en/'},
 };
 
@@ -71,10 +72,48 @@ const DE_ZAKON={
 // sk notFound: „…takto označený odkaz ani tlačidlo nie je“ tvrdí neprítomnosť a protirečí riadku o podobnom odkaze (brána).
 // en applies: anglická stránka je pre celú EÚ, „Applies since 27 September 2026.“ bez výhrady je pre Česko nepravda (právo).
 // en unknown: stránka píše všade „shop“, EU_UI „store“ (jazyk kolo 2).
+// Relácia 220 (stránky odstúpenia de a en, ops/druhy-ucet/220/overenie/naostro-1.json): stránka pravidla nemá vetu „what“ celej
+// kontroly, preto notFound menuje nápis („diese Beschriftung“ a „that label“ by odkazovali na nič). de similar porovnáva so zákonom
+// (§ 356a Abs. 1 Satz 2 BGB) a de aj en hovoria, že odkaz len na poučenie alebo vzorový formulár nie je funkcia, cez ktorú zákazník
+// vyhlásenie online odošle (§ 356a Abs. 2 BGB, čl. 11a ods. 2 smernice). en applies: anglická stránka je pre celú EÚ, v Česku
+// platí § 1830a OZ až od 1. 1. 2027 (zákon č. 159/2026 Sb., 213/zber/pravo-sk-cz.md); de applies podľa BGBl. 2026 I Nr. 28,
+// Artikel 10 Abs. 1 (213/zber/pravo-de.md 1.3). en unknown, manualNotFound a manualOrderPage: „shop“ ako na stránke záruky.
+// Brána 220 pokus 1 (ops/ai/kontrola/2026-10-23-220-widerrufsbutton.md G1 a 2026-10-23-220-pravo-jazyk.md G2; nové kľúče len de a en,
+// sk a cs sa nemenia): podobný odkaz krátkym riadkom a poznámka raz s ďalším krokom (G1 2, § 356a Abs. 2 BGB a čl. 11a ods. 2 smernice);
+// notFound menuje oba zákonné nápisy a čo kontrola nepozná: rakúske „Vom Vertrag zurücktreten“ (Erläuterungen 498 d.B., 220/zber/
+// pravo-de-at.md 3) a írske „cancel contract here“ (§ 115A ods. 1 Consumer Rights Act 2022) (G1 5); unknown s dôvodom a ďalším krokom
+// (G1 3); manualFound s obsahom vyhlásenia v potvrdení (G2 23, § 356a Abs. 4 BGB, čl. 11a ods. 4); manualNotFound s odkazom na sekciu
+// platforiem stránky (G1 2) a v de „geladen werden“ (G2 24); en applies s dátumami štátov z tabuľky stránky (Malta reg. 1 ods. 3
+// L.N. 145/2026, Írsko 30. 6. 2026; G1 5 a G2 22). Názvy sekcií v „…“ a “…” sú nadpisy stránok odstúpenia de a en
+// (ops/seo/povinnosti-eu/texty/odstupenie-de.mjs a -en.mjs; test v ops/seo/povinnosti-eu/postav.test.mjs).
 const PREPISY_EU={
   sk:{eu_withdrawal:{notFound:'Odkaz ani tlačidlo s nápisom „odstúpiť od zmluvy tu“ sme na prečítaných stránkach nenašli. Znenie smernice hľadáme v slovenčine, češtine, angličtine, nemčine, poľštine, francúzštine, taliančine, španielčine a holandčine.'}},
+  de:{eu_withdrawal:{
+    // Rakúsko: § 13a FAGG (BGBl. I Nr. 59/2026) pre zmluvy uzavreté po 30. 9. 2026, § 20 Abs. 5 FAGG (220/zber/pravo-de-at.md časť 3).
+    applies:'In Deutschland gilt § 356a BGB seit dem 19. Juni 2026, in Österreich § 13a FAGG seit dem 1. Oktober 2026.',
+    notFound:'Einen Link oder Button mit der Beschriftung „Vertrag widerrufen“ oder „Widerruf bestätigen“ haben wir auf den gelesenen Seiten nicht gefunden. Wir suchen den Wortlaut der Richtlinie in neun EU-Sprachen, auf Deutsch wie im Gesetz; die österreichische Alternative „Vom Vertrag zurücktreten“ erkennt die Prüfung nicht.',
+    similar:'Ähnlicher Link auf {page}: „{label}“.',
+    // Raz pod všetkými podobnými odkazmi (kontrola.mjs), nie v každom riadku.
+    similarNote:'Prüfen Sie, wohin ein solcher Link führt. Führt er nur zur Widerrufsbelehrung oder zu einem Formular zum Herunterladen, ist er keine Widerrufsfunktion (§ 356a Abs. 2 BGB). Öffnet er ein Online-Formular, über das Kunden ihre Widerrufserklärung an Sie absenden, beschriften Sie ihn am sichersten mit „Vertrag widerrufen“.',
+    unknown:'Wir konnten keine Seite des Shops lesen, etwa weil robots.txt das Lesen verbietet oder der Server unseren Abruf abweist. Über die Widerrufsfunktion sagt das nichts; prüfen Sie Ihren Shop selbst mit den Schritten unten im Abschnitt „So prüfen Sie selbst“.',
+    manualFound:'Klicken Sie als Kunde darauf, senden Sie mit einer Testbestellung eine Widerrufserklärung ab und prüfen Sie, ob unverzüglich eine Eingangsbestätigung mit dem Inhalt der Erklärung sowie Datum und Uhrzeit des Eingangs per E-Mail ankommt.',
+    // Platí pre „Beschriftung nicht gefunden“ aj „Link prüfen“ (kontrola.mjs vyhodnot).
+    manualNotFound:'Öffnen Sie Ihren Shop als Kunde und sehen Sie in der Fußzeile, in der Bestellbestätigung und im Kundenkonto nach. Die Funktion kann erst per JavaScript geladen werden oder nur nach dem Login sichtbar sein; das sieht diese Prüfung nicht. Fehlt sie, steht unten im Abschnitt „Shopsysteme“, wie Sie sie in Ihrem System einschalten oder einrichten.',
+  }},
   // en links: miesto nálezu stálo za vedľajšou vetou na konci (brána kolo 3).
-  en:{eu_guarantee_notice:{applies:'Applies in Slovakia and Germany since 27 September 2026; in Czechia the law was not yet in force on 22 October 2026.',unknown:'We could not read any page of the shop.',links:'On {page} we found a link to the EU guarantee page on Your Europe, where the notice’s QR code leads.'}},
+  en:{
+    eu_guarantee_notice:{applies:'Applies in Slovakia and Germany since 27 September 2026; in Czechia the law was not yet in force on 22 October 2026.',unknown:'We could not read any page of the shop.',links:'On {page} we found a link to the EU guarantee page on Your Europe, where the notice’s QR code leads.'},
+    eu_withdrawal:{
+      applies:'Member States had to apply their rules from 19 June 2026, but start dates differ: Germany, Malta and Slovakia since that date, Ireland since 30 June 2026, Austria since 1 October 2026, Czechia from 1 January 2027.',
+      notFound:'In the pages we read, we did not find a link or button labelled “withdraw from contract here” or “confirm withdrawal”, or with the same words in another of the nine EU languages we check. The Irish wording “cancel contract here” is not recognised yet; if you sell under Irish law, check by hand.',
+      similar:'Similar link on {page}: “{label}”.',
+      similarNote:'Check where such a link leads. If it leads only to the withdrawal instructions or to a form to download, it is not a withdrawal function (Art. 11a(2)). If it opens an online form where customers send their withdrawal statement, the safest label is “withdraw from contract here” or the wording of your national law.',
+      unknown:'We could not read any page of the shop, for example because robots.txt disallows it or the server blocked our request. This says nothing about the withdrawal function; check your shop by hand with the steps under “How to check it yourself” below.',
+      manualFound:'Click it as a customer, send a withdrawal statement for a test order and check that an acknowledgement with the content of the statement and the date and time of submission arrives by email without undue delay.',
+      manualNotFound:'Open your shop as a customer and look in the footer, on the order confirmation and in the customer account. The function may load with JavaScript or appear only after login, which this check cannot see. If it is missing, the section “How to add it on your platform” below shows how to switch it on or add it.',
+      manualOrderPage:'In the Shoptet administration, put an external link to the order page in the menu or the footer, labelled with words about withdrawal in the language of your shop, for example “Withdraw from contract here”. Then try it as a customer with a test order.',
+    },
+  },
 };
 
 /** Texty, ktoré celá kontrola nemá (chyby s ďalším krokom, osobitné prípady, šablóna stránky). */
@@ -155,10 +194,12 @@ const VLASTNE={
     precitane:(n)=>n===0?'Wir konnten keine Seite des Shops lesen.':n===1?'Wir haben 1 Seite des Shops gelesen.':`Wir haben ${n} Seiten des Shops gelesen.`,
     yourEurope:'Ein Link zu Your Europe ohne den Text des Hinweises kann eine aufklappbare Darstellung nach den Leitlinien der Kommission oder der Link aus dem QR-Code sein. Prüfen Sie selbst, ob der vollständige Hinweis auf der Seite steht.',
     overteRucne:null,
-    vedlajsiOdkaz:'In der vollständigen Prüfung ansehen',
+    // Relácia 220: vedľajší riadok vedie na stránku druhého pravidla (obe sú už aj po nemecky), nie na celú kontrolu.
+    vedlajsiOdkaz:'Mehr zu dieser Pflicht',
     plnaRiadok:'Die übrigen Ergebnisse (Umweltaussagen und Daten für KI-Einkaufsassistenten) zeigt die vollständige Prüfung.',
     plna:'Vollständige kostenlose Shop-Prüfung öffnen',
-    noscript:'Die Prüfung auf dieser Seite braucht JavaScript. Ohne JavaScript können Sie die vollständige kostenlose Prüfung nutzen:',
+    // Brána 220 G2 25: aj celá kontrola je formulár bez action (feed-doctor/agent-ready/de/index.html), bez JavaScriptu nefunguje.
+    noscript:'Diese Prüfung braucht JavaScript, die vollständige Prüfung ebenfalls. Aktivieren Sie JavaScript und laden Sie die Seite neu.',
     faqNadpis:'Häufige Fragen',zdrojeNadpis:'Quellen',zdrojLabel:'Quelle:',
     zdrojePozn:'Bei jeder Quelle steht, wann wir sie gelesen haben.',
     strazJazyk:null,
@@ -179,10 +220,12 @@ const VLASTNE={
     precitane:(n)=>n===0?'We could not read any page of the shop.':n===1?'We read 1 page of the shop.':`We read ${n} pages of the shop.`,
     yourEurope:'A link to Your Europe without the text of the notice may be an expandable notice as shown in the Commission guidelines, or the link from the QR code. Check by hand that the full notice is on the page.',
     overteRucne:null,
-    vedlajsiOdkaz:'See it in the full check',
+    // Relácia 220: vedľajší riadok vedie na stránku druhého pravidla (obe sú už aj po anglicky), nie na celú kontrolu.
+    vedlajsiOdkaz:'More about this rule',
     plnaRiadok:'The other results (environmental claims and data for AI shopping assistants) are in the full check.',
     plna:'Open the full free shop check',
-    noscript:'The check on this page needs JavaScript. Without it, use the full free check:',
+    // Brána 220 G2 25 (ako de).
+    noscript:'This check needs JavaScript, and so does the full check. Turn on JavaScript and reload the page.',
     faqNadpis:'Frequently asked questions',zdrojeNadpis:'Sources',zdrojLabel:'Source:',
     zdrojePozn:'Each source shows the date we read it.',
     strazJazyk:null,
