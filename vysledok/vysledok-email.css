@@ -1,0 +1,89 @@
+/* Výsledok kontroly e-mailom (relácia 205, SPEC časť 5): blok pod výsledkom troch nástrojov a stránka /vysledok/potvrdit/.
+   Papierová linka hore, nie karta (R64). Farby len z premenných stránky (paper.css :root aj body.noc), aby blok sedel
+   na tmavej kontrole e-shopu, e-faktúre aj SEPA Doctorovi a rovnako na svetlom papieri. Tlačidlo je obrysové (btn btn-line
+   z paper.css, R62, R77): hlavná akcia stránky ostáva kontrola. Ciele dotyku aspoň 44 px, na úzkej obrazovke pole
+   a tlačidlo na celú šírku. Nič sa tu nehýbe okrem farby okraja; pri zníženom pohybe ani to. Blok sa netlačí. */
+
+/* section.vys-email.vys-email (0,2,1): pravidlá stránok na section (body.noc section 0,1,2 dáva 56 až 112 px odsadenie,
+   body.efv4 main section 0,1,3 ruší linku) nesmú zmeniť odsadenie ani linku bloku; R67 rovnaký vzhľad na troch nástrojoch.
+   Spodný okraj 32 px (O2 po snímkach): bez neho sa nasledujúci obsah nástroja lepil na riadok správcu (kontrola e-shopu
+   nadpis „What this check reads“ asi 14 px, e-faktúra linka prvého nálezu, Doctor box 149 €). */
+section.vys-email.vys-email{box-sizing:border-box;max-width:68ch;margin:40px 0 32px;padding:32px 0 0;border-top:1px solid var(--line,rgba(127,127,127,.35));
+  color:var(--body,inherit);font-family:var(--ui,system-ui,sans-serif);text-align:left;overflow-wrap:break-word}
+.vys-email *,.vys-email *::before,.vys-email *::after{box-sizing:border-box}
+.vys-email [hidden]{display:none !important}
+.vys-email .vys-nadpis{margin:0 0 10px;font:600 clamp(19px,1.6vw,22px)/1.3 var(--nadpis,var(--ui,system-ui,sans-serif));letter-spacing:-.012em;color:var(--ink,inherit);text-wrap:balance}
+.vys-email .vys-nadpis:focus{outline:none}
+/* Každý odsek má triedu, aby pravidlá stránok (napr. body.efv4 main p, .ar-page p) nevyhrali špecificitou.
+   text-wrap:pretty (O3a, brána O5): posledný riadok odseku bez osamoteného slova (vo vete súhlasu ostávalo samo „iné.“);
+   prehliadač bez podpory zalomí ako doteraz. */
+.vys-email p.vys-text,.vys-email p.vys-oddelenie,.vys-email p.vys-drobne,.vys-email p.vys-chyba,.vys-email p.vys-suhlas,.vys-email p.vys-spravca{
+  max-width:64ch;margin:0 0 12px;font-size:16px;line-height:1.6;color:var(--body,inherit);text-wrap:pretty}
+.vys-email p.vys-oddelenie,.vys-email p.vys-drobne{font-size:14.5px;line-height:1.55;color:var(--muted,inherit)}
+.vys-email .vys-form{margin:20px 0 0}
+.vys-email .vys-label{display:block;margin:0 0 8px;font:600 15px/1.4 var(--ui,system-ui,sans-serif);color:var(--ink,inherit)}
+.vys-email .vys-pole{display:block;width:100%;max-width:440px;min-width:0;min-height:48px;margin:0;padding:12px 14px;
+  font:16px/1.3 var(--ui,system-ui,sans-serif);color:var(--ink,inherit);background:var(--card,#fff);
+  border:1px solid #858078;border-radius:10px;caret-color:var(--accent,currentColor);box-shadow:none;
+  transition:border-color .16s ease-out}
+.vys-email .vys-pole:focus-visible{outline:2px solid var(--accent,currentColor);outline-offset:2px}
+.vys-email .vys-pole[readonly]{opacity:.75}
+.vys-email .vys-pole[aria-invalid="true"]{border-color:var(--accent,currentColor)}
+.vys-email p.vys-chyba{margin:10px 0 0;font-size:15px;line-height:1.5;color:var(--accent,inherit)}
+.vys-email p.vys-suhlas{margin:16px 0 14px;font-size:16px;line-height:1.55;color:var(--ink,inherit)}
+.vys-email .vys-tlacidlo{display:inline-flex;align-items:center;justify-content:center;height:auto;min-height:48px;max-width:100%;
+  margin:0;padding:12px 22px;line-height:1.2;text-align:center;white-space:normal;cursor:pointer;
+  background:transparent;border:1px solid var(--ink,currentColor);color:var(--ink,inherit)}
+.vys-email .vys-tlacidlo:hover{background:var(--ink,currentColor);color:var(--paper,#fff)}
+.vys-email .vys-tlacidlo:disabled{cursor:progress;opacity:.6;transform:none}
+.vys-email .vys-tlacidlo:disabled:hover{background:transparent;color:var(--ink,inherit)}
+.vys-email .vys-tlacidlo:focus-visible,.vys-email .vys-zmenit:focus-visible,.vys-email a:focus-visible{outline:2px solid var(--accent,currentColor);outline-offset:3px}
+.vys-email p.vys-spravca{margin:12px 0 0;max-width:62ch;font-size:14px;line-height:1.55;color:var(--muted,inherit)}
+.vys-email .vys-spravca a{color:inherit;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px}
+.vys-email .vys-adresa{font-weight:600;color:var(--ink,inherit);overflow-wrap:anywhere}
+.vys-email .vys-zmenit{display:inline-flex;align-items:center;min-height:44px;margin:0;padding:0;border:0;background:none;
+  font:500 15px/1.3 var(--ui,system-ui,sans-serif);color:var(--ink,inherit);text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.vys-email .vys-zmenit:hover{background:none;color:var(--ink,inherit);text-decoration-thickness:2px}
+.vys-email .vys-pasca{position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden}
+
+/* Tmavý vzhľad (body.noc): pole ako ostatné polia na tmavom (paper.css „Natívne ovládacie prvky“), chyba svetlejšou
+   medenou (#ffb59d má na #0a0908 kontrast nad 10 : 1); svetlý papier má chybu v tehlovej --accent (5,9 : 1). */
+/* Okraj poľa a tlačidla --linka-3 (.34 na #0a0908 je asi 3,0 : 1, WCAG 1.4.11 hranica ovládacieho prvku; .16 malo 1,52 : 1). */
+body.noc .vys-email .vys-pole{background:rgba(255,255,255,.045);border-color:var(--linka-3,rgba(255,255,255,.34))}
+body.noc .vys-email .vys-tlacidlo{border-color:var(--linka-3,rgba(255,255,255,.34));background:rgba(255,255,255,.03)}
+body.noc .vys-email .vys-tlacidlo:hover{border-color:rgba(255,255,255,.55);background:rgba(255,255,255,.06);color:var(--ink,inherit)}
+body.noc .vys-email .vys-tlacidlo:disabled:hover{border-color:var(--linka-3,rgba(255,255,255,.34));background:rgba(255,255,255,.03)}
+body.noc .vys-email .vys-pole[aria-invalid="true"]{border-color:var(--accent-light,currentColor)}
+body.noc .vys-email p.vys-chyba{color:var(--accent-light,inherit)}
+
+/* Kontrola e-shopu: hneď nad blokom končí zoznam opráv vlastnou linkou; druhá linka o 40 px nižšie pôsobila ako zdvojená
+   hrana (V2 D3). Pri vete bez chýb (zoznam nie je) linka bloku ostáva. Tu, nie v style.css nástroja: jeho ?v= v troch
+   HTML je mimo rozsahu 205 a modul sa nasadí spolu s týmto pravidlom. */
+.ar-page .ar-list + .ar-vysledok-miesto .vys-email{border-top:0;margin-top:0}
+
+@media (max-width:600px){
+  section.vys-email.vys-email{margin-top:32px;padding-top:28px}
+  .vys-email .vys-pole{max-width:none}
+  .vys-email .vys-tlacidlo{display:flex;width:100%}
+}
+@media (prefers-reduced-motion:reduce){.vys-email *{transition:none !important}}
+@media print{.vys-email{display:none !important}}
+
+/* Stránka potvrdenia /vysledok/potvrdit/ (jedna akcia, rám hubu z paper.css). */
+.vys-potvrdit{max-width:640px;padding-block:clamp(40px,8vh,96px)}
+.vys-potvrdit [hidden]{display:none !important}
+/* Veľkosť nadpisu dáva rám stránky (body.noc h1); tu len medzera pod ním (V2 D6: 16 px pri asi 58 px písme bolo málo). */
+.vys-potvrdit h1,body.noc .vys-potvrdit h1{margin:0 0 clamp(20px,2.2vw,28px)}
+/* Kicker DE sa pri 390 px láme do dvoch riadkov: bodka ostane pri prvom riadku (V2 D5). */
+body.noc .vys-potvrdit .kicker{align-items:flex-start}
+body.noc .vys-potvrdit .kicker::before{margin-top:.5em}
+.vys-potvrdit h1:focus{outline:none}
+.vys-potvrdit p{font-size:16px;line-height:1.7;color:var(--body,inherit);text-wrap:pretty}
+.vys-potvrdit .btn{height:auto;min-height:48px;padding-top:10px;padding-bottom:10px;line-height:1.2;text-align:center;white-space:normal}
+.vys-potvrdit p.vys-ok{margin:16px 0 0;padding-left:14px;border-left:2px solid var(--ok,currentColor);color:var(--ink,inherit)}
+.vys-potvrdit p.vys-zle{margin:16px 0 0;color:var(--accent,inherit)}
+body.noc .vys-potvrdit p.vys-zle{color:var(--accent-light,inherit)}
+.vys-potvrdit p.vys-ok:focus,.vys-potvrdit p.vys-zle:focus{outline:none}
+.vys-potvrdit .vys-spat a,.vys-potvrdit .vys-nastroje a{display:inline-flex;align-items:center;min-height:44px;color:var(--ink,inherit)}
+.vys-potvrdit .vys-nastroje{margin:8px 0 0;padding:0;list-style:none}
+@media (max-width:600px){.vys-potvrdit .btn{display:flex;width:100%;justify-content:center}}

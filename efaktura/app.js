@@ -5,7 +5,9 @@
  * (nahlad.js). Faktura sa nenahrava. Stav platby sa overuje po navrate zo
  * Stripe (?session_id=) sa worker spyta, ci je session zaplatena a na aku sumu
  * (GET /v1/kontrola/status). Samostatny dobrovolny dopyt odosiela dopyt.js,
- * iba z vedome vyplnenych poli; faktura sa k nemu nepriklada.
+ * iba z vedome vyplnenych poli; faktura sa k nemu nepriklada. Dobrovolny blok "Poslat si vysledok
+ * e-mailom" (vysledok-blok.mjs, spolocny modul /vysledok/vysledok-email.js) posiela len adresu
+ * a zhrnutie: profil, typ, pocty a kody pravidiel; nikdy obsah faktury, hodnoty ani nazov suboru.
  *
  * Slovenska, ceska aj nemecka stranka pouzivaju tento jeden skript; lisia sa
  * len textami v objekte T a atributom lang na <html>.
@@ -24,6 +26,7 @@ import { zUbl, skrat } from './z-ubl.mjs';
 import { vykresliNahlad } from './nahlad.js';
 import { zapojDavku } from './davka-ui.js';
 import { zobrazOpakovanie } from './dopyt-opakovanie.js';
+import { blokSmie, zhrnutieVysledku, cspPovoluje, cspStranky, riadicBloku, nacitavacModulu, nacitajPriVstupe, MODUL_BLOKU, adresaOdberuFaq, ukazPonukuFaq, pridajTlacidloEmailu, posunNaBlok } from './vysledok-blok.mjs?v=5201baa0';
 let davkaUI = null;
 
 /* Jazyk berieme z cesty (/cs/, /de/, /en/), lebo tak je stranka rozdelena; atribut lang
@@ -69,6 +72,9 @@ const T = {
     sumarInformacie: (n) => tvar3(n, 'informácia', 'informácie', 'informácií'),
     sumarPravidla: (n) => 'Pre tento profil sme vyhodnotili ' + n + ' ' + tvar3(n, 'pravidlo', 'pravidlá', 'pravidiel') + '.',
     bezChyb: 'Nenašli sme žiadnu chybu ani varovanie. Súbor prešiel tými pravidlami, ktoré kontrolujeme.',
+    ciiStav: 'Súbor je vo formáte CII. Pravidlá kontrolujeme len nad UBL 2.1, preto sme ho nekontrolovali. Exportujte faktúru zo svojho programu ako UBL 2.1 a vložte ju znova.',
+    kupaPreKoho: 'Platené XML je určené najmä pre XRechnung do Nemecka a Peppol mimo Slovenska. Náš nástroj XML neodosiela.',
+    navrhPripraveny: 'Faktúra, ktorú ste kontrolovali, je pripravená vo formulári.',
     maChyby: (n) => 'Našli sme ' + n + (n === 1 ? ' chybu.' : n < 5 ? ' chyby.' : ' chýb.') + ' Opravte ich a skúste znova.',
     povodneZnenie: 'Pôvodné znenie pravidla (anglicky)',
     xpathPopis: 'Cesta k prvku',
@@ -84,6 +90,8 @@ const T = {
     // nazov vlozeneho XML (v stave vstupu a v hlavicke protokolu) a stiahnuteho protokolu
     vlozeneMeno: 'vlozene.xml', menoProtokolu: 'protokol-efaktura.txt',
     kopirovanieZlyhalo: 'Kopírovanie sa nepodarilo, označte text myšou.',
+    // P4 brány 205: tretie tlačidlo v #akcie, posunie na blok výsledku e-mailom za nálezmi
+    poslatEmailom: 'Poslať e-mailom',
     prazdnyNahlad: 'Načítajte súbor a doklad sa vykreslí tu.',
     typNieJeUbl: 'Doklad vieme vykresliť len z UBL 2.1 (Invoice alebo CreditNote). Čo je v súbore, píšeme v záložke Kontrola.',
     // generator
@@ -162,6 +170,9 @@ const T = {
     sumarInformacie: (n) => tvar3(n, 'informace', 'informace', 'informací'),
     sumarPravidla: (n) => 'Pro tento profil jsme vyhodnotili ' + n + ' ' + tvar3(n, 'pravidlo', 'pravidla', 'pravidel') + '.',
     bezChyb: 'Nenašli jsme žádnou chybu ani varování. Soubor prošel těmi pravidly, která kontrolujeme.',
+    ciiStav: 'Soubor je ve formátu CII. Pravidla kontrolujeme jen nad UBL 2.1, proto jsme ho nekontrolovali. Exportujte fakturu ze svého programu jako UBL 2.1 a vložte ji znovu.',
+    kupaPreKoho: 'Placené XML je určené hlavně pro XRechnung do Německa a pro Peppol. Náš nástroj XML neodesílá, fakturu doručí váš poskytovatel doručovací služby.',
+    navrhPripraveny: 'Faktura, kterou jste kontrolovali, je připravená ve formuláři.',
     maChyby: (n) => 'Našli jsme ' + n + (n === 1 ? ' chybu.' : n < 5 ? ' chyby.' : ' chyb.') + ' Opravte je a zkuste to znovu.',
     povodneZnenie: 'Původní znění pravidla (anglicky)',
     xpathPopis: 'Cesta k prvku',
@@ -176,6 +187,7 @@ const T = {
     skopirovane: 'Zkopírováno.',
     vlozeneMeno: 'vlozene.xml', menoProtokolu: 'protokol-e-faktury.txt',
     kopirovanieZlyhalo: 'Kopírování se nepodařilo, označte text myší.',
+    poslatEmailom: 'Poslat e-mailem',
     prazdnyNahlad: 'Načtěte soubor a doklad se vykreslí tady.',
     typNieJeUbl: 'Doklad umíme vykreslit jen z UBL 2.1 (Invoice nebo CreditNote). Co je v souboru, píšeme v záložce Kontrola.',
     pridatRiadok: 'Přidat řádek',
@@ -251,6 +263,9 @@ const T = {
     sumarInformacie: (n) => tvar2(n, 'Hinweis', 'Hinweise'),
     sumarPravidla: (n) => 'Für dieses Profil haben wir ' + n + ' ' + tvar2(n, 'Regel', 'Regeln') + ' ausgewertet.',
     bezChyb: 'Wir haben weder Fehler noch Warnungen gefunden. Die Datei hat die Regeln bestanden, die wir prüfen.',
+    ciiStav: 'Die Datei liegt im CII-Format vor. Unsere Regeln prüfen nur UBL 2.1, deshalb haben wir sie nicht geprüft. Exportieren Sie die Rechnung aus Ihrem Programm als UBL 2.1 und laden Sie sie erneut.',
+    kupaPreKoho: 'Das bezahlte XML ist vor allem für XRechnung und Peppol gedacht. Unser Werkzeug versendet das XML nicht, die Zustellung übernimmt Ihr Zugangsdienstleister.',
+    navrhPripraveny: 'Die Rechnung, die Sie geprüft haben, steht im Formular bereit.',
     maChyby: (n) => n === 1
       ? 'Wir haben 1 Fehler gefunden. Bitte beheben Sie ihn und prüfen Sie erneut.'
       : 'Wir haben ' + n + ' Fehler gefunden. Bitte beheben Sie sie und prüfen Sie erneut.',
@@ -267,6 +282,7 @@ const T = {
     skopirovane: 'Kopiert.',
     vlozeneMeno: 'eingefuegt.xml', menoProtokolu: 'pruefprotokoll-e-rechnung.txt',
     kopirovanieZlyhalo: 'Das Kopieren ist fehlgeschlagen, markieren Sie den Text mit der Maus.',
+    poslatEmailom: 'Per E-Mail senden',
     prazdnyNahlad: 'Laden Sie eine Datei, dann erscheint der Beleg hier.',
     typNieJeUbl: 'Wir können den Beleg nur aus UBL 2.1 darstellen (Invoice oder CreditNote). Was in der Datei steht, sagen wir im Tab Prüfung.',
     pridatRiadok: 'Zeile hinzufügen',
@@ -342,6 +358,9 @@ const T = {
     sumarInformacie: (n) => tvar2(n, 'note', 'notes'),
     sumarPravidla: (n) => 'For this profile we evaluated ' + n + ' ' + tvar2(n, 'rule', 'rules') + '.',
     bezChyb: 'We found no errors and no warnings. The file passed the rules we check.',
+    ciiStav: 'This file is in CII format. We only run the rules on UBL 2.1, so this file was not checked. Export the invoice from your software as UBL 2.1 and load it again.',
+    kupaPreKoho: 'The paid XML is meant mainly for XRechnung and Peppol. This tool does not send the XML; your access point provider delivers it.',
+    navrhPripraveny: 'The invoice you checked is ready in the form.',
     maChyby: (n) => n === 1
       ? 'We found 1 error. Fix it and check again.'
       : 'We found ' + n + ' errors. Fix them and check again.',
@@ -358,6 +377,7 @@ const T = {
     skopirovane: 'Copied.',
     vlozeneMeno: 'pasted.xml', menoProtokolu: 'e-invoice-check-report.txt',
     kopirovanieZlyhalo: 'Copying failed, select the text with the mouse instead.',
+    poslatEmailom: 'Email it',
     prazdnyNahlad: 'Load a file and the document will be drawn here.',
     typNieJeUbl: 'We can only draw the document from UBL 2.1 (Invoice or CreditNote). What is in the file we say in the Check tab.',
     // generator
@@ -1145,8 +1165,13 @@ let vstupJeUkazka = false;
 function stavVstupu(text) { const s = $('vstup-stav'); if (s) s.textContent = text; }
 
 function prijmiText(text, nazov, ukazka = false) {
+  // Novy vstup: blok e-mailu k predoslemu vysledku zmizne hned, aj keby sa kontrola nespustila (zalozka Nahlad).
+  skryBlokEmailu();
   xmlText = text;
-  vstupJeUkazka = ukazka || text.trim() === VZOR.trim();
+  vstupJeUkazka = ukazka || text.trim() === VZOR.trim() || (!!VZOR_CHYBY && text.trim() === VZOR_CHYBY.trim());
+  // Modul bloku sa zacne nacitavat uz teraz, nie az pod vysledkom: inak blok pride neskoro a naleze pod nim poskocia
+  // (O1 po V2 D1). Nie pod vzorom (tam sa blok neukaze) a len ked CSP stranky pusti odoslanie.
+  if (!vstupJeUkazka && text.trim() && cspPovoluje(cspStranky(document))) nacitajModulBloku().catch(() => {});
   nazovSuboru = nazov || '';
   const ta = $('xml');
   if (ta && ta.value !== text) ta.value = text;
@@ -1232,6 +1257,107 @@ if (heroCitat) heroCitat.addEventListener('click', () => {
 /* ── Zalozka 1: kontrola ────────────────────────────────────────────────── */
 let poslednyVysledok = null;
 
+/* Blok "Poslat si vysledok e-mailom" (relacia 205, SPEC 7.2). Miesto je prazdny div hned za #nalezy (P4 brany 205,
+ * R57 a R75: jadro vysledku, nalezy, je hned pod akciami; predtym stal formular medzi suhrnom a prvym nalezom).
+ * Do #akcie ide len tretie tlacidlo "Poslat e-mailom" (btn btn-line), ktore k bloku posunie a da fokus do pola,
+ * takze ani pri 50 nalezoch netreba blok hladat. Vykresli ho spolocny modul hubu
+ * (/vysledok/vysledok-email.js); sem ide len zhrnutie z vysledok-blok.mjs: profil, typ, pocty a kody
+ * pravidiel, nikdy hodnota, sprava, xpath ani nazov suboru. Poistka: ked connect-src stranky nepusti
+ * feed-monitor, prehliadac by odoslanie zablokoval, preto sa blok vtedy vobec neukaze.
+ * Pod blokom je na SK stranke s #faq-odber samostatna ponuka odberu FAQ (vlastne tlacidlo = vlastny suhlas). */
+let blokEmailu = null;
+// Jedna kopia importu; po zlyhani (vypadok siete) sa zabudne a dalsi vysledok skusi znova (O1 po V2 D2).
+const nacitajModulBloku = nacitavacModulu(() => import(MODUL_BLOKU));
+// Modul bloku (a s nim jeho CSS) uz pri prvej praci so vstupom, nie az v prijmiText: kontrola bezi synchronne, takze
+// import az tam nestihne prist pred vykreslenymi nalezmi a blok by ich pri prvom vysledku odsunul o svoju vysku
+// (K1-1 po O2, meranie 502 px). Nie pri vzore; len ked CSP stranky pusti odoslanie (inak sa blok neukaze).
+nacitajPriVstupe({
+  doc: document,
+  ciel: '#vstup, #hero-subor, #hero-citat',
+  vynechaj: '#vzor, #hero-vzor',
+  nacitaj: () => (cspPovoluje(cspStranky(document)) ? nacitajModulBloku() : null),
+});
+function riadicEmailu() {
+  if (blokEmailu) return blokEmailu;
+  const nalezy = $('nalezy');
+  if (!nalezy || !nalezy.parentNode || !cspPovoluje(cspStranky(document))) return null;
+  const miesto = el('div', 'vysledok-miesto');
+  miesto.id = 'ef-vysledok-email';
+  miesto.hidden = true;
+  nalezy.parentNode.insertBefore(miesto, nalezy.nextSibling);
+  const faq = el('div', 'ef-opak ef-vysledok-faq');
+  faq.id = 'ef-vysledok-faq';
+  faq.hidden = true;
+  nalezy.parentNode.insertBefore(faq, miesto.nextSibling);
+  blokEmailu = riadicBloku({ nacitaj: nacitajModulBloku, miesto });
+  blokEmailu.miesto = miesto;
+  blokEmailu.faq = faq;
+  blokEmailu.vratRamcek = null;
+  blokEmailu.cakanie = null;
+  // P4: vstup k bloku v rade akcii, viditelny len spolu s blokom (ukazBlokEmailu, skryBlokEmailu).
+  const akcie = $('akcie');
+  blokEmailu.tlacidlo = akcie ? pridajTlacidloEmailu(document, akcie, T.poslatEmailom, miesto.id) : null;
+  if (blokEmailu.tlacidlo) blokEmailu.tlacidlo.addEventListener('click', klikPoslatEmailom);
+  return blokEmailu;
+}
+/* P4: klik na "Poslat e-mailom" posunie k bloku za nalezmi a da fokus do pola e-mailu. Ked sa blok este nacitava,
+ * urobi to hned po jeho vykresleni, ale len ak medzitym neprisiel novy vysledok (bod 12a). */
+function klikPoslatEmailom() {
+  const r = blokEmailu;
+  if (!r) return;
+  const pohyb = { redukovanyPohyb: redukovanyPohyb() };
+  if (posunNaBlok(r.miesto, pohyb)) return;
+  const moje = r.poradie;
+  Promise.resolve(r.cakanie).then((ok) => { if (ok && r.aktualne(moje)) posunNaBlok(r.miesto, pohyb); }).catch(() => {});
+}
+function redukovanyPohyb() {
+  try { return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); } catch (e) { return false; }
+}
+/* Zavrie ponuku FAQ pod blokom a vrati stary ramik #faq-odber do stavu pred nou (O1 po V3 D8). */
+function zavriPonukuFaq(r) {
+  vycisti(r.faq);
+  r.faq.hidden = true;
+  if (r.vratRamcek) r.vratRamcek();
+}
+function skryBlokEmailu() {
+  if (!blokEmailu) return;
+  blokEmailu.skry();
+  if (blokEmailu.tlacidlo) blokEmailu.tlacidlo.hidden = true;
+  zavriPonukuFaq(blokEmailu);
+}
+function ukazBlokEmailu(v) {
+  const vysledok = blokSmie(v, vstupJeUkazka) ? zhrnutieVysledku(v) : null;
+  if (!vysledok) { skryBlokEmailu(); return; }
+  const r = riadicEmailu();
+  if (!r) return;
+  zavriPonukuFaq(r);
+  // Tlacidlo v #akcie v tej istej ulohe ako vysledok, aby sa rad akcii neprestaval neskor (bod 9 kontroly vzhladu);
+  // ked sa blok neukaze (modul zlyhal alebo zhrnutie odmietol), tlacidlo zmizne, nevedie nikam.
+  if (r.tlacidlo) r.tlacidlo.hidden = false;
+  r.cakanie = r.ukaz({ nastroj: 'efaktura', jazyk: LANG, vysledok, poOdoslani: (email) => ponukniFaq(r, email) });
+  const moje = r.poradie;
+  r.cakanie.then((ok) => { if (!ok && r.aktualne(moje) && r.tlacidlo) r.tlacidlo.hidden = true; });
+}
+function ponukniFaq(r, email) {
+  const ramcek = $('faq-odber');
+  const src = adresaOdberuFaq(document);
+  if (LANG !== 'sk' || !ramcek || !src || !email) return;
+  // Kym je ukazana nova volba, stary ramik sa skryje (nie vyberie), aby neboli dve ponuky naraz (V3 D8).
+  const ramcekPredtym = ramcek.hidden;
+  ramcek.hidden = true;
+  r.vratRamcek = () => { r.vratRamcek = null; if (ramcek.isConnected) ramcek.hidden = ramcekPredtym; };
+  ukazPonukuFaq({
+    doc: document,
+    ciel: r.faq,
+    posli: () => import(src).then((m) => m.posli(m.telo(email, m.ZDROJ))),
+    // Ramcek sa vyberie z DOM: odber.js by ho inak pri dalsom vysledku znova odkryl (data-vysledok na #hero).
+    poUspechu: () => { r.vratRamcek = null; ramcek.hidden = true; ramcek.remove(); if (!testRezim()) track('faq_odber_start', { miesto: 'vysledok-email' }); },
+    // Ponuka patri k odoslanej adrese: "Zmenit adresu" v bloku ju zavrie a nic neposle (V2 V2).
+    zmenit: document.querySelector('#ef-vysledok-email .vys-zmenit'),
+    poZatvoreni: () => { if (r.vratRamcek) r.vratRamcek(); },
+  });
+}
+
 function riadokNalezu(n) {
   const box = el('article', 'nalez nalez-' + n.zavaznost);
   const hlava = el('p', 'nalez-hlava');
@@ -1266,6 +1392,7 @@ function spustiKontrolu() {
   const akcie = $('akcie');
   if (!cielSumar || !cielNalezy) return;
   const kupaBlok = $('kupa-vysledok-blok');
+  skryBlokEmailu();
   if (!xmlText.trim()) {
     vycisti(cielSumar); vycisti(cielNalezy);
     cielSumar.appendChild(el('p', 'poznamka', T.nacitajteSubor));
@@ -1278,7 +1405,10 @@ function spustiKontrolu() {
   poslednyVysledok = v;
   vycisti(cielSumar);
   const s = v.sumar;
-  const stav = el('p', 'sumar-stav ' + (s.chyby ? 'je-chyba' : 'je-ok'), s.chyby ? T.maChyby(s.chyby) : T.bezChyb);
+  // CII: pravidla nebezali (CII-01 je len informacia), preto stav nesmie tvrdit, ze subor presiel.
+  const stav = v.typ === 'CII'
+    ? el('p', 'sumar-stav je-info', T.ciiStav)
+    : el('p', 'sumar-stav ' + (s.chyby ? 'je-chyba' : 'je-ok'), s.chyby ? T.maChyby(s.chyby) : T.bezChyb);
   cielSumar.appendChild(stav);
   const meta = el('p', 'sumar-meta');
   meta.appendChild(el('span', null, T.sumarProfil + ': ' + nazovProfilu(v, LANG)));
@@ -1297,10 +1427,25 @@ function spustiKontrolu() {
   vycisti(cielNalezy);
   for (const n of v.nalezy) cielNalezy.appendChild(riadokNalezu(n));
   if (akcie) akcie.hidden = false;
-  // Platene tlacidlo hned pod uspesnym vysledkom bezplatnej kontroly (len tam, kde ho stranka ma).
-  if (kupaBlok) kupaBlok.hidden = !(bezaliPravidla && s.chyby === 0);
+  // Platene tlacidlo hned pod uspesnym vysledkom bezplatnej kontroly (len tam, kde ho stranka ma),
+  // nie pod vzorom: klik z ukazky by nebol kupou skontrolovanej faktury (Z3 T6).
+  if (kupaBlok) {
+    kupaBlok.hidden = !(bezaliPravidla && s.chyby === 0 && !vstupJeUkazka);
+    if (!kupaBlok.hidden) doplnPreKoho(kupaBlok);
+  }
   zobrazOpakovanie(bezaliPravidla && !vstupJeUkazka);
+  ukazBlokEmailu(v);
   track('efaktura_kontrola', { vysledok: s.chyby ? 'chyby' : 'ok', profil: v.profil, produkt: 'efaktura', jazyk: LANG });
+}
+
+/* Pri platenom tlacidle pod vysledkom ta ista veta ako v #brana: pre koho je platene XML a ze ho
+ * nastroj neodosiela (Z3 T3). Vlozi sa raz, za prvy odsek bloku, len textContent. */
+function doplnPreKoho(blok) {
+  if (blok.querySelector('.kupa-pre-koho')) return;
+  const veta = el('p', 'pomoc kupa-pre-koho', T.kupaPreKoho);
+  const prvy = blok.querySelector('p');
+  if (prvy && prvy.parentNode === blok) blok.insertBefore(veta, prvy.nextSibling);
+  else blok.insertBefore(veta, blok.firstChild);
 }
 
 /* Protokol (Stiahnut aj Kopirovat) v jazyku stranky. Nazov profilu v nom preklada protokol()
@@ -1713,13 +1858,7 @@ function doFormulara(text, pocetChyb) {
     return;
   }
   if (navrhJeRozpisany() && !window.confirm(T.prepisatNavrh)) return;
-  const pocetPoloziek = v.faktura.polozky.length;
-  // Bez riadku by formular nemal kam pisat a po obnoveni stranky by sa navrh zahodil (novaFaktura).
-  if (!pocetPoloziek) v.faktura.polozky.push({ nazov: '', mnozstvo: '', jednotka: '', cena: '', sadzba: '', kategoria: '' });
-  faktura = v.faktura;
-  ulozNavrh();
-  poslednyPrenos = JSON.stringify(faktura);
-  opravaAktivna = true;
+  const pocetPoloziek = zapisPrenos(v);
   postavFormular();
   prepni('vytvorit', true);
   const poz = ukazPrenos(v, pocetPoloziek, pocetChyb > 0);
@@ -1730,6 +1869,60 @@ function doFormulara(text, pocetChyb) {
     try { poz.focus({ preventScroll: true }); } catch (e) { /* nic */ }
   }
   track('efaktura_do_formulara', { chyby: pocetChyb, vzor: vstupJeUkazka, produkt: 'efaktura', jazyk: LANG });
+}
+
+/* Zapis prenesenej faktury do formulara a do ulozeneho navrhu. Spolocne pre doFormulara a pre kupu
+ * pod vysledkom (navrhPredKupou). Vrati pocet poloziek zo suboru (pred doplnenim prazdneho riadku). */
+function zapisPrenos(v) {
+  const pocetPoloziek = v.faktura.polozky.length;
+  // Bez riadku by formular nemal kam pisat a po obnoveni stranky by sa navrh zahodil (novaFaktura).
+  if (!pocetPoloziek) v.faktura.polozky.push({ nazov: '', mnozstvo: '', jednotka: '', cena: '', sadzba: '', kategoria: '' });
+  faktura = v.faktura;
+  ulozNavrh();
+  poslednyPrenos = JSON.stringify(faktura);
+  opravaAktivna = true;
+  return pocetPoloziek;
+}
+
+/* Z3 T2: tlacidlo kupy pod bezchybnym vysledkom (#kupa-vysledok) platilo za XML z formulara, ale
+ * formular ostal prazdny, takze po platbe clovek pristal pri nesuvisiacom formulari. Pred presmerovanim
+ * sa preto urobi to iste ako doFormulara, len bez prepnutia panela: zUbl a ulozNavrh. Po navrate zo
+ * Stripe ukaze ukazPripravenyNavrh vetu, ze faktura je vo formulari (len ked navrh ostal ten isty).
+ * Rozpisanu inu fakturu bez suhlasu neprepise. Vrati true, ked je navrh pripraveny. */
+const KLUC_Z_KONTROLY = 'efaktura:z-kontroly:' + LANG;
+const PLATNOST_Z_KONTROLY = 6 * 3600 * 1000;
+function navrhPredKupou(text) {
+  zmaz(KLUC_Z_KONTROLY);
+  if (!text || vstupJeUkazka) return false;
+  const v = zUbl(text, { jazyk: LANG });
+  if (!v.ok) return false;
+  if (navrhJeRozpisany() && !window.confirm(T.prepisatNavrh)) return false;
+  zapisPrenos(v);
+  postavFormular();
+  // Odtlacok berieme z ulozeneho navrhu, nie z pamate: po navrate sa porovnava presne s nim.
+  const ulozeny = nacitaj(KLUC_NAVRH);
+  if (!ulozeny) return false;
+  uloz(KLUC_Z_KONTROLY, { t: Date.now(), navrh: JSON.stringify(ulozeny) });
+  return true;
+}
+function ukazPripravenyNavrh() {
+  const z = nacitaj(KLUC_Z_KONTROLY);
+  zmaz(KLUC_Z_KONTROLY);
+  const teraz = Date.now();
+  if (!z || !Number.isFinite(z.t) || z.t > teraz || teraz - z.t > PLATNOST_Z_KONTROLY) return false;
+  // Veta plati, len ked je ulozeny navrh stale ta faktura zo suboru (clovek ho medzitym nezmenil).
+  if (typeof z.navrh !== 'string' || JSON.stringify(nacitaj(KLUC_NAVRH)) !== z.navrh) return false;
+  const stav = $('stav-platby');
+  if (!stav || !stav.parentNode) return false;
+  let p = $('navrh-z-kontroly');
+  if (!p) {
+    p = el('p', 'pomoc');
+    p.id = 'navrh-z-kontroly';
+    p.setAttribute('role', 'status');
+    stav.parentNode.insertBefore(p, stav);
+  }
+  p.textContent = T.navrhPripraveny;
+  return true;
 }
 
 /* Poznamka stoji tesne nad formularom a nahladom (pred .dielna, teda aj pod blokom CSV davky,
@@ -1973,7 +2166,7 @@ function klikNaKupu(btn, typ, cena, miesto) {
 if (btnJedna) btnJedna.addEventListener('click', () => klikNaKupu(btnJedna, 'jedna', CENA_JEDNA, 'dole'));
 if (btnTrid) btnTrid.addEventListener('click', () => klikNaKupu(btnTrid, '30dni', CENA_30DNI, 'dole'));
 const btnVysledok = $('kupa-vysledok');
-if (btnVysledok) btnVysledok.addEventListener('click', () => klikNaKupu(btnVysledok, 'jedna', CENA_JEDNA, 'vysledok'));
+if (btnVysledok) btnVysledok.addEventListener('click', () => { navrhPredKupou(xmlText); klikNaKupu(btnVysledok, 'jedna', CENA_JEDNA, 'vysledok'); });
 
 /* Stiahnutie XML: vygenerovane XML najprv prezenieme vlastnym validatorom.
  * Ked ma chybu, nestahujeme ho a ukazeme nalezy. Radsej ziadny subor nez zly. */
@@ -2070,14 +2263,18 @@ function poNavrate() {
   let sid = '';
   try { sid = new URL(location.href).searchParams.get('session_id') || ''; } catch (e) { /* nic */ }
   const test = testRezim();
+  const zoStripe = !!sid;
   if (sid) { try { history.replaceState(null, '', location.pathname + (location.hash || '')); } catch (e) { /* nic */ } }
+  // Bez navratu zo Stripe (spat z pokladne, obycajne otvorenie) znacka z kupy pod vysledkom neplati.
+  if (!zoStripe) zmaz(KLUC_Z_KONTROLY);
   if (!sid) {
     const c = nacitaj(CAKAJUCA);
     if (c && c.session && !odomknute()) sid = c.session;
   }
   if (!sid) return;
-  if (sid.startsWith('cs_test_') && !test) { if (stavPlatby) stavPlatby.textContent = T.testCudzi; return; }
+  if (sid.startsWith('cs_test_') && !test) { zmaz(KLUC_Z_KONTROLY); if (stavPlatby) stavPlatby.textContent = T.testCudzi; return; }
   prepni('vytvorit', true);
+  if (zoStripe) ukazPripravenyNavrh();
   overPlatbu(sid, 1);
 }
 

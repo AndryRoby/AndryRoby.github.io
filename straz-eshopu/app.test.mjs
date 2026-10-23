@@ -360,12 +360,13 @@ test('stará stránka monitora: navrat.mjs načítaný, tlačidlo Shop Guard, od
   assert.ok(t.indexOf('<script>'+nacitavac)<t.indexOf('navrat.mjs?v=2'));
 });
 
-test('zásady súkromia časť 4: veta o Stráži v SK, EN, DE a dátum 22. 10. 2026', ()=>{
-  for(const [p,veta,datum] of [['../privacy/index.html','Stráž e-shopu je platený plán','Znenie z 22. októbra 2026'],
-    ['../privacy/en/index.html','Shop Guard is the paid plan','Version of 22 October 2026'],
-    ['../privacy/de/index.html','Der Shop-Wächter ist der kostenpflichtige Tarif','Fassung vom 22. Oktober 2026']]){
+// Relácia 205 (23. 10. 2026): znenie zásad sa po 22. 10. zmenilo (odsek #vysledok-emailom), preto dátum 22. 10. 2026 alebo neskôr.
+test('zásady súkromia časť 4: veta o Stráži v SK, EN, DE a dátum znenia od 22. 10. 2026', ()=>{
+  for(const [p,veta,datum] of [['../privacy/index.html','Stráž e-shopu je platený plán',/Znenie z (2[2-9]|3[01])\. októbra 2026|Znenie z \d{1,2}\. (novembra|decembra) 2026/],
+    ['../privacy/en/index.html','Shop Guard is the paid plan',/Version of (2[2-9]|3[01]) October 2026|Version of \d{1,2} (November|December) 2026/],
+    ['../privacy/de/index.html','Der Shop-Wächter ist der kostenpflichtige Tarif',/Fassung vom (2[2-9]|3[01])\. Oktober 2026|Fassung vom \d{1,2}\. (November|Dezember) 2026/]]){
     const t=subor(p),s4=t.slice(t.indexOf('<h2 id="s4"'),t.indexOf('<h2 id="s5"'));
-    assert.ok(s4.includes(veta),p);assert.ok(/Stripe/.test(s4),p);assert.ok(t.includes(datum),p);
+    assert.ok(s4.includes(veta),p);assert.ok(/Stripe/.test(s4),p);assert.match(t,datum,p);
   }
 });
 

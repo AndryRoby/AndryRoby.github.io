@@ -15,7 +15,7 @@
  * pri live sa formulár skryje a ukáže sa odkaz na appku (prechod.mjs createAppPageCheck, pri chybe ostane stav „čaká“).
  * Bez vložených skriptov a štýlov (CSP script-src 'self'); texty sa vkladajú cez textContent.
  */
-import {EU_UI} from './i18n.mjs?v=2';
+import {EU_UI} from './i18n.mjs?v=4';
 
 export const SOURCE='agent-ready-pro';
 // Odkaz na appku po schválení nesie miesto (result, sample, page, calendar) v utm_medium, aby meranie rozlíšilo, odkiaľ prechod prišiel

@@ -1,5 +1,5 @@
 import {RULES} from './core.mjs';
-import {UI,localRule,EU_UI} from './i18n.mjs?v=2';
+import {UI,localRule,EU_UI} from './i18n.mjs?v=4';
 import {createLatest} from './controller.mjs';
 const lang=document.documentElement.lang,copy=UI[lang]||UI.en,euCopy=EU_UI[lang]||EU_UI.en;
 const $=id=>document.getElementById(id),form=$('check-form'),report=$('report'),status=$('status'),latest=createLatest();
@@ -13,6 +13,42 @@ const euModule=import('./eu-zobraz.mjs').catch(()=>null);
 const waitlist=import('./cakacia.mjs').catch(()=>null);
 // Stráž e-shopu (relácia 209): optional; null unless /straz-eshopu/stav.json is live or the test mode is on.
 const strazModule=import('./straz.mjs?v=2').then(m=>m.strazOn().then(on=>on?m:null)).catch(()=>null);
+// Výsledok e-mailom (relácia 205, SPEC časti 3 a 5.2): spoločný modul hubu; blok sa ukáže len pod skutočným výsledkom (nie pri vzorke).
+// Modul (a s ním jeho CSS) sa začne sťahovať už pri spustení ostrej kontroly (P5, brána 205 pokus 1), aby bol pri vykreslení výsledku
+// na mieste so štýlom. Keď chýba alebo zlyhá, kontrola beží ako predtým; po chybe importu sa pri výsledku a ďalšej kontrole skúsi znova.
+const VYSLEDOK_MODUL='/vysledok/vysledok-email.js?v=1',JAZYK=['sk','en','de'].includes(lang)?lang:'en';
+let vysledokModul=null,miestoEmailu=null;
+const nacitajVysledok=()=>vysledokModul||=import(VYSLEDOK_MODUL).catch(()=>{vysledokModul=null;return null;});
+const EU_KODY=['eu_withdrawal','eu_guarantee_notice','eu_green_claims'],EU_STAVY=['found','not_found','not_applicable','unknown','link_found'];
+const vaha=code=>RULES.find(r=>r.code===code)?.weight??0;
+/** Zhrnutie pre POST /v1/vysledok (SPEC 205 časť 3): len pôvod obchodu, čísla a kódy. Nikdy adresy stránok, handle, texty z obchodu
+ *  ani dôkazy (affectedIds, evidence, noindexPages, nálezy EÚ s textami). Adresa, ktorá nie je https bez mena a hesla: null (blok sa neukáže). */
+export function zhrnutieVysledku(data){
+  let obchod;try{const u=new URL(data.storeUrl);if(u.protocol!=='https:'||u.username||u.password)return null;obchod=u.origin+'/';}catch{return null;}
+  const cislo=x=>Number.isInteger(x)&&x>=0&&x<=100?x:null;
+  const pravidla=[...new Set((Array.isArray(data.rules)?data.rules:[]).filter(r=>r&&r.status==='fail'&&RULES.some(d=>d.code===r.code)).map(r=>r.code))].sort((a,b)=>vaha(b)-vaha(a)).slice(0,27);
+  const eu=[],videne=new Set();
+  for(const r of (data.eu&&Array.isArray(data.eu.rules)?data.eu.rules:[]))if(r&&EU_KODY.includes(r.code)&&EU_STAVY.includes(r.status)&&!videne.has(r.code)&&eu.length<3){videne.add(r.code);eu.push({kod:r.code,stav:r.status});}
+  return {obchod,skore:cislo(data.score),pokrytie:cislo(data.coverage),pravidla,eu};
+}
+// Odpoveď importu pre miesto, ktoré medzitým nahradil nový výsledok alebo skrylo zrušenie, nič nevykreslí (AGENTS.md bod 12a).
+function ukazEmail(miesto,data){
+  const vysledok=zhrnutieVysledku(data);if(!vysledok)return;
+  nacitajVysledok().then(m=>{if(m&&miesto===miestoEmailu&&miesto.parentNode===report&&!report.hidden)m.ukaz(miesto,{nastroj:'agent-ready',jazyk:JAZYK,vysledok});}).catch(()=>{});
+}
+function skryEmail(){const m=miestoEmailu;miestoEmailu=null;if(m&&vysledokModul)vysledokModul.then(x=>{if(x)x.skry(m);}).catch(()=>{});}
+// AI fix 149 USD (#fix-service, len EN): služba opravuje typ produktu, kategórie zo Shopify taxonómie, vrátenie a doručenie v značkovaní
+// produktu (products/arling-sk/shopify-ai-fix/). Kategória nemá vo verejnej kontrole kód (verejný export ju neukazuje). Po výsledku ostane
+// len pre obchod so znakmi Shopify, v ktorom zlyhalo aspoň jedno z týchto pravidiel; pred výsledkom a po jeho skrytí je taká ako v HTML.
+const OPRAVA_KODY=['feed_type','jsonld_returns','jsonld_shipping'];
+const oprava=$('fix-service'),opravaPovodne=oprava?oprava.hidden:false;
+function opravaPoVysledku(platform,failing){if(oprava)oprava.hidden=!(platform==='yes'&&failing.some(r=>OPRAVA_KODY.includes(r.code)));}
+// Nový beh, chyba, zrušenie alebo úprava vstupu: výsledok, blok e-mailu aj stav ponuky opravy patria k starému výsledku.
+function zrusVysledok(){report.hidden=true;skryEmail();if(oprava)oprava.hidden=opravaPovodne;}
+// Rovnaké pravidlo pre pole aj pre odkaz #url=: https (bez schémy sa doplní), bez mena, hesla, ? a #; inak null.
+function normalizujObchod(raw){let value=String(raw??'').trim();if(!value)return null;if(!/^https?:\/\//i.test(value))value='https://'+value;
+  try{const s=new URL(value);return s.protocol==='https:'&&!s.username&&!s.password&&!s.hash&&!s.search?s:null;}catch{return null;}}
+const CHYBY=['invalid_url','invalid_product','unavailable','rate'];
 function node(tag,text,cls){const el=document.createElement(tag);if(text!=null)el.textContent=String(text);if(cls)el.className=cls;return el;}
 function track(name,data){if(new URLSearchParams(location.search).has('test'))return;try{window.umami?.track(name,data);}catch{}}
 function safeLink(url){try{const u=new URL(url);return u.protocol==='https:'&&!u.username&&!u.password?u.href:null;}catch{return null;}}
@@ -76,7 +112,10 @@ function render(data,sample,app=null,eu=null,wl=null,platform='unknown',sz=null)
   currentReport=data;report.replaceChildren();report.hidden=false;
   if(sample)report.append(node('p',copy.sample,'ar-status'));
   report.append(node('h2',copy.result),node('p',`${data.storeUrl} · ${new Date(data.at).toLocaleString(lang)}`,'ar-context'));
-  const scoreline=node('dl',null,'ar-scoreline');for(const [label,value,cls] of [[copy.score,data.score==null?'?':data.score+'/100',''],[copy.coverage,data.coverage+'%',''],[copy.scope,`${data.sample.products} ${copy.products}, ${data.sample.pages}/${data.sample.attemptedPages} ${copy.pages}`,'ar-scope']]){const group=node('div',null,cls);group.append(node('dt',label),node('dd',value));scoreline.append(group);}report.append(scoreline,node('p',data.score==null?copy.noScore:copy.limit,'ar-muted'));
+  // Obchod bez verejného exportu produktov (iná platforma než Shopify): nie „0 produktov vo feede“, ale že export nie je (SPEC 205 7.1 c);
+  // starý i18n.mjs z vyrovnávacej pamäte bez kľúča noFeed: riadok ako predtým.
+  const pages=`${data.sample.pages}/${data.sample.attemptedPages} ${copy.pages}`,scope=data.sample.products===0&&typeof copy.noFeed==='string'?`${copy.noFeed}, ${pages}`:`${data.sample.products} ${copy.products}, ${pages}`;
+  const scoreline=node('dl',null,'ar-scoreline');for(const [label,value,cls] of [[copy.score,data.score==null?'?':data.score+'/100',''],[copy.coverage,data.coverage+'%',''],[copy.scope,scope,'ar-scope']]){const group=node('div',null,cls);group.append(node('dt',label),node('dd',value));scoreline.append(group);}report.append(scoreline,node('p',data.score==null?copy.noScore:copy.limit,'ar-muted'));
   const noPages=data.score==null||data.sample.pages===0;
   if(!noPages&&(data.coverage<100||data.sample.pages<data.sample.attemptedPages))report.append(node('p',copy.unknown,'ar-status'));
   if(data.noindexPages?.length)report.append(node('p',copy.noindex,'ar-status'));
@@ -84,6 +123,8 @@ function render(data,sample,app=null,eu=null,wl=null,platform='unknown',sz=null)
   // No product page read: one neutral sentence instead of "no failing checks" and the high-score warning (gate 209, finding 6).
   if(noPages&&!failing.length){const t=NO_PAGES[lang]||NO_PAGES.en,euOk=Boolean(eu&&eu.euState(data)==='ok');report.append(node('p',euOk?t[0]+' '+t[1]:t[0],'ar-status ar-no-pages'));}
   else{report.append(node('h3',copy.fixes));const ul=node('ul',null,'ar-list');for(const r of failing){const li=ruleElement(r);if(sz&&li)li.append(sz.strazLink(r.code,lang));ul.append(li);}if(!failing.length)report.append(node('p',copy.empty));else report.append(ul);}
+  // Prázdne miesto pre blok „Poslať si výsledok e-mailom“ (SPEC 205 7.1, Z2 M1): za opravami, pred limitmi; pri vzorke nie.
+  miestoEmailu=null;if(!sample){miestoEmailu=node('div',null,'ar-vysledok-miesto');report.append(miestoEmailu);}
   if(copy.readsTitle)report.append(limitsBlock());
   if(eu){const state=eu.euState(data);report.append(euBlock(state==='ok'?eu.euView(data.eu,euCopy):state,sz));}
   if(sz){const box=sz.buildStrazBox(lang,sample?'sample':'result',platform,data);if(box)report.append(box);}
@@ -94,14 +135,19 @@ function render(data,sample,app=null,eu=null,wl=null,platform='unknown',sz=null)
   const proof=node('details');proof.append(node('summary',copy.proof));const urls=node('ul',null,'ar-proof');for(const e of data.evidence||[]){const li=node('li');const href=safeLink(e.url),a=node(href?'a':'span',e.url||'');if(href){a.href=href;a.rel='noopener';a.target='_blank';}li.append(a,node('span',` · HTTP ${e.status||'?'}${e.error?' · '+e.error:''}`));urls.append(li);}proof.append(urls);report.append(proof);
   const download=node('button',copy.download,'ar-quiet');download.type='button';download.addEventListener('click',()=>{const url=URL.createObjectURL(new Blob([JSON.stringify(currentReport,null,2)],{type:'application/json'}));const a=node('a');a.href=url;a.download='agent-ready-report.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});const actions=node('div',null,'ar-actions');actions.append(download);report.append(actions);
   report.focus({preventScroll:true});report.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'start'});
+  opravaPoVysledku(platform,failing);
+  if(miestoEmailu)ukazEmail(miestoEmailu,data);
 }
-async function run(sample=false){const request=latest.begin();busy(true);status.textContent=copy.busy;report.hidden=true;let timer;
+async function run(sample=false){const request=latest.begin();busy(true);status.textContent=copy.busy;zrusVysledok();let timer;
  transition.then(t=>t?.live()); // GET /agent-ready/stranka.json starts with the check, so the result renders once, without a late jump
  try{let url;
   if(sample)url=new URL('./sample-report.json',import.meta.url);
-  else{let value=$('store-url').value.trim();if(!/^https?:\/\//i.test(value))value='https://'+value;const store=new URL(value);if(store.protocol!=='https:'||store.username||store.password||store.hash||store.search)throw new Error('invalid_url');$('store-url').value=store.href;url=new URL(API);url.searchParams.set('url',store.href);const product=$('product-url').value.trim();if(product){const p=new URL(product);if(p.origin!==store.origin||p.protocol!=='https:'||p.username||p.password||p.hash)throw new Error('invalid_url');url.searchParams.set('product',p.href);}
+  else{const store=normalizujObchod($('store-url').value);if(!store)throw new Error('invalid_url');$('store-url').value=store.href;url=new URL(API);url.searchParams.set('url',store.href);const product=$('product-url').value.trim();if(product){let p;try{p=new URL(product);}catch{throw new Error('invalid_product');}if(p.origin!==store.origin||p.protocol!=='https:'||p.username||p.password||p.hash)throw new Error('invalid_product');url.searchParams.set('product',p.href);}
    // Umami: a check that was sent (not the sample, not an invalid address); language only, never the store address.
-   track('ar_check_start',{lang});}
+   track('ar_check_start',{lang});
+   // P5: modul bloku sa sťahuje, kým beží kontrola obchodu (2 až 20 s); render ho potom vloží v tej istej úlohe ako výsledok, takže
+   // obsah pod blokom (limity, EÚ, čakacia listina) pri prvom výsledku neposkočí o výšku bloku. Nič sa tým nevykreslí (len render).
+   nacitajVysledok();}
   timer=setTimeout(()=>{if(request.current()){latest.cancel();busy(false);status.textContent=copy.error;}},65000);
   const response=await fetch(url,{signal:request.signal,credentials:'omit',cache:'no-store'});if(!request.current())return;
   if(!response.ok)throw new Error(response.status===503?'unavailable':response.status===429?'rate':'fetch');
@@ -115,9 +161,24 @@ async function run(sample=false){const request=latest.begin();busy(true);status.
   track(sample?'agent_ready_sample':'agent_ready_check',{score:data.score,coverage:data.coverage,products:data.sample.products,pages:data.sample.pages,lang,eu:euEvent?'yes':'no'});
   // Umami: EU findings that need a look (statuses and their count only); the sample is never counted.
   if(!sample&&euEvent&&euEvent.review>0)track('ar_eu_finding',euEvent);
- }catch(e){if(request.current()){status.textContent=copy[e.message]||copy.error;report.hidden=true;}}finally{clearTimeout(timer);if(request.current())busy(false);}}
+ }catch(e){if(request.current()){const k=e?.message;status.textContent=CHYBY.includes(k)&&typeof copy[k]==='string'?copy[k]:copy.error;zrusVysledok();}}finally{clearTimeout(timer);if(request.current())busy(false);}}
 form.addEventListener('submit',e=>{e.preventDefault();run();});$('sample').addEventListener('click',()=>run(true));
-$('cancel').addEventListener('click',()=>{latest.cancel();busy(false);status.textContent=copy.cancelled;report.hidden=true;});
-for(const id of ['store-url','product-url'])$(id).addEventListener('input',()=>{latest.cancel();busy(false);status.textContent='';report.hidden=true;});
+$('cancel').addEventListener('click',()=>{latest.cancel();busy(false);status.textContent=copy.cancelled;zrusVysledok();});
+for(const id of ['store-url','product-url'])$(id).addEventListener('input',()=>{latest.cancel();busy(false);status.textContent='';zrusVysledok();});
+// Odkaz z e-mailu s výsledkom (SPEC 205 časti 4 a 7.1): #url=<adresa obchodu> len predvyplní pole a presunie fokus na Skontrolovať.
+// Kontrolu nespustí (spotrebovala by limit 6 za hodinu a odkaz môže otvoriť aj skener pošty). Fragment s parametrom url sa hneď odstráni
+// (aj pri neplatnej adrese, tá sa ticho zahodí); iné kotvy (#odber, #pro) ostanú. Query (UTM) ostáva.
+export function adresaZOdkazu(hash){
+  const h=String(hash||'');if(h.length<2||h[0]!=='#')return {najdene:false,adresa:null};
+  let p;try{p=new URLSearchParams(h.slice(1));}catch{return {najdene:false,adresa:null};}
+  if(!p.has('url'))return {najdene:false,adresa:null};
+  const store=normalizujObchod(p.get('url'));return {najdene:true,adresa:store?store.href:null};
+}
+(()=>{let hash='';try{hash=location.hash;}catch{return;}
+  const {najdene,adresa}=adresaZOdkazu(hash);if(!najdene)return;
+  try{history.replaceState(history.state,'',location.pathname+location.search);}catch{}
+  if(!adresa)return;
+  $('store-url').value=adresa;try{$('check').focus();}catch{}
+})();
 // Link to the Stráž e-shopu page; not a purchase, so not kupa_click (that one counts as a buy click in the morning report).
 document.querySelector('[data-pro-link]')?.addEventListener('click',()=>track('ar_straz_link',{lang,place:'result'}));

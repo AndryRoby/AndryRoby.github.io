@@ -462,7 +462,7 @@ test('Z3: pri skóre null alebo 0 produktových stránkach box povie, že údaje
 });
 
 // ---------- 5. kolo 2 (brána pokus 1, ops/druhy-ucet/209/overenie/brana-1-nalezy.md; snímky-2/zoznam.md) ----------
-const { UI } = await import('./i18n.mjs?v=2');
+const { UI } = await import('./i18n.mjs?v=4'); // tá istá inštancia, ktorú načíta app.mjs
 const NEVYHODNOTENE = /\b(AI|KI)\b[\s\S]*(nedali vyhodnotiť|nehodnotíme|could not be evaluated|do not evaluate|nicht auswerten|nicht bewerten)/;
 test('nález 9: veta o platforme nesľubuje každú platformu, hovorí, že Stráž číta len verejné stránky (SK, EN, DE)', () => {
   assert.equal(T.sk.shopify, 'Stráž číta len verejné stránky, preto funguje aj pri Shopify a do obchodu sa nič neinštaluje. Je to samostatná služba, nie Pro v našej appke pre Shopify.');
@@ -526,11 +526,12 @@ test('nález 6: bez platného bloku EÚ neutrálna veta netvrdí, že sme EÚ sk
   const r2 = (await spustiApp({ live: false, lang: 'sk', vysledok: b, sample: false })).rep;
   assert.ok(r2.all((e) => e.tagName === 'P').some((p) => p.textContent === UI.sk.unknown)); assert.equal(triedy(r2, 'ar-no-pages').length, 0);
 });
-test('medzera pred čiarkou v riadku vzorky nevzniká v texte (app.mjs ani i18n.mjs): „0 produktov vo feede, 0/0“', async () => {
+// Relácia 205 (SPEC 7.1 c): obchod bez verejného exportu má v riadku rozsahu „bez verejného exportu produktov“, nie „0 produktov vo feede“.
+test('medzera pred čiarkou v riadku vzorky nevzniká v texte (app.mjs ani i18n.mjs): „bez verejného exportu produktov, 0/0“', async () => {
   for (const lang of ['sk', 'en', 'de']) {
     const { rep } = await spustiApp({ live: false, lang, vysledok: shoptet(), sample: false });
     const dd = prve(rep, 'ar-scope').all((e) => e.tagName === 'DD')[0].textContent;
     assert.ok(!dd.includes(' ,'), lang + ': ' + dd);
-    assert.equal(dd, `0 ${UI[lang].products}, 0/0 ${UI[lang].pages}`);
+    assert.equal(dd, `${UI[lang].noFeed}, 0/0 ${UI[lang].pages}`);
   }
 });
