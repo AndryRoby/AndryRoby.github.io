@@ -7,13 +7,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://api.arling.workers.dev 'sha256-7FSdfmrl+5QSgl6IKPQIurtZ+JQz6W0uhhvFm3YWalc='; connect-src 'self' https://api.arling.workers.dev; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
 <meta name="color-scheme" content="dark">
-<meta name="robots" content="index, follow">
-<link rel="manifest" href="/games/squirrels/manifest.json">
+<meta name="robots" content="noindex, follow">
+<link rel="manifest" href="/games/hares/manifest.json">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Squirrels">
+<meta name="apple-mobile-web-app-title" content="Hares">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
-<meta property="og:image" content="https://arling.sk/games/squirrels/og.png">
+<meta property="og:image" content="https://arling.sk/games/hares/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
@@ -22,14 +22,13 @@
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon.ico" sizes="48x48">
 <link rel="apple-touch-icon" href="/icon-180.png">
-<title>Squirrels for Sunday 26 July 2026 · ARLing</title>
-<meta name="description" content="The Squirrels wood for Sunday 26 July 2026: the Sunday challenge, twelve by twelve. Fill every hollow so each run of acorns adds up to the number on its sign. Free, with hints, in your browser.">
-<link rel="canonical" href="https://arling.sk/games/squirrels/2026-07-26/">
-<link rel="prev" href="https://arling.sk/games/squirrels/archive/">
-<link rel="next" href="https://arling.sk/games/squirrels/2026-07-27/">
-<meta property="og:title" content="Squirrels for Sunday 26 July 2026 · ARLing">
-<meta property="og:description" content="The Squirrels wood for Sunday 26 July 2026: the Sunday challenge, twelve by twelve. Fill every hollow so each run of acorns adds up to the number on its sign. Free, with hints, in your browser.">
-<meta property="og:url" content="https://arling.sk/games/squirrels/2026-07-26/">
+<title>Hares for Tuesday 26 October 2027 · ARLing</title>
+<meta name="description" content="The Hares meadow for Tuesday 26 October 2027: easy, six by six with the knight’s leap. Fill every row, column and block so each number appears once, and keep two burrows a knight’s leap apart from ever repeating it. Free, with hints and Check, in your browser.">
+<link rel="canonical" href="https://arling.sk/games/hares/2027-10-26/">
+<link rel="prev" href="https://arling.sk/games/hares/2027-10-25/">
+<meta property="og:title" content="Hares for Tuesday 26 October 2027 · ARLing">
+<meta property="og:description" content="The Hares meadow for Tuesday 26 October 2027: easy, six by six with the knight’s leap. Fill every row, column and block so each number appears once, and keep two burrows a knight’s leap apart from ever repeating it. Free, with hints and Check, in your browser.">
+<meta property="og:url" content="https://arling.sk/games/hares/2027-10-26/">
 <meta property="og:type" content="website">
 
 
@@ -261,236 +260,215 @@ html:not(.css) main>:nth-child(n+2),html:not(.css) body>footer{visibility:hidden
 <link rel="stylesheet" media="print" data-async data-href="/style/hra.css">
 <noscript data-kriticke><link rel="stylesheet" href="/style/paper.css?v=98a15c28"><link rel="stylesheet" href="/style/obsah.css"><link rel="stylesheet" href="/style/hra.css"><style>main>*,body>footer{visibility:visible!important;animation:none!important}</style></noscript>
 <script type="text/plain" data-odlozene src="/style/prepinac.js?v=71e7f906"></script>
-<script type="text/plain" data-odlozene="module" src="/games/squirrels/game.js?v=10"></script>
+<script type="text/plain" data-odlozene="module" src="/games/hares/game.js?v=9"></script>
 <style>
-  /* paper.css carries no base rule for the hidden attribute, and this page
-     only covers it class by class (.pauza-blok[hidden], .doska[hidden],
-     .pad[hidden], .zdielanie[hidden]); this backstops every other element
-     that gets hidden set or removed by game.js, such as the pause button
-     and the result history line. */
-  [hidden]{display:none !important}
-  /* Only this page: the wood, the number pad, the control row and the rules. */
+  /* Only this page: the meadow, the number pad, the control row and the rules. */
   .hero{align-items:start}
-  /* Wide enough for the ten keys of the pad and the row of buttons, whatever
-     size the wood is; from a phone up it is simply the width it is given. */
-  .hra{max-width:min(100%, max(392px, calc(var(--n,8) * 46px + 12px)));margin:0 auto}
-  @media (max-width:860px){ .hra{margin:0 auto;max-width:min(100%, max(320px, calc(var(--n,8) * 50px + 12px)))} }
+  /* The width the meadow asks for, in one place: the board, and the column it
+     stands in, are both built from it. --n is the size of the meadow and comes
+     from game.js on the html element, so this holds for a six by six too. */
+  :root{--sirka-dosky:max(392px, calc(var(--n,9) * 48px + 12px))}
+  /* The right column is at least as wide as the meadow and never takes its
+     width from what happens to be written inside it. A plain fr track keeps an
+     automatic minimum of its own content, so anything appearing in the game
+     block (the Pause button arriving with the first move, and going again at
+     every pause) moved the column edge and the whole meadow with it. The two
+     rules below repeat the ratios paper.css gives .hero at its two widths. */
+  @media (min-width:861px){ .hero{grid-template-columns:minmax(0,7fr) minmax(var(--sirka-dosky),5fr)} }
+  @media (min-width:1700px){ .hero{grid-template-columns:minmax(0,6.5fr) minmax(var(--sirka-dosky),5.5fr)} }
+  /* Wide enough for the pad and the row of buttons at any size of meadow; from
+     a phone up it is simply the width it is given. */
+  .hra{max-width:min(100%, var(--sirka-dosky));margin:0 auto}
+  @media (max-width:860px){ .hra{margin:0 auto;max-width:min(100%, max(320px, calc(var(--n,9) * 52px + 12px)))} }
   /* Narrow phones: the board takes the whole screen width, exactly, so the
      page never scrolls sideways (the wrap gutter is a percentage, so a fixed
      negative margin would overshoot it by a pixel). */
   @media (max-width:480px){ .doska-obal{margin-inline:calc((100% - 100vw) / 2)} }
 
-  .horna{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:0 0 10px;
+  /* The row above the meadow: the date and the level on the left, the clock on
+     the right. It wraps rather than grow wider than the meadow it stands on,
+     and the clock keeps to the right edge on a line of its own as well. */
+  .horna{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:12px;margin:0 0 10px;
          font-family:var(--ui);font-size:14px;color:var(--muted)}
 
   .horna #cas-blok,.horna #datum{white-space:nowrap}
+  /* The two halves of the row may shrink, so nothing in it can decide how wide
+     the meadow is; the clock stays at the right edge even once it has wrapped
+     onto a line of its own, where space-between alone would put it left. */
   .horna>span{min-width:0}
-  /* On a narrow phone the date and the clock cannot both stay on one
-     unbreakable line: with the Pause button showing they pushed the page past
-     320 px. The date is allowed to break, the clock is not. */
-  @media (max-width:480px){
-    .horna{flex-wrap:wrap}
-    .horna .uroven{display:block;margin:2px 0 0}
-    .horna #datum{white-space:normal}
-  }
+  .horna #cas-blok{margin-left:auto}
+  /* The Pause button keeps its place from the first second, hidden or not.
+     It is shown with the first move and taken away again at the end, and a
+     button that came and went would change how wide this row is; the row
+     would change the column, and the meadow would step sideways under it. */
+  .horna #pauza[hidden]{display:inline-block;visibility:hidden}
+  @media (max-width:480px){ .horna .uroven{display:block;margin:2px 0 0;white-space:normal} .hra{min-width:0} }
 
   .doska-obal{position:relative;touch-action:pan-y}
   .pauza-blok{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
      background:rgba(10,9,8,.9);border:2px solid var(--line);border-radius:8px;text-align:center;font-family:var(--ui);padding:20px;z-index:3}
 
-  /* GIF-CSS-START */
-  /* ── The wood ─────────────────────────────────────────────────────────── *
-     Everything from the marker above to GIF-CSS-END is the board, and
-     ops/games/squirrels/gify.mjs copies exactly this range into the tutorial
-     GIFs, so the animation and the game can never drift apart.
-
-     A square grid of cells built by game.js. A trunk (.k) is a dark cell with
-     a diagonal: the number above the diagonal is the total of the run of
-     hollows to its right, the number below it the total of the run going
-     down. A hollow (.b) is a button that holds one digit, the corner and
-     centre marks you keep while you think, and one of nine colours. Every
-     size is drawn from one --cell variable, the measured width of a single
-     cell, so the numbers stay in proportion from a six by six on a desktop
-     to a twelve by twelve on a phone. */
-  /* The nine cell colours. They are a ladder: colour 1 is the darkest and
-     colour 9 the lightest, in even steps, so which colour a hollow carries can
-     be read from its brightness alone and the set still works without hue
-     vision. Warm and cool hues alternate along the ladder, so two colours that
-     a red green blindness would flatten into one are always far apart in
-     brightness. Every one of them keeps the white of a number above 4.5:1:
-     colour 9, the lightest, reads 4.75:1 against #fff, and the marks and the
-     number on a coloured hollow are drawn in exactly that white. */
-  :root{
-    --farba-1:#542621;  /* red */
-    --farba-2:#1e4143;  /* teal */
-    --farba-3:#593e22;  /* orange */
-    --farba-4:#304c75;  /* blue */
-    --farba-5:#5b5327;  /* yellow */
-    --farba-6:#724893;  /* violet */
-    --farba-7:#346e40;  /* green */
-    --farba-8:#9c5180;  /* magenta */
-    --farba-9:#7e715f;  /* sand */
-  }
-  .doska{display:grid;grid-template-columns:repeat(var(--n,8),minmax(0,1fr));
+  /* ── The meadow ─────────────────────────────────────────────────────────
+     A square grid of burrows built by game.js. Every burrow holds one number
+     or the small notes you keep while you think; the numbers the puzzle gives
+     away are heavier and sit on a darker ground, so a glance tells yours from
+     the meadow's. Thin lines part the burrows, thicker ones part the blocks.
+     Everything is drawn from --cell, the measured width of a single burrow,
+     so a nine by nine on a phone reads like a six by six on a desktop. */
+  .doska{display:grid;grid-template-columns:repeat(var(--n,9),minmax(0,1fr));
          border:2px solid var(--ink);border-radius:8px;overflow:hidden;background:var(--card-plna);
          touch-action:none;user-select:none;-webkit-user-select:none;
-         /* Trunk and hollow have to be told apart by the fill alone, at a glance,
-        not only by the diagonal and the numbers. The first pair was 1.15:1
-        apart, which on a dense twelve by twelve read as one flat surface. The
-        trunk now goes all the way down to the page (--paper is #0a0908) and
-        the hollow comes up a step: 1.29:1, still the same quiet palette. */
-     --cell:40px;--tenka:rgba(255,255,255,.10);--kmen:#0a0806;--dutina:#2a231e}
+         --cell:40px;--tenka:rgba(255,255,255,.10);--hruba:rgba(255,255,255,.44);
+         --pole:#262019;--pole-dane:#120f0c}
   .doska[hidden]{display:none}
   @media (max-width:480px){ .doska{border-radius:0;border-left:0;border-right:0} }
 
-  .doska.pauza .b,.doska.pauza .k{visibility:hidden}
+  .doska.pauza .b{visibility:hidden}
   .riadok{display:contents}
-  .k,.b{aspect-ratio:1;min-width:0;position:relative;display:block;padding:0;margin:0;
-        box-shadow:inset 1px 0 0 var(--tenka),inset 0 1px 0 var(--tenka)}
-  .k.c0,.b.c0{box-shadow:inset 0 1px 0 var(--tenka)}
-  .k.r0,.b.r0{box-shadow:inset 1px 0 0 var(--tenka)}
-  .k.r0.c0,.b.r0.c0{box-shadow:none}
-  /* the trunk, with its diagonal drawn by the gradient */
-  .k{background:var(--kmen);font-family:var(--ui);font-variant-numeric:tabular-nums;
-     background-image:linear-gradient(to bottom right, transparent calc(50% - .8px), rgba(255,255,255,.20) 50%, transparent calc(50% + .8px))}
-  .k span{position:absolute;font-size:calc(var(--cell) * .30);line-height:1;color:var(--body);font-weight:600}
-  .k .sr{top:calc(var(--cell) * .10);right:calc(var(--cell) * .09)}
-  .k .sd{bottom:calc(var(--cell) * .10);left:calc(var(--cell) * .09)}
-  .k span.splnene{color:var(--muted);opacity:.42}
-  /* a trunk with no run after it carries no sign, so it carries no diagonal */
-  .k.prazdny{background-image:none}
-  /* the hollow */
-  .b{appearance:none;-webkit-appearance:none;border:0;background:var(--dutina);cursor:pointer;color:var(--ink);font:inherit}
-  .b:hover{background:#332c27}
+  /* One rule for every burrow; the two lines it draws come from its own
+     variables, so a block edge is a value and not a pile of overriding rules. */
+  .b{aspect-ratio:1;min-width:0;position:relative;display:block;padding:0;margin:0;
+     appearance:none;-webkit-appearance:none;border:0;background-color:var(--pole);cursor:pointer;color:var(--ink);font:inherit;
+     --sl:1px;--cl:var(--tenka);--st:1px;--ct:var(--tenka);--wash:transparent;
+     box-shadow:inset var(--sl) 0 0 var(--cl), inset 0 var(--st) 0 var(--ct)}
+  .b.l0{--sl:0px}
+  .b.l2{--sl:2px;--cl:var(--hruba)}
+  .b.t0{--st:0px}
+  .b.t2{--st:2px;--ct:var(--hruba)}
+  /* Hover and the unit of the picked burrow are a wash, not a background
+     colour of their own: a coloured burrow is opaque and would simply swallow
+     a background drawn underneath it. The wash is painted by the .farba layer,
+     which every burrow has, coloured or not. */
+  .b:hover{--wash:rgba(255,255,255,.042)}
   .b:focus-visible{outline:2px solid var(--accent-light);outline-offset:-3px;z-index:2}
-  .b .cif{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-          font:600 calc(var(--cell) * .52)/1 var(--ui);font-variant-numeric:tabular-nums;color:var(--ink)}
-  /* Corner marks. Nine fixed places in the order sudokupad uses, so the marks
-     never jump about: left top, right top, left bottom, right bottom, top,
-     bottom, left, right, middle. game.js sorts the marks and drops them into
-     those places in turn, which is why the places are addressed by position in
-     the list and not by the number they hold. */
-  .b .rohy{position:absolute;inset:7%;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);pointer-events:none}
-  /* The marks shrink as they grow, the way the centre marks do, instead of
-     sitting at one small size whatever happens. Four of them use two rows of
-     the three, so they may be large; only seven and up need all three rows and
-     have to come down. It matters on the ten by ten and twelve by twelve
-     boards, where a phone gives a cell about 32 px: the old fixed .215 put two
-     corner marks on screen at seven pixels, and two corner marks is the
-     ordinary case while you are solving. */
-  .b .rohy i{font:500 calc(var(--cell) * .30)/1 var(--ui);font-style:normal;color:var(--body);
-             font-variant-numeric:tabular-nums}
-  .b .rohy[data-k="5"] i,.b .rohy[data-k="6"] i{font-size:calc(var(--cell) * .275)}
-  .b .rohy[data-k="7"] i,.b .rohy[data-k="8"] i,.b .rohy[data-k="9"] i{font-size:calc(var(--cell) * .25)}
-  .b .rohy i:nth-child(1){grid-area:1/1;place-self:start start}
-  .b .rohy i:nth-child(2){grid-area:1/3;place-self:start end}
-  .b .rohy i:nth-child(3){grid-area:3/1;place-self:end start}
-  .b .rohy i:nth-child(4){grid-area:3/3;place-self:end end}
-  .b .rohy i:nth-child(5){grid-area:1/2;place-self:start center}
-  .b .rohy i:nth-child(6){grid-area:3/2;place-self:end center}
-  .b .rohy i:nth-child(7){grid-area:2/1;place-self:center start}
-  .b .rohy i:nth-child(8){grid-area:2/3;place-self:center end}
-  .b .rohy i:nth-child(9){grid-area:2/2;place-self:center center}
-  /* Centre marks: one sorted line in the middle, shrinking as it grows so
-     nine of them still fit inside a twelve by twelve cell on a phone. They
-     stand apart from each other, or 2 4 6 8 reads as the number two thousand
-     four hundred and sixty-eight. The gap loosens as there is room for it and
-     tightens as the line fills up; text-indent matches the letter-spacing, so
-     the trailing gap after the last mark does not push the whole line half a
-     gap off centre. The same ladder in all three games. */
+  .b .cif{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:3;
+          font:500 calc(var(--cell) * .54)/1 var(--ui);font-variant-numeric:tabular-nums;color:var(--accent-light)}
+  /* A given number: heavier, in the page ink, on a burrow that sits a shade
+     lower, so it reads as part of the meadow and not as something you wrote. */
+  .b.dane{background-color:var(--pole-dane);cursor:default}
+  /* A given burrow does not answer the mouse, so it keeps no hover wash; the
+     shading of a unit and of a hint band still reaches it. */
+  .b.dane:hover:not(.jednotka){--wash:transparent}
+  .b.dane .cif{font-weight:700;color:var(--ink)}
+  /* ── Marks and colour inside one burrow ─────────────────────────────────
+     Four layers, from the bottom: the colour, the selection wash, the small
+     marks, the big number. Corner marks take the nine fixed places of
+     sudokupad (left top, right top, left bottom, right bottom, top, bottom,
+     left, right, middle); centre marks sit in the middle in order and shrink
+     as they get more crowded. A big number hides both kinds of mark; taking
+     it out again brings them back, because they were never thrown away. */
+  .b .rohy{position:absolute;inset:5%;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);
+           pointer-events:none;z-index:2}
+  /* The corner marks scale with the burrow, but never below 10.5px: on a 390px
+     phone a burrow is about 43px wide and .215 of that is 9.3px, small enough
+     to lose at arm's length. The floor only bites on a small screen; on a
+     desktop the burrow is wide enough that the ratio wins. */
+  .b .rohy i{display:flex;align-items:center;justify-content:center;font-style:normal;
+             font:500 max(10.5px, calc(var(--cell) * .215))/1 var(--ui);font-variant-numeric:tabular-nums;color:var(--body)}
+  .b .rohy .s1{grid-area:1 / 1}
+  .b .rohy .s2{grid-area:1 / 3}
+  .b .rohy .s3{grid-area:3 / 1}
+  .b .rohy .s4{grid-area:3 / 3}
+  .b .rohy .s5{grid-area:1 / 2}
+  .b .rohy .s6{grid-area:3 / 2}
+  .b .rohy .s7{grid-area:2 / 1}
+  .b .rohy .s8{grid-area:2 / 3}
+  .b .rohy .s9{grid-area:2 / 2}
+  /* Centre marks stand apart from each other, or 2 4 6 8 reads as the number
+     two thousand four hundred and sixty-eight. The gap loosens as there is
+     room for it and tightens as the line fills up; text-indent matches the
+     letter-spacing, so the trailing gap after the last mark does not push the
+     whole line half a gap off centre. The same ladder in all three games. */
   .b .stred{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:0 5%;
-            font:500 calc(var(--cell) * .27)/1 var(--ui);font-variant-numeric:tabular-nums;
-            color:var(--body);letter-spacing:.18em;text-indent:.18em;pointer-events:none}
-  .b .stred[data-k="4"]{font-size:calc(var(--cell) * .25)}
-  .b .stred[data-k="5"]{font-size:calc(var(--cell) * .225);letter-spacing:.08em;text-indent:.08em}
-  .b .stred[data-k="6"]{font-size:calc(var(--cell) * .195);letter-spacing:.08em;text-indent:.08em}
-  /* Seven marks and up go onto two lines instead of shrinking to nothing:
-     nine of them on a ten by ten phone board would be four pixels tall. Two
-     lines leave room to grow, so the step down here is small. Text-indent goes
-     as well here: it would only indent the first of the two lines. */
-  .b .stred[data-k="7"],.b .stred[data-k="8"],.b .stred[data-k="9"]{font-size:calc(var(--cell) * .205);
-     word-break:break-all;line-height:1.15;text-align:center;letter-spacing:.06em;text-indent:0}
-  /* var(--muted) on the hollow's own fill read 3.19:1, and less once the
-     picked hollow's tinted background lightens it further: var(--body) clears
-     4.5:1 at rest, and the picked hollow needs a lighter tone still. */
-  .b.vybrana .rohy i,.b.vybrana .stred{color:#c9c5bf}
-  /* Number entry with noted cells: Fill cell. The number hides the marks of
-     its hollow; the marks themselves are kept and come back on Delete. */
-  .b:not([data-v="0"]) .rohy,.b:not([data-v="0"]) .stred{display:none}
-  /* The two runs of the picked hollow, shown only when a single hollow is
-     picked. A solid colour, not a translucent white: .b.beh beats .b, so it
-     replaces the hollow's own background instead of sitting on top of it, and
-     a low alpha then landed on the darker grid background and came out one RGB
-     step from a plain hollow. */
-  .b.beh{background:#3c3530}
-  .b.rovnaka .cif{color:var(--accent)}
-  /* The selected cell is also 'the same' as itself; its own digit stays plain. */
-  .b.vybrana.rovnaka:not(.chyba) .cif{color:var(--ink)}
-  /* A coloured hollow. The colour is the hollow's own fill, so it survives the
-     run shading and shows through the tint of the selection; a faint diagonal
-     sheen says "this one is coloured" even where two colours sit close on the
-     brightness ladder. Numbers and marks go to full white on top of it. */
-  /* The sheen darkens, it does not lighten. A white sheen lifted the corner of
-     the lightest colour of the ladder, colour 9, and white on it fell to
-     4.08:1 there, under the 4.5:1 the palette is built to hold; a dark sheen
-     says the same "this one is coloured" and every reading of white on it can
-     only get better, never worse. */
-  .b[data-f]{background-image:linear-gradient(135deg,rgba(0,0,0,.10),rgba(0,0,0,0) 62%)}
-  .b[data-f="1"]{background-color:var(--farba-1)}
-  .b[data-f="2"]{background-color:var(--farba-2)}
-  .b[data-f="3"]{background-color:var(--farba-3)}
-  .b[data-f="4"]{background-color:var(--farba-4)}
-  .b[data-f="5"]{background-color:var(--farba-5)}
-  .b[data-f="6"]{background-color:var(--farba-6)}
-  .b[data-f="7"]{background-color:var(--farba-7)}
-  .b[data-f="8"]{background-color:var(--farba-8)}
-  .b[data-f="9"]{background-color:var(--farba-9)}
-  /* Plain white on a coloured hollow, not the page's off white: on colour 9,
-     the lightest rung, #fafafa reads 4.55:1 and #fff 4.75:1, and the extra
-     fifth of a step is what keeps the whole ladder clear of 4.5:1 with room to
-     spare. The matching number highlight, when it is switched on, still wins
-     over it. */
-  .b[data-f]:not(.rovnaka) .cif,.b[data-f] .rohy i,.b[data-f] .stred{color:#fff}
-  /* The picked hollows. The tint is drawn on ::before, over the hollow's
-     colour, so a coloured hollow keeps its colour while it is picked.
-     The frame is drawn side by side, not as one box on every cell: game.js
-     puts vh, vp, vd and vl on a hollow for the sides whose neighbour is not
-     picked, so several picked hollows carry one outline round the whole shape
-     and the seam between two of them stays a single hairline. */
+            pointer-events:none;z-index:2;font:500 calc(var(--cell) * .25)/1 var(--ui);
+            font-variant-numeric:tabular-nums;letter-spacing:.18em;text-indent:.18em;color:var(--body)}
+  .b .stred[data-k="5"]{font-size:calc(var(--cell) * .215);letter-spacing:.14em;text-indent:.14em}
+  .b .stred[data-k="6"]{font-size:calc(var(--cell) * .19);letter-spacing:.10em;text-indent:.10em}
+  .b .stred[data-k="7"]{font-size:calc(var(--cell) * .17);letter-spacing:.07em;text-indent:.07em}
+  .b .stred[data-k="8"]{font-size:calc(var(--cell) * .16);letter-spacing:.06em;text-indent:.06em}
+  .b .stred[data-k="9"]{font-size:calc(var(--cell) * .145);letter-spacing:.05em;text-indent:.05em}
+  /* On a coloured burrow the quiet grey of a mark falls to about 3.2:1, right
+     when the marks matter most. On those burrows only, the marks step up to a
+     near white that clears 6.7:1 against all nine colours and still reads as a
+     mark, not as the big number above it (which is orange, or the page ink). */
+  .b[data-f] .rohy i, .b[data-f] .stred{color:#f0ede7}
+  .b .farba{position:absolute;inset:0;pointer-events:none;z-index:0;
+            background-color:var(--fc, transparent);background-image:var(--ftex, none);background-size:var(--fsize, auto);
+            box-shadow:inset 0 0 0 9999px var(--wash)}
+  /* Nine muted colours for the night page. Hue goes right round the circle and
+     every hued colour also carries its own texture, so two of them are never
+     told apart by hue alone (WCAG 1.4.1); the first one is the neutral
+     grey-brown and stays deliberately plain, because it has no hue to be
+     confused with. All nine stay dark enough for the number above them to keep
+     its contrast. */
+  .doska,.farby-pad{
+    --farba-1:#4a4540; --farba-2:#6b3630; --farba-3:#6d4a1d;
+    --farba-4:#565117; --farba-5:#2c5731; --farba-6:#15515a;
+    --farba-7:#2a3d70; --farba-8:#4b2f6b; --farba-9:#6a2b50}
+  .doska .f1,.farby-pad .f1{--fc:var(--farba-1);--ftex:none}
+  .doska .f2,.farby-pad .f2{--fc:var(--farba-2);--ftex:repeating-linear-gradient(45deg, rgba(255,255,255,.10) 0 2px, transparent 2px 7px)}
+  .doska .f3,.farby-pad .f3{--fc:var(--farba-3);--ftex:repeating-linear-gradient(-45deg, rgba(255,255,255,.11) 0 3.5px, transparent 3.5px 11px)}
+  .doska .f4,.farby-pad .f4{--fc:var(--farba-4);--ftex:repeating-linear-gradient(90deg, rgba(255,255,255,.10) 0 2px, transparent 2px 7px)}
+  .doska .f5,.farby-pad .f5{--fc:var(--farba-5);--ftex:repeating-linear-gradient(0deg, rgba(255,255,255,.10) 0 2px, transparent 2px 7px)}
+  .doska .f6,.farby-pad .f6{--fc:var(--farba-6);--ftex:radial-gradient(circle at 50% 50%, rgba(255,255,255,.20) 0 1.5px, transparent 1.7px);--fsize:7px 7px}
+  .doska .f7,.farby-pad .f7{--fc:var(--farba-7);--ftex:repeating-linear-gradient(45deg, rgba(255,255,255,.09) 0 1.5px, transparent 1.5px 6px), repeating-linear-gradient(-45deg, rgba(255,255,255,.09) 0 1.5px, transparent 1.5px 6px)}
+  .doska .f8,.farby-pad .f8{--fc:var(--farba-8);--ftex:repeating-linear-gradient(45deg, rgba(255,255,255,.09) 0 1px, transparent 1px 3.5px)}
+  .doska .f9,.farby-pad .f9{--fc:var(--farba-9);--ftex:repeating-linear-gradient(0deg, rgba(255,255,255,.09) 0 1.5px, transparent 1.5px 6px), repeating-linear-gradient(90deg, rgba(255,255,255,.09) 0 1.5px, transparent 1.5px 6px)}
+  /* The row, the column and the block of the picked burrow: a wash above the
+     colour layer, so it shows on a coloured burrow too. The two values match
+     the flat tones this used to paint (#38302a, and #1d1815 on a given one). */
+  .b.jednotka{--wash:rgba(255,255,255,.08)}
+  .b.jednotka.dane{--wash:rgba(255,255,255,.04)}
+  .b.rovnaka .cif{color:var(--accent);font-weight:700}
+  /* A given number stays a given number while it is highlighted: a warm light
+     tone, never the same orange the player's own numbers take, so "the meadow
+     gave me this" and "I wrote this" never look alike. */
+  .b.dane.rovnaka .cif{color:var(--accent-light);font-weight:700}
+  /* The selection is a frame and a wash on one layer above the colour: a
+     coloured burrow is opaque, so a selection drawn as a background colour
+     underneath it would simply not be there. The big number sits above the
+     wash, the small marks under it. */
   .b.vybrana{z-index:2}
-  .b.vybrana::before{content:"";position:absolute;inset:0;border:0 solid var(--accent);
-                     background:rgba(242,100,60,.16);pointer-events:none}
-  .b.vybrana.vh::before{border-top-width:2px}
-  .b.vybrana.vp::before{border-right-width:2px}
-  .b.vybrana.vd::before{border-bottom-width:2px}
-  .b.vybrana.vl::before{border-left-width:2px}
-  /* A coloured hollow gets the frame and nothing else. The tint lightened the
-     colour under it, and on colour 9, the lightest rung of the ladder, that
-     took the white of a number from 4.55:1 down to 4.36:1, under the 4.5:1
-     the palette is built to hold. The colour stays exactly as it was and the
-     frame alone says which hollow is picked. */
-  .b.vybrana[data-f]::before{background:none}
-  .b.stlmena .cif{opacity:.55}
-  /* A hint: the two runs it reads are outlined, the hollow it means pulses. */
-  .b.tip-beh,.k.tip-beh{background-color:rgba(250,204,21,.14)}
-  .b.tip{background:rgba(250,204,21,.26)}
-  .b.tip::after{content:"";position:absolute;inset:14%;border-radius:50%;border:2px solid #facc15;
+  .b.vybrana::before{content:"";position:absolute;inset:0;border:2px solid var(--accent);
+                     background:rgba(242,100,60,.20);pointer-events:none;z-index:1}
+  .b.vybrana.dane::before{background:rgba(242,100,60,.13)}
+  /* A row, a column or a block that is full and holds no repeat goes quiet.
+     It says nothing about whether the numbers are right. */
+  .b.stlmena .cif{opacity:.5}
+  /* A hint: the row, column and block it reads are outlined, the burrow it
+     means pulses. Yellow is the brightest of the three warm helps, so the hint
+     band reads above the reach wash even where the two lie on one burrow. */
+  /* Deliberately still a background colour and not a --wash: over a coloured
+     burrow the yellow would drop the small marks under the 4.5:1 the standard
+     asks for. The ring below is drawn above everything, so the burrow a hint
+     means is never lost, whatever colour the player painted it. */
+  .b.tip-jednotka{background-color:rgba(250,204,21,.20)}
+  .b.tip{background-color:rgba(250,204,21,.34)}
+  .b.tip::after{content:"";position:absolute;inset:12%;border-radius:50%;border:2px solid #facc15;z-index:5;
                 animation:tip-pulz .9s ease-in-out infinite alternate;pointer-events:none}
+  /* Hint picks the burrow it means, so without this the square orange frame of
+     the pick and the round yellow ring of the hint would sit on one burrow as
+     two different "look here" signs. While a hint stands, only the ring shows;
+     the frame comes back the moment the player picks another burrow. A burrow
+     Check has marked keeps its red frame: that one is not a hint, it is a
+     mistake, and it outranks both. */
+  .b.vybrana.tip:not(.chyba)::before{display:none}
   @keyframes tip-pulz{from{transform:scale(.85);opacity:.5}to{transform:scale(1);opacity:1}}
   @media (prefers-reduced-motion:reduce){ .b.tip::after{animation:none} }
   /* A mistake is a shape and a mark, not only a colour: a red frame and an
-     exclamation mark in the corner of the hollow. */
-  .b.chyba{background:rgba(255,92,92,.26)}
-  .b.chyba::before{content:"";position:absolute;inset:0;border:2px solid #ff7b7b;pointer-events:none}
-  .b.chyba::after{content:"!";position:absolute;top:2%;right:8%;font:700 calc(var(--cell) * .28)/1 var(--ui);color:#ff7b7b}
-  /* Finished: every run is satisfied, so the quiet cue above would dim the
-     whole wood. The numbers go green instead, at full strength. */
+     exclamation mark in the corner of the burrow. */
+  .b.chyba::before{content:"";position:absolute;inset:0;border:2px solid #ff7b7b;pointer-events:none;
+                   background:rgba(255,92,92,.30);z-index:1}
+  .b.chyba::after{content:"!";position:absolute;top:1%;right:7%;z-index:5;
+                  font:700 calc(var(--cell) * .28)/1 var(--ui);color:#ff7b7b}
+  /* Finished: every row, column and block is quiet, so the cue above would dim
+     the whole meadow. The numbers go green instead, at full strength. */
   .hotovo .b .cif{color:var(--ok);opacity:1}
   .hotovo .b{cursor:default}
-  .hotovo .b:hover{background:var(--dutina)}
-  /* GIF-CSS-END */
+  .hotovo .b:hover{--wash:transparent}
+  .hotovo .b.dane:hover{--wash:transparent}
   /* ── The number pad ───────────────────────────────────────────────────── */
-  .pad{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:4px;margin-top:10px}
+  .pad{display:grid;grid-template-columns:repeat(var(--pad,10),minmax(0,1fr));gap:4px;margin-top:10px}
   .pad[hidden]{display:none}
   /* 48px, the height paper.css gives every button on a night page, so the pad
      and the control row right under it are one rhythm and not two. */
@@ -500,46 +478,47 @@ html:not(.css) main>:nth-child(n+2),html:not(.css) body>footer{visibility:hidden
   .pad button:hover{border-color:var(--ink)}
   .pad button:disabled{opacity:.35;cursor:default}
   .pad .zmaz{font-size:12px;letter-spacing:.04em;color:var(--body)}
-  /* The pad says which mode it is writing in: dashed and quieter for the two
-     kinds of mark, and in Colour mode every key wears its own colour. */
-  .pad[data-rezim="corner"] button[data-d]:not(.zmaz),
-  .pad[data-rezim="centre"] button[data-d]:not(.zmaz){border-style:dashed;font-size:14px;color:var(--body)}
-  .pad[data-rezim="colour"] button[data-d="1"]{background:var(--farba-1)}
-  .pad[data-rezim="colour"] button[data-d="2"]{background:var(--farba-2)}
-  .pad[data-rezim="colour"] button[data-d="3"]{background:var(--farba-3)}
-  .pad[data-rezim="colour"] button[data-d="4"]{background:var(--farba-4)}
-  .pad[data-rezim="colour"] button[data-d="5"]{background:var(--farba-5)}
-  .pad[data-rezim="colour"] button[data-d="6"]{background:var(--farba-6)}
-  .pad[data-rezim="colour"] button[data-d="7"]{background:var(--farba-7)}
-  .pad[data-rezim="colour"] button[data-d="8"]{background:var(--farba-8)}
-  .pad[data-rezim="colour"] button[data-d="9"]{background:var(--farba-9)}
-  .pad[data-rezim="colour"] button[data-d]:not(.zmaz){border-color:rgba(255,255,255,.20)}
-  /* Digit first: the number waiting on the pad is the one the taps write. */
-  .pad button[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
-  /* ── The four entry modes ─────────────────────────────────────────────── *
-     Normal, Corner, Centre, Colour, always visible, always four, right under
-     the pad and above the thumb on a phone. The letter under each name is its
-     keyboard shortcut; the space bar walks round all four. */
+  /* A number already in every burrow it can reach is spent: the key goes quiet
+     but still works, in case the player wants to take one back out. */
+  .pad button.hotova{opacity:.4}
+  /* Digit first (Control method in Settings): the number waits on the pad
+     while the burrows are tapped, so it has to be visible which one it is. */
+  .pad button.zvolena{border-color:var(--accent);color:var(--accent);background:rgba(242,100,60,.18)}
+  /* In Corner and Centre the pad writes small marks, and says so: dashed keys
+     with the smaller number, the same difference the burrow itself shows. */
+  .hra[data-rezim="corner"] .pad button[data-d]:not(.zmaz),
+  .hra[data-rezim="centre"] .pad button[data-d]:not(.zmaz){border-style:dashed;font-size:14px;color:var(--body)}
+  /* Colour mode swaps the numbers for the nine colours: a meadow has six
+     numbers on an easy day, the colours are always nine. */
+  .farby-pad .farba-btn{background-color:var(--fc);background-image:var(--ftex, none);background-size:var(--fsize, auto)}
+  .farby-pad .farba-btn.zvolena,.farby-pad .farba-btn:hover{border-color:var(--ink)}
+  .farby-pad .farba-btn.zvolena{box-shadow:0 0 0 2px var(--accent) inset}
+  /* ── The four entry modes ─────────────────────────────────────────────────
+     Normal, Corner, Centre and Colour as four buttons under the pad, the way
+     Cracking the Cryptic has them; the shortcut letter is printed on each, so
+     the keyboard is learnt by looking. Four across still fit at 320 px. */
   .rezimy{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;margin-top:6px}
   .rezimy[hidden]{display:none}
-  .rezimy button{height:44px;min-width:0;padding:0 2px;border:1px solid var(--line);border-radius:10px;
-                 background:var(--card);color:var(--body);cursor:pointer;touch-action:manipulation;
-                 display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
-                 font:600 12.5px/1.1 var(--ui);user-select:none;-webkit-user-select:none}
-  .rezimy button small{font:500 10px/1 var(--ui);color:var(--muted);letter-spacing:.08em}
+  .rezimy button{height:42px;min-width:0;padding:0;border:1px solid var(--line);border-radius:10px;background:var(--card);
+                 color:var(--body);font:600 12.5px/1 var(--ui);cursor:pointer;touch-action:manipulation;
+                 display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
+  .rezimy button small{font:500 9.5px/1 var(--ui);letter-spacing:.10em;color:var(--muted)}
   .rezimy button:hover{border-color:var(--ink);color:var(--ink)}
-  .rezimy button[aria-pressed="true"]{border-color:var(--accent);color:var(--accent);background:rgba(242,100,60,.14)}
-  .rezimy button[aria-pressed="true"] small{color:var(--accent)}
-  @media (max-width:390px){
-    .rezimy button{height:42px;font-size:11.5px}
-    .rezimy button small{font-size:9px}
-  }
+  .rezimy button.zap,.rezimy button.zap:hover{border-color:var(--accent);color:var(--accent);background:rgba(242,100,60,.14)}
+  .rezimy button.zap small{color:var(--accent)}
+  @media (max-width:390px){ .rezimy button{font-size:11.5px;height:40px} .rezimy button small{font-size:9px} }
   .ovladanie{display:flex;gap:5px;align-items:center;flex-wrap:wrap;margin-top:10px}
   /* Height and type come from paper.css (body.noc .btn: 48px), which outranks
      a plain .ovladanie .btn rule, so setting them here would only look like it
      worked. The pad above is set to the same 48px instead. Padding is ours. */
   .ovladanie .btn{padding:0 10px}
-  .ovladanie .btn[aria-pressed="true"]{border-color:var(--accent);color:var(--accent)}
+  /* Vypnute tlacidlo musi byt vidno. .btn ani .btn-line nemaju v paper.css
+     nic pre :disabled, a hover z paper.css by inak stale svietil, preto sa tu
+     prebija aj hover stav (rovnaka specificita (0,4,0), toto pravidlo je
+     nizsie, takze na vypnutom tlacidle vyhrava). */
+  .ovladanie .btn:disabled,
+  .ovladanie .btn:disabled:hover{opacity:.35;cursor:default;
+     background:rgba(255,255,255,.03);border-color:rgba(255,255,255,.16);color:var(--ink);transform:none}
   /* On a phone the five buttons make two tidy rows, three and two, instead of
      leaving one of them alone at the end of a wrapped line. */
   @media (max-width:480px){
@@ -551,7 +530,7 @@ html:not(.css) main>:nth-child(n+2),html:not(.css) body>footer{visibility:hidden
 
   .stav.ok b{color:var(--ok);display:block;font:700 clamp(22px,3.2vw,30px)/1.15 var(--display);letter-spacing:-.01em;margin:0 0 6px}
 
-  /* Share, only after the wood is finished (ops/spec-hry-ux.md, part 8).
+  /* Share, only after the meadow is finished (ops/spec-hry-ux.md, part 8).
      The textarea is the way out when the browser refuses the clipboard. */
   .zdielanie{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px;
              font-family:var(--ui);font-size:13px;line-height:1.45;color:var(--muted)}
@@ -564,25 +543,15 @@ html:not(.css) main>:nth-child(n+2),html:not(.css) body>footer{visibility:hidden
   .den{position:relative;flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;padding:6px 0 5px;border:1px solid var(--line);border-radius:10px;
        text-decoration:none;color:var(--muted);font-family:var(--ui);min-width:0;background:var(--card)}
 
-  /* Two marks for a finished wood (ops/spec-hry-ux.md, part 8): solved, and
+  /* Two marks for a finished meadow (ops/spec-hry-ux.md, part 8): solved, and
      solved clean with no hint and no check, which gets the dot as well. The
      screen reader gets the same difference in the aria-label, not only the
      colour. */
   .den.ciste::after{content:"";position:absolute;top:3px;right:4px;width:5px;height:5px;border-radius:50%;background:var(--ok)}
 
-  /* The settings that are a choice of two, not a switch, keep the name on the
-     left and the choice on the right. */
-  .nastavenia label.vyber{align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
-  .nastavenia label.vyber>span{flex:1 1 250px;min-width:0}
-  /* min-width:0 matters: without it a select is as wide as its longest option
-     and it pushed the whole page past 320 px. */
-  .nastavenia select{flex:0 1 180px;min-width:0;max-width:100%;background:var(--card-plna);color:var(--ink);
-                     border:1px solid var(--line);border-radius:8px;font:13px/1.3 var(--ui);padding:6px 8px;min-height:32px}
-  .nastavenia select:hover{border-color:var(--ink)}
-
   .skryte{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
 
-  /* On the phone the wood goes under the text; the keyboard note there would
+  /* On the phone the meadow goes under the text; the keyboard note there would
      just push the game further down. It is in the Rules section too. */
   @media (max-width:860px){ .navod{display:none} }
 
@@ -595,7 +564,7 @@ html:not(.css) main>:nth-child(n+2),html:not(.css) body>footer{visibility:hidden
   .rule { transform:scaleX(1) !important; }
 </style></noscript>
 </head>
-<body class="noc obsah hra" data-den="2026-07-26">
+<body class="noc obsah hra" data-den="2027-10-26">
 <a class="skip site-skip" href="#arling-obsah" data-site-label="skip">Skip to content</a>
 <header class="site-header">
   <div class="wrap bar">
@@ -616,17 +585,17 @@ html:not(.css) main>:nth-child(n+2),html:not(.css) body>footer{visibility:hidden
 <main id="arling-obsah" tabindex="-1">
   <div class="wrap hero" id="hero">
     <div>
-      <h1 id="h1"><span class="l">Squirrels.</span></h1>
-      <p class="lead r d3">Squirrels hide acorns in the hollows. Each sign tells how many acorns are in the run of hollows to its right or below it. Every hollow holds 1 to 9 acorns, and no number repeats within a run.</p>
-      <p class="uv-actions"><a class="btn btn-solid" href="#doska">Play today's tree</a><a class="uv-quiet" href="/games/squirrels/guide/">How to play</a></p>
-      <p class="proof r d5" id="dnes">The wood for Sunday 26 July 2026: the Sunday challenge, twelve by twelve. Exactly one solution.</p>
-      <p class="navod r d5">Click a hollow, or drag across several, then a number. Keyboard: arrows move, <kbd>1</kbd> to <kbd>9</kbd> write, <kbd>Delete</kbd> clears; <kbd>Z</kbd> <kbd>X</kbd> <kbd>C</kbd> <kbd>V</kbd> pick between a number, corner marks, centre marks and a colour, and the space bar walks round the four; <kbd>Ctrl</kbd>+<kbd>Z</kbd> undo, <kbd>Ctrl</kbd>+<kbd>Y</kbd> redo; Restart clears the wood, one Undo brings it back; <kbd>P</kbd> pauses. Nothing lights up while you play; Check judges only when you ask.</p>
+      <h1 id="h1"><span class="l">Hares.</span></h1>
+      <p class="lead r d3">Fill the meadow so that every row, column and block has each number once. Hares leap like a chess knight: two burrows a knight's leap apart never hold the same number. From Friday on, hares also refuse to sit next to the same number in any direction, corners included.</p>
+      <p class="uv-actions"><a class="btn btn-solid" href="#doska">Play today's meadow</a><a class="uv-quiet" href="/games/hares/guide/">How to play</a></p>
+      <p class="proof r d5" id="dnes">This meadow opens on Tuesday 26 October 2027 at midnight, Bratislava time.</p>
+      <p class="navod r d5">Click a burrow, or drag across several, then a number from the pad. Keyboard: arrows move and wrap round the edge, <kbd>Ctrl</kbd> plus an arrow widens the selection, the number keys write, <kbd>Delete</kbd> clears, <kbd>Z</kbd> <kbd>X</kbd> <kbd>C</kbd> <kbd>V</kbd> pick Normal, Corner, Centre and Colour, <kbd>U</kbd> undo, <kbd>R</kbd> redo, <kbd>P</kbd> pauses. Restart puts the meadow back to the numbers it was given, and one Undo brings your board back. Nothing lights up while you play; Check judges only when you ask.</p>
     </div>
     <div class="r d2">
       <div class="hra" id="hra">
-        <div class="horna"><span><span id="datum">Sunday 26 July 2026</span><span class="uroven" id="uroven">Challenge · 12×12</span></span><span id="cas-blok">Time <b id="cas">0:00</b><button type="button" class="pauza-btn" id="pauza" hidden>Pause</button></span></div>
+        <div class="horna"><span><span id="datum">Tuesday 26 October 2027</span><span class="uroven" id="uroven">Easy · 6×6 · knight</span></span><span id="cas-blok">Time <b id="cas">0:00</b><button type="button" class="pauza-btn" id="pauza" hidden>Pause</button></span></div>
         <div class="doska-obal">
-          <div class="doska" id="doska" role="grid" aria-label="Acorn grid 12 by 12" aria-describedby="cisla-text">
+          <div class="doska" id="doska" role="grid" aria-label="Meadow grid 6 by 6" aria-describedby="cisla-text">
             <noscript><p>This game needs JavaScript: the puzzle is generated right in your browser.</p></noscript>
           </div>
           <div class="pauza-blok" id="pauza-blok" hidden><p><b>Paused.</b> <span id="pauza-cas"></span></p><button type="button" class="btn btn-solid" id="pokracuj">Resume</button></div>
@@ -642,13 +611,14 @@ html:not(.css) main>:nth-child(n+2),html:not(.css) body>footer{visibility:hidden
           <button type="button" data-d="7">7</button>
           <button type="button" data-d="8">8</button>
           <button type="button" data-d="9">9</button>
-          <button type="button" class="zmaz" data-d="0" aria-label="Erase the picked hollows">Del</button>
+          <button type="button" class="zmaz" data-d="0" aria-label="Empty the burrow">Del</button>
         </div>
+        <div class="pad farby-pad" id="farby" hidden></div>
         <div class="rezimy" id="rezimy" role="group" aria-label="What a number writes">
-          <button type="button" data-rezim="normal" aria-pressed="true">Normal<small>Z</small></button>
-          <button type="button" data-rezim="corner" aria-pressed="false">Corner<small>X</small></button>
-          <button type="button" data-rezim="centre" aria-pressed="false">Centre<small>C</small></button>
-          <button type="button" data-rezim="colour" aria-pressed="false">Colour<small>V</small></button>
+          <button type="button" data-rezim="normal" aria-pressed="true" aria-keyshortcuts="Z">Normal<small>Z</small></button>
+          <button type="button" data-rezim="corner" aria-pressed="false" aria-keyshortcuts="X">Corner<small>X</small></button>
+          <button type="button" data-rezim="centre" aria-pressed="false" aria-keyshortcuts="C">Centre<small>C</small></button>
+          <button type="button" data-rezim="colour" aria-pressed="false" aria-keyshortcuts="V">Colour<small>V</small></button>
         </div>
         <div class="ovladanie">
           <button type="button" class="btn btn-line" id="spat">Undo</button>
@@ -661,38 +631,22 @@ html:not(.css) main>:nth-child(n+2),html:not(.css) body>footer{visibility:hidden
         <p class="stav" id="stav" aria-live="polite"></p>
         <div class="zdielanie" id="zdielanie" hidden>
           <button type="button" class="btn btn-line" id="zdielaj">Share</button>
-          <span id="zdielanie-stav" aria-live="polite">Copies a short text: the wood, your time, the help you used. No numbers, so it spoils nothing.</span>
+          <span id="zdielanie-stav" aria-live="polite">Copies a short text: the meadow, your time, the help you used. No numbers, so it spoils nothing.</span>
           <textarea id="zdielanie-text" rows="8" readonly hidden aria-label="The text to copy"></textarea>
         </div>
         <nav class="pasik" id="pasik" aria-label="This week"></nav>
-        <p class="odkazy"><a href="/games/squirrels/guide/">How to play</a> · <a href="/games/squirrels/practice/">Practice sets</a> · <a href="/games/squirrels/archive/">Archive</a></p>
+        <p class="odkazy"><a href="/games/hares/guide/">How to play</a> · <a href="/games/hares/practice/">Practice sets</a> · <a href="/games/hares/archive/">Archive</a></p>
         <p class="historia" id="historia" hidden></p>
         <details class="nastavenia">
           <summary>Settings</summary>
-          <label class="vyber"><span>Control method: Selection is a hollow first and then a number, Digit first is a number from the pad and then the hollows you tap; the number stays chosen, so one hollow after another takes it</span>
-            <select data-nastavenie="ovladanie" aria-label="Control method">
-              <option value="selection">Selection</option>
-              <option value="digit">Digit first</option>
-            </select></label>
-          <label><input type="checkbox" data-nastavenie="casovac"> Display timer, with the Pause button</label>
-          <label><input type="checkbox" data-nastavenie="zvyrazniRovnake"> Highlight matching numbers everywhere on the board</label>
-          <label class="vyber"><span>Cell selection when dragging: a drag picks every hollow it runs over, or moves a single one</span>
-            <select data-nastavenie="tahVyber" aria-label="Cell selection when dragging">
-              <option value="multiple">Multiple cells</option>
-              <option value="single">Single cell</option>
-            </select></label>
-          <label class="vyber"><span>Number entry with noted cells: Fill cell writes the number over the marks, Add note makes it another mark</span>
-            <select data-nastavenie="zapisSoZnackami" aria-label="Number entry with noted cells">
-              <option value="fill">Fill cell</option>
-              <option value="note">Add note</option>
-            </select></label>
+          <label><input type="checkbox" data-nastavenie="cifraPrva"> Digit first: pick a number from the pad, then tap the burrows it goes into; the number stays chosen, so one tap after another writes it again (off: pick the burrows first, then the number)</label>
+          <label><input type="checkbox" data-nastavenie="casovac"> Display timer: show the clock and the Pause button</label>
+          <label><input type="checkbox" data-nastavenie="zvyrazniRovnake"> Highlight matching numbers: with one burrow picked, light up every burrow holding the same number</label>
+          <label><input type="checkbox" data-nastavenie="tahViac"> Cell selection when dragging: a drag across the meadow selects every burrow it crosses (off: it moves the one selected burrow)</label>
+          <label><input type="checkbox" data-nastavenie="znackyPridavat"> Number entry with noted cells, Add note: in a burrow that already has marks, a number becomes another mark (off: it fills the burrow and the marks wait underneath)</label>
           <label><input type="checkbox" data-nastavenie="zivaKontrola"> Highlight errors: mark a wrong number as soon as it is written (off by default: finding a mistake is part of the puzzle)</label>
-          <label class="vyber"><span>Default note style: which of the two the <kbd>N</kbd> key reaches first</span>
-            <select data-nastavenie="predvolenyStyl" aria-label="Default note style">
-              <option value="corner">Corner</option>
-              <option value="centre">Centre</option>
-            </select></label>
-          <label><input type="checkbox" data-nastavenie="autoOdstranZnacky"> Auto remove restricted notes: a number written in takes the same mark out of the rest of its two runs (off by default: the marks are your own)</label>
+          <label><input type="checkbox" data-nastavenie="predvolenaCentre"> Default note style Centre: the Notes key writes in the middle of the burrow (off: in the corners)</label>
+          <label><input type="checkbox" data-nastavenie="autoOdstranZnacky"> Auto remove restricted notes: a number written in takes the same mark out of every burrow it rules out</label>
           <label><input type="checkbox" data-nastavenie="pauzaPriOdchode"> Auto pause: stop the clock when you leave the tab or sit still for a minute</label>
           <label><input type="checkbox" data-nastavenie="lenPad"> Onscreen input only: numbers come from the pad, the number keys of a keyboard are ignored (arrows, Undo, Redo and Pause keep working)</label>
           <label><input type="checkbox" data-nastavenie="potvrditReset"> Confirm before Restart</label>
@@ -712,49 +666,48 @@ html:not(.css) main>:nth-child(n+2),html:not(.css) body>footer{visibility:hidden
         <details open>
           <summary>How to play</summary>
           <div class="telo">
-            <p>Squirrels hide acorns in the hollows. Each sign tells how many acorns are in the run of hollows to its right or below it. Every hollow holds 1 to 9 acorns, and no number repeats within a run.</p>
-            <p>A run is the unbroken line of hollows that follows a sign, and it ends at the next trunk or at the edge of the wood. Every hollow belongs to one run across and one run down at the same time, and that is where the puzzle lives: the number you write has to suit both.</p>
-            <p>Every wood has exactly one arrangement of acorns that fits every sign. When the last hollow is right, the game notices by itself.</p>
+            <p>Fill the meadow so that every row, column and block has each number once. Hares leap like a chess knight: two burrows a knight's leap apart never hold the same number. From Friday on, hares also refuse to sit next to the same number in any direction, corners included.</p>
+            <p>A knight's leap is two burrows one way and one across, the move a knight makes on a chessboard. It reaches over rows, columns and blocks alike, which is where the puzzle differs from the number square you already know: a burrow far away can still rule a number out.</p>
+            <p>The numbers the meadow gives you are heavier and sit a shade darker. Every meadow has exactly one filling that fits every rule. When the last burrow is right, the game notices by itself.</p>
           </div>
         </details>
         <details>
           <summary>Controls</summary>
           <div class="telo">
-            <p><b>Moving about.</b> Click or tap a hollow to pick it. Drag with the mouse or the finger across the wood to pick several at once, <kbd>Ctrl</kbd> (on a Mac <kbd>Cmd</kbd>) plus a click adds one to the picked hollows or takes it away, and <kbd>Ctrl</kbd> plus an arrow grows the picked patch. The arrow keys move from hollow to hollow and step over the edge of the wood to the other side; <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> do the same. <kbd>Escape</kbd> lets the whole selection go.</p>
-            <p><b>Writing.</b> <kbd>1</kbd> to <kbd>9</kbd>, on the number row or the numeric keypad, or the pad under the wood, write into every picked hollow at once. The same number again takes it back. <kbd>Delete</kbd> or <kbd>Backspace</kbd> clears in one order: the numbers first, then the marks, then the colour, so one more press always takes away one more layer. A number written into a hollow with marks in it covers them; they come back when the number goes.</p>
-            <p><b>The four modes.</b> The buttons under the pad say what a number writes: <b>Normal</b> the big number, <b>Corner</b> a small mark in the corners of the hollow, <b>Centre</b> a small mark in the middle, <b>Colour</b> one of nine colours. <kbd>Z</kbd> <kbd>X</kbd> <kbd>C</kbd> <kbd>V</kbd> pick one, the space bar walks round all four, <kbd>N</kbd> steps through the two kinds of mark and back. Holding <kbd>Shift</kbd> writes a corner mark and holding <kbd>Ctrl</kbd> a centre mark for that one number, without leaving the mode you are in.</p>
-            <p><b>Undo and Redo.</b> <kbd>Ctrl</kbd>+<kbd>Z</kbd> or <kbd>U</kbd> goes back, <kbd>Ctrl</kbd>+<kbd>Y</kbd>, <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> or <kbd>R</kbd> goes forward, as far as you like in either direction. <kbd>Ctrl</kbd>+<kbd>R</kbd> is left alone: that is the browser reloading the page. <b>Restart</b> takes every number, mark and colour off the wood; the clock keeps running and one Undo brings it all back.</p>
-            <p><b>Check and Hint.</b> Nothing lights up while you play: finding a mistake is part of the puzzle. <b>Check</b> first tells you only how many numbers are wrong and which rows or columns they sit in; press it again and it marks them. <b>Hint</b> names the rule and the place without giving the number away, and the second press writes that one number and explains it. If something on the board is already wrong, the hint points there first. Hints and checks are free and counted, and shown when you finish. <kbd>P</kbd> pauses.</p>
-            <p>The clock runs from your first number to the last hollow and pauses when you leave the tab or sit still for a minute, which also hides the wood. Your progress, time, history and day streak stay in this browser, and in your <a href="/ucet/">account</a> when you are signed in, so you can continue on another device. The day turns over at midnight where you are. Only the wood of the day counts towards the streak, the archive is for practice; once you are five days in, a single missed day is forgiven, at most twice a month.</p>
+            <p><b>Moving.</b> Tap or click a burrow to select it; drag across the meadow and every burrow you cross joins the selection. <kbd>Ctrl</kbd> (on a Mac <kbd>Cmd</kbd>) plus a click adds one burrow or takes it out again. The arrow keys, or <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd>, move the selection and wrap round the edge; <kbd>Ctrl</kbd> plus an arrow widens it. <kbd>Escape</kbd> lets the selection go. A burrow the meadow gave you can be selected, for the marks and colours around it, but never overwritten.</p>
+            <p><b>Writing.</b> The keys <kbd>1</kbd> to <kbd>9</kbd>, the numeric keypad and the pad under the meadow all write the same way, into every selected burrow at once. The same number again takes it back, so the way out is always one press. <kbd>Delete</kbd> or <kbd>Backspace</kbd> clears in one order: the big numbers first, then the marks of those burrows, then the colour. A number written into a burrow that already carries marks simply covers them; take the number out and they are all back.</p>
+            <p><b>Four modes.</b> The four buttons under the pad say what a number writes: <b>Normal</b> the big number, <b>Corner</b> a small mark in the corners, <b>Centre</b> a small mark in the middle, <b>Colour</b> one of nine colours over the burrow. Keys <kbd>Z</kbd> <kbd>X</kbd> <kbd>C</kbd> <kbd>V</kbd> pick one, the spacebar cycles through them, <kbd>N</kbd> goes Corner, Centre, Normal, and holding <kbd>Shift</kbd> borrows Corner or <kbd>Ctrl</kbd> Centre for as long as you hold it. Nothing lights up while you play: finding a mistake is part of the puzzle.</p>
+            <p><b>Undo, Redo and Restart.</b> <kbd>U</kbd> or <kbd>Ctrl</kbd>+<kbd>Z</kbd> go back, <kbd>R</kbd>, <kbd>Ctrl</kbd>+<kbd>Y</kbd> or <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> forward, as far as you like; <kbd>Ctrl</kbd>+<kbd>R</kbd> stays your browser's reload, we never take it. <b>Restart</b> puts the meadow back to the numbers it was given and clears everything else, colours included; the clock keeps running and one Undo brings it all back. <kbd>P</kbd> pauses.</p>
+            <p><b>Check and Hint.</b> <b>Check</b> first tells you only how many numbers are wrong and which rows or columns they sit in; press it again and it marks them. With exactly one burrow selected it reads only that row, column and block. <b>Hint</b> names the rule and the place without giving the number away, and the second press writes that one number and explains it. If something on the board is already wrong, the hint points there first. Hints and checks are free and counted, and shown when you finish.</p>
+            <p>The clock runs from your first number to the last burrow and pauses when you leave the tab or sit still for a minute, which also hides the meadow. Your progress, time, history and day streak stay in this browser, and in your <a href="/ucet/">account</a> when you are signed in, so you can continue on another device. The day turns over at midnight where you are. Only the meadow of the day counts towards the streak, the archive is for practice; once you are five days in, a single missed day is forgiven, at most twice a month.</p>
           </div>
         </details>
         <details>
           <summary>The week</summary>
           <div class="telo">
-            <p>Monday and Tuesday are easy (six by six), Wednesday and Thursday medium (eight by eight), Friday and Saturday hard (ten by ten) and Sunday is the challenge: twelve by twelve. The week strip under the wood takes you to the other days; the <a href="/games/squirrels/archive/">archive</a> goes back a year, and the <a href="/games/squirrels/practice/">practice sets</a> have eight woods of each level with no date attached.</p>
-            <p>Difficulty is measured, not guessed. Every wood is solved by a program that only knows named rules, in three layers: the plain ones (the last empty hollow of a run, a total that can be made in only one way, and the single number that both crossing runs still allow), the patterns inside a run (a number the run has to use that fits only one hollow, a pair of hollows holding two numbers between them, a total narrowed down by the crossing runs), and the hard one (writing a number in and dropping it because it runs into a contradiction). Easy and Medium never need that third layer; Sunday leans on it the most.</p>
+            <p>Monday and Tuesday are easy: six by six, blocks of two rows by three columns, numbers 1 to 6, with the knight's leap. Wednesday and Thursday are medium and Friday and Saturday hard, both nine by nine with blocks of three by three; from Friday the touching rule joins in and fewer numbers are given away. Sunday is the challenge, the same nine by nine with both extra rules and the fewest numbers to start from. The week strip under the meadow takes you to the other days; the <a href="/games/hares/archive/">archive</a> goes back a year, and the <a href="/games/hares/practice/">practice sets</a> have eight meadows of each level with no date attached.</p>
+            <p>Difficulty is measured, not guessed. Every meadow is solved by a program that only knows named rules, in three layers: the plain ones (a burrow with a single number left once its row, its column, its block and every hare within reach have taken theirs, and a number that fits only one burrow of a row, a column or a block), the patterns (a number held in place by the knight's leap or the touching rule alone, a pair of burrows holding two numbers between them, a number confined to one line inside a block), and the hard one (writing a number in, following it one step and dropping it because it runs into a contradiction). Easy and Medium never need that third layer; Sunday leans on it the most.</p>
           </div>
         </details>
         <details>
           <summary>A few ways in</summary>
           <div class="telo">
-            <p>Short runs with extreme totals are the way in. Two hollows adding to 3 can only be 1 and 2; to 4, only 1 and 3; to 16, only 7 and 9; to 17, only 8 and 9. Three hollows adding to 6 are 1, 2 and 3; to 24, they are 7, 8 and 9.</p>
-            <p>Where two such runs cross, the hollow they share has to suit both sets, and often only one number is in both.</p>
-            <p>When a run has one empty hollow left, its number is simply the total minus what is already there. That one number then narrows the run crossing it, which is how a wood unravels.</p>
-            <p>If a number the run must use fits only one of its hollows, that is where it goes, even when that hollow could still hold other numbers on its own.</p>
+            <p>Start where the meadow is crowded. A block with six or seven numbers in it usually gives the rest away, and every number you write there narrows two more lines at once.</p>
+            <p>Then use the leap. When a row is missing a number and two of its empty burrows sit a knight's leap from that same number elsewhere, the third burrow is the only one left. That step is the heart of this puzzle, and the classic number square has nothing like it.</p>
+            <p>On the king days, look at pairs of touching burrows first. Two burrows side by side or corner to corner cannot both hold the same number, which quietly halves a lot of choices around a block edge.</p>
+            <p>When a number can only sit in one row of a block, it is gone from the rest of that row everywhere else on the board. That is often the step that unlocks a stubborn corner.</p>
           </div>
         </details>
       </div>
     </div>
   </section>
 
-<script type="application/json" id="zadanie">{"d":"2026-07-26","n":12,"b":"#############..##.....###...#.......##......##..####..##....##..##....####..#...#..####....##..##....##..####..##......##.......#...###.....##..","s":"172463125815796481425982517791323931898142219628725973218725134668495373822849531","u":"challenge","l":"70,3,8","t":81}</script>
 </main>
 
-<aside class="predaj" data-predaj="squirrels" aria-label="More from ARLing" style="border-top:1px solid var(--line)">
+<aside class="predaj" data-predaj="hares" aria-label="More from ARLing" style="border-top:1px solid var(--line)">
   <div class="wrap" style="padding:20px 0 28px">
     <p class="small" style="margin:0 0 6px">Everything on this page is free. For a tablet you can write on, we also make books.</p>
-    <p class="small" style="margin:0;display:flex;flex-wrap:wrap;gap:4px 18px"><a href="/puzzle-post/" data-umami-event="games_to_puzzle_post" data-umami-event-game="squirrels">Puzzle Post: 100 hyperlinked puzzles a month for e-ink tablets, 3.90 &euro;</a><a href="/shop/" data-umami-event="games_to_shop" data-umami-event-game="squirrels">All puzzle books and titles</a></p>
+    <p class="small" style="margin:0;display:flex;flex-wrap:wrap;gap:4px 18px"><a href="/puzzle-post/" data-umami-event="games_to_puzzle_post" data-umami-event-game="hares">Puzzle Post: 100 hyperlinked puzzles a month for e-ink tablets, 3.90 &euro;</a><a href="/shop/" data-umami-event="games_to_shop" data-umami-event-game="hares">All puzzle books and titles</a></p>
   </div>
 </aside>
 
