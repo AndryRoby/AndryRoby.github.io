@@ -197,6 +197,9 @@ export function precitajDoklad(koren) {
     objednavka: hod(koren, 'cac:OrderReference/cbc:ID'),
     predchadzajuca: cesta(koren, 'cac:BillingReference/cac:InvoiceDocumentReference')
       .map((n) => [hod(n, 'cbc:ID'), hod(n, 'cbc:IssueDate')].filter(Boolean).join(', ')).join('; '),
+    // To isté po častiach, aby sa dátum dal zapísať podľa jazyka bez hádania v spojenom texte.
+    predchadzajuce: cesta(koren, 'cac:BillingReference/cac:InvoiceDocumentReference')
+      .map((n) => ({ id: hod(n, 'cbc:ID'), datum: hod(n, 'cbc:IssueDate') })),
     poznamky: deti(koren, 'cbc:Note').map((n) => txt(n)),
     dodavatel: citajStranu(jeden(koren, 'cac:AccountingSupplierParty/cac:Party')),
     odberatel: citajStranu(jeden(koren, 'cac:AccountingCustomerParty/cac:Party')),
@@ -271,6 +274,8 @@ function blokStrany(dok, t, nadpis, strana) {
   return b;
 }
 
+// Každá bunka nesie popis stĺpca v data-th (relácia 246, P5 brány): na úzkej obrazovke sa riadok dokladu skladá
+// do bloku s popiskami (efaktura-v4.css), takže sumy sú čitateľné bez vodorovného posúvania. Tlač ostáva tabuľkou.
 function tabulka(dok, hlavicky, riadky, trieda) {
   const tab = el(dok, 'table', trieda);
   const thead = el(dok, 'thead');
@@ -281,16 +286,62 @@ function tabulka(dok, hlavicky, riadky, trieda) {
   const tbody = el(dok, 'tbody');
   for (const r of riadky) {
     const tr = el(dok, 'tr');
-    for (const b of r) tr.appendChild(el(dok, 'td', null, b));
+    r.forEach((b, i) => {
+      const td = el(dok, 'td', null, b);
+      if (hlavicky[i] && typeof td.setAttribute === 'function') td.setAttribute('data-th', hlavicky[i]);
+      tr.appendChild(td);
+    });
     tbody.appendChild(tr);
   }
   tab.appendChild(tbody);
   return tab;
 }
 
-function suma(hodnota, mena) {
+// ---------------------------------------------------------------- zápis čísel, dátumov a IBAN
+// Relácia 246 (R55 v ops/ai/ZNALOSTI-UI.md, nález R1 brány): nemecký doklad píše dátum 11.09.2026 a sumu 1.234,50 €.
+// Mení sa len zápis, nie hodnota: desatinné miesta ostávajú, koľko ich je v súbore, nič sa nezaokrúhľuje a hodnota,
+// ktorá nie je číslo alebo dátum v tvare XML, sa vypíše presne tak, ako je v súbore. Ostatné jazyky zatiaľ ostávajú
+// pri zápise zo súboru (2026-09-11, 450.00 EUR); medzera pred menou a percentom je nezlomiteľná.
+const ZAPIS = {
+  de: { datum: (r, m, d) => d + '.' + m + '.' + r, desatinna: ',', tisice: '.', meny: { EUR: '€' }, rozsah: ' bis ' }
+};
+const NBSP = '\u00a0';
+
+function zapisCisla(hodnota, jazyk) {
+  const s = String(hodnota).trim();
+  const z = ZAPIS[jazyk];
+  const m = z ? /^([+-]?)(\d+)(?:\.(\d+))?$/.exec(s) : null;
+  if (!m) return s;
+  const cele = m[2].replace(/\B(?=(\d{3})+(?!\d))/g, z.tisice);
+  return (m[1] === '-' ? '-' : '') + cele + (m[3] !== undefined ? z.desatinna + m[3] : '');
+}
+
+function zapisDatumu(hodnota, jazyk) {
+  const s = String(hodnota || '').trim();
+  const z = ZAPIS[jazyk];
+  const m = z ? /^(\d{4})-(\d{2})-(\d{2})$/.exec(s) : null;
+  return m ? z.datum(m[1], m[2], m[3]) : s;
+}
+
+// IBAN po skupinách po štyroch znakoch, ako na papieri (ISO 13616); vo všetkých jazykoch.
+function zapisIban(iban) {
+  const s = String(iban || '').replace(/\s+/g, '');
+  return /^[A-Za-z]{2}[0-9]{2}[A-Za-z0-9]+$/.test(s) ? s.replace(/(.{4})(?=.)/g, '$1 ') : String(iban || '');
+}
+
+// Exportovaná ako zapisSumy: riadok súčtov nad živým náhľadom generátora (app.js) píše sumu presne tak ako doklad pod ním
+// (relácia 246, N2 brány: na nemeckej stránke stálo „0.00 EUR“ nad „0,00 €“).
+function suma(hodnota, mena, jazyk) {
   if (hodnota === undefined || hodnota === null || String(hodnota).trim() === '') return '';
-  return String(hodnota) + (mena ? ' ' + mena : '');
+  const z = ZAPIS[jazyk];
+  if (!z) return String(hodnota) + (mena ? ' ' + mena : '');
+  const znak = mena ? (z.meny[mena] || mena) : '';
+  return zapisCisla(hodnota, jazyk) + (znak ? NBSP + znak : '');
+}
+
+function sadzba(hodnota, jazyk) {
+  if (hodnota === undefined || hodnota === null || String(hodnota).trim() === '') return '';
+  return ZAPIS[jazyk] ? zapisCisla(hodnota, jazyk) + NBSP + '%' : hodnota + ' %';
 }
 
 /**
@@ -315,15 +366,19 @@ export function vykresliNahlad(vstup, ciel, jazyk = 'sk', dokument) {
   const nazovTypu = K.nazovTypuDokladu(D.typDokladu, jazyk) ||
     (D.jeDobropis ? t.dobropis : t.faktura);
   hlava.appendChild(el(dok, 'h2', null, nazovTypu + ' ' + (D.cislo || '')));
-  pridajAkJe(hlava, riadokUdaju(dok, t.vystavena, D.datumVystavenia));
-  pridajAkJe(hlava, riadokUdaju(dok, t.dodanie, D.datumDodania));
-  pridajAkJe(hlava, riadokUdaju(dok, t.splatnost, D.datumSplatnosti));
+  const datum = (x) => zapisDatumu(x, jazyk);
+  pridajAkJe(hlava, riadokUdaju(dok, t.vystavena, datum(D.datumVystavenia)));
+  pridajAkJe(hlava, riadokUdaju(dok, t.dodanie, datum(D.datumDodania)));
+  pridajAkJe(hlava, riadokUdaju(dok, t.splatnost, datum(D.datumSplatnosti)));
   if (D.obdobieOd || D.obdobieDo) {
-    pridajAkJe(hlava, riadokUdaju(dok, t.obdobie, [D.obdobieOd, D.obdobieDo].filter(Boolean).join(' .. ')));
+    pridajAkJe(hlava, riadokUdaju(dok, t.obdobie, [datum(D.obdobieOd), datum(D.obdobieDo)].filter(Boolean)
+      .join(ZAPIS[jazyk] ? ZAPIS[jazyk].rozsah : ' .. ')));
   }
   pridajAkJe(hlava, riadokUdaju(dok, t.referencia, D.referenciaOdberatela));
   pridajAkJe(hlava, riadokUdaju(dok, t.objednavka, D.objednavka));
-  pridajAkJe(hlava, riadokUdaju(dok, t.predchadzajuca, D.predchadzajuca));
+  pridajAkJe(hlava, riadokUdaju(dok, t.predchadzajuca, Array.isArray(D.predchadzajuce)
+    ? D.predchadzajuce.map((p) => [p.id, datum(p.datum)].filter(Boolean).join(', ')).join('; ')
+    : D.predchadzajuca));
   koren.appendChild(hlava);
 
   // strany
@@ -348,11 +403,11 @@ export function vykresliNahlad(vstup, ciel, jazyk = 'sk', dokument) {
   const riadkyP = D.riadky.map((r) => [
     r.poradie,
     r.popis ? r.nazov + ' (' + r.popis + ')' : r.nazov,
-    r.mnozstvo,
+    r.mnozstvo === '' ? '' : zapisCisla(r.mnozstvo, jazyk),
     K.nazovJednotky(r.jednotka, jazyk) || r.jednotka,
-    suma(r.cena, D.mena),
-    (r.sadzba !== '' ? r.sadzba + ' %' : '') + (r.kategoria ? ' ' + r.kategoria : ''),
-    suma(r.suma, D.mena)
+    suma(r.cena, D.mena, jazyk),
+    (r.sadzba !== '' ? sadzba(r.sadzba, jazyk) : '') + (r.kategoria ? ' ' + r.kategoria : ''),
+    suma(r.suma, D.mena, jazyk)
   ]);
   sekciaP.appendChild(tabulka(dok, [t.pPoradie, t.pNazov, t.pMnozstvo, t.pJednotka, t.pCena, t.pSadzba, t.pSuma], riadkyP, 'efa-tabulka'));
   koren.appendChild(sekciaP);
@@ -363,9 +418,9 @@ export function vykresliNahlad(vstup, ciel, jazyk = 'sk', dokument) {
     sekciaR.appendChild(el(dok, 'h3', null, t.rozpis));
     const riadkyR = D.rozpis.map((r) => [
       r.kategoria + (K.nazovKategorieDph(r.kategoria, jazyk) ? ' ' + K.nazovKategorieDph(r.kategoria, jazyk) : ''),
-      r.sadzba !== '' ? r.sadzba + ' %' : '',
-      suma(r.zaklad, D.mena),
-      suma(r.dan, D.mena),
+      r.sadzba !== '' ? sadzba(r.sadzba, jazyk) : '',
+      suma(r.zaklad, D.mena, jazyk),
+      suma(r.dan, D.mena, jazyk),
       [r.dovodKod, r.dovodText].filter(Boolean).join(' ')
     ]);
     sekciaR.appendChild(tabulka(dok, [t.rKategoria, t.rSadzba, t.rZaklad, t.rDan, t.rDovod], riadkyR, 'efa-tabulka'));
@@ -376,14 +431,14 @@ export function vykresliNahlad(vstup, ciel, jazyk = 'sk', dokument) {
   if (D.sucty) {
     const sekciaS = el(dok, 'section', 'efa-sucty');
     sekciaS.appendChild(el(dok, 'h3', null, t.sucty));
-    pridajAkJe(sekciaS, riadokUdaju(dok, t.sZaklad, suma(D.sucty.bezDph || D.sucty.zaklad, D.mena)));
-    pridajAkJe(sekciaS, riadokUdaju(dok, t.sDph, suma(D.danSpolu[0], D.mena)));
-    pridajAkJe(sekciaS, riadokUdaju(dok, t.sSDph, suma(D.sucty.sDph, D.mena)));
-    pridajAkJe(sekciaS, riadokUdaju(dok, t.sZaplatene, suma(D.sucty.zaplatene, D.mena)));
-    pridajAkJe(sekciaS, riadokUdaju(dok, t.sZaokruhlenie, suma(D.sucty.zaokruhlenie, D.mena)));
+    pridajAkJe(sekciaS, riadokUdaju(dok, t.sZaklad, suma(D.sucty.bezDph || D.sucty.zaklad, D.mena, jazyk)));
+    pridajAkJe(sekciaS, riadokUdaju(dok, t.sDph, suma(D.danSpolu[0], D.mena, jazyk)));
+    pridajAkJe(sekciaS, riadokUdaju(dok, t.sSDph, suma(D.sucty.sDph, D.mena, jazyk)));
+    pridajAkJe(sekciaS, riadokUdaju(dok, t.sZaplatene, suma(D.sucty.zaplatene, D.mena, jazyk)));
+    pridajAkJe(sekciaS, riadokUdaju(dok, t.sZaokruhlenie, suma(D.sucty.zaokruhlenie, D.mena, jazyk)));
     const uhrada = el(dok, 'p', 'efa-uhrada');
     uhrada.appendChild(el(dok, 'span', 'efa-popis', t.sUhrada));
-    uhrada.appendChild(el(dok, 'strong', 'efa-hodnota', suma(D.sucty.naUhradu, D.mena)));
+    uhrada.appendChild(el(dok, 'strong', 'efa-hodnota', suma(D.sucty.naUhradu, D.mena, jazyk)));
     sekciaS.appendChild(uhrada);
     koren.appendChild(sekciaS);
   }
@@ -395,7 +450,7 @@ export function vykresliNahlad(vstup, ciel, jazyk = 'sk', dokument) {
     for (const p of D.platby) {
       pridajAkJe(sekciaPl, riadokUdaju(dok, t.pSposob,
         (K.nazovSposobuPlatby(p.kod, jazyk) || '') + (p.kod ? ' (' + p.kod + ')' : '')));
-      pridajAkJe(sekciaPl, riadokUdaju(dok, t.pIban, p.iban));
+      pridajAkJe(sekciaPl, riadokUdaju(dok, t.pIban, zapisIban(p.iban)));
       pridajAkJe(sekciaPl, riadokUdaju(dok, t.pBic, p.bic));
       pridajAkJe(sekciaPl, riadokUdaju(dok, t.pVs, p.identifikator));
       pridajAkJe(sekciaPl, riadokUdaju(dok, t.pMandat, p.mandat));
@@ -441,6 +496,8 @@ export function vykresliNahlad(vstup, ciel, jazyk = 'sk', dokument) {
 // zalozky (kontrola/nahlad/vytvorit); nezname meno spadne na "kontrola", takze
 // by sa cely panel Vytvorit aj s nahladom hned skryl namiesto toho, aby sa naň
 // odscrolovalo. Preto tu vlastny scroll a zabranenie skutocnej zmene hashu.
+// Od relacie 246 app.js nezname kotvy ignoruje (panelZKotvy); vlastny okamzity
+// posun tu ostava, lebo plynuly by pri dlhom formulari trval sekundy.
 if (typeof document !== 'undefined') {
   const odkazNahlad = document.querySelector('.zobrazit-nahlad');
   if (odkazNahlad) {
@@ -457,4 +514,4 @@ if (typeof document !== 'undefined') {
   }
 }
 
-export { T as TEXTY_NAHLADU };
+export { T as TEXTY_NAHLADU, suma as zapisSumy };

@@ -302,7 +302,9 @@ body.efv4 main .ef-dvojica h2{font-size:clamp(22px,2vw,28px);letter-spacing:-.02
 /* ── Náhľad dokladu ako papier (kreslí nahlad.js). ───────────────────────── */
 .efv4 .nahlad-hlava{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin:0 0 12px;font-size:13.5px;color:var(--tichy)}
 .efv4 .nahlad-hlava .btn{min-height:40px;padding:0 16px;font-size:14px}
-.efv4 .doklad-obal{background:#f6f4ef;color:#1b1a17;border-radius:8px;padding:clamp(20px,2.6vw,36px);box-shadow:0 30px 60px -28px rgba(0,0,0,.9);overflow-x:auto}
+/* container: rám dokladu je kontajner (relácia 246, N1 brány): tabuľky v ňom sa skladajú do blokov podľa šírky rámu,
+   nie okna (pravidlá @container nižšie). */
+.efv4 .doklad-obal{background:#f6f4ef;color:#1b1a17;border-radius:8px;padding:clamp(20px,2.6vw,36px);box-shadow:0 30px 60px -28px rgba(0,0,0,.9);overflow-x:auto;container:doklad/inline-size}
 .efv4 .doklad-obal:empty{display:none}
 .efv4 .efa-doklad{font:15px/1.55 Georgia,"Times New Roman",serif}
 body.efv4 .efa-doklad h2{font:700 23px/1.2 var(--ui);color:#111;margin:0 0 12px;letter-spacing:-.01em}
@@ -320,8 +322,21 @@ body.efv4 .efa-tabulka{width:100%;border-collapse:collapse;font-size:13.5px;marg
 body.efv4 .efa-tabulka th,body.efv4 .efa-tabulka td{border:1px solid #bbb6aa;padding:6px 8px;text-align:left;vertical-align:top}
 body.efv4 .efa-tabulka th{background:#e9e5dc;font:600 12px/1.3 var(--ui);letter-spacing:.03em;text-transform:none}
 body.efv4 .efa-tabulka tbody tr,body.efv4 .efa-tabulka tbody tr:hover{background:transparent}
+/* Sumy a sadzby sa v bunke nelámu (relácia 246, R9 brány: „270.00 / EUR“ a „19.00 % / S“ na dvoch riadkoch);
+   láme sa názov položky alebo kategórie. Položky: Einzelpreis, USt., Nettobetrag; rozpis: Satz, Grundlage, Steuer.
+   Len tam, kde tabuľku v úzkom ráme zachráni container query (N1 brány, pokus 2): nezalomiteľné sumy zväčšia najmenšiu
+   šírku tabuľky, a prehliadač bez container queries by ju v ráme 450 px dal za posuvník (stĺpec Nettobetrag). */
+@supports (container-type:inline-size){
+  body.efv4 .efa-polozky .efa-tabulka td:nth-child(n+5),body.efv4 .efa-rozpis .efa-tabulka td:nth-child(n+2):nth-child(-n+4){white-space:nowrap}
+}
+/* Dlhé slovo v názve položky, v kategórii alebo v dôvode oslobodenia (nemčina) nesmie rozšíriť tabuľku za rám (relácia 246, N1:
+   „Softwareentwicklungsleistungen“ dalo tabuľku 610 px, kým rám pri okne 1440 px má 558 px). Takáto bunka sa láme aj uprostred
+   slova, no len vtedy, keď by slovo inak nevošlo: anywhere zmenší najmenšiu šírku stĺpca (Positionen v nemčine 534 px na 497 px,
+   s tým slovom 610 px na 497 px), kým šírku, ktorú stĺpec dostane, určuje zvyšok tabuľky, takže bežné slová ostanú celé a doklad
+   vyzerá ako predtým. Položky: Bezeichnung; rozpis: Kategorie, Befreiungsgrund. */
+body.efv4 .efa-polozky .efa-tabulka td:nth-child(2),body.efv4 .efa-rozpis .efa-tabulka td:nth-child(1),body.efv4 .efa-rozpis .efa-tabulka td:nth-child(5){overflow-wrap:anywhere}
 /* Doklad je dokument, nie responzívna tabuľka: pod 600 px ju paper.css mení na bloky s popiskom
-   z data-th, ktorý náhľad nemá. Vraciame ju na tabuľku, ktorá scrolluje vo vnútri .doklad-obal. */
+   z data-th. Statický výrez dokladu (.ef-vyrez-papier, obrázok bez data-th) aj tlač ostávajú tabuľkou. */
 @media (max-width:600px){
   .efa-doklad .efa-tabulka{display:table;width:100%;min-width:520px}
   .efa-doklad .efa-tabulka thead{display:table-header-group}
@@ -329,6 +344,47 @@ body.efv4 .efa-tabulka tbody tr,body.efv4 .efa-tabulka tbody tr:hover{background
   .efa-doklad .efa-tabulka tr{display:table-row;background:transparent;border:0;border-radius:0;margin:0;padding:0}
   .efa-doklad .efa-tabulka th,.efa-doklad .efa-tabulka td{display:table-cell;width:auto;border:1px solid #bbb6aa;padding:6px 8px}
   .efa-doklad .efa-tabulka td::before{content:none;display:none}
+}
+/* Relácia 246, P5 brány: doklad v ráme (.doklad-obal: náhľad, živý náhľad generátora, dávka, ukážka na vieweri) má
+   na úzkej obrazovke každý riadok tabuľky ako blok, v ňom bunky ako riadky „popis stĺpca a hodnota“; popis je
+   z data-th (nahlad.js). Predtým mala tabuľka min. 520 px v ráme asi 310 px a sumy (Einzelpreis, USt., Nettobetrag,
+   Steuer) boli mimo obrazu za tenkým posuvníkom. Len obrazovka: na papier A4 ide tabuľka. */
+@media screen and (max-width:600px){
+  .efv4 .doklad-obal .efa-tabulka{display:block;width:100%;min-width:0;margin:6px 0 10px}
+  .efv4 .doklad-obal .efa-tabulka thead{display:none}
+  .efv4 .doklad-obal .efa-tabulka tbody{display:block}
+  /* Riadok je mriežka s dvoma stĺpcami, bunky ju zdieľajú cez subgrid: stĺpec popisov má šírku najdlhšieho popisu
+     v riadku (Bemessungsgrundlage sa nezalomí uprostred slova) a hodnoty sú pod sebou zarovnané. Bez subgridu bunka
+     použije vlastné dva stĺpce (prvé grid-template-columns). */
+  .efv4 .doklad-obal .efa-tabulka tr{display:grid;grid-template-columns:minmax(0,max-content) minmax(0,1fr);column-gap:12px;margin:0 0 10px;padding:3px 0;border:1px solid #c9c3b6;border-radius:6px;background:#fbfaf6}
+  .efv4 .doklad-obal .efa-tabulka tr:last-child{margin-bottom:0}
+  .efv4 .doklad-obal .efa-tabulka tbody tr:hover{background:#fbfaf6}
+  .efv4 .doklad-obal .efa-tabulka td{grid-column:1/-1;display:grid;grid-template-columns:minmax(92px,40%) minmax(0,1fr);grid-template-columns:subgrid;column-gap:12px;width:auto;padding:5px 10px;border:0;font-size:14px;line-height:1.45;overflow-wrap:anywhere}
+  .efv4 .doklad-obal .efa-tabulka td:not(:empty)~td:not(:empty){border-top:1px solid #e6e1d6}
+  .efv4 .doklad-obal .efa-tabulka td:empty{display:none}
+  .efv4 .doklad-obal .efa-tabulka td::before{content:attr(data-th);display:block;margin:0;color:#57534a;font:500 12.5px/1.6 var(--ui);letter-spacing:0;text-transform:none;overflow-wrap:normal}
+}
+/* Relácia 246, N1 brány (pokus 2): tie isté bloky podľa šírky RÁMU dokladu, nie okna. P5 ich zapínal len pri okne do 600 px,
+   no rám je užší než tabuľka aj pri oknách 601 až 1290 px (dva stĺpce nástroja od 1081 px, živý náhľad generátora od
+   900 px): pri 1100 px bol stĺpec Nettobetrag celý za tenkým posuvníkom rámu. Tabuľka v tabuľkovom režime potrebuje obsah
+   rámu aspoň taký široký, ako je jej najmenšia šírka: Positionen 497 px (nemecký, slovenský a český vzor) a 524 px
+   (anglický) s pravidlom overflow-wrap:anywhere vyššie, bez neho nemecký 534 px (zmerané v Chrome aj Firefoxe,
+   ops/druhy-ucet/246/sirky.mjs). Prah 540 px nechá stĺpcu Bezeichnung asi 138 px, takže slová ako Werkzeugmaschine ostanú
+   celé; pri okne 1440 px má rám 558 px (tabuľka ako predtým), pod prahom sú bloky, čitateľné pri akejkoľvek šírke.
+   Pravidlá sú tie isté ako v @media vyššie (viewer.test.mjs (h) ich porovnáva). @media vyššie ostáva ako poistka pre
+   prehliadač bez container queries a pre prvé vykreslenie na mobile (kriticke.mjs pravidlá @container do kritického CSS
+   neprenáša). Tlač ide cez #tlac mimo .doklad-obal, preto ostáva tabuľkou. */
+@container doklad (max-width:540px){
+  .efv4 .doklad-obal .efa-tabulka{display:block;width:100%;min-width:0;margin:6px 0 10px}
+  .efv4 .doklad-obal .efa-tabulka thead{display:none}
+  .efv4 .doklad-obal .efa-tabulka tbody{display:block}
+  .efv4 .doklad-obal .efa-tabulka tr{display:grid;grid-template-columns:minmax(0,max-content) minmax(0,1fr);column-gap:12px;margin:0 0 10px;padding:3px 0;border:1px solid #c9c3b6;border-radius:6px;background:#fbfaf6}
+  .efv4 .doklad-obal .efa-tabulka tr:last-child{margin-bottom:0}
+  .efv4 .doklad-obal .efa-tabulka tbody tr:hover{background:#fbfaf6}
+  .efv4 .doklad-obal .efa-tabulka td{grid-column:1/-1;display:grid;grid-template-columns:minmax(92px,40%) minmax(0,1fr);grid-template-columns:subgrid;column-gap:12px;width:auto;padding:5px 10px;border:0;font-size:14px;line-height:1.45;overflow-wrap:anywhere}
+  .efv4 .doklad-obal .efa-tabulka td:not(:empty)~td:not(:empty){border-top:1px solid #e6e1d6}
+  .efv4 .doklad-obal .efa-tabulka td:empty{display:none}
+  .efv4 .doklad-obal .efa-tabulka td::before{content:attr(data-th);display:block;margin:0;color:#57534a;font:500 12.5px/1.6 var(--ui);letter-spacing:0;text-transform:none;overflow-wrap:normal}
 }
 .efv4 .efa-uhrada{display:flex;gap:10px;font-size:17px;margin-top:8px}
 .efv4 .efa-uhrada .efa-popis{min-width:132px;color:#57534a}
@@ -522,7 +578,10 @@ body.efv4 main .ef-hero-text .lead{animation-delay:.07s}
 #tlac{display:none}
 @media print{
   @page{size:A4;margin:14mm}
-  body{background:#fff}
+  /* body.efv4 má tmavé pozadie a jeho pravidlo je silnejšie než body, stránka má color-scheme dark: so zapnutou tlačou
+     pozadí bola strana PDF pod dokladom aj okraje čierne (snímka viewer-390-tlac.pdf, relácia 246). */
+  :root{color-scheme:light}
+  html,body,body.efv4.tlaci{background:#fff}
   body.tlaci>*:not(#tlac){display:none !important}
   body.tlaci #tlac{display:block !important;background:#fff;color:#000}
   body.tlaci #tlac .efa-doklad{font:11.5pt/1.45 Georgia,"Times New Roman",serif;color:#000}

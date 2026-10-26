@@ -300,10 +300,17 @@ for (const j of ['de', 'cs']) {
       const polozky = [...xml.matchAll(/<cac:InvoiceLine>[\s\S]*?<cac:Item>[\s\S]*?<cbc:Name>([^<]*)<\/cbc:Name>/g)].map((m) => m[1]);
       assert.equal(polozky.length, 2);
       for (const n of polozky) assert.ok(k3.includes('<td>' + esc(n) + '</td>'), 'krok 3: polozka ' + n);
+      // Od relácie 246 píše nemecký doklad sadzbu 19,00 % a sumu 45,00 € (nahlad.js, nezlomiteľná medzera pred % a €);
+      // český ostáva pri zápise zo súboru (21.00 %, 1150.00 CZK). Porovnáva sa bez rozdielu medzier.
+      const k3n = k3.replace(/\u00a0/g, ' ');
       const sadzba = hod(d, 'cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory/cbc:Percent');
-      assert.equal((k3.match(new RegExp('<td>' + sadzba.replace('.', '\\.') + ' % S</td>', 'g')) || []).length, 2, 'krok 3: sadzba ' + sadzba);
+      const sadzbaNaStranke = j === 'de' ? sadzba.replace('.', ',') : sadzba;
+      assert.equal((k3n.match(new RegExp('<td>' + sadzbaNaStranke.replace('.', '\\.') + ' % S</td>', 'g')) || []).length, 2, 'krok 3: sadzba ' + sadzba);
       const mena = hod(d, 'cbc:DocumentCurrencyCode');
-      assert.ok(!new RegExp(' (?!' + mena + '<)[A-Z]{3}</td>').test(k3), 'krok 3: suma v inej mene nez ' + mena);
+      if (j === 'de') {
+        assert.equal(mena, 'EUR');
+        assert.ok(!/ [A-Z]{3}<\/td>/.test(k3n) && (k3n.match(/,\d{2} €<\/td>/g) || []).length === 4, 'krok 3: sumy nie sú v tvare 45,00 €');
+      } else assert.ok(!new RegExp(' (?!' + mena + '<)[A-Z]{3}</td>').test(k3), 'krok 3: suma v inej mene nez ' + mena);
 
       for (const sk of SLOVENSKY_VZOR) assert.ok(!html.includes(sk), cesta + ' obsahuje slovensky vzor: ' + sk);
       // nemecky vzor ma v BuyerReference Leitweg-ID; OBJ-2026-77 je referencia slovenskeho (a ceskeho) vzoru
@@ -383,7 +390,8 @@ function rozdielyKrokov(surove, jazyk) {
   const z1 = k1.indexOf('<pre class="ef-xml"');
   const je1 = z1 < 0 ? '' : k1.slice(z1, k1.indexOf('</pre>', z1) + '</pre>'.length);
   if (je1 !== ocak1) r.push('krok 1: ' + okolie(je1, ocak1));
-  const ocak3 = obrazokKroku3(xml, jazyk);
+  // Od relácie 246 píše nahlad.js v nemčine pred € a % nezlomiteľnú medzeru; porovnáva sa bez nej ako stránka vyššie.
+  const ocak3 = obrazokKroku3(xml, jazyk).replace(/\u00a0/g, ' ');
   const z3 = k3.indexOf('<div class="ef-vyrez-papier"');
   const je3 = z3 < 0 ? '' : k3.slice(z3, z3 + ocak3.length);
   if (je3 !== ocak3) r.push('krok 3: ' + okolie(je3, ocak3));
@@ -427,8 +435,9 @@ test('presne porovnanie krokov zachyti aj drobnu zmenu (kontrola samotneho testu
   const kon = html.indexOf('</ol>', zac);
   // zmeny, ktore kontrola poli vyssie prepusti (overene 25. 9. 2026 mutaciami kritika)
   const ZMENY = [
-    ['<span class="efa-hodnota">2026-09-25</span>', '<span class="efa-hodnota">2026-10-31</span>'],
-    ['<td>45.00 EUR</td>', '<td>55.00 EUR</td>'],
+    // nemecký zápis dátumu a sumy od relácie 246 (nahlad.js, R55)
+    ['<span class="efa-hodnota">25.09.2026</span>', '<span class="efa-hodnota">31.10.2026</span>'],
+    ['<td>45,00\u00a0€</td>', '<td>55,00\u00a0€</td>'],
     ['<p class="efa-adresa">04109 Leipzig</p>', '<p class="efa-adresa">974 01 Banska Bystrica</p>'],
     ['<span class="efa-hodnota">DE123456789</span>', '<span class="efa-hodnota">SK9999999999</span>'],
     ['<p class="efa-t2">Rechnung 2026-0142</p>', '<p class="efa-t2">Faktura 2026-0142</p>'],
@@ -484,7 +493,8 @@ test('suhrn aj protokol maju nazov profilu v jazyku stranky, z jedneho miesta v 
 });
 
 test('vlozene XML a stiahnuty protokol maju nazov suboru v jazyku stranky', () => {
-  assert.ok(APP.includes('prijmiText(t, nazovSuboru || T.vlozeneMeno);'), 'vlozeny text nema nazov z T');
+  // Od relácie 246 (P4 brány) meno vybera menoVlozeneho(): meno súboru len pre ten istý text, inak T.vlozeneMeno.
+  assert.ok(APP.includes('prijmiText(t, menoVlozeneho(t));') && /function menoVlozeneho\(t\) \{[^}]*\? nazovSuboru : T\.vlozeneMeno;\n\}/.test(APP), 'vlozeny text nema nazov z T');
   assert.ok(APP.includes('stiahni(T.menoProtokolu, protokol(poslednyVysledok, LANG, nazovSuboru));'), 'protokol sa nestahuje pod nazvom z T');
   assert.ok(!/'protokol-efaktura\.txt', protokol|\|\| 'vlozene\.xml'/.test(APP), 'natvrdo slovensky nazov suboru');
   const OCAKAVANE = {

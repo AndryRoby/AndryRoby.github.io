@@ -180,9 +180,10 @@ function stranky() {
   return out.filter((p) => readFileSync(p, 'utf8').includes('id="sumar"'));
 }
 
-test('všetkých 20 stránok s #sumar: feed-monitor v connect-src a app.js s aktuálnym odtlačkom', () => {
+// 21 od relácie 246 (26. 10. 2026): pribudla /efaktura/de/xrechnung-viewer/ s tým istým nástrojom.
+test('všetkých 21 stránok s #sumar: feed-monitor v connect-src a app.js s aktuálnym odtlačkom', () => {
   const zoznam = stranky();
-  assert.equal(zoznam.length, 20, 'počet stránok s kontrolou sa zmenil');
+  assert.equal(zoznam.length, 21, 'počet stránok s kontrolou sa zmenil');
   const verzia = odtlacok(new URL('./app.js', import.meta.url));
   for (const p of zoznam) {
     const h = readFileSync(p, 'utf8');
@@ -218,9 +219,9 @@ const jazykStranky = (p) => (p.replace(/\\/g, '/').match(/\/efaktura\/(en|de|cs)
 const odkry = (s) => s.replace(/<[^>]+>/g, '').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
 const retazceLd = (x, out = []) => { if (typeof x === 'string') out.push(x); else if (x && typeof x === 'object') for (const v of Object.values(x)) retazceLd(v, out); return out; };
 
-test('P3: na 20 stránkach s #sumar žiadna absolútna veta o serveri a ukladaní bez výnimky v tom istom odseku alebo odpovedi; FAQ v HTML = JSON-LD', () => {
+test('P3: na 21 stránkach s #sumar žiadna absolútna veta o serveri a ukladaní bez výnimky v tom istom odseku alebo odpovedi; FAQ v HTML = JSON-LD', () => {
   const zoznam = stranky();
-  assert.equal(zoznam.length, 20);
+  assert.equal(zoznam.length, 21);
   let vety = 0, vetyLd = 0, faq = 0;
   for (const p of zoznam) {
     const h = readFileSync(p, 'utf8');
@@ -313,7 +314,7 @@ const KOPIA = {
 };
 const vetyO = (t) => t.split(/(?<=[.!?])\s+/).filter((v) => DO_ODOSLANIA.test(v) && /e-?mail/i.test(v));
 
-test('N1: každá veta o uložení do odoslania na 20 stránkach s #sumar (HTML aj JSON-LD) a v pristavne.json hovorí „v databáze“ a o kópii v našej pošte', () => {
+test('N1: každá veta o uložení do odoslania na 21 stránkach s #sumar (HTML aj JSON-LD) a v pristavne.json hovorí „v databáze“ a o kópii v našej pošte', () => {
   let html = 0, ld = 0, gen = 0;
   const over = (veta, j, kde) => {
     assert.match(veta, DATABAZA[j], kde + ': veta o uložení bez „' + DATABAZA[j].source + '“: ' + veta);

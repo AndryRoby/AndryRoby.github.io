@@ -45,10 +45,14 @@ function rozbal(s, riadok, stav) {
     }
     const meno = s.slice(i + 1, kon);
     if (meno[0] === '#') {
-      const cislo = meno[1] === 'x' || meno[1] === 'X'
-        ? parseInt(meno.slice(2), 16)
-        : parseInt(meno.slice(1), 10);
-      if (!Number.isFinite(cislo)) {
+      // Len znak, ktorý XML 1.0 pozná (Char): tab, nový riadok, CR, U+0020 až U+D7FF, U+E000 až U+FFFD a U+10000
+      // až U+10FFFF. &#x110000;, &#-5; alebo &#99999999; predtým hodili RangeError zo String.fromCodePoint, výnimka
+      // preletela cez načítanie a v náhľade ostal predošlý doklad (relácia 246, R8 brány); &#12abc; prešiel ako znak 12.
+      const m = /^#(?:([0-9]+)|[xX]([0-9a-fA-F]+))$/.exec(meno);
+      const cislo = !m ? NaN : m[1] !== undefined ? parseInt(m[1], 10) : parseInt(m[2], 16);
+      const znak = cislo === 0x9 || cislo === 0xA || cislo === 0xD || (cislo >= 0x20 && cislo <= 0xD7FF)
+        || (cislo >= 0xE000 && cislo <= 0xFFFD) || (cislo >= 0x10000 && cislo <= 0x10FFFF);
+      if (!znak) {
         stav.chyba = chyba(
           'Neplatná znaková referencia &' + meno + '; na riadku ' + riadok + '.',
           'Neplatná znaková reference &' + meno + '; na řádku ' + riadok + '.',

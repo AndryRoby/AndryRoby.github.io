@@ -731,7 +731,8 @@ for (const [meno, faktura] of [['SK', fakturaSk()], ['DE', fakturaDe()], ['CZ', 
   ok('19. nahlad obsahuje cislo faktury', text.includes('SK-2026-100'));
   ok('19. nahlad obsahuje dodavatela', text.includes('ARLing vzor s. r. o.'));
   ok('19. nahlad obsahuje odberatela', text.includes('Odberatel SK a. s.'));
-  ok('19. nahlad obsahuje IBAN', text.includes(IBAN_SK));
+  // Od relácie 246 (R55) náhľad píše IBAN po skupinách po štyroch, ako na papieri; bez medzier je to ten istý IBAN.
+  ok('19. nahlad obsahuje IBAN po skupinach', text.includes('SK31 1200 0000 1987 4263 7541') && 'SK31 1200 0000 1987 4263 7541'.replace(/ /g, '') === IBAN_SK);
   ok('19. nahlad obsahuje sumu na uhradu', text.includes('Na úhradu'));
   const v = prepocitaj(f);
   ok('19. nahlad obsahuje spravnu sumu', text.includes(zCentov(v.sDphCenty)), zCentov(v.sDphCenty));

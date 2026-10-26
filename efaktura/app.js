@@ -16,14 +16,17 @@
  * efaktura_vytvorit_nahlad, efaktura_kupa_click, efaktura_zaplatene,
  * efaktura_stiahnute, kupa_click_vysledok, efaktura_do_formulara (prenos
  * skontrolovaneho XML do formulara, vlastnost chyby = pocet chyb v subore),
- * plus spolocne nastroj_pouzity a cena_videna.
+ * plus spolocne nastroj_pouzity a cena_videna. Od relacie 246 (26. 10. 2026):
+ * efaktura_nahlad a dve nove udalosti sa posielaju raz na vstup (zmerajRaz):
+ * efaktura_nahlad (vlastnost vzor), efaktura_cii (CII subor, miesto nahlad
+ * alebo kontrola) a efaktura_nahlad_odmietnute (dovod pdf, xml alebo koren).
  */
 import { skontroluj, protokol, nazovProfilu, IMPLEMENTOVANE } from './pravidla.mjs';
 import * as K from './kodovniky.mjs';
 import { parsujXml } from './parser.mjs';
 import { vytvorUbl, prepocitaj, prazdnaFaktura, zCentov } from './ubl.js';
 import { zUbl, skrat } from './z-ubl.mjs';
-import { vykresliNahlad } from './nahlad.js';
+import { vykresliNahlad, zapisSumy } from './nahlad.js';
 import { zapojDavku } from './davka-ui.js';
 import { zobrazOpakovanie } from './dopyt-opakovanie.js';
 import { blokSmie, zhrnutieVysledku, cspPovoluje, cspStranky, riadicBloku, nacitavacModulu, nacitajPriVstupe, MODUL_BLOKU, adresaOdberuFaq, ukazPonukuFaq, pridajTlacidloEmailu, posunNaBlok } from './vysledok-blok.mjs?v=5201baa0';
@@ -94,6 +97,8 @@ const T = {
     poslatEmailom: 'Poslať e-mailom',
     prazdnyNahlad: 'Načítajte súbor a doklad sa vykreslí tu.',
     typNieJeUbl: 'Doklad vieme vykresliť len z UBL 2.1 (Invoice alebo CreditNote). Čo je v súbore, píšeme v záložke Kontrola.',
+    ciiNahlad: 'Súbor je e-faktúra v syntaxi CII (hlavný prvok CrossIndustryInvoice), napríklad XRechnung v CII alebo XML z faktúry ZUGFeRD. Náhľad zatiaľ vykreslí len UBL 2.1 (Invoice a CreditNote), preto doklad nezobrazíme. Ak ju chcete čítať tu, požiadajte odosielateľa o tú istú faktúru vo formáte UBL. Súbor ostal vo vašom prehliadači.',
+    pdfNahlad: 'Toto je súbor PDF, nie XML. Pri ZUGFeRD a Factur-X je XML (v syntaxi CII) vložené vnútri PDF a samotné PDF prečítate v bežnom prehliadači PDF. Náhľad tu číta len súbory XML v UBL 2.1.',
     // generator
     pridatRiadok: 'Pridať riadok',
     zmazatRiadok: 'Zmazať',
@@ -190,6 +195,8 @@ const T = {
     poslatEmailom: 'Poslat e-mailem',
     prazdnyNahlad: 'Načtěte soubor a doklad se vykreslí tady.',
     typNieJeUbl: 'Doklad umíme vykreslit jen z UBL 2.1 (Invoice nebo CreditNote). Co je v souboru, píšeme v záložce Kontrola.',
+    ciiNahlad: 'Soubor je e-faktura v syntaxi CII (hlavní prvek CrossIndustryInvoice), například XRechnung v CII nebo XML z faktury ZUGFeRD. Náhled zatím vykreslí jen UBL 2.1 (Invoice a CreditNote), proto doklad nezobrazíme. Pokud ji chcete číst tady, požádejte odesílatele o stejnou fakturu ve formátu UBL. Soubor zůstal ve vašem prohlížeči.',
+    pdfNahlad: 'Toto je soubor PDF, ne XML. U ZUGFeRD a Factur-X je XML (v syntaxi CII) vložené uvnitř PDF a samotné PDF přečtete v běžném prohlížeči PDF. Náhled tady čte jen soubory XML v UBL 2.1.',
     pridatRiadok: 'Přidat řádek',
     zmazatRiadok: 'Smazat',
     pNazov: 'Název položky', pMnozstvo: 'Množství', pJednotka: 'Jednotka', pCena: 'Cena bez DPH', pSadzba: 'Sazba DPH', pKategoria: 'Kategorie DPH',
@@ -285,6 +292,8 @@ const T = {
     poslatEmailom: 'Per E-Mail senden',
     prazdnyNahlad: 'Laden Sie eine Datei, dann erscheint der Beleg hier.',
     typNieJeUbl: 'Wir können den Beleg nur aus UBL 2.1 darstellen (Invoice oder CreditNote). Was in der Datei steht, sagen wir im Tab Prüfung.',
+    ciiNahlad: 'Diese Datei ist eine E-Rechnung in der Syntax CII (Wurzelelement CrossIndustryInvoice), etwa eine XRechnung in CII oder die XML-Datei aus einer ZUGFeRD-Rechnung. Die Vorschau stellt bisher nur UBL 2.1 dar (Invoice und CreditNote), deshalb zeigen wir keinen Beleg. Um die Rechnung hier zu lesen, bitten Sie den Absender um dieselbe Rechnung im Format UBL. Die Datei hat Ihren Browser nicht verlassen.',
+    pdfNahlad: 'Das ist eine PDF-Datei, keine XML-Datei. Bei ZUGFeRD und Factur-X steckt die XML-Datei (in der Syntax CII) im PDF, und das PDF selbst öffnen Sie mit jedem PDF-Programm. Die Vorschau hier liest nur XML-Dateien in UBL 2.1.',
     pridatRiadok: 'Zeile hinzufügen',
     zmazatRiadok: 'Löschen',
     pNazov: 'Bezeichnung', pMnozstvo: 'Menge', pJednotka: 'Einheit', pCena: 'Preis netto', pSadzba: 'Steuersatz', pKategoria: 'Steuerkategorie',
@@ -380,6 +389,8 @@ const T = {
     poslatEmailom: 'Email it',
     prazdnyNahlad: 'Load a file and the document will be drawn here.',
     typNieJeUbl: 'We can only draw the document from UBL 2.1 (Invoice or CreditNote). What is in the file we say in the Check tab.',
+    ciiNahlad: 'This file is an e-invoice in the CII syntax (root element CrossIndustryInvoice), for example an XRechnung in CII or the XML from a ZUGFeRD invoice. The preview only draws UBL 2.1 so far (Invoice and CreditNote), so we show no document. To read it here, ask the sender for the same invoice in UBL format. The file stayed in your browser.',
+    pdfNahlad: 'This is a PDF file, not XML. In ZUGFeRD and Factur-X the XML (in the CII syntax) sits inside the PDF, and the PDF itself opens in any PDF reader. The preview here reads only XML files in UBL 2.1.',
     // generator
     pridatRiadok: 'Add line',
     zmazatRiadok: 'Delete',
@@ -1136,6 +1147,17 @@ function nacitajVzor(sChybami) {
 const PANELY = ['kontrola', 'nahlad', 'vytvorit'];
 let aktivna = 'kontrola';
 
+/* Kotva v adrese prepne záložku len vtedy, keď je to meno panela (relácia 246, P1 brány). Iné kotvy (#selbst-erstellen
+ * z „Preise im Detail“, #arling-obsah z „Zum Inhalt springen“, #otazky z vyhľadávača, #cennik) len posunú stránku;
+ * záložka, vstup aj výsledok ostanú, ako boli, a kontrola sa nespustí. Predtým hashchange aj štart posielali každú
+ * kotvu do prepni(), ktoré neznáme meno zmenilo na 'kontrola': na vieweri (predvolená Vorschau) sa nástroj sám
+ * prepol na Prüfung a s načítaným súborom spustil kontrolu, v záložke Erstellen sa skryl formulár.
+ * Vráti meno panela alebo prázdny reťazec. */
+function panelZKotvy(hash) {
+  const meno = String(hash || '').replace(/^#/, '');
+  return PANELY.indexOf(meno) === -1 ? '' : meno;
+}
+
 function prepni(meno, zapisHash) {
   if (PANELY.indexOf(meno) === -1) meno = 'kontrola';
   aktivna = meno;
@@ -1154,6 +1176,10 @@ function prepni(meno, zapisHash) {
   if (zapisHash) { try { history.replaceState(null, '', '#' + meno); } catch (e) { /* nic */ } }
   if (meno === 'nahlad') vykresliVstupnyDoklad();
   if (meno === 'vytvorit') prekresliGenerator();
+  /* Relácia 246 (KANDIDATI.md časť 6 bod 1, nález 24 kontroly inej AI pri 219): súbor načítaný v náhľade
+   * sa pri prepnutí na Kontrolu skontroluje. Veta náhľadu „čo je v súbore, píšeme v záložke Kontrola“
+   * inak viedla na prázdnu záložku. Raz na vstup: ten istý súbor sa pri ďalšom prepnutí znova nekontroluje. */
+  if (meno === 'kontrola' && xmlText.trim() && kontrolaVstupu !== vstupCislo) spustiKontrolu();
 }
 
 /* ── Spolocny vstup: subor, pretiahnutie, vlozene XML ───────────────────── */
@@ -1162,11 +1188,29 @@ let xmlText = '';
 let nazovSuboru = '';
 let vstupJeUkazka = false;
 
+/* Meranie raz na vstup (relácia 246). Každý nový vstup (súbor, vzor, vložené XML) dostane nové číslo.
+ * Udalosti náhľadu a odmietnutia sa zaznamenajú raz na vstup: prepnutie záložky ani opakované vykreslenie
+ * toho istého súboru nepridá ďalšiu, takže počty v Umami sú počty súborov, nie kliknutí na záložky.
+ * Do udalosti nejde nič zo súboru, len druh výsledku. */
+let vstupCislo = 0;
+let kontrolaVstupu = -1;
+let citanieCislo = 0; // poradie čítania súboru, pozri prijmiSubor (súbeh FileReader)
+const zmerane = new Set();
+function zmerajRaz(meno, data) {
+  const kluc = meno + '|' + vstupCislo;
+  if (zmerane.has(kluc)) return false;
+  zmerane.add(kluc);
+  track(meno, data);
+  return true;
+}
+
 function stavVstupu(text) { const s = $('vstup-stav'); if (s) s.textContent = text; }
 
 function prijmiText(text, nazov, ukazka = false) {
   // Novy vstup: blok e-mailu k predoslemu vysledku zmizne hned, aj keby sa kontrola nespustila (zalozka Nahlad).
   skryBlokEmailu();
+  vstupCislo += 1;
+  citanieCislo += 1;
   xmlText = text;
   vstupJeUkazka = ukazka || text.trim() === VZOR.trim() || (!!VZOR_CHYBY && text.trim() === VZOR_CHYBY.trim());
   // Modul bloku sa zacne nacitavat uz teraz, nie az pod vysledkom: inak blok pride neskoro a naleze pod nim poskocia
@@ -1180,13 +1224,20 @@ function prijmiText(text, nazov, ukazka = false) {
   if (aktivna === 'nahlad') vykresliVstupnyDoklad(); else spustiKontrolu();
 }
 
+/* Súbeh pri čítaní súboru (AGENTS.md bod 12a, relácia 246): FileReader odpovedá asynchrónne, takže pri dvoch
+ * súboroch rýchlo po sebe (alebo pri vložení XML počas čítania) by neskoršia odpoveď staršieho súboru prepísala
+ * novší vstup. Každé čítanie dostane poradie citanieCislo; prijme sa len odpoveď posledného požiadavku, a každý
+ * prijatý vstup (aj vložené XML a vzor v prijmiText) zvýši poradie, takže staršie čítanie sa už neprijme.
+ * Poradie dostane každý vybraný súbor ešte pred kontrolou veľkosti (P3 brány 246): aj odmietnutý príliš veľký súbor
+ * je novší vstup, takže neskorá odpoveď čítania predošlého súboru neprepíše hlášku „príliš veľký“ ani náhľad. */
 function prijmiSubor(f) {
   if (!f) return;
+  const moje = ++citanieCislo;
   if (f.size > MAX_MB * 1024 * 1024) { stavVstupu(T.prilisVelky(MAX_MB)); return; }
   stavVstupu(T.citam);
   const r = new FileReader();
-  r.onload = () => prijmiText(String(r.result || ''), f.name);
-  r.onerror = () => stavVstupu(T.nacitajteSubor);
+  r.onload = () => { if (moje === citanieCislo) prijmiText(String(r.result || ''), f.name); };
+  r.onerror = () => { if (moje === citanieCislo) stavVstupu(T.nacitajteSubor); };
   r.readAsText(f, 'utf-8');
 }
 
@@ -1215,8 +1266,17 @@ if (vstupBlok) {
     const ta = $('xml');
     const t = ta ? ta.value : '';
     if (!t.trim()) { stavVstupu(T.nacitajteSubor); return; }
-    prijmiText(t, nazovSuboru || T.vlozeneMeno);
+    prijmiText(t, menoVlozeneho(t));
   });
+}
+
+/* Meno vstupu pri tlačidle „vložené XML“ (P4 brány 246). Meno súboru ostane len vtedy, keď pole nesie presne text,
+ * ktorý je načítaný (človek ten istý súbor iba znova otvoril); vložený alebo upravený text je „vložené XML“.
+ * Predtým po „Beispiel ansehen“ a vložení vlastnej faktúry stav aj protokol hlásili beispielrechnung.xml.
+ * Konce riadkov sa porovnávajú zjednotené: textarea vracia CRLF zo súboru ako LF. */
+function menoVlozeneho(t) {
+  const lf = (x) => String(x).replace(/\r\n?/g, '\n');
+  return nazovSuboru && lf(t) === lf(xmlText) ? nazovSuboru : T.vlozeneMeno;
 }
 
 /* Spustenie nastroja z prvej obrazovky. Nemecka stranka ma tieto tlacidla nad zahybom,
@@ -1403,6 +1463,7 @@ function spustiKontrolu() {
   }
   const v = skontroluj(xmlText);
   poslednyVysledok = v;
+  kontrolaVstupu = vstupCislo;
   vycisti(cielSumar);
   const s = v.sumar;
   // CII: pravidla nebezali (CII-01 je len informacia), preto stav nesmie tvrdit, ze subor presiel.
@@ -1435,7 +1496,10 @@ function spustiKontrolu() {
   }
   zobrazOpakovanie(bezaliPravidla && !vstupJeUkazka);
   ukazBlokEmailu(v);
-  track('efaktura_kontrola', { vysledok: s.chyby ? 'chyby' : 'ok', profil: v.profil, produkt: 'efaktura', jazyk: LANG });
+  // CII pravidlá nekontrolovali (0 chýb neznamená „ok“), preto vlastný výsledok (R4 brány 246).
+  track('efaktura_kontrola', { vysledok: v.typ === 'CII' ? 'cii' : s.chyby ? 'chyby' : 'ok', profil: v.profil, produkt: 'efaktura', jazyk: LANG });
+  // CII súbor sa počíta raz na vstup, či ho človek načítal v kontrole alebo v náhľade (KANDIDATI.md časť 8 A, relácia 246).
+  if (v.typ === 'CII') zmerajRaz('efaktura_cii', { miesto: 'kontrola', produkt: 'efaktura', jazyk: LANG });
 }
 
 /* Pri platenom tlacidle pod vysledkom ta ista veta ako v #brana: pre koho je platene XML a ze ho
@@ -1479,17 +1543,39 @@ function vykresliVstupnyDoklad() {
     if (tlacidlo) tlacidlo.hidden = true;
     return;
   }
-  const p = parsujXml(xmlText);
-  if (!p.ok || (p.koren.local !== 'Invoice' && p.koren.local !== 'CreditNote')) {
+  const pdf = /^\s*%PDF-/.test(xmlText);
+  const p = pdf ? null : parsujXml(xmlText);
+  if (!p || !p.ok || (p.koren.local !== 'Invoice' && p.koren.local !== 'CreditNote')) {
     vycisti(ciel);
-    if (stav) stav.textContent = T.typNieJeUbl;
+    if (stav) stav.textContent = dovodBezNahladu(p);
     if (tlacidlo) tlacidlo.hidden = true;
     return;
   }
   vykresliNahlad(p.koren, ciel, LANG);
   if (stav) stav.textContent = '';
   if (tlacidlo) tlacidlo.hidden = false;
-  track('efaktura_nahlad', { produkt: 'efaktura', jazyk: LANG });
+  zmerajRaz('efaktura_nahlad', { vzor: vstupJeUkazka, produkt: 'efaktura', jazyk: LANG });
+}
+
+/* Prečo sa doklad nevykreslil (relácia 246): PDF (napríklad ZUGFeRD), syntax CII, poškodené XML alebo iný
+ * hlavný prvok. p je výsledok parsujXml, pri PDF null (PDF sa ako XML ani nečíta). Vráti vetu pre #nahlad-stav
+ * a zaznamená jednu udalosť na vstup: CII ako efaktura_cii (to isté meno ako pri kontrole), ostatné ako
+ * efaktura_nahlad_odmietnute s dôvodom pdf, xml alebo koren. Text chyby XML je z parsera v jazyku stránky. */
+function dovodBezNahladu(p) {
+  if (!p) {
+    zmerajRaz('efaktura_nahlad_odmietnute', { dovod: 'pdf', produkt: 'efaktura', jazyk: LANG });
+    return T.pdfNahlad;
+  }
+  if (p.ok && p.koren.local === 'CrossIndustryInvoice') {
+    zmerajRaz('efaktura_cii', { miesto: 'nahlad', produkt: 'efaktura', jazyk: LANG });
+    return T.ciiNahlad;
+  }
+  if (!p.ok) {
+    zmerajRaz('efaktura_nahlad_odmietnute', { dovod: 'xml', produkt: 'efaktura', jazyk: LANG });
+    return (p.chyba && (p.chyba[LANG] || p.chyba.sk)) || T.typNieJeUbl;
+  }
+  zmerajRaz('efaktura_nahlad_odmietnute', { dovod: 'koren', produkt: 'efaktura', jazyk: LANG });
+  return T.typNieJeUbl;
 }
 
 /* Tlac: doklad sa naklonuje do samostatneho bloku, aby na papier islo len on. */
@@ -1786,6 +1872,18 @@ let opravaAktivna = false;
 let poslednyPrenos = '';
 let casovacKontroly = null;
 
+/* Riadok súčtov nad živým náhľadom (Netto, DPH, Spolu, Na úhradu). Sumu píše zapisSumy z nahlad.js podľa jazyka
+ * stránky, teda tak ako doklad pod ním: nemecká stránka „1.234,50 €“, slovenská, česká a anglická „1234.50 EUR“
+ * (relácia 246, N2 brány: predtým stálo na nemeckej stránke „0.00 EUR“ nad náhľadom s „0,00 €“). */
+function vypisSucty(ciel, v, mena) {
+  vycisti(ciel);
+  const par = (m, c) => { const s = el('span'); s.appendChild(el('b', null, m + ': ')); s.appendChild(document.createTextNode(zapisSumy(zCentov(c), mena, LANG))); return s; };
+  ciel.appendChild(par(T.suctyZaklad, v.zakladCenty));
+  ciel.appendChild(par(T.suctyDph, v.danCenty));
+  ciel.appendChild(par(T.suctySpolu, v.sDphCenty));
+  ciel.appendChild(par(T.suctyUhrada, v.naUhraduCenty));
+}
+
 function prekresliGenerator() {
   const ciel = $('nahlad-zivy');
   if (!ciel) return;
@@ -1802,17 +1900,8 @@ function prekresliGenerator() {
   if (p.ok) vykresliNahlad(p.koren, ciel, LANG);
 
   // sucty v jednom riadku nad nahladom
-  const v = prepocitaj(faktura);
-  const mena = faktura.mena || 'EUR';
   const sucty = $('sucty');
-  if (sucty) {
-    vycisti(sucty);
-    const par = (m, c) => { const s = el('span'); s.appendChild(el('b', null, m + ': ')); s.appendChild(document.createTextNode(zCentov(c) + ' ' + mena)); return s; };
-    sucty.appendChild(par(T.suctyZaklad, v.zakladCenty));
-    sucty.appendChild(par(T.suctyDph, v.danCenty));
-    sucty.appendChild(par(T.suctySpolu, v.sDphCenty));
-    sucty.appendChild(par(T.suctyUhrada, v.naUhraduCenty));
-  }
+  if (sucty) vypisSucty(sucty, prepocitaj(faktura), faktura.mena || 'EUR');
   if (!generatorPouzity && faktura.dodavatel.nazov && faktura.polozky.some((x) => x.nazov)) {
     generatorPouzity = true;
     track('efaktura_vytvorit_nahlad', { produkt: 'efaktura', jazyk: LANG });
@@ -2278,14 +2367,24 @@ function poNavrate() {
   overPlatbu(sid, 1);
 }
 
+/* Videnie ceny (cena_videna) raz na miesto a zobrazenie stránky: platobný blok generátora (#brana, miesto generator)
+ * a cenník pod nástrojom (.ef-cennik, miesto cennik). Relácia 246, R2 brány: na vieweri je #brana v skrytej záložke
+ * Erstellen, takže videnie ceny v cenníku sa nemeralo vôbec. Videné = aspoň polovica prvku, pri prvku vyššom než
+ * okno aspoň polovica okna. Do udalosti ide len miesto, produkt a jazyk. */
 function sledujCenuVidenu() {
   try {
-    const box = $('brana');
-    if (!box || !('IntersectionObserver' in window)) return;
+    if (!('IntersectionObserver' in window)) return;
+    const miesta = [[$('brana'), 'generator'], [document.querySelector('.ef-cennik'), 'cennik']].filter((x) => x[0]);
+    if (!miesta.length) return;
     const io = new IntersectionObserver((zaznamy) => {
-      for (const z of zaznamy) if (z.isIntersecting) { track('cena_videna', { produkt: 'efaktura', jazyk: LANG }); io.disconnect(); }
-    }, { threshold: 0.5 });
-    io.observe(box);
+      for (const z of zaznamy) {
+        if (!z.isIntersecting || (z.intersectionRatio < 0.5 && z.intersectionRect.height < window.innerHeight * 0.5)) continue;
+        io.unobserve(z.target);
+        const m = miesta.find((x) => x[0] === z.target);
+        if (m) track('cena_videna', { miesto: m[1], produkt: 'efaktura', jazyk: LANG });
+      }
+    }, { threshold: [0.25, 0.5, 0.75, 1] });
+    for (const [prvok] of miesta) io.observe(prvok);
   } catch (e) { /* nic */ }
 }
 
@@ -2293,10 +2392,11 @@ function sledujCenuVidenu() {
 for (const b of document.querySelectorAll('.zalozka')) {
   b.addEventListener('click', () => prepni(b.dataset.tab, true));
 }
-window.addEventListener('hashchange', () => { const m = (location.hash || '').replace('#', ''); prepni(m, false); if (PANELY.includes(m)) kNastroju(); });
+// Odkaz na panel, ktorý už je v adrese, hashchange nespustí; k nástroju vtedy posúva efaktura-v4.js.
+window.addEventListener('hashchange', () => { const m = panelZKotvy(location.hash); if (!m) return; prepni(m, false); kNastroju(); });
 
 postavFormular();
-prepni((location.hash || '').replace('#', '') || document.body.dataset.efakturaStart || 'kontrola', false);
+prepni(panelZKotvy(location.hash) || document.body.dataset.efakturaStart || 'kontrola', false);
 spustiKontrolu();
 prekresliGenerator();
 ukazPlatbu();
