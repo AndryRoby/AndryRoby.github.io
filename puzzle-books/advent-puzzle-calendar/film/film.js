@@ -1,5 +1,5 @@
 // Advent Puzzle Calendar 2026: film na 20 sekúnd pre tlačiteľný adventný kalendár hlavolamov (Etsy,
-// 4,90 €), nakreslený a ozvučený kódom (kodfilm engine). Vizuálny jazyk kalendára: tmavá zelená noc,
+// 8,90 €), nakreslený a ozvučený kódom (kodfilm engine). Vizuálny jazyk kalendára: tmavá zelená noc,
 // krémový papier, červená #b3261e a zlatá #e2b85a z PDF a obrázkov ponuky (products/hlavolamy-advent).
 //
 // Pokus 2 po bráne (Astra, 28. 9.): hlavným predmetom od snímky 0 do konca je jeden skutočný list PDF
@@ -50,7 +50,7 @@ export const FAKTY = {
   ponukaEn: 4583815695,
   ponukaDe: 4583815851,
   url: 'https://www.etsy.com/listing/4583815695/printable-puzzle-advent-calendar-2026-48',
-  cena: '4.90',
+  cena: '8.90',
   // Nonogramy 10 x 10 v dňoch 1 až 8, 15 x 15 v dňoch 9 až 24 (texty.mjs uvod, zadania.json)
   malychDni: 8,
 };

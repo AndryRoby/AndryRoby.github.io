@@ -1,0 +1,102 @@
+/* Relácia 273 (31. 10. 2026): poznámky k predávajúcim ponukám na Etsy a odkazy na bezplatné ukážky na hube. Vkladá ich
+   ops/etsy/hub-bloky/vloz.mjs (značky <!-- b273:<id> -->, prvok s atribútom data-b273); súbor sa načíta len na stránkach
+   s blokom. Tmavý papier hubu (premenné z paper.css, body.noc). Papierová poznámka s tenkou linkou, žiadna karta, podklad
+   ani tlačidlo (ZNALOSTI-UI R64, R74): jediné plné tlačidlo ostáva hlavná akcia stránky, tu sú len textové odkazy
+   s podčiarknutím (R67), ciele dotyku aspoň 44 px, písmo odseku 16 px. Bez vloženého štýlu (stránky ukážok majú CSP
+   style-src 'self'). Selektory s [data-b273] majú váhu (0,2,x), aby neprehrali s body.noc p (0,1,2) z paper.css ani
+   s body.shopv4 main p a main a (0,1,3) z obchod-v4.css. Kontrast na #0a0908: --ink 19 : 1, --body 7,9 : 1,
+   --muted 5,7 : 1, --accent-light 11,7 : 1 (ops/druhy-ucet/273/tmp/kontrast.py). */
+
+/* 1. Poznámka k ponukám (rodicia, dospeli): kicker, položky (názov, riadok faktov, dva textové odkazy). */
+[data-b273].b273-blok { margin:24px 0 0; padding:16px 0 0; border-top:1px solid var(--line); max-width:34rem;
+  text-align:left; font-family:var(--ui); overflow-wrap:break-word; }
+[data-b273].b273-blok .b273-kicker { margin:0; font:600 13px/1.4 var(--ui); letter-spacing:.08em; text-transform:uppercase;
+  color:var(--muted); }
+[data-b273].b273-blok .b273-polozky { list-style:none; margin:0; padding:0; }
+[data-b273].b273-blok .b273-polozky > li { margin:0; padding:0; }
+[data-b273].b273-blok .b273-polozky > li::before { content:none; }
+[data-b273].b273-blok .b273-polozky > li + li { margin-top:8px; padding-top:4px; border-top:1px solid var(--line); }
+/* Názov je cieľ dotyku: 24 px riadok + 10 a 10 px = 44 px. */
+[data-b273].b273-blok a.b273-nazov { display:inline-block; padding:10px 0; font:600 17px/24px var(--ui); color:var(--ink);
+  text-decoration:underline; text-decoration-thickness:1px; text-underline-offset:3px; text-decoration-color:rgba(255,255,255,.3); }
+/* Riadok faktov: <p> bez triedy, lebo ops/etsy/ceny-na-hube.py číta tvar <a …>…</a><p>…, X € on Etsy.</p>. Bez osamelého
+   „Etsy.“ na poslednom riadku (kolo 4 F1, SNIMKY.md nález 6). */
+[data-b273].b273-blok .b273-polozky p { margin:0; max-width:none; font:400 16px/1.5 var(--ui); color:var(--body);
+  text-wrap:pretty; }
+/* Samotný riadok faktov (prvý <p> za názvom, v bloku aj v sekcii nižšie) vyvážene: pri pretty ostalo na poslednom riadku „on Etsy.“
+   (56 px pri 1440) a cena „8.90 €“ na konci predošlého riadku; balance drží „X € on Etsy.“ spolu a funguje aj v Safari 17.5 a
+   Firefoxe 121, kde pretty nie je. */
+[data-b273].b273-blok .b273-polozky a.b273-nazov + p, #new-samples.b273-nove li a + p { text-wrap:balance; }
+[data-b273].b273-blok .b273-polozky p.b273-akcie, [data-b273] .b273-akcie { display:flex; flex-wrap:wrap; gap:0 24px;
+  margin:0; max-width:none; }
+[data-b273] .b273-akcie a { display:inline-flex; align-items:center; min-height:44px; font:500 16px/1.4 var(--ui);
+  color:var(--body); text-decoration:underline; text-decoration-thickness:1px; text-underline-offset:3px;
+  text-decoration-color:rgba(255,255,255,.35); }
+[data-b273].b273-blok .b273-viac { margin:8px 0 0; padding-top:12px; border-top:1px solid var(--line); max-width:none;
+  font:400 16px/1.5 var(--ui); color:var(--body); }
+
+/* 2. Riadok s odkazmi v úvode (games/, shop/, classics/): jedna veta, odkazy vnútri vety. Ciele dotyku 44 px bez
+   zmeny výšky riadku (ten istý postup ako .nx-tema-meta a v obsah.css): vnútorný okraj 10 px a rovnaký záporný. */
+[data-b273].b273-riadok { margin:16px 0 0; max-width:44rem; font:400 16px/1.5 var(--ui); color:var(--body);
+  text-wrap:pretty; overflow-wrap:break-word; }
+[data-b273].b273-riadok a, [data-b273].b273-blok .b273-viac a { display:inline-block; padding:10px 0; margin:-10px 0;
+  color:var(--ink); text-decoration:underline; text-decoration-thickness:1px; text-underline-offset:3px;
+  text-decoration-color:rgba(255,255,255,.35); }
+.uv-lead-text > [data-b273].b273-riadok { margin-top:14px; }
+.sv-hero-text > [data-b273].b273-riadok { margin-top:18px; }
+/* Obchod: obchod-v4.css púšťa vstup všetkým deťom .sv-hero-text (nadpis 0 s, veta .08 s, tlačidlá .16 s); riadok ide až po
+   tlačidlách, aby hlavná akcia nebola posledná, čo sa ukáže. Pri zníženom pohybe animáciu vypína obchod-v4.css. */
+.shopv4 .sv-hero-text > [data-b273] { animation-delay:.24s; }
+
+/* Spoločné stavy odkazov (rovnaké ako odkazy v texte hubu: paper.css body.noc main :is(p,li) a:not([class])). */
+[data-b273] a:hover { color:var(--accent-light); text-decoration-color:currentColor; }
+[data-b273] a:focus-visible { outline:2px solid var(--accent-light); outline-offset:3px; border-radius:2px; }
+
+/* 3. Nové ukážky na /printables/ (sekcia nad zoznamom 10 ukážok; rozloženie riadkov berie z .free-samples vo vzorky.css). */
+#new-samples.b273-nove { border-bottom:0; }
+/* Odseky a odkazy sekcie aspoň 16 px (vzorky.css dáva riadkom zoznamu 15 px, do 480 px 14 px); zoznam 10 ukážok pod sekciou
+   ostáva, ako bol, lebo selektor platí len pre #new-samples (kolo 4 F1, SNIMKY.md nález 1). Odseky bez osamelého slova na konci,
+   riadok faktov vyvážene (pravidlo v časti 1). */
+#new-samples.b273-nove li p { font-size:16px; text-wrap:pretty; }
+#new-samples .b273-co { color:var(--body); }
+#new-samples .b273-akcie { margin:2px 0 0; }
+#new-samples .b273-akcie a { min-height:44px; padding:0; font:500 16px/1.4 var(--ui); }
+
+/* 4. Miesto bloku v úvodoch predajných stránok s mriežkou. Blok je priame dieťa .hero (za cenovým boxom, na puzzle-books za
+   faktmi), medzeru dáva mriežka. Pravidlá bez :has(): súbor sa načíta len na stránkach s blokom a prehliadač bez :has() by blok s neznámou
+   oblasťou postavil do nového stĺpca (vodorovný posun). */
+.hero > [data-b273].b273-blok { margin-top:0; }
+/* Pre návrat bloku po 15. 11.: adventné stránky, Murder at Club Juniper a Murder at the Lantern Ball sú od kola 5 G1 kontrolná
+   skupina bez bloku (bloky.json "kontrola": true) a súbor sa na nich nenačíta; ďalšie tri pravidlá mriežky dnes žiadna stránka
+   s blokom nepoužíva (body.svedkovia, .juniper ani .sada na nich nie je). Ostávajú, aby návrat bloku ("kontrola": false) dal
+   rozloženie overené snímkami kola 4 F1, nie blok pod obálkou. */
+/* Adventné stránky (svedkovia.css má pomenované oblasti aj na mobile): blok hneď pod cenou, obálka a dôkazy pod ním. */
+body.svedkovia .sv-hero { grid-template-areas:"text" "cena" "b273" "obalka" "dokazy"; }
+body.svedkovia .sv-hero > [data-b273] { grid-area:b273; width:100%; max-width:560px; }
+@media (min-width:900px) {
+  body.svedkovia .sv-hero { grid-template-areas:"text obalka" "cena obalka" "b273 obalka" "dokazy obalka";
+    grid-template-rows:auto auto auto 1fr; }
+}
+/* Murder at Club Juniper: od 861 px cena vpravo cez dva riadky, blok pod ňou vpravo; na mobile je blok v poradí stránky. */
+@media (min-width:861px) {
+  .juniper .hero { grid-template-areas:"text cena" "dole cena" "dole b273"; }
+  .juniper .hero > [data-b273] { grid-area:b273; }
+}
+/* Murder at the Lantern Ball: automatické umiestnenie 7fr 5fr (text a obrázky, pod nimi cena vľavo a dôkazy vpravo). Od 861 px
+   ide blok vpravo pod dôkazy (riadok 3): cena (align-self:start z hub.css) prechádza riadkami 2 a 3, riadok 3 je 1fr a berie len
+   to, čo cena potrebuje navyše oproti dôkazom, takže text, obrázky, cena aj tlačidlo kúpy ostanú tam, kde boli, a pravý stĺpec
+   pod dôkazmi nie je prázdny (kolo 4 F1, SNIMKY.md nález 4; predtým blok vľavo pod cenou). */
+@media (min-width:861px) {
+  .sada .hero { grid-template-rows:auto auto 1fr; }
+  .sada .hero > .cena { grid-row:2 / span 2; }
+  .sada .hero > [data-b273] { grid-column:2; grid-row:3; align-self:start; }
+}
+/* Puzzle books (kolo 4 F1): blok stojí v DOM za zoznamom faktov, mimo úseku od #cena po ul.facts, ktorý stráži test B1. Od 961 px
+   ide vpravo pod cenu: tretí riadok mriežky patrí bloku, fakty sa natiahnu cez riadky 2 a 3 a riadok 2 (1fr) dostane len to, čo
+   cena potrebuje navyše oproti textu, takže text, cena a fakty ostanú tam, kde boli (hub.css .hero.knihy). Na mobile je blok
+   za faktmi, na konci úvodu. */
+@media (min-width:961px) {
+  .hero.knihy { grid-template-rows:auto 1fr auto; }
+  .hero.knihy > .facts { grid-row:2 / span 2; }
+  .hero.knihy > [data-b273] { grid-column:2; grid-row:3; align-self:start; }
+}
