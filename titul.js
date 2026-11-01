@@ -173,8 +173,15 @@ export function utmZAdresy(adresa) {
 const POSTAVA_KLUC = 'arling_postava';
 export const POSTAVY = ['walt', 'june', 'olive'];
 
+/* Od 1. 11. 2026 nesú odkazy stránok postáv postavu vo fragmente #postava= (Google tak nevidí kópiu stránky
+ * s parametrom, ops/seo/INDEXACIA-DIAGNOZA-2026-10-31.md časť 3.2); staré odkazy s ?postava= platia ďalej
+ * a majú prednosť. */
 export function postavaZAdresy(adresa) {
-  try { const p = new URL(adresa).searchParams.get('postava') || ''; return POSTAVY.includes(p) ? p : ''; } catch (e) { return ''; }
+  try {
+    const u = new URL(adresa);
+    const p = u.searchParams.get('postava') || new URLSearchParams(u.hash.slice(1)).get('postava') || '';
+    return POSTAVY.includes(p) ? p : '';
+  } catch (e) { return ''; }
 }
 
 export function sOdkazomReklamy(odkaz, u, { postava = '', titul = '' } = {}) {

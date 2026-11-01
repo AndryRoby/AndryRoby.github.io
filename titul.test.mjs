@@ -393,6 +393,7 @@ test('po platbe: sluzba neodpovie, Try again sa spyta znova a az potom ukaze sub
 {
   const { sOdkazomReklamy, postavaZAdresy, prichod } = await import('./titul.js');
   const ref = (h) => new URL(h).searchParams.get('client_reference_id');
+  const ulozeneTest = () => ({ utm: { utm_source: 'google', utm_campaign: 'stara' }, postava: 'june' });
   for (const p of ['walt', 'june', 'olive']) {
     assert.equal(postavaZAdresy(`https://arling.sk/morning-quiet/?postava=${p}`), p);
     const bez = sOdkazomReklamy('https://buy.stripe.com/abc', {}, { postava: p, titul: 'morning-quiet' });
@@ -403,6 +404,13 @@ test('po platbe: sluzba neodpovie, Try again sa spyta znova a az potom ukaze sub
   }
   assert.equal(postavaZAdresy('https://arling.sk/x/?postava=evil'), '');
   assert.equal(postavaZAdresy('zla adresa'), '');
+  // Od 1. 11. 2026 nesie postavu fragment #postava= (diagnóza indexovania 3.2); ?postava= zo starých odkazov má prednosť.
+  for (const p of ['walt', 'june', 'olive']) assert.equal(postavaZAdresy(`https://arling.sk/shop/budget-2027/#postava=${p}`), p, p + ' z fragmentu');
+  assert.equal(postavaZAdresy('https://arling.sk/x/?utm_source=ig#postava=olive'), 'olive', 'fragment pri UTM v dotaze');
+  assert.equal(postavaZAdresy('https://arling.sk/x/?postava=june#postava=olive'), 'june', 'dotaz má prednosť');
+  assert.equal(postavaZAdresy('https://arling.sk/x/#postava=evil'), '', 'neznáma postava z fragmentu');
+  assert.equal(postavaZAdresy('https://arling.sk/x/#price'), '', 'iná kotva nie je postava');
+  assert.deepEqual(prichod('https://arling.sk/x/?utm_source=ig&utm_campaign=nova#postava=walt', ulozeneTest()), { utm: { utm_source: 'ig', utm_campaign: 'nova' }, postava: 'walt' });
   // instagram bez postavy: UTM ano, gads_ nie
   const ig = sOdkazomReklamy('https://buy.stripe.com/abc', { utm_source: 'instagram', utm_campaign: 'bio' });
   assert.equal(ref(ig), null);

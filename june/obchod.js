@@ -15,8 +15,8 @@
  * (.kupa-polozka), prepínače sú disabled a hidden, spoločné tlačidlo #kupit je v skrytom #kupa-jedna.
  * Až keď skript úspešne nastaví prvú voľbu, zapne prepínače, ukáže #kupit a skryje tlačidlá produktov.
  * Pri chybe počas zapínania vráti statický stav, takže tlačidlo nikdy nekúpi iný produkt, než je vidieť.
- * Nález P2: odkaz v detaile nesie ?postava=<postava> a aktuálne UTM (adresa má prednosť, úložisko je
- * len doplnok), stránka produktu (/titul.js) z toho spraví ig_<postava>_<titul>.
+ * Nález P2: odkaz v detaile nesie aktuálne UTM a postavu (od 1. 11. 2026 vo fragmente #postava=, predtým ?postava=;
+ * adresa má prednosť, úložisko je len doplnok), stránka produktu (/titul.js) z toho spraví ig_<postava>_<titul>.
  */
 const UTM_POLIA = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'];
 export const POSTAVY = ['walt', 'june', 'olive'];
@@ -80,11 +80,12 @@ export function cielDetailu(volba, druh, { postava = '', utm = {} } = {}) {
   let url;
   try { url = new URL(volba.stranka || '', 'https://arling.sk/'); } catch (e) { return { href: '', vypnute: true }; }
   if (url.origin !== 'https://arling.sk' || !/^\/[a-z0-9/-]+\/$/.test(url.pathname)) return { href: '', vypnute: true };
+  // Postava ide od 1. 11. 2026 do fragmentu #postava= (/titul.js ju číta z dotazu aj z fragmentu), aby Google
+  // nevidel kópiu stránky produktu s parametrom (ops/seo/INDEXACIA-DIAGNOZA-2026-10-31.md časť 3.2).
   const q = new URLSearchParams();
-  if (POSTAVY.includes(postava)) q.set('postava', postava);
   for (const k of UTM_POLIA) if (utm[k]) q.set(k, String(utm[k]).replace(/[^A-Za-z0-9_-]/g, '').slice(0, 80));
   const s = q.toString();
-  return { href: url.pathname + (s ? '?' + s : ''), vypnute: false };
+  return { href: url.pathname + (s ? '?' + s : '') + (POSTAVY.includes(postava) ? '#postava=' + postava : ''), vypnute: false };
 }
 
 function track(meno, data) {
