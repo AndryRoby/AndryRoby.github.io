@@ -242,7 +242,7 @@ test('Z-392 a D2: pri živej Stráži stojí miesto bloku e-mailu za EÚ a boxom
   }
 });
 test('Z-392: so schválenou appkou stojí miesto aj za blokom appky; bez živej Stráže za čakacou listinou; vzorka miesto nemá', async () => {
-  const { rep, posli } = await app({ lang: 'en', stavAppky: { stav: 'live', appStoreUrl: 'https://apps.shopify.com/agentic-product-check' } });
+  const { rep, posli } = await app({ lang: 'en', stavAppky: { stav: 'live', appStoreUrl: 'https://apps.shopify.com/arling-agentic-product-check' } });
   await posli(sShopify());
   let p = poradieBlokov(rep);
   assert.ok(p.appka > p.listina, 'blok appky sa vykreslil za listinou');

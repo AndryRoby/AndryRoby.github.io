@@ -1,7 +1,7 @@
 // Prechod z verejnej kontroly na appku Agentic Product Check (B-02, 18. 10. 2026). Bez DOM, testy v core.test.mjs.
 // Nový samostatný súbor: po nasadení ho nemôže prehliadač mať v starej kópii, kým sa obnovuje app.mjs.
 // 19. 10. 2026 (brána 1 vstupnej stránky, nález 3): výzva sa riadi stavom /agent-ready/stranka.json, nie tým,
-// či stránka existuje. Kým appka čaká na schválenie Shopify, výzva sa neukáže (inak by obchodník prešiel na stránku,
+// či stránka existuje. Kým stranka.json nehovorí live (appka ešte nie je v Shopify App Store), výzva sa neukáže (inak by obchodník prešiel na stránku,
 // ktorej hlavná akcia ho pošle späť na túto kontrolu).
 export const APP_PAGE='/agent-ready/';
 export const APP_STATE='/agent-ready/stranka.json';
