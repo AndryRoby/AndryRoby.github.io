@@ -1,0 +1,632 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://api.arling.workers.dev 'sha256-7YIYAj/6yVj7SFUUqNlQKZ9elk33JObFVbHjLA61Hho='; connect-src 'self' https://api.arling.workers.dev; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'">
+<meta name="theme-color" content="#15120f">
+<title>Orbling for Shopify: product page blocks with sourced AI</title>
+<meta name="description" content="Orbling builds Buy box, Product story and Home blocks from your Shopify catalog, one product at a time, with AI suggestions that show their source. Not in the Shopify App Store yet.">
+<link rel="canonical" href="https://arling.sk/orbling/">
+<meta property="og:title" content="Orbling for Shopify: product page blocks with sourced AI">
+<meta property="og:description" content="Orbling builds Buy box, Product story and Home blocks from your Shopify catalog, one product at a time, with AI suggestions that show their source. Not in the Shopify App Store yet.">
+<meta property="og:url" content="https://arling.sk/orbling/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ARLing">
+<meta property="og:locale" content="en_GB">
+<meta property="og:image" content="https://arling.sk/orbling/obrazky/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Two Orbling suggestion cards from our Shopify development store, for a sample product, each with the exact source text from the product description.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://arling.sk/orbling/obrazky/og.png">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="48x48">
+<link rel="apple-touch-icon" href="/icon-180.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="alternate" type="text/plain" href="https://arling.sk/llms.txt" title="llms.txt">
+<link rel="preload" href="/fonts/ARLingDrawText-VF.woff2?v=db08e281" as="font" type="font/woff2" crossorigin>
+<style>@font-face{font-family:"ARLing Draw Text";src:url(/fonts/ARLingDrawText-VF.woff2?v=db08e281) format("woff2");font-weight:200 800;font-style:normal;font-display:optional}
+:root{--noc:#15120f;--noc-2:#1d1915;--noc-3:#27221d;--ink:#f6f0e8;--ink-2:#c3b9ad;--ink-3:#9a8f83;--porcelan:#f5f1eb;--porcelan-2:#e9e2d8;--grafit:#1b1714;--grafit-2:#5c5249;--koral:#ef6a3c;--koral-2:#ff8d61;--linka:rgba(246,240,232,.1);--linka-2:rgba(246,240,232,.18);--vstup:cubic-bezier(.23,1,.32,1);--pohyb:cubic-bezier(.77,0,.175,1);--font:"ARLing Draw Text",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--hlava:72px}
+*,*::before,*::after{box-sizing:border-box;margin:0}
+html{background:var(--noc);color-scheme:dark;-webkit-text-size-adjust:100%;scrollbar-color:var(--noc-3) var(--noc)}
+body{font-family:var(--font);font-size:1.0625rem;line-height:1.55;color:var(--ink);background:var(--noc);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;overflow-x:clip}
+::selection{background:rgba(239,106,60,.38);color:#fff}
+a{color:inherit;text-underline-offset:.22em;text-decoration-thickness:1px}
+:focus-visible{outline:2px solid var(--koral-2);outline-offset:3px;border-radius:8px}
+img{display:block;max-width:100%;height:auto}
+.wrap{width:min(1240px,100% - 40px);margin-inline:auto}
+.nw{white-space:nowrap}
+.preskoc{position:absolute;left:12px;top:-60px;z-index:80;background:var(--ink);color:var(--grafit);padding:10px 14px;border-radius:10px;font-weight:600;text-decoration:none}.preskoc:focus{top:12px}
+main section[id]{scroll-margin-top:var(--hlava)}
+/* Hlavička */
+.hlava{position:sticky;top:0;z-index:50;height:var(--hlava);transition:background-color .3s ease,border-color .3s ease;border-bottom:1px solid transparent}
+.hlava.posunute{background:rgba(21,18,15,.86);border-bottom-color:var(--linka);-webkit-backdrop-filter:saturate(1.2) blur(14px);backdrop-filter:saturate(1.2) blur(14px)}
+.hlava-in{height:100%;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:24px}
+.hlava-lavo{display:flex;align-items:center;gap:14px;justify-self:start}
+.znak{display:inline-flex;align-items:center;gap:10px;font-weight:650;font-size:1.25rem;letter-spacing:-.02em;text-decoration:none;min-height:44px}
+.znak svg{width:36px;height:auto}
+.hlava-sep{width:1px;height:22px;background:var(--linka-2)}
+.meno{font-weight:650;font-size:1.1875rem;letter-spacing:-.02em;text-decoration:none;min-height:44px;display:inline-flex;align-items:center}
+.nav{display:flex;align-items:center;gap:4px}
+.nav a{font-size:.9375rem;font-weight:520;color:var(--ink-2);text-decoration:none;display:inline-flex;align-items:center;height:44px;padding:0 14px;border-radius:999px;transition:color .2s ease,background-color .2s ease}
+.nav a:hover{color:var(--ink);background:rgba(246,240,232,.06)}
+.hlava-pravo{justify-self:end;display:flex;align-items:center;gap:10px}
+.stitok{display:inline-flex;align-items:center;gap:8px;font-size:.875rem;font-weight:520;color:var(--ink-3);white-space:nowrap}
+.stitok svg{width:16px;height:16px;color:var(--koral-2);flex:none}
+.menu-mob{display:none}
+.mob{position:fixed;inset:0;z-index:70;background:var(--noc);display:flex;flex-direction:column;padding:12px 20px calc(24px + env(safe-area-inset-bottom));opacity:0;visibility:hidden;transform:translateY(-12px);transition:opacity .22s ease,transform .26s var(--vstup),visibility 0s linear .26s;overflow-y:auto;overscroll-behavior:contain}
+.mob.otvorene,.mob:target{opacity:1;visibility:visible;transform:none;transition:opacity .22s ease,transform .26s var(--vstup),visibility 0s}
+.mob-hlava{display:flex;justify-content:space-between;align-items:center;min-height:52px;margin-bottom:8px}
+.mob-zavri,.menu-mob{font:inherit;font-size:.9375rem;font-weight:560;color:var(--ink);background:rgba(246,240,232,.06);border:1px solid var(--linka);border-radius:999px;height:44px;padding:0 16px;align-items:center;gap:8px;cursor:pointer;text-decoration:none}
+.mob-zavri{display:inline-flex}
+.mob-zavri svg,.menu-mob svg{width:18px;height:18px}
+.mob-skupina{padding:16px 0;border-bottom:1px solid var(--linka)}
+.mob-skupina p{font-size:.8125rem;font-weight:600;color:var(--ink-3);margin-bottom:4px}
+.mob-skupina a{display:flex;align-items:center;min-height:48px;font-size:1.1875rem;font-weight:600;letter-spacing:-.02em;text-decoration:none}
+.mob-stav{margin-top:20px;font-size:.9063rem;line-height:1.5;color:var(--ink-2)}
+.mob .btn{margin-top:20px;width:100%;flex:none}
+/* Tlačidlá a odkazy */
+.btn{font:inherit;display:inline-flex;align-items:center;justify-content:center;gap:10px;text-decoration:none;border-radius:999px;font-weight:600;letter-spacing:-.005em;cursor:pointer;border:0;transition:transform .14s var(--vstup),background-color .2s ease}
+.btn:active{transform:scale(.97)}
+.btn svg{width:18px;height:18px;transition:transform .25s var(--vstup)}
+.btn-ink{background:var(--ink);color:var(--grafit);min-height:56px;padding:0 26px 0 28px;font-size:1.0625rem;box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 8px 18px -10px rgba(0,0,0,.6)}
+.btn-ink:hover{background:#fff}
+.btn-ink:is(:hover,:focus-visible) svg{transform:translateX(3px)}
+.odkaz{font-weight:560;color:var(--ink);text-decoration:underline;text-decoration-color:rgba(246,240,232,.35);min-height:44px;display:inline-flex;align-items:center;transition:text-decoration-color .2s ease}
+.odkaz:hover{text-decoration-color:var(--ink)}
+.odkaz-tmavy,.odkaz-svetly{display:inline-flex;align-items:center;min-height:44px;margin-top:28px;font-weight:600;text-decoration:underline;text-underline-offset:.25em;text-decoration-thickness:1px}
+.odkaz-tmavy{color:var(--grafit);text-decoration-color:rgba(27,23,20,.35)}.odkaz-tmavy:hover{text-decoration-color:var(--grafit)}
+.odkaz-svetly{color:var(--ink);text-decoration-color:rgba(246,240,232,.35)}.odkaz-svetly:hover{text-decoration-color:var(--ink)}
+/* Úvod */
+.hrdina{position:relative;isolation:isolate;overflow:clip;margin-top:calc(-1 * var(--hlava));padding-top:var(--hlava);background:var(--noc)}
+.hrdina::before{content:"";position:absolute;inset:0;z-index:-1;background:radial-gradient(38% 52% at 78% 46%,rgba(239,106,60,.13),rgba(239,106,60,0) 70%);pointer-events:none}
+.hrdina-in{display:grid;grid-template-columns:minmax(0,1fr) 600px;align-items:center;column-gap:56px;min-height:max(760px,100svh - var(--hlava) + 28px);padding-block:40px 64px}
+.hrdina-text{max-width:600px}
+.nad{font-size:.875rem;font-weight:600;color:var(--ink-2);margin-bottom:18px}
+h1{font-size:clamp(2.4rem,4.3vw,4.1rem);line-height:1.03;letter-spacing:-.04em;font-weight:660;text-wrap:balance;max-width:11em}
+.vedla{margin-top:22px;font-size:1.1875rem;line-height:1.55;color:var(--ink-2);max-width:31em;text-wrap:pretty}
+.akcie{display:flex;flex-wrap:wrap;align-items:center;gap:14px 26px;margin-top:32px}
+.pozn{margin-top:14px;font-size:.9375rem;color:var(--ink-2);max-width:34em}
+.stav{display:flex;gap:10px;align-items:flex-start;margin-top:22px;padding-top:18px;border-top:1px solid var(--linka);font-size:.9063rem;line-height:1.5;color:var(--ink-2);max-width:34em}
+.stav svg{flex:none;width:18px;height:18px;margin-top:2px;color:var(--koral-2)}
+/* Scéna: dve obrazovky Orblingu prekreslené v HTML, text appky doslova */
+.scena{margin:0;position:relative;width:600px;max-width:100%}
+.scena-okna{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;align-items:start}
+.app{position:relative;background:#fff;color:#303030;border-radius:16px;overflow:hidden;font-size:.875rem;line-height:1.45;box-shadow:0 0 0 1px rgba(0,0,0,.06),0 50px 90px -40px rgba(0,0,0,.85),0 14px 30px -18px rgba(0,0,0,.6)}
+.app b,.app strong{font-weight:650}
+.app-nahlad{margin-top:72px}
+.app-lista{display:flex;align-items:center;gap:10px;height:42px;padding:0 14px;border-bottom:1px solid #ebebeb;font-size:.8125rem;color:#303030}
+.app-lista svg{width:16px;height:16px;color:#616161}
+.app-lista span{color:#8a8a8a}
+.np-produkt{display:grid;grid-template-columns:88px minmax(0,1fr);gap:14px;padding:14px;background:#f3f4f6}
+.np-foto{width:88px;height:88px;border-radius:6px;background:#fff;overflow:hidden}
+.np-foto img{width:100%;height:100%;object-fit:cover}
+.np-nazov{font-size:1.0625rem;line-height:1.2;font-weight:700;letter-spacing:-.01em;color:#1f2128}
+.np-cena{margin-top:6px;font-size:.875rem;color:#303030}
+.np-kosik{margin-top:12px;display:grid;place-items:center;height:34px;border-radius:4px;background:#c4521e;color:#fff;font-size:.8125rem;font-weight:700}
+.np-specs{background:#1f2128;color:#fff;padding:14px 16px 16px}
+.np-specs>span{display:block;font-size:.75rem;font-weight:650;letter-spacing:.08em;color:#c9cbd1}
+.np-specs dl{margin:10px 0 0;display:grid;grid-template-columns:1fr 1fr;gap:0}
+.np-specs dl div{padding-right:12px}
+.np-specs dl div+div{padding:0 0 0 12px;border-left:1px solid rgba(255,255,255,.2)}
+.np-specs dt{font-size:1.125rem;line-height:1.15;font-weight:700;letter-spacing:-.015em}
+.np-specs dd{margin:4px 0 0;font-size:.8125rem;color:#c9cbd1}
+.np-otazky{padding:14px 16px 16px;background:#f3f4f6}
+.np-otazky>b{display:block;font-size:1rem;color:#1f2128}
+.np-otazka{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:10px;padding-top:10px;border-top:1px solid #dcdcdc;font-size:.8125rem;font-weight:600;color:#1f2128}
+.np-otazka i{font-style:normal;font-size:1.125rem;font-weight:400;color:#616161}
+.np-pozn{padding:10px 16px 12px;font-size:.8125rem;color:#616161}
+.app-navrhy{padding:16px 16px 18px}
+.an-nadpis{font-size:1rem;font-weight:650;color:#303030}
+.an-sub{margin-top:6px;font-size:.8125rem;color:#616161}
+.an-zoznam{list-style:none;padding:0;margin:12px 0 0;display:grid;gap:8px}
+.navrh{border:1px solid #e3e3e3;border-radius:10px;padding:10px 12px}
+.navrh-hore{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;font-size:.8125rem;font-weight:650;color:#303030}
+.nove-st{flex:none;font-size:.75rem;font-weight:560;color:#00527c;background:#e0f0ff;border-radius:8px;padding:0 7px;line-height:1.6}
+.navrh-hodnota{margin-top:4px;font-size:.875rem;color:#303030}
+.navrh-zdroj{margin-top:4px;font-size:.8125rem;line-height:1.4;color:#616161}
+.prijat{margin-top:12px;display:grid;place-items:center;height:38px;border-radius:10px;background:linear-gradient(180deg,#3a3a3a,#1f1f1f);color:#fff;font-size:.8125rem;font-weight:700;box-shadow:inset 0 1px 0 rgba(255,255,255,.18)}
+.scena-popis{margin-top:20px;font-size:.8125rem;line-height:1.5;color:var(--ink-3);max-width:44em}
+.scena.pred .app-navrhy{opacity:0;transform:translateY(18px)}
+.scena.pred .navrh,.scena.pred .prijat{opacity:0;transform:translateY(8px)}
+.scena.pred .nove,.scena.pred .np-otazky{opacity:0}
+.scena.hra .np-otazky{animation:ukaz .35s ease 1.2s both}
+@keyframes ukaz{from{opacity:0}to{opacity:1}}
+.scena.hra .app-navrhy{animation:vstup .5s var(--vstup) .1s both}
+.scena.hra .navrh{animation:vstup .45s var(--vstup) calc(.35s + var(--i) * .15s) both}
+.scena.hra .prijat{animation:vstup .4s var(--vstup) .6s both,stlac .36s ease .95s}
+.scena.hra .nove{animation:nove 1.3s var(--vstup) 1.2s both}
+@keyframes vstup{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes stlac{0%,100%{transform:none}40%{transform:scale(.96);box-shadow:0 0 0 3px rgba(0,91,211,.45)}}
+@keyframes nove{0%{opacity:0;background-color:rgba(239,106,60,.45)}35%{opacity:1;background-color:rgba(239,106,60,.35)}100%{opacity:1;background-color:rgba(239,106,60,0)}}
+@media (prefers-reduced-motion:reduce){.scena *{animation:none!important;transition:none!important}}
+/* Sekcie */
+.sv{background:var(--porcelan);color:var(--grafit)}
+.sv2{background:#ece6dd;color:var(--grafit)}
+.tm{background:var(--noc);color:var(--ink)}
+.sv,.sv2,.tm{position:relative;padding:128px 0}
+h2{font-size:clamp(2.1rem,3.7vw,3.5rem);line-height:1.04;letter-spacing:-.037em;font-weight:650;text-wrap:balance;max-width:15em}
+.lead{margin-top:20px;font-size:1.1875rem;line-height:1.55;max-width:34em;text-wrap:pretty}
+.sv .lead,.sv2 .lead{color:var(--grafit-2)}
+.tm .lead{color:var(--ink-2)}
+.sv ::selection,.sv2 ::selection{background:rgba(239,106,60,.28);color:var(--grafit)}
+.sv :focus-visible,.sv2 :focus-visible{outline-color:#c4532a}
+.zaobl{border-radius:28px 28px 0 0;margin-top:-28px;z-index:2}
+.dva{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:72px;align-items:start}
+.dva.stred{align-items:center}
+/* Skutočné snímky v prirodzenej veľkosti */
+.snimka{margin:0;width:fit-content;max-width:100%}
+.snimka-ram{border-radius:12px;overflow:hidden;background:#fff;box-shadow:0 0 0 1px rgba(27,23,20,.08),0 30px 60px -34px rgba(60,35,15,.45),0 10px 20px -14px rgba(60,35,15,.25)}
+.tm .snimka-ram{box-shadow:0 0 0 1px rgba(246,240,232,.1),0 40px 70px -36px rgba(0,0,0,.8)}
+.snimka figcaption{margin-top:12px;font-size:.8125rem;line-height:1.45;color:var(--grafit-2);max-width:34em}
+.tm .snimka figcaption,.tm .popis{color:var(--ink-3)}
+.popis{margin-top:16px;font-size:.8125rem;line-height:1.5;color:var(--grafit-2);max-width:40em}
+.podklad{background:rgba(27,23,20,.045);border-radius:24px;padding:48px 24px;display:grid;justify-items:center;align-content:start;gap:16px}
+.podklad .popis{margin-top:0;text-align:center}
+.stitok-sn{display:inline-flex;align-items:center;gap:8px;font-size:.875rem;font-weight:650;color:var(--grafit);margin-bottom:12px}
+.stitok-sn i{width:8px;height:8px;border-radius:50%;background:var(--koral);flex:none}
+/* Kroky */
+.kroky{list-style:none;padding:0;margin:40px 0 0;display:grid}
+.kroky li{position:relative;display:grid;grid-template-columns:30px 1fr;column-gap:16px;padding-bottom:22px}
+.kroky li::before{content:"";grid-row:span 2;width:12px;height:12px;margin:7px 9px 0;border-radius:50%;background:var(--porcelan);box-shadow:0 0 0 2px var(--koral)}
+.kroky li::after{content:"";position:absolute;left:14px;top:24px;bottom:0;width:2px;background:linear-gradient(180deg,rgba(239,106,60,.55),rgba(239,106,60,.12));transform-origin:50% 0}
+.kroky li:last-child{padding-bottom:0}.kroky li:last-child::after{display:none}
+.kroky li:nth-child(2){--k:1}.kroky li:nth-child(3){--k:2}.kroky li:nth-child(4){--k:3}.kroky li:nth-child(5){--k:4}
+.kroky.pred li::after{transform:scaleY(0)}
+.kroky.hra li::after{animation:krok-ciara .5s var(--vstup) calc(.7s + var(--k,0) * .5s) both}
+.kroky.hra li::before{animation:krok-uzol .7s var(--vstup) calc(.55s + var(--k,0) * .5s) both}
+@keyframes krok-ciara{from{transform:scaleY(0)}to{transform:none}}
+@keyframes krok-uzol{0%{background:var(--porcelan);transform:none}35%{background:var(--koral);transform:scale(1.3)}100%{background:var(--porcelan);transform:none}}
+@media (prefers-reduced-motion:reduce){.kroky li::before,.kroky li::after{animation:none!important;transform:none!important}}
+.kroky b{font-size:1.0625rem;font-weight:640;letter-spacing:-.01em}
+.kroky span{grid-column:2;color:var(--grafit-2);font-size:.98rem;line-height:1.5;margin-top:2px}
+/* Zdroje (tmavá sekcia) */
+.zdroje-in{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:72px;align-items:start}
+.tm.zdroje::before{content:"";position:absolute;inset:0;background:radial-gradient(40% 60% at 85% 30%,rgba(239,106,60,.1),rgba(239,106,60,0) 70%);pointer-events:none}
+.zdroje-in>*{position:relative}
+.pravidla-h{margin-top:36px;font-size:.9375rem;font-weight:650;color:var(--ink)}
+.pravidla{list-style:none;padding:0;margin:10px 0 0;display:flex;flex-wrap:wrap;gap:8px}
+.pravidla li{border:1px solid var(--linka-2);border-radius:999px;padding:6px 14px;font-size:.9375rem;color:var(--ink-2)}
+.limity{margin:36px 0 0;display:grid}
+.limity div{display:grid;grid-template-columns:96px 1fr;gap:18px;padding:16px 0;border-top:1px solid var(--linka)}
+.limity dt{font-weight:650}
+.limity dd{margin:0;color:var(--ink-2);line-height:1.55}
+.hranica{margin-top:20px;font-size:.9375rem;line-height:1.55;color:var(--ink-2);max-width:34em;padding:16px 18px;border-radius:14px;background:rgba(246,240,232,.05);border:1px solid var(--linka)}
+.karty-zdroj{display:flex;flex-wrap:wrap;gap:20px;justify-content:center;align-items:flex-start}
+.zdroje-vizual{display:grid;justify-items:center;gap:16px;padding-top:8px}
+.zdroje-vizual .popis{text-align:center;margin-top:0}
+/* Bloky, zoznamy, fakty */
+.fakty{margin:36px 0 0;display:grid}
+.fakty div{display:grid;grid-template-columns:132px 1fr;gap:18px;padding:16px 0;border-top:1px solid rgba(27,23,20,.12)}
+.fakty div:last-child{border-bottom:1px solid rgba(27,23,20,.12)}
+.fakty dt{font-weight:650}
+.fakty dd{margin:0;color:var(--grafit-2);line-height:1.55}
+.pozor{margin-top:20px;font-size:.9375rem;line-height:1.55;color:var(--grafit-2);max-width:36em;padding:16px 18px;border-radius:14px;background:#fbf8f3;box-shadow:0 0 0 1px rgba(27,23,20,.08)}
+.pozor b{color:var(--grafit)}
+.dve-snimky{margin-top:72px;display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-start;gap:40px 48px}
+.zoznam{list-style:none;padding:0;margin:36px 0 0}
+.zoznam li{display:grid;gap:4px;padding:18px 0;border-top:1px solid rgba(27,23,20,.12)}
+.zoznam li:last-child{border-bottom:1px solid rgba(27,23,20,.12)}
+.zoznam b{font-size:1.125rem;font-weight:640;letter-spacing:-.015em}
+.zoznam span{color:var(--grafit-2);font-size:.98rem;line-height:1.5}
+.nie{list-style:none;padding:0;margin:32px 0 0;display:grid}
+.nie li{display:grid;grid-template-columns:22px 1fr;column-gap:14px;padding:16px 0;border-top:1px solid rgba(27,23,20,.12)}
+.nie li:last-child{border-bottom:1px solid rgba(27,23,20,.12)}
+.nie svg{width:20px;height:20px;margin-top:3px;color:#9a4020}
+.nie b{font-weight:650}
+.nie span{color:var(--grafit-2)}
+h2.maly{font-size:clamp(1.75rem,2.6vw,2.4rem)}
+.dva-rovno{display:grid;grid-template-columns:1fr 1fr;gap:72px;align-items:start}
+/* Otázky */
+.faq{margin-top:40px;max-width:52em;border-bottom:1px solid rgba(27,23,20,.12)}
+.faq details{border-top:1px solid rgba(27,23,20,.12)}
+.faq summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:20px;min-height:64px;padding:12px 4px;font-size:1.125rem;font-weight:620;letter-spacing:-.01em}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:"";flex:none;width:18px;height:18px;background:currentColor;opacity:.6;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M12 5v14M5 12h14'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M12 5v14M5 12h14'/%3E%3C/svg%3E") center/contain no-repeat;transition:transform .25s var(--vstup)}
+.faq details[open] summary::after{transform:rotate(45deg)}
+.faq details p{padding:0 4px 22px;color:var(--grafit-2);max-width:44em}
+@media (prefers-reduced-motion:reduce){.faq summary::after{transition:none}}
+/* Záver */
+.zaver{border-top:1px solid var(--linka);padding:120px 0 136px;overflow:clip}
+.zaver::before{content:"";position:absolute;inset:0;background:radial-gradient(46% 70% at 50% 100%,rgba(239,106,60,.2),rgba(239,106,60,0) 70%);pointer-events:none}
+.zaver-in{position:relative;display:grid;justify-items:center;text-align:center}
+.zaver h2{max-width:17em}
+.zaver .lead{margin-inline:auto}
+.zaver .akcie{justify-content:center;margin-top:36px}
+.zaver-pc{margin-top:28px;padding-top:18px;border-top:1px solid var(--linka);display:grid;justify-items:center;font-size:.9375rem;line-height:1.5;color:var(--ink-2);max-width:34em}
+.zaver-pc .odkaz{text-wrap:balance}
+.dalsia{margin-top:12px;font-size:.9063rem;line-height:1.5;color:var(--ink-2);max-width:34em;padding-left:28px}
+.dalsia a{color:var(--ink);font-weight:560;text-decoration-color:rgba(246,240,232,.35);display:inline-block;padding-block:12px;margin-block:-12px}
+.dalsia a:hover{text-decoration-color:var(--ink)}
+/* Panel balíčkov prekreslený v HTML len pre úzke obrazovky (široká snímka sa tam skryje) */
+.iba-uzke{display:none}
+.panel-bal{width:100%;max-width:358px;background:#fff;color:#303030;border-radius:12px;padding:16px;font-size:.8125rem;line-height:1.45;text-align:left;box-shadow:0 0 0 1px rgba(27,23,20,.08),0 30px 60px -34px rgba(60,35,15,.45),0 10px 20px -14px rgba(60,35,15,.25)}
+.panel-bal .pb-hlava{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.panel-bal .pb-nadpis{font-size:.875rem;font-weight:650;color:#303030}
+.panel-bal .pb-sub{margin-top:2px;color:#616161}
+.panel-bal .pb-edit{flex:none;color:#005bd3;font-weight:560}
+.panel-bal .pb-veta{margin-top:12px}
+.panel-bal .pb-pole{margin-top:12px}
+.panel-bal .pb-pole span{display:block;margin-bottom:4px}
+.panel-bal .pb-pole i{display:flex;align-items:center;justify-content:space-between;min-height:32px;padding:0 10px;border:1px solid #8a8a8a;border-radius:8px;font-style:normal;color:#303030}
+.panel-bal .pb-dva{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+/* Kto */
+.ako-in{display:grid;grid-template-columns:minmax(0,6fr) minmax(0,5fr);gap:72px;align-items:start}
+.list{margin:0;background:#fbf8f3;border-radius:20px;padding:36px;box-shadow:0 0 0 1px rgba(27,23,20,.06),0 24px 48px -32px rgba(60,35,15,.35)}
+.list blockquote{margin:0;font-size:1.1875rem;line-height:1.55;letter-spacing:-.01em}
+.list figcaption{margin-top:24px;display:grid}
+.list figcaption b{font-weight:650}
+.list figcaption span{color:var(--grafit-2);font-size:.9375rem}
+.ako-pozn{margin-top:24px;font-size:.9375rem;line-height:1.55;color:var(--grafit-2)}
+/* Päta */
+.pata{background:#110e0c;color:var(--ink-2);padding:72px 0 40px;border-top:1px solid var(--linka)}
+.pata-hore{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:32px;align-items:start}
+.pata-hore .znak{color:var(--ink)}
+.pata-hore p{margin-top:14px;font-size:.9375rem;line-height:1.55;max-width:24em}
+.pata nav{display:flex;flex-wrap:wrap;gap:0 28px;justify-content:flex-end;max-width:640px}
+.pata nav a{min-height:44px;display:inline-flex;align-items:center;text-decoration:none;color:var(--ink-2);font-size:.9375rem}
+.pata nav a:hover{color:var(--ink)}
+.pata-riadok{margin-top:24px;font-size:.8125rem;line-height:1.6;color:var(--ink-3)}
+.pata-riadok:first-of-type{margin-top:48px;padding-top:24px;border-top:1px solid var(--linka)}
+.pata-riadok a{color:var(--ink-2)}
+/* Responzivita */
+@media (max-width:1180px){
+.hrdina-in{grid-template-columns:1fr;row-gap:56px;min-height:0;padding-block:56px 88px}
+.hrdina-text{max-width:640px}
+.scena{justify-self:start}
+}
+@media (max-width:1080px){
+.dva,.zdroje-in,.ako-in,.dva-rovno{grid-template-columns:1fr;gap:48px}
+.podklad{padding:40px 24px}
+.pata-hore{grid-template-columns:1fr}
+.pata nav{justify-content:flex-start}
+}
+@media (max-width:900px){
+.nav,.stitok{display:none}
+.hlava-in{grid-template-columns:1fr auto}
+.menu-mob{display:inline-flex}
+}
+@media (max-width:700px){
+.skry-uzke{display:none!important}
+.iba-uzke{display:grid}
+}
+@media (max-width:640px){
+:root{--hlava:64px}
+body{font-size:1rem}
+.hlava-lavo{gap:10px}
+.znak svg{width:32px}
+.hlava .znak{min-width:44px;justify-content:center;margin-left:-6px}
+h1{font-size:clamp(2.15rem,9.6vw,2.9rem);line-height:1.05}
+.nad{margin-bottom:12px}
+.vedla{font-size:1.0625rem;margin-top:16px}
+.akcie{flex-direction:column;align-items:stretch;gap:4px;margin-top:24px}
+.btn-ink{width:100%}
+.odkaz{justify-content:center}
+.pozn{text-align:center;margin-top:8px;font-size:.875rem}
+.stav{margin-top:16px;padding-top:14px;font-size:.875rem}
+.hrdina-in{padding-block:24px 72px;row-gap:40px}
+.scena{width:100%}
+.scena-okna{grid-template-columns:1fr;gap:16px}
+.app-navrhy{margin-right:18px}
+.app-nahlad{margin:0 0 0 18px}
+.sv,.sv2,.tm{padding:88px 0}
+.lead{font-size:1.0625rem}
+.zaobl{border-radius:22px 22px 0 0}
+.podklad{padding:28px 16px;border-radius:20px}
+.limity div{grid-template-columns:80px 1fr;gap:14px}
+.fakty div{grid-template-columns:1fr;gap:4px}
+.dve-snimky{margin-top:48px}
+.faq summary{font-size:1.0625rem}
+.list{padding:26px 22px}
+.zaver{padding:96px 0 104px}
+.zaver .akcie{width:100%}
+.pata{padding:56px 0 36px}
+.pata nav{gap:0 22px}
+}
+@media (max-width:359px){.hlava-sep,.meno{display:none}}
+@media print{.hlava,.mob{display:none!important}}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://arling.sk/#org","name":"ARLing s. r. o.","url":"https://arling.sk/"},{"@type":"SoftwareApplication","@id":"https://arling.sk/orbling/#app","name":"Orbling: AI Store Builder","applicationCategory":"BusinessApplication","operatingSystem":"Shopify","inLanguage":"en","url":"https://arling.sk/orbling/","description":"Shopify app that builds Buy box, Product story and Home blocks for one product at a time from the merchant's catalog, with AI suggestions that cite their source. Not in the Shopify App Store yet: it is waiting for Shopify approval and cannot be installed today. Once it is in the App Store, Orbling Growth costs 19.00 USD every 30 days after a 7-day free trial, with no usage or other app charges, billed by Shopify.","featureList":["Product page blocks built from your catalog","Sourced AI text and FAQ, up to 20 runs per store per UTC day","Nest, Halo and Torque looks","Editable bundle offers for two and three items","Preview content in the theme editor","Check sources and accept suggestions before publishing","Product story, Buy box and Home blocks","Turn off bundle discounts at any time"],"screenshot":"https://arling.sk/orbling/obrazky/zdroj-difuzer.webp","publisher":{"@id":"https://arling.sk/#org"}},{"@type":"WebPage","@id":"https://arling.sk/orbling/#page","url":"https://arling.sk/orbling/","name":"Orbling for Shopify: product page blocks with sourced AI","inLanguage":"en","dateModified":"2026-11-07","about":{"@id":"https://arling.sk/orbling/#app"},"isPartOf":{"@id":"https://arling.sk/#website"},"breadcrumb":{"@id":"https://arling.sk/orbling/#breadcrumb"}},{"@type":"BreadcrumbList","@id":"https://arling.sk/orbling/#breadcrumb","itemListElement":[{"@type":"ListItem","position":1,"name":"ARLing","item":"https://arling.sk/"},{"@type":"ListItem","position":2,"name":"Orbling","item":"https://arling.sk/orbling/"}]},{"@type":"FAQPage","@id":"https://arling.sk/orbling/#faq","mainEntity":[{"@type":"Question","name":"Can I install Orbling today?","acceptedAnswer":{"@type":"Answer","text":"No. Orbling is not in the Shopify App Store yet. It is waiting for Shopify approval, so there is no public listing to install from. This page will link to the listing once Orbling is in the Shopify App Store. Our other app, Agentic Product Check, is in the Shopify App Store today."}},{"@type":"Question","name":"Does the free preview change my live store?","acceptedAnswer":{"@type":"Answer","text":"No. Build my page saves a draft that your theme shows only inside the theme editor, with a note that it is a draft. Shoppers see Orbling content only after you select Publish. If you turn on the Orbling Look app embed or save an Orbling block before that, the change is live in your theme right away, as with any theme change."}},{"@type":"Question","name":"Why is it called AI Store Builder if it does not build my whole store?","acceptedAnswer":{"@type":"Answer","text":"Orbling: AI Store Builder is the app's name in Shopify. For the products you choose, it builds page blocks from your catalog and confirmed facts, a look for those blocks and bundle offers for 2 and 3 items. It does not create your header, footer, menus, collections, pages, policies or domain."}},{"@type":"Question","name":"Does Orbling work with my theme?","acceptedAnswer":{"@type":"Answer","text":"Your theme must support app blocks. Orbling does not edit theme files: you place the blocks from the links on Theme setup and save in Shopify. By default the Orbling Look embed applies the look's colors, shape and type to your whole theme while the header, footer and layout stay; you can turn that off in the embed settings."}},{"@type":"Question","name":"What does the AI receive, and where does it run?","acceptedAnswer":{"@type":"Answer","text":"Cloudflare Workers AI (Llama 3.3 70B) receives our instructions, the facts you confirmed with their sources, the product title, category and up to 4,000 characters of plain text from the product description. It does not receive prices, policies, the store domain, order or buyer data as separate fields. Avoid personal data in the text you supply."}},{"@type":"Question","name":"How much does it cost, and how do I cancel?","acceptedAnswer":{"@type":"Answer","text":"19.00 USD every 30 days after a 7-day free trial, one trial per store while Orbling holds its data, with no usage or other app charges. Cancel anytime on the Plan page. Cancelling or uninstalling stops future charges; charges already submitted may remain on your Shopify invoice."}},{"@type":"Question","name":"Who answers support questions?","acceptedAnswer":{"@type":"Answer","text":"Write to support@arling.sk in English. Replies come from an AI assistant run by ARLing, and support cannot change anything in your store. We do not promise a response time yet."}}]}]}</script>
+</head>
+<body>
+<a class="preskoc" href="#obsah">Skip to content</a>
+
+<header class="hlava" id="hlava">
+  <div class="wrap hlava-in">
+    <div class="hlava-lavo">
+      <a class="znak" href="/en/" aria-label="ARLing, home" data-umami-event="orbling_odkaz" data-umami-event-target="/en/" data-umami-event-miesto="hlava"><svg viewBox="0 0 488 215" aria-hidden="true" focusable="false"><path fill="currentColor" fill-rule="evenodd" d="M0,213L74,214L181,85L285,214L360,214L206,21L185,4L164,10Z M221,0L263,50L395,50L409,55L419,76L401,96L313,98L411,214L487,214L422,139L457,123L482,88L482,48L463,19L417,0Z"/><path fill="#f2643c" d="M269,66L269,67L268,68L268,70L267,71L267,76L268,77L268,79L270,81L270,82L271,82L273,84L274,84L277,86L279,86L280,87L287,87L288,86L290,86L291,85L294,84L298,80L298,79L299,78L299,75L300,74L300,72L299,71L299,69L298,68L297,65L295,63L294,63L289,60L278,60L277,61L276,61L275,62L272,63Z"/></svg></a>
+      <span class="hlava-sep" aria-hidden="true"></span>
+      <a class="meno" href="#top">Orbling</a>
+    </div>
+    <nav class="nav" aria-label="Orbling">
+      <a href="#how-it-works">How it works</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#questions">Questions</a>
+      <a href="/orbling/support/" data-umami-event="orbling_odkaz" data-umami-event-target="/orbling/support/" data-umami-event-miesto="hlava">Support</a>
+    </nav>
+    <div class="hlava-pravo">
+      <span class="stitok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Not in the App Store yet</span>
+      <a class="menu-mob" href="#mob" role="button" aria-expanded="false" aria-controls="mob"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>Menu</a>
+    </div>
+  </div>
+</header>
+
+<div class="mob" id="mob" role="dialog" aria-modal="true" aria-label="Menu">
+  <div class="mob-hlava"><span class="meno" aria-hidden="true">Orbling</span><a class="mob-zavri" href="#" role="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>Close</a></div>
+  <div class="mob-skupina"><p>On this page</p><a href="#how-it-works">How it works</a><a href="#sources">Sources</a><a href="#pricing">Pricing</a><a href="#questions">Questions</a></div>
+  <div class="mob-skupina"><p>More</p><a href="/orbling/support/" data-umami-event="orbling_odkaz" data-umami-event-target="/orbling/support/" data-umami-event-miesto="mob">Support and setup guide</a><a href="/orbling/privacy/" data-umami-event="orbling_odkaz" data-umami-event-target="/orbling/privacy/" data-umami-event-miesto="mob">Privacy policy</a><a href="/agent-ready/" data-umami-event="orbling_odkaz" data-umami-event-target="/agent-ready/" data-umami-event-miesto="mob-pc">Agentic Product Check</a><a href="/en/" data-umami-event="orbling_odkaz" data-umami-event-target="/en/" data-umami-event-miesto="mob">arling.sk</a></div>
+  <p class="mob-stav">Orbling is not in the Shopify App Store yet, so it cannot be installed today.</p>
+  <a class="btn btn-ink" href="/orbling/support/" data-umami-event="orbling_cta" data-umami-event-target="/orbling/support/" data-umami-event-miesto="mob">Read the setup guide</a>
+</div>
+
+<main id="obsah">
+<section class="hrdina" id="top" aria-labelledby="nadpis">
+  <div class="wrap hrdina-in">
+    <div class="hrdina-text">
+      <p class="nad">Orbling for Shopify, by ARLing</p>
+      <h1 id="nadpis">Product page blocks built from your own catalog.</h1>
+      <p class="vedla">Choose a product, pick a look and see a free preview. AI suggests key specs and common questions, each with the exact text it came from. Nothing goes live until you publish.</p>
+      <div class="akcie">
+        <a class="btn btn-ink" href="/orbling/support/" data-umami-event="orbling_cta" data-umami-event-target="/orbling/support/" data-umami-event-miesto="hrdina">Read the setup guide<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        <a class="odkaz" href="mailto:support@arling.sk" data-umami-event="orbling_odkaz" data-umami-event-target="mailto" data-umami-event-miesto="hrdina">Email support@arling.sk</a>
+      </div>
+      <p class="pozn">Orbling Growth: 19.00 USD every 30 days after a 7&#8209;day free trial, billed by Shopify. The preview is free.</p>
+      <p class="stav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Waiting for Shopify App Store approval, so it cannot be installed today.</span></p>
+      <p class="dalsia">Our other app, <a href="/agent-ready/" data-umami-event="orbling_odkaz" data-umami-event-target="/agent-ready/" data-umami-event-miesto="hrdina-pc">Agentic Product Check</a>, is in the Shopify App Store: a read&#8209;only check of your catalog, with a Free plan.</p>
+    </div>
+
+    <figure class="scena" id="scena">
+      <div class="scena-okna">
+        <div class="app app-navrhy">
+          <p class="an-nadpis">AI suggestions (2)</p>
+          <p class="an-sub">Accept all adds them to this page. Publish writes them to your store.</p>
+          <ul class="an-zoznam">
+            <li class="navrh" style="--i:0"><p class="navrh-hore"><span>Material</span><span class="nove-st">New</span></p><p class="navrh-hodnota">glazed porcelain</p><p class="navrh-zdroj">Exact text from Product description in Shopify: "glazed porcelain"</p></li>
+            <li class="navrh" style="--i:1"><p class="navrh-hore"><span>What is the maximum runtime of the diffuser?</span><span class="nove-st">New</span></p><p class="navrh-hodnota">up to six hours</p><p class="navrh-zdroj">Rewritten by AI from Product description in Shopify: "up to six hours of scent"</p></li>
+          </ul>
+          <p class="prijat" aria-hidden="true">Accept all</p>
+        </div>
+        <div class="app app-nahlad">
+          <div class="app-lista"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg><span>/</span>Preview your page</div>
+          <div class="np-produkt">
+            <div class="np-foto"><img src="/orbling/obrazky/difuzer.webp" width="360" height="360" alt="" decoding="async" fetchpriority="low"></div>
+            <div><p class="np-nazov">Porcelain Mist Diffuser</p><p class="np-cena">48.00 USD</p><p class="np-kosik" aria-hidden="true">Add to cart</p></div>
+          </div>
+          <div class="np-specs"><span>KEY SPECS</span><dl><div><dt>Diffusers</dt><dd>Category</dd></div><div class="nove"><dt>glazed porcelain</dt><dd>Material</dd></div></dl></div>
+          <div class="np-otazky"><b>Questions</b><p class="np-otazka nove"><span>What is the maximum runtime of the diffuser?</span><i aria-hidden="true">+</i></p></div>
+          <p class="np-pozn">Draft preview drawn by Orbling.</p>
+        </div>
+      </div>
+      <figcaption class="scena-popis">Two Orbling screens from our Shopify development store on 6&nbsp;November&nbsp;2026, redrawn in HTML with the app's text word for word: the AI suggestions, and the preview after Accept all. Porcelain Mist Diffuser is a sample product we made for testing, and its photo is AI&#8209;generated. The real screenshots are further down this page.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="sv zaobl" id="how-it-works" aria-labelledby="ako-h">
+  <div class="wrap dva">
+    <div>
+      <h2 id="ako-h" data-vstup>From your catalog to a published page.</h2>
+      <p class="lead" data-vstup>Orbling builds one product page at a time. Your theme keeps its header, footer and layout; you place the blocks and save in the theme editor.</p>
+      <ol class="kroky" data-vstup>
+        <li><b>Choose a product</b><span>From your Shopify catalog. Nothing to import; up to 100 variants.</span></li>
+        <li><b>Pick a look</b><span>Nest, Halo or Torque. Orbling recommends one for the product's category.</span></li>
+        <li><b>Build my page</b><span>A free draft from your catalog alone, without AI. It shows only in your theme editor, never to shoppers.</span></li>
+        <li><b>Improve with AI</b><span>Suggestions for key specs, who the product suits and common questions. The first time, it starts the 7&#8209;day free trial.</span></li>
+        <li><b>Accept and publish</b><span>Check each source, select Accept all, then Publish. Add the Orbling blocks in the theme editor and save.</span></li>
+      </ol>
+      <a class="odkaz-tmavy" href="/orbling/support/" data-umami-event="orbling_odkaz" data-umami-event-target="/orbling/support/" data-umami-event-miesto="kroky">Step by step, with every button name</a>
+    </div>
+    <div class="podklad" data-vstup>
+      <figure class="snimka"><div class="snimka-ram"><img src="/orbling/obrazky/zhrnutie.webp" width="301" height="540" loading="lazy" decoding="async" alt="Orbling summary before Build my page: product added, look Nest recommended for this product, bundle offers set, your facts optional, and a Build my page button with the note Free. Your live product page does not change."></div></figure>
+      <p class="popis">The summary before Build my page, on a sample product in our development store. For this test we set 3 items to 20% off.</p>
+    </div>
+  </div>
+</section>
+
+<section class="tm zdroje" id="sources" aria-labelledby="zdroje-h">
+  <div class="wrap zdroje-in">
+    <div>
+      <h2 id="zdroje-h" data-vstup>Every suggestion shows its source.</h2>
+      <p class="lead" data-vstup>Facts are taken word for word from your product data or from facts you confirmed. Other lines are rewritten by AI and pass an automatic check: numbers and materials must appear in the cited source, and superlatives or urgency are removed.</p>
+      <div data-vstup>
+        <h3 class="pravidla-h">The rules also reject</h3>
+        <ul class="pravidla">
+          <li>certificates not in the source</li>
+          <li>reviews and ratings</li>
+          <li>health claims</li>
+          <li>anything about price, stock, delivery, returns or warranty</li>
+        </ul>
+        <dl class="limity">
+          <div><dt>Input</dt><dd>The product title, category, up to 4,000 characters of plain description text and the facts you confirmed. Not prices, policies or buyer data as separate fields.</dd></div>
+          <div><dt>Model</dt><dd>Llama 3.3 70B on Cloudflare Workers AI.</dd></div>
+          <div><dt>Limit</dt><dd>Up to 20 AI runs per store per day (UTC), plus a daily capacity limit shared by all stores.</dd></div>
+        </dl>
+        <p class="hranica">The checks are rules. They do not prove that your description is true, so read each source before you select Accept all.</p>
+      </div>
+    </div>
+    <div class="zdroje-vizual" data-vstup>
+      <div class="karty-zdroj">
+        <figure class="snimka"><div class="snimka-ram"><img src="/orbling/obrazky/zdroj-difuzer.webp" width="281" height="297" loading="lazy" decoding="async" alt="Two Orbling suggestion cards: Material, glazed porcelain, exact text from the product description; maximum runtime of the diffuser, up to six hours, rewritten by AI from the description, quoting up to six hours of scent."></div></figure>
+        <figure class="snimka"><div class="snimka-ram"><img src="/orbling/obrazky/zdroj-nabijacka.webp" width="281" height="295" loading="lazy" decoding="async" alt="Two Orbling suggestion cards for a USB-C charger: Power, 30 W, exact text Delivers 30 W from a single USB-C port; plug type, Type C or Type F, rewritten by AI from the description."></div></figure>
+      </div>
+      <p class="popis">Real suggestion cards for two sample products on our development store, 6&nbsp;November&nbsp;2026, at their actual size.</p>
+    </div>
+  </div>
+</section>
+
+<section class="sv" id="storefront" aria-labelledby="obchod-h">
+  <div class="wrap dva">
+    <div>
+      <h2 id="obchod-h" data-vstup>Shoppers see it only after you publish.</h2>
+      <p class="lead" data-vstup>A draft shows only in your theme editor, with a note that it is a draft. Publish writes the accepted content to Orbling's own fields on the product, and the blocks you placed show it on your store.</p>
+      <dl class="fakty" data-vstup>
+        <div><dt>Buy box</dt><dd>Price, bundle cards for 1, 2 and 3 items, delivery and returns, and your store's payment methods. A missing detail is hidden, never filled in.</dd></div>
+        <div><dt>Product story</dt><dd>Key specs, who it suits, what is in the box and questions, below the product.</dd></div>
+        <div><dt>Home</dt><dd>A featured product on your home page.</dd></div>
+        <div><dt>Orbling Look</dt><dd>The colors, shape and type of the look you chose. You can limit it to the Orbling blocks.</dd></div>
+      </dl>
+      <p class="pozor" data-vstup><b>Good to know:</b> if you save an Orbling block in your theme before you publish, shoppers see your product's own details from Shopify in it, as with any theme change.</p>
+    </div>
+    <div class="podklad skry-uzke" data-vstup>
+      <figure class="snimka"><div class="snimka-ram"><img src="/orbling/obrazky/tema-kroky.webp" width="488" height="332" loading="lazy" decoding="async" alt="Theme editor steps in Orbling: 1 Enable Orbling Look, 2 Add Buy box, 3 Add Product story, 4 Add Home, each with a short description."></div></figure>
+      <p class="popis">Theme setup in Orbling: each step opens the theme editor, where you place the block and save.</p>
+    </div>
+  </div>
+  <div class="wrap">
+    <div class="dve-snimky" data-vstup>
+      <figure class="snimka skry-uzke"><p class="stitok-sn"><i aria-hidden="true"></i>In Orbling, after Accept all</p><div class="snimka-ram"><img src="/orbling/obrazky/v-orblingu.webp" width="626" height="576" loading="lazy" decoding="async" alt="Orbling preview after accepting suggestions: Porcelain Mist Diffuser at 48.00 USD, Key specs Diffusers and glazed porcelain, and the question about maximum runtime."></div></figure>
+      <figure class="snimka"><p class="stitok-sn"><i aria-hidden="true"></i>On the store after Publish, phone width</p><div class="snimka-ram"><img src="/orbling/obrazky/v-obchode-390.webp" width="390" height="430" loading="lazy" decoding="async" alt="The published product page on the store at phone width: a dark Key specs band with Diffusers and glazed porcelain, and a Questions block with the runtime question."></div></figure>
+    </div>
+    <p class="popis" style="margin-inline:auto;text-align:center">The same sample product on our development store, 6&nbsp;November&nbsp;2026. The store's header, footer and other products are cropped out.</p>
+  </div>
+</section>
+
+<section class="sv2" id="bundles" aria-labelledby="balicky-h">
+  <div class="wrap dva">
+    <div>
+      <h2 id="balicky-h" data-vstup>Bundle offers for 2 and 3 items.</h2>
+      <p class="lead" data-vstup>Orbling creates real Shopify automatic discounts for one product when you publish. By default 2 items get 10% off and 3 items 15% off; you can change the amounts or turn bundles off.</p>
+      <ul class="zoznam" data-vstup>
+        <li><b>Above your costs</b><span>Each variant's price after the discount must stay above the cost plus shipping per item you enter.</span></li>
+        <li><b>No stacking</b><span>Bundle discounts do not combine with other discounts.</span></li>
+        <li><b>Turned off by itself</b><span>If a price or discount changes in Shopify so the saving no longer holds, Orbling turns the saving off.</span></li>
+        <li><b>Off at any time</b><span>Turn off bundle discounts removes the product's discounts and keeps your content. It works without a plan.</span></li>
+        <li><b>Before you uninstall</b><span>Turn the discounts off first: after uninstalling, Orbling can no longer change your store.</span></li>
+      </ul>
+    </div>
+    <div class="podklad skry-uzke" data-vstup>
+      <figure class="snimka"><div class="snimka-ram"><img src="/orbling/obrazky/balicky.webp" width="643" height="417" loading="lazy" decoding="async" alt="Bundle offers panel in Orbling: bundles on, cost plus shipping per item, discount type percentage per item, 10 for 2 items and 20 for 3 items, and the notes that discounts activate only when you publish and do not stack."></div></figure>
+      <p class="popis">The Bundle offers panel in Orbling. For this test we set 3 items to 20%. The panel itself says the defaults do not guarantee a profit.</p>
+    </div>
+    <div class="podklad iba-uzke" data-vstup>
+      <div class="panel-bal" aria-hidden="true">
+        <div class="pb-hlava"><div><p class="pb-nadpis">Bundle offers</p><p class="pb-sub">Bundles on: 2 items 10% off, 3 items 15% off.</p></div><span class="pb-edit">Edit</span></div>
+        <p class="pb-veta">Discounts activate only when you publish. Discounts do not stack.</p>
+        <div class="pb-pole"><span>Bundle offers</span><i>On</i></div>
+        <div class="pb-pole"><span>Cost plus shipping per item (USD)</span><i>0.00</i></div>
+        <div class="pb-pole"><span>Discount type</span><i>Percentage per item</i></div>
+        <div class="pb-dva"><div class="pb-pole"><span>2 items: percentage or amount per item</span><i>10</i></div><div class="pb-pole"><span>3 items: percentage or amount per item</span><i>15</i></div></div>
+        <p class="pb-veta">Review your costs before publishing. These defaults do not guarantee a profit.</p>
+      </div>
+      <p class="popis">The Bundle offers panel in Orbling with its default values, redrawn in HTML with the app's text word for word. The panel itself says the defaults do not guarantee a profit.</p>
+    </div>
+  </div>
+</section>
+
+<section class="sv" id="pricing" aria-labelledby="cena-h">
+  <div class="wrap dva">
+    <div>
+      <h2 id="cena-h" data-vstup>One plan, one price.</h2>
+      <p class="lead" data-vstup>Once Orbling is in the Shopify App Store, the plan is 19.00 USD every 30 days after a 7&#8209;day free trial. No usage or other app charges. Shopify bills the plan on your Shopify invoice.</p>
+      <dl class="fakty" data-vstup>
+        <div><dt>Free, without a plan</dt><dd>Choose a product, pick a look, Build my page, the draft in your theme editor, and turning off Orbling discounts.</dd></div>
+        <div><dt>With the trial or plan</dt><dd>Improve with AI and Publish.</dd></div>
+        <div><dt>Free trial</dt><dd>7 days, once per store while Orbling holds its data. Nothing is charged during the trial.</dd></div>
+        <div><dt>Orbling Growth</dt><dd>19.00 USD every 30 days. Shopify may show an estimate in your store currency.</dd></div>
+        <div><dt>Cancel</dt><dd>Anytime on the Plan page. Uninstalling stops future charges; charges already submitted may remain on your Shopify invoice.</dd></div>
+      </dl>
+      <a class="odkaz-tmavy" href="/orbling/support/#q-zrusenie" data-umami-event="orbling_odkaz" data-umami-event-target="/orbling/support/#q-zrusenie" data-umami-event-miesto="cena">All billing questions</a>
+    </div>
+    <div class="podklad skry-uzke" data-vstup>
+      <figure class="snimka"><div class="snimka-ram"><img src="/orbling/obrazky/plan.webp" width="517" height="350" loading="lazy" decoding="async" alt="What the plan includes, in Orbling: product pages in the Nest, Halo or Torque look, bundle offers for 2 and 3 items with real Shopify automatic discounts, AI suggestions with sources up to 20 runs per day, theme blocks Orbling Look, Buy box, Product story and Home, one price with no usage charges."></div></figure>
+      <p class="popis">The Plan page in Orbling after a test subscription on our development store. The terms there match this page.</p>
+    </div>
+  </div>
+</section>
+
+<section class="sv2" id="limits" aria-labelledby="nie-h">
+  <div class="wrap dva-rovno">
+    <div>
+      <h2 class="maly" id="nie-h" data-vstup>What Orbling does not do.</h2>
+      <ul class="nie" data-vstup>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/></svg><p><b>It does not build your whole store.</b> <span>No header, footer, menus, collections, pages, policies or domain.</span></p></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/></svg><p><b>It does not edit your product details.</b> <span>Titles, descriptions, images, prices and variants stay as they are. Publish writes only Orbling's own product fields, plus Shopify discounts when bundles are on.</span></p></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/></svg><p><b>It does not edit theme files.</b> <span>It asks for no theme permissions; you place the blocks.</span></p></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/></svg><p><b>It works only with themes that support app blocks.</b></p></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/></svg><p><b>It adds no reviews, ratings, countdowns or compare&#8209;at prices.</b></p></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/></svg><p><b>It does not count sales yet.</b> <span>The Revenue screen stays empty until Shopify approves access to protected customer data and order webhooks are on.</span></p></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/></svg><p><b>It is in English only.</b> <span>The app and support are in English, and it does not translate.</span></p></li>
+      </ul>
+    </div>
+    <div>
+      <h2 class="maly" id="data-h" data-vstup>Your data.</h2>
+      <dl class="fakty" data-vstup>
+        <div><dt>Where</dt><dd>Cloudflare Workers, D1 and Workers AI.</dd></div>
+        <div><dt>Permissions</dt><dd>Six, none for your theme code.</dd></div>
+        <div><dt>On your store</dt><dd>The Orbling blocks set no cookies and send nothing to our servers.</dd></div>
+        <div><dt>Buyers</dt><dd>No buyer names or contact details are stored.</dd></div>
+        <div><dt>Removal</dt><dd>Uninstalling removes access; store data is deleted when Shopify sends its erasure request 48 hours later, except a few records the privacy policy lists with their own retention.</dd></div>
+      </dl>
+      <a class="odkaz-tmavy" href="/orbling/privacy/" data-umami-event="orbling_odkaz" data-umami-event-target="/orbling/privacy/" data-umami-event-miesto="data">Orbling privacy policy</a>
+    </div>
+  </div>
+</section>
+
+<section class="sv" id="questions" aria-labelledby="otazky-h">
+  <div class="wrap">
+    <h2 id="otazky-h" data-vstup>Questions about Orbling.</h2>
+    <div class="faq" data-vstup>
+      <details open><summary>Can I install Orbling today?</summary><p>No. Orbling is not in the Shopify App Store yet. It is waiting for Shopify approval, so there is no public listing to install from. This page will link to the listing once Orbling is in the Shopify App Store. Our other app, <a href="/agent-ready/" data-umami-event="orbling_odkaz" data-umami-event-target="/agent-ready/" data-umami-event-miesto="otazky-pc">Agentic Product Check</a>, is in the Shopify App Store today.</p></details>
+      <details><summary>Does the free preview change my live store?</summary><p>No. Build my page saves a draft that your theme shows only inside the theme editor, with a note that it is a draft. Shoppers see Orbling content only after you select Publish. If you turn on the Orbling Look app embed or save an Orbling block before that, the change is live in your theme right away, as with any theme change.</p></details>
+      <details><summary>Why is it called AI Store Builder if it does not build my whole store?</summary><p>Orbling: AI Store Builder is the app's name in Shopify. For the products you choose, it builds page blocks from your catalog and confirmed facts, a look for those blocks and bundle offers for 2 and 3 items. It does not create your header, footer, menus, collections, pages, policies or domain.</p></details>
+      <details><summary>Does Orbling work with my theme?</summary><p>Your theme must support app blocks. Orbling does not edit theme files: you place the blocks from the links on Theme setup and save in Shopify. By default the Orbling Look embed applies the look's colors, shape and type to your whole theme while the header, footer and layout stay; you can turn that off in the embed settings.</p></details>
+      <details><summary>What does the AI receive, and where does it run?</summary><p>Cloudflare Workers AI (Llama 3.3 70B) receives our instructions, the facts you confirmed with their sources, the product title, category and up to 4,000 characters of plain text from the product description. It does not receive prices, policies, the store domain, order or buyer data as separate fields. Avoid personal data in the text you supply.</p></details>
+      <details><summary>How much does it cost, and how do I cancel?</summary><p>19.00 USD every 30 days after a 7-day free trial, one trial per store while Orbling holds its data, with no usage or other app charges. Cancel anytime on the Plan page. Cancelling or uninstalling stops future charges; charges already submitted may remain on your Shopify invoice.</p></details>
+      <details><summary>Who answers support questions?</summary><p>Write to support@arling.sk in English. Replies come from an AI assistant run by ARLing, and support cannot change anything in your store. We do not promise a response time yet.</p></details>
+    </div>
+    <a class="odkaz-tmavy" href="/orbling/support/" data-umami-event="orbling_odkaz" data-umami-event-target="/orbling/support/" data-umami-event-miesto="otazky">All support answers</a>
+  </div>
+</section>
+
+<section class="tm zaver" aria-labelledby="zaver-h">
+  <div class="wrap zaver-in">
+    <h2 id="zaver-h" data-vstup>Orbling is not in the Shopify App Store yet.</h2>
+    <p class="lead" data-vstup>Until then, the setup guide shows every step and button, and the privacy policy says what the app reads and stores.</p>
+    <div class="akcie">
+      <a class="btn btn-ink" href="/orbling/support/" data-umami-event="orbling_cta" data-umami-event-target="/orbling/support/" data-umami-event-miesto="zaver">Read the setup guide<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+      <a class="odkaz" href="mailto:support@arling.sk" data-umami-event="orbling_odkaz" data-umami-event-target="mailto" data-umami-event-miesto="zaver">Email support@arling.sk</a>
+    </div>
+    <p class="zaver-pc"><a class="odkaz" href="/agent-ready/" data-umami-event="orbling_odkaz" data-umami-event-target="/agent-ready/" data-umami-event-miesto="zaver-pc">Meanwhile, check your catalog with Agentic Product Check</a><span>Our read&#8209;only app in the Shopify App Store, with a Free plan.</span></p>
+  </div>
+</section>
+
+<section class="sv ako zaobl" id="who" aria-labelledby="kto-h">
+  <div class="wrap ako-in">
+    <div>
+      <h2 id="kto-h" data-vstup>Who builds Orbling.</h2>
+      <dl class="fakty" data-vstup>
+        <div><dt>Company</dt><dd>ARLing s.&nbsp;r.&nbsp;o., Ivanská cesta 19112/32E, 821&nbsp;04 Bratislava, Slovakia. Company ID 56&nbsp;583&nbsp;486.</dd></div>
+        <div><dt>Billing</dt><dd>Through Shopify, on your Shopify invoice.</dd></div>
+        <div><dt>Support</dt><dd>support@arling.sk, in English, answered by an AI assistant run by ARLing.</dd></div>
+        <div><dt>Other apps</dt><dd><a href="/agent-ready/" data-umami-event="orbling_odkaz" data-umami-event-target="/agent-ready/" data-umami-event-miesto="kto">Agentic Product Check</a>, our read&#8209;only catalog check, is in the Shopify App Store.</dd></div>
+      </dl>
+    </div>
+    <figure class="list" data-vstup>
+      <blockquote><p>I run ARLing on my own, with AI helping with code and text.</p></blockquote>
+      <figcaption><b>Andrej Róbert Lauko</b><span>founder, ARLing s.&nbsp;r.&nbsp;o.</span></figcaption>
+    </figure>
+  </div>
+</section>
+</main>
+
+<footer class="pata">
+  <div class="wrap">
+    <div class="pata-hore">
+      <div><span class="znak"><svg viewBox="0 0 488 215" aria-hidden="true" focusable="false"><path fill="currentColor" fill-rule="evenodd" d="M0,213L74,214L181,85L285,214L360,214L206,21L185,4L164,10Z M221,0L263,50L395,50L409,55L419,76L401,96L313,98L411,214L487,214L422,139L457,123L482,88L482,48L463,19L417,0Z"/><path fill="#f2643c" d="M269,66L269,67L268,68L268,70L267,71L267,76L268,77L268,79L270,81L270,82L271,82L273,84L274,84L277,86L279,86L280,87L287,87L288,86L290,86L291,85L294,84L298,80L298,79L299,78L299,75L300,74L300,72L299,71L299,69L298,68L297,65L295,63L294,63L289,60L278,60L277,61L276,61L275,62L272,63Z"/></svg>ARLing</span><p>Orbling for Shopify. Product page blocks from your own catalog.</p></div>
+      <nav aria-label="Orbling links">
+        <a href="/orbling/support/" data-umami-event="orbling_odkaz" data-umami-event-target="/orbling/support/" data-umami-event-miesto="pata">Setup guide and support</a>
+        <a href="/orbling/privacy/" data-umami-event="orbling_odkaz" data-umami-event-target="/orbling/privacy/" data-umami-event-miesto="pata">Privacy policy</a>
+        <a href="/agent-ready/" data-umami-event="orbling_odkaz" data-umami-event-target="/agent-ready/" data-umami-event-miesto="pata">Agentic Product Check</a>
+        <a href="/en/" data-umami-event="orbling_odkaz" data-umami-event-target="/en/" data-umami-event-miesto="pata">arling.sk</a>
+        <a href="/privacy/en/" data-umami-event="orbling_odkaz" data-umami-event-target="/privacy/en/" data-umami-event-miesto="pata">Website privacy policy</a>
+      </nav>
+    </div>
+    <p class="pata-riadok">ARLing s.&nbsp;r.&nbsp;o., Ivanská cesta 19112/32E, 821&nbsp;04 Bratislava, Slovakia. Company ID 56&nbsp;583&nbsp;486, VAT ID SK2122352100. support@arling.sk. ARLing is not affiliated with Shopify.</p>
+    <p class="pata-riadok">This page counts visits and clicks with self&#8209;hosted Umami, without cookies (<a href="/privacy/en/">website privacy policy</a>, section 2). Page updated 7&nbsp;November&nbsp;2026.</p>
+  </div>
+</footer>
+<script type="module" src="/orbling/pohyb.js?v=0c249eef"></script>
+<script defer src="https://api.arling.workers.dev/script.js" data-website-id="be534d51-4d01-4860-b267-9596d91606de"></script>
+</body>
+</html>
