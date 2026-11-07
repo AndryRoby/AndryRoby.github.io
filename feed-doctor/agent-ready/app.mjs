@@ -7,10 +7,10 @@ const API='https://feed-monitor.arling.workers.dev/v1/agent-ready/check';
 let currentReport=null;
 // Optional module: if prechod.mjs is missing or fails, only the next step for Shopify stores is hidden.
 const transition=import('./prechod.mjs').then(m=>({m,live:m.createAppPageCheck()}),()=>null);
-// EU 2026 findings (A-189, 20. 10. 2026) and the Pro waitlist: optional modules too; without them the check works as before.
-// cakacia.mjs also wires the waitlist form already on the page as soon as it loads.
+// EU 2026 findings (A-189, 20. 10. 2026): optional module too; without it the check works as before.
+// F5 (7. 11. 2026): the Pro waitlist (cakacia.mjs) is no longer loaded here. The app is in the Shopify App Store since 2. 11. 2026,
+// so the page collects no addresses for it; the result shows the app block with a direct install button instead.
 const euModule=import('./eu-zobraz.mjs').catch(()=>null);
-const waitlist=import('./cakacia.mjs').catch(()=>null);
 // Stráž e-shopu (relácia 209): optional; null unless /straz-eshopu/stav.json is live or the test mode is on.
 const strazModule=import('./straz.mjs?v=2').then(m=>m.strazOn().then(on=>on?m:null)).catch(()=>null);
 // Výsledok e-mailom (relácia 205, SPEC časti 3 a 5.2): spoločný modul hubu; blok sa ukáže len pod skutočným výsledkom (nie pri vzorke).
@@ -43,7 +43,7 @@ function skryEmail(){const m=miestoEmailu;miestoEmailu=null;if(m&&vysledokModul)
 const OPRAVA_KODY=['feed_type','jsonld_returns','jsonld_shipping'];
 const oprava=$('fix-service'),opravaPovodne=oprava?oprava.hidden:false;
 function opravaPoVysledku(platform,failing){if(oprava)oprava.hidden=!(platform==='yes'&&failing.some(r=>OPRAVA_KODY.includes(r.code)));}
-// Statická čakacia listina Pro pre Shopify (#pro, relácia 208 nález S1): obchod bez znakov Shopify ju nedostane ani vo výsledku
+// Statická sekcia Pro pre Shopify (#pro, relácia 208 nález S1; od F5 bez formulára, s odkazom na zápis): obchod bez znakov Shopify ju nedostane ani vo výsledku
 // (brána 218 D2), preto sa vtedy skryje. Pri Shopify a pri neznámej platforme (prechod.mjs chýba) ostane taká ako v HTML.
 const pro=$('pro'),proPovodne=pro?pro.hidden:false;
 function proPoVysledku(platform){if(pro)pro.hidden=proPovodne||platform==='no';}
@@ -65,12 +65,53 @@ function ruleElement(result){const index=RULES.findIndex(r=>r.code===result.code
 }
 // Limits of the check, next to the result (same text as below the form).
 function limitsBlock(){const box=node('div',null,'ar-limits');box.append(node('h3',copy.readsTitle),node('p',copy.privacy,'ar-muted'));return box;}
+// F5 (ops/shopify/pc-10-instalacii/PLAN.md, 7. 11. 2026): the main button installs the app straight from its Shopify App Store
+// listing, because the campaign goal is installs and the visitor has just seen the gaps in 20 products; the page of the app
+// (/agent-ready/) stays as the secondary text link. Texts here, not in i18n.mjs, so its ?v and the modules that share it stay as they are.
+// Free plan: full first check of every active and unlisted product (FAKTY-PRODUCT-CHECK.md 3.2); the web check reads 20.
+// top: the short row right under the score (gate F5 attempt 1, finding 1). It says "a sample" and no number, because
+// data.sample.products differs from store to store (the web check reads at most 20, core.mjs) and stays true for every count.
+// topSample (gate F5 attempt 2, finding 1): the sample is a fictional store, so the row there says that a real check of a Shopify
+// store shows it (like copy.app.sampleWhy) and never "your public data"; first sentence about as long as top, so the button does not move.
+// jazyk (attempt 2, finding 2): SK and DE say the app is in English (as copy.app.terms and #pro) in the note right under the row's
+// button, which the button points to with aria-describedby. Not in top: at 390 px DE one more line pushed the button out of the
+// first screen after the result (measured, snimky-web-p2.json).
+const INSTALL={
+ en:{cta:'See all products: install free',note:'The install button opens the Shopify App Store in a new tab.',
+  top:'This was a sample from your public data. In our Shopify app, the Free plan includes a full first check of every active and unlisted product.',
+  topSample:'For a Shopify store, a real check shows this row. In our Shopify app, the Free plan includes a full first check of every active and unlisted product.'},
+ sk:{cta:'Pozrieť všetky produkty: inštalácia zadarmo',note:'Tlačidlo inštalácie otvorí Shopify App Store na novej karte.',jazyk:'Appka je po anglicky.',
+  top:'Toto bola vzorka z vašich verejných údajov. V našej appke pre Shopify obsahuje plán Free celú prvú kontrolu každého produktu v stave Active alebo Unlisted.',
+  topSample:'Skutočná kontrola obchodu na Shopify ukáže tento riadok. V našej appke pre Shopify obsahuje plán Free celú prvú kontrolu každého produktu v stave Active alebo Unlisted.'},
+ de:{cta:'Alle Produkte ansehen: kostenlos installieren',note:'Die Schaltfläche zur Installation öffnet den Shopify App Store in einem neuen Tab.',jazyk:'Die App ist auf Englisch.',
+  top:'Das war eine Stichprobe aus Ihren öffentlichen Daten. In unserer Shopify-App enthält der Free-Tarif eine vollständige erste Prüfung jedes Produkts mit dem Status Active oder Unlisted.',
+  topSample:'Eine echte Prüfung eines Shopify-Shops zeigt diese Zeile. In unserer Shopify-App enthält der Free-Tarif eine vollständige erste Prüfung jedes Produkts mit dem Status Active oder Unlisted.'}};
+// Umami: language and source only, like ar_check_to_app; PLAN.md part 6 measures this event. Sources: check and sample
+// (button in the app block), check-top and sample-top (row under the score), page (static link in #pro, data-umami-event).
+const INSTALL_EVENT='ar_check_to_install';
+let nextId=0;
+const installUrlOf=app=>typeof app?.installUrl==='string'&&app.installUrl.startsWith('https://apps.shopify.com/')?app.installUrl:null;
+function installLink(app,sample,source,describedBy){const t=INSTALL[lang]||INSTALL.en,a=node('a',t.cta,'ar-next-link ar-next-instalacia');
+  a.href=installUrlOf(app);a.rel='noopener';a.target='_blank';a.setAttribute('aria-describedby',describedBy);
+  a.addEventListener('click',()=>track(INSTALL_EVENT,{...app.clickData(lang,sample),...(source?{source}:{})}));return a;}
+// Gate F5 attempt 1, finding 1: the app block sits about 10 screens below the score at 390 px. For a Shopify store with the live
+// app, one short row with the same main button stands right under the score; null for an older prechod.mjs without INSTALL_URL.
+function installTop(app,sample){if(!installUrlOf(app))return null;const t=INSTALL[lang]||INSTALL.en,id='ar-next-pozn-'+(++nextId);
+  const box=node('div',null,'ar-next-hore');const note=node('p',t.jazyk?t.note+' '+t.jazyk:t.note,'ar-muted ar-next-pozn');note.id=id;
+  box.append(node('p',sample?t.topSample:t.top,'ar-next-hore-text'),installLink(app,sample,sample?'sample-top':'check-top',id),note);return box;}
 // Calm next step for stores with Shopify signals; the store address never leaves this page in the event.
 function appBlock(app,sample){const c=copy.app,box=node('div',null,'ar-next'),title=node('h3',c.title);
-  const link=node('a',c.cta,'ar-next-link');link.href=app.url;link.addEventListener('click',()=>track('ar_check_to_app',app.clickData(lang,sample)));
   const why=app.signals.map(s=>c.signals?.[s]).filter(Boolean);
   const reason=sample?c.sampleWhy:why.length?c.why+' '+why.join(', ')+'.':'';
-  box.append(title,node('p',c.text),node('p',c.terms,'ar-muted'),link);if(reason)box.append(node('p',reason,'ar-muted ar-why'));return box;}
+  box.append(title,node('p',c.text),node('p',c.terms,'ar-muted'));
+  if(installUrlOf(app)){
+    // One main action (filled) and one secondary text link; an older cached prechod.mjs without INSTALL_URL keeps the old single button.
+    const t=INSTALL[lang]||INSTALL.en,id='ar-next-pozn-'+(++nextId),actions=node('div',null,'ar-next-akcie');
+    const install=installLink(app,sample,null,id);
+    const page=node('a',c.cta,'ar-next-druhy');page.href=app.url;page.addEventListener('click',()=>track('ar_check_to_app',app.clickData(lang,sample)));
+    actions.append(install,page);const note=node('p',t.note,'ar-muted ar-next-pozn');note.id=id;box.append(actions,note);
+  }else{const link=node('a',c.cta,'ar-next-link');link.href=app.url;link.addEventListener('click',()=>track('ar_check_to_app',app.clickData(lang,sample)));box.append(link);}
+  if(reason)box.append(node('p',reason,'ar-muted ar-why'));return box;}
 // Result without a single product page read (score null or 0 pages); kept here, i18n.mjs belongs to session 208.
 const NO_PAGES={
  sk:['Neprečítali sme žiadnu produktovú stránku, preto údaje pre AI asistentov nehodnotíme.','Povinnosti EÚ nižšie sme skontrolovali.'],
@@ -111,7 +152,7 @@ function euBlock(rows,sz=null){
   box.append(cal);
   return box;
 }
-function render(data,sample,app=null,eu=null,wl=null,platform='unknown',sz=null){
+function render(data,sample,app=null,eu=null,platform='unknown',sz=null){
   if(!data||data.version!=='1.0.0'||!Array.isArray(data.rules)||!data.sample||!data.rules.every(r=>RULES.some(def=>def.code===r.code)&&['pass','fail','unknown','info'].includes(r.status)&&Number.isInteger(r.checked)&&Number.isInteger(r.affected)))throw new Error('invalid_report');
   currentReport=data;report.replaceChildren();report.hidden=false;
   if(sample)report.append(node('p',copy.sample,'ar-status'));
@@ -120,6 +161,8 @@ function render(data,sample,app=null,eu=null,wl=null,platform='unknown',sz=null)
   // starý i18n.mjs z vyrovnávacej pamäte bez kľúča noFeed: riadok ako predtým.
   const pages=`${data.sample.pages}/${data.sample.attemptedPages} ${copy.pages}`,scope=data.sample.products===0&&typeof copy.noFeed==='string'?`${copy.noFeed}, ${pages}`:`${data.sample.products} ${copy.products}, ${pages}`;
   const scoreline=node('dl',null,'ar-scoreline');for(const [label,value,cls] of [[copy.score,data.score==null?'?':data.score+'/100',''],[copy.coverage,data.coverage+'%',''],[copy.scope,scope,'ar-scope']]){const group=node('div',null,cls);group.append(node('dt',label),node('dd',value));scoreline.append(group);}report.append(scoreline,node('p',data.score==null?copy.noScore:copy.limit,'ar-muted'));
+  // F5, gate attempt 1, finding 1: the install button right under the score (app is only set for Shopify signals and a live app).
+  const top=app&&copy.app?installTop(app,sample):null;if(top)report.append(top);
   const noPages=data.score==null||data.sample.pages===0;
   if(!noPages&&(data.coverage<100||data.sample.pages<data.sample.attemptedPages))report.append(node('p',copy.unknown,'ar-status'));
   if(data.noindexPages?.length)report.append(node('p',copy.noindex,'ar-status'));
@@ -129,14 +172,14 @@ function render(data,sample,app=null,eu=null,wl=null,platform='unknown',sz=null)
   else{report.append(node('h3',copy.fixes));const ul=node('ul',null,'ar-list');for(const r of failing){const li=ruleElement(r);if(sz&&li)li.append(sz.strazLink(r.code,lang));ul.append(li);}if(!failing.length)report.append(node('p',copy.empty));else report.append(ul);}
   if(copy.readsTitle)report.append(limitsBlock());
   if(eu){const state=eu.euState(data);report.append(euBlock(state==='ok'?eu.euView(data.eu,euCopy):state,sz));}
-  if(sz){const box=sz.buildStrazBox(lang,sample?'sample':'result',platform,data);if(box)report.append(box);}
-  // Pro je appka pre Shopify: obchod bez znakov Shopify nedostane nič o nej (brána 218 D2, rozhodnutie Fable: veta o appke za
-  // 9,99 USD hneď pod boxom Stráže za 9 € Shoptetu nič neponúkala a pôsobila ako druhá cena; predtým veta namiesto formulára podľa
-  // brány A-189 pokus 1, nález 9b). Pri Shopify a neznámej platforme čakacia listina ako doteraz.
-  if(wl&&platform!=='no')report.append(wl.buildWaitlist(lang,sample?'sample':'result',platform));
+  // Pro je appka pre Shopify: obchod bez znakov Shopify nedostane nič o nej (brána 218 D2). F5 (7. 11. 2026): čakacia listina Pro
+  // vo výsledku už nie je (appka je v Shopify App Store od 2. 11. 2026); jediný blok appky je app block s tlačidlom inštalácie.
+  // Brána F5 pokus 1, nález 1: blok appky stojí pred boxom Stráže (Stráž hovorí „nothing is installed“, nemá stáť tesne pred
+  // tlačidlom inštalácie); obchod bez znakov Shopify blok appky nemá, Stráž ostáva hneď za EÚ ako doteraz.
   if(app&&copy.app)report.append(appBlock(app,sample));
-  // Prázdne miesto pre blok „Poslať si výsledok e-mailom“ (SPEC 205 7.1; Z-392, brána 205 O1): za boxom Stráže, čakacou listinou
-  // a appkou, pred zoznamom všetkých kontrol, aby nestál nad platenou ponukou; pri vzorke nie.
+  if(sz){const box=sz.buildStrazBox(lang,sample?'sample':'result',platform,data);if(box)report.append(box);}
+  // Prázdne miesto pre blok „Poslať si výsledok e-mailom“ (SPEC 205 7.1; Z-392, brána 205 O1): za appkou a boxom Stráže,
+  // pred zoznamom všetkých kontrol, aby nestál nad platenou ponukou; pri vzorke nie.
   miestoEmailu=null;if(!sample){miestoEmailu=node('div',null,'ar-vysledok-miesto');report.append(miestoEmailu);}
   const all=node('details');all.append(node('summary',copy.all));const allList=node('ul',null,'ar-list');for(const r of data.rules)allList.append(ruleElement(r));all.append(allList);report.append(all);
   const proof=node('details');proof.append(node('summary',copy.proof));const urls=node('ul',null,'ar-proof');for(const e of data.evidence||[]){const li=node('li');const href=safeLink(e.url),a=node(href?'a':'span',e.url||'');if(href){a.href=href;a.rel='noopener';a.target='_blank';}li.append(a,node('span',` · HTTP ${e.status||'?'}${e.error?' · '+e.error:''}`));urls.append(li);}proof.append(urls);report.append(proof);
@@ -161,9 +204,9 @@ async function run(sample=false){const request=latest.begin();busy(true);status.
   const data=await response.json();if(!request.current())return;
   const t=await transition,next=t?t.m.shopifyEvidence(data):{shopify:false,signals:[]};
   const showApp=next.shopify&&Boolean(copy.app)&&await t.live();if(!request.current())return;
-  const [eu,wl,sz]=await Promise.all([euModule,waitlist,strazModule]);if(!request.current())return;
+  const [eu,sz]=await Promise.all([euModule,strazModule]);if(!request.current())return;
   const platform=t?(next.shopify?'yes':'no'):'unknown';
-  render(data,sample,showApp?{...next,url:t.m.APP_URL,clickData:t.m.appClickData}:null,eu,wl,platform,sz);status.textContent='';
+  render(data,sample,showApp?{...next,url:t.m.APP_URL,installUrl:t.m.INSTALL_URL,clickData:t.m.appClickData}:null,eu,platform,sz);status.textContent='';
   const euEvent=eu?eu.euEvent(data.eu,lang):null;
   track(sample?'agent_ready_sample':'agent_ready_check',{score:data.score,coverage:data.coverage,products:data.sample.products,pages:data.sample.pages,lang,eu:euEvent?'yes':'no'});
   // Umami: EU findings that need a look (statuses and their count only); the sample is never counted.

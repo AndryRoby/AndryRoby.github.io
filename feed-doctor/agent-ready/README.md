@@ -247,5 +247,22 @@ sentence about the app (relation 218, gate D2), `buildNote` stays only for older
 `sample-report.json` are built by `ops/strategia/2026-10-20-trendy-2027/postav.mjs` (not by the older `postav.mjs` of
 13 October, whose page template is outdated). Sources and decisions: `ops/strategia/2026-10-20-trendy-2027/STAVBA-TESTU.md`.
 
+F5 of the 10 installs campaign (7 November 2026, `ops/shopify/pc-10-instalacii/PLAN.md`, report
+`ops/shopify/pc-10-instalacii/opravy/web-f5.md`). The app is in the Shopify App Store since 2 November 2026
+(`ops/shopify/den-schvalenia/STAV.md`). The app block in the result (Shopify signals and `/agent-ready/stranka.json` live) has two
+actions: the main one, "See all products: install free" (SK and DE in `app.mjs` `INSTALL`), opens `prechod.mjs` `INSTALL_URL`, the
+listing on apps.shopify.com, in a new tab with `rel="noopener"` and a sentence that it opens the Shopify App Store; Umami
+`ar_check_to_install` with `lang` and `source` (check or sample) only. The secondary text link keeps `/agent-ready/` and
+`ar_check_to_app`. The result no longer has the Pro waitlist, and `app.mjs` no longer loads `cakacia.mjs`. The three check pages have
+no waitlist form, no hidden "waiting for approval" sentence and no `#odber` section (its text said the app "cannot be installed yet");
+`#pro` says the app is available and links to the listing (`ar_check_to_install`, `source` page). `cakacia.mjs` keeps
+`deps.zberOtvoreny` false: `wire()` never opens a form (the calendar still has one in its HTML) and `buildWaitlist()` builds none.
+`odber-ar.js` stays on disk, but no page loads it. The generator `ops/strategia/2026-10-20-trendy-2027/postav.mjs` still writes the
+old `#pro` section; do not run it on these pages until it is updated.
+After gate attempt 1 (same day): the same install button also stands in a short row `.ar-next-hore` right under the score
+(`installTop`, Umami `source` check-top or sample-top), the app block comes before the Stráž e-shopu box, `#pro` shows the install
+link as the filled button and the app page as underlined text, the unsourced sentence about adding the EU checks to Pro is gone,
+and `16-checks/` no longer says "until the app is approved" in its meta, og and JSON-LD (CSP hash updated).
+
 The live check runs in the Feed Monitor worker, which bundles this file: the EU findings appear on arling.sk only after
 `npx wrangler deploy` in `products/feed-doctor/monitor` (done by Fable, never by agents).

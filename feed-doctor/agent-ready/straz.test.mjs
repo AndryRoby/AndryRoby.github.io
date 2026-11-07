@@ -149,14 +149,14 @@ test('app.mjs: bez live ani test módu sa nevloží box ani jeden odkaz „Sledo
   const { rep } = await spustiApp({ live: false });
   assert.equal(rep.hidden, false);
   assert.equal(triedy(rep, 'ar-straz').length, 0); assert.equal(triedy(rep, 'ar-straz-odkaz').length, 0);
-  assert.equal(triedy(rep, 'ar-eu').length, 1); assert.equal(triedy(rep, 'ar-pro-cakacia').length, 1, 'čakacia listina sa nemení');
+  assert.equal(triedy(rep, 'ar-eu').length, 1); assert.equal(triedy(rep, 'ar-pro-cakacia').length, 0, 'F5 (7. 11. 2026): výsledok nemá čakaciu listinu');
   assert.ok(!udalosti.some(([n]) => n.startsWith('ar_straz')), 'žiadna udalosť Stráže');
 });
-test('app.mjs pri live: odkazy len pri neúspešných pravidlách prvého zoznamu a pri nálezoch EÚ review alebo unknown; box za EÚ a pred čakacou listinou', async () => {
+test('app.mjs pri live: odkazy len pri neúspešných pravidlách prvého zoznamu a pri nálezoch EÚ review alebo unknown; box hneď za EÚ (čakacia listina od F5 nie je)', async () => {
   const { rep } = await spustiApp({ live: true });
   const boxy = triedy(rep, 'ar-straz'); assert.equal(boxy.length, 1);
   const deti = rep.children, iEu = deti.findIndex((e) => ma(e, 'ar-eu')), iBox = deti.indexOf(boxy[0]), iPro = deti.findIndex((e) => ma(e, 'ar-pro-cakacia'));
-  assert.ok(iEu >= 0 && iBox === iEu + 1 && iPro === iBox + 1, `poradie EÚ ${iEu}, box ${iBox}, listina ${iPro}`);
+  assert.ok(iEu >= 0 && iBox === iEu + 1 && iPro === -1, `poradie EÚ ${iEu}, box ${iBox}, listina ${iPro}`);
   const prvy = deti.find((e) => e.tagName === 'UL' && ma(e, 'ar-list'));
   const neuspesne = VZORKA.rules.filter((r) => r.status === 'fail').map((r) => r.code).sort();
   const vPrvom = triedy(prvy, 'ar-straz-odkaz');

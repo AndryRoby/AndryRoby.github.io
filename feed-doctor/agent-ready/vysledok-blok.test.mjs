@@ -123,7 +123,8 @@ test('skutočná kontrola: miesto za zoznamom opráv, limitmi, EÚ a čakacou li
   assert.equal(miesto.length, 1); const i = deti.indexOf(miesto[0]);
   assert.ok(i > deti.findIndex((e) => e.tagName === 'UL' && ma(e, 'ar-list')), 'za zoznamom opráv');
   assert.ok(i > deti.findIndex((e) => ma(e, 'ar-limits')) && i > deti.findIndex((e) => ma(e, 'ar-eu')), 'za limitmi a EÚ');
-  assert.ok(ma(deti[i - 1], 'ar-pro-cakacia'), 'hneď za čakacou listinou (platená ponuka je nad blokom)');
+  // F5 (7. 11. 2026): výsledok už nemá blok čakacej listiny; bez živej appky (stranka.json tu odpovie 404) a bez Stráže hneď za EÚ.
+  assert.ok(ma(deti[i - 1], 'ar-eu'), 'hneď za EÚ (bez čakacej listiny, F5)');
   assert.equal(deti[i + 1].tagName, 'DETAILS', 'hneď pred zoznamom všetkých kontrol');
   const [[, m, o]] = ukazy();
   assert.equal(m, miesto[0]);
@@ -137,7 +138,7 @@ test('skutočná kontrola: miesto za zoznamom opráv, limitmi, EÚ a čakacou li
 test('miesto aj pri výsledku bez chýb (za vetou bez chýb) a bez prečítanej produktovej stránky (za neutrálnou vetou; bez Shopify hneď za EÚ, bez bloku appky); jazyk EN a DE', async () => {
   // Brána 218 D2: obchod bez Shopify nemá pod EÚ (a boxom Stráže, tu nie je živý) blok čakacej listiny appky ani vetu o nej.
   for (const [lang, data, trieda, listina] of [
-    ['en', vysledokObchodu({ rules: VZORKA.rules.map((r) => ({ ...r, status: r.status === 'fail' ? 'pass' : r.status })) }), null, 'ar-pro-cakacia'],
+    ['en', vysledokObchodu({ rules: VZORKA.rules.map((r) => ({ ...r, status: r.status === 'fail' ? 'pass' : r.status })) }), null, 'ar-eu'], // F5: bez čakacej listiny
     ['de', bezShopify({ score: null, coverage: 0, sample: { ...VZORKA.sample, products: 0, pages: 0, attemptedPages: 0 }, rules: VZORKA.rules.map((r) => ({ ...r, status: 'unknown' })) }), 'ar-no-pages', 'ar-eu'],
   ]) {
     odpovedKontroly = () => odpoved(200, data);
@@ -393,7 +394,7 @@ test('trenie c: obchod bez verejného exportu nemá „0 produktov vo feede“, 
 });
 
 // ---------- 9. texty, verzie a tri HTML ----------
-test('nové texty v SK, EN, DE bez pomlčiek em a en; i18n.mjs má rovnaké ?v v app.mjs aj cakacia.mjs; tri HTML: Umami s data-exclude-hash, app.mjs?v=6 (relácia 218)', () => {
+test('nové texty v SK, EN, DE bez pomlčiek em a en; i18n.mjs má rovnaké ?v v app.mjs aj cakacia.mjs; tri HTML: Umami s data-exclude-hash, app.mjs?v=7 (F5, 7. 11. 2026)', () => {
   for (const lang of ['sk', 'en', 'de']) for (const k of ['invalid_url', 'invalid_product', 'noFeed', 'rate']) {
     assert.equal(typeof UI[lang][k], 'string', lang + ' ' + k); assert.ok(!/[–—]/.test(UI[lang][k]), lang + ' ' + k + ': pomlčka');
   }
@@ -407,7 +408,7 @@ test('nové texty v SK, EN, DE bez pomlčiek em a en; i18n.mjs má rovnaké ?v v
     const html = subor(p), umami = html.split('\n').filter((r) => r.includes('api.arling.workers.dev/script.js'));
     assert.equal(umami.length, 1, p);
     assert.match(umami[0], /data-exclude-hash="true"/, p); assert.ok(!umami[0].includes('data-exclude-search'), p + ': UTM sa merajú ďalej');
-    assert.equal((html.match(/\/feed-doctor\/agent-ready\/app\.mjs\?v=6"/g) || []).length, 1, p);
+    assert.equal((html.match(/\/feed-doctor\/agent-ready\/app\.mjs\?v=7"/g) || []).length, 1, p);
     assert.ok(!html.includes('\r\n'), p + ': konce riadkov LF');
   }
 });

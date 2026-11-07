@@ -119,7 +119,8 @@ test('S1 a D2: obchod bez znakov Shopify skryje statickú sekciu #pro a výsledo
     await posli(sShopify());
     assert.equal(pro.hidden, false, lang + ': nová kontrola obchodu so Shopify');
     assert.equal(triedy(rep, 'ar-pro-poznamka').length, 0, lang);
-    assert.equal(triedy(rep, 'ar-pro-cakacia').length, 1, lang + ': pri Shopify čakacia listina vo výsledku ostáva');
+    // F5 (7. 11. 2026): appka je v App Store, výsledok čakaciu listinu nemá ani pri Shopify (zber adries zastavený).
+    assert.equal(triedy(rep, 'ar-pro-cakacia').length, 0, lang + ': pri Shopify vo výsledku žiadna čakacia listina (F5)');
     await posli(bezShopify()); assert.equal(pro.hidden, true, lang);
     await vzorka();
     assert.equal(pro.hidden, false, lang + ': vzorka (fiktívny obchod Shopify)');
@@ -136,12 +137,14 @@ test('S1: sekcia skrytá už v HTML ostane skrytá pri Shopify, bez Shopify aj p
   assert.equal(triedy(bez.rep, 'ar-pro-cakacia').length, 0, 'brána 218 D2: bez bloku appky');
   assert.equal(triedy(bez.rep, 'ar-vysledok-miesto').length, 1, 'výsledok je celý');
 });
-test('S1: keď prechod.mjs zlyhá (platforma unknown), sekcia ostane a výsledok má formulár čakacej listiny ako predtým', async () => {
+test('S1: keď prechod.mjs zlyhá (platforma unknown), sekcia ostane; výsledok od F5 nemá formulár čakacej listiny ani blok appky', async () => {
   const { $, rep, posli } = await app({ bezPrechodu: true });
   await posli(bezShopify());
   assert.equal($('pro').hidden, false);
   assert.equal(triedy(rep, 'ar-pro-poznamka').length, 0);
-  assert.equal(triedy(rep, 'ar-pro-cakacia').length, 1);
+  assert.equal(triedy(rep, 'ar-pro-cakacia').length, 0, 'F5: zber adries zastavený');
+  assert.equal(triedy(rep, 'ar-next').length, 0, 'bez prechod.mjs ani blok appky');
+  assert.equal(triedy(rep, 'ar-vysledok-miesto').length, 1, 'výsledok je celý');
 });
 
 // ---------- Z-385 (a): odkazy na kontrolu jedného pravidla v troch HTML (ops/seo/povinnosti-eu/agent-ready-odkazy.mjs) ----------
@@ -231,7 +234,9 @@ test('Z-392 a D2: pri živej Stráži stojí miesto bloku e-mailu za EÚ a boxom
     assert.ok(p.opravy >= 0 && p.limity > p.opravy && p.eu > p.limity, msg);
     assert.ok(p.straz > p.eu, msg + ': Stráž za EÚ');
     if (popis === 'Shopify') {
-      assert.ok(p.listina > p.straz && p.miesto > p.listina, msg + ': Stráž a listina pred blokom e-mailu');
+      // F5 (7. 11. 2026): čakacia listina vo výsledku nie je; bez živej appky (stranka.json 404) stojí blok e-mailu hneď za Strážou.
+      assert.equal(p.listina, -1, msg + ': bez čakacej listiny (F5)');
+      assert.equal(p.miesto, p.straz + 1, msg + ': blok e-mailu hneď za boxom Stráže');
     } else {
       // Brána 218 D2: obchod bez Shopify nemá blok čakacej listiny appky ani vetu o nej; blok e-mailu hneď za boxom Stráže.
       assert.equal(p.listina, -1, msg + ': bez bloku appky');
@@ -245,12 +250,13 @@ test('Z-392: so schválenou appkou stojí miesto aj za blokom appky; bez živej 
   const { rep, posli } = await app({ lang: 'en', stavAppky: { stav: 'live', appStoreUrl: 'https://apps.shopify.com/arling-agentic-product-check' } });
   await posli(sShopify());
   let p = poradieBlokov(rep);
-  assert.ok(p.appka > p.listina, 'blok appky sa vykreslil za listinou');
+  assert.ok(p.appka > p.eu, 'blok appky sa vykreslil za EÚ'); assert.equal(p.listina, -1, 'F5: bez čakacej listiny');
   assert.equal(p.miesto, p.appka + 1, 'miesto hneď za appkou'); assert.equal(p.vsetky, p.miesto + 1);
   const x = await app({ lang: 'sk', live: false });
   await x.posli(sShopify());
   p = poradieBlokov(x.rep);
-  assert.equal(p.straz, -1, 'bez živej Stráže box nie je'); assert.equal(p.miesto, p.listina + 1); assert.equal(p.vsetky, p.miesto + 1);
+  assert.equal(p.straz, -1, 'bez živej Stráže box nie je'); assert.equal(p.listina, -1, 'F5');
+  assert.equal(p.miesto, p.eu + 1, 'bez appky a Stráže hneď za EÚ'); assert.equal(p.vsetky, p.miesto + 1);
   await x.vzorka();
   assert.equal(triedy(x.rep, 'ar-vysledok-miesto').length, 0);
 });

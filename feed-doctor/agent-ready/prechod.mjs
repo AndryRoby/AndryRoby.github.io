@@ -6,6 +6,10 @@
 export const APP_PAGE='/agent-ready/';
 export const APP_STATE='/agent-ready/stranka.json';
 export const APP_URL='https://arling.sk/agent-ready/?utm_source=agent-ready-check&utm_medium=result&utm_campaign=product-check';
+// F5 (ops/shopify/pc-10-instalacii/PLAN.md, 7. 11. 2026): hlavné tlačidlo výsledku vedie priamo na zápis appky v Shopify App Store
+// (zverejnená 2. 11. 2026, ops/shopify/den-schvalenia/STAV.md). UTM na apps.shopify.com bez GA4 v zápise nič nemeria
+// (FAKTY-PRODUCT-CHECK.md časť 1); klik meria Umami udalosť ar_check_to_install v app.mjs.
+export const INSTALL_URL='https://apps.shopify.com/arling-agentic-product-check?utm_source=arling&utm_medium=check-result&utm_campaign=product-check';
 // Rovnaké pravidlo ako overKonfig v ops/strategia/2026-10-18-arling-2/stavba/landing-agent-ready/postav.mjs.
 const APP_STORE=/^https:\/\/apps\.shopify\.com\/[a-z0-9][a-z0-9-]{1,80}(\?[A-Za-z0-9_=&.%-]{1,200})?$/;
 const SIGNALS=['export','robots','assets'];

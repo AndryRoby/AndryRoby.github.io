@@ -14,6 +14,13 @@
  * Pravdivosť po schválení (nález 10): veta „appka čaká na posúdenie“ ostane len, kým /agent-ready/stranka.json nehovorí live;
  * pri live sa formulár skryje a ukáže sa odkaz na appku (prechod.mjs createAppPageCheck, pri chybe ostane stav „čaká“).
  * Bez vložených skriptov a štýlov (CSP script-src 'self'); texty sa vkladajú cez textContent.
+ *
+ * F5 (ops/shopify/pc-10-instalacii/PLAN.md, 7. 11. 2026): appka je v Shopify App Store od 2. 11. 2026
+ * (ops/shopify/den-schvalenia/STAV.md), listina „Email me once, when Pro can be started“ preto ďalšie adresy nezbiera.
+ * deps.zberOtvoreny je predvolene false: wire() formulár neotvorí ani nezapojí odoslanie, skryje vetu o čakaní a hneď ukáže vetu
+ * o App Store (aj keď stranka.json neodpovie); buildWaitlist() formulár ani vetu o čakaní nevytvorí. Služba
+ * products/subscribe-service sa nemení. Logika odosielania ostáva pod prepínačom pre prípad, že by sa listina znova otvorila
+ * (testy ju overujú s deps.zberOtvoreny true). Na tomto module ešte stojí kalendár /eu-ecommerce-calendar/ (cakacia.mjs?v=1).
  */
 import {EU_UI} from './i18n.mjs?v=5';
 
@@ -31,6 +38,7 @@ export const deps={
   setTimeout:(f,ms)=>setTimeout(f,ms),
   clearTimeout:(t)=>clearTimeout(t),
   timeoutMs:15000,
+  zberOtvoreny:false, // F5: zber adries zastavený, appka je v Shopify App Store
   appState:null, // Promise<{live:boolean,url:string}> | null; prvé volanie appLive() ju vytvorí
   track:(name,data)=>{if(typeof location!=='undefined'&&new URLSearchParams(location.search).has('test'))return;try{window.umami?.track(name,data);}catch{}},
 };
@@ -47,9 +55,15 @@ export function buildWaitlist(lang=jazykStranky(),place='result',shopify='unknow
   const t=(EU_UI[lang]||EU_UI.en).pro,id='ar-pro-'+(++pocitadlo);
   const box=el('section',null,'ar-pro-cakacia');box.setAttribute('aria-labelledby',id+'-nadpis');box.dataset.proSekcia='';
   const h=el('h3',t.title);h.id=id+'-nadpis';
-  const cakanie=el('p',t.waiting);cakanie.dataset.proCakanie='';
-  const live=el('p',t.live+' ');live.dataset.proLive='';live.hidden=true;const odkaz=el('a',t.liveLink);odkaz.href='/agent-ready/';live.append(odkaz);
+  const live=el('p',t.live+' ');live.dataset.proLive='';const odkaz=el('a',t.liveLink);odkaz.href='/agent-ready/';live.append(odkaz);
   const cena=el('p',null,'ar-pro-cena');cena.append(el('strong',t.price),' ',el('span',t.priceNote));
+  // F5: so zastaveným zberom bez formulára a bez vety o čakaní; veta o App Store je viditeľná hneď, odkaz dostane miesto v UTM.
+  if(!deps.zberOtvoreny){
+    box.append(h,el('p',t.text),live,cena);
+    appLive().then(({live:je,url})=>{if(je&&url)odkaz.href=sMiestom(url,place);},()=>{});
+    return box;
+  }
+  const cakanie=el('p',t.waiting);cakanie.dataset.proCakanie='';live.hidden=true;
   const form=el('form',null,'ar-pro-form');form.dataset.arPro='';form.dataset.place=place;form.dataset.jazyk=lang;form.dataset.shopify=PLATFORMY.includes(shopify)?shopify:'unknown';form.noValidate=true;form.hidden=true;
   const label=el('label',t.label);label.htmlFor=id+'-email';
   const input=el('input',null,'ar-pro-pole');Object.assign(input,{id:id+'-email',name:'email',type:'email',autocomplete:'email',inputMode:'email',spellcheck:false,required:true,maxLength:254});
@@ -81,6 +95,15 @@ export function wire(form){
   const lang=JAZYKY.includes(form.dataset.jazyk)?form.dataset.jazyk:jazykStranky(),place=form.dataset.place||'page',t=(EU_UI[lang]||EU_UI.en).pro;
   const shopify=PLATFORMY.includes(form.dataset.shopify)?form.dataset.shopify:'unknown';
   const sekcia=form.closest('[data-pro-sekcia]')||form.parentNode;
+  // F5: zber zastavený. Formulár ostane skrytý a bez odoslania; veta o čakaní zmizne a veta o App Store sa ukáže hneď (fakt, nie stav
+  // stranka.json); odkaz dostane miesto v utm_medium, keď stranka.json potvrdí live.
+  if(!deps.zberOtvoreny){
+    form.dataset.wired='1';form.hidden=true;
+    const cakanie=sekcia?.querySelector?.('[data-pro-cakanie]'),liveEl=sekcia?.querySelector?.('[data-pro-live]');
+    if(cakanie)cakanie.hidden=true;if(liveEl)liveEl.hidden=false;
+    appLive().then(({live,url})=>{const a=liveEl?.querySelector?.('a');if(live&&a&&url)a.href=sMiestom(url,place);},()=>{});
+    return;
+  }
   const email=form.querySelector('input[type="email"]'),pasca=form.querySelector('input[name="website"]'),tlacidlo=form.querySelector('button[type="submit"]');
   const chyba=form.querySelector('[data-pro-chyba]'),stav=sekcia.querySelector('[data-pro-stav]');
   if(!email||!tlacidlo||!chyba||!stav)return;
