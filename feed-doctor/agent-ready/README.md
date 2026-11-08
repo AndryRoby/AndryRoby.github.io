@@ -250,7 +250,7 @@ sentence about the app (relation 218, gate D2), `buildNote` stays only for older
 F5 of the 10 installs campaign (7 November 2026, `ops/shopify/pc-10-instalacii/PLAN.md`, report
 `ops/shopify/pc-10-instalacii/opravy/web-f5.md`). The app is in the Shopify App Store since 2 November 2026
 (`ops/shopify/den-schvalenia/STAV.md`). The app block in the result (Shopify signals and `/agent-ready/stranka.json` live) has two
-actions: the main one, "See all products: install free" (SK and DE in `app.mjs` `INSTALL`), opens `prechod.mjs` `INSTALL_URL`, the
+actions: the main one, "Check all products: install free" (SK and DE in `app.mjs` `INSTALL`), opens `prechod.mjs` `INSTALL_URL`, the
 listing on apps.shopify.com, in a new tab with `rel="noopener"` and a sentence that it opens the Shopify App Store; Umami
 `ar_check_to_install` with `lang` and `source` (check or sample) only. The secondary text link keeps `/agent-ready/` and
 `ar_check_to_app`. The result no longer has the Pro waitlist, and `app.mjs` no longer loads `cakacia.mjs`. The three check pages have

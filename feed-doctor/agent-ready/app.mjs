@@ -68,7 +68,7 @@ function limitsBlock(){const box=node('div',null,'ar-limits');box.append(node('h
 // F5 (ops/shopify/pc-10-instalacii/PLAN.md, 7. 11. 2026): the main button installs the app straight from its Shopify App Store
 // listing, because the campaign goal is installs and the visitor has just seen the gaps in 20 products; the page of the app
 // (/agent-ready/) stays as the secondary text link. Texts here, not in i18n.mjs, so its ?v and the modules that share it stay as they are.
-// Free plan: full first check of every active and unlisted product (FAKTY-PRODUCT-CHECK.md 3.2); the web check reads 20.
+// Free plan (decision 7. 11. 2026, Free = preview): the full check of every active and unlisted product runs, the score and counts are real, full detail for 3 products only; the web check reads 20.
 // top: the short row right under the score (gate F5 attempt 1, finding 1). It says "a sample" and no number, because
 // data.sample.products differs from store to store (the web check reads at most 20, core.mjs) and stays true for every count.
 // topSample (gate F5 attempt 2, finding 1): the sample is a fictional store, so the row there says that a real check of a Shopify
@@ -77,15 +77,15 @@ function limitsBlock(){const box=node('div',null,'ar-limits');box.append(node('h
 // button, which the button points to with aria-describedby. Not in top: at 390 px DE one more line pushed the button out of the
 // first screen after the result (measured, snimky-web-p2.json).
 const INSTALL={
- en:{cta:'See all products: install free',note:'The install button opens the Shopify App Store in a new tab.',
-  top:'This was a sample from your public data. In our Shopify app, the Free plan includes a full first check of every active and unlisted product.',
-  topSample:'For a Shopify store, a real check shows this row. In our Shopify app, the Free plan includes a full first check of every active and unlisted product.'},
- sk:{cta:'Pozrieť všetky produkty: inštalácia zadarmo',note:'Tlačidlo inštalácie otvorí Shopify App Store na novej karte.',jazyk:'Appka je po anglicky.',
-  top:'Toto bola vzorka z vašich verejných údajov. V našej appke pre Shopify obsahuje plán Free celú prvú kontrolu každého produktu v stave Active alebo Unlisted.',
-  topSample:'Skutočná kontrola obchodu na Shopify ukáže tento riadok. V našej appke pre Shopify obsahuje plán Free celú prvú kontrolu každého produktu v stave Active alebo Unlisted.'},
- de:{cta:'Alle Produkte ansehen: kostenlos installieren',note:'Die Schaltfläche zur Installation öffnet den Shopify App Store in einem neuen Tab.',jazyk:'Die App ist auf Englisch.',
-  top:'Das war eine Stichprobe aus Ihren öffentlichen Daten. In unserer Shopify-App enthält der Free-Tarif eine vollständige erste Prüfung jedes Produkts mit dem Status Active oder Unlisted.',
-  topSample:'Eine echte Prüfung eines Shopify-Shops zeigt diese Zeile. In unserer Shopify-App enthält der Free-Tarif eine vollständige erste Prüfung jedes Produkts mit dem Status Active oder Unlisted.'}};
+ en:{cta:'Check all products: install free',note:'The install button opens the Shopify App Store in a new tab.',
+  top:'This was a sample from your public data. In our Shopify app, the Free plan checks every active and unlisted product and shows the score and counts, with full detail for 3 products.',
+  topSample:'For a Shopify store, a real check shows this row. In our Shopify app, the Free plan checks every active and unlisted product and shows the score and counts, with full detail for 3 products.'},
+ sk:{cta:'Skontrolovať všetky produkty: inštalácia zadarmo',note:'Tlačidlo inštalácie otvorí Shopify App Store na novej karte.',jazyk:'Appka je po anglicky.',
+  top:'Toto bola vzorka z vašich verejných údajov. V našej appke pre Shopify plán Free skontroluje každý produkt v stave Active alebo Unlisted a ukáže skóre a počty, úplný detail pri 3 produktoch.',
+  topSample:'Skutočná kontrola obchodu na Shopify ukáže tento riadok. V našej appke pre Shopify plán Free skontroluje každý produkt v stave Active alebo Unlisted a ukáže skóre a počty, úplný detail pri 3 produktoch.'},
+ de:{cta:'Alle Produkte prüfen: kostenlos installieren',note:'Die Schaltfläche zur Installation öffnet den Shopify App Store in einem neuen Tab.',jazyk:'Die App ist auf Englisch.',
+  top:'Das war eine Stichprobe aus Ihren öffentlichen Daten. In unserer Shopify-App prüft der Free-Tarif jedes Produkt mit dem Status Active oder Unlisted und zeigt Score und Anzahlen, mit vollständigem Detail für 3 Produkte.',
+  topSample:'Eine echte Prüfung eines Shopify-Shops zeigt diese Zeile. In unserer Shopify-App prüft der Free-Tarif jedes Produkt mit dem Status Active oder Unlisted und zeigt Score und Anzahlen, mit vollständigem Detail für 3 Produkte.'}};
 // Umami: language and source only, like ar_check_to_app; PLAN.md part 6 measures this event. Sources: check and sample
 // (button in the app block), check-top and sample-top (row under the score), page (static link in #pro, data-umami-event).
 const INSTALL_EVENT='ar_check_to_install';

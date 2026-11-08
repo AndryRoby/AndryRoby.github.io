@@ -1,5 +1,5 @@
 // F5 kampane 10 inštalácií Product Checku (ops/shopify/pc-10-instalacii/PLAN.md F5 a časť 6, PRIPRAVENOST.md problém 12), 7. 11. 2026.
-// A) Výsledok webovej kontroly obchodu so znakmi Shopify a živou appkou má dve tlačidlá: hlavné „See all products: install free“ priamo
+// A) Výsledok webovej kontroly obchodu so znakmi Shopify a živou appkou má dve tlačidlá: hlavné „Check all products: install free“ priamo
 //    na zápis v Shopify App Store (rel noopener, nová karta, veta, že odchádza na Shopify App Store, udalosť Umami ar_check_to_install
 //    s jazykom a zdrojom) a vedľajšie „See Agentic Product Check“ na /agent-ready/ (udalosť ar_check_to_app ostáva).
 // B) Appka je v Shopify App Store od 2. 11. 2026 (ops/shopify/den-schvalenia/STAV.md): stránka nesmie naraz tvrdiť „available“ a
@@ -102,9 +102,9 @@ test('A: INSTALL_URL je zápis appky v Shopify App Store (nie /agent-ready/), pr
 
 // ---------- A: dve tlačidlá vo výsledku ----------
 const TEXTY = {
-  en: { cta: 'See all products: install free', druhy: 'See Agentic Product Check', pozn: /Shopify App Store/ },
-  sk: { cta: 'Pozrieť všetky produkty: inštalácia zadarmo', druhy: 'Pozrieť Agentic Product Check', pozn: /Shopify App Store/ },
-  de: { cta: 'Alle Produkte ansehen: kostenlos installieren', druhy: 'Agentic Product Check ansehen', pozn: /Shopify App Store/ },
+  en: { cta: 'Check all products: install free', druhy: 'See Agentic Product Check', pozn: /Shopify App Store/ },
+  sk: { cta: 'Skontrolovať všetky produkty: inštalácia zadarmo', druhy: 'Pozrieť Agentic Product Check', pozn: /Shopify App Store/ },
+  de: { cta: 'Alle Produkte prüfen: kostenlos installieren', druhy: 'Agentic Product Check ansehen', pozn: /Shopify App Store/ },
 };
 test('A: obchod so Shopify a živou appkou: hlavné tlačidlo inštalácie priamo na zápis (prvé, plné, noopener, nová karta, veta o odchode) a vedľajší odkaz na /agent-ready/ (SK, EN, DE)', async () => {
   for (const lang of ['en', 'sk', 'de']) {
@@ -148,9 +148,9 @@ test('A: bez živej appky (stranka.json nehovorí live) alebo bez znakov Shopify
 
 // ---------- Brána F5 pokus 1, nález 1: tlačidlo inštalácie pri skóre, blok appky pred boxom Stráže ----------
 const HORE = {
-  en: /^This was a sample from your public data\. In our Shopify app, the Free plan includes a full first check of every active and unlisted product\.$/,
-  sk: /^Toto bola vzorka z vašich verejných údajov\. V našej appke pre Shopify obsahuje plán Free celú prvú kontrolu každého produktu v stave Active alebo Unlisted\.$/,
-  de: /^Das war eine Stichprobe aus Ihren öffentlichen Daten\. In unserer Shopify-App enthält der Free-Tarif eine vollständige erste Prüfung jedes Produkts mit dem Status Active oder Unlisted\.$/,
+  en: /^This was a sample from your public data\. In our Shopify app, the Free plan checks every active and unlisted product and shows the score and counts, with full detail for 3 products\.$/,
+  sk: /^Toto bola vzorka z vašich verejných údajov\. V našej appke pre Shopify plán Free skontroluje každý produkt v stave Active alebo Unlisted a ukáže skóre a počty, úplný detail pri 3 produktoch\.$/,
+  de: /^Das war eine Stichprobe aus Ihren öffentlichen Daten\. In unserer Shopify-App prüft der Free-Tarif jedes Produkt mit dem Status Active oder Unlisted und zeigt Score und Anzahlen, mit vollständigem Detail für 3 Produkte\.$/,
 };
 // Brána F5 pokus 2, nález 2: pri hlavnom tlačidle pod skóre aj veta o jazyku appky (ako copy.app.terms a #pro), v SK a DE; je vo vete
 // hneď pod tlačidlom, na ktorú tlačidlo ukazuje cez aria-describedby (v texte nad tlačidlom by pri DE 390 px posunula tlačidlo z prvého okna).
@@ -162,9 +162,9 @@ const POZN_HORE = {
 // Brána F5 pokus 2, nález 1: vzorka je fiktívny obchod (pruh „Sample report from a fictional store“), riadok pod skóre preto
 // nesmie hovoriť o verejných údajoch návštevníka; povie, že ho ukáže skutočná kontrola obchodu na Shopify (ako copy.app.sampleWhy).
 const HORE_VZORKA = {
-  en: /^For a Shopify store, a real check shows this row\. In our Shopify app, the Free plan includes a full first check of every active and unlisted product\.$/,
-  sk: /^Skutočná kontrola obchodu na Shopify ukáže tento riadok\. V našej appke pre Shopify obsahuje plán Free celú prvú kontrolu každého produktu v stave Active alebo Unlisted\.$/,
-  de: /^Eine echte Prüfung eines Shopify-Shops zeigt diese Zeile\. In unserer Shopify-App enthält der Free-Tarif eine vollständige erste Prüfung jedes Produkts mit dem Status Active oder Unlisted\.$/,
+  en: /^For a Shopify store, a real check shows this row\. In our Shopify app, the Free plan checks every active and unlisted product and shows the score and counts, with full detail for 3 products\.$/,
+  sk: /^Skutočná kontrola obchodu na Shopify ukáže tento riadok\. V našej appke pre Shopify plán Free skontroluje každý produkt v stave Active alebo Unlisted a ukáže skóre a počty, úplný detail pri 3 produktoch\.$/,
+  de: /^Eine echte Prüfung eines Shopify-Shops zeigt diese Zeile\. In unserer Shopify-App prüft der Free-Tarif jedes Produkt mit dem Status Active oder Unlisted und zeigt Score und Anzahlen, mit vollständigem Detail für 3 Produkte\.$/,
 };
 const VASE_UDAJE = /your public data|vašich verejných údajov|Ihren öffentlichen Daten|This was a sample|Toto bola vzorka|Das war eine Stichprobe/;
 test('pokus 2, nález 1: vo vzorke (fiktívny obchod) riadok pod skóre netvrdí „vzorka z vašich verejných údajov“, povie, kde sa ukáže pri skutočnej kontrole (EN, SK, DE); tlačidlo ostáva so sample-top', async () => {
