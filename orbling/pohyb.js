@@ -1,5 +1,5 @@
 // Pohyb stránky arling.sk/orbling/ nad knižnicou ARLing Motion (arling.sk/motion, MIT), vzor obrazky/v7/pohyb.js domova.
-// Tri momenty, každý raz: scéna v úvode (návrhy AI prídu, Accept all, náhľad dostane nový fakt a otázku), postup krokov
+// Tri momenty, každý raz: scéna v úvode (okno Build príde, riadky Bundle offers a Your facts, stlačenie Build my page), postup krokov
 // „From your catalog to a published page“ a jemné vstupy sekcií (bez rozmazania). Bez JS a pri obmedzenom pohybe je všetko v koncovom stave.
 // Navyše hlavička po posune a menu na mobile (bez JS funguje cez :target).
 import { presence, driver } from '/motion/src/core.js';
@@ -35,15 +35,16 @@ if (mob && mobBtn) {
   d.addEventListener('keydown', (e) => { if (e.key === 'Escape' && mob.classList.contains('otvorene')) { nastav(false); mobBtn.focus(); } });
 }
 
-// 1) Scéna v úvode: raz po načítaní písma. Triedu .pred pridá až tento modul, takže pri chybe modulu nič neostane skryté.
+// 1) Scéna v úvode: raz po načítaní písma. Oprava 1 Wb (motion 2): počiatočný stav (okno Build skryté) nastavuje CSS v <head> od prvého
+// vykreslenia, nie tento modul, takže scéna nikdy neblikne hotová a potom prázdna. Ak modul nepríde, CSS poistka ju po 2,5 s ukáže
+// sama. Keď modul príde až potom, čo poistka začala (asi 2,3 s), nechá ju dobehnúť a nič nespúšťa znova.
 const scena = d.getElementById('scena');
 if (scena && !reduced) {
-  scena.classList.add('pred');
-  const start = () => requestAnimationFrame(() => requestAnimationFrame(() => { scena.classList.remove('pred'); scena.classList.add('hra'); }));
+  const start = () => { if (performance.now() < 2300) requestAnimationFrame(() => scena.classList.add('hra')); };
   if (d.fonts && d.fonts.ready) d.fonts.ready.then(start); else start();
 }
 
-// 2) Postup krokov: signál prejde raz krokmi 1 až 5, keď je polovica zoznamu v obraze (len ak ešte nie je v obraze).
+// 2) Postup krokov: signál prejde raz krokmi 1 až 4, keď je polovica zoznamu v obraze (len ak ešte nie je v obraze).
 const kroky = d.querySelector('.kroky');
 if (kroky && !reduced && 'IntersectionObserver' in w && kroky.getBoundingClientRect().top > innerHeight) {
   kroky.classList.add('pred');
