@@ -37,7 +37,7 @@ export const T={
  sk:{
   title:'Stráž e-shopu: táto kontrola znova každý týždeň',
   lead:'Stráž zopakuje túto kontrolu každý týždeň a napíše vám, keď sa výsledok zmení: keď sa niečo pokazí alebo keď sa oprava prejaví.',
-  shopify:'Stráž číta len verejné stránky, preto funguje aj pri Shopify a do obchodu sa nič neinštaluje. Je to samostatná služba, nie Pro v našej appke pre Shopify.',
+  shopify:'Stráž číta len verejné stránky, preto funguje aj pri Shopify a do obchodu sa nič neinštaluje. Je to samostatná služba, nie plán Growth v našej appke pre Shopify, Orbling.',
   watchTitle:'Čo sleduje',
   watch:['Povinnosti EÚ na verejných stránkach obchodu, raz týždenne: funkciu na odstúpenie od zmluvy online, oznámenie o zákonnej záruke a všeobecné environmentálne tvrdenia.',
    'Údaje pre AI nákupných asistentov, raz týždenne: cenu, dostupnosť, dopravu a vrátenie v údajoch produktov a v zásadách obchodu (najviac 20 produktov a 3 produktové stránky).',
@@ -72,7 +72,7 @@ export const T={
  en:{
   title:'Shop Guard: this check again every week',
   lead:'Shop Guard repeats this check every week and emails you when the result changes: when something breaks or when a fix shows up.',
-  shopify:'Shop Guard reads public pages only, so it works with Shopify too and nothing is installed in your store. It is a separate service, not Pro in our Shopify app.',
+  shopify:'Shop Guard reads public pages only, so it works with Shopify too and nothing is installed in your store. It is a separate service, not the Growth plan in our Shopify app, Orbling.',
   watchTitle:'What it watches',
   watch:['EU duties on the public pages of your store, once a week: the online withdrawal function, the notice on the legal guarantee and generic environmental claims.',
    'Data for AI shopping assistants, once a week: price, availability, shipping and returns in your product data and store policies (up to 20 products and 3 product pages).',
@@ -107,7 +107,7 @@ export const T={
  de:{
   title:'Shop-Wächter: diese Prüfung jede Woche erneut',
   lead:'Der Shop-Wächter wiederholt diese Prüfung jede Woche und schreibt Ihnen, wenn sich das Ergebnis ändert: wenn etwas kaputtgeht oder eine Korrektur sichtbar wird.',
-  shopify:'Der Shop-Wächter liest nur öffentliche Seiten, daher funktioniert er auch mit Shopify, und in Ihrem Shop wird nichts installiert. Er ist ein eigener Dienst, nicht Pro in unserer Shopify-App.',
+  shopify:'Der Shop-Wächter liest nur öffentliche Seiten, daher funktioniert er auch mit Shopify, und in Ihrem Shop wird nichts installiert. Er ist ein eigener Dienst, nicht der Growth-Tarif unserer Shopify-App Orbling.',
   watchTitle:'Was er beobachtet',
   watch:['EU-Pflichten auf den öffentlichen Seiten Ihres Shops, einmal pro Woche: die Online-Widerrufsfunktion, den Hinweis auf die gesetzliche Gewährleistung und allgemeine Umweltaussagen.',
    'Daten für KI-Einkaufsassistenten, einmal pro Woche: Preis, Verfügbarkeit, Versand und Rückgabe in Ihren Produktdaten und Shop-Richtlinien (bis zu 20 Produkte und 3 Produktseiten).',

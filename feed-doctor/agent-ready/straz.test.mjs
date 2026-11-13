@@ -468,10 +468,12 @@ test('Z3: pri skóre null alebo 0 produktových stránkach box povie, že údaje
 const { UI } = await import('./i18n.mjs?v=5'); // tá istá inštancia, ktorú načíta app.mjs
 const NEVYHODNOTENE = /\b(AI|KI)\b[\s\S]*(nedali vyhodnotiť|nehodnotíme|could not be evaluated|do not evaluate|nicht auswerten|nicht bewerten)/;
 test('nález 9: veta o platforme nesľubuje každú platformu, hovorí, že Stráž číta len verejné stránky (SK, EN, DE)', () => {
-  assert.equal(T.sk.shopify, 'Stráž číta len verejné stránky, preto funguje aj pri Shopify a do obchodu sa nič neinštaluje. Je to samostatná služba, nie Pro v našej appke pre Shopify.');
+  // 13. 11. 2026 (nasadenie-2026-11-13/PRAVDA.md, brána pokus 1 nález 3): plán Pro je zmazaný, Stráž sa odlišuje od plánu Growth v Orblingu.
+  assert.equal(T.sk.shopify, 'Stráž číta len verejné stránky, preto funguje aj pri Shopify a do obchodu sa nič neinštaluje. Je to samostatná služba, nie plán Growth v našej appke pre Shopify, Orbling.');
   for (const [lang, verejne] of [['sk', /číta len verejné stránky/], ['en', /reads public pages only/], ['de', /liest nur öffentliche Seiten/]]) {
     assert.ok(!/každej platforme|every platform|jeder Plattform/i.test(T[lang].shopify), lang + ': ' + T[lang].shopify);
-    assert.match(T[lang].shopify, verejne, lang); assert.match(T[lang].shopify, /Shopify/, lang); assert.match(T[lang].shopify, /Pro/, lang);
+    assert.match(T[lang].shopify, verejne, lang); assert.match(T[lang].shopify, /Shopify/, lang); assert.match(T[lang].shopify, /Growth/, lang); assert.match(T[lang].shopify, /Orbling/, lang);
+    assert.doesNotMatch(T[lang].shopify, /\bPro\b/, lang);
   }
 });
 // Brána pokus 2 nález D1 (ops/ai/kontrola/2026-10-22-straz-eshopu-pokus2.md): nález 9 sa vrátil v statickej sekcii monitor-pro.
