@@ -5,7 +5,7 @@
 <script type="text/plain" data-odlozene src="/style/vzhlad.js?v=da076a5a"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://api.arling.workers.dev 'sha256-7FSdfmrl+5QSgl6IKPQIurtZ+JQz6W0uhhvFm3YWalc=' 'sha256-j4czM+07qiXvVNmD8vemgLhSup70ncXSG5L7Q8v8q0A=' 'sha256-JVdxJzCbZNq60tirkrCOtOJRPPqtO2pINqs4ocXz2Pc=' 'sha256-0PxmtJhfdRRqQ1O7CvviHNLgLWcXX9lDBjeGvirUfHk='; connect-src 'self' https://api.arling.workers.dev; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://api.arling.workers.dev 'sha256-7FSdfmrl+5QSgl6IKPQIurtZ+JQz6W0uhhvFm3YWalc=' 'sha256-+vpiHMacVOGes/mPT0GW+m9dJJiMvHwAanIdisuwMcU=' 'sha256-JVdxJzCbZNq60tirkrCOtOJRPPqtO2pINqs4ocXz2Pc=' 'sha256-0PxmtJhfdRRqQ1O7CvviHNLgLWcXX9lDBjeGvirUfHk='; connect-src 'self' https://api.arling.workers.dev; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#0a0908">
 <link rel="preconnect" href="https://api.arling.workers.dev" crossorigin>
@@ -31,7 +31,7 @@
   "headline": "Banka odmietla súbor pain.001: najčastejšie chyby a ako ich nájsť",
   "description": "Prečo Tatra banka, SLSP, VÚB alebo ČSOB odmietli import XML súboru pain.001: šesť najčastejších príčin, ako ich nájsť a opraviť.",
   "datePublished": "2026-09-06",
-  "dateModified": "2026-09-06",
+  "dateModified": "2026-11-19",
   "inLanguage": "sk",
   "author": { "@type": "Organization", "name": "ARLing s. r. o.",
     "url": "https://arling.sk/"
@@ -416,8 +416,8 @@ html:not(.css) main>:nth-child(n+2),html:not(.css) body>footer{visibility:hidden
 &lt;CtrlSum&gt;4520.00&lt;/CtrlSum&gt;</code></pre>
         </section>
         <section class="sec" id="s3">
-  <h2 class="r">2. Menný priestor Document nie je presne pain.001.001.03</h2>
-  <p class="r d1">Element <code>&lt;Document&gt;</code> musí mať <code>xmlns="urn:iso:std:iso:20022:tech:xsd:pain.001.001.03"</code>. Tatra banka, SLSP, VÚB aj ČSOB pri importe hromadného príkazu spracúvajú túto konkrétnu verziu. Ak účtovný softvér vyexportuje novšiu verziu (napríklad pain.001.001.09), súbor banka odmietne alebo import zlyhá bez jasnej príčiny, lebo polia sa nezhodujú s tým, čo banka očakáva.</p>
+  <h2 class="r">2. Menný priestor Document nie je presne pain.001.001.03 ani .09</h2>
+  <p class="r d1">Element <code>&lt;Document&gt;</code> musí mať presný menný priestor verzie súboru, teda <code>xmlns="urn:iso:std:iso:20022:tech:xsd:pain.001.001.03"</code> alebo <code>xmlns="urn:iso:std:iso:20022:tech:xsd:pain.001.001.09"</code>. VÚB (Internet banking) a ČSOB v dokumentácii importu výslovne uvádzajú obe verzie, Slovenská sporiteľňa pre Business24 zverejňuje popis importu oboch. Tatra banka na stránke dávkových platieb uvádza vzory .09 a stále aj popis .03; jej slovenské znenie z apríla 2026 ohlasovalo import .03 len do 12. 11. 2026 a či ho banka po tomto dátume naozaj odmieta, sme neoverili. Pri .09 Tatra banka uvádza vlastné obmedzenia, napríklad najviac jeden blok PmtInf. Ak menný priestor nesedí s verziou súboru alebo ho banka pri importe neuvádza, import môže zlyhať bez jasnej príčiny.</p>
   <pre class="r d2"><code>&lt;Document xmlns="urn:iso:std:iso:20022:tech:xsd:pain.001.001.03"&gt;</code></pre>
         </section>
         <section class="sec" id="s4">
@@ -442,7 +442,7 @@ Faktúra č. 2026/045  →  Faktura c. 2026/045</code></pre>
         <section class="sec" id="s8">
   <h2 class="r">Checklist</h2>
   <ol class="r d1">
-    <li>Skontrolujte, že <code>xmlns</code> v <code>&lt;Document&gt;</code> je presne <code>urn:iso:std:iso:20022:tech:xsd:pain.001.001.03</code>.</li>
+    <li>Skontrolujte, že <code>xmlns</code> v <code>&lt;Document&gt;</code> je presne <code>urn:iso:std:iso:20022:tech:xsd:pain.001.001.03</code> alebo <code>urn:iso:std:iso:20022:tech:xsd:pain.001.001.09</code>, podľa verzie súboru a toho, čo vaša banka pri importe uvádza.</li>
     <li>Overte, že <code>GrpHdr/NbOfTxs</code> a <code>CtrlSum</code> sedia so skutočným počtom a súčtom platieb.</li>
     <li>Skontrolujte BIC banky platiteľa: TATRSKBX (Tatra banka), GIBASKBX (SLSP), SUBASKBX (VÚB), CEKOSKBX (ČSOB).</li>
     <li>Overte <code>ReqdExctnDt</code>: nie v minulosti, u Tatra banky max. 31 dní dopredu, u VÚB max. 30 dní.</li>
@@ -472,6 +472,11 @@ Faktúra č. 2026/045  →  Faktura c. 2026/045</code></pre>
     <li>VÚB, a.s.: <em>Popis formátu pre SEPA úhrady (SCT)</em>. <a href="https://app.vub.sk/source/files/vubweb/sekundarna-navigacia/informacny-servis/sepa-aplikacie/sct_klient_f.pdf" target="_blank" rel="noopener">app.vub.sk (PDF)</a></li>
     <li>ČSOB: <em>BusinessBanking Lite a SEPA</em>. <a href="https://www.csob.sk/documents/11005/123723/BB_SEPA_01022016.pdf" target="_blank" rel="noopener">csob.sk (PDF)</a></li>
     <li>Slovenská sporiteľňa: <em>Okamžité platby</em> (Business24). <a href="https://www.slsp.sk/sk/biznis/platobny-styk/okamzite-platby" target="_blank" rel="noopener">slsp.sk</a></li>
+    <li>VÚB, a.s.: <em>Internet banking, Formáty importných súborov</em>. <a href="https://www.vub.sk/document/documents/VUB/IB-navody-manualy/IB-Formaty-importnych-suborov.pdf" target="_blank" rel="noopener">vub.sk (PDF)</a></li>
+    <li>ČSOB: <em>ISO20022 Štrukturované adresy</em>. <a href="https://www.csob.sk/documents/11005/100040/ISO20022_Strukturovane_adresy.pdf" target="_blank" rel="noopener">csob.sk (PDF)</a></li>
+    <li>Slovenská sporiteľňa: <em>Business24, Popis štruktúr pre import úhrad</em>. <a href="https://www.slsp.sk/sk/biznis/elektronicke-bankovnictvo/business24" target="_blank" rel="noopener">slsp.sk</a></li>
+    <li>Tatra banka: <em>Batch files</em>, anglické znenie čítané 19. 11. 2026. <a href="https://www.tatrabanka.sk/en/personal/account-payments/internet-banking/batch-files/" target="_blank" rel="noopener">tatrabanka.sk</a></li>
+    <li>Tatra banka: <em>Dávkové platby</em>, slovenské znenie z 10. 4. 2026, archívna kópia. <a href="https://web.archive.org/web/20260410214751/https://www.tatrabanka.sk/sk/personal/ucet-platby/internet-banking/davkove-platby/" target="_blank" rel="noopener">web.archive.org</a></li>
     <li>ISO 20022: <em>pain.001.001.03 message definition</em>. <a href="https://www.iso20022.org/" target="_blank" rel="noopener">iso20022.org</a></li>
   </ul>
         </div>

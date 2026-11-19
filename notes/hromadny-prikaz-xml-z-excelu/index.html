@@ -5,7 +5,7 @@
 <script type="text/plain" data-odlozene src="/style/vzhlad.js?v=da076a5a"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://api.arling.workers.dev 'sha256-7FSdfmrl+5QSgl6IKPQIurtZ+JQz6W0uhhvFm3YWalc=' 'sha256-ZX/JlbN1+rRm68352RbZXPo5DwQ3MM+X/1vyztWkE08=' 'sha256-Pb2GQssaNVej/4t1X/t6wBUVyovsPIYgJMFRX38YXhY=' 'sha256-kHzhLBitzZlfAaUS4VuXMelQQYrrpIhEmCeLW+iUbL4='; connect-src 'self' https://api.arling.workers.dev; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://api.arling.workers.dev 'sha256-7FSdfmrl+5QSgl6IKPQIurtZ+JQz6W0uhhvFm3YWalc=' 'sha256-xAMyJzLaLiQ5YaeRZ7K3l9jZba+eAGQBc4bBl17+Css=' 'sha256-Pb2GQssaNVej/4t1X/t6wBUVyovsPIYgJMFRX38YXhY=' 'sha256-kHzhLBitzZlfAaUS4VuXMelQQYrrpIhEmCeLW+iUbL4='; connect-src 'self' https://api.arling.workers.dev; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#0a0908">
 <link rel="preconnect" href="https://api.arling.workers.dev" crossorigin>
@@ -29,7 +29,7 @@
   "headline": "Hromadný príkaz z Excelu do banky: ako vyrobiť pain.001 XML pre Tatra banku, SLSP, VÚB a ČSOB",
   "description": "Ako previesť platby z Excelu na SEPA pain.001 XML hromadný príkaz pre Tatra banku, SLSP, VÚB a ČSOB: presné hodnoty polí, BIC, VS/ŠS/KS a limity.",
   "datePublished": "2026-09-06",
-  "dateModified": "2026-09-06",
+  "dateModified": "2026-11-19",
   "inLanguage": "sk",
   "author": { "@type": "Organization", "name": "ARLing s. r. o.",
     "url": "https://arling.sk/"
@@ -426,7 +426,7 @@ html:not(.css) main>:nth-child(n+2),html:not(.css) body>footer{visibility:hidden
         </section>
         <section class="sec" id="s3">
   <h2 class="r">2. Presné hodnoty, ktoré banka v XML očakáva</h2>
-  <p class="r d1">Súbor musí mať menný priestor <code>urn:iso:std:iso:20022:tech:xsd:pain.001.001.03</code>: to je presne to, čo skratka pain.001.001.03 z normy ISO 20022 znamená. Bez tohto riadku ho žiadna zo štyroch bánk nespracuje ako platný hromadný príkaz. Spôsob úhrady (PmtMtd) musí byť <code>TRF</code>, úroveň služby (SvcLvl/Cd) <code>SEPA</code> a spôsob úhrady poplatkov (ChrgBr) <code>SLEV</code>. Mena je vždy EUR, so sumou zapísanou na presne dve desatinné miesta (napríklad <code>450.00</code>).</p>
+  <p class="r d1">Súbor musí mať menný priestor svojej verzie, pri pain.001.001.03 je to <code>urn:iso:std:iso:20022:tech:xsd:pain.001.001.03</code>: to je presne to, čo skratka pain.001.001.03 z normy ISO 20022 znamená; pri pain.001.001.09 sa končí na .09. Bez menného priestoru ho žiadna zo štyroch bánk nespracuje ako platný hromadný príkaz. Tatra banka, Slovenská sporiteľňa, VÚB aj ČSOB v dokumentácii importu uvádzajú .03 aj .09. Tatra banka v apríli 2026 ohlásila import .03 len do 12. 11. 2026; či ho po tomto dátume naozaj odmieta, sme neoverili. Spôsob úhrady (PmtMtd) musí byť <code>TRF</code>, úroveň služby (SvcLvl/Cd) <code>SEPA</code> a spôsob úhrady poplatkov (ChrgBr) <code>SLEV</code>. Mena je vždy EUR, so sumou zapísanou na presne dve desatinné miesta (napríklad <code>450.00</code>).</p>
   <p class="r d2">Toto sú pevné hodnoty schémy EPC SEPA Credit Transfer, ktoré generátor vyplní do každej transakcie automaticky. Pri ručnom písaní XML je práve tu najčastejšie miesto, kde niečo chýba alebo je preklepnuté, a banka súbor odmietne bez ďalšieho vysvetlenia.</p>
         </section>
         <section class="sec" id="s4">
@@ -490,6 +490,10 @@ html:not(.css) main>:nth-child(n+2),html:not(.css) body>footer{visibility:hidden
     <li>Tatra banka: <a href="https://www.tatrabanka.sk/en/personal/account-payments/internet-banking/batch-files/" target="_blank" rel="noopener">Batch files: Send payment files</a></li>
     <li>VÚB, a.s.: <a href="https://app.vub.sk/source/files/vubweb/sekundarna-navigacia/informacny-servis/sepa-aplikacie/sct_klient_f.pdf" target="_blank" rel="noopener">Popis formátu pre SEPA úhrady: SCT</a> (PDF)</li>
     <li>ČSOB: <a href="https://www.csob.sk/documents/11005/123723/BB_SEPA_01022016.pdf" target="_blank" rel="noopener">BusinessBanking Lite a SEPA</a> (PDF, 20.8.2015)</li>
+    <li>Tatra banka: <a href="https://web.archive.org/web/20260410214751/https://www.tatrabanka.sk/sk/personal/ucet-platby/internet-banking/davkove-platby/" target="_blank" rel="noopener">Dávkové platby</a> (slovenské znenie z 10. 4. 2026, archívna kópia)</li>
+    <li>VÚB, a.s.: <a href="https://www.vub.sk/document/documents/VUB/IB-navody-manualy/IB-Formaty-importnych-suborov.pdf" target="_blank" rel="noopener">Internet banking, Formáty importných súborov</a> (PDF)</li>
+    <li>ČSOB: <a href="https://www.csob.sk/documents/11005/100040/ISO20022_Strukturovane_adresy.pdf" target="_blank" rel="noopener">ISO20022 Štrukturované adresy</a> (PDF, 1. 8. 2026)</li>
+    <li>Slovenská sporiteľňa: <a href="https://www.slsp.sk/sk/biznis/elektronicke-bankovnictvo/business24" target="_blank" rel="noopener">Business24, Popis štruktúr pre import úhrad</a></li>
     <li>ISO 20022: <a href="https://www.iso20022.org/" target="_blank" rel="noopener">pain.001.001.03, Customer Credit Transfer Initiation</a></li>
   </ul>
         </div>

@@ -5,7 +5,7 @@
 <script type="text/plain" data-odlozene src="/style/vzhlad.js?v=da076a5a"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://api.arling.workers.dev 'sha256-7FSdfmrl+5QSgl6IKPQIurtZ+JQz6W0uhhvFm3YWalc=' 'sha256-WgizXKcRhCR6RiJyHdiCCxsxDNQpVMiF+OpUUGEa6/M=' 'sha256-K0tvngAcuyKaxMxByxaxBXxB/FVrZgz5sZTGB2p4Hww=' 'sha256-5mVnDbwDxwViQnINLq/ylaRiiUkz/ekJz2UnCZucX94=' 'sha256-kHzhLBitzZlfAaUS4VuXMelQQYrrpIhEmCeLW+iUbL4='; connect-src 'self' https://api.arling.workers.dev; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://api.arling.workers.dev 'sha256-7FSdfmrl+5QSgl6IKPQIurtZ+JQz6W0uhhvFm3YWalc=' 'sha256-LZOGbZ9afyvCEHolWPsME8vdkn1+ioIpM3uc1VXAcGg=' 'sha256-K0tvngAcuyKaxMxByxaxBXxB/FVrZgz5sZTGB2p4Hww=' 'sha256-uD11PXJmL/QHv86QtiEadd6KcfGr8JjR3LxyAhl+EBk=' 'sha256-kHzhLBitzZlfAaUS4VuXMelQQYrrpIhEmCeLW+iUbL4='; connect-src 'self' https://api.arling.workers.dev; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'none'; object-src 'none'">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#0a0908">
 <link rel="preconnect" href="https://api.arling.workers.dev" crossorigin>
@@ -32,7 +32,7 @@
   "headline": "SEPA-Sammelüberweisung aus Excel: pain.001 für die Bank erzeugen, ohne jede Zeile von Hand einzutippen",
   "description": "Wann sich eine SEPA-Sammelüberweisung aus einer Excel-Liste lohnt, welche Felder jede Zahlung braucht, die häufigsten Gründe, warum eine Bank die Datei ablehnt, und wie Sie eine pain.001-XML-Datei kostenlos im Browser erzeugen und vor dem Hochladen prüfen.",
   "datePublished": "2026-09-06",
-  "dateModified": "2026-09-06",
+  "dateModified": "2026-11-19",
   "inLanguage": "de",
   "author": { "@type": "Organization", "name": "ARLing s. r. o.", "url": "https://arling.sk/how-we-work/" },
   "publisher": { "@type": "Organization", "name": "ARLing s. r. o.", "url": "https://arling.sk/", "email": "support@arling.sk", "identifier": "56583486" },
@@ -73,7 +73,7 @@
     {
       "@type": "Question",
       "name": "Ist die erzeugte Datei automatisch fehlerfrei, oder muss ich sie noch prüfen?",
-      "acceptedAnswer": { "@type": "Answer", "text": "Der Generator schreibt die von Ihnen eingegebenen Werte in das korrekte pain.001.001.03-Schema mit den vorgeschriebenen festen Feldern, prüft aber nicht automatisch, ob ein Name Zeichen außerhalb des zulässigen Zeichensatzes enthält oder ob eine Bank ihre eigene Obergrenze für Zahlungen pro Datei einhält. Öffnen Sie die fertige Datei vor dem Hochladen einmal kurz und prüfen Sie stichprobenartig einige Zeilen, insbesondere Beträge und IBANs, gegen Ihre Ausgangsliste." }
+      "acceptedAnswer": { "@type": "Answer", "text": "Der Generator schreibt die von Ihnen eingegebenen Werte in das korrekte Schema pain.001.001.03 oder .09 (im Formular wählbar) mit den vorgeschriebenen festen Feldern, prüft aber nicht automatisch, ob ein Name Zeichen außerhalb des zulässigen Zeichensatzes enthält oder ob eine Bank ihre eigene Obergrenze für Zahlungen pro Datei einhält. Öffnen Sie die fertige Datei vor dem Hochladen einmal kurz und prüfen Sie stichprobenartig einige Zeilen, insbesondere Beträge und IBANs, gegen Ihre Ausgangsliste." }
     }
   ]
 }
@@ -442,13 +442,13 @@ html:not(.css) main>:nth-child(n+2),html:not(.css) body>footer{visibility:hidden
   <h2 class="r">4. Ablauf mit dem Generator und die Prüfung davor</h2>
   <div class="tool-box r d1">
     <p>Der <a data-umami-event="open-sepa-pain001-generator-de-cta-text" href="https://arling.sk/sepa-pain001-generator/de/">SEPA pain.001 Generator</a> übernimmt eine aus Excel kopierte oder als CSV hochgeladene Zahlungsliste, erkennt Spalten wie IBAN, Betrag, Name, Verwendungszweck und Symbole automatisch anhand der Spaltenüberschrift und lässt jede falsch erkannte Spalte manuell korrigieren. Das Tool hat eine deutsche Oberfläche (daneben Englisch und Slowakisch) und ein Länderprofil DE mit Verwendungszweck und EndToEndId. Die eingebaute BIC-Tabelle leitet die BIC bislang aus slowakischen Bankleitzahlen ab; bei einer deutschen, österreichischen oder Schweizer IBAN öffnet sich automatisch ein freies Feld, in das Sie die BIC selbst eintragen, danach wird die Datei normal erzeugt.</p>
-    <p>Die Verarbeitung läuft vollständig im Browser, nichts von der Zahlungsliste wird hochgeladen, was sich ebenfalls im Netzwerk-Reiter der Entwicklertools nachprüfen lässt. Der Generator schreibt exakt die Werte, die Sie eingeben, in das pain.001.001.03-Schema; er entfernt keine unzulässigen Sonderzeichen und prüft keine bankspezifischen Grenzen wie ein Zahlungslimit pro Datei, das bleibt Ihre eigene Kontrolle vor dem Hochladen. Die kostenlose Version hat kein Limit bei der Anzahl der Zahlungen oder Dateien. Das Paket <a data-umami-event="open-bankove-nastroje-de-text" href="https://arling.sk/bankove-nastroje/?lang=de">Bankové nástroje</a> (9 EUR im Monat oder 79 EUR im Jahr, Preise inklusive Umsatzsteuer, Abrechnung über Stripe) fügt für drei Bank-Tools (SEPA-pain.001-Generator, camt.053 nach Excel, Zahlungsabgleich) gespeicherte Zahlerprofile, mehrere Dateien in einer Sitzung und eine Verlaufsübersicht hinzu.</p>
+    <p>Die Verarbeitung läuft vollständig im Browser, nichts von der Zahlungsliste wird hochgeladen, was sich ebenfalls im Netzwerk-Reiter der Entwicklertools nachprüfen lässt. Der Generator schreibt exakt die Werte, die Sie eingeben, in das Schema pain.001.001.03 oder .09 (im Formular wählbar); er entfernt keine unzulässigen Sonderzeichen und prüft keine bankspezifischen Grenzen wie ein Zahlungslimit pro Datei, das bleibt Ihre eigene Kontrolle vor dem Hochladen. Die kostenlose Version hat kein Limit bei der Anzahl der Zahlungen oder Dateien. Das Paket <a data-umami-event="open-bankove-nastroje-de-text" href="https://arling.sk/bankove-nastroje/?lang=de">Bankové nástroje</a> (9 EUR im Monat oder 79 EUR im Jahr, Preise inklusive Umsatzsteuer, Abrechnung über Stripe) fügt für drei Bank-Tools (SEPA-pain.001-Generator, camt.053 nach Excel, Zahlungsabgleich) gespeicherte Zahlerprofile, mehrere Dateien in einer Sitzung und eine Verlaufsübersicht hinzu.</p>
     <a data-umami-event="open-sepa-pain001-generator-de-cta" class="btn btn-solid" href="https://arling.sk/sepa-pain001-generator/de/">SEPA pain.001 Generator öffnen</a>
   </div>
         </section>
         <section class="sec" id="s6">
   <h2 class="r">5. Was die Bank beim Einlesen prüft</h2>
-  <p class="r d1">Die pain.001.001.03-Struktur selbst ist keine Erfindung einer einzelnen Bank, sondern folgt dem SEPA Credit Transfer Scheme Rulebook des European Payments Council, auf das auch Die Deutsche Kreditwirtschaft für die SEPA-Überweisung verweist. Banken in Deutschland akzeptieren eine Sammelüberweisung nach diesem gemeinsamen Regelwerk in der Form pain.001.001.03, mit den dort festgelegten Pflichtwerten wie Zahlungsart und SEPA-Kennzeichnung. Über diesen gemeinsamen Kern hinaus behält sich jede Bank eigene, zusätzliche Regeln vor, etwa zu Obergrenzen je Datei oder zum Umgang mit bestimmten Zeichen; welche das im Einzelfall sind, weicht von Bank zu Bank ab und lässt sich zuverlässig nur bei der eigenen Bank oder in deren eigener technischer Dokumentation nachlesen. Dieser Beitrag beschreibt bewusst nur die gemeinsame, bankunabhängige Grundlage, keine einzelnen Bankregeln.</p>
+  <p class="r d1">Die pain.001.001.03-Struktur selbst ist keine Erfindung einer einzelnen Bank, sondern folgt dem SEPA Credit Transfer Scheme Rulebook des European Payments Council, auf das auch Die Deutsche Kreditwirtschaft für die SEPA-Überweisung verweist. Dort sind auch die Pflichtwerte wie Zahlungsart und SEPA-Kennzeichnung festgelegt. Welche Version eine Bank beim Sammelimport annimmt, entscheidet sie selbst. Die Deutsche Kreditwirtschaft hat die für November 2026 geplante Abkündigung von pain.001.001.03 im September 2026 ausgesetzt; das Format bleibt vorübergehend weiter verwendbar, ein neues Enddatum ist offen. Früher genannte Termine einzelner Bankengruppen (Atruvia-Verbund 14. November 2026, Sparkassen November 2026) stammen aus der Zeit vor diesem Beschluss. Ob Ihre Bank trotzdem schon umgestellt hat, erfahren Sie nur von ihr; prüfen Sie im Online-Banking, ob sie .03 oder .09 erwartet. Über diesen gemeinsamen Kern hinaus behält sich jede Bank eigene, zusätzliche Regeln vor, etwa zu Obergrenzen je Datei oder zum Umgang mit bestimmten Zeichen; welche das im Einzelfall sind, weicht von Bank zu Bank ab und lässt sich zuverlässig nur bei der eigenen Bank oder in deren eigener technischer Dokumentation nachlesen. Dieser Beitrag beschreibt bewusst nur die gemeinsame, bankunabhängige Grundlage; einzelne Bankregeln nennt er nur beim Versionswechsel als Beispiel.</p>
         </section>
         <section class="sec" id="s7">
   <h2 class="r">Häufig gestellte Fragen</h2>
@@ -466,7 +466,7 @@ html:not(.css) main>:nth-child(n+2),html:not(.css) body>footer{visibility:hidden
   </details>
   <details class="r d3">
     <summary>Ist die erzeugte Datei automatisch fehlerfrei, oder muss ich sie noch prüfen?</summary>
-    <p>Der Generator schreibt die von Ihnen eingegebenen Werte in das korrekte pain.001.001.03-Schema mit den vorgeschriebenen festen Feldern, prüft aber nicht automatisch, ob ein Name Zeichen außerhalb des zulässigen Zeichensatzes enthält oder ob eine Bank ihre eigene Obergrenze für Zahlungen pro Datei einhält. Öffnen Sie die fertige Datei vor dem Hochladen einmal kurz und prüfen Sie stichprobenartig einige Zeilen, insbesondere Beträge und IBANs, gegen Ihre Ausgangsliste.</p>
+    <p>Der Generator schreibt die von Ihnen eingegebenen Werte in das korrekte Schema pain.001.001.03 oder .09 (im Formular wählbar) mit den vorgeschriebenen festen Feldern, prüft aber nicht automatisch, ob ein Name Zeichen außerhalb des zulässigen Zeichensatzes enthält oder ob eine Bank ihre eigene Obergrenze für Zahlungen pro Datei einhält. Öffnen Sie die fertige Datei vor dem Hochladen einmal kurz und prüfen Sie stichprobenartig einige Zeilen, insbesondere Beträge und IBANs, gegen Ihre Ausgangsliste.</p>
   </details>
         </section>
       </div>
@@ -480,6 +480,8 @@ html:not(.css) main>:nth-child(n+2),html:not(.css) body>footer{visibility:hidden
   <ul class="sources r d1">
     <li>ISO 20022: <em>ISO 20022 message definitions (pain.001 Customer Credit Transfer Initiation)</em>. <a href="https://www.iso20022.org/iso-20022-message-definitions" target="_blank" rel="noopener">iso20022.org</a></li>
     <li>Die Deutsche Kreditwirtschaft: <em>SEPA-Überweisung</em>, mit Verweis auf das SEPA Credit Transfer Scheme Rulebook des European Payments Council. <a href="https://die-dk.de/zahlungsverkehr/sepa/inhalte-der-sepa/sepa-ueberweisung/" target="_blank" rel="noopener">die-dk.de</a></li>
+    <li>Die Deutsche Kreditwirtschaft: <em>Format LifeCycle, SEPA-Formatversionen, Stand September 2026</em>. <a href="https://www.ebics.de/de/datenformate/format-lifecycle" target="_blank" rel="noopener">ebics.de</a>. Abkündigung der Altformate zu November 2026 ausgesetzt, pain.001.001.03 vorübergehend weiter verwendbar; ein neues Enddatum legen EPC und SWIFT fest.</li>
+    <li>finisma.de: <em>„pain.001.001.09: Umstellung von pain.001.001.03, Unterschiede und Fristen“</em> (Stand 2. Oktober 2026). <a href="https://finisma.de/blog/pain-001-001-09-umstellung" target="_blank" rel="noopener">finisma.de</a>. Die Termine von Atruvia (14. November 2026) und Sparkassen (November 2026) stammen aus der Zeit vor dem DK-Beschluss.</li>
   </ul>
         </div>
       </div>
