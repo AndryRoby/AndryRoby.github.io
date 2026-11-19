@@ -446,8 +446,9 @@ if (ukazkyTelo && zoznam && riadky.length) {
     if (nahladUkaz && NAHLAD_MQ.matches) nahladUkaz(zdroj ? podla(zdroj) : UKAZKY[0], true);
   };
   if ('IntersectionObserver' in w) {
-    // až po načítaní stránky (nesúperí s prvou obrazovkou) a keď je zoznam do 400 px pod oknom
-    const io = new IntersectionObserver((e) => { if (e.some((x) => x.isIntersecting)) { io.disconnect(); poNacitani(priblizenie); } }, { rootMargin: '0px 0px 400px 0px' });
+    // až po načítaní stránky (nesúperí s prvou obrazovkou) a keď je zoznam do 200 px pod oknom; pri 400 px sa na počítači
+    // s výškou okna 900 (zoznam 395 px pod oknom) sťahovalo všetkých 15 dlaždíc a náhľad hneď pri prvom načítaní (V, 19. 11.)
+    const io = new IntersectionObserver((e) => { if (e.some((x) => x.isIntersecting)) { io.disconnect(); poNacitani(priblizenie); } }, { rootMargin: '0px 0px 200px 0px' });
     io.observe(ukazkyTelo);
   } else poNacitani(priblizenie);
   // Keď sa zmení rozloženie (otočenie tabletu), riadky v novom režime dostanú svoje obrázky.
@@ -477,9 +478,9 @@ if (nahladEl && riadky.length) {
     nove.width = 560;
     nove.height = 700;
     nove.decoding = 'async';
-    nove.sizes = im.getAttribute('sizes') || '500px';
-    nove.srcset = `${N}${u.slug}-kurzor-560.webp 560w, ${N}${u.slug}-kurzor-1120.webp 1120w`;
-    nove.src = `${N}${u.slug}-kurzor-560.webp`;
+    nove.sizes = im.getAttribute('sizes') || '(min-width: 1600px) 577px, (min-width: 1280px) 493px, calc((100vw - 96px) * 5 / 12)';
+    nove.srcset = [400, 493, 577, 620, 740, 866, 986, 1160, 1480, 1740].map((s) => `${N}${u.slug}-kurzor-${s}.webp ${s}w`).join(', ');
+    nove.src = `${N}${u.slug}-kurzor-493.webp`;
     await Promise.all([doCasu(nove.decode ? nove.decode().catch(() => {}) : Promise.resolve(), 1500), prvy ? null : cakaj(140), pismoZnacky(u)]);
     if (moje !== poradie) return;
     im = ram.querySelector('img');
@@ -621,8 +622,9 @@ if (telVelky) {
     cela.setAttribute('data-umami-event-target', slug);
     const nove = plagat.cloneNode(false);
     nove.removeAttribute('loading');
-    nove.srcset = `${N}${slug}-telefon-300.webp 300w, ${N}${slug}-telefon-600.webp 600w, ${N}${slug}-telefon-780.webp 780w`;
-    nove.src = `${N}${slug}-telefon-300.webp`;
+    nove.sizes = '286px';
+    nove.srcset = [218, 251, 286, 316, 360, 400, 452, 502, 572, 654, 753, 858, 960].map((s) => `${N}${slug}-telefon-${s}.webp ${s}w`).join(', ');
+    nove.src = `${N}${slug}-telefon-286.webp`;
     nove.alt = `Náhľad ukážky ${u.meno} v telefóne`;
     try { await nove.decode(); } catch (e) { /* zobrazí sa po načítaní */ }
     if (moje !== poradie) return;
@@ -727,7 +729,10 @@ for (const det of d.querySelectorAll('.faq details')) {
   });
 }
 if (w.location.hash.startsWith('#otazka-')) {
-  const det = d.getElementById(decodeURIComponent(w.location.hash.slice(1)));
+  // Poškodená kotva (napríklad samotné %) by v decodeURIComponent hodila URIError a zastavila zvyšok modulu.
+  let id = '';
+  try { id = decodeURIComponent(w.location.hash.slice(1)); } catch (e) { id = ''; }
+  const det = id ? d.getElementById(id) : null;
   if (det && det.tagName === 'DETAILS') det.open = true;
 }
 

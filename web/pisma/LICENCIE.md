@@ -18,3 +18,7 @@ LICENCIE.md ukážky). Podmnožina je odvodené dielo podľa OFL a šíri sa pod
 | startup*.woff2 | startup | web/ukazky/startup/fonts/rozsvit-sans.woff2 | Rozsvit Sans | Copyright 2022 The Inter Project Authors (https://github.com/rsms/inter-tight) |
 | reality*.woff2 | reality | web/ukazky/reality/fonts/hradba-titul.woff2 | Hradba Titul | Copyright 2017 The Literata Project Authors (https://github.com/googlefonts/literata) |
 | vinarstvo*.woff2 | vinarstvo | web/ukazky/vinarstvo/fonts/svornik-nadpis.woff2 | Svornik Nadpis | Copyright (c) 2012 by Brian J. Bonislawsky DBA Astigmatic (AOETI) (astigma@astigmatic.com), with ReservedFont Name "Marcellus" |
+| autoservis*.woff2 | autoservis | web/ukazky/autoservis/fonts/anybody-siroke.woff2 | Anybody Thin | Copyright 2020 The Anybody Project Authors (https://github.com/Etcetera-Type-Co/Anybody) |
+| penzion*.woff2 | penzion | web/ukazky/penzion/fonts/inovat-nadpis.woff2 | Inovat Nadpis | Copyright 2023 The Young Serif Project Authors (https://github.com/noirblancrouge/YoungSerif) |
+| kaviaren*.woff2 | kaviaren | web/ukazky/kaviaren/fonts/okenica-nadpis.woff2 | Okenica Nadpis | Copyright 2023 The Gabarito Project Authors (https://github.com/naipefoundry/gabarito) |
+| stolarstvo*.woff2 | stolarstvo | web/ukazky/stolarstvo/fonts/zilla-slab-700.woff2 | Zilla Slab | Copyright 2017, The Mozilla Foundation |

@@ -77,7 +77,9 @@
     function smeny() { return [].slice.call(tabulka.querySelectorAll('.smena')); }
     function casy(s) { return cas(s.getAttribute('data-od')) + ' až ' + cas(s.getAttribute('data-do')); }
     function popis(s) { var p = poloha(s); return ludia[p.o].meno + ', ' + DNI[p.d] + ', ' + ROLY[s.getAttribute('data-rola')] + ', ' + casy(s); }
-    function obnovStitok(s) { s.setAttribute('aria-label', popis(s)); }
+    // meno tlačidla smeny začína viditeľným textom („7:00 do 15:00“), potom človek, deň a práca (WCAG 2.5.3)
+    function stitok(s) { var p = poloha(s); return cas(s.getAttribute('data-od')) + ' do ' + cas(s.getAttribute('data-do')) + ', ' + ludia[p.o].meno + ', ' + DNI[p.d] + ', ' + ROLY[s.getAttribute('data-rola')]; }
+    function obnovStitok(s) { s.setAttribute('aria-label', stitok(s)); }
     function hodiny(o) { var h = 0; riadky[o].querySelectorAll('.smena').forEach(function (s) { h += dlzka(s); }); return h; }
 
     // dnešný deň v tabuľke a v pohľade na deň
@@ -709,17 +711,20 @@
           b.className = 'den-smena s-' + rola;
           b.setAttribute('data-id', s.getAttribute('data-id'));
           b.setAttribute('aria-expanded', 'false');
-          b.setAttribute('aria-label', ludia[o].meno + ', ' + casy(s) + ', ' + ROLY[rola] + '. Vybrať, kto smenu vezme.');
           b.style.setProperty('--od', s.getAttribute('data-od'));
           b.style.setProperty('--dlzka', dlzka(s));
           b.style.setProperty('--i', k++);
-          // viditeľný text sa na úzkej stope skráti na „7 až 15“, čítačka dostane celý čas a prácu v aria-label
-          var vid = doc.createElement('span'); vid.setAttribute('aria-hidden', 'true');
+          // viditeľný text sa na úzkej stope skráti na „7 až 15“; meno tlačidla začína presne ním a skrytý doplnok
+          // za ním pridá človeka, prácu a čo tlačidlo robí (WCAG 2.5.3, bez aria-label)
+          var vid = doc.createElement('span');
           [s.getAttribute('data-od'), ':00', ' až ' + s.getAttribute('data-do'), ':00'].forEach(function (t, i) {
             if (i % 2) { var m = doc.createElement('span'); m.className = 'min'; m.textContent = t; vid.appendChild(m); }
             else vid.appendChild(doc.createTextNode(t));
           });
           b.appendChild(vid);
+          var skr = doc.createElement('span'); skr.className = 'skryte';
+          skr.textContent = ', ' + ludia[o].meno + ', ' + ROLY[rola] + '. Vybrať, kto smenu vezme.';
+          b.appendChild(skr);
           b.addEventListener('click', function () { otvorVyber(s, b, li); });
           stopa.appendChild(b);
         } else {

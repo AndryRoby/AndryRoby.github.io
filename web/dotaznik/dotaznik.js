@@ -15,7 +15,8 @@
     barbershop: 'Holičstvo Krátko (barbershop)', salon: 'Salón Šípka (nechty a kozmetika)', bistro: 'Bistro Perón',
     architekti: 'Ateliér Olovnica', trener: 'Švih (osobný tréner)', praziaren: 'Pražiareň Kolotoč (e-shop)',
     fyzioterapia: 'Fyzioterapia Os', fotografka: 'Clona (fotografka)',
-    startup: 'Rozsvit (softvér na plánovanie smien)', reality: 'Reality Hradba', vinarstvo: 'Vinárstvo Svorník (e-shop)'
+    startup: 'Rozsvit (softvér na plánovanie smien)', reality: 'Reality Hradba', vinarstvo: 'Vinárstvo Svorník (e-shop)',
+    penzion: 'Penzión Inovať', autoservis: 'Autoservis Ojnica', stolarstvo: 'Stolárstvo Rybina', kaviaren: 'Kaviareň Okenica'
   };
 
   var form = document.getElementById('dotaznik');

@@ -1,0 +1,774 @@
+<!doctype html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; img-src 'self' data:; style-src 'unsafe-inline'; font-src 'self'; connect-src 'none'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex, nofollow">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#1a1c1e">
+<title>Ukážka: Autoservis Ojnica, Nitra (vymyslená prevádzka)</title>
+<meta name="description" content="Ukážka webu od ARLing pre vymyslený autoservis a pneuservis v Nitre: telefón na jeden ťuk, otváracie hodiny, cenník so zákazkovým listom, ktorý spočíta cenu od do, a ilustračná mapa.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M0 0h24l8 8v24H0z' fill='%23ffd60a'/%3E%3Cg fill='none' stroke='%231a1c1e' stroke-width='3'%3E%3Ccircle cx='10' cy='20' r='5.5'/%3E%3Ccircle cx='23' cy='11' r='3'/%3E%3Cpath d='M14.5 17l6-4'/%3E%3C/g%3E%3C/svg%3E">
+<link rel="preload" href="fonts/anybody-siroke.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/ojnica-text.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" as="image" media="(min-width: 600px)" imagesrcset="img/uvod-800.webp 800w, img/uvod-1600.webp 1600w, img/uvod-2400.webp 2400w, img/uvod-3200.webp 3200w, img/uvod-3840.webp 3840w" imagesizes="100vw" fetchpriority="high">
+<link rel="preload" as="image" media="(max-width: 599.98px)" imagesrcset="img/uvod-mobil-800.webp 800w, img/uvod-mobil-1600.webp 1600w" imagesizes="100vw">
+<link rel="preload" href="app.js" as="script">
+<style>
+/* Autoservis Ojnica: ukážka webu klienta. Svet: dielňa ako farebné bloky. Betónová plocha, gumová čierna, signálna žltá,
+   fotky v dvojtóne guma a betón, aby žltá bola jediná sýta farba. Všetky rohy ostré, tlačidlá a štítky majú jeden skosený
+   roh ako vyrazený kovový štítok. Podpisový prvok: zákazkový list so súčtom, ktorý sa pretáča ako počítadlo kilometrov.
+   Je už v úvode (malý list s tromi úkonmi), v cenníku (celý list) a v spodnej lište (súčet pri palci).
+   Písma (OFL, lokálne): Anybody v šírke 130 na veľké nadpisy, IBM Plex Sans na text a malé nadpisy, IBM Plex Mono na čísla. */
+@font-face{font-family:"Ojnica Nadpis";src:url(fonts/anybody-siroke.woff2) format("woff2");font-weight:600 900;font-display:swap}
+@font-face{font-family:"Ojnica Text";src:url(fonts/ojnica-text.woff2) format("woff2");font-weight:400 600;font-display:swap}
+@font-face{font-family:"Ojnica Cisla";src:url(fonts/ojnica-cisla-500.woff2) format("woff2");font-weight:500;font-display:swap}
+
+:root{
+  --beton:#e9eae7;--podlaha:#d6d8d3;--guma:#1a1c1e;--zlta:#ffd60a;--olej:#444a50;--biela:#fafaf8;--brzda:#b3261e;
+  --guma-2:#2a2d30;--na-gume:#c4c8c4;
+  --nadpis:"Ojnica Nadpis","Arial Black","Segoe UI",system-ui,sans-serif;
+  --text:"Ojnica Text",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  --cisla:"Ojnica Cisla",ui-monospace,"Cascadia Mono",Consolas,monospace;
+  --siroko:min(1240px,calc(100vw - 32px));
+  --okraj:max(16px,calc((100vw - 1240px) / 2));
+  --rytmus:clamp(64px,9vw,128px);
+  --skos:12px;
+  --fokus:var(--guma);
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-padding-top:20px;scrollbar-color:var(--guma) var(--podlaha)}
+body{margin:0;background:var(--beton);color:var(--guma);font:400 17px/1.55 var(--text);overflow-wrap:break-word;font-feature-settings:"kern"}
+::selection{background:var(--zlta);color:var(--guma)}
+img{display:block;max-width:100%;height:auto}
+a{color:inherit;text-underline-offset:.2em;text-decoration-thickness:2px}
+p{margin:0}
+h1,h2,h3{margin:0;font-family:var(--nadpis);font-weight:800;line-height:1.02;letter-spacing:-.01em;text-wrap:balance}
+h2{font-size:clamp(1.6rem,3vw,2.5rem)}
+:focus-visible{outline:3px solid var(--fokus);outline-offset:3px}
+.pas,.cierny,.kontakt,.pata,.lista,.okno-hlava{--fokus:var(--zlta)}
+.obsah{width:var(--siroko);margin-inline:auto}
+.nw{white-space:nowrap}
+.skryte{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.preskocit{position:absolute;left:12px;top:-70px;z-index:50;background:var(--zlta);color:var(--guma);padding:12px 18px;font-weight:600}
+.preskocit:focus{top:12px}
+html:not(.js) .len-js{display:none!important}
+.js .bez-js{display:none!important}
+
+/* Pás ukážky */
+.pas{background:var(--guma);color:var(--na-gume);font-size:14px;line-height:1.45}
+.pas .obsah{display:flex;flex-wrap:wrap;gap:2px 16px;align-items:center;justify-content:space-between;padding-block:8px}
+.pas strong{color:var(--biela);font-weight:600}
+.pas a{color:var(--biela);display:inline-flex;align-items:center;min-height:44px;margin-block:-8px}
+
+/* Tlačidlá: jeden tvar, skosený roh vpravo hore. Žlté = zavolať. Fokus sa kreslí dovnútra, clip-path by vonkajší orezal. */
+.akcia{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:54px;padding:0 26px 0 20px;border:0;background:var(--zlta);color:var(--guma);font:600 17px/1 var(--text);cursor:pointer;text-decoration:none;white-space:nowrap;
+  clip-path:polygon(0 0,calc(100% - var(--skos)) 0,100% var(--skos),100% 100%,0 100%);transition:background-color .15s ease,transform .15s ease}
+.akcia:hover{background:#ffe14d}
+.akcia:active{transform:translateY(1px)}
+.akcia{--fokus:var(--guma)}
+.akcia:focus-visible{outline-offset:-6px}
+.akcia svg{flex:none}
+.akcia .cislo{font-family:var(--cisla);font-weight:500;font-size:.98em;letter-spacing:-.01em}
+.akcia-guma{--fokus:var(--zlta);background:var(--guma);color:var(--biela)}
+.akcia-guma:hover{background:#000}
+/* Obrysové tlačidlo má ten istý skosený roh: šikmú hranu kreslí prechod v rohu, zvyšok vnútorný tieň. */
+.akcia-ram{background:linear-gradient(225deg,var(--guma) calc(var(--skos) * .7071 + 2px),transparent 0);color:var(--guma);box-shadow:inset 0 0 0 2px var(--guma);padding-inline:22px}
+.akcia-ram:hover{background-color:rgba(26,28,30,.1)}
+.akcia-mala{min-height:48px;font-size:16px;padding:0 20px 0 16px}
+.akcia-velka{min-height:64px;font-size:20px;padding:0 34px 0 26px;--skos:16px}
+
+/* Hlavička */
+.hlava .obsah{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:68px}
+.znak{display:inline-flex;align-items:center;gap:10px;min-height:44px;text-decoration:none;font-family:var(--nadpis);font-weight:800;font-size:22px;letter-spacing:.01em;line-height:1}
+.znak small{display:block;font:500 12.5px/1.2 var(--text);letter-spacing:0;color:var(--olej);margin-top:3px}
+.menu{display:none;gap:2px;margin:0;padding:0;list-style:none}
+.menu a{display:inline-flex;align-items:center;min-height:44px;padding:0 14px;text-decoration:none;font-weight:500}
+.menu a:hover{text-decoration:underline}
+
+/* Úvod: žltý plagát cez celú šírku s nadpisom v dvoch riadkoch, pod ním pás fotky od okraja po okraj (koleso na zdviháku
+   z nízkeho uhla). Biely zákazkový list sedí vedľa druhého riadku nadpisu a visí dolu cez fotku: podpis je v prvej obrazovke
+   a jeho počítadlo sa po načítaní raz pretočí z núl. */
+.hero{position:relative;background:var(--zlta);--h1:min(10.6vw,4.4rem)}
+.hero-mriezka{display:grid;padding-top:22px}
+.hero h1{font-size:var(--h1);line-height:.96;letter-spacing:-.015em;text-wrap:nowrap}
+/* Od 600 px je nadpis v dvoch dlhých riadkoch: pri .96 zrastal spodok p s bodkou nad i, preto 1.08 */
+.hero h1 span{display:block}
+.hero-text{margin-top:16px;max-width:38ch;font-size:clamp(17px,1.5vw,19px);line-height:1.5}
+.stav{display:flex;align-items:center;gap:10px;margin-top:16px;font-weight:600;font-size:16px}
+.stav-bod{flex:none;width:12px;height:12px;background:var(--guma)}
+.stav.zatvorene .stav-bod{background:var(--brzda)}
+.hero-akcie{display:flex;flex-wrap:wrap;gap:12px;margin-top:20px}
+.hero-akcie .akcia-ram{display:none}
+.hl{position:relative;z-index:2;margin:20px 0 -76px;background:var(--biela);padding:18px 18px 12px;clip-path:polygon(0 0,calc(100% - 28px) 0,100% 28px,100% 100%,0 100%)}
+.hl-hlava{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding-right:20px;white-space:nowrap}
+/* Anybody pod 24 px sa v malých písmenách číta ako minusky, preto sú malé nadpisy listu a okna verzálkami ako znak OJNICA */
+.hl-hlava h2,.list-hlava h3,.okno-hlava h2{text-transform:uppercase;letter-spacing:.03em;text-wrap:nowrap}
+.hl-hlava h2{font-size:1.02rem}
+.hl-hlava span{font-size:14.5px;color:var(--olej)}
+.hl .ukony{margin:10px 0 0;border-top:2px solid var(--guma);padding-top:6px}
+.hl .ukon{min-height:50px;padding:6px 10px;margin-inline:-10px}
+.hl .ukon-cena{font-size:15.5px}
+.hl-sucet{margin-top:6px;padding-top:12px;border-top:2px solid var(--guma)}
+.hl-spolu{display:flex;align-items:center;justify-content:space-between;gap:12px;font-weight:600}
+.hl-spolu .sucet{margin-top:0;flex-wrap:nowrap;font-size:clamp(27px,7.6vw,36px)}
+.hl-spolu-pozn{margin-top:8px;text-align:right;font-size:14.5px;color:var(--olej)}
+.hl-odkaz{display:inline-flex;align-items:center;min-height:44px;margin-top:6px;font-weight:600}
+.hero-foto{position:relative;overflow:hidden;background:var(--guma)}
+.hero-foto img{width:100%;height:clamp(300px,84vw,470px);object-fit:cover;object-position:40% 50%}
+
+/* Čierny pás troch údajov */
+.cierny{background:var(--guma);color:var(--biela)}
+.udaje{display:grid;margin-block:0;padding:6px 0}
+.udaje div{padding:16px 0}
+.udaje div+div{border-top:2px solid var(--guma-2)}
+.udaje dt{font-size:15px;color:var(--na-gume)}
+.udaje dd{margin:2px 0 0;font-family:var(--nadpis);font-weight:700;font-size:clamp(21px,2vw,25px);line-height:1.15;letter-spacing:-.01em}
+
+/* Sekcie */
+.sekcia{padding-block:var(--rytmus)}
+.pod-nadpisom{margin-top:14px;max-width:52ch;color:var(--olej)}
+
+/* Cenník a zákazkový list */
+.cennik-mriezka{display:grid;gap:40px;margin-top:36px}
+.cennik-mriezka>div:first-child{max-width:760px}
+.trieda{border:0;margin:0;padding:0;min-width:0}
+.trieda legend{padding:0;font-weight:600;margin-bottom:10px}
+.trieda-volby{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2px;background:var(--guma);padding:2px}
+.trieda-volby label{position:relative;display:flex;flex-direction:column;justify-content:center;min-height:60px;padding:8px 12px;background:var(--beton);cursor:pointer;font-weight:600;line-height:1.2}
+.trieda-volby label small{font-weight:400;font-size:13.5px;color:var(--olej);margin-top:2px}
+.trieda-volby input{position:absolute;opacity:0;inset:0;width:100%;height:100%;margin:0;cursor:pointer}
+.trieda-volby label:has(input:checked){background:var(--guma);color:var(--biela)}
+.trieda-volby label:has(input:checked) small{color:var(--na-gume)}
+.trieda-volby label:has(input:focus-visible){outline:3px solid var(--zlta);outline-offset:-5px}
+.trieda-volby label:not(:has(input:checked)):hover{background:var(--podlaha)}
+
+.skupina{margin-top:34px;border-top:2px solid var(--guma);padding-top:14px}
+.skupina h3,.sluzby-zoznam h3,.postup-kroky h3{font-family:var(--text);font-weight:600;font-size:1.2rem;line-height:1.25;letter-spacing:0;text-wrap:pretty}
+.skupina h3{margin-bottom:6px}
+.skupina-pozn{margin:2px 0 6px;color:var(--olej);font-size:15px;max-width:52ch}
+.ukony{margin:0 -12px;padding:0;list-style:none}
+.ukon{position:relative;display:grid;grid-template-columns:auto 1fr auto;gap:2px 14px;align-items:center;min-height:60px;padding:10px 12px;cursor:pointer;transition:background-color .12s ease}
+html:not(.js) .ukon{grid-template-columns:1fr auto;cursor:default}
+.ukon input{position:absolute;opacity:0;inset:0;width:100%;height:100%;margin:0;cursor:pointer}
+.ukon .stvorec{width:26px;height:26px;box-shadow:inset 0 0 0 2px var(--guma);display:grid;place-items:center;background:var(--beton)}
+.ukon .stvorec svg{opacity:0;transform:scale(.6);transition:opacity .12s ease,transform .16s cubic-bezier(.2,.8,.2,1)}
+.js .ukon:has(input:checked){background:var(--zlta)}
+.ukon:has(input:checked) .stvorec{background:var(--guma)}
+.ukon:has(input:checked) .stvorec svg{opacity:1;transform:none}
+.ukon:has(input:focus-visible){outline:3px solid var(--guma);outline-offset:-3px}
+.js .ukon:not(:has(input:checked)):hover{background:var(--podlaha)}
+.ukon-meno{font-weight:600;line-height:1.3}
+.ukon-meno small{display:block;font-weight:400;font-size:15px;color:var(--olej);line-height:1.35;margin-top:1px}
+.js .ukon:has(input:checked) .ukon-meno small{color:var(--guma)}
+.ukon-cena{font-family:var(--cisla);font-weight:500;font-size:16px;white-space:nowrap;text-align:right}
+.cennik-pozn{margin-top:26px;color:var(--olej);font-size:16px;max-width:56ch}
+
+.list-obal{max-width:620px}
+.list{background:var(--biela);padding:26px 22px 24px;clip-path:polygon(0 0,calc(100% - 30px) 0,100% 30px,100% 100%,0 100%)}
+.list-hlava{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:4px 12px;padding-right:22px}
+.list-hlava h3{font-size:1.2rem}
+.list-cislo{font-family:var(--cisla);font-weight:500;font-size:14.5px;color:var(--olej)}
+.list-vozidlo{margin-top:14px;padding:10px 0;border-block:2px solid var(--guma);display:flex;justify-content:space-between;gap:12px;font-size:16px}
+.list-vozidlo strong{font-weight:600}
+.list-riadky{margin:0;padding:6px 0 0;list-style:none;min-height:64px}
+.list-riadky li{display:grid;grid-template-columns:1fr auto;gap:0 12px;padding:9px 0}
+.list-riadky b{font-weight:600;line-height:1.3}
+.list-riadky small{grid-column:1;font-size:14.5px;color:var(--olej)}
+.list-riadky .cena{grid-row:1/span 2;grid-column:2;align-self:start;font-family:var(--cisla);font-weight:500;font-size:15.5px;white-space:nowrap;padding-top:2px}
+.list-prazdny{color:var(--olej);font-size:16px;padding:14px 0}
+.list-sucet{margin-top:8px;padding-top:16px;border-top:2px solid var(--guma)}
+.list-sucet-popis{display:flex;justify-content:space-between;gap:12px;font-weight:600}
+.list-sucet-popis span:last-child{font-weight:400;color:var(--olej);font-size:15px}
+.sucet{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;margin-top:10px;font-family:var(--cisla);font-weight:500;font-size:clamp(30px,3.2vw,38px);line-height:1}
+.sucet .slovo{font:500 17px/1 var(--text)}
+.pocitadlo{display:inline-flex;gap:2px}
+.cifra{display:block;width:.86em;height:1.34em;overflow:hidden;background:var(--guma);color:var(--biela)}
+.cifra.nula{color:#7b8288}
+.valec{display:block;transform:translateY(calc(var(--d,0) * -1.34em));transition:transform .32s cubic-bezier(.3,.7,.2,1);transition-delay:calc(var(--i,0) * 45ms)}
+.valec span{display:block;height:1.34em;line-height:1.34em;text-align:center}
+.list-fakty{margin:16px 0 0;display:grid;gap:6px;font-size:16px}
+.list-fakty div{display:flex;justify-content:space-between;gap:12px}
+.list-fakty dt{color:var(--olej);white-space:nowrap}
+.list-fakty dd{margin:0;font-weight:600;text-align:right;text-wrap:balance}
+.list .akcia{width:100%;margin-top:18px}
+.list-pozn{margin-top:12px;font-size:14.5px;line-height:1.45;color:var(--olej)}
+
+/* Ďalšie služby: plocha podlahy, fotka brzdy od okraja */
+.sluzby{background:var(--podlaha)}
+.sluzby-mriezka{display:grid;gap:36px}
+.sluzby-foto img{width:100%;aspect-ratio:4/3;object-fit:cover;object-position:35% 40%}
+.sluzby-zoznam{margin:30px 0 0;padding:0;list-style:none;display:grid;gap:26px 40px}
+.sluzby-zoznam li{display:grid;grid-template-columns:40px 1fr;gap:14px}
+.sluzby-zoznam svg{margin-top:2px}
+.sluzby-zoznam p{margin-top:5px;color:var(--olej);font-size:16px;line-height:1.5}
+.sadzba{margin-top:34px;padding-top:16px;border-top:2px solid var(--guma);max-width:60ch}
+.sadzba strong{font-weight:600}
+
+/* Dielňa: dva striedané riadky, potom žltý blok */
+.dielna-riadok{display:grid;gap:22px;margin-top:40px}
+.dielna-riadok h3{font-size:clamp(1.45rem,2.2vw,1.8rem);font-weight:700;line-height:1.1}
+.dielna-riadok p{margin-top:12px;max-width:46ch;color:var(--olej)}
+.dielna-riadok img{width:100%;object-fit:cover}
+.d-naradie img{aspect-ratio:16/10}
+.d-koleso img{aspect-ratio:4/3;object-position:50% 38%}
+.neplatite{background:var(--zlta);margin-top:var(--rytmus)}
+.neplatite .obsah{padding-block:clamp(48px,7vw,96px)}
+.neplatite-mriezka{display:grid;gap:28px;margin-top:30px}
+.neplatite h2{font-size:clamp(1.9rem,4.2vw,3.4rem)}
+.neplatite-mriezka p:first-child{font-family:var(--text);font-weight:600;font-size:clamp(1.2rem,1.7vw,1.4rem);line-height:1.25;padding-top:14px;border-top:2px solid var(--guma)}
+.neplatite-mriezka p+p{margin-top:10px;max-width:40ch}
+
+/* Postup: skutočné poradie, preto číslovaný zoznam */
+.postup-kroky{margin:36px 0 0;padding:0;list-style:none;display:grid;gap:0;counter-reset:krok}
+.postup-kroky li{counter-increment:krok;display:grid;align-content:start;grid-template-columns:54px 1fr;gap:0 14px;padding:18px 0;border-top:2px solid var(--guma)}
+.postup-kroky li::before{content:counter(krok);grid-row:1/span 2;font-family:var(--nadpis);font-weight:800;font-size:44px;line-height:.9}
+.postup-kroky p{margin-top:6px;color:var(--olej);font-size:16px;line-height:1.5}
+
+/* Otázky */
+.otazky-mriezka{display:grid;gap:28px}
+.otazky details{border-top:2px solid var(--guma)}
+.otazky details:last-child{border-bottom:2px solid var(--guma)}
+.otazky summary{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:64px;padding:12px 0;cursor:pointer;font-weight:600;font-size:18px;line-height:1.3;list-style:none}
+.otazky summary::-webkit-details-marker{display:none}
+.otazky summary svg{flex:none;transition:transform .18s ease}
+.otazky details[open] summary svg{transform:rotate(45deg)}
+.otazky details p{padding:0 0 20px;max-width:58ch;color:var(--olej)}
+
+/* Kontakt na gume */
+.kontakt{background:var(--guma);color:var(--biela)}
+.kontakt h2{color:var(--zlta);font-size:clamp(2rem,5.6vw,4.6rem);line-height:1.06;letter-spacing:-.015em;max-width:16ch}
+.kontakt .akcia-velka{margin-top:clamp(22px,3vw,34px)}
+.telefon-pozn{margin-top:16px;color:var(--na-gume);max-width:46ch}
+.hodiny-pozn{margin-top:10px;font-size:15px;color:var(--na-gume)}
+.kontakt-mriezka{display:grid;gap:40px;margin-top:48px}
+.hodiny{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+.hodiny caption{text-align:left;font-family:var(--nadpis);font-weight:700;font-size:1.45rem;padding-bottom:12px}
+.hodiny th,.hodiny td{padding:11px 12px;text-align:left;font-weight:400}
+.hodiny td{text-align:right;white-space:nowrap;font-family:var(--cisla);font-weight:500;font-size:16px}
+.hodiny tr.dnes{background:var(--zlta);color:var(--guma)}
+.hodiny tr.dnes th{font-weight:600}
+.hodiny .zatv{font-family:var(--text);color:var(--na-gume)}
+.hodiny tr.dnes .zatv{color:var(--guma)}
+.znacka-dnes{margin-left:8px;font-size:14px;font-weight:400}
+.znacka-dnes[hidden]{display:none}
+.adresa{font-style:normal;margin-top:28px;line-height:1.5}
+.adresa strong{display:block;font-family:var(--nadpis);font-weight:700;font-size:1.45rem;line-height:1.1;margin-bottom:8px}
+.adresa .mail{display:inline-block;margin-top:10px;overflow-wrap:anywhere}
+.adresa .mail small{display:block;font-size:14px;color:var(--na-gume)}
+.mapa{margin:0}
+.mapa svg{display:block;width:100%;height:auto;background:var(--guma-2)}
+.mapa figcaption{margin-top:14px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 20px;font-size:14.5px;color:var(--na-gume)}
+.mapa figcaption span{max-width:44ch}
+
+/* Päta */
+.pata{background:var(--guma);color:var(--na-gume);font-size:15px;padding:0 0 calc(40px + 84px)}
+.pata .obsah{border-top:2px solid var(--guma-2);padding-top:28px;display:grid;gap:18px}
+.pata strong{color:var(--biela);font-weight:600}
+.pata a{color:var(--biela);display:inline-flex;align-items:center;min-height:44px}
+.pata .male{max-width:74ch}
+
+/* Spodná lišta do 1079 px (list je tam až pod cenníkom): súčet na tých istých valcoch a telefón v dosahu palca */
+.lista{position:fixed;left:0;right:0;bottom:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px max(12px,calc(var(--okraj) - 4px)) calc(8px + env(safe-area-inset-bottom)) var(--okraj);background:var(--guma);color:var(--biela);transition:transform .2s ease}
+.lista.schovana{transform:translateY(110%);visibility:hidden;transition:transform .2s ease,visibility 0s .2s}
+.lista-text{display:flex;flex-direction:column;justify-content:center;gap:3px;min-width:0;min-height:48px;font-size:14.5px;line-height:1.25;color:var(--na-gume);text-decoration:none}
+.lista-sucet{display:flex;align-items:center;gap:6px;font-family:var(--cisla);font-weight:500;font-size:18px;line-height:1;color:var(--biela);white-space:nowrap}
+.lista-sucet[hidden]{display:none}
+.lista-sucet .slovo{font:500 14.5px/1 var(--text);color:var(--na-gume)}
+.lista-sucet .cifra{background:var(--guma-2)}
+
+/* Okno Zavolať (popover) */
+.okno{border:0;padding:0;margin:auto;width:min(440px,calc(100vw - 32px));background:var(--biela);color:var(--guma);clip-path:polygon(0 0,calc(100% - 24px) 0,100% 24px,100% 100%,0 100%);transition:opacity .2s ease,transform .22s cubic-bezier(.2,.8,.2,1),overlay .22s allow-discrete,display .22s allow-discrete}
+.okno::backdrop{background:rgba(26,28,30,.6)}
+@starting-style{.okno:popover-open{opacity:0;transform:translateY(12px)}}
+.okno:not(:popover-open){opacity:0;transform:translateY(8px)}
+.okno-hlava{background:var(--guma);color:var(--biela);padding:18px 44px 16px 22px;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.okno-hlava h2{font-size:1.2rem;color:var(--biela)}
+.zavriet{flex:none;width:44px;height:44px;margin-left:auto;border:0;background:transparent;color:var(--biela);cursor:pointer;display:grid;place-items:center}
+.zavriet:hover{background:var(--guma-2)}
+.okno-telo{padding:22px;display:grid;gap:14px}
+.okno-cislo{font-family:var(--cisla);font-weight:500;font-size:34px;line-height:1}
+.okno-pozn{font-size:15px;color:var(--olej);background:var(--beton);padding:12px 14px}
+
+@keyframes zasun{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:none}}
+@keyframes usad{from{transform:scale(1.07)}to{transform:none}}
+@keyframes vysun{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:no-preference){
+  .list-riadky li.novy{animation:zasun .18s cubic-bezier(.2,.8,.2,1) both}
+  .hero-foto img{animation:usad 1.4s cubic-bezier(.2,.7,.2,1) both}
+  .hl{animation:vysun .5s .12s cubic-bezier(.2,.8,.2,1) both}
+}
+@media (prefers-reduced-motion:reduce){
+  .valec,.akcia,.okno,.lista,.lista.schovana,.ukon,.ukon .stvorec svg,.otazky summary svg{transition:none}
+}
+
+@media (max-width:420px){
+  .znak{gap:8px}
+  .znak small{white-space:nowrap}
+  .pas{font-size:13px}
+  .ukon-cena{font-size:15px}
+  .trieda-volby label{padding-inline:9px;font-size:15.5px}
+  .trieda-volby label small{font-size:12.5px}
+}
+@media (max-width:899px){
+  .hlava .volat-hore .cislo{display:none}
+}
+/* Mobil: súčet listu musí vojsť do prvej obrazovky aj s lištami prehliadača (asi 660 px). Zavolať je v hlavičke hneď
+   nad nadpisom, druhé tlačidlo v úvode by ho len opakovalo; pás ukážky má jeden riadok a riadky listu sú nižšie. */
+@media (max-width:599px){
+  .pas-viac{display:none}
+  .hlava .obsah{min-height:58px}
+  .hero-mriezka{padding-top:14px}
+  .hero-text{margin-top:12px;font-size:16px}
+  .hero-akcie{display:none}
+  .stav{margin-top:10px;font-size:15.5px}
+  .hl{margin-top:14px;padding-top:14px}
+  .hl .ukony{margin-top:8px;padding-top:4px}
+  .hl .ukon{min-height:46px;padding-block:4px}
+  .hl-sucet{margin-top:4px;padding-top:10px}
+}
+@media (min-width:600px){
+  .udaje{grid-template-columns:repeat(3,auto);justify-content:space-between;gap:0 32px;padding:0}
+  .udaje div{padding:22px 0}
+  .udaje div+div{border-top:0}
+  .sluzby-zoznam{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .neplatite-mriezka{grid-template-columns:repeat(2,minmax(0,1fr));gap:48px}
+  .postup-kroky{grid-template-columns:repeat(2,minmax(0,1fr));gap:0 40px}
+  .hero{--h1:clamp(2.3rem,6.2vw,5.25rem)}
+  .hero h1{line-height:1.08}
+  .hl-spolu .sucet{font-size:clamp(30px,2.9vw,36px)}
+  .hero-mriezka{padding-top:clamp(28px,5svh,56px)}
+  .hero h1 span{display:inline}
+  .hero h1 .r3{display:block}
+  .hero-akcie .akcia-ram{display:inline-flex}
+  .hl{width:min(100%,440px);margin-left:auto;margin-bottom:-110px}
+  .hero-foto img{height:clamp(270px,36vw,640px);object-position:50% 45%}
+}
+@media (min-width:900px){
+  .menu{display:flex}
+  .hero-mriezka{grid-template-columns:minmax(0,1fr) clamp(360px,33vw,440px);column-gap:40px;align-items:start}
+  .hero h1{grid-column:1/-1}
+  .hero-lavy{padding-bottom:clamp(30px,5svh,48px)}
+  .hl{width:auto;margin:calc(var(--h1) * -.9) 0 -116px;padding:22px 22px 14px}
+  .hl-hlava{padding-right:8px}
+  .sluzby-mriezka{grid-template-columns:minmax(0,4fr) minmax(0,8fr);gap:64px;align-items:stretch}
+  .sluzby-foto{position:relative;min-height:520px;margin-left:calc(var(--okraj) * -1)}
+  .sluzby-foto img{position:absolute;inset:0;height:100%;aspect-ratio:auto}
+  .dielna-riadok{grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:56px;align-items:center}
+  .d-koleso{grid-template-columns:minmax(0,5fr) minmax(0,7fr)}
+  .d-koleso .dielna-text{order:-1}
+  .d-naradie{margin-top:48px}
+  .d-koleso{margin-top:56px}
+  .d-koleso img{aspect-ratio:5/4}
+  .postup-kroky h3{font-size:1.2rem}
+  .otazky-mriezka{grid-template-columns:minmax(0,4fr) minmax(0,8fr);gap:64px}
+  .kontakt-mriezka{grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:64px;align-items:start}
+  .postup-kroky{grid-template-columns:repeat(4,minmax(0,1fr));gap:0 32px}
+  .postup-kroky li{grid-template-columns:1fr;padding-top:16px}
+  .postup-kroky li::before{grid-row:auto;font-size:64px;margin-bottom:14px}
+  .pata .obsah{grid-template-columns:2fr 1fr}
+  .pata .obsah>div:last-child{justify-self:end}
+}
+/* List vedľa cenníka až od 1080 px, pod tým je pod cenníkom (na 1024 px by ho prekrýval) a súčet drží spodná lišta */
+@media (min-width:1080px){
+  .lista{display:none}
+  .pata{padding-bottom:40px}
+  .cennik-mriezka{grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:56px;align-items:start}
+  .list-obal{position:sticky;top:20px;max-width:none}
+  .hl-hlava h2{font-size:1.2rem}
+}
+/* Nízka obrazovka notebooku: riadky listu bez druhého riadku, aby sa plný list zmestil bez vnútorného posuvníka */
+@media (min-width:1080px) and (max-height:900px){
+  .list{padding-block:20px 18px}
+  .list-riadky li{padding:6px 0}
+  .list-riadky small{display:none}
+  .list-riadky{min-height:38px}
+  .list-pozn{display:none}
+  .list .akcia{margin-top:14px}
+  .list-fakty{margin-top:12px}
+}
+figure{margin:0}
+</style>
+</head>
+<body>
+<a class="preskocit" href="#obsah">Preskočiť na obsah</a>
+
+<div class="pas" role="note">
+  <div class="obsah">
+    <p><strong>Ukážka webu od ARLing, vymyslená prevádzka.</strong> <span class="pas-viac">Autoservis Ojnica neexistuje, adresa a&nbsp;čísla sú vymyslené.</span></p>
+    <a href="https://arling.sk/web/?z=autoservis" target="_top">Chcem taký web</a>
+    <a href="https://arling.sk/web/?z=autoservis#ukazky" target="_top">Späť na ukážky</a>
+  </div>
+</div>
+
+<header class="hlava">
+  <div class="obsah">
+    <a class="znak" href="#obsah" aria-label="Autoservis Ojnica, na začiatok">
+      <svg width="38" height="38" viewBox="0 0 32 32" aria-hidden="true"><path d="M0 0h24l8 8v24H0z" fill="#ffd60a"/><g fill="none" stroke="#1a1c1e" stroke-width="3"><circle cx="10" cy="20" r="5.5"/><circle cx="23" cy="11" r="3"/><path d="M14.5 17l6-4"/></g></svg>
+      <span>OJNICA<small>autoservis a&nbsp;pneuservis</small></span>
+    </a>
+    <nav aria-label="Hlavná">
+      <ul class="menu">
+        <li><a href="#cennik">Cenník</a></li>
+        <li><a href="#sluzby">Služby</a></li>
+        <li><a href="#dielna">Dielňa</a></li>
+        <li><a href="#kontakt">Kontakt</a></li>
+      </ul>
+    </nav>
+    <button class="akcia akcia-mala volat-hore" type="button" popovertarget="okno-volat">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="miter" aria-hidden="true"><path d="M5 3.5h3.4l1.5 4.3-2.2 1.6a11 11 0 0 0 6.9 6.9l1.6-2.2 4.3 1.5v3.4a1.5 1.5 0 0 1-1.6 1.5A16.4 16.4 0 0 1 3.5 5.1 1.5 1.5 0 0 1 5 3.5z"/></svg>
+      Zavolať <span class="cislo">0XX XXX XXX</span>
+    </button>
+  </div>
+</header>
+
+<main id="obsah">
+  <section class="hero" aria-labelledby="hero-nadpis">
+    <div class="obsah hero-mriezka">
+      <h1 id="hero-nadpis"><span>Opravíme,</span> <span>čo treba.</span> <span class="r3">Nič navyše.</span></h1>
+      <div class="hero-lavy">
+        <p class="hero-text">Autoservis a&nbsp;pneuservis v&nbsp;Nitre. Cenu vám povieme skôr, než chytíme kľúč.</p>
+        <div class="hero-akcie">
+          <button class="akcia akcia-guma" type="button" popovertarget="okno-volat" id="volat-hero">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="miter" aria-hidden="true"><path d="M5 3.5h3.4l1.5 4.3-2.2 1.6a11 11 0 0 0 6.9 6.9l1.6-2.2 4.3 1.5v3.4a1.5 1.5 0 0 1-1.6 1.5A16.4 16.4 0 0 1 3.5 5.1 1.5 1.5 0 0 1 5 3.5z"/></svg>
+            Zavolať <span class="cislo">0XX XXX XXX</span>
+          </button>
+          <a class="akcia akcia-ram" href="#cennik">Pozrieť cenník</a>
+        </div>
+        <p class="stav" id="stav"><span class="stav-bod" aria-hidden="true"></span><span class="stav-text">V&nbsp;pracovné dni 7:00 až 17:00</span></p>
+      </div>
+      <aside class="hl" aria-labelledby="hl-nadpis">
+        <div class="hl-hlava">
+          <h2 id="hl-nadpis">Zákazkový list</h2>
+          <span class="len-js">skúste si ho</span>
+          <span class="bez-js">ceny od do</span>
+        </div>
+        <ul class="ukony">
+          <li><label class="ukon"><input class="len-js" type="checkbox" data-zrkadlo="olej" checked><span class="stvorec len-js" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#ffd60a" stroke-width="2.6"><path d="M2.5 8.5l3.5 3.5 7.5-8"/></svg></span><span class="ukon-meno">Olej a&nbsp;filter</span><span class="ukon-cena" data-zrkadlo-cena="olej">79 až 129&nbsp;€</span></label></li>
+          <li><label class="ukon"><input class="len-js" type="checkbox" data-zrkadlo="platnicky"><span class="stvorec len-js" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#ffd60a" stroke-width="2.6"><path d="M2.5 8.5l3.5 3.5 7.5-8"/></svg></span><span class="ukon-meno">Predné platničky</span><span class="ukon-cena" data-zrkadlo-cena="platnicky">69 až 119&nbsp;€</span></label></li>
+          <li><label class="ukon"><input class="len-js" type="checkbox" data-zrkadlo="prezutie"><span class="stvorec len-js" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#ffd60a" stroke-width="2.6"><path d="M2.5 8.5l3.5 3.5 7.5-8"/></svg></span><span class="ukon-meno">Prezutie kolies</span><span class="ukon-cena" data-zrkadlo-cena="prezutie">36 až 52&nbsp;€</span></label></li>
+        </ul>
+        <div class="hl-sucet len-js">
+          <p class="hl-spolu"><span>Spolu</span><span class="sucet" aria-hidden="true"><span class="pocitadlo" data-pocitadlo="od"></span><span class="slovo">až</span><span class="pocitadlo" data-pocitadlo="do"></span><span>€</span></span></p>
+          <p class="hl-spolu-pozn"><span data-list-trieda>stredné</span> auto, orientačne s&nbsp;DPH</p>
+        </div>
+        <a class="hl-odkaz" href="#cennik"><span class="len-js">Celý cenník a&nbsp;váš list</span><span class="bez-js">Celý cenník</span></a>
+      </aside>
+    </div>
+    <figure class="hero-foto">
+      <picture>
+        <source media="(min-width: 600px)" srcset="img/uvod-800.webp 800w, img/uvod-1600.webp 1600w, img/uvod-2400.webp 2400w, img/uvod-3200.webp 3200w, img/uvod-3840.webp 3840w" sizes="100vw" width="3840" height="1649">
+        <img src="img/uvod-mobil-800.webp" srcset="img/uvod-mobil-800.webp 800w, img/uvod-mobil-1600.webp 1600w" sizes="100vw" width="1600" height="1363" alt="Zadné koleso bieleho auta na zdviháku z nízkeho uhla, rameno zdviháka drží prah a za ním je dielňa v opare" fetchpriority="high">
+      </picture>
+    </figure>
+  </section>
+
+  <div class="cierny">
+    <dl class="obsah udaje">
+      <div><dt>Voľný termín</dt><dd>do troch pracovných&nbsp;dní</dd></div>
+      <div><dt>Náhradné auto</dt><dd>15&nbsp;€ na deň</dd></div>
+      <div><dt>Záruka na prácu</dt><dd>24 mesiacov</dd></div>
+    </dl>
+  </div>
+
+  <section class="sekcia" id="cennik" aria-labelledby="cennik-nadpis">
+    <div class="obsah">
+      <h2 id="cennik-nadpis">Cenník bežných úkonov</h2>
+      <p class="pod-nadpisom len-js">Vyberte triedu auta a&nbsp;zaškrtnite, čo potrebuje. Zákazkový list ukáže cenu od najnižšej po najvyššiu.</p>
+      <p class="pod-nadpisom bez-js">Ceny sú od najmenšieho auta po SUV a&nbsp;dodávku, s&nbsp;prácou aj materiálom.</p>
+
+      <div class="cennik-mriezka">
+        <div>
+          <fieldset class="trieda len-js">
+            <legend>Trieda auta</legend>
+            <div class="trieda-volby">
+              <label><input type="radio" name="trieda" value="0">Malé<small>mestské auto</small></label>
+              <label><input type="radio" name="trieda" value="1" checked>Stredné<small>hatchback, kombi</small></label>
+              <label><input type="radio" name="trieda" value="2">Veľké<small>SUV, dodávka</small></label>
+            </div>
+          </fieldset>
+
+          <div class="skupina" style="margin-top:28px">
+            <h3>Pravidelný servis</h3>
+            <ul class="ukony">
+              <li><label class="ukon"><input class="len-js" type="checkbox" data-kod="olej" data-ceny="79-95|89-109|105-129" data-min="45" data-popis="práca, olej a filter" checked><span class="stvorec len-js" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#ffd60a" stroke-width="2.6"><path d="M2.5 8.5l3.5 3.5 7.5-8"/></svg></span><span class="ukon-meno">Výmena oleja a&nbsp;filtra<small>S&nbsp;olejom podľa predpisu výrobcu a&nbsp;novým filtrom.</small></span><span class="ukon-cena">79 až 129&nbsp;€</span></label></li>
+              <li><label class="ukon"><input class="len-js" type="checkbox" data-kod="diagnostika" data-ceny="25-25|25-25|25-25" data-min="30" data-popis="práca"><span class="stvorec len-js" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#ffd60a" stroke-width="2.6"><path d="M2.5 8.5l3.5 3.5 7.5-8"/></svg></span><span class="ukon-meno">Načítanie chýb diagnostikou<small>Prečítame pamäť chýb a&nbsp;vysvetlíme, čo znamenajú.</small></span><span class="ukon-cena">25&nbsp;€</span></label></li>
+              <li><label class="ukon"><input class="len-js" type="checkbox" data-kod="stk" data-ceny="30-30|30-30|30-30" data-min="120" data-popis="práca, bez poplatkov stanice"><span class="stvorec len-js" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#ffd60a" stroke-width="2.6"><path d="M2.5 8.5l3.5 3.5 7.5-8"/></svg></span><span class="ukon-meno">Príprava a&nbsp;pristavenie na STK a&nbsp;EK<small>Poplatky stanice platíte podľa jej cenníka.</small></span><span class="ukon-cena">30&nbsp;€</span></label></li>
+            </ul>
+          </div>
+
+          <div class="skupina">
+            <h3>Brzdy a&nbsp;podvozok</h3>
+            <p class="skupina-pozn len-js">Z&nbsp;predných bŕzd sa do listu ráta jedna z&nbsp;dvoch možností, platničky sú už v&nbsp;cene výmeny s&nbsp;kotúčmi.</p>
+            <ul class="ukony">
+              <li><label class="ukon"><input class="len-js" type="checkbox" data-kod="platnicky" data-vylucuje="kotuce" data-ceny="69-85|79-99|95-119" data-min="60" data-popis="práca a platničky"><span class="stvorec len-js" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#ffd60a" stroke-width="2.6"><path d="M2.5 8.5l3.5 3.5 7.5-8"/></svg></span><span class="ukon-meno">Predné brzdové platničky<small>Nové platničky, kotúče ostávajú.</small></span><span class="ukon-cena">69 až 119&nbsp;€</span></label></li>
+              <li><label class="ukon"><input class="len-js" type="checkbox" data-kod="kotuce" data-vylucuje="platnicky" data-ceny="159-199|189-239|229-289" data-min="90" data-popis="práca, platničky a kotúče"><span class="stvorec len-js" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#ffd60a" stroke-width="2.6"><path d="M2.5 8.5l3.5 3.5 7.5-8"/></svg></span><span class="ukon-meno">Platničky a&nbsp;kotúče, predná náprava<small>Keď sú kotúče pod mierou alebo hádžu.</small></span><span class="ukon-cena">159 až 289&nbsp;€</span></label></li>
+              <li><label class="ukon"><input class="len-js" type="checkbox" data-kod="geometria" data-ceny="45-50|49-55|55-60" data-min="60" data-popis="práca, protokol z merania"><span class="stvorec len-js" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#ffd60a" stroke-width="2.6"><path d="M2.5 8.5l3.5 3.5 7.5-8"/></svg></span><span class="ukon-meno">Geometria<small>Meranie a&nbsp;nastavenie, protokol dostanete do ruky.</small></span><span class="ukon-cena">45 až 60&nbsp;€</span></label></li>
+            </ul>
+          </div>
+
+          <div class="skupina">
+            <h3>Pneumatiky a&nbsp;klimatizácia</h3>
+            <ul class="ukony">
+              <li><label class="ukon"><input class="len-js" type="checkbox" data-kod="prezutie" data-ceny="36-40|40-46|46-52" data-min="45" data-popis="práca, vyváženie"><span class="stvorec len-js" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#ffd60a" stroke-width="2.6"><path d="M2.5 8.5l3.5 3.5 7.5-8"/></svg></span><span class="ukon-meno">Prezutie štyroch kolies<small>S&nbsp;vyvážením a&nbsp;dotiahnutím momentovým kľúčom.</small></span><span class="ukon-cena">36 až 52&nbsp;€</span></label></li>
+              <li><label class="ukon"><input class="len-js" type="checkbox" data-kod="uskladnenie" data-ceny="28-28|28-28|28-28" data-min="0" data-popis="jedna sezóna, štyri kusy"><span class="stvorec len-js" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#ffd60a" stroke-width="2.6"><path d="M2.5 8.5l3.5 3.5 7.5-8"/></svg></span><span class="ukon-meno">Uskladnenie pneumatík<small>Na jednu sezónu, v&nbsp;suchu a&nbsp;označené vaším menom.</small></span><span class="ukon-cena">28&nbsp;€</span></label></li>
+              <li><label class="ukon"><input class="len-js" type="checkbox" data-kod="klima" data-ceny="49-59|55-65|59-69" data-min="45" data-popis="práca a chladivo R134a"><span class="stvorec len-js" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#ffd60a" stroke-width="2.6"><path d="M2.5 8.5l3.5 3.5 7.5-8"/></svg></span><span class="ukon-meno">Plnenie klimatizácie<small>Odsatie, skúška tesnosti a&nbsp;chladivo R134a. Pri R1234yf podľa množstva.</small></span><span class="ukon-cena">49 až 69&nbsp;€</span></label></li>
+            </ul>
+          </div>
+          <p class="cennik-pozn">Ceny sú s&nbsp;DPH, s&nbsp;prácou aj materiálom. Ak pri práci nájdeme niečo ďalšie, najprv vám zavoláme.</p>
+        </div>
+
+        <div class="list-obal">
+          <aside class="list" id="zakazkovy-list" aria-labelledby="list-nadpis">
+            <div class="list-hlava">
+              <h3 id="list-nadpis">Zákazkový list</h3>
+              <span class="list-cislo">č. 2026/1147 (ukážka)</span>
+            </div>
+            <div class="len-js">
+              <p class="list-vozidlo"><span>Vozidlo</span><strong data-list-trieda>stredné</strong></p>
+              <ul class="list-riadky" data-list-riadky></ul>
+              <div class="list-sucet">
+                <p class="list-sucet-popis"><span>Spolu orientačne</span><span>s&nbsp;DPH</span></p>
+                <p class="sucet" aria-hidden="true">
+                  <span class="pocitadlo" data-pocitadlo="od"></span><span class="slovo">až</span><span class="pocitadlo" data-pocitadlo="do"></span><span>€</span>
+                </p>
+                <p class="skryte" aria-live="polite" data-list-hlas></p>
+              </div>
+              <dl class="list-fakty">
+                <div><dt>Čas v&nbsp;dielni</dt><dd data-list-cas></dd></div>
+                <div><dt>Termín</dt><dd>do troch pracovných dní</dd></div>
+              </dl>
+            </div>
+            <div class="bez-js">
+              <p class="list-vozidlo"><span>Hodinová sadzba</span><strong>38&nbsp;€</strong></p>
+              <p style="padding:14px 0 4px">Zavolajte, povieme vám cenu pre vaše auto a&nbsp;voľný termín.</p>
+            </div>
+            <button class="akcia" type="button" popovertarget="okno-volat">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="miter" aria-hidden="true"><path d="M5 3.5h3.4l1.5 4.3-2.2 1.6a11 11 0 0 0 6.9 6.9l1.6-2.2 4.3 1.5v3.4a1.5 1.5 0 0 1-1.6 1.5A16.4 16.4 0 0 1 3.5 5.1 1.5 1.5 0 0 1 5 3.5z"/></svg>
+              Zavolať <span class="cislo">0XX XXX XXX</span>
+            </button>
+            <p class="list-pozn">Orientačná cena. Presnú povieme po obhliadke a&nbsp;pred začatím práce.</p>
+          </aside>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sekcia sluzby" id="sluzby" aria-labelledby="sluzby-nadpis">
+    <div class="obsah sluzby-mriezka">
+      <figure class="sluzby-foto">
+        <img src="img/brzda-800.webp" srcset="img/brzda-800.webp 800w, img/brzda-1600.webp 1600w" sizes="(min-width: 900px) 34vw, calc(100vw - 32px)" width="1600" height="2196" loading="lazy" decoding="async" alt="Odkrytý brzdový kotúč a pružina na aute bez kolesa, mechanik stojí chrbtom">
+      </figure>
+      <div>
+        <h2 id="sluzby-nadpis">Čo ešte robíme</h2>
+        <p class="pod-nadpisom">Na tieto práce cenu z&nbsp;tabuľky nepovieme. Záleží na aute a&nbsp;na tom, čo nájdeme pri obhliadke.</p>
+        <ul class="sluzby-zoznam">
+          <li>
+            <svg width="36" height="36" viewBox="0 0 36 36" fill="none" stroke="#1a1c1e" stroke-width="2.2" aria-hidden="true"><path d="M3 7h30v18H3zM12 31h12M18 25v6M7 17h6l3-6 4 10 3-4h6"/></svg>
+            <div><h3>Hľadanie príčiny poruchy</h3><p>Svieti kontrolka alebo auto trhá. Príčinu hľadáme za hodinovú sadzbu, skôr než začneme meniť diely.</p></div>
+          </li>
+          <li>
+            <svg width="36" height="36" viewBox="0 0 36 36" fill="none" stroke="#1a1c1e" stroke-width="2.2" aria-hidden="true"><circle cx="10" cy="12" r="4"/><circle cx="27" cy="10" r="3"/><circle cx="20" cy="27" r="4"/><path d="M9.2 4.6l18-1.9M33.1 12.1l-6.4 18.4M14.2 31L3.5 15.6"/></svg>
+            <div><h3>Rozvody</h3><p>Remeň alebo reťaz, kladky a&nbsp;vodná pumpa v&nbsp;jednom termíne.</p></div>
+          </li>
+          <li>
+            <svg width="36" height="36" viewBox="0 0 36 36" fill="none" stroke="#1a1c1e" stroke-width="2.2" aria-hidden="true"><circle cx="18" cy="18" r="14"/><circle cx="18" cy="18" r="5"/><path d="M18 4v9M18 23v9M4 18h9M23 18h9"/></svg>
+            <div><h3>Spojka a&nbsp;zotrvačník</h3><p>Výmena celej sady, aby ste demontáž prevodovky neplatili dvakrát.</p></div>
+          </li>
+          <li>
+            <svg width="36" height="36" viewBox="0 0 36 36" fill="none" stroke="#1a1c1e" stroke-width="2.2" aria-hidden="true"><path d="M2 15h7l3-4h12l3 4h7M2 21h7l3 4h12l3-4h7M12 11v14M24 11v14"/></svg>
+            <div><h3>Výfuky</h3><p>Zváranie, výmena tlmiča a&nbsp;pružných dielov, uchytenie.</p></div>
+          </li>
+          <li>
+            <svg width="36" height="36" viewBox="0 0 36 36" fill="none" stroke="#1a1c1e" stroke-width="2.2" aria-hidden="true"><path d="M3 10h30v20H3zM8 10V6h6v4M22 10V6h6v4M8 20h6M22 20h6M25 17v6"/></svg>
+            <div><h3>Autoelektrika</h3><p>Batéria, štartér, alternátor, svetlá a&nbsp;ťažné zariadenie.</p></div>
+          </li>
+          <li>
+            <svg width="36" height="36" viewBox="0 0 36 36" fill="none" stroke="#1a1c1e" stroke-width="2.2" aria-hidden="true"><path d="M8 4h20v28H8zM13 4v5h10V4M13 17l3 3 6-6M13 26h10"/></svg>
+            <div><h3>Kontrola pred kúpou</h3><p>Ojazdené auto pozrieme na zdviháku a&nbsp;povieme, čo ho čaká.</p></div>
+          </li>
+        </ul>
+        <p class="sadzba">Hodinová sadzba je <strong>38&nbsp;€</strong>. Pred opravou dostanete cenu práce aj dielov a&nbsp;rozhodnete sa&nbsp;vy.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="sekcia" id="dielna" aria-labelledby="dielna-nadpis" style="padding-bottom:0">
+    <div class="obsah">
+      <h2 id="dielna-nadpis">Dielňa</h2>
+      <div class="dielna-riadok d-naradie">
+        <figure>
+          <img src="img/naradie-800.webp" srcset="img/naradie-800.webp 800w, img/naradie-1600.webp 1600w" sizes="(min-width: 1272px) 690px, (min-width: 900px) 56vw, calc(100vw - 32px)" width="1600" height="1000" loading="lazy" decoding="async" alt="Pracovný stôl s otvoreným kufrom kľúčov zoradených podľa veľkosti, vedľa leží uhlová brúska">
+        </figure>
+        <div class="dielna-text">
+          <h3>Štyri zdviháky, náradie na svojom mieste</h3>
+          <p>Dve autá robíme naraz, tretí zdvihák je na pneumatiky a&nbsp;štvrtý držíme voľný pre tých, čo k&nbsp;nám dôjdu na lane. Náradie sa po každom aute vracia na miesto.</p>
+        </div>
+      </div>
+      <div class="dielna-riadok d-koleso">
+        <figure>
+          <img src="img/koleso-800.webp" srcset="img/koleso-800.webp 800w, img/koleso-1600.webp 1600w" sizes="(min-width: 1272px) 690px, (min-width: 900px) 56vw, calc(100vw - 32px)" width="1600" height="2000" loading="lazy" decoding="async" alt="Ruky mechanika nasadzujú koleso a doťahujú skrutky">
+        </figure>
+        <div class="dielna-text">
+          <h3>Kolesá doťahujeme rukou</h3>
+          <p>Pištoľ skrutky len pritiahne. Posledný krok robíme momentovým kľúčom na hodnotu výrobcu a&nbsp;po 50 kilometroch vám ich zadarmo skontrolujeme.</p>
+        </div>
+      </div>
+    </div>
+    <div class="neplatite">
+      <div class="obsah">
+        <h2>Čo u&nbsp;nás neplatíte</h2>
+        <div class="neplatite-mriezka">
+          <div><p>Obhliadku pred opravou.</p><p>Auto zdvihneme, pozrieme a&nbsp;povieme cenu. Ak sa rozhodnete nedať ho opraviť, odchádzate bez účtu.</p></div>
+          <div><p>Prácu, ktorú ste neschválili.</p><p>Všetko nad dohodnutú sumu najprv voláme. Bez vášho áno sa na aute nič ďalšie nerobí.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sekcia" aria-labelledby="postup-nadpis">
+    <div class="obsah">
+      <h2 id="postup-nadpis">Ako to u&nbsp;nás prebieha</h2>
+      <ol class="postup-kroky">
+        <li><h3>Zavoláte</h3><p>Poviete, čo auto robí, a&nbsp;dohodneme termín. Väčšinou do troch pracovných&nbsp;dní.</p></li>
+        <li><h3>Obhliadka a&nbsp;cena vopred</h3><p>Auto pozrieme na zdviháku a&nbsp;zavoláme vám cenu práce aj dielov.</p></li>
+        <li><h3>Oprava</h3><p>Robíme len to, čo ste schválili. Bežné úkony stihneme v&nbsp;ten istý deň.</p></li>
+        <li><h3>Odovzdanie</h3><p>Ukážeme vám staré diely, prejdeme faktúru a&nbsp;platíte kartou alebo v&nbsp;hotovosti.</p></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="sekcia otazky" aria-labelledby="otazky-nadpis" style="padding-top:0">
+    <div class="obsah otazky-mriezka">
+      <h2 id="otazky-nadpis">Na čo sa pýtate najčastejšie</h2>
+      <div>
+        <details>
+          <summary>Môžem si doniesť vlastné diely?<svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M10 2v16M2 10h16"/></svg></summary>
+          <p>Áno. Namontujeme ich za hodinovú sadzbu. Záruku potom dávame na prácu, na diel ju drží ten, kto vám ho predal.</p>
+        </details>
+        <details>
+          <summary>Dá sa platiť kartou?<svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M10 2v16M2 10h16"/></svg></summary>
+          <p>Kartou, v&nbsp;hotovosti aj prevodom na faktúru. Zálohu pýtame len pri dieloch na objednávku nad 300&nbsp;€.</p>
+        </details>
+        <details>
+          <summary>Vystavíte faktúru na firmu?<svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M10 2v16M2 10h16"/></svg></summary>
+          <p>Áno, stačí nám povedať IČO pri preberaní auta. Firmám s&nbsp;viacerými autami vedieme servisnú históriu každého vozidla.</p>
+        </details>
+        <details>
+          <summary>Auto nenaštartuje. Viete ho odtiahnuť?<svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M10 2v16M2 10h16"/></svg></summary>
+          <p>Vlastný odťah nemáme. Zavolajte nám, dáme vám číslo na odťahovku, s&nbsp;ktorou robíme, a&nbsp;jeden zdvihák držíme pre takéto prípady voľný.</p>
+        </details>
+        <details>
+          <summary>Môžem na auto počkať u&nbsp;vás?<svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M10 2v16M2 10h16"/></svg></summary>
+          <p>Pri prezutí, výmene oleja a&nbsp;plnení klimatizácie áno, máme čakáreň s&nbsp;kávou a&nbsp;wifi. Pri dlhších opravách si vezmite náhradné auto za 15&nbsp;€ na deň.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <section class="sekcia kontakt" id="kontakt" aria-labelledby="kontakt-nadpis">
+    <div class="obsah">
+      <h2 id="kontakt-nadpis">Zavolajte, kým sme v&nbsp;dielni.</h2>
+      <button class="akcia akcia-velka" type="button" popovertarget="okno-volat">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="miter" aria-hidden="true"><path d="M5 3.5h3.4l1.5 4.3-2.2 1.6a11 11 0 0 0 6.9 6.9l1.6-2.2 4.3 1.5v3.4a1.5 1.5 0 0 1-1.6 1.5A16.4 16.4 0 0 1 3.5 5.1 1.5 1.5 0 0 1 5 3.5z"/></svg>
+        Zavolať <span class="cislo">0XX XXX XXX</span>
+      </button>
+      <p class="telefon-pozn" data-stav-veta>Telefón berieme počas otváracích hodín. Mimo nich nám napíšte, ozveme sa ráno.</p>
+
+      <div class="kontakt-mriezka">
+        <div>
+          <table class="hodiny">
+            <caption>Otváracie hodiny</caption>
+            <tbody>
+              <tr data-den="1" data-od="7:00" data-do="17:00"><th scope="row">Pondelok<span class="znacka-dnes" hidden>dnes</span></th><td>7:00 až 17:00</td></tr>
+              <tr data-den="2" data-od="7:00" data-do="17:00"><th scope="row">Utorok<span class="znacka-dnes" hidden>dnes</span></th><td>7:00 až 17:00</td></tr>
+              <tr data-den="3" data-od="7:00" data-do="17:00"><th scope="row">Streda<span class="znacka-dnes" hidden>dnes</span></th><td>7:00 až 17:00</td></tr>
+              <tr data-den="4" data-od="7:00" data-do="17:00"><th scope="row">Štvrtok<span class="znacka-dnes" hidden>dnes</span></th><td>7:00 až 17:00</td></tr>
+              <tr data-den="5" data-od="7:00" data-do="17:00"><th scope="row">Piatok<span class="znacka-dnes" hidden>dnes</span></th><td>7:00 až 17:00</td></tr>
+              <tr data-den="6" data-od="8:00" data-do="12:00"><th scope="row">Sobota<span class="znacka-dnes" hidden>dnes</span></th><td>8:00 až 12:00</td></tr>
+              <tr data-den="0"><th scope="row">Nedeľa<span class="znacka-dnes" hidden>dnes</span></th><td class="zatv">zatvorené</td></tr>
+            </tbody>
+          </table>
+          <p class="hodiny-pozn">Cez sviatky a&nbsp;dni pracovného pokoja je zatvorené.</p>
+          <address class="adresa">
+            <strong>Ojničná 12, 949&nbsp;01&nbsp;Nitra</strong>
+            Priemyselná zóna, druhá brána za kruhovým objazdom. Parkovanie pre šesť áut priamo pred dielňou.<br>
+            <span class="mail">dielna@autoservis-ojnica.example <small>vymyslený e-mail</small></span>
+          </address>
+        </div>
+
+        <figure class="mapa">
+          <svg viewBox="0 0 720 440" role="img" aria-labelledby="mapa-titul">
+            <title id="mapa-titul">Ilustračná mapa: autoservis na Ojničnej ulici v priemyselnej zóne, za kruhovým objazdom na ceste od centra Nitry</title>
+            <g fill="#33373b">
+              <path d="M40 30h170v90H40zM250 30h150v100H250zM40 300h210v100H40zM560 330h120v80H560zM560 30h120v80H560z"/>
+            </g>
+            <path d="M-20 250C120 190 250 240 330 220S520 150 740 190" fill="none" stroke="#3d4a55" stroke-width="26"/>
+            <g fill="none" stroke="#565c62" stroke-width="16">
+              <path d="M-10 172h300M350 172h380M320 202v250M320 142V-10"/>
+            </g>
+            <circle cx="320" cy="172" r="30" fill="none" stroke="#565c62" stroke-width="16"/>
+            <path d="M440 180v100h130" fill="none" stroke="#565c62" stroke-width="10"/>
+            <g font-family="Ojnica Text, system-ui, sans-serif" font-size="23" fill="#c4c8c4">
+              <text x="24" y="150">smer centrum</text>
+              <text x="340" y="424">priemyselná zóna</text>
+              <text x="40" y="272" font-style="italic">rieka Nitra</text>
+              <text x="452" y="312">Ojničná</text>
+            </g>
+            <g transform="translate(470 196)">
+              <path d="M0 0h150l14 14v38H0z" fill="#ffd60a"/>
+              <text x="14" y="35" font-family="Ojnica Nadpis, Arial Black, sans-serif" font-weight="800" font-size="24" fill="#1a1c1e">OJNICA</text>
+            </g>
+            <path d="M440 222l22 0" stroke="#ffd60a" stroke-width="4"/>
+            <rect x="432" y="214" width="16" height="16" fill="#ffd60a"/>
+          </svg>
+          <figcaption>
+            <span>Mapa je ilustračná, nie v&nbsp;mierke. Ulica Ojničná je vymyslená, tlačidlo otvorí mapy len s&nbsp;mestom Nitra.</span>
+            <a class="akcia akcia-mala" href="https://www.google.com/maps/search/?api=1&amp;query=Nitra" target="_blank" rel="noopener">Navigovať</a>
+          </figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="pata">
+  <div class="obsah">
+    <div>
+      <p><strong>Autoservis Ojnica</strong>, Ojničná 12, 949 01 Nitra. <span class="nw">IČO 00 000 000.</span></p>
+      <p class="male" style="margin-top:10px">Toto je ukážka webu od ARLing. Prevádzka, adresa, IČO, telefón aj <span class="nw">e-mail</span> sú vymyslené. Fotky sú z&nbsp;Pexels pod licenciou Pexels a&nbsp;nezobrazujú nikoho z&nbsp;vymysleného servisu.</p>
+    </div>
+    <div>
+      <a href="https://arling.sk/web/?z=autoservis#ukazky" target="_top">Späť na ukážky</a>
+    </div>
+  </div>
+</footer>
+
+<div class="lista">
+  <a class="lista-text" href="#zakazkovy-list"><span data-lista-popis>V&nbsp;pracovné dni 7:00 až 17:00</span><span class="lista-sucet len-js" data-lista-sucet aria-hidden="true" hidden><span class="pocitadlo" data-pocitadlo="od"></span><span class="slovo">až</span><span class="pocitadlo" data-pocitadlo="do"></span><span>€</span></span></a>
+  <button class="akcia akcia-mala" type="button" popovertarget="okno-volat">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="miter" aria-hidden="true"><path d="M5 3.5h3.4l1.5 4.3-2.2 1.6a11 11 0 0 0 6.9 6.9l1.6-2.2 4.3 1.5v3.4a1.5 1.5 0 0 1-1.6 1.5A16.4 16.4 0 0 1 3.5 5.1 1.5 1.5 0 0 1 5 3.5z"/></svg>
+    Zavolať
+  </button>
+</div>
+
+<div class="okno" id="okno-volat" popover role="dialog" aria-labelledby="okno-volat-nadpis">
+  <div class="okno-hlava">
+    <h2 id="okno-volat-nadpis">Zavolať</h2>
+    <button class="zavriet" type="button" popovertarget="okno-volat" popovertargetaction="hide" aria-label="Zavrieť">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 5l14 14M19 5 5 19"/></svg>
+    </button>
+  </div>
+  <div class="okno-telo">
+    <p class="okno-cislo">0XX XXX XXX</p>
+    <p>Na vašom webe toto tlačidlo rovno vytočí vaše číslo, jedným ťukom z&nbsp;mobilu.</p>
+    <p class="okno-pozn"><strong>Vymyslené číslo.</strong> V&nbsp;ukážke sa nič nevytáča a&nbsp;nič sa neodošle.</p>
+    <a class="akcia akcia-guma" href="https://arling.sk/web/?z=autoservis" target="_top">Chcem taký web</a>
+  </div>
+</div>
+
+<script src="app.js" defer></script>
+</body>
+</html>

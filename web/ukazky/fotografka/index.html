@@ -238,7 +238,13 @@ button{font:inherit;color:inherit}
 .policko img{width:100%;height:100%;object-fit:cover;-webkit-user-drag:none;user-select:none}
 .policko figcaption{position:absolute;left:2px;right:2px;top:calc(100% + 8px);display:flex;justify-content:space-between;align-items:baseline;gap:10px;white-space:nowrap;overflow:hidden}
 .policko-popis{font:500 .8125rem/1.35 var(--sans);color:var(--striebro)}
-.policko .exif{overflow:hidden;text-overflow:ellipsis}
+/* EXIF sa nikdy neoreže: kým je políčko užšie (okno do 1199 px), popis a EXIF idú pod seba do dvoch riadkov
+   a spodný okraj políčka je o riadok vyšší, aby text nezasiahol perforáciu. */
+@media (max-width:1199px){
+  .policko{padding-bottom:calc(var(--w) * .086 + 48px)}
+  .policko figcaption{flex-direction:column;align-items:flex-start;gap:1px}
+  .policko figcaption>span{line-height:1.3}
+}
 @media (max-width:599px){.policko-popis{font-size:.75rem}.policko .exif{font-size:.75rem;letter-spacing:.03em}}
 /* Malá clona: fotka v páse sa pri vstupe odkryje kruhom z 0 na 75 % (500 ms) */
 @media (prefers-reduced-motion:no-preference){
@@ -437,7 +443,7 @@ button.den:hover::before{background:var(--papier);transform:scale(1.15)}
 <div class="pas-ukazky" role="note">
   <div class="obal">
     <p class="pas-text"><strong>Ukážka webu od ARLing, vymyslená prevádzka.</strong> <span class="pas-dlhe">Fotografka Ema ani jej ateliér Clona neexistujú, mená, adresa a&nbsp;čísla sú vymyslené.</span><span class="pas-kratke">Ema ani Clona neexistujú.</span></p>
-    <p class="pas-ukazky-odkazy"><a href="https://arling.sk/web/?z=fotografka" target="_top">Chcem taký web</a><a href="../../index.html#ukazky" target="_top" aria-label="Späť na ukážky"><span class="pas-dlhe">Späť na ukážky</span><span class="pas-kratke">Ukážky</span></a></p>
+    <p class="pas-ukazky-odkazy"><a href="https://arling.sk/web/?z=fotografka" target="_top">Chcem taký web</a><a href="https://arling.sk/web/?z=fotografka#ukazky" target="_top" aria-label="Späť na ukážky"><span class="pas-dlhe">Späť na ukážky</span><span class="pas-kratke">Späť</span></a></p>
   </div>
 </div>
 
@@ -826,7 +832,7 @@ button.den:hover::before{background:var(--papier);transform:scale(1.15)}
         <dl class="kontakt-udaje">
           <div><dt>Ateliér</dt><dd>Svetlomerná 4, 969&nbsp;01 Banská Štiavnica<br>stretnutia po dohode</dd></div>
           <div><dt>E-mail</dt><dd><a href="mailto:ahoj@clona.example">ahoj@clona.example</a></dd></div>
-          <div><dt>Telefón</dt><dd>0900&nbsp;XXX&nbsp;XXX (vymyslené&nbsp;číslo)</dd></div>
+          <div><dt>Telefón</dt><dd>0XX&nbsp;XXX&nbsp;XXX (vymyslené&nbsp;číslo)</dd></div>
           <div><dt>Odpisujem</dt><dd>pondelok až piatok, 9:00&nbsp;až&nbsp;17:00</dd></div>
         </dl>
       </div>
@@ -884,7 +890,7 @@ button.den:hover::before{background:var(--papier);transform:scale(1.15)}
       <p class="male">Autori fotiek: Novkov Visuals, Gizem Arslan Ok, Flo Zimmermann, Pavel Danilyuk, Rene Terp, NUDE Nahum, Doğukan Benli, Andrea Prochilo, Adinasta Kusuma a&nbsp;Ron Lach.</p>
     </div>
     <div>
-      <a href="../../index.html#ukazky" target="_top">Späť na ukážky webov od ARLing</a>
+      <a href="https://arling.sk/web/?z=fotografka#ukazky" target="_top">Späť na ukážky</a>
     </div>
   </div>
 </footer>
@@ -907,7 +913,7 @@ button.den:hover::before{background:var(--papier);transform:scale(1.15)}
     <p class="okno-vyber" id="okno-vyber" hidden></p>
     <p>Na vašom webe toto tlačidlo otvorí krátky formulár alebo váš kalendár a&nbsp;dopyt vám príde e-mailom.</p>
     <p class="okno-pozn">Toto je ukážka, nič sa neodošle ani nerezervuje.</p>
-    <a class="tlacidlo tlacidlo-tmave" href="https://arling.sk/web/dotaznik/?ukazka=fotografka" target="_top">Chcem taký web</a>
+    <a class="tlacidlo tlacidlo-tmave" href="https://arling.sk/web/?z=fotografka" target="_top">Chcem taký web</a>
   </div>
 </div>
 
@@ -919,10 +925,11 @@ button.den:hover::before{background:var(--papier);transform:scale(1.15)}
     </button>
   </div>
   <div class="okno-telo">
-    <p class="okno-cislo">0900&nbsp;XXX&nbsp;XXX</p>
+    <p class="okno-cislo">0XX&nbsp;XXX&nbsp;XXX</p>
     <p><a href="mailto:ahoj@clona.example">ahoj@clona.example</a></p>
     <p>Na vašom webe toto tlačidlo jedným ťukom vytočí vaše číslo alebo otvorí nový e-mail.</p>
     <p class="okno-pozn">Číslo aj adresa sú vymyslené, v&nbsp;ukážke sa nič nevytáča.</p>
+    <a class="tlacidlo tlacidlo-tmave" href="https://arling.sk/web/?z=fotografka" target="_top">Chcem taký web</a>
   </div>
 </div>
 

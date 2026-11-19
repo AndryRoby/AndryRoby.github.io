@@ -345,7 +345,7 @@
     akcie.appendChild(volat); akcie.appendChild(mail);
     bl.appendChild(akcie);
     var odh = el('p', { class: 'odhalene', id: 'detail-cislo', hidden: '' });
-    odh.appendChild(el('strong', null, '0900 XXX XXX'));
+    odh.appendChild(el('strong', null, '0XX XXX XXX'));
     odh.appendChild(document.createTextNode(nb('Na vašom webe sa číslo makléra vytočí jedným ťukom. V ukážke je vymyslené, preto sa nevytáča.')));
     bl.appendChild(odh);
     volat.addEventListener('click', function () {

@@ -10,6 +10,12 @@
 
   var pohyb = !(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   var maIO = 'IntersectionObserver' in window;
+  // Práca, ktorú netreba hneď (pás prác, zameriavač), počká na voľnú chvíľu prehliadača, najneskôr 1,2 s.
+  // Pri načítaní tak skript nevynúti prepočítanie rozloženia celej stránky (brána 19. 11., Lighthouse TBT).
+  function vKlude(fn) {
+    if ('requestIdleCallback' in window) window.requestIdleCallback(fn, { timeout: 1200 });
+    else window.setTimeout(fn, 1200);
+  }
   var NBSP = ' ';
 
   // 1. Hodiny v ateliéri: zvýrazní dnešok a v úvode prepíše stav. Čas podľa Bratislavy.
@@ -175,7 +181,8 @@
   // 7. Pás prác. Fotky sa načítajú až pri priblížení: najprv keď je sekcia do štvrtiny výšky okna pod obrazom,
   //    na mobile potom len karty pri viditeľnej časti pásu. Na počítači sa pás pripne a zvislý posun ho
   //    posúva do strany cez animation-timeline v CSS; kde ho prehliadač nepozná, ostáva obyčajný posuvník.
-  (function () {
+  //    Celé sa spúšťa až vo voľnej chvíli (vKlude): pás je pod úvodom a dovtedy funguje ako voľný posuvník.
+  vKlude(function () {
     var sekcia = document.querySelector('.prace');
     var lepidlo = sekcia && sekcia.querySelector('.prace-lepidlo');
     var obal = sekcia && sekcia.querySelector('.prace-posuvne');
@@ -272,14 +279,16 @@
     }
     function stavSipok() {
       if (!tlacidla.length) return;
+      // Najprv všetky rozmery, až potom zápisy (žiadne striedanie čítania a zápisu).
       var koniec = pas.scrollWidth - pas.clientWidth - 2;
+      var vlavo = pas.scrollLeft;
       tlacidla.forEach(function (b) {
-        var vypnute = Number(b.getAttribute('data-smer')) < 0 ? pas.scrollLeft <= 2 : pas.scrollLeft >= koniec;
-        b.setAttribute('aria-disabled', vypnute ? 'true' : 'false');
+        var vypnute = Number(b.getAttribute('data-smer')) < 0 ? vlavo <= 2 : vlavo >= koniec;
+        var hodnota = vypnute ? 'true' : 'false';
+        if (b.getAttribute('aria-disabled') !== hodnota) b.setAttribute('aria-disabled', hodnota);
       });
     }
     if (sipky) {
-      sipky.hidden = false;
       tlacidla.forEach(function (b) {
         b.addEventListener('click', function () {
           if (b.getAttribute('aria-disabled') === 'true' || jePripnute()) return;
@@ -314,9 +323,11 @@
       if (podmienka.addEventListener) podmienka.addEventListener('change', prepocitaj);
       else if (podmienka.addListener) podmienka.addListener(prepocitaj);
     }
+    // Rozmery sa čítajú v prepocitaj (stav šípok) ešte pred odkrytím šípok; odkrytie nemení šírku pásu.
     prepocitaj();
-    if (document.fonts && document.fonts.ready) document.fonts.ready.then(prepocitaj);
-    window.addEventListener('load', prepocitaj);
+    if (sipky) sipky.hidden = false;
+    if (document.readyState !== 'complete') window.addEventListener('load', prepocitaj);
+    if (document.fonts && document.fonts.status !== 'loaded' && document.fonts.ready) document.fonts.ready.then(prepocitaj);
 
     if (maIO) {
       var ioSekcia = new IntersectionObserver(function (zaznamy) {
@@ -326,7 +337,7 @@
     } else {
       nacitajVsetky();
     }
-  })();
+  });
 
   // 8. Dialógy: otvárajú sa cez commandfor a command (bez skriptu v nových prehliadačoch), tu je záloha
   //    pre staršie prehliadače a zatvorenie klikom mimo okna. Esc zatvorí modálne okno sám prehliadač.
@@ -364,7 +375,8 @@
 
   // 10. Zameriavač nad pôdorysom v úvode (len myš, od 768 px, kde pôdorys nie je otočený): vlasový kríž ako v CAD,
   //     miestnosť pod kurzorom a súradnice v mm od ľavého horného rohu bytu. Pri posune stránky sa nič nespúšťa.
-  (function () {
+  //     Zapína sa až vo voľnej chvíli (vKlude), myš sa k pôdorysu skôr nedostane.
+  vKlude(function () {
     var ramec = document.querySelector('.uvod-plan .plan-ramec');
     var zam = ramec && ramec.querySelector('.zameriavac');
     if (!ramec || !zam || !window.matchMedia) return;
@@ -412,22 +424,31 @@
       if (!bezi) { bezi = true; window.requestAnimationFrame(vykresli); }
     });
     ramec.addEventListener('pointerleave', function () { posledny = null; ramec.classList.remove('mieri'); });
-  })();
+  });
 
   // 11. Výkres v úvode sa kreslí, keď ho človek vidí. Na počítači je v prvej obrazovke a kreslí sa hneď (čisté CSS).
   //     Na mobile a tablete je pod fotkou: ak je pri načítaní z väčšej časti mimo obrazu, jeho pohyb sa vráti
   //     na začiatok a podrží (trieda caka), kým výkres nepríde do obrazu. Bez skriptu sa kreslí hneď.
+  //     Polohu výkresu dodá prvé hlásenie pozorovateľa (po vykreslení snímky), skript ju nečíta sám,
+  //     aby pri načítaní nevynútil prepočítanie rozloženia.
   (function () {
     if (!pohyb || !maIO) return;
     var plan = document.querySelector('.uvod-plan');
-    if (!plan || plan.getBoundingClientRect().top < window.innerHeight * 0.72) return;
-    plan.classList.add('caka');
-    if (plan.getAnimations) {
-      plan.getAnimations({ subtree: true }).forEach(function (a) { try { a.currentTime = 0; } catch (e) { /* nič */ } });
-    }
+    if (!plan) return;
+    var prve = true;
     var io = new IntersectionObserver(function (zaznamy) {
       var z = zaznamy[zaznamy.length - 1];
-      if (z && z.isIntersecting) { plan.classList.remove('caka'); io.disconnect(); }
+      if (!z) return;
+      if (prve) {
+        prve = false;
+        var vyska = (z.rootBounds && z.rootBounds.height) || window.innerHeight;
+        if (z.boundingClientRect.top < vyska * 0.72) { io.disconnect(); return; }
+        plan.classList.add('caka');
+        if (plan.getAnimations) {
+          plan.getAnimations({ subtree: true }).forEach(function (a) { try { a.currentTime = 0; } catch (e) { /* nič */ } });
+        }
+      }
+      if (z.isIntersecting) { plan.classList.remove('caka'); io.disconnect(); }
     }, { threshold: 0.3 });
     io.observe(plan);
   })();
