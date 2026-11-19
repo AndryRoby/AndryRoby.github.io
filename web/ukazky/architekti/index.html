@@ -1,0 +1,1216 @@
+<!doctype html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; img-src 'self' data:; style-src 'unsafe-inline'; font-src 'self'; connect-src 'none'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex, nofollow">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#f4f4f1">
+<title>Ukážka: Ateliér Olovnica, Košice (vymyslená prevádzka)</title>
+<meta name="description" content="Ukážka webu od ARLing pre vymyslený ateliér architektúry a&nbsp;interiéru v&nbsp;Košiciach: pôdorys, ktorý sa sám nakreslí, vybrané práce, postup, orientačné ceny a&nbsp;konzultácia na jeden ťuk.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23f4f4f1'/%3E%3Cpath d='M16 3.5v9' stroke='%231e1f1f' stroke-width='1.6'/%3E%3Cpath d='M12.2 12.5h7.6L16 28z' fill='%231e1f1f'/%3E%3Ccircle cx='16' cy='12.5' r='1.6' fill='%23a8784a'/%3E%3C/svg%3E">
+<link rel="preload" href="fonts/geist-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/geist-latin-ext.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/geist-mono-latin.woff2" as="font" type="font/woff2" crossorigin>
+<noscript><style>img[data-src]{display:none}.lista{transform:none;visibility:visible}</style></noscript>
+<style>
+/* Ateliér Olovnica: ukážka webu klienta. Svet: ateliér dvoch architektov, od čiary k priestoru.
+   Vápno nesie plochy, grafit text a čiary, dub len kóty a body. Písmo Geist (OFL), lokálne;
+   Geist Mono len na kóty a plochy v pôdorysoch. */
+@font-face{font-family:"Olovnica Sans";src:url(fonts/geist-latin-ext.woff2) format("woff2");font-weight:100 900;font-style:normal;font-display:swap;unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C4,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"Olovnica Sans";src:url(fonts/geist-latin.woff2) format("woff2");font-weight:100 900;font-style:normal;font-display:swap;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Olovnica Mono";src:url(fonts/geist-mono-latin-ext.woff2) format("woff2");font-weight:100 900;font-style:normal;font-display:swap;unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C4,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"Olovnica Mono";src:url(fonts/geist-mono-latin.woff2) format("woff2");font-weight:100 900;font-style:normal;font-display:swap;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+
+:root{
+  --vapno:#f4f4f1;--vapno-2:#ebeae5;--grafit:#1e1f1f;--beton:#c9c8c3;
+  --dub:#a8784a;--dub-tmavy:#8a5f36;--tlmeny:#6b6b66;
+  --na-tmavom-2:#a9a9a3;--dub-svetly:#c99b6d;
+  --ciara:rgba(30,31,31,.06);
+  --pismo:"Olovnica Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  --mono:"Olovnica Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --okraj:clamp(16px,3.9vw,64px);
+  --medzera:clamp(12px,1.6vw,24px);
+  --sirka:1760px;
+  --stlpce:4;
+  --rytmus:clamp(88px,11vw,176px);
+  --krivka:cubic-bezier(.65,0,.35,1);
+  --hore:128px;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-padding-top:16px;scrollbar-color:var(--tlmeny) var(--vapno-2)}
+body{position:relative;margin:0;background:var(--vapno);color:var(--grafit);font:400 17px/1.6 var(--pismo);overflow-x:clip;overflow-wrap:break-word;font-feature-settings:"kern"}
+::selection{background:var(--grafit);color:var(--vapno)}
+img{display:block;max-width:100%;height:auto}
+a{color:inherit;text-decoration-thickness:1px;text-underline-offset:.22em}
+a:hover{text-decoration-thickness:2px}
+:focus-visible{outline:2px solid var(--grafit);outline-offset:3px}
+h1,h2,h3{margin:0;font-weight:400;text-wrap:balance}
+p{margin:0}
+.skryte{font-family:var(--pismo);position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}
+.obsah{width:min(var(--sirka),100% - 2*var(--okraj));margin-inline:auto}
+.mriezka{display:grid;grid-template-columns:repeat(var(--stlpce),minmax(0,1fr));column-gap:var(--medzera)}
+.preskocit{position:absolute;left:12px;top:-80px;z-index:60;background:var(--grafit);color:var(--vapno);padding:12px 18px;font-weight:500}
+.preskocit:focus{top:12px}
+.cisla{font-variant-numeric:tabular-nums}
+
+/* Vlasové čiary stĺpcov cez celú stránku */
+.ciary{position:absolute;inset:0;pointer-events:none;z-index:0}
+.ciary-vnutro{height:100%;width:min(var(--sirka),100% - 2*var(--okraj));margin-inline:auto;display:grid;grid-template-columns:repeat(var(--stlpce),minmax(0,1fr));column-gap:var(--medzera)}
+.ciary-vnutro span{border-left:1px solid var(--ciara)}
+.ciary-vnutro span:last-child{border-right:1px solid var(--ciara)}
+.ciary-vnutro span:nth-child(n+5){display:none}
+main,header,footer,.pas-ukazky{position:relative;z-index:1}
+
+/* Pás ukážky (ARLing): na mobile jeden riadok, veta a odkaz vedľa seba; od tabletu aj vysvetlenie a návrat */
+.pas-ukazky{background:var(--grafit);color:#e9e9e4;font-size:13px;line-height:1.4}
+.pas-ukazky .obsah{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:14px}
+.pas-ukazky .obsah>p:first-child{font-size:12.5px;line-height:1.3;padding-block:5px}
+.pas-ukazky strong{color:#fff;font-weight:600}
+.pas-viac,.pas-ukazky .pas-spat{display:none}
+.pas-odkazy{display:flex;flex-wrap:wrap;gap:0 22px}
+.pas-ukazky a{color:#fff;display:inline-flex;align-items:center;min-height:48px}
+.pas-ukazky :focus-visible{outline-color:#fff}
+
+/* Hlavička */
+.hlava .obsah{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:64px}
+.znak{display:inline-flex;align-items:center;gap:10px;min-height:44px;text-decoration:none;font-weight:500;font-size:20px;letter-spacing:-.02em}
+.znak svg{flex:none}
+.menu{display:none;margin:0;padding:0;list-style:none;gap:2px}
+.menu a{display:inline-flex;align-items:center;min-height:44px;padding:0 12px;text-decoration:none;font-size:15px;color:var(--grafit)}
+.menu a:hover{text-decoration:underline}
+
+/* Tlačidlá */
+.tlacidlo{display:inline-flex;align-items:center;justify-content:center;gap:12px;min-height:52px;padding:0 24px;border:1px solid var(--grafit);border-radius:2px;background:var(--grafit);color:var(--vapno);font:500 16px/1 var(--pismo);letter-spacing:-.005em;text-decoration:none;cursor:pointer;transition:background-color .2s var(--krivka),color .2s var(--krivka)}
+.tlacidlo svg{flex:none;transition:transform .25s var(--krivka)}
+.tlacidlo:hover{background:#000}
+.tlacidlo:hover svg{transform:translateX(3px)}
+.tlacidlo:active{transform:translateY(1px)}
+.tlacidlo-obrys{background:transparent;color:var(--grafit)}
+.tlacidlo-obrys:hover{background:var(--grafit);color:var(--vapno)}
+.tlacidlo-male{min-height:44px;padding:0 18px;font-size:15px}
+
+/* Úvod ako dvojstrana v monografii ateliéru: hotový priestor (pohľad A) a výkres, z ktorého vznikol.
+   Mobil: meno, odbor, veta a tlačidlo, fotka kuchyne, pod ňou pôdorys. Tablet: meno, vedľa seba text a fotka,
+   pod nimi pôdorys. Počítač: pod vlasovou čiarou meno a vedľa neho veta s tlačidlami na účiari mena,
+   pod nimi fotka (ľavá strana) a výkres (pravá strana) v rovnakej výške, popisy oboch na jednej čiare. */
+.uvod{padding:8px 0 clamp(28px,4vw,64px)}
+.uvod-mriezka{position:relative;row-gap:0;--nad-pad:14px;--maly-v:28px}
+.meno-blok,.uvod-plan,.pohlad,.uvod-text{grid-column:1/-1}
+.uvod-text{margin-top:12px}
+.uvod-veta{margin-top:12px;font-size:clamp(1.75rem,2.9vw,3.5rem);line-height:1.08;letter-spacing:-.03em;font-weight:380;max-width:15em;text-wrap:balance}
+.uvod-akcie{display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px;margin-top:22px}
+.odkaz-sipka{display:inline-flex;align-items:center;gap:10px;min-height:52px;padding:0 4px;font-weight:500;font-size:16px;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:.3em}
+.odkaz-sipka svg{flex:none;transition:transform .25s var(--krivka)}
+.odkaz-sipka:hover svg{transform:translateY(3px)}
+.stav{display:inline-flex;align-items:center;gap:10px;margin:0;font-size:15px;line-height:1.4;color:var(--tlmeny);font-variant-numeric:tabular-nums}
+.stav-bod{flex:none;width:8px;height:8px;border-radius:50%;background:var(--dub);box-shadow:0 0 0 4px rgba(168,120,74,.18)}
+
+/* Veľké meno: šírka bloku mena (mobil a tablet celý riadok, počítač ľavá strana dvojstrany),
+   bodku nad ı tvorí olovnica na šnúre zavesenej na vlasovej čiare */
+.meno-blok{position:relative;container-type:inline-size;--nad:calc(var(--nad-pad) + var(--maly-v));border-top:1px solid var(--grafit);padding-top:var(--nad-pad)}
+.meno{font-weight:300;line-height:.8}
+.meno-maly{display:block;height:var(--maly-v);line-height:var(--maly-v);font-size:clamp(17px,1.5vw,24px);font-weight:450;letter-spacing:-.01em;white-space:nowrap}
+.meno-velky{display:block;font-size:28.2cqi;letter-spacing:-.045em;margin-left:-.047em;white-space:nowrap}
+.meno-i{position:relative}
+.olovnica{position:absolute;left:.0572em;top:calc(.25em - var(--nad));width:.12em;height:calc(var(--nad) + .155em);transform-origin:50% 0;background:linear-gradient(var(--grafit),var(--grafit)) 50% 0/max(1px,.004em) calc(100% - .2em) no-repeat;pointer-events:none}
+.olovnica::after{content:"";position:absolute;left:0;bottom:0;width:100%;height:.2em;background:var(--grafit);clip-path:polygon(0 0,100% 0,50% 100%)}
+.olovnica::before{content:"";position:absolute;z-index:1;left:50%;bottom:.2em;width:.05em;height:.05em;border-radius:50%;background:var(--dub);transform:translate(-50%,50%)}
+.meno-popis{margin:0;font-size:15px;line-height:1.35;color:var(--tlmeny)}
+
+/* Pohľad A: fotka hotovej kuchyne v samostatnom ráme vedľa výkresu, nikdy nie vo vnútri izby.
+   Značka A v pôdoryse ukazuje miesto a smer, odkiaľ je fotka odfotená, a vedie na fotku (odkaz cez značku).
+   Fotka sa orezáva na stred, teda na polostrov s drezom, nikdy na pás plochejší než 3 : 2. */
+.pohlad{margin:0}
+.pohlad-ramec{position:relative;aspect-ratio:3/2;overflow:hidden}
+.pohlad-ramec img{width:100%;height:100%;object-fit:cover;object-position:57% 50%;transform-origin:50% 0;outline:1px solid rgba(30,31,31,.14);outline-offset:-1px}
+.pohlad-ramec::before{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;box-shadow:inset 0 0 0 2px var(--dub);opacity:0}
+.pohlad.zvyraznene .pohlad-ramec::before,.pohlad:target .pohlad-ramec::before{opacity:1}
+.pohlad figcaption,.plan figcaption{margin-top:12px;font-size:14px;line-height:1.5;color:var(--tlmeny)}
+.pohlad figcaption{display:flex;align-items:flex-start;gap:10px}
+.pohlad figcaption strong{font-weight:600;color:var(--grafit)}
+.pohlad-znak{flex:none;overflow:visible;margin-top:-1px}
+.pohlad-znak circle{fill:var(--vapno);stroke:var(--grafit);stroke-width:1.25}
+.pohlad-znak path{fill:var(--grafit)}
+.pohlad-znak text{font:600 10.5px var(--pismo);fill:var(--grafit);text-anchor:middle}
+
+/* Pôdorys v úvode: čistý technický výkres. Steny tenkým obrysom a jemným šrafovaním pod 45°, okná a dvere
+   vlasovou čiarou, nábytok tlmene, kóty v dube, popisy miestností s plochou, severka a grafická mierka.
+   Hrúbky čiar a písmo sú v jednotkách výkresu (1 = 10 mm) a menia sa so šírkou výkresu (kontajnerové dotazy
+   nižšie), aby obrys stien ostal na obrazovke okolo 1,2 px, vlasové čiary okolo 0,7 px a šrafy okolo pol pixela. */
+.plan{margin:0}
+.plan-ramec{position:relative;aspect-ratio:1480/910;container:plan/inline-size}
+.plan-ramec>svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;--c-obrys:3;--c-tenka:1.7;--c-srafa:1.25;--c-dvere:2.5;--c-popis:29px;--c-plocha:25px;--c-kota:27px}
+.plan-kota{position:absolute;left:calc(100% * 360 / 1480);top:calc(100% * 808 / 910);transform:translate(-50%,-84%);font:400 calc(100cqi * 27 / 1480)/1.2 var(--mono);color:var(--dub-tmavy);white-space:nowrap}
+.plan figcaption{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:12px 24px}
+.plan figcaption strong{font-weight:600;color:var(--grafit)}
+.plan figcaption a{color:var(--dub-tmavy)}
+/* Odkaz cez značku A v pôdoryse (na mobile otočený výkres, preto iné súradnice): vedie na fotku pohľadu A.
+   Je len pre myš a dotyk (tabindex -1), klávesnica a čítačka majú ten istý cieľ v popise výkresu. */
+.pohlad-odkaz{position:absolute;z-index:2;left:calc(100% * 270 / 1480);top:calc(100% * 640 / 910);width:44px;height:44px;margin:-22px 0 0 -22px;border-radius:50%}
+.mierka{position:relative;flex:none;width:calc(100% * 300 / 1480);height:30px;margin:4px 1.4em 0 0;font-size:12px;line-height:1;color:var(--grafit);font-variant-numeric:tabular-nums}
+.mierka-pas{display:block;height:5px;border:1px solid var(--grafit);background:linear-gradient(90deg,var(--grafit) 0 33.333%,transparent 33.333% 66.667%,var(--grafit) 66.667%)}
+.mierka-c{position:absolute;top:12px;transform:translateX(-50%)}
+.mierka-j{position:absolute;left:100%;margin-left:.3em}
+.plan svg text{font-family:var(--pismo);fill:var(--grafit)}
+.plan .podklad{fill:var(--vapno)}
+.plan .steny-srafa{fill:url(#srafa)}
+.plan .srafa-ciara{fill:none;stroke:#77766f;stroke-width:var(--c-srafa)}
+.plan .steny-obrys path{fill:none;stroke:var(--grafit);stroke-width:var(--c-obrys);stroke-linejoin:miter}
+.plan .okna{fill:none;stroke:var(--grafit);stroke-width:var(--c-tenka)}
+.plan .dvere{fill:none;stroke:var(--grafit);stroke-width:var(--c-dvere)}
+.plan .obluk{fill:none;stroke:#8f8e88;stroke-width:var(--c-tenka)}
+.plan .nabytok{fill:none;stroke:#9b9a94;stroke-width:var(--c-tenka);stroke-linejoin:round}
+.plan .koberec{fill:none;stroke:#b5b4ad;stroke-width:var(--c-tenka);stroke-dasharray:7 6}
+/* Zorné pole pohľadu A ako jemný lúč od značky: dub, ktorý sa do strany stráca, okraje vlasovou čiarkovanou */
+.plan .kuzel-plocha{fill:url(#luc)}
+.plan .kuzel-hrany{fill:none;stroke:url(#luc-h);stroke-width:var(--c-tenka);stroke-dasharray:6 5}
+.plan .luc-0{stop-color:#a8784a;stop-opacity:.3}
+.plan .luc-1{stop-color:#a8784a;stop-opacity:0}
+.plan .luc-h0{stop-color:#8a5f36;stop-opacity:.75}
+.plan .luc-h1{stop-color:#8a5f36;stop-opacity:.12}
+/* Clona: pri prechode myšou nad fotkou ostane ostrá len obývačka, zvyšok výkresu ustúpi */
+.plan .clona{fill:var(--vapno);fill-rule:evenodd;opacity:0;pointer-events:none}
+.plan .pohlad-kruh{fill:var(--vapno);stroke:var(--grafit);stroke-width:var(--c-dvere)}
+.plan .pohlad-hrot{fill:var(--grafit)}
+.plan .pohlad-pismeno{font-size:20px;font-weight:600;text-anchor:middle}
+.plan .severka circle{fill:none;stroke:var(--grafit);stroke-width:var(--c-tenka)}
+.plan .severka path{fill:var(--grafit)}
+.plan .severka-pismeno{font-size:var(--c-plocha);font-weight:500;text-anchor:middle}
+.plan .koty-ciary{fill:none;stroke:var(--dub);stroke-width:var(--c-tenka)}
+.plan .koty-znacky{fill:none;stroke:var(--dub);stroke-width:var(--c-dvere)}
+.plan .popis{font-size:var(--c-popis);font-weight:500;letter-spacing:-.005em;text-anchor:middle}
+.plan .plocha{font-family:var(--mono);font-size:var(--c-plocha);font-weight:400;letter-spacing:0;fill:var(--tlmeny)}
+.plan .koty-text text{font-family:var(--mono);font-size:var(--c-kota);fill:var(--dub-tmavy);text-anchor:middle}
+
+/* Sekcie */
+.sekcia{padding-block:var(--rytmus)}
+.nadpis{font-size:clamp(2.4rem,5.2vw,5rem);line-height:1;letter-spacing:-.04em;font-weight:350}
+.uvodny{margin-top:22px;max-width:34em;color:var(--tlmeny);font-size:clamp(17px,1.25vw,19px)}
+
+/* Vybrané práce: jediná tmavá sekcia */
+.prace{position:relative;z-index:1;background:var(--grafit);color:var(--vapno)}
+.prace .ciary-vnutro span{border-color:rgba(244,244,241,.07)}
+.prace .uvodny{color:var(--na-tmavom-2)}
+.prace :focus-visible{outline-color:var(--vapno)}
+.prace-lepidlo{position:relative;z-index:1;padding-block:var(--rytmus)}
+.prace-hlava{width:min(var(--sirka),100% - 2*var(--okraj));margin-inline:auto}
+.prace-hlava .uvodny{max-width:30em}
+.pas-ovladanie{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 24px;margin-top:18px}
+.navod{font-size:14px;line-height:1.5;color:var(--na-tmavom-2)}
+.navod-pocitac,.navod-mys{display:none}
+/* Tlačidlá Predošlá a Ďalšia: len pre myš, keď pás nie je pripnutý (Firefox, obmedzený pohyb); bez skriptu skryté */
+.sipky{display:none;gap:8px}
+.sipka{display:inline-flex;align-items:center;gap:10px;min-height:48px;padding:0 16px;border:1px solid rgba(244,244,241,.35);border-radius:2px;background:transparent;color:var(--vapno);font:450 15px/1 var(--pismo);cursor:pointer;transition:border-color .25s var(--krivka),background-color .25s var(--krivka),opacity .25s var(--krivka)}
+.sipka svg{flex:none;transition:transform .25s var(--krivka)}
+.sipka:hover{border-color:var(--vapno)}
+.sipka[data-smer="-1"]:hover svg{transform:translateX(-3px)}
+.sipka[data-smer="1"]:hover svg{transform:translateX(3px)}
+.sipka[aria-disabled="true"]{opacity:.4;cursor:default}
+.sipka[aria-disabled="true"]:hover{border-color:rgba(244,244,241,.35)}
+.sipka[aria-disabled="true"]:hover svg{transform:none}
+@media (hover:hover) and (pointer:fine){
+  .prace:not(.pripnute) .sipky:not([hidden]){display:flex}
+  .prace:not(.pripnute) .navod-mobil{display:none}
+  .prace:not(.pripnute) .navod-mys{display:inline}
+}
+.pas{list-style:none;margin:clamp(32px,5vh,56px) 0 0;padding:0 var(--okraj) 18px;display:flex;gap:clamp(16px,2.2vw,40px);overflow-x:auto;scroll-snap-type:x mandatory;scroll-padding-inline:var(--okraj);overscroll-behavior-x:contain;scrollbar-width:thin;scrollbar-color:var(--tlmeny) transparent}
+.pas:focus-visible{outline-offset:-2px}
+.projekt{flex:0 0 min(80vw,420px);scroll-snap-align:start}
+.projekt figure{margin:0}
+.projekt-foto{position:relative;aspect-ratio:4/5;overflow:hidden;background:#2a2b2b}
+.projekt-foto img{width:100%;height:100%;object-fit:cover;transition:opacity .45s var(--krivka)}
+img[data-src],img.nacitava{opacity:0}
+.projekt-plan{position:absolute;inset:0;width:100%;height:100%;background:rgba(24,25,25,.74);opacity:0;transition:opacity .35s var(--krivka)}
+.projekt-plan .c{stroke-dasharray:1 1}
+.projekt-plan .s{fill:none;stroke:var(--vapno);stroke-linejoin:miter}
+.projekt-plan .t{fill:none;stroke:var(--vapno)}
+.projekt-plan .o{fill:none;stroke:var(--na-tmavom-2)}
+.projekt-plan .n{fill:none;stroke:var(--na-tmavom-2);stroke-width:1.2}
+.projekt-plan .k{fill:none;stroke:var(--dub-svetly);stroke-width:1.4}
+.projekt-plan text{font:400 15px var(--mono);fill:var(--dub-svetly);text-anchor:middle}
+.projekt.ukaz-plan .projekt-plan{opacity:1}
+.kota{position:relative;display:flex;justify-content:center;margin-top:16px;font:400 13px/1.2 var(--mono);color:var(--dub-svetly);background:linear-gradient(currentColor,currentColor) 0 50%/100% 1px no-repeat}
+.kota::before,.kota::after{content:"";position:absolute;top:50%;width:1px;height:14px;background:currentColor;transform:translateY(-50%) rotate(45deg)}
+.kota::before{left:0}
+.kota::after{right:0}
+.kota>span{position:relative;padding:0 10px;background:var(--grafit)}
+.kota-slovo{font-family:var(--pismo)}
+.projekt-riadok{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px}
+.projekt h3{font-size:clamp(1.25rem,1.5vw,1.5rem);line-height:1.15;letter-spacing:-.025em;font-weight:450}
+.projekt-udaje{margin-top:4px;font-size:14px;line-height:1.5;color:var(--dub-svetly);font-variant-numeric:tabular-nums}
+.projekt-text{margin-top:10px;color:var(--na-tmavom-2);font-size:16px;line-height:1.55}
+.prepinac{flex:none;display:inline-flex;align-items:center;gap:10px;min-height:44px;padding:0 14px 0 12px;border:1px solid rgba(244,244,241,.35);border-radius:2px;background:transparent;color:var(--vapno);font:450 14px/1 var(--pismo);cursor:pointer;transition:background-color .25s var(--krivka),border-color .25s var(--krivka)}
+.prepinac:hover{border-color:var(--vapno)}
+.prepinac[aria-pressed="true"]{background:var(--vapno);color:var(--grafit);border-color:var(--vapno)}
+.projekt-dalsi{flex:0 0 min(80vw,420px);scroll-snap-align:start;display:flex;flex-direction:column;justify-content:flex-end;gap:18px;border:1px solid rgba(244,244,241,.22);padding:28px;aspect-ratio:4/5}
+.projekt-dalsi p{font-size:clamp(1.4rem,2vw,1.9rem);line-height:1.15;letter-spacing:-.025em;font-weight:380}
+.projekt-dalsi .tlacidlo{align-self:flex-start;background:var(--vapno);color:var(--grafit);border-color:var(--vapno)}
+.projekt-dalsi .tlacidlo:hover{background:#fff}
+
+/* Ako pracujeme */
+.postup-hlava{row-gap:32px}
+.postup-hlava>div{grid-column:1/-1}
+.postup-foto{grid-column:1/-1;margin:0}
+.postup-foto img{width:100%;aspect-ratio:3/2;object-fit:cover;background:var(--vapno-2);transition:opacity .45s var(--krivka)}
+.postup-foto figcaption,.atelier-foto figcaption{margin-top:10px;font-size:14px;line-height:1.5;color:var(--tlmeny)}
+.fazy{list-style:none;margin:clamp(48px,7vw,96px) 0 0;padding:0;display:grid}
+.faza{position:relative;padding:0 0 40px 28px;border-left:1px solid var(--dub)}
+.faza::before{content:"";position:absolute;left:-1px;top:0;width:1px;height:16px;background:var(--dub);transform:translate(0,-50%) rotate(45deg)}
+.faza:last-child{padding-bottom:0}
+.faza:last-child::after{content:"";position:absolute;left:-1px;bottom:0;width:1px;height:16px;background:var(--dub);transform:translate(0,50%) rotate(45deg)}
+.faza-dlzka{display:inline-block;font-size:14px;line-height:1.2;font-weight:500;color:var(--dub-tmavy);background:var(--vapno);padding:0 8px 0 0;transform:translateY(-.6em);font-variant-numeric:tabular-nums}
+.faza h3{margin-top:6px;font-size:clamp(1.45rem,2vw,1.9rem);line-height:1.1;letter-spacing:-.03em;font-weight:420}
+.faza p{margin-top:10px;max-width:30em}
+.faza .vystup{margin-top:12px;font-size:15px;line-height:1.5;color:var(--tlmeny)}
+
+/* Služby a ceny */
+.sluzby-hlava,.cennik,.cennik-pozn,.kalkulacka{grid-column:1/-1}
+.cennik{list-style:none;margin:clamp(40px,6vw,80px) 0 0;padding:0;border-top:1px solid var(--grafit)}
+.sluzba{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 20px;padding:22px 0 24px;border-bottom:1px solid var(--beton)}
+.sluzba h3{font-size:clamp(1.2rem,1.5vw,1.45rem);line-height:1.2;letter-spacing:-.02em;font-weight:500}
+.sluzba-opis{grid-column:1/-1;color:var(--tlmeny);font-size:16px;line-height:1.55;max-width:36em}
+.cena{grid-column:2;grid-row:1;text-align:right;font-size:clamp(1.35rem,2.2vw,2.1rem);line-height:1.05;letter-spacing:-.025em;font-variant-numeric:tabular-nums;white-space:nowrap}
+.cena small{display:block;margin-top:6px;font-size:14px;line-height:1.4;letter-spacing:0;color:var(--dub-tmavy)}
+.cennik-pozn{margin-top:20px;max-width:46em;font-size:15px;color:var(--tlmeny)}
+.kalkulacka{margin-top:clamp(40px,5vw,64px);padding:clamp(20px,3vw,36px);border:1px solid var(--grafit);background:rgba(244,244,241,.8);display:grid;gap:22px}
+.kalkulacka h3{font-size:clamp(1.3rem,1.8vw,1.7rem);letter-spacing:-.025em;font-weight:450;line-height:1.15}
+.kalk-vstup{display:grid;gap:10px}
+.kalk-vstup label{font-weight:500;font-size:15px}
+.kalk-pole{display:flex;align-items:center;gap:10px}
+.kalk-pole input{width:7.5em;min-height:48px;padding:0 12px;border:1px solid var(--grafit);border-radius:2px;background:#fff;color:var(--grafit);font:400 20px/1 var(--pismo);font-variant-numeric:tabular-nums}
+.kalk-pole span{font-size:16px;color:var(--tlmeny)}
+.kalk-posuvnik{width:100%;min-height:44px;margin:0;accent-color:var(--grafit);background:transparent;cursor:pointer}
+.kalk-vysledok{margin:0;display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.kalk-vysledok div{border-top:1px solid var(--beton);padding-top:10px}
+.kalk-vysledok dt{font-size:14px;line-height:1.4;color:var(--tlmeny)}
+.kalk-vysledok dd{margin:4px 0 0;font-size:clamp(1.6rem,2.6vw,2.4rem);line-height:1;letter-spacing:-.03em;font-variant-numeric:tabular-nums;white-space:nowrap}
+.kalk-pozn{font-size:14px;color:var(--tlmeny)}
+.kalk-rozsah{font-size:14px;line-height:1.4;color:var(--tlmeny)}
+/* Mimo rozsahu 20 až 300 m² sa namiesto čísel ukáže veta, starý výsledok nikdy neostane */
+.kalk-hlaska{margin:0;border-top:1px solid var(--beton);padding-top:10px;font-size:clamp(1.15rem,1.5vw,1.4rem);line-height:1.25;letter-spacing:-.015em}
+.kalk-hlaska[hidden],.kalk-vysledok[hidden]{display:none}
+
+/* Ateliér */
+.atelier-mriezka{row-gap:32px}
+.atelier-foto{grid-column:1/-1;margin:0}
+.atelier-foto img{width:100%;aspect-ratio:3/2;object-fit:cover;background:var(--vapno-2);transition:opacity .45s var(--krivka)}
+.atelier-text{grid-column:1/-1}
+.atelier-text .uvodna{margin-top:22px;font-size:clamp(1.3rem,1.9vw,1.75rem);line-height:1.25;letter-spacing:-.02em;max-width:22em}
+.atelier-text p+p{margin-top:14px}
+.atelier-text .tlmene{color:var(--tlmeny)}
+.atelier-text .tlmene:first-of-type{margin-top:18px}
+.fakty{margin:28px 0 0;padding:0;border-top:1px solid var(--grafit)}
+.fakty div{display:grid;grid-template-columns:7.5em minmax(0,1fr);gap:14px;padding:12px 0;border-bottom:1px solid var(--beton)}
+.fakty dt{font-size:14px;line-height:1.7;color:var(--tlmeny)}
+.fakty dd{margin:0}
+
+/* Konzultácia a kontakt */
+.kontakt{background:var(--vapno-2);--tlmeny:#5d5d58}
+.kontakt-mriezka{row-gap:40px}
+.kontakt-text,.kontakt-mapa{grid-column:1/-1}
+.kontakt-akcie{display:flex;flex-wrap:wrap;gap:12px;margin-top:28px}
+.hodiny{width:100%;max-width:28em;margin-top:36px;border-collapse:collapse;font-variant-numeric:tabular-nums}
+.hodiny caption{text-align:left;font-weight:500;padding-bottom:8px}
+.hodiny th,.hodiny td{padding:11px 0;text-align:left;border-bottom:1px solid var(--beton);font-weight:400}
+.hodiny td{text-align:right;font-size:16px;white-space:nowrap}
+.hodiny tr.dnes th,.hodiny tr.dnes td{font-weight:600;color:var(--grafit)}
+.zatvorene{color:var(--tlmeny)}
+.znacka-dnes{margin-left:8px;font-size:14px;font-weight:500;color:var(--dub-tmavy)}
+.znacka-dnes[hidden]{display:none}
+.hodiny-pozn{margin-top:14px;font-size:15px;color:var(--tlmeny);max-width:30em}
+.mapa-karta{margin:0;background:var(--vapno);border:1px solid var(--beton)}
+.mapa-karta>svg{display:block;width:100%;height:auto}
+.mapa-karta svg text{font-family:var(--pismo)}
+.mapa-spodok{padding:20px clamp(16px,2.4vw,28px) 24px;display:grid;gap:14px}
+.adresa{font-style:normal;font-size:18px;line-height:1.5}
+.adresa strong{display:block;font-size:clamp(1.3rem,1.8vw,1.6rem);font-weight:450;letter-spacing:-.02em}
+.kontakt-riadky{display:grid;gap:2px;font-size:16px}
+.kontakt-riadky a{display:inline-flex;align-items:center;min-height:44px;color:var(--dub-tmavy)}
+.mapa-pozn{font-size:14px;color:var(--tlmeny)}
+
+/* Päta */
+.pata{border-top:1px solid var(--grafit);padding:48px 0 calc(48px + 76px + env(safe-area-inset-bottom));font-size:15px}
+.pata-mriezka{row-gap:20px}
+.pata-mriezka>*{grid-column:1/-1}
+.pata .znak{font-size:18px}
+.pata .male{color:var(--tlmeny);max-width:62em;font-size:14px}
+.pata-odkazy{display:flex;flex-wrap:wrap;gap:0 24px}
+.pata-odkazy a{display:inline-flex;align-items:center;min-height:44px;color:var(--dub-tmavy)}
+
+/* Spodná lišta na mobile: ukáže sa, až keď tlačidlo v úvode odíde z obrazovky (app.js), aby neboli dve rovnaké
+   tlačidlá naraz a lišta nerezala prvú obrazovku. Bez skriptu je stále viditeľná (noscript v hlave). */
+.lista{position:fixed;left:0;right:0;bottom:0;z-index:30;display:grid;grid-template-columns:1.25fr 1fr;gap:10px;padding:10px 12px calc(10px + env(safe-area-inset-bottom));background:var(--vapno);border-top:1px solid var(--grafit);transform:translateY(calc(100% + 2px));visibility:hidden;transition:transform .32s var(--krivka),visibility 0s linear .32s}
+.lista.vidno{transform:none;visibility:visible;transition:transform .32s var(--krivka),visibility 0s}
+.lista .tlacidlo{width:100%;min-height:50px;padding:0 12px}
+.lista .tlacidlo-obrys{background:var(--vapno)}
+.lista .tlacidlo-obrys:hover{background:var(--grafit)}
+
+/* Dialógy (modálne okná) */
+.okno{border:1px solid var(--grafit);padding:0;margin:auto;width:min(500px,100vw - 24px);max-width:none;max-height:calc(100dvh - 24px);overflow:auto;border-radius:2px;background:var(--vapno);color:var(--grafit);box-shadow:0 30px 70px -30px rgba(30,31,31,.55);opacity:0;transform:translateY(8px);transition:opacity .25s var(--krivka),transform .3s var(--krivka),overlay .3s allow-discrete,display .3s allow-discrete}
+.okno[open]{opacity:1;transform:none}
+@starting-style{.okno[open]{opacity:0;transform:translateY(12px)}}
+.okno::backdrop{background:rgba(30,31,31,0);transition:background-color .25s var(--krivka),overlay .3s allow-discrete,display .3s allow-discrete}
+.okno[open]::backdrop{background:rgba(30,31,31,.45)}
+@starting-style{.okno[open]::backdrop{background:rgba(30,31,31,0)}}
+.okno-hlava{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:20px 20px 0 24px}
+.okno-hlava h2{font-size:30px;letter-spacing:-.03em;line-height:1.1;padding-top:6px;font-weight:420}
+.zavriet{flex:none;width:44px;height:44px;border:0;border-radius:2px;background:transparent;color:var(--grafit);cursor:pointer;display:grid;place-items:center}
+.zavriet:hover{background:var(--vapno-2)}
+.okno-telo{display:grid;gap:16px;padding:16px 24px 24px}
+.okno-telo fieldset{margin:0;padding:0;border:0}
+.okno-telo legend{padding:0;margin-bottom:8px;font-weight:500}
+.volby{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.volba{position:relative;display:block;cursor:pointer}
+.volba input{position:absolute;left:14px;top:50%;width:18px;height:18px;margin:-9px 0 0;accent-color:var(--grafit)}
+.volba span{display:flex;align-items:center;min-height:48px;padding:0 14px 0 42px;border:1px solid var(--beton);border-radius:2px;background:#fff}
+.volba input:checked+span{border-color:var(--grafit)}
+.pole{display:grid;gap:6px}
+.pole label{font-weight:500}
+.pole input,.pole select{min-height:48px;padding:0 12px;border:1px solid var(--tlmeny);border-radius:2px;background:#fff;color:var(--grafit);font:400 17px/1.2 var(--pismo)}
+.okno-pozn{font-size:14px;color:var(--tlmeny);background:var(--vapno-2);padding:12px 14px}
+.okno-hotovo{font-size:15px;border-left:2px solid var(--dub);padding:4px 0 4px 12px}
+.okno-hotovo:empty{display:none}
+.okno-cislo{font-size:40px;line-height:1;letter-spacing:-.02em;font-weight:400;font-variant-numeric:tabular-nums}
+
+/* Pretáčané čísla kót: číslice dodá CSS, v HTML je len stĺpec s cieľovou číslicou --c */
+.valce{display:inline-block;white-space:nowrap}
+.valec{display:inline-block;height:1.2em;overflow:hidden;vertical-align:bottom;line-height:1.2}
+.stlpec{display:block;white-space:pre;transform:translateY(calc(var(--c) * -1.2em));transition:transform .9s var(--krivka) calc(var(--i,0) * 40ms)}
+.stlpec::before{content:"0\A 1\A 2\A 3\A 4\A 5\A 6\A 7\A 8\A 9\A 0\A 1\A 2\A 3\A 4\A 5\A 6\A 7\A 8\A 9"}
+.otocene .stlpec{transform:translateY(calc((var(--c) + 10) * -1.2em))}
+
+/* Jediný hlasný moment: olovnica nad ı sa raz zakýve a ustáli, obrysy stien sa nakreslia tenkou čiarou
+   (oba hlavné ťahy začínajú pri vchode, krátke steny pribudnú, až keď k nim dôjde pero), šrafy stien sa jemne
+   vyplnia, pribudnú okná, dvere, nábytok a kóty. V obývačke sa objaví značka pohľadu A a otvorí sa jej zorné pole.
+   Na počítači sa potom fotka hotovej kuchyne otvorí od väzby dvojstrany, teda od výkresu doľava. Na mobile
+   a tablete je fotka nad výkresom, odkryje sa zhora hneď a výkres sa začne kresliť, až keď príde do obrazu
+   (app.js). Všetko do 1,8 s, pri obmedzenom pohybe hneď koncový stav. */
+@media (prefers-reduced-motion:no-preference){
+  .plan .kresli{stroke-dasharray:1 1;stroke-dashoffset:1;animation:kreslit var(--t) var(--krivka) var(--d) both}
+  .plan .steny-obrys path{--t:760ms;--d:60ms}
+  .plan .steny-obrys path:nth-child(n+3){--t:300ms;--d:380ms}
+  .plan .steny-obrys path:nth-child(n+6){--d:520ms}
+  .plan .steny-srafa{animation:zjavit 380ms var(--krivka) 640ms both}
+  .plan .okna{--t:300ms;--d:820ms}
+  .plan .dvere,.plan .obluk{--t:320ms;--d:880ms}
+  .plan .nabytok{--t:380ms;--d:960ms}
+  .plan .nabytok-izba{--t:420ms;--d:1000ms}
+  .plan .koberec{animation:zjavit 300ms var(--krivka) 1080ms both}
+  .plan .koty-ciary,.plan .koty-znacky{--t:300ms;--d:1100ms}
+  .plan .popisy,.plan .koty-text,.plan .severka{animation:zjavit 300ms var(--krivka) 1150ms both}
+  .plan .pohlad-a{animation:zjavit 180ms var(--krivka) 1060ms both}
+  .plan .pohlad-kuzel{transform-box:fill-box;transform-origin:50% 100%;animation:otvorit 380ms var(--krivka) 1100ms both}
+  .pohlad-ramec img{--odkryt-od:inset(0 0 100% 0);animation:odkryt 640ms var(--krivka) 160ms both}
+  .pohlad figcaption{animation:zjavit 260ms var(--krivka) 560ms both}
+  .pohlad.zvyraznene .pohlad-ramec::before{animation:zvyraznit 1.5s var(--krivka) both}
+  .plan-kota{animation:zjavit 120ms linear 1400ms both}
+  .plan-kota .stlpec{transition:none;animation:pretocit 400ms var(--krivka) 1400ms both}
+  .olovnica{animation:kyv 1.6s cubic-bezier(.37,0,.63,1) 120ms both}
+  .projekt.ukaz-plan .projekt-plan .c{animation:kreslit 420ms var(--krivka) both}
+  @keyframes kreslit{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
+  @keyframes zjavit{from{opacity:0}to{opacity:1}}
+  /* Jedno meno animácie pre všetky šírky (smer odkrytia nesie premenná), aby zmena šírky okna cez 1024 px
+     nespustila odkrytie znova */
+  @keyframes odkryt{from{clip-path:var(--odkryt-od);transform:scale(1.04)}to{clip-path:inset(0 0 0 0);transform:none}}
+  @keyframes otvorit{from{opacity:0;transform:scale(.12)}to{opacity:1;transform:none}}
+  @keyframes pretocit{from{transform:translateY(0)}to{transform:translateY(calc((var(--c) + 10) * -1.2em))}}
+  @keyframes kyv{0%{rotate:6deg}16%{rotate:-4.2deg}32%{rotate:2.8deg}48%{rotate:-1.6deg}64%{rotate:.8deg}82%{rotate:-.3deg}100%{rotate:0deg}}
+  @keyframes zvyraznit{0%,55%{opacity:1}100%{opacity:0}}
+}
+@media (min-width:1024px) and (prefers-reduced-motion:no-preference){
+  .pohlad-ramec img{--odkryt-od:inset(0 0 0 100%);transform-origin:100% 50%;animation-delay:1140ms}
+  .pohlad figcaption{animation:zjavit 260ms var(--krivka) 1500ms both}
+}
+/* Výkres mimo obrazu (mobil, tablet): app.js podrží jeho pohyb na začiatku, kým nepríde do obrazu */
+.uvod-plan.caka *,.uvod-plan.caka *::before,.uvod-plan.caka *::after{animation-play-state:paused!important}
+.plan-kota .stlpec{transform:translateY(calc((var(--c) + 10) * -1.2em))}
+@media (prefers-reduced-motion:reduce){
+  .tlacidlo,.tlacidlo svg,.odkaz-sipka svg,.okno,.okno::backdrop,.projekt-plan,.prepinac,.projekt-foto img,.postup-foto img,.atelier-foto img,.sipka,.sipka svg,.zameriavac,.lista{transition:none}
+  .stlpec{transition:none}
+}
+/* Prechod myšou nad fotkou: výkres ustúpi a ostane ostrá len obývačka so značkou A a silnejším lúčom.
+   Prechod nad značkou A (aj fokus na nej) orámuje fotku. Pri obmedzenom pohybe bez prechodu, hneď. */
+@media (hover:hover) and (pointer:fine) and (prefers-reduced-motion:no-preference){
+  .plan .clona{transition:opacity .35s var(--krivka)}
+  .plan .luc-0,.plan .luc-h0,.plan .luc-h1{transition:stop-opacity .3s var(--krivka)}
+  .plan .pohlad-kruh,.plan .pohlad-hrot{transition:fill .25s var(--krivka),stroke .25s var(--krivka)}
+  .pohlad-ramec::before{transition:opacity .25s var(--krivka)}
+}
+/* Klávesnica: značka A je len pre myš a dotyk, rovnaký cieľ má odkaz „pohľad A do kuchyne“ v popise výkresu;
+   fokus na ňom orámuje fotku a stmavne značku A */
+.uvod-mriezka:has(.plan figcaption a:focus-visible) .pohlad-ramec::before{opacity:1}
+.uvod-plan:has(figcaption a:focus-visible) .pohlad-kruh{stroke:var(--dub-tmavy)}
+.uvod-plan:has(figcaption a:focus-visible) .pohlad-hrot{fill:var(--dub-tmavy)}
+@media (hover:hover) and (pointer:fine){
+  .uvod-mriezka:has(.pohlad-odkaz:hover) .pohlad-ramec::before{opacity:1}
+  .plan-ramec:has(.pohlad-odkaz:hover) .pohlad-kruh{stroke:var(--dub-tmavy)}
+  .plan-ramec:has(.pohlad-odkaz:hover) .pohlad-hrot{fill:var(--dub-tmavy)}
+  .uvod-mriezka:has(.pohlad:hover) .plan .clona{opacity:.74}
+  .uvod-mriezka:has(.pohlad:hover) .plan .luc-0{stop-opacity:.5}
+  .uvod-mriezka:has(.pohlad:hover) .plan .luc-h0{stop-opacity:1}
+  .uvod-mriezka:has(.pohlad:hover) .plan .luc-h1{stop-opacity:.3}
+  .uvod-mriezka:has(.pohlad:hover) .plan .pohlad-kruh{stroke:var(--dub-tmavy)}
+  .uvod-mriezka:has(.pohlad:hover) .plan .pohlad-hrot{fill:var(--dub-tmavy)}
+}
+
+/* Zameriavač ako v CAD: nad pôdorysom pod kurzorom vlasový kríž, miestnosť a súradnice v mm (len myš) */
+.zameriavac{display:none}
+@media (min-width:768px) and (hover:hover) and (pointer:fine){
+  .zameriavac{display:block;position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .2s var(--krivka)}
+  .plan-ramec.mieri .zameriavac{opacity:1}
+  .plan-ramec.mieri{cursor:crosshair}
+  .zam-h,.zam-v{position:absolute;left:0;top:0;background:var(--dub)}
+  .zam-h{width:100%;height:1px;transform:translate3d(0,var(--zy,0),0)}
+  .zam-v{width:1px;height:100%;transform:translate3d(var(--zx,0),0,0)}
+  .zam-stitok{position:absolute;left:0;top:0;display:grid;gap:2px;padding:7px 10px 8px;background:var(--vapno);border:1px solid var(--grafit);border-radius:2px;white-space:nowrap;transform:translate3d(calc(var(--zx,0) + var(--sx,14px)),calc(var(--zy,0) + var(--sy,14px)),0)}
+  .zam-izba{font-size:14px;line-height:1.2;font-weight:500;color:var(--grafit)}
+  .zam-xy{font:400 12px/1.2 var(--mono);color:var(--dub-tmavy);font-variant-numeric:tabular-nums}
+}
+
+/* Mobil: meno s olovnicou hneď pod hlavičkou, pod ním odbor, veta a tlačidlo, potom fotka hotovej kuchyne
+   (pohľad A, 5 : 4, celá v prvej obrazovke) a pod ňou pôdorys. Pôdorys je otočený o 90°, aby sa zmestil na výšku,
+   značka A v ňom vedie späť na fotku; ciele dotyku 48 px */
+@media (max-width:767px){
+  html{scroll-padding-bottom:calc(76px + env(safe-area-inset-bottom))}
+  .pas-ukazky a,.znak,.prepinac,.kontakt-riadky a,.pata-odkazy a,.kalk-posuvnik{min-height:48px}
+  .zavriet{width:48px;height:48px}
+  .tlacidlo-male{min-height:48px}
+  .uvod-akcie .odkaz-sipka,.uvod-akcie .stav{display:none}
+  .uvod-akcie{margin-top:20px}
+  .uvod-akcie .tlacidlo{flex:1 1 100%}
+  .pohlad{margin-top:24px}
+  .pohlad-ramec{aspect-ratio:5/4}
+  .uvod-plan{margin-top:40px;width:min(100%,calc(78svh * 910 / 1480));justify-self:center}
+  .pohlad-odkaz{left:calc(100% * 270 / 910);top:calc(100% * 270 / 1480);width:48px;height:48px;margin:-24px 0 0 -24px}
+  .plan-ramec{aspect-ratio:910/1480;container-type:size}
+  .plan-ramec>svg{inset:auto;left:50%;top:50%;width:100cqh;height:100cqw;transform:translate(-50%,-50%) rotate(90deg);--c-obrys:3.4;--c-tenka:1.9;--c-srafa:1.35;--c-dvere:2.9;--c-popis:34px;--c-plocha:30px;--c-kota:31px}
+  .plan .steny-srafa{fill:url(#srafa-r)}
+  .plan .popis{transform-box:fill-box;transform-origin:center;transform:rotate(-90deg)}
+  .plan .koty-text .kh{transform-box:fill-box;transform-origin:center;transform:rotate(180deg)}
+  .plan .pohlad-pismeno,.plan .severka-pismeno{transform-box:fill-box;transform-origin:center;transform:rotate(-90deg)}
+  .plan .pohlad-telo{transform:scale(1.35)}
+  .plan-kota{left:12.6%;top:24.324%;transform:translate(-50%,-50%) rotate(-90deg);font-size:calc(100cqw * 31 / 910)}
+  .mierka{width:calc(100% * 300 / 910)}
+  @container plan (min-width:480px){
+    .plan-ramec>svg{--c-popis:27px;--c-plocha:24px;--c-kota:24px}
+    .plan-kota{font-size:calc(100cqw * 24 / 910)}
+  }
+}
+
+/* Tablet */
+@media (min-width:768px){
+  :root{--stlpce:8}
+  body{font-size:18px}
+  .pas-ukazky{font-size:14px}
+  .pas-ukazky .obsah{column-gap:20px}
+  .pas-ukazky .obsah>p:first-child{font-size:14px;line-height:1.4;padding-block:0}
+  .pas-viac{display:inline}
+  .pas-ukazky .pas-spat{display:inline-flex}
+  .pas-ukazky a{min-height:44px}
+  .ciary-vnutro span:nth-child(n+5){display:block}
+  .ciary-vnutro span:nth-child(n+9){display:none}
+  .menu{display:flex}
+  @container plan (min-width:640px){
+    .plan-ramec>svg{--c-obrys:2.7;--c-tenka:1.5;--c-srafa:1.1;--c-dvere:2.2;--c-popis:27px;--c-plocha:23.5px;--c-kota:25px}
+    .plan-kota{font-size:calc(100cqi * 25 / 1480)}
+  }
+  @container plan (min-width:760px){
+    .plan-ramec>svg{--c-obrys:2.35;--c-tenka:1.3;--c-srafa:.95;--c-dvere:1.95;--c-popis:25px;--c-plocha:21.5px;--c-kota:23px}
+    .plan-kota{font-size:calc(100cqi * 23 / 1480)}
+  }
+  @container plan (min-width:900px){
+    .plan-ramec>svg{--c-obrys:2.05;--c-tenka:1.15;--c-srafa:.85;--c-dvere:1.7;--c-popis:22px;--c-plocha:19px;--c-kota:20px}
+    .plan-kota{font-size:calc(100cqi * 20 / 1480)}
+  }
+  @container plan (min-width:1100px){
+    .plan-ramec>svg{--c-obrys:1.8;--c-tenka:1;--c-srafa:.75;--c-dvere:1.5;--c-popis:19.5px;--c-plocha:17px;--c-kota:18px}
+    .plan-kota{font-size:calc(100cqi * 18 / 1480)}
+  }
+  .projekt,.projekt-dalsi{flex-basis:42vw}
+  .postup-hlava>div{grid-column:1/5;align-self:end}
+  .postup-foto{grid-column:5/-1}
+  .sluzby-hlava{grid-column:1/7}
+  .kalkulacka{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:end;column-gap:40px}
+  .kalkulacka h3,.kalk-pozn{grid-column:1/-1}
+  .atelier-foto{grid-column:1/5}
+  .atelier-text{grid-column:5/-1}
+  .kontakt-text{grid-column:1/5}
+  .kontakt-mapa{grid-column:5/-1}
+  .lista{display:none}
+  .pata{padding-bottom:48px}
+  .pata-mriezka>.pata-zaver{grid-column:1/5}
+  .pata-mriezka>.male{grid-column:5/-1}
+}
+
+/* Tablet: meno cez celú šírku, pod ním vľavo odbor, veta a tlačidlá, vpravo fotka pohľadu A (3 : 2),
+   pod nimi pôdorys cez celú šírku */
+@media (min-width:768px) and (max-width:1023px){
+  .meno-velky{font-size:min(28.2cqi,17svh)}
+  .uvod-text{grid-column:1/4;grid-row:2;margin-top:28px;align-self:start}
+  .uvod-veta{font-size:clamp(1.6rem,3.3vw,2.2rem)}
+  .uvod-akcie{flex-direction:column;align-items:flex-start;gap:6px}
+  .uvod-akcie .stav{margin-top:10px}
+  .pohlad{grid-column:4/-1;grid-row:2;margin-top:28px}
+  .uvod-plan{grid-row:3;margin-top:44px}
+}
+
+/* Počítač: dvojstrana. Pod vlasovou čiarou meno (ľavá strana) a vedľa neho odbor, veta a tlačidlá na účiari mena
+   (pravá strana). Pod nimi fotka a výkres v rovnakej výške --h, popisy oboch na jednej čiare. Výška dvojstrany
+   je najviac taká, aby sa výkres zmestil do stĺpcov 6 až 12 a celý úvod do výšky okna; fotka vyplní zvyšok
+   šírky a nikdy nie je plochejšia než 3 : 2 (1,5 + 1480/910 = 3,126; vtedy radšej popisy pod okraj okna než pás).
+   100cqw je šírka sekcie úvodu (kontajner), --k šírka jedného z 12 stĺpcov, --f veľkosť mena. */
+@media (min-width:1024px){
+  :root{--stlpce:12}
+  .ciary-vnutro span:nth-child(n+9){display:block}
+  .hlava .obsah{min-height:84px}
+  .uvod{padding:0;container-type:inline-size}
+  .uvod-mriezka{
+    --nad-pad:20px;--maly-v:32px;--hore-pas:16px;--pod-pasom:24px;--popisy:54px;--dole:18px;
+    --c:min(var(--sirka),100cqw - 2 * var(--okraj));
+    --k:calc((var(--c) - 11 * var(--medzera)) / 12);
+    --f:min(15svh,(5 * var(--k) + 4 * var(--medzera)) * .282);
+    --h-volne:calc(100svh - var(--hore) - var(--hore-pas) - var(--nad-pad) - var(--maly-v) - .755 * var(--f) - 21px - var(--pod-pasom) - var(--popisy) - var(--dole));
+    --h:max((var(--c) - var(--medzera)) / 3.126,min((7 * var(--k) + 6 * var(--medzera)) * 910 / 1480,var(--h-volne)));
+    /* Výška, ktorá ostane, keď výkres narazí na šírku stĺpcov (1024 × 768): rozdelí sa do medzier, aby úvod vyplnil okno */
+    --zvysok:clamp(0px,var(--h-volne) - var(--h),96px);
+    grid-template-columns:minmax(0,1fr) calc(var(--h) * 1480 / 910);
+    grid-template-rows:auto auto;row-gap:calc(var(--pod-pasom) + .3 * var(--zvysok));
+    padding-block:calc(var(--hore-pas) + .2 * var(--zvysok)) calc(var(--dole) + .5 * var(--zvysok));
+  }
+  .uvod-mriezka::before{content:"";grid-column:1/-1;grid-row:1;align-self:start;border-top:1px solid var(--grafit)}
+  /* Účiar mena a účiar textu tlačidiel na jednej čiare: text sa zarovná dole, meno má pod sebou presne toľko,
+     koľko je v tlačidle (52 px) pod účiarom textu (20,6 px), mínus to, čo je pod účiarom v riadku mena (0,045 em).
+     Meno ostáva hore, aby šnúra olovnice vždy siahala na vlasovú čiaru. */
+  .meno-blok{grid-column:1;grid-row:1;align-self:start;border-top:0;container-type:normal;padding-bottom:calc(20.6px - .045 * var(--f))}
+  .meno-velky{font-size:var(--f)}
+  .uvod-text{grid-column:2;grid-row:1;align-self:end;margin:0}
+  .meno-popis{font-size:16px}
+  /* Veta má štvrtinu veľkosti mena: drží pomer k menu a pri nízkych širokých oknách nenarazí na odbor nad sebou */
+  .uvod-veta{margin-top:6px;font-size:clamp(1.5rem,.25 * var(--f),2.75rem);line-height:1.08;letter-spacing:-.03em;max-width:none}
+  /* Odbor a mesto ako záhlavie pravej strany: účiar zhodný s „Ateliér“ vľavo (0,355 = účiar pri riadku --maly-v,
+     16,5 px = účiar riadku odboru). Pri najnižších oknách ostáva v toku nad vetou. */
+  .meno-popis{position:absolute;right:0;width:calc(var(--h) * 1480 / 910);top:calc(var(--hore-pas) + .2 * var(--zvysok) + var(--nad-pad) + var(--maly-v) / 2 + .355 * clamp(17px,1.5vw,24px) - 16.5px)}
+  .meno-popis+.uvod-veta{margin-top:0}
+  .stav{display:none}
+  .uvod-akcie{flex-wrap:nowrap;margin-top:clamp(14px,2vh,22px);gap:0 22px}
+  .pohlad{grid-column:1;grid-row:2}
+  .pohlad-ramec{aspect-ratio:auto;height:var(--h)}
+  .uvod-plan{grid-column:2;grid-row:2}
+  .postup-hlava>div{grid-column:1/6;align-self:stretch;display:flex;flex-direction:column;justify-content:space-between;gap:32px}
+  .postup-foto{grid-column:7/-1}
+  /* Pás bez pripnutia (Firefox bez časovej osi, obmedzený pohyb): karta aj s popisom vo výške okna */
+  .projekt,.projekt-dalsi{flex-basis:max(260px,min(30vw,440px,calc((100svh - 250px) * .8)))}
+  .fazy{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .faza{border-left:0;border-top:1px solid var(--dub);padding:0 var(--medzera) 0 0}
+  .faza::before{left:0;top:-1px;transform:translate(-50%,-50%) rotate(45deg)}
+  .faza:last-child::after{left:auto;right:0;top:-1px;bottom:auto;transform:translate(50%,-50%) rotate(45deg)}
+  .faza-dlzka{display:block;width:max-content;margin:-.62em auto 0;padding:0 10px;transform:none}
+  .faza h3{margin-top:28px}
+  .sluzby-hlava{grid-column:1/7;grid-row:1;align-self:end}
+  .cennik{grid-row:2}
+  .cennik-pozn{grid-row:3}
+  .sluzba{grid-template-columns:minmax(0,4fr) minmax(0,5fr) minmax(0,3fr);column-gap:var(--medzera);align-items:baseline}
+  .sluzba-opis{grid-column:2;grid-row:1}
+  .cena{grid-column:3;grid-row:1}
+  .kalkulacka{grid-column:8/-1;grid-row:1;align-self:end;margin-top:0;grid-template-columns:1fr}
+  .atelier-foto{grid-column:1/7}
+  .atelier-text{grid-column:8/-1}
+  .kontakt-text{grid-column:1/6}
+  .kontakt-mapa{grid-column:7/-1}
+  .pata-mriezka>.pata-zaver{grid-column:1/7}
+  .pata-mriezka>.male{grid-column:8/-1}
+}
+
+/* Stav ateliéru na konci riadku s tlačidlami, len kde sa zmestí do jedného riadku (široké a vyššie okná) */
+@media (min-width:1400px) and (min-height:821px){
+  .uvod-akcie .stav{display:inline-flex;margin-left:auto}
+}
+/* Nižšie okná notebookov (1366 × 768, 1440 × 790): nižšia hlavička a menšie medzery, aby sa dvojstrana
+   s fotkou 3 : 2 zmestila do okna */
+@media (min-width:1024px) and (max-height:820px){
+  :root{--hore:108px}
+  .hlava .obsah{min-height:64px}
+  .uvod-mriezka{--pod-pasom:20px;--dole:12px}
+}
+/* Nízke okná (1280 × 720, 1536 × 730): menšie odsadenia */
+@media (min-width:1024px) and (max-height:760px){
+  .uvod-mriezka{--nad-pad:16px;--maly-v:28px;--hore-pas:12px;--pod-pasom:16px;--dole:10px}
+}
+/* Najnižšie okná (1366 × 657, 1280 × 593): menšie meno; ak sa ani tak nezmestí, popisy idú pod okraj okna */
+@media (min-width:1024px) and (max-height:680px){
+  .uvod-mriezka{--nad-pad:12px;--maly-v:24px;--hore-pas:8px;--pod-pasom:16px;--dole:8px;--f:min(13svh,(5 * var(--k) + 4 * var(--medzera)) * .282)}
+  .meno-maly{font-size:17px}
+  .meno-popis{position:static;width:auto}
+  .meno-popis+.uvod-veta{margin-top:4px}
+  .uvod-veta{font-size:clamp(1.35rem,2vw,2.2rem)}
+  .uvod-akcie{margin-top:12px}
+}
+@media (min-width:1024px) and (max-height:640px){
+  .meno-popis+.uvod-veta{margin-top:2px}
+  .uvod-akcie{margin-top:8px}
+}
+
+/* Pás prác pripnutý: zvislý posun ho posúva do strany. Posun riadi časová os posunu v CSS
+   (bez skriptu pri posune), zapína ho app.js len tam, kde prehliadač animation-timeline pozná. */
+.prace.pripnute .prace-lepidlo{position:sticky;top:0;height:100vh;height:100svh;overflow:clip;display:flex;align-items:center;padding-block:clamp(24px,5vh,56px)}
+.prace.pripnute .prace-posuvne{display:flex;align-items:center;gap:clamp(48px,6vw,112px);width:max-content;padding-inline:var(--okraj);will-change:transform}
+.prace.pripnute .prace-hlava{flex:0 0 clamp(300px,27vw,460px);width:auto;margin:0}
+.prace.pripnute .pas{align-items:flex-start;margin:0;padding:0;overflow:visible;scroll-snap-type:none}
+.prace.pripnute .projekt,.prace.pripnute .projekt-dalsi{flex-basis:calc(min(56vh,600px) * .8)}
+.prace.pripnute .navod-mobil{display:none}
+.prace.pripnute .navod-pocitac{display:inline}
+@supports (animation-timeline:view()){
+  .prace.pripnute{view-timeline-name:--prace;view-timeline-axis:block}
+  .prace.pripnute .prace-posuvne{animation:pas-posun linear both;animation-timeline:--prace;animation-range:contain 0% contain 100%}
+  @keyframes pas-posun{from{transform:translate3d(0,0,0)}to{transform:translate3d(calc(-1 * var(--posun,0px)),0,0)}}
+}
+@media (hover:hover) and (pointer:fine){
+  .projekt:hover .projekt-plan{opacity:1}
+}
+@media (hover:hover) and (pointer:fine) and (prefers-reduced-motion:no-preference){
+  .projekt:hover .projekt-plan .c{animation:kreslit 420ms var(--krivka) both}
+}
+</style>
+<script src="app.js" defer></script>
+</head>
+<body>
+<a class="preskocit" href="#obsah">Preskočiť na obsah</a>
+<div class="ciary" aria-hidden="true"><div class="ciary-vnutro"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div></div>
+
+<div class="pas-ukazky" role="note">
+  <div class="obsah">
+    <p><strong>Ukážka webu od ARLing, vymyslená prevádzka.</strong><span class="pas-viac"> Ateliér Olovnica neexistuje, mená, adresa, projekty aj&nbsp;čísla sú vymyslené.</span></p>
+    <p class="pas-odkazy"><a href="https://arling.sk/web/" target="_top">Chcem taký web</a><a class="pas-spat" href="../../#ukazky">Späť na ukážky</a></p>
+  </div>
+</div>
+
+<header class="hlava">
+  <div class="obsah">
+    <a class="znak" href="#obsah" aria-label="Ateliér Olovnica, na začiatok">
+      <svg width="22" height="30" viewBox="0 0 22 30" aria-hidden="true"><path d="M11 0v10" stroke="#1e1f1f" stroke-width="1.5"/><path d="M5.5 10h11L11 29z" fill="#1e1f1f"/><circle cx="11" cy="10" r="2" fill="#a8784a"/></svg>
+      Olovnica
+    </a>
+    <nav aria-label="Hlavná">
+      <ul class="menu">
+        <li><a href="#prace">Práce</a></li>
+        <li><a href="#postup">Postup</a></li>
+        <li><a href="#sluzby">Služby a&nbsp;ceny</a></li>
+        <li><a href="#atelier">Ateliér</a></li>
+        <li><a href="#kontakt">Kontakt</a></li>
+      </ul>
+    </nav>
+    <button class="tlacidlo tlacidlo-male" type="button" commandfor="okno-konzultacia" command="show-modal">Konzultácia</button>
+  </div>
+</header>
+
+<main id="obsah">
+  <section class="uvod" aria-labelledby="meno">
+    <div class="obsah mriezka uvod-mriezka">
+      <div class="meno-blok">
+        <h1 class="meno" id="meno"><span class="meno-maly">Ateliér</span> <span class="skryte">Olovnica</span><span class="meno-velky" aria-hidden="true">Olovn<span class="meno-i">ı<span class="olovnica"></span></span>ca</span></h1>
+      </div>
+      <div class="uvod-text">
+        <p class="meno-popis">Architektúra a&nbsp;interiér, Košice</p>
+        <p class="uvod-veta">Od prvej čiary po hotový priestor.</p>
+        <div class="uvod-akcie">
+          <button class="tlacidlo" type="button" commandfor="okno-konzultacia" command="show-modal">Dohodnúť konzultáciu <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M2 9h13M10 4l5 5-5 5"/></svg></button>
+          <a class="odkaz-sipka" href="#prace">Pozrieť práce <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M8 2v11M3.5 8.5 8 13l4.5-4.5"/></svg></a>
+          <p class="stav" id="stav"><span class="stav-bod" aria-hidden="true"></span><span class="stav-text">V&nbsp;ateliéri Po až Št 9:00 až 17:00</span></p>
+        </div>
+      </div>
+      <figure class="pohlad" id="pohlad-a">
+        <div class="pohlad-ramec">
+          <img src="img/pohlad-a-800.webp" srcset="img/pohlad-a-800.webp 800w, img/pohlad-a-1200.webp 1200w, img/pohlad-a-1600.webp 1600w, img/pohlad-a-2400.webp 2400w" sizes="(min-width: 1024px) max(45vw, min(49vw, 133vh - 437px)), (min-width: 768px) 58vw, calc((100vw - 32px) * 1.2)" width="2400" height="1600" alt="Pohľad A&nbsp;do kuchyne bytu P-07 po dokončení: kamenný polostrov s&nbsp;drezom, orechové a&nbsp;bronzové skrinky, vpravo orechová stena s&nbsp;čiernymi policami a&nbsp;jedálenský stôl" fetchpriority="high">
+        </div>
+        <figcaption><svg class="pohlad-znak" width="34" height="22" viewBox="-11 -11 34 22" aria-hidden="true"><path d="M5.5-6.5L17 0L5.5 6.5Z"/><circle r="9.5"/><text y="4">A</text></svg><span><strong>Pohľad A:</strong> kuchyňa po dokončení</span></figcaption>
+      </figure>
+      <figure class="plan uvod-plan" id="podorys">
+        <div class="plan-ramec">
+          <svg viewBox="-150 -30 1480 910" role="img" aria-labelledby="plan-titul">
+            <title id="plan-titul">Pôdorys bytu P-07 po prestavbe: obývačka s&nbsp;kuchyňou (vysoké skrinky a&nbsp;linka s&nbsp;varnou doskou pri stene, kamenný polostrov s&nbsp;drezom, jedálenský stôl so štyrmi stoličkami, pohovka, dva stolíky a&nbsp;koberec), komora, predsieň, kúpeľňa, spálňa, detská izba a&nbsp;pracovňa. Steny sú šrafované, kóty sú v&nbsp;milimetroch. Značka A&nbsp;v&nbsp;obývačke ukazuje miesto a&nbsp;smer, odkiaľ je fotka pohľadu A. Vonkajšie rozmery 12&nbsp;000 × 7&nbsp;200&nbsp;mm.</title>
+            <defs>
+              <pattern id="srafa" patternUnits="userSpaceOnUse" width="9" height="9" patternTransform="rotate(45)"><path class="srafa-ciara" d="M4.5-1V10"/></pattern>
+              <pattern id="srafa-r" patternUnits="userSpaceOnUse" width="12" height="12" patternTransform="rotate(45)"><path class="srafa-ciara" d="M6-1V13"/></pattern>
+              <radialGradient id="luc" gradientUnits="userSpaceOnUse" cx="120" cy="610" r="128"><stop class="luc-0" offset="0"/><stop class="luc-1" offset="1"/></radialGradient>
+              <radialGradient id="luc-h" gradientUnits="userSpaceOnUse" cx="120" cy="610" r="128"><stop class="luc-h0" offset="0"/><stop class="luc-h1" offset="1"/></radialGradient>
+            </defs>
+            <rect class="podklad" width="1200" height="720"/>
+            <g class="pohlad-kuzel"><path class="kuzel-plocha" d="M120 610L204.5 517.8A125 125 0 0 0 35.5 517.8Z"/><path class="kuzel-hrany" d="M120 610L204.5 517.8M120 610L35.5 517.8"/></g>
+            <path class="koberec" d="M210 470H332V650H210Z"/>
+            <path class="nabytok kresli" pathLength="1" d="M960 30V230H1120V30M972 44H1036V80H972ZM1044 44H1108V80H1044ZM960 104H1120M864 38H892V56H864ZM868 56H888V80A10 10 0 0 1 868 80ZM852 106H892V158H852ZM858 114H886V150H858ZM812 172H892V252H812ZM846 212a6 6 0 1 0 12 0a6 6 0 1 0-12 0M612 40H652.5V220H612ZM432 495H522V685H432ZM440 503H514V535H440ZM645 632H765V687H645ZM689 612a16 16 0 1 0 32 0a16 16 0 1 0-32 0M1100 470H1166V630H1100ZM1057 550a18 18 0 1 0 36 0a18 18 0 1 0-36 0M792 500H827V680H792Z"/>
+            <path class="nabytok nabytok-izba kresli" pathLength="1" d="M30 230H92V140H90V90H172V240H262V30M30 140H90M30 140L92 185M30 185H92M30 185L92 230M37 60H83V112H37ZM41 74a8 8 0 1 0 16 0a8 8 0 1 0-16 0M63 74a8 8 0 1 0 16 0a8 8 0 1 0-16 0M41 98a8 8 0 1 0 16 0a8 8 0 1 0-16 0M63 98a8 8 0 1 0 16 0a8 8 0 1 0-16 0M200 45H234A6 6 0 0 1 240 51V79A6 6 0 0 1 234 85H200A6 6 0 0 1 194 79V51A6 6 0 0 1 200 45ZM212 65a5 5 0 1 0 10 0a5 5 0 1 0-10 0M292.5 50H272V230H292.5M208 300H308V380H208ZM221 274H253V300H221ZM273 274H305V300H273ZM221 380H253V406H221ZM273 380H305V406H273ZM327.5 450H412.5V670H327.5ZM390 450V670M390 523H412.5M390 597H412.5M272 520a24 24 0 1 0 48 0a24 24 0 1 0-48 0M272 598a18 18 0 1 0 36 0a18 18 0 1 0-36 0"/>
+            <path class="steny-srafa" d="M480 0H0V470H30V30H292.5V267.5H412.5V300H427.5V190H412.5V252.5H307.5V30H412.5V120H427.5V30H480ZM570 0H1200V120H1170V30H907.5V290H892.5V267.5H780V252.5H892.5V30H667.5V252.5H700V267.5H652.5V30H570ZM340 690H412.5V390H427.5V392.5H500V407.5H427.5V690H520V720H340ZM580 392.5H800V407.5H787.5V690H880V720H680V690H772.5V407.5H580ZM880 392.5H892.5V370H907.5V392.5H1170V280H1200V480H1170V407.5H880ZM0 650H30V690H100V720H0ZM1080 690H1170V620H1200V720H1080Z"/>
+            <g class="steny-obrys">
+              <path class="kresli" pathLength="1" d="M480 0H0V470H30V30H292.5V267.5H412.5V300H427.5V190H412.5V252.5H307.5V30H412.5V120H427.5V30H480Z"/>
+              <path class="kresli" pathLength="1" d="M570 0H1200V120H1170V30H907.5V290H892.5V267.5H780V252.5H892.5V30H667.5V252.5H700V267.5H652.5V30H570Z"/>
+              <path class="kresli" pathLength="1" d="M340 690H412.5V390H427.5V392.5H500V407.5H427.5V690H520V720H340Z"/>
+              <path class="kresli" pathLength="1" d="M580 392.5H800V407.5H787.5V690H880V720H680V690H772.5V407.5H580Z"/>
+              <path class="kresli" pathLength="1" d="M880 392.5H892.5V370H907.5V392.5H1170V280H1200V480H1170V407.5H880Z"/>
+              <path class="kresli" pathLength="1" d="M0 650H30V690H100V720H0Z"/>
+              <path class="kresli" pathLength="1" d="M1080 690H1170V620H1200V720H1080Z"/>
+            </g>
+            <path class="okna kresli" pathLength="1" d="M1200 120V280M1188 120V280M1184 120V280M1170 120V280M1200 480V620M1188 480V620M1184 480V620M1170 480V620M880 720H1080M880 708H1080M880 704H1080M880 690H1080M520 720H680M520 708H680M520 704H680M520 690H680M100 720H340M100 708H340M100 704H340M100 690H340M0 470V650M12 470V650M16 470V650M30 470V650"/>
+            <path class="dvere kresli" pathLength="1" d="M480 30V120M427.5 190H497.5M412.5 300H322.5M700 252.5V172.5M907.5 370H987.5M500 407.5V487.5M880 407.5V487.5"/>
+            <path class="obluk kresli" pathLength="1" d="M570 30A90 90 0 0 1 480 120M427.5 120A70 70 0 0 1 497.5 190M412.5 390A90 90 0 0 1 322.5 300M780 252.5A80 80 0 0 0 700 172.5M907.5 290A80 80 0 0 1 987.5 370M580 407.5A80 80 0 0 1 500 487.5M800 407.5A80 80 0 0 0 880 487.5"/>
+            <path class="koty-ciary kresli" pathLength="1" d="M0 735V800M420 735V800M780 735V800M1200 735V860M0 800V860M0 790H1200M0 850H1200M-15 0H-82M-15 720H-82M-70 0V720M1215 0H1282M1215 400H1282M1215 720H1282M1270 0V720"/>
+            <path class="koty-znacky kresli" pathLength="1" d="M-9 799L9 781M411 799L429 781M771 799L789 781M1191 799L1209 781M-9 859L9 841M1191 859L1209 841M-79 9L-61-9M-79 729L-61 711M1261 9L1279-9M1261 409L1279 391M1261 729L1279 711"/>
+            <g class="koty-text">
+              <text class="kh" x="600" y="778">3&nbsp;600</text>
+              <text class="kh" x="990" y="778">4&nbsp;200</text>
+              <text class="kh" x="600" y="838">12&nbsp;000</text>
+              <text x="-82" y="360" transform="rotate(-90 -82 360)">7&nbsp;200</text>
+              <text x="1258" y="200" transform="rotate(-90 1258 200)">4&nbsp;000</text>
+              <text x="1258" y="560" transform="rotate(-90 1258 560)">3&nbsp;200</text>
+            </g>
+            <g class="popisy">
+              <text class="popis" x="350" y="150" transform="rotate(-90 350 150)">Komora<tspan class="plocha" x="350" dy="1.25em">2,3&nbsp;m²</tspan></text>
+              <text class="popis" x="117" y="330">Obývačka<tspan x="117" dy="1.1em">s&nbsp;kuchyňou</tspan><tspan class="plocha" x="117" dy="1.3em">22,4&nbsp;m²</tspan></text>
+              <text class="popis" x="530" y="300">Predsieň<tspan class="plocha" x="530" dy="1.25em">11,2&nbsp;m²</tspan></text>
+              <text class="popis" x="775" y="98">Kúpeľňa<tspan class="plocha" x="775" dy="1.25em">5,0&nbsp;m²</tspan></text>
+              <text class="popis" x="1060" y="300">Spálňa<tspan class="plocha" x="1060" dy="1.25em">9,5&nbsp;m²</tspan></text>
+              <text class="popis" x="640" y="530">Detská<tspan class="plocha" x="640" dy="1.25em">9,7&nbsp;m²</tspan></text>
+              <text class="popis" x="950" y="560">Pracovňa<tspan class="plocha" x="950" dy="1.25em">10,8&nbsp;m²</tspan></text>
+            </g>
+            <g class="severka" transform="translate(-85 806)"><circle r="18"/><path d="M0-12.5L5.5 8L0 4.5L-5.5 8Z"/><text class="severka-pismeno" y="-25">S</text></g>
+            <path class="clona" d="M-150-30H1330V880H-150ZM30 30V690H412.5V267.5H292.5V30Z"/>
+            <g class="pohlad-a" transform="translate(120 610)">
+              <g class="pohlad-telo">
+                <path class="pohlad-hrot" transform="rotate(-90)" d="M14-10L32 0L14 10Z"/>
+                <circle class="pohlad-kruh" r="17"/>
+                <text class="pohlad-pismeno" y="7.5">A</text>
+              </g>
+            </g>
+          </svg>
+          <a class="pohlad-odkaz" href="#pohlad-a" tabindex="-1" aria-hidden="true"></a>
+          <div class="zameriavac" aria-hidden="true"><span class="zam-h"></span><span class="zam-v"></span><span class="zam-stitok"><span class="zam-izba"></span><span class="zam-xy"></span></span></div>
+          <span class="plan-kota" aria-hidden="true"><span class="valec"><span class="stlpec" style="--c:4"></span></span>&nbsp;<span class="valec"><span class="stlpec" style="--c:2"></span></span><span class="valec"><span class="stlpec" style="--c:0"></span></span><span class="valec"><span class="stlpec" style="--c:0"></span></span></span>
+        </div>
+        <figcaption>
+          <span><strong>P-07</strong> · Byt, Košice-Juh · <span class="cisla">71&nbsp;m² · 2025</span><br>Pôdorys po prestavbe a&nbsp;<a href="#pohlad-a">pohľad A&nbsp;do kuchyne</a></span>
+          <span class="mierka" aria-hidden="true"><span class="mierka-pas"></span><span class="mierka-c" style="left:0">0</span><span class="mierka-c" style="left:33.333%">1</span><span class="mierka-c" style="left:66.667%">2</span><span class="mierka-c" style="left:100%">3<span class="mierka-j">m</span></span></span>
+        </figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="prace" id="prace" aria-labelledby="prace-nadpis">
+    <div class="ciary" aria-hidden="true"><div class="ciary-vnutro"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div></div>
+    <div class="prace-lepidlo">
+      <div class="prace-posuvne">
+      <div class="prace-hlava">
+        <h2 class="nadpis" id="prace-nadpis">Vybrané práce</h2>
+        <p class="uvodny">Päť projektov z&nbsp;posledných troch rokov. Ku každému patrí pôdorys, ukáže sa pod kurzorom alebo tlačidlom Pôdorys.</p>
+        <div class="pas-ovladanie">
+          <p class="navod"><span class="navod-mobil">Potiahnite pás do strany.</span><span class="navod-mys">Listujte tlačidlami alebo kolieskom so stlačeným Shiftom.</span><span class="navod-pocitac">Posúvajte nadol, pás sa pohne do strany.</span></p>
+          <div class="sipky" role="group" aria-label="Posun pásu prác" hidden>
+            <button class="sipka" type="button" data-smer="-1" aria-controls="pas-prac"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M16 9H3M8 4 3 9l5 5"/></svg>Predošlá</button>
+            <button class="sipka" type="button" data-smer="1" aria-controls="pas-prac">Ďalšia<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M2 9h13M10 4l5 5-5 5"/></svg></button>
+          </div>
+        </div>
+      </div>
+      <ul class="pas" id="pas-prac" role="list" aria-label="Projekty ateliéru" tabindex="0">
+        <li class="projekt">
+          <figure>
+            <div class="projekt-foto">
+              <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-src="img/dom-600.webp" data-srcset="img/dom-600.webp 600w, img/dom-1200.webp 1200w" sizes="(min-width: 1024px) min(30vw, 440px), (min-width: 768px) 42vw, min(80vw, 420px)" width="600" height="750" decoding="async" alt="Biely tehlový dom s&nbsp;poschodím vysunutým nad vstup, vo večernom slnku">
+              <noscript><img src="img/dom-600.webp" srcset="img/dom-600.webp 600w, img/dom-1200.webp 1200w" sizes="(min-width: 1024px) min(30vw, 440px), (min-width: 768px) 42vw, min(80vw, 420px)" width="600" height="750" loading="lazy" alt="Biely tehlový dom s&nbsp;poschodím vysunutým nad vstup, vo večernom slnku"></noscript>
+              <svg class="projekt-plan" viewBox="0 0 400 500" aria-hidden="true">
+                <g transform="translate(40 140) scale(.227)">
+                  <path class="s c" pathLength="1" stroke-width="26" d="M0 15H160M380 15H600M800 15H1220M1380 15H1450M1435 0V180M1435 420V600M1450 585H1100M960 585H870M885 570V680M885 860V960M900 945H850M740 945H440M300 945H200M60 945H0M15 960V860M15 620V400M15 140V0"/>
+                  <path class="s c" pathLength="1" stroke-width="13" d="M520 30V420M520 520V930M520 420H880M880 30V420M1150 30V570M15 520H420M250 520V930M700 600V930"/>
+                  <path class="t c" pathLength="1" stroke-width="5" d="M160 4H380M160 26H380M800 4H600M800 26H600M1220 4H1380M1220 26H1380M1446 180V420M1424 180V420M960 574H1100M960 596H1100M874 680V860M896 680V860M740 934H850M740 956H850M60 934H200M60 956H200M4 140V400M26 140V400M4 620V860M26 620V860"/>
+                  <path class="t c" pathLength="1" stroke-width="5" d="M300 930V790M535 420H615"/>
+                  <path class="o c" pathLength="1" stroke-width="5" d="M440 930A140 140 0 0 0 300 790M535 500A80 80 0 0 0 615 420"/>
+                </g>
+                <path class="k c" pathLength="1" d="M40 394H369M40 387V401M369 387V401"/>
+                <text x="204.5" y="386">14&nbsp;500</text>
+                <path class="k c" pathLength="1" d="M26 140V358M19 140H33M19 358H33"/>
+                <text x="17" y="249" transform="rotate(-90 17 249)">9&nbsp;600</text>
+              </svg>
+            </div>
+            <figcaption>
+              <p class="kota"><span class="otoc"><span class="skryte">14&nbsp;500 × 9&nbsp;600</span><span class="valce" aria-hidden="true"><span class="valec"><span class="stlpec" style="--c:1;--i:0"></span></span><span class="valec"><span class="stlpec" style="--c:4;--i:1"></span></span>&nbsp;<span class="valec"><span class="stlpec" style="--c:5;--i:2"></span></span><span class="valec"><span class="stlpec" style="--c:0;--i:3"></span></span><span class="valec"><span class="stlpec" style="--c:0;--i:4"></span></span> × <span class="valec"><span class="stlpec" style="--c:9;--i:5"></span></span>&nbsp;<span class="valec"><span class="stlpec" style="--c:6;--i:6"></span></span><span class="valec"><span class="stlpec" style="--c:0;--i:7"></span></span><span class="valec"><span class="stlpec" style="--c:0;--i:8"></span></span></span></span></p>
+              <div class="projekt-riadok"><h3>Dom v&nbsp;Myslave</h3><button class="prepinac" type="button" aria-pressed="false" aria-label="Pôdorys: Dom v&nbsp;Myslave"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M1.5 1.5h13v13h-13zM6.5 1.5v6h8M6.5 11v3.5"/></svg>Pôdorys</button></div>
+              <p class="projekt-udaje">P-06 · Košice-Myslava · 148&nbsp;m² · 2024</p>
+              <p class="projekt-text">Biela tehla, poschodie vysunuté nad vstup a&nbsp;okná tam, kde podvečer svieti slnko.</p>
+            </figcaption>
+          </figure>
+        </li>
+        <li class="projekt">
+          <figure>
+            <div class="projekt-foto">
+              <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-src="img/kuchyna-800.webp" data-srcset="img/kuchyna-800.webp 800w, img/kuchyna-1200.webp 1200w" sizes="(min-width: 1024px) min(30vw, 440px), (min-width: 768px) 42vw, min(80vw, 420px)" width="800" height="1000" decoding="async" alt="Kuchyňa s&nbsp;dubovými skrinkami po strop v&nbsp;tmavom ráme, ostrovček a&nbsp;betónová podlaha">
+              <noscript><img src="img/kuchyna-800.webp" srcset="img/kuchyna-800.webp 800w, img/kuchyna-1200.webp 1200w" sizes="(min-width: 1024px) min(30vw, 440px), (min-width: 768px) 42vw, min(80vw, 420px)" width="800" height="1000" loading="lazy" alt="Kuchyňa s&nbsp;dubovými skrinkami po strop v&nbsp;tmavom ráme, ostrovček a&nbsp;betónová podlaha"></noscript>
+              <svg class="projekt-plan" viewBox="0 0 400 500" aria-hidden="true">
+                <g transform="translate(45 100) scale(.5)">
+                  <path class="s c" pathLength="1" stroke-width="15" d="M0 15H200M420 15H620M605 0V540M620 525H330M210 525H0M15 540V0"/>
+                  <path class="t c" pathLength="1" stroke-width="2.5" d="M200 5H420M200 25H420M210 510V390"/>
+                  <path class="o c" pathLength="1" stroke-width="2.5" d="M330 510A120 120 0 0 0 210 390"/>
+                  <path class="n c" pathLength="1" stroke-width="2.5" d="M30 30H590V95H30ZM30 95H95V400H30ZM220 230H440V320H220ZM415 440a55 55 0 1 0 110 0a55 55 0 1 0-110 0M240 30V95M330 30V95"/>
+                </g>
+                <path class="k c" pathLength="1" d="M45 392H355M45 385V399M355 385V399"/>
+                <text x="200" y="384">6&nbsp;200</text>
+                <path class="k c" pathLength="1" d="M29 100V370M22 100H36M22 370H36"/>
+                <text x="20" y="235" transform="rotate(-90 20 235)">5&nbsp;400</text>
+              </svg>
+            </div>
+            <figcaption>
+              <p class="kota"><span class="otoc"><span class="skryte">6&nbsp;200 × 5&nbsp;400</span><span class="valce" aria-hidden="true"><span class="valec"><span class="stlpec" style="--c:6;--i:0"></span></span>&nbsp;<span class="valec"><span class="stlpec" style="--c:2;--i:1"></span></span><span class="valec"><span class="stlpec" style="--c:0;--i:2"></span></span><span class="valec"><span class="stlpec" style="--c:0;--i:3"></span></span> × <span class="valec"><span class="stlpec" style="--c:5;--i:4"></span></span>&nbsp;<span class="valec"><span class="stlpec" style="--c:4;--i:5"></span></span><span class="valec"><span class="stlpec" style="--c:0;--i:6"></span></span><span class="valec"><span class="stlpec" style="--c:0;--i:7"></span></span></span></span></p>
+              <div class="projekt-riadok"><h3>Kuchyňa v&nbsp;rodinnom dome</h3><button class="prepinac" type="button" aria-pressed="false" aria-label="Pôdorys: Kuchyňa v&nbsp;rodinnom dome"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M1.5 1.5h13v13h-13zM6.5 1.5v6h8M6.5 11v3.5"/></svg>Pôdorys</button></div>
+              <p class="projekt-udaje">P-05 · Košice-Šaca · 34&nbsp;m² · 2024</p>
+              <p class="projekt-text">Dubové skrinky od podlahy po strop, tmavý rám a&nbsp;ostrovček, pri ktorom sa varí aj raňajkuje.</p>
+            </figcaption>
+          </figure>
+        </li>
+        <li class="projekt">
+          <figure>
+            <div class="projekt-foto">
+              <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-src="img/schody-600.webp" data-srcset="img/schody-600.webp 600w, img/schody-1200.webp 1200w" sizes="(min-width: 1024px) min(30vw, 440px), (min-width: 768px) 42vw, min(80vw, 420px)" width="600" height="750" decoding="async" alt="Dubové stupne schodiska zakotvené do sivej stierkovanej steny">
+              <noscript><img src="img/schody-600.webp" srcset="img/schody-600.webp 600w, img/schody-1200.webp 1200w" sizes="(min-width: 1024px) min(30vw, 440px), (min-width: 768px) 42vw, min(80vw, 420px)" width="600" height="750" loading="lazy" alt="Dubové stupne schodiska zakotvené do sivej stierkovanej steny"></noscript>
+              <svg class="projekt-plan" viewBox="0 0 400 500" aria-hidden="true">
+                <path class="s c" pathLength="1" stroke-width="10" d="M140 80V420"/>
+                <path class="t c" pathLength="1" stroke-width="1.4" d="M146 92H262V412H146M146 110.8H262M146 129.6H262M146 148.5H262M146 167.3H262M146 186.1H262M146 204.9H262M146 223.8H262M146 242.6H262M146 261.4H262M146 280.2H262M146 299.1H262M146 317.9H262M146 336.7H262M146 355.5H262M146 374.4H262M146 393.2H262"/>
+                <path class="k c" pathLength="1" d="M204 400V112M196 124L204 108 212 124"/>
+                <path class="k c" pathLength="1" d="M290 92V412M283 92H297M283 412H297M146 440H262M146 433V447M262 433V447"/>
+                <text x="314" y="252" transform="rotate(-90 314 252)">2&nbsp;970</text>
+                <text x="204" y="432">1&nbsp;000</text>
+              </svg>
+            </div>
+            <figcaption>
+              <p class="kota"><span class="otoc"><span class="skryte">výška 2&nbsp;970</span><span class="valce" aria-hidden="true"><span class="kota-slovo">výška</span> <span class="valec"><span class="stlpec" style="--c:2;--i:0"></span></span>&nbsp;<span class="valec"><span class="stlpec" style="--c:9;--i:1"></span></span><span class="valec"><span class="stlpec" style="--c:7;--i:2"></span></span><span class="valec"><span class="stlpec" style="--c:0;--i:3"></span></span></span></span></p>
+              <div class="projekt-riadok"><h3>Schodisko z&nbsp;dubu</h3><button class="prepinac" type="button" aria-pressed="false" aria-label="Pôdorys: Schodisko z&nbsp;dubu"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M1.5 1.5h13v13h-13zM6.5 1.5v6h8M6.5 11v3.5"/></svg>Pôdorys</button></div>
+              <p class="projekt-udaje">P-04 · Košice-Barca · 17&nbsp;stupňov · 2023</p>
+              <p class="projekt-text">Dubové stupne zakotvené do steny. Oceľ, ktorá ich drží, je schovaná v&nbsp;murive.</p>
+            </figcaption>
+          </figure>
+        </li>
+        <li class="projekt">
+          <figure>
+            <div class="projekt-foto">
+              <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-src="img/svetlo-800.webp" data-srcset="img/svetlo-800.webp 800w, img/svetlo-1200.webp 1200w" sizes="(min-width: 1024px) min(30vw, 440px), (min-width: 768px) 42vw, min(80vw, 420px)" width="800" height="1000" decoding="async" alt="Vysoká miestnosť z&nbsp;pohľadového betónu, slnko kreslí na stenu svetlý obdĺžnik">
+              <noscript><img src="img/svetlo-800.webp" srcset="img/svetlo-800.webp 800w, img/svetlo-1200.webp 1200w" sizes="(min-width: 1024px) min(30vw, 440px), (min-width: 768px) 42vw, min(80vw, 420px)" width="800" height="1000" loading="lazy" alt="Vysoká miestnosť z&nbsp;pohľadového betónu, slnko kreslí na stenu svetlý obdĺžnik"></noscript>
+              <svg class="projekt-plan" viewBox="0 0 400 500" aria-hidden="true">
+                <g transform="translate(40 142) scale(.36)">
+                  <path class="s c" pathLength="1" stroke-width="30" d="M0 15H900M885 0V600M900 585H560M400 585H0M15 600V420M15 180V0"/>
+                  <path class="t c" pathLength="1" stroke-width="4" d="M4 180V420M15 180V420M26 180V420M400 570V410"/>
+                  <path class="o c" pathLength="1" stroke-width="4" d="M560 570A160 160 0 0 0 400 410"/>
+                </g>
+                <path class="k c" pathLength="1" d="M40 392H364M40 385V399M364 385V399"/>
+                <text x="202" y="384">9&nbsp;000</text>
+                <path class="k c" pathLength="1" d="M26 142V358M19 142H33M19 358H33"/>
+                <text x="17" y="250" transform="rotate(-90 17 250)">6&nbsp;000</text>
+              </svg>
+            </div>
+            <figcaption>
+              <p class="kota"><span class="otoc"><span class="skryte">9&nbsp;000 × 6&nbsp;000</span><span class="valce" aria-hidden="true"><span class="valec"><span class="stlpec" style="--c:9;--i:0"></span></span>&nbsp;<span class="valec"><span class="stlpec" style="--c:0;--i:1"></span></span><span class="valec"><span class="stlpec" style="--c:0;--i:2"></span></span><span class="valec"><span class="stlpec" style="--c:0;--i:3"></span></span> × <span class="valec"><span class="stlpec" style="--c:6;--i:4"></span></span>&nbsp;<span class="valec"><span class="stlpec" style="--c:0;--i:5"></span></span><span class="valec"><span class="stlpec" style="--c:0;--i:6"></span></span><span class="valec"><span class="stlpec" style="--c:0;--i:7"></span></span></span></span></p>
+              <div class="projekt-riadok"><h3>Výstavná miestnosť</h3><button class="prepinac" type="button" aria-pressed="false" aria-label="Pôdorys: Výstavná miestnosť"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M1.5 1.5h13v13h-13zM6.5 1.5v6h8M6.5 11v3.5"/></svg>Pôdorys</button></div>
+              <p class="projekt-udaje">P-03 · Košice, Staré Mesto · 54&nbsp;m² · 2023</p>
+              <p class="projekt-text">Pohľadový betón, jedno vysoké okno a&nbsp;svetlo, ktoré sa po stene posúva celý deň.</p>
+            </figcaption>
+          </figure>
+        </li>
+        <li class="projekt">
+          <figure>
+            <div class="projekt-foto">
+              <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-src="img/obyvacka-detail-800.webp" data-srcset="img/obyvacka-detail-800.webp 800w, img/obyvacka-detail-1200.webp 1200w" sizes="(min-width: 1024px) min(30vw, 440px), (min-width: 768px) 42vw, min(80vw, 420px)" width="800" height="1000" decoding="async" alt="Detail kuchyne bytu P-07: roh kamenného polostrova s&nbsp;čiernou batériou, orechová stena s&nbsp;policami a&nbsp;jedálenský stôl s&nbsp;koňakovými stoličkami">
+              <noscript><img src="img/obyvacka-detail-800.webp" srcset="img/obyvacka-detail-800.webp 800w, img/obyvacka-detail-1200.webp 1200w" sizes="(min-width: 1024px) min(30vw, 440px), (min-width: 768px) 42vw, min(80vw, 420px)" width="800" height="1000" loading="lazy" alt="Detail kuchyne bytu P-07: roh kamenného polostrova s&nbsp;čiernou batériou, orechová stena s&nbsp;policami a&nbsp;jedálenský stôl s&nbsp;koňakovými stoličkami"></noscript>
+              <svg class="projekt-plan" viewBox="0 0 400 500" aria-hidden="true">
+                <g transform="translate(46 166) scale(.2567)">
+                  <path class="s c" pathLength="1" stroke-width="22" d="M0 15H480M570 15H1200M1185 0V120M1185 280V480M1185 620V720M1200 705H1080M880 705H680M520 705H340M100 705H0M15 720V650M15 470V0"/>
+                  <path class="s c" pathLength="1" stroke-width="11" d="M420 30V120M420 190V300M420 390V690M300 30V267.5M292.5 260H420M660 30V267.5M652.5 260H700M780 260H907.5M900 30V290M900 370V407.5M412.5 400H500M580 400H800M880 400H1170M780 400V690"/>
+                  <path class="t c" pathLength="1" stroke-width="4.5" d="M1196 120V280M1174 120V280M1196 480V620M1174 480V620M1080 716H880M1080 694H880M680 716H520M680 694H520M340 716H100M340 694H100M4 650V470M26 650V470"/>
+                  <path class="t c" pathLength="1" stroke-width="5" d="M480 30V120M427.5 190H497.5M412.5 300H322.5M700 252.5V172.5M907.5 370H987.5M500 407.5V487.5M880 407.5V487.5"/>
+                  <path class="o c" pathLength="1" stroke-width="4.5" d="M570 30A90 90 0 0 1 480 120M427.5 120A70 70 0 0 1 497.5 190M412.5 390A90 90 0 0 1 322.5 300M780 252.5A80 80 0 0 0 700 172.5M907.5 290A80 80 0 0 1 987.5 370M580 407.5A80 80 0 0 1 500 487.5M800 407.5A80 80 0 0 0 880 487.5"/>
+                </g>
+                <path class="k c" pathLength="1" d="M46 394H354M46 387V401M354 387V401"/>
+                <text x="200" y="386">12&nbsp;000</text>
+                <path class="k c" pathLength="1" d="M30 166V351M23 166H37M23 351H37"/>
+                <text x="21" y="258.5" transform="rotate(-90 21 258.5)">7&nbsp;200</text>
+              </svg>
+            </div>
+            <figcaption>
+              <p class="kota"><span class="otoc"><span class="skryte">12&nbsp;000 × 7&nbsp;200</span><span class="valce" aria-hidden="true"><span class="valec"><span class="stlpec" style="--c:1;--i:0"></span></span><span class="valec"><span class="stlpec" style="--c:2;--i:1"></span></span>&nbsp;<span class="valec"><span class="stlpec" style="--c:0;--i:2"></span></span><span class="valec"><span class="stlpec" style="--c:0;--i:3"></span></span><span class="valec"><span class="stlpec" style="--c:0;--i:4"></span></span> × <span class="valec"><span class="stlpec" style="--c:7;--i:5"></span></span>&nbsp;<span class="valec"><span class="stlpec" style="--c:2;--i:6"></span></span><span class="valec"><span class="stlpec" style="--c:0;--i:7"></span></span><span class="valec"><span class="stlpec" style="--c:0;--i:8"></span></span></span></span></p>
+              <div class="projekt-riadok"><h3>Byt na Juhu</h3><button class="prepinac" type="button" aria-pressed="false" aria-label="Pôdorys: Byt na Juhu"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M1.5 1.5h13v13h-13zM6.5 1.5v6h8M6.5 11v3.5"/></svg>Pôdorys</button></div>
+              <p class="projekt-udaje">P-07 · Košice-Juh · 71&nbsp;m² · 2025</p>
+              <p class="projekt-text">Štvorizbový byt v&nbsp;paneláku. Zrušili sme priečku do kuchyne a&nbsp;obývačka dostala svetlo z&nbsp;dvoch strán.</p>
+            </figcaption>
+          </figure>
+        </li>
+        <li class="projekt-dalsi">
+          <p>Ďalší pôdorys môže byť váš.</p>
+          <button class="tlacidlo" type="button" commandfor="okno-konzultacia" command="show-modal">Dohodnúť konzultáciu <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M2 9h13M10 4l5 5-5 5"/></svg></button>
+        </li>
+      </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="sekcia" id="postup" aria-labelledby="postup-nadpis">
+    <div class="obsah">
+      <div class="mriezka postup-hlava">
+        <div>
+          <h2 class="nadpis" id="postup-nadpis">Ako pracujeme</h2>
+          <p class="uvodny">Štyri fázy a&nbsp;jeden človek, ktorý vás nimi prevedie. Pri každej viete, čo dostanete a&nbsp;ako dlho to trvá.</p>
+        </div>
+        <figure class="postup-foto">
+          <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-src="img/materialy-600.webp" data-srcset="img/materialy-600.webp 600w, img/materialy-1200.webp 1200w, img/materialy-1600.webp 1600w, img/materialy-2400.webp 2400w" sizes="(min-width: 1024px) min(45.5vw, 880px), (min-width: 768px) 52vw, calc(100vw - 32px)" width="600" height="400" decoding="async" alt="Ruka nad stolom so vzorkami: dubová a&nbsp;orechová doska, ovčia kožušina, karta odtieňov a&nbsp;čierny mramor">
+          <noscript><img src="img/materialy-600.webp" srcset="img/materialy-600.webp 600w, img/materialy-1200.webp 1200w, img/materialy-1600.webp 1600w, img/materialy-2400.webp 2400w" sizes="(min-width: 1024px) min(45.5vw, 880px), (min-width: 768px) 52vw, calc(100vw - 32px)" width="600" height="400" loading="lazy" alt="Ruka nad stolom so vzorkami: dubová a&nbsp;orechová doska, ovčia kožušina, karta odtieňov a&nbsp;čierny mramor"></noscript>
+          <figcaption>Vzorky k&nbsp;štúdii: dub, orech, mramor a&nbsp;látky na jednom stole</figcaption>
+        </figure>
+      </div>
+      <ol class="fazy">
+        <li class="faza">
+          <span class="faza-dlzka otoc"><span class="skryte">7&nbsp;dní</span><span class="valce" aria-hidden="true"><span class="valec"><span class="stlpec" style="--c:7;--i:0"></span></span>&nbsp;dní</span></span>
+          <h3>Zameranie</h3>
+          <p>Prídeme na miesto, zmeriame byt alebo pozemok a&nbsp;vypočujeme si, ako bývate. Odfotíme každý kút, aby sme nemuseli chodiť znova.</p>
+          <p class="vystup">Dostanete: zameraný pôdorys v&nbsp;mierke 1&nbsp;:&nbsp;50</p>
+        </li>
+        <li class="faza">
+          <span class="faza-dlzka otoc"><span class="skryte">21 až 28&nbsp;dní</span><span class="valce" aria-hidden="true"><span class="valec"><span class="stlpec" style="--c:2;--i:0"></span></span><span class="valec"><span class="stlpec" style="--c:1;--i:1"></span></span> až <span class="valec"><span class="stlpec" style="--c:2;--i:2"></span></span><span class="valec"><span class="stlpec" style="--c:8;--i:3"></span></span>&nbsp;dní</span></span>
+          <h3>Štúdia</h3>
+          <p>Dve až tri varianty dispozície, materiály, svietidlá a&nbsp;vizualizácie. Dve kolá úprav sú v&nbsp;cene.</p>
+          <p class="vystup">Dostanete: štúdiu v&nbsp;PDF a&nbsp;vzorky materiálov</p>
+        </li>
+        <li class="faza">
+          <span class="faza-dlzka otoc"><span class="skryte">30 až 60&nbsp;dní</span><span class="valce" aria-hidden="true"><span class="valec"><span class="stlpec" style="--c:3;--i:0"></span></span><span class="valec"><span class="stlpec" style="--c:0;--i:1"></span></span> až <span class="valec"><span class="stlpec" style="--c:6;--i:2"></span></span><span class="valec"><span class="stlpec" style="--c:0;--i:3"></span></span>&nbsp;dní</span></span>
+          <h3>Projekt</h3>
+          <p>Výkresy pre remeselníkov a&nbsp;úrady: rozmery, rezy, detaily a&nbsp;zoznam materiálov. Pri dome aj projekt na povolenie stavby.</p>
+          <p class="vystup">Dostanete: výkresy, výkaz výmer a&nbsp;rozpočet</p>
+        </li>
+        <li class="faza">
+          <span class="faza-dlzka">podľa stavby</span>
+          <h3>Realizácia</h3>
+          <p>Chodíme na stavbu, kontrolujeme detaily a&nbsp;odpovedáme remeselníkom, aby ste nemuseli vy.</p>
+          <p class="vystup">Dostanete: autorský dozor a&nbsp;kontrolu prác</p>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="sekcia" id="sluzby" aria-labelledby="sluzby-nadpis">
+    <div class="obsah mriezka sluzby-obal">
+      <div class="sluzby-hlava">
+          <h2 class="nadpis" id="sluzby-nadpis">Služby a&nbsp;orientačné ceny</h2>
+          <p class="uvodny">Návrh počítame z&nbsp;podlahovej plochy. Presnú sumu napíšeme do ponuky po prvej konzultácii a&nbsp;zameraní.</p>
+      </div>
+      <ul class="cennik">
+        <li class="sluzba">
+          <h3>Konzultácia na mieste</h3>
+          <p class="sluzba-opis">90&nbsp;minút u&nbsp;vás v&nbsp;Košiciach a&nbsp;okolí do 20&nbsp;km. Ak si potom objednáte štúdiu, cenu konzultácie odpočítame.</p>
+          <p class="cena">60&nbsp;€</p>
+        </li>
+        <li class="sluzba">
+          <h3>Návrh interiéru, štúdia</h3>
+          <p class="sluzba-opis">Dispozícia, materiály, svietidlá a&nbsp;tri vizualizácie. Dve kolá úprav sú v&nbsp;cene.</p>
+          <p class="cena">30&nbsp;€/m²<small>byt 70&nbsp;m² za 2&nbsp;100&nbsp;€</small></p>
+        </li>
+        <li class="sluzba">
+          <h3>Návrh interiéru s&nbsp;výkresmi</h3>
+          <p class="sluzba-opis">Štúdia a&nbsp;výkresy pre stolára, obkladača a&nbsp;elektrikára, zoznam materiálov s&nbsp;cenami.</p>
+          <p class="cena">45&nbsp;€/m²<small>byt 70&nbsp;m² za 3&nbsp;150&nbsp;€</small></p>
+        </li>
+        <li class="sluzba">
+          <h3>Architektonická štúdia domu</h3>
+          <p class="sluzba-opis">Dispozícia, pohľady, rezy a&nbsp;osadenie na pozemku, dve vizualizácie exteriéru. Podklad pre projekt stavby.</p>
+          <p class="cena">od 20&nbsp;€/m²<small>dom 150&nbsp;m² od 3&nbsp;000&nbsp;€</small></p>
+        </li>
+        <li class="sluzba">
+          <h3>Autorský dozor</h3>
+          <p class="sluzba-opis">Návšteva stavby, kontrola detailov a&nbsp;odpovede remeselníkom priamo na mieste.</p>
+          <p class="cena">40&nbsp;€<small>za hodinu na stavbe</small></p>
+        </li>
+        <li class="sluzba">
+          <h3>Vizualizácia navyše</h3>
+          <p class="sluzba-opis">Fotorealistický pohľad do miestnosti alebo na dom, keď tri v&nbsp;štúdii nestačia.</p>
+          <p class="cena">120&nbsp;€<small>za kus</small></p>
+        </li>
+      </ul>
+      <p class="cennik-pozn">Ceny sú konečné, ateliér nie je platiteľom DPH. Platia od 1.&nbsp;1.&nbsp;2026. Projekt stavby na povolenie a&nbsp;projekty profesií naceníme po štúdii, podľa veľkosti a&nbsp;zložitosti domu.</p>
+
+      <div class="kalkulacka" role="group" aria-labelledby="kalk-nadpis">
+        <h3 id="kalk-nadpis">Koľko by stál návrh vášho bytu?</h3>
+        <div class="kalk-vstup">
+          <label for="plocha">Podlahová plocha bytu</label>
+          <div class="kalk-pole"><input id="plocha" type="number" inputmode="numeric" min="20" max="300" step="1" value="70" aria-describedby="kalk-rozsah kalk-hlaska"><span>m²</span></div>
+          <input class="kalk-posuvnik" id="plocha-posuvnik" type="range" min="20" max="300" step="1" value="70" aria-label="Podlahová plocha bytu v&nbsp;m², posuvník">
+          <p class="kalk-rozsah" id="kalk-rozsah">Kalkulačka počíta byty od 20 do 300&nbsp;m².</p>
+        </div>
+        <dl class="kalk-vysledok" id="kalk-vysledok">
+          <div><dt>Štúdia, 30&nbsp;€/m²</dt><dd><output id="vysledok-studia" for="plocha">2&nbsp;100&nbsp;€</output></dd></div>
+          <div><dt>S&nbsp;výkresmi, 45&nbsp;€/m²</dt><dd><output id="vysledok-komplet" for="plocha">3&nbsp;150&nbsp;€</output></dd></div>
+        </dl>
+        <p class="kalk-hlaska" id="kalk-hlaska" role="status" hidden></p>
+        <p class="kalk-pozn">Orientačne, podľa cien vyššie. Doprava mimo Košíc a&nbsp;okolia do 20&nbsp;km sa počíta zvlášť.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="sekcia" id="atelier" aria-labelledby="atelier-nadpis">
+    <div class="obsah mriezka atelier-mriezka">
+      <figure class="atelier-foto">
+        <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-src="img/stol-600.webp" data-srcset="img/stol-600.webp 600w, img/stol-1200.webp 1200w, img/stol-1600.webp 1600w, img/stol-2400.webp 2400w" sizes="(min-width: 1024px) min(46vw, 880px), (min-width: 768px) 46vw, calc(100vw - 32px)" width="600" height="400" decoding="async" alt="Pohľad zhora na pracovný stôl: pôdorys na papieri, pravítko, skicáre, šálka kávy a&nbsp;ruky nad výkresom">
+        <noscript><img src="img/stol-600.webp" srcset="img/stol-600.webp 600w, img/stol-1200.webp 1200w, img/stol-1600.webp 1600w, img/stol-2400.webp 2400w" sizes="(min-width: 1024px) min(46vw, 880px), (min-width: 768px) 46vw, calc(100vw - 32px)" width="600" height="400" loading="lazy" alt="Pohľad zhora na pracovný stôl: pôdorys na papieri, pravítko, skicáre, šálka kávy a&nbsp;ruky nad výkresom"></noscript>
+        <figcaption>Pracovný stôl v&nbsp;ateliéri. Každý projekt začína na papieri.</figcaption>
+      </figure>
+      <div class="atelier-text">
+        <h2 class="nadpis" id="atelier-nadpis">Ateliér</h2>
+        <p class="uvodna">Olovnicu vedú dvaja architekti, Tomáš a&nbsp;Lucia.</p>
+        <p class="tlmene">Tomáš navrhuje domy a&nbsp;chodí na stavby. Lucia kreslí interiéry a&nbsp;vyberá materiály. Pracujeme len dvaja, preto vás od prvej konzultácie po odovzdanie kľúčov vedie ten istý človek.</p>
+        <p class="tlmene">Olovnica je závažie na šnúre, ktoré ukáže presnú zvislicu. Murári ju používajú stáročia a&nbsp;my ju máme v&nbsp;názve, lebo dobrý priestor začína presnou čiarou.</p>
+        <dl class="fakty">
+          <div><dt>Od roku</dt><dd>2016</dd></div>
+          <div><dt>Navrhujeme</dt><dd>byty, rodinné domy, interiéry a&nbsp;menšie prevádzky</dd></div>
+          <div><dt>Kde</dt><dd>Košice a&nbsp;okolie do 50&nbsp;km, štúdie aj inde na Slovensku</dd></div>
+          <div><dt>Jazyky</dt><dd>slovenčina, angličtina, maďarčina</dd></div>
+        </dl>
+      </div>
+    </div>
+  </section>
+
+  <section class="sekcia kontakt" id="kontakt" aria-labelledby="kontakt-nadpis">
+    <div class="obsah mriezka kontakt-mriezka">
+      <div class="kontakt-text">
+        <h2 class="nadpis" id="kontakt-nadpis">Konzultácia</h2>
+        <p class="uvodny">Začnime 90&nbsp;minútami u&nbsp;vás. Prinesieme meter a&nbsp;skicár, vy otázky a&nbsp;fotky, ktoré sa vám páčia.</p>
+        <div class="kontakt-akcie">
+          <button class="tlacidlo" type="button" commandfor="okno-konzultacia" command="show-modal">Dohodnúť konzultáciu <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M2 9h13M10 4l5 5-5 5"/></svg></button>
+          <button class="tlacidlo tlacidlo-obrys" type="button" commandfor="okno-volat" command="show-modal">Zavolať</button>
+        </div>
+        <table class="hodiny">
+          <caption>Kedy sme v&nbsp;ateliéri</caption>
+          <tbody>
+            <tr data-den="1" data-od="9:00" data-do="17:00"><th scope="row">Pondelok<span class="znacka-dnes" hidden>dnes</span></th><td>9:00 až 17:00</td></tr>
+            <tr data-den="2" data-od="9:00" data-do="17:00"><th scope="row">Utorok<span class="znacka-dnes" hidden>dnes</span></th><td>9:00 až 17:00</td></tr>
+            <tr data-den="3" data-od="9:00" data-do="17:00"><th scope="row">Streda<span class="znacka-dnes" hidden>dnes</span></th><td>9:00 až 17:00</td></tr>
+            <tr data-den="4" data-od="9:00" data-do="17:00"><th scope="row">Štvrtok<span class="znacka-dnes" hidden>dnes</span></th><td>9:00 až 17:00</td></tr>
+            <tr data-den="5" data-od="9:00" data-do="14:00"><th scope="row">Piatok<span class="znacka-dnes" hidden>dnes</span></th><td>9:00 až 14:00</td></tr>
+            <tr data-den="6"><th scope="row">Sobota<span class="znacka-dnes" hidden>dnes</span></th><td class="zatvorene">po dohode</td></tr>
+            <tr data-den="0"><th scope="row">Nedeľa<span class="znacka-dnes" hidden>dnes</span></th><td class="zatvorene">zatvorené</td></tr>
+          </tbody>
+        </table>
+        <p class="hodiny-pozn">Konzultácie u&nbsp;vás robíme aj podvečer a&nbsp;v&nbsp;sobotu doobeda, stačí napísať.</p>
+      </div>
+
+      <div class="kontakt-mapa">
+        <figure class="mapa-karta">
+          <svg viewBox="0 0 640 420" role="img" aria-labelledby="mapa-titul">
+            <title id="mapa-titul">Ilustračná situácia: ateliér na vymyslenej ulici Kružidlová, vchod z&nbsp;dvora, neďaleko parku a&nbsp;zastávky MHD</title>
+            <rect width="640" height="420" fill="#ebeae5"/>
+            <g fill="#dcdbd5" stroke="#c9c8c3">
+              <rect x="20" y="20" width="156" height="166"/>
+              <rect x="212" y="20" width="236" height="166"/>
+              <rect x="486" y="20" width="134" height="166"/>
+              <rect x="20" y="242" width="156" height="158"/>
+            </g>
+            <rect x="486" y="242" width="134" height="158" fill="#e1e2da" stroke="#c9c8c3"/>
+            <g fill="#bcbdb3">
+              <circle cx="512" cy="270" r="9"/><circle cx="548" cy="292" r="12"/><circle cx="590" cy="268" r="8"/><circle cx="520" cy="330" r="11"/><circle cx="572" cy="352" r="9"/><circle cx="600" cy="318" r="10"/><circle cx="536" cy="378" r="7"/>
+            </g>
+            <rect x="212" y="242" width="236" height="158" fill="#f4f4f1" stroke="#1e1f1f" stroke-width="2"/>
+            <g stroke="#c9c8c3" stroke-width="1"><path d="M228 400L386 242M262 400L420 242M296 400L448 248M330 400L448 282M364 400L448 316M398 400L448 350M432 400L448 384M212 382L352 242M212 348L318 242M212 314L284 242M212 280L250 242"/></g>
+            <rect x="292" y="300" width="76" height="64" fill="#f4f4f1" stroke="#1e1f1f" stroke-width="1.5"/>
+            <g fill="none" stroke="#ffffff" stroke-width="24"><path d="M0 214H640"/><path d="M194 0V420"/><path d="M467 0V420"/></g>
+            <path d="M0 214H640" fill="none" stroke="#6b6b66" stroke-width="1.5" stroke-dasharray="10 8"/>
+            <g transform="translate(330 334)">
+              <path d="M0-30V-14" stroke="#1e1f1f" stroke-width="2"/>
+              <path d="M-9-14H9L0 14Z" fill="#1e1f1f"/>
+              <circle cy="-14" r="3.5" fill="#a8784a"/>
+            </g>
+            <g font-size="17" fill="#1e1f1f">
+              <text x="330" y="207" text-anchor="middle" font-weight="500">Kružidlová</text>
+              <text x="552" y="414" text-anchor="middle" fill="#4f4f4b">park</text>
+              <text x="62" y="197" fill="#4f4f4b">zastávka MHD</text>
+              <text x="330" y="292" text-anchor="middle" font-size="14" fill="#4f4f4b">dvor</text>
+            </g>
+            <rect x="40" y="184" width="14" height="14" fill="#1e1f1f"/>
+            <g transform="translate(596 52)">
+              <circle r="20" fill="#f4f4f1" stroke="#1e1f1f" stroke-width="1.5"/>
+              <path d="M0-13L6 8L0 4L-6 8Z" fill="#1e1f1f"/>
+              <text y="40" text-anchor="middle" font-size="15" fill="#1e1f1f">S</text>
+            </g>
+          </svg>
+          <figcaption class="mapa-spodok">
+            <address class="adresa"><strong>Kružidlová 12</strong>040&nbsp;01 Košice<br>prízemie, vchod z&nbsp;dvora</address>
+            <div><a class="tlacidlo tlacidlo-obrys" href="https://www.google.com/maps/search/?api=1&amp;query=Ko%C5%A1ice" target="_blank" rel="noopener">Navigovať <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M2 9h13M10 4l5 5-5 5"/></svg></a></div>
+            <div class="kontakt-riadky">
+              <span>Telefón: <strong>0900 XXX XXX</strong> (vymyslené číslo)</span>
+              <a href="mailto:konzultacie@atelier-olovnica.example">konzultacie@atelier-olovnica.example</a>
+            </div>
+            <p class="mapa-pozn">Mapa je ilustračná, nie v&nbsp;mierke, ulica je vymyslená. V&nbsp;ukážke Navigovať otvorí mapy len s&nbsp;mestom Košice.</p>
+          </figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="pata">
+  <div class="obsah mriezka pata-mriezka">
+    <div class="pata-zaver">
+      <a class="znak" href="#obsah"><svg width="18" height="26" viewBox="0 0 22 30" aria-hidden="true"><path d="M11 0v10" stroke="#1e1f1f" stroke-width="1.5"/><path d="M5.5 10h11L11 29z" fill="#1e1f1f"/><circle cx="11" cy="10" r="2" fill="#a8784a"/></svg>Olovnica</a>
+      <p style="margin-top:10px">Ateliér Olovnica, Kružidlová&nbsp;12, 040&nbsp;01 Košice. IČO&nbsp;00&nbsp;000&nbsp;000.</p>
+      <p class="pata-odkazy"><a href="../../#ukazky">Späť na ukážky</a><a href="https://arling.sk/web/" target="_top">Chcem taký web</a></p>
+    </div>
+    <p class="male">Toto je ukážka webu od ARLing. Ateliér, ľudia, projekty, adresa, IČO, telefón aj e-mail sú vymyslené. Fotky sú z&nbsp;Pexels pod licenciou Pexels a&nbsp;nezobrazujú práce vymysleného ateliéru. Pôdorysy a&nbsp;mapa sú nakreslené pre túto ukážku.</p>
+  </div>
+</footer>
+
+<nav class="lista" aria-label="Rýchly kontakt">
+  <button class="tlacidlo" type="button" commandfor="okno-konzultacia" command="show-modal">Konzultácia</button>
+  <button class="tlacidlo tlacidlo-obrys" type="button" commandfor="okno-volat" command="show-modal">Zavolať</button>
+</nav>
+
+<dialog class="okno" id="okno-konzultacia" aria-labelledby="okno-konzultacia-nadpis" closedby="any">
+  <div class="okno-hlava">
+    <h2 id="okno-konzultacia-nadpis">Konzultácia</h2>
+    <button class="zavriet" type="button" commandfor="okno-konzultacia" command="close" aria-label="Zavrieť">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+  </div>
+  <form class="okno-telo" id="formular" novalidate>
+    <p>Tri otázky a&nbsp;ozveme sa do 2&nbsp;pracovných dní s&nbsp;termínom.</p>
+    <fieldset>
+      <legend>Čo plánujete?</legend>
+      <div class="volby">
+        <label class="volba"><input type="radio" name="typ" value="byt" checked><span>Byt</span></label>
+        <label class="volba"><input type="radio" name="typ" value="dom"><span>Dom</span></label>
+        <label class="volba"><input type="radio" name="typ" value="interier"><span>Interiér</span></label>
+        <label class="volba"><input type="radio" name="typ" value="ine"><span>Niečo iné</span></label>
+      </div>
+    </fieldset>
+    <div class="pole">
+      <label for="f-plocha">Približná plocha v&nbsp;m²</label>
+      <input id="f-plocha" name="plocha" type="number" inputmode="numeric" min="5" max="2000" placeholder="napríklad 70">
+    </div>
+    <div class="pole">
+      <label for="f-kedy">Kedy sa vám hodí stretnutie</label>
+      <select id="f-kedy" name="kedy">
+        <option>Tento týždeň</option>
+        <option>Budúci týždeň</option>
+        <option>O&nbsp;mesiac a&nbsp;neskôr</option>
+      </select>
+    </div>
+    <button class="tlacidlo" type="submit">Pokračovať</button>
+    <p class="okno-pozn">Toto je ukážka, formulár nič neodošle. Na vašom webe by dopyt prišiel vám na e-mail alebo do kalendára.</p>
+    <p class="okno-hotovo" id="formular-stav" role="status"></p>
+  </form>
+</dialog>
+
+<dialog class="okno" id="okno-volat" aria-labelledby="okno-volat-nadpis" closedby="any">
+  <div class="okno-hlava">
+    <h2 id="okno-volat-nadpis">Zavolať</h2>
+    <button class="zavriet" type="button" commandfor="okno-volat" command="close" aria-label="Zavrieť">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+  </div>
+  <div class="okno-telo">
+    <p class="okno-cislo">0900 XXX XXX</p>
+    <p>Na vašom webe toto tlačidlo rovno vytočí vaše číslo, jedným ťukom z&nbsp;mobilu.</p>
+    <p class="okno-pozn">Číslo je vymyslené, v&nbsp;ukážke sa nič nevytáča.</p>
+  </div>
+</dialog>
+</body>
+</html>

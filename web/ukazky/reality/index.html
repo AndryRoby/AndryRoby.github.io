@@ -1,0 +1,1163 @@
+<!doctype html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; img-src 'self' data:; style-src 'unsafe-inline'; font-src 'self'; connect-src 'none'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex, nofollow">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#2c2133">
+<title>Ukážka: Reality Hradba, Nitra (vymyslená realitná kancelária)</title>
+<meta name="description" content="Ukážka webu od ARLing pre vymyslenú realitnú kanceláriu v Nitre: žalúzie, ktoré pustia do izby svetlo, ponuka s filtrami a mapou, detail s galériou a pôdorysom, orientačná kalkulačka splátky.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232c2133'/%3E%3Cpath d='M6 26V9h3.6v3h2.8V9H16v3h2.8V9h3.6v3h2.8V9H26v17h-7.5v-5.2a2.5 2.5 0 0 0-5 0V26z' fill='%23ffd28f'/%3E%3C/svg%3E">
+<link rel="preload" as="image" imagesrcset="img/uvod-vyska-600.webp 600w, img/uvod-vyska-760.webp 760w, img/uvod-vyska-900.webp 900w, img/uvod-vyska-1200.webp 1200w" imagesizes="100vw" media="(max-width: 699px)" fetchpriority="high">
+<link rel="preload" as="image" imagesrcset="img/uvod-800.webp 800w, img/uvod-1600.webp 1600w, img/uvod-2400.webp 2400w" imagesizes="(min-width: 1024px) and (max-height: 760px) 900px, (min-width: 1024px) calc((100vh - 120px) * 1.25), (orientation: portrait) calc((100vh - 120px) * 1.25), 100vw" media="(min-width: 700px)" fetchpriority="high">
+<link rel="preload" href="fonts/hradba-titul.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/hradba-text.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+/* Reality Hradba: ukážka webu klienta, vymyslená realitná kancelária v Nitre.
+   Smer po kritike 19. 11. 2026: svetlo cez žalúzie. Tmavá baklažánová stena, okno s fotkou izby a skutočné žalúzie,
+   ktoré sa po načítaní fotky a písma naklopia, pustia svetlo a vytiahnu sa. Pásy svetla z lamiel ostávajú na stene
+   a pri posune sa hýbu, lamely sa pri posune naklápajú. Písma Literata (nadpisy) a Plus Jakarta Sans (text), OFL, lokálne. */
+@font-face{font-family:"Hradba Titul";src:url(fonts/hradba-titul.woff2) format("woff2");font-weight:420 640;font-display:swap}
+@font-face{font-family:"Hradba Text";src:url(fonts/hradba-text.woff2) format("woff2");font-weight:400 700;font-display:swap}
+/* Náhradné písma s mierami Literata a Plus Jakarta Sans (vypočítané skriptom pisma.py), aby výmena nepohla textom */
+@font-face{font-family:"Hradba Titul Zaloha";src:local("Georgia"),local("Noto Serif"),local("DejaVu Serif");size-adjust:107.6%;ascent-override:109.4%;descent-override:28.6%;line-gap-override:0%}
+@font-face{font-family:"Hradba Text Zaloha";src:local("Arial"),local("Roboto"),local("Helvetica");size-adjust:105.4%;ascent-override:98.4%;descent-override:21.1%;line-gap-override:0%}
+
+:root{
+  --biela:#ffffff;--dym:#f5f2f7;--dym-2:#ebe4ef;--linka:#e0d8e6;--linka-2:#8b7f96;
+  --atrament:#1f1726;--tlmeny:#5d5367;--fialova:#5a3a73;--fialova-2:#47295f;
+  --baklazan:#2c2133;--baklazan-2:#382a41;--baklazan-3:#211827;--na-tme:#f6f1f8;--na-tme-2:#cdbfd6;
+  --slnko:#ffd28f;--slnko-2:#ffe2b3;--med:#e9a24c;
+  --titul:"Hradba Titul","Hradba Titul Zaloha",Georgia,"Times New Roman",serif;
+  --text:"Hradba Text","Hradba Text Zaloha",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  --okraj:clamp(16px,4vw,48px);
+  --max:1320px;
+  --siroko:min(var(--max),100% - 2 * var(--okraj));
+  --rytmus:clamp(72px,9vw,136px);
+  --hlava-v:64px;--pas-v:104px;
+  --vstup:cubic-bezier(.23,1,.32,1);--pohyb:cubic-bezier(.65,0,.35,1);
+  --fokus:var(--fialova);
+}
+@media (min-width:380px){:root{--pas-v:86px}}
+@media (min-width:600px){:root{--pas-v:70px}}
+@media (min-width:1024px){:root{--hlava-v:76px;--pas-v:48px}}
+@media (min-width:1700px){:root{--max:1480px}}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%;scroll-padding-top:calc(var(--hlava-v) + 18px);overflow-x:clip}
+body{margin:0;background:var(--biela);color:var(--atrament);font:400 17px/1.6 var(--text);overflow-x:clip;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+::selection{background:var(--slnko);color:var(--baklazan)}
+img{display:block;max-width:100%;height:auto}
+svg{display:block}
+a{color:inherit;text-underline-offset:.22em;text-decoration-thickness:1px}
+a:hover{text-decoration-thickness:2px}
+p,figure,dl,dd,ol,ul{margin:0}
+h1,h2,h3{margin:0;font-weight:500;text-wrap:balance}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--fokus);outline-offset:3px}
+.obsah{width:var(--siroko);margin-inline:auto}
+.skryte{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}
+.nw{white-space:nowrap}
+.preskocit{position:absolute;left:12px;top:-80px;z-index:60;background:var(--slnko);color:var(--baklazan);padding:12px 18px;font-weight:700;text-decoration:none}
+.preskocit:focus{top:12px}
+.tma{--fokus:var(--slnko)}
+
+/* Pás ukážky */
+.pas{background:var(--baklazan-3);color:var(--na-tme-2);font-size:13px;line-height:1.38;min-height:var(--pas-v)}
+.pas .obsah{display:flex;flex-wrap:wrap;align-items:center;column-gap:18px;padding-top:6px}
+.pas p{flex:1 1 100%}
+.pas strong{color:#fff;font-weight:700}
+.pas a{color:#fff;display:inline-flex;align-items:center;min-height:44px;font-weight:600}
+@media (min-width:600px){.pas{font-size:14px}.pas .obsah{padding-block:2px}.pas p{flex:1 1 380px;padding-top:2px}}
+
+/* Hlavička: plná baklažánová, nič cez ňu nepresvitá */
+.hlava{position:sticky;top:0;z-index:30;background:var(--baklazan);color:var(--na-tme);border-bottom:1px solid rgba(255,210,143,.12);transition:box-shadow .25s ease}
+.hlava.posunute{box-shadow:0 12px 28px -18px rgba(20,10,28,.75)}
+.hlava-riadok{display:flex;align-items:center;gap:14px;min-height:var(--hlava-v)}
+.znacka{display:inline-flex;align-items:center;gap:12px;text-decoration:none;min-height:44px;margin-right:auto;color:var(--na-tme)}
+.znacka svg{flex:none;color:var(--slnko)}
+.znacka-slova{display:grid;line-height:1}
+.znacka-meno{font:520 26px/1 var(--titul);letter-spacing:-.01em}
+.znacka-pod{font:600 10.5px/1.2 var(--text);letter-spacing:.16em;text-transform:uppercase;color:var(--na-tme-2);margin-top:5px}
+.menu{display:none}
+.menu ul{display:flex;gap:2px;margin:0;padding:0;list-style:none}
+.menu a{display:inline-flex;align-items:center;min-height:44px;padding:0 12px;text-decoration:none;font-weight:600;font-size:15px;color:var(--na-tme);position:relative}
+.menu a::after{content:"";position:absolute;left:12px;right:12px;bottom:9px;height:1px;background:var(--slnko);transform:scaleX(0);transform-origin:0 50%;transition:transform .3s var(--vstup)}
+.menu a:hover::after{transform:scaleX(1)}
+.menu-tlacidlo,.hlava-telefon{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;min-width:44px;padding:0 15px;border:1px solid rgba(246,241,248,.42);border-radius:999px;background:transparent;color:var(--na-tme);font-weight:600;font-size:15px;cursor:pointer}
+.hlava-telefon{padding:0}
+.menu-tlacidlo:hover,.hlava-telefon:hover{border-color:var(--slnko)}
+.hlava .hlava-volat{display:none}
+
+/* Tlačidlá */
+.akcia{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:50px;padding:0 24px;border:1px solid transparent;border-radius:999px;font:700 16px/1.1 var(--text);letter-spacing:.005em;text-decoration:none;cursor:pointer;transition:background-color .18s ease,color .18s ease,border-color .18s ease,scale .12s ease;text-align:center}
+.akcia svg{flex:none}
+.akcia:active{scale:.97}
+.akcia-plna{background:var(--fialova);color:#fff}
+.akcia-plna:hover{background:var(--fialova-2)}
+.akcia-obrys{background:#fff;color:var(--fialova);border-color:var(--fialova)}
+.akcia-obrys:hover{background:var(--dym)}
+.akcia-svetla{background:var(--na-tme);color:var(--baklazan)}
+.akcia-svetla:hover{background:var(--slnko-2)}
+.akcia-mala{min-height:44px;padding:0 18px;font-size:15px}
+.sipka{transition:translate .25s var(--vstup)}
+.akcia:hover .sipka,.odkaz:hover .sipka{translate:3px 0}
+.odkaz{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0;border:0;background:none;color:var(--fialova);font:700 16px/1.2 var(--text);text-decoration:underline;text-underline-offset:.25em;text-decoration-thickness:1px;cursor:pointer}
+.odkaz:hover{text-decoration-thickness:2px}
+
+/* ---------- Úvod: stena, okno so žalúziami a svetlo ---------- */
+.hrdina{position:relative;isolation:isolate;display:grid;background:var(--baklazan);color:var(--na-tme);--fokus:var(--slnko);
+  min-height:max(540px,calc(100svh - var(--hlava-v) - var(--pas-v) - 1px))}
+.hrdina-foto{position:relative;margin:0;grid-area:1/1;z-index:0;min-height:inherit}
+.okno{position:absolute;inset:0;overflow:hidden;background:#3a2d43}
+.okno picture{display:contents}
+.okno-foto{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 50%}
+/* Izba za zatvorenými žalúziami je v šere, pri otvorení sa rozjasní */
+.okno::before{content:"";position:absolute;inset:0;z-index:1;background:#1c1322;opacity:.42;transition:opacity 1.1s ease}
+/* Mobil a tablet: text na fotke, prechod zo strany textu (zdola) */
+.okno::after{content:"";position:absolute;inset:0;z-index:3;background:linear-gradient(0deg,rgba(33,24,39,.96) 0%,rgba(33,24,39,.92) 40%,rgba(33,24,39,.78) 52%,rgba(33,24,39,.38) 62%,rgba(33,24,39,0) 74%)}
+
+/* Žalúzie: 16 lamiel s hranou, leskom a tieňom, rebríkové šnúry a horná lišta. Pohyb len cez translate a rotate. */
+.zaluzia{position:absolute;inset:0;z-index:2;pointer-events:none;perspective:1100px;perspective-origin:50% 20%;--naklon:72}
+.zaluzia-hlava{position:absolute;left:-1%;right:-1%;top:0;height:13px;z-index:20;background:linear-gradient(180deg,#fdfbfe 0%,#ece4f0 55%,#cfc3d7 100%);box-shadow:0 4px 10px -2px rgba(20,10,28,.45)}
+.zaluzia-snury{position:absolute;inset:0;z-index:0;transform-origin:50% 0;scale:1 1;transition:scale .95s var(--pohyb);
+  background:linear-gradient(90deg,transparent calc(16% - 1px),rgba(255,252,246,.8) calc(16% - 1px) calc(16% + 1px),transparent calc(16% + 1px) calc(84% - 1px),rgba(255,252,246,.8) calc(84% - 1px) calc(84% + 1px),transparent calc(84% + 1px))}
+.zaluzia i{position:absolute;left:-1%;right:-1%;top:calc(var(--i) * 5%);height:5%;z-index:1;
+  background:linear-gradient(180deg,#ffffff 0%,#fbf8fc 9%,#eee7f2 38%,#ddd3e4 72%,#c3b5cd 94%,#9f8fab 100%);
+  box-shadow:0 -1px 0 rgba(255,232,190,.95),0 3px 5px -1px rgba(28,14,38,.34);
+  --k:84deg;translate:0 0;rotate:x 0deg;backface-visibility:visible;
+  transition:rotate .56s var(--vstup) calc(var(--i) * 13ms),translate .95s var(--pohyb) calc((19 - var(--i)) * 8ms)}
+.zaluzia i.spustena,.zaluzia i.dole{--k:calc(var(--naklon) * 1deg);box-shadow:0 -1px 0 rgba(255,232,190,.95),0 7px 9px -5px rgba(20,10,28,.5)}
+.zaluzia i.dole{background:linear-gradient(180deg,#ffffff 0%,#f6f2f8 16%,#e2d9e8 58%,#b7a8c2 90%,#8c7c99 100%)}
+.hrdina.otvara .okno::before{opacity:0}
+.hrdina.otvara .zaluzia i{rotate:x 76deg}
+.hrdina.vytiahnute .zaluzia i{translate:0 var(--y);rotate:x var(--k)}
+.hrdina.vytiahnute .zaluzia-snury{scale:1 .23}
+.hrdina.pokoj .zaluzia i{transition:rotate .3s linear,translate 0s}
+.hrdina.pokoj .zaluzia-snury{transition:none}
+.hrdina.pokoj .svetlo{transition:none}
+
+/* Pásy svetla z lamiel na stene (počítač) a v tieni pod textom (mobil); pri posune sa posúvajú */
+.svetlo{position:absolute;inset:0;z-index:1;overflow:hidden;pointer-events:none;opacity:0;transition:opacity 1.2s ease .2s;--posun:0;
+  -webkit-mask-image:linear-gradient(0deg,#000 0%,#000 46%,transparent 78%);mask-image:linear-gradient(0deg,#000 0%,#000 46%,transparent 78%)}
+.svetlo::before{content:"";position:absolute;left:-30%;right:-30%;top:-40%;bottom:-40%;rotate:-14deg;translate:calc(var(--posun) * -.35px) calc(var(--posun) * 1px);
+  background:repeating-linear-gradient(180deg,rgba(255,210,143,0) 0,rgba(255,210,143,0) 26px,rgba(255,210,143,.16) 36px,rgba(255,214,150,.2) 50px,rgba(255,210,143,.16) 60px,rgba(255,210,143,0) 70px,rgba(255,210,143,0) 84px)}
+.svetlo::after{content:"";position:absolute;inset:0;background:radial-gradient(70% 60% at 85% 100%,rgba(255,196,120,.16),transparent 70%)}
+.hrdina.otvara .svetlo{opacity:1}
+
+.hrdina-text{position:relative;z-index:3;grid-area:1/1;align-self:end;container-type:inline-size;width:var(--siroko);margin-inline:auto;padding:clamp(96px,16svh,200px) 0 clamp(20px,3.6svh,40px)}
+.hrdina-nadpis{font-family:var(--titul);font-size:clamp(2.2rem,10cqi,6.3rem);line-height:1.03;letter-spacing:-.022em;font-weight:520;color:var(--na-tme);max-width:12.5em;text-shadow:0 2px 22px rgba(20,10,28,.55)}
+.hrdina-veta{margin-top:clamp(12px,2.4cqi,22px);max-width:31em;font-size:clamp(16px,1.2vw,18.5px);line-height:1.55;color:var(--na-tme-2)}
+.hladanie{margin-top:clamp(18px,3cqi,30px);display:flex;flex-wrap:wrap;align-items:flex-end;gap:14px 18px}
+.hladanie fieldset{border:0;margin:0;padding:0;min-width:0}
+.hladanie legend{padding:0;margin-bottom:8px;font:600 13px/1.3 var(--text);letter-spacing:.02em;color:var(--na-tme-2)}
+.hladanie .akcia{flex:1 1 100%}
+.hrdina-dalsie{display:flex;flex-wrap:wrap;gap:4px 22px;margin-top:6px}
+.hrdina-dalsie a{display:inline-flex;align-items:center;min-height:44px;color:var(--na-tme);font-weight:600;font-size:15.5px}
+.hrdina-fakty{display:none}
+.hrdina-popis{display:none}
+
+/* Čipy (na tmavom aj svetlom) */
+.cipy{display:flex;flex-wrap:wrap;gap:6px}
+.cip{position:relative;display:inline-flex}
+.cip input{position:absolute;inset:0;margin:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.cip span{display:inline-flex;align-items:center;justify-content:center;min-width:46px;min-height:44px;padding:0 15px;border:1px solid var(--linka-2);border-radius:999px;background:#fff;font:600 15px/1 var(--text);color:var(--atrament);transition:background-color .18s ease,border-color .18s ease,color .18s ease}
+.cip:hover span{border-color:var(--fialova)}
+.cip input:checked+span{background:var(--fialova);border-color:var(--fialova);color:#fff}
+.cip input:focus-visible+span{outline:2px solid var(--fokus);outline-offset:2px}
+.hrdina .cip span{background:rgba(246,241,248,.06);border-color:rgba(246,241,248,.5);color:var(--na-tme)}
+.hrdina .cip:hover span{border-color:var(--slnko)}
+.hrdina .cip input:checked+span{background:var(--na-tme);border-color:var(--na-tme);color:var(--baklazan)}
+
+/* Spoločné pre sekcie */
+.sekcia{padding-block:var(--rytmus)}
+.sekcia,.pata{content-visibility:auto;contain-intrinsic-size:auto 1000px}
+.ponuka{contain-intrinsic-size:auto 2700px}
+@media (max-width:679px){.ponuka{contain-intrinsic-size:auto 5600px}.sekcia,.pata{contain-intrinsic-size:auto 1300px}}
+.sekcia-hlava{display:grid;gap:16px;margin-bottom:clamp(28px,4vw,48px)}
+.nadpis{font-family:var(--titul);font-size:clamp(2.1rem,1.2rem + 3.1vw,4.1rem);line-height:1.04;letter-spacing:-.02em;font-weight:500;max-width:15em}
+.uvodny{max-width:36em;font-size:clamp(16.5px,1.25vw,18.5px);color:var(--tlmeny)}
+
+/* Ponuka */
+.ponuka{padding-top:clamp(40px,7vw,112px)}
+.ponuka-hlava{display:flex;flex-wrap:wrap;align-items:end;justify-content:space-between;gap:14px 32px}
+select{-webkit-appearance:none;appearance:none;width:100%;min-height:48px;padding:0 42px 0 14px;border:1px solid var(--linka-2);border-radius:12px;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%235a3a73' stroke-width='1.6'/%3E%3C/svg%3E") no-repeat right 15px center;font:500 16px/1.2 var(--text);color:var(--atrament);cursor:pointer}
+select:hover{border-color:var(--fialova)}
+.pole{display:block;min-width:0}
+legend,.pole-meno{display:block;padding:0;margin-bottom:8px;font:600 13px/1.3 var(--text);letter-spacing:.03em;color:var(--tlmeny)}
+fieldset{border:0;margin:0;padding:0;min-width:0}
+input[type=range]{-webkit-appearance:none;appearance:none;display:block;width:100%;height:44px;margin:0;background:transparent;cursor:pointer;--p:100%}
+input[type=range]::-webkit-slider-runnable-track{height:4px;border-radius:2px;background:linear-gradient(90deg,var(--fialova) var(--p),#d8cfde var(--p))}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:26px;height:26px;margin-top:-11px;border-radius:50%;background:#fff;border:2px solid var(--fialova);box-shadow:0 3px 10px -2px rgba(31,23,38,.35);transition:scale .15s ease}
+input[type=range]:active::-webkit-slider-thumb{scale:1.12}
+input[type=range]::-moz-range-track{height:4px;border-radius:2px;background:#d8cfde}
+input[type=range]::-moz-range-progress{height:4px;border-radius:2px;background:var(--fialova)}
+input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:#fff;border:2px solid var(--fialova);box-shadow:0 3px 10px -2px rgba(31,23,38,.35)}
+input[type=range]:focus-visible{outline:2px solid var(--fialova);outline-offset:2px}
+
+/* Filtre: na počítači v riadku, na mobile v spodnom okne (ten istý prvok, popover; zatvorený je skrytý aj pre fokus) */
+.filtre{gap:18px 28px}
+.filtre-hlava,.filtre-paticka{display:none}
+.filter-cena-hlava{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.filter-cena output{font:700 15px/1.3 var(--text);color:var(--fialova);font-variant-numeric:tabular-nums}
+.vysledok-riadok{display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px;margin:18px 0 22px;min-height:44px}
+.vysledok-text{font-size:15px;color:var(--tlmeny);margin-right:auto}
+.vysledok-text strong{color:var(--atrament);font-weight:700}
+.filtre-tlacidlo{display:inline-flex;align-items:center;gap:9px;min-height:44px;padding:0 16px;border:1px solid var(--linka-2);border-radius:999px;background:#fff;color:var(--atrament);font:700 15px/1 var(--text);cursor:pointer}
+.filtre-tlacidlo:hover{border-color:var(--fialova)}
+.filtre-tlacidlo b{display:inline-grid;place-items:center;min-width:22px;height:22px;padding:0 6px;border-radius:999px;background:var(--fialova);color:#fff;font-size:12.5px}
+.pohlad{display:inline-flex;padding:3px;border-radius:999px;background:var(--dym-2)}
+.pohlad button{min-height:40px;min-width:44px;padding:0 15px;border:0;border-radius:999px;background:transparent;color:var(--tlmeny);font:700 14.5px/1 var(--text);cursor:pointer;transition:background-color .2s ease,color .2s ease}
+.pohlad button[aria-pressed="true"]{background:#fff;color:var(--atrament);box-shadow:0 2px 8px -3px rgba(31,23,38,.35)}
+.ponuka-mriezka{display:grid;gap:clamp(40px,5vw,56px)}
+.karty{display:grid;gap:clamp(34px,3.4vw,48px) clamp(20px,2.4vw,32px);align-content:start}
+.karta{position:relative;display:flex;flex-direction:column;min-width:0}
+.karta-foto{position:relative;overflow:hidden;aspect-ratio:3/2;background:var(--dym-2);border-radius:14px}
+.karta-foto img{width:100%;height:100%;object-fit:cover;transition:scale .8s var(--vstup)}
+.karta:hover .karta-foto img{scale:1.035}
+.karta-telo{display:flex;flex-direction:column;gap:5px;padding-top:16px;flex:1}
+.mena{font-family:var(--text);font-weight:600;font-size:.62em;letter-spacing:0;vertical-align:.1em}
+.karta-cena{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:2px 14px}
+.cena{font:540 clamp(26px,2.2vw,30px)/1.05 var(--titul);letter-spacing:-.012em;color:var(--atrament);font-variant-numeric:lining-nums;white-space:nowrap}
+.cena-m2{font-size:14px;color:var(--tlmeny);font-variant-numeric:tabular-nums;white-space:nowrap}
+.karta-nazov{font:700 17px/1.35 var(--text);letter-spacing:0;margin-top:4px}
+.karta-miesto{display:flex;align-items:center;gap:9px;font-size:15px;color:var(--tlmeny)}
+.cislo{display:inline-grid;place-items:center;flex:none;width:24px;height:24px;border-radius:50%;background:var(--fialova);color:#fff;font:700 12px/1 var(--text);font-variant-numeric:tabular-nums}
+.karta-fakty{list-style:none;display:flex;flex-wrap:wrap;gap:4px 16px;margin-top:8px;padding:10px 0 0;border-top:1px solid var(--linka);font-size:14.5px;color:var(--atrament)}
+.karta-otvor{align-self:flex-start;margin-top:auto;padding-top:6px}
+.karta-otvor::after{content:"";position:absolute;inset:0;z-index:1}
+.karta-otvor:focus-visible{outline:none}
+.karta:has(.karta-otvor:focus-visible){outline:2px solid var(--fialova);outline-offset:6px;border-radius:16px}
+.karta.zvyraznena .karta-foto::after{content:"";position:absolute;inset:0;border-radius:inherit;box-shadow:inset 0 0 0 3px var(--fialova)}
+.prazdne{grid-column:1/-1;padding:clamp(28px,4vw,48px);background:var(--dym);border-radius:18px;display:grid;gap:12px;justify-items:start}
+.prazdne-nadpis{font:500 clamp(26px,2.4vw,34px)/1.1 var(--titul)}
+.prazdne-akcie{display:flex;flex-wrap:wrap;gap:10px;margin-top:6px}
+.ponuka-pozn{margin-top:clamp(30px,4vw,44px);font-size:14.5px;color:var(--tlmeny);max-width:60em}
+
+/* Ilustračná mapa: popisy sú HTML s pevnou veľkosťou, nie text v SVG, ktorý sa zmenšuje s mapou */
+.mapa{position:relative;margin:0}
+.mapa-plocha{position:relative;aspect-ratio:6/7;background:#f3eff5;border:1px solid var(--linka);border-radius:18px;overflow:hidden;container-type:inline-size}
+.mapa-plocha>svg{position:absolute;inset:0;width:100%;height:100%}
+.mapa-popis{position:absolute;left:var(--x);top:var(--y);translate:-50% -50%;z-index:1;font:700 clamp(11px,2.3cqi,12.5px)/1.1 var(--text);letter-spacing:.12em;text-transform:uppercase;color:var(--tlmeny);white-space:nowrap;pointer-events:none}
+.mapa-popis.prirodne{font-weight:600;font-style:italic;letter-spacing:.02em;text-transform:none;color:#4a5e82}
+.mapa-popis.rieka{rotate:-62deg}
+.mapa-popis.hrad{color:var(--fialova);letter-spacing:.16em}
+.pin{position:absolute;left:var(--x);top:var(--y);z-index:2;display:grid;place-items:center;width:44px;height:52px;margin:-50px 0 0 -22px;text-decoration:none;color:#fff;transition:scale .25s var(--vstup),opacity .25s ease}
+.pin-hlava{display:grid;place-items:center;width:34px;height:34px;border-radius:50% 50% 50% 4px;rotate:-45deg;background:var(--fialova);box-shadow:0 6px 14px -6px rgba(31,23,38,.6);border:2px solid #fff;transition:background-color .2s ease}
+.pin-hlava b{rotate:45deg;font:700 13px/1 var(--text)}
+.pin.vlavo .pin-cena{left:auto;right:38px}
+.pin-cena{position:absolute;left:38px;top:6px;padding:5px 9px;border-radius:8px;background:#fff;color:var(--atrament);font:700 13px/1 var(--text);white-space:nowrap;box-shadow:0 6px 16px -8px rgba(31,23,38,.5);opacity:0;translate:-4px 0;transition:opacity .2s ease,translate .2s var(--vstup);pointer-events:none}
+.pin:hover,.pin:focus-visible,.pin.aktivny{scale:1.14;z-index:4}
+.pin:hover .pin-hlava,.pin:focus-visible .pin-hlava,.pin.aktivny .pin-hlava{background:var(--atrament)}
+.pin:hover .pin-cena,.pin:focus-visible .pin-cena,.pin.aktivny .pin-cena{opacity:1;translate:0 0}
+.pin:focus-visible{outline:none}
+.pin:focus-visible .pin-hlava{outline:2px solid var(--atrament);outline-offset:3px}
+.pin-kancelaria .pin-hlava{background:var(--slnko);color:var(--baklazan);border-color:var(--baklazan)}
+.pin-kancelaria .pin-hlava svg{rotate:45deg}
+.mapa figcaption{margin-top:12px;font-size:14px;line-height:1.5;color:var(--tlmeny)}
+
+/* Hypotéka */
+.hypoteka{background:var(--dym)}
+.hypoteka-mriezka{display:grid;gap:clamp(32px,5vw,72px);align-items:start}
+.upozornenie{display:grid;grid-template-columns:28px 1fr;gap:14px;margin-top:28px;padding:18px 20px;background:#fff;border-radius:14px;border-left:3px solid var(--fialova);font-size:15.5px;line-height:1.55;color:var(--tlmeny)}
+.upozornenie svg{color:var(--fialova);margin-top:1px}
+.upozornenie strong{display:block;color:var(--atrament);font-size:16.5px;margin-bottom:2px}
+.kalkulacka{background:#fff;border:1px solid var(--linka);border-radius:22px;padding:clamp(20px,3vw,36px);display:grid;gap:22px;box-shadow:0 30px 60px -48px rgba(31,23,38,.45)}
+.kalk-pole{display:grid;gap:2px}
+.kalk-hlava{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.kalk-hlava label{font:600 15px/1.3 var(--text);color:var(--atrament)}
+.kalk-hlava output{font:700 16px/1.3 var(--text);color:var(--fialova);font-variant-numeric:tabular-nums;text-align:right}
+.kalk-rozsah{display:flex;justify-content:space-between;font-size:13px;color:var(--tlmeny);margin-top:-4px}
+.kalk-vysledok{margin-top:6px;padding-top:22px;border-top:1px solid var(--atrament);display:grid;gap:14px}
+.kalk-stitok{font:600 14px/1.3 var(--text);color:var(--tlmeny)}
+.kalk-stitok b{display:inline-block;margin-left:8px;padding:3px 9px;border-radius:999px;background:var(--dym-2);color:var(--fialova-2);font-size:12px;letter-spacing:.04em;text-transform:uppercase;vertical-align:1px}
+.kalk-splatka{font:500 clamp(54px,6vw,82px)/.95 var(--titul);letter-spacing:-.03em;color:var(--atrament);font-variant-numeric:lining-nums}
+.kalk-splatka .mena{font-size:.5em;vertical-align:.12em}
+.kalk-splatka small{font:400 .3em/1 var(--text);letter-spacing:0;color:var(--tlmeny);margin-left:.2em}
+.kalk-fakty{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;font-size:14px;color:var(--tlmeny)}
+.kalk-fakty dd{font:700 17px/1.3 var(--text);color:var(--atrament);font-variant-numeric:tabular-nums;margin-top:2px;white-space:nowrap}
+.pomer{display:flex;height:8px;border-radius:4px;background:var(--dym-2);overflow:hidden}
+.pomer-istina{background:var(--fialova);width:58%;transition:width .35s var(--vstup)}
+.pomer-uroky{background:var(--med)}
+.pomer-legenda{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13.5px;color:var(--tlmeny)}
+.pomer-legenda span{display:inline-flex;align-items:center;gap:7px}
+.pomer-legenda i{width:10px;height:10px;border-radius:3px;display:inline-block}
+.kalk-bezjs{font-size:15px;color:var(--tlmeny)}
+
+/* Predávate: tmavá kapitola, svetlo z lamiel padá aj sem */
+.predat{position:relative;overflow:hidden;background:var(--baklazan);color:var(--na-tme)}
+.predat .svetlo{opacity:1;-webkit-mask-image:radial-gradient(70% 90% at 100% 0%,#000 0%,rgba(0,0,0,.6) 45%,transparent 80%);mask-image:radial-gradient(70% 90% at 100% 0%,#000 0%,rgba(0,0,0,.6) 45%,transparent 80%)}
+.predat .svetlo::after{background:none}
+.predat .obsah{position:relative;z-index:2}
+.predat .nadpis{color:var(--na-tme)}
+.predat .uvodny{color:var(--na-tme-2)}
+.predat-mriezka{display:grid;gap:clamp(40px,6vw,96px)}
+.provizia{display:grid;grid-template-columns:auto 1fr;gap:6px 24px;align-items:end;margin:clamp(30px,4vw,48px) 0 clamp(26px,3vw,36px);padding-top:24px;border-top:1px solid rgba(246,241,248,.2)}
+.provizia-cislo{font:500 clamp(84px,11vw,160px)/.82 var(--titul);letter-spacing:-.04em;color:var(--slnko);font-variant-numeric:lining-nums}
+.provizia-cislo small{font-size:.42em;letter-spacing:-.02em;margin-left:.04em}
+.provizia-popis{max-width:22em;font-size:15.5px;line-height:1.55;color:var(--na-tme-2);padding-bottom:8px}
+.provizia-popis strong{color:var(--na-tme)}
+.kroky{list-style:none;padding:0;border-top:1px solid rgba(246,241,248,.2)}
+.krok{display:grid;grid-template-columns:52px 1fr;gap:4px 18px;padding:24px 0;border-bottom:1px solid rgba(246,241,248,.2)}
+.krok-cislo{grid-row:1/span 2;font:500 34px/1 var(--titul);color:var(--slnko);font-variant-numeric:lining-nums}
+.krok h3{font:700 19px/1.35 var(--text);color:var(--na-tme)}
+.krok p{font-size:15.5px;line-height:1.6;color:var(--na-tme-2)}
+
+/* Makléri: dlaždice so svetlom namiesto sivých kruhov */
+.makleri-zoznam{list-style:none;padding:0;border-top:1px solid var(--atrament)}
+.makler{display:grid;grid-template-columns:64px 1fr;gap:14px 20px;align-items:center;padding:24px 0;border-bottom:1px solid var(--linka)}
+.makler-znak{position:relative;display:grid;place-items:center;width:64px;height:64px;border-radius:16px;overflow:hidden;color:var(--slnko);font:500 34px/1 var(--titul);
+  background:repeating-linear-gradient(166deg,rgba(255,210,143,0) 0 8px,rgba(255,210,143,.2) 11px 16px,rgba(255,210,143,0) 19px 24px),var(--baklazan)}
+.makler-meno h3{font:520 clamp(26px,2.4vw,32px)/1.1 var(--titul);letter-spacing:-.015em}
+.makler-meno p{font-size:15.5px;color:var(--tlmeny);margin-top:4px}
+.makler-jazyky{grid-column:2;font-size:14.5px;color:var(--tlmeny)}
+.makler-jazyky strong{color:var(--atrament);font-weight:700}
+.makler-akcie{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:10px}
+.makler-akcie .akcia{flex:1 1 100%}
+
+/* Otázky */
+.otazky{background:var(--dym)}
+.otazky-mriezka{display:grid;gap:clamp(28px,5vw,72px)}
+.otazky-zoznam{border-top:1px solid var(--atrament)}
+.otazka{border-bottom:1px solid var(--linka)}
+.otazka summary{list-style:none;display:flex;justify-content:space-between;align-items:center;gap:20px;min-height:64px;padding:16px 0;cursor:pointer;font:700 17px/1.4 var(--text)}
+.otazka summary::-webkit-details-marker{display:none}
+.otazka summary::after{content:"";flex:none;width:14px;height:14px;background:linear-gradient(var(--fialova),var(--fialova)) center/14px 1.8px no-repeat,linear-gradient(var(--fialova),var(--fialova)) center/1.8px 14px no-repeat;transition:rotate .3s var(--vstup)}
+.otazka[open] summary::after{rotate:45deg}
+.otazka summary:hover{color:var(--fialova)}
+.otazka p{padding:0 0 22px;max-width:44em;color:var(--tlmeny)}
+
+/* Kontakt */
+.kontakt-mriezka{display:grid;gap:clamp(36px,5vw,80px)}
+.adresa{font:480 clamp(30px,3vw,42px)/1.14 var(--titul);font-style:normal;letter-spacing:-.018em;margin-top:22px}
+.stav{display:inline-flex;align-items:center;gap:10px;margin-top:20px;padding:9px 16px 9px 13px;background:var(--dym);font-weight:700;font-size:15px;border-radius:999px}
+.stav-bod{width:9px;height:9px;border-radius:50%;background:#2f8a5b;box-shadow:0 0 0 4px rgba(47,138,91,.18)}
+.stav.zatvorene .stav-bod{background:var(--linka-2);box-shadow:0 0 0 4px rgba(139,127,150,.2)}
+.kontakt-zoznam{list-style:none;padding:0;margin-top:26px;border-top:1px solid var(--linka)}
+.kontakt-zoznam li{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:4px 16px;min-height:56px;padding:8px 0;border-bottom:1px solid var(--linka);font-size:16px}
+.kontakt-zoznam .pozn{font-size:14px;color:var(--tlmeny)}
+.kontakt-zoznam a{display:inline-flex;align-items:center;min-height:44px;color:var(--fialova);font-weight:700;overflow-wrap:anywhere}
+.cisla{font-variant-numeric:tabular-nums lining-nums}
+.hodiny{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;margin-top:18px}
+.hodiny th,.hodiny td{padding:13px 0;border-bottom:1px solid var(--linka);text-align:left;font-weight:400}
+.hodiny td{text-align:right}
+.hodiny tr.dnes th,.hodiny tr.dnes td{font-weight:700;color:var(--fialova)}
+.znacka-dnes{display:inline-block;margin-left:10px;padding:2px 8px;background:var(--fialova);color:#fff;font-size:12px;font-weight:700;border-radius:999px;vertical-align:2px}
+.kontakt-h3{font:700 15px/1.3 var(--text);letter-spacing:.03em;color:var(--tlmeny)}
+
+/* Päta: veľké meno, cez ktoré prechádza svetlo */
+.pata{position:relative;background:var(--baklazan-3);color:var(--na-tme-2);padding:clamp(56px,7vw,96px) 0 0;overflow:hidden}
+.pata-mriezka{display:grid;gap:32px}
+.pata .znacka-pod{color:var(--na-tme-2)}
+.pata p{font-size:15px;line-height:1.6;max-width:62ch}
+.pata strong{color:var(--na-tme)}
+.pata .male{font-size:13.5px;margin-top:14px}
+.pata-odkazy{display:grid;gap:4px;align-content:start}
+.pata-odkazy a{display:inline-flex;align-items:center;min-height:44px;color:var(--na-tme);font-weight:600}
+.pata-meno{display:block;width:min(100% - 2 * var(--okraj),1100px);height:auto;margin:clamp(36px,5vw,64px) auto 0;font-family:var(--titul);font-weight:560;letter-spacing:-.035em;translate:0 14%}
+
+/* Spodná lišta na mobile: ukáže sa až po úvode, kde je vlastné tlačidlo */
+.lista{position:fixed;left:0;right:0;bottom:0;z-index:25;display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:8px 12px calc(8px + env(safe-area-inset-bottom));background:#fff;border-top:1px solid var(--linka);box-shadow:0 -10px 30px -22px rgba(31,23,38,.5);
+  translate:0 110%;visibility:hidden;transition:translate .3s var(--pohyb),visibility 0s linear .3s}
+.lista.ukazana{translate:0 0;visibility:visible;transition:translate .35s var(--vstup),visibility 0s linear 0s}
+.lista .akcia{min-height:50px;padding:0 12px}
+
+/* Okná (popover) */
+.okno-p{border:0;padding:0;margin:auto;width:min(460px,100vw - 32px);max-height:calc(100dvh - 32px);overflow:auto;background:#fff;color:var(--atrament);border-radius:22px;box-shadow:0 40px 80px -30px rgba(20,10,28,.6);opacity:1;translate:0 0;transition:opacity .22s ease,translate .26s var(--vstup),overlay .26s allow-discrete,display .26s allow-discrete}
+.okno-p::backdrop{background:rgba(28,19,34,.58);transition:background-color .22s ease,overlay .26s allow-discrete,display .26s allow-discrete}
+@starting-style{.okno-p:popover-open{opacity:0;translate:0 14px}.okno-p:popover-open::backdrop{background:rgba(28,19,34,0)}}
+.okno-p:not(:popover-open){opacity:0;translate:0 8px}
+.okno-hlava{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:22px 22px 16px 24px;border-bottom:1px solid var(--linka)}
+.okno-hlava h2{font:520 27px/1.1 var(--titul);letter-spacing:-.015em}
+.zavriet{flex:none;display:grid;place-items:center;width:44px;height:44px;margin:-8px -8px 0 0;border:0;border-radius:50%;background:transparent;color:var(--atrament);cursor:pointer}
+.zavriet:hover{background:var(--dym)}
+.okno-telo{padding:20px 24px 24px;display:grid;gap:14px;font-size:16px}
+.okno-cislo{font:520 44px/1 var(--titul);letter-spacing:-.02em;color:var(--fialova);font-variant-numeric:lining-nums}
+.okno-pozn{font-size:14.5px;line-height:1.5;color:var(--tlmeny);background:var(--dym);padding:12px 14px;border-radius:12px}
+.okno-akcie{display:grid;gap:10px}
+.okno-menu{width:min(380px,100vw - 24px);margin:12px 12px auto auto}
+.okno-menu ul{list-style:none;margin:0;padding:8px 24px 18px}
+.okno-menu li a{display:flex;align-items:center;justify-content:space-between;min-height:56px;border-bottom:1px solid var(--linka);text-decoration:none;font:500 25px/1.1 var(--titul)}
+
+/* Detail ponuky (dialog) */
+.detail{width:min(1160px,100vw - 40px);max-width:none;max-height:calc(100dvh - 40px);padding:0;border:0;border-radius:22px;background:#fff;color:var(--atrament);box-shadow:0 50px 100px -40px rgba(20,10,28,.7);overflow:hidden}
+.detail::backdrop{background:rgba(28,19,34,.66)}
+.detail[open]{display:flex;flex-direction:column}
+html:has(.detail[open]){overflow:hidden}
+.detail-hlava{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px 10px 22px;border-bottom:1px solid var(--linka);flex:none}
+.detail-hlava p{font-size:14px;color:var(--tlmeny);font-variant-numeric:tabular-nums}
+.detail-hlava .zavriet{margin:0}
+.detail-telo{overflow:auto;overscroll-behavior:contain;flex:1;min-height:0}
+.galeria{background:var(--dym);min-width:0}
+.galeria-ram{position:relative}
+.galeria-scena{position:relative;aspect-ratio:3/2;overflow:hidden;background:var(--dym-2);touch-action:pan-y}
+.galeria-scena>img,.galeria-scena>.podorys{position:absolute;inset:0;width:100%;height:100%}
+.galeria-scena>img{object-fit:cover}
+.galeria-scena>.podorys{background:#fff}
+.galeria-sipka{position:absolute;top:50%;z-index:2;display:grid;place-items:center;width:48px;height:48px;margin-top:-24px;border:0;border-radius:50%;background:rgba(255,255,255,.94);color:var(--atrament);cursor:pointer;box-shadow:0 6px 18px -8px rgba(31,23,38,.5);transition:scale .15s ease}
+.galeria-sipka:hover{scale:1.06}
+.galeria-sipka:active{scale:.96}
+.galeria-sipka.pred{left:12px}
+.galeria-sipka.dalej{right:12px}
+.galeria-pocet{position:absolute;left:12px;bottom:12px;z-index:2;padding:6px 11px;border-radius:999px;background:rgba(28,19,34,.78);color:#fff;font:700 13px/1 var(--text);font-variant-numeric:tabular-nums}
+.galeria-nahlady{display:flex;gap:8px;padding:10px 12px;overflow-x:auto;scrollbar-width:thin}
+.galeria-nahlad{flex:none;position:relative;width:84px;height:56px;padding:0;border:0;border-radius:8px;overflow:hidden;background:#fff;cursor:pointer;opacity:.62;transition:opacity .2s ease}
+.galeria-nahlad img,.galeria-nahlad span{width:100%;height:100%;object-fit:cover}
+.galeria-nahlad span{display:grid;place-items:center;font:700 12px/1.2 var(--text);color:var(--fialova);border:1px solid var(--linka);border-radius:8px}
+.galeria-nahlad::after{content:"";position:absolute;inset:0;border-radius:8px;box-shadow:inset 0 0 0 2px transparent;transition:box-shadow .2s ease}
+.galeria-nahlad[aria-current="true"]{opacity:1}
+.galeria-nahlad[aria-current="true"]::after{box-shadow:inset 0 0 0 2px var(--fialova)}
+.galeria-nahlad:hover{opacity:1}
+.galeria-popis{padding:0 12px 12px;font-size:14px;color:var(--tlmeny);min-height:1.5em}
+.miestnosti{list-style:none;margin:0;padding:0 12px 14px;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:4px 16px;font-size:14px;color:var(--atrament)}
+.miestnosti li{display:grid;grid-template-columns:21px minmax(0,1fr) auto;align-items:center;gap:8px;min-width:0;line-height:1.35}
+.miestnosti b{display:inline-grid;place-items:center;width:21px;height:21px;border-radius:50%;background:var(--atrament);color:#fff;font:700 11.5px/1 var(--text)}
+.miestnosti i{font-style:normal;min-width:0}
+.miestnosti span{color:var(--tlmeny);font-variant-numeric:tabular-nums;white-space:nowrap}
+.podorys text{font-family:var(--text);fill:var(--atrament)}
+.podorys text.c{fill:#fff}
+.detail-info{padding:clamp(20px,3vw,32px);display:grid;gap:16px;align-content:start;min-width:0}
+.detail-info .karta-miesto{font-size:15px}
+.detail-nazov{font:520 clamp(30px,3vw,40px)/1.06 var(--titul);letter-spacing:-.02em}
+.detail-cena{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 14px}
+.detail-cena .cena{font-size:clamp(30px,2.8vw,36px)}
+.detail-popis{color:var(--tlmeny)}
+.detail-parametre{padding:6px clamp(20px,3vw,28px) 30px;min-width:0}
+.detail-h3{font:700 14px/1.3 var(--text);letter-spacing:.03em;color:var(--tlmeny);margin:18px 0 10px}
+.detail-fakty{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);border-top:1px solid var(--atrament);font-size:15px}
+.detail-fakty dt,.detail-fakty dd{padding:9px 0;border-bottom:1px solid var(--linka)}
+.detail-fakty dt{color:var(--tlmeny);padding-right:12px}
+.detail-fakty dd{font-weight:700;font-variant-numeric:tabular-nums}
+.detail-splatka{padding:14px 16px;background:var(--dym);border-radius:14px;font-size:15px;line-height:1.55;color:var(--tlmeny)}
+.detail-splatka strong{color:var(--atrament);font-variant-numeric:tabular-nums}
+.detail-splatka .odkaz{min-height:40px;font-size:15px}
+.detail-makler{display:grid;grid-template-columns:52px 1fr;gap:12px 14px;align-items:center;padding-top:16px;border-top:1px solid var(--linka)}
+.detail-makler .makler-znak{width:52px;height:52px;border-radius:13px;font-size:28px}
+.detail-makler-meno strong{display:block;font:520 22px/1.15 var(--titul)}
+.detail-makler-meno span{font-size:14px;color:var(--tlmeny)}
+.detail-akcie{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.odhalene{grid-column:1/-1;padding:12px 14px;background:var(--dym);border-radius:12px;font-size:14.5px;line-height:1.5;color:var(--tlmeny)}
+.odhalene strong{display:block;font:520 32px/1.1 var(--titul);color:var(--fialova);letter-spacing:-.01em}
+
+/* ---------- Pohyb ---------- */
+/* Úvodný text sa ukáže, keď je načítané písmo (app.js pridá triedu pismo, najneskôr po 1,2 s).
+   Poistka bez app.js: CSS ho ukáže samo po 2,6 s. Bez JS (noscript) a pri obmedzenom pohybe je hneď. */
+@media (prefers-reduced-motion:no-preference){
+  .hrdina-text>*{animation:ukaz-zaloha .01s linear 2.6s both}
+  html.pismo .hrdina-text>*{animation:ukaz .78s var(--vstup) both;animation-delay:calc(var(--k,0) * 90ms)}
+  html.pismo.neskoro .hrdina-text>*,html.uvod-hotovy .hrdina-text>*{animation:none}
+  .hrdina .zaluzia i{animation:zaluzia-zaloha .9s var(--pohyb) 3.6s both}
+  .hrdina.js .zaluzia i{animation:none}
+  .detail[open]{animation:detail-dnu .28s var(--vstup)}
+  .detail[open]::backdrop{animation:pozadie-dnu .28s ease}
+}
+@keyframes ukaz-zaloha{from{opacity:0}to{opacity:1}}
+@keyframes ukaz{from{opacity:0;translate:0 22px}to{opacity:1;translate:0 0}}
+@keyframes zaluzia-zaloha{from{translate:0 0;rotate:x 0deg}to{translate:0 var(--y);rotate:x var(--k)}}
+@keyframes detail-dnu{from{opacity:0;translate:0 16px}to{opacity:1;translate:0 0}}
+@keyframes pozadie-dnu{from{opacity:0}to{opacity:1}}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  .zaluzia i{translate:0 var(--y)!important;rotate:x var(--k)!important}
+  .zaluzia-snury{scale:1 .23!important}
+  .okno::before{opacity:0!important}
+  .svetlo{opacity:1!important}
+  *,*::before,*::after{transition-duration:.01ms!important;transition-delay:0s!important}
+}
+
+/* ---------- Šírky ---------- */
+@media (max-width:1023px){
+  body{padding-bottom:calc(68px + env(safe-area-inset-bottom))}
+  html{scroll-padding-bottom:calc(84px + env(safe-area-inset-bottom))}
+}
+@media (max-width:1023px){
+  .hrdina-dalsie{display:none}
+}
+@media (max-width:899px){
+  .pohlad{order:2;margin-left:auto}
+  .vysledok-text{order:3;flex:1 1 auto;margin-right:0}
+  #f-zrusit{order:4}
+}
+@media (min-width:700px) and (max-width:1023px){
+  .okno-foto{object-position:28% 50%}
+  .okno::after{background:linear-gradient(0deg,rgba(33,24,39,.95) 0%,rgba(33,24,39,.9) 34%,rgba(33,24,39,.72) 45%,rgba(33,24,39,.3) 56%,rgba(33,24,39,0) 68%)}
+  .hrdina-nadpis{font-size:clamp(2.6rem,7.6cqi,4rem);max-width:13em}
+  .hrdina-veta{max-width:36em}
+}
+@media (max-width:699px){
+  .zaluzia{bottom:auto;height:84%}
+}
+@media (min-width:560px){
+  .hladanie .akcia{flex:0 1 auto}
+  .makler{grid-template-columns:72px minmax(0,1fr) auto;align-items:center}
+  .makler-znak{width:72px;height:72px;font-size:38px}
+  .makler-jazyky{grid-column:2}
+  .makler-akcie{grid-column:3;grid-row:1/span 2;flex-wrap:nowrap}
+  .makler-akcie .akcia{flex:none}
+}
+@media (min-width:680px){
+  .karty{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+/* Filtre do 899 px: spodné okno */
+@media (max-width:899px){
+  .filtre[popover]{position:fixed;inset:auto 0 0 0;width:100%;max-width:none;max-height:min(86dvh,640px);margin:0;padding:0 0 calc(12px + env(safe-area-inset-bottom));border:0;border-radius:24px 24px 0 0;background:#fff;color:var(--atrament);box-shadow:0 -30px 60px -30px rgba(20,10,28,.55);overflow:auto;gap:22px;
+    translate:0 0;transition:translate .32s var(--vstup),overlay .32s allow-discrete,display .32s allow-discrete}
+  .filtre[popover]:popover-open{display:grid}
+  .filtre[popover]:not(:popover-open){translate:0 100%}
+  .filtre[popover]::backdrop{background:rgba(28,19,34,.5)}
+  @starting-style{.filtre[popover]:popover-open{translate:0 100%}}
+  .filtre>fieldset,.filtre>.filter-cena,.filtre>.pole{padding-inline:20px}
+  .filtre-hlava{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 12px 8px 20px;border-bottom:1px solid var(--linka);position:sticky;top:0;background:#fff;z-index:1}
+  .filtre-hlava h3{font:520 24px/1.1 var(--titul)}
+  .filtre-paticka{display:grid;grid-template-columns:auto 1fr;gap:10px;padding:14px 20px 0;border-top:1px solid var(--linka);position:sticky;bottom:0;background:#fff}
+}
+@media (min-width:900px){
+  .filtre[popover]{display:grid;position:static;inset:auto;width:auto;height:auto;max-height:none;margin:0;border:0;padding:20px 0 22px;overflow:visible;background:transparent;color:inherit;
+    grid-template-columns:repeat(3,minmax(0,1fr));align-items:end;margin-top:clamp(22px,3vw,34px);border-top:1px solid var(--atrament);border-bottom:1px solid var(--linka)}
+  .filtre>fieldset{grid-column:1/-1}
+  .filtre-tlacidlo{display:none}
+  .detail-telo{display:grid;grid-template-columns:minmax(0,1.42fr) minmax(0,1fr);grid-template-rows:auto 1fr;grid-template-areas:"galeria info" "parametre info";align-items:start}
+  .galeria{grid-area:galeria}
+  .detail-info{grid-area:info;position:sticky;top:0}
+  .detail-parametre{grid-area:parametre}
+  .hypoteka-mriezka{grid-template-columns:minmax(0,5fr) minmax(0,6fr)}
+  .otazky-mriezka{grid-template-columns:minmax(0,5fr) minmax(0,7fr)}
+  .kontakt-mriezka{grid-template-columns:minmax(0,7fr) minmax(0,5fr)}
+  .pata-mriezka{grid-template-columns:minmax(0,2fr) minmax(0,1fr)}
+}
+@media (min-width:1200px){
+  .filtre[popover]{grid-template-columns:auto minmax(220px,1fr) minmax(170px,.62fr) minmax(170px,.62fr)}
+  .filtre>fieldset{grid-column:auto}
+}
+@media (max-width:899px){
+  .detail{width:100%;max-width:100%;height:100dvh;max-height:100dvh;margin:0;border-radius:0}
+  .detail-info{padding-bottom:8px}
+  .galeria-sipka{display:none}
+}
+/* Mapa do 1099 px: prepínač Zoznam a Mapa, mapa najviac 72 % výšky okna */
+@media (max-width:1099px){
+  .ponuka-mriezka:not(.ukaz-mapu) .mapa{display:none}
+  .ponuka-mriezka.ukaz-mapu .karty{display:none}
+  .mapa-plocha{width:min(100%,calc(72svh * 6 / 7));margin-inline:auto}
+  .mapa figcaption{max-width:40em;margin-inline:auto;text-align:center}
+}
+@media (min-width:1100px){
+  .ponuka-mriezka{grid-template-columns:minmax(0,7.2fr) minmax(0,4.8fr);align-items:start}
+  .mapa{position:sticky;top:calc(var(--hlava-v) + 20px)}
+  .pohlad{display:none}
+}
+@media (min-width:1024px){
+  .menu{display:block}
+  .menu-tlacidlo,.hlava-telefon{display:none}
+  .hlava .hlava-volat{display:inline-flex}
+  .lista{display:none}
+  /* Stena vľavo, okno so žalúziami vpravo až po okraj */
+  .hrdina{--lavy:max(var(--okraj),(100% - var(--max)) / 2);grid-template-columns:var(--lavy) minmax(0,46fr) clamp(28px,3.6vw,72px) minmax(0,54fr);
+    min-height:clamp(640px,calc(100svh - var(--hlava-v) - var(--pas-v)),1040px)}
+  .hrdina-foto{grid-area:1/4/2/5}
+  .hrdina-text{grid-area:1/2/2/3;width:auto;margin:0;align-self:stretch;display:flex;flex-direction:column;justify-content:center;padding:clamp(40px,7svh,96px) 0 0}
+  .hrdina-nadpis{text-shadow:none;font-size:clamp(2.6rem,11cqi,6.4rem)}
+  .okno::after{background:linear-gradient(0deg,rgba(33,24,39,.55) 0%,rgba(33,24,39,0) 26%)}
+  .okno-foto{object-position:38% 50%}
+  .svetlo{-webkit-mask-image:linear-gradient(90deg,rgba(0,0,0,.25) 0%,#000 40%,#000 49%,transparent 50.5%);mask-image:linear-gradient(90deg,rgba(0,0,0,.25) 0%,#000 40%,#000 49%,transparent 50.5%)}
+  .svetlo::after{background:radial-gradient(60% 70% at 54% 46%,rgba(255,196,120,.14),transparent 70%)}
+  .hladanie .akcia{flex:0 1 auto}
+  .hrdina-popis{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"kto odkaz" "co odkaz";align-items:center;column-gap:18px;position:absolute;left:20px;bottom:20px;z-index:4;max-width:calc(100% - 40px);padding:10px 10px 10px 16px;border-radius:14px;background:rgba(28,19,34,.76);color:var(--na-tme);font-size:14.5px;line-height:1.35}
+  .popis-kto{grid-area:kto;font-size:12.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--slnko)}
+  .popis-co{grid-area:co}
+  .hrdina-popis a{grid-area:odkaz;display:inline-flex;align-items:center;min-height:44px;padding:0 14px;border-radius:999px;background:rgba(246,241,248,.1);color:var(--na-tme);font-weight:700;text-decoration:none}
+  .hrdina-popis a:hover{background:rgba(246,241,248,.18)}
+  .hrdina-fakty{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0 22px;list-style:none;padding:20px 0 clamp(22px,4svh,40px);margin-top:auto;border-top:1px solid rgba(246,241,248,.18);font-size:14px;line-height:1.45;color:var(--na-tme-2)}
+  .hrdina-fakty li{display:grid;gap:8px;align-content:start}
+  .hrdina-fakty svg{color:var(--slnko)}
+  .hrdina-fakty strong{display:block;color:var(--na-tme);font-weight:700;font-size:14.5px}
+  .predat-mriezka{grid-template-columns:minmax(0,6fr) minmax(0,6fr);align-items:start}
+}
+@media (min-width:1024px) and (max-height:820px){
+  .hrdina-text{padding-top:28px}
+  .hrdina-veta{margin-top:10px}
+  .hrdina-fakty{padding-top:14px}
+}
+@media (max-width:420px){
+  .pas .obsah{column-gap:14px}
+  .znacka-pod{display:none}
+  .znacka-meno{font-size:25px}
+  .hrdina-veta{font-size:15.5px}
+}
+</style>
+<noscript><style>
+.len-js{display:none!important}
+.hrdina-text>*{animation:none!important;opacity:1!important}
+.zaluzia i{translate:0 var(--y)!important;rotate:x var(--k)!important;animation:none!important}
+.zaluzia-snury{scale:1 .23!important}
+.okno::before{opacity:0!important}
+.svetlo{opacity:1!important}
+.ponuka-mriezka .mapa{display:block!important}
+.lista{translate:0 0!important;visibility:visible!important}
+@media (max-width:1023px){.hrdina-text{padding-bottom:calc(84px + env(safe-area-inset-bottom))}}
+</style></noscript>
+<script src="app.js" defer></script>
+</head>
+<body>
+<a class="preskocit" href="#obsah">Preskočiť na obsah</a>
+
+<div class="pas tma" role="note">
+  <div class="obsah">
+    <p><strong>Ukážka webu od ARLing, vymyslená prevádzka.</strong> Reality Hradba neexistuje, ponuky, mená aj čísla sú vymyslené.</p>
+    <a href="https://arling.sk/web/?z=reality" target="_top">Chcem taký web</a>
+    <a href="../../index.html#ukazky" target="_top">Späť na ukážky</a>
+  </div>
+</div>
+
+<header class="hlava tma" id="hlava">
+  <div class="obsah hlava-riadok">
+    <a class="znacka" href="#obsah">
+      <svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true" focusable="false"><path d="M4 31V8.5h4.4v3.6h3.4V8.5h4.4v3.6h3.4V8.5H24v3.6h3.4V8.5H32V31h-9.6v-6.4a3.4 3.4 0 0 0-6.8 0V31z" fill="currentColor"/></svg>
+      <span class="znacka-slova"><span class="znacka-meno">Hradba</span> <span class="znacka-pod">reality, Nitra</span></span><span class="skryte">, na začiatok stránky</span>
+    </a>
+    <nav class="menu" aria-label="Hlavná ponuka">
+      <ul>
+        <li><a href="#ponuka">Ponuka</a></li>
+        <li><a href="#hypoteka">Hypotéka</a></li>
+        <li><a href="#predat">Predávate?</a></li>
+        <li><a href="#makleri">Makléri</a></li>
+        <li><a href="#kontakt">Kontakt</a></li>
+      </ul>
+    </nav>
+    <button class="akcia akcia-svetla akcia-mala hlava-volat" type="button" popovertarget="okno-volat" data-volat="kancelaria">
+      <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6.6 3.5l2.6.4 1.4 4.3-1.9 1.6a12.6 12.6 0 0 0 5.5 5.5l1.6-1.9 4.3 1.4.4 2.6a2 2 0 0 1-2 2.3A16.9 16.9 0 0 1 4.3 5.5a2 2 0 0 1 2.3-2z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
+      Zavolať
+    </button>
+    <button class="hlava-telefon" type="button" popovertarget="okno-volat" data-volat="kancelaria" aria-label="Zavolať do kancelárie">
+      <svg width="19" height="19" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6.6 3.5l2.6.4 1.4 4.3-1.9 1.6a12.6 12.6 0 0 0 5.5 5.5l1.6-1.9 4.3 1.4.4 2.6a2 2 0 0 1-2 2.3A16.9 16.9 0 0 1 4.3 5.5a2 2 0 0 1 2.3-2z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
+    </button>
+    <button class="menu-tlacidlo" type="button" popovertarget="okno-menu" aria-label="Otvoriť menu stránky">
+      <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 8h16M4 16h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      Menu
+    </button>
+  </div>
+</header>
+
+<main id="obsah">
+  <section class="hrdina tma" id="hrdina" aria-labelledby="hrdina-nadpis">
+    <div class="svetlo" aria-hidden="true"></div>
+    <div class="hrdina-text">
+      <h1 class="hrdina-nadpis" id="hrdina-nadpis">Bývanie v&nbsp;Nitre, preverené do posledného papiera.</h1>
+      <p class="hrdina-veta" style="--k:1">Byty a&nbsp;domy v&nbsp;Nitre a&nbsp;okolí, právne preverené, nafotené a&nbsp;zmerané ešte pred zverejnením.</p>
+      <div class="hladanie len-js" style="--k:2" role="search" aria-label="Rýchle hľadanie v ponuke">
+        <fieldset>
+          <legend>Koľko izieb hľadáte?</legend>
+          <div class="cipy">
+            <label class="cip"><input type="radio" name="h-izby" value="" checked><span>Všetky</span></label>
+            <label class="cip"><input type="radio" name="h-izby" value="1"><span>1</span></label>
+            <label class="cip"><input type="radio" name="h-izby" value="2"><span>2</span></label>
+            <label class="cip"><input type="radio" name="h-izby" value="3"><span>3</span></label>
+            <label class="cip"><input type="radio" name="h-izby" value="4"><span>4 a&nbsp;viac</span></label>
+          </div>
+        </fieldset>
+        <button class="akcia akcia-svetla" type="button" id="h-zobraz"><span id="h-zobraz-text">Zobraziť 8 ponúk</span> <svg class="sipka" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 12h15m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      </div>
+      <noscript><p><a class="akcia akcia-svetla" href="#ponuka">Pozrieť ponuku</a></p></noscript>
+      <p class="hrdina-dalsie" style="--k:3"><a href="#predat">Predávate? Ocenenie zdarma</a></p>
+      <ul class="hrdina-fakty" style="--k:4">
+        <li><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3l7 3v5.5c0 4.3-3 7.7-7 9.5-4-1.8-7-5.2-7-9.5V6z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M8.6 12.2l2.3 2.3 4.6-4.8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span><strong>Právna previerka</strong>list vlastníctva a&nbsp;ťarchy pred zverejnením</span></li>
+        <li><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="7.5" cy="7.5" r="2.6" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="16.5" cy="16.5" r="2.6" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M18 5L6 19" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span><strong>Provízia 3,5&nbsp;% po predaji</strong>platí predávajúci, kupujúci nič navyše</span></li>
+        <li><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="6.6" cy="12" r="3.9" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10.5 12h11M17.5 12v3.4M20.6 12v2.4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span><strong>Maklér na obhliadke</strong>osobne, cez týždeň aj v&nbsp;sobotu</span></li>
+      </ul>
+    </div>
+    <figure class="hrdina-foto">
+      <div class="okno">
+        <picture>
+          <source media="(max-width: 699px)" srcset="img/uvod-vyska-600.webp 600w, img/uvod-vyska-760.webp 760w, img/uvod-vyska-900.webp 900w, img/uvod-vyska-1200.webp 1200w" sizes="100vw" width="1200" height="2182">
+          <img class="okno-foto" src="img/uvod-1600.webp" srcset="img/uvod-800.webp 800w, img/uvod-1600.webp 1600w, img/uvod-2400.webp 2400w" sizes="(min-width: 1024px) and (max-height: 760px) 900px, (min-width: 1024px) calc((100vh - 120px) * 1.25), (orientation: portrait) calc((100vh - 120px) * 1.25), 100vw" width="2400" height="1920" alt="Obývačka s jedálenským stolom, jantárovou vázou, modrozelenými závesmi a pásmi slnka na parketách" fetchpriority="high" decoding="async">
+        </picture>
+        <div class="zaluzia" aria-hidden="true">
+          <span class="zaluzia-snury"></span>
+          <i style="--i:0;--y:0%"></i><i style="--i:1;--y:-94.12%"></i><i style="--i:2;--y:-188.24%"></i><i style="--i:3;--y:-282.35%"></i><i style="--i:4;--y:-376.47%"></i>
+          <i style="--i:5;--y:-470.59%"></i><i style="--i:6;--y:-564.71%"></i><i style="--i:7;--y:-658.82%"></i><i style="--i:8;--y:-752.94%"></i><i style="--i:9;--y:-847.06%"></i>
+          <i style="--i:10;--y:-941.18%"></i><i style="--i:11;--y:-1035.29%"></i><i style="--i:12;--y:-1129.41%"></i><i style="--i:13;--y:-1223.53%"></i><i style="--i:14;--y:-1317.65%"></i>
+          <i style="--i:15;--y:-1411.76%"></i><i style="--i:16;--y:-1505.88%"></i><i class="spustena" style="--i:17;--y:-1500%"></i><i class="spustena" style="--i:18;--y:-1500%"></i><i class="dole" style="--i:19;--y:-1500%"></i>
+          <span class="zaluzia-hlava"></span>
+        </div>
+      </div>
+      <figcaption class="hrdina-popis"><span class="popis-kto">Na fotke ponuka&nbsp;1</span><span class="popis-co">3-izbový byt v&nbsp;Starom meste, 274&nbsp;900&nbsp;€</span><a href="#ponuka-1" data-detail="1">Pozrieť byt<span class="skryte"> v&nbsp;Starom meste</span></a></figcaption>
+    </figure>
+  </section>
+
+  <section class="sekcia ponuka" id="ponuka" aria-labelledby="ponuka-nadpis">
+    <div class="obsah">
+      <div class="ponuka-hlava">
+        <h2 class="nadpis" id="ponuka-nadpis">Aktuálna ponuka.</h2>
+        <p class="uvodny">Osem bytov a&nbsp;domov, každý s&nbsp;fotkami, pôdorysom a&nbsp;právnou previerkou. Ceny sú konečné, províziu platí predávajúci a&nbsp;na obhliadku s&nbsp;vami príde maklér.</p>
+      </div>
+
+      <div class="filtre len-js" id="filtre" popover role="group" aria-label="Filtre ponuky">
+        <div class="filtre-hlava">
+          <h3>Filtre</h3>
+          <button class="zavriet" type="button" popovertarget="filtre" popovertargetaction="hide" aria-label="Zavrieť filtre"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+        </div>
+        <fieldset>
+          <legend>Počet izieb</legend>
+          <div class="cipy">
+            <label class="cip"><input type="radio" name="f-izby" value="" checked><span>Všetky</span></label>
+            <label class="cip"><input type="radio" name="f-izby" value="1"><span>1</span></label>
+            <label class="cip"><input type="radio" name="f-izby" value="2"><span>2</span></label>
+            <label class="cip"><input type="radio" name="f-izby" value="3"><span>3</span></label>
+            <label class="cip"><input type="radio" name="f-izby" value="4"><span>4 a&nbsp;viac</span></label>
+          </div>
+        </fieldset>
+        <div class="filter-cena">
+          <div class="filter-cena-hlava"><label class="pole-meno" for="f-cena">Cena do</label><output id="f-cena-hodnota" for="f-cena">bez limitu</output></div>
+          <input type="range" id="f-cena" min="120000" max="460000" step="10000" value="460000" aria-valuetext="bez limitu">
+        </div>
+        <label class="pole"><span class="pole-meno">Lokalita</span>
+          <select id="f-lok">
+            <option value="">Nitra a&nbsp;okolie</option>
+            <option value="stare-mesto">Staré mesto</option>
+            <option value="zobor">Zobor</option>
+            <option value="klokocina">Klokočina</option>
+            <option value="chrenova">Chrenová</option>
+            <option value="diely">Diely</option>
+            <option value="cerman">Čermáň</option>
+            <option value="drazovce">Dražovce</option>
+            <option value="luzianky">Lužianky</option>
+          </select>
+        </label>
+        <label class="pole"><span class="pole-meno">Zoradiť</span>
+          <select id="f-poradie">
+            <option value="">Odporúčané</option>
+            <option value="lacne">Od najlacnejšej</option>
+            <option value="drahe">Od najdrahšej</option>
+            <option value="plocha">Od najväčšej plochy</option>
+            <option value="m2">Najnižšia cena za m²</option>
+          </select>
+        </label>
+        <div class="filtre-paticka">
+          <button class="akcia akcia-obrys akcia-mala" type="button" id="f-zrusit-okno">Zrušiť</button>
+          <button class="akcia akcia-plna" type="button" id="f-hotovo" popovertarget="filtre" popovertargetaction="hide"><span id="f-hotovo-text">Zobraziť 8 ponúk</span></button>
+        </div>
+      </div>
+
+      <div class="vysledok-riadok">
+        <button class="filtre-tlacidlo len-js" type="button" popovertarget="filtre" id="filtre-otvor"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 7h10M18 7h2M4 17h4M12 17h8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="16" cy="7" r="2.2" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="10" cy="17" r="2.2" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>Filtre <b id="filtre-pocet" hidden>0</b></button>
+        <p class="vysledok-text" id="vysledok" aria-live="polite"><strong>8&nbsp;nehnuteľností</strong> v&nbsp;ponuke</p>
+        <button class="odkaz len-js" type="button" id="f-zrusit" hidden>Zrušiť filtre</button>
+        <div class="pohlad len-js" role="group" aria-label="Zobrazenie ponuky">
+          <button type="button" id="pohlad-zoznam" aria-pressed="true">Zoznam</button>
+          <button type="button" id="pohlad-mapa" aria-pressed="false">Mapa</button>
+        </div>
+      </div>
+
+      <div class="ponuka-mriezka" id="ponuka-mriezka">
+        <div class="karty" id="karty">
+          <article class="karta" id="ponuka-1" data-id="1" data-izby="3" data-cena="274900" data-plocha="82.5" data-lok="stare-mesto">
+            <div class="karta-foto"><img src="img/b1-sedacka-800.webp" srcset="img/b1-sedacka-800.webp 800w, img/b1-sedacka-1600.webp 1600w" sizes="(min-width: 1100px) 400px, (min-width: 680px) calc(50vw - 48px), calc(100vw - 32px)" width="1600" height="1067" alt="Sedenie pri okne s modrozelenými závesmi, mosadzné svietidlá a jantárová váza" loading="lazy" decoding="async" fetchpriority="low"></div>
+            <div class="karta-telo">
+              <p class="karta-cena"><span class="cena">274&nbsp;900&nbsp;<span class="mena">€</span></span><span class="cena-m2">3&nbsp;332&nbsp;€/m²</span></p>
+              <h3 class="karta-nazov">3-izbový byt, 82,5&nbsp;m²</h3>
+              <p class="karta-miesto"><span class="cislo" aria-hidden="true">1</span>Staré mesto, Nitra</p>
+              <ul class="karta-fakty"><li>2. z&nbsp;4 poschodí</li><li>balkón</li><li>tehla, po rekonštrukcii</li></ul>
+              <button class="odkaz karta-otvor len-js" type="button" data-detail="1" aria-haspopup="dialog">Pozrieť detail<span class="skryte">: 3-izbový byt, Staré mesto</span> <svg class="sipka" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 12h15m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+            </div>
+          </article>
+          <article class="karta" id="ponuka-2" data-id="2" data-izby="4" data-cena="419000" data-plocha="108" data-lok="zobor">
+            <div class="karta-foto"><img src="img/b5-kuchyna-800.webp" srcset="img/b5-kuchyna-800.webp 800w, img/b5-kuchyna-1600.webp 1600w" sizes="(min-width: 1100px) 400px, (min-width: 680px) calc(50vw - 48px), calc(100vw - 32px)" width="1600" height="1067" alt="Svetlá kuchyňa s ostrovčekom a obývačka s veľkými oknami" loading="lazy" decoding="async" fetchpriority="low"></div>
+            <div class="karta-telo">
+              <p class="karta-cena"><span class="cena">419&nbsp;000&nbsp;<span class="mena">€</span></span><span class="cena-m2">3&nbsp;880&nbsp;€/m²</span></p>
+              <h3 class="karta-nazov">4-izbový byt, 108&nbsp;m²</h3>
+              <p class="karta-miesto"><span class="cislo" aria-hidden="true">2</span>Zobor, Nitra</p>
+              <ul class="karta-fakty"><li>4. z&nbsp;4 poschodí</li><li>terasa 24&nbsp;m²</li><li>novostavba 2024</li></ul>
+              <button class="odkaz karta-otvor len-js" type="button" data-detail="2" aria-haspopup="dialog">Pozrieť detail<span class="skryte">: 4-izbový byt, Zobor</span> <svg class="sipka" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 12h15m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+            </div>
+          </article>
+          <article class="karta" id="ponuka-3" data-id="3" data-izby="3" data-cena="189900" data-plocha="72" data-lok="klokocina">
+            <div class="karta-foto"><img src="img/b3-obyvacka-800.webp" srcset="img/b3-obyvacka-800.webp 800w, img/b3-obyvacka-1600.webp 1600w" sizes="(min-width: 1100px) 400px, (min-width: 680px) calc(50vw - 48px), calc(100vw - 32px)" width="1600" height="1067" alt="Otvorená obývačka s kuchyňou, jedálenským stolom a veľkými oknami" loading="lazy" decoding="async" fetchpriority="low"></div>
+            <div class="karta-telo">
+              <p class="karta-cena"><span class="cena">189&nbsp;900&nbsp;<span class="mena">€</span></span><span class="cena-m2">2&nbsp;638&nbsp;€/m²</span></p>
+              <h3 class="karta-nazov">3-izbový byt, 72&nbsp;m²</h3>
+              <p class="karta-miesto"><span class="cislo" aria-hidden="true">3</span>Klokočina, Nitra</p>
+              <ul class="karta-fakty"><li>6. z&nbsp;8 poschodí</li><li>loggia</li><li>výťah</li></ul>
+              <button class="odkaz karta-otvor len-js" type="button" data-detail="3" aria-haspopup="dialog">Pozrieť detail<span class="skryte">: 3-izbový byt, Klokočina</span> <svg class="sipka" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 12h15m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+            </div>
+          </article>
+          <article class="karta" id="ponuka-4" data-id="4" data-izby="5" data-cena="339000" data-plocha="156" data-lok="drazovce">
+            <div class="karta-foto"><img src="img/d6-dom-800.webp" srcset="img/d6-dom-800.webp 800w, img/d6-dom-1600.webp 1600w" sizes="(min-width: 1100px) 400px, (min-width: 680px) calc(50vw - 48px), calc(100vw - 32px)" width="1600" height="1067" alt="Biely rodinný dom s hnedou strechou, dreveným štítom a tujami" loading="lazy" decoding="async" fetchpriority="low"></div>
+            <div class="karta-telo">
+              <p class="karta-cena"><span class="cena">339&nbsp;000&nbsp;<span class="mena">€</span></span><span class="cena-m2">2&nbsp;173&nbsp;€/m²</span></p>
+              <h3 class="karta-nazov">Rodinný dom, 5&nbsp;izieb, 156&nbsp;m²</h3>
+              <p class="karta-miesto"><span class="cislo" aria-hidden="true">4</span>Dražovce, Nitra</p>
+              <ul class="karta-fakty"><li>pozemok 680&nbsp;m²</li><li>garáž</li><li>rekonštrukcia 2023</li></ul>
+              <button class="odkaz karta-otvor len-js" type="button" data-detail="4" aria-haspopup="dialog">Pozrieť detail<span class="skryte">: rodinný dom, Dražovce</span> <svg class="sipka" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 12h15m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+            </div>
+          </article>
+          <article class="karta" id="ponuka-5" data-id="5" data-izby="2" data-cena="156900" data-plocha="58" data-lok="diely">
+            <div class="karta-foto"><img src="img/b8-balkon-800.webp" srcset="img/b8-balkon-800.webp 800w, img/b8-balkon-1600.webp 1600w" sizes="(min-width: 1100px) 400px, (min-width: 680px) calc(50vw - 48px), calc(100vw - 32px)" width="1600" height="1067" alt="Obývačka s otvorenými dverami na balkón, izbové rastliny a parkety" loading="lazy" decoding="async" fetchpriority="low"></div>
+            <div class="karta-telo">
+              <p class="karta-cena"><span class="cena">156&nbsp;900&nbsp;<span class="mena">€</span></span><span class="cena-m2">2&nbsp;705&nbsp;€/m²</span></p>
+              <h3 class="karta-nazov">2-izbový byt, 58&nbsp;m²</h3>
+              <p class="karta-miesto"><span class="cislo" aria-hidden="true">5</span>Diely, Nitra</p>
+              <ul class="karta-fakty"><li>3. z&nbsp;4 poschodí</li><li>balkón</li><li>tehla</li></ul>
+              <button class="odkaz karta-otvor len-js" type="button" data-detail="5" aria-haspopup="dialog">Pozrieť detail<span class="skryte">: 2-izbový byt, Diely</span> <svg class="sipka" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 12h15m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+            </div>
+          </article>
+          <article class="karta" id="ponuka-6" data-id="6" data-izby="1" data-cena="127900" data-plocha="36" data-lok="cerman">
+            <div class="karta-foto"><img src="img/b4-garsonka-800.webp" srcset="img/b4-garsonka-800.webp 800w, img/b4-garsonka-1600.webp 1600w" sizes="(min-width: 1100px) 400px, (min-width: 680px) calc(50vw - 48px), calc(100vw - 32px)" width="1600" height="1067" alt="Biela garsónka s kuchynským kútom a dreveným barovým stolom" loading="lazy" decoding="async" fetchpriority="low"></div>
+            <div class="karta-telo">
+              <p class="karta-cena"><span class="cena">127&nbsp;900&nbsp;<span class="mena">€</span></span><span class="cena-m2">3&nbsp;553&nbsp;€/m²</span></p>
+              <h3 class="karta-nazov">1-izbový byt, 36&nbsp;m²</h3>
+              <p class="karta-miesto"><span class="cislo" aria-hidden="true">6</span>Čermáň, Nitra</p>
+              <ul class="karta-fakty"><li>3. z&nbsp;5 poschodí</li><li>balkón</li><li>státie v&nbsp;cene</li></ul>
+              <button class="odkaz karta-otvor len-js" type="button" data-detail="6" aria-haspopup="dialog">Pozrieť detail<span class="skryte">: 1-izbový byt, Čermáň</span> <svg class="sipka" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 12h15m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+            </div>
+          </article>
+          <article class="karta" id="ponuka-7" data-id="7" data-izby="4" data-cena="449000" data-plocha="168" data-lok="luzianky">
+            <div class="karta-foto"><img src="img/d7-dom-800.webp" srcset="img/d7-dom-800.webp 800w, img/d7-dom-1600.webp 1600w" sizes="(min-width: 1100px) 400px, (min-width: 680px) calc(50vw - 48px), calc(100vw - 32px)" width="1600" height="1067" alt="Nový rodinný dom s drevenými trámami, upravenou záhradou a chodníkmi" loading="lazy" decoding="async" fetchpriority="low"></div>
+            <div class="karta-telo">
+              <p class="karta-cena"><span class="cena">449&nbsp;000&nbsp;<span class="mena">€</span></span><span class="cena-m2">2&nbsp;673&nbsp;€/m²</span></p>
+              <h3 class="karta-nazov">Rodinný dom, 4&nbsp;izby, 168&nbsp;m²</h3>
+              <p class="karta-miesto"><span class="cislo" aria-hidden="true">7</span>Lužianky, okres Nitra</p>
+              <ul class="karta-fakty"><li>pozemok 720&nbsp;m²</li><li>tepelné čerpadlo</li><li>novostavba 2025</li></ul>
+              <button class="odkaz karta-otvor len-js" type="button" data-detail="7" aria-haspopup="dialog">Pozrieť detail<span class="skryte">: rodinný dom, Lužianky</span> <svg class="sipka" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 12h15m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+            </div>
+          </article>
+          <article class="karta" id="ponuka-8" data-id="8" data-izby="2" data-cena="148500" data-plocha="54" data-lok="chrenova">
+            <div class="karta-foto"><img src="img/b2-izba-800.webp" srcset="img/b2-izba-800.webp 800w, img/b2-izba-1600.webp 1600w" sizes="(min-width: 1100px) 400px, (min-width: 680px) calc(50vw - 48px), calc(100vw - 32px)" width="1600" height="1067" alt="Prázdna svetlá izba so zabudovanou knižnicou, pohovkou a dvoma oknami" loading="lazy" decoding="async" fetchpriority="low"></div>
+            <div class="karta-telo">
+              <p class="karta-cena"><span class="cena">148&nbsp;500&nbsp;<span class="mena">€</span></span><span class="cena-m2">2&nbsp;750&nbsp;€/m²</span></p>
+              <h3 class="karta-nazov">2-izbový byt, 54&nbsp;m²</h3>
+              <p class="karta-miesto"><span class="cislo" aria-hidden="true">8</span>Chrenová, Nitra</p>
+              <ul class="karta-fakty"><li>3. z&nbsp;4 poschodí</li><li>tehla</li><li>hneď voľný</li></ul>
+              <button class="odkaz karta-otvor len-js" type="button" data-detail="8" aria-haspopup="dialog">Pozrieť detail<span class="skryte">: 2-izbový byt, Chrenová</span> <svg class="sipka" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 12h15m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+            </div>
+          </article>
+          <div class="prazdne" id="prazdne" hidden>
+            <p class="prazdne-nadpis">Takú nehnuteľnosť práve nemáme.</p>
+            <p>Povedzte nám, čo hľadáte, a&nbsp;ozveme sa, keď sa niečo také objaví v&nbsp;ponuke.</p>
+            <div class="prazdne-akcie">
+              <button class="akcia akcia-obrys akcia-mala" type="button" id="prazdne-zrusit">Zrušiť filtre</button>
+              <a class="akcia akcia-plna akcia-mala" href="mailto:kancelaria@reality-hradba.example?subject=H%C4%BEad%C3%A1m%20nehnute%C4%BEnos%C5%A5">Napísať, čo hľadám</a>
+            </div>
+          </div>
+        </div>
+
+        <figure class="mapa" id="mapa" aria-labelledby="mapa-popis">
+          <div class="mapa-plocha">
+            <svg viewBox="0 0 600 700" preserveAspectRatio="xMidYMid meet" aria-hidden="true" focusable="false">
+              <rect width="600" height="700" fill="#f3eff5"/>
+              <g fill="none" stroke="#e5dcea" stroke-width="7" stroke-linecap="round">
+                <path d="M-10 262 C 140 250 250 236 336 246 S 520 304 610 292"/>
+                <path d="M-10 520 C 120 500 230 470 330 444 S 520 418 610 450"/>
+                <path d="M430 710 C 414 610 402 512 384 432 S 360 300 382 196"/>
+                <path d="M118 710 C 140 610 152 506 142 404 S 150 252 204 118"/>
+                <path d="M384 432 C 450 470 520 520 610 560"/>
+              </g>
+              <g fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" opacity=".95">
+                <path d="M-10 262 C 140 250 250 236 336 246 S 520 304 610 292"/>
+                <path d="M-10 520 C 120 500 230 470 330 444 S 520 418 610 450"/>
+                <path d="M430 710 C 414 610 402 512 384 432 S 360 300 382 196"/>
+                <path d="M118 710 C 140 610 152 506 142 404 S 150 252 204 118"/>
+              </g>
+              <g stroke="#d6c9de" stroke-width="1.4">
+                <path d="M362 62 C 424 22 548 26 588 94 C 616 146 596 236 544 266 C 492 296 402 276 366 224 C 334 178 320 104 362 62 Z" fill="#ebe3ef"/>
+                <path d="M396 88 C 442 58 532 62 560 110 C 582 148 566 214 528 236 C 490 258 424 242 398 204 C 376 170 366 116 396 88 Z" fill="#e4d9e9"/>
+                <path d="M428 114 C 458 94 516 96 536 128 C 550 152 540 194 514 208 C 488 222 446 212 430 188 C 416 166 410 130 428 114 Z" fill="#dcd0e3"/>
+                <path d="M452 134 C 468 124 496 126 506 142 C 512 154 506 174 494 180 C 480 188 460 182 452 170 C 445 160 443 142 452 134 Z" fill="#d4c6dd"/>
+              </g>
+              <path d="M300 -12 C 284 60 250 112 262 172 C 274 232 318 264 300 332 C 284 394 232 422 238 488 C 244 550 300 592 292 652 C 289 690 281 704 279 714" fill="none" stroke="#bccbe4" stroke-width="15" stroke-linecap="round"/>
+              <path d="M300 -12 C 284 60 250 112 262 172 C 274 232 318 264 300 332 C 284 394 232 422 238 488 C 244 550 300 592 292 652 C 289 690 281 704 279 714" fill="none" stroke="#d8e1f1" stroke-width="5" stroke-linecap="round"/>
+              <g transform="translate(352 300)">
+                <ellipse rx="54" ry="34" fill="#ebe3ef" stroke="#d6c9de" stroke-width="1.4"/>
+                <path d="M-30 9 V-5 h6 v-5 h5 v5 h6 v-5 h5 v5 h6 v-5 h5 v5 h6 v-5 h5 v5 h6 V9 Z" fill="#5a3a73"/>
+                <path d="M14 9 V-20 h4 v-4 h3 v4 h3 v-4 h3 v4 h3 V9 Z" fill="#5a3a73"/>
+              </g>
+              <path d="M196 20 V10 M191 15 L196 10 L201 15" fill="none" stroke="#5d5367" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M40 616 L47 640 L40 634 L33 640 Z" fill="#5d5367"/>
+            </svg>
+            <span class="mapa-popis" style="--x:32.7%;--y:5.2%">Lužianky, 7&nbsp;km</span>
+            <span class="mapa-popis" style="--x:28.7%;--y:25.6%">Dražovce</span>
+            <span class="mapa-popis" style="--x:16.7%;--y:42.6%">Diely</span>
+            <span class="mapa-popis" style="--x:20%;--y:64.1%">Klokočina</span>
+            <span class="mapa-popis" style="--x:60%;--y:60.2%">Staré mesto</span>
+            <span class="mapa-popis" style="--x:87.2%;--y:40.1%">Zobor</span>
+            <span class="mapa-popis" style="--x:84%;--y:72.9%">Chrenová</span>
+            <span class="mapa-popis" style="--x:31%;--y:86.1%">Čermáň</span>
+            <span class="mapa-popis prirodne" style="--x:80%;--y:22.4%">vrch Zobor</span>
+            <span class="mapa-popis prirodne rieka" style="--x:36.5%;--y:63.2%">rieka Nitra</span>
+            <span class="mapa-popis hrad" style="--x:56%;--y:47.4%">Hrad</span>
+            <span class="mapa-popis" style="--x:6.7%;--y:93.3%">S</span>
+            <a class="pin vlavo" href="#ponuka-1" data-detail="1" style="--x:68.3%;--y:54%" aria-label="1: 3-izbový byt, Staré mesto, 274 900 €"><span class="pin-hlava"><b>1</b></span><span class="pin-cena" aria-hidden="true">274&nbsp;900&nbsp;€</span></a>
+            <a class="pin vlavo" href="#ponuka-2" data-detail="2" style="--x:72%;--y:38%" aria-label="2: 4-izbový byt, Zobor, 419 000 €"><span class="pin-hlava"><b>2</b></span><span class="pin-cena" aria-hidden="true">419&nbsp;000&nbsp;€</span></a>
+            <a class="pin" href="#ponuka-3" data-detail="3" style="--x:22%;--y:57%" aria-label="3: 3-izbový byt, Klokočina, 189 900 €"><span class="pin-hlava"><b>3</b></span><span class="pin-cena" aria-hidden="true">189&nbsp;900&nbsp;€</span></a>
+            <a class="pin" href="#ponuka-4" data-detail="4" style="--x:30%;--y:21%" aria-label="4: rodinný dom, Dražovce, 339 000 €"><span class="pin-hlava"><b>4</b></span><span class="pin-cena" aria-hidden="true">339&nbsp;000&nbsp;€</span></a>
+            <a class="pin" href="#ponuka-5" data-detail="5" style="--x:17%;--y:39%" aria-label="5: 2-izbový byt, Diely, 156 900 €"><span class="pin-hlava"><b>5</b></span><span class="pin-cena" aria-hidden="true">156&nbsp;900&nbsp;€</span></a>
+            <a class="pin" href="#ponuka-6" data-detail="6" style="--x:32%;--y:81%" aria-label="6: 1-izbový byt, Čermáň, 127 900 €"><span class="pin-hlava"><b>6</b></span><span class="pin-cena" aria-hidden="true">127&nbsp;900&nbsp;€</span></a>
+            <a class="pin vlavo" href="#ponuka-7" data-detail="7" style="--x:64%;--y:12%" aria-label="7: rodinný dom, Lužianky, 449 000 €"><span class="pin-hlava"><b>7</b></span><span class="pin-cena" aria-hidden="true">449&nbsp;000&nbsp;€</span></a>
+            <a class="pin vlavo" href="#ponuka-8" data-detail="8" style="--x:80%;--y:68%" aria-label="8: 2-izbový byt, Chrenová, 148 500 €"><span class="pin-hlava"><b>8</b></span><span class="pin-cena" aria-hidden="true">148&nbsp;500&nbsp;€</span></a>
+            <a class="pin pin-kancelaria vlavo" href="#kontakt" style="--x:75.3%;--y:47.1%" aria-label="Kancelária Reality Hradba, Baštová 7"><span class="pin-hlava"><svg width="16" height="16" viewBox="0 0 34 34" aria-hidden="true" focusable="false"><path d="M4 31V8.5h4.4v3.6h3.4V8.5h4.4v3.6h3.4V8.5H24v3.6h3.4V8.5H32V31h-9.6v-6.4a3.4 3.4 0 0 0-6.8 0V31z" fill="currentColor"/></svg></span><span class="pin-cena" aria-hidden="true">Kancelária</span></a>
+          </div>
+          <figcaption id="mapa-popis">Ilustračná mapa ponúk, nie v&nbsp;mierke. Čísla patria k&nbsp;ponukám, žltý znak je naša kancelária. Presnú adresu povieme pri dohodnutí obhliadky.</figcaption>
+        </figure>
+      </div>
+      <p class="ponuka-pozn">Ceny sú konečné pre kupujúceho, províziu platí predávajúci. Energetické certifikáty a&nbsp;listy vlastníctva vám pošleme pred obhliadkou.</p>
+    </div>
+  </section>
+
+  <section class="sekcia hypoteka" id="hypoteka" aria-labelledby="hypoteka-nadpis">
+    <div class="obsah hypoteka-mriezka">
+      <div>
+        <h2 class="nadpis" id="hypoteka-nadpis">Koľko by ste splácali?</h2>
+        <p class="uvodny" style="margin-top:18px">Orientačný výpočet pre ktorúkoľvek ponuku. Zmeňte cenu, vlastné zdroje, splatnosť alebo sadzbu a&nbsp;mesačná splátka sa hneď prepočíta.</p>
+        <div class="upozornenie" role="note">
+          <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9.2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M12 10.6v6M12 7.2v.1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          <p><strong>Ilustrácia, nie ponuka úveru.</strong>Splátku počítame vzorcom anuity len z&nbsp;čísel, ktoré zadáte. Skutočnú sadzbu, poplatky, poistenie a&nbsp;RPMN určí banka podľa vášho príjmu. Reality Hradba nie je banka ani finančný sprostredkovateľ a&nbsp;tento výpočet nie je rada.</p>
+        </div>
+      </div>
+      <div>
+        <form class="kalkulacka len-js" id="kalkulacka" aria-label="Orientačná hypotekárna kalkulačka" novalidate>
+          <div class="kalk-pole">
+            <div class="kalk-hlava"><label for="k-cena">Cena nehnuteľnosti</label><output for="k-cena" id="k-cena-v">190&nbsp;000&nbsp;€</output></div>
+            <input type="range" id="k-cena" min="50000" max="600000" step="1000" value="190000" style="--p:25.45%" aria-valuetext="190 000 €">
+            <div class="kalk-rozsah" aria-hidden="true"><span>50&nbsp;000&nbsp;€</span><span>600&nbsp;000&nbsp;€</span></div>
+          </div>
+          <div class="kalk-pole">
+            <div class="kalk-hlava"><label for="k-vlastne">Vlastné zdroje</label><output for="k-vlastne" id="k-vlastne-v">20&nbsp;%, 38&nbsp;000&nbsp;€</output></div>
+            <input type="range" id="k-vlastne" min="10" max="60" step="1" value="20" style="--p:20%" aria-valuetext="20 %, 38 000 €">
+            <div class="kalk-rozsah" aria-hidden="true"><span>10&nbsp;%</span><span>60&nbsp;%</span></div>
+          </div>
+          <div class="kalk-pole">
+            <div class="kalk-hlava"><label for="k-roky">Splatnosť</label><output for="k-roky" id="k-roky-v">30&nbsp;rokov</output></div>
+            <input type="range" id="k-roky" min="5" max="30" step="1" value="30" style="--p:100%" aria-valuetext="30 rokov">
+            <div class="kalk-rozsah" aria-hidden="true"><span>5&nbsp;rokov</span><span>30&nbsp;rokov</span></div>
+          </div>
+          <div class="kalk-pole">
+            <div class="kalk-hlava"><label for="k-sadzba">Úroková sadzba, ilustračná</label><output for="k-sadzba" id="k-sadzba-v">3,9&nbsp;% ročne</output></div>
+            <input type="range" id="k-sadzba" min="1" max="7" step="0.1" value="3.9" style="--p:48.33%" aria-valuetext="3,9 % ročne">
+            <div class="kalk-rozsah" aria-hidden="true"><span>1&nbsp;%</span><span>7&nbsp;%</span></div>
+          </div>
+          <div class="kalk-vysledok">
+            <p class="kalk-stitok">Orientačná mesačná splátka<b>ilustrácia</b></p>
+            <p class="kalk-splatka" aria-live="polite"><span id="k-splatka">717</span>&nbsp;<span class="mena">€</span> <small>mesačne</small></p>
+            <dl class="kalk-fakty">
+              <div><dt>Výška úveru</dt><dd id="k-uver">152&nbsp;000&nbsp;€</dd></div>
+              <div><dt>Spolu zaplatíte</dt><dd id="k-spolu">258&nbsp;097&nbsp;€</dd></div>
+              <div><dt>Z&nbsp;toho úroky</dt><dd id="k-uroky">106&nbsp;097&nbsp;€</dd></div>
+            </dl>
+            <div class="pomer" aria-hidden="true"><span class="pomer-istina" id="k-pomer"></span><span class="pomer-uroky"></span></div>
+            <p class="pomer-legenda" aria-hidden="true"><span><i style="background:var(--fialova)"></i>úver</span><span><i style="background:var(--med)"></i>úroky</span></p>
+          </div>
+        </form>
+        <noscript><p class="kalk-bezjs">Príklad: byt za 190&nbsp;000&nbsp;€, vlastné zdroje 20&nbsp;%, splatnosť 30&nbsp;rokov a&nbsp;ilustračná sadzba 3,9&nbsp;% ročne dávajú splátku približne 717&nbsp;€ mesačne. Kalkulačka potrebuje zapnutý JavaScript.</p></noscript>
+      </div>
+    </div>
+  </section>
+
+  <section class="sekcia predat tma" id="predat" aria-labelledby="predat-nadpis">
+    <div class="svetlo" aria-hidden="true"></div>
+    <div class="obsah predat-mriezka">
+      <div>
+        <h2 class="nadpis" id="predat-nadpis">Predávate? Postaráme sa o&nbsp;všetko od ocenenia po kľúče.</h2>
+        <p class="uvodny" style="margin-top:18px">Jeden maklér od prvej návštevy až po odovzdanie bytu. Cenu navrhneme podľa skutočných predajov v&nbsp;okolí, nie podľa toho, čo chcete počuť.</p>
+        <div class="provizia">
+          <p class="provizia-cislo">3,5<small>&nbsp;%</small></p>
+          <p class="provizia-popis"><strong>Provízia z&nbsp;kúpnej ceny vrátane DPH.</strong> Platíte ju až po prevode na katastri. Ak nepredáme, neplatíte nič.</p>
+        </div>
+        <button class="akcia akcia-svetla" type="button" popovertarget="okno-ocenenie">Chcem ocenenie zdarma <svg class="sipka" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 12h15m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      </div>
+      <ol class="kroky">
+        <li class="krok"><span class="krok-cislo" aria-hidden="true">1</span><h3>Ocenenie do 48&nbsp;hodín</h3><p>Prídeme, pozrieme nehnuteľnosť aj papiere a&nbsp;porovnáme ju s&nbsp;predajmi v&nbsp;okolí. Ocenenie je zadarmo a&nbsp;k&nbsp;ničomu vás nezaväzuje.</p></li>
+        <li class="krok"><span class="krok-cislo" aria-hidden="true">2</span><h3>Previerka a&nbsp;príprava</h3><p>List vlastníctva, ťarchy a&nbsp;zmluvy prejde advokát. Odfotíme interiér za denného svetla, nakreslíme pôdorys a&nbsp;natočíme krátke video.</p></li>
+        <li class="krok"><span class="krok-cislo" aria-hidden="true">3</span><h3>Inzercia a&nbsp;obhliadky</h3><p>Ponuku zverejníme u&nbsp;nás aj na veľkých realitných portáloch. Na každej obhliadke je maklér osobne a&nbsp;po každej vám napíše, ako dopadla.</p></li>
+        <li class="krok"><span class="krok-cislo" aria-hidden="true">4</span><h3>Zmluvy, úschova a&nbsp;kľúče</h3><p>Rezervačnú a&nbsp;kúpnu zmluvu pripraví advokát, peniaze idú cez úschovu u&nbsp;notára. Nehnuteľnosť odovzdáme s&nbsp;protokolom a&nbsp;stavmi meračov.</p></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="sekcia makleri" id="makleri" aria-labelledby="makleri-nadpis">
+    <div class="obsah">
+      <div class="sekcia-hlava">
+        <h2 class="nadpis" id="makleri-nadpis">Ľudia, ktorí vám zdvihnú telefón.</h2>
+        <p class="uvodny">Každú ponuku má na starosti jeden maklér od prvej obhliadky po odovzdanie kľúčov. Volajte mu priamo, bez ústredne.</p>
+      </div>
+      <ul class="makleri-zoznam">
+        <li class="makler">
+          <span class="makler-znak" aria-hidden="true">S</span>
+          <div class="makler-meno"><h3>Simona</h3><p>byty v&nbsp;Starom meste, na Klokočine a&nbsp;Dieloch</p></div>
+          <p class="makler-jazyky">Hovorí <strong>po slovensky a&nbsp;po anglicky</strong></p>
+          <div class="makler-akcie">
+            <button class="akcia akcia-plna akcia-mala" type="button" popovertarget="okno-volat" data-volat="simona"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6.6 3.5l2.6.4 1.4 4.3-1.9 1.6a12.6 12.6 0 0 0 5.5 5.5l1.6-1.9 4.3 1.4.4 2.6a2 2 0 0 1-2 2.3A16.9 16.9 0 0 1 4.3 5.5a2 2 0 0 1 2.3-2z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>Zavolať Simone</button>
+            <a class="akcia akcia-obrys akcia-mala" href="mailto:simona@reality-hradba.example">Napísať e-mail</a>
+          </div>
+        </li>
+        <li class="makler">
+          <span class="makler-znak" aria-hidden="true">T</span>
+          <div class="makler-meno"><h3>Tomáš</h3><p>domy a&nbsp;byty na Zobore, v&nbsp;Dražovciach a&nbsp;na Chrenovej</p></div>
+          <p class="makler-jazyky">Hovorí <strong>po slovensky a&nbsp;po maďarsky</strong></p>
+          <div class="makler-akcie">
+            <button class="akcia akcia-plna akcia-mala" type="button" popovertarget="okno-volat" data-volat="tomas"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6.6 3.5l2.6.4 1.4 4.3-1.9 1.6a12.6 12.6 0 0 0 5.5 5.5l1.6-1.9 4.3 1.4.4 2.6a2 2 0 0 1-2 2.3A16.9 16.9 0 0 1 4.3 5.5a2 2 0 0 1 2.3-2z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>Zavolať Tomášovi</button>
+            <a class="akcia akcia-obrys akcia-mala" href="mailto:tomas@reality-hradba.example">Napísať e-mail</a>
+          </div>
+        </li>
+        <li class="makler">
+          <span class="makler-znak" aria-hidden="true">V</span>
+          <div class="makler-meno"><h3>Veronika</h3><p>novostavby a&nbsp;prvé bývanie, Čermáň a&nbsp;Lužianky</p></div>
+          <p class="makler-jazyky">Hovorí <strong>po slovensky a&nbsp;po nemecky</strong></p>
+          <div class="makler-akcie">
+            <button class="akcia akcia-plna akcia-mala" type="button" popovertarget="okno-volat" data-volat="veronika"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6.6 3.5l2.6.4 1.4 4.3-1.9 1.6a12.6 12.6 0 0 0 5.5 5.5l1.6-1.9 4.3 1.4.4 2.6a2 2 0 0 1-2 2.3A16.9 16.9 0 0 1 4.3 5.5a2 2 0 0 1 2.3-2z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>Zavolať Veronike</button>
+            <a class="akcia akcia-obrys akcia-mala" href="mailto:veronika@reality-hradba.example">Napísať e-mail</a>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="sekcia otazky" id="otazky" aria-labelledby="otazky-nadpis">
+    <div class="obsah otazky-mriezka">
+      <div>
+        <h2 class="nadpis" id="otazky-nadpis">Čo sa nás pýtate.</h2>
+        <p class="uvodny" style="margin-top:18px">Nenašli ste odpoveď? Zavolajte do kancelárie alebo napíšte maklérovi, ktorý má ponuku na starosti.</p>
+      </div>
+      <div class="otazky-zoznam">
+        <details class="otazka"><summary>Platí kupujúci niečo navyše?</summary><p>Pri našich ponukách nie. Províziu platí predávajúci a&nbsp;cena v&nbsp;ponuke je konečná. Rátajte len s&nbsp;poplatkom za návrh na vklad do katastra a&nbsp;s&nbsp;poplatkom za úschovu, ak ju využijete.</p></details>
+        <details class="otazka"><summary>Ako funguje rezervácia?</summary><p>Po obhliadke podpíšete rezervačnú zmluvu a&nbsp;zaplatíte zálohu, ktorej výšku poznáte vopred. Nehnuteľnosť potom stiahneme z&nbsp;ponuky a&nbsp;advokát pripraví kúpnu zmluvu. Záloha sa započíta do kúpnej ceny.</p></details>
+        <details class="otazka"><summary>Pomôžete mi s&nbsp;hypotékou?</summary><p>Odporučíme vám nezávislého finančného sprostredkovateľa, s&nbsp;ktorým spolupracujeme. O&nbsp;úvere rozhodujete vy a&nbsp;banka. Kalkulačka na tejto stránke je len ilustrácia.</p></details>
+        <details class="otazka"><summary>Prečo pri ponukách nie je presná adresa?</summary><p>Kvôli súkromiu predávajúcich. Presnú adresu povieme pri dohodnutí obhliadky, mapa ukazuje len približnú polohu.</p></details>
+        <details class="otazka"><summary>Čo presne znamená právna previerka?</summary><p>Pred zverejnením skontrolujeme list vlastníctva, ťarchy, vecné bremená a&nbsp;dokumenty k&nbsp;stavbe. Ak niečo nesedí, povieme to predávajúcemu aj vám skôr, než si dohodnete obhliadku.</p></details>
+        <details class="otazka"><summary>Kedy sa dá prísť na obhliadku?</summary><p>V&nbsp;pracovné dni od 9:00 do 19:00, v&nbsp;sobotu doobeda po dohode. Termín dohodnete telefonicky alebo e-mailom priamo s&nbsp;maklérom.</p></details>
+      </div>
+    </div>
+  </section>
+
+  <section class="sekcia kontakt" id="kontakt" aria-labelledby="kontakt-nadpis">
+    <div class="obsah kontakt-mriezka">
+      <div>
+        <h2 class="nadpis" id="kontakt-nadpis">Kancelária na Baštovej.</h2>
+        <address class="adresa">Baštová 7, 949&nbsp;01 Nitra</address>
+        <p class="stav len-js" id="stav" hidden><span class="stav-bod" aria-hidden="true"></span><span class="stav-text"></span></p>
+        <ul class="kontakt-zoznam">
+          <li><span>Telefón <strong class="cisla">0900&nbsp;XXX&nbsp;XXX</strong></span><span class="pozn">vymyslené číslo, v&nbsp;ukážke sa nevytáča</span></li>
+          <li><span>E-mail</span><a href="mailto:kancelaria@reality-hradba.example">kancelaria@reality-hradba.example</a></li>
+          <li><span>Parkovanie</span><span class="pozn">dve miesta pred kanceláriou</span></li>
+          <li><span>Mapa</span><a href="https://www.google.com/maps/search/Nitra" target="_blank" rel="noopener">Otvoriť Nitru v&nbsp;Mapách Google</a></li>
+        </ul>
+      </div>
+      <div>
+        <h3 class="kontakt-h3">Otváracie hodiny</h3>
+        <table class="hodiny">
+          <caption class="skryte">Otváracie hodiny kancelárie</caption>
+          <tbody>
+            <tr data-den="1" data-od="9:00" data-do="17:30"><th scope="row">Pondelok<span class="znacka-dnes" hidden>dnes</span></th><td>9:00 až 17:30</td></tr>
+            <tr data-den="2" data-od="9:00" data-do="17:30"><th scope="row">Utorok<span class="znacka-dnes" hidden>dnes</span></th><td>9:00 až 17:30</td></tr>
+            <tr data-den="3" data-od="9:00" data-do="17:30"><th scope="row">Streda<span class="znacka-dnes" hidden>dnes</span></th><td>9:00 až 17:30</td></tr>
+            <tr data-den="4" data-od="9:00" data-do="17:30"><th scope="row">Štvrtok<span class="znacka-dnes" hidden>dnes</span></th><td>9:00 až 17:30</td></tr>
+            <tr data-den="5" data-od="9:00" data-do="16:00"><th scope="row">Piatok<span class="znacka-dnes" hidden>dnes</span></th><td>9:00 až 16:00</td></tr>
+            <tr data-den="6"><th scope="row">Sobota<span class="znacka-dnes" hidden>dnes</span></th><td>obhliadky po dohode</td></tr>
+            <tr data-den="0"><th scope="row">Nedeľa<span class="znacka-dnes" hidden>dnes</span></th><td>zatvorené</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="pata tma">
+  <div class="obsah pata-mriezka">
+    <div>
+      <a class="znacka" href="#obsah">
+        <svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true" focusable="false"><path d="M4 31V8.5h4.4v3.6h3.4V8.5h4.4v3.6h3.4V8.5H24v3.6h3.4V8.5H32V31h-9.6v-6.4a3.4 3.4 0 0 0-6.8 0V31z" fill="currentColor"/></svg>
+        <span class="znacka-slova"><span class="znacka-meno">Hradba</span> <span class="znacka-pod">reality, Nitra</span></span><span class="skryte">, na začiatok stránky</span>
+      </a>
+      <p style="margin-top:18px"><strong>Reality Hradba s.&nbsp;r.&nbsp;o.</strong>, Baštová 7, 949&nbsp;01 Nitra. IČO&nbsp;00&nbsp;000&nbsp;000.</p>
+      <p class="male">Toto je ukážka webu od ARLing. Kancelária, makléri, ponuky, adresa, IČO, telefón aj e-maily sú vymyslené. Ceny zodpovedajú ponukám v&nbsp;Nitre v&nbsp;novembri 2026. Fotky sú z&nbsp;Pexels pod licenciou Pexels a&nbsp;nezobrazujú skutočné ponuky. Mapa, žalúzie a&nbsp;pôdorysy sú kreslené pre ukážku. Písma Literata a&nbsp;Plus Jakarta Sans (SIL Open Font License).</p>
+    </div>
+    <div class="pata-odkazy">
+      <a href="#ponuka">Aktuálna ponuka</a>
+      <a href="#kontakt">Kontakt a&nbsp;hodiny</a>
+      <a href="../../index.html#ukazky" target="_top">Späť na ukážky webov od ARLing</a>
+      <a href="https://arling.sk/web/dotaznik/?ukazka=reality" target="_top">Vyplniť dotazník na taký web</a>
+    </div>
+  </div>
+  <svg class="pata-meno" viewBox="0 0 1000 250" aria-hidden="true" focusable="false">
+    <defs>
+      <linearGradient id="pata-svetlo" x1="0" y1="0" x2="0.32" y2="1" spreadMethod="repeat" gradientTransform="scale(.09)">
+        <stop offset="0" stop-color="#f6f1f8" stop-opacity=".07"/><stop offset=".45" stop-color="#f6f1f8" stop-opacity=".07"/>
+        <stop offset=".55" stop-color="#ffd28f" stop-opacity=".22"/><stop offset=".9" stop-color="#ffd28f" stop-opacity=".22"/><stop offset="1" stop-color="#f6f1f8" stop-opacity=".07"/>
+      </linearGradient>
+    </defs>
+    <text x="500" y="236" text-anchor="middle" font-size="300" fill="url(#pata-svetlo)">Hradba</text>
+  </svg>
+</footer>
+
+<div class="lista" role="group" aria-label="Rýchle akcie">
+  <button class="akcia akcia-plna" type="button" popovertarget="okno-volat" data-volat="kancelaria"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6.6 3.5l2.6.4 1.4 4.3-1.9 1.6a12.6 12.6 0 0 0 5.5 5.5l1.6-1.9 4.3 1.4.4 2.6a2 2 0 0 1-2 2.3A16.9 16.9 0 0 1 4.3 5.5a2 2 0 0 1 2.3-2z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>Zavolať</button>
+  <a class="akcia akcia-obrys" href="#ponuka">Ponuka</a>
+</div>
+
+<div class="okno-p" id="okno-volat" popover role="dialog" aria-labelledby="okno-volat-nadpis">
+  <div class="okno-hlava">
+    <h2 id="okno-volat-nadpis">Zavolať do kancelárie</h2>
+    <button class="zavriet" type="button" popovertarget="okno-volat" popovertargetaction="hide" aria-label="Zavrieť"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+  </div>
+  <div class="okno-telo">
+    <p id="okno-volat-kto">Reality Hradba, Baštová 7, Nitra</p>
+    <p class="okno-cislo">0900&nbsp;XXX&nbsp;XXX</p>
+    <p class="okno-pozn">Na vašom webe toto tlačidlo hneď vytočí číslo jedným ťukom. V&nbsp;ukážke je číslo vymyslené, preto sa nevytáča.</p>
+    <div class="okno-akcie"><a class="akcia akcia-obrys" id="okno-volat-mail" href="mailto:kancelaria@reality-hradba.example">Radšej napísať e-mail</a></div>
+  </div>
+</div>
+
+<div class="okno-p" id="okno-ocenenie" popover role="dialog" aria-labelledby="okno-ocenenie-nadpis">
+  <div class="okno-hlava">
+    <h2 id="okno-ocenenie-nadpis">Ocenenie zdarma</h2>
+    <button class="zavriet" type="button" popovertarget="okno-ocenenie" popovertargetaction="hide" aria-label="Zavrieť"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+  </div>
+  <div class="okno-telo">
+    <p>Pošlite nám adresu, rozlohu a&nbsp;stav nehnuteľnosti. Do 48&nbsp;hodín sa ozveme s&nbsp;porovnaním predajov v&nbsp;okolí a&nbsp;návrhom ceny.</p>
+    <div class="okno-akcie">
+      <a class="akcia akcia-plna" href="mailto:ocenenie@reality-hradba.example?subject=Ocenenie%20nehnute%C4%BEnosti&amp;body=Adresa%3A%20%0AR%C3%BDchly%20popis%3A%20">Napísať e-mail s&nbsp;údajmi</a>
+      <button class="akcia akcia-obrys" type="button" popovertarget="okno-volat" data-volat="kancelaria">Zavolať do kancelárie</button>
+    </div>
+    <p class="okno-pozn">Toto je ukážka, nič sa neodošle. Na vašom webe tu môže byť krátky formulár alebo priamy odkaz na e-mail.</p>
+  </div>
+</div>
+
+<div class="okno-p okno-menu" id="okno-menu" popover role="dialog" aria-label="Menu stránky">
+  <div class="okno-hlava">
+    <h2>Menu</h2>
+    <button class="zavriet" type="button" popovertarget="okno-menu" popovertargetaction="hide" aria-label="Zavrieť menu"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+  </div>
+  <ul>
+    <li><a href="#ponuka">Ponuka</a></li>
+    <li><a href="#hypoteka">Hypotéka</a></li>
+    <li><a href="#predat">Predávate?</a></li>
+    <li><a href="#makleri">Makléri</a></li>
+    <li><a href="#otazky">Otázky</a></li>
+    <li><a href="#kontakt">Kontakt</a></li>
+  </ul>
+</div>
+
+<dialog class="detail" id="detail" aria-labelledby="detail-nazov">
+  <div class="detail-hlava">
+    <p id="detail-cislo-ponuky">Ponuka</p>
+    <button class="zavriet" type="button" id="detail-zavriet" aria-label="Zavrieť detail"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+  </div>
+  <div class="detail-telo">
+    <div class="galeria" role="region" aria-roledescription="galéria" aria-label="Fotky a pôdorys">
+      <div class="galeria-ram">
+      <div class="galeria-scena" id="galeria-scena"></div>
+      <button class="galeria-sipka pred" type="button" id="galeria-pred" aria-label="Predchádzajúca fotka"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <button class="galeria-sipka dalej" type="button" id="galeria-dalej" aria-label="Ďalšia fotka"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <p class="galeria-pocet" id="galeria-pocet" aria-live="polite">1 / 3</p>
+      </div>
+      <div class="galeria-nahlady" id="galeria-nahlady"></div>
+      <p class="galeria-popis" id="galeria-popis"></p>
+      <ol class="miestnosti" id="galeria-miestnosti" hidden></ol>
+    </div>
+    <div class="detail-info" id="detail-info"></div>
+    <div class="detail-parametre" id="detail-parametre"></div>
+  </div>
+</dialog>
+</body>
+</html>

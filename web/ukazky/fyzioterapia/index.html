@@ -1,0 +1,837 @@
+<!doctype html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; img-src 'self' data:; style-src 'unsafe-inline'; font-src 'self'; connect-src 'none'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0f2a2e">
+<title>Ukážka: Fyzioterapia Os, Trnava (vymyslená prevádzka)</title>
+<meta name="description" content="Ukážka webu od ARLing pre vymyslenú súkromnú fyzioterapiu v&nbsp;Trnave: chrbtica, ktorá sa vyrovná, mapa tela s&nbsp;cenami, prvá návšteva krok po kroku a&nbsp;žiadosť o&nbsp;termín za minútu.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%230d4b56'/%3E%3Crect x='11' y='6' width='10' height='5' rx='2.5' fill='%23d9efe8'/%3E%3Crect x='10' y='13.5' width='12' height='5' rx='2.5' fill='%23d9efe8'/%3E%3Crect x='9' y='21' width='14' height='5' rx='2.5' fill='%23d9efe8'/%3E%3C/svg%3E">
+<link rel="preload" href="fonts/os-text.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/os-kurziva.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+/* Fyzioterapia Os: ukážka webu klienta (súkromná fyzioterapia, Trnava). Svet: pokojná ambulancia, vzpriamená chrbtica
+   a otázka „Kde vás to bolí?“. Mäta nesie úvod a mapu tela, perla plochy, petrolej nadpisy a tlačidlá,
+   šafrán len body na mape a fokus. Písma Lexend (Os Text) a Newsreader Italic (Os Kurziva), OFL, lokálne.
+   Záložné písma majú metriky Lexend a Newsreader (size-adjust, ascent-override), aby výmena písma neprelomila riadky. */
+@font-face{font-family:"Os Text";src:url(fonts/os-text.woff2) format("woff2");font-weight:300 600;font-style:normal;font-display:swap}
+@font-face{font-family:"Os Kurziva";src:url(fonts/os-kurziva.woff2) format("woff2");font-weight:400;font-style:italic;font-display:swap}
+@font-face{font-family:"Os Text Z";src:local("Arial"),local("ArialMT"),local("Helvetica"),local("Helvetica Neue");font-weight:300 450;size-adjust:108.68%;ascent-override:92.01%;descent-override:23%;line-gap-override:0%}
+@font-face{font-family:"Os Text Z";src:local("Arial"),local("ArialMT"),local("Helvetica"),local("Helvetica Neue");font-weight:451 700;size-adjust:111.18%;ascent-override:89.94%;descent-override:22.49%;line-gap-override:0%}
+@font-face{font-family:"Os Kurziva Z";src:local("Georgia Italic"),local("Georgia-Italic");font-weight:400;font-style:italic;size-adjust:85.26%;ascent-override:86.21%;descent-override:31.08%;line-gap-override:0%}
+
+:root{
+  --perla:#f6faf9;--mata:#d9efe8;--mata-2:#c6e6dc;--mata-3:#eaf6f2;--mata-4:#cfe9e0;
+  --petrolej:#0d4b56;--petrolej-2:#2f7a85;--hlbina:#0f2a2e;--safran:#f2b33d;--tlmeny:#4d6468;
+  --biela:#fff;--ciara:rgba(15,42,46,.14);--ciara-2:rgba(15,42,46,.08);
+  --na-petroleji:#cfe6e1;
+  --text:"Os Text","Os Text Z",ui-sans-serif,system-ui,"Segoe UI",Roboto,sans-serif;
+  --kurziva:"Os Kurziva","Os Kurziva Z",Georgia,"Times New Roman",serif;
+  --okraj:clamp(16px,4vw,48px);
+  --obal:min(1440px,100% - 2*var(--okraj));
+  --obal-uvod:var(--obal);
+  --r-velky:32px;--r:24px;--r-maly:14px;
+  --vstup:cubic-bezier(.22,1,.36,1);
+  --pohyb:cubic-bezier(.65,0,.35,1);
+  --pruzina:cubic-bezier(.3,1.25,.5,1);
+  color-scheme:light;
+}
+@supports (transition-timing-function:linear(0,1)){
+  :root{--pruzina:linear(0,.09,.3,.55,.77,.93,1.03,1.07,1.075,1.06,1.04,1.02,1.005,.997,.994,.995,.998,1)}
+}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%;overflow-x:clip;scroll-behavior:smooth}
+body{margin:0;background:var(--perla);color:var(--hlbina);font:400 1.0625rem/1.65 var(--text);overflow-x:clip;-webkit-font-smoothing:antialiased}
+img{display:block;max-width:100%;height:auto}
+h1,h2,h3,p,ol,ul,dl,dd,figure,blockquote{margin:0}
+p,dd,figcaption,blockquote p,li{text-wrap:pretty}
+ul[role=list],ol[role=list]{list-style:none;padding:0}
+a{color:inherit;text-decoration-thickness:1px;text-underline-offset:.22em}
+a:hover{text-decoration-thickness:2px}
+::selection{background:var(--mata-2);color:var(--hlbina)}
+:focus{outline:none}
+:focus-visible{outline:3px solid var(--hlbina);outline-offset:3px;box-shadow:0 0 0 3px var(--safran);border-radius:6px}
+.tmava :focus-visible,.pata :focus-visible,.pas-ukazky :focus-visible{outline-color:var(--safran);box-shadow:none}
+[id]{scroll-margin-top:16px}
+.vh{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.obal{width:var(--obal);margin-inline:auto}
+.nz{white-space:nowrap}
+.preskocit{position:absolute;left:12px;top:-90px;z-index:80;background:var(--petrolej);color:var(--biela);padding:12px 18px;font-weight:600;text-decoration:none;border-radius:12px}
+.preskocit:focus{top:12px}
+
+/* Pás ukážky */
+.pas-ukazky{background:var(--hlbina);color:#d7e6e3;font-size:.78125rem;line-height:1.4}
+.pas-ukazky .obal{display:grid;gap:0 24px;padding-block:7px 0}
+.pas-ukazky strong{color:var(--biela);font-weight:600}
+.pas-odkazy{display:flex;flex-wrap:wrap;gap:0 22px}
+.pas-ukazky a{display:inline-flex;align-items:center;min-height:44px;color:var(--biela)}
+.pas-dlhe{display:none}
+
+/* Tlačidlá */
+.tlac{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:52px;padding:0 24px;border-radius:999px;border:2px solid transparent;font:500 1rem/1.15 var(--text);letter-spacing:.005em;text-decoration:none;cursor:pointer;text-align:center;transition:background-color .2s,border-color .2s,color .2s,transform .15s var(--vstup);-webkit-tap-highlight-color:transparent}
+.tlac:active{transform:scale(.97)}
+.tlac svg{flex:none;transition:transform .25s var(--vstup)}
+.tlac:hover svg{transform:translateX(3px)}
+.tlac-hlavne{background:var(--petrolej);color:var(--biela);box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 12px 24px -14px rgba(13,75,86,.85)}
+.tlac-hlavne:hover{background:var(--hlbina)}
+.tlac-obrys{border-color:var(--petrolej);color:var(--petrolej);background:transparent}
+.tlac-obrys:hover{background:rgba(255,255,255,.55)}
+.tlac-svetle{background:var(--biela);color:var(--petrolej)}
+.tlac-svetle:hover{background:var(--mata)}
+.tlac-obrys-svetly{border-color:rgba(255,255,255,.7);color:var(--biela);background:transparent}
+.tlac-obrys-svetly:hover{border-color:var(--biela);background:rgba(255,255,255,.08)}
+.tlac-male{min-height:44px;padding:0 18px;font-size:.9375rem}
+
+/* Hlavička na mäte */
+.hlava{background:var(--mata)}
+.hlava .obal{width:var(--obal-uvod);display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:62px}
+.znacka{display:inline-flex;align-items:center;gap:12px;text-decoration:none;min-height:44px}
+.znacka svg{flex:none}
+.znacka-text{display:grid;line-height:1.1}
+.znacka-text strong{font-weight:500;font-size:1.1875rem;letter-spacing:-.02em;color:var(--petrolej)}
+.znacka-text span{font-size:.8125rem;color:var(--tlmeny)}
+.menu{display:none;gap:2px}
+.menu a{display:inline-flex;align-items:center;min-height:44px;padding:0 14px;text-decoration:none;color:var(--tlmeny);font-weight:500;border-radius:999px;transition:color .2s,background-color .2s}
+.menu a:hover{color:var(--petrolej);background:rgba(255,255,255,.6)}
+
+/* Úvod: mätová plocha, veľký nadpis, chrbtica (mobil kapsula vľavo, od 760 px kruh vpravo) a fotka s faktami */
+.uvod{background:linear-gradient(180deg,var(--mata) 0%,#d4ede5 55%,var(--mata-4) 100%);border-radius:0 0 clamp(28px,4vw,56px) clamp(28px,4vw,56px);padding-block:4px clamp(36px,4.6vw,64px)}
+.uvod-mriezka{--mezera:14px;--kap:clamp(104px,29vw,132px);width:var(--obal-uvod);margin-inline:auto;container-type:inline-size;display:grid;column-gap:var(--mezera);grid-template-columns:var(--kap) minmax(0,1fr);grid-template-areas:"kap nadpis" "kap kurziva" "kap akcie" "foto foto" "popis popis";align-items:start}
+.uvod-nadpis{grid-area:nadpis;font-weight:500;font-size:calc((100cqi - var(--kap) - var(--mezera)) / 5.25);line-height:1;letter-spacing:-.03em;color:var(--petrolej);text-wrap:balance}
+.uvod-nadpis em{font-family:var(--kurziva);font-style:italic;font-weight:400;letter-spacing:-.01em;color:var(--petrolej-2)}
+.uvod-kurziva{grid-area:kurziva;margin-top:12px;font:italic 400 clamp(1.1875rem,5.4cqi,2rem)/1.22 var(--kurziva);color:var(--hlbina);text-wrap:balance}
+.uvod-popis{grid-area:popis;margin-top:20px;max-width:34em;color:var(--tlmeny);font-size:clamp(1rem,1.2vw + .7rem,1.1875rem);line-height:1.6}
+.uvod-akcie{grid-area:akcie;display:flex;flex-direction:column;gap:8px;margin-top:18px}
+.uvod-akcie .tlac{padding-inline:18px}
+
+/* Chrbtica */
+.chrbtica-obal{grid-area:kap;position:relative;z-index:2;align-self:stretch;container-type:inline-size;min-height:320px;margin-bottom:-92px;border-radius:999px;background:linear-gradient(180deg,#fbfdfc,#eaf5f1);box-shadow:inset 0 0 0 1px rgba(13,75,86,.07),0 26px 44px -30px rgba(13,75,86,.6)}
+.chrbtica{position:absolute;inset:14px 0 10px;display:block;width:100%;height:calc(100% - 24px);overflow:hidden}
+.ryhy{fill:none;stroke:rgba(13,75,86,.3);stroke-width:1.5;stroke-linecap:round}
+.sklon{fill:var(--petrolej);transform-box:view-box;transform-origin:300px 300px}
+.chrbtica-os{stroke:rgba(13,75,86,.42);stroke-width:2;stroke-linecap:round;stroke-dasharray:3 9;transform-box:fill-box;transform-origin:50% 100%}
+.chrbtica-telo{--amp:.62;--amp-r:.8}
+.stavec{transform-box:fill-box;transform-origin:50% 50%;transition:opacity .25s}
+.telo-stavca{fill:url(#stavce)}
+.lesk{fill:#c9f1e6;opacity:0}
+.vybezok{fill:var(--petrolej);fill-opacity:.26}
+.disk{fill:var(--perla)}
+.otvory{fill:var(--perla)}
+.kostrc{fill:var(--petrolej);fill-opacity:.7}
+.zatvorky{fill:none;stroke:rgba(15,42,46,.34);stroke-width:1.5;stroke-dasharray:1;stroke-dashoffset:0}
+.cifernik,.zatvorky,.stitky{visibility:hidden}
+.stitok{position:absolute;display:grid;gap:1px;min-height:44px;align-content:center;padding:4px 10px 4px 8px;margin-left:-8px;border-radius:12px;text-decoration:none;color:var(--tlmeny);font-size:clamp(13px,2.9cqi,15px);line-height:1.25;transition:background-color .2s,color .2s}
+.stitok strong{display:flex;align-items:center;gap:6px;color:var(--hlbina);font-weight:500;font-size:clamp(14px,3.1cqi,17px)}
+.stitok strong::after{content:"";width:13px;height:9px;opacity:0;transform:translateX(-4px);transition:opacity .2s,transform .25s var(--vstup);background:no-repeat center/13px 9px url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 13 9'%3E%3Cpath d='M1 4.5h10M7.5 1 11 4.5 7.5 8' fill='none' stroke='%230d4b56' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")}
+.stitok:hover,.stitok:focus-visible{background:rgba(217,239,232,.75);color:var(--hlbina)}
+.stitok:hover strong::after,.stitok:focus-visible strong::after{opacity:1;transform:none}
+.stitok-vlavo{margin-left:0;margin-right:-8px;padding:4px 8px 4px 10px;text-align:right;justify-items:end}
+.chrbtica-obal[data-ukaz] .stavec{opacity:.32}
+.chrbtica-obal[data-ukaz="krk"] .stavec[data-skupina="krk"],
+.chrbtica-obal[data-ukaz="hrudna"] .stavec[data-skupina="hrudna"],
+.chrbtica-obal[data-ukaz="driek"] .stavec[data-skupina="driek"],
+.chrbtica-obal[data-ukaz="kriz"] .stavec[data-skupina="kriz"]{opacity:1}
+/* Podpisový pohyb len cez CSS, hneď po prvom vykreslení: stavce zapadnú zdola nahor, os narastie, ryska sklonu
+   prejde na 0°, potom zátvorky a popisy; všetko dobehne do 1,8 s a ostane v pokoji. Deklarácie sú mimo dotazov
+   na šírku, aby ich snímka stránky ani zmena okna nereštartovali. */
+@media (prefers-reduced-motion:no-preference){
+  .stavec{animation:stavec-zapadne .72s var(--pruzina) both;animation-delay:calc(240ms + (24 - var(--i)) * 23ms)}
+  .lesk{animation:lesk .58s ease-out both;animation-delay:calc(560ms + (24 - var(--i)) * 23ms)}
+  .chrbtica-os{animation:os-rast 1.05s var(--pohyb) .18s both}
+  .sklon{animation:sklon 1.3s var(--pruzina) .24s both}
+  .zatvorky{animation:zatvorky .62s var(--vstup) 1s both}
+  .stitok{animation:stitok-vstup .5s var(--vstup) both;animation-delay:calc(1.02s + var(--j,0) * 70ms)}
+}
+@keyframes stavec-zapadne{from{transform:translateX(calc(var(--x) * var(--amp) * 1px)) rotate(calc(var(--r) * var(--amp-r) * 1deg))}to{transform:none}}
+@keyframes lesk{0%{opacity:0}28%{opacity:.92}100%{opacity:0}}
+@keyframes os-rast{from{transform:scaleY(0);opacity:.15}to{transform:none;opacity:1}}
+@keyframes sklon{from{transform:rotate(9deg)}to{transform:none}}
+@keyframes zatvorky{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
+@keyframes stitok-vstup{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:none}}
+
+/* Fotka v úvode s faktami */
+.uvod-foto{grid-area:foto;position:relative;container-type:inline-size;margin-top:22px;aspect-ratio:1;border-radius:var(--r-velky);overflow:hidden;background:var(--mata-2);box-shadow:0 30px 60px -44px rgba(13,75,86,.7)}
+.uvod-foto img{width:100%;height:100%;object-fit:cover;object-position:50% 34%}
+.cipy{position:absolute;left:12px;right:12px;bottom:12px;display:flex;flex-wrap:wrap;gap:6px}
+.cip{display:inline-flex;align-items:center;gap:7px;padding:7px 13px;border-radius:999px;background:rgba(246,250,249,.95);white-space:nowrap;font-size:clamp(11.5px,5.6cqi,13px);font-weight:500;line-height:1.3;color:var(--hlbina);box-shadow:0 6px 16px -10px rgba(15,42,46,.5)}
+.cip b{font-weight:500;color:var(--petrolej)}
+.cip-stav{position:absolute;right:12px;top:12px;opacity:0;transition:opacity .45s var(--vstup)}
+.cip-stav.je{opacity:1}
+@container (max-width:250px){.cip-min{display:none}}
+.stav-bodka{display:inline-block;flex:none;width:9px;height:9px;border-radius:50%;background:var(--petrolej);box-shadow:0 0 0 3px rgba(13,75,86,.16)}
+.stav-bodka.zatvorene{background:transparent;box-shadow:inset 0 0 0 2px var(--tlmeny)}
+
+/* Sekcie */
+.sekcia{padding-block:clamp(80px,9vw,136px)}
+.sekcia-mata{background:var(--mata-3)}
+h2{font-weight:500;font-size:clamp(2.125rem,4.6vw,4rem);line-height:1.05;letter-spacing:-.02em;color:var(--petrolej);text-wrap:balance;max-width:15em}
+h3{font-weight:500;font-size:clamp(1.1875rem,1.6vw,1.375rem);line-height:1.25;letter-spacing:-.01em;color:var(--hlbina)}
+.uvod-sekcie{margin-top:18px;max-width:36em;color:var(--tlmeny);font-size:clamp(1.0625rem,1.3vw,1.1875rem)}
+
+/* Mapa tela: súvislá silueta s obrysom, vybraná oblasť sa rozsvieti plochou */
+.mapa-mriezka{display:grid;gap:clamp(20px,3vw,40px);margin-top:clamp(28px,4vw,52px)}
+.mapa-tela{position:relative;display:grid;grid-template-columns:1fr 1fr;gap:clamp(4px,2vw,32px);padding:clamp(18px,3vw,40px) clamp(8px,3vw,44px) clamp(12px,2vw,22px);border-radius:var(--r-velky);background:var(--mata);overflow:hidden}
+.mapa-tela::before{content:"";position:absolute;left:50%;top:50%;width:min(92%,560px);aspect-ratio:1;transform:translate(-50%,-52%);border-radius:50%;border:1.5px solid rgba(13,75,86,.08);pointer-events:none}
+.postava{position:relative;max-width:210px;width:100%;margin-inline:auto}
+.postava svg{display:block;width:100%;height:auto;overflow:visible}
+.postava-plocha{position:relative}
+.postava figcaption{margin-top:6px;text-align:center;font-size:.875rem;color:var(--tlmeny)}
+.telo-plocha{fill:#fbfdfc}
+.telo-obrys{fill:none;stroke:var(--petrolej);stroke-width:1.75;stroke-linejoin:round}
+.telo-detail{fill:none;stroke:rgba(13,75,86,.32);stroke-width:1.25;stroke-linecap:round}
+.telo-stavce{fill:url(#stavce-male)}
+.tien{fill:rgba(13,75,86,.12)}
+.ziara{fill:url(#ziara);opacity:0;transition:opacity .35s var(--vstup)}
+.mapa-tela[data-vybrane="krk"] .ziara[data-zona="krk"],.mapa-tela[data-vybrane="plecia"] .ziara[data-zona="plecia"],
+.mapa-tela[data-vybrane="hrudna"] .ziara[data-zona="hrudna"],.mapa-tela[data-vybrane="kriz"] .ziara[data-zona="kriz"],
+.mapa-tela[data-vybrane="koleno"] .ziara[data-zona="koleno"],.mapa-tela[data-vybrane="clenok"] .ziara[data-zona="clenok"]{opacity:1}
+.bod{position:absolute;width:48px;height:48px;margin:-24px 0 0 -24px;padding:0;border:0;border-radius:50%;background:transparent;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.bod::before{content:"";position:absolute;inset:14px;border-radius:50%;background:var(--safran);box-shadow:0 0 0 3px var(--hlbina);transition:transform .3s var(--pruzina),box-shadow .3s}
+.bod::after{content:"";position:absolute;inset:3px;border-radius:50%;border:2px solid var(--hlbina);opacity:0;transform:scale(.6);transition:opacity .25s,transform .35s var(--vstup)}
+.bod:hover::before{transform:scale(1.15)}
+.bod.aktivny::before{transform:scale(1.2);box-shadow:0 0 0 3px var(--hlbina),0 0 0 11px rgba(242,179,61,.3)}
+.bod.aktivny::after{opacity:1;transform:none}
+@media (prefers-reduced-motion:no-preference){
+  .mapa-tela .bod.ping::after{animation:ping .7s var(--vstup)}
+}
+@keyframes ping{0%{opacity:.9;transform:scale(.5)}60%{opacity:.6;transform:scale(1.2)}100%{opacity:1;transform:none}}
+.mapa-pravo{display:grid;gap:18px;align-content:start}
+.zony{display:flex;flex-wrap:wrap;gap:8px}
+.zona{min-height:48px;padding:0 18px;border-radius:999px;border:1.5px solid var(--ciara);background:var(--biela);color:var(--hlbina);font:500 .9375rem/1.2 var(--text);cursor:pointer;transition:background-color .2s,border-color .2s,color .2s}
+.zona:hover{border-color:var(--petrolej)}
+.zona[aria-pressed="true"]{background:var(--petrolej);border-color:var(--petrolej);color:var(--biela)}
+.detail{padding:clamp(22px,3vw,36px);border-radius:var(--r-velky);background:var(--biela);box-shadow:0 1px 0 var(--ciara-2),0 18px 40px -28px rgba(15,42,46,.35)}
+.detail-nadpis{font-size:clamp(1.5rem,2.4vw,2.125rem);line-height:1.12;font-weight:500;letter-spacing:-.02em;color:var(--petrolej)}
+.detail-co{margin-top:10px;color:var(--hlbina)}
+.detail-udaje{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:22px;padding-top:18px;border-top:1px solid var(--ciara)}
+.detail-udaje dt{font-size:.8125rem;color:var(--tlmeny)}
+.detail-udaje dd{font-weight:500;font-size:1.0625rem;line-height:1.35;margin-top:2px;font-variant-numeric:tabular-nums}
+.detail .tlac{margin-top:24px}
+.detail-pozn{margin-top:14px;font-size:.875rem;color:var(--tlmeny)}
+@media (scripting:enabled) and (prefers-reduced-motion:no-preference){
+  .detail-obsah.zmena{animation:detail-vstup .32s var(--vstup)}
+}
+@keyframes detail-vstup{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* Prvá návšteva: fotka sa mení podľa kroku */
+.navsteva-hlava{max-width:46em}
+.kroky-obal{position:relative;margin-top:clamp(28px,4vw,52px)}
+.kroky-ram{position:sticky;top:max(10px,env(safe-area-inset-top));z-index:2;margin-bottom:26px;aspect-ratio:3/2;border-radius:var(--r);overflow:hidden;background:var(--mata);box-shadow:0 22px 44px -32px rgba(15,42,46,.5)}
+.kroky-ram img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.kroky-ram img+img{display:none}
+.kroky-ram.nacitane img+img{display:block}
+.kroky-ram.zivy img{opacity:0;transition:opacity .55s var(--vstup)}
+.kroky-ram.zivy img.aktivna{opacity:1}
+.ram-stitok{position:absolute;left:12px;bottom:12px;display:flex;align-items:center;gap:8px;padding:7px 14px 7px 8px;border-radius:999px;background:rgba(246,250,249,.94);font-size:.875rem;font-weight:500;color:var(--hlbina)}
+.ram-stitok b{display:inline-grid;place-items:center;min-width:26px;height:26px;border-radius:50%;background:var(--petrolej);color:var(--biela);font-weight:500;font-size:.8125rem;font-variant-numeric:tabular-nums}
+.kroky{position:relative}
+.krok{--p:0px;position:relative;display:grid;grid-template-columns:44px minmax(0,1fr);align-content:start;gap:4px 18px;padding:var(--p) 0 30px}
+.krok:last-child{padding-bottom:0}
+.krok:not(:last-child)::before,.krok:not(:last-child)::after{content:"";position:absolute;left:21px;top:calc(var(--p) + 22px);bottom:calc(-1 * (var(--p) + 22px));width:2px;background:var(--mata-2)}
+.krok:not(:last-child)::after{background:var(--petrolej);transform-origin:50% 0;transition:transform .5s var(--vstup)}
+.kroky.zive .krok:not(.hotovy)::after{transform:scaleY(0)}
+.krok-znak{position:relative;z-index:1;grid-row:span 2;display:grid;place-items:center;width:44px;height:44px;border-radius:50%;background:var(--petrolej);color:var(--biela);font-weight:500;font-size:1rem;font-variant-numeric:tabular-nums;box-shadow:0 0 0 6px var(--mata-3);transition:background-color .3s,color .3s,transform .4s var(--pruzina)}
+.kroky.zive .krok-znak{background:var(--biela);color:var(--petrolej);box-shadow:inset 0 0 0 2px var(--mata-2),0 0 0 6px var(--mata-3)}
+.kroky.zive .krok.hotovy .krok-znak,.kroky.zive .krok.aktivny .krok-znak{background:var(--petrolej);color:var(--biela);box-shadow:0 0 0 6px var(--mata-3)}
+.kroky.zive .krok.aktivny .krok-znak{transform:scale(1.08)}
+.krok h3{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;padding-top:8px}
+.krok-cas{font-size:.875rem;font-weight:400;color:var(--tlmeny);font-variant-numeric:tabular-nums}
+.krok p{color:var(--tlmeny);max-width:34em}
+.navsteva-spolu{margin-top:30px;padding:16px 20px;border-radius:var(--r);background:var(--biela);font-size:.9375rem}
+
+/* Cenník */
+.cennik-mriezka{display:grid;gap:clamp(36px,5vw,72px);align-items:start}
+.cennik-foto{margin-top:clamp(28px,4vw,40px);border-radius:var(--r-velky);overflow:hidden;background:var(--mata);max-width:520px}
+.cennik-foto img{width:100%}
+.cennik{border-top:1px solid var(--ciara)}
+.cennik li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 20px;padding:22px 0;border-bottom:1px solid var(--ciara)}
+.cennik li.balik{margin-inline:-16px;padding-inline:16px;border-radius:var(--r-maly);background:var(--mata-3);border-bottom-color:transparent}
+.cennik p{color:var(--tlmeny);font-size:.9375rem;line-height:1.55;max-width:32em}
+.cennik .cena{grid-column:2;grid-row:1 / span 2;align-self:start;max-width:none;text-align:right;font-weight:500;font-size:clamp(1.5rem,2.3vw,2.125rem);line-height:1.05;letter-spacing:-.02em;color:var(--petrolej);font-variant-numeric:tabular-nums;white-space:nowrap}
+.cennik .cena small{display:block;margin-top:6px;font-size:.8125rem;font-weight:400;letter-spacing:0;color:var(--tlmeny)}
+.cennik-pozn{margin-top:20px;font-size:.9375rem;color:var(--tlmeny);max-width:36em}
+
+/* Tím */
+.tim{display:grid;gap:16px;margin-top:clamp(28px,4vw,44px)}
+.clovek{display:grid;grid-template-columns:72px minmax(0,1fr);gap:18px;align-items:start;padding:24px;border-radius:var(--r-velky);background:var(--biela)}
+.clovek-znak{display:grid;place-items:center;width:72px;height:72px;border-radius:50%;background:var(--mata);font:italic 400 2.25rem/1 var(--kurziva);color:var(--petrolej)}
+.clovek h3{font-size:1.375rem}
+.clovek p{color:var(--tlmeny);margin-top:4px}
+.clovek ul{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.clovek li{padding:4px 12px;border-radius:999px;background:var(--mata-3);font-size:.875rem;color:var(--hlbina)}
+.citat{margin-top:clamp(32px,4vw,56px);padding-left:clamp(18px,2vw,28px);border-left:3px solid var(--mata-2)}
+.citat p{font:italic 400 clamp(1.625rem,3vw,2.5rem)/1.2 var(--kurziva);color:var(--petrolej);max-width:22em}
+.citat footer{margin-top:10px;font-size:.9375rem;color:var(--tlmeny)}
+
+/* Prakticky */
+.prakticky-mriezka{display:grid;gap:clamp(36px,5vw,72px);align-items:start}
+.body{margin-top:clamp(24px,3vw,36px);border-top:1px solid var(--ciara)}
+.body li{display:grid;grid-template-columns:28px minmax(0,1fr);gap:4px 16px;padding:20px 0;border-bottom:1px solid var(--ciara)}
+.body li::before{content:"";grid-row:span 2;width:28px;height:14px;margin-top:6px;border-radius:7px;background:var(--mata-2)}
+.body p{color:var(--tlmeny)}
+.prakticky-fotky{display:grid;grid-template-columns:1fr 1fr;gap:clamp(12px,2vw,20px);align-items:start}
+.prakticky-fotky img{width:100%;border-radius:var(--r);background:var(--mata)}
+.prakticky-fotky figure:nth-child(2){margin-top:clamp(40px,7vw,96px)}
+.prakticky-fotky figcaption{margin-top:8px;font-size:.8125rem;color:var(--tlmeny)}
+.upozornenie{margin-top:24px;padding:16px 20px;border-radius:var(--r);background:var(--mata-3);font-size:.9375rem;color:var(--hlbina)}
+
+/* Hodiny a mapa */
+.hodiny-mriezka{display:grid;gap:clamp(28px,4vw,56px);margin-top:clamp(28px,4vw,44px);align-items:start}
+.stav{display:flex;align-items:center;gap:10px;padding:14px 18px;border-radius:var(--r);background:var(--biela);font-weight:500;color:var(--hlbina)}
+.hodiny{margin-top:16px;border-top:1px solid var(--ciara)}
+.hodiny div{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 16px;padding:14px 4px;border-bottom:1px solid var(--ciara)}
+.hodiny dt{color:var(--tlmeny)}
+.hodiny dd{font-weight:500;font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.hodiny div.dnes{background:var(--biela);border-radius:12px;border-bottom-color:transparent;padding-inline:14px}
+.hodiny div.dnes dt{color:var(--hlbina);font-weight:500}
+.adresa{margin-top:22px;color:var(--tlmeny)}
+.adresa strong{color:var(--hlbina);font-weight:500}
+.mapa{border-radius:var(--r-velky);overflow:hidden;background:var(--mata)}
+.mapa-plocha{position:relative;container-type:inline-size}
+.mapa svg{display:block;width:100%;height:auto}
+.mapa-popisy span{position:absolute;padding:3px 9px;border-radius:9px;background:rgba(246,250,249,.94);font-size:clamp(13px,2.1cqi,15px);line-height:1.3;color:var(--tlmeny);white-space:nowrap}
+.mapa-popisy strong{display:block;color:var(--hlbina);font-weight:500}
+.mapa figcaption{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 16px;padding:12px 20px 14px;font-size:.875rem;color:var(--tlmeny);background:var(--biela)}
+.mapa figcaption a{display:inline-flex;align-items:center;min-height:44px;color:var(--petrolej);font-weight:500}
+
+/* Kontakt */
+.kontakt{background:var(--petrolej);color:var(--biela);padding-block:clamp(72px,8vw,120px)}
+.kontakt h2{color:var(--biela)}
+.kontakt .uvod-sekcie{color:var(--na-petroleji)}
+.kontakt-mriezka{display:grid;gap:clamp(32px,5vw,64px);align-items:end}
+.kontakt-akcie{display:flex;flex-wrap:wrap;gap:12px;margin-top:28px}
+.kontakt-udaje div{display:grid;grid-template-columns:7.5em minmax(0,1fr);gap:12px;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.18)}
+.kontakt-udaje dt{color:var(--na-petroleji)}
+.kontakt-udaje dd{min-width:0;overflow-wrap:anywhere}
+.kontakt-udaje a{display:inline-flex;align-items:center;min-height:44px;margin-block:-12px;overflow-wrap:anywhere;word-break:break-word}
+.pozn{color:var(--na-petroleji);font-size:.875rem}
+
+/* Päta */
+.pata{background:var(--hlbina);color:#c9dbd8;padding-block:48px calc(48px + env(safe-area-inset-bottom));font-size:.9375rem}
+.pata .obal{display:grid;gap:18px}
+.pata-meno{display:flex;align-items:center;gap:12px;color:var(--biela);font-weight:500;font-size:1.125rem}
+.pata-odkazy{display:flex;flex-wrap:wrap;gap:0 22px}
+.pata-odkazy a{display:inline-flex;align-items:center;min-height:44px;color:var(--biela)}
+.male{font-size:.8125rem;line-height:1.55;color:#a9c1bd;max-width:62em}
+
+/* Lepiaca lišta (mobil a tablet) */
+.lista{position:fixed;left:0;right:0;bottom:0;z-index:40;display:flex;gap:10px;padding:10px var(--okraj) calc(10px + env(safe-area-inset-bottom));background:rgba(246,250,249,.97);border-top:1px solid var(--ciara);transform:translateY(110%);transition:transform .3s var(--vstup);visibility:hidden}
+.lista.vidno{transform:none;visibility:visible}
+.lista .tlac{flex:1;min-height:54px;flex-direction:column;gap:1px;line-height:1.1}
+.lista .tlac small{font-size:.75rem;font-weight:400;opacity:.85}
+.lista-volat{flex:0 0 56px!important;padding:0;background:var(--mata);color:var(--petrolej)}
+
+/* Okná */
+.okno{width:min(560px,calc(100% - 24px));max-height:calc(100dvh - 24px);padding:0;border:0;border-radius:var(--r-velky);background:var(--perla);color:var(--hlbina);box-shadow:0 30px 80px -20px rgba(15,42,46,.45)}
+.okno::backdrop{background:rgba(15,42,46,.55)}
+.okno-hlava{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 18px 0 24px}
+.okno-hlava h2{font-size:1.625rem;max-width:none}
+.zavriet{display:inline-grid;place-items:center;width:48px;height:48px;border:0;border-radius:50%;background:var(--mata-3);color:var(--hlbina);cursor:pointer}
+.zavriet:hover{background:var(--mata)}
+.okno-telo{display:grid;gap:16px;padding:12px 24px 24px}
+.okno-telo fieldset{border:0;padding:0;margin:0}
+.okno-telo legend{font-weight:500;margin-bottom:8px;padding:0}
+.volby{display:flex;flex-wrap:wrap;gap:8px}
+.volby label{display:inline-flex;align-items:center;gap:8px;min-height:48px;padding:0 16px;border-radius:999px;border:1.5px solid var(--ciara);background:var(--biela);cursor:pointer;font-size:.9375rem}
+.volby label:has(input:checked){border-color:var(--petrolej);background:var(--mata-3)}
+.volby input{accent-color:var(--petrolej);width:18px;height:18px;margin:0}
+.pole{display:grid;gap:6px;font-weight:500}
+.pole input,.pole select{min-height:50px;padding:0 14px;border-radius:var(--r-maly);border:1.5px solid rgba(15,42,46,.32);background:var(--biela);color:var(--hlbina);font:400 1rem var(--text)}
+.pole input:focus-visible,.pole select:focus-visible{border-radius:var(--r-maly)}
+.okno-pozn{font-size:.875rem;color:var(--tlmeny)}
+.okno-hotovo{font-weight:500;color:var(--petrolej)}
+.okno-hotovo:empty{display:none}
+.okno-cislo{font-size:2rem;font-weight:500;letter-spacing:-.01em;color:var(--petrolej);font-variant-numeric:tabular-nums}
+
+/* Od tabletu: kruh s chrbticou vedľa textu, kroky v dvoch stĺpcoch */
+@media (min-width:760px){
+  .pas-ukazky{font-size:.875rem}
+  .pas-ukazky .obal{grid-template-columns:minmax(0,1fr) auto;align-items:center;padding-block:2px}
+  .pas-dlhe{display:inline}
+  .pas-kratke{display:none}
+  .hlava .obal{min-height:72px}
+  .uvod{padding-top:clamp(8px,1.6vw,24px)}
+  .uvod-mriezka{--mezera:clamp(24px,2.8vw,48px);--disk:clamp(270px,42vw,380px);grid-template-columns:minmax(0,1fr) var(--disk);grid-template-areas:"nadpis disk" "kurziva disk" "popis disk" "akcie disk" "foto foto"}
+  .uvod-nadpis{font-size:min(calc((100cqi - var(--disk) - var(--mezera)) / 5.35),11svh)}
+  .uvod-kurziva{margin-top:18px;font-size:clamp(1.375rem,2.6cqi,2.125rem)}
+  .uvod-popis{margin-top:14px;font-size:clamp(1.0625rem,1.4cqi,1.1875rem)}
+  .uvod-akcie{flex-direction:row;flex-wrap:wrap;gap:10px;margin-top:24px}
+  .uvod-akcie .tlac{padding-inline:24px}
+  .chrbtica-obal{grid-area:disk;align-self:center;width:var(--disk);aspect-ratio:1;min-height:0;margin:0;border-radius:50%;background:radial-gradient(circle at 50% 40%,#fff 0%,#f4faf8 56%,#e6f3ef 100%);box-shadow:inset 0 0 0 1px rgba(255,255,255,.7),0 50px 90px -56px rgba(13,75,86,.55)}
+  .chrbtica{inset:0;height:100%}
+  .chrbtica-telo{--amp:1;--amp-r:1}
+  .cifernik,.zatvorky,.stitky{visibility:visible}
+  .uvod-foto{margin-top:clamp(28px,4vw,48px);aspect-ratio:16/9}
+  .uvod-foto img{object-position:50% 42%}
+  .cipy{left:16px;bottom:16px;right:auto;max-width:calc(100% - 32px)}
+  .cip-stav{left:16px;right:auto;top:16px}
+  .mapa-mriezka{grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);align-items:start}
+  .kroky-obal{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(32px,5vw,96px);align-items:start}
+  .kroky-ram{grid-column:2;grid-row:1;top:max(24px,calc(50vh - 22vw));aspect-ratio:1;max-width:600px;width:100%;justify-self:end;margin:0}
+  .kroky{grid-column:1;grid-row:1}
+  .krok{--p:calc((min(34vh,310px) - 150px) / 2);min-height:min(34vh,310px);padding-bottom:0}
+  .tim{grid-template-columns:1fr 1fr}
+  .prakticky-mriezka{grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr)}
+}
+/* Počítač: nadpis cez dva stĺpce, pod ním text a fotka 4 : 5, vpravo veľký kruh; výška podľa okna notebooku */
+@media (min-width:1024px){
+  .menu{display:flex}
+  .hlava .obal{min-height:80px}
+  .uvod{padding-top:clamp(4px,1.2vw,20px)}
+  .uvod-mriezka{--mezera:clamp(24px,2.8vw,48px);--disk:clamp(380px,min(39vw,100svh - 210px),640px);--foto-s:clamp(220px,min(20vw,36svh),330px);grid-template-columns:minmax(0,1fr) var(--foto-s) var(--disk);grid-template-rows:auto auto auto auto 1fr;grid-template-areas:"nadpis nadpis disk" "kurziva foto disk" "popis foto disk" "akcie foto disk" ". foto disk"}
+  .uvod-nadpis{font-size:min(calc((100cqi - var(--disk) - var(--mezera)) / 7.8),14.5svh);margin-bottom:clamp(20px,2.4vw,32px)}
+  .uvod-kurziva{margin-top:0;font-size:clamp(1.375rem,2cqi,2.125rem)}
+  .uvod-popis{margin-top:14px}
+  .uvod-akcie{margin-top:24px}
+  .uvod-foto{margin-top:0;aspect-ratio:4/5;width:var(--foto-s)}
+  .uvod-foto img{object-position:50% 50%}
+  .cipy{left:12px;right:12px;bottom:12px;max-width:none}
+  .cip-stav{left:12px;right:auto;top:12px}
+  .chrbtica-obal{align-self:center}
+  .krok h3{font-size:clamp(1.75rem,2.5vw,2.375rem);padding-top:0}
+  .krok-cas{font-size:1rem}
+  .krok p{font-size:1.125rem;margin-top:4px}
+  .cennik-mriezka{grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr)}
+  .hodiny-mriezka{grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr)}
+  .kontakt-mriezka{grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr)}
+  .lista{display:none}
+}
+@media (max-width:1023px){
+  html{scroll-padding-bottom:calc(84px + env(safe-area-inset-bottom))}
+  body{padding-bottom:calc(76px + env(safe-area-inset-bottom))}
+}
+@media (max-width:759px){
+  .pas-ukazky a,.pata-odkazy a,.mapa figcaption a{min-height:48px}
+  .cennik li{padding:18px 0}
+  .cennik li.balik{margin-inline:-12px;padding-inline:12px}
+}
+@media (max-width:479px){
+  .detail-udaje{grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr)}
+  .detail-udaje dd{font-size:1rem}
+}
+@media (max-width:379px){
+  .tlac{padding:0 18px}
+  .hlava .obal{gap:10px}
+  .znacka{gap:9px}
+  .znacka-text strong{font-size:1.0625rem}
+  .detail-udaje{grid-template-columns:1fr}
+  .uvod-akcie .tlac{padding-inline:12px}
+}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{transition-duration:.01ms!important;animation:none!important}
+}
+@media (forced-colors:active){.bod::before{background:Highlight}.tlac{border-color:ButtonText}}
+</style>
+<script src="app.js" defer></script>
+</head>
+<body>
+<a class="preskocit" href="#obsah">Preskočiť na obsah</a>
+
+<div class="pas-ukazky" role="note">
+  <div class="obal">
+    <p><strong>Ukážka webu od ARLing, vymyslená prevádzka.</strong> <span class="pas-dlhe">Fyzioterapia Os, fyzioterapeuti Lucia a&nbsp;Martin, adresa aj&nbsp;čísla sú vymyslené.</span><span class="pas-kratke">Mená, adresa aj&nbsp;čísla sú vymyslené.</span></p>
+    <p class="pas-odkazy"><a href="https://arling.sk/web/?z=fyzioterapia" target="_top">Chcem taký web</a><a href="../../#ukazky" target="_top">Späť na ukážky</a></p>
+  </div>
+</div>
+
+<header class="hlava">
+  <div class="obal">
+    <a class="znacka" href="#obsah">
+      <svg width="36" height="36" viewBox="0 0 34 34" aria-hidden="true"><circle cx="17" cy="17" r="17" fill="#f6faf9"/><rect x="12.5" y="7" width="9" height="4.4" rx="2.2" fill="#0d4b56"/><rect x="11.5" y="13.2" width="11" height="4.6" rx="2.3" fill="#0d4b56"/><rect x="10.5" y="19.6" width="13" height="5" rx="2.5" fill="#0d4b56"/><rect x="15" y="26.4" width="4" height="2.6" rx="1.3" fill="#0d4b56"/></svg>
+      <span class="znacka-text"><strong>Fyzioterapia Os</strong><span>Trnava</span></span>
+    </a>
+    <nav class="menu" aria-label="Sekcie">
+      <a href="#kde-to-boli">Kde to bolí</a>
+      <a href="#prva-navsteva">Prvá návšteva</a>
+      <a href="#cennik">Cenník</a>
+      <a href="#kontakt">Kontakt</a>
+    </nav>
+    <a class="tlac tlac-hlavne tlac-male" href="#kontakt" data-okno="okno-rezervacia">Rezervovať</a>
+  </div>
+</header>
+
+<main id="obsah" tabindex="-1">
+<section class="uvod" aria-labelledby="uvod-nadpis">
+  <div class="uvod-mriezka">
+    <h1 class="uvod-nadpis" id="uvod-nadpis">Pomôžeme vám späť k&nbsp;<em>pohybu.</em></h1>
+    <p class="uvod-kurziva">Najprv sa opýtame, kde vás to bolí.</p>
+    <p class="uvod-popis">Súkromná fyzioterapia v&nbsp;Trnave. Na prvej návšteve vás vypočujeme, vyšetríme, ošetríme a&nbsp;odídete s&nbsp;plánom cvikov na doma.</p>
+    <div class="uvod-akcie">
+      <a class="tlac tlac-hlavne" href="#kontakt" data-okno="okno-rezervacia">Rezervovať termín<svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M3 9h11M10 4.5 14.5 9 10 13.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+      <a class="tlac tlac-obrys" href="#kontakt" data-okno="okno-volat">Zavolať</a>
+    </div>
+    <div class="uvod-foto">
+      <img src="img/uvod-1200.webp" srcset="img/uvod-800.webp 800w, img/uvod-1200.webp 1200w, img/uvod-1600.webp 1600w, img/uvod-2400.webp 2400w" sizes="(min-width: 1024px) 330px, (min-width: 760px) calc(100vw - 62px), calc(100vw - 32px)" width="1200" height="1500" alt="Ruka fyzioterapeuta v&nbsp;mätovej uniforme drží hlavu pacientky, druhá ruka jej spočíva na pleci, pohľad zozadu" fetchpriority="high">
+      <p class="cip cip-stav" data-stav-cip hidden><span class="stav-bodka" aria-hidden="true" data-stav-bodka></span><span data-stav-cip-text></span></p>
+      <ul class="cipy" role="list">
+        <li class="cip">Bez odporúčania</li>
+        <li class="cip">Prvá návšteva <b><span class="cip-min">60&nbsp;min, </span>55&nbsp;€</b></li>
+      </ul>
+    </div>
+    <div class="chrbtica-obal" data-chrbtica>
+      <svg class="chrbtica" viewBox="0 0 600 600" preserveAspectRatio="xMidYMid slice" role="img" aria-labelledby="chrbtica-titul">
+        <title id="chrbtica-titul">Ilustrácia: chrbtica z&nbsp;24 stavcov a&nbsp;krížovej kosti sa z&nbsp;oblúka vyrovná do osi</title>
+        <defs>
+          <linearGradient id="stavce" x1="0" y1="40" x2="0" y2="570" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#3a8590"/><stop offset=".38" stop-color="#0d4b56"/><stop offset="1" stop-color="#0b3f48"/></linearGradient>
+        </defs>
+        <g class="cifernik" aria-hidden="true">
+          <path class="ryhy" d="M28 300L10 300M20.5 270.6L11.6 269.7M25.1 241.6L16.3 239.7M32.8 213.2L24.2 210.4M43.3 185.7L35.1 182M64.4 164L48.9 155M72.7 134.8L65.4 129.5M91.2 112L84.5 106M112 91.2L106 84.5M134.8 72.7L129.5 65.4M164 64.4L155 48.9M185.7 43.3L182 35.1M213.2 32.8L210.4 24.2M241.6 25.1L239.7 16.3M270.6 20.5L269.7 11.6M329.4 20.5L330.3 11.6M358.4 25.1L360.3 16.3M386.8 32.8L389.6 24.2M414.3 43.3L418 35.1M436 64.4L445 48.9M465.2 72.7L470.5 65.4M488 91.2L494 84.5M508.8 112L515.5 106M527.3 134.8L534.6 129.5M535.6 164L551.1 155M556.7 185.7L564.9 182M567.2 213.2L575.8 210.4M574.9 241.6L583.7 239.7M579.5 270.6L588.4 269.7M572 300L590 300"/>
+          <path class="sklon" d="M292.5 10h15l-7.5 13z"/>
+        </g>
+        <line class="chrbtica-os" x1="300" y1="30" x2="300" y2="586"/>
+        <path class="zatvorky" pathLength="1" d="M342 46h8v96h-8M350 94h10M352 150h8v212h-8M360 256h10M364 370h8v109h-8M372 425h10M276 527h-16" aria-hidden="true"/>
+        <g class="chrbtica-telo">
+<g class="stavec" data-skupina="krk" style="--i:0;--x:3.9;--r:-9"><rect class="vybezok" x="280.5" y="45.8" width="39" height="4.6" rx="2.3"/><rect class="telo-stavca" x="286.5" y="44" width="27" height="10" rx="4.2"/><rect class="lesk" x="286.5" y="44" width="27" height="10" rx="4.2"/><rect class="disk" x="289.7" y="54.7" width="20.6" height="3" rx="1.5"/></g>
+<g class="stavec" data-skupina="krk" style="--i:1;--x:14.9;--r:-8.8"><rect class="vybezok" x="279.3" y="60.2" width="41.3" height="4.7" rx="2.4"/><rect class="telo-stavca" x="285.7" y="58.4" width="28.7" height="10.2" rx="4.3"/><rect class="lesk" x="285.7" y="58.4" width="28.7" height="10.2" rx="4.3"/><rect class="disk" x="289.1" y="69.3" width="21.8" height="3" rx="1.5"/></g>
+<g class="stavec" data-skupina="krk" style="--i:2;--x:25.6;--r:-8.2"><rect class="vybezok" x="278.2" y="74.8" width="43.7" height="4.8" rx="2.4"/><rect class="telo-stavca" x="284.8" y="73" width="30.3" height="10.3" rx="4.3"/><rect class="lesk" x="284.8" y="73" width="30.3" height="10.3" rx="4.3"/><rect class="disk" x="288.5" y="84" width="23.1" height="3" rx="1.5"/></g>
+<g class="stavec" data-skupina="krk" style="--i:3;--x:35.6;--r:-7.5"><rect class="vybezok" x="277" y="89.6" width="46" height="4.8" rx="2.4"/><rect class="telo-stavca" x="284" y="87.7" width="32" height="10.5" rx="4.4"/><rect class="lesk" x="284" y="87.7" width="32" height="10.5" rx="4.4"/><rect class="disk" x="287.9" y="98.9" width="24.3" height="3" rx="1.5"/></g>
+<g class="stavec" data-skupina="krk" style="--i:4;--x:44.6;--r:-6.5"><rect class="vybezok" x="275.8" y="104.5" width="48.3" height="4.9" rx="2.5"/><rect class="telo-stavca" x="283.2" y="102.6" width="33.7" height="10.7" rx="4.5"/><rect class="lesk" x="283.2" y="102.6" width="33.7" height="10.7" rx="4.5"/><rect class="disk" x="287.3" y="114" width="25.5" height="3" rx="1.5"/></g>
+<g class="stavec" data-skupina="krk" style="--i:5;--x:52.2;--r:-5.2"><rect class="vybezok" x="274.7" y="119.6" width="50.7" height="5" rx="2.5"/><rect class="telo-stavca" x="282.3" y="117.7" width="35.3" height="10.8" rx="4.6"/><rect class="lesk" x="282.3" y="117.7" width="35.3" height="10.8" rx="4.6"/><rect class="disk" x="286.6" y="129.2" width="26.8" height="3" rx="1.5"/></g>
+<g class="stavec" data-skupina="krk" style="--i:6;--x:58.1;--r:-3.8"><rect class="vybezok" x="273.5" y="134.9" width="53" height="5.1" rx="2.6"/><rect class="telo-stavca" x="281.5" y="132.9" width="37" height="11" rx="4.6"/><rect class="lesk" x="281.5" y="132.9" width="37" height="11" rx="4.6"/><rect class="disk" x="286" y="144.6" width="28.1" height="3" rx="1.5"/></g>
+<g class="stavec" data-skupina="hrudna" style="--i:7;--x:62.2;--r:-2.1"><rect class="vybezok" x="271.5" y="150.5" width="57" height="5.5" rx="2.8"/><rect class="telo-stavca" x="280.5" y="148.3" width="39" height="12" rx="5"/><rect class="lesk" x="280.5" y="148.3" width="39" height="12" rx="5"/><rect class="disk" x="285.4" y="161.1" width="29.2" height="3" rx="1.5"/></g>
+<g class="stavec" data-skupina="hrudna" style="--i:8;--x:64;--r:-0.3"><rect class="vybezok" x="270.9" y="167.1" width="58.2" height="5.7" rx="2.9"/><rect class="telo-stavca" x="280" y="164.9" width="40" height="12.3" rx="5.2"/><rect class="lesk" x="280" y="164.9" width="40" height="12.3" rx="5.2"/><rect class="disk" x="285" y="178" width="30" height="3" rx="1.5"/></g>
+<g class="stavec" data-skupina="hrudna" style="--i:9;--x:63.1;--r:1.5"><rect class="vybezok" x="270.3" y="184.1" width="59.4" height="5.8" rx="2.9"/><rect class="telo-stavca" x="279.5" y="181.8" width="41" height="12.6" rx="5.3"/><rect class="lesk" x="279.5" y="181.8" width="41" height="12.6" rx="5.3"/><rect class="disk" x="284.7" y="195.3" width="30.7" height="3" rx="1.5"/></g>
+<g class="stavec" data-skupina="hrudna" style="--i:10;--x:59.5;--r:3.3"><rect class="vybezok" x="269.7" y="201.4" width="60.5" height="6" rx="3"/><rect class="telo-stavca" x="279" y="199.1" width="42" height="13" rx="5.4"/><rect class="lesk" x="279" y="199.1" width="42" height="13" rx="5.4"/><rect class="disk" x="284.3" y="212.8" width="31.5" height="3" rx="1.5"/></g>
+<g class="stavec" data-skupina="hrudna" style="--i:11;--x:53.1;--r:5"><rect class="vybezok" x="269.1" y="219" width="61.7" height="6.1" rx="3.1"/><rect class="telo-stavca" x="278.5" y="216.6" width="43" height="13.3" rx="5.6"/><rect class="lesk" x="278.5" y="216.6" width="43" height="13.3" rx="5.6"/><rect class="disk" x="283.9" y="230.7" width="32.2" height="3" rx="1.5"/></g>
+<g class="stavec" data-skupina="hrudna" style="--i:12;--x:44.2;--r:6.5"><rect class="vybezok" x="268.5" y="236.9" width="62.9" height="6.3" rx="3.2"/><rect class="telo-stavca" x="278" y="234.5" width="44" height="13.6" rx="5.7"/><rect class="lesk" x="278" y="234.5" width="44" height="13.6" rx="5.7"/><rect class="disk" x="283.6" y="248.9" width="32.9" height="3" rx="1.5"/></g>
+<g class="stavec" data-skupina="hrudna" style="--i:13;--x:33;--r:7.7"><rect class="vybezok" x="268" y="255.2" width="64.1" height="6.4" rx="3.2"/><rect class="telo-stavca" x="277.5" y="252.7" width="45" height="13.9" rx="5.8"/><rect class="lesk" x="277.5" y="252.7" width="45" height="13.9" rx="5.8"/><rect class="disk" x="283.2" y="267.4" width="33.7" height="3" rx="1.5"/></g>
+<g class="stavec" data-skupina="hrudna" style="--i:14;--x:19.9;--r:8.6"><rect class="vybezok" x="267.4" y="273.7" width="65.3" height="6.5" rx="3.3"/><rect class="telo-stavca" x="277" y="271.2" width="46" height="14.2" rx="6"/><rect class="lesk" x="277" y="271.2" width="46" height="14.2" rx="6"/><rect class="disk" x="282.8" y="286.2" width="34.4" height="3" rx="1.5"/></g>
+<g class="stavec" data-skupina="hrudna" style="--i:15;--x:5.6;--r:9"><rect class="vybezok" x="266.8" y="292.6" width="66.5" height="6.7" rx="3.4"/><rect class="telo-stavca" x="276.5" y="290" width="47" height="14.5" rx="6.1"/><rect class="lesk" x="276.5" y="290" width="47" height="14.5" rx="6.1"/><rect class="disk" x="282.4" y="305.4" width="35.2" height="3" rx="1.5"/></g>
+<g class="stavec" data-skupina="hrudna" style="--i:16;--x:-9.3;--r:8.9"><rect class="vybezok" x="266.2" y="311.8" width="67.6" height="6.8" rx="3.4"/><rect class="telo-stavca" x="276" y="309.2" width="48" height="14.9" rx="6.2"/><rect class="lesk" x="276" y="309.2" width="48" height="14.9" rx="6.2"/><rect class="disk" x="282.1" y="324.8" width="35.9" height="3" rx="1.5"/></g>
+<g class="stavec" data-skupina="hrudna" style="--i:17;--x:-23.9;--r:8.3"><rect class="vybezok" x="265.6" y="331.4" width="68.8" height="7" rx="3.5"/><rect class="telo-stavca" x="275.5" y="328.6" width="49" height="15.2" rx="6.4"/><rect class="lesk" x="275.5" y="328.6" width="49" height="15.2" rx="6.4"/><rect class="disk" x="281.7" y="344.6" width="36.6" height="3" rx="1.5"/></g>
+<g class="stavec" data-skupina="hrudna" style="--i:18;--x:-37.3;--r:7.3"><rect class="vybezok" x="265" y="351.2" width="70" height="7.1" rx="3.6"/><rect class="telo-stavca" x="275" y="348.4" width="50" height="15.5" rx="6.5"/><rect class="lesk" x="275" y="348.4" width="50" height="15.5" rx="6.5"/><rect class="disk" x="280.6" y="364.7" width="38.9" height="3" rx="1.5"/></g>
+<g class="stavec" data-skupina="driek" style="--i:19;--x:-49.1;--r:5.8"><rect class="vybezok" x="259.5" y="371.6" width="81" height="7.8" rx="3.9"/><rect class="telo-stavca" x="272.5" y="368.5" width="55" height="17" rx="7.1"/><rect class="lesk" x="272.5" y="368.5" width="55" height="17" rx="7.1"/><rect class="disk" x="279.3" y="386.5" width="41.5" height="3" rx="1.5"/></g>
+<g class="stavec" data-skupina="driek" style="--i:20;--x:-58.3;--r:3.7"><rect class="vybezok" x="257.9" y="393.7" width="84.3" height="8.2" rx="4.1"/><rect class="telo-stavca" x="271.4" y="390.5" width="57.3" height="17.8" rx="7.5"/><rect class="lesk" x="271.4" y="390.5" width="57.3" height="17.8" rx="7.5"/><rect class="disk" x="278.4" y="409.3" width="43.2" height="3" rx="1.5"/></g>
+<g class="stavec" data-skupina="driek" style="--i:21;--x:-63.3;--r:1.3"><rect class="vybezok" x="256.3" y="416.6" width="87.5" height="8.5" rx="4.3"/><rect class="telo-stavca" x="270.3" y="413.3" width="59.5" height="18.5" rx="7.8"/><rect class="lesk" x="270.3" y="413.3" width="59.5" height="18.5" rx="7.8"/><rect class="disk" x="277.6" y="432.8" width="44.9" height="3" rx="1.5"/></g>
+<g class="stavec" data-skupina="driek" style="--i:22;--x:-63.4;--r:-1.3"><rect class="vybezok" x="254.6" y="440.2" width="90.8" height="8.9" rx="4.5"/><rect class="telo-stavca" x="269.1" y="436.8" width="61.8" height="19.3" rx="8.1"/><rect class="lesk" x="269.1" y="436.8" width="61.8" height="19.3" rx="8.1"/><rect class="disk" x="276.8" y="457" width="46.5" height="3" rx="1.5"/></g>
+<g class="stavec" data-skupina="driek" style="--i:23;--x:-58;--r:-3.8"><rect class="vybezok" x="253" y="464.6" width="94" height="9.2" rx="4.6"/><rect class="telo-stavca" x="268" y="461" width="64" height="20" rx="8.4"/><rect class="lesk" x="268" y="461" width="64" height="20" rx="8.4"/><rect class="disk" x="276.3" y="482" width="47.4" height="3" rx="1.5"/></g>
+<g class="stavec kriz" data-skupina="kriz" style="--i:24;--x:-33.7;--r:-7.7"><path class="telo-stavca" d="M271 487h58a6 6 0 0 1 5.6 8.1L309 545a10 10 0 0 1-18 0L265.4 495.1A6 6 0 0 1 271 487z"/><path class="lesk" d="M271 487h58a6 6 0 0 1 5.6 8.1L309 545a10 10 0 0 1-18 0L265.4 495.1A6 6 0 0 1 271 487z"/><g class="otvory"><circle cx="286" cy="506.2" r="2.6"/><circle cx="314" cy="506.2" r="2.6"/><circle cx="289.6" cy="520.3" r="2.2"/><circle cx="310.4" cy="520.3" r="2.2"/><circle cx="293.2" cy="533.1" r="1.8"/><circle cx="306.8" cy="533.1" r="1.8"/></g><g class="kostrc"><rect x="296" y="554" width="8" height="3.6" rx="1.8"/><rect x="297" y="559" width="6" height="3.6" rx="1.8"/><rect x="298" y="564" width="4" height="3.6" rx="1.8"/></g></g>
+        </g>
+      </svg>
+      <div class="stitky">
+        <a class="stitok" href="#kde-to-boli" data-zona="krk" data-skupina="krk" style="left:61.5%;top:11.6%;--j:3" aria-label="Krčná, 7 stavcov: čo robíme pri bolesti krku"><strong>Krčná</strong><span>7 stavcov</span></a>
+        <a class="stitok" href="#kde-to-boli" data-zona="hrudna" data-skupina="hrudna" style="left:63.2%;top:38.6%;--j:2" aria-label="Hrudná, 12 stavcov: čo robíme pri bolesti hrudnej chrbtice"><strong>Hrudná</strong><span>12 stavcov</span></a>
+        <a class="stitok" href="#kde-to-boli" data-zona="kriz" data-skupina="driek" style="left:65.2%;top:66.8%;--j:1" aria-label="Drieková, 5 stavcov: čo robíme pri bolesti drieku a&nbsp;v&nbsp;krížoch"><strong>Drieková</strong><span>5 stavcov</span></a>
+        <a class="stitok stitok-vlavo" href="#kde-to-boli" data-zona="kriz" data-skupina="kriz" style="right:57%;top:84%;--j:0" aria-label="Krížová kosť: čo robíme pri bolesti v&nbsp;krížoch"><strong>Krížová kosť</strong></a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sekcia" id="kde-to-boli" aria-labelledby="mapa-nadpis">
+  <div class="obal">
+    <h2 id="mapa-nadpis">Kde vás to bolí?</h2>
+    <p class="uvod-sekcie">Ťuknite na miesto na postave alebo vyberte oblasť zo zoznamu. Ukážeme, čo pri nej zvyčajne robíme, s&nbsp;akým plánom rátať a&nbsp;koľko to stojí.</p>
+    <div class="mapa-mriezka">
+      <div class="mapa-tela" data-mapa data-vybrane="kriz">
+        <figure class="postava">
+          <div class="postava-plocha">
+          <svg viewBox="0 0 180 462" aria-hidden="true">
+            <defs>
+              <path id="silueta" vector-effect="non-scaling-stroke" d="M90 8C101 8 109 17 109 30C109 42 104 53 98 58C97 62 97 66 98 70C103 76 113 79 124 84C132 87 138 95 138.5 108C139 128 140 148 140.5 168C141.5 190 144 210 145 228C148 238 150 252 147 263C145 270 138 271 136.5 264C135.5 256 134.5 244 133.5 232C132 212 129.5 190 128 172C126.5 152 124.5 132 121.5 118C122 142 119.5 166 116.5 186C114.5 200 116 216 120 232C123.5 244 124.5 254 124 266C123 292 120.5 318 118.5 340C117.5 352 119.5 362 120 374C120.5 394 115 414 111 428C112 436 116 442 118 447C119.5 452 113 455 105 455C99 455 96.5 452 96.5 446C96.5 440 97 434 97 428C97 410 95.5 392 96 376C96.5 362 98.5 350 98 340C97 318 95 292 93 272C92.5 268 91.5 266 90 266C88.5 266 87.5 268 87 272C85 292 83 318 82 340C81.5 350 83.5 362 84 376C84.5 392 83 410 83 428C83 434 83.5 440 83.5 446C83.5 452 81 455 75 455C67 455 60.5 452 62 447C64 442 68 436 69 428C65 414 59.5 394 60 374C60.5 362 62.5 352 61.5 340C59.5 318 57 292 56 266C55.5 254 56.5 244 60 232C64 216 65.5 200 63.5 186C60.5 166 58 142 58.5 118C55.5 132 53.5 152 52 172C50.5 190 48 212 46.5 232C45.5 244 44.5 256 43.5 264C42 271 35 270 33 263C30 252 32 238 35 228C36 210 38.5 190 39.5 168C40 148 41 128 41.5 108C42 95 48 87 56 84C67 79 77 76 82 70C83 66 83 62 82 58C76 53 71 42 71 30C71 17 79 8 90 8Z"/>
+              <radialGradient id="ziara"><stop offset="0" stop-color="#f2b33d" stop-opacity=".78"/><stop offset=".5" stop-color="#f2b33d" stop-opacity=".42"/><stop offset="1" stop-color="#f2b33d" stop-opacity="0"/></radialGradient>
+              <linearGradient id="stavce-male" x1="0" y1="70" x2="0" y2="240" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#3a8590"/><stop offset=".4" stop-color="#0d4b56"/><stop offset="1" stop-color="#0b3f48"/></linearGradient>
+            </defs>
+            <ellipse class="tien" cx="90" cy="456" rx="44" ry="5"/>
+            <use class="telo-plocha" href="#silueta"/>
+            <ellipse class="ziara" data-zona="plecia" cx="131" cy="98" rx="30" ry="30"/>
+            <ellipse class="ziara" data-zona="koleno" cx="72" cy="342" rx="26" ry="30"/>
+            <ellipse class="ziara" data-zona="clenok" cx="104" cy="432" rx="22" ry="20"/>
+            <path class="telo-detail" vector-effect="non-scaling-stroke" d="M99 80C106 84 115 85 123 84M81 80C74 84 65 85 57 84M93 123C101 128 111 127 118 119M87 123C79 128 69 127 62 119M116 228C110 240 101 251 94 259M64 228C70 240 79 251 86 259M103 335C106 331 111 331 114 335M77 335C74 331 69 331 66 335M135 160C136.5 166 136.5 172 135 177M45 160C43.5 166 43.5 172 45 177M90 134L90 184"/>
+            <use class="telo-obrys" href="#silueta"/>
+          </svg>
+          <button class="bod" type="button" tabindex="-1" aria-hidden="true" data-zona="plecia" style="left:73%;top:20.4%;--d:1"></button>
+          <button class="bod" type="button" tabindex="-1" aria-hidden="true" data-zona="koleno" style="left:39.9%;top:74%;--d:4"></button>
+          <button class="bod" type="button" tabindex="-1" aria-hidden="true" data-zona="clenok" style="left:57.8%;top:93.2%;--d:5"></button>
+          </div>
+          <figcaption>Spredu</figcaption>
+        </figure>
+        <figure class="postava">
+          <div class="postava-plocha">
+          <svg viewBox="0 0 180 462" aria-hidden="true">
+            <ellipse class="tien" cx="90" cy="456" rx="44" ry="5"/>
+            <use class="telo-plocha" href="#silueta"/>
+            <ellipse class="ziara" data-zona="krk" cx="90" cy="68" rx="24" ry="22"/>
+            <ellipse class="ziara" data-zona="hrudna" cx="90" cy="140" rx="34" ry="42"/>
+            <ellipse class="ziara" data-zona="kriz" cx="90" cy="222" rx="36" ry="32"/>
+            <path class="telo-detail" vector-effect="non-scaling-stroke" d="M100 100C108 101 116 108 117 121C113.5 129 105 130 99.5 124M80 100C72 101 64 108 63 121C66.5 129 75 130 80.5 124M104 266C99.5 271 94.5 271 91.5 268M76 266C80.5 271 85.5 271 88.5 268M103 345C106 348 111 348 114 345M77 345C74 348 69 348 66 345M117 358C119.5 370 119 384 116 396M63 358C60.5 370 61 384 64 396M90 246L90 262"/>
+            <g class="telo-stavce"><rect x="87.5" y="72" width="5" height="3.6" rx="1.5"/><rect x="87.4" y="77" width="5.2" height="3.7" rx="1.5"/><rect x="87.3" y="82.1" width="5.5" height="3.7" rx="1.6"/><rect x="87.2" y="87.2" width="5.7" height="3.8" rx="1.6"/><rect x="87" y="92.4" width="5.9" height="3.9" rx="1.6"/><rect x="86.9" y="97.7" width="6.2" height="3.9" rx="1.7"/><rect x="86.8" y="103" width="6.4" height="4" rx="1.7"/><rect x="86.7" y="108.4" width="6.6" height="4.2" rx="1.8"/><rect x="86.6" y="114.1" width="6.8" height="4.3" rx="1.8"/><rect x="86.5" y="119.9" width="6.9" height="4.4" rx="1.9"/><rect x="86.5" y="125.8" width="7.1" height="4.5" rx="1.9"/><rect x="86.4" y="131.9" width="7.3" height="4.6" rx="1.9"/><rect x="86.3" y="138" width="7.4" height="4.7" rx="2"/><rect x="86.2" y="144.2" width="7.6" height="4.9" rx="2"/><rect x="86.1" y="150.6" width="7.7" height="5" rx="2.1"/><rect x="86" y="157.1" width="7.9" height="5.1" rx="2.1"/><rect x="86" y="163.6" width="8.1" height="5.2" rx="2.2"/><rect x="85.9" y="170.3" width="8.2" height="5.3" rx="2.2"/><rect x="85.8" y="177.1" width="8.4" height="5.4" rx="2.3"/><rect x="85.4" y="184" width="9.2" height="5.8" rx="2.4"/><rect x="85.2" y="191.4" width="9.6" height="6" rx="2.5"/><rect x="85" y="199" width="10" height="6.2" rx="2.6"/><rect x="84.8" y="206.8" width="10.4" height="6.4" rx="2.7"/><rect x="84.6" y="214.8" width="10.8" height="6.6" rx="2.8"/><path d="M83.6 223.4h12.8a1.6 1.6 0 0 1 1.5 2.2L91.6 238.4a1.8 1.8 0 0 1-3.2 0L82.1 225.6A1.6 1.6 0 0 1 83.6 223.4z"/></g>
+            <use class="telo-obrys" href="#silueta"/>
+          </svg>
+          <button class="bod" type="button" tabindex="-1" aria-hidden="true" data-zona="krk" style="left:50%;top:14.6%;--d:0"></button>
+          <button class="bod" type="button" tabindex="-1" aria-hidden="true" data-zona="hrudna" style="left:50%;top:30.3%;--d:2"></button>
+          <button class="bod aktivny" type="button" tabindex="-1" aria-hidden="true" data-zona="kriz" style="left:50%;top:48.2%;--d:3"></button>
+          </div>
+          <figcaption>Zozadu</figcaption>
+        </figure>
+      </div>
+      <div class="mapa-pravo">
+        <div class="zony" role="group" aria-label="Oblasti tela">
+          <button class="zona" type="button" aria-pressed="false" aria-controls="detail" data-zona="krk">Krk</button>
+          <button class="zona" type="button" aria-pressed="false" aria-controls="detail" data-zona="plecia">Plecia</button>
+          <button class="zona" type="button" aria-pressed="false" aria-controls="detail" data-zona="hrudna">Hrudná chrbtica</button>
+          <button class="zona" type="button" aria-pressed="true" aria-controls="detail" data-zona="kriz">Driek a&nbsp;kríže</button>
+          <button class="zona" type="button" aria-pressed="false" aria-controls="detail" data-zona="koleno">Koleno</button>
+          <button class="zona" type="button" aria-pressed="false" aria-controls="detail" data-zona="clenok">Členok</button>
+        </div>
+        <div class="detail" id="detail">
+          <div class="detail-obsah" aria-live="polite">
+            <h3 class="detail-nadpis" data-detail="nadpis">Driek a&nbsp;kríže</h3>
+            <p class="detail-co" data-detail="co">Vyšetrenie panvy a&nbsp;drieku, mäkké techniky, mobilizácia a&nbsp;stabilizačné cviky, ktoré zvládnete doma za 10&nbsp;minút.</p>
+            <dl class="detail-udaje">
+              <div><dt>Typický plán</dt><dd data-detail="plan">4 až 6&nbsp;návštev</dd></div>
+              <div><dt>Cena</dt><dd data-detail="cena">prvá 55&nbsp;€, ďalšie 45&nbsp;€</dd></div>
+            </dl>
+          </div>
+          <button class="tlac tlac-hlavne" type="button" data-okno="okno-rezervacia" data-oblast="Driek a&nbsp;kríže">Rezervovať termín<svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M3 9h11M10 4.5 14.5 9 10 13.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          <p class="detail-pozn">Počet návštev je orientačný. Presný plán povieme až po vyšetrení, nič nesľubujeme dopredu.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sekcia sekcia-mata" id="prva-navsteva" aria-labelledby="navsteva-nadpis">
+  <div class="obal">
+    <div class="navsteva-hlava">
+      <h2 id="navsteva-nadpis">Prvá návšteva: 60&nbsp;minút, štyri kroky.</h2>
+      <p class="uvod-sekcie">Žiadne čakanie v&nbsp;čakárni a&nbsp;žiadna rýchla masáž namiesto vyšetrenia. Celý čas sa vám venuje ten istý človek.</p>
+    </div>
+    <div class="kroky-obal">
+      <figure class="kroky-ram" data-ram>
+        <img class="aktivna" src="img/krok-rozhovor-1200.webp" srcset="img/krok-rozhovor-600.webp 600w, img/krok-rozhovor-800.webp 800w, img/krok-rozhovor-1200.webp 1200w" sizes="(min-width: 1312px) 600px, (min-width: 760px) calc(50vw - 60px), calc(100vw - 32px)" width="1200" height="1200" alt="Pacientka si rukou ukazuje na bolestivé miesto na chrbte, fyzioterapeut má dlane na jej chrbte" loading="lazy" decoding="async">
+        <img src="img/krok-vysetrenie-1200.webp" srcset="img/krok-vysetrenie-600.webp 600w, img/krok-vysetrenie-800.webp 800w, img/krok-vysetrenie-1200.webp 1200w" sizes="(min-width: 1312px) 600px, (min-width: 760px) calc(50vw - 60px), calc(100vw - 32px)" width="1200" height="1200" alt="Fyzioterapeut drží pacientke zápästie a&nbsp;lakeť a&nbsp;skúša rozsah pohybu ruky" loading="lazy" decoding="async">
+        <img src="img/krok-terapia-1200.webp" srcset="img/krok-terapia-600.webp 600w, img/krok-terapia-800.webp 800w, img/krok-terapia-1200.webp 1200w" sizes="(min-width: 1312px) 600px, (min-width: 760px) calc(50vw - 60px), calc(100vw - 32px)" width="1200" height="1200" alt="Dlaň fyzioterapeuta na lopatke a&nbsp;druhá ruka na pleci pacientky, pohľad zozadu" loading="lazy" decoding="async">
+        <img src="img/krok-cviky-1200.webp" srcset="img/krok-cviky-600.webp 600w, img/krok-cviky-800.webp 800w, img/krok-cviky-1200.webp 1200w" sizes="(min-width: 1312px) 600px, (min-width: 760px) calc(50vw - 60px), calc(100vw - 32px)" width="1200" height="1200" alt="Pacientka naťahuje tyrkysovú cvičebnú gumu pred sebou, fyzioterapeut jej pridržiava ruku" loading="lazy" decoding="async">
+        <figcaption class="ram-stitok" aria-hidden="true"><b data-ram-cislo>1</b><span data-ram-nazov>Rozhovor, 10&nbsp;min</span></figcaption>
+      </figure>
+      <ol class="kroky" role="list" data-kroky>
+        <li class="krok" data-krok="0" data-nazov="Rozhovor, 10 min"><span class="krok-znak" aria-hidden="true">1</span><h3>Rozhovor <span class="krok-cas">10&nbsp;min</span></h3><p>Kde to bolí, odkedy, čo to zhoršuje a&nbsp;čo vám to berie v&nbsp;práci, pri športe či v&nbsp;spánku.</p></li>
+        <li class="krok" data-krok="1" data-nazov="Vyšetrenie, 15 min"><span class="krok-znak" aria-hidden="true">2</span><h3>Vyšetrenie <span class="krok-cas">15&nbsp;min</span></h3><p>Držanie tela, rozsah pohybu a&nbsp;sila. Čo nájdeme, vysvetlíme bez latinčiny.</p></li>
+        <li class="krok" data-krok="2" data-nazov="Terapia, 25 min"><span class="krok-znak" aria-hidden="true">3</span><h3>Terapia <span class="krok-cas">25&nbsp;min</span></h3><p>Mäkké techniky, mobilizácia alebo cvičenie podľa toho, čo sme našli. Nič, s&nbsp;čím nesúhlasíte.</p></li>
+        <li class="krok" data-krok="3" data-nazov="Plán cvikov, 10 min"><span class="krok-znak" aria-hidden="true">4</span><h3>Plán cvikov <span class="krok-cas">10&nbsp;min</span></h3><p>Dva až tri cviky domov, ukázané a&nbsp;vyskúšané na mieste, s&nbsp;fotkami do&nbsp;mobilu. Dohodneme, či a&nbsp;kedy prísť znova.</p></li>
+      </ol>
+    </div>
+    <p class="navsteva-spolu">Prvá návšteva stojí 55&nbsp;€. Ak po vyšetrení uvidíme, že patríte najprv k&nbsp;lekárovi, povieme vám to rovno.</p>
+  </div>
+</section>
+
+<section class="sekcia" id="cennik" aria-labelledby="cennik-nadpis">
+  <div class="obal cennik-mriezka">
+    <div>
+      <h2 id="cennik-nadpis">Terapie a&nbsp;cenník.</h2>
+      <p class="uvod-sekcie">Ceny sú konečné a&nbsp;platíte na mieste po terapii. Nemáme zmluvu so zdravotnými poisťovňami, terapiu si hradíte sami.</p>
+      <figure class="cennik-foto">
+        <img src="img/plece-1200.webp" srcset="img/plece-600.webp 600w, img/plece-1200.webp 1200w" sizes="(min-width: 1024px) 520px, calc(100vw - 32px)" width="1200" height="768" alt="Ruka fyzioterapeuta pridržiava plece pacientky, vedľa chvost vlasov a&nbsp;mätový rukáv uniformy" loading="lazy" decoding="async">
+      </figure>
+    </div>
+    <div>
+      <ul class="cennik" role="list">
+        <li><h3>Prvá návšteva</h3><p class="cena">55&nbsp;€<small>60&nbsp;min</small></p><p>Rozhovor, vyšetrenie, prvá terapia a&nbsp;plán cvikov domov.</p></li>
+        <li><h3>Terapia</h3><p class="cena">45&nbsp;€<small>50&nbsp;min</small></p><p>Manuálne techniky, mobilizácia a&nbsp;cvičenie podľa plánu. Kineziotejp, ak ho potrebujete, bez príplatku.</p></li>
+        <li><h3>Krátka terapia</h3><p class="cena">30&nbsp;€<small>30&nbsp;min</small></p><p>Kontrola cvikov, úprava plánu alebo práca na jednej oblasti.</p></li>
+        <li class="balik"><h3>Balík 5&nbsp;terapií</h3><p class="cena">200&nbsp;€<small>5 ×&nbsp;50&nbsp;min</small></p><p>40&nbsp;€ za terapiu namiesto 45&nbsp;€. Využijete do 3&nbsp;mesiacov.</p></li>
+        <li><h3>Zrušenie termínu</h3><p class="cena">0&nbsp;€<small>do 24&nbsp;h vopred</small></p><p>Neskôr alebo bez ospravedlnenia účtujeme 20&nbsp;€, lebo termín už nevieme ponúknuť inému.</p></li>
+      </ul>
+      <p class="cennik-pozn">Platba v&nbsp;hotovosti alebo kartou, doklad dostanete hneď.</p>
+    </div>
+  </div>
+</section>
+
+<section class="sekcia sekcia-mata" id="tim" aria-labelledby="tim-nadpis">
+  <div class="obal">
+    <h2 id="tim-nadpis">Kto vás ošetrí.</h2>
+    <p class="uvod-sekcie">Sme dvaja. Na prvej návšteve si môžete vybrať, ku komu chcete ísť, alebo to necháte na nás podľa toho, čo vás bolí.</p>
+    <div class="tim">
+      <article class="clovek">
+        <span class="clovek-znak" aria-hidden="true">L</span>
+        <div>
+          <h3>Lucia</h3>
+          <p>Fyzioterapeutka, v&nbsp;praxi od roku 2013. Krk, chrbát a&nbsp;bolesti z&nbsp;práce pri&nbsp;počítači.</p>
+          <ul role="list"><li>krčná chrbtica</li><li>driek</li><li>držanie tela</li></ul>
+        </div>
+      </article>
+      <article class="clovek">
+        <span class="clovek-znak" aria-hidden="true">M</span>
+        <div>
+          <h3>Martin</h3>
+          <p>Fyzioterapeut, v&nbsp;praxi od roku 2016. Kolená, členky, plecia a&nbsp;návrat k&nbsp;športu po&nbsp;zranení.</p>
+          <ul role="list"><li>koleno</li><li>členok</li><li>kineziotejping</li></ul>
+        </div>
+      </article>
+    </div>
+    <blockquote class="citat">
+      <p>„Najprv počúvam. Až potom sa&nbsp;dotýkam.“</p>
+      <footer>Lucia, o&nbsp;tom, prečo prvá návšteva začína rozhovorom</footer>
+    </blockquote>
+  </div>
+</section>
+
+<section class="sekcia" id="prakticky" aria-labelledby="prakticky-nadpis">
+  <div class="obal prakticky-mriezka">
+    <div>
+      <h2 id="prakticky-nadpis">Prakticky.</h2>
+      <ul class="body" role="list">
+        <li><h3>Bez odporúčania lekára</h3><p>Prídete priamo, bez výmenného lístka. Nemáme zmluvu so zdravotnými poisťovňami, terapiu preto hradíte&nbsp;sami.</p></li>
+        <li><h3>Platba na mieste</h3><p>V&nbsp;hotovosti alebo kartou po terapii. Doklad dostanete hneď, nič sa neplatí&nbsp;vopred.</p></li>
+        <li><h3>Čo si priniesť</h3><p>Pohodlné oblečenie, v&nbsp;ktorom sa dá hýbať, lekárske správy a&nbsp;snímky, ak ich máte, a&nbsp;fľašu vody.</p></li>
+        <li><h3>Parkovanie</h3><p>Dve miesta na dvore, prvá brána vľavo. Zastávka MHD je dve minúty&nbsp;pešo.</p></li>
+      </ul>
+      <p class="upozornenie">Pri úraze, horúčke alebo náhlej silnej bolesti choďte najprv k&nbsp;lekárovi alebo volajte 155.</p>
+    </div>
+    <div class="prakticky-fotky">
+      <figure>
+        <img src="img/uterak-1200.webp" srcset="img/uterak-600.webp 600w, img/uterak-1200.webp 1200w" sizes="(min-width: 1320px) 270px, (min-width: 760px) 21vw, calc(50vw - 24px)" width="1200" height="1500" alt="Zrolovaný biely uterák na čisto zastlanom lehátku, v&nbsp;pozadí izbová rastlina" loading="lazy" decoding="async">
+        <figcaption>Čisté lehátko a&nbsp;uterák pre&nbsp;každého.</figcaption>
+      </figure>
+      <figure>
+        <img src="img/tejp-1200.webp" srcset="img/tejp-600.webp 600w, img/tejp-1200.webp 1200w" sizes="(min-width: 1320px) 270px, (min-width: 760px) 21vw, calc(50vw - 24px)" width="1200" height="907" alt="Koleno s&nbsp;čiernym a&nbsp;ružovým kineziotejpom, ruky opreté o&nbsp;stehno" loading="lazy" decoding="async">
+        <figcaption>Kineziotejp je v&nbsp;cene&nbsp;terapie.</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<section class="sekcia sekcia-mata" id="hodiny" aria-labelledby="hodiny-nadpis">
+  <div class="obal">
+    <h2 id="hodiny-nadpis">Hodiny a&nbsp;cesta.</h2>
+    <div class="hodiny-mriezka">
+      <div>
+        <p class="stav"><span class="stav-bodka" aria-hidden="true" data-stav-bodka></span><span data-stav-veta>Pondelok až štvrtok od 7:00 do 19:00, piatok do&nbsp;15:00.</span></p>
+        <dl class="hodiny">
+          <div data-den="1 2 3 4"><dt>Pondelok až štvrtok</dt><dd>7:00 až 19:00</dd></div>
+          <div data-den="5"><dt>Piatok</dt><dd>7:00 až 15:00</dd></div>
+          <div data-den="6 0"><dt>Sobota a&nbsp;nedeľa</dt><dd>zatvorené</dd></div>
+        </dl>
+        <p class="adresa"><strong>Stavcová 6, 917&nbsp;01 Trnava</strong><br>Prízemie, bezbariérový vstup z&nbsp;dvora.</p>
+      </div>
+      <figure class="mapa">
+        <div class="mapa-plocha">
+          <svg viewBox="0 0 800 600" role="img" aria-labelledby="mapa-titul">
+            <title id="mapa-titul">Ilustračná mapa: Fyzioterapia Os na vymyslenej Stavcovej ulici, parkovanie na dvore a&nbsp;zastávka MHD dve minúty pešo</title>
+            <rect width="800" height="600" fill="#d9efe8"/>
+            <path d="M566 0H800V214C748 232 700 204 652 230S566 236 566 176Z" fill="#c6e6dc"/>
+            <g fill="#b2dace"><circle cx="640" cy="66" r="17"/><circle cx="702" cy="122" r="13"/><circle cx="748" cy="54" r="15"/><circle cx="612" cy="146" r="11"/><circle cx="760" cy="168" r="10"/></g>
+            <g fill="none" stroke="#f6faf9" stroke-linecap="round">
+              <path d="M0 150H800M0 450H800M170 0V600M650 236V600" stroke-width="28"/>
+              <path d="M170 300H650M430 150V450M34 0 170 150M0 562 170 450" stroke-width="14"/>
+            </g>
+            <rect x="452" y="318" width="176" height="108" rx="16" fill="#f6faf9" fill-opacity=".72"/>
+            <g transform="translate(548 372)"><rect x="-19" y="-19" width="38" height="38" rx="10" fill="#0f2a2e" fill-opacity=".14"/><text y="7" text-anchor="middle" font-family="Os Text, Arial, sans-serif" font-size="20" font-weight="500" fill="#0f2a2e">P</text></g>
+            <path d="M188 440C262 398 334 330 400 274" fill="none" stroke="#0d4b56" stroke-width="3" stroke-dasharray="6 9" stroke-linecap="round"/>
+            <g transform="translate(170 450)"><circle r="17" fill="#f6faf9" stroke="#0d4b56" stroke-width="3.5"/><circle r="6.5" fill="#0d4b56"/></g>
+            <g transform="translate(430 252)">
+              <circle r="36" fill="#0d4b56"/><circle r="46" fill="none" stroke="#0d4b56" stroke-opacity=".18" stroke-width="2"/>
+              <rect x="-7" y="-20" width="14" height="7" rx="3.5" fill="#d9efe8"/><rect x="-9" y="-9" width="18" height="8" rx="4" fill="#d9efe8"/><rect x="-11" y="3" width="22" height="9" rx="4.5" fill="#d9efe8"/><rect x="-3" y="15" width="6" height="4" rx="2" fill="#d9efe8"/>
+            </g>
+          </svg>
+          <p class="mapa-popisy" aria-hidden="true">
+            <span style="left:61%;top:34%"><strong>Fyzioterapia Os</strong>Stavcová 6</span>
+            <span style="left:72.5%;top:58.8%">parkovanie</span>
+            <span style="left:25%;top:78.5%"><strong>Zastávka MHD</strong>2&nbsp;minúty pešo</span>
+            <span style="left:85%;top:4%">park</span>
+          </p>
+        </div>
+        <figcaption><span>Mapa je ilustračná, nie v&nbsp;mierke. Ulica Stavcová je vymyslená.</span><a href="https://www.google.com/maps/search/?api=1&amp;query=Trnava" target="_blank" rel="noopener">Otvoriť Trnavu v&nbsp;mapách</a></figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<section class="kontakt tmava" id="kontakt" aria-labelledby="kontakt-nadpis">
+  <div class="obal kontakt-mriezka">
+    <div>
+      <h2 id="kontakt-nadpis">Žiadosť o&nbsp;termín pošlete za minútu.</h2>
+      <p class="uvod-sekcie">Vyberte, čo potrebujete a&nbsp;kedy sa vám hodí. Ozveme sa do jedného pracovného dňa s&nbsp;konkrétnym časom.</p>
+      <div class="kontakt-akcie">
+        <button class="tlac tlac-svetle" type="button" data-okno="okno-rezervacia">Rezervovať termín<svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M3 9h11M10 4.5 14.5 9 10 13.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <button class="tlac tlac-obrys-svetly" type="button" data-okno="okno-volat">Zavolať</button>
+      </div>
+    </div>
+    <dl class="kontakt-udaje">
+      <div><dt>Telefón</dt><dd>0900 XXX XXX <span class="pozn nz">(vymyslené číslo)</span></dd></div>
+      <div><dt>E-mail</dt><dd><a href="mailto:recepcia@fyzioterapia-os.example">recepcia@fyzioterapia-os.example</a></dd></div>
+      <div><dt>Adresa</dt><dd>Stavcová 6, 917&nbsp;01 Trnava</dd></div>
+      <div><dt>Hodiny</dt><dd><span class="nz">Po až št 7:00 až 19:00,</span> <span class="nz">pi do 15:00</span></dd></div>
+    </dl>
+  </div>
+</section>
+</main>
+
+<footer class="pata">
+  <div class="obal">
+    <p class="pata-meno"><svg width="28" height="28" viewBox="0 0 34 34" aria-hidden="true"><circle cx="17" cy="17" r="17" fill="#d9efe8"/><rect x="12.5" y="7" width="9" height="4.4" rx="2.2" fill="#0d4b56"/><rect x="11.5" y="13.2" width="11" height="4.6" rx="2.3" fill="#0d4b56"/><rect x="10.5" y="19.6" width="13" height="5" rx="2.5" fill="#0d4b56"/><rect x="15" y="26.4" width="4" height="2.6" rx="1.3" fill="#0d4b56"/></svg>Fyzioterapia Os</p>
+    <p>Fyzioterapia Os, Stavcová 6, 917&nbsp;01 Trnava. IČO 00&nbsp;000&nbsp;000.</p>
+    <p class="pata-odkazy"><a href="../../#ukazky" target="_top">Späť na ukážky</a><a href="https://arling.sk/web/?z=fyzioterapia" target="_top">Chcem taký web</a></p>
+    <p class="male">Toto je ukážka webu od ARLing. Fyzioterapia Os, fyzioterapeuti Lucia a&nbsp;Martin, adresa, IČO, telefón aj e-mail sú vymyslené. Web nenahrádza vyšetrenie u&nbsp;lekára. Ceny zodpovedajú trhu súkromnej fyzioterapie v&nbsp;Trnave v&nbsp;novembri 2026. Fotky sú z&nbsp;Pexels pod licenciou Pexels a&nbsp;nezobrazujú vymyslených fyzioterapeutov ani ich klientov. Písma Lexend a&nbsp;Newsreader (SIL Open Font License).</p>
+  </div>
+</footer>
+
+<div class="lista" data-lista>
+  <a class="tlac tlac-hlavne" href="#kontakt" data-okno="okno-rezervacia">Rezervovať termín<small>prvá návšteva 55&nbsp;€</small></a>
+  <button class="tlac lista-volat" type="button" data-okno="okno-volat" aria-label="Zavolať"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3.5h3.2l1.6 4.2-2.1 1.4a11 11 0 0 0 7.2 7.2l1.4-2.1 4.2 1.6V19a1.8 1.8 0 0 1-1.9 1.8A16.5 16.5 0 0 1 3.2 5.4 1.8 1.8 0 0 1 5 3.5z"/></svg></button>
+</div>
+
+<dialog class="okno" id="okno-rezervacia" aria-labelledby="okno-rezervacia-nadpis">
+  <div class="okno-hlava">
+    <h2 id="okno-rezervacia-nadpis">Rezervovať termín</h2>
+    <button class="zavriet" type="button" data-zavriet aria-label="Zavrieť"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+  </div>
+  <form class="okno-telo" id="formular" novalidate>
+    <fieldset>
+      <legend>Čo potrebujete</legend>
+      <div class="volby">
+        <label><input type="radio" name="sluzba" value="Prvá návšteva" checked>Prvá návšteva, 55&nbsp;€</label>
+        <label><input type="radio" name="sluzba" value="Terapia">Terapia, 45&nbsp;€</label>
+        <label><input type="radio" name="sluzba" value="Balík 5 terapií">Balík 5&nbsp;terapií, 200&nbsp;€</label>
+      </div>
+    </fieldset>
+    <label class="pole" for="pole-oblast">Kde vás to bolí
+      <select id="pole-oblast" name="oblast">
+        <option>Neviem presne</option>
+        <option>Krk</option>
+        <option>Plecia</option>
+        <option>Hrudná chrbtica</option>
+        <option>Driek a&nbsp;kríže</option>
+        <option>Koleno</option>
+        <option>Členok</option>
+        <option>Iné miesto</option>
+      </select>
+    </label>
+    <fieldset>
+      <legend>Kedy sa vám hodí</legend>
+      <div class="volby">
+        <label><input type="radio" name="cas" value="ráno" checked>Ráno, 7:00 až 10:00</label>
+        <label><input type="radio" name="cas" value="cez deň">Cez deň</label>
+        <label><input type="radio" name="cas" value="popoludní">Popoludní, do 19:00</label>
+      </div>
+    </fieldset>
+    <label class="pole" for="pole-meno">Meno
+      <input id="pole-meno" name="meno" type="text" autocomplete="name" required>
+    </label>
+    <label class="pole" for="pole-email">E-mail
+      <input id="pole-email" name="email" type="email" autocomplete="email" inputmode="email" required>
+    </label>
+    <button class="tlac tlac-hlavne" type="submit">Poslať žiadosť o&nbsp;termín</button>
+    <p class="okno-pozn">Toto je ukážka, formulár nič neodošle. Na vašom webe by žiadosť prišla vám na e-mail alebo by tlačidlo otvorilo váš rezervačný systém.</p>
+    <p class="okno-hotovo" id="formular-stav" role="status"></p>
+  </form>
+</dialog>
+
+<dialog class="okno" id="okno-volat" aria-labelledby="okno-volat-nadpis">
+  <div class="okno-hlava">
+    <h2 id="okno-volat-nadpis">Zavolať</h2>
+    <button class="zavriet" type="button" data-zavriet aria-label="Zavrieť"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+  </div>
+  <div class="okno-telo">
+    <p class="okno-cislo">0900 XXX XXX</p>
+    <p>Na vašom webe toto tlačidlo rovno vytočí vaše číslo, jedným ťukom z&nbsp;mobilu.</p>
+    <p class="okno-pozn">Číslo je vymyslené, v&nbsp;ukážke sa nič nevytáča.</p>
+  </div>
+</dialog>
+</body>
+</html>

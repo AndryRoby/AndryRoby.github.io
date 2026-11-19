@@ -1,0 +1,355 @@
+/* Vinárstvo Svorník (ukážka webu od ARLing): štýly kapitol pod úvodom, košíka, menu a dialógov.
+   Kritické štýly (písma, farby, pás, hlavička, úvod s portálom a jeho pohyb) sú vložené v index.html; tento súbor sa
+   načíta až za úvodom, takže nezdržiava prvé vykreslenie úvodu. Svetlé kapitoly sú vápno, tmavé žula a víno. */
+/* Spoločné pre kapitoly (kapitola a formulár dostanú fokus po kotve z menu, obrys pri nich netreba) */
+.kapitola{padding-block:var(--rytmus)}
+.kapitola[tabindex="-1"]:focus,.rezervacia[tabindex="-1"]:focus{outline:none}
+.nadpis{font:400 clamp(2.5rem,5.6vw,5rem)/1 var(--nadpis);letter-spacing:-.005em;text-wrap:balance}
+.nadpis em{font-style:normal;color:var(--svetlo)}
+.svetla .nadpis em{color:var(--vino)}
+.uvodna{font:400 clamp(21px,2vw,26px)/1.42 var(--nadpis);text-wrap:pretty}
+.drobne{font-size:14px;line-height:1.5}
+.ukazka-poznamka{display:inline-flex;align-items:flex-start;gap:10px;max-width:64ch;padding:11px 16px;border-radius:14px;border:1px dashed rgba(234,165,74,.55);font-size:14px;line-height:1.5;color:var(--svetly-2)}
+.ukazka-poznamka svg{flex:none;margin-top:2px;color:var(--svetlo)}
+.svetla .ukazka-poznamka{border-color:rgba(107,26,46,.45);color:var(--tlmeny)}
+.svetla .ukazka-poznamka svg{color:var(--vino)}
+
+/* Vinohrad (vápno): vysoký oblúk s hmlou nad terasami, v kruhu oberačka, vpravo príbeh, svorník a fakty */
+.vinohrad{background:var(--vapno);color:var(--atrament)}
+.vinohrad-mriezka{display:grid;gap:36px;grid-template-areas:"nadpis" "galeria" "text"}
+.vinohrad-nadpis{grid-area:nadpis}
+.vinohrad-galeria{grid-area:galeria}
+.vinohrad-text{grid-area:text}
+.vinohrad-obrazy{position:relative;justify-self:center;width:min(100%,360px);padding:0 9% 56px 0}
+.vinohrad-obluk{border-radius:999px 999px 0 0;overflow:hidden;aspect-ratio:2/3;background:#c9c4b5}
+.vinohrad-obluk img,.vinohrad-kruh img{width:100%;height:100%;object-fit:cover}
+.vinohrad-kruh{position:absolute;right:0;bottom:0;width:44%;aspect-ratio:1;border-radius:50%;overflow:hidden;background:#6a4a3a;box-shadow:0 0 0 7px var(--vapno),0 24px 40px -22px rgba(31,28,25,.7)}
+.vinohrad-popis{margin-top:16px;max-width:34ch;color:var(--tlmeny)}
+.vinohrad-text .uvodna{max-width:31ch;color:var(--atrament)}
+.vinohrad-text p:not(.uvodna){margin-top:20px;max-width:56ch;color:var(--tlmeny);text-wrap:pretty}
+.fakty{margin-top:36px;border-top:1px solid var(--linka-svetla)}
+.fakty div{display:grid;grid-template-columns:96px minmax(0,1fr);gap:16px;padding:14px 0;border-bottom:1px solid var(--linka-svetla)}
+.fakty dt{font-size:14px;font-weight:600;letter-spacing:.02em;color:var(--svetlo-tmave);padding-top:3px}
+.fakty dd{font:400 19px/1.4 var(--nadpis);color:var(--atrament)}
+
+/* Vína a e-shop (žula v noci): výklenky s fľašami vytesané do steny pivnice */
+.vina{background:linear-gradient(rgba(24,22,20,.8),rgba(24,22,20,.8)),#2a2724 url(../img/zula.webp) 0 0/256px 256px;color:var(--svetly)}
+.vina-hlava{display:grid;gap:22px;margin-bottom:34px}
+.vina-hlava .uvodna{max-width:34ch;color:var(--svetly-2)}
+.filter{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));position:relative;margin:0 0 46px;padding:4px;border:1px solid rgba(244,239,231,.24);border-radius:999px;width:min(100%,520px);background:rgba(15,13,11,.55)}
+.filter legend{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.filter-volba{position:relative;z-index:1;display:flex;align-items:center;justify-content:center;gap:6px;min-height:46px;padding:0 6px;border-radius:999px;cursor:pointer;font-size:15px;color:var(--svetly-2);transition:color .3s ease}
+.filter-volba input{position:absolute;opacity:0;width:1px;height:1px;margin:0}
+.filter-volba small{font-size:12px;color:var(--svetly-3);font-variant-numeric:tabular-nums;transition:color .3s ease}
+.filter-volba:has(input:checked){color:var(--noc)}
+.filter-volba:has(input:checked) small{color:rgba(28,26,24,.75)}
+.filter-volba:has(input:focus-visible){outline:3px solid var(--svetlo);outline-offset:2px}
+.filter-palec{position:absolute;z-index:0;top:4px;bottom:4px;left:4px;width:calc((100% - 8px) / 4);border-radius:999px;background:var(--svetlo);transform:translateX(calc(var(--k,0) * 100%));transition:transform .5s var(--krivka)}
+.filter:has(.filter-volba:nth-child(3) input:checked){--k:1}
+.filter:has(.filter-volba:nth-child(4) input:checked){--k:2}
+.filter:has(.filter-volba:nth-child(5) input:checked){--k:3}
+.vina-zoznam{list-style:none;margin:0;padding:0;display:grid;gap:44px 28px}
+.vino{display:grid;grid-template-columns:104px minmax(0,1fr);grid-template-areas:"nik nazov" "nik rocnik" "nik chut" "profil profil" "parovanie parovanie" "kupa kupa";column-gap:18px;align-items:start}
+.vino[hidden]{display:none}
+.vino-telo{display:contents}
+.vino .vyklenok{grid-area:nik}
+.vino[data-farba="ruzove"] .vyklenok{--svetlo-vyklenku:rgba(240,168,158,.3)}
+.vino[data-farba="cervene"] .vyklenok{--svetlo-vyklenku:rgba(214,96,120,.32)}
+.vino h3{grid-area:nazov;font:400 clamp(25px,2.2vw,30px)/1.08 var(--nadpis)}
+.vino-rocnik{grid-area:rocnik;margin-top:6px;font-size:14px;line-height:1.45;color:var(--svetly-3)}
+.vino-chut{grid-area:chut;margin-top:10px;font:400 19px/1.38 var(--nadpis);color:var(--svetly)}
+.profil{grid-area:profil;display:grid;grid-template-columns:auto 1fr;gap:7px 16px;margin-top:20px;font-size:13px;line-height:1;color:var(--svetly-2)}
+.profil dt{font-weight:500}
+.profil dd{display:flex;align-items:center}
+.bodky{--n:3;position:relative;width:75px;height:8px;background:radial-gradient(circle at 4px 4px,rgba(234,165,74,.3) 3px,transparent 3.5px) 0 0/15px 8px repeat-x}
+.bodky::before{content:"";position:absolute;left:0;top:0;bottom:0;width:calc(var(--n) * 15px);background:radial-gradient(circle at 4px 4px,var(--svetlo) 3px,transparent 3.5px) 0 0/15px 8px repeat-x}
+.vino-parovanie{grid-area:parovanie;margin-top:14px;font-size:15px;line-height:1.5;color:var(--svetly-2);text-wrap:pretty}
+.vino-parovanie strong{font-weight:600;color:var(--svetly)}
+.vino-kupa{grid-area:kupa;display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:16px;padding-top:16px;border-top:1px solid var(--linka-tma)}
+.cena{font:600 22px/1 var(--text);font-variant-numeric:tabular-nums;color:var(--svetly)}
+.cena small{display:block;margin-top:6px;font-size:12px;font-weight:400;color:var(--svetly-3)}
+.pridat{min-width:132px}
+.vina-pozn{margin-top:56px;max-width:70ch;color:var(--svetly-3)}
+
+/* Degustácie (vápno): široké okno klenby do pivnice, ponuka a rezervácia v jednom zhluku */
+.degustacie{background:var(--vapno);color:var(--atrament)}
+.okno-pivnice{position:relative;width:var(--obal);margin:0 auto}
+.okno-pivnice-obraz{aspect-ratio:4/3;border-radius:50% 50% 0 0/clamp(90px,16vw,240px) clamp(90px,16vw,240px) 0 0;overflow:hidden;background:#24100c;box-shadow:0 0 0 8px rgba(31,28,25,.06)}
+.okno-pivnice-obraz img{width:100%;height:100%;object-fit:cover;object-position:64% 50%}
+.okno-pivnice-kruh{position:absolute;right:4%;bottom:-48px;width:clamp(112px,20vw,230px);aspect-ratio:1;border-radius:50%;overflow:hidden;background:#d9cdb9;box-shadow:0 0 0 7px var(--vapno),0 24px 40px -22px rgba(31,28,25,.7)}
+.okno-pivnice-kruh img{width:100%;height:100%;object-fit:cover;object-position:30% 60%}
+.degustacie-mriezka{display:grid;gap:48px;padding-top:clamp(72px,8vw,112px)}
+.degustacie-text .uvodna{margin-top:26px;max-width:32ch}
+.ponuka{margin-top:36px;border-top:1px solid var(--linka-svetla)}
+.ponuka div{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 20px;padding:18px 0;border-bottom:1px solid var(--linka-svetla)}
+.ponuka dt{font:400 23px/1.18 var(--nadpis)}
+.ponuka dd{grid-column:1;font-size:15px;line-height:1.5;color:var(--tlmeny)}
+.ponuka dd.ponuka-cena{grid-column:2;grid-row:1/span 2;align-self:center;font:600 20px/1.2 var(--text);color:var(--vino);text-align:right;font-variant-numeric:tabular-nums}
+.ponuka-cena small{display:block;font-size:13px;font-weight:400;color:var(--tlmeny)}
+.prakticke{margin-top:28px;display:grid;gap:12px;color:var(--tlmeny);font-size:16px}
+.prakticke p{display:grid;grid-template-columns:28px 1fr;gap:10px;align-items:start}
+.prakticke svg{color:var(--vino);margin-top:3px}
+
+/* Formulár rezervácie */
+.rezervacia{position:relative;align-self:start;padding:clamp(22px,3vw,36px);border-radius:28px;background:var(--vapno-3);border:1px solid rgba(31,28,25,.12);box-shadow:0 30px 60px -40px rgba(31,28,25,.45)}
+.rezervacia h3{font:400 clamp(27px,2.5vw,33px)/1.08 var(--nadpis)}
+.rezervacia-popis{margin-top:8px;font-size:15px;color:var(--tlmeny)}
+.pole{margin-top:20px}
+.pole>label,.volba legend{display:block;margin-bottom:8px;font-size:15px;font-weight:600;color:var(--atrament)}
+.pole>label span,.volba legend span{font-weight:400;color:var(--tlmeny)}
+.volba{margin:22px 0 0;padding:0;border:0;min-width:0}
+.volba-zoznam{display:grid;gap:10px}
+.volba-polozka{position:relative;display:grid;grid-template-columns:24px minmax(0,1fr) auto;gap:4px 12px;align-items:start;padding:14px 16px;border-radius:16px;border:1px solid rgba(107,26,46,.24);background:#fff;cursor:pointer;transition:border-color .2s ease,background-color .2s ease,box-shadow .2s ease}
+.volba-polozka:hover{border-color:rgba(107,26,46,.5)}
+.volba-polozka:has(input:checked){border-color:var(--vino);background:#fbf6f4;box-shadow:inset 0 0 0 1px var(--vino)}
+.volba-polozka:has(input:focus-visible){outline:3px solid var(--vino);outline-offset:2px}
+.volba-polozka input{appearance:none;-webkit-appearance:none;width:20px;height:20px;margin:2px 0 0;border-radius:50%;border:1.5px solid rgba(107,26,46,.6);display:grid;place-items:center;background:#fff}
+.volba-polozka input::before{content:"";width:10px;height:10px;border-radius:50%;background:var(--vino);transform:scale(0);transition:transform .25s var(--krivka)}
+.volba-polozka input:checked{border-color:var(--vino)}
+.volba-polozka input:checked::before{transform:scale(1)}
+.volba-polozka input:focus-visible{outline:none}
+.volba-nazov{font-weight:600;font-size:16px;line-height:1.3}
+.volba-popis{grid-column:2;font-size:14px;line-height:1.45;color:var(--tlmeny)}
+.volba-cena{grid-column:3;grid-row:1/span 2;align-self:center;font-weight:600;font-size:16px;color:var(--vino);white-space:nowrap;font-variant-numeric:tabular-nums}
+.pole-dvojica{display:grid;gap:0 16px}
+input[type="text"],input[type="email"],input[type="tel"],select,textarea{width:100%;min-height:50px;padding:12px 14px;border-radius:12px;border:1px solid rgba(31,28,25,.32);background:#fff;color:var(--atrament);font:400 16px/1.4 var(--text);transition:border-color .2s ease,box-shadow .2s ease}
+textarea{min-height:96px;resize:vertical}
+select{appearance:none;-webkit-appearance:none;padding-right:44px;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9'%3E%3Cpath d='M1 1.5l6 6 6-6' fill='none' stroke='%236b1a2e' stroke-width='1.8'/%3E%3C/svg%3E") no-repeat right 16px center}
+input:hover,select:hover,textarea:hover{border-color:rgba(31,28,25,.55)}
+input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--vino);outline-offset:1px;border-color:var(--vino)}
+input[aria-invalid="true"],select[aria-invalid="true"]{border-color:#a3152f;box-shadow:inset 0 0 0 1px #a3152f}
+.chyba{margin-top:6px;font-size:14px;color:#a3152f}
+.chyba[hidden]{display:none}
+.krokovac{display:inline-grid;grid-template-columns:50px 64px 50px;align-items:center;min-height:50px;border-radius:12px;border:1px solid rgba(31,28,25,.32);background:#fff;overflow:hidden}
+.krokovac button{height:50px;border:0;background:transparent;color:var(--vino);cursor:pointer;display:grid;place-items:center;transition:background-color .2s ease}
+.krokovac button:hover{background:rgba(107,26,46,.07)}
+.krokovac button:disabled{color:rgba(31,28,25,.25);cursor:default;background:transparent}
+.krokovac button:focus-visible{outline-offset:-3px}
+.krokovac input{width:64px;height:50px;min-height:0;border:0;border-inline:1px solid rgba(31,28,25,.16);border-radius:0;text-align:center;font:600 18px/1 var(--text);font-variant-numeric:tabular-nums;appearance:textfield;-moz-appearance:textfield;padding:0}
+.krokovac input::-webkit-inner-spin-button,.krokovac input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.suhrn{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:4px 16px;margin-top:24px;padding-top:18px;border-top:1px solid var(--linka-svetla)}
+.suhrn-text{font-size:15px;color:var(--tlmeny)}
+.suhrn strong{font:400 30px/1 var(--nadpis);font-variant-numeric:lining-nums tabular-nums;color:var(--atrament)}
+.rezervacia .akcia{width:100%;margin-top:18px}
+.rezervacia .ukazka-poznamka{margin-top:14px;display:flex;max-width:none}
+
+/* Vinársky rok (víno): ciferník s mesiacmi, oberačkou a otvorenými pivnicami; ručička je svorník */
+.rok{background:var(--vino-hlbka);color:var(--svetly);overflow:clip}
+.rok-mriezka{display:grid;gap:36px;grid-template-areas:"text" "kruh" "mesiace"}
+.rok-text{grid-area:text}
+.rok-kruh{grid-area:kruh}
+.rok-text .uvodna{margin-top:26px;max-width:30ch;color:var(--svetly-2)}
+.mesiace{grid-area:mesiace;list-style:none;margin:0;padding:0;display:grid;gap:0;border-top:1px solid var(--linka-tma)}
+.mesiac{padding:18px 0 20px;border-bottom:1px solid var(--linka-tma)}
+.mesiac h3{font:400 29px/1.08 var(--nadpis)}
+.mesiac-titul{margin-top:4px;font:400 21px/1.3 var(--nadpis);color:var(--svetlo)}
+.mesiac p:not(.mesiac-titul){margin-top:10px;max-width:52ch;color:var(--svetly-2);text-wrap:pretty}
+.znacky{list-style:none;margin:14px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:8px}
+.znacky li{display:inline-flex;align-items:center;gap:7px;min-height:30px;padding:3px 12px;border-radius:999px;border:1px solid var(--linka-tma);font-size:13px;line-height:1.3;color:var(--svetly-2)}
+.znacky li::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--svetlo);flex:none}
+.znacky .zn-pivnice::before{background:var(--svetly);box-shadow:0 0 0 2px var(--svetlo)}
+.znacky .zn-oberacka{border-color:rgba(234,165,74,.7);color:var(--svetly)}
+.znacky .zn-tiche::before{background:rgba(244,239,231,.3)}
+.mesiac{display:none}
+.mesiac.vybrany{display:block}
+.mesiac.vybrany{animation:mesiac-vstup .45s var(--krivka)}
+.kruh{position:relative;width:min(100%,520px);aspect-ratio:1;justify-self:center;container-type:inline-size}
+.kruh-svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.kruh-svg .ram{fill:none;stroke:rgba(234,165,74,.42);stroke-width:1}
+.kruh-svg .ryhy{fill:none;stroke:rgba(234,165,74,.6);stroke-width:12}
+.kruh-svg .ryhy-male{fill:none;stroke:rgba(234,165,74,.22);stroke-width:7}
+.kruh-svg .vnutro{fill:rgba(20,6,10,.55);stroke:rgba(234,165,74,.25);stroke-width:1}
+.oblk-degustacie{fill:none;stroke:rgba(234,165,74,.55);stroke-width:2}
+.oblk-odpociva{fill:none;stroke:rgba(244,239,231,.22);stroke-width:2;stroke-dasharray:2 5}
+.oblk-oberacka{fill:none;stroke:var(--svetlo);stroke-width:11;stroke-linecap:round}
+.bod-pivnice{fill:var(--svetly);stroke:var(--svetlo);stroke-width:2.5}
+.rucicka{transform-origin:200px 200px;transform:rotate(var(--uhol,0deg));transition:transform .8s var(--krivka-dvere)}
+.rucicka line{stroke:var(--svetlo);stroke-width:1.6;stroke-linecap:round}
+.rucicka .hrot{fill:var(--svetlo)}
+.kruh-mesiac{position:absolute;left:50%;top:50%;width:46px;height:46px;margin:-23px 0 0 -23px;padding:0;border-radius:50%;border:1px solid transparent;background:transparent;color:var(--svetly-2);font:400 17px/1 var(--nadpis);cursor:pointer;transform:rotate(var(--a)) translateY(-40cqi) rotate(calc(-1 * var(--a)));transition:background-color .3s ease,color .3s ease,border-color .3s ease}
+.kruh-mesiac:hover{border-color:rgba(234,165,74,.6);color:var(--svetly)}
+.kruh-mesiac[aria-pressed="true"]{background:var(--svetlo);border-color:var(--svetlo);color:var(--noc)}
+.kruh-mesiac.teraz{border-color:rgba(244,239,231,.65)}
+.kruh-mesiac.teraz[aria-pressed="true"]{border-color:var(--svetlo)}
+.kruh-stred{position:absolute;inset:31%;display:grid;place-content:center;gap:4px;text-align:center;pointer-events:none}
+.kruh-stred-mesiac{font:400 clamp(23px,7.6cqi,38px)/1 var(--nadpis);color:var(--svetly)}
+.kruh-stred-titul{font:400 clamp(15px,4cqi,19px)/1.2 var(--nadpis);color:var(--svetlo)}
+.kruh-stred-teraz{font:600 12px/1 var(--text);letter-spacing:.14em;text-transform:uppercase;color:var(--svetly-3);min-height:12px}
+.legenda{display:flex;list-style:none;margin:22px auto 0;padding:0;flex-wrap:wrap;justify-content:center;gap:10px 22px;font-size:14px;color:var(--svetly-2);max-width:520px}
+.legenda li{display:inline-flex;align-items:center;gap:9px}
+.legenda svg{flex:none}
+
+/* Kontakt (vápno): ilustračná mapa, hodiny a spojenie */
+.kontakt{background:var(--vapno);color:var(--atrament)}
+.kontakt-mriezka{display:grid;gap:44px;margin-top:44px}
+.mapa{margin:0;border-radius:28px;overflow:hidden;background:#ece8e0;box-shadow:inset 0 0 0 1px rgba(31,28,25,.12)}
+.mapa svg{width:100%;height:auto}
+.mapa figcaption{padding:14px 20px 18px;font-size:14px;line-height:1.5;color:var(--tlmeny);border-top:1px solid var(--linka-svetla)}
+.adresa{font-style:normal;font:400 22px/1.4 var(--nadpis)}
+.adresa strong{display:block;font:400 clamp(30px,3vw,38px)/1.05 var(--nadpis);margin-bottom:8px}
+.cesta{margin-top:12px;color:var(--tlmeny);max-width:44ch;text-wrap:pretty}
+.hodiny{width:100%;margin-top:30px;border-collapse:collapse;font-size:16px;font-variant-numeric:tabular-nums}
+.hodiny caption{text-align:left;font:400 24px/1.2 var(--nadpis);padding-bottom:10px}
+.hodiny th,.hodiny td{padding:11px 10px;text-align:left;border-bottom:1px solid var(--linka-svetla)}
+.hodiny th{font-weight:500}
+.hodiny td{text-align:right;white-space:nowrap}
+.hodiny .zatvorene{color:var(--tlmeny)}
+.hodiny tr.dnes{background:var(--kamen);color:var(--svetly)}
+.hodiny tr.dnes .zatvorene{color:var(--svetly-2)}
+.hodiny tr.dnes th:first-child{border-radius:10px 0 0 10px}
+.hodiny tr.dnes td:last-child{border-radius:0 10px 10px 0}
+.hodiny tr.dnes th,.hodiny tr.dnes td{border-bottom-color:transparent}
+.znacka-dnes{display:inline-block;margin-left:8px;padding:2px 9px;border-radius:999px;background:var(--svetlo);color:var(--noc);font-size:12px;font-weight:600;vertical-align:1px}
+.znacka-dnes[hidden]{display:none}
+.hodiny-pozn{margin-top:12px;font-size:15px;color:var(--tlmeny);text-wrap:pretty}
+.stav-vinoteky{display:inline-flex;align-items:center;gap:10px;margin-top:20px;padding:8px 14px 8px 12px;border-radius:999px;background:rgba(107,26,46,.08);font-weight:500;font-size:15px}
+.stav-vinoteky[hidden]{display:none}
+.stav-bod{width:9px;height:9px;border-radius:50%;background:var(--vino);box-shadow:0 0 0 3px rgba(107,26,46,.18)}
+.spojenie{margin-top:28px;display:grid;gap:4px;font-size:16px}
+.spojenie a{display:inline-flex;align-items:center;min-height:44px;color:var(--vino)}
+.kontakt-akcie{display:flex;flex-wrap:wrap;gap:12px;margin-top:22px}
+
+/* Päta (žula) s výzvou pre ARLing */
+.pata{background:linear-gradient(rgba(20,18,16,.86),rgba(20,18,16,.86)),#1c1a18 url(../img/zula.webp) 0 0/256px 256px;color:var(--svetly-2);padding:64px 0 calc(64px + 84px + env(safe-area-inset-bottom));font-size:15px;line-height:1.6}
+.pata-mriezka{display:grid;gap:36px}
+.pata strong{color:var(--svetly);font-weight:500}
+.pata .drobne{margin-top:12px;max-width:72ch;color:var(--svetly-3)}
+.pata-znak{display:flex;align-items:center;gap:14px;font:400 24px/1 var(--nadpis);letter-spacing:.06em;color:var(--svetly);margin-bottom:16px}
+.pata-arling{display:flex;flex-direction:column;align-items:flex-start;gap:12px}
+.pata-otazka{font:400 22px/1.2 var(--nadpis);color:var(--svetly)}
+.pata-spat{display:inline-flex;align-items:center;min-height:44px;color:var(--svetly)}
+
+/* Dialógy: košík ako zásuvka sprava (na mobile zdola), menu zhora, oznam ukážky v strede */
+dialog{padding:0;border:0;color:inherit;max-width:none;max-height:none}
+.zasuvka{position:fixed;inset:0 0 0 auto;margin:0;width:min(460px,100%);height:100%;background:var(--vapno-3);color:var(--atrament);box-shadow:-40px 0 80px -40px rgba(0,0,0,.65);--fokus:var(--vino);overscroll-behavior:contain}
+.zasuvka[open]{display:flex;flex-direction:column}
+.zasuvka::backdrop,.okno::backdrop,.menu-zasuvka::backdrop{background:rgba(14,12,10,.62)}
+.zasuvka-hlava{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 22px 14px;border-bottom:1px solid var(--linka-svetla)}
+.zasuvka-hlava h2{font:400 31px/1 var(--nadpis)}
+.zavriet{flex:none;width:44px;height:44px;border:0;border-radius:50%;background:transparent;color:inherit;cursor:pointer;display:grid;place-items:center;transition:background-color .2s ease}
+.zavriet:hover{background:rgba(107,26,46,.08)}
+.zasuvka-telo{flex:1;overflow-y:auto;padding:16px 22px}
+.zasuvka-telo .ukazka-poznamka{display:flex;max-width:none}
+.kosik-prazdny{margin-top:28px;text-align:center;color:var(--tlmeny)}
+.kosik-prazdny[hidden]{display:none}
+.kosik-prazdny p{font:400 22px/1.4 var(--nadpis);color:var(--atrament);margin-bottom:16px}
+.kosik-polozky{list-style:none;margin:8px 0 0;padding:0}
+.polozka{display:grid;grid-template-columns:14px minmax(0,1fr) auto;grid-template-areas:"bod nazov suma" "bod krok odobrat";gap:8px 12px;align-items:center;padding:16px 0;border-bottom:1px solid var(--linka-svetla)}
+.polozka-bod{grid-area:bod;align-self:start;margin-top:6px;width:12px;height:12px;border-radius:50%;background:#c6b26a;box-shadow:0 0 0 2px rgba(31,28,25,.08)}
+.polozka-bod[data-farba="ruzove"]{background:#e39f99}
+.polozka-bod[data-farba="cervene"]{background:var(--vino)}
+.polozka-nazov{grid-area:nazov;font:400 19px/1.25 var(--nadpis)}
+.polozka-nazov small{display:block;margin-top:2px;font:400 14px/1.4 var(--text);color:var(--tlmeny)}
+.polozka-suma{grid-area:suma;font-weight:600;font-variant-numeric:tabular-nums;text-align:right}
+.polozka .krokovac{grid-area:krok;justify-self:start;grid-template-columns:44px 44px 44px;min-height:44px}
+.polozka .krokovac button{height:44px}
+.polozka .krokovac output{display:grid;place-items:center;height:44px;border-inline:1px solid rgba(31,28,25,.16);font-weight:600;font-variant-numeric:tabular-nums}
+.odobrat{grid-area:odobrat;justify-self:end;min-height:44px;padding:0 4px;border:0;background:transparent;color:var(--vino);font:400 14px/1 var(--text);text-decoration:underline;text-underline-offset:.22em;cursor:pointer}
+.doprava{margin:22px 0 0;padding:0;border:0;min-width:0}
+.doprava legend{font-weight:600;margin-bottom:10px}
+.doprava label{display:grid;grid-template-columns:24px 1fr auto;align-items:center;gap:10px;min-height:48px;padding:6px 14px;margin-bottom:8px;border-radius:14px;border:1px solid rgba(107,26,46,.22);background:#fff;cursor:pointer}
+.doprava label:has(input:checked){border-color:var(--vino);box-shadow:inset 0 0 0 1px var(--vino)}
+.doprava label:has(input:focus-visible){outline:3px solid var(--vino);outline-offset:2px}
+.doprava input{accent-color:var(--vino);width:18px;height:18px;margin:0}
+.doprava input:focus-visible{outline:none}
+.doprava span{font-variant-numeric:tabular-nums;color:var(--tlmeny)}
+.zasuvka-paticka{padding:16px 22px calc(18px + env(safe-area-inset-bottom));border-top:1px solid var(--linka-svetla);background:var(--vapno-3)}
+.sumy div{display:flex;justify-content:space-between;gap:12px;padding:3px 0;font-variant-numeric:tabular-nums;color:var(--tlmeny)}
+.sumy .spolu{margin-top:6px;color:var(--atrament)}
+.sumy .spolu dt{font-weight:600}
+.sumy .spolu dd{font:400 28px/1 var(--nadpis);font-variant-numeric:lining-nums tabular-nums}
+.vek{margin-top:10px;font-size:13px;line-height:1.45;color:var(--tlmeny)}
+.zasuvka-paticka .akcia{width:100%;margin-top:14px}
+.zasuvka-paticka .akcia:disabled{opacity:.45;cursor:not-allowed}
+.okno{margin:auto;width:min(480px,calc(100% - 32px));border-radius:28px;background:var(--vapno-3);color:var(--atrament);box-shadow:0 40px 80px -30px rgba(0,0,0,.7);--fokus:var(--vino);overflow:hidden}
+.okno-hlava{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:24px 24px 0}
+.okno-hlava h2{font:400 31px/1.08 var(--nadpis)}
+.okno-telo{display:grid;gap:14px;padding:14px 24px 26px;font-size:16px}
+.okno-suhrn{padding:14px 16px;border-radius:16px;background:var(--vapno);font-size:15px;line-height:1.55}
+.okno-suhrn:empty{display:none}
+.okno .akcia{justify-self:start}
+.menu-zasuvka{position:fixed;inset:0 0 auto 0;margin:0;width:100%;max-height:100dvh;overflow-y:auto;background:linear-gradient(rgba(20,18,16,.86),rgba(20,18,16,.86)),#1c1a18 url(../img/zula.webp) 0 0/256px 256px;color:var(--svetly);border-radius:0 0 24px 24px;box-shadow:0 30px 60px -20px rgba(0,0,0,.7);overscroll-behavior:contain}
+.menu-zasuvka-hlava{display:flex;align-items:center;justify-content:space-between;gap:12px;width:var(--obal);margin:0 auto;min-height:64px;border-bottom:1px solid rgba(244,239,231,.1)}
+.menu-nadpis{font:600 12px/1 var(--text);letter-spacing:.24em;text-transform:uppercase;color:var(--svetly-3)}
+.menu-zasuvka .zavriet:hover{background:rgba(244,239,231,.08)}
+.menu-zoznam{list-style:none;margin:0 auto;padding:8px 0;width:var(--obal)}
+.menu-zoznam a{display:flex;align-items:center;min-height:56px;font:400 30px/1.1 var(--nadpis);color:var(--svetly);text-decoration:none;border-bottom:1px solid rgba(244,239,231,.08)}
+.menu-zoznam a:hover{color:var(--svetlo-2)}
+.menu-zasuvka-paticka{width:var(--obal);margin:0 auto;padding:18px 0 calc(24px + env(safe-area-inset-bottom));display:grid;gap:14px;font-size:15px;color:var(--svetly-2)}
+.menu-zasuvka-paticka .akcia{width:100%}
+html.okno-otvorene{overflow:hidden}
+
+/* Pohyb v kapitolách: vstup mesiaca a vín, košík zo strany, menu zhora, okno ukážky. Pri obmedzenom pohybe platí
+   pravidlo z vloženého CSS v index.html (všetky animácie a prechody na koncový stav). */
+@media (prefers-reduced-motion:no-preference){
+  @keyframes mesiac-vstup{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  @keyframes vino-vstup{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  .vino.vstup{animation:vino-vstup .5s var(--krivka) both}
+  .zasuvka{transition:transform .45s var(--krivka),overlay .45s allow-discrete,display .45s allow-discrete}
+  .zasuvka:not([open]){transform:translateX(100%)}
+  @starting-style{.zasuvka[open]{transform:translateX(100%)}}
+  .menu-zasuvka{transition:transform .4s var(--krivka),overlay .4s allow-discrete,display .4s allow-discrete}
+  .menu-zasuvka:not([open]){transform:translateY(-100%)}
+  @starting-style{.menu-zasuvka[open]{transform:translateY(-100%)}}
+  .okno{transition:opacity .25s ease,transform .3s var(--krivka),overlay .3s allow-discrete,display .3s allow-discrete}
+  .okno:not([open]){opacity:0;transform:translateY(10px) scale(.98)}
+  @starting-style{.okno[open]{opacity:0;transform:translateY(10px) scale(.98)}}
+}
+@media (prefers-reduced-motion:no-preference) and (hover:hover){
+  .vino:hover .flasa-telo,.hrdina-vino:hover .flasa-telo{transform:translateY(-7px)}
+  .vino:hover .flasa-tien,.hrdina-vino:hover .flasa-tien{transform:scaleX(.82);opacity:.55}
+}
+@media (max-width:599px){
+  .zasuvka{inset:auto 0 0 0;width:100%;height:auto;max-height:90dvh;border-radius:24px 24px 0 0}
+  @media (prefers-reduced-motion:no-preference){
+    .zasuvka:not([open]){transform:translateY(100%)}
+    @starting-style{.zasuvka[open]{transform:translateY(100%)}}
+  }
+  /* rezervácia: cena pod názvom, nech názov a popis majú celú šírku */
+  .volba-polozka{grid-template-columns:24px minmax(0,1fr)}
+  .volba-cena{grid-column:2;grid-row:auto;align-self:start;margin-top:2px}
+  /* mapa: väčšie popisky, na telefóne by mali okolo 11 px */
+  .mapa-popisky{font-size:31px}
+}
+@media (min-width:600px){
+  .vinohrad-obrazy{width:min(100%,440px)}
+  .pole-dvojica{grid-template-columns:minmax(0,1fr) auto}
+  .okno-pivnice-obraz{aspect-ratio:16/9}
+}
+@media (min-width:700px){
+  .vina-zoznam{grid-template-columns:repeat(2,minmax(0,1fr));gap:64px 32px}
+  .vino{display:flex;flex-direction:column}
+  .vino-telo{display:flex;flex-direction:column}
+  .vino .vyklenok{width:100%}
+  .vino h3{margin-top:24px}
+  .vino-kupa{margin-top:auto;padding-top:16px}
+  .vino-parovanie{margin-bottom:18px}
+  .vino .flasa{width:27%}
+  .vino .vyklenok{aspect-ratio:4/5}
+}
+@media (min-width:900px){
+  .vinohrad-mriezka{grid-template-columns:minmax(0,5fr) minmax(0,6fr);grid-template-areas:"galeria nadpis" "galeria text";column-gap:clamp(48px,7vw,112px);row-gap:30px}
+  .vinohrad-nadpis{align-self:end}
+  .vinohrad-text{align-self:start}
+  .vinohrad-galeria{align-self:center}
+  .vinohrad-obrazy{justify-self:start;width:100%;max-width:470px}
+  .vina-hlava{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:end;column-gap:56px}
+  .vina-hlava .nadpis{grid-row:1/span 2}
+  .okno-pivnice-obraz{aspect-ratio:2/1}
+  .degustacie-mriezka{grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:clamp(40px,6vw,96px)}
+  .rok-mriezka{grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);grid-template-areas:"text kruh" "mesiace kruh";column-gap:clamp(40px,6vw,96px);row-gap:30px}
+  .rok-text{align-self:end}
+  .mesiace{align-self:start}
+  .rok-kruh{align-self:center}
+  .kontakt-mriezka{grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:clamp(40px,5vw,80px);align-items:start}
+  .pata-mriezka{grid-template-columns:2fr 1fr}
+}
+@media (min-width:1000px){
+  .pata{padding-bottom:64px}
+}
+@media (min-width:1100px){
+  .vina-zoznam{grid-template-columns:repeat(3,minmax(0,1fr));gap:72px clamp(28px,3vw,44px)}
+  .vino:nth-child(3n+2 of :not([hidden])){margin-top:72px}
+  .vino .vyklenok{aspect-ratio:3/4}
+  .vino .flasa{width:34%}
+}

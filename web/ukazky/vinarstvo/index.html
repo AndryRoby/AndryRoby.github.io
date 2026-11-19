@@ -1,0 +1,967 @@
+<!doctype html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; font-src 'self'; connect-src 'none'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex, nofollow">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#1c1a18">
+<title>Ukážka: Vinárstvo Svorník, Svätý Jur (vymyslená prevádzka)</title>
+<meta name="description" content="Ukážka webu od ARLing pre vymyslené rodinné vinárstvo vo Svätom Jure: kamenný portál pivnice, ktorého dvere sa otvoria, vína s chuťovými poznámkami a párovaním, malý e-shop s košíkom, rezervácia degustácie, vinársky rok a ilustračná mapa.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231c1a18'/%3E%3Cpath d='M6.5 29V18a9.5 9.5 0 0 1 19 0v11' fill='none' stroke='%23b9b2a6' stroke-width='4'/%3E%3Cpath d='M12.6 3.8h6.8l-1.3 7h-4.2z' fill='%23eaa54a'/%3E%3C/svg%3E">
+<link rel="preload" as="image" href="img/zula.webp" fetchpriority="high">
+<link rel="preload" as="image" imagesrcset="img/pivnica-dvere-400.webp 400w, img/pivnica-dvere-600.webp 600w, img/pivnica-dvere-800.webp 800w, img/pivnica-dvere-1200.webp 1200w" imagesizes="(min-width: 1000px) clamp(160px, calc((100vh - 330px) * 0.398), 280px), min(45vw, 238px)" fetchpriority="high">
+<style>
+/* Vinárstvo Svorník: ukážka webu klienta od ARLing. Svet: kamenný portál pivnice z roku 1786 vo Svätom Jure.
+   Svorník je kameň na vrchole klenby, ktorý drží celý oblúk; nesie meno vinárstva aj vytesaný rok. Stena a portál sú
+   zo žuly (vlastná textúra img/zula.webp), dvere z dubových dosiek (img/dub.webp), za nimi pivnica. Farby: žula a noc,
+   teplé svetlo sviečky (jantár) ako jediné zvýraznenie na tmavom, víno na svetlom vápne. Písma Marcellus (glyfické,
+   podľa rímskych nápisov tesaných do kameňa) a Hanken Grotesk, OFL, lokálne a premenované (Svornik Nadpis, Svornik Text). */
+@font-face{font-family:"Svornik Nadpis";src:url(fonts/svornik-nadpis.woff2) format("woff2");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:"Svornik Text";src:url(fonts/svornik-text.woff2) format("woff2");font-weight:400 600;font-style:normal;font-display:swap}
+/* Záložné písma s metrikami nastavenými na Marcellus a Hanken Grotesk, aby text pri výmene písma neposkočil (CLS) */
+@font-face{font-family:"Svornik Nadpis Zaloha";src:local("Times New Roman"),local("TimesNewRomanPSMT"),local("Liberation Serif");size-adjust:109.17%;ascent-override:89.23%;descent-override:25.63%;line-gap-override:0%}
+@font-face{font-family:"Svornik Text Zaloha";src:local("Arial"),local("ArialMT"),local("Liberation Sans");size-adjust:100.75%;ascent-override:99.25%;descent-override:30.07%;line-gap-override:0%}
+
+:root{
+  --stena:#6b6761;--kamen:#2a2724;--noc:#1c1a18;--noc-2:#141210;
+  --vapno:#efebe4;--vapno-2:#e3ded4;--vapno-3:#f8f6f1;
+  --svetly:#f4efe7;--svetly-2:#d9d1c4;--svetly-3:#bdb3a3;
+  --svetlo:#eaa54a;--svetlo-2:#f5bd6a;--svetlo-tmave:#7a5a1f;
+  --vino:#6b1a2e;--vino-2:#83213a;--vino-hlbka:#2b0a13;
+  --atrament:#1f1c19;--tlmeny:#5b554e;
+  --linka-tma:rgba(234,165,74,.28);--linka-svetla:rgba(31,28,25,.16);
+  --nadpis:"Svornik Nadpis","Svornik Nadpis Zaloha","Times New Roman",serif;
+  --text:"Svornik Text","Svornik Text Zaloha",Arial,sans-serif;
+  --okraj:clamp(16px,4vw,48px);
+  --obal:min(1240px,100% - 2 * var(--okraj));
+  --rytmus:clamp(76px,10vw,148px);
+  --krivka:cubic-bezier(.22,1,.36,1);
+  --krivka-dvere:cubic-bezier(.55,.06,.22,1);
+  --fokus:var(--svetlo);
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-padding-top:84px;scrollbar-color:var(--stena) var(--noc);overflow-x:clip}
+body{margin:0;background:var(--noc);color:var(--svetly);font:400 17px/1.65 var(--text);overflow-wrap:break-word;font-kerning:normal;-webkit-font-smoothing:antialiased}
+::selection{background:var(--svetlo);color:var(--noc)}
+img{display:block;max-width:100%;height:auto}
+svg{display:block}
+a{color:inherit;text-underline-offset:.22em;text-decoration-thickness:1px}
+a:hover{text-decoration-thickness:2px}
+h1,h2,h3,p,figure,dl,dd{margin:0}
+:focus-visible{outline:3px solid var(--fokus);outline-offset:3px;border-radius:6px}
+.svetla{--fokus:var(--vino)}
+.obal{width:var(--obal);margin-inline:auto}
+.skryte{position:absolute!important;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.nw{white-space:nowrap}
+.defs{position:absolute;width:0;height:0;overflow:hidden}
+.preskocit{position:absolute;left:12px;top:-64px;z-index:60;background:var(--svetlo);color:var(--noc);padding:12px 18px;border-radius:999px;font-weight:600;text-decoration:none}
+.preskocit:focus{top:12px}
+
+/* Tlačidlá: pilulka 52 px. Jantárová (svetlo sviečky) na tmavom, vínová na vápne, linka ako druhá voľba */
+.akcia{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:52px;padding:0 26px;border-radius:999px;border:1px solid transparent;font:600 16px/1.1 var(--text);letter-spacing:.01em;text-decoration:none;text-align:center;cursor:pointer;transition:background-color .25s ease,border-color .25s ease,color .25s ease,transform .2s var(--krivka)}
+.akcia:active{transform:scale(.97)}
+.akcia svg{flex:none}
+.akcia-svetlo{background:var(--svetlo);color:var(--noc);box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 10px 26px -12px rgba(234,140,40,.55)}
+.akcia-svetlo:hover{background:var(--svetlo-2)}
+.akcia-linka{background:transparent;color:var(--svetly);border-color:rgba(244,239,231,.55)}
+.akcia-linka:hover{background:rgba(244,239,231,.1);border-color:var(--svetly)}
+.akcia-vino{background:var(--vino);color:var(--svetly);box-shadow:0 10px 24px -14px rgba(43,10,19,.8)}
+.akcia-vino:hover{background:var(--vino-2)}
+.akcia-linka-tmava{background:transparent;color:var(--vino);border-color:rgba(107,26,46,.55)}
+.akcia-linka-tmava:hover{background:rgba(107,26,46,.07);border-color:var(--vino)}
+.akcia-mala{min-height:44px;padding:0 18px;font-size:15px}
+.akcia .sipka{transition:transform .25s var(--krivka)}
+.akcia:hover .sipka{transform:translateX(3px)}
+
+/* Pás ukážky (pod 600 px jedna krátka veta, plné vysvetlenie je aj v päte) */
+.pas{background:var(--noc-2);color:#e6dfd3;font:400 13px/1.4 var(--text);--fokus:var(--svetly)}
+.pas .obal{display:flex;flex-wrap:wrap;gap:0 18px;align-items:center;justify-content:space-between;padding-block:6px}
+.pas p{max-width:92ch;flex:1 1 auto}
+.pas .pas-odkazy{flex:0 1 auto}
+.pas strong{color:#fff;font-weight:600}
+.pas-dlhe{display:none}
+.pas-odkazy{display:flex;flex-wrap:wrap;align-items:center;gap:0 14px}
+.pas-kratke{color:#cfc6b8}
+.pas a{color:#fff;display:inline-flex;align-items:center;min-height:44px;margin-block:-8px}
+@media (min-width:600px){
+  .pas{font-size:14px;line-height:1.45}
+  .pas .obal{padding-block:9px}
+  .pas p{flex:1 1 480px}
+  .pas-dlhe{display:inline}.pas-kratke{display:none}
+}
+
+/* Hlavička: znak (svorník na oblúku), menu od 960 px, pod ním tlačidlo Menu so zásuvkou */
+.hlava{position:sticky;top:0;z-index:30;background:rgba(28,26,24,.97);color:var(--svetly);border-bottom:1px solid rgba(244,239,231,.06);transition:border-color .3s ease,background-color .3s ease}
+.hlava.posunute{background:rgba(20,18,16,.97);border-bottom-color:var(--linka-tma)}
+.hlava-riadok{display:flex;align-items:center;gap:16px;min-height:64px}
+.znak{display:inline-flex;align-items:center;gap:11px;color:inherit;text-decoration:none;min-height:44px;flex:none}
+.znak svg{width:34px;height:34px}
+.znak-meno{display:flex;flex-direction:column;line-height:1}
+.znak-meno small{font:600 11px/1 var(--text);letter-spacing:.24em;text-transform:uppercase;color:var(--svetly-3)}
+.znak-meno span{font:400 21px/1 var(--nadpis);letter-spacing:.1em;text-transform:uppercase;margin-top:5px}
+.hlava nav{margin-left:auto}
+.menu{display:none;margin:0;padding:0;list-style:none;gap:2px}
+.menu a{display:inline-flex;align-items:center;min-height:44px;padding:0 12px;border-radius:999px;text-decoration:none;font-size:15px;color:var(--svetly-2);transition:color .2s ease,background-color .2s ease}
+.menu a:hover{color:var(--svetly);background:rgba(244,239,231,.07)}
+.hlava-akcie{display:flex;align-items:center;gap:8px;margin-left:auto}
+.menu-tlacidlo,.kosik-tlacidlo{position:relative;display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 14px;border-radius:999px;border:1px solid rgba(244,239,231,.32);background:transparent;color:var(--svetly);font:500 15px/1 var(--text);cursor:pointer;transition:background-color .2s ease,border-color .2s ease}
+.menu-tlacidlo:hover,.kosik-tlacidlo:hover{background:rgba(244,239,231,.08);border-color:rgba(244,239,231,.6)}
+.kosik-pocet{display:inline-grid;place-items:center;min-width:24px;height:24px;padding:0 6px;border-radius:999px;background:var(--svetlo);color:var(--noc);font:600 13px/1 var(--text);font-variant-numeric:tabular-nums;overflow:hidden}
+.kosik-pocet[data-prazdny]{background:rgba(244,239,231,.14);color:var(--svetly-2)}
+.kosik-pocet span{display:block}
+.hlava .rezervovat{display:none}
+
+/* Úvod: žulová stena v podvečer, uprostred portál pivnice, nad ním vytesané meno. Dubové dvere sa otvoria na pántoch
+   a z pivnice vytečie teplé svetlo na kamene a prah. Text je na stene vľavo, najlepšie víno vo výklenku vpravo. */
+/* Žula steny: tá istá svetlá textúra ako portál, stmavená priesvitnou vrstvou (obyčajné skladanie, bez režimu miešania
+   a masky, ktoré pri DPR 3 spomaľovali prvé vykreslenie), navrchu vineta a tieň pod hlavičkou. */
+.hrdina{position:relative;isolation:isolate;overflow:clip;color:var(--svetly);
+  background:radial-gradient(120% 90% at 50% 62%,rgba(20,18,16,0) 30%,rgba(20,18,16,.55) 100%),linear-gradient(180deg,rgba(20,18,16,.5),rgba(20,18,16,0) 32%),linear-gradient(rgba(36,33,31,.66),rgba(36,33,31,.66)),#56524c url(img/zula.webp) 0 0/256px 256px}
+.hrdina-mriezka{position:relative;display:grid;grid-template-areas:"meno" "portal" "telo";justify-items:center;padding-top:clamp(18px,3vh,40px)}
+.meno{grid-area:meno;position:relative;z-index:2;text-align:center;line-height:1}
+.meno-mala{display:block;font:600 13px/1 var(--text);letter-spacing:.42em;text-transform:uppercase;color:var(--svetlo);padding-left:.42em}
+.meno-velka{display:block;margin-top:.14em;font:400 clamp(50px,min(14vw,15svh),150px)/.92 var(--nadpis);letter-spacing:.14em;padding-left:.14em;text-transform:uppercase;color:var(--svetly);
+  text-shadow:0 -1px 0 rgba(0,0,0,.55),0 1px 0 rgba(255,255,255,.1)}
+.portal{grid-area:portal;position:relative;width:clamp(232px,min(84vw,440px,calc((100svh - 320px) * .7368)),440px);aspect-ratio:560/760;margin-top:clamp(14px,2.4vh,26px)}
+.portal-kamen{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.portal-otvor{position:absolute;z-index:2;left:23.0357%;top:15.6579%;width:53.9286%;height:79.0789%;border-radius:50% 50% 0 0/25.1248% 25.1248% 0 0;overflow:hidden;background:#120d09;perspective:520px;perspective-origin:50% 55%}
+.portal-foto{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 50%}
+.portal-otvor::after{content:"";position:absolute;inset:0;z-index:3;border-radius:inherit;pointer-events:none;box-shadow:inset 0 16px 18px -6px rgba(0,0,0,.6),inset 10px 0 16px -8px rgba(0,0,0,.55),inset -10px 0 16px -8px rgba(0,0,0,.55)}
+.kridlo{position:absolute;top:0;bottom:0;width:50%;z-index:2;background:#5d3e25 url(img/dub.webp) no-repeat;background-size:200% 100%;backface-visibility:hidden}
+.kridlo svg{position:absolute;inset:0;width:100%;height:100%}
+.kridlo::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,0,0,.25),rgba(0,0,0,.72));opacity:1}
+.kridlo-l{left:0;background-position:0 0;transform-origin:0 50%;transform:rotateY(84deg)}
+.kridlo-p{right:0;background-position:100% 0;transform-origin:100% 50%;transform:rotateY(-84deg)}
+.kridlo-p::after{background:linear-gradient(270deg,rgba(0,0,0,.25),rgba(0,0,0,.72))}
+.portal-svetlo{position:absolute;z-index:1;left:-48%;right:-48%;top:-6%;bottom:0;pointer-events:none;mix-blend-mode:screen;
+  background:radial-gradient(20% 9% at 50% 99%,rgba(255,214,150,.85),rgba(255,190,110,0) 100%),radial-gradient(46% 80% at 50% 100%,rgba(255,170,88,.8) 0%,rgba(255,150,70,.4) 34%,rgba(255,140,60,.13) 58%,rgba(255,140,60,0) 76%)}
+.hrdina-telo{grid-area:telo;position:relative;z-index:2;width:min(100%,560px);text-align:center;padding:30px 0 clamp(56px,8vw,96px)}
+.hrdina-lead{font-size:clamp(17px,1.3vw,19px);line-height:1.62;color:var(--svetly-2);text-wrap:pretty}
+.hrdina-akcie{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin-top:24px}
+.hrdina-fakty{margin-top:26px;border-top:1px solid var(--linka-tma);text-align:left}
+.hrdina-fakty div{display:grid;grid-template-columns:92px minmax(0,1fr);align-items:baseline;gap:12px;padding:9px 0;border-bottom:1px solid rgba(244,239,231,.1)}
+.hrdina-fakty dt{font:600 12px/1.3 var(--text);letter-spacing:.08em;text-transform:uppercase;color:#ded6c9}
+.hrdina-fakty dd{font:400 17px/1.3 var(--nadpis);color:var(--svetly)}
+.hrdina-vino{display:none}
+
+/* Výklenok v stene: tmavá klenba v kameni so svetlom zhora, rámom zo žuly a kamennou rímsou (úvod aj zoznam vín) */
+.vyklenok{position:relative;aspect-ratio:3/4;border:9px solid transparent;border-radius:999px 999px 8px 8px;overflow:hidden;display:flex;align-items:flex-end;justify-content:center;padding-bottom:9%;
+  background:radial-gradient(70% 46% at 50% 16%,var(--svetlo-vyklenku,rgba(255,186,110,.3)),rgba(255,170,90,0) 72%) padding-box,linear-gradient(180deg,#191613 0%,#0f0d0b 74%,#161412 100%) padding-box,linear-gradient(rgba(58,53,48,.3),rgba(58,53,48,.3)) border-box,#9f9a92 url(img/zula.webp) 0 0/256px 256px border-box;
+  box-shadow:inset 0 18px 26px -10px rgba(0,0,0,.9),0 0 0 1px rgba(0,0,0,.45),0 18px 30px -18px rgba(0,0,0,.7)}
+.vyklenok::after{content:"";position:absolute;left:0;right:0;bottom:0;height:8%;background:linear-gradient(180deg,#9a948b 0,#6a655e 26%,#3c3935 100%);box-shadow:0 -1px 0 rgba(255,255,255,.28)}
+.flasa{position:relative;z-index:1;width:40%;height:auto;overflow:visible}
+.flasa-telo{transform-box:fill-box;transform-origin:50% 100%;transition:transform .6s var(--krivka)}
+.flasa-tien{transform-box:fill-box;transform-origin:50% 50%;transition:transform .6s var(--krivka),opacity .6s ease}
+.et-nazov{font-family:var(--nadpis);font-size:7.3px;letter-spacing:.5px}
+.et-rok{font-family:var(--text);font-size:6.4px;font-weight:600;letter-spacing:1.2px}
+
+/* Spodná lišta na mobile: rezervácia v dosahu palca a košík */
+.lista{position:fixed;left:0;right:0;bottom:0;z-index:25;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;padding:10px var(--okraj) calc(10px + env(safe-area-inset-bottom));background:rgba(20,18,16,.97);border-top:1px solid var(--linka-tma)}
+.lista .akcia{min-height:50px;padding:0 18px;font-size:15px}
+.lista .kosik-tlacidlo{min-height:50px}
+
+/* Pohyb: jeden hlasný moment. Dubové krídla sa otvoria dnu na pántoch (rotateY s perspektívou), z pivnice vytečie
+   svetlo (len opacity), pohľad do pivnice sa jemne priblíži. Dobehne do 1,75 s a skončí v pokoji. Fotka je pod krídlami
+   vykreslená od prvej snímky (LCP nečaká na pohyb). Bez JS a pri obmedzenom pohybe je hneď koncový stav. */
+@media (prefers-reduced-motion:no-preference){
+  html{scroll-behavior:smooth}
+  .kridlo-l{animation:kridlo-l 1.35s var(--krivka-dvere) .25s both}
+  .kridlo-p{animation:kridlo-p 1.35s var(--krivka-dvere) .33s both}
+  .kridlo::after{animation:tien-kridla 1.35s var(--krivka-dvere) .25s both}
+  .portal-svetlo{animation:svetlo 1.2s ease-out .45s both}
+  .portal-foto{animation:pribliz 1.7s var(--krivka) .05s both}
+  .hrdina.caka .kridlo,.hrdina.caka .kridlo::after,.hrdina.caka .portal-svetlo,.hrdina.caka .portal-foto{animation-play-state:paused}
+  @keyframes kridlo-l{0%{transform:rotateY(0)}12%{transform:rotateY(-2.5deg)}100%{transform:rotateY(84deg)}}
+  @keyframes kridlo-p{0%{transform:rotateY(0)}12%{transform:rotateY(2.5deg)}100%{transform:rotateY(-84deg)}}
+  @keyframes tien-kridla{from{opacity:0}to{opacity:1}}
+  @keyframes svetlo{from{opacity:0}to{opacity:1}}
+  @keyframes pribliz{from{transform:scale(1.07)}to{transform:none}}
+  @keyframes pocet{from{transform:translateY(100%)}to{transform:none}}
+  .kosik-pocet.tik span{animation:pocet .4s var(--krivka)}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;animation-delay:0s!important;transition-duration:.01ms!important;transition-delay:0s!important;scroll-behavior:auto!important}
+}
+
+@media (max-width:420px){
+  .hlava-riadok{min-height:58px;gap:10px}
+  .znak{gap:9px}
+  .znak svg{width:30px;height:30px}
+  .znak-meno span{font-size:19px}
+  .menu-tlacidlo,.kosik-tlacidlo{padding:0 12px}
+  .kosik-text{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+}
+@media (max-width:359px){
+  .menu-text{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+}
+@media (min-width:700px){
+  .hrdina-mriezka{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"meno meno" "portal portal" "telo vino";column-gap:40px;justify-items:stretch;align-items:start}
+  .meno,.portal{justify-self:center}
+  .hrdina-telo{text-align:left;width:auto;max-width:520px;justify-self:end}
+  .hrdina-akcie{justify-content:flex-start}
+  .hrdina-vino{grid-area:vino;display:grid;grid-template-columns:118px minmax(0,1fr);gap:4px 18px;align-items:end;align-self:start;padding-top:30px;width:min(100%,330px)}
+  .portal-otvor{perspective:640px}
+}
+.hrdina-vino .vyklenok{grid-row:1/span 4;width:118px}
+.hrdina-vino .flasa{width:42%}
+.hv-uvod{font-size:14px;line-height:1.4;color:var(--svetly-2)}
+.hv-nazov{font:400 23px/1.12 var(--nadpis);color:var(--svetly)}
+.hv-popis{font-size:14px;line-height:1.45;color:#ded6c9}
+.hv-kupa{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin-top:8px}
+.hv-kupa .cena{font:600 20px/1 var(--text);font-variant-numeric:tabular-nums;color:var(--svetly)}
+@media (min-width:960px){
+  .menu{display:flex}
+  .menu-tlacidlo{display:none}
+  .hlava .rezervovat{display:inline-flex}
+  .hlava-akcie{margin-left:8px}
+}
+@media (min-width:1000px){
+  .lista{display:none}
+  html{scroll-padding-bottom:0}
+  .hrdina-mriezka{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);grid-template-areas:"meno meno meno" "telo portal vino";column-gap:clamp(32px,4.4vw,80px);align-items:end}
+  .portal{width:auto;height:clamp(400px,calc(100vh - 330px),700px);height:clamp(400px,calc(100svh - 330px),700px)}
+  .portal-otvor{perspective:820px}
+  .hrdina-telo{justify-self:stretch;max-width:420px;padding:0 0 clamp(34px,5vh,64px);align-self:end}
+  .hrdina-vino{display:grid;justify-self:start;align-self:end;grid-template-columns:1fr;padding:0 0 clamp(34px,5vh,64px);width:min(100%,300px);gap:6px}
+  .hrdina-vino .vyklenok{grid-row:auto;width:min(164px,100%);margin-bottom:16px}
+}
+@media (min-width:1000px) and (max-width:1279px){
+  .hrdina-telo,.hrdina-vino{padding-bottom:24px}
+  .hrdina-fakty div{grid-template-columns:80px minmax(0,1fr)}
+  .hrdina-lead{font-size:16px;line-height:1.58}
+  .hrdina-akcie{margin-top:20px}
+  .hrdina-akcie .akcia{min-height:48px;padding:0 20px;font-size:15px}
+}
+@media (min-width:1600px){
+  .hrdina-mriezka,.hlava-riadok,.pas .obal{width:min(1480px,100% - 160px)}
+  .hrdina-lead{font-size:20px}
+}
+@media (max-width:999px){
+  html{scroll-padding-bottom:96px}
+}
+</style>
+<noscript><style>.odlozeny{display:none!important}.kridlo,.kridlo::after,.portal-svetlo,.portal-foto{animation:none!important}.filter,.kruh,.legenda{display:none!important}.mesiac{display:block!important}.menu-tlacidlo{display:none!important}</style></noscript>
+</head>
+<body>
+<a class="preskocit" href="#obsah">Preskočiť na obsah</a>
+
+<svg class="defs" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="g-zelene" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="#0d1a11"/><stop offset=".13" stop-color="#28432d"/><stop offset=".27" stop-color="#47694a"/><stop offset=".42" stop-color="#2b4631"/><stop offset=".74" stop-color="#16281b"/><stop offset=".88" stop-color="#2c4733"/><stop offset="1" stop-color="#0a140d"/></linearGradient>
+    <linearGradient id="g-olivove" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="#1c1a0a"/><stop offset=".13" stop-color="#454117"/><stop offset=".27" stop-color="#6d6729"/><stop offset=".42" stop-color="#47431a"/><stop offset=".74" stop-color="#26240c"/><stop offset=".88" stop-color="#4a461b"/><stop offset="1" stop-color="#141307"/></linearGradient>
+    <linearGradient id="g-jantar" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="#1e1206"/><stop offset=".13" stop-color="#4c3112"/><stop offset=".27" stop-color="#7a5322"/><stop offset=".42" stop-color="#4d3213"/><stop offset=".74" stop-color="#2a1a08"/><stop offset=".88" stop-color="#523615"/><stop offset="1" stop-color="#150c04"/></linearGradient>
+    <linearGradient id="g-rose" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="#9c4f50"/><stop offset=".13" stop-color="#df9690"/><stop offset=".27" stop-color="#f7cbc2"/><stop offset=".42" stop-color="#e6a198"/><stop offset=".74" stop-color="#c47672"/><stop offset=".88" stop-color="#dd9a93"/><stop offset="1" stop-color="#8a4446"/></linearGradient>
+    <linearGradient id="g-tmave" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="#080305"/><stop offset=".13" stop-color="#241013"/><stop offset=".27" stop-color="#3e1a20"/><stop offset=".42" stop-color="#251012"/><stop offset=".74" stop-color="#120708"/><stop offset=".88" stop-color="#2a1216"/><stop offset="1" stop-color="#060203"/></linearGradient>
+    <linearGradient id="g-lesk" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".45" stop-color="#fff" stop-opacity=".5"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+    <linearGradient id="g-etiketa" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#faf7f1"/><stop offset="1" stop-color="#e4ddd0"/></linearGradient>
+    <linearGradient id="g-etiketa-ruzova" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#fbf1ee"/><stop offset="1" stop-color="#efd9d4"/></linearGradient>
+    <linearGradient id="g-etiketa-vino" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#7a2236"/><stop offset="1" stop-color="#55131f"/></linearGradient>
+    <linearGradient id="g-etiketa-noc" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#2a2623"/><stop offset="1" stop-color="#151311"/></linearGradient>
+    <radialGradient id="g-tien"><stop offset="0" stop-color="#000" stop-opacity=".6"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>
+    <pattern id="p-riadky" width="9" height="9" patternUnits="userSpaceOnUse" patternTransform="rotate(-24)"><path d="M0 4.5H9" stroke="#bfae84" stroke-width="1.7"/></pattern>
+    <pattern id="p-les" width="16" height="16" patternUnits="userSpaceOnUse"><circle cx="4" cy="4" r="2.2" fill="#b4bda4"/><circle cx="12" cy="12" r="2.2" fill="#b4bda4"/></pattern>
+    <!-- Fľaše: rýnska (biele a rosé) a burgundská (červené). Farby skla, uzáveru a etikety berú z CSS premenných na <use>. -->
+    <symbol id="flasa-r" viewBox="0 0 120 360">
+      <path style="fill:var(--sklo)" d="M48 8h24v8h-2v102c0 22 18 42 18 72v150q0 8-8 8H40q-8 0-8-8V190c0-30 18-50 18-72V16h-2z"/>
+      <path fill="url(#g-lesk)" opacity=".45" d="M37 196c1-28 11-44 13-74h3c-2 30-10 47-11 74v138h-5z"/>
+      <path style="fill:var(--uzaver)" d="M49 6h22v40H49z"/><path style="fill:var(--uzaver-2)" d="M49 40h22v6H49z"/>
+      <path style="fill:var(--etiketa)" d="M35 326V258a25 25 0 0 1 50 0v68z"/>
+      <path style="fill:var(--znak)" d="M56.3 243.5h7.4l-1.3 7.3h-4.8z"/>
+      <path style="stroke:var(--znak)" fill="none" stroke-width="1" d="M50 264a10 10 0 0 1 20 0"/>
+      <path style="stroke:var(--linka)" stroke-width=".8" d="M43 296h34"/>
+    </symbol>
+    <symbol id="flasa-b" viewBox="0 0 120 360">
+      <path style="fill:var(--sklo)" d="M49 8h22v8h-2v84c0 30 23 40 23 90v150q0 8-8 8H36q-8 0-8-8V190c0-50 23-60 23-90V16h-2z"/>
+      <path fill="url(#g-lesk)" opacity=".38" d="M33 196c1-36 14-50 18-84h3c-3 34-14 50-15 84v138h-6z"/>
+      <path style="fill:var(--uzaver)" d="M49.5 6h21v40h-21z"/><path style="fill:var(--uzaver-2)" d="M49.5 40h21v6h-21z"/>
+      <path style="fill:var(--etiketa);stroke:var(--okraj-etikety,none)" stroke-width=".8" d="M33 326V260a27 27 0 0 1 54 0v66z"/>
+      <path style="fill:var(--znak)" d="M56.3 244.5h7.4l-1.3 7.3h-4.8z"/>
+      <path style="stroke:var(--znak)" fill="none" stroke-width="1" d="M49.5 266a10.5 10.5 0 0 1 21 0"/>
+      <path style="stroke:var(--linka)" stroke-width=".8" d="M41 297h38"/>
+    </symbol>
+    <!-- Kovanie dverí: dva pásové pánty s nitmi, kruh na otváranie, štítok kľúčovej dierky, lišta na stretnutí krídel -->
+    <symbol id="kovanie" viewBox="0 0 151 601" preserveAspectRatio="none">
+      <rect x="143" y="0" width="8" height="601" fill="#2a1a0e" opacity=".8"/>
+      <path d="M143 0v601" stroke="#a87c52" stroke-opacity=".35" stroke-width="1"/>
+      <g fill="#1b1917" stroke="#f3e2c8" stroke-opacity=".16" stroke-width=".9">
+        <path d="M0 160h100l12 7-12 7H0z"/><circle cx="116" cy="167" r="6"/>
+        <path d="M0 450h100l12 7-12 7H0z"/><circle cx="116" cy="457" r="6"/>
+        <circle cx="128" cy="298" r="7.5"/>
+        <path d="M124 340h9v24h-9z"/>
+      </g>
+      <circle cx="128" cy="320" r="13" fill="none" stroke="#1b1917" stroke-width="3.4"/>
+      <circle cx="128" cy="320" r="13" fill="none" stroke="#f3e2c8" stroke-opacity=".14" stroke-width="1"/>
+      <path d="M128.5 347.5a2.4 2.4 0 1 1-.1 0zM127.4 349.5h2.2l.7 6h-3.6z" fill="#0a0908"/>
+      <g fill="#4a4540"><circle cx="16" cy="167" r="2"/><circle cx="44" cy="167" r="2"/><circle cx="72" cy="167" r="2"/><circle cx="16" cy="457" r="2"/><circle cx="44" cy="457" r="2"/><circle cx="72" cy="457" r="2"/></g>
+    </symbol>
+    <symbol id="znak" viewBox="0 0 36 36">
+      <path d="M6 34.5V21.5a12 12 0 0 1 24 0v13" fill="none" stroke="#b9b2a6" stroke-width="4.6" stroke-dasharray="6.4 1.1" pathLength="62"/>
+      <path d="M14.2 4.2h7.6l-1.5 8.6h-4.6z" fill="#eaa54a"/>
+    </symbol>
+  </defs>
+</svg>
+
+<div class="pas" role="note">
+  <div class="obal">
+    <p><strong>Ukážka webu od ARLing, vymyslená prevádzka.</strong><span class="pas-dlhe"> Vinárstvo Svorník neexistuje, mená, adresa a&nbsp;čísla sú vymyslené. Košík aj rezervácia sú len ukážka, nič sa neobjedná ani neodošle.</span></p>
+    <p class="pas-odkazy"><span class="pas-kratke">Nič sa neobjedná.</span><a href="https://arling.sk/web/?z=vinarstvo" target="_top">Chcem taký web</a><a href="../../index.html#ukazky" target="_top">Späť na ukážky</a></p>
+  </div>
+</div>
+
+<header class="hlava" id="hlava">
+  <div class="obal hlava-riadok">
+    <a class="znak" href="#obsah">
+      <svg viewBox="0 0 36 36" aria-hidden="true" focusable="false"><use href="#znak"/></svg>
+      <span class="znak-meno"><small>Vinárstvo</small> <span>Svorník</span></span>
+    </a>
+    <nav aria-label="Hlavná">
+      <ul class="menu">
+        <li><a href="#vina">Vína</a></li>
+        <li><a href="#degustacie">Degustácie</a></li>
+        <li><a href="#rok">Vinársky rok</a></li>
+        <li><a href="#kontakt">Kontakt</a></li>
+      </ul>
+    </nav>
+    <div class="hlava-akcie">
+      <button class="menu-tlacidlo" type="button" data-otvor-menu aria-haspopup="dialog" aria-controls="menu-zasuvka">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10"/></svg>
+        <span class="menu-text">Menu</span>
+      </button>
+      <button class="kosik-tlacidlo" type="button" data-otvor-kosik>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 8h13l-1.2 12.2a1 1 0 0 1-1 .8H7.7a1 1 0 0 1-1-.8z"/><path d="M9 10.5V7a3 3 0 0 1 6 0v3.5"/></svg>
+        <span class="kosik-text">Košík</span>
+        <span class="kosik-pocet" data-prazdny aria-hidden="true"><span>0</span></span>
+        <span class="skryte kosik-stav">, prázdny</span>
+      </button>
+      <a class="akcia akcia-svetlo akcia-mala rezervovat" href="#rezervacia">Rezervovať degustáciu</a>
+    </div>
+  </div>
+</header>
+
+<main id="obsah">
+  <section class="hrdina" aria-labelledby="meno">
+    <div class="obal hrdina-mriezka">
+      <h1 class="meno" id="meno"><span class="meno-mala">Vinárstvo</span> <span class="meno-velka">Svorník</span></h1>
+
+      <div class="portal">
+        <svg class="portal-kamen" viewBox="0 20 560 760" aria-hidden="true" focusable="false">
+          <defs>
+            <pattern id="p-zula" width="320" height="320" patternUnits="userSpaceOnUse"><image href="img/zula.webp" width="320" height="320"/></pattern>
+            <radialGradient id="g-portal-jas" cx="280" cy="610" r="470" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#fff" stop-opacity=".1"/><stop offset=".55" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".34"/></radialGradient>
+            <linearGradient id="g-ostenie" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#14110f"/><stop offset=".6" stop-color="#26211c"/><stop offset="1" stop-color="#3a3029"/></linearGradient>
+            <linearGradient id="g-prah" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".45"/></linearGradient>
+            <g id="portal-tvary">
+              <path d="M115 290A165 165 0 0 1 124.95 233.57L51.65 206.89A243 243 0 0 0 37 290Z"/>
+              <path d="M124.95 233.57A165 165 0 0 1 153.6 183.94L93.85 133.8A243 243 0 0 0 51.65 206.89Z"/>
+              <path d="M153.6 183.94A165 165 0 0 1 197.5 147.11L158.5 79.56A243 243 0 0 0 93.85 133.8Z"/>
+              <path d="M197.5 147.11A165 165 0 0 1 251.35 127.51L237.8 50.69A243 243 0 0 0 158.5 79.56Z"/>
+              <path d="M251.35 127.51A165 165 0 0 1 308.65 127.51L327.26 22L232.74 22Z"/>
+              <path d="M308.65 127.51A165 165 0 0 1 362.5 147.11L401.5 79.56A243 243 0 0 0 322.2 50.69Z"/>
+              <path d="M362.5 147.11A165 165 0 0 1 406.4 183.94L466.15 133.8A243 243 0 0 0 401.5 79.56Z"/>
+              <path d="M406.4 183.94A165 165 0 0 1 435.05 233.57L508.35 206.89A243 243 0 0 0 466.15 133.8Z"/>
+              <path d="M435.05 233.57A165 165 0 0 1 445 290L523 290A243 243 0 0 0 508.35 206.89Z"/>
+              <path d="M22 290H121V314H22Z"/>
+              <path d="M439 290H538V314H439Z"/>
+              <path d="M25 314H115V430H25Z"/>
+              <path d="M37 430H115V534H37Z"/>
+              <path d="M25 534H115V648H25Z"/>
+              <path d="M37 648H115V740H37Z"/>
+              <path d="M445 314H535V430H445Z"/>
+              <path d="M445 430H523V534H445Z"/>
+              <path d="M445 534H535V648H445Z"/>
+              <path d="M445 648H523V740H445Z"/>
+            </g>
+          </defs>
+          <use href="#portal-tvary" fill="none" stroke="#0b0a09" stroke-opacity=".5" stroke-width="12" stroke-linejoin="round"/>
+          <path d="M115 740V290A165 165 0 0 1 445 290V740Z" fill="url(#g-ostenie)"/>
+          <use href="#portal-tvary" fill="#9f9a92"/>
+          <use href="#portal-tvary" fill="url(#p-zula)" fill-opacity=".92"/>
+          <use href="#portal-tvary" fill="#3a3530" fill-opacity=".26"/>
+          <g fill="#000">
+            <path fill-opacity=".07" d="M153.6 183.94A165 165 0 0 1 197.5 147.11L158.5 79.56A243 243 0 0 0 93.85 133.8Z"/>
+            <path fill-opacity=".05" d="M362.5 147.11A165 165 0 0 1 406.4 183.94L466.15 133.8A243 243 0 0 0 401.5 79.56Z"/>
+            <path fill-opacity=".08" d="M37 430H115V534H37Z"/>
+            <path fill-opacity=".06" d="M445 534H535V648H445Z"/>
+            <path fill-opacity=".1" d="M25 534H115V648H25Z"/>
+          </g>
+          <g fill="#fff">
+            <path fill-opacity=".05" d="M197.5 147.11A165 165 0 0 1 251.35 127.51L237.8 50.69A243 243 0 0 0 158.5 79.56Z"/>
+            <path fill-opacity=".07" d="M251.35 127.51A165 165 0 0 1 308.65 127.51L327.26 22L232.74 22Z"/>
+            <path fill-opacity=".04" d="M445 430H523V534H445Z"/>
+          </g>
+          <use href="#portal-tvary" fill="url(#g-portal-jas)"/>
+          <use href="#portal-tvary" fill="none" stroke="#1d1a17" stroke-opacity=".9" stroke-width="3.2" stroke-linejoin="round"/>
+          <use href="#portal-tvary" fill="none" stroke="#fff3df" stroke-opacity=".16" stroke-width="1.1" transform="translate(1.1 1.4)"/>
+          <path d="M22 297.5H121M439 297.5H538" stroke="#1d1a17" stroke-opacity=".45" stroke-width="1.6"/>
+          <path d="M22 299H121M439 299H538" stroke="#fff3df" stroke-opacity=".14" stroke-width=".9"/>
+          <g font-family="Svornik Nadpis, Times New Roman, serif" font-size="31" letter-spacing="2.5" text-anchor="middle">
+            <text x="281.2" y="83.4" fill="#fff8ec" fill-opacity=".34">1786</text>
+            <text x="280" y="82" fill="#1b1714">1786</text>
+          </g>
+          <path d="M250 98.5h60" stroke="#1b1714" stroke-opacity=".7" stroke-width="1.4"/>
+          <path d="M250 99.9h60" stroke="#fff8ec" stroke-opacity=".25" stroke-width=".8"/>
+          <path d="M6 740H554L560 750H0Z" fill="#a39e96"/>
+          <path d="M6 740H554L560 750H0Z" fill="url(#p-zula)" fill-opacity=".6"/>
+          <path d="M0 750H560V780H0Z" fill="#6f6a63"/>
+          <path d="M0 750H560V780H0Z" fill="url(#p-zula)" fill-opacity=".5"/>
+          <path d="M0 750H560V780H0Z" fill="url(#g-prah)"/>
+          <path d="M6 740H554" stroke="#fff3df" stroke-opacity=".22" stroke-width="1.2"/>
+          <path d="M0 750H560" stroke="#1d1a17" stroke-opacity=".6" stroke-width="1.4"/>
+        </svg>
+        <span class="portal-svetlo" aria-hidden="true"></span>
+        <div class="portal-otvor">
+          <img class="portal-foto" src="img/pivnica-dvere-600.webp" srcset="img/pivnica-dvere-400.webp 400w, img/pivnica-dvere-600.webp 600w, img/pivnica-dvere-800.webp 800w, img/pivnica-dvere-1200.webp 1200w" sizes="(min-width: 1000px) clamp(160px, calc((100vh - 330px) * 0.398), 280px), min(45vw, 238px)" width="1200" height="2449" alt="Pohľad cez otvorené dvere do pivnice: rad kamenných oblúkov a dubové sudy v teplom svetle" fetchpriority="high">
+          <span class="kridlo kridlo-l" aria-hidden="true"><svg viewBox="0 0 151 601" preserveAspectRatio="none" focusable="false"><use href="#kovanie"/></svg></span>
+          <span class="kridlo kridlo-p" aria-hidden="true"><svg viewBox="0 0 151 601" preserveAspectRatio="none" focusable="false"><use href="#kovanie" transform="matrix(-1 0 0 1 151 0)"/></svg></span>
+        </div>
+      </div>
+
+      <div class="hrdina-telo">
+        <p class="hrdina-lead">Rodinné vinárstvo vo Svätom Jure. Štyri hektáre viniča na žulovom svahu pod lesom, svieže biele vína, Frankovka z&nbsp;dubových sudov a&nbsp;degustácie v&nbsp;klenutej pivnici z&nbsp;roku 1786.</p>
+        <div class="hrdina-akcie">
+          <a class="akcia akcia-svetlo" href="#rezervacia">Rezervovať degustáciu</a>
+          <a class="akcia akcia-linka" href="#vina">Vybrať víno <svg class="sipka" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        </div>
+        <dl class="hrdina-fakty">
+          <div><dt>Vinica</dt><dd>4&nbsp;ha v&nbsp;trati Strminy</dd></div>
+          <div><dt>Vinotéka</dt><dd id="stav-hrdina">štvrtok až sobota</dd></div>
+        </dl>
+      </div>
+
+      <div class="hrdina-vino">
+        <div class="vyklenok" aria-hidden="true" style="--svetlo-vyklenku:rgba(214,96,120,.34)">
+          <svg class="flasa" viewBox="0 0 120 360" focusable="false"><ellipse class="flasa-tien" cx="60" cy="352" rx="40" ry="5" fill="url(#g-tien)"/><g class="flasa-telo"><use href="#flasa-b" style="--sklo:url(#g-tmave);--uzaver:#eaa54a;--uzaver-2:#b07a2e;--etiketa:url(#g-etiketa-noc);--okraj-etikety:#eaa54a;--znak:#eaa54a;--linka:#eaa54a"/><text class="et-nazov" x="60" y="288" text-anchor="middle" fill="#f5bd6a">KLENBA</text><text class="et-rok" x="60" y="311" text-anchor="middle" fill="#d9d1c4">2022</text></g></svg>
+        </div>
+        <p class="hv-uvod">Najlepšie z&nbsp;pivnice</p>
+        <p class="hv-nazov">Frankovka modrá Klenba</p>
+        <p class="hv-popis">2022, výber z&nbsp;hrozna, 14&nbsp;mesiacov v&nbsp;dube</p>
+        <div class="hv-kupa">
+          <span class="cena">18,90&nbsp;€</span>
+          <button class="akcia akcia-linka akcia-mala pridat" type="button" data-pridat="klenba" aria-label="Do košíka: Frankovka modrá Klenba 2022, 18,90 €"><span class="pridat-text">Do košíka</span></button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <link rel="stylesheet" href="css/vinarstvo.css" fetchpriority="low">
+  <section class="kapitola vinohrad svetla" id="vinohrad" aria-labelledby="vinohrad-nadpis">
+    <div class="obal vinohrad-mriezka">
+      <h2 class="nadpis vinohrad-nadpis" id="vinohrad-nadpis">Víno zo <em>žulového</em> svahu</h2>
+      <div class="vinohrad-galeria">
+        <div class="vinohrad-obrazy">
+          <figure class="vinohrad-obluk">
+            <img class="odlozeny" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEAAAAALAAAAAABAAEAAAIBTAA7" data-srcset="img/vinohrad-600.webp 600w, img/vinohrad-900.webp 900w, img/vinohrad-1000.webp 1000w" sizes="(min-width: 900px) min(428px, 34vw), (min-width: 600px) 400px, min(328px, 91vw - 30px)" width="1000" height="1500" decoding="async" alt="Ranná hmla v údolí medzi zalesnenými kopcami, pod ňou terasy viniča v oblúkoch a drevená búda pod topoľmi">
+            <noscript><img src="img/vinohrad-600.webp" srcset="img/vinohrad-600.webp 600w, img/vinohrad-900.webp 900w, img/vinohrad-1000.webp 1000w" sizes="(min-width: 900px) min(428px, 34vw), (min-width: 600px) 400px, min(328px, 91vw - 30px)" width="1000" height="1500" loading="lazy" decoding="async" alt="Ranná hmla v údolí medzi zalesnenými kopcami, pod ňou terasy viniča v oblúkoch a drevená búda pod topoľmi"></noscript>
+          </figure>
+          <figure class="vinohrad-kruh">
+            <img class="odlozeny" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEAAAAALAAAAAABAAEAAAIBTAA7" data-srcset="img/oberacka-600.webp 600w, img/oberacka-1200.webp 1200w" sizes="(min-width: 900px) 207px, (min-width: 600px) 194px, 158px" width="1200" height="1200" decoding="async" alt="Ruka pri strapcoch tmavého hrozna medzi jesenným lístím">
+            <noscript><img src="img/oberacka-600.webp" srcset="img/oberacka-600.webp 600w, img/oberacka-1200.webp 1200w" sizes="(min-width: 900px) 207px, (min-width: 600px) 194px, 158px" width="1200" height="1200" loading="lazy" decoding="async" alt="Ruka pri strapcoch tmavého hrozna medzi jesenným lístím"></noscript>
+          </figure>
+        </div>
+        <p class="vinohrad-popis drobne">Hmla nad terasami viniča. V&nbsp;kruhu tmavé strapce pri oberačke.</p>
+      </div>
+      <div class="vinohrad-text">
+        <p class="uvodna">Nad Svätým Jurom stúpajú vinice až k&nbsp;lesu. Najvyššej z&nbsp;nich sa odjakživa hovorí Strminy: pod tenkou vrstvou hliny je žula, korene idú hlboko a&nbsp;víno má z&nbsp;toho napätie a&nbsp;slanú stopu.</p>
+        <p>Vinárstvo vedú súrodenci Tomáš a&nbsp;Zuzana, tretia generácia rodiny. Strapce zbierame ručne do malých debničiek, biele vína kvasia pomaly v&nbsp;chlade a&nbsp;Frankovka zreje v&nbsp;dubových sudoch v&nbsp;pivnici pod domom.</p>
+        <p>Do pivnice sa vchádza kamenným portálom. Na jeho vrchole je svorník, kameň, ktorý drží celý oblúk, a&nbsp;v&nbsp;ňom vytesaný rok 1786. Podľa neho sa voláme.</p>
+        <dl class="fakty">
+          <div><dt>Vinica</dt><dd>4&nbsp;ha v&nbsp;trati Strminy, 210 až 260&nbsp;m&nbsp;n.&nbsp;m.</dd></div>
+          <div><dt>Odrody</dt><dd>Veltlínske zelené, Rizling rýnsky, Devín, Frankovka modrá</dd></div>
+          <div><dt>Zber</dt><dd>ručne, od septembra do konca októbra</dd></div>
+          <div><dt>Pivnica</dt><dd>klenutá, z&nbsp;roku 1786, celý rok 12&nbsp;°C</dd></div>
+          <div><dt>Ročne</dt><dd>asi 18&nbsp;000&nbsp;fliaš</dd></div>
+        </dl>
+      </div>
+    </div>
+  </section>
+
+  <section class="kapitola vina" id="vina" aria-labelledby="vina-nadpis">
+    <div class="obal">
+      <div class="vina-hlava">
+        <h2 class="nadpis" id="vina-nadpis">Naše <em>vína</em></h2>
+        <p class="uvodna">Šesť vín z&nbsp;jedného svahu. Pošleme ich kuriérom po celom Slovensku alebo si ich vyzdvihnete v&nbsp;pivnici.</p>
+        <p class="ukazka-poznamka"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg><span>Ukážka dizajnu <span class="nw">e-shopu</span>: košík funguje, ale nič sa neobjedná ani nezaplatí. Čo presne k&nbsp;<span class="nw">e-shopu</span> dodáme, napíšeme v&nbsp;ponuke.</span></p>
+      </div>
+
+      <fieldset class="filter" id="filter">
+        <legend>Filtrovať vína podľa farby</legend>
+        <label class="filter-volba"><input type="radio" name="farba" value="vsetky" checked>Všetky <small>6</small></label>
+        <label class="filter-volba"><input type="radio" name="farba" value="biele">Biele <small>3</small></label>
+        <label class="filter-volba"><input type="radio" name="farba" value="ruzove">Ružové <small>1</small></label>
+        <label class="filter-volba"><input type="radio" name="farba" value="cervene">Červené <small>2</small></label>
+        <span class="filter-palec" aria-hidden="true"></span>
+      </fieldset>
+
+      <ul class="vina-zoznam" id="vina-zoznam">
+        <li class="vino" id="vino-veltlin" data-id="veltlin" data-farba="biele" data-nazov="Veltlínske zelené 2025" data-cena="1090">
+          <div class="vyklenok" aria-hidden="true">
+            <svg class="flasa" viewBox="0 0 120 360" focusable="false"><ellipse class="flasa-tien" cx="60" cy="352" rx="36" ry="5" fill="url(#g-tien)"/><g class="flasa-telo"><use href="#flasa-r" style="--sklo:url(#g-zelene);--uzaver:#c9a45f;--uzaver-2:#a8853f;--etiketa:url(#g-etiketa);--znak:#6b1a2e;--linka:#c9a45f"/><text class="et-nazov" x="60" y="287" text-anchor="middle" fill="#1f1c19">VELTLÍN</text><text class="et-rok" x="60" y="310" text-anchor="middle" fill="#5b554e">2025</text></g></svg>
+          </div>
+          <div class="vino-telo">
+            <h3>Veltlínske zelené</h3>
+            <p class="vino-rocnik">2025, suché, 12&nbsp;% obj., 0,75&nbsp;l</p>
+            <p class="vino-chut">Zelené jablko, biele korenie a&nbsp;svieža kyselina.</p>
+            <dl class="profil">
+              <dt>Telo</dt><dd><span class="bodky" style="--n:2" aria-hidden="true"></span><span class="skryte">2 z&nbsp;5</span></dd>
+              <dt>Kyselina</dt><dd><span class="bodky" style="--n:4" aria-hidden="true"></span><span class="skryte">4 z&nbsp;5</span></dd>
+              <dt>Sladkosť</dt><dd><span class="bodky" style="--n:1" aria-hidden="true"></span><span class="skryte">1 z&nbsp;5</span></dd>
+            </dl>
+            <p class="vino-parovanie"><strong>Hodí sa k&nbsp;</strong>pstruhovi na masle, šalátu s&nbsp;kozím syrom aj k&nbsp;rezňu.</p>
+            <div class="vino-kupa">
+              <p class="cena">10,90&nbsp;€<small>za fľašu</small></p>
+              <button class="akcia akcia-svetlo akcia-mala pridat" type="button" data-pridat="veltlin" aria-label="Do košíka: Veltlínske zelené 2025, 10,90 €"><span class="pridat-text">Do košíka</span></button>
+            </div>
+          </div>
+        </li>
+
+        <li class="vino" id="vino-devin" data-id="devin" data-farba="biele" data-nazov="Devín 2025" data-cena="1240">
+          <div class="vyklenok" aria-hidden="true">
+            <svg class="flasa" viewBox="0 0 120 360" focusable="false"><ellipse class="flasa-tien" cx="60" cy="352" rx="36" ry="5" fill="url(#g-tien)"/><g class="flasa-telo"><use href="#flasa-r" style="--sklo:url(#g-olivove);--uzaver:#b9786a;--uzaver-2:#94584c;--etiketa:url(#g-etiketa);--znak:#6b1a2e;--linka:#b9786a"/><text class="et-nazov" x="60" y="287" text-anchor="middle" fill="#1f1c19">DEVÍN</text><text class="et-rok" x="60" y="310" text-anchor="middle" fill="#5b554e">2025</text></g></svg>
+          </div>
+          <div class="vino-telo">
+            <h3>Devín</h3>
+            <p class="vino-rocnik">2025, polosuché, 12,5&nbsp;% obj., 0,75&nbsp;l</p>
+            <p class="vino-chut">Ruža, med a&nbsp;zrelá hruška, jemne sladký koniec.</p>
+            <dl class="profil">
+              <dt>Telo</dt><dd><span class="bodky" style="--n:3" aria-hidden="true"></span><span class="skryte">3 z&nbsp;5</span></dd>
+              <dt>Kyselina</dt><dd><span class="bodky" style="--n:3" aria-hidden="true"></span><span class="skryte">3 z&nbsp;5</span></dd>
+              <dt>Sladkosť</dt><dd><span class="bodky" style="--n:3" aria-hidden="true"></span><span class="skryte">3 z&nbsp;5</span></dd>
+            </dl>
+            <p class="vino-parovanie"><strong>Hodí sa k&nbsp;</strong>pikantnej ázijskej kuchyni, plesňovým syrom a&nbsp;ovocným koláčom.</p>
+            <div class="vino-kupa">
+              <p class="cena">12,40&nbsp;€<small>za fľašu</small></p>
+              <button class="akcia akcia-svetlo akcia-mala pridat" type="button" data-pridat="devin" aria-label="Do košíka: Devín 2025, 12,40 €"><span class="pridat-text">Do košíka</span></button>
+            </div>
+          </div>
+        </li>
+
+        <li class="vino" id="vino-rizling" data-id="rizling" data-farba="biele" data-nazov="Rizling rýnsky 2024" data-cena="1350">
+          <div class="vyklenok" aria-hidden="true">
+            <svg class="flasa" viewBox="0 0 120 360" focusable="false"><ellipse class="flasa-tien" cx="60" cy="352" rx="36" ry="5" fill="url(#g-tien)"/><g class="flasa-telo"><use href="#flasa-r" style="--sklo:url(#g-jantar);--uzaver:#efe8dc;--uzaver-2:#cdbfa8;--etiketa:url(#g-etiketa);--znak:#6b1a2e;--linka:#7a5a1f"/><text class="et-nazov" x="60" y="287" text-anchor="middle" fill="#1f1c19">RIZLING</text><text class="et-rok" x="60" y="310" text-anchor="middle" fill="#5b554e">2024</text></g></svg>
+          </div>
+          <div class="vino-telo">
+            <h3>Rizling rýnsky</h3>
+            <p class="vino-rocnik">2024, suché, 12,5&nbsp;% obj., 0,75&nbsp;l</p>
+            <p class="vino-chut">Broskyňa, lipový kvet a&nbsp;slaný koniec zo žuly.</p>
+            <dl class="profil">
+              <dt>Telo</dt><dd><span class="bodky" style="--n:3" aria-hidden="true"></span><span class="skryte">3 z&nbsp;5</span></dd>
+              <dt>Kyselina</dt><dd><span class="bodky" style="--n:4" aria-hidden="true"></span><span class="skryte">4 z&nbsp;5</span></dd>
+              <dt>Sladkosť</dt><dd><span class="bodky" style="--n:1" aria-hidden="true"></span><span class="skryte">1 z&nbsp;5</span></dd>
+            </dl>
+            <p class="vino-parovanie"><strong>Hodí sa k&nbsp;</strong>pečenému kuraťu s&nbsp;bylinkami, rybe na grile a&nbsp;sushi.</p>
+            <div class="vino-kupa">
+              <p class="cena">13,50&nbsp;€<small>za fľašu</small></p>
+              <button class="akcia akcia-svetlo akcia-mala pridat" type="button" data-pridat="rizling" aria-label="Do košíka: Rizling rýnsky 2024, 13,50 €"><span class="pridat-text">Do košíka</span></button>
+            </div>
+          </div>
+        </li>
+
+        <li class="vino" id="vino-rose" data-id="rose" data-farba="ruzove" data-nazov="Rosé z Frankovky modrej 2025" data-cena="950">
+          <div class="vyklenok" aria-hidden="true">
+            <svg class="flasa" viewBox="0 0 120 360" focusable="false"><ellipse class="flasa-tien" cx="60" cy="352" rx="36" ry="5" fill="url(#g-tien)"/><g class="flasa-telo"><use href="#flasa-r" style="--sklo:url(#g-rose);--uzaver:#9b3a52;--uzaver-2:#7b2a40;--etiketa:url(#g-etiketa-ruzova);--znak:#9b3a52;--linka:#e39f99"/><text class="et-nazov" x="60" y="287" text-anchor="middle" fill="#55131f">ROSÉ</text><text class="et-rok" x="60" y="310" text-anchor="middle" fill="#7b2a40">2025</text></g></svg>
+          </div>
+          <div class="vino-telo">
+            <h3>Rosé z&nbsp;Frankovky modrej</h3>
+            <p class="vino-rocnik">2025, suché, 11,5&nbsp;% obj., 0,75&nbsp;l</p>
+            <p class="vino-chut">Jahoda, malina a&nbsp;šťavnatá kyselina.</p>
+            <dl class="profil">
+              <dt>Telo</dt><dd><span class="bodky" style="--n:2" aria-hidden="true"></span><span class="skryte">2 z&nbsp;5</span></dd>
+              <dt>Kyselina</dt><dd><span class="bodky" style="--n:4" aria-hidden="true"></span><span class="skryte">4 z&nbsp;5</span></dd>
+              <dt>Sladkosť</dt><dd><span class="bodky" style="--n:1" aria-hidden="true"></span><span class="skryte">1 z&nbsp;5</span></dd>
+            </dl>
+            <p class="vino-parovanie"><strong>Hodí sa k&nbsp;</strong>letným šalátom, grilovanej zelenine a&nbsp;lososovi.</p>
+            <div class="vino-kupa">
+              <p class="cena">9,50&nbsp;€<small>za fľašu</small></p>
+              <button class="akcia akcia-svetlo akcia-mala pridat" type="button" data-pridat="rose" aria-label="Do košíka: Rosé z Frankovky modrej 2025, 9,50 €"><span class="pridat-text">Do košíka</span></button>
+            </div>
+          </div>
+        </li>
+
+        <li class="vino" id="vino-frankovka" data-id="frankovka" data-farba="cervene" data-nazov="Frankovka modrá 2023" data-cena="1190">
+          <div class="vyklenok" aria-hidden="true">
+            <svg class="flasa" viewBox="0 0 120 360" focusable="false"><ellipse class="flasa-tien" cx="60" cy="352" rx="40" ry="5" fill="url(#g-tien)"/><g class="flasa-telo"><use href="#flasa-b" style="--sklo:url(#g-tmave);--uzaver:#6b1a2e;--uzaver-2:#4d1220;--etiketa:url(#g-etiketa-vino);--znak:#f4efe7;--linka:#e6b9a2"/><text class="et-nazov" x="60" y="288" text-anchor="middle" fill="#f4efe7" style="font-size:5.7px">FRANKOVKA</text><text class="et-rok" x="60" y="311" text-anchor="middle" fill="#efd9d4">2023</text></g></svg>
+          </div>
+          <div class="vino-telo">
+            <h3>Frankovka modrá</h3>
+            <p class="vino-rocnik">2023, suché, 13&nbsp;% obj., 0,75&nbsp;l</p>
+            <p class="vino-chut">Višňa, čierne korenie a&nbsp;jemné triesloviny.</p>
+            <dl class="profil">
+              <dt>Telo</dt><dd><span class="bodky" style="--n:3" aria-hidden="true"></span><span class="skryte">3 z&nbsp;5</span></dd>
+              <dt>Kyselina</dt><dd><span class="bodky" style="--n:3" aria-hidden="true"></span><span class="skryte">3 z&nbsp;5</span></dd>
+              <dt>Sladkosť</dt><dd><span class="bodky" style="--n:1" aria-hidden="true"></span><span class="skryte">1 z&nbsp;5</span></dd>
+            </dl>
+            <p class="vino-parovanie"><strong>Hodí sa k&nbsp;</strong>pečenej kačke s&nbsp;červenou kapustou a&nbsp;hovädziemu gulášu.</p>
+            <div class="vino-kupa">
+              <p class="cena">11,90&nbsp;€<small>za fľašu</small></p>
+              <button class="akcia akcia-svetlo akcia-mala pridat" type="button" data-pridat="frankovka" aria-label="Do košíka: Frankovka modrá 2023, 11,90 €"><span class="pridat-text">Do košíka</span></button>
+            </div>
+          </div>
+        </li>
+
+        <li class="vino" id="vino-klenba" data-id="klenba" data-farba="cervene" data-nazov="Frankovka modrá Klenba 2022" data-cena="1890">
+          <div class="vyklenok" aria-hidden="true">
+            <svg class="flasa" viewBox="0 0 120 360" focusable="false"><ellipse class="flasa-tien" cx="60" cy="352" rx="40" ry="5" fill="url(#g-tien)"/><g class="flasa-telo"><use href="#flasa-b" style="--sklo:url(#g-tmave);--uzaver:#eaa54a;--uzaver-2:#b07a2e;--etiketa:url(#g-etiketa-noc);--okraj-etikety:#eaa54a;--znak:#eaa54a;--linka:#eaa54a"/><text class="et-nazov" x="60" y="288" text-anchor="middle" fill="#f5bd6a">KLENBA</text><text class="et-rok" x="60" y="311" text-anchor="middle" fill="#d9d1c4">2022</text></g></svg>
+          </div>
+          <div class="vino-telo">
+            <h3>Frankovka modrá Klenba</h3>
+            <p class="vino-rocnik">2022, výber z&nbsp;hrozna, suché, 13,5&nbsp;% obj., 14&nbsp;mesiacov v&nbsp;dubovom sude</p>
+            <p class="vino-chut">Slivka, horká čokoláda a&nbsp;vanilka z&nbsp;dubu.</p>
+            <dl class="profil">
+              <dt>Telo</dt><dd><span class="bodky" style="--n:5" aria-hidden="true"></span><span class="skryte">5 z&nbsp;5</span></dd>
+              <dt>Kyselina</dt><dd><span class="bodky" style="--n:3" aria-hidden="true"></span><span class="skryte">3 z&nbsp;5</span></dd>
+              <dt>Sladkosť</dt><dd><span class="bodky" style="--n:1" aria-hidden="true"></span><span class="skryte">1 z&nbsp;5</span></dd>
+            </dl>
+            <p class="vino-parovanie"><strong>Hodí sa k&nbsp;</strong>diviakovi, hovädzím líčkam a&nbsp;zrelým syrom.</p>
+            <div class="vino-kupa">
+              <p class="cena">18,90&nbsp;€<small>za fľašu</small></p>
+              <button class="akcia akcia-svetlo akcia-mala pridat" type="button" data-pridat="klenba" aria-label="Do košíka: Frankovka modrá Klenba 2022, 18,90 €"><span class="pridat-text">Do košíka</span></button>
+            </div>
+          </div>
+        </li>
+      </ul>
+      <p class="vina-pozn drobne">Ceny sú s&nbsp;DPH za fľašu 0,75&nbsp;l. Víno predávame len osobám starším ako 18&nbsp;rokov. Kuriér po Slovensku stojí 5,90&nbsp;€, osobný odber v&nbsp;pivnici je zadarmo.</p>
+    </div>
+  </section>
+
+  <section class="kapitola degustacie svetla" id="degustacie" aria-labelledby="degustacie-nadpis">
+    <div class="okno-pivnice">
+      <figure class="okno-pivnice-obraz">
+        <img src="img/pivnica-1600.webp" srcset="img/pivnica-800.webp 800w, img/pivnica-1200.webp 1200w, img/pivnica-1600.webp 1600w, img/pivnica-2400.webp 2400w" sizes="(min-width: 1336px) 1240px, (min-width: 900px) calc(100vw - 8vw), (min-width: 600px) calc((100vw - 8vw) * 1.125), calc((100vw - 32px) * 1.5)" width="2400" height="1200" loading="lazy" decoding="async" fetchpriority="low" alt="Klenutá pivnica so stenami dubových sudov naukladaných na sebe, svetlo zo stropu v tmavej chodbe">
+      </figure>
+      <figure class="okno-pivnice-kruh">
+        <img src="img/degustacia-600.webp" srcset="img/degustacia-600.webp 600w, img/degustacia-1200.webp 1200w" sizes="(min-width: 1150px) 230px, 20vw" width="1200" height="1500" loading="lazy" decoding="async" fetchpriority="low" alt="Dva poháre červeného vína na drevenej stoličke, za nimi svetlo z okna na stene">
+      </figure>
+    </div>
+    <div class="obal degustacie-mriezka">
+      <div class="degustacie-text">
+        <h2 class="nadpis" id="degustacie-nadpis">Degustácie v&nbsp;<em>pivnici</em></h2>
+        <p class="uvodna">Pivnica pod domom je klenutá a&nbsp;celý rok má 12&nbsp;°C. Nalejeme vám zo sudov aj z&nbsp;fliaš a&nbsp;povieme, prečo každé víno chutí tak, ako chutí.</p>
+        <dl class="ponuka">
+          <div><dt>Ochutnávka v&nbsp;pivnici</dt><dd>6&nbsp;vín, prehliadka pivnice, asi hodina</dd><dd class="ponuka-cena">25&nbsp;€<small>za osobu</small></dd></div>
+          <div><dt>Pivničná degustácia</dt><dd>8&nbsp;vín, prehliadka a&nbsp;domáca doska so syrom, šunkou a&nbsp;chlebom, asi 2&nbsp;hodiny</dd><dd class="ponuka-cena">35&nbsp;€<small>za osobu</small></dd></div>
+          <div><dt>Skupiny nad 12&nbsp;osôb a&nbsp;firmy</dt><dd>Termín a&nbsp;ponuku pošleme e-mailom do dvoch dní.</dd><dd class="ponuka-cena">na mieru</dd></div>
+        </dl>
+        <div class="prakticke">
+          <p><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg><span>Piatok o&nbsp;17:00, sobota o&nbsp;14:00 a&nbsp;o&nbsp;17:00. V&nbsp;januári len pre skupiny na objednávku, od 24. do 26.&nbsp;decembra zatvorené.</span></p>
+          <p><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="6" width="17" height="12" rx="2"/><path d="M3.5 10h17M7 14.5h4"/></svg><span>Platíte na mieste kartou alebo v&nbsp;hotovosti.</span></p>
+          <p><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3.5h10l-1.5 7a3.5 3.5 0 0 1-7 0z"/><path d="M12 14v6M8.5 20.5h7"/></svg><span>Šoférom a&nbsp;deťom nalejeme hroznový mušt z&nbsp;našej vinice.</span></p>
+        </div>
+      </div>
+
+      <form class="rezervacia" id="rezervacia" novalidate aria-labelledby="rezervacia-nadpis">
+        <h3 id="rezervacia-nadpis">Rezervácia degustácie</h3>
+        <p class="rezervacia-popis">Vyberte degustáciu a&nbsp;termín, potvrdenie príde e-mailom.</p>
+        <fieldset class="volba">
+          <legend>Degustácia</legend>
+          <div class="volba-zoznam">
+            <label class="volba-polozka"><input type="radio" name="typ" value="ochutnavka" data-cena="25" data-nazov="Ochutnávka v pivnici" checked><span class="volba-nazov">Ochutnávka v&nbsp;pivnici</span><span class="volba-popis">6&nbsp;vín a&nbsp;prehliadka, asi hodina</span><span class="volba-cena">25&nbsp;€ za osobu</span></label>
+            <label class="volba-polozka"><input type="radio" name="typ" value="pivnicna" data-cena="35" data-nazov="Pivničná degustácia"><span class="volba-nazov">Pivničná degustácia</span><span class="volba-popis">8&nbsp;vín, prehliadka a&nbsp;domáca doska, asi 2&nbsp;hodiny</span><span class="volba-cena">35&nbsp;€ za osobu</span></label>
+          </div>
+        </fieldset>
+        <div class="pole-dvojica">
+          <div class="pole">
+            <label for="termin">Termín</label>
+            <select id="termin" name="termin" required aria-describedby="chyba-termin">
+              <option value="">Vyberte termín</option>
+              <option value="piatok">najbližší piatok o&nbsp;17:00</option>
+              <option value="sobota-14">najbližšia sobota o&nbsp;14:00</option>
+              <option value="sobota-17">najbližšia sobota o&nbsp;17:00</option>
+              <option value="iny">iný termín, napíšem do poznámky</option>
+            </select>
+            <p class="chyba" id="chyba-termin" hidden>Vyberte termín zo zoznamu alebo „iný termín“.</p>
+          </div>
+          <div class="pole">
+            <label for="osoby">Počet osôb</label>
+            <div class="krokovac">
+              <button type="button" data-osoby="-1" aria-label="Menej osôb"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 12h12"/></svg></button>
+              <input id="osoby" name="osoby" type="number" inputmode="numeric" min="1" max="12" value="2">
+              <button type="button" data-osoby="1" aria-label="Viac osôb"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 12h12M12 6v12"/></svg></button>
+            </div>
+          </div>
+        </div>
+        <div class="pole">
+          <label for="meno-hosta">Meno a&nbsp;priezvisko</label>
+          <input id="meno-hosta" name="meno" type="text" autocomplete="name" required aria-describedby="chyba-meno">
+          <p class="chyba" id="chyba-meno" hidden>Napíšte meno, nech vieme, na koho rezerváciu zapíšeme.</p>
+        </div>
+        <div class="pole">
+          <label for="email-hosta">E-mail</label>
+          <input id="email-hosta" name="email" type="email" autocomplete="email" inputmode="email" required aria-describedby="chyba-email">
+          <p class="chyba" id="chyba-email" hidden>Napíšte e-mail v&nbsp;tvare meno@domena.sk, pošleme naň potvrdenie.</p>
+        </div>
+        <div class="pole">
+          <label for="telefon-hosta">Telefón <span>(nepovinné)</span></label>
+          <input id="telefon-hosta" name="telefon" type="tel" autocomplete="tel" inputmode="tel">
+        </div>
+        <div class="pole">
+          <label for="poznamka">Poznámka <span>(nepovinné)</span></label>
+          <textarea id="poznamka" name="poznamka" rows="3" placeholder="Oslava, alergie, šofér, ktorý nepije…"></textarea>
+        </div>
+        <div class="suhrn" aria-live="polite">
+          <span class="suhrn-text" id="suhrn-text">2&nbsp;osoby po 25&nbsp;€, platíte na mieste</span>
+          <strong id="suhrn-cena">50&nbsp;€</strong>
+        </div>
+        <button class="akcia akcia-vino" type="submit">Rezervovať degustáciu</button>
+        <p class="ukazka-poznamka"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg><span>Ukážka: formulár nič neodošle ani neuloží.</span></p>
+      </form>
+    </div>
+  </section>
+
+  <section class="kapitola rok" id="rok" aria-labelledby="rok-nadpis">
+    <div class="obal rok-mriezka">
+      <div class="rok-text">
+        <h2 class="nadpis" id="rok-nadpis">Vinársky <em>rok</em></h2>
+        <p class="uvodna">Kedy sa vinič strihá, kedy kvitne a&nbsp;kedy sa zbiera. A&nbsp;kedy je pivnica otvorená aj bez rezervácie.</p>
+      </div>
+      <div class="rok-kruh">
+        <div class="kruh" id="kruh">
+          <svg class="kruh-svg" viewBox="0 0 400 400" aria-hidden="true" focusable="false">
+            <circle class="ram" cx="200" cy="200" r="196"/>
+            <circle class="ryhy-male" cx="200" cy="200" r="192" stroke-dasharray="1 19.106" transform="rotate(-90.15 200 200)"/>
+            <circle class="ryhy" cx="200" cy="200" r="190" stroke-dasharray="1.6 97.884" transform="rotate(-90.24 200 200)"/>
+            <circle class="vnutro" cx="200" cy="200" r="82"/>
+            <path class="oblk-degustacie" d="M256.00 103.01A112 112 0 1 1 199.98 88.00"/>
+            <path class="oblk-odpociva" d="M200.00 88.00A112 112 0 0 1 256.00 103.01"/>
+            <path class="oblk-oberacka" d="M103.01 256.00A112 112 0 0 1 103.01 144.00"/>
+            <circle class="bod-pivnice" cx="279.2" cy="279.2" r="7"/>
+            <circle class="bod-pivnice" cx="120.8" cy="120.8" r="7"/>
+            <g class="rucicka"><line x1="200" y1="116" x2="200" y2="106"/><path class="hrot" d="M196.6 92.5h6.8l-1.3 8h-4.2z"/></g>
+          </svg>
+          <div class="kruh-stred" aria-hidden="true">
+            <span class="kruh-stred-teraz" id="kruh-teraz"></span>
+            <span class="kruh-stred-mesiac" id="kruh-mesiac">November</span>
+            <span class="kruh-stred-titul" id="kruh-titul">Mladé víno</span>
+          </div>
+          <div role="group" aria-label="Mesiace vinárskeho roka">
+            <button class="kruh-mesiac" type="button" style="--a:15deg" data-m="1" aria-controls="m-1" aria-pressed="false"><span aria-hidden="true">I</span><span class="skryte kruh-meno">Január</span></button>
+            <button class="kruh-mesiac" type="button" style="--a:45deg" data-m="2" aria-controls="m-2" aria-pressed="false"><span aria-hidden="true">II</span><span class="skryte kruh-meno">Február</span></button>
+            <button class="kruh-mesiac" type="button" style="--a:75deg" data-m="3" aria-controls="m-3" aria-pressed="false"><span aria-hidden="true">III</span><span class="skryte kruh-meno">Marec</span></button>
+            <button class="kruh-mesiac" type="button" style="--a:105deg" data-m="4" aria-controls="m-4" aria-pressed="false"><span aria-hidden="true">IV</span><span class="skryte kruh-meno">Apríl</span></button>
+            <button class="kruh-mesiac" type="button" style="--a:135deg" data-m="5" aria-controls="m-5" aria-pressed="false"><span aria-hidden="true">V</span><span class="skryte kruh-meno">Máj</span></button>
+            <button class="kruh-mesiac" type="button" style="--a:165deg" data-m="6" aria-controls="m-6" aria-pressed="false"><span aria-hidden="true">VI</span><span class="skryte kruh-meno">Jún</span></button>
+            <button class="kruh-mesiac" type="button" style="--a:195deg" data-m="7" aria-controls="m-7" aria-pressed="false"><span aria-hidden="true">VII</span><span class="skryte kruh-meno">Júl</span></button>
+            <button class="kruh-mesiac" type="button" style="--a:225deg" data-m="8" aria-controls="m-8" aria-pressed="false"><span aria-hidden="true">VIII</span><span class="skryte kruh-meno">August</span></button>
+            <button class="kruh-mesiac" type="button" style="--a:255deg" data-m="9" aria-controls="m-9" aria-pressed="false"><span aria-hidden="true">IX</span><span class="skryte kruh-meno">September</span></button>
+            <button class="kruh-mesiac" type="button" style="--a:285deg" data-m="10" aria-controls="m-10" aria-pressed="false"><span aria-hidden="true">X</span><span class="skryte kruh-meno">Október</span></button>
+            <button class="kruh-mesiac" type="button" style="--a:315deg" data-m="11" aria-controls="m-11" aria-pressed="false"><span aria-hidden="true">XI</span><span class="skryte kruh-meno">November</span></button>
+            <button class="kruh-mesiac" type="button" style="--a:345deg" data-m="12" aria-controls="m-12" aria-pressed="false"><span aria-hidden="true">XII</span><span class="skryte kruh-meno">December</span></button>
+          </div>
+        </div>
+        <ul class="legenda">
+          <li><svg width="28" height="10" viewBox="0 0 28 10" aria-hidden="true"><path d="M3 5h22" stroke="#eaa54a" stroke-width="7" stroke-linecap="round"/></svg>Oberačka</li>
+          <li><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="5.5" fill="#f4efe7" stroke="#eaa54a" stroke-width="2"/></svg>Otvorené pivnice</li>
+          <li><svg width="28" height="10" viewBox="0 0 28 10" aria-hidden="true"><path d="M2 5h24" stroke="#eaa54a" stroke-opacity=".6" stroke-width="2"/></svg>Degustácie v&nbsp;piatok a&nbsp;v&nbsp;sobotu</li>
+        </ul>
+      </div>
+      <ol class="mesiace" id="mesiace">
+          <li class="mesiac" id="m-1" data-m="1"><h3>Január</h3><p class="mesiac-titul">Pivnica odpočíva</p><p>Vo vinici začína zimný rez. Frankovka zreje v&nbsp;sudoch, degustácie robíme len pre skupiny na objednávku.</p><ul class="znacky"><li class="zn-tiche">Len na objednávku</li></ul></li>
+          <li class="mesiac" id="m-2" data-m="2"><h3>Február</h3><p class="mesiac-titul">Zimný rez</p><p>Každý ker strihá ruka zvlášť, podľa toho, koľko hrozna má o&nbsp;rok uniesť. Degustácie sú znova v&nbsp;piatok a&nbsp;v&nbsp;sobotu.</p><ul class="znacky"><li>Degustácie</li></ul></li>
+          <li class="mesiac" id="m-3" data-m="3"><h3>Marec</h3><p class="mesiac-titul">Vinič plače</p><p>Keď sa oteplí, z&nbsp;čerstvých rezov kvapká miazga. V&nbsp;pivnici plníme do fliaš prvé biele vína z&nbsp;minulej jesene.</p><ul class="znacky"><li>Degustácie</li></ul></li>
+          <li class="mesiac" id="m-4" data-m="4"><h3>Apríl</h3><p class="mesiac-titul">Pučanie</p><p>Z&nbsp;očiek sa tlačia prvé lístky. Na dvore otvárame letnú vinotéku a&nbsp;v&nbsp;sobotu nalievame aj vonku.</p><ul class="znacky"><li>Degustácie</li></ul></li>
+          <li class="mesiac" id="m-5" data-m="5"><h3>Máj</h3><p class="mesiac-titul">Otvorené pivnice</p><p>Víkend, keď je naša pivnica otvorená bez rezervácie. Mladé vína z&nbsp;minulej jesene ochutnáte priamo zo sudov.</p><ul class="znacky"><li class="zn-pivnice">Otvorené pivnice</li><li>Degustácie</li></ul></li>
+          <li class="mesiac" id="m-6" data-m="6"><h3>Jún</h3><p class="mesiac-titul">Kvitnutie</p><p>Vinič kvitne a&nbsp;celý svah vonia ako lipa. Vylamujeme a&nbsp;viažeme letorasty, aby mal každý strapec miesto.</p><ul class="znacky"><li>Degustácie</li></ul></li>
+          <li class="mesiac" id="m-7" data-m="7"><h3>Júl</h3><p class="mesiac-titul">Zelené práce</p><p>Odlisťujeme okolo strapcov, aby mali vzduch a&nbsp;ranné slnko. Piatkové degustácie sú pod orechom na dvore.</p><ul class="znacky"><li>Degustácie</li></ul></li>
+          <li class="mesiac" id="m-8" data-m="8"><h3>August</h3><p class="mesiac-titul">Mäknutie bobúľ</p><p>Bobule mäknú a&nbsp;Frankovka sa farbí do modra. Čistíme lis a&nbsp;pripravujeme sudy na oberačku.</p><ul class="znacky"><li>Degustácie</li></ul></li>
+          <li class="mesiac" id="m-9" data-m="9"><h3>September</h3><p class="mesiac-titul">Prvé strapce</p><p>Ručne zbierame skoré odrody, ako je Devín. V&nbsp;pivnici kvasí burčiak a&nbsp;ochutnáte ho aj u&nbsp;nás.</p><ul class="znacky"><li class="zn-oberacka">Oberačka</li><li>Burčiak</li><li>Degustácie</li></ul></li>
+          <li class="mesiac" id="m-10" data-m="10"><h3>Október</h3><p class="mesiac-titul">Oberačka</p><p>Oberáme Rizling rýnsky a&nbsp;Frankovku modrú. Zber trvá podľa počasia dva až tri týždne, strapce idú z&nbsp;vinice rovno do lisu.</p><ul class="znacky"><li class="zn-oberacka">Oberačka</li><li>Degustácie</li></ul></li>
+          <li class="mesiac vybrany" id="m-11" data-m="11"><h3>November</h3><p class="mesiac-titul">Mladé víno</p><p>Okolo svätého Martina ochutnáte prvé mladé víno. V&nbsp;druhej polovici novembra je pivnica celý víkend otvorená bez rezervácie.</p><ul class="znacky"><li class="zn-pivnice">Otvorené pivnice</li><li>Mladé víno</li><li>Degustácie</li></ul></li>
+          <li class="mesiac" id="m-12" data-m="12"><h3>December</h3><p class="mesiac-titul">Víno pod stromček</p><p>Kartóny šiestich fliaš na darček. Objednáte ich v&nbsp;<span class="nw">e-shope</span> a&nbsp;v&nbsp;pivnici si ich vyzdvihnete až do 23.&nbsp;decembra, od 24. do 26.&nbsp;decembra je zatvorené.</p><ul class="znacky"><li>E-shop</li><li>Degustácie</li></ul></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="kapitola kontakt svetla" id="kontakt" aria-labelledby="kontakt-nadpis">
+    <div class="obal">
+      <h2 class="nadpis" id="kontakt-nadpis">Kde nás <em>nájdete</em></h2>
+      <div class="kontakt-mriezka">
+        <figure class="mapa">
+          <svg viewBox="0 0 640 600" role="img" aria-labelledby="mapa-titul mapa-opis" focusable="false">
+            <title id="mapa-titul">Ilustračná mapa Svätého Jura</title>
+            <desc id="mapa-opis">Nad mestom sú zalesnené Malé Karpaty, medzi lesom a mestom pás viníc. Vinárstvo Svorník je na hornom okraji mesta pri viniciach, na konci Lisovej ulice. Hlavná cesta vedie na juhozápad do Bratislavy a na severovýchod do Pezinka, pod mestom je železničná trať so zastávkou.</desc>
+            <rect width="640" height="600" fill="#ece8e0"/>
+            <path d="M0 0H470C430 60 390 100 340 130C290 160 240 168 196 198C150 230 104 246 60 280C36 298 18 308 0 316Z" fill="#d9ddce"/>
+            <path d="M0 0H470C430 60 390 100 340 130C290 160 240 168 196 198C150 230 104 246 60 280C36 298 18 308 0 316Z" fill="url(#p-les)" opacity=".75"/>
+            <g fill="none" stroke="#c3c8b4" stroke-width="1.4">
+              <path d="M0 58C76 46 140 76 214 56S344 14 410 0"/>
+              <path d="M0 114C82 104 152 132 232 110S356 66 436 22"/>
+              <path d="M0 172C86 166 158 190 240 162S348 118 412 84"/>
+              <path d="M0 236C66 230 116 244 174 224S262 182 318 156"/>
+              <path d="M128 30c30-12 68-8 86 10s-8 38-44 38-64-32-42-48z"/>
+            </g>
+            <path d="M0 316C18 308 36 298 60 280C104 246 150 230 196 198C240 168 290 160 340 130C390 100 430 60 470 0H604C570 72 518 128 458 172C402 214 342 240 284 272C224 304 160 328 106 364C70 388 32 406 0 418Z" fill="#e6e0cd"/>
+            <path d="M0 316C18 308 36 298 60 280C104 246 150 230 196 198C240 168 290 160 340 130C390 100 430 60 470 0H604C570 72 518 128 458 172C402 214 342 240 284 272C224 304 160 328 106 364C70 388 32 406 0 418Z" fill="url(#p-riadky)"/>
+            <g fill="#ddd7ca">
+              <rect x="150" y="372" width="58" height="34" rx="6"/><rect x="222" y="338" width="62" height="36" rx="6"/>
+              <rect x="96" y="486" width="64" height="34" rx="6"/><rect x="182" y="456" width="66" height="36" rx="6"/><rect x="270" y="426" width="64" height="36" rx="6"/>
+              <rect x="356" y="396" width="62" height="36" rx="6"/><rect x="432" y="378" width="60" height="40" rx="6"/><rect x="512" y="330" width="60" height="34" rx="6"/><rect x="588" y="290" width="46" height="32" rx="6"/>
+            </g>
+            <path d="M0 598C190 548 380 498 640 376" fill="none" stroke="#8d877d" stroke-width="3.5"/>
+            <path d="M0 598C190 548 380 498 640 376" fill="none" stroke="#ece8e0" stroke-width="2" stroke-dasharray="9 9"/>
+            <path d="M-10 512C130 462 262 414 374 362S562 252 650 206" fill="none" stroke="#d3ccbe" stroke-width="24"/>
+            <path d="M-10 512C130 462 262 414 374 362S562 252 650 206" fill="none" stroke="#fbfaf6" stroke-width="17"/>
+            <path d="M302 400C296 372 300 344 316 324" fill="none" stroke="#d3ccbe" stroke-width="13"/>
+            <path d="M302 400C296 372 300 344 316 324" fill="none" stroke="#fbfaf6" stroke-width="9"/>
+            <g transform="translate(462 398)">
+              <path d="M0-18V-2M-6-12H6" stroke="#5b554e" stroke-width="2.4"/>
+              <rect x="-8" y="-2" width="16" height="13" rx="2" fill="#5b554e"/>
+            </g>
+            <g transform="translate(556 414)">
+              <rect x="-17" y="-11" width="34" height="22" rx="5" fill="#24211f"/>
+              <path d="M-8-5h16v9h-16zM-6 7l-2 3M6 7l2 3" fill="none" stroke="#f4efe7" stroke-width="1.6"/>
+            </g>
+            <g class="mapa-popisky" font-family="Svornik Text, Arial, sans-serif" font-size="25" font-weight="500" fill="#3b3632" stroke="#ece8e0" stroke-width="6" stroke-linejoin="round" paint-order="stroke">
+              <text x="484" y="404">kostol</text>
+              <text x="630" y="470" text-anchor="end">zastávka vlaku</text>
+              <text x="12" y="478" transform="rotate(-19 12 478)">do Bratislavy</text>
+              <text x="630" y="196" text-anchor="end" transform="rotate(-27 630 196)">do Pezinka</text>
+              <text x="436" y="122" transform="rotate(-34 436 122)" letter-spacing="3">vinice</text>
+            </g>
+            <text x="44" y="168" font-family="Svornik Nadpis, Times New Roman, serif" font-size="42" letter-spacing="1" fill="#3b3632" stroke="#d9ddce" stroke-width="6" stroke-linejoin="round" paint-order="stroke" transform="rotate(-12 44 168)">Malé Karpaty</text>
+            <text x="620" y="576" text-anchor="end" font-family="Svornik Nadpis, Times New Roman, serif" font-size="50" letter-spacing="1" fill="#1f1c19">Svätý Jur</text>
+            <g transform="translate(316 324)">
+              <ellipse cx="0" cy="3" rx="15" ry="5" fill="#1f1c19" opacity=".22"/>
+              <path d="M0 2C-7-14-23-23-23-41A23 23 0 0 1 23-41C23-23 7-14 0 2Z" fill="#6b1a2e" stroke="#1f1c19" stroke-width="2"/>
+              <path d="M-8.5-30v-9a8.5 8.5 0 0 1 17 0v9" fill="none" stroke="#f4efe7" stroke-width="2.4"/>
+              <path d="M-3.4-56.5h6.8l-1.3 6.5h-4.2z" fill="#eaa54a"/>
+            </g>
+            <g transform="translate(76 236)">
+              <rect width="210" height="80" rx="12" fill="#24211f"/>
+              <path d="M209 29l13 11-13 11z" fill="#24211f"/>
+              <text x="18" y="35" font-family="Svornik Nadpis, Times New Roman, serif" font-size="30" letter-spacing="3" fill="#f5bd6a">SVORNÍK</text>
+              <text x="18" y="64" font-family="Svornik Text, Arial, sans-serif" font-size="24" fill="#f4efe7">Lisová 9</text>
+            </g>
+            <g transform="translate(604 46)" fill="#3b3632">
+              <path d="M0-18L8 7 0 1-8 7Z"/>
+              <text x="0" y="32" text-anchor="middle" font-family="Svornik Text, Arial, sans-serif" font-size="27" font-weight="600">S</text>
+            </g>
+          </svg>
+          <figcaption>Mapa je ilustračná, nie v&nbsp;mierke. Navigovať otvorí mapy len s&nbsp;mestom Svätý Jur, ulica Lisová je vymyslená.</figcaption>
+        </figure>
+
+        <div>
+          <address class="adresa"><strong>Lisová 9</strong>900&nbsp;21 Svätý Jur</address>
+          <p class="cesta">Pivnica je v&nbsp;dvore, vchod bránou z&nbsp;Lisovej ulice. Z&nbsp;Bratislavy prídete autom alebo vlakom na zastávku Svätý Jur, parkovať môžete pred domom.</p>
+          <p class="stav-vinoteky" id="stav-vinoteky" hidden><span class="stav-bod" aria-hidden="true"></span><span class="stav-vinoteky-text"></span></p>
+          <table class="hodiny">
+            <caption>Vinotéka a&nbsp;predaj</caption>
+            <tbody>
+              <tr data-den="1"><th scope="row">Pondelok<span class="znacka-dnes" hidden>dnes</span></th><td class="zatvorene">zatvorené</td></tr>
+              <tr data-den="2"><th scope="row">Utorok<span class="znacka-dnes" hidden>dnes</span></th><td class="zatvorene">zatvorené</td></tr>
+              <tr data-den="3"><th scope="row">Streda<span class="znacka-dnes" hidden>dnes</span></th><td class="zatvorene">zatvorené</td></tr>
+              <tr data-den="4" data-od="14:00" data-do="19:00"><th scope="row">Štvrtok<span class="znacka-dnes" hidden>dnes</span></th><td>14:00 až 19:00</td></tr>
+              <tr data-den="5" data-od="14:00" data-do="19:00"><th scope="row">Piatok<span class="znacka-dnes" hidden>dnes</span></th><td>14:00 až 19:00</td></tr>
+              <tr data-den="6" data-od="10:00" data-do="18:00"><th scope="row">Sobota<span class="znacka-dnes" hidden>dnes</span></th><td>10:00 až 18:00</td></tr>
+              <tr data-den="0"><th scope="row">Nedeľa<span class="znacka-dnes" hidden>dnes</span></th><td class="zatvorene">zatvorené</td></tr>
+            </tbody>
+          </table>
+          <p class="hodiny-pozn">V&nbsp;januári a&nbsp;od 24. do 26.&nbsp;decembra je vinotéka zatvorená, víno vám pošleme kuriérom.</p>
+          <div class="spojenie">
+            <span>Telefón: <strong>0900 XXX XXX</strong> (vymyslené číslo)</span>
+            <a href="mailto:degustacie@svornik.example">degustacie@svornik.example</a>
+          </div>
+          <div class="kontakt-akcie">
+            <a class="akcia akcia-vino" href="https://www.google.com/maps/search/?api=1&amp;query=Sv%C3%A4t%C3%BD%20Jur" target="_blank" rel="noopener">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 11 20.5 3.5 13 20.5l-2-7.5z"/></svg>
+              Navigovať
+            </a>
+            <a class="akcia akcia-linka-tmava" href="#rezervacia">Rezervovať degustáciu</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="pata">
+  <div class="obal pata-mriezka">
+    <div>
+      <p class="pata-znak"><svg width="32" height="32" viewBox="0 0 36 36" aria-hidden="true" focusable="false"><use href="#znak"/></svg>Vinárstvo Svorník</p>
+      <p>Lisová 9, 900&nbsp;21 Svätý Jur. IČO 00&nbsp;000&nbsp;000.</p>
+      <p class="drobne">Toto je ukážka webu od ARLing. Vinárstvo, ľudia, adresa, IČO, telefón, e-mail aj vína sú vymyslené. Fotky sú z&nbsp;Pexels pod licenciou Pexels a&nbsp;nezobrazujú vymyslené vinárstvo; portál, dvere, fľaše a&nbsp;mapa sú kreslené pre túto ukážku. Ceny vín a&nbsp;degustácií sú orientačné podľa malokarpatských vinárstiev v&nbsp;novembri 2026.</p>
+    </div>
+    <div class="pata-arling">
+      <p class="pata-otazka">Páči sa vám tento web?</p>
+      <a class="akcia akcia-svetlo akcia-mala" href="https://arling.sk/web/?z=vinarstvo" target="_top">Chcem taký web</a>
+      <a class="pata-spat" href="../../index.html#ukazky" target="_top">Späť na ukážky webov od ARLing</a>
+    </div>
+  </div>
+</footer>
+
+<nav class="lista" aria-label="Rýchle akcie">
+  <a class="akcia akcia-svetlo" href="#rezervacia">Rezervovať degustáciu</a>
+  <button class="kosik-tlacidlo" type="button" data-otvor-kosik>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 8h13l-1.2 12.2a1 1 0 0 1-1 .8H7.7a1 1 0 0 1-1-.8z"/><path d="M9 10.5V7a3 3 0 0 1 6 0v3.5"/></svg>
+    <span class="skryte">Košík</span>
+    <span class="kosik-pocet" data-prazdny aria-hidden="true"><span>0</span></span>
+    <span class="skryte kosik-stav">, prázdny</span>
+  </button>
+</nav>
+
+<dialog class="menu-zasuvka" id="menu-zasuvka" aria-labelledby="menu-nadpis">
+  <div class="menu-zasuvka-hlava">
+    <p class="menu-nadpis" id="menu-nadpis">Menu</p>
+    <button class="zavriet" type="button" data-zavriet aria-label="Zavrieť menu"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+  </div>
+  <nav aria-label="Menu stránky">
+    <ul class="menu-zoznam">
+      <li><a href="#vina" data-kotva>Vína</a></li>
+      <li><a href="#degustacie" data-kotva>Degustácie</a></li>
+      <li><a href="#rok" data-kotva>Vinársky rok</a></li>
+      <li><a href="#kontakt" data-kotva>Kontakt</a></li>
+    </ul>
+  </nav>
+  <div class="menu-zasuvka-paticka">
+    <a class="akcia akcia-svetlo" href="#rezervacia" data-kotva>Rezervovať degustáciu</a>
+    <p>Lisová 9, Svätý Jur. Vinotéka vo štvrtok a&nbsp;v&nbsp;piatok od 14:00 do 19:00, v&nbsp;sobotu od 10:00 do 18:00.</p>
+  </div>
+</dialog>
+
+<dialog class="zasuvka svetla" id="kosik" aria-labelledby="kosik-nadpis">
+  <div class="zasuvka-hlava">
+    <h2 id="kosik-nadpis">Košík</h2>
+    <button class="zavriet" type="button" data-zavriet aria-label="Zavrieť košík"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+  </div>
+  <div class="zasuvka-telo">
+    <p class="ukazka-poznamka"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg><span>Ukážka košíka: nič sa neobjedná ani nezaplatí.</span></p>
+    <div class="kosik-prazdny" id="kosik-prazdny">
+      <p>Košík je zatiaľ prázdny.</p>
+      <a class="akcia akcia-linka-tmava akcia-mala" href="#vina" data-zavriet>Vybrať víno</a>
+    </div>
+    <ul class="kosik-polozky" id="kosik-polozky"></ul>
+    <fieldset class="doprava" id="doprava">
+      <legend>Doručenie</legend>
+      <label><input type="radio" name="doprava" value="odber" checked><span class="doprava-nazov">Osobný odber v&nbsp;pivnici</span><span>zadarmo</span></label>
+      <label><input type="radio" name="doprava" value="kurier"><span class="doprava-nazov">Kuriér po Slovensku</span><span>5,90&nbsp;€</span></label>
+    </fieldset>
+  </div>
+  <div class="zasuvka-paticka">
+    <dl class="sumy">
+      <div><dt>Vína</dt><dd id="suma-vina">0,00&nbsp;€</dd></div>
+      <div><dt>Doručenie</dt><dd id="suma-doprava">zadarmo</dd></div>
+      <div class="spolu"><dt>Spolu s&nbsp;DPH</dt><dd id="suma-spolu">0,00&nbsp;€</dd></div>
+    </dl>
+    <p class="vek">Víno predávame len osobám starším ako 18&nbsp;rokov.</p>
+    <button class="akcia akcia-vino" type="button" id="k-objednavke" disabled>Pokračovať k&nbsp;objednávke</button>
+  </div>
+</dialog>
+
+<dialog class="okno svetla" id="okno-ukazka" aria-labelledby="okno-nadpis">
+  <div class="okno-hlava">
+    <h2 id="okno-nadpis">Toto je ukážka</h2>
+    <button class="zavriet" type="button" data-zavriet aria-label="Zavrieť"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+  </div>
+  <div class="okno-telo">
+    <p id="okno-text">Nič sa neodoslalo, neobjednalo ani nezaplatilo.</p>
+    <p class="okno-suhrn" id="okno-suhrn"></p>
+    <a class="akcia akcia-vino" href="https://arling.sk/web/dotaznik/?ukazka=vinarstvo" target="_top">Chcem taký web</a>
+  </div>
+</dialog>
+
+<p class="skryte" id="hlasenie" role="status" aria-live="polite"></p>
+
+<script src="app.js" defer></script>
+</body>
+</html>

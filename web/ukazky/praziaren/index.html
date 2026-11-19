@@ -1,0 +1,1306 @@
+<!doctype html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; img-src 'self' data:; style-src 'unsafe-inline'; font-src 'self'; connect-src 'none'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex, nofollow">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#f7b067">
+<title>Ukážka: Pražiareň Kolotoč, Bratislava (vymyslený e-shop)</title>
+<meta name="description" content="Ukážka dizajnu e-shopu od ARLing pre vymyslenú pražiareň kávy v Bratislave: kolotoč šiestich vreciek, posuvník praženia, košík bez platby, predplatné, krivka praženia a príprava.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23f7b067'/%3E%3Cpath d='M16 4.5 5 12.5h22z' fill='%232b1810'/%3E%3Cpath d='M5 12.5h22v2a2.75 2.75 0 0 1-5.5 0 2.75 2.75 0 0 1-5.5 0 2.75 2.75 0 0 1-5.5 0 2.75 2.75 0 0 1-5.5 0z' fill='%232b1810'/%3E%3Cpath d='M15 16.5h2v8h-2z' fill='%232b1810'/%3E%3Crect x='6' y='24' width='20' height='3.6' rx='1.8' fill='%232b1810'/%3E%3C/svg%3E">
+<link rel="preload" as="font" type="font/woff2" href="fonts/fraunces-meno.woff2" crossorigin>
+<link rel="preload" as="font" type="font/woff2" href="fonts/manrope.woff2" crossorigin>
+<link rel="preload" as="font" type="font/woff2" href="fonts/fraunces-kurziva.woff2" crossorigin>
+<link rel="preload" as="font" type="font/woff2" href="fonts/fraunces-nazov.woff2" crossorigin>
+<link rel="preload" as="image" imagesrcset="img/zrnka-480.webp 480w, img/zrnka-640.webp 640w, img/zrnka-800.webp 800w, img/zrnka-1600.webp 1600w, img/zrnka-2400.webp 2400w" imagesizes="(min-width: 1600px) 500px, (min-width: 640px) 32vw, 62vw" fetchpriority="high">
+<style>
+/* Pražiareň Kolotoč: ukážka e-shopu klienta (vymyslená pražiareň v Bratislave). Svet: kolotoč šiestich vreciek, každá káva
+   má vlastné vrecko s motívom chuti; posuvník praženia otáča kolotoč a prefarbí úvod. Marhuľa, espresso, pena a farby vreciek.
+   Fraunces (SOFT 100, WONK 1) a Manrope, obe OFL. */
+@font-face{font-family:"Kolotoc Meno";src:url(fonts/fraunces-meno.woff2) format("woff2");font-weight:700;font-display:swap}
+@font-face{font-family:"Kolotoc Nazov";src:url(fonts/fraunces-nazov.woff2) format("woff2");font-weight:600;font-display:swap}
+@font-face{font-family:"Kolotoc Kurziva";src:url(fonts/fraunces-kurziva.woff2) format("woff2");font-weight:500;font-style:italic;font-display:swap}
+@font-face{font-family:"Kolotoc UI";src:url(fonts/manrope.woff2) format("woff2");font-weight:400 800;font-display:swap}
+:root{
+  --marhula:#f7b067;--espresso:#2b1810;--pena:#fbf3e6;--pena-2:#f4e7d2;--pena-3:#ecdcc2;--tlmeny:#6b5446;--skorica:#a94a24;
+  --citron:#f4d35e;--malina:#e4577b;--pistacia:#9ccf8a;--slivka:#7a3e6b;--nebo:#9cc9e8;
+  --ciara:rgba(43,24,16,.16);--tien:0 1px 0 rgba(43,24,16,.06),0 22px 44px -22px rgba(43,24,16,.38);
+  --f-meno:"Kolotoc Meno","Iowan Old Style","Palatino Linotype",Georgia,serif;
+  --f-nazov:"Kolotoc Nazov","Iowan Old Style",Georgia,serif;
+  --f-kurz:"Kolotoc Kurziva","Iowan Old Style",Georgia,serif;
+  --f-ui:"Kolotoc UI",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  --okraj:clamp(16px,4vw,56px);--obal:min(1320px,calc(100% - 2 * var(--okraj)));--rytmus:clamp(80px,10vw,140px);
+  --vstup:cubic-bezier(.23,1,.32,1);--pohyb:cubic-bezier(.77,0,.175,1);--pruzina:cubic-bezier(.34,1.5,.5,1);
+  --uvod-bg:#f7b067;--uvod-text:#2b1810;--zrnko:#ab794e;--zrnko-ryha:#653e21;
+  --hlava-v:58px
+}
+@media (min-width:640px){:root{--hlava-v:64px}}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%;scroll-padding-top:calc(var(--hlava-v) + 16px)}
+@media (prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
+body{margin:0;background:var(--pena);color:var(--espresso);font-family:var(--f-ui);font-size:1.0625rem;line-height:1.6;overflow-x:clip;-webkit-font-smoothing:antialiased;font-variant-numeric:lining-nums}
+img,svg{display:block;max-width:100%}
+img{height:auto}
+h1,h2,h3,p,ul,ol,dl,dd,figure{margin:0}
+p,dd,figcaption,li{text-wrap:pretty}
+ul[role=list],ol[role=list]{list-style:none;padding:0}
+a{color:inherit;text-decoration-thickness:1px;text-underline-offset:.22em}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+::selection{background:var(--malina);color:var(--espresso)}
+:focus-visible{outline:3px solid var(--fokus,var(--espresso));outline-offset:3px;border-radius:8px}
+.vh{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0}
+.obal{width:var(--obal);margin-inline:auto}
+.preskocit{position:absolute;left:16px;top:-200px;z-index:100;background:var(--espresso);color:var(--pena);padding:12px 18px;border-radius:12px;font-weight:700;text-decoration:none;--fokus:var(--pena)}
+.preskocit:focus{top:12px}
+
+/* Pás ukážky od ARLing (pod 600 px krátka veta, plné vysvetlenie je aj v päte) */
+.pas-ukazky{background:var(--espresso);color:var(--pena);font-size:.8125rem;line-height:1.4;--fokus:var(--pena)}
+.pas-ukazky .obal{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:0 24px;padding:7px 0 0}
+.pas-ukazky p{max-width:64em}
+.pas-ukazky strong{font-weight:800}
+.pas-dlhe{display:none}
+.pas-odkazy{display:flex;flex-wrap:wrap;gap:0 18px}
+.pas-odkazy a{display:inline-flex;align-items:center;min-height:44px;font-weight:700;color:var(--marhula)}
+@media (min-width:600px){
+  .pas-ukazky{font-size:.875rem;line-height:1.5}
+  .pas-ukazky .obal{padding:8px 0}
+  .pas-dlhe{display:inline}.pas-kratke{display:none}
+}
+
+/* Hlavička */
+/* farby úvodu a hlavičky sa menia bez prechodu: pri prechode by text a pozadie chvíľu nemali kontrast AA */
+.hlava{position:sticky;top:0;z-index:40;background:var(--uvod-bg);color:var(--uvod-text);transition:box-shadow .3s ease;--fokus:var(--uvod-text);--znak-vnutro:var(--uvod-bg)}
+.hlava.posunuta{background:var(--pena);color:var(--espresso);box-shadow:0 1px 0 var(--ciara);--fokus:var(--espresso);--znak-vnutro:var(--pena)}
+.hlava-obal{display:flex;align-items:center;gap:clamp(8px,2vw,20px);min-height:var(--hlava-v)}
+.znak{display:inline-flex;align-items:center;gap:10px;text-decoration:none;min-height:48px;margin-right:auto}
+.znak svg{width:36px;height:36px;flex:none}
+.znak-meno{font-family:var(--f-meno);font-weight:700;font-size:1.65rem;letter-spacing:-.02em;line-height:1}
+.znak-dopln{font-size:.78rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;opacity:.9;padding-top:6px}
+@media (max-width:379.98px){.znak-dopln{display:none}}
+.menu{display:none;gap:4px}
+.menu a,.hlava-kavy{display:inline-flex;align-items:center;min-height:44px;padding:0 12px;border-radius:99px;font-weight:650;font-size:.95rem;text-decoration:none}
+.menu a:hover,.hlava-kavy:hover{background:rgba(43,24,16,.08)}
+.hlava.tmava:not(.posunuta) .menu a:hover,.hlava.tmava:not(.posunuta) .hlava-kavy:hover{background:rgba(251,243,230,.12)}
+.hlava-kavy{padding:0 14px;box-shadow:inset 0 0 0 1.5px currentColor}
+@media (min-width:960px){.menu{display:flex}.hlava-kavy{display:none}}
+.kosik-tlac{position:relative;display:inline-grid;place-items:center;width:48px;height:48px;border-radius:50%;border:2px solid currentColor;background:transparent;transition:transform .2s var(--vstup)}
+@media (min-width:640px){.kosik-tlac{width:52px;height:52px}}
+.kosik-tlac:hover{transform:translateY(-2px)}
+.kosik-tlac:active{transform:scale(.95)}
+.kosik-tlac svg{width:24px;height:24px}
+.kosik-tlac.nadskok{animation:nadskok .42s var(--pruzina)}
+@keyframes nadskok{0%{transform:scale(1)}40%{transform:scale(1.16)}100%{transform:scale(1)}}
+.kosik-pocet{position:absolute;top:-6px;right:-6px;min-width:24px;height:24px;padding:0 6px;border-radius:12px;background:var(--malina);color:var(--espresso);font-size:.8rem;font-weight:800;line-height:24px;text-align:center;overflow:hidden;box-shadow:0 0 0 2px var(--pena)}
+.kosik-pocet span{display:block}
+.kosik-pocet .stare{position:absolute;inset:0;animation:von .3s var(--vstup) forwards}
+.kosik-pocet .nove{animation:dnu .3s var(--vstup)}
+@keyframes von{to{transform:translateY(-100%);opacity:0}}
+@keyframes dnu{from{transform:translateY(100%);opacity:0}}
+
+/* Úvod: nadpis, kolotoč vreciek, posuvník praženia a odporúčanie */
+.uvod{position:relative;z-index:2;background:var(--uvod-bg);color:var(--uvod-text);padding:clamp(10px,2.2vw,36px) 0 clamp(48px,6vw,84px);--fokus:var(--uvod-text);overflow:clip visible}
+/* lemovka kolotoča: spodný okraj úvodu ako zúbkovaná strieška */
+.uvod::after{content:"";position:absolute;left:0;right:0;bottom:-15px;height:16px;background:radial-gradient(circle at 50% 0,var(--uvod-bg) 15px,transparent 15.6px) 0 0/32px 16px repeat-x;pointer-events:none}
+.uvod-mriezka{display:grid;grid-template-columns:minmax(0,1fr);grid-template-areas:"nadpis" "scena" "vyber" "popis";row-gap:clamp(6px,1.6vw,16px)}
+/* ľavý stĺpec: na mobile a tablete sa jeho deti radia priamo do mriežky (scéna je medzi nadpisom a posuvníkom) */
+.uvod-lavy{display:contents}
+.uvod-text{grid-area:nadpis;container-type:inline-size}
+.uvod-h1{font-family:var(--f-meno);font-weight:700;font-size:clamp(2.2rem,11.4cqi,6.9rem);line-height:.93;letter-spacing:-.032em;text-wrap:balance}
+.uvod-h1 .riadok{display:block}
+.uvod-h1 .kurz{font-family:var(--f-kurz);font-style:italic;font-weight:500;letter-spacing:-.02em}
+.ciara-obal{position:relative;display:inline-block}
+.h1-ciara{position:absolute;left:-1%;width:102%;height:auto;bottom:-.36em;overflow:visible;pointer-events:none}
+.h1-ciara path{fill:none;stroke:var(--malina);stroke-width:4.6;stroke-linecap:round}
+.uvod-popis{grid-area:popis;max-width:32em;font-size:clamp(1rem,.96rem + .25vw,1.15rem);line-height:1.55;margin-top:10px}
+.vyber{grid-area:vyber;max-width:640px;min-width:0}
+.vyber-otazka{font-size:1rem;line-height:1.4;max-width:30em}
+.vyber-otazka .kurziva{display:block;font-family:var(--f-kurz);font-style:italic;font-weight:500;font-size:clamp(1.65rem,1.35rem + 1.2vw,2.4rem);line-height:1.05;letter-spacing:-.01em;margin-bottom:2px}
+.posuvnik{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:12px;margin:4px 0 12px}
+.posuvnik-kraj{font-size:.85rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
+.posuvnik-draha{position:relative;height:60px;container-type:inline-size;touch-action:none;cursor:pointer;-webkit-user-select:none;user-select:none}
+.posuvnik-draha::before{content:"";position:absolute;left:0;right:0;top:50%;height:16px;margin-top:-8px;border-radius:99px;background:linear-gradient(90deg,#f6d7a1 0%,#e4a35f 28%,#b8693a 52%,#6e3d22 76%,#2a1a12 100%);box-shadow:inset 0 0 0 2px var(--uvod-text)}
+.palec-obal{position:absolute;left:0;top:0;bottom:0;width:56px;transform:translateX(calc(var(--p,.3) * (100cqw - 56px)));pointer-events:none}
+.posuvnik-palec{position:absolute;left:0;top:50%;width:56px;height:56px;margin-top:-28px;border-radius:50%;background:var(--pena);box-shadow:0 0 0 2px var(--espresso),0 10px 22px -6px rgba(43,24,16,.45);display:grid;place-items:center;cursor:grab;pointer-events:auto;touch-action:none;transition:transform .2s var(--vstup)}
+.posuvnik-palec:hover{transform:scale(1.06)}
+.posuvnik-palec{animation:poskok .9s var(--pohyb) 1.9s}
+@keyframes poskok{0%,100%{translate:0 0}45%{translate:18px 0}72%{translate:-4px 0}}
+.posuvnik-palec.tahane{cursor:grabbing;transform:scale(1.1)}
+.posuvnik-palec:focus-visible{outline-color:var(--uvod-text);outline-offset:4px;border-radius:50%}
+.posuvnik-palec svg{width:30px;height:40px;transform:rotate(18deg)}
+.zrnko-telo{fill:var(--zrnko);transition:fill .15s linear}
+.zrnko-ryha{stroke:var(--zrnko-ryha);transition:stroke .15s linear}
+.odporucanie{display:grid;grid-template-columns:58px minmax(0,1fr);gap:12px 16px;align-items:center;padding:14px 16px;border-radius:24px;background:var(--pena);color:var(--espresso);box-shadow:var(--tien);--fokus:var(--espresso)}
+.odporucanie .mini{width:58px;height:auto;overflow:visible}
+.odp-meta{font-size:.78rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--tlmeny)}
+.odp-nazov{font-family:var(--f-nazov);font-weight:600;font-size:1.4rem;line-height:1.15;letter-spacing:-.01em}
+.odp-chut{font-size:.95rem;color:var(--tlmeny);line-height:1.4}
+.odp-akcia{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 16px;padding-top:10px;border-top:1px solid var(--ciara)}
+.odp-priprava{font-size:.95rem;font-weight:700}
+.odp-priprava span{font-weight:500;color:var(--tlmeny)}
+.odp-cena{font-weight:800;font-size:1.05rem;font-variant-numeric:tabular-nums;white-space:nowrap}
+.odp-za{font-weight:600;font-size:.9rem;color:var(--tlmeny)}
+.odp-vymena{animation:vymena .36s var(--vstup)}
+@keyframes vymena{from{opacity:0;transform:translateY(6px)}}
+
+/* Scéna: oblúk so zrnkami, tanier kolotoča so šiestimi vreckami a okrúhla nálepka. Všetko v jednotkách šírky scény (cqw). */
+.scena{grid-area:scena;position:relative;width:100%;aspect-ratio:100/76;container-type:size;touch-action:pan-y;cursor:grab;-webkit-user-select:none;user-select:none;--vw:32cqw}
+.scena.tahana{cursor:grabbing}
+.oblok{position:absolute;left:18cqw;right:18cqw;top:0;bottom:26cqw;margin:0;border-radius:999px 999px 0 0;overflow:hidden;background:#7a4a2a}
+.oblok::after{content:"";position:absolute;inset:0;border-radius:inherit;box-shadow:inset 0 0 0 3px var(--espresso)}
+.oblok img{width:100%;height:100%;object-fit:cover;object-position:50% 0}
+/* tanier: elipsa so stredom 28,6 cqw nad spodkom scény (rx 41,4, ry 21,3), vrecká stoja na elipse Rx 30 a Ry 14 */
+.tanier{position:absolute;left:8cqw;width:84cqw;bottom:1cqw;height:auto;overflow:visible}
+.kolotoc{position:absolute;inset:0;pointer-events:none}
+.k-miesto{position:absolute;left:50%;bottom:28.6cqw;width:var(--vw);margin-left:calc(var(--vw) / -2);transform-origin:50% 100%;will-change:transform;pointer-events:auto;cursor:pointer}
+.k-miesto svg{width:100%;height:auto;overflow:visible;transform:translateY(4.3%);transition:translate .25s var(--vstup)}
+@media (hover:hover){.k-miesto:hover svg{translate:0 -2.5%}}
+/* nová káva vpredu po zmene chuti raz poskočí (vlastnosť translate, transform patrí vstupu) */
+.k-miesto.hop svg{animation:pad .8s var(--pruzina) both,hop .5s var(--pruzina)}
+@keyframes hop{0%,100%{translate:0 0}40%{translate:0 -7%}}
+.scena.tahana .k-miesto{cursor:grabbing}
+.nalepka-kruh{position:absolute;left:1cqw;top:2cqw;width:23cqw;aspect-ratio:1;z-index:120;pointer-events:none}
+.nalepka-kruh svg{width:100%;height:100%;overflow:visible}
+@media (min-width:640px){
+  .uvod-mriezka{grid-template-columns:minmax(0,1.08fr) minmax(0,.92fr);grid-template-areas:"nadpis nadpis" "scena vyber" "popis popis";column-gap:clamp(20px,3vw,40px);row-gap:18px;align-items:center}
+  .uvod-h1{font-size:clamp(2.6rem,9.4cqi,6.9rem)}
+  .scena{aspect-ratio:100/92;--vw:34cqw}
+  .vyber{max-width:none}
+}
+@media (min-width:1024px){
+  /* počítač: text vľavo zarovnaný na stred výšky scény, popis hneď pod nadpisom */
+  .uvod-mriezka{grid-template-columns:minmax(0,1.04fr) minmax(0,.96fr);grid-template-areas:"lavy scena";column-gap:clamp(32px,4vw,72px);align-items:center}
+  .uvod-lavy{display:flex;flex-direction:column;gap:clamp(12px,2vh,26px);grid-area:lavy;min-width:0}
+  .vyber{display:block;max-width:600px;margin-top:4px;order:2}
+  .uvod-popis{margin-top:.55em;order:1}
+  /* výška podľa okna: celé vrecko aj tlačidlo v prvej obrazovke aj na 1280 x 720 */
+  .scena{aspect-ratio:100/118;max-height:calc(100svh - 188px);min-height:420px;--vw:39cqw}
+  .uvod-h1{font-size:clamp(2.6rem,min(11cqi,11.4svh),6.9rem)}
+}
+@media (min-width:1600px){
+  .uvod .obal{width:min(1480px,calc(100% - 2 * var(--okraj)))}
+  .uvod-h1{font-size:clamp(3rem,min(11.4cqi,12svh),7.6rem)}
+  .uvod-popis{font-size:1.25rem}
+}
+
+/* Tlačidlá */
+.tlac{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:52px;padding:0 24px;border-radius:99px;border:2px solid transparent;background:var(--espresso);color:var(--pena);font-weight:750;font-size:1rem;text-decoration:none;line-height:1.1;transition:transform .18s var(--vstup),background-color .2s ease,box-shadow .2s ease;box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 8px 18px -10px rgba(43,24,16,.6)}
+.tlac:hover{transform:translateY(-1px)}
+.tlac:active{transform:scale(.97)}
+.tlac svg{width:18px;height:18px;transition:transform .2s var(--vstup)}
+.tlac:hover svg{transform:translateX(3px)}
+.tlac-obrys{background:transparent;color:inherit;border-color:currentColor;box-shadow:none}
+.tlac-pena{background:var(--pena);color:var(--espresso)}
+.tlac-male{min-height:46px;padding:0 18px;font-size:.95rem}
+.odkaz-tlac{border:0;background:none;padding:0 6px;min-height:46px;font-weight:700;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:.22em;color:var(--espresso)}
+.odkaz-tlac:hover{color:var(--skorica)}
+
+/* Vrecká (SVG symboly): štítok, motívy a nápisy */
+.v-oblukt{font-family:var(--f-ui);font-weight:800;font-size:11px;letter-spacing:2.4px;fill:var(--tlmeny);text-anchor:middle}
+.v-nazov{font-family:var(--f-nazov);font-weight:600;font-size:30px;fill:var(--espresso);text-anchor:middle}
+.v-nazov.dlhy{font-size:27px}
+.v-oblast{font-family:var(--f-kurz);font-style:italic;font-weight:500;font-size:19px;fill:var(--espresso);text-anchor:middle}
+.v-chut{font-family:var(--f-ui);font-weight:700;font-size:12.5px;fill:var(--tlmeny);text-anchor:middle}
+.v-vaha{font-family:var(--f-ui);font-weight:800;font-size:10px;letter-spacing:2px;fill:var(--espresso);text-anchor:middle}
+
+/* Sekcie */
+.sekcia{padding:var(--rytmus) 0}
+.sekcia-hlava{display:grid;gap:18px;margin-bottom:clamp(36px,5vw,64px)}
+@media (min-width:1024px){.sekcia-hlava{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:end;column-gap:64px}}
+.h2{font-family:var(--f-meno);font-weight:700;font-size:clamp(2.2rem,1.3rem + 3.3vw,4.4rem);line-height:.98;letter-spacing:-.028em;text-wrap:balance;max-width:14em}
+.h2 .kurz{font-family:var(--f-kurz);font-style:italic;font-weight:500}
+.uvod-sekcie{max-width:34em;font-size:1.1rem;color:var(--tlmeny)}
+
+/* Kávy */
+.kavy{background:var(--pena);padding-top:calc(var(--rytmus) + 12px)}
+.mriezka-kav{display:grid;gap:clamp(16px,2vw,28px);grid-template-columns:minmax(0,1fr)}
+@media (min-width:600px){.mriezka-kav{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (min-width:1100px){.mriezka-kav{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.karta{display:flex;flex-direction:column;border-radius:28px;background:#fffaf2;box-shadow:0 0 0 1px var(--ciara);overflow:hidden;transition:box-shadow .3s ease,transform .3s var(--vstup)}
+.karta:hover{box-shadow:0 0 0 1px rgba(43,24,16,.28),0 26px 50px -30px rgba(43,24,16,.45)}
+.karta.vasa{box-shadow:0 0 0 3px var(--espresso),0 26px 50px -30px rgba(43,24,16,.45)}
+.karta-pozadie{position:relative;display:grid;place-items:center;padding:58px 20px 14px;background:color-mix(in srgb,var(--farba) 30%,#fffaf2);background-image:radial-gradient(70% 60% at 50% 100%,color-mix(in srgb,var(--farba) 46%,#fffaf2),transparent 72%)}
+.karta-vrecko{border:0;background:none;padding:0;width:min(60%,236px);border-radius:18px;transition:transform .45s var(--pruzina)}
+.karta-vrecko svg{width:100%;height:auto;overflow:visible}
+.karta:hover .karta-vrecko{transform:translateY(-8px) rotate(-3deg)}
+.karta-stitok{position:absolute;left:16px;top:16px;padding:6px 12px;border-radius:99px;background:var(--pena);font-size:.8rem;font-weight:800;color:var(--espresso);white-space:nowrap}
+.karta-vasa{position:absolute;right:14px;top:14px;display:inline-flex;align-items:center;gap:6px;padding:6px 12px 6px 8px;border-radius:99px;background:var(--espresso);color:var(--pena);font-size:.8rem;font-weight:800;white-space:nowrap;animation:vymena .4s var(--vstup)}
+.karta-vasa[hidden]{display:none}
+.karta-vasa svg{width:18px;height:18px}
+.karta-telo{display:flex;flex-direction:column;gap:10px;padding:20px 22px 0}
+.karta-nakup{display:grid;gap:12px;margin-top:auto;padding:16px 22px 22px}
+.karta-krajina{font-size:.82rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--tlmeny)}
+.karta-nazov{font-family:var(--f-nazov);font-weight:600;font-size:1.6rem;line-height:1.1;letter-spacing:-.01em}
+.karta-chut{font-size:1rem;line-height:1.45}
+.karta-meta{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;font-size:.92rem;color:var(--tlmeny)}
+.body{display:inline-flex;gap:4px}
+.body i{width:10px;height:10px;border-radius:50%;border:1.5px solid var(--espresso)}
+.body i.plny{background:var(--espresso)}
+.velkost{display:grid;grid-template-columns:1fr 1fr;gap:8px;border:0;padding:0;margin:0;min-width:0}
+.volba{position:relative;display:block}
+.volba input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+.volba span{display:flex;flex-direction:column;justify-content:center;min-height:56px;padding:8px 14px;border-radius:16px;box-shadow:inset 0 0 0 1.5px var(--ciara);font-size:.85rem;font-weight:700;line-height:1.25;transition:box-shadow .2s ease,background-color .2s ease}
+.volba span b{font-size:1.05rem;font-weight:800;font-variant-numeric:tabular-nums}
+.volba input:checked+span{box-shadow:inset 0 0 0 2px var(--espresso);background:var(--pena-2)}
+.volba input:focus-visible+span{outline:3px solid var(--espresso);outline-offset:3px}
+.volba:hover span{box-shadow:inset 0 0 0 1.5px rgba(43,24,16,.5)}
+.volba input:checked:hover+span{box-shadow:inset 0 0 0 2px var(--espresso)}
+.karta-akcie{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.karta-akcie .tlac{flex:1}
+/* Mobil: karta naležato (vrecko vľavo, chuť vpravo, nákup pod nimi), aby bolo na obrazovke viac káv naraz */
+@media (max-width:599.98px){
+  .karta{display:grid;grid-template-columns:minmax(0,36%) minmax(0,1fr);border-radius:24px}
+  .karta-pozadie{display:flex;flex-direction:column-reverse;align-items:center;justify-content:center;gap:10px;padding:16px 8px 14px}
+  .karta-stitok{position:static;max-width:100%;padding:4px 9px;font-size:.75rem;line-height:1.25;text-align:center}
+  .karta-vasa{position:static;padding:4px 10px 4px 7px;font-size:.75rem}
+  .karta-vrecko{width:min(100%,112px)}
+  .karta-telo{padding:16px 16px 12px;gap:6px}
+  .karta-krajina{font-size:.76rem}
+  .karta-nazov{font-size:1.3rem}
+  .karta-chut{font-size:.95rem}
+  .karta-nakup{grid-column:1/-1;margin-top:0;padding:14px 16px 16px;border-top:1px solid var(--ciara)}
+}
+.kavy-pozn{margin-top:28px;font-size:.95rem;color:var(--tlmeny)}
+
+/* Okrúhle nálepky s textom do kruhu (úvod a predplatné) */
+.kruh-text{font-family:var(--f-ui);font-weight:800;font-size:12.6px;letter-spacing:.6px;fill:var(--espresso)}
+
+/* Predplatné */
+.predplatne{background:var(--slivka);color:#fff;--fokus:#fff}
+.predplatne-mriezka{display:grid;gap:clamp(32px,5vw,72px);align-items:center}
+@media (min-width:1024px){.predplatne-mriezka{grid-template-columns:minmax(0,5fr) minmax(0,7fr)}}
+.predplatne-foto{position:relative;max-width:520px;width:100%;justify-self:center}
+.predplatne-foto img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:50%;box-shadow:0 0 0 3px var(--espresso),0 30px 60px -30px rgba(0,0,0,.6)}
+.predplatne-nalepka{position:absolute;right:3%;bottom:2%;width:clamp(104px,29%,150px);aspect-ratio:1;transform:rotate(-12deg)}
+.predplatne-nalepka svg{width:100%;height:100%;overflow:visible}
+.predplatne .h2{max-width:13em}
+.predplatne-text>p{margin-top:18px;max-width:36em;font-size:1.1rem;color:#f6eaf2}
+.volitelne{display:grid;gap:22px;margin-top:30px}
+.skupina{border:0;padding:0;margin:0;min-width:0}
+.skupina legend{padding:0;margin-bottom:10px;font-size:.82rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#f6eaf2}
+.cipy{display:flex;flex-wrap:wrap;gap:8px}
+.cip{position:relative}
+.cip input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+.cip span{display:inline-flex;align-items:center;min-height:48px;padding:0 18px;border-radius:99px;box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.55);font-weight:700;font-size:.95rem;transition:background-color .2s ease,color .2s ease,box-shadow .2s ease}
+.cip input:checked+span{background:var(--pena);color:var(--espresso);box-shadow:none}
+.cip input:focus-visible+span{outline:3px solid #fff;outline-offset:3px}
+.cip:hover span{box-shadow:inset 0 0 0 1.5px #fff}
+.predplatne-suhrn{display:flex;flex-wrap:wrap;align-items:center;gap:16px 24px;margin-top:30px;padding-top:24px;border-top:1px solid rgba(255,255,255,.28)}
+.predplatne-cena{font-size:1.05rem}
+.predplatne-cena strong{display:block;font-family:var(--f-nazov);font-weight:600;font-size:2.1rem;line-height:1.1;font-variant-numeric:tabular-nums}
+.predplatne .male{margin-top:14px;font-size:.9rem;color:#f6eaf2}
+
+/* Ako pražíme */
+.prazime{background:var(--espresso);color:var(--pena);--fokus:var(--pena)}
+.prazime .uvod-sekcie{color:#d9c7b0}
+.prazime-mriezka{display:grid;gap:clamp(32px,5vw,72px)}
+@media (min-width:1024px){.prazime-mriezka{grid-template-columns:minmax(0,5fr) minmax(0,7fr);align-items:center}}
+.prazime-fakty{display:grid;gap:0;margin-top:30px;border-top:1px solid rgba(251,243,230,.18)}
+.prazime-fakty div{display:grid;grid-template-columns:minmax(0,8.5em) minmax(0,1fr);gap:16px;padding:14px 0;border-bottom:1px solid rgba(251,243,230,.18)}
+.prazime-fakty dt{font-weight:800;color:var(--marhula)}
+.prazime-fakty dd{color:#e9dccb}
+.krivka{background:#3a2419;border-radius:28px;padding:clamp(14px,2.4vw,28px);box-shadow:inset 0 0 0 1px rgba(251,243,230,.08)}
+.profil-volba{border:0;padding:0;margin:0 0 14px;min-width:0}
+.profil-volba legend{padding:0;margin-bottom:8px;font-size:.82rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#d9c7b0}
+.profil-volba .cipy{gap:6px}
+.profil-volba .cip span{min-height:44px;padding:0 12px 0 9px;gap:7px;font-size:.88rem;box-shadow:inset 0 0 0 1.5px rgba(251,243,230,.4)}
+.profil-volba .cip span i{width:14px;height:14px;border-radius:50%;background:var(--farba);box-shadow:inset 0 0 0 1.5px rgba(43,24,16,.5)}
+.profil-volba .cip input:checked+span{background:var(--pena);color:var(--espresso)}
+.profil-volba .cip input:focus-visible+span{outline-color:var(--pena)}
+.profil-volba .cip:hover span{box-shadow:inset 0 0 0 1.5px var(--pena)}
+.krivka svg{width:100%;height:auto;overflow:visible}
+.krivka figcaption{margin-top:10px;font-size:.92rem;color:#c9b39a}
+.k-mriezka{stroke:rgba(251,243,230,.12);stroke-width:1}
+.k-os{fill:#c9b39a;font-family:var(--f-ui);font-size:13px;font-weight:600}
+.k-krivka{fill:none;stroke:var(--k-farba,var(--marhula));stroke-width:4.5;stroke-linecap:round;stroke-linejoin:round;transition:stroke .4s ease}
+.k-plocha{fill:url(#k-plocha)}
+.k-bod circle{fill:var(--pena);stroke:var(--espresso);stroke-width:3}
+.k-bod text{fill:var(--pena);font-family:var(--f-ui);font-size:13.5px;font-weight:700}
+.k-bod .k-cas{fill:#c9b39a;font-weight:600;font-size:12.5px}
+.k-bod .k-c,.k-bod .k-n,.krivka-legenda{display:none}
+/* Mobil: graf je široký len asi 330 px, popisky v ňom by mali 7 px. Body dostanú čísla a popisky idú pod graf. */
+@media (max-width:599.98px){
+  .k-os{font-size:20px}
+  .k-bod circle:not(.k-c),.k-bod text:not(.k-n){display:none}
+  .k-bod .k-c{display:inline;fill:var(--marhula);stroke:var(--espresso);stroke-width:3}
+  .k-bod .k-n{display:inline;fill:var(--espresso);font-size:20px;font-weight:800;text-anchor:middle}
+  .krivka-legenda{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 14px;margin:14px 0 4px;padding:0;list-style:none;counter-reset:bod;font-size:.88rem;line-height:1.35;color:#e9dccb}
+  .krivka-legenda li{position:relative;padding-left:32px;counter-increment:bod}
+  .krivka-legenda li::before{content:counter(bod);position:absolute;left:0;top:0;width:24px;height:24px;border-radius:50%;background:var(--marhula);color:var(--espresso);display:grid;place-items:center;font-weight:800;font-size:.8rem}
+  .krivka-legenda b{display:block;color:var(--pena);font-weight:750}
+}
+.js-kreslenie .k-krivka{stroke-dasharray:1;stroke-dashoffset:1}
+.js-kreslenie .k-plocha,.js-kreslenie .k-bod{opacity:0}
+.js-kreslenie.kreslit .k-krivka{stroke-dashoffset:0;transition:stroke-dashoffset 1.6s var(--pohyb),stroke .4s ease}
+.js-kreslenie.kreslit .k-plocha{opacity:1;transition:opacity .8s ease .9s}
+.js-kreslenie.kreslit .k-bod{opacity:1;transition:opacity .35s ease}
+.js-kreslenie.kreslit .k-bod-1{transition-delay:.45s}.js-kreslenie.kreslit .k-bod-2{transition-delay:.9s}.js-kreslenie.kreslit .k-bod-3{transition-delay:1.25s}.js-kreslenie.kreslit .k-bod-4{transition-delay:1.5s}
+.prazime-fotky{display:grid;gap:clamp(16px,2vw,28px);margin-top:clamp(40px,6vw,80px)}
+@media (min-width:768px){.prazime-fotky{grid-template-columns:minmax(0,2fr) minmax(0,1fr);align-items:end}}
+.prazime-fotky img{width:100%;border-radius:28px}
+.foto-velka img{aspect-ratio:16/9;object-fit:cover}
+.foto-mala img{aspect-ratio:5/4;object-fit:cover}
+.prazime-fotky figcaption{margin-top:12px;font-size:.95rem;color:#d9c7b0;max-width:30em}
+
+/* Príprava */
+.priprava{background:var(--pena-2)}
+.zalozky{display:inline-flex;flex-wrap:wrap;gap:4px;padding:5px;border-radius:99px;background:var(--pena);box-shadow:inset 0 0 0 1px var(--ciara);margin-bottom:28px}
+.zalozka{min-height:48px;padding:0 24px;border:0;border-radius:99px;background:transparent;font-weight:750;font-size:1rem;transition:background-color .25s ease,color .25s ease}
+.zalozka[aria-selected=true]{background:var(--espresso);color:var(--pena)}
+.zalozka:not([aria-selected=true]):hover{background:var(--pena-3)}
+.panel-pripravy{display:grid;gap:clamp(24px,4vw,64px);border-radius:32px;background:var(--pena);padding:clamp(16px,2.6vw,32px);box-shadow:var(--tien)}
+@media (min-width:768px){.panel-pripravy{grid-template-columns:minmax(0,5fr) minmax(0,7fr);align-items:center}}
+.panel-pripravy[hidden]{display:none}
+.panel-pripravy img{width:100%;aspect-ratio:4/5;max-height:540px;object-fit:cover;border-radius:22px}
+@media (max-width:767px){.panel-pripravy img{aspect-ratio:4/3}}
+.panel-pripravy h3{font-family:var(--f-meno);font-weight:700;font-size:clamp(1.9rem,1.4rem + 1.6vw,2.8rem);line-height:1;letter-spacing:-.02em}
+.recept{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;margin:22px 0;border-radius:18px;overflow:hidden;background:var(--ciara);box-shadow:0 0 0 1px var(--ciara)}
+@media (min-width:1100px){.recept{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.recept div{background:#fffaf2;padding:12px 14px}
+.recept dt{font-size:.78rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--tlmeny)}
+.recept dd{font-family:var(--f-nazov);font-weight:600;font-size:1.3rem;line-height:1.2;font-variant-numeric:tabular-nums}
+.kroky{display:grid;gap:10px;padding:0;margin:0;list-style:none;counter-reset:krok}
+.kroky li{position:relative;padding-left:44px;counter-increment:krok;line-height:1.5}
+.kroky li::before{content:counter(krok);position:absolute;left:0;top:-2px;width:30px;height:30px;border-radius:50%;background:var(--marhula);display:grid;place-items:center;font-weight:800;font-size:.9rem}
+.odporucane{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;margin-top:22px;font-size:.95rem;font-weight:700}
+.odporucane button{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 16px 0 10px;border-radius:99px;border:0;background:var(--pena-2);box-shadow:inset 0 0 0 1px var(--ciara);font-weight:700;font-size:.92rem}
+.odporucane button:hover{box-shadow:inset 0 0 0 1.5px var(--espresso)}
+.odporucane i{width:16px;height:16px;border-radius:50%;background:var(--farba);box-shadow:inset 0 0 0 1.5px rgba(43,24,16,.35)}
+
+/* Doprava a platba */
+.doprava{background:var(--pena)}
+.doprava-mriezka{display:grid;gap:clamp(32px,5vw,72px)}
+@media (min-width:1024px){.doprava-mriezka{grid-template-columns:minmax(0,7fr) minmax(0,5fr);align-items:start}}
+.riadky{border-top:1px solid var(--ciara)}
+.riadky div{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 24px;padding:18px 0;border-bottom:1px solid var(--ciara);align-items:baseline}
+.riadky dt{font-weight:750}
+.riadky dt span{display:block;font-weight:500;font-size:.95rem;color:var(--tlmeny)}
+.riadky dd{font-weight:800;font-variant-numeric:tabular-nums;text-align:right}
+.odber{border-radius:28px;background:#fffaf2;box-shadow:0 0 0 1px var(--ciara);overflow:hidden}
+.odber svg{width:100%;height:auto}
+.odber-telo{padding:22px 24px 26px;display:grid;gap:10px}
+.odber h3{font-family:var(--f-nazov);font-weight:600;font-size:1.5rem;line-height:1.15}
+.stav{display:inline-flex;align-items:center;gap:8px;font-weight:750;font-size:.95rem}
+.stav::before{content:"";width:10px;height:10px;border-radius:50%;background:var(--tlmeny)}
+.stav.otvorene::before{background:#3f8f4f;box-shadow:0 0 0 4px rgba(63,143,79,.18)}
+.hodiny{display:grid;grid-template-columns:auto 1fr;gap:4px 18px;font-size:.98rem}
+.hodiny dt{font-weight:700}
+.hodiny dd{font-variant-numeric:tabular-nums}
+.odber .male{font-size:.88rem;color:var(--tlmeny)}
+.mapa-text{font-family:var(--f-ui);font-weight:800;font-size:13px;letter-spacing:1.5px;fill:var(--espresso)}
+.mapa-meno{font-family:var(--f-nazov);font-weight:600;font-size:19px;fill:var(--espresso)}
+.mapa-rieka{font-family:var(--f-kurz);font-style:italic;font-weight:500;font-size:17px;fill:var(--espresso)}
+
+/* Päta so zúbkovanou strieškou kolotoča */
+.pata{position:relative;background:var(--espresso);color:var(--pena);padding:clamp(64px,7vw,104px) 0 calc(36px + env(safe-area-inset-bottom));--fokus:var(--pena);overflow:clip visible}
+.pata::before{content:"";position:absolute;left:0;right:0;top:0;height:16px;background:radial-gradient(circle at 50% 0,var(--pena) 15px,transparent 15.6px) 0 0/32px 16px repeat-x}
+.pata-meno{display:flex;align-items:flex-end;gap:.12em;font-family:var(--f-meno);font-weight:700;font-size:clamp(4.2rem,17vw,15rem);line-height:.8;letter-spacing:-.045em;color:var(--marhula);margin-bottom:clamp(28px,4vw,48px)}
+.pata-meno svg{width:.62em;height:.62em;flex:none;margin-bottom:.04em}
+.pata-riadky{display:grid;gap:18px 48px;padding-top:24px;border-top:1px solid rgba(251,243,230,.2)}
+@media (min-width:900px){.pata-riadky{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.pata-riadky p{color:#e9dccb}
+.pata-riadky strong{color:var(--pena)}
+.pata-odkazy{display:flex;flex-wrap:wrap;gap:4px 18px}
+.pata-odkazy a{display:inline-flex;align-items:center;min-height:44px;font-weight:700}
+.pata .male{margin-top:32px;font-size:.88rem;color:#c9b39a;max-width:60em}
+
+/* Zásuvky a okná */
+dialog{padding:0;border:0;background:var(--pena);color:var(--espresso);--fokus:var(--espresso)}
+dialog::backdrop{background:rgba(43,24,16,.5)}
+.zasuvka{position:fixed;margin:0;inset:auto 0 0 0;width:100%;max-width:none;height:auto;max-height:min(92svh,820px);border-radius:26px 26px 0 0;display:none;flex-direction:column;overflow:hidden;box-shadow:0 -20px 60px rgba(43,24,16,.35);transform:translateY(100%);transition:transform .4s var(--vstup)}
+.zasuvka[open]{display:flex}
+.zasuvka.otvorena{transform:none}
+@media (min-width:768px){
+  .zasuvka{inset:0 0 0 auto;width:min(460px,100%);height:100%;max-height:none;border-radius:26px 0 0 26px;transform:translateX(100%)}
+  .zasuvka.zlava{inset:0 auto 0 0;border-radius:0 26px 26px 0;transform:translateX(-100%)}
+  .zasuvka.otvorena{transform:none}
+}
+.zasuvka-hlava{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px 12px 24px;border-bottom:1px solid var(--ciara)}
+.zasuvka-hlava h2{font-family:var(--f-meno);font-weight:700;font-size:1.7rem;line-height:1.1;letter-spacing:-.02em}
+.zavriet{display:inline-grid;place-items:center;width:48px;height:48px;flex:none;border-radius:50%;border:0;background:var(--pena-2)}
+.zavriet:hover{background:var(--pena-3)}
+.zavriet svg{width:22px;height:22px}
+.zasuvka-telo{flex:1;overflow:auto;overscroll-behavior:contain;padding:18px 24px}
+.zasuvka-pata{padding:14px 24px calc(16px + env(safe-area-inset-bottom));border-top:1px solid var(--ciara);background:var(--pena-2)}
+.doprava-pas{padding:14px 16px;border-radius:18px;background:var(--pena-2);box-shadow:inset 0 0 0 1px var(--ciara);font-weight:700;font-size:.95rem}
+.doprava-draha{height:8px;border-radius:99px;background:var(--pena-3);margin-top:10px;overflow:hidden}
+.doprava-draha span{display:block;height:100%;width:100%;border-radius:inherit;background:var(--espresso);transform-origin:0 50%;transform:scaleX(var(--plnenie,0));transition:transform .5s var(--vstup)}
+.polozky{display:grid;gap:0;margin-top:14px}
+.polozka{display:grid;grid-template-columns:48px minmax(0,1fr) auto;gap:6px 14px;padding:16px 0;border-bottom:1px solid var(--ciara);align-items:start}
+.polozka svg{width:48px;height:auto;overflow:visible}
+.polozka-nazov{font-family:var(--f-nazov);font-weight:600;font-size:1.15rem;line-height:1.2}
+.polozka-popis{font-size:.88rem;color:var(--tlmeny)}
+.polozka-cena{font-weight:800;font-variant-numeric:tabular-nums;text-align:right}
+.polozka-ovladanie{grid-column:2/-1;display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.mnozstvo{display:inline-flex;align-items:center;border-radius:99px;box-shadow:inset 0 0 0 1.5px var(--ciara)}
+.mnozstvo button{width:44px;height:44px;border:0;border-radius:50%;background:none;font-size:1.25rem;font-weight:700;line-height:1}
+.mnozstvo button:hover{background:var(--pena-2)}
+.mnozstvo output{min-width:28px;text-align:center;font-weight:800;font-variant-numeric:tabular-nums}
+.mletie{min-height:44px;border-radius:12px;border:0;box-shadow:inset 0 0 0 1.5px var(--ciara);background:#fffaf2;padding:0 32px 0 12px;font-size:.92rem;font-weight:600;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%232b1810' stroke-width='2' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
+.odstranit{border:0;background:none;min-height:44px;padding:0 4px;font-size:.88rem;font-weight:700;text-decoration:underline;text-underline-offset:.2em;color:var(--tlmeny)}
+.odstranit:hover{color:var(--espresso)}
+.kosik-prazdny{padding:28px 0 8px;color:var(--tlmeny)}
+.kosik-prazdny strong{display:block;font-family:var(--f-nazov);font-weight:600;font-size:1.3rem;color:var(--espresso);margin-bottom:6px}
+.suhrn{display:grid;gap:4px;margin-bottom:14px;font-variant-numeric:tabular-nums}
+.suhrn div{display:flex;justify-content:space-between;gap:16px}
+.suhrn .spolu{font-weight:800;font-size:1.15rem;margin-top:6px}
+.zasuvka-pata .tlac{width:100%}
+.zasuvka-pata .male{margin-top:10px;font-size:.85rem;color:var(--tlmeny);text-align:center}
+/* Detail kávy: vrecko s chuťovým profilom hore, balenie aj cena pri tlačidle v lepiacej päte */
+.detail-vrch{display:grid;grid-template-columns:minmax(0,40%) minmax(0,1fr);align-items:center;gap:16px;padding:16px 24px 14px;background:color-mix(in srgb,var(--farba) 30%,var(--pena))}
+.detail-vrch svg{width:100%;max-width:150px;height:auto;justify-self:center;overflow:visible}
+.detail-chut{font-family:var(--f-kurz);font-style:italic;font-weight:500;font-size:1.3rem;line-height:1.2;margin-bottom:10px}
+.profil{display:grid;gap:7px}
+.profil div{display:grid;grid-template-columns:minmax(0,5.6em) auto;align-items:center;gap:10px}
+.profil dt{font-size:.8rem;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--espresso)}
+.profil dd{display:flex;gap:4px}
+.profil dd i{width:16px;height:8px;border-radius:99px;background:rgba(43,24,16,.16)}
+.profil dd i.plny{background:var(--espresso)}
+.detail-obsah{padding:16px 24px 10px}
+.detail-dl{border-top:1px solid var(--ciara);margin-top:12px}
+.detail-dl div{display:grid;grid-template-columns:minmax(0,9em) minmax(0,1fr);gap:12px;padding:10px 0;border-bottom:1px solid var(--ciara);font-size:.95rem}
+.detail-dl dt{font-weight:750;color:var(--tlmeny)}
+.detail-pata .velkost{margin-bottom:10px}
+.detail-pata .volba span{min-height:50px;padding:6px 14px;background:#fffaf2}
+.detail-pata .volba input:checked+span{background:var(--pena)}
+@media (min-width:768px){.detail-vrch svg{max-width:180px}}
+.okno{width:min(520px,calc(100% - 32px));border-radius:28px;padding:28px;box-shadow:0 30px 80px rgba(43,24,16,.4);opacity:0;transform:translateY(12px) scale(.97);transition:opacity .25s ease,transform .35s var(--vstup)}
+.okno.otvorena{opacity:1;transform:none}
+.okno h2{font-family:var(--f-meno);font-weight:700;font-size:2rem;line-height:1.05;letter-spacing:-.02em;margin-bottom:12px}
+.okno p+p{margin-top:10px}
+.okno-akcie{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}
+.letiace{position:fixed;left:0;top:0;z-index:80;width:46px;height:60px;pointer-events:none;will-change:transform}
+.letiace>div{width:100%;height:100%;will-change:transform}
+.letiace svg{width:100%;height:auto;overflow:visible}
+
+/* Vstup úvodu: jeden hlasný moment do 2 s, potom pokoj. Oblúk sa odkryje zdola, tanier sa vysunie, vrecká dopadnú jedno po
+   druhom, nálepka sa prilepí a čiara pod nadpisom sa nakreslí; app.js potom kolotoč raz otočí dokola a palec poskočí.
+   Scéna je teraz v prvej obrazovke na každej šírke, preto vstup beží hneď. Bez JS a pri obmedzenom pohybe koncový stav. */
+@keyframes pad{from{transform:translateY(-34%) rotate(-10deg);opacity:0}60%{opacity:1}to{transform:translateY(4.3%);opacity:1}}
+@keyframes odkryt{from{clip-path:inset(100% 0 0 0 round 999px 999px 0 0)}to{clip-path:inset(0 0 0 0 round 999px 999px 0 0)}}
+@keyframes tanier{from{transform:translateY(8%) scale(.86);opacity:0}to{transform:none;opacity:1}}
+@keyframes nalepit{from{transform:rotate(-40deg) scale(.3);opacity:0}to{transform:none;opacity:1}}
+@keyframes ciara{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
+@media (prefers-reduced-motion:no-preference){
+  .scena .oblok{animation:odkryt .8s var(--vstup) both}
+  .scena .tanier{animation:tanier .7s var(--vstup) .1s both}
+  .k-miesto svg{animation:pad .8s var(--pruzina) both;animation-delay:calc(.22s + var(--i, 0) * 70ms)}
+  .nalepka-kruh{animation:nalepit .6s var(--pruzina) .95s both}
+  .h1-ciara path{stroke-dasharray:1;animation:ciara .7s var(--vstup) .7s both}
+}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-delay:0s!important;transition-duration:.01ms!important;transition-delay:0s!important}
+}
+</style>
+<script src="app.js" defer></script>
+</head>
+<body>
+<a class="preskocit" href="#obsah">Preskočiť na obsah</a>
+
+<svg class="vh" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="v-tvar" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0" stop-color="#2b1810" stop-opacity=".32"/>
+      <stop offset=".07" stop-color="#2b1810" stop-opacity=".1"/>
+      <stop offset=".15" stop-color="#fff" stop-opacity=".2"/>
+      <stop offset=".27" stop-color="#fff" stop-opacity=".05"/>
+      <stop offset=".6" stop-color="#fff" stop-opacity="0"/>
+      <stop offset=".85" stop-color="#2b1810" stop-opacity=".07"/>
+      <stop offset=".94" stop-color="#2b1810" stop-opacity=".18"/>
+      <stop offset="1" stop-color="#2b1810" stop-opacity=".36"/>
+    </linearGradient>
+    <radialGradient id="v-tien" cx=".5" cy=".5" r=".5">
+      <stop offset="0" stop-color="#2b1810" stop-opacity=".45"/>
+      <stop offset="1" stop-color="#2b1810" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="k-plocha" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#f7b067" stop-opacity=".3"/>
+      <stop offset="1" stop-color="#f7b067" stop-opacity="0"/>
+    </linearGradient>
+    <pattern id="v-papier" patternUnits="userSpaceOnUse" width="120" height="120"><image href="img/papier.webp" width="120" height="120"/></pattern>
+    <path id="v-obrys" d="M38 58H282c5 0 9.2 3.8 9.5 8.8L305 384c.6 9.6-7 17.6-16.6 17.6H31.6C22 401.6 14.4 393.6 15 384L28.5 66.8C28.8 61.8 33 58 38 58Z"/>
+    <clipPath id="v-orez"><use href="#v-obrys"/></clipPath>
+
+    <!-- Znak Kolotoča: strieška s lemovkou, tri tyče so sedadlami, otočný tanier -->
+    <symbol id="znak" viewBox="0 0 40 40">
+      <path d="M20 2.6v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+      <path d="M20 2.2l4.8 1.5-4.8 1.5z" fill="currentColor"/>
+      <path d="M20 6 5.5 15.6h29z" fill="currentColor"/>
+      <path d="M5.5 15.6h29v2.4a3.625 3.625 0 0 1-7.25 0 3.625 3.625 0 0 1-7.25 0 3.625 3.625 0 0 1-7.25 0 3.625 3.625 0 0 1-7.25 0z" fill="currentColor"/>
+      <path d="M19 21h2v11.5h-2zM10.4 21h1.7v9.4h-1.7zM27.9 21h1.7v9.4h-1.7z" fill="currentColor"/>
+      <ellipse cx="11.25" cy="25.6" rx="3.7" ry="2.3" fill="currentColor"/>
+      <ellipse cx="28.75" cy="25.6" rx="3.7" ry="2.3" fill="currentColor"/>
+      <path d="M5.5 32.6h29a2.4 2.4 0 0 1 0 4.8h-29a2.4 2.4 0 0 1 0-4.8z" fill="currentColor"/>
+    </symbol>
+
+    <!-- Vrecko: spodok (tieň, zvar so zúbkami, telo vo farbe kávy, lemovka kolotoča) a vrch (tvar, záhyby, papier, obrys) -->
+    <symbol id="v-spodok" viewBox="0 0 320 420">
+      <ellipse cx="160" cy="404" rx="152" ry="12" fill="url(#v-tien)"/>
+      <path d="M34 26l6-8 6 8l6-8 6 8l6-8 6 8l6-8 6 8l6-8 6 8l6-8 6 8l6-8 6 8l6-8 6 8l6-8 6 8l6-8 6 8l6-8 6 8l6-8 6 8l6-8 6 8l6-8 6 8l6-8 6 8l6-8 6 8l6-8 6 8l6-8 6 8l6-8 6 8l6-8 6 8l6-8 6 8V66H34Z" fill="currentColor"/>
+      <path d="M34 26l6-8 6 8l6-8 6 8l6-8 6 8l6-8 6 8l6-8 6 8l6-8 6 8l6-8 6 8l6-8 6 8l6-8 6 8l6-8 6 8l6-8 6 8l6-8 6 8l6-8 6 8l6-8 6 8l6-8 6 8l6-8 6 8l6-8 6 8l6-8 6 8l6-8 6 8l6-8 6 8V66H34Z" fill="#2b1810" fill-opacity=".18" stroke="#2b1810" stroke-width="2.5" stroke-linejoin="round"/>
+      <path d="M34 40H286" stroke="#2b1810" stroke-opacity=".28" stroke-width="2" stroke-dasharray="3 5"/>
+      <use href="#v-obrys" fill="currentColor"/>
+      <g clip-path="url(#v-orez)">
+        <path d="M10 109a10 10 0 0 0 20 0a10 10 0 0 0 20 0a10 10 0 0 0 20 0a10 10 0 0 0 20 0a10 10 0 0 0 20 0a10 10 0 0 0 20 0a10 10 0 0 0 20 0a10 10 0 0 0 20 0a10 10 0 0 0 20 0a10 10 0 0 0 20 0a10 10 0 0 0 20 0a10 10 0 0 0 20 0a10 10 0 0 0 20 0a10 10 0 0 0 20 0a10 10 0 0 0 20 0V96H10Z" fill="#2b1810" fill-opacity=".16"/>
+        <rect x="0" y="60" width="320" height="44" fill="currentColor"/>
+        <rect x="0" y="60" width="320" height="44" fill="#2b1810" fill-opacity=".22"/>
+        <path d="M30 62h20v42h-20zM70 62h20v42h-20zM110 62h20v42h-20zM150 62h20v42h-20zM190 62h20v42h-20zM230 62h20v42h-20zM270 62h20v42h-20z" fill="#fbf3e6"/>
+        <path d="M10 104a10 10 0 0 0 20 0zM50 104a10 10 0 0 0 20 0zM90 104a10 10 0 0 0 20 0zM130 104a10 10 0 0 0 20 0zM170 104a10 10 0 0 0 20 0zM210 104a10 10 0 0 0 20 0zM250 104a10 10 0 0 0 20 0zM290 104a10 10 0 0 0 20 0z" fill="currentColor"/>
+        <path d="M10 104a10 10 0 0 0 20 0zM50 104a10 10 0 0 0 20 0zM90 104a10 10 0 0 0 20 0zM130 104a10 10 0 0 0 20 0zM170 104a10 10 0 0 0 20 0zM210 104a10 10 0 0 0 20 0zM250 104a10 10 0 0 0 20 0zM290 104a10 10 0 0 0 20 0z" fill="#2b1810" fill-opacity=".22"/>
+        <path d="M30 104a10 10 0 0 0 20 0zM70 104a10 10 0 0 0 20 0zM110 104a10 10 0 0 0 20 0zM150 104a10 10 0 0 0 20 0zM190 104a10 10 0 0 0 20 0zM230 104a10 10 0 0 0 20 0zM270 104a10 10 0 0 0 20 0z" fill="#fbf3e6"/>
+        <path d="M10 104a10 10 0 0 0 20 0a10 10 0 0 0 20 0a10 10 0 0 0 20 0a10 10 0 0 0 20 0a10 10 0 0 0 20 0a10 10 0 0 0 20 0a10 10 0 0 0 20 0a10 10 0 0 0 20 0a10 10 0 0 0 20 0a10 10 0 0 0 20 0a10 10 0 0 0 20 0a10 10 0 0 0 20 0a10 10 0 0 0 20 0a10 10 0 0 0 20 0a10 10 0 0 0 20 0" fill="none" stroke="#2b1810" stroke-opacity=".62" stroke-width="2"/>
+        <path d="M0 61H320" stroke="#2b1810" stroke-opacity=".5" stroke-width="2.5"/>
+      </g>
+    </symbol>
+    <symbol id="v-vrch" viewBox="0 0 320 420">
+      <g clip-path="url(#v-orez)">
+        <rect x="0" y="56" width="320" height="350" fill="url(#v-tvar)"/>
+        <path d="M51 118 42 388M269 118 278 388" stroke="#2b1810" stroke-opacity=".14" stroke-width="2.5" fill="none"/>
+        <path d="M55 118 47 388M265 118 274 388" stroke="#fff" stroke-opacity=".16" stroke-width="2" fill="none"/>
+        <path d="M14 386C90 396 230 396 306 386" stroke="#2b1810" stroke-opacity=".2" stroke-width="3" fill="none"/>
+        <rect x="0" y="56" width="320" height="350" fill="url(#v-papier)" opacity=".7"/>
+      </g>
+      <use href="#v-obrys" fill="none" stroke="#2b1810" stroke-width="3" stroke-linejoin="round"/>
+    </symbol>
+    <!-- Štítok v tvare oblúka (ako okno s fotkou v úvode), meno pražiarne do oblúka a znak -->
+    <symbol id="v-stitok" viewBox="0 0 320 420">
+      <path d="M76 220a84 84 0 0 1 168 0v98a12 12 0 0 1-12 12H88a12 12 0 0 1-12-12z" fill="#fbf3e6" stroke="#2b1810" stroke-width="2.5"/>
+      <path d="M84 220a76 76 0 0 1 152 0v94a6 6 0 0 1-6 6H90a6 6 0 0 1-6-6z" fill="none" stroke="#2b1810" stroke-opacity=".3" stroke-width="1.2"/>
+      <path id="v-oblukT" d="M98 222a62 62 0 0 1 124 0" fill="none"/>
+      <text class="v-oblukt"><textPath href="#v-oblukT" startOffset="50%">PRAŽIAREŇ KOLOTOČ</textPath></text>
+      <use href="#znak" x="145" y="171" width="30" height="30" style="color:#2b1810"/>
+      <path d="M128 304h64" stroke="#2b1810" stroke-opacity=".2" stroke-width="1.2"/>
+    </symbol>
+
+    <!-- Motívy chutí -->
+    <symbol id="m-citron" viewBox="-25 -25 50 50"><circle r="23" fill="#fbf3e6" stroke="#2b1810" stroke-width="2.2"/><circle r="18.5" fill="#ffe17a"/><path d="M0-17V17M-17 0H17M-12-12 12 12M12-12-12 12" stroke="#fbf3e6" stroke-width="2.6" stroke-linecap="round"/><circle r="3.2" fill="#fbf3e6"/></symbol>
+    <symbol id="m-kvet" viewBox="-16 -16 32 32"><g fill="#fffaf2" stroke="#2b1810" stroke-width="1.6"><ellipse cy="-7.5" rx="5" ry="7.5"/><ellipse cy="-7.5" rx="5" ry="7.5" transform="rotate(72)"/><ellipse cy="-7.5" rx="5" ry="7.5" transform="rotate(144)"/><ellipse cy="-7.5" rx="5" ry="7.5" transform="rotate(216)"/><ellipse cy="-7.5" rx="5" ry="7.5" transform="rotate(288)"/></g><circle r="3.6" fill="#f7b067" stroke="#2b1810" stroke-width="1.3"/></symbol>
+    <symbol id="m-list" viewBox="-14 -8 28 16"><path d="M-12 0C-6-8 6-8 12 0 6 8-6 8-12 0Z" fill="#9ccf8a" stroke="#2b1810" stroke-width="1.6"/><path d="M-10 0H9" stroke="#2b1810" stroke-opacity=".55" stroke-width="1.2"/></symbol>
+    <symbol id="m-malina" viewBox="-14 -18 28 34"><path d="M-8-11.5 0-8l8-3.5-3.5-5H-4.5Z" fill="#7fb36a" stroke="#2b1810" stroke-width="1.3" stroke-linejoin="round"/><g fill="#b8325a" stroke="#2b1810" stroke-width="1.3"><circle cx="-5.5" cy="-5" r="4.6"/><circle cx="5.5" cy="-5" r="4.6"/><circle cy="-6.5" r="4.6"/><circle cx="-7" cy="2" r="4.6"/><circle cx="7" cy="2" r="4.6"/><circle cy="1" r="4.6"/><circle cx="-4" cy="8.5" r="4.6"/><circle cx="4" cy="8.5" r="4.6"/><circle cy="13" r="4.2"/></g><g fill="#fbf3e6" fill-opacity=".8"><circle cx="-1.4" cy="-8" r="1.2"/><circle cx="-8.4" cy=".6" r="1.2"/><circle cx="-1.4" cy="-.4" r="1.2"/><circle cx="-5.4" cy="7" r="1.1"/><circle cx="4.2" cy="-6.4" r="1.1"/></g></symbol>
+    <symbol id="m-karamel" viewBox="-11 -11 22 22"><rect x="-9" y="-9" width="18" height="18" rx="3.5" fill="#efa94f" stroke="#2b1810" stroke-width="1.6"/><path d="M-5-4.5h6" stroke="#fbf3e6" stroke-opacity=".85" stroke-width="2" stroke-linecap="round"/></symbol>
+    <symbol id="m-slivka" viewBox="-16 -22 32 40"><path d="M0-14q1.5-5 5-7.5" stroke="#6e3d22" stroke-width="2.4" fill="none" stroke-linecap="round"/><path d="M3-17c4-5 10-4 12-1-4 3-9 3-12 1z" fill="#9ccf8a" stroke="#2b1810" stroke-width="1.3"/><ellipse rx="13" ry="14.5" fill="#cf6ea6" stroke="#2b1810" stroke-width="1.8"/><path d="M-1.5-13c-5 7-5 18-1 27" stroke="#2b1810" stroke-opacity=".35" stroke-width="1.6" fill="none"/><ellipse cx="5.5" cy="-5" rx="3" ry="5" fill="#fbf3e6" fill-opacity=".55"/></symbol>
+    <symbol id="m-kakao" viewBox="-9 -13 18 26"><ellipse rx="7.5" ry="11.5" fill="#b0683a" stroke="#2b1810" stroke-width="1.6"/><path d="M0-9.5C-2.5-3-2.5 3 0 9.5" stroke="#fbf3e6" stroke-opacity=".65" stroke-width="1.4" fill="none"/></symbol>
+    <symbol id="m-cukor" viewBox="-10 -10 20 20"><rect x="-8" y="-8" width="16" height="16" rx="2.5" fill="#e8b878" stroke="#2b1810" stroke-width="1.5"/><g fill="#fffaf2" fill-opacity=".75"><circle cx="-3" cy="-3" r="1"/><circle cx="2" cy="1" r="1"/><circle cx="-1" cy="4" r=".9"/><circle cx="4" cy="-4" r=".8"/></g></symbol>
+    <symbol id="m-orech" viewBox="-15 -19 30 35"><path d="M0-11C8.5-11 13-4 13 3c0 7-6 12-13 12S-13 10-13 3C-13-4-8.5-11 0-11Z" fill="#c07b42" stroke="#2b1810" stroke-width="1.8"/><path d="M-12.5-1C-12-9-6.5-14 0-14S12-9 12.5-1L9-4 5-.5 1-4.5-3-.5-7-4Z" fill="#6e3d22" stroke="#2b1810" stroke-width="1.6" stroke-linejoin="round"/><path d="M0-14v-3.5" stroke="#2b1810" stroke-width="2" stroke-linecap="round"/><path d="M5.5 4c1 3 0 6-3 8" stroke="#fbf3e6" stroke-opacity=".6" stroke-width="2" fill="none" stroke-linecap="round"/></symbol>
+    <symbol id="m-vir" viewBox="-14 -14 28 28"><path d="M0 0a2 2 0 0 1 4 0 4 4 0 0 1-8 0 6 6 0 0 1 12 0 8 8 0 0 1-16 0 10 10 0 0 1 20 0" fill="none" stroke="#2b1810" stroke-width="5" stroke-linecap="round"/><path d="M0 0a2 2 0 0 1 4 0 4 4 0 0 1-8 0 6 6 0 0 1 12 0 8 8 0 0 1-16 0 10 10 0 0 1 20 0" fill="none" stroke="#fbf3e6" stroke-width="2.4" stroke-linecap="round"/></symbol>
+    <symbol id="m-cokolada" viewBox="-13 -13 26 26"><rect x="-11" y="-11" width="22" height="22" rx="3" fill="#5a3221" stroke="#2b1810" stroke-width="1.8"/><path d="M-11 0H11M0-11V11" stroke="#8a5a3c" stroke-width="1.6"/><path d="M-8-8h5" stroke="#fbf3e6" stroke-opacity=".45" stroke-width="1.6" stroke-linecap="round"/></symbol>
+    <symbol id="m-mliecna" viewBox="-13 -13 26 26"><rect x="-11" y="-11" width="22" height="22" rx="3" fill="#8f5a35" stroke="#2b1810" stroke-width="1.8"/><path d="M-11 0H11M0-11V11" stroke="#b07a52" stroke-width="1.6"/><path d="M-8-8h5" stroke="#fbf3e6" stroke-opacity=".5" stroke-width="1.6" stroke-linecap="round"/></symbol>
+    <symbol id="m-mandla" viewBox="-9 -14 18 28"><path d="M0-12C7-6 8 6 0 12-8 6-7-6 0-12Z" fill="#cf9358" stroke="#2b1810" stroke-width="1.6"/><path d="M0-8C2-3 2 3 0 8" stroke="#2b1810" stroke-opacity=".4" stroke-width="1.2" fill="none"/></symbol>
+    <symbol id="m-kvapka" viewBox="-10 -14 20 26"><path d="M0-12C4-5 8-1 8 4A8 8 0 0 1-8 4C-8-1-4-5 0-12Z" fill="#3b2216" stroke="#2b1810" stroke-width="1.6"/><ellipse cx="-3" cy="3" rx="1.6" ry="2.6" fill="#fbf3e6" fill-opacity=".6"/></symbol>
+    <symbol id="m-mesiac" viewBox="-26 -26 52 52"><path d="M9-21A22.85 22.85 0 1 0 21 9 17 17 0 0 1 9-21Z" fill="#fbf3e6" stroke="#2b1810" stroke-width="2" stroke-linejoin="round"/><circle cx="-8" cy="4" r="2.2" fill="#2b1810" fill-opacity=".12"/><circle cx="-2" cy="12" r="1.6" fill="#2b1810" fill-opacity=".12"/></symbol>
+    <symbol id="m-hviezda" viewBox="-9 -9 18 18"><path d="M0-8 2-2.75 7.61-2.47 3.23 1.05 4.7 6.47 0 3.4-4.7 6.47-3.23 1.05-7.61-2.47-2-2.75Z" fill="#f4d35e" stroke="#2b1810" stroke-width="1.4" stroke-linejoin="round"/></symbol>
+    <symbol id="m-jablko" viewBox="-15 -20 30 34"><path d="M0-9q1-6 4-9" stroke="#6e3d22" stroke-width="2.4" fill="none" stroke-linecap="round"/><path d="M3-15c4-4 9-3 11 0-4 3-8 3-11 0z" fill="#9ccf8a" stroke="#2b1810" stroke-width="1.3"/><path d="M0-8C6-13 14-10 14-1 14 9 7 14 0 11-7 14-14 9-14-1-14-10-6-13 0-8Z" fill="#e4577b" stroke="#2b1810" stroke-width="1.8"/><ellipse cx="-6" cy="-3" rx="2.4" ry="4" fill="#fbf3e6" fill-opacity=".6"/></symbol>
+    <symbol id="m-oblak" viewBox="-20 -11 40 22"><path d="M-14 8H14a6 6 0 0 0 .5-12A8.5 8.5 0 0 0-1-6.5 6.5 6.5 0 0 0-12.5-1 4.5 4.5 0 0 0-14 8Z" fill="#fffaf2" stroke="#2b1810" stroke-width="1.5" stroke-linejoin="round"/></symbol>
+
+    <!-- Šesť vreciek: rovnaký obal Kolotoča, každá káva vlastná farba, motív chuti a štítok -->
+    <symbol id="v-etiopia" viewBox="0 0 320 420">
+      <use href="#v-spodok" width="320" height="420" style="color:#f4d35e"/>
+      <g clip-path="url(#v-orez)">
+        <g fill="#fbf3e6" fill-opacity=".85"><circle cx="102" cy="126" r="2.4"/><circle cx="220" cy="124" r="2.4"/><circle cx="34" cy="206" r="2.2"/><circle cx="290" cy="214" r="2.2"/><circle cx="44" cy="330" r="2.2"/><circle cx="286" cy="350" r="2.2"/><circle cx="128" cy="388" r="2"/></g>
+        <use href="#m-citron" x="34" y="125" width="50" height="50"/>
+        <use href="#m-kvet" x="237" y="128" width="40" height="40"/>
+        <use href="#m-kvet" x="23" y="236" width="32" height="32"/>
+        <use href="#m-list" x="248" y="262" width="38" height="22" transform="rotate(-28 267 273)"/>
+        <use href="#m-citron" x="249" y="296" width="42" height="42"/>
+        <use href="#m-kvet" x="80" y="346" width="30" height="30"/>
+        <use href="#m-citron" x="140" y="343" width="40" height="40"/>
+        <use href="#m-list" x="203" y="352" width="34" height="20" transform="rotate(22 220 362)"/>
+        <use href="#m-kvet" x="252" y="350" width="24" height="24"/>
+        <use href="#m-list" x="24" y="300" width="30" height="18" transform="rotate(-50 39 309)"/>
+      </g>
+      <use href="#v-stitok" width="320" height="420"/>
+      <text class="v-nazov" x="160" y="246">Etiópia</text>
+      <text class="v-oblast" x="160" y="271">Guji</text>
+      <text class="v-chut" x="160" y="294">citrón · jazmín</text>
+      <text class="v-vaha" x="160" y="320">250 G · ZRNKOVÁ</text>
+      <use href="#v-vrch" width="320" height="420"/>
+    </symbol>
+    <symbol id="v-kolumbia" viewBox="0 0 320 420">
+      <use href="#v-spodok" width="320" height="420" style="color:#e4577b"/>
+      <g clip-path="url(#v-orez)">
+        <g fill="#fbf3e6" fill-opacity=".8"><circle cx="104" cy="126" r="2.4"/><circle cx="218" cy="126" r="2.4"/><circle cx="36" cy="214" r="2.2"/><circle cx="288" cy="206" r="2.2"/><circle cx="40" cy="352" r="2.2"/><circle cx="290" cy="336" r="2.2"/><circle cx="190" cy="390" r="2"/></g>
+        <use href="#m-malina" x="40" y="128" width="36" height="44"/>
+        <use href="#m-karamel" x="248" y="134" width="28" height="28" transform="rotate(15 262 148)"/>
+        <use href="#m-malina" x="252" y="244" width="31" height="38" transform="rotate(12 267 263)"/>
+        <use href="#m-karamel" x="32" y="254" width="24" height="24" transform="rotate(-12 44 266)"/>
+        <use href="#m-malina" x="30" y="306" width="27" height="33" transform="rotate(-10 43 322)"/>
+        <use href="#m-malina" x="92" y="344" width="30" height="37" transform="rotate(-8 107 362)"/>
+        <use href="#m-karamel" x="150" y="354" width="24" height="24" transform="rotate(20 162 366)"/>
+        <use href="#m-malina" x="200" y="342" width="30" height="37" transform="rotate(10 215 360)"/>
+        <use href="#m-list" x="252" y="356" width="34" height="20" transform="rotate(-24 269 366)"/>
+      </g>
+      <use href="#v-stitok" width="320" height="420"/>
+      <text class="v-nazov" x="160" y="246">Kolumbia</text>
+      <text class="v-oblast" x="160" y="271">Huila</text>
+      <text class="v-chut" x="160" y="294">malina · karamel</text>
+      <text class="v-vaha" x="160" y="320">250 G · ZRNKOVÁ</text>
+      <use href="#v-vrch" width="320" height="420"/>
+    </symbol>
+    <symbol id="v-guatemala" viewBox="0 0 320 420">
+      <use href="#v-spodok" width="320" height="420" style="color:#7a3e6b"/>
+      <g clip-path="url(#v-orez)">
+        <g fill="#fbf3e6" fill-opacity=".55"><circle cx="102" cy="126" r="2.4"/><circle cx="220" cy="126" r="2.4"/><circle cx="34" cy="214" r="2.2"/><circle cx="290" cy="210" r="2.2"/><circle cx="42" cy="350" r="2.2"/><circle cx="288" cy="334" r="2.2"/><circle cx="132" cy="390" r="2"/></g>
+        <use href="#m-slivka" x="42" y="128" width="34" height="42"/>
+        <use href="#m-kakao" x="250" y="132" width="22" height="32" transform="rotate(25 261 148)"/>
+        <use href="#m-cukor" x="33" y="249" width="22" height="22" transform="rotate(10 44 260)"/>
+        <use href="#m-slivka" x="253" y="246" width="30" height="38" transform="rotate(8 268 265)"/>
+        <use href="#m-kakao" x="33" y="304" width="20" height="28" transform="rotate(-18 43 318)"/>
+        <use href="#m-kakao" x="90" y="348" width="20" height="28" transform="rotate(-20 100 362)"/>
+        <use href="#m-slivka" x="144" y="341" width="32" height="40"/>
+        <use href="#m-cukor" x="208" y="356" width="20" height="20" transform="rotate(-8 218 366)"/>
+        <use href="#m-kakao" x="256" y="348" width="20" height="28" transform="rotate(30 266 362)"/>
+      </g>
+      <use href="#v-stitok" width="320" height="420"/>
+      <text class="v-nazov dlhy" x="160" y="245">Guatemala</text>
+      <text class="v-oblast" x="160" y="271">Huehuetenango</text>
+      <text class="v-chut" x="160" y="294">slivka · kakao</text>
+      <text class="v-vaha" x="160" y="320">250 G · ZRNKOVÁ</text>
+      <use href="#v-vrch" width="320" height="420"/>
+    </symbol>
+    <symbol id="v-zmes" viewBox="0 0 320 420">
+      <use href="#v-spodok" width="320" height="420" style="color:#f7b067"/>
+      <g clip-path="url(#v-orez)">
+        <g fill="#fbf3e6" fill-opacity=".85"><circle cx="104" cy="126" r="2.4"/><circle cx="218" cy="124" r="2.4"/><circle cx="36" cy="208" r="2.2"/><circle cx="290" cy="212" r="2.2"/><circle cx="40" cy="342" r="2.2"/><circle cx="292" cy="330" r="2.2"/><circle cx="188" cy="390" r="2"/></g>
+        <use href="#m-orech" x="42" y="132" width="32" height="38"/>
+        <use href="#m-vir" x="246" y="132" width="32" height="32"/>
+        <use href="#m-mliecna" x="32" y="250" width="24" height="24" transform="rotate(-10 44 262)"/>
+        <use href="#m-orech" x="254" y="250" width="28" height="33" transform="rotate(15 268 266)"/>
+        <use href="#m-vir" x="30" y="306" width="26" height="26"/>
+        <use href="#m-vir" x="86" y="350" width="24" height="24"/>
+        <use href="#m-orech" x="145" y="344" width="30" height="35"/>
+        <use href="#m-mliecna" x="208" y="353" width="22" height="22" transform="rotate(12 219 364)"/>
+        <use href="#m-orech" x="252" y="348" width="24" height="28" transform="rotate(-14 264 362)"/>
+      </g>
+      <use href="#v-stitok" width="320" height="420"/>
+      <text class="v-nazov" x="160" y="246">Zmes</text>
+      <text class="v-oblast" x="160" y="271">na espresso</text>
+      <text class="v-chut" x="160" y="294">karamel · orech</text>
+      <text class="v-vaha" x="160" y="320">250 G · ZRNKOVÁ</text>
+      <use href="#v-vrch" width="320" height="420"/>
+    </symbol>
+    <symbol id="v-brazilia" viewBox="0 0 320 420">
+      <use href="#v-spodok" width="320" height="420" style="color:#9ccf8a"/>
+      <g clip-path="url(#v-orez)">
+        <g fill="#fbf3e6" fill-opacity=".85"><circle cx="104" cy="126" r="2.4"/><circle cx="216" cy="126" r="2.4"/><circle cx="34" cy="212" r="2.2"/><circle cx="290" cy="206" r="2.2"/><circle cx="42" cy="348" r="2.2"/><circle cx="290" cy="332" r="2.2"/><circle cx="130" cy="390" r="2"/></g>
+        <use href="#m-cokolada" x="43" y="135" width="30" height="30" transform="rotate(-8 58 150)"/>
+        <use href="#m-mandla" x="251" y="132" width="22" height="34" transform="rotate(30 262 149)"/>
+        <use href="#m-kvapka" x="34" y="250" width="20" height="26"/>
+        <use href="#m-cokolada" x="255" y="253" width="26" height="26" transform="rotate(14 268 266)"/>
+        <use href="#m-mandla" x="34" y="302" width="18" height="28" transform="rotate(-24 43 316)"/>
+        <use href="#m-mandla" x="90" y="347" width="20" height="30" transform="rotate(-30 100 362)"/>
+        <use href="#m-cokolada" x="146" y="350" width="28" height="28" transform="rotate(6 160 364)"/>
+        <use href="#m-kvapka" x="208" y="348" width="20" height="26"/>
+        <use href="#m-mandla" x="258" y="348" width="20" height="30" transform="rotate(40 268 363)"/>
+      </g>
+      <use href="#v-stitok" width="320" height="420"/>
+      <text class="v-nazov" x="160" y="246">Brazília</text>
+      <text class="v-oblast" x="160" y="271">Cerrado</text>
+      <text class="v-chut" x="160" y="294">čokoláda · orechy</text>
+      <text class="v-vaha" x="160" y="320">250 G · ZRNKOVÁ</text>
+      <use href="#v-vrch" width="320" height="420"/>
+    </symbol>
+    <symbol id="v-bezkofeinu" viewBox="0 0 320 420">
+      <use href="#v-spodok" width="320" height="420" style="color:#9cc9e8"/>
+      <g clip-path="url(#v-orez)">
+        <g fill="#fbf3e6"><circle cx="104" cy="124" r="2.2"/><circle cx="214" cy="130" r="1.8"/><circle cx="36" cy="216" r="2"/><circle cx="292" cy="230" r="2"/><circle cx="292" cy="320" r="1.8"/><circle cx="128" cy="390" r="2"/><circle cx="196" cy="392" r="1.6"/></g>
+        <use href="#m-mesiac" x="35" y="127" width="50" height="50"/>
+        <use href="#m-hviezda" x="248" y="130" width="20" height="20"/>
+        <use href="#m-hviezda" x="276" y="168" width="13" height="13"/>
+        <use href="#m-oblak" x="26" y="242" width="40" height="22"/>
+        <use href="#m-jablko" x="252" y="246" width="30" height="34"/>
+        <use href="#m-hviezda" x="32" y="304" width="15" height="15"/>
+        <use href="#m-jablko" x="90" y="345" width="28" height="32" transform="rotate(-10 104 361)"/>
+        <use href="#m-hviezda" x="151" y="344" width="18" height="18"/>
+        <use href="#m-oblak" x="194" y="356" width="38" height="21"/>
+        <use href="#m-hviezda" x="262" y="352" width="15" height="15"/>
+      </g>
+      <use href="#v-stitok" width="320" height="420"/>
+      <text class="v-nazov" x="160" y="246">Večerná</text>
+      <text class="v-oblast" x="160" y="271">bez kofeínu</text>
+      <text class="v-chut" x="160" y="294">karamel · jablko</text>
+      <text class="v-vaha" x="160" y="320">250 G · ZRNKOVÁ</text>
+      <use href="#v-vrch" width="320" height="420"/>
+    </symbol>
+    <!-- Krabica predplatného (v košíku a pri lete do košíka) -->
+    <symbol id="v-balik" viewBox="0 0 320 420">
+      <ellipse cx="160" cy="398" rx="146" ry="12" fill="url(#v-tien)"/>
+      <path d="M36 176 160 126l124 50v168l-124 50-124-50Z" fill="#d79b5e" stroke="#2b1810" stroke-width="3" stroke-linejoin="round"/>
+      <path d="M36 176 160 226v168L36 344Z" fill="#2b1810" fill-opacity=".12"/>
+      <path d="M36 176 160 226l124-50M160 226v168" fill="none" stroke="#2b1810" stroke-width="3" stroke-linejoin="round"/>
+      <path d="M98 151 222 201v52" fill="none" stroke="#7a3e6b" stroke-width="18"/>
+      <path d="M98 151 222 201v52" fill="none" stroke="#2b1810" stroke-opacity=".25" stroke-width="2"/>
+      <use href="#znak" x="186" y="262" width="74" height="74" style="color:#2b1810"/>
+    </symbol>
+  </defs>
+</svg>
+
+<div class="pas-ukazky" role="note">
+  <div class="obal">
+    <p><strong>Ukážka webu od ARLing, vymyslená prevádzka.</strong> <span class="pas-kratke">Nič sa neobjedná.</span><span class="pas-dlhe">Pražiareň Kolotoč, adresa aj&nbsp;čísla sú vymyslené. Košík funguje, ale nič sa neobjedná ani nezaplatí. Na čom váš e&#8209;shop postavíme a&nbsp;ktoré prvky z&nbsp;tejto ukážky v&nbsp;ňom budú, napíšeme v&nbsp;ponuke vopred.</span></p>
+    <p class="pas-odkazy"><a href="https://arling.sk/web/?z=praziaren" target="_top">Chcem taký web</a><a href="../../index.html#ukazky" target="_top">Späť na ukážky</a></p>
+  </div>
+</div>
+
+<header class="hlava" data-hlava>
+  <div class="obal hlava-obal">
+    <a class="znak" href="#uvod" aria-label="Kolotoč, pražiareň kávy, na začiatok">
+      <svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="20" fill="currentColor"/><use href="#znak" x="7" y="6.5" width="26" height="26" style="color:var(--znak-vnutro)"/></svg>
+      <span class="znak-meno">Kolotoč</span>
+      <span class="znak-dopln">pražiareň</span>
+    </a>
+    <nav class="menu" aria-label="Obchod">
+      <a href="#kavy">Kávy</a>
+      <a href="#predplatne">Predplatné</a>
+      <a href="#prazime">Ako pražíme</a>
+      <a href="#priprava">Príprava</a>
+      <a href="#doprava">Doprava</a>
+    </nav>
+    <a class="hlava-kavy" href="#kavy">Kávy</a>
+    <button class="kosik-tlac" type="button" data-kosik-otvor aria-haspopup="dialog" aria-controls="kosik" aria-label="Košík, prázdny">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 8h14l-1.2 11.2a2 2 0 0 1-2 1.8H8.2a2 2 0 0 1-2-1.8z"/><path d="M9 10V7a3 3 0 0 1 6 0v3"/></svg>
+      <span class="kosik-pocet" aria-hidden="true" data-pocet hidden><span>0</span></span>
+    </button>
+  </div>
+</header>
+
+<main id="obsah" tabindex="-1">
+
+<section class="uvod" id="uvod" data-uvod aria-labelledby="uvod-nadpis">
+  <div class="obal uvod-mriezka">
+    <div class="uvod-lavy">
+      <div class="uvod-text">
+        <h1 class="uvod-h1" id="uvod-nadpis"><span class="riadok">Pražené v&nbsp;utorok.</span> <span class="riadok kurz"><span class="ciara-obal">U&nbsp;vás vo štvrtok.<svg class="h1-ciara" viewBox="0 0 320 24" aria-hidden="true"><path d="M5 15C68 6 126 21 188 12S286 7 315 13" pathLength="1"/></svg></span></span></h1>
+      </div>
+
+      <div class="vyber" data-vyber>
+        <p class="vyber-otazka" id="vyber-otazka"><span class="kurziva">Ako ju máte radi?</span> Svetlá a&nbsp;ovocná, alebo tmavá a&nbsp;čokoládová.</p>
+        <div class="posuvnik">
+          <span class="posuvnik-kraj" aria-hidden="true">Svetlá</span>
+          <div class="posuvnik-draha" data-draha>
+            <div class="palec-obal">
+              <div class="posuvnik-palec" role="slider" tabindex="0" aria-labelledby="vyber-otazka" aria-valuemin="0" aria-valuemax="100" aria-valuenow="30" aria-valuetext="Svetlá až stredná, malina a karamel. Odporúčame Kolumbiu Huila, na filter." data-palec>
+                <svg viewBox="0 0 40 52" aria-hidden="true"><ellipse class="zrnko-telo" cx="20" cy="26" rx="16" ry="22"/><path class="zrnko-ryha" d="M14 6c9 8 3 31 12 40" fill="none" stroke-width="3" stroke-linecap="round"/></svg>
+              </div>
+            </div>
+          </div>
+          <span class="posuvnik-kraj" aria-hidden="true">Tmavá</span>
+        </div>
+        <div class="odporucanie" data-odporucanie>
+          <svg class="mini" viewBox="0 0 320 420" aria-hidden="true"><use href="#v-kolumbia" data-odp-vrecko/></svg>
+          <div data-odp-obsah>
+            <p class="odp-meta">Odporúčame</p>
+            <p class="odp-nazov" data-odp-nazov>Kolumbia Huila</p>
+            <p class="odp-chut" data-odp-chut>Malina, karamel a&nbsp;mliečna čokoláda</p>
+          </div>
+          <div class="odp-akcia">
+            <p class="odp-priprava" data-odp-priprava>Na filter <span>alebo aj na espresso</span></p>
+            <p class="odp-cena"><span data-odp-cena>13,50&nbsp;€</span> <span class="odp-za">za 250&nbsp;g</span></p>
+            <button class="tlac tlac-male" type="button" data-pridaj="kolumbia" data-odp-tlac>Do košíka<svg viewBox="0 0 18 18" aria-hidden="true"><path d="M3 9h11M10 4.5 14.5 9 10 13.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          </div>
+        </div>
+      </div>
+
+      <p class="uvod-popis">Malá pražiareň výberovej kávy v&nbsp;Bratislave. Šesť káv, každá vo vlastnom vrecku. Pošleme ich deň po pražení, od 45&nbsp;€ s&nbsp;dopravou zadarmo.</p>
+    </div>
+
+    <div class="scena" data-scena>
+      <figure class="oblok">
+        <img src="img/zrnka-800.webp" srcset="img/zrnka-480.webp 480w, img/zrnka-640.webp 640w, img/zrnka-800.webp 800w, img/zrnka-1600.webp 1600w, img/zrnka-2400.webp 2400w" sizes="(min-width: 1600px) 500px, (min-width: 640px) 32vw, 62vw" width="1600" height="2000" alt="Čerstvo pražené zrnká kávy zhora" fetchpriority="high">
+      </figure>
+      <svg class="tanier" viewBox="0 0 780 460" aria-hidden="true" data-tanier>
+        <defs>
+          <radialGradient id="t-tien" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#2b1810" stop-opacity=".34"/><stop offset="1" stop-color="#2b1810" stop-opacity="0"/></radialGradient>
+          <radialGradient id="t-vrch" cx=".42" cy=".36" r=".78"><stop offset="0" stop-color="#fffaf2"/><stop offset=".7" stop-color="#f6e8d2"/><stop offset="1" stop-color="#ead5b6"/></radialGradient>
+          <clipPath id="t-orez"><path d="M6 204A384 198 0 0 0 774 204V256A384 198 0 0 1 6 256Z"/></clipPath>
+        </defs>
+        <ellipse cx="390" cy="424" rx="388" ry="40" fill="url(#t-tien)"/>
+        <path d="M6 204A384 198 0 0 0 774 204V256A384 198 0 0 1 6 256Z" fill="#fbf3e6"/>
+        <g clip-path="url(#t-orez)" data-obruc><path fill="#f4d35e" d="M57.4 303L95.8 331.3L95.8 383.3L57.4 355ZM722.6 303L750.8 271.7L750.8 323.7L722.6 355Z"/><path fill="#e4577b" d="M143.2 355.7L198 375.5L198 427.5L143.2 407.7ZM768.2 238.4L774 204L774 256L768.2 290.4Z"/><path fill="#7a3e6b" d="M258.7 390.1L323.3 399L323.3 451L258.7 442.1Z"/><path fill="#f7b067" d="M390 402L456.7 399L456.7 451L390 454Z"/><path fill="#9ccf8a" d="M521.3 390.1L582 375.5L582 427.5L521.3 442.1Z"/><path fill="#9cc9e8" d="M636.8 355.7L684.2 331.3L684.2 383.3L636.8 407.7ZM11.8 238.4L29.2 271.7L29.2 323.7L11.8 290.4Z"/></g>
+        <path d="M6 204A384 198 0 0 0 774 204V256A384 198 0 0 1 6 256Z" fill="none" stroke="#2b1810" stroke-width="3" stroke-linejoin="round"/>
+        <ellipse cx="390" cy="204" rx="384" ry="198" fill="url(#t-vrch)" stroke="#2b1810" stroke-width="3"/>
+        <ellipse cx="390" cy="204" rx="342" ry="176" fill="none" stroke="#2b1810" stroke-opacity=".18" stroke-width="2" stroke-dasharray="2 9" stroke-linecap="round"/>
+        <path data-luce d="M329.4 222L104.2 289M355 235.2L225 351.2M390 240L390 374M425 235.2L555 351.2M450.6 222L675.8 289M460 204L720 204M450.6 186L675.8 119M425 172.8L555 56.8M390 168L390 34M355 172.8L225 56.8M329.4 186L104.2 119M320 204L60 204" stroke="#2b1810" stroke-opacity=".1" stroke-width="2"/>
+        <ellipse cx="390" cy="204" rx="70" ry="36" fill="#f4e7d2" stroke="#2b1810" stroke-opacity=".28" stroke-width="2"/>
+      </svg>
+      <div class="kolotoc" data-kolotoc aria-hidden="true">
+        <div class="k-miesto" data-k="etiopia" style="--i:1;transform:translate(-25.98cqw, 7cqw) scale(0.8);z-index:75;filter:brightness(0.94)"><svg viewBox="0 0 320 420"><use href="#v-etiopia"/></svg></div>
+        <div class="k-miesto" data-k="kolumbia" style="--i:0;transform:translate(0cqw, 14cqw) scale(1);z-index:100"><svg viewBox="0 0 320 420"><use href="#v-kolumbia"/></svg></div>
+        <div class="k-miesto" data-k="guatemala" style="--i:2;transform:translate(25.98cqw, 7cqw) scale(0.8);z-index:75;filter:brightness(0.94)"><svg viewBox="0 0 320 420"><use href="#v-guatemala"/></svg></div>
+        <div class="k-miesto" data-k="zmes" style="--i:4;transform:translate(25.98cqw, -7cqw) scale(0.58);z-index:25;filter:brightness(0.81)"><svg viewBox="0 0 320 420"><use href="#v-zmes"/></svg></div>
+        <div class="k-miesto" data-k="brazilia" style="--i:5;transform:translate(0cqw, -14cqw) scale(0.55);z-index:0;filter:brightness(0.74)"><svg viewBox="0 0 320 420"><use href="#v-brazilia"/></svg></div>
+        <div class="k-miesto" data-k="bezkofeinu" style="--i:3;transform:translate(-25.98cqw, -7cqw) scale(0.58);z-index:25;filter:brightness(0.81)"><svg viewBox="0 0 320 420"><use href="#v-bezkofeinu"/></svg></div>
+      </div>
+      <div class="nalepka-kruh" aria-hidden="true">
+        <svg viewBox="0 0 160 160" data-nalepka>
+          <circle cx="80" cy="80" r="77" fill="#f4d35e" stroke="#2b1810" stroke-width="3"/>
+          <circle cx="80" cy="80" r="45" fill="#fbf3e6" stroke="#2b1810" stroke-width="2"/>
+          <path id="n-kruh" d="M80 80m-60 0a60 60 0 1 1 120 0a60 60 0 1 1-120 0" fill="none"/>
+          <text class="kruh-text"><textPath href="#n-kruh" textLength="372" lengthAdjust="spacing">ČERSTVÁ DO 6 TÝŽDŇOV · PRAŽIAREŇ KOLOTOČ · </textPath></text>
+          <use href="#znak" x="55" y="53" width="50" height="50" style="color:#2b1810"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sekcia kavy" id="kavy" aria-labelledby="kavy-nadpis">
+  <div class="obal">
+    <div class="sekcia-hlava">
+      <h2 class="h2" id="kavy-nadpis">Šesť káv, <span class="kurz">šesť vreciek.</span></h2>
+      <p class="uvod-sekcie">Každú pôvodovú kávu kupujeme od jednej farmy alebo družstva a&nbsp;pražíme ju na mieru jej chuti. Ceny sú za zrnkovú kávu, zomletie na filter, espresso alebo moku zvolíte v&nbsp;košíku zadarmo.</p>
+    </div>
+    <ul class="mriezka-kav" role="list">
+      <li class="karta" style="--farba:#f4d35e" data-kava="etiopia">
+        <div class="karta-pozadie">
+          <span class="karta-stitok">Svetlé</span>
+          <span class="karta-vasa" data-vasa hidden><svg viewBox="0 0 40 40" aria-hidden="true"><use href="#znak" style="color:var(--marhula)"/></svg>Vaša chuť</span>
+          <button class="karta-vrecko" type="button" data-detail="etiopia" aria-haspopup="dialog" tabindex="-1"><span class="vh">Detail kávy Etiópia Guji</span><svg viewBox="0 0 320 420" aria-hidden="true"><use href="#v-etiopia"/></svg></button>
+        </div>
+        <div class="karta-telo">
+          <p class="karta-krajina">Etiópia · Guji, Uraga</p>
+          <h3 class="karta-nazov">Etiópia Guji</h3>
+          <p class="karta-chut">Citrón, jazmín a&nbsp;čierny čaj. Ľahká a&nbsp;šťavnatá ako limonáda.</p>
+          <p class="karta-meta"><span class="body" role="img" aria-label="Praženie 1 z 5"><i class="plny"></i><i></i><i></i><i></i><i></i></span>Na filter</p>
+        </div>
+        <div class="karta-nakup">
+          <fieldset class="velkost"><legend class="vh">Balenie Etiópia Guji</legend>
+            <label class="volba"><input type="radio" name="v-etiopia" value="250" checked><span>250&nbsp;g <b>15,00&nbsp;€</b></span></label>
+            <label class="volba"><input type="radio" name="v-etiopia" value="1000"><span>1&nbsp;kg <b>56,00&nbsp;€</b></span></label>
+          </fieldset>
+          <div class="karta-akcie"><button class="tlac" type="button" data-pridaj="etiopia">Do košíka</button><button class="odkaz-tlac" type="button" data-detail="etiopia" aria-haspopup="dialog">Detail<span class="vh"> kávy Etiópia Guji</span></button></div>
+        </div>
+      </li>
+      <li class="karta vasa" style="--farba:#e4577b" data-kava="kolumbia">
+        <div class="karta-pozadie">
+          <span class="karta-stitok">Stredne svetlé</span>
+          <span class="karta-vasa" data-vasa><svg viewBox="0 0 40 40" aria-hidden="true"><use href="#znak" style="color:var(--marhula)"/></svg>Vaša chuť</span>
+          <button class="karta-vrecko" type="button" data-detail="kolumbia" aria-haspopup="dialog" tabindex="-1"><span class="vh">Detail kávy Kolumbia Huila</span><svg viewBox="0 0 320 420" aria-hidden="true"><use href="#v-kolumbia"/></svg></button>
+        </div>
+        <div class="karta-telo">
+          <p class="karta-krajina">Kolumbia · Huila, Pitalito</p>
+          <h3 class="karta-nazov">Kolumbia Huila</h3>
+          <p class="karta-chut">Malina, karamel a&nbsp;mliečna čokoláda. Sladká, keď vychladne.</p>
+          <p class="karta-meta"><span class="body" role="img" aria-label="Praženie 2 z 5"><i class="plny"></i><i class="plny"></i><i></i><i></i><i></i></span>Na filter aj espresso</p>
+        </div>
+        <div class="karta-nakup">
+          <fieldset class="velkost"><legend class="vh">Balenie Kolumbia Huila</legend>
+            <label class="volba"><input type="radio" name="v-kolumbia" value="250" checked><span>250&nbsp;g <b>13,50&nbsp;€</b></span></label>
+            <label class="volba"><input type="radio" name="v-kolumbia" value="1000"><span>1&nbsp;kg <b>46,00&nbsp;€</b></span></label>
+          </fieldset>
+          <div class="karta-akcie"><button class="tlac" type="button" data-pridaj="kolumbia">Do košíka</button><button class="odkaz-tlac" type="button" data-detail="kolumbia" aria-haspopup="dialog">Detail<span class="vh"> kávy Kolumbia Huila</span></button></div>
+        </div>
+      </li>
+      <li class="karta" style="--farba:#7a3e6b" data-kava="guatemala">
+        <div class="karta-pozadie">
+          <span class="karta-stitok">Stredné</span>
+          <span class="karta-vasa" data-vasa hidden><svg viewBox="0 0 40 40" aria-hidden="true"><use href="#znak" style="color:var(--marhula)"/></svg>Vaša chuť</span>
+          <button class="karta-vrecko" type="button" data-detail="guatemala" aria-haspopup="dialog" tabindex="-1"><span class="vh">Detail kávy Guatemala Huehuetenango</span><svg viewBox="0 0 320 420" aria-hidden="true"><use href="#v-guatemala"/></svg></button>
+        </div>
+        <div class="karta-telo">
+          <p class="karta-krajina">Guatemala · Huehuetenango</p>
+          <h3 class="karta-nazov">Guatemala Huehuetenango</h3>
+          <p class="karta-chut">Slivka, kakao a&nbsp;hnedý cukor. Plná, a&nbsp;predsa jemná.</p>
+          <p class="karta-meta"><span class="body" role="img" aria-label="Praženie 3 z 5"><i class="plny"></i><i class="plny"></i><i class="plny"></i><i></i><i></i></span>Na espresso</p>
+        </div>
+        <div class="karta-nakup">
+          <fieldset class="velkost"><legend class="vh">Balenie Guatemala Huehuetenango</legend>
+            <label class="volba"><input type="radio" name="v-guatemala" value="250" checked><span>250&nbsp;g <b>12,50&nbsp;€</b></span></label>
+            <label class="volba"><input type="radio" name="v-guatemala" value="1000"><span>1&nbsp;kg <b>42,00&nbsp;€</b></span></label>
+          </fieldset>
+          <div class="karta-akcie"><button class="tlac" type="button" data-pridaj="guatemala">Do košíka</button><button class="odkaz-tlac" type="button" data-detail="guatemala" aria-haspopup="dialog">Detail<span class="vh"> kávy Guatemala Huehuetenango</span></button></div>
+        </div>
+      </li>
+      <li class="karta" style="--farba:#f7b067" data-kava="zmes">
+        <div class="karta-pozadie">
+          <span class="karta-stitok">Stredne tmavé</span>
+          <span class="karta-vasa" data-vasa hidden><svg viewBox="0 0 40 40" aria-hidden="true"><use href="#znak" style="color:var(--marhula)"/></svg>Vaša chuť</span>
+          <button class="karta-vrecko" type="button" data-detail="zmes" aria-haspopup="dialog" tabindex="-1"><span class="vh">Detail kávy Zmes Kolotoč</span><svg viewBox="0 0 320 420" aria-hidden="true"><use href="#v-zmes"/></svg></button>
+        </div>
+        <div class="karta-telo">
+          <p class="karta-krajina">Brazília a&nbsp;Guatemala · zmes</p>
+          <h3 class="karta-nazov">Zmes Kolotoč</h3>
+          <p class="karta-chut">Karamel, lieskový orech a&nbsp;mliečna čokoláda. Naša domáca, aj s&nbsp;mliekom.</p>
+          <p class="karta-meta"><span class="body" role="img" aria-label="Praženie 4 z 5"><i class="plny"></i><i class="plny"></i><i class="plny"></i><i class="plny"></i><i></i></span>Na espresso a&nbsp;cappuccino</p>
+        </div>
+        <div class="karta-nakup">
+          <fieldset class="velkost"><legend class="vh">Balenie Zmes Kolotoč</legend>
+            <label class="volba"><input type="radio" name="v-zmes" value="250" checked><span>250&nbsp;g <b>11,50&nbsp;€</b></span></label>
+            <label class="volba"><input type="radio" name="v-zmes" value="1000"><span>1&nbsp;kg <b>40,00&nbsp;€</b></span></label>
+          </fieldset>
+          <div class="karta-akcie"><button class="tlac" type="button" data-pridaj="zmes">Do košíka</button><button class="odkaz-tlac" type="button" data-detail="zmes" aria-haspopup="dialog">Detail<span class="vh"> kávy Zmes Kolotoč</span></button></div>
+        </div>
+      </li>
+      <li class="karta" style="--farba:#9ccf8a" data-kava="brazilia">
+        <div class="karta-pozadie">
+          <span class="karta-stitok">Tmavšie</span>
+          <span class="karta-vasa" data-vasa hidden><svg viewBox="0 0 40 40" aria-hidden="true"><use href="#znak" style="color:var(--marhula)"/></svg>Vaša chuť</span>
+          <button class="karta-vrecko" type="button" data-detail="brazilia" aria-haspopup="dialog" tabindex="-1"><span class="vh">Detail kávy Brazília Cerrado</span><svg viewBox="0 0 320 420" aria-hidden="true"><use href="#v-brazilia"/></svg></button>
+        </div>
+        <div class="karta-telo">
+          <p class="karta-krajina">Brazília · Cerrado Mineiro</p>
+          <h3 class="karta-nazov">Brazília Cerrado</h3>
+          <p class="karta-chut">Horká čokoláda, pražené orechy a&nbsp;melasa. Hustá ako z&nbsp;moky má byť.</p>
+          <p class="karta-meta"><span class="body" role="img" aria-label="Praženie 5 z 5"><i class="plny"></i><i class="plny"></i><i class="plny"></i><i class="plny"></i><i class="plny"></i></span>Na moku aj espresso</p>
+        </div>
+        <div class="karta-nakup">
+          <fieldset class="velkost"><legend class="vh">Balenie Brazília Cerrado</legend>
+            <label class="volba"><input type="radio" name="v-brazilia" value="250" checked><span>250&nbsp;g <b>10,90&nbsp;€</b></span></label>
+            <label class="volba"><input type="radio" name="v-brazilia" value="1000"><span>1&nbsp;kg <b>37,00&nbsp;€</b></span></label>
+          </fieldset>
+          <div class="karta-akcie"><button class="tlac" type="button" data-pridaj="brazilia">Do košíka</button><button class="odkaz-tlac" type="button" data-detail="brazilia" aria-haspopup="dialog">Detail<span class="vh"> kávy Brazília Cerrado</span></button></div>
+        </div>
+      </li>
+      <li class="karta" style="--farba:#9cc9e8" data-kava="bezkofeinu">
+        <div class="karta-pozadie">
+          <span class="karta-stitok">Bez kofeínu</span>
+          <span class="karta-vasa" data-vasa hidden><svg viewBox="0 0 40 40" aria-hidden="true"><use href="#znak" style="color:var(--marhula)"/></svg>Vaša chuť</span>
+          <button class="karta-vrecko" type="button" data-detail="bezkofeinu" aria-haspopup="dialog" tabindex="-1"><span class="vh">Detail kávy Večerná Kolumbia</span><svg viewBox="0 0 320 420" aria-hidden="true"><use href="#v-bezkofeinu"/></svg></button>
+        </div>
+        <div class="karta-telo">
+          <p class="karta-krajina">Kolumbia · Huila, bez kofeínu</p>
+          <h3 class="karta-nazov">Večerná Kolumbia</h3>
+          <p class="karta-chut">Karamel, červené jablko a&nbsp;kakao. Káva aj o&nbsp;deviatej&nbsp;večer.</p>
+          <p class="karta-meta"><span class="body" role="img" aria-label="Praženie 3 z 5"><i class="plny"></i><i class="plny"></i><i class="plny"></i><i></i><i></i></span>Na espresso aj filter</p>
+        </div>
+        <div class="karta-nakup">
+          <fieldset class="velkost"><legend class="vh">Balenie Večerná Kolumbia</legend>
+            <label class="volba"><input type="radio" name="v-bezkofeinu" value="250" checked><span>250&nbsp;g <b>13,00&nbsp;€</b></span></label>
+            <label class="volba"><input type="radio" name="v-bezkofeinu" value="1000"><span>1&nbsp;kg <b>43,00&nbsp;€</b></span></label>
+          </fieldset>
+          <div class="karta-akcie"><button class="tlac" type="button" data-pridaj="bezkofeinu">Do košíka</button><button class="odkaz-tlac" type="button" data-detail="bezkofeinu" aria-haspopup="dialog">Detail<span class="vh"> kávy Večerná Kolumbia</span></button></div>
+        </div>
+      </li>
+    </ul>
+    <p class="kavy-pozn">Všetky ceny sú s&nbsp;DPH. Vrecko má ventil a&nbsp;zips, káva je najlepšia do šiestich týždňov od&nbsp;praženia.</p>
+  </div>
+</section>
+
+<section class="sekcia predplatne" id="predplatne" aria-labelledby="predplatne-nadpis">
+  <div class="obal predplatne-mriezka">
+    <figure class="predplatne-foto">
+      <img src="img/salka-1200.webp" srcset="img/salka-600.webp 600w, img/salka-1200.webp 1200w" sizes="(min-width: 1024px) 34vw, 86vw" width="1200" height="1200" alt="Keramická šálka kávy v&nbsp;rannom slnku na drevenom stole" loading="lazy" decoding="async">
+      <div class="predplatne-nalepka" aria-hidden="true">
+        <svg viewBox="0 0 160 160">
+          <circle cx="80" cy="80" r="77" fill="#f7b067" stroke="#2b1810" stroke-width="3"/>
+          <circle cx="80" cy="80" r="45" fill="#fbf3e6" stroke="#2b1810" stroke-width="2"/>
+          <path id="n-kruh-2" d="M80 80m-60 0a60 60 0 1 1 120 0a60 60 0 1 1-120 0" fill="none"/>
+          <text class="kruh-text"><textPath href="#n-kruh-2" textLength="372" lengthAdjust="spacing">DOPRAVA ZADARMO · PRI PREDPLATNOM · </textPath></text>
+          <use href="#v-balik" x="52" y="44" width="56" height="74"/>
+        </svg>
+      </div>
+    </figure>
+    <div class="predplatne-text">
+      <h2 class="h2" id="predplatne-nadpis">Káva domov každé 2&nbsp;alebo <span class="kurz">4&nbsp;týždne.</span></h2>
+      <p>Vyberiete si kávu alebo necháte výber na nás. Pošleme ju na druhý deň po pražení a&nbsp;doprava je pri predplatnom vždy zadarmo. Bez viazanosti: dodávku posuniete alebo predplatné zrušíte jedným e&#8209;mailom.</p>
+      <div class="volitelne" data-predplatne>
+        <fieldset class="skupina"><legend>Ako často</legend>
+          <div class="cipy">
+            <label class="cip"><input type="radio" name="pp-cas" value="2" checked><span>Každé 2&nbsp;týždne</span></label>
+            <label class="cip"><input type="radio" name="pp-cas" value="4"><span>Každé 4&nbsp;týždne</span></label>
+          </div>
+        </fieldset>
+        <fieldset class="skupina"><legend>Koľko kávy</legend>
+          <div class="cipy">
+            <label class="cip"><input type="radio" name="pp-mnozstvo" value="250" checked><span>250&nbsp;g</span></label>
+            <label class="cip"><input type="radio" name="pp-mnozstvo" value="500"><span>2 × 250&nbsp;g</span></label>
+            <label class="cip"><input type="radio" name="pp-mnozstvo" value="1000"><span>1&nbsp;kg</span></label>
+          </div>
+        </fieldset>
+        <fieldset class="skupina"><legend>Ktorá káva</legend>
+          <div class="cipy">
+            <label class="cip"><input type="radio" name="pp-kava" value="prekvapenie" checked><span>Prekvapte ma</span></label>
+            <label class="cip"><input type="radio" name="pp-kava" value="kolumbia"><span>Kolumbia</span></label>
+            <label class="cip"><input type="radio" name="pp-kava" value="zmes"><span>Zmes Kolotoč</span></label>
+            <label class="cip"><input type="radio" name="pp-kava" value="brazilia"><span>Brazília</span></label>
+          </div>
+        </fieldset>
+      </div>
+      <div class="predplatne-suhrn">
+        <p class="predplatne-cena">Za dodávku <strong data-pp-cena>13,50&nbsp;€</strong></p>
+        <button class="tlac tlac-pena" type="button" data-pridaj-predplatne>Pridať predplatné do košíka<svg viewBox="0 0 18 18" aria-hidden="true"><path d="M3 9h11M10 4.5 14.5 9 10 13.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      </div>
+      <p class="male">Pri „Prekvapte ma“ dostanete zakaždým inú kávu z&nbsp;ponuky, cenu účtujeme ako za Kolumbiu. Platí sa pri každej dodávke zvlášť.</p>
+    </div>
+  </div>
+</section>
+
+<section class="sekcia prazime" id="prazime" aria-labelledby="prazime-nadpis">
+  <div class="obal">
+    <div class="prazime-mriezka">
+      <div>
+        <h2 class="h2" id="prazime-nadpis">Ako pražíme.</h2>
+        <p class="uvod-sekcie" style="margin-top:18px">Pražič na 5&nbsp;kg, dva dni v&nbsp;týždni, jedna várka za druhou. Každá káva má vlastný profil: teplotu, čas a&nbsp;chvíľu, keď ju vysypeme. Svetlé kávy vysypeme skôr, aby ostala ovocná kyslosť; tmavšie necháme dlhšie, kým nechutia po čokoláde.</p>
+        <dl class="prazime-fakty">
+          <div><dt>Várka</dt><dd>5&nbsp;kg zelenej kávy, z&nbsp;nej asi 4,2&nbsp;kg praženej</dd></div>
+          <div><dt>Dni praženia</dt><dd>utorok a&nbsp;štvrtok, odosielame na druhý deň</dd></div>
+          <div><dt>Ochutnávanie</dt><dd>každú várku v&nbsp;deň praženia na obed, až potom ide do vreciek</dd></div>
+        </dl>
+      </div>
+      <figure class="krivka" data-krivka style="--k-farba:#f07a98">
+        <fieldset class="profil-volba" data-profil-volba>
+          <legend>Krivka praženia pre kávu</legend>
+          <div class="cipy">
+            <label class="cip" style="--farba:#f4d35e"><input type="radio" name="k-profil" value="etiopia"><span><i></i>Etiópia</span></label>
+            <label class="cip" style="--farba:#e4577b"><input type="radio" name="k-profil" value="kolumbia" checked><span><i></i>Kolumbia</span></label>
+            <label class="cip" style="--farba:#7a3e6b"><input type="radio" name="k-profil" value="guatemala"><span><i></i>Guatemala</span></label>
+            <label class="cip" style="--farba:#f7b067"><input type="radio" name="k-profil" value="zmes"><span><i></i>Zmes</span></label>
+            <label class="cip" style="--farba:#9ccf8a"><input type="radio" name="k-profil" value="brazilia"><span><i></i>Brazília</span></label>
+            <label class="cip" style="--farba:#9cc9e8"><input type="radio" name="k-profil" value="bezkofeinu"><span><i></i>Večerná</span></label>
+          </div>
+        </fieldset>
+        <svg viewBox="0 0 640 390" role="img" aria-labelledby="krivka-titulok krivka-opis">
+          <title id="krivka-titulok" data-k-titulok>Krivka praženia Kolumbie Huila</title>
+          <desc id="krivka-opis" data-k-opis>Teplota zrna v čase. Po vsypaní klesne na 93&nbsp;°C v čase 1:30, žltnutie pri 155&nbsp;°C v 5:30, prvé praskanie pri 195&nbsp;°C v 8:40 a vysypanie pri 205&nbsp;°C v 9:50.</desc>
+          <g class="k-mriezka">
+            <path d="M70 256.7H610M70 173.3H610M70 90H610"/>
+            <path d="M160 40V340M250 40V340M340 40V340M430 40V340M520 40V340M610 40V340" stroke-dasharray="2 6"/>
+            <path d="M70 340H610" stroke="rgba(251,243,230,.35)"/>
+          </g>
+          <g class="k-os">
+            <text x="60" y="261" text-anchor="end">100&nbsp;°C</text>
+            <text x="60" y="178" text-anchor="end">150&nbsp;°C</text>
+            <text x="60" y="95" text-anchor="end">200&nbsp;°C</text>
+            <text x="70" y="364" text-anchor="middle">0</text>
+            <text x="160" y="364" text-anchor="middle">2</text>
+            <text x="250" y="364" text-anchor="middle">4</text>
+            <text x="340" y="364" text-anchor="middle">6</text>
+            <text x="430" y="364" text-anchor="middle">8</text>
+            <text x="520" y="364" text-anchor="middle">10</text>
+            <text x="610" y="364" text-anchor="middle">12&nbsp;min</text>
+          </g>
+          <path class="k-plocha" data-k-plocha d="M70 78.2L78 115.3L86.1 152.3L94.1 184.7L102.2 211.6L110.2 234L118.3 251.2L126.3 262.6L134.4 267.9L142.4 268L150.5 266L158.5 262.5L166.5 257.8L174.6 252.1L182.6 245.8L190.7 239L198.7 232.1L206.8 225.3L214.8 219L222.9 213.3L230.9 208.5L239 204.1L247 199.8L255 195.7L263.1 191.7L271.1 187.7L279.2 183.8L287.2 179.9L295.3 176L303.3 172.1L311.4 168.1L319.4 164L327.5 159.7L335.5 155.4L343.5 151.1L351.6 146.7L359.6 142.4L367.7 138.1L375.7 134L383.8 130L391.8 126.2L399.9 122.5L407.9 118.9L416 115.5L424 112.2L432 108.9L440.1 105.7L448.1 102.6L456.2 99.6L464.2 96.7L472.3 94L480.3 91.4L488.4 88.9L496.4 86.5L504.5 84.1L512.5 81.6L512.5 340L70 340Z"/>
+          <path class="k-krivka" data-k-krivka pathLength="1" d="M70 78.2L78 115.3L86.1 152.3L94.1 184.7L102.2 211.6L110.2 234L118.3 251.2L126.3 262.6L134.4 267.9L142.4 268L150.5 266L158.5 262.5L166.5 257.8L174.6 252.1L182.6 245.8L190.7 239L198.7 232.1L206.8 225.3L214.8 219L222.9 213.3L230.9 208.5L239 204.1L247 199.8L255 195.7L263.1 191.7L271.1 187.7L279.2 183.8L287.2 179.9L295.3 176L303.3 172.1L311.4 168.1L319.4 164L327.5 159.7L335.5 155.4L343.5 151.1L351.6 146.7L359.6 142.4L367.7 138.1L375.7 134L383.8 130L391.8 126.2L399.9 122.5L407.9 118.9L416 115.5L424 112.2L432 108.9L440.1 105.7L448.1 102.6L456.2 99.6L464.2 96.7L472.3 94L480.3 91.4L488.4 88.9L496.4 86.5L504.5 84.1L512.5 81.6"/>
+          <g class="k-bod k-bod-1" data-k-bod="tp"><circle cx="137.5" cy="268.4" r="7"/><circle class="k-c" cx="137.5" cy="268.4" r="17"/><text class="k-n" x="137.5" y="275.6">1</text><text x="151.5" y="300.4">Bod obratu</text><text class="k-cas" x="151.5" y="318.4">1:30 · 93&nbsp;°C</text></g>
+          <g class="k-bod k-bod-2" data-k-bod="y"><circle cx="317.5" cy="165" r="7"/><circle class="k-c" cx="317.5" cy="165" r="17"/><text class="k-n" x="317.5" y="172.2">2</text><text x="329.5" y="196">Žltnutie</text><text class="k-cas" x="329.5" y="214">5:30 · 155&nbsp;°C</text></g>
+          <g class="k-bod k-bod-3" data-k-bod="fc"><circle cx="460" cy="98.2" r="7"/><circle class="k-c" cx="460" cy="98.2" r="17"/><text class="k-n" x="460" y="105.4">3</text><text x="471" y="128.2">Prvé praskanie</text><text class="k-cas" x="471" y="146.2">8:40 · 195&nbsp;°C</text></g>
+          <g class="k-bod k-bod-4" data-k-bod="drop"><circle cx="512.5" cy="81.6" r="7"/><circle class="k-c" cx="512.5" cy="81.6" r="17"/><text class="k-n" x="512.5" y="88.8">4</text><text x="512.5" y="44.6" text-anchor="middle">Vysypanie</text><text class="k-cas" x="512.5" y="61.6" text-anchor="middle">9:50 · 205&nbsp;°C</text></g>
+        </svg>
+        <ol class="krivka-legenda" role="list" aria-hidden="true" data-k-legenda>
+          <li><b>Bod obratu</b> 1:30 · 93&nbsp;°C</li>
+          <li><b>Žltnutie</b> 5:30 · 155&nbsp;°C</li>
+          <li><b>Prvé praskanie</b> 8:40 · 195&nbsp;°C</li>
+          <li><b>Vysypanie</b> 9:50 · 205&nbsp;°C</li>
+        </ol>
+        <figcaption data-k-popis>Krivka praženia Kolumbie Huila: teplota zrna v&nbsp;čase. Po prvom praskaní ju necháme dopražiť ešte 70&nbsp;sekúnd.</figcaption>
+      </figure>
+    </div>
+    <div class="prazime-fotky">
+      <figure class="foto-velka">
+        <img src="img/prazic-1600.webp" srcset="img/prazic-800.webp 800w, img/prazic-1600.webp 1600w, img/prazic-2400.webp 2400w" sizes="(min-width: 1320px) 860px, (min-width: 768px) 64vw, 92vw" width="1600" height="900" alt="Čerstvo pražená káva sa chladí v&nbsp;site pražiča, miešadlo ju obracia" loading="lazy" decoding="async">
+      </figure>
+      <figure class="foto-mala">
+        <img src="img/ochutnavanie-1200.webp" srcset="img/ochutnavanie-600.webp 600w, img/ochutnavanie-1200.webp 1200w" sizes="(min-width: 1320px) 420px, (min-width: 768px) 31vw, 92vw" width="1200" height="960" alt="Stôl pri ochutnávaní zhora: papierový filter s&nbsp;mletou kávou, šálky a&nbsp;kanvica, z&nbsp;ktorej sa nalieva káva" loading="lazy" decoding="async">
+        <figcaption>V&nbsp;deň praženia na obed každú várku ochutnáme, na filter aj ako espresso. Čo nechutí, ako má, do vreciek nejde.</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<section class="sekcia priprava" id="priprava" aria-labelledby="priprava-nadpis">
+  <div class="obal">
+    <div class="sekcia-hlava">
+      <h2 class="h2" id="priprava-nadpis">Príprava <span class="kurz">bez kurzu.</span></h2>
+      <p class="uvod-sekcie">Tri spôsoby, ktoré doma zvládnete. Ak nemáte mlynček, kávu vám zomelieme presne na váš spôsob, stačí ho zvoliť v&nbsp;košíku.</p>
+    </div>
+    <div class="zalozky" role="tablist" aria-label="Spôsob prípravy" data-zalozky>
+      <button class="zalozka" type="button" role="tab" id="z-espresso" aria-controls="p-espresso" aria-selected="true">Espresso</button>
+      <button class="zalozka" type="button" role="tab" id="z-filter" aria-controls="p-filter" aria-selected="false" tabindex="-1">Filter</button>
+      <button class="zalozka" type="button" role="tab" id="z-moka" aria-controls="p-moka" aria-selected="false" tabindex="-1">Moka</button>
+    </div>
+    <div class="panel-pripravy" role="tabpanel" id="p-espresso" aria-labelledby="z-espresso" tabindex="0">
+      <img src="img/espresso-1200.webp" srcset="img/espresso-600.webp 600w, img/espresso-1200.webp 1200w" sizes="(min-width: 1320px) 520px, (min-width: 768px) 38vw, 92vw" width="1200" height="1500" alt="Espresso v&nbsp;nízkom pohári na tmavom tanieriku, drevený pult v&nbsp;dennom svetle" loading="lazy" decoding="async">
+      <div>
+        <h3>Espresso</h3>
+        <dl class="recept">
+          <div><dt>Káva</dt><dd>18&nbsp;g</dd></div>
+          <div><dt>V&nbsp;šálke</dt><dd>36&nbsp;g</dd></div>
+          <div><dt>Čas</dt><dd>27 až 32&nbsp;s</dd></div>
+          <div><dt>Voda</dt><dd>93&nbsp;°C</dd></div>
+        </dl>
+        <ol class="kroky">
+          <li>Zomeľte jemne, tesne pred prípravou, a&nbsp;rovno utlačte.</li>
+          <li>Púšťajte, kým v&nbsp;šálke nie je dvakrát toľko, čo v&nbsp;sitku.</li>
+          <li>Tečie rýchlo a&nbsp;je kyslé? Zomeľte jemnejšie. Pomaly a&nbsp;horké? Hrubšie.</li>
+        </ol>
+        <p class="odporucane">Odporúčame:
+          <button type="button" data-detail="zmes" aria-haspopup="dialog" style="--farba:#f7b067"><i></i>Zmes Kolotoč</button>
+          <button type="button" data-detail="guatemala" aria-haspopup="dialog" style="--farba:#7a3e6b"><i></i>Guatemala</button>
+        </p>
+      </div>
+    </div>
+    <div class="panel-pripravy" role="tabpanel" id="p-filter" aria-labelledby="z-filter" tabindex="0" hidden>
+      <img src="img/filter-1200.webp" srcset="img/filter-600.webp 600w, img/filter-1200.webp 1200w" sizes="(min-width: 1320px) 520px, (min-width: 768px) 38vw, 92vw" width="1200" height="1500" alt="Prekvapkávaná káva zhora: kanvica s&nbsp;dlhým hrdlom leje vodu do papierového filtra" loading="lazy" decoding="async">
+      <div>
+        <h3>Filter</h3>
+        <dl class="recept">
+          <div><dt>Káva</dt><dd>15&nbsp;g</dd></div>
+          <div><dt>Voda</dt><dd>250&nbsp;g</dd></div>
+          <div><dt>Čas</dt><dd>2:30 až 3:00</dd></div>
+          <div><dt>Teplota</dt><dd>94&nbsp;°C</dd></div>
+        </dl>
+        <ol class="kroky">
+          <li>Zomeľte stredne jemne, približne ako morská soľ.</li>
+          <li>Zalejte 40&nbsp;g vody a&nbsp;nechajte 30&nbsp;sekúnd napučať.</li>
+          <li>Zvyšok vody lejte pomaly v&nbsp;krúžkoch, do troch minút je hotovo.</li>
+        </ol>
+        <p class="odporucane">Odporúčame:
+          <button type="button" data-detail="etiopia" aria-haspopup="dialog" style="--farba:#f4d35e"><i></i>Etiópia Guji</button>
+          <button type="button" data-detail="kolumbia" aria-haspopup="dialog" style="--farba:#e4577b"><i></i>Kolumbia Huila</button>
+        </p>
+      </div>
+    </div>
+    <div class="panel-pripravy" role="tabpanel" id="p-moka" aria-labelledby="z-moka" tabindex="0" hidden>
+      <img src="img/moka-1200.webp" srcset="img/moka-600.webp 600w, img/moka-1200.webp 1200w" sizes="(min-width: 1320px) 520px, (min-width: 768px) 38vw, 92vw" width="1200" height="1500" alt="Pohľad do moka kanvice, káva práve stúpa do hornej nádobky" loading="lazy" decoding="async">
+      <div>
+        <h3>Moka</h3>
+        <dl class="recept">
+          <div><dt>Káva</dt><dd>16&nbsp;g</dd></div>
+          <div><dt>Voda</dt><dd>po ventil</dd></div>
+          <div><dt>Plameň</dt><dd>stredný</dd></div>
+          <div><dt>Mletie</dt><dd>stredne jemné</dd></div>
+        </dl>
+        <ol class="kroky">
+          <li>Do spodnej časti nalejte horúcu vodu, kávu v&nbsp;sitku neutláčajte.</li>
+          <li>Postavte na stredný plameň a&nbsp;nechajte veko otvorené.</li>
+          <li>Keď káva začne prskať, odstavte a&nbsp;spodok ochlaďte pod tečúcou vodou.</li>
+        </ol>
+        <p class="odporucane">Odporúčame:
+          <button type="button" data-detail="brazilia" aria-haspopup="dialog" style="--farba:#9ccf8a"><i></i>Brazília Cerrado</button>
+          <button type="button" data-detail="zmes" aria-haspopup="dialog" style="--farba:#f7b067"><i></i>Zmes Kolotoč</button>
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sekcia doprava" id="doprava" aria-labelledby="doprava-nadpis">
+  <div class="obal doprava-mriezka">
+    <div>
+      <h2 class="h2" id="doprava-nadpis">Doprava <span class="kurz">a&nbsp;platba.</span></h2>
+      <p class="uvod-sekcie" style="margin:18px 0 32px">Čo objednáte do polnoci v&nbsp;pondelok alebo v&nbsp;stredu, upražíme hneď na druhý deň a&nbsp;odošleme nasledujúce ráno.</p>
+      <dl class="riadky">
+        <div><dt>Výdajné miesto alebo box<span>doručenie do 2&nbsp;pracovných dní</span></dt><dd>2,90&nbsp;€</dd></div>
+        <div><dt>Kuriér na adresu<span>doručenie nasledujúci pracovný deň po odoslaní</span></dt><dd>3,90&nbsp;€</dd></div>
+        <div><dt>Osobný odber v&nbsp;pražiarni<span>pripravené od 15:00 v&nbsp;deň praženia</span></dt><dd>zadarmo</dd></div>
+        <div><dt>Nákup od 45&nbsp;€ a&nbsp;predplatné<span>na výdajné miesto aj kuriérom</span></dt><dd>zadarmo</dd></div>
+        <div><dt>Platba<span>kartou online, bankovým prevodom alebo na dobierku bez poplatku</span></dt><dd>&nbsp;</dd></div>
+      </dl>
+    </div>
+    <aside class="odber" aria-labelledby="odber-nadpis">
+      <svg viewBox="0 0 480 280" aria-hidden="true">
+        <rect width="480" height="280" fill="#f4e7d2"/>
+        <g fill="#ecdcc2" stroke="#2b1810" stroke-opacity=".18" stroke-width="2"><rect x="14" y="12" width="62" height="52" rx="8"/><rect x="128" y="16" width="70" height="56" rx="8"/><rect x="236" y="14" width="66" height="54" rx="8"/><rect x="350" y="94" width="66" height="44" rx="8"/><rect x="14" y="104" width="58" height="40" rx="8"/><rect x="236" y="104" width="78" height="38" rx="8"/><rect x="124" y="164" width="56" height="34" rx="8"/></g>
+        <path d="M120 120c-10-26 22-40 40-30 22-12 52 4 46 30 10 22-18 40-44 32-26 10-54-6-42-32z" fill="#9ccf8a" stroke="#2b1810" stroke-width="2.5"/>
+        <g fill="#6fa35c" stroke="#2b1810" stroke-width="1.8"><circle cx="146" cy="112" r="9"/><circle cx="170" cy="128" r="11"/><circle cx="188" cy="108" r="8"/><circle cx="150" cy="138" r="7"/></g>
+        <path d="M-10 236C80 210 150 258 236 240S394 196 490 212" stroke="#2b1810" stroke-width="46" fill="none" stroke-linecap="round"/>
+        <path d="M-10 236C80 210 150 258 236 240S394 196 490 212" stroke="#9cc9e8" stroke-width="40" fill="none" stroke-linecap="round"/>
+        <g fill="none" stroke="#fffaf2" stroke-width="2.4" stroke-linecap="round"><path d="M40 232q6-5 12 0t12 0"/><path d="M300 222q6-5 12 0t12 0"/><path d="M412 212q6-5 12 0t12 0"/></g>
+        <text class="mapa-rieka" x="168" y="248">Dunaj</text>
+        <g fill="none" stroke-linecap="round"><path d="M-10 84H490M96 -10 118 196M330 -10 350 196M-10 160C120 150 300 168 490 150" stroke="#2b1810" stroke-width="15"/><path d="M-10 84H490M96 -10 118 196M330 -10 350 196M-10 160C120 150 300 168 490 150" stroke="#fffaf2" stroke-width="11"/><path d="M-10 84H490" stroke="#e4577b" stroke-width="2.4" stroke-dasharray="7 6"/></g>
+        <g transform="translate(262 132)">
+          <ellipse cx="0" cy="34" rx="22" ry="6" fill="#2b1810" fill-opacity=".25"/>
+          <path d="M0 34C-8 22-26 4-26-14a26 26 0 0 1 52 0C26 4 8 22 0 34Z" fill="#e4577b" stroke="#2b1810" stroke-width="3" stroke-linejoin="round"/>
+          <circle cx="0" cy="-14" r="17" fill="#fbf3e6" stroke="#2b1810" stroke-width="2"/>
+          <use href="#znak" x="-12" y="-27" width="24" height="24" style="color:#2b1810"/>
+          <g transform="translate(34 -44)"><rect x="0" y="-22" width="98" height="34" rx="17" fill="#fffaf2" stroke="#2b1810" stroke-width="2.5"/><path d="M8 10-6 22 18 12" fill="#fffaf2" stroke="#2b1810" stroke-width="2.5" stroke-linejoin="round"/><path d="M6 9H20" stroke="#fffaf2" stroke-width="4"/><text class="mapa-meno" x="49" y="2" text-anchor="middle">Kolotoč</text></g>
+        </g>
+        <g transform="translate(438 46)"><circle r="20" fill="#fffaf2" stroke="#2b1810" stroke-width="2.5"/><path d="M0-14 5 2H-5Z" fill="#e4577b" stroke="#2b1810" stroke-width="1.5" stroke-linejoin="round"/><path d="M0 14-5 2H5Z" fill="#fffaf2" stroke="#2b1810" stroke-width="1.5" stroke-linejoin="round"/><text class="mapa-text" x="0" y="-25" text-anchor="middle">S</text></g>
+      </svg>
+      <div class="odber-telo">
+        <h3 id="odber-nadpis">Pražiareň a&nbsp;osobný odber</h3>
+        <p>Kolotočová 12, 821&nbsp;08 Bratislava</p>
+        <p class="stav" data-stav>Ut až pi 8:00 až 16:00, so 9:00 až 12:00</p>
+        <dl class="hodiny">
+          <dt>Pondelok</dt><dd>zatvorené</dd>
+          <dt>Ut až pi</dt><dd>8:00 až 16:00</dd>
+          <dt>Sobota</dt><dd>9:00 až 12:00</dd>
+          <dt>Nedeľa</dt><dd>zatvorené</dd>
+        </dl>
+        <p class="male">Mapa je kreslená ilustrácia, nie v&nbsp;mierke. Telefón 0900 XXX XXX, e&#8209;mail <a href="mailto:ahoj@kolotoc.example">ahoj@kolotoc.example</a></p>
+      </div>
+    </aside>
+  </div>
+</section>
+
+</main>
+
+<footer class="pata">
+  <div class="obal">
+    <p class="pata-meno" aria-hidden="true"><svg viewBox="0 0 40 40"><use href="#znak" style="color:var(--marhula)"/></svg>Kolotoč</p>
+    <div class="pata-riadky">
+      <p><strong>Pražiareň Kolotoč s.&nbsp;r.&nbsp;o.</strong><br>Kolotočová 12, 821&nbsp;08 Bratislava<br>IČO 00&nbsp;000&nbsp;000</p>
+      <p>Telefón 0900 XXX XXX<br><a href="mailto:ahoj@kolotoc.example">ahoj@kolotoc.example</a><br>Tu budú vaše obchodné podmienky a&nbsp;reklamačný poriadok.</p>
+      <p class="pata-odkazy"><a href="../../index.html#ukazky" target="_top">Späť na ukážky</a><a href="https://arling.sk/web/?z=praziaren" target="_top">Chcem taký web</a></p>
+    </div>
+    <p class="male">Toto je ukážka dizajnu e&#8209;shopu od ARLing. Pražiareň Kolotoč, adresa, IČO, telefón aj e&#8209;mail sú vymyslené a&nbsp;nič sa tu neobjedná ani nezaplatí. Na čom váš e&#8209;shop postavíme a&nbsp;ktoré prvky z&nbsp;tejto ukážky v&nbsp;ňom budú, napíšeme v&nbsp;ponuke vopred. Fotky sú z&nbsp;Pexels pod licenciou Pexels, vrecká, kolotoč a&nbsp;mapa sú kreslené pre túto ukážku. Ceny zodpovedajú slovenským pražiarňam výberovej kávy v&nbsp;novembri 2026. Písma Fraunces a&nbsp;Manrope (SIL Open Font License).</p>
+  </div>
+</footer>
+
+<dialog class="zasuvka" id="kosik" aria-labelledby="kosik-nadpis" data-kosik>
+  <div class="zasuvka-hlava">
+    <h2 id="kosik-nadpis">Košík</h2>
+    <button class="zavriet" type="button" data-zavriet aria-label="Zavrieť košík"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+  </div>
+  <div class="zasuvka-telo">
+    <div class="doprava-pas" data-doprava-pas>
+      <p data-doprava-text>Doprava zadarmo od 45&nbsp;€ a&nbsp;pri predplatnom.</p>
+      <div class="doprava-draha" aria-hidden="true"><span data-doprava-plnenie></span></div>
+    </div>
+    <ul class="polozky" role="list" data-polozky></ul>
+    <p class="kosik-prazdny" data-prazdny><strong>Košík je zatiaľ prázdny.</strong>Vyberte si kávu posuvníkom v&nbsp;úvode alebo v&nbsp;zozname káv.</p>
+  </div>
+  <div class="zasuvka-pata">
+    <dl class="suhrn">
+      <div><dt>Medzisúčet</dt><dd data-medzisucet>0,00&nbsp;€</dd></div>
+      <div><dt>Doprava</dt><dd data-doprava>od 2,90&nbsp;€</dd></div>
+      <div class="spolu"><dt>Spolu</dt><dd data-spolu>0,00&nbsp;€</dd></div>
+    </dl>
+    <button class="tlac" type="button" data-pokracovat>Pokračovať k&nbsp;platbe<svg viewBox="0 0 18 18" aria-hidden="true"><path d="M3 9h11M10 4.5 14.5 9 10 13.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <p class="male">Ukážka košíka: nič sa neobjedná ani nezaplatí.</p>
+  </div>
+</dialog>
+
+<dialog class="zasuvka zlava" id="detail" aria-labelledby="detail-nadpis" data-detail-okno>
+  <div class="zasuvka-hlava">
+    <h2 id="detail-nadpis" data-d-nazov>Káva</h2>
+    <button class="zavriet" type="button" data-zavriet aria-label="Zavrieť detail"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+  </div>
+  <div class="zasuvka-telo" style="padding:0">
+    <div class="detail-vrch">
+      <svg viewBox="0 0 320 420" aria-hidden="true"><use href="#v-kolumbia" data-d-vrecko/></svg>
+      <div>
+        <p class="detail-chut" data-d-chut></p>
+        <dl class="profil" data-d-profil></dl>
+      </div>
+    </div>
+    <div class="detail-obsah">
+      <p class="karta-krajina" data-d-krajina></p>
+      <dl class="detail-dl" data-d-dl></dl>
+    </div>
+  </div>
+  <div class="zasuvka-pata detail-pata">
+    <fieldset class="velkost" data-d-velkost><legend class="vh">Balenie</legend>
+      <label class="volba"><input type="radio" name="d-velkost" value="250" checked><span>250&nbsp;g <b data-d-cena="250"></b></span></label>
+      <label class="volba"><input type="radio" name="d-velkost" value="1000"><span>1&nbsp;kg <b data-d-cena="1000"></b></span></label>
+    </fieldset>
+    <button class="tlac" type="button" data-d-pridaj>Do košíka</button>
+  </div>
+</dialog>
+
+<dialog class="okno" id="okno-platba" aria-labelledby="okno-platba-nadpis" data-okno-platba>
+  <h2 id="okno-platba-nadpis">Toto je ukážka.</h2>
+  <p>Nič sa neobjedná ani nezaplatí.</p>
+  <p>Na vašom e&#8209;shope tu bude pokladňa: doprava, platba kartou alebo prevodom a&nbsp;vaše obchodné podmienky. Na čom e&#8209;shop postavíme a&nbsp;ktoré prvky z&nbsp;tejto ukážky v&nbsp;ňom budú, napíšeme v&nbsp;ponuke vopred.</p>
+  <div class="okno-akcie">
+    <a class="tlac" href="https://arling.sk/web/dotaznik/?ukazka=praziaren" target="_top">Chcem taký e&#8209;shop</a>
+    <button class="tlac tlac-obrys" type="button" data-zavriet>Späť do košíka</button>
+  </div>
+</dialog>
+
+<p class="vh" aria-live="polite" data-hlasenie></p>
+</body>
+</html>

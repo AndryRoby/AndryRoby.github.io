@@ -1,0 +1,520 @@
+<!doctype html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://api.arling.workers.dev; connect-src 'self' https://api.arling.workers.dev; img-src 'self' data:; style-src 'self' 'unsafe-inline'; font-src 'self'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#15120f">
+<title>Dotazník k webu | ARLing</title>
+<meta name="description" content="Otázky pred stavbou webu pre vašu firmu, značku alebo prevádzku. Odpovede odídu len vo vašom e-maile, nič sa neukladá na server.">
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="preload" href="../../fonts/ARLingDrawText-VF.woff2?v=db08e281" as="font" type="font/woff2" crossorigin>
+<script src="dotaznik.js" defer></script>
+<script defer src="https://api.arling.workers.dev/script.js" data-website-id="be534d51-4d01-4860-b267-9596d91606de"></script>
+<style>
+/* Dotazník pred stavbou webu (ARLing, 18. 11. 2026, v2). Vzhľad novej /web/ podľa úvodu hubu: teplá noc, porcelánový hárok,
+   jediný akcent koral, písmo ARLing Draw Text. Bez servera: odpovede zloží dotaznik.js do e-mailu (mailto). */
+@font-face{font-family:"ARLing Draw Text";src:url(../../fonts/ARLingDrawText-VF.woff2?v=db08e281) format("woff2");font-weight:200 800;font-style:normal;font-display:optional}
+:root{--noc:#15120f;--noc-2:#1d1915;--noc-3:#27221d;--ink:#f6f0e8;--ink-2:#c3b9ad;--ink-3:#9a8f83;
+  --porcelan:#f5f1eb;--porcelan-2:#ece6dd;--karta:#fbf8f3;--grafit:#1b1714;--grafit-2:#5c5249;
+  --koral:#ef6a3c;--koral-2:#ff8d61;--koral-fokus:#c4532a;--koral-text:#b4461f;--salvia:#86b49a;--pata:#110e0c;
+  --linka:rgba(246,240,232,.1);--linka-2:rgba(246,240,232,.18);--linka-sv:rgba(27,23,20,.12);--pole:#8a7f74;
+  --vstup:cubic-bezier(.23,1,.32,1);--pohyb:cubic-bezier(.77,0,.175,1);--pruzina:cubic-bezier(.34,1.32,.5,1);
+  --font:"ARLing Draw Text",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--hlava:72px}
+*,*::before,*::after{box-sizing:border-box;margin:0}
+html{background:var(--noc);color-scheme:dark;-webkit-text-size-adjust:100%;scroll-padding-top:calc(var(--hlava) + 20px);scrollbar-color:var(--noc-3) var(--noc)}
+body{font-family:var(--font);font-size:1.0625rem;line-height:1.55;color:var(--ink);background:var(--noc);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;overflow-x:clip}
+/* Tabuľkové číslice len tam, kde sa čísla menia alebo stoja pod sebou (počty, čísla častí, ceny), nie v behu textu */
+.priebeh-text b,.priebeh-spolu,.casti-pocet b,.casti-cislo,legend>span:first-child,summary>span:first-child,.cena-riadok b{font-variant-numeric:tabular-nums}
+::selection{background:rgba(239,106,60,.38);color:#fff}
+a{color:inherit;text-underline-offset:.22em;text-decoration-thickness:1px}
+:focus-visible{outline:2px solid var(--koral-2);outline-offset:3px;border-radius:8px}
+svg{flex:none}
+.wrap{width:min(1240px,100% - 40px);margin-inline:auto}
+.nw{white-space:nowrap}
+.vh{position:absolute!important;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.preskoc{position:absolute;left:12px;top:-60px;z-index:80;background:var(--ink);color:var(--grafit);padding:10px 14px;border-radius:10px;font-weight:600;text-decoration:none}
+.preskoc:focus{top:12px}
+[hidden]{display:none!important}
+
+/* Hlavička: lepiaca, nad hrdinom priesvitná, po posune noc s rozmazaním a vlasovou čiarou */
+.hlava{position:sticky;top:0;z-index:50;height:var(--hlava);border-bottom:1px solid transparent;transition:background-color .3s ease,border-color .3s ease}
+.hlava.posunute{background:rgba(21,18,15,.86);border-bottom-color:var(--linka);-webkit-backdrop-filter:saturate(1.2) blur(14px);backdrop-filter:saturate(1.2) blur(14px)}
+.hlava-in{height:100%;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.znak{display:inline-flex;align-items:center;gap:10px;min-height:44px;font-weight:650;font-size:1.25rem;letter-spacing:-.02em;text-decoration:none;color:var(--ink)}
+.znak svg{width:36px;height:auto}
+.hlava-odkaz{display:inline-flex;align-items:center;gap:8px;height:44px;padding:0 14px;border-radius:999px;font-size:.9375rem;font-weight:520;color:var(--ink-2);text-decoration:none;transition:color .2s ease,background-color .2s ease}
+.hlava-odkaz svg{width:18px;height:18px;transition:transform .25s var(--vstup)}
+.hlava-odkaz:hover{color:var(--ink);background:rgba(246,240,232,.06)}
+.hlava-odkaz:is(:hover,:focus-visible) svg{transform:translateX(-3px)}
+/* Priebeh v hlavičke: tenká koralová čiara podľa vyplnených častí (všade) a na mobile a tablete „Vyplnené X z 14“ s tlačidlom Obsah.
+   Zobrazí sa, až keď je formulár na obrazovke; dovtedy je vpravo odkaz späť na ponuku. */
+.priebeh{display:none;align-items:center;gap:10px;margin-left:auto;min-width:0}
+.priebeh-text{font-size:.9375rem;color:var(--ink-2);white-space:nowrap}
+.priebeh-text b{color:var(--ink);font-weight:640}
+.priebeh-obsah{display:inline-flex;align-items:center;gap:6px;height:44px;padding:0 14px;border-radius:999px;border:1px solid var(--linka-2);background:rgba(246,240,232,.06);color:var(--ink);font:inherit;font-size:.9375rem;font-weight:560;cursor:pointer;transition:background-color .2s ease,border-color .2s ease}
+.priebeh-obsah:hover{background:rgba(246,240,232,.1);border-color:rgba(246,240,232,.32)}
+.priebeh-obsah svg{width:16px;height:16px;transition:transform .25s var(--vstup)}
+.priebeh-obsah[aria-expanded="true"] svg{transform:rotate(180deg)}
+.priebeh-ciara{position:absolute;left:0;right:0;bottom:-1px;height:3px;background:var(--koral);transform-origin:0 50%;transform:scaleX(var(--priebeh,0));opacity:0;transition:transform .45s var(--vstup),opacity .3s ease;pointer-events:none}
+body.v-dotazniku .priebeh-ciara{opacity:1}
+
+/* Hrdina na noci */
+.hrdina{position:relative;isolation:isolate;margin-top:calc(-1 * var(--hlava));padding:calc(var(--hlava) + 72px) 0 calc(104px + 28px);background:var(--noc);overflow:clip}
+.hrdina::before{content:"";position:absolute;inset:0;z-index:-1;background:radial-gradient(42% 62% at 84% 34%,rgba(239,106,60,.11),rgba(239,106,60,0) 70%);pointer-events:none}
+.hrdina-in{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:72px;align-items:center}
+.hrdina-text{max-width:600px}
+h1{font-size:clamp(2.4rem,4.3vw,4.1rem);line-height:1.03;letter-spacing:-.04em;font-weight:660;text-wrap:balance}
+.vedla{margin-top:22px;font-size:1.1875rem;line-height:1.55;color:var(--ink-2);max-width:34em;text-wrap:pretty}
+.stav{display:flex;gap:10px;align-items:flex-start;margin-top:26px;padding-top:18px;border-top:1px solid var(--linka);font-size:.9375rem;line-height:1.5;color:var(--ink-2);max-width:36em}
+.stav svg{width:18px;height:18px;margin-top:2px;color:var(--koral-2)}
+.stav a{color:var(--ink);text-decoration-color:rgba(246,240,232,.35);transition:text-decoration-color .2s ease}
+.stav a:hover{text-decoration-color:var(--ink)}
+
+/* Karta s postupom: krokový zoznam hubu, signál prebehne raz */
+.postup{position:relative;justify-self:end;width:min(100%,520px);padding:30px 32px 28px;border-radius:22px;background:linear-gradient(180deg,rgba(246,240,232,.07),rgba(246,240,232,.03));border:1px solid rgba(246,240,232,.12);box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 50px 90px -40px rgba(0,0,0,.85)}
+.postup-nadpis{font-size:1.25rem;font-weight:640;letter-spacing:-.015em}
+.kroky{list-style:none;padding:0;margin:24px 0 0;display:grid}
+.kroky li{position:relative;display:grid;grid-template-columns:30px 1fr;column-gap:16px;padding-bottom:24px}
+.kroky li::before{content:"";grid-row:span 2;width:12px;height:12px;margin:7px 9px 0;border-radius:50%;background:var(--noc);box-shadow:0 0 0 2px var(--koral)}
+.kroky li::after{content:"";position:absolute;left:14px;top:24px;bottom:0;width:2px;background:linear-gradient(180deg,rgba(239,106,60,.6),rgba(239,106,60,.14));transform-origin:50% 0}
+.kroky li:last-child{padding-bottom:0}
+.kroky li:last-child::after{display:none}
+.kroky li.teraz::before{background:var(--koral)}
+.kroky li:nth-child(2){--k:1}
+.kroky li:nth-child(3){--k:2}
+.kroky b{font-size:1.0625rem;font-weight:640;letter-spacing:-.01em;color:var(--ink)}
+.kroky b em{font-style:normal;font-weight:520;font-size:.875rem;color:var(--koral-2);margin-left:6px}
+.kroky span{grid-column:2;margin-top:2px;font-size:.96rem;line-height:1.5;color:var(--ink-2)}
+.cena-riadok{margin-top:24px;padding-top:18px;border-top:1px solid var(--linka);display:grid;grid-template-columns:auto 1fr;gap:10px 16px;align-items:baseline}
+.cena-riadok b{font-size:1.875rem;font-weight:660;letter-spacing:-.03em;color:var(--ink);line-height:1;white-space:nowrap}
+.cena-riadok b.mensia{font-size:1.375rem}
+.cena-riadok span{font-size:.9375rem;line-height:1.45;color:var(--ink-2)}
+.cena-pozn{margin-top:14px;font-size:.875rem;line-height:1.5;color:var(--ink-3)}
+@media (prefers-reduced-motion:no-preference){
+  .js .kroky.hra li::after{animation:krok-ciara .45s var(--vstup) calc(.5s + var(--k,0) * .4s) both}
+  .js .kroky.hra li::before{animation:krok-uzol .6s var(--vstup) calc(.35s + var(--k,0) * .4s) both}
+  .js .kroky.hra li.teraz::before{animation-name:krok-uzol-teraz}
+}
+@keyframes krok-ciara{from{transform:scaleY(0)}to{transform:none}}
+@keyframes krok-uzol{0%{background:var(--noc);transform:none}35%{background:var(--koral);transform:scale(1.3)}100%{background:var(--noc);transform:none}}
+@keyframes krok-uzol-teraz{0%{transform:none}35%{transform:scale(1.35);box-shadow:0 0 0 2px var(--koral),0 0 0 9px rgba(239,106,60,.22)}100%{transform:none}}
+
+/* Porcelánový hárok s formulárom nasadne na noc */
+.harok{position:relative;z-index:2;margin-top:-28px;border-radius:28px 28px 0 0;background:var(--porcelan);color:var(--grafit);color-scheme:light;padding:104px 0 120px}
+.harok ::selection{background:rgba(239,106,60,.28);color:var(--grafit)}
+.harok :focus-visible{outline-color:var(--koral-fokus)}
+.harok-in{display:grid;grid-template-columns:minmax(0,4fr) minmax(0,7fr);gap:72px;align-items:start}
+.casti{position:sticky;top:calc(var(--hlava) + 28px)}
+.casti-nadpis{font-size:clamp(1.75rem,2.6vw,2.35rem);font-weight:650;letter-spacing:-.035em;line-height:1.06}
+.casti-pocet{margin-top:10px;font-size:.9375rem;color:var(--grafit-2)}
+.casti-pocet b{color:var(--grafit);font-weight:640}
+.casti ol{list-style:none;padding:0;margin:22px 0 0;border-top:1px solid var(--linka-sv)}
+.casti li{border-bottom:1px solid var(--linka-sv)}
+.casti a{position:relative;display:grid;grid-template-columns:2.2ch 1fr 18px;gap:12px;align-items:center;min-height:44px;padding:7px 4px;font-size:.96rem;line-height:1.3;color:var(--grafit-2);text-decoration:none;transition:color .2s ease,background-color .2s ease}
+.casti a:hover{color:var(--grafit);background:rgba(255,255,255,.5)}
+.casti a[aria-current]{color:var(--grafit);font-weight:620}
+.casti a[aria-current]::before{content:"";position:absolute;left:-14px;top:12px;bottom:12px;width:3px;border-radius:2px;background:var(--koral-fokus)}
+.casti-cislo{color:var(--koral-text);font-weight:600}
+.casti-ok{width:18px;height:18px;opacity:0;transform:scale(.6);transition:opacity .2s ease,transform .35s var(--pruzina)}
+.casti-ok circle{fill:var(--salvia)}
+.casti li.vyplnena .casti-ok{opacity:1;transform:none}
+.casti-pozn{margin-top:18px;font-size:.875rem;line-height:1.5;color:var(--grafit-2);max-width:30em}
+/* Na počítači je obsah najviac taký vysoký ako okno pod hlavičkou a posúva sa sám v sebe (koliesko nad ním neposunie stránku);
+   dotaznik.js doňho posunie aktívnu časť a pri okraji, za ktorým je ďalší obsah, ho jemne vyblední. */
+@media (min-width:901px){
+  .casti{max-height:calc(100vh - var(--hlava) - 56px);overflow-y:auto;overscroll-behavior:contain;scroll-padding-block:40px 48px;scrollbar-width:thin;scrollbar-color:rgba(27,23,20,.22) transparent;padding:0 8px 6px 18px;margin-left:-18px;margin-right:-8px}
+  .casti.viac-dole{-webkit-mask-image:linear-gradient(180deg,#000 calc(100% - 40px),transparent);mask-image:linear-gradient(180deg,#000 calc(100% - 40px),transparent)}
+  .casti.viac-hore{-webkit-mask-image:linear-gradient(180deg,transparent,#000 32px);mask-image:linear-gradient(180deg,transparent,#000 32px)}
+  .casti.viac-hore.viac-dole{-webkit-mask-image:linear-gradient(180deg,transparent,#000 32px,#000 calc(100% - 40px),transparent);mask-image:linear-gradient(180deg,transparent,#000 32px,#000 calc(100% - 40px),transparent)}
+}
+/* Notebooky a nižšie okná: tesnejšie riadky obsahu (ciele ostávajú 36 px), aby sa do okna zmestilo čo najviac častí */
+@media (min-width:901px) and (max-height:960px){
+  .casti-nadpis{font-size:clamp(1.6rem,2.2vw,2rem)}
+  .casti ol{margin-top:16px}
+  .casti a{min-height:36px;padding-block:4px;font-size:.94rem}
+  .casti a[aria-current]::before{top:9px;bottom:9px}
+  .casti-pozn{margin-top:14px}
+}
+
+/* Formulár */
+form{min-width:0}
+fieldset{min-width:0;margin:0;padding:40px 0 44px;border:0;border-top:1px solid var(--linka-sv)}
+fieldset:first-of-type{padding-top:0;border-top:0}
+legend{float:left;width:100%;padding:0;margin-bottom:18px;display:flex;align-items:baseline;gap:14px;font-size:clamp(1.5rem,2.3vw,1.9rem);font-weight:650;letter-spacing:-.03em;line-height:1.15;color:var(--grafit)}
+legend+*{clear:both;margin-top:0}
+legend>span:first-child,summary>span:first-child{min-width:2.2ch;color:var(--koral-text);font-weight:620}
+.pole{margin-top:22px}
+.pole>label,.skupina-nadpis{display:block;margin-bottom:8px;font-size:1rem;font-weight:600;line-height:1.4;color:var(--grafit)}
+.pomoc{display:block;margin:-4px 0 9px;font-size:.9063rem;line-height:1.45;color:var(--grafit-2)}
+.pomoc a{color:var(--grafit);text-decoration-color:rgba(27,23,20,.35)}
+.pomoc a:hover{text-decoration-color:var(--grafit)}
+input[type=text],input[type=tel],input[type=email],input[type=url],textarea{display:block;width:100%;min-height:50px;padding:12px 14px;font:inherit;font-size:1.0625rem;line-height:1.45;color:var(--grafit);background:var(--karta);border:1px solid var(--pole);border-radius:12px;transition:border-color .2s ease,background-color .2s ease}
+textarea{min-height:108px;resize:vertical}
+input:hover,textarea:hover{border-color:var(--grafit-2)}
+input:focus,textarea:focus{border-color:var(--grafit);background:#fff}
+input:focus-visible,textarea:focus-visible{outline:2px solid var(--koral-fokus);outline-offset:2px;border-radius:12px}
+.volby{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:8px}
+.volba{display:flex;align-items:center;gap:12px;min-height:52px;padding:10px 16px;font-size:1rem;line-height:1.35;color:var(--grafit);background:var(--karta);border:1px solid rgba(27,23,20,.16);border-radius:14px;cursor:pointer;transition:border-color .2s ease,background-color .2s ease,box-shadow .2s ease}
+.volba input{width:20px;height:20px;margin:0;flex:none;accent-color:var(--koral-fokus)}
+.volba input:focus-visible{outline:none}
+.volba:hover{border-color:var(--grafit-2)}
+.volba:has(input:checked){background:#fff;border-color:var(--grafit);box-shadow:inset 0 0 0 1px var(--grafit)}
+.volba:has(input:focus-visible){outline:2px solid var(--koral-fokus);outline-offset:2px}
+details{padding:32px 0 8px;border-top:1px solid var(--linka-sv)}
+summary{display:flex;align-items:baseline;gap:14px;min-height:44px;font-size:clamp(1.5rem,2.3vw,1.9rem);font-weight:650;letter-spacing:-.03em;line-height:1.15;color:var(--grafit);cursor:pointer;list-style:none}
+summary::-webkit-details-marker{display:none}
+summary small{display:block;margin-top:6px;font-size:.9375rem;font-weight:450;letter-spacing:0;line-height:1.45;color:var(--grafit-2)}
+.sipka-dole{width:22px;height:22px;margin-left:auto;align-self:center;color:var(--grafit-2);transition:transform .3s var(--vstup)}
+details[open] .sipka-dole{transform:rotate(180deg)}
+details[open]{padding-bottom:44px}
+
+/* Odoslanie: tmavá karta s koralovou žiarou zdola, ako záver hubu */
+.odoslat{position:relative;isolation:isolate;overflow:clip;margin-top:40px;padding:44px clamp(22px,4vw,48px) 40px;border-radius:24px;background:var(--noc);color:var(--ink);color-scheme:dark}
+.odoslat::before{content:"";position:absolute;inset:0;z-index:-1;background:radial-gradient(60% 90% at 50% 120%,rgba(239,106,60,.26),rgba(239,106,60,0) 70%);pointer-events:none}
+.odoslat :focus-visible{outline-color:var(--koral-2)}
+.odoslat ::selection{background:rgba(239,106,60,.38);color:#fff}
+.odoslat h2{font-size:clamp(1.85rem,3vw,2.6rem);font-weight:650;letter-spacing:-.037em;line-height:1.06;text-wrap:balance}
+.odoslat-text{margin-top:14px;max-width:36em;font-size:1.0625rem;line-height:1.55;color:var(--ink-2);text-wrap:pretty}
+.akcie{display:flex;flex-wrap:wrap;align-items:center;gap:14px 18px;margin-top:28px}
+.tlac{display:inline-flex;align-items:center;justify-content:center;gap:10px;font:inherit;font-weight:600;letter-spacing:-.005em;text-decoration:none;border-radius:999px;border:0;cursor:pointer;transition:transform .14s var(--vstup),background-color .2s ease,border-color .2s ease}
+.tlac:active{transform:scale(.97)}
+.tlac svg{width:18px;height:18px;transition:transform .25s var(--vstup)}
+.tlac-hl{min-height:56px;padding:0 26px 0 28px;font-size:1.0625rem;background:var(--koral);color:#1a0d06;box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 8px 18px -10px rgba(0,0,0,.6)}
+.tlac-hl:hover{background:var(--koral-2)}
+.tlac-hl:is(:hover,:focus-visible) svg{transform:translateX(3px)}
+.tlac-obrys{min-height:52px;padding:0 22px;font-size:1rem;background:transparent;color:var(--ink);border:1px solid var(--linka-2)}
+.tlac-obrys:hover{background:rgba(246,240,232,.07);border-color:rgba(246,240,232,.32)}
+.stav-odoslania{margin-top:16px;min-height:1.5em;font-size:.9375rem;line-height:1.5;color:var(--ink)}
+.odoslat-pozn{margin-top:22px;padding-top:18px;border-top:1px solid var(--linka);display:grid;gap:6px;font-size:.9063rem;line-height:1.5;color:var(--ink-3)}
+.odoslat-pozn b{color:var(--ink-2);font-weight:600}
+.nahlad{margin-top:20px}
+.nahlad label{display:block;margin-bottom:8px;font-size:.9375rem;font-weight:600;color:var(--ink)}
+.nahlad textarea{min-height:220px;font-size:.875rem;line-height:1.5;color:var(--grafit);background:var(--karta);border-color:var(--karta);color-scheme:light}
+
+/* Päta */
+.pata{background:var(--pata);color:var(--ink-2);padding:64px 0 40px;border-top:1px solid var(--linka);font-size:.9375rem}
+.pata-mriezka{display:flex;flex-wrap:wrap;justify-content:space-between;gap:24px 40px}
+.pata .znak{font-size:1.125rem}
+.pata-znak p{margin-top:12px;max-width:24em;line-height:1.55}
+.pata nav{display:flex;flex-wrap:wrap;gap:0 22px;align-content:start}
+.pata nav a{display:inline-flex;align-items:center;min-height:44px;color:var(--ink-2);text-decoration:none}
+.pata nav a:hover{color:var(--ink)}
+.pata-riadok{margin-top:40px;padding-top:22px;border-top:1px solid var(--linka);font-size:.8125rem;line-height:1.6;color:var(--ink-3)}
+
+@media (prefers-reduced-motion:reduce){
+  .tlac,.tlac svg,.hlava-odkaz svg,.casti-ok,.sipka-dole,.hlava,.priebeh-ciara,.priebeh-obsah svg{transition:none}
+  .tlac-hl:is(:hover,:focus-visible) svg,.hlava-odkaz:is(:hover,:focus-visible) svg{transform:none}
+}
+@media (max-width:1080px){
+  .hrdina-in{grid-template-columns:1fr;gap:48px}
+  .postup{justify-self:start;width:min(100%,600px)}
+  .harok-in{gap:48px}
+}
+@media (max-width:900px){
+  .harok-in{grid-template-columns:1fr;gap:0}
+  .casti{display:none}
+  form{max-width:760px}
+  body.v-dotazniku .priebeh{display:flex}
+  body.v-dotazniku .hlava-odkaz{display:none}
+  .casti.otvorene{display:block;position:fixed;z-index:45;top:var(--hlava);left:0;right:0;bottom:0;overflow:auto;overscroll-behavior:contain;padding:26px 20px calc(36px + env(safe-area-inset-bottom));background:var(--porcelan);color:var(--grafit);border-top:1px solid var(--linka-sv)}
+  html.obsah-otvoreny{overflow:hidden}
+}
+@media (max-width:640px){
+  :root{--hlava:64px}
+  body{font-size:1rem}
+  h1{font-size:clamp(2.15rem,9.6vw,2.9rem);line-height:1.05}
+  .vedla{margin-top:16px;font-size:1.0625rem}
+  .hrdina{padding:calc(var(--hlava) + 36px) 0 calc(80px + 22px)}
+  .postup{padding:24px 20px 22px;border-radius:18px}
+  .harok{border-radius:22px 22px 0 0;margin-top:-22px;padding:64px 0 88px}
+  fieldset{padding:32px 0 36px}
+  details{padding-top:28px}
+  .odoslat{padding:34px 20px 30px;border-radius:20px}
+  .akcie{flex-direction:column;align-items:stretch}
+  .tlac{width:100%}
+  .hlava-odkaz{padding:0 10px}
+}
+@media (max-width:359px){
+  .hlava-odkaz span{display:none}
+  .priebeh-text{font-size:.875rem}
+  .priebeh-obsah{padding:0 10px}
+}
+</style>
+</head>
+<body>
+<a class="preskoc" href="#dotaznik">Preskočiť na dotazník</a>
+
+<header class="hlava">
+  <div class="wrap hlava-in">
+    <a class="znak" href="https://arling.sk/" aria-label="ARLing, úvod"><svg viewBox="0 0 488 215" aria-hidden="true" focusable="false"><path fill="currentColor" fill-rule="evenodd" d="M0,213L74,214L181,85L285,214L360,214L206,21L185,4L164,10Z M221,0L263,50L395,50L409,55L419,76L401,96L313,98L411,214L487,214L422,139L457,123L482,88L482,48L463,19L417,0Z"/><path fill="#f2643c" d="M269,66L269,67L268,68L268,70L267,71L267,76L268,77L268,79L270,81L270,82L271,82L273,84L274,84L277,86L279,86L280,87L287,87L288,86L290,86L291,85L294,84L298,80L298,79L299,78L299,75L300,74L300,72L299,71L299,69L298,68L297,65L295,63L294,63L289,60L278,60L277,61L276,61L275,62L272,63Z"/></svg>ARLing</a>
+    <a class="hlava-odkaz" href="../index.html"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Ponuka a&nbsp;ukážky</span></a>
+    <div class="priebeh" hidden>
+      <span class="priebeh-text" aria-live="polite">Vyplnené <b class="priebeh-pocet">0</b> z&nbsp;<span class="priebeh-spolu">14</span></span>
+      <button class="priebeh-obsah" type="button" aria-controls="casti" aria-expanded="false">Obsah<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    </div>
+  </div>
+  <span class="priebeh-ciara" aria-hidden="true"></span>
+</header>
+
+<main>
+  <section class="hrdina" aria-labelledby="nadpis">
+    <div class="wrap hrdina-in">
+      <div class="hrdina-text">
+        <h1 id="nadpis">Dotazník k&nbsp;webu.</h1>
+        <p class="vedla">Asi 10&nbsp;minút, ak vyplníte len to, čo viete. Kde odpoveď nemáte, nechajte pole prázdne a&nbsp;poradíme. Na konci sa otvorí váš <span class="nw">e-mail</span> s&nbsp;odpoveďami, logo a&nbsp;fotky k&nbsp;nemu len priložíte.</p>
+        <p class="stav"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 5 6v5c0 4.4 3 8.3 7 9.5 4-1.2 7-5.1 7-9.5V6z M9 12l2 2 4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span>Odpovede sa nikam neukladajú, odídu len vo vašom <span class="nw">e-maile</span> na andrej@arling.sk a&nbsp;použijeme ich len na prípravu webu (<a href="https://arling.sk/privacy/#s8c">ochrana údajov</a>). Meriame iba návštevu a&nbsp;to, ku ktorej časti ste sa dostali, nie to, čo píšete.</span></p>
+      </div>
+      <div class="postup">
+        <h2 class="postup-nadpis">Čo bude ďalej.</h2>
+        <ol class="kroky">
+          <li class="teraz"><b>Vyplníte dotazník <em>teraz</em></b><span>Čo robíte, pár viet alebo vaše texty, fotky, cenník a&nbsp;weby, ktoré sa vám páčia.</span></li>
+          <li><b>Do 48&nbsp;hodín máte náhľad</b><span>Od nášho <span class="nw">e-mailu</span>, že máme všetky podklady. Celý web na skúšobnej adrese a&nbsp;dve kolá pripomienok.</span></li>
+          <li><b>Schválite, zaplatíte, zapojíme</b><span>Faktúru pošleme, až keď hotový web schválite. Potom ho zapojíme na vašu doménu.</span></li>
+        </ol>
+        <div class="cena-riadok">
+          <b>290&nbsp;€</b><span>jednostránkový web, platíte až po schválení.</span>
+          <b class="mensia">19&nbsp;€</b><span>mesačne za správu webu, voliteľne a&nbsp;bez viazanosti.</span>
+        </div>
+        <p class="cena-pozn">Väčší web alebo <span class="nw">e-shop</span>: cenu pošleme do 2&nbsp;pracovných dní. DPH na faktúre nebude: ARLing s.&nbsp;r.&nbsp;o. nie je platiteľom DPH (registrácia len podľa §&nbsp;7a), preto si ju neodpočítate, ale ani sa k&nbsp;290&nbsp;€ nič nepripočíta.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="harok" aria-label="Otázky dotazníka">
+    <div class="wrap harok-in">
+      <nav class="casti" id="casti" aria-labelledby="casti-nadpis">
+        <h2 class="casti-nadpis" id="casti-nadpis">Čo sa pýtame.</h2>
+        <p class="casti-pocet">Vyplnené <b id="pocet-vyplnenych">0</b> z&nbsp;14 častí, <span class="nw">e-shop</span> je navyše. Žiadna časť nie je povinná.</p>
+        <ol>
+          <li><a href="#cast-1"><span class="casti-cislo">1</span><span>Firma a&nbsp;kontakt</span><svg class="casti-ok" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="9"/><path d="M5.2 9.3l2.4 2.3 5-5" fill="none" stroke="#1b1714" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a></li>
+          <li><a href="#cast-2"><span class="casti-cislo">2</span><span>Adresa a&nbsp;hodiny</span><svg class="casti-ok" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="9"/><path d="M5.2 9.3l2.4 2.3 5-5" fill="none" stroke="#1b1714" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a></li>
+          <li><a href="#cast-3"><span class="casti-cislo">3</span><span>Logo</span><svg class="casti-ok" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="9"/><path d="M5.2 9.3l2.4 2.3 5-5" fill="none" stroke="#1b1714" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a></li>
+          <li><a href="#cast-4"><span class="casti-cislo">4</span><span>Texty</span><svg class="casti-ok" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="9"/><path d="M5.2 9.3l2.4 2.3 5-5" fill="none" stroke="#1b1714" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a></li>
+          <li><a href="#cast-5"><span class="casti-cislo">5</span><span>Fotky</span><svg class="casti-ok" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="9"/><path d="M5.2 9.3l2.4 2.3 5-5" fill="none" stroke="#1b1714" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a></li>
+          <li><a href="#cast-6"><span class="casti-cislo">6</span><span>Služby a&nbsp;ceny</span><svg class="casti-ok" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="9"/><path d="M5.2 9.3l2.4 2.3 5-5" fill="none" stroke="#1b1714" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a></li>
+          <li><a href="#cast-7"><span class="casti-cislo">7</span><span>Doména a&nbsp;<span class="nw">e-mail</span></span><svg class="casti-ok" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="9"/><path d="M5.2 9.3l2.4 2.3 5-5" fill="none" stroke="#1b1714" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a></li>
+          <li><a href="#cast-8"><span class="casti-cislo">8</span><span>Rezervácie a&nbsp;objednávky</span><svg class="casti-ok" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="9"/><path d="M5.2 9.3l2.4 2.3 5-5" fill="none" stroke="#1b1714" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a></li>
+          <li><a href="#cast-9"><span class="casti-cislo">9</span><span>Sociálne siete</span><svg class="casti-ok" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="9"/><path d="M5.2 9.3l2.4 2.3 5-5" fill="none" stroke="#1b1714" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a></li>
+          <li><a href="#cast-10"><span class="casti-cislo">10</span><span>Jazyk</span><svg class="casti-ok" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="9"/><path d="M5.2 9.3l2.4 2.3 5-5" fill="none" stroke="#1b1714" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a></li>
+          <li><a href="#cast-11"><span class="casti-cislo">11</span><span>Štýl</span><svg class="casti-ok" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="9"/><path d="M5.2 9.3l2.4 2.3 5-5" fill="none" stroke="#1b1714" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a></li>
+          <li><a href="#cast-12"><span class="casti-cislo">12</span><span>Čo nesmie chýbať</span><svg class="casti-ok" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="9"/><path d="M5.2 9.3l2.4 2.3 5-5" fill="none" stroke="#1b1714" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a></li>
+          <li><a href="#cast-13"><span class="casti-cislo">13</span><span>Správa po spustení</span><svg class="casti-ok" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="9"/><path d="M5.2 9.3l2.4 2.3 5-5" fill="none" stroke="#1b1714" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a></li>
+          <li><a href="#cast-14"><span class="casti-cislo">14</span><span>Fakturačné údaje</span><svg class="casti-ok" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="9"/><path d="M5.2 9.3l2.4 2.3 5-5" fill="none" stroke="#1b1714" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a></li>
+          <li><a href="#cast-15"><span class="casti-cislo">15</span><span><span class="nw">E-shop</span>, len ak ho chcete</span><svg class="casti-ok" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="9"/><path d="M5.2 9.3l2.4 2.3 5-5" fill="none" stroke="#1b1714" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a></li>
+          <li><a href="#odoslat"><span class="casti-cislo" aria-hidden="true"></span><span>Odoslanie <span class="nw">e-mailom</span></span></a></li>
+        </ol>
+        <p class="casti-pozn">Rozpracovaný dotazník ostáva v&nbsp;tejto karte prehliadača, kým ju nezavriete. Nič sa neukladá.</p>
+      </nav>
+
+      <form id="dotaznik" novalidate>
+        <fieldset id="cast-1">
+          <legend><span>1</span><span class="nazov">Firma a&nbsp;kontakt</span></legend>
+          <div class="pole"><label for="nazov">Názov firmy, značky alebo prevádzky, ako má byť na webe</label><input type="text" id="nazov" name="Názov" autocomplete="organization"></div>
+          <div class="pole"><label for="cinnost">Čím sa zaoberáte a&nbsp;pre koho</label><span class="pomoc" id="cinnost-pomoc">Stačia 2 až 3&nbsp;vety.</span><textarea id="cinnost" name="Čím sa zaoberáte a pre koho" aria-describedby="cinnost-pomoc"></textarea></div>
+          <div class="pole"><label for="osoba">Meno kontaktnej osoby</label><span class="pomoc" id="osoba-pomoc">Pre nás, na web len ak chcete.</span><input type="text" id="osoba" name="Kontaktná osoba" autocomplete="name" aria-describedby="osoba-pomoc"></div>
+          <div class="pole"><label for="telefon">Telefón, ktorý má byť na webe</label><input type="tel" id="telefon" name="Telefón na web" autocomplete="tel"></div>
+          <div class="pole"><label for="email"><span class="nw">E-mail</span>, ktorý má byť na webe</label><input type="email" id="email" name="E-mail na web" autocomplete="email"></div>
+        </fieldset>
+
+        <fieldset id="cast-2">
+          <legend><span>2</span><span class="nazov">Adresa a&nbsp;hodiny</span></legend>
+          <div class="pole"><label for="adresa">Adresa, ak ju chcete na webe</label><span class="pomoc" id="adresa-pomoc">Prevádzka, ateliér alebo len mesto, kde pôsobíte.</span><input type="text" id="adresa" name="Adresa" autocomplete="street-address" aria-describedby="adresa-pomoc"></div>
+          <div class="pole"><label for="hodiny">Otváracie hodiny alebo kedy ste k&nbsp;dispozícii</label><span class="pomoc" id="hodiny-pomoc">Napríklad: Po až Pi 9.00 až 18.00, So 8.00 až 12.00.</span><textarea id="hodiny" name="Otváracie hodiny" aria-describedby="hodiny-pomoc"></textarea></div>
+          <div class="pole"><label for="parkovanie">Parkovanie alebo ako sa k&nbsp;vám dostať</label><input type="text" id="parkovanie" name="Parkovanie a príchod"></div>
+        </fieldset>
+
+        <fieldset id="cast-3">
+          <legend><span>3</span><span class="nazov">Logo</span></legend>
+          <div class="pole" role="radiogroup" aria-labelledby="logo-n">
+            <span class="skupina-nadpis" id="logo-n">Máte logo?</span>
+            <div class="volby">
+              <label class="volba"><input type="radio" name="Logo" value="áno, pošlem ho v prílohe (SVG alebo PNG)"><span>Áno, pošlem ho v&nbsp;prílohe</span></label>
+              <label class="volba"><input type="radio" name="Logo" value="nie, stačí názov písmom"><span>Nie, stačí názov písmom</span></label>
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset id="cast-4">
+          <legend><span>4</span><span class="nazov">Texty</span></legend>
+          <div class="pole" role="radiogroup" aria-labelledby="texty-n">
+            <span class="skupina-nadpis" id="texty-n">Máte texty na web?</span>
+            <div class="volby">
+              <label class="volba"><input type="radio" name="Texty" value="áno, pošlem ich"><span>Áno, pošlem ich</span></label>
+              <label class="volba"><input type="radio" name="Texty" value="nie, navrhnite ich podľa dotazníka a ja ich opravím"><span>Nie, navrhnite ich a&nbsp;ja ich opravím</span></label>
+            </div>
+          </div>
+          <div class="pole"><label for="odlisuje">Čo vás odlišuje od iných</label><textarea id="odlisuje" name="Čo nás odlišuje"></textarea></div>
+        </fieldset>
+
+        <fieldset id="cast-5">
+          <legend><span>5</span><span class="nazov">Fotky</span></legend>
+          <div class="pole" role="radiogroup" aria-labelledby="fotky-n" aria-describedby="fotky-pomoc">
+            <span class="skupina-nadpis" id="fotky-n">Pošlete 3 až 10&nbsp;fotiek priestorov, práce alebo produktov?</span>
+            <span class="pomoc" id="fotky-pomoc">Bez rozpoznateľných ľudí a&nbsp;bez mien zamestnancov.</span>
+            <div class="volby">
+              <label class="volba"><input type="radio" name="Fotky" value="áno, pošlem ich v prílohe"><span>Áno, pošlem ich v&nbsp;prílohe</span></label>
+              <label class="volba"><input type="radio" name="Fotky" value="fotky nemám"><span>Fotky nemám</span></label>
+            </div>
+          </div>
+          <div class="pole"><label for="foto-popis">Ak fotky nemáte, čo by na nich malo byť</label><span class="pomoc" id="foto-pomoc">Poradíme, čo odfotiť mobilom. Fotku z&nbsp;fotobanky dáme len s&nbsp;vaším súhlasom a&nbsp;licenciou.</span><textarea aria-describedby="foto-pomoc" id="foto-popis" name="Čo má byť na fotkách"></textarea></div>
+        </fieldset>
+
+        <fieldset id="cast-6">
+          <legend><span>6</span><span class="nazov">Služby a&nbsp;ceny</span></legend>
+          <div class="pole"><label for="cennik">Služby alebo produkty a&nbsp;ich ceny</label><span class="pomoc" id="cennik-pomoc">Môžete ich skopírovať sem alebo priložiť fotku cenníka.</span><textarea id="cennik" name="Cenník" aria-describedby="cennik-pomoc"></textarea></div>
+        </fieldset>
+
+        <fieldset id="cast-7">
+          <legend><span>7</span><span class="nazov">Doména a&nbsp;<span class="nw">e-mail</span></span></legend>
+          <div class="pole" role="radiogroup" aria-labelledby="domena-n">
+            <span class="skupina-nadpis" id="domena-n">Máte doménu (napríklad vasafirma.sk)?</span>
+            <div class="volby">
+              <label class="volba"><input type="radio" name="Doména" value="áno"><span>Áno</span></label>
+              <label class="volba"><input type="radio" name="Doména" value="nie"><span>Nie</span></label>
+              <label class="volba"><input type="radio" name="Doména" value="neviem"><span>Neviem</span></label>
+            </div>
+          </div>
+          <div class="pole"><label for="domena-nazov">Aká doména a&nbsp;u&nbsp;koho je registrovaná</label><input type="text" id="domena-nazov" name="Doména a registrátor"></div>
+          <div class="pole"><label for="domena-spravca">Kto ju spravuje</label><span class="pomoc" id="spravca-pomoc">Vy, známy alebo firma, stačí meno alebo kontakt.</span><input type="text" id="domena-spravca" name="Kto spravuje doménu" aria-describedby="spravca-pomoc"></div>
+          <div class="pole"><label for="email-domena">Máte <span class="nw">e-mail</span> na doméne? U&nbsp;koho?</label><span class="pomoc" id="emaildom-pomoc">Napríklad adresa info@ na vašej doméne u&nbsp;Websupportu. Pred prepnutím ho skontrolujeme, aby pošta nevypadla.</span><input type="text" id="email-domena" name="E-mail na doméne" aria-describedby="emaildom-pomoc"></div>
+          <div class="pole"><label for="sucasny-web">Adresa súčasného webu, ak nejaký máte</label><input type="url" id="sucasny-web" name="Súčasný web" inputmode="url"></div>
+        </fieldset>
+
+        <fieldset id="cast-8">
+          <legend><span>8</span><span class="nazov">Rezervácie a&nbsp;objednávky</span></legend>
+          <div class="pole"><label for="rezervacie">Používate rezervačný alebo objednávkový systém? Pošlite odkaz</label><span class="pomoc" id="rez-pomoc">Napríklad Bookio, Reservio, Booqme, Noona.</span><input type="text" id="rezervacie" name="Rezervačný systém" aria-describedby="rez-pomoc"></div>
+          <div class="pole" role="radiogroup" aria-labelledby="tlacidlo-n">
+            <span class="skupina-nadpis" id="tlacidlo-n">Ak systém nemáte, kam má viesť tlačidlo na webe?</span>
+            <div class="volby">
+              <label class="volba"><input type="radio" name="Tlačidlo bez systému" value="na telefón"><span>Na telefón</span></label>
+              <label class="volba"><input type="radio" name="Tlačidlo bez systému" value="na e-mail"><span>Na <span class="nw">e-mail</span></span></label>
+              <label class="volba"><input type="radio" name="Tlačidlo bez systému" value="chcem systém zriadiť, cenu pošlite vopred"><span>Chcem systém zriadiť, cenu pošlite vopred</span></label>
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset id="cast-9">
+          <legend><span>9</span><span class="nazov">Sociálne siete</span></legend>
+          <div class="pole"><label for="siete">Instagram, Facebook, TikTok, profil na Google</label><span class="pomoc" id="siete-pomoc">Odkazy alebo mená profilov.</span><textarea id="siete" name="Sociálne siete" aria-describedby="siete-pomoc"></textarea></div>
+        </fieldset>
+
+        <fieldset id="cast-10">
+          <legend><span>10</span><span class="nazov">Jazyk</span></legend>
+          <div class="pole" role="radiogroup" aria-labelledby="jazyk-n">
+            <span class="skupina-nadpis" id="jazyk-n">V&nbsp;akom jazyku má byť web?</span>
+            <div class="volby">
+              <label class="volba"><input type="radio" name="Jazyk" value="slovenčina"><span>Slovenčina</span></label>
+              <label class="volba"><input type="radio" name="Jazyk" value="slovenčina a ďalší jazyk (cenu pošlete vopred)"><span>Slovenčina a&nbsp;ďalší jazyk</span></label>
+            </div>
+          </div>
+          <div class="pole"><label for="jazyk-dalsi">Ktorý ďalší jazyk</label><span class="pomoc" id="jazyk-pomoc">Cenu za ďalší jazyk pošleme do 2&nbsp;pracovných dní.</span><input type="text" id="jazyk-dalsi" name="Ďalší jazyk" aria-describedby="jazyk-pomoc"></div>
+        </fieldset>
+
+        <fieldset id="cast-11">
+          <legend><span>11</span><span class="nazov">Štýl</span></legend>
+          <div class="pole" role="radiogroup" aria-labelledby="styl-n" aria-describedby="styl-pomoc">
+            <span class="skupina-nadpis" id="styl-n">Aký štýl je vám najbližší?</span>
+            <span class="pomoc" id="styl-pomoc">Ukážky v&nbsp;rôznych štýloch: <a href="../index.html#ukazky" target="_blank" rel="noopener">ponuka a&nbsp;ukážky</a> (otvorí sa v&nbsp;novej karte).</span>
+            <div class="volby">
+              <label class="volba"><input type="radio" name="Štýl" id="styl-odvazne" value="odvážny a výrazný"><span>Odvážny a&nbsp;výrazný</span></label>
+              <label class="volba"><input type="radio" name="Štýl" id="styl-elegantne" value="elegantný a jemný"><span>Elegantný a&nbsp;jemný</span></label>
+              <label class="volba"><input type="radio" name="Štýl" id="styl-hrave" value="hravý a farebný"><span>Hravý a&nbsp;farebný</span></label>
+              <label class="volba"><input type="radio" name="Štýl" id="styl-pokojne" value="pokojný a čistý"><span>Pokojný a&nbsp;čistý</span></label>
+              <label class="volba"><input type="radio" name="Štýl" id="styl-neviem" value="neviem, poraďte"><span>Neviem, poraďte</span></label>
+            </div>
+          </div>
+          <div class="pole"><label for="ukazka-oblubena">Ktorá ukážka sa vám páči najviac</label><input type="text" id="ukazka-oblubena" name="Najbližšia ukážka"></div>
+          <div class="pole"><label for="vzory">1 až 3&nbsp;weby, ktoré sa vám páčia, a&nbsp;čo sa vám na nich páči</label><textarea id="vzory" name="Vzory webov"></textarea></div>
+          <div class="pole"><label for="farby">Farby, ktoré k&nbsp;vám patria, alebo ktoré nechcete</label><input type="text" id="farby" name="Farby"></div>
+        </fieldset>
+
+        <fieldset id="cast-12">
+          <legend><span>12</span><span class="nazov">Čo nesmie chýbať</span></legend>
+          <div class="pole"><label for="nesmie">Čo musí byť na webe, aby ste boli spokojní</label><textarea id="nesmie" name="Čo nesmie chýbať"></textarea></div>
+        </fieldset>
+
+        <fieldset id="cast-13">
+          <legend><span>13</span><span class="nazov">Správa po spustení</span></legend>
+          <div class="pole" role="radiogroup" aria-labelledby="sprava-n" aria-describedby="sprava-pomoc">
+            <span class="skupina-nadpis" id="sprava-n">Chcete mesačnú správu webu za 19&nbsp;€?</span>
+            <span class="pomoc" id="sprava-pomoc">Raz mesačne vám pošleme <span class="nw">e-mail</span> s&nbsp;meraním rýchlosti a&nbsp;so záznamom, či bol web celý mesiac dostupný. V&nbsp;cene sú najviac 3&nbsp;drobné úpravy za mesiac (text, telefón, hodiny, cenník alebo výmena fotky) do 2&nbsp;pracovných dní. Voliteľné a&nbsp;bez viazanosti, zrušíte jedným <span class="nw">e-mailom</span>. Web funguje aj bez nej.</span>
+            <div class="volby">
+              <label class="volba"><input type="radio" name="Mesačná správa za 19 €" value="áno, chcem správu za 19 € mesačne"><span>Áno, chcem správu</span></label>
+              <label class="volba"><input type="radio" name="Mesačná správa za 19 €" value="nie, stačí mi hotový web"><span>Nie, stačí mi web</span></label>
+              <label class="volba"><input type="radio" name="Mesačná správa za 19 €" value="neviem, poraďte"><span>Neviem, poraďte</span></label>
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset id="cast-14">
+          <legend><span>14</span><span class="nazov">Fakturačné údaje</span></legend>
+          <div class="pole"><label for="fa-meno">Obchodné meno a&nbsp;sídlo</label><textarea id="fa-meno" name="Obchodné meno a sídlo"></textarea></div>
+          <div class="pole"><label for="fa-ico">IČO</label><input type="text" id="fa-ico" name="IČO" inputmode="numeric"></div>
+          <div class="pole"><label for="fa-dic">DIČ, prípadne IČ DPH</label><input type="text" id="fa-dic" name="DIČ a IČ DPH"></div>
+          <div class="pole"><label for="fa-email"><span class="nw">E-mail</span> na faktúru</label><input type="email" id="fa-email" name="E-mail na faktúru" autocomplete="email"></div>
+        </fieldset>
+
+        <details id="cast-15">
+          <summary><span>15</span><span class="nazov"><span class="nw">E-shop</span><small>Vyplňte len, ak chcete <span class="nw">e-shop</span>. Cenu pošleme do 2&nbsp;pracovných dní.</small></span><svg class="sipka-dole" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></summary>
+          <div class="pole"><label for="es-co">Čo predávate a&nbsp;približne koľko produktov</label><textarea id="es-co" name="E-shop: čo a koľko produktov"></textarea></div>
+          <div class="pole"><label for="es-ucet">Máte už účet na Shoptete alebo inej platforme?</label><input type="text" id="es-ucet" name="E-shop: platforma"></div>
+          <div class="pole"><label for="es-doprava">Doprava a&nbsp;platby, ktoré chcete ponúkať</label><textarea id="es-doprava" name="E-shop: doprava a platby"></textarea></div>
+          <div class="pole" role="radiogroup" aria-labelledby="es-pravo-n" aria-describedby="es-pravo-pomoc">
+            <span class="skupina-nadpis" id="es-pravo-n">Máte obchodné podmienky a&nbsp;reklamačný poriadok?</span>
+            <span class="pomoc" id="es-pravo-pomoc">Za právne texty <span class="nw">e-shopu</span> zodpovedáte vy, my ich nepíšeme.</span>
+            <div class="volby">
+              <label class="volba"><input type="radio" name="E-shop: právne texty" value="áno, mám ich"><span>Áno, mám ich</span></label>
+              <label class="volba"><input type="radio" name="E-shop: právne texty" value="zatiaľ nie"><span>Zatiaľ nie</span></label>
+            </div>
+          </div>
+        </details>
+
+        <div class="odoslat" id="odoslat">
+          <h2>Pošlite odpovede <span class="nw">e-mailom</span>.</h2>
+          <p class="odoslat-text">Otvorí sa váš <span class="nw">e-mail</span> na andrej@arling.sk s&nbsp;vyplnenými odpoveďami. Logo, fotky a&nbsp;cenník k&nbsp;nemu priložte. Náhľad webu pošleme do 48&nbsp;hodín od <span class="nw">e-mailu</span>, že máme všetky podklady.</p>
+          <div class="akcie">
+            <a class="tlac tlac-hl" id="otvorit" href="mailto:andrej@arling.sk?subject=Dotazn%C3%ADk%20k%20webu"><span>Otvoriť <span class="nw">e-mail</span> s&nbsp;odpoveďami</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+            <button class="tlac tlac-obrys" type="button" id="kopirovat" hidden>Skopírovať odpovede</button>
+          </div>
+          <p class="stav-odoslania" id="stav" role="status" aria-live="polite"></p>
+          <noscript><p class="odoslat-text">Bez JavaScriptu sa otvorí prázdny <span class="nw">e-mail</span> s&nbsp;predmetom. Odpovede doň napíšte alebo skopírujte otázky z&nbsp;tejto stránky.</p></noscript>
+          <div class="nahlad" id="nahlad" hidden>
+            <label for="nahlad-text">Text <span class="nw">e-mailu</span> (ak sa <span class="nw">e-mail</span> neotvoril, skopírujte ho a&nbsp;pošlite na andrej@arling.sk)</label>
+            <textarea id="nahlad-text" readonly></textarea>
+          </div>
+          <div class="odoslat-pozn">
+            <p><b>Jednostránkový web 290&nbsp;€</b> platíte až po schválení hotového webu. Správa za 19&nbsp;€ mesačne je voliteľná. Väčší web, <span class="nw">e-shop</span> alebo ďalší jazyk: cenu pošleme do 2&nbsp;pracovných dní.</p>
+            <p>DPH na faktúre nebude: ARLing s.&nbsp;r.&nbsp;o. nie je platiteľom DPH (registrácia len podľa §&nbsp;7a), preto si ju neodpočítate, ale ani sa k&nbsp;290&nbsp;€ nič nepripočíta.</p>
+            <p>Robíme len pre podnikateľov a&nbsp;firmy. Odpovede použijeme len na prípravu webu.</p>
+          </div>
+        </div>
+      </form>
+    </div>
+  </section>
+</main>
+
+<footer class="pata">
+  <div class="wrap">
+    <div class="pata-mriezka">
+      <div class="pata-znak">
+        <span class="znak"><svg viewBox="0 0 488 215" aria-hidden="true" focusable="false"><path fill="currentColor" fill-rule="evenodd" d="M0,213L74,214L181,85L285,214L360,214L206,21L185,4L164,10Z M221,0L263,50L395,50L409,55L419,76L401,96L313,98L411,214L487,214L422,139L457,123L482,88L482,48L463,19L417,0Z"/></svg>ARLing</span>
+        <p>Weby na mieru pre firmy, značky aj prevádzky. Bratislava, Slovensko.</p>
+      </div>
+      <nav aria-label="Odkazy v päte">
+        <a href="../index.html">Ponuka a&nbsp;ukážky</a>
+        <a href="https://arling.sk/">Úvod ARLing</a>
+        <a href="https://arling.sk/kontakt/">Kontakt</a>
+        <a href="https://arling.sk/podmienky/">Podmienky</a>
+        <a href="https://arling.sk/privacy/">Ochrana údajov</a>
+        <a href="https://arling.sk/impressum/">Impressum</a>
+      </nav>
+    </div>
+    <p class="pata-riadok">ARLing s.&nbsp;r.&nbsp;o., Ivanská cesta 19112/32E, 821&nbsp;04 Bratislava. IČO 56&nbsp;583&nbsp;486, IČ&nbsp;DPH SK2122352100.</p>
+  </div>
+</footer>
+</body>
+</html>

@@ -1,0 +1,1284 @@
+<!doctype html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; img-src 'self' data:; style-src 'unsafe-inline'; font-src 'self'; connect-src 'none'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex, nofollow">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#07090f">
+<title>Ukážka: Rozsvit, plánovanie smien pre prevádzky (vymyslená firma)</title>
+<meta name="description" content="Ukážka webu od ARLing pre vymyslený slovenský softvér na plánovanie smien: živý rozpis na týždeň, ktorý sa poskladá sám, funkcie, cenník, otázky.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23ffd9b8'/%3E%3Cstop offset='.5' stop-color='%23ffb27a'/%3E%3Cstop offset='1' stop-color='%23ff8fb8'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='9' fill='%23151927'/%3E%3Cpath d='M8 20.5a8 8 0 0 1 16 0z' fill='url(%23g)'/%3E%3Crect x='6' y='22.2' width='20' height='2.4' rx='1.2' fill='%23eef1f8'/%3E%3C/svg%3E">
+<link rel="preload" href="fonts/rozsvit-sans.woff2" as="font" type="font/woff2" crossorigin>
+<noscript><style>.dni button[aria-selected="true"]{background:#eef1f8;color:#0b0d14}</style></noscript>
+<style>
+/* Rozsvit: ukážka webu klienta, vymyslený softvér na plánovanie smien z Bratislavy. Svet: noc nad rozpisom, ktorá sa
+   rozvidnie, keď je týždeň pokrytý. Svetlo nad oknom aplikácie počíta app.js z pokrytia (--svit 0 až 1, jantárová --hmla,
+   keď smena chýba), takže obzor nie je kulisa, ale ukazovateľ. Smeny svietia farbou práce: bar marhuľová, kuchyňa mätová,
+   sála fialková. Písmo Rozsvit Sans je podmnožina Inter Tight (OFL), lokálne. Žiadne fotky, hviezdy sú malé SVG. */
+@font-face{font-family:"Rozsvit Sans";src:url(fonts/rozsvit-sans.woff2) format("woff2");font-weight:400 700;font-style:normal;font-display:swap}
+@font-face{font-family:"Rozsvit Náhrada";src:local("Arial"),local("ArialMT");size-adjust:95.5%;ascent-override:101.4%;descent-override:25.3%;line-gap-override:0%}
+@font-face{font-family:"Rozsvit Náhrada";src:local("Arial Bold"),local("Arial-BoldMT");font-weight:700;size-adjust:95.5%;ascent-override:101.4%;descent-override:25.3%;line-gap-override:0%}
+
+:root{
+  --noc:#07090f;--noc-2:#0b0e17;--plocha:#10131d;--plocha-2:#151927;--plocha-3:#1b2030;
+  --ciara:rgba(255,255,255,.08);--ciara-2:rgba(255,255,255,.14);
+  --text:#eef1f8;--text-2:#a7afc2;--text-3:#848ca1;
+  --marhula:#ffb27a;--marhula-2:#ffd2ad;--ruza:#ff8fb8;--fialka:#a29bff;--mata:#6fe3b5;--jantar:#ffd166;--cervena:#ff8080;
+  --bar:#ffb27a;--kuchyna:#6fe3b5;--sala:#a29bff;
+  --pismo:"Rozsvit Sans","Rozsvit Náhrada",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  --vstup:cubic-bezier(.23,1,.32,1);--pohyb:cubic-bezier(.77,0,.175,1);--pruzina:cubic-bezier(.34,1.32,.5,1);--plynule:cubic-bezier(.3,.7,.2,1);
+  --rytmus:clamp(80px,10vw,136px);
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-padding-top:84px;background:var(--noc);scrollbar-color:#2a3040 var(--noc)}
+body{margin:0;background:var(--noc);color:var(--text);font:400 17px/1.6 var(--pismo);font-feature-settings:"ss01";overflow-x:clip;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+::selection{background:var(--marhula);color:#1a0f0a}
+h1,h2,h3{margin:0;font-weight:640;letter-spacing:-.028em;line-height:1.04;text-wrap:balance;font-feature-settings:"ss01","cv11"}
+p,ul,ol{margin:0}
+a{color:inherit;text-underline-offset:.22em;text-decoration-thickness:1px}
+a:hover{text-decoration-thickness:2px}
+button{font:inherit;color:inherit}
+svg{flex:none}
+:focus-visible{outline:2px solid var(--marhula-2);outline-offset:3px;border-radius:6px}
+.obsah{width:min(1200px,100% - 32px);margin-inline:auto}
+.skryte{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}
+.nw{white-space:nowrap}
+.preskocit{position:absolute;left:12px;top:-80px;z-index:90;background:var(--marhula);color:#1a0f0a;padding:12px 18px;border-radius:10px;font-weight:600;text-decoration:none}
+.preskocit:focus{top:12px}
+[hidden]{display:none!important}
+
+/* Pás ukážky: na mobile dva riadky (veta ukážky, potom krátke vysvetlenie a odkazy), od 720 px jeden */
+.pas{background:#0d1019;border-bottom:1px solid var(--ciara);color:var(--text-2);font-size:13px;line-height:1.45;position:relative;z-index:41}
+.pas .obsah{padding-block:7px}
+.pas p{display:inline}
+.pas strong{display:block;color:var(--text);font-weight:600}
+.pas nav{display:inline;margin-left:8px}
+.pas a{color:var(--text);display:inline-flex;align-items:center;min-height:44px;margin-block:-14px;margin-right:12px}
+.pas a:last-child{margin-right:0}
+.pas-dlhe{display:none}
+
+/* Hlavička */
+.hlava{position:sticky;top:0;z-index:40;background:rgba(7,9,15,.78);-webkit-backdrop-filter:blur(14px) saturate(150%);backdrop-filter:blur(14px) saturate(150%);border-bottom:1px solid transparent;transition:border-color .3s}
+.hlava.posun{border-bottom-color:var(--ciara)}
+.hlava-in{display:flex;align-items:center;gap:12px;min-height:68px}
+.znak{display:inline-flex;align-items:center;gap:10px;min-height:44px;text-decoration:none;font-weight:650;font-size:21px;letter-spacing:-.04em;font-feature-settings:"cv11";margin-right:auto}
+.menu{display:none;gap:2px}
+.menu a{display:inline-flex;align-items:center;min-height:44px;padding:0 14px;border-radius:999px;text-decoration:none;color:var(--text-2);font-size:15.5px;font-weight:500;transition:color .2s,background-color .2s}
+.menu a:hover{color:var(--text);background:rgba(255,255,255,.06)}
+.hlava-akcie{display:flex;align-items:center;gap:8px}
+.prihlasit{display:none;min-height:44px;padding:0 14px;border:0;border-radius:999px;background:transparent;color:var(--text-2);font-size:15.5px;font-weight:500;cursor:pointer}
+.prihlasit:hover{color:var(--text);background:rgba(255,255,255,.06)}
+.menu-tlacidlo{display:grid;place-items:center;width:44px;height:44px;border-radius:12px;border:1px solid var(--ciara-2);background:rgba(255,255,255,.04);cursor:pointer}
+.kratke{display:inline}.dlhe{display:none}
+
+/* Tlačidlá */
+.akcia{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:52px;padding:0 24px;border-radius:999px;border:1px solid transparent;font:600 16.5px/1 var(--pismo);letter-spacing:-.01em;text-decoration:none;cursor:pointer;white-space:nowrap;transition:transform .16s var(--vstup),background-color .2s,border-color .2s,box-shadow .25s}
+.akcia:active{transform:scale(.97)}
+.akcia svg{transition:transform .22s var(--vstup)}
+.akcia:hover svg{transform:translateX(3px)}
+.akcia-svit{color:#1a0f0a;background:linear-gradient(135deg,#ffdcbf 0%,#ffb27a 48%,#ff9fbe 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,.6),0 10px 30px -12px rgba(255,150,110,.75)}
+.akcia-svit:hover{box-shadow:inset 0 1px 0 rgba(255,255,255,.65),0 16px 38px -12px rgba(255,150,110,.95)}
+.akcia-svit:focus-visible{outline-color:#fff}
+.akcia-sklo{color:var(--text);background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.16)}
+.akcia-sklo:hover{background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.26)}
+.akcia-mala{min-height:44px;padding:0 18px;font-size:15px}
+
+/* Úvod: noc nad rozpisom. --svit (0 až 1) a --hmla (0 až 1) nastavuje app.js podľa pokrytia týždňa; --zac je 0, kým sa
+   rozpis prvý raz neposkladá (len so skriptom a bez obmedzeného pohybu, pozri Pohyb). Bez skriptu je hneď deň. */
+.uvod{--svit:1;--hmla:0;--zac:1;--obzor:-30px;position:relative;isolation:isolate;overflow:clip;padding-top:clamp(18px,4.2vw,60px);padding-bottom:clamp(52px,7vw,104px)}
+.nebo{position:absolute;z-index:-3;inset:0 0 auto;height:1100px;pointer-events:none;background:linear-gradient(180deg,#05070c 0%,#070912 38%,#0c0e1d 70%,#090b16 100%)}
+.hviezdy{position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1600 640'%3E%3Cg fill='%23d8dcff' opacity='.3'%3E%3Ccircle cx='1081' cy='424' r='1.1'/%3E%3Ccircle cx='558' cy='217' r='1.1'/%3E%3Ccircle cx='342' cy='203' r='.55'/%3E%3Ccircle cx='1165' cy='472' r='.75'/%3E%3Ccircle cx='424' cy='174' r='.55'/%3E%3Ccircle cx='277' cy='221' r='.65'/%3E%3C/g%3E%3Cg fill='%23d8dcff' opacity='.55'%3E%3Ccircle cx='699' cy='363' r='.65'/%3E%3Ccircle cx='402' cy='35' r='.55'/%3E%3C/g%3E%3Cg fill='%23d8dcff' opacity='.85'%3E%3Ccircle cx='686' cy='226' r='.65'/%3E%3Ccircle cx='1507' cy='26' r='.9'/%3E%3Ccircle cx='390' cy='22' r='.9'/%3E%3C/g%3E%3Cg fill='%23ffe1c4' opacity='.3'%3E%3Ccircle cx='1429' cy='1' r='1.1'/%3E%3Ccircle cx='1167' cy='439' r='.9'/%3E%3Ccircle cx='501' cy='602' r='.9'/%3E%3Ccircle cx='948' cy='116' r='.75'/%3E%3Ccircle cx='886' cy='357' r='1.1'/%3E%3Ccircle cx='780' cy='540' r='.9'/%3E%3C/g%3E%3Cg fill='%23ffe1c4' opacity='.55'%3E%3Ccircle cx='200' cy='4' r='.55'/%3E%3Ccircle cx='541' cy='581' r='.55'/%3E%3C/g%3E%3Cg fill='%23ffe1c4' opacity='.85'%3E%3Ccircle cx='329' cy='226' r='.9'/%3E%3Ccircle cx='738' cy='83' r='1.3'/%3E%3Ccircle cx='875' cy='253' r='.75'/%3E%3Ccircle cx='1345' cy='229' r='1.1'/%3E%3C/g%3E%3Cg fill='%23fff' opacity='.3'%3E%3Ccircle cx='259' cy='297' r='.9'/%3E%3Ccircle cx='789' cy='230' r='.9'/%3E%3Ccircle cx='809' cy='313' r='.55'/%3E%3Ccircle cx='986' cy='507' r='.55'/%3E%3Ccircle cx='367' cy='2' r='.65'/%3E%3Ccircle cx='201' cy='480' r='.65'/%3E%3Ccircle cx='1544' cy='280' r='.9'/%3E%3Ccircle cx='782' cy='582' r='.9'/%3E%3Ccircle cx='921' cy='317' r='1.1'/%3E%3Ccircle cx='669' cy='22' r='1.1'/%3E%3Ccircle cx='1496' cy='70' r='.9'/%3E%3Ccircle cx='36' cy='223' r='.55'/%3E%3Ccircle cx='777' cy='323' r='.65'/%3E%3Ccircle cx='953' cy='157' r='1.1'/%3E%3Ccircle cx='304' cy='601' r='1.1'/%3E%3Ccircle cx='721' cy='452' r='1.1'/%3E%3Ccircle cx='1120' cy='130' r='.65'/%3E%3Ccircle cx='1187' cy='480' r='1.3'/%3E%3Ccircle cx='1008' cy='207' r='.9'/%3E%3Ccircle cx='1365' cy='573' r='.9'/%3E%3C/g%3E%3Cg fill='%23fff' opacity='.55'%3E%3Ccircle cx='635' cy='314' r='.75'/%3E%3Ccircle cx='1490' cy='181' r='.9'/%3E%3Ccircle cx='127' cy='19' r='.9'/%3E%3Ccircle cx='1363' cy='6' r='.75'/%3E%3Ccircle cx='1143' cy='382' r='.75'/%3E%3Ccircle cx='1389' cy='50' r='.55'/%3E%3Ccircle cx='821' cy='504' r='.75'/%3E%3Ccircle cx='1095' cy='97' r='.65'/%3E%3Ccircle cx='110' cy='327' r='.55'/%3E%3Ccircle cx='64' cy='456' r='1.3'/%3E%3Ccircle cx='583' cy='35' r='1.3'/%3E%3Ccircle cx='928' cy='211' r='1.3'/%3E%3C/g%3E%3Cg fill='%23fff' opacity='.85'%3E%3Ccircle cx='421' cy='96' r='.75'/%3E%3Ccircle cx='164' cy='1' r='1.1'/%3E%3Ccircle cx='768' cy='17' r='.9'/%3E%3Ccircle cx='49' cy='122' r='.55'/%3E%3Ccircle cx='186' cy='284' r='1.3'/%3E%3Ccircle cx='1017' cy='3' r='1.1'/%3E%3Ccircle cx='223' cy='94' r='1.1'/%3E%3Ccircle cx='460' cy='200' r='.9'/%3E%3Ccircle cx='1546' cy='12' r='1.3'/%3E%3Ccircle cx='717' cy='85' r='1.1'/%3E%3Ccircle cx='1141' cy='182' r='.75'/%3E%3Ccircle cx='1288' cy='69' r='.9'/%3E%3Ccircle cx='1143' cy='175' r='1.1'/%3E%3Ccircle cx='339' cy='265' r='.75'/%3E%3Ccircle cx='1008' cy='263' r='.65'/%3E%3Ccircle cx='74' cy='66' r='.75'/%3E%3Ccircle cx='801' cy='1' r='1.1'/%3E%3C/g%3E%3C/svg%3E") 50% 0/1600px 640px repeat-x;opacity:calc(1 - .72 * var(--svit) * var(--zac));-webkit-mask-image:linear-gradient(#000 0 46%,transparent 86%);mask-image:linear-gradient(#000 0 46%,transparent 86%)}
+.uvod-mriezka{display:grid;grid-template-columns:minmax(0,1fr);grid-template-areas:"h" "scena" "popis" "bok";column-gap:clamp(40px,4.6vw,72px)}
+.uvod-h,.uvod-bok{position:relative;z-index:1;min-width:0}
+.uvod-h{grid-area:h}
+.uvod-nad{display:none;align-items:center;gap:10px;margin:0 0 20px;font-size:14.5px;font-weight:550;color:var(--text-2)}
+.uvod h1{font-size:clamp(2.35rem,10.4vw,3.1rem);line-height:.98;letter-spacing:-.046em;font-weight:660;max-width:12em}
+.farebne{background:linear-gradient(96deg,#fff0e2 0%,#ffc79c 30%,#ffaecb 64%,#d0c6ff 100%);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-box-decoration-break:clone;box-decoration-break:clone;padding-bottom:.07em;filter:saturate(calc(.3 + .7 * var(--svit) * var(--zac))) brightness(calc(.84 + .16 * var(--svit) * var(--zac)))}
+.uvod-bok{grid-area:bok;display:grid;gap:18px;justify-items:start;margin-top:30px}
+.uvod-popis{font-size:clamp(1.03rem,.98rem + .3vw,1.18rem);line-height:1.55;color:var(--text-2);max-width:30em;text-wrap:pretty}
+.uvod-akcie{display:flex;flex-wrap:wrap;align-items:center;gap:8px 26px;width:100%}
+.uvod-akcie .akcia{flex:1 1 100%}
+.uvod-odkaz{display:inline-flex;align-items:center;gap:8px;min-height:44px;font-weight:600;font-size:16px;color:var(--text);text-decoration:underline;text-decoration-color:rgba(238,241,248,.35);text-underline-offset:.32em}
+.uvod-odkaz:hover{text-decoration-color:currentColor}
+.uvod-odkaz svg{transition:transform .22s var(--vstup)}
+.uvod-odkaz:hover svg{transform:translateY(2px)}
+.uvod-pozn{font-size:14px;color:var(--text-2)}
+.scena-popis{grid-area:popis;margin-top:16px;font-size:14px;color:var(--text-3);text-align:center;text-wrap:balance}
+
+/* Scéna: obzor a svetlo za oknom aplikácie. Slnko vyjde, keď je týždeň pokrytý; keď smena chýba, zapadne a nad obzorom
+   ostane jantárová hmla. Vrstvy menia len opacity a transform. */
+.scena{grid-area:scena;position:relative;isolation:isolate;margin:clamp(30px,3.4vw,52px) -6px 0}
+.svitanie{position:absolute;inset:0;z-index:-1;pointer-events:none}
+.svitanie>i{position:absolute;left:50%;display:block}
+.svit-nebo{top:-560px;width:min(1900px,200vw);height:1000px;background:radial-gradient(50% 46% at 50% 62%,rgba(255,178,134,.42) 0%,rgba(255,128,168,.2) 36%,rgba(128,110,255,.11) 60%,transparent 78%);
+  opacity:calc(.1 + .9 * var(--svit) * var(--zac));transform:translateX(-50%) translateY(calc((1 - var(--svit) * var(--zac)) * 110px)) scale(calc(.82 + .18 * var(--svit) * var(--zac)))}
+.svit-hmla{top:-330px;width:min(1500px,170vw);height:700px;transform:translateX(-50%);opacity:calc(var(--hmla) * var(--zac));background:radial-gradient(50% 50% at 50% 64%,rgba(255,196,96,.42) 0%,rgba(255,164,72,.16) 42%,transparent 72%)}
+.svit-slnko{top:-200px;width:640px;height:640px;margin-left:-320px;opacity:calc(var(--svit) * var(--zac));transform:translateY(calc((1 - var(--svit) * var(--zac)) * 190px));
+  background:radial-gradient(closest-side,rgba(255,247,236,.95) 0%,rgba(255,216,176,.78) 20%,rgba(255,172,124,.42) 44%,rgba(255,136,160,.13) 68%,transparent)}
+.svit-obruba,.svit-zem{top:var(--obzor);width:min(2400px,240vw);aspect-ratio:3.1/1;transform:translateX(-50%);border-radius:50%}
+.svit-obruba{top:calc(var(--obzor) - 2px);background:linear-gradient(90deg,rgba(255,170,150,0) 16%,#ffe0c8 50%,rgba(205,190,255,0) 84%);opacity:calc(.3 + .7 * var(--svit) * var(--zac));-webkit-mask-image:linear-gradient(#000 0 6%,transparent 22%);mask-image:linear-gradient(#000 0 6%,transparent 22%)}
+.svit-zem{background:linear-gradient(180deg,#0c0e19 0%,#07090f 16%)}
+.svit-zem::after{content:"";position:absolute;left:0;right:0;top:50%;height:3000px;background:#07090f}
+
+/* Okno aplikácie */
+.app{position:relative;border-radius:22px;background:linear-gradient(180deg,#161a29 0%,#0f121c 24%,#0c0f18 100%);border:1px solid rgba(255,255,255,.1);
+  box-shadow:0 0 0 1px rgba(0,0,0,.5),0 50px 120px -30px rgba(0,0,0,.85),0 -18px 70px -34px rgba(255,170,130,.5);transform-origin:50% 100%;
+  display:grid;grid-template-columns:minmax(0,1fr);grid-template-areas:"hlava" "telo" "pata"}
+.app::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:linear-gradient(90deg,transparent,rgba(255,226,204,.6) 30%,rgba(255,243,230,.95) 50%,rgba(205,196,255,.55) 70%,transparent) top/100% 1px no-repeat;opacity:calc(.35 + .65 * var(--svit) * var(--zac))}
+.app::after{content:"";position:absolute;left:12%;right:12%;top:-1px;height:2px;border-radius:2px;pointer-events:none;background:radial-gradient(50% 100% at 50% 50%,#fff,rgba(255,222,196,.7) 42%,transparent 76%);opacity:0}
+.app-hlava{grid-area:hlava;display:flex;flex-wrap:wrap;align-items:center;gap:10px 12px;padding:14px 14px 12px;border-bottom:1px solid var(--ciara)}
+.app-meno{display:flex;align-items:center;gap:10px;min-width:0;margin-right:auto}
+.app-znak{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:var(--plocha-3);border:1px solid var(--ciara)}
+.app-prevadzka{font-weight:600;font-size:15px;letter-spacing:-.01em;line-height:1.25}
+.app-tyzden{font-size:13px;color:var(--text-2);line-height:1.3}
+.app-akcie{display:flex;gap:8px}
+.app-tlacidlo{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;min-width:44px;padding:0 14px;border-radius:11px;border:1px solid var(--ciara-2);background:rgba(255,255,255,.04);font-size:14px;font-weight:550;white-space:nowrap;cursor:pointer;transition:background-color .2s,transform .15s var(--vstup)}
+.app-tlacidlo:hover{background:rgba(255,255,255,.09)}
+.app-tlacidlo:active{transform:scale(.97)}
+.app-tlacidlo-hlavne{background:var(--text);color:#0b0d14;border-color:var(--text);font-weight:600}
+.app-tlacidlo-hlavne:hover{background:#fff}
+.app-tlacidlo-hlavne:focus-visible{outline-color:#fff}
+
+/* Prepínač so sklzom (rozpis aj cenník) */
+.prepinac{position:relative;display:inline-grid;grid-auto-flow:column;grid-auto-columns:1fr;margin:0;padding:3px;border:1px solid var(--ciara-2);border-radius:12px;background:rgba(0,0,0,.25);min-width:0}
+.prepinac legend{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.prepinac input{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
+.prepinac label{position:relative;z-index:1;display:flex;align-items:center;justify-content:center;gap:6px;min-height:44px;padding:0 16px;border-radius:9px;font-size:14px;font-weight:550;color:var(--text-2);cursor:pointer;white-space:nowrap;transition:color .25s}
+.prepinac-palec{position:absolute;z-index:0;top:3px;bottom:3px;left:3px;width:calc((100% - 6px) / 2);border-radius:9px;background:var(--text);box-shadow:0 2px 10px rgba(0,0,0,.35);transition:transform .42s var(--pruzina)}
+.prepinac input:focus-visible+label{outline:2px solid var(--marhula-2);outline-offset:2px}
+.prepinac input:checked+label{color:#0b0d14}
+.prepinac:has(input:nth-of-type(2):checked) .prepinac-palec{transform:translateX(100%)}
+/* Pohľad rozpisu: bez voľby rozhoduje šírka (mobil deň, inak týždeň), po voľbe rozhoduje voľba */
+.app-telo{grid-area:telo;min-width:0;position:relative}
+.pohlad-den{display:none}
+.prepinac-pohlad:not(:has(input:checked)) label[for="pohlad-tyzden"]{color:#0b0d14}
+.app:has(#pohlad-den:checked) .pohlad-tyzden{display:none}
+.app:has(#pohlad-den:checked) .pohlad-den{display:block}
+
+/* Týždeň */
+.tyzden-obal{overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:thin;scrollbar-color:#2a3040 transparent}
+.tyzden{width:100%;min-width:660px;border-collapse:separate;border-spacing:0;table-layout:fixed}
+.tyzden col.t-ludia{width:172px}
+.tyzden thead th{height:44px;padding:0 8px;font-size:13px;font-weight:500;color:var(--text-2);text-align:left;border-bottom:1px solid var(--ciara);white-space:nowrap}
+.tyzden thead th.t-tim{padding-left:16px}
+.den-k{text-decoration:none;color:var(--text);font-weight:600}
+.den-d{font-variant-numeric:tabular-nums}
+.tyzden thead th.dnes .den-d{color:var(--marhula)}
+.tyzden thead th.dnes .den-k::before{content:"";display:inline-block;width:6px;height:6px;margin:0 6px 2px 0;border-radius:50%;background:var(--marhula);box-shadow:0 0 10px var(--marhula)}
+.tyzden thead th.chyba::after{content:"chýba";margin-left:6px;padding:1px 6px;border-radius:6px;background:rgba(255,209,102,.14);color:var(--jantar);font-size:11px;font-weight:600}
+.tyzden tbody th{position:sticky;left:0;z-index:2;padding:7px 10px 7px 14px;text-align:left;font-weight:500;background:#0f121c;border-bottom:1px solid var(--ciara)}
+.tyzden tbody tr:last-child>*{border-bottom:0}
+.tyzden td{height:64px;padding:5px;border-bottom:1px solid var(--ciara);border-left:1px solid var(--ciara);vertical-align:middle}
+.tyzden td.dnes{background:rgba(255,178,122,.035)}
+.osoba{display:flex;align-items:center;gap:10px;min-width:0}
+.avatar{display:grid;place-items:center;flex:none;width:30px;height:30px;border-radius:50%;font-size:13px;font-weight:650;color:#0b0d14;background:var(--f,var(--bar))}
+.a-bar{--f:var(--bar)}.a-kuchyna{--f:var(--kuchyna)}.a-sala{--f:var(--sala)}
+.osoba-text{display:grid;min-width:0;line-height:1.25}
+.osoba-meno{font-size:14.5px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.osoba-info{font-size:12.5px;color:var(--text-2);white-space:nowrap}
+.osoba-hodiny{font-variant-numeric:tabular-nums}
+tr.nad .osoba-hodiny{color:var(--jantar);font-weight:600}
+.osoba-pruh{display:block;height:3px;margin:7px 0 0 40px;border-radius:2px;background:rgba(255,255,255,.08);overflow:hidden}
+.osoba-pruh i{display:block;height:100%;border-radius:inherit;background:var(--mata);transform-origin:left;transform:scaleX(var(--p,1));transition:transform .5s var(--vstup),background-color .3s}
+tr.nad .osoba-pruh i{background:var(--jantar)}
+/* farba smeny: predvolená bez váhy, trieda práce (s-bar, s-kuchyna, s-sala nižšie) ju vždy prebije v týždni aj v dni */
+:where(.smena,.den-smena){--f:var(--bar)}
+.smena{position:relative;display:grid;align-content:center;gap:1px;width:100%;height:54px;padding:5px 6px 5px 13px;border-radius:11px;border:1px solid color-mix(in srgb,var(--f) 36%,transparent);background:linear-gradient(180deg,color-mix(in srgb,var(--f) 22%,transparent),color-mix(in srgb,var(--f) 11%,transparent));text-align:left;cursor:grab;touch-action:manipulation;-webkit-user-select:none;user-select:none;transition:box-shadow .2s,opacity .2s,transform .2s var(--vstup)}
+.smena::before{content:"";position:absolute;left:5px;top:9px;bottom:9px;width:3px;border-radius:2px;background:var(--f)}
+.smena:hover{box-shadow:0 0 0 1px color-mix(in srgb,var(--f) 60%,transparent),0 8px 20px -10px color-mix(in srgb,var(--f) 70%,transparent)}
+.smena:focus-visible{outline-offset:2px}
+.smena-od{font-size:14.5px;font-weight:600;line-height:1.15;font-variant-numeric:tabular-nums;color:var(--text)}
+.smena-do{font-size:12.5px;line-height:1.2;color:var(--text-2);font-variant-numeric:tabular-nums;white-space:nowrap}
+.smena.zdvihnuta{transform:translateY(-2px) scale(1.04);box-shadow:0 0 0 2px var(--marhula-2),0 14px 28px -10px rgba(0,0,0,.8);z-index:3}
+.smena.tiahne{opacity:.35}
+.smena-duch{position:fixed;z-index:80;margin:0;pointer-events:none;box-shadow:0 0 0 1px color-mix(in srgb,var(--f) 70%,transparent),0 24px 50px -12px rgba(0,0,0,.85);background:linear-gradient(180deg,color-mix(in srgb,var(--f) 34%,#151927),color-mix(in srgb,var(--f) 20%,#151927))}
+.tiahnutie,.tiahnutie *{cursor:grabbing!important}
+td.volno{background:repeating-linear-gradient(135deg,rgba(255,255,255,.05) 0 6px,transparent 6px 12px)}
+.volno-stitok{display:block;padding-left:6px;font-size:12.5px;color:var(--text-3)}
+td.ciel{box-shadow:inset 0 0 0 2px var(--marhula)}
+td.ciel-zle{box-shadow:inset 0 0 0 2px var(--cervena);background-color:rgba(255,128,128,.08)}
+.vyber td:not(.volno):empty{background:rgba(255,178,122,.04)}
+.vyber td:not(.volno):empty::after{content:"+";display:grid;place-items:center;height:54px;border:1px dashed rgba(255,178,122,.35);border-radius:11px;color:var(--marhula);font-size:18px}
+
+/* Deň: časová os 6:00 až 24:00, smeny sú tlačidlá, ťuk otvorí výber človeka */
+.dni{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;padding:10px 10px 6px}
+.dni button{display:grid;place-items:center;align-content:center;gap:1px;min-height:50px;padding:0;border-radius:12px;border:1px solid transparent;background:transparent;color:var(--text-2);cursor:pointer;line-height:1.1;transition:background-color .2s,color .2s}
+.dni button:hover{background:rgba(255,255,255,.06)}
+.dni-k{font-size:13px;font-weight:600;color:inherit}
+.dni-d{font-size:12.5px;font-variant-numeric:tabular-nums}
+.js .dni button[aria-selected="true"]{background:var(--text);color:#0b0d14}
+.dni button.dnes .dni-d::after{content:"";display:block;width:4px;height:4px;margin:3px auto 0;border-radius:50%;background:var(--marhula)}
+.den-panel{--meno:96px;position:relative;padding:0 10px 6px;touch-action:pan-y}
+.os{display:grid;grid-template-columns:var(--meno) 1fr;height:24px;font-size:11.5px;color:var(--text-3)}
+.os-cas{position:relative}
+.os-cas i{position:absolute;left:calc(var(--x) * 100%);top:4px;font-style:normal;font-variant-numeric:tabular-nums;transform:translateX(-50%)}
+.os-cas i:first-child{transform:none}
+.den-riadky{list-style:none;padding:0}
+.den-riadky li{display:grid;grid-template-columns:var(--meno) 1fr;align-items:center;height:54px;border-top:1px solid var(--ciara)}
+.den-osoba{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;min-width:0;white-space:nowrap}
+.den-osoba .avatar{width:26px;height:26px;font-size:12px}
+.den-stopa{position:relative;height:100%;container-type:inline-size;background:linear-gradient(90deg,var(--ciara) 1px,transparent 1px) 0 0/calc(100% / 6) 100%}
+@container (max-width:340px){.den-smena .min{display:none}}
+.den-smena{position:absolute;top:4px;bottom:5px;left:calc((var(--od) - 6) / 18 * 100%);width:calc(var(--dlzka) / 18 * 100%);display:flex;align-items:center;margin:0;padding:0 10px 0 13px;border-radius:10px;border:1px solid color-mix(in srgb,var(--f) 38%,transparent);background:linear-gradient(180deg,color-mix(in srgb,var(--f) 26%,transparent),color-mix(in srgb,var(--f) 13%,transparent));color:var(--text);font-size:13px;font-weight:600;text-align:left;white-space:nowrap;overflow:hidden;font-variant-numeric:tabular-nums;transform-origin:left center;cursor:pointer;touch-action:pan-y;transition:box-shadow .2s}
+.den-smena::before{content:"";position:absolute;left:5px;top:8px;bottom:8px;width:3px;border-radius:2px;background:var(--f)}
+.den-smena:hover{box-shadow:0 0 0 1px color-mix(in srgb,var(--f) 60%,transparent)}
+.den-smena:focus-visible{outline-offset:1px}
+.den-smena[aria-expanded="true"]{box-shadow:0 0 0 2px var(--marhula-2)}
+.s-bar{--f:var(--bar)}.s-kuchyna{--f:var(--kuchyna)}.s-sala{--f:var(--sala)}
+.den-volno{display:flex;align-items:center;height:100%;padding-left:10px;font-size:12.5px;color:var(--text-3);background:repeating-linear-gradient(135deg,rgba(255,255,255,.045) 0 6px,transparent 6px 12px)}
+.den-volno.den-bez{background:none}
+.den-riadky li.den-vyber{display:block;height:auto;padding:12px 0 12px;border-top:1px solid var(--ciara)}
+.den-vyber-nadpis{font-size:14px;font-weight:600;line-height:1.4;margin-bottom:10px}
+.den-vyber-nadpis span{display:block;font-size:13px;font-weight:500;color:var(--text-2)}
+.den-vyber-zoznam{display:flex;flex-wrap:wrap;gap:8px}
+.den-vyber-osoba{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:4px 12px 4px 8px;border-radius:12px;border:1px solid var(--ciara-2);background:rgba(255,255,255,.05);font-size:14px;font-weight:600;line-height:1.2;text-align:left;cursor:pointer;transition:background-color .2s}
+.den-vyber-osoba:not(:disabled):hover{background:rgba(255,255,255,.1)}
+.den-vyber-osoba .avatar{width:24px;height:24px;font-size:11.5px}
+.den-vyber-osoba small{display:block;font-size:12.5px;font-weight:500;color:#bff3df}
+.den-vyber-osoba.pozor small{color:#ffe3a3}
+.den-vyber-osoba:disabled{cursor:not-allowed;color:var(--text-3);border-color:var(--ciara);background:repeating-linear-gradient(135deg,rgba(255,255,255,.035) 0 6px,transparent 6px 12px)}
+.den-vyber-osoba:disabled small{color:var(--text-3)}
+.den-vyber-osoba:disabled .avatar{opacity:.45}
+.den-vyber-zrusit{display:inline-flex;align-items:center;min-height:44px;margin-top:6px;padding:0 4px;border:0;background:transparent;color:var(--text-2);font-size:14px;font-weight:600;text-decoration:underline;text-underline-offset:.25em;cursor:pointer}
+.den-vyber-zrusit:hover{color:var(--text)}
+.teraz{position:absolute;top:24px;bottom:6px;left:calc(10px + var(--meno) + (100% - 20px - var(--meno)) * var(--x,.5));width:2px;margin-left:-1px;background:var(--marhula);box-shadow:0 0 12px var(--marhula);border-radius:2px;pointer-events:none}
+.teraz span{position:absolute;top:-2px;left:6px;padding:1px 6px;border-radius:6px;background:var(--marhula);color:#1a0f0a;font-size:11px;font-weight:650;line-height:1.4}
+.den-panel.vyber-otvoreny .teraz{display:none}
+
+/* Bočný panel žiadostí (len na širokom okne) */
+.app-bok{display:none}
+.bok-nadpis{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600}
+.bok-pocet{display:grid;place-items:center;min-width:22px;height:22px;padding:0 6px;border-radius:999px;background:rgba(255,178,122,.16);color:var(--marhula);font-size:12px;font-weight:650;font-variant-numeric:tabular-nums}
+.ziadost{display:grid;gap:8px;padding:14px;border-radius:14px;background:rgba(255,255,255,.035);border:1px solid var(--ciara)}
+.ziadost-hlava{display:flex;align-items:center;gap:9px;font-size:14px;line-height:1.3}
+.ziadost-hlava .avatar{width:26px;height:26px;font-size:12px}
+.ziadost-text{font-size:13.5px;color:var(--text-2);line-height:1.45}
+.ziadost-pozor{display:flex;gap:7px;font-size:13px;line-height:1.4;color:var(--jantar)}
+.ziadost-pozor svg{margin-top:2px}
+.ziadost-akcie{display:flex;gap:6px}
+.ziadost-akcie button{flex:1;min-height:44px;border-radius:10px;border:1px solid var(--ciara-2);background:rgba(255,255,255,.04);font-size:13.5px;font-weight:600;cursor:pointer}
+.ziadost-akcie button:hover{background:rgba(255,255,255,.09)}
+.ziadost-akcie button[data-akcia-ziadosti="schvalit"]{background:rgba(111,227,181,.14);border-color:rgba(111,227,181,.4);color:#c9f6e4}
+.ziadost-akcie button[data-akcia-ziadosti="schvalit"]:hover{background:rgba(111,227,181,.22)}
+.ziadost-vysledok{display:flex;align-items:center;gap:7px;font-size:13.5px;font-weight:600;color:var(--mata)}
+.ziadost-vysledok.zamietnute{color:var(--text-2)}
+.ziadost.vybavena{opacity:.78}
+.bok-pozn{font-size:12.5px;color:var(--text-3);line-height:1.45}
+
+/* Päta okna: pokrytie, legenda a hlásenia */
+.app-pata{grid-area:pata;display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px;padding:12px 16px 14px;border-top:1px solid var(--ciara);font-size:13.5px;color:var(--text-2)}
+.pokrytie{display:flex;align-items:center;gap:10px}
+.pokrytie-pruh{display:block;width:clamp(80px,12vw,150px);height:6px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden}
+.pokrytie-pruh i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--mata),#b6f5dc);transform-origin:left;transform:scaleX(var(--p,1));transition:transform .5s var(--vstup)}
+.pokrytie.neuplne .pokrytie-pruh i{background:linear-gradient(90deg,var(--jantar),#ffe3a3)}
+.pata-cislo{color:var(--text);font-weight:600;font-variant-numeric:tabular-nums}
+.legenda{display:flex;gap:12px;margin-left:auto}
+.legenda span{display:inline-flex;align-items:center;gap:6px}
+.legenda i{width:8px;height:8px;border-radius:3px;background:var(--f)}
+.app-sprava{flex-basis:100%;display:flex;align-items:flex-start;gap:8px;min-height:22px;color:var(--text-2);font-size:13.5px;line-height:1.45;--ikona:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 1.5a6.5 6.5 0 1 1 0 13 6.5 6.5 0 0 1 0-13zm-.8 6v4.2h1.6V7.5zm.8-3a.95.95 0 1 0 0 1.9.95.95 0 0 0 0-1.9z'/%3E%3C/svg%3E")}
+.app-sprava::before{content:"";flex:none;width:15px;height:15px;margin-top:2px;background:currentColor;-webkit-mask:var(--ikona) center/contain no-repeat;mask:var(--ikona) center/contain no-repeat}
+.app-sprava.ok{color:#bff3df;--ikona:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 1.5a6.5 6.5 0 1 1 0 13 6.5 6.5 0 0 1 0-13zm3.3 3.9L7.1 9.7 5 7.6 3.9 8.7l3.2 3.2 5.3-5.4z'/%3E%3C/svg%3E")}
+.app-sprava.pozor{color:#ffe3a3;--ikona:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 1.2 15.3 14H.7zm-.8 4.6v4.1h1.6V5.8zm.8 5.4a.9.9 0 1 0 0 1.8.9.9 0 0 0 0-1.8z'/%3E%3C/svg%3E")}
+.app-sprava.zle{color:#ffc4c4;--ikona:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 1.5a6.5 6.5 0 1 1 0 13 6.5 6.5 0 0 1 0-13zM5.6 4.5 4.5 5.6 6.9 8l-2.4 2.4 1.1 1.1L8 9.1l2.4 2.4 1.1-1.1L9.1 8l2.4-2.4-1.1-1.1L8 6.9z'/%3E%3C/svg%3E")}
+.app-sprava.nova{animation:sprava .45s var(--vstup)}
+@keyframes sprava{from{opacity:0;transform:translateY(6px)}}
+
+/* Pre koho */
+.pre-koho{padding:clamp(36px,5vw,56px) 0 0}
+.pre-koho .obsah{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:12px 28px;color:var(--text-2);font-size:15px}
+.pre-koho p{color:var(--text-3)}
+.pre-koho ul{display:flex;flex-wrap:wrap;justify-content:center;gap:10px 24px;list-style:none;padding:0}
+.pre-koho li{display:inline-flex;align-items:center;gap:8px;color:var(--text-2)}
+.pre-koho li svg{color:var(--text-3)}
+
+/* Sekcie */
+.sekcia{padding-block:var(--rytmus)}
+.sekcia-hlava{display:grid;gap:18px;max-width:46rem;margin-bottom:clamp(36px,5vw,56px)}
+.sekcia-hlava.stred{margin-inline:auto;text-align:center;justify-items:center}
+.sekcia h2{font-size:clamp(2rem,1.25rem + 2.7vw,3.4rem);letter-spacing:-.032em;line-height:1.03}
+.sekcia-uvod{font-size:clamp(1.05rem,1rem + .2vw,1.2rem);color:var(--text-2);text-wrap:pretty;max-width:38em}
+
+/* Funkcie: karty s malými ukážkami */
+.bento{display:grid;gap:16px;grid-template-columns:minmax(0,1fr)}
+.karta{position:relative;overflow:hidden;isolation:isolate;display:flex;flex-direction:column;gap:10px;padding:clamp(18px,2vw,24px);border-radius:24px;background:linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.018));border:1px solid rgba(255,255,255,.08);transition:border-color .3s}
+.karta:hover{border-color:rgba(255,255,255,.15)}
+.karta h3{font-size:1.28rem;font-weight:620;letter-spacing:-.018em;line-height:1.2;margin-top:6px}
+.karta p{color:var(--text-2);font-size:16px;line-height:1.55;text-wrap:pretty}
+.mini{position:relative;overflow:hidden;height:196px;border-radius:16px;background:radial-gradient(120% 90% at 50% 0%,rgba(255,255,255,.05),transparent 60%),rgba(5,7,12,.55);border:1px solid rgba(255,255,255,.06);display:grid;place-items:center;padding:16px;font-size:13px;line-height:1.3}
+.mini b{font-weight:600}
+/* A: dostupnosť */
+.md{display:grid;gap:14px;width:min(100%,520px)}
+.md-hlava{display:flex;align-items:center;gap:10px;font-weight:600;font-size:14px}
+.md-ulozene{margin-left:auto;display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:rgba(111,227,181,.14);color:var(--mata);font-size:12.5px}
+.md-dni{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.md-den{position:relative;display:grid;justify-items:center;gap:6px;padding:10px 2px;border-radius:12px;border:1px solid var(--ciara);background:rgba(255,255,255,.03)}
+.md-den i{font-style:normal;font-size:11.5px;color:var(--text-2);white-space:nowrap}
+.md-den.nie{background:repeating-linear-gradient(135deg,rgba(255,255,255,.05) 0 5px,transparent 5px 10px)}
+.md-den.ano i{color:var(--mata)}
+.md-den .bod{width:8px;height:8px;border-radius:50%;background:var(--mata)}
+.md-den.nie .bod{background:#5b6275}
+.md-den b{grid-row:1}.md-den .bod{grid-row:2}.md-den i{grid-row:3;grid-column:1}
+.md-prepni{border-color:rgba(255,209,102,.45)}
+.md-prepni::after{content:"";position:absolute;inset:-1px;border-radius:12px;border:1px solid rgba(111,227,181,.55)}
+.md-prepni .bod{position:relative;background:var(--jantar)}
+.md-prepni .bod::after{content:"";position:absolute;inset:0;border-radius:50%;background:var(--mata)}
+.md-prepni .i-a{opacity:0;color:var(--jantar)}
+.md-prepni .i-b{color:var(--mata)}
+/* B: výmena */
+.mv{position:relative;container-type:inline-size;width:min(100%,330px);height:150px}
+.mv-osoba{position:absolute;top:0;display:grid;justify-items:center;gap:6px;font-size:13px;font-weight:600}
+.mv-osoba .avatar{width:40px;height:40px;font-size:15px}
+.mv-osoba.vlavo{left:0}.mv-osoba.vpravo{right:0}
+.mv-ciara{position:absolute;left:52px;right:52px;top:18px;height:2px;background:repeating-linear-gradient(90deg,rgba(255,255,255,.22) 0 6px,transparent 6px 12px)}
+.mv-smena{--f:var(--bar);position:absolute;left:50%;top:62px;width:120px;margin-left:-60px;padding:8px 10px 8px 14px;border-radius:11px;border:1px solid color-mix(in srgb,var(--f) 40%,transparent);background:color-mix(in srgb,var(--f) 18%,#0d1019);text-align:left}
+.mv-smena::before{content:"";position:absolute;left:5px;top:8px;bottom:8px;width:3px;border-radius:2px;background:var(--f)}
+.mv-smena span{display:block;color:var(--text-2);font-size:12px}
+.mv-ok{position:absolute;right:0;top:122px;display:inline-flex;align-items:center;gap:5px;padding:4px 9px;border-radius:999px;background:rgba(111,227,181,.16);color:var(--mata);font-size:12px;font-weight:600}
+/* C: kolízia */
+.mk{position:relative;width:min(100%,320px);display:grid;gap:12px;padding-top:50px}
+.mk-bunky{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.mk-bunka{height:56px;border-radius:11px;border:1px solid var(--ciara);display:grid;place-items:center;color:var(--text-3);font-size:12px}
+.mk-bunka.volno{position:relative;background:repeating-linear-gradient(135deg,rgba(255,255,255,.05) 0 5px,transparent 5px 10px)}
+.mk-bunka.volno::after{content:"";position:absolute;inset:-1px;border-radius:11px;box-shadow:inset 0 0 0 2px rgba(255,128,128,.75)}
+.mk-smena{--f:var(--bar);position:absolute;left:calc(50% - 46px);top:4px;width:92px;padding:7px 8px 7px 13px;border-radius:11px;border:1px solid color-mix(in srgb,var(--f) 45%,transparent);background:color-mix(in srgb,var(--f) 22%,#0d1019);font-size:12.5px}
+.mk-smena::before{content:"";position:absolute;left:5px;top:7px;bottom:7px;width:3px;border-radius:2px;background:var(--f)}
+.mk-varovanie{display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:12px;background:rgba(255,128,128,.1);border:1px solid rgba(255,128,128,.32);color:#ffc4c4;font-size:12.5px}
+/* D: mobil */
+.karta-d .mini{place-items:start center;padding-top:26px}
+.mm{width:178px;height:226px;border-radius:30px;border:1.5px solid rgba(255,255,255,.18);background:linear-gradient(180deg,#121624,#0b0d16);padding:14px 10px;box-shadow:inset 0 0 0 4px #07090f;display:grid;align-content:start;gap:8px}
+.mm-notif{display:grid;grid-template-columns:auto 1fr;gap:8px;align-items:start;padding:9px 10px;border-radius:14px;background:rgba(255,255,255,.09);font-size:11.5px;line-height:1.35}
+.mm-notif b{display:block;font-size:11.5px}
+.mm-ikona{width:20px;height:20px;border-radius:6px;background:var(--plocha-3);display:grid;place-items:center}
+.mm-riadok{display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:10px;background:rgba(255,255,255,.04);font-size:11.5px;font-variant-numeric:tabular-nums}
+.mm-riadok i{width:3px;height:16px;border-radius:2px;background:var(--f)}
+.mm-riadok b{width:20px}
+/* E: dochádzka */
+.mdo{display:grid;grid-template-columns:auto 1fr;align-items:center;gap:18px;width:min(100%,300px)}
+.mdo-kruh{position:relative;width:96px;height:96px;display:grid;place-items:center}
+.mdo-kruh svg{position:absolute;inset:0;transform:rotate(-90deg)}
+.mdo-kruh circle{fill:none;stroke-width:5}
+.mdo-stopa{stroke:rgba(255,255,255,.08)}
+.mdo-priebeh{stroke:var(--mata);stroke-linecap:round;stroke-dasharray:176;stroke-dashoffset:0}
+.mdo-kruh b{font-size:20px;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.mdo-text{display:grid;gap:4px}
+.mdo-text strong{font-size:15px;font-weight:600;display:flex;align-items:center;gap:6px}
+.mdo-text span{color:var(--text-2);font-size:12.5px}
+.mdo-pin{display:flex;gap:7px;margin-top:6px}
+.mdo-pin i{width:11px;height:11px;border-radius:50%;border:1.5px solid rgba(255,255,255,.35)}
+.mdo-pin i::after{content:"";display:block;width:100%;height:100%;border-radius:50%;background:var(--text)}
+/* F: hodiny */
+.mh{display:grid;gap:10px;width:100%;max-width:520px}
+.mh-riadok{display:grid;grid-template-columns:62px 1fr 56px;align-items:center;gap:12px;font-size:13px}
+.mh-riadok b{text-align:right;font-variant-numeric:tabular-nums}
+.mh-pruh{height:8px;border-radius:4px;background:rgba(255,255,255,.07);overflow:hidden}
+.mh-pruh i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--f),color-mix(in srgb,var(--f) 60%,#fff));transform-origin:left;transform:scaleX(var(--p))}
+.mh-export{justify-self:start;display:inline-flex;align-items:center;gap:8px;margin-top:6px;padding:8px 12px;border-radius:10px;border:1px solid var(--ciara-2);background:rgba(255,255,255,.04);font-size:12.5px;font-weight:600}
+.karta-f{display:grid;gap:10px 40px;align-items:center}
+
+/* Postup */
+.postup{background:var(--noc-2);border-block:1px solid var(--ciara)}
+.kroky{list-style:none;padding:0;display:grid;gap:36px;position:relative;counter-reset:krok}
+.krok{position:relative;display:grid;gap:10px;padding-left:64px}
+.krok-cislo{position:absolute;left:0;top:-4px;display:grid;place-items:center;width:44px;height:44px;border-radius:14px;background:linear-gradient(var(--plocha-2),var(--plocha-2)) padding-box,linear-gradient(135deg,#ffd2ad,#ff8fb8 55%,#a29bff) border-box;border:1px solid transparent;font-weight:650;font-size:17px;font-variant-numeric:tabular-nums}
+.krok h3{font-size:1.3rem;font-weight:620;letter-spacing:-.018em}
+.krok p{color:var(--text-2);text-wrap:pretty;max-width:26em}
+.kroky-ciara{display:none}
+
+/* Integrácie */
+.integracie{overflow:clip;padding-bottom:calc(var(--rytmus) * .45)}
+.int-pasy{display:grid;gap:14px;-webkit-mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent);mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent)}
+.int-rad{display:flex;justify-content:center;gap:14px;list-style:none;padding:0;width:max-content;margin-inline:auto;transform:translateX(var(--posun,0px))}
+.int-rad li{display:flex;align-items:center;gap:12px;width:228px;padding:12px 14px;border-radius:18px;background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.02));border:1px solid var(--ciara)}
+.int-ikona{display:grid;place-items:center;flex:none;width:44px;height:44px;border-radius:13px;background:linear-gradient(140deg,var(--a),var(--b));box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 8px 20px -10px var(--a);color:#0b0d14}
+.int-text{display:grid;line-height:1.25;min-width:0}
+.int-meno{font-weight:600;font-size:15px}
+.int-popis{font-size:13px;color:var(--text-2)}
+.int-pozn{margin-top:22px;text-align:center;font-size:14px;color:var(--text-3)}
+
+/* Cenník */
+.cennik{position:relative}
+.obdobie{margin-top:6px}
+.obdobie label{padding:0 18px;font-size:15px}
+.usetrite{font-size:12.5px;font-weight:600;color:var(--mata);transition:color .25s}
+.obdobie input:checked+label .usetrite{color:#0d6b47}
+.plany{display:grid;gap:16px;grid-template-columns:minmax(0,1fr);align-items:stretch}
+.plan{position:relative;display:flex;flex-direction:column;gap:18px;padding:clamp(22px,2.4vw,30px);border-radius:26px;background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.015));border:1px solid var(--ciara)}
+.plan-hlavny{background:linear-gradient(180deg,rgba(32,27,38,.95),rgba(16,17,27,.95)) padding-box,linear-gradient(160deg,#ffd2ad,#ff8fb8 45%,rgba(162,155,255,.7) 75%,rgba(255,255,255,.1)) border-box;border:1px solid transparent;box-shadow:0 30px 80px -30px rgba(255,150,120,.4)}
+.plan-stitok{position:absolute;top:22px;right:22px;padding:4px 10px;border-radius:999px;background:rgba(255,178,122,.14);color:var(--marhula-2);font-size:12.5px;font-weight:600}
+.plan h3{font-size:1.4rem;font-weight:620;letter-spacing:-.02em}
+.plan-pre{color:var(--text-2);font-size:15px;margin-top:-10px}
+.plan-cena{display:flex;align-items:baseline;flex-wrap:wrap;gap:6px 10px}
+.cena{display:inline-grid;font-size:clamp(2.6rem,2rem + 1.6vw,3.3rem);font-weight:650;letter-spacing:-.045em;line-height:1;font-variant-numeric:tabular-nums;font-feature-settings:"ss01","tnum"}
+.cena>span{grid-area:1/1;transition:transform .45s var(--pruzina),opacity .3s,visibility .45s}
+.cena-r{opacity:0;visibility:hidden;transform:translateY(55%)}
+.cennik:has(#obdobie-rocne:checked) .cena-m{opacity:0;visibility:hidden;transform:translateY(-55%)}
+.cennik:has(#obdobie-rocne:checked) .cena-r{opacity:1;visibility:visible;transform:none}
+.cena-j{color:var(--text-2);font-size:15px}
+.plan-priklad{display:grid;font-size:14px;color:var(--text-2);margin-top:-6px}
+.plan-priklad>span{grid-area:1/1;transition:opacity .3s,visibility .3s}
+.plan-priklad .cena-r{transform:none}
+.cennik:has(#obdobie-rocne:checked) .plan-priklad .cena-m{transform:none}
+.plan .akcia{width:100%}
+.plan-zoznam{list-style:none;padding:18px 0 0;display:grid;gap:11px;border-top:1px solid var(--ciara);font-size:15.5px}
+.plan-zoznam li{display:flex;gap:10px;line-height:1.45}
+.plan-zoznam li::before{content:"";flex:none;width:18px;height:18px;margin-top:2px;border-radius:50%;background:var(--mata);-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 18'%3E%3Cpath d='M9 0a9 9 0 1 1 0 18A9 9 0 0 1 9 0zm4 5.6-5.1 5.3-2.4-2.4-1.3 1.3 3.7 3.7 6.4-6.6z'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 18'%3E%3Cpath d='M9 0a9 9 0 1 1 0 18A9 9 0 0 1 9 0zm4 5.6-5.1 5.3-2.4-2.4-1.3 1.3 3.7 3.7 6.4-6.6z'/%3E%3C/svg%3E") center/contain no-repeat}
+.cennik-pozn{margin-top:26px;display:grid;gap:6px;justify-items:center;text-align:center;font-size:14px;color:var(--text-3)}
+
+/* Otázky */
+.otazky{background:var(--noc-2);border-top:1px solid var(--ciara)}
+.otazky-mriezka{display:grid;gap:36px}
+.faq{display:grid;gap:10px}
+.faq details{border-radius:18px;background:rgba(255,255,255,.03);border:1px solid var(--ciara);transition:background-color .25s,border-color .25s}
+.faq details[open]{background:rgba(255,255,255,.05);border-color:var(--ciara-2)}
+.faq summary{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:60px;padding:14px 20px;cursor:pointer;list-style:none;font-weight:600;font-size:17px;letter-spacing:-.01em;border-radius:18px}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary svg{transition:transform .35s var(--pruzina);color:var(--text-2)}
+.faq details[open] summary svg{transform:rotate(45deg)}
+.faq details p{padding:0 20px 18px;color:var(--text-2);max-width:42em;text-wrap:pretty}
+.faq details[open] p{animation:odpoved .35s var(--vstup)}
+@keyframes odpoved{from{opacity:0;transform:translateY(-6px)}}
+
+/* Záver */
+.zaver{--obzor:clamp(96px,11vw,150px);position:relative;overflow:clip;isolation:isolate;text-align:center;padding-bottom:0}
+.zaver::before{content:"";position:absolute;z-index:-1;left:50%;top:calc(100% - var(--obzor) - 330px);width:min(1500px,180vw);height:660px;transform:translateX(-50%);pointer-events:none;
+  background:radial-gradient(50% 50% at 50% 50%,rgba(255,168,122,.36),rgba(255,118,168,.17) 45%,rgba(132,118,255,.1) 65%,transparent 78%)}
+.zaver::after{content:"";position:absolute;z-index:-1;left:50%;top:calc(100% - var(--obzor));width:min(1800px,200vw);aspect-ratio:2.4/1;transform:translateX(-50%);border-radius:50%;pointer-events:none;background:var(--noc);box-shadow:inset 0 1.5px 0 rgba(255,228,206,.78),0 -24px 70px -20px rgba(255,150,120,.38)}
+.zaver .obsah{display:grid;justify-items:center;gap:22px;padding-bottom:calc(var(--obzor) + clamp(56px,6vw,84px))}
+.zaver h2{font-size:clamp(2.2rem,1.3rem + 3.4vw,4.2rem);max-width:13em;letter-spacing:-.036em}
+.zaver p{color:var(--text-2);max-width:34em;font-size:clamp(1.05rem,1rem + .25vw,1.22rem)}
+.zaver .uvod-akcie{justify-content:center;gap:12px}
+
+/* Päta */
+.pata{background:#05070c;border-top:1px solid var(--ciara);padding:56px 0 calc(40px + env(safe-area-inset-bottom));font-size:15px;color:var(--text-2)}
+.pata-mriezka{display:grid;gap:32px}
+.pata-znacka p{margin-top:12px;max-width:26em}
+.pata-nadpis{color:var(--text);font-weight:600;margin-bottom:8px}
+.pata ul{list-style:none;padding:0;display:grid}
+.pata ul a{display:inline-flex;align-items:center;min-height:44px;text-decoration:none;color:var(--text-2)}
+.pata ul a:hover{color:var(--text);text-decoration:underline}
+.pata-kontakt li{min-height:44px;display:flex;align-items:center}
+.pata-spodok{margin-top:36px;padding-top:24px;border-top:1px solid var(--ciara);display:grid;gap:10px;font-size:14px;color:var(--text-3)}
+.pata-spodok a{color:var(--text-2);display:inline-flex;align-items:center;min-height:44px}
+
+/* Dialógy a mobilné menu (popover, bez skriptu; app.js len posunie menu pod hlavičku) */
+.modal{border:1px solid var(--ciara-2);padding:0;margin:auto;width:min(460px,calc(100% - 32px));border-radius:22px;background:linear-gradient(180deg,#171b29,#0f121c);color:var(--text);box-shadow:0 40px 100px -20px rgba(0,0,0,.85);opacity:1;transform:none;transition:opacity .22s ease,transform .3s var(--vstup),overlay .3s allow-discrete,display .3s allow-discrete}
+.modal::backdrop{background:rgba(3,4,8,.7);transition:background-color .22s ease,overlay .3s allow-discrete,display .3s allow-discrete}
+@starting-style{.modal:popover-open{opacity:0;transform:translateY(14px) scale(.98)}.modal:popover-open::backdrop{background:rgba(3,4,8,0)}}
+.modal:not(:popover-open){opacity:0;transform:translateY(8px)}
+.dialog-hlava{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:22px 22px 0}
+.dialog-hlava h2{font-size:1.6rem;letter-spacing:-.035em;line-height:1.1}
+.zavriet{flex:none;display:grid;place-items:center;width:44px;height:44px;margin:-8px -10px 0 0;border:0;border-radius:12px;background:transparent;color:var(--text-2);cursor:pointer}
+.zavriet:hover{background:rgba(255,255,255,.07);color:var(--text)}
+.dialog-telo{display:grid;gap:14px;padding:14px 22px 24px;color:var(--text-2)}
+.dialog-pozn{padding:12px 14px;border-radius:12px;background:rgba(255,255,255,.05);font-size:14.5px;color:var(--text-2)}
+.dialog-kontakt{display:grid;gap:4px;font-size:18px;color:var(--text);font-weight:600}
+.modal .akcia{width:100%}
+.mobil-menu{border:1px solid var(--ciara-2);margin:0;padding:10px;inset:auto 12px auto 12px;top:76px;width:auto;border-radius:20px;background:#0f121c;color:var(--text);box-shadow:0 30px 80px -20px rgba(0,0,0,.9);opacity:1;transform:none;transition:opacity .2s ease,transform .28s var(--vstup),overlay .28s allow-discrete,display .28s allow-discrete}
+@starting-style{.mobil-menu:popover-open{opacity:0;transform:translateY(-8px)}}
+.mobil-menu:not(:popover-open){opacity:0;transform:translateY(-8px)}
+.mobil-menu::backdrop{background:rgba(3,4,8,.5)}
+.mobil-menu ul{list-style:none;padding:0;display:grid}
+.mobil-menu a,.menu-polozka{display:flex;align-items:center;width:100%;min-height:52px;padding:0 14px;border:0;border-radius:12px;background:transparent;text-decoration:none;font-size:17px;font-weight:550;text-align:left;cursor:pointer}
+.mobil-menu a:hover,.menu-polozka:hover{background:rgba(255,255,255,.06)}
+.mobil-menu .akcia{width:100%;margin-top:8px}
+
+/* Pohyb. Jeden orchestrovaný moment pri vstupe: okno vyjde spoza obzoru (1 s), smeny sa poskladajú vlnou po dňoch
+   (34 ms na smenu, posledná dobehne do 2 s), počítadlo pokrytia ide od 0 a s ním vychádza slnko. Spustí ho app.js, až keď
+   je z okna v obraze aspoň 35 %. Potom pokoj; svetlo sa mení len s pokrytím (smena chýba, Navrhnúť týždeň). */
+@media (prefers-reduced-motion:no-preference){
+  html{scroll-behavior:smooth}
+  .svitanie>i,.hviezdy,.app::before{transition:opacity 1.1s var(--plynule),transform 1.3s var(--plynule)}
+  .farebne{transition:filter 1.1s var(--plynule)}
+  .uvod.sklada .svitanie>i,.uvod.sklada .hviezdy,.uvod.sklada .app::before{transition-duration:1.9s,2.1s;transition-delay:.35s,.35s}
+  .uvod.sklada .farebne{transition-duration:1.8s;transition-delay:.5s}
+  .uvod.svit-rychlo .svitanie>i,.uvod.svit-rychlo .hviezdy,.uvod.svit-rychlo .app::before,.uvod.svit-rychlo .farebne{transition-duration:.35s,.35s;transition-delay:0s,0s}
+  .uvod.svit-pomaly .svitanie>i,.uvod.svit-pomaly .hviezdy,.uvod.svit-pomaly .app::before,.uvod.svit-pomaly .farebne{transition-duration:1.6s,1.8s}
+  @keyframes vzlet{from{opacity:0;transform:perspective(1800px) translateY(70px) rotateX(18deg) scale(.95)}40%{opacity:1}to{opacity:1;transform:none}}
+  @keyframes prilet{from{opacity:0;transform:translateY(12px) scale(.9)}to{opacity:1;transform:none}}
+  @keyframes pruh{from{transform:scaleX(0)}}
+  @keyframes rast{from{clip-path:inset(0 100% 0 0 round 10px)}to{clip-path:inset(0 0 0 0 round 10px)}}
+  @keyframes vstup{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  @keyframes lesk{0%{opacity:0;transform:scaleX(.15)}30%{opacity:1}100%{opacity:0;transform:scaleX(1.12)}}
+  .uvod.sklada .app::after{animation:lesk 1.3s var(--plynule) 1.8s both}
+  .app.vlna::after{animation:lesk 1.2s var(--plynule) 1.15s both}
+  .uvod.sklada .app{animation:vzlet 1.05s cubic-bezier(.2,.85,.25,1) both}
+  .uvod.sklada .smena{animation:prilet .56s var(--vstup) both;animation-delay:calc(560ms + var(--i) * 34ms)}
+  .app.vlna .smena{animation:prilet .56s var(--vstup) both;animation-delay:calc(60ms + var(--i) * 30ms)}
+  .den-smena{animation:rast .55s var(--vstup) both;animation-delay:calc(40ms + var(--i) * 55ms)}
+  .uvod.sklada .den-smena{animation-duration:.62s;animation-delay:calc(640ms + var(--i) * 85ms)}
+  .uvod.sklada .pokrytie-pruh i{animation:pruh 1.5s var(--pohyb) .6s both}
+  .app.vlna .pokrytie-pruh i{animation:pruh 1.1s var(--pohyb) .1s both}
+  .uvod.sklada .osoba-pruh i,.app.vlna .osoba-pruh i{animation:pruh .9s var(--vstup) .9s both}
+  /* sekcie pod ohybom: vstup raz, keď vojdú do obrazu (čo je vidieť hneď, sa neskrýva) */
+  .caka{opacity:0;transform:translateY(22px)}
+  .caka.videne{opacity:1;transform:none;transition:opacity .7s var(--vstup),transform .8s var(--vstup)}
+  /* karty: malé ukážky sa prehrajú raz, keď karta vojde do obrazu */
+  .js .md-den{opacity:0;transform:translateY(8px)}
+  .js .hra .md-den{animation:vstup .45s var(--vstup) both;animation-delay:calc(var(--d) * 60ms)}
+  .js .md-prepni .i-a{opacity:1}.js .md-prepni .i-b{opacity:0}
+  .js .md-prepni::after,.js .md-prepni .bod::after{opacity:0}
+  .js .hra .md-prepni{animation:vstup .45s var(--vstup) .24s both,prepni .5s var(--pruzina) 1s both}
+  .js .hra .md-prepni .i-a{animation:zhasni .2s linear 1.05s both}
+  .js .hra .md-prepni .i-b,.js .hra .md-prepni::after,.js .hra .md-prepni .bod::after{animation:rozsviet .25s linear 1.05s both}
+  @keyframes prepni{40%{transform:scale(1.08)}100%{transform:none}}
+  @keyframes zhasni{to{opacity:0}}
+  @keyframes rozsviet{from{opacity:0}to{opacity:1}}
+  .js .md-ulozene{opacity:0}
+  .js .hra .md-ulozene{animation:vstup .4s var(--vstup) 1.35s both}
+  .js .mv-smena{transform:translateX(calc(60px - 50cqw))}
+  .js .hra .mv-smena{animation:vymena 1.1s var(--pohyb) .3s both}
+  @keyframes vymena{0%{transform:translateX(calc(60px - 50cqw))}50%{transform:translate(0,-14px) rotate(-3deg)}100%{transform:translateX(calc(50cqw - 60px))}}
+  .js .mv-ok{opacity:0}
+  .js .hra .mv-ok{animation:vstup .4s var(--pruzina) 1.35s both}
+  .js .mk-smena{opacity:0}
+  .js .hra .mk-smena{animation:kolizia 1.25s var(--vstup) .25s both}
+  @keyframes kolizia{0%{opacity:0;transform:translateY(-10px)}20%{opacity:1;transform:translateY(0)}45%{transform:translateY(62px)}52%{transform:translate(-6px,62px)}59%{transform:translate(6px,62px)}66%{transform:translate(-4px,62px)}74%{transform:translate(0,62px)}100%{opacity:1;transform:translateY(0)}}
+  .js .mk-bunka.volno::after{opacity:0}
+  .js .hra .mk-bunka.volno::after{animation:rozsviet .3s linear .75s both}
+  .js .mk-varovanie{opacity:0}
+  .js .hra .mk-varovanie{animation:vstup .45s var(--vstup) 1.2s both}
+  .js .mm-notif{opacity:0;transform:translateY(-16px)}
+  .js .hra .mm-notif{animation:notif .6s var(--pruzina) .3s both}
+  @keyframes notif{from{opacity:0;transform:translateY(-16px) scale(.96)}to{opacity:1;transform:none}}
+  .js .mm-riadok{opacity:0}
+  .js .hra .mm-riadok{animation:vstup .45s var(--vstup) both;animation-delay:calc(.7s + var(--d) * 90ms)}
+  .js .mdo-pin i::after{opacity:0}
+  .js .hra .mdo-pin i::after{animation:rozsviet .18s linear both;animation-delay:calc(.2s + var(--d) * 120ms)}
+  .js .mdo-priebeh{stroke-dashoffset:176}
+  .js .hra .mdo-priebeh{animation:kruh .9s var(--pohyb) .75s both}
+  @keyframes kruh{to{stroke-dashoffset:0}}
+  .js .mdo-text{opacity:0}
+  .js .hra .mdo-text{animation:vstup .45s var(--vstup) 1.2s both}
+  .js .mh-pruh i{transform:scaleX(0)}
+  .js .hra .mh-pruh i{animation:mh 1s var(--vstup) both;animation-delay:calc(.15s + var(--d) * 90ms)}
+  @keyframes mh{from{transform:scaleX(0)}to{transform:scaleX(var(--p))}}
+  .js .kroky-ciara i{transform:scaleX(0)}
+  .js .videne .kroky-ciara i{transition:transform 1.2s var(--pohyb) .2s;transform:none}
+}
+/* Kým app.js nespustí skladanie, je noc a okno čaká pod obzorom. Platí len so skriptom (media scripting) a bez obmedzeného
+   pohybu; bez skriptu je hneď hotový rozpis a deň. Poistka pre pomalé zariadenia: ak skript do 1,2 s od prvého vykreslenia
+   nespustí skladanie, prehrá ho samotné CSS (okno, smeny, svetlo, bez počítadla) a app.js ho potom nechá dobehnúť. */
+@media (scripting:enabled) and (prefers-reduced-motion:no-preference){
+  .uvod:not(.sklada):not(.hotovo){--zac:0}
+  .uvod:not(.sklada):not(.hotovo) .app{opacity:0;transform:perspective(1800px) translateY(70px) rotateX(18deg) scale(.95)}
+  .uvod:not(.sklada):not(.hotovo) .smena,.uvod:not(.sklada):not(.hotovo) .den-smena{opacity:0}
+  /* vlastné mená animácií: keď skript poistku predbehne, jeho skladanie začne od nuly a neprevezme rozbehnutý čas */
+  @keyframes poistka-svit{to{--zac:1}}
+  @keyframes vzlet-p{from{opacity:0;transform:perspective(1800px) translateY(70px) rotateX(18deg) scale(.95)}40%{opacity:1}to{opacity:1;transform:none}}
+  @keyframes prilet-p{from{opacity:0;transform:translateY(12px) scale(.9)}to{opacity:1;transform:none}}
+  @keyframes poistka-rast{from{opacity:1;clip-path:inset(0 100% 0 0 round 10px)}to{opacity:1;clip-path:inset(0 0 0 0 round 10px)}}
+  .uvod:not(.sklada):not(.hotovo):not(.odlozene){animation:poistka-svit 0s linear 1.2s forwards}
+  .uvod:not(.sklada):not(.hotovo):not(.odlozene) .app{animation:vzlet-p 1.05s cubic-bezier(.2,.85,.25,1) 1.2s both}
+  .uvod:not(.sklada):not(.hotovo):not(.odlozene) .smena{animation:prilet-p .56s var(--vstup) both;animation-delay:calc(1.76s + var(--i) * 34ms)}
+  .uvod:not(.sklada):not(.hotovo):not(.odlozene) .den-smena{animation:poistka-rast .62s var(--vstup) both;animation-delay:calc(1.84s + var(--i) * 85ms)}
+}
+@media (prefers-reduced-motion:reduce){
+  .akcia,.prepinac-palec,.cena>span,.plan-priklad>span,.smena,.osoba-pruh i,.pokrytie-pruh i,.faq summary svg,.modal,.modal::backdrop,.mobil-menu{transition:none!important}
+  .app-sprava.nova,.faq details[open] p{animation:none}
+}
+
+/* Rozloženie podľa šírky */
+@media (max-width:719px){
+  .app:not(:has(.prepinac-pohlad input:checked)) .pohlad-tyzden{display:none}
+  .app:not(:has(.prepinac-pohlad input:checked)) .pohlad-den{display:block}
+  .prepinac-pohlad:not(:has(input:checked)) .prepinac-palec{transform:translateX(100%)}
+  .prepinac-pohlad:not(:has(input:checked)) label[for="pohlad-tyzden"]{color:var(--text-2)}
+  .prepinac-pohlad:not(:has(input:checked)) label[for="pohlad-den"]{color:#0b0d14}
+  .uvod{--obzor:-18px}
+  .svit-slnko{top:-110px;width:420px;height:420px;margin-left:-210px}
+  .svit-nebo{top:-440px;height:820px}
+  .app{border-radius:20px}
+  /* hlavička okna: meno a Zverejniť, pod nimi prepínač a hlavné Navrhnúť týždeň */
+  .app-hlava{padding:12px 12px 10px;gap:10px}
+  .app-meno{flex:1 1 calc(100% - 112px);order:1;margin-right:0}
+  .app-znak{display:none}
+  .app-akcie{display:contents}
+  .app-tlacidlo[data-akcia="zverejnit"]{order:2;padding:0 12px}
+  .prepinac-pohlad{order:3;flex:1 1 128px}
+  .prepinac-pohlad label{padding:0 10px}
+  .app-tlacidlo[data-akcia="navrhnut"]{order:4;padding:0 14px}
+  .dni{padding:8px 8px 4px}
+  .dni button{min-height:48px}
+  .int-pasy{-webkit-mask-image:none;mask-image:none}
+  .int-rad{width:auto;max-width:100%;justify-content:flex-start;overflow-x:auto;padding:2px 16px 8px;scroll-snap-type:x mandatory;scroll-padding-inline:16px;scrollbar-width:none;transform:none}
+  .int-rad::-webkit-scrollbar{display:none}
+  .int-rad li{flex:none;width:208px;scroll-snap-align:start}
+  .tyzden col.t-ludia{width:118px}
+  .tyzden tbody th{padding-left:10px}
+  .osoba-pruh{margin-left:0}
+  .osoba .avatar{display:none}
+  .legenda{order:5;margin-left:0}
+  .app-pata{padding:10px 12px 12px;gap:6px 14px}
+  .app-sprava{order:6}
+  .karta-f .mini{order:-1}
+}
+@media (max-width:389px){
+  .den-panel{--meno:84px}
+  .den-osoba .avatar{display:none}
+  .dni{gap:2px;padding-inline:8px}
+  .prepinac-pohlad label{padding:0 8px}
+  .app-tlacidlo[data-akcia="navrhnut"]{padding:0 12px}
+}
+@media (min-width:720px){
+  .pas{font-size:14px}
+  .pas .obsah{display:flex;flex-wrap:wrap;gap:2px 18px;align-items:center;justify-content:space-between;padding-block:8px}
+  .pas p{display:block}
+  .pas strong{display:inline}
+  .pas nav{display:flex;gap:4px 18px;margin:0}
+  .pas a{margin:-8px 0}
+  .pas-dlhe{display:inline}.pas-kratke{display:none}
+  .uvod-mriezka{grid-template-areas:"h" "bok" "scena" "popis"}
+  .uvod-nad{display:flex}
+  .uvod h1{font-size:clamp(3.2rem,7.4vw,4.6rem)}
+  .uvod-bok{margin-top:22px}
+  .uvod-akcie .akcia{flex:0 0 auto}
+  .scena{margin-inline:0}
+  .bento{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .karta-a,.karta-f{grid-column:span 2}
+  .karta-f{grid-template-columns:minmax(0,1fr) minmax(0,1.2fr)}
+  .karta-f .mini{grid-row:1/span 3;grid-column:2}
+  .plany{max-width:600px;margin-inline:auto}
+  .kroky{grid-template-columns:repeat(3,minmax(0,1fr));gap:28px}
+  .krok{padding-left:0;padding-top:68px}
+  .krok-cislo{top:0}
+  .kroky-ciara{display:block;position:absolute;left:44px;right:calc(33.33% - 14px);top:21px;height:2px;pointer-events:none}
+  .kroky-ciara i{display:block;height:100%;border-radius:2px;background:linear-gradient(90deg,#ffd2ad,#ff8fb8 50%,#a29bff);transform-origin:left;opacity:.55}
+  .pata-mriezka{grid-template-columns:1.4fr 1fr 1fr}
+  .dlhe{display:inline}.kratke{display:none}
+}
+@media (min-width:1024px){
+  .menu{display:flex}
+  .prihlasit{display:inline-flex;align-items:center}
+  .menu-tlacidlo{display:none}
+  .hlava-in{min-height:72px}
+  /* úvod: nadpis vľavo, popis a tlačidlá vpravo na jeho spodnej línii, okno cez celú šírku hneď pod nimi */
+  .uvod-mriezka{grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);grid-template-areas:"h bok" "scena scena" "popis popis";align-items:end}
+  .uvod h1{font-size:clamp(3.4rem,min(2.1rem + 3.3vw,10.5svh),5.1rem)}
+  .uvod-bok{margin:0;padding-bottom:4px}
+  .bento{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .karta-a{grid-column:span 2}
+  .karta-f{grid-column:span 3}
+  .plany{grid-template-columns:repeat(3,minmax(0,1fr));max-width:none}
+  .otazky-mriezka{grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:56px}
+  .otazky .sekcia-hlava{position:sticky;top:120px;align-self:start}
+  .tyzden col.t-ludia{width:180px}
+  /* postup: nadpis vľavo, kroky zvisle vpravo spojené čiarou */
+  .postup .obsah{display:grid;grid-template-columns:minmax(0,.95fr) minmax(0,1.05fr);gap:72px;align-items:start}
+  .postup .sekcia-hlava{margin-bottom:0;position:sticky;top:120px}
+  .kroky{grid-template-columns:minmax(0,1fr);gap:46px}
+  .krok{padding:0 0 0 78px}
+  .krok-cislo{top:-6px;width:48px;height:48px;font-size:18px}
+  .krok h3{font-size:1.45rem}
+  .krok p{font-size:17.5px;max-width:30em}
+  .kroky-ciara{left:23px;right:auto;top:54px;bottom:60px;width:2px;height:auto}
+  .kroky-ciara i{background:linear-gradient(180deg,#ffd2ad,#ff8fb8 50%,#a29bff);transform-origin:top}
+}
+@media (min-width:1024px) and (max-width:1279px){
+  .uvod-mriezka{grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);column-gap:40px}
+  .uvod h1{font-size:clamp(3.4rem,min(6.1vw,10.5svh),4.4rem)}
+  .uvod-akcie{gap:8px 20px}
+  .uvod-akcie .akcia{padding:0 20px;font-size:16px}
+  /* pravý stĺpec je tu bližšie k slnku: menšie slnko a svetlejšia poznámka (kontrast aspoň 4,5 : 1) */
+  .svit-slnko{top:-150px;width:540px;height:540px;margin-left:-270px}
+  .uvod-pozn{color:#c8cede}
+}
+/* nízke okná notebookov (1280 x 720, 1366 x 768, 1536 x 730): menší odstup, aby bolo okno s rozpisom v prvej obrazovke */
+@media (min-width:1024px) and (max-height:900px){
+  .uvod{padding-top:26px}
+  .uvod-nad{margin-bottom:16px}
+  .scena{margin-top:42px}
+}
+@media (min-width:1024px) and (prefers-reduced-motion:no-preference){
+  .js .kroky-ciara i{transform:scaleY(0)}
+}
+@media (min-width:1180px){
+  .app{grid-template-columns:minmax(0,1fr) 280px;grid-template-areas:"hlava hlava" "telo bok" "pata pata"}
+  .app-bok{grid-area:bok;display:flex;flex-direction:column;gap:12px;padding:14px;border-left:1px solid var(--ciara)}
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="rozsvit-svit" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffdcbf"/><stop offset=".5" stop-color="#ffb27a"/><stop offset="1" stop-color="#ff8fb8"/></linearGradient>
+    <linearGradient id="rozsvit-iskra" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f08a32"/><stop offset="1" stop-color="#dd4f86"/></linearGradient>
+  </defs>
+</svg>
+<a class="preskocit" href="#obsah">Preskočiť na obsah</a>
+
+<div class="pas" role="note">
+  <div class="obsah">
+    <p><strong>Ukážka webu od ARLing, vymyslená prevádzka.</strong> <span class="pas-dlhe">Rozsvit neexistuje, mená, adresa, čísla aj ceny sú vymyslené.</span><span class="pas-kratke">Mená aj ceny sú vymyslené.</span></p>
+    <nav aria-label="Ukážka">
+      <a href="https://arling.sk/web/?z=startup" target="_top">Chcem taký web</a>
+      <a href="../../index.html#ukazky" target="_top" aria-label="Späť na ukážky">Späť<span class="pas-dlhe">&nbsp;na ukážky</span></a>
+    </nav>
+  </div>
+</div>
+
+<header class="hlava">
+  <div class="obsah hlava-in">
+    <a class="znak" href="#obsah" aria-label="Rozsvit, na začiatok">
+      <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><rect width="30" height="30" rx="9" fill="#151927"/><rect x=".5" y=".5" width="29" height="29" rx="8.5" fill="none" stroke="rgba(255,255,255,.12)"/><path d="M7.5 19.2a7.5 7.5 0 0 1 15 0z" fill="url(#rozsvit-svit)"/><rect x="5.5" y="20.8" width="19" height="2.2" rx="1.1" fill="#eef1f8"/></svg>
+      <span aria-hidden="true">Rozsvit</span>
+    </a>
+    <nav class="menu" aria-label="Hlavná">
+      <a href="#funkcie">Funkcie</a>
+      <a href="#postup">Ako to funguje</a>
+      <a href="#cennik">Cenník</a>
+      <a href="#otazky">Otázky</a>
+    </nav>
+    <div class="hlava-akcie">
+      <button class="prihlasit" type="button" popovertarget="okno-prihlasit">Prihlásiť sa</button>
+      <button class="akcia akcia-svit akcia-mala" type="button" popovertarget="okno-skusit"><span class="kratke">Vyskúšať</span><span class="dlhe">Vyskúšať zadarmo</span></button>
+      <button class="menu-tlacidlo" type="button" popovertarget="mobil-menu" aria-label="Menu">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M3 7h14M3 13h14"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<nav class="mobil-menu" id="mobil-menu" popover aria-label="Menu">
+  <ul>
+    <li><a href="#funkcie">Funkcie</a></li>
+    <li><a href="#postup">Ako to funguje</a></li>
+    <li><a href="#cennik">Cenník</a></li>
+    <li><a href="#otazky">Otázky</a></li>
+    <li><button class="menu-polozka" type="button" popovertarget="okno-prihlasit">Prihlásiť sa</button></li>
+  </ul>
+  <button class="akcia akcia-svit" type="button" popovertarget="okno-skusit">Vyskúšať 14&nbsp;dní zadarmo</button>
+</nav>
+
+<main id="obsah">
+  <section class="uvod" aria-labelledby="uvod-nadpis">
+    <div class="nebo" aria-hidden="true"><div class="hviezdy"></div></div>
+    <div class="obsah uvod-mriezka">
+      <div class="uvod-h">
+        <p class="uvod-nad"><svg width="20" height="20" viewBox="0 0 30 30" aria-hidden="true"><path d="M7.5 19.2a7.5 7.5 0 0 1 15 0z" fill="url(#rozsvit-svit)"/><rect x="5.5" y="20.8" width="19" height="2.2" rx="1.1" fill="#eef1f8"/></svg>Plánovanie smien pre kaviarne, bistrá a&nbsp;salóny</p>
+        <h1 id="uvod-nadpis">Rozpis smien, ktorý sa <span class="farebne">poskladá sám.</span></h1>
+      </div>
+      <div class="uvod-bok">
+        <p class="uvod-popis">Rozsvit navrhne týždeň podľa toho, kto kedy môže, postráži nadčasy a&nbsp;kolízie a&nbsp;každému pošle jeho smeny do&nbsp;mobilu.</p>
+        <div class="uvod-akcie">
+          <button class="akcia akcia-svit" type="button" popovertarget="okno-skusit">Vyskúšať 14&nbsp;dní zadarmo
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 9h11M10 4.5 14.5 9 10 13.5"/></svg>
+          </button>
+          <a class="uvod-odkaz" href="#cennik">Pozrieť cenník<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3v9.5M4 8.5l4 4 4-4"/></svg></a>
+        </div>
+        <p class="uvod-pozn">Bez platobnej karty. Do 5&nbsp;ľudí zadarmo navždy.</p>
+      </div>
+
+      <div class="scena">
+        <div class="svitanie" aria-hidden="true"><i class="svit-nebo"></i><i class="svit-hmla"></i><i class="svit-slnko"></i><i class="svit-obruba"></i><i class="svit-zem"></i></div>
+        <div class="app" id="rozpis" role="region" aria-labelledby="app-nazov" aria-describedby="app-navod">
+          <div class="app-hlava">
+            <div class="app-meno">
+              <span class="app-znak" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 30 30"><path d="M7.5 19.2a7.5 7.5 0 0 1 15 0z" fill="url(#rozsvit-svit)"/><rect x="5.5" y="20.8" width="19" height="2.2" rx="1.1" fill="#eef1f8"/></svg></span>
+              <div>
+                <p class="app-prevadzka" id="app-nazov"><span class="dlhe">Rozpis smien: </span>Ukážková kaviareň</p>
+                <p class="app-tyzden"><span data-tyzden>Tento týždeň</span>, 6&nbsp;ľudí</p>
+              </div>
+            </div>
+            <fieldset class="prepinac prepinac-pohlad">
+              <legend>Zobrazenie rozpisu</legend>
+              <input type="radio" name="pohlad" id="pohlad-tyzden" value="tyzden"><label for="pohlad-tyzden">Týždeň</label>
+              <input type="radio" name="pohlad" id="pohlad-den" value="den"><label for="pohlad-den">Deň</label>
+              <span class="prepinac-palec" aria-hidden="true"></span>
+            </fieldset>
+            <div class="app-akcie">
+              <button type="button" class="app-tlacidlo app-tlacidlo-hlavne" data-akcia="navrhnut">
+                <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M6.4 1.2c.5 2.9 1.7 4.1 4.6 4.6-2.9.5-4.1 1.7-4.6 4.6-.5-2.9-1.7-4.1-4.6-4.6 2.9-.5 4.1-1.7 4.6-4.6z" fill="url(#rozsvit-iskra)"/><path d="M12.2 9.4c.3 1.7.9 2.3 2.6 2.6-1.7.3-2.3.9-2.6 2.6-.3-1.7-.9-2.3-2.6-2.6 1.7-.3 2.3-.9 2.6-2.6z" fill="url(#rozsvit-iskra)"/></svg>
+                Navrhnúť týždeň
+              </button>
+              <button type="button" class="app-tlacidlo" data-akcia="zverejnit">Zverejniť</button>
+            </div>
+          </div>
+
+          <div class="app-telo">
+            <div class="pohlad-tyzden">
+<div class="tyzden-obal">
+<table class="tyzden" id="tyzden">
+<caption class="skryte">Rozpis smien na tento týždeň v&nbsp;ukážkovej kaviarni, vymyslené údaje</caption>
+<colgroup><col class="t-ludia"><col span="7"></colgroup>
+<thead><tr><th scope="col" class="t-tim">Tím</th><th scope="col" data-den="0"><abbr class="den-k" title="pondelok">Po</abbr> <span class="den-d" data-datum="0"></span></th><th scope="col" data-den="1"><abbr class="den-k" title="utorok">Ut</abbr> <span class="den-d" data-datum="1"></span></th><th scope="col" data-den="2"><abbr class="den-k" title="streda">St</abbr> <span class="den-d" data-datum="2"></span></th><th scope="col" data-den="3"><abbr class="den-k" title="štvrtok">Št</abbr> <span class="den-d" data-datum="3"></span></th><th scope="col" data-den="4"><abbr class="den-k" title="piatok">Pi</abbr> <span class="den-d" data-datum="4"></span></th><th scope="col" data-den="5"><abbr class="den-k" title="sobota">So</abbr> <span class="den-d" data-datum="5"></span></th><th scope="col" data-den="6"><abbr class="den-k" title="nedeľa">Ne</abbr> <span class="den-d" data-datum="6"></span></th></tr></thead>
+<tbody>
+<tr data-osoba="jana" data-meno="Jana" data-zrucnosti="bar sala" data-zmluva="40">
+<th scope="row"><span class="osoba"><span class="avatar a-bar" aria-hidden="true">J</span><span class="osoba-text"><span class="osoba-meno">Jana</span><span class="osoba-info">Bar, <span class="osoba-hodiny">40&nbsp;h z&nbsp;40</span></span></span></span><span class="osoba-pruh" aria-hidden="true"><i style="--p:1.000"></i></span></th>
+<td data-den="0"><button type="button" class="smena s-bar" data-id="s01" data-rola="bar" data-od="7" data-do="15" style="--i:0" aria-label="Jana, pondelok, bar, 7:00 až 15:00"><span class="smena-od">7:00</span><span class="smena-do">do&nbsp;15:00</span></button></td>
+<td data-den="1"><button type="button" class="smena s-bar" data-id="s05" data-rola="bar" data-od="7" data-do="15" style="--i:4" aria-label="Jana, utorok, bar, 7:00 až 15:00"><span class="smena-od">7:00</span><span class="smena-do">do&nbsp;15:00</span></button></td>
+<td data-den="2" class="volno" data-volno="Voľno"><span class="volno-stitok">Voľno</span></td>
+<td data-den="3"><button type="button" class="smena s-bar" data-id="s13" data-rola="bar" data-od="14" data-do="22" style="--i:12" aria-label="Jana, štvrtok, bar, 14:00 až 22:00"><span class="smena-od">14:00</span><span class="smena-do">do&nbsp;22:00</span></button></td>
+<td data-den="4"><button type="button" class="smena s-bar" data-id="s17" data-rola="bar" data-od="14" data-do="22" style="--i:16" aria-label="Jana, piatok, bar, 14:00 až 22:00"><span class="smena-od">14:00</span><span class="smena-do">do&nbsp;22:00</span></button></td>
+<td data-den="5"><button type="button" class="smena s-bar" data-id="s21" data-rola="bar" data-od="8" data-do="16" style="--i:20" aria-label="Jana, sobota, bar, 8:00 až 16:00"><span class="smena-od">8:00</span><span class="smena-do">do&nbsp;16:00</span></button></td>
+<td data-den="6"></td>
+</tr>
+<tr data-osoba="matej" data-meno="Matej" data-zrucnosti="bar" data-zmluva="40">
+<th scope="row"><span class="osoba"><span class="avatar a-bar" aria-hidden="true">M</span><span class="osoba-text"><span class="osoba-meno">Matej</span><span class="osoba-info">Bar, <span class="osoba-hodiny">40&nbsp;h z&nbsp;40</span></span></span></span><span class="osoba-pruh" aria-hidden="true"><i style="--p:1.000"></i></span></th>
+<td data-den="0"><button type="button" class="smena s-bar" data-id="s02" data-rola="bar" data-od="14" data-do="22" style="--i:1" aria-label="Matej, pondelok, bar, 14:00 až 22:00"><span class="smena-od">14:00</span><span class="smena-do">do&nbsp;22:00</span></button></td>
+<td data-den="1"><button type="button" class="smena s-bar" data-id="s06" data-rola="bar" data-od="14" data-do="22" style="--i:5" aria-label="Matej, utorok, bar, 14:00 až 22:00"><span class="smena-od">14:00</span><span class="smena-do">do&nbsp;22:00</span></button></td>
+<td data-den="2"><button type="button" class="smena s-bar" data-id="s09" data-rola="bar" data-od="7" data-do="15" style="--i:8" aria-label="Matej, streda, bar, 7:00 až 15:00"><span class="smena-od">7:00</span><span class="smena-do">do&nbsp;15:00</span></button></td>
+<td data-den="3"></td>
+<td data-den="4"><button type="button" class="smena s-bar" data-id="s18" data-rola="bar" data-od="7" data-do="15" style="--i:17" aria-label="Matej, piatok, bar, 7:00 až 15:00"><span class="smena-od">7:00</span><span class="smena-do">do&nbsp;15:00</span></button></td>
+<td data-den="5" class="volno" data-volno="Nemôže"><span class="volno-stitok">Nemôže</span></td>
+<td data-den="6"><button type="button" class="smena s-bar" data-id="s25" data-rola="bar" data-od="14" data-do="22" style="--i:24" aria-label="Matej, nedeľa, bar, 14:00 až 22:00"><span class="smena-od">14:00</span><span class="smena-do">do&nbsp;22:00</span></button></td>
+</tr>
+<tr data-osoba="lucia" data-meno="Lucia" data-zrucnosti="bar sala" data-zmluva="32">
+<th scope="row"><span class="osoba"><span class="avatar a-bar" aria-hidden="true">L</span><span class="osoba-text"><span class="osoba-meno">Lucia</span><span class="osoba-info">Bar, <span class="osoba-hodiny">32&nbsp;h z&nbsp;32</span></span></span></span><span class="osoba-pruh" aria-hidden="true"><i style="--p:1.000"></i></span></th>
+<td data-den="0" class="volno" data-volno="Nemôže"><span class="volno-stitok">Nemôže</span></td>
+<td data-den="1" class="volno" data-volno="Nemôže"><span class="volno-stitok">Nemôže</span></td>
+<td data-den="2"><button type="button" class="smena s-bar" data-id="s10" data-rola="bar" data-od="14" data-do="22" style="--i:9" aria-label="Lucia, streda, bar, 14:00 až 22:00"><span class="smena-od">14:00</span><span class="smena-do">do&nbsp;22:00</span></button></td>
+<td data-den="3"><button type="button" class="smena s-bar" data-id="s14" data-rola="bar" data-od="7" data-do="15" style="--i:13" aria-label="Lucia, štvrtok, bar, 7:00 až 15:00"><span class="smena-od">7:00</span><span class="smena-do">do&nbsp;15:00</span></button></td>
+<td data-den="4"></td>
+<td data-den="5"><button type="button" class="smena s-bar" data-id="s22" data-rola="bar" data-od="14" data-do="22" style="--i:21" aria-label="Lucia, sobota, bar, 14:00 až 22:00"><span class="smena-od">14:00</span><span class="smena-do">do&nbsp;22:00</span></button></td>
+<td data-den="6"><button type="button" class="smena s-bar" data-id="s26" data-rola="bar" data-od="8" data-do="16" style="--i:25" aria-label="Lucia, nedeľa, bar, 8:00 až 16:00"><span class="smena-od">8:00</span><span class="smena-do">do&nbsp;16:00</span></button></td>
+</tr>
+<tr data-osoba="tomas" data-meno="Tomáš" data-zrucnosti="kuchyna" data-zmluva="40">
+<th scope="row"><span class="osoba"><span class="avatar a-kuchyna" aria-hidden="true">T</span><span class="osoba-text"><span class="osoba-meno">Tomáš</span><span class="osoba-info">Kuchyňa, <span class="osoba-hodiny">40&nbsp;h z&nbsp;40</span></span></span></span><span class="osoba-pruh" aria-hidden="true"><i style="--p:1.000"></i></span></th>
+<td data-den="0"><button type="button" class="smena s-kuchyna" data-id="s03" data-rola="kuchyna" data-od="9" data-do="17" style="--i:2" aria-label="Tomáš, pondelok, kuchyňa, 9:00 až 17:00"><span class="smena-od">9:00</span><span class="smena-do">do&nbsp;17:00</span></button></td>
+<td data-den="1"><button type="button" class="smena s-kuchyna" data-id="s07" data-rola="kuchyna" data-od="9" data-do="17" style="--i:6" aria-label="Tomáš, utorok, kuchyňa, 9:00 až 17:00"><span class="smena-od">9:00</span><span class="smena-do">do&nbsp;17:00</span></button></td>
+<td data-den="2"><button type="button" class="smena s-kuchyna" data-id="s11" data-rola="kuchyna" data-od="9" data-do="17" style="--i:10" aria-label="Tomáš, streda, kuchyňa, 9:00 až 17:00"><span class="smena-od">9:00</span><span class="smena-do">do&nbsp;17:00</span></button></td>
+<td data-den="3"><button type="button" class="smena s-kuchyna" data-id="s15" data-rola="kuchyna" data-od="9" data-do="17" style="--i:14" aria-label="Tomáš, štvrtok, kuchyňa, 9:00 až 17:00"><span class="smena-od">9:00</span><span class="smena-do">do&nbsp;17:00</span></button></td>
+<td data-den="4"><button type="button" class="smena s-kuchyna" data-id="s19" data-rola="kuchyna" data-od="9" data-do="17" style="--i:18" aria-label="Tomáš, piatok, kuchyňa, 9:00 až 17:00"><span class="smena-od">9:00</span><span class="smena-do">do&nbsp;17:00</span></button></td>
+<td data-den="5" class="volno" data-volno="Voľno"><span class="volno-stitok">Voľno</span></td>
+<td data-den="6" class="volno" data-volno="Voľno"><span class="volno-stitok">Voľno</span></td>
+</tr>
+<tr data-osoba="samuel" data-meno="Samuel" data-zrucnosti="kuchyna sala" data-zmluva="24">
+<th scope="row"><span class="osoba"><span class="avatar a-kuchyna" aria-hidden="true">S</span><span class="osoba-text"><span class="osoba-meno">Samuel</span><span class="osoba-info">Kuchyňa, <span class="osoba-hodiny">24&nbsp;h z&nbsp;24</span></span></span></span><span class="osoba-pruh" aria-hidden="true"><i style="--p:1.000"></i></span></th>
+<td data-den="0" class="volno" data-volno="Nemôže"><span class="volno-stitok">Nemôže</span></td>
+<td data-den="1" class="volno" data-volno="Nemôže"><span class="volno-stitok">Nemôže</span></td>
+<td data-den="2"></td>
+<td data-den="3"><button type="button" class="smena s-sala" data-id="s16" data-rola="sala" data-od="11" data-do="19" style="--i:15" aria-label="Samuel, štvrtok, sála, 11:00 až 19:00"><span class="smena-od">11:00</span><span class="smena-do">do&nbsp;19:00</span></button></td>
+<td data-den="4"></td>
+<td data-den="5"><button type="button" class="smena s-kuchyna" data-id="s23" data-rola="kuchyna" data-od="10" data-do="18" style="--i:22" aria-label="Samuel, sobota, kuchyňa, 10:00 až 18:00"><span class="smena-od">10:00</span><span class="smena-do">do&nbsp;18:00</span></button></td>
+<td data-den="6"><button type="button" class="smena s-kuchyna" data-id="s27" data-rola="kuchyna" data-od="10" data-do="18" style="--i:26" aria-label="Samuel, nedeľa, kuchyňa, 10:00 až 18:00"><span class="smena-od">10:00</span><span class="smena-do">do&nbsp;18:00</span></button></td>
+</tr>
+<tr data-osoba="eva" data-meno="Eva" data-zrucnosti="sala bar" data-zmluva="40">
+<th scope="row"><span class="osoba"><span class="avatar a-sala" aria-hidden="true">E</span><span class="osoba-text"><span class="osoba-meno">Eva</span><span class="osoba-info">Sála, <span class="osoba-hodiny">40&nbsp;h z&nbsp;40</span></span></span></span><span class="osoba-pruh" aria-hidden="true"><i style="--p:1.000"></i></span></th>
+<td data-den="0"><button type="button" class="smena s-sala" data-id="s04" data-rola="sala" data-od="11" data-do="19" style="--i:3" aria-label="Eva, pondelok, sála, 11:00 až 19:00"><span class="smena-od">11:00</span><span class="smena-do">do&nbsp;19:00</span></button></td>
+<td data-den="1"><button type="button" class="smena s-sala" data-id="s08" data-rola="sala" data-od="11" data-do="19" style="--i:7" aria-label="Eva, utorok, sála, 11:00 až 19:00"><span class="smena-od">11:00</span><span class="smena-do">do&nbsp;19:00</span></button></td>
+<td data-den="2"><button type="button" class="smena s-sala" data-id="s12" data-rola="sala" data-od="11" data-do="19" style="--i:11" aria-label="Eva, streda, sála, 11:00 až 19:00"><span class="smena-od">11:00</span><span class="smena-do">do&nbsp;19:00</span></button></td>
+<td data-den="3"></td>
+<td data-den="4"><button type="button" class="smena s-sala" data-id="s20" data-rola="sala" data-od="11" data-do="19" style="--i:19" aria-label="Eva, piatok, sála, 11:00 až 19:00"><span class="smena-od">11:00</span><span class="smena-do">do&nbsp;19:00</span></button></td>
+<td data-den="5"><button type="button" class="smena s-sala" data-id="s24" data-rola="sala" data-od="11" data-do="19" style="--i:23" aria-label="Eva, sobota, sála, 11:00 až 19:00"><span class="smena-od">11:00</span><span class="smena-do">do&nbsp;19:00</span></button></td>
+<td data-den="6"></td>
+</tr>
+</tbody></table></div>
+            </div>
+            <div class="pohlad-den">
+<div class="dni" role="tablist" aria-label="Dni týždňa">
+<button type="button" role="tab" id="den-tab-0" aria-controls="den-panel" aria-selected="true" tabindex="0" data-den="0"><span class="dni-k">Po</span><span class="dni-d" data-datum="0"></span><span class="skryte"> pondelok</span></button>
+<button type="button" role="tab" id="den-tab-1" aria-controls="den-panel" aria-selected="false" tabindex="-1" data-den="1"><span class="dni-k">Ut</span><span class="dni-d" data-datum="1"></span><span class="skryte"> utorok</span></button>
+<button type="button" role="tab" id="den-tab-2" aria-controls="den-panel" aria-selected="false" tabindex="-1" data-den="2"><span class="dni-k">St</span><span class="dni-d" data-datum="2"></span><span class="skryte"> streda</span></button>
+<button type="button" role="tab" id="den-tab-3" aria-controls="den-panel" aria-selected="false" tabindex="-1" data-den="3"><span class="dni-k">Št</span><span class="dni-d" data-datum="3"></span><span class="skryte"> štvrtok</span></button>
+<button type="button" role="tab" id="den-tab-4" aria-controls="den-panel" aria-selected="false" tabindex="-1" data-den="4"><span class="dni-k">Pi</span><span class="dni-d" data-datum="4"></span><span class="skryte"> piatok</span></button>
+<button type="button" role="tab" id="den-tab-5" aria-controls="den-panel" aria-selected="false" tabindex="-1" data-den="5"><span class="dni-k">So</span><span class="dni-d" data-datum="5"></span><span class="skryte"> sobota</span></button>
+<button type="button" role="tab" id="den-tab-6" aria-controls="den-panel" aria-selected="false" tabindex="-1" data-den="6"><span class="dni-k">Ne</span><span class="dni-d" data-datum="6"></span><span class="skryte"> nedeľa</span></button>
+</div>
+<div class="den-panel" id="den-panel" role="tabpanel" aria-labelledby="den-tab-0" tabindex="0">
+<div class="os" aria-hidden="true"><span></span><span class="os-cas"><i style="--x:0.0000">6</i><i style="--x:0.1667">9</i><i style="--x:0.3333">12</i><i style="--x:0.5000">15</i><i style="--x:0.6667">18</i><i style="--x:0.8333">21</i></span></div>
+<ul class="den-riadky">
+<li data-osoba="jana"><span class="den-osoba"><span class="avatar a-bar" aria-hidden="true">J</span>Jana</span><span class="den-stopa">
+<button type="button" class="den-smena s-bar" data-id="s01" style="--od:7;--dlzka:8;--i:0" aria-label="Jana, 7:00 až 15:00, bar"><span aria-hidden="true">7<span class="min">:00</span> až 15<span class="min">:00</span></span></button>
+</span></li>
+<li data-osoba="matej"><span class="den-osoba"><span class="avatar a-bar" aria-hidden="true">M</span>Matej</span><span class="den-stopa">
+<button type="button" class="den-smena s-bar" data-id="s02" style="--od:14;--dlzka:8;--i:1" aria-label="Matej, 14:00 až 22:00, bar"><span aria-hidden="true">14<span class="min">:00</span> až 22<span class="min">:00</span></span></button>
+</span></li>
+<li data-osoba="lucia"><span class="den-osoba"><span class="avatar a-bar" aria-hidden="true">L</span>Lucia</span><span class="den-stopa">
+<span class="den-volno">Nemôže</span>
+</span></li>
+<li data-osoba="tomas"><span class="den-osoba"><span class="avatar a-kuchyna" aria-hidden="true">T</span>Tomáš</span><span class="den-stopa">
+<button type="button" class="den-smena s-kuchyna" data-id="s03" style="--od:9;--dlzka:8;--i:2" aria-label="Tomáš, 9:00 až 17:00, kuchyňa"><span aria-hidden="true">9<span class="min">:00</span> až 17<span class="min">:00</span></span></button>
+</span></li>
+<li data-osoba="samuel"><span class="den-osoba"><span class="avatar a-kuchyna" aria-hidden="true">S</span>Samuel</span><span class="den-stopa">
+<span class="den-volno">Nemôže</span>
+</span></li>
+<li data-osoba="eva"><span class="den-osoba"><span class="avatar a-sala" aria-hidden="true">E</span>Eva</span><span class="den-stopa">
+<button type="button" class="den-smena s-sala" data-id="s04" style="--od:11;--dlzka:8;--i:3" aria-label="Eva, 11:00 až 19:00, sála"><span aria-hidden="true">11<span class="min">:00</span> až 19<span class="min">:00</span></span></button>
+</span></li>
+</ul>
+<div class="teraz" hidden><span>Teraz</span></div>
+</div>
+            </div>
+          </div>
+
+        <aside class="app-bok" aria-labelledby="bok-nadpis">
+          <p class="bok-nadpis" id="bok-nadpis">Na schválenie <span class="bok-pocet" data-pocet>2</span></p>
+          <article class="ziadost" data-ziadost="vymena" aria-label="Žiadosť: Matej ponúka smenu">
+            <p class="ziadost-hlava"><span class="avatar a-bar" aria-hidden="true">M</span><span><strong>Matej</strong> ponúka smenu</span></p>
+            <p class="ziadost-text">Piatok 7:00 až 15:00, bar. Prevzala by ju Lucia.</p>
+            <p class="ziadost-pozor"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M7 1.5 13 12.5H1z"/><path d="M7 5.5v3M7 10.3v.2"/></svg>Lucia by mala 40&nbsp;h, v&nbsp;zmluve má 32&nbsp;h.</p>
+            <div class="ziadost-akcie">
+              <button type="button" data-akcia-ziadosti="schvalit">Schváliť</button>
+              <button type="button" data-akcia-ziadosti="zamietnut">Zamietnuť</button>
+            </div>
+            <p class="ziadost-vysledok" hidden></p>
+          </article>
+          <article class="ziadost" data-ziadost="volno" aria-label="Žiadosť: Eva žiada voľno">
+            <p class="ziadost-hlava"><span class="avatar a-sala" aria-hidden="true">E</span><span><strong>Eva</strong> žiada voľno</span></p>
+            <p class="ziadost-text">Nedeľa, celý deň. Smenu v&nbsp;nedeľu&nbsp;nemá.</p>
+            <div class="ziadost-akcie">
+              <button type="button" data-akcia-ziadosti="schvalit">Schváliť</button>
+              <button type="button" data-akcia-ziadosti="zamietnut">Zamietnuť</button>
+            </div>
+            <p class="ziadost-vysledok" hidden></p>
+          </article>
+          <p class="bok-pozn">V&nbsp;ukážke sa žiadosti nikam neodosielajú, zmenia len rozpis na tejto stránke.</p>
+        </aside>
+
+        <div class="app-pata">
+          <span class="pokrytie"><span>Pokrytie</span><span class="pokrytie-pruh" aria-hidden="true"><i></i></span><span class="pata-cislo" data-pokrytie>27 z&nbsp;27 smien</span></span>
+          <span>Nad zmluvu: <span class="pata-cislo" data-nadcas>nikto</span></span>
+          <span>Spolu <span class="pata-cislo" data-spolu>216&nbsp;h</span></span>
+          <span class="legenda" aria-hidden="true"><span><i style="--f:var(--bar)"></i>Bar</span><span><i style="--f:var(--kuchyna)"></i>Kuchyňa</span><span><i style="--f:var(--sala)"></i>Sála</span></span>
+          <p class="app-sprava" role="status" aria-live="polite">Ukážka rozpisu s&nbsp;vymyslenými údajmi.</p>
+        </div>
+        <p class="skryte" id="app-navod">Ukážka rozpisu s&nbsp;vymyslenými údajmi. V&nbsp;pohľade Týždeň smenu presuniete potiahnutím myšou alebo ťuknutím na smenu a&nbsp;potom na iné políčko. Klávesnicou: šípky prechádzajú medzi smenami, Enter smenu zdvihne, šípky vyberú nové miesto, Enter ju položí a&nbsp;Escape ju vráti späť. V&nbsp;pohľade Deň stlačte smenu a&nbsp;vyberte, kto ju vezme.</p>
+        </div>
+      </div>
+      <p class="scena-popis">Ukážka aplikácie: ľudia, smeny aj kaviareň sú vymyslené a&nbsp;nič sa neukladá.</p>
+    </div>
+  </section>
+
+  <section class="pre-koho" aria-label="Pre koho je Rozsvit">
+    <div class="obsah">
+      <p>Pre prevádzky od 3 do 50&nbsp;ľudí</p>
+      <ul>
+        <li><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6.5h9v4.5a3.5 3.5 0 0 1-3.5 3.5h-2A3.5 3.5 0 0 1 3 11zM12 7.5h1.2a2 2 0 0 1 0 4H12M6 2.5v1.5M9 2.5v1.5"/></svg>Kaviarne a&nbsp;bistrá</li>
+        <li><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9.5c0-3 2.7-5.5 6-5.5s6 2.5 6 5.5H3zM2 12h14M5.5 15h7"/></svg>Reštaurácie</li>
+        <li><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5" cy="5.5" r="2.2"/><circle cx="5" cy="12.5" r="2.2"/><path d="M6.8 6.8 15 13.5M6.8 11.2 15 4.5"/></svg>Salóny</li>
+        <li><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 6h11l-1 9h-9zM6.5 6V4.8a2.5 2.5 0 0 1 5 0V6"/></svg>Obchody</li>
+        <li><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 9h13M4.5 6v6M13.5 6v6M2.5 7.5v3M15.5 7.5v3"/></svg>Fitness</li>
+        <li><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 13.5h12M4.5 13.5a4.5 4.5 0 0 1 9 0M9 6.5V5M7.8 5h2.4"/></svg>Recepcie a&nbsp;penzióny</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="sekcia funkcie" id="funkcie" aria-labelledby="funkcie-nadpis">
+    <div class="obsah">
+      <div class="sekcia-hlava vstupi">
+        <h2 id="funkcie-nadpis">Menej telefonátov v&nbsp;nedeľu večer.</h2>
+        <p class="sekcia-uvod">Rozsvit za vás stráži, kto kedy môže, kto s&nbsp;kým mení a&nbsp;koľko kto odrobil. Vy&nbsp;len schvaľujete.</p>
+      </div>
+      <div class="bento">
+        <article class="karta karta-a vstupi">
+          <div class="mini" aria-hidden="true">
+            <div class="md">
+              <div class="md-hlava"><span class="avatar a-bar">L</span>Lucia, dostupnosť na budúci týždeň<span class="md-ulozene"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2.5 6.5 2.2 2.2L9.5 3.5"/></svg>Uložené</span></div>
+              <div class="md-dni">
+                <span class="md-den nie" style="--d:0"><b>Po</b><span class="bod"></span><i>Škola</i></span>
+                <span class="md-den nie" style="--d:1"><b>Ut</b><span class="bod"></span><i>Škola</i></span>
+                <span class="md-den ano" style="--d:2"><b>St</b><span class="bod"></span><i>Môže</i></span>
+                <span class="md-den ano" style="--d:3"><b>Št</b><span class="bod"></span><i>Môže</i></span>
+                <span class="md-den ano md-prepni" style="--d:4"><b>Pi</b><span class="bod"></span><i class="i-a">Možno</i><i class="i-b">Môže</i></span>
+                <span class="md-den ano" style="--d:5"><b>So</b><span class="bod"></span><i>Môže</i></span>
+                <span class="md-den ano" style="--d:6"><b>Ne</b><span class="bod"></span><i>Môže</i></span>
+              </div>
+            </div>
+          </div>
+          <h3>Kto kedy môže, vidíte skôr, než začnete plánovať.</h3>
+          <p>Ľudia si dostupnosť a&nbsp;dovolenky zadajú sami v&nbsp;aplikácii. V&nbsp;rozpise ich vidíte ako šrafované políčka, takže nikoho nenaplánujete na deň, keď má školu alebo voľno.</p>
+        </article>
+        <article class="karta karta-b vstupi">
+          <div class="mini" aria-hidden="true">
+            <div class="mv">
+              <span class="mv-osoba vlavo"><span class="avatar a-bar">M</span>Matej</span>
+              <span class="mv-ciara"></span>
+              <span class="mv-osoba vpravo"><span class="avatar a-bar">L</span>Lucia</span>
+              <span class="mv-smena"><b>Pi 7:00</b><span>do 15:00, bar</span></span>
+              <span class="mv-ok"><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m2.5 6.5 2.2 2.2L9.5 3.5"/></svg>Schválené</span>
+            </div>
+          </div>
+          <h3>Výmeny bez skupinového chatu.</h3>
+          <p>Kto nemôže prísť, ponúkne smenu. Rozsvit ju ukáže len tým, ktorí v&nbsp;ten deň môžu a&nbsp;majú zaškolenie. Vy výmenu jedným ťukom schválite.</p>
+        </article>
+        <article class="karta karta-c vstupi">
+          <div class="mini" aria-hidden="true">
+            <div class="mk">
+              <div class="mk-bunky"><span class="mk-bunka"></span><span class="mk-bunka volno">Nemôže</span><span class="mk-bunka"></span></div>
+              <span class="mk-smena"><b>Po 7:00</b></span>
+              <p class="mk-varovanie"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M7 1.5 13 12.5H1z"/><path d="M7 5.5v3M7 10.3v.2"/></svg>Lucia v&nbsp;pondelok nemôže, má&nbsp;školu</p>
+            </div>
+          </div>
+          <h3>Chyby, ktoré sa nestanú.</h3>
+          <p>Dve smeny v&nbsp;jeden deň, nadčas nad zmluvu alebo človek bez zaškolenia v&nbsp;kuchyni. Rozsvit vás upozorní ešte pred zverejnením.</p>
+        </article>
+        <article class="karta karta-d vstupi">
+          <div class="mini" aria-hidden="true">
+            <div class="mm">
+              <div class="mm-notif"><span class="mm-ikona"><svg width="14" height="14" viewBox="0 0 30 30"><path d="M7.5 19.2a7.5 7.5 0 0 1 15 0z" fill="url(#rozsvit-svit)"/><rect x="5.5" y="20.8" width="19" height="2.2" rx="1.1" fill="#eef1f8"/></svg></span><span><b>Rozsvit</b>Tvoj rozpis na budúci týždeň je hotový.</span></div>
+              <div class="mm-riadok" style="--f:var(--bar);--d:0"><i></i><b>Po</b>7:00 až 15:00</div>
+              <div class="mm-riadok" style="--f:var(--bar);--d:1"><i></i><b>Št</b>14:00 až 22:00</div>
+              <div class="mm-riadok" style="--f:var(--bar);--d:2"><i></i><b>So</b>8:00 až 16:00</div>
+            </div>
+          </div>
+          <h3>Rozpis v&nbsp;mobile každého.</h3>
+          <p>Po zverejnení dostane každý svoje smeny. Zmenu uvidí hneď aj s&nbsp;upozornením, nie až v&nbsp;pondelok ráno.</p>
+        </article>
+        <article class="karta karta-e vstupi">
+          <div class="mini" aria-hidden="true">
+            <div class="mdo">
+              <div class="mdo-kruh"><svg viewBox="0 0 64 64" width="96" height="96"><circle class="mdo-stopa" cx="32" cy="32" r="28"/><circle class="mdo-priebeh" cx="32" cy="32" r="28"/></svg><b>6:58</b></div>
+              <div class="mdo-text"><strong><svg width="14" height="14" viewBox="0 0 12 12" fill="none" stroke="#6fe3b5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m2.5 6.5 2.2 2.2L9.5 3.5"/></svg>Príchod</strong><span>Jana, smena od 7:00</span><span class="mdo-pin"><i style="--d:0"></i><i style="--d:1"></i><i style="--d:2"></i><i style="--d:3"></i></span></div>
+            </div>
+          </div>
+          <h3>Príchody bez papiera.</h3>
+          <p>Na tablete pri pokladni sa ľudia prihlásia PIN kódom. Príchody a&nbsp;odchody sa samé spárujú so smenami.</p>
+        </article>
+        <article class="karta karta-f vstupi">
+          <div class="mini" aria-hidden="true">
+            <div class="mh">
+              <div class="mh-riadok" style="--f:var(--bar);--p:1;--d:0"><span>Jana</span><span class="mh-pruh"><i></i></span><b>160&nbsp;h</b></div>
+              <div class="mh-riadok" style="--f:var(--bar);--p:.95;--d:1"><span>Matej</span><span class="mh-pruh"><i></i></span><b>152&nbsp;h</b></div>
+              <div class="mh-riadok" style="--f:var(--kuchyna);--p:1;--d:2"><span>Tomáš</span><span class="mh-pruh"><i></i></span><b>160&nbsp;h</b></div>
+              <div class="mh-riadok" style="--f:var(--sala);--p:.8;--d:3"><span>Eva</span><span class="mh-pruh"><i></i></span><b>128&nbsp;h</b></div>
+              <span class="mh-export"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 1.5v8M3.8 6.5 7 9.7l3.2-3.2M2 12.5h10"/></svg>Hodiny za mesiac pre mzdy, CSV</span>
+            </div>
+          </div>
+          <h3>Hodiny pre mzdy za pár sekúnd.</h3>
+          <p>Na konci mesiaca stiahnete odpracované hodiny, víkendy a&nbsp;sviatky ako tabuľku pre mzdovú účtovníčku. Nič sa neprepisuje ručne.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="sekcia postup" id="postup" aria-labelledby="postup-nadpis">
+    <div class="obsah">
+      <div class="sekcia-hlava vstupi">
+        <h2 id="postup-nadpis">Prvý rozpis máte hotový za&nbsp;popoludnie.</h2>
+        <p class="sekcia-uvod">Bez inštalácie a&nbsp;bez školenia. Kto vie poslať správu, vie používať Rozsvit.</p>
+      </div>
+      <ol class="kroky vstupi">
+        <li class="kroky-ciara" aria-hidden="true"><i></i></li>
+        <li class="krok"><span class="krok-cislo" aria-hidden="true">1</span><h3>Pridáte tím</h3><p>Mená, úväzky a&nbsp;čo kto vie robiť. Ručne alebo z&nbsp;tabuľky, ktorú už máte.</p></li>
+        <li class="krok"><span class="krok-cislo" aria-hidden="true">2</span><h3>Rozsvit navrhne týždeň</h3><p>Podľa otváracích hodín, dostupnosti a&nbsp;zmlúv. Návrh upravíte potiahnutím smeny.</p></li>
+        <li class="krok"><span class="krok-cislo" aria-hidden="true">3</span><h3>Zverejníte jedným ťukom</h3><p>Každý dostane svoje smeny do mobilu. Výmeny a&nbsp;voľno si vybavujú sami, vy len schvaľujete.</p></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="sekcia integracie" aria-labelledby="integracie-nadpis">
+    <div class="obsah">
+      <div class="sekcia-hlava stred vstupi">
+        <h2 id="integracie-nadpis">Spojí sa s&nbsp;tým, čo už používate.</h2>
+        <p class="sekcia-uvod">Tržby z&nbsp;pokladne, hodiny do miezd, smeny do kalendára. Bez prepisovania z&nbsp;jedného programu do druhého.</p>
+      </div>
+    </div>
+    <div class="int-pasy">
+      <ul class="int-rad" data-smer="-1" aria-label="Napojenia, prvý rad">
+        <li><span class="int-ikona" style="--a:#ffd2ad;--b:#ffb27a"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="9" width="16" height="10" rx="2"/><path d="M6 9V4h10v5M7 13h2M11 13h2M15 13h1M7 16h8"/></svg></span><span class="int-text"><span class="int-meno">Pokladňa</span><span class="int-popis">tržby za smenu</span></span></li>
+        <li><span class="int-ikona" style="--a:#b6f5dc;--b:#6fe3b5"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3h9l3 3v13H5z"/><path d="M14 3v3h3M8 11h6M8 14.5h6M8 7.5h3"/></svg></span><span class="int-text"><span class="int-meno">Mzdy</span><span class="int-popis">hodiny na výplatu</span></span></li>
+        <li><span class="int-ikona" style="--a:#d4ceff;--b:#a29bff"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4.5" width="16" height="14.5" rx="2.5"/><path d="M3 9h16M7.5 2.5v4M14.5 2.5v4M7 12.5h2M11 12.5h2M7 15.5h2"/></svg></span><span class="int-text"><span class="int-meno">Kalendár</span><span class="int-popis">smeny v&nbsp;mobile</span></span></li>
+        <li><span class="int-ikona" style="--a:#ffc6dc;--b:#ff8fb8"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5h10a2 2 0 0 1 2 2V12a2 2 0 0 1-2 2H9l-3.5 3v-3H4a2 2 0 0 1-2-2V7.5a2 2 0 0 1 2-2z"/><path d="M16 9h2a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-1v2.5L14 17h-2"/></svg></span><span class="int-text"><span class="int-meno">Tímový chat</span><span class="int-popis">oznámenia</span></span></li>
+        <li><span class="int-ikona" style="--a:#ffe6a8;--b:#ffd166"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="2.5" width="12" height="17" rx="2.5"/><circle cx="11" cy="9" r="2.5"/><path d="M8 15h6"/></svg></span><span class="int-text"><span class="int-meno">Terminál</span><span class="int-popis">príchody na PIN</span></span></li>
+        <li><span class="int-ikona" style="--a:#c9ecff;--b:#7cc8ff"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 16.5a5 5 0 0 1 .4-9.9A6 6 0 0 1 17.4 8a4.3 4.3 0 0 1-.9 8.5z"/><path d="M8 19.5l1-1.5M12 19.5l1-1.5"/></svg></span><span class="int-text"><span class="int-meno">Počasie</span><span class="int-popis">viac ľudí na terasu</span></span></li>
+        <li><span class="int-ikona" style="--a:#ffd2ad;--b:#ff8fb8"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 3.5a5 5 0 0 0-5 5v3.5l-1.5 2.5h13L16 12V8.5a5 5 0 0 0-5-5zM9 17.5a2 2 0 0 0 4 0"/></svg></span><span class="int-text"><span class="int-meno">Rezervácie</span><span class="int-popis">vyťaženie dňa</span></span></li>
+        <li><span class="int-ikona" style="--a:#b6f5dc;--b:#7cc8ff"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="5" width="17" height="12.5" rx="2.5"/><path d="m3.5 6.5 7.5 6 7.5-6"/></svg></span><span class="int-text"><span class="int-meno"><span class="nw">E-mail</span></span><span class="int-popis">rozpis pre každého</span></span></li>
+      </ul>
+      <ul class="int-rad" data-smer="1" aria-label="Napojenia, druhý rad">
+        <li><span class="int-ikona" style="--a:#d4ceff;--b:#ff8fb8"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2.5" width="10" height="17" rx="2.5"/><path d="M9.5 16.5h3"/></svg></span><span class="int-text"><span class="int-meno">SMS</span><span class="int-popis">aj bez aplikácie</span></span></li>
+        <li><span class="int-ikona" style="--a:#b6f5dc;--b:#6fe3b5"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3.5" width="16" height="15" rx="2"/><path d="M3 8.5h16M3 13.5h16M8.5 3.5v15M13.5 3.5v15"/></svg></span><span class="int-text"><span class="int-meno">Tabuľky</span><span class="int-popis">export CSV</span></span></li>
+        <li><span class="int-ikona" style="--a:#ffe6a8;--b:#ffb27a"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7.5 11 3l8 4.5v8L11 20l-8-4.5z"/><path d="M3 7.5l8 4.5 8-4.5M11 12v8"/></svg></span><span class="int-text"><span class="int-meno">Sklad</span><span class="int-popis">inventúra po smene</span></span></li>
+        <li><span class="int-ikona" style="--a:#c9ecff;--b:#a29bff"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19V8l7-5 7 5v11"/><path d="M9 19v-5h4v5M8 10.5h6"/></svg></span><span class="int-text"><span class="int-meno">Viac prevádzok</span><span class="int-popis">požičanie ľudí</span></span></li>
+        <li><span class="int-ikona" style="--a:#ffc6dc;--b:#ffb27a"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4.5" width="16" height="14.5" rx="2.5"/><path d="M3 9h16M7.5 2.5v4M14.5 2.5v4"/><path d="m8.5 14 1.8 1.8L14 12"/></svg></span><span class="int-text"><span class="int-meno">Sviatky</span><span class="int-popis">štátne sviatky SR</span></span></li>
+        <li><span class="int-ikona" style="--a:#b6f5dc;--b:#a29bff"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 18c2-6 5-9 8-9s6 3 8 9"/><circle cx="11" cy="5" r="2"/></svg></span><span class="int-text"><span class="int-meno">Dovolenky</span><span class="int-popis">schvaľovanie voľna</span></span></li>
+        <li><span class="int-ikona" style="--a:#ffd2ad;--b:#ffd166"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="9.5" width="14" height="10" rx="2"/><path d="M7.5 9.5V7a3.5 3.5 0 0 1 7 0v2.5M11 13.5v2.5"/></svg></span><span class="int-text"><span class="int-meno">Prístup</span><span class="int-popis">karty na dvere</span></span></li>
+        <li><span class="int-ikona" style="--a:#d4ceff;--b:#7cc8ff"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m8 7-4.5 4L8 15M14 7l4.5 4L14 15M12.5 4.5l-3 13"/></svg></span><span class="int-text"><span class="int-meno">API</span><span class="int-popis">pre vlastné systémy</span></span></li>
+      </ul>
+    </div>
+    <p class="obsah int-pozn">Ikony a&nbsp;mená sú ilustračné. Na webe skutočnej firmy tu budú jej skutočné napojenia.</p>
+  </section>
+
+  <section class="sekcia cennik" id="cennik" aria-labelledby="cennik-nadpis">
+    <div class="obsah">
+      <div class="sekcia-hlava stred vstupi">
+        <h2 id="cennik-nadpis">Platíte za ľudí, nie za funkcie.</h2>
+        <p class="sekcia-uvod">Všetky plány majú aplikáciu pre tím a&nbsp;podporu po slovensky. Mesačný plán zrušíte kedykoľvek.</p>
+        <fieldset class="prepinac obdobie">
+          <legend>Spôsob platby</legend>
+          <input type="radio" name="obdobie" id="obdobie-mesacne" value="mesacne" checked><label for="obdobie-mesacne">Mesačne</label>
+          <input type="radio" name="obdobie" id="obdobie-rocne" value="rocne"><label for="obdobie-rocne">Ročne <span class="usetrite">o&nbsp;10&nbsp;% menej</span></label>
+          <span class="prepinac-palec" aria-hidden="true"></span>
+        </fieldset>
+      </div>
+      <div class="plany">
+        <article class="plan vstupi" aria-labelledby="plan-start">
+          <h3 id="plan-start">Štart</h3>
+          <p class="plan-pre">Na vyskúšanie a&nbsp;malé tímy</p>
+          <p class="plan-cena"><span class="cena"><span>0&nbsp;€</span></span><span class="cena-j">do 5&nbsp;ľudí, navždy</span></p>
+          <p class="plan-priklad"><span>Bez karty a&nbsp;bez časového limitu</span></p>
+          <button class="akcia akcia-sklo" type="button" popovertarget="okno-skusit">Začať zadarmo</button>
+          <ul class="plan-zoznam">
+            <li>Rozpis smien na týždeň aj mesiac</li>
+            <li>Dostupnosť a&nbsp;dovolenky</li>
+            <li>Aplikácia pre tím</li>
+            <li>1&nbsp;prevádzka</li>
+          </ul>
+        </article>
+        <article class="plan plan-hlavny vstupi" aria-labelledby="plan-tim">
+          <span class="plan-stitok">Odporúčame</span>
+          <h3 id="plan-tim">Tím</h3>
+          <p class="plan-pre">Pre jednu prevádzku s&nbsp;tímom</p>
+          <p class="plan-cena"><span class="cena"><span class="cena-m">2,90&nbsp;€</span><span class="cena-r">2,60&nbsp;€</span></span><span class="cena-j">za človeka mesačne</span></p>
+          <p class="plan-priklad"><span class="cena-m">Napríklad 8&nbsp;ľudí: 23,20&nbsp;€ mesačne</span><span class="cena-r">Napríklad 8&nbsp;ľudí: 20,80&nbsp;€ mesačne, ročne 249,60&nbsp;€</span></p>
+          <button class="akcia akcia-svit" type="button" popovertarget="okno-skusit">Vyskúšať 14&nbsp;dní zadarmo</button>
+          <ul class="plan-zoznam">
+            <li>Všetko zo Štartu, bez limitu ľudí</li>
+            <li>Výmeny smien a&nbsp;voľné smeny</li>
+            <li>Príchody a&nbsp;odchody na tablete</li>
+            <li>Hodiny pre mzdy jedným klikom</li>
+            <li>Upozornenia na nadčasy</li>
+          </ul>
+        </article>
+        <article class="plan vstupi" aria-labelledby="plan-siet">
+          <h3 id="plan-siet">Sieť</h3>
+          <p class="plan-pre">Pre viac prevádzok pod jednou strechou</p>
+          <p class="plan-cena"><span class="cena"><span class="cena-m">4,90&nbsp;€</span><span class="cena-r">4,40&nbsp;€</span></span><span class="cena-j">za človeka mesačne</span></p>
+          <p class="plan-priklad"><span class="cena-m">Od 2&nbsp;prevádzok</span><span class="cena-r">Od 2&nbsp;prevádzok, platba na rok</span></p>
+          <button class="akcia akcia-sklo" type="button" popovertarget="okno-napisat">Dohodnúť ukážku</button>
+          <ul class="plan-zoznam">
+            <li>Všetko z&nbsp;plánu Tím</li>
+            <li>Požičanie ľudí medzi prevádzkami</li>
+            <li>Schvaľovanie podľa vedúcich</li>
+            <li>Prehľady za celú sieť</li>
+          </ul>
+        </article>
+      </div>
+      <div class="cennik-pozn">
+        <p>Ceny sú bez DPH. Platíte len za ľudí, ktorí mali v&nbsp;danom mesiaci aspoň jednu smenu.</p>
+        <p>Ukážka: ceny sú vymyslené podľa cien podobných služieb na našom trhu v&nbsp;roku 2026.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="sekcia otazky" id="otazky" aria-labelledby="otazky-nadpis">
+    <div class="obsah otazky-mriezka">
+      <div class="sekcia-hlava">
+        <h2 id="otazky-nadpis">Časté otázky.</h2>
+        <p class="sekcia-uvod">Nenašli ste odpoveď? Napíšte nám, odpovedáme v&nbsp;pracovné dni do 4&nbsp;hodín.</p>
+        <button class="akcia akcia-sklo" type="button" popovertarget="okno-napisat" style="justify-self:start">Napísať nám</button>
+      </div>
+      <div class="faq">
+        <details>
+          <summary>Musia si zamestnanci niečo inštalovať?<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M9 3.5v11M3.5 9h11"/></svg></summary>
+          <p>Nemusia. Rozpis uvidia v&nbsp;aplikácii pre Android a&nbsp;iPhone alebo v&nbsp;prehliadači cez odkaz. Kto nemá smartfón, dostane svoje smeny v&nbsp;SMS.</p>
+        </details>
+        <details>
+          <summary>Ako dlho trvá začať?<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M9 3.5v11M3.5 9h11"/></svg></summary>
+          <p>Pridáte ľudí, otváracie hodiny a&nbsp;typy smien. Pri tíme do 15&nbsp;ľudí to zvyčajne zaberie menej ako hodinu. Prvý návrh týždňa potom pripraví Rozsvit.</p>
+        </details>
+        <details>
+          <summary>Postráži Rozsvit nadčasy a&nbsp;oddych medzi smenami?<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M9 3.5v11M3.5 9h11"/></svg></summary>
+          <p>Upozorní vás, keď má niekto viac hodín, ako má v&nbsp;zmluve, alebo keď medzi dvoma smenami nemá dosť času na oddych. Hranice si nastavíte sami podľa svojich zmlúv.</p>
+        </details>
+        <details>
+          <summary>Čo ak niekto ochorie a&nbsp;smena ostane&nbsp;prázdna?<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M9 3.5v11M3.5 9h11"/></svg></summary>
+          <p>Označíte ju ako voľnú. Rozsvit ju ponúkne ľuďom, ktorí v&nbsp;ten deň môžu a&nbsp;majú zaškolenie, a&nbsp;smenu dostane ten, kto ju prijme prvý. Vy dostanete správu, kto to je.</p>
+        </details>
+        <details>
+          <summary>Kde sú uložené údaje môjho tímu?<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M9 3.5v11M3.5 9h11"/></svg></summary>
+          <p>Na serveroch v&nbsp;Európskej únii. Údaje vašich ľudí nepredávame a&nbsp;nepoužívame na reklamu. Zmluvu o&nbsp;spracúvaní osobných údajov dostanete pri registrácii.</p>
+        </details>
+        <details>
+          <summary>Môžem kedykoľvek skončiť?<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M9 3.5v11M3.5 9h11"/></svg></summary>
+          <p>Áno. Mesačný plán zrušíte jedným klikom v&nbsp;nastaveniach, ročný platí do konca zaplateného obdobia. Rozpisy aj odpracované hodiny si predtým stiahnete.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <section class="sekcia zaver" aria-labelledby="zaver-nadpis">
+    <div class="obsah vstupi">
+      <h2 id="zaver-nadpis">Budúci týždeň môžete mať naplánovaný ešte dnes.</h2>
+      <p>14&nbsp;dní so všetkým zadarmo, bez karty. Potom Štart pre 5&nbsp;ľudí zadarmo alebo Tím za 2,90&nbsp;€ za&nbsp;človeka.</p>
+      <div class="uvod-akcie">
+        <button class="akcia akcia-svit" type="button" popovertarget="okno-skusit">Vyskúšať 14&nbsp;dní zadarmo
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 9h11M10 4.5 14.5 9 10 13.5"/></svg>
+        </button>
+        <button class="akcia akcia-sklo" type="button" popovertarget="okno-napisat">Napísať nám</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="pata">
+  <div class="obsah">
+    <div class="pata-mriezka">
+      <div class="pata-znacka">
+        <span class="znak" aria-hidden="true"><svg width="30" height="30" viewBox="0 0 30 30"><rect width="30" height="30" rx="9" fill="#151927"/><rect x=".5" y=".5" width="29" height="29" rx="8.5" fill="none" stroke="rgba(255,255,255,.12)"/><path d="M7.5 19.2a7.5 7.5 0 0 1 15 0z" fill="url(#rozsvit-svit)"/><rect x="5.5" y="20.8" width="19" height="2.2" rx="1.1" fill="#eef1f8"/></svg>Rozsvit</span>
+        <p>Plánovanie smien pre malé prevádzky. Z&nbsp;Bratislavy, po slovensky.</p>
+      </div>
+      <div>
+        <p class="pata-nadpis">Produkt</p>
+        <ul>
+          <li><a href="#funkcie">Funkcie</a></li>
+          <li><a href="#postup">Ako to funguje</a></li>
+          <li><a href="#cennik">Cenník</a></li>
+          <li><a href="#otazky">Otázky</a></li>
+        </ul>
+      </div>
+      <div>
+        <p class="pata-nadpis">Kontakt</p>
+        <ul class="pata-kontakt">
+          <li><span class="nw">ahoj@rozsvit.example</span></li>
+          <li><span class="nw">0900 XXX XXX</span></li>
+          <li>Smenová 12, 821&nbsp;09 Bratislava</li>
+        </ul>
+      </div>
+    </div>
+    <div class="pata-spodok">
+      <p>Rozsvit, Smenová 12, 821&nbsp;09 Bratislava. IČO 00&nbsp;000&nbsp;000.</p>
+      <p>Toto je ukážka webu od ARLing. Firma Rozsvit, jej aplikácia, ľudia, adresa, IČO, telefón, <span class="nw">e-mail</span> aj ceny sú vymyslené. Ikony napojení sú ilustračné, nejde o&nbsp;skutočné značky. Stránka nemá žiadne fotky, všetko je nakreslené v&nbsp;HTML a&nbsp;CSS.</p>
+      <p><a href="../../index.html#ukazky" target="_top">Späť na ukážky webov od ARLing</a></p>
+    </div>
+  </div>
+</footer>
+
+<div class="modal" id="okno-skusit" popover role="dialog" aria-labelledby="okno-skusit-nadpis">
+  <div class="dialog-hlava">
+    <h2 id="okno-skusit-nadpis">Vyskúšať Rozsvit zadarmo</h2>
+    <button class="zavriet" type="button" popovertarget="okno-skusit" popovertargetaction="hide" aria-label="Zavrieť">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+  </div>
+  <div class="dialog-telo">
+    <p>Na webe skutočnej firmy toto tlačidlo otvorí registráciu do aplikácie: <span class="nw">e-mail</span>, názov prevádzky a&nbsp;počet ľudí.</p>
+    <p class="dialog-pozn">Toto je ukážka webu od ARLing. Nič sa nezaregistruje ani neodošle.</p>
+    <a class="akcia akcia-svit" href="https://arling.sk/web/dotaznik/?ukazka=startup" target="_top">Chcem taký web</a>
+  </div>
+</div>
+
+<div class="modal" id="okno-prihlasit" popover role="dialog" aria-labelledby="okno-prihlasit-nadpis">
+  <div class="dialog-hlava">
+    <h2 id="okno-prihlasit-nadpis">Prihlásenie</h2>
+    <button class="zavriet" type="button" popovertarget="okno-prihlasit" popovertargetaction="hide" aria-label="Zavrieť">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+  </div>
+  <div class="dialog-telo">
+    <p>Na webe skutočnej firmy tu bude prihlásenie do aplikácie pre vedúcich aj pre tím.</p>
+    <p class="dialog-pozn">Toto je ukážka webu od ARLing, žiadna aplikácia za ňou nie je.</p>
+    <a class="akcia akcia-svit" href="https://arling.sk/web/dotaznik/?ukazka=startup" target="_top">Chcem taký web</a>
+  </div>
+</div>
+
+<div class="modal" id="okno-napisat" popover role="dialog" aria-labelledby="okno-napisat-nadpis">
+  <div class="dialog-hlava">
+    <h2 id="okno-napisat-nadpis">Napíšte nám</h2>
+    <button class="zavriet" type="button" popovertarget="okno-napisat" popovertargetaction="hide" aria-label="Zavrieť">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+  </div>
+  <div class="dialog-telo">
+    <p class="dialog-kontakt"><span class="nw">ahoj@rozsvit.example</span><span>0900 XXX XXX</span></p>
+    <p>Na webe skutočnej firmy tu bude <span class="nw">e-mail</span> a&nbsp;telefón, ktoré sa otvoria jedným ťukom, alebo formulár na ukážku pre sieť prevádzok.</p>
+    <p class="dialog-pozn">Kontakty sú vymyslené, v&nbsp;ukážke sa nič neodošle ani nevytáča.</p>
+    <a class="akcia akcia-svit" href="https://arling.sk/web/dotaznik/?ukazka=startup" target="_top">Chcem taký web</a>
+  </div>
+</div>
+
+<script src="app.js" defer></script>
+</body>
+</html>

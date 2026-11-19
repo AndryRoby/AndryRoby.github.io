@@ -1,0 +1,657 @@
+<!doctype html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; img-src 'self' data:; style-src 'unsafe-inline'; font-src 'self'; connect-src 'none'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex, nofollow">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#9a1536">
+<title>Ukážka: Salón Šípka, Levice (vymyslená prevádzka)</title>
+<meta name="description" content="Ukážka webu od ARLing pre vymyslený nechtový a kozmetický salón v Leviciach: cenník, vzorkovník, otváracie hodiny, galéria, mapa a rezervácia na jeden ťuk.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23f8eeeb'/%3E%3Cpath d='M9 27C9 16 11 8 16 4c5 4 7 12 7 23-5 2-9 2-14 0z' fill='%239a1536'/%3E%3Cpath d='M12.5 20c0-4.5.8-8.5 2.4-11' stroke='%23fff' stroke-opacity='.6' stroke-width='1.8' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preload" href="fonts/figtree-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" as="image" imagesrcset="img/nechty-800.webp 800w, img/nechty-1600.webp 1600w, img/nechty-2400.webp 2400w" imagesizes="(min-width: 1600px) 560px, (min-width: 1144px) 440px, (min-width: 960px) calc(41.67vw - 37px), min(66vw, 440px)" fetchpriority="high">
+<style>
+/* Salón Šípka: ukážka webu klienta. Svet: vzorkovník gél lakov pri stolíku.
+   Šípkový lak nesie úvod, mliečny podklad cenník, slivka hodiny a pätu. Tvar nechtu (mandľa) je jediný opakovaný motív.
+   Písmo Gloock (nadpisy, ceny) a Figtree (text), obe OFL, lokálne. */
+@font-face{font-family:"Šípka Nadpis";src:url(fonts/gloock-latin-ext.woff2) format("woff2");font-weight:400;font-display:swap;unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C4,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"Šípka Nadpis";src:url(fonts/gloock-latin.woff2) format("woff2");font-weight:400;font-display:swap;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Šípka Text";src:url(fonts/figtree-latin-ext.woff2) format("woff2");font-weight:400 700;font-display:swap;unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C4,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"Šípka Text";src:url(fonts/figtree-latin.woff2) format("woff2");font-weight:400 700;font-display:swap;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+
+:root{
+  --sipka:#9a1536;--sipka-tmava:#7c0f2a;--sipka-svetla:#f7d3da;
+  --mlieko:#f8eeeb;--puder:#f0dcd7;--linka:#e3c6c0;
+  --slivka:#2a1020;--slivka-svetla:#dcc4cd;
+  --atrament:#2a1020;--tichy:#6e4757;
+  --nadpis:"Šípka Nadpis","Iowan Old Style","Palatino Linotype",Georgia,serif;
+  --text:"Šípka Text",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  --siroko:min(1200px,calc(100vw - 40px));
+  --rytmus:clamp(72px,10vw,136px);
+  --fokus:var(--sipka);
+  --necht:50% 50% 24px 24px / 38% 38% 24px 24px;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-padding-top:20px;scrollbar-color:var(--sipka) var(--puder)}
+body{margin:0;background:var(--mlieko);color:var(--atrament);font:400 18px/1.6 var(--text);overflow-wrap:break-word}
+::selection{background:#ecb6bf;color:var(--slivka)}
+img{display:block;max-width:100%;height:auto}
+a{color:inherit;text-underline-offset:.22em;text-decoration-thickness:1px}
+a:hover{text-decoration-thickness:2px}
+:focus-visible{outline:3px solid var(--fokus);outline-offset:3px;border-radius:6px}
+h1,h2,h3{margin:0;font-family:var(--nadpis);font-weight:400;line-height:1;letter-spacing:-.01em;text-wrap:balance}
+p,ul,figure{margin:0}
+ul{padding:0;list-style:none}
+.obsah{width:var(--siroko);margin-inline:auto}
+.nw{white-space:nowrap}
+.skryte{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.preskocit{position:absolute;left:12px;top:-60px;z-index:50;background:var(--slivka);color:var(--mlieko);padding:10px 16px;border-radius:999px;font-weight:600}
+.preskocit:focus{top:12px}
+.cena,.cas,td{font-variant-numeric:tabular-nums}
+
+/* Pás ukážky */
+.pas{background:var(--slivka);color:#f3e3e8;font-size:14px;line-height:1.45;--fokus:var(--mlieko)}
+.pas .obsah{display:flex;flex-wrap:wrap;gap:2px 16px;align-items:center;justify-content:space-between;padding-block:9px}
+.pas strong{font-weight:700;color:#fff}
+.pas a{color:#fff;display:inline-flex;align-items:center;min-height:44px;margin-block:-10px}
+
+/* Tlačidlá */
+.akcia{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:52px;padding:0 24px;border-radius:999px;border:2px solid transparent;font:600 17px/1 var(--text);text-decoration:none;cursor:pointer;transition:transform .16s cubic-bezier(.2,.8,.2,1),background-color .2s ease,color .2s ease}
+.akcia:active{transform:scale(.97)}
+.akcia svg{flex:none}
+.akcia-plna{background:var(--sipka);color:#fff}
+.akcia-plna:hover{background:var(--sipka-tmava)}
+.akcia-mliecna{background:var(--mlieko);color:var(--slivka)}
+.akcia-mliecna:hover{background:#fff}
+.akcia-obrys{background:transparent;color:var(--mlieko);border-color:rgba(248,238,235,.7)}
+.akcia-obrys:hover{background:rgba(248,238,235,.12);border-color:var(--mlieko)}
+.akcia-mala{min-height:46px;padding:0 20px;font-size:16px}
+
+/* Úvod */
+.uvod{background:var(--sipka);color:var(--mlieko);--fokus:var(--mlieko);overflow:hidden}
+.hlava{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:72px}
+.znak{display:inline-flex;align-items:center;gap:10px;min-height:44px;text-decoration:none;font-family:var(--nadpis);font-size:25px;line-height:1}
+.znak svg{flex:none}
+.znak-popis{display:none;font:600 13px/1.3 var(--text);letter-spacing:.14em;text-transform:uppercase;color:var(--sipka-svetla)}
+.menu{display:none;gap:2px}
+.menu a{display:inline-flex;align-items:center;min-height:44px;padding:0 14px;border-radius:999px;text-decoration:none;font-weight:500;font-size:16px;color:#fbe7eb}
+.menu a:hover{background:rgba(248,238,235,.12);color:#fff}
+/* Na mobile: meno, pod ním oblúk s fotkou hotových nechtov a vejárom vzoriek (celé nad spodnou lištou), potom text.
+   Na počítači meno a text vľavo, oblúk s vejárom vpravo. */
+.uvod-mriezka{display:grid;gap:22px;padding:20px 0 72px;grid-template-areas:"meno" "foto" "telo"}
+.uvod h1{grid-area:meno;font-size:clamp(104px,30vw,232px);line-height:.86;letter-spacing:-.035em;margin-left:-.04em;padding-bottom:.16em}
+.uvod-telo{grid-area:telo}
+.uvod-veta{margin-top:6px;font-size:clamp(20px,2vw,24px);line-height:1.45;max-width:30ch;color:#fde9ed}
+.stav{display:inline-flex;align-items:center;gap:10px;margin-top:22px;padding:8px 16px 8px 12px;border-radius:999px;background:rgba(42,16,32,.28);font-size:16px;font-weight:500;color:#fff}
+.stav[hidden]{display:none}
+.stav-bod{width:10px;height:10px;border-radius:50%;background:#f3c7cf;flex:none}
+.stav.otvorene .stav-bod{background:#9fe0bd;box-shadow:0 0 0 4px rgba(159,224,189,.22)}
+.uvod-akcie{display:flex;flex-wrap:wrap;gap:12px;margin-top:34px}
+.uvod-foto{grid-area:foto;position:relative;margin-left:auto;width:min(66vw,440px);margin-right:4px}
+.uvod-foto img{width:100%;aspect-ratio:4/5;object-fit:cover;object-position:30% 40%;border-radius:var(--necht);box-shadow:0 30px 60px -28px rgba(42,16,32,.65)}
+/* vejár: na mobile pri hornom okraji oblúka (rozvinie sa nad spodnou lištou), na počítači pri dolnom ako doteraz */
+.vejar{position:absolute;left:-40%;top:3%;width:74%;height:auto;overflow:visible;pointer-events:none}
+.vejar .tip{transform:rotate(var(--u));transform-origin:0 0}
+
+/* Spoločné sekcie */
+.sekcia{padding-block:var(--rytmus)}
+.sekcia h2{font-size:clamp(46px,8vw,84px);line-height:.95}
+.uvodny-text{margin-top:18px;max-width:46ch;color:var(--tichy)}
+
+/* Cenník */
+.cennik-mriezka{display:grid;gap:44px}
+.cennik-pozn{margin-top:22px;max-width:40ch;font-size:16px;color:var(--tichy);padding-top:18px;border-top:1px solid var(--linka)}
+.skupina+.skupina{margin-top:56px}
+.skupina h3{display:flex;align-items:center;gap:12px;font-size:clamp(30px,4vw,38px);padding-bottom:14px;border-bottom:2px solid var(--slivka)}
+.skupina h3 svg{flex:none}
+.sluzba{display:grid;grid-template-columns:1fr auto;column-gap:20px;row-gap:4px;padding:18px 0 17px;border-bottom:1px solid var(--linka)}
+.sluzba h4{margin:0;font-size:19px;font-weight:600;line-height:1.3}
+.sluzba .cena{grid-row:1/span 2;grid-column:2;align-self:start;font-family:var(--nadpis);font-size:32px;line-height:1;color:var(--sipka);white-space:nowrap}
+.sluzba p{font-size:16px;line-height:1.5;color:var(--tichy)}
+.sluzba .cas{display:inline-block;margin-top:2px;font-size:15px;font-weight:600;color:var(--slivka)}
+
+/* Vzorkovník: odtieň sa dá vyskúšať, porcelánová ruka ukáže vybranú farbu (bez skriptu, cez :has).
+   Ruka a odtiene sú pri každej šírke vedľa seba v jednej karte, takže po ťuknutí na odtieň je ruka vždy na obrazovke. */
+.vzorky{background:var(--puder);--lak:#9a1536}
+.vzorky-mriezka{display:grid;gap:30px}
+.vzorky h2{font-size:clamp(46px,7vw,76px)}
+.skuska{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:center;gap:10px 6px;padding:18px 10px 18px 12px;border-radius:26px;background:var(--mlieko);box-shadow:inset 0 1px 0 rgba(255,255,255,.75),0 26px 50px -34px rgba(42,16,32,.5)}
+.ruka{display:grid;justify-items:center;gap:4px;margin:0;min-width:0}
+.prsty{display:block;width:100%;max-width:230px;height:auto}
+.prst{color:var(--lak);transition:color .45s ease calc(var(--i) * 70ms)}
+.ruka-nazov{font-family:var(--nadpis);font-size:clamp(22px,2.4vw,30px);line-height:1.1;color:var(--slivka);text-align:center;min-height:2.4em}
+.ruka-nazov span{display:none}
+.ruka-nazov small{display:block;margin-top:5px;font-family:var(--text);font-size:14px;line-height:1.3;color:var(--tichy)}
+.odtiene{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin:0;padding:0;border:0;min-width:0}
+.odtien{position:relative;display:grid;justify-items:center;align-content:start;gap:5px;padding:8px 2px 9px;border-radius:16px;text-align:center;font-size:14px;font-weight:600;line-height:1.2;cursor:pointer;transition:background-color .2s ease}
+.odtien:hover{background:rgba(240,220,215,.6)}
+.odtien input{position:absolute;opacity:0;width:1px;height:1px;margin:0;pointer-events:none}
+.odtien svg{width:22px;height:auto;filter:drop-shadow(0 5px 5px rgba(42,16,32,.16));transition:transform .35s cubic-bezier(.34,1.4,.5,1)}
+.odtien span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.odtien:has(input:checked){background:#fff;box-shadow:0 0 0 2px var(--slivka)}
+.odtien:has(input:checked) svg{transform:translateY(-4px) rotate(-6deg)}
+.odtien:has(input:focus-visible){outline:3px solid var(--sipka);outline-offset:2px}
+.vzorky:has(#lak-mlieko:checked){--lak:#f6ebe7}
+.vzorky:has(#lak-puder:checked){--lak:#e9b8b2}
+.vzorky:has(#lak-marhula:checked){--lak:#e58a63}
+.vzorky:has(#lak-mak:checked){--lak:#d6223f}
+.vzorky:has(#lak-slivka:checked){--lak:#5b1d47}
+.vzorky:has(#lak-levandula:checked){--lak:#b9a3d9}
+.vzorky:has(#lak-mata:checked){--lak:#a3d2bf}
+.ruka-nazov [data-lak="sipka"]{display:inline}
+.vzorky:has(.odtiene input:checked:not(#lak-sipka)) .ruka-nazov [data-lak="sipka"]{display:none}
+.vzorky:has(#lak-mlieko:checked) [data-lak="mlieko"],.vzorky:has(#lak-puder:checked) [data-lak="puder"],
+.vzorky:has(#lak-marhula:checked) [data-lak="marhula"],.vzorky:has(#lak-mak:checked) [data-lak="mak"],
+.vzorky:has(#lak-slivka:checked) [data-lak="slivka"],.vzorky:has(#lak-levandula:checked) [data-lak="levandula"],
+.vzorky:has(#lak-mata:checked) [data-lak="mata"]{display:inline}
+
+/* Galéria */
+.galeria{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:40px}
+.galeria figure{margin:0}
+.galeria img{width:100%;height:auto;object-fit:cover;border-radius:16px;background:var(--puder)}
+.galeria figcaption{margin-top:8px;font-size:15px;color:var(--tichy);line-height:1.4}
+.g-vzorkovnik{grid-column:1/-1}
+.g-vzorkovnik img{aspect-ratio:4/3}
+.g-manikura img,.g-nohy img{aspect-ratio:1}
+.g-nohy img{object-position:50% 62%}
+.g-hotove{grid-column:1/-1}
+.g-hotove img{aspect-ratio:4/3;object-position:50% 38%}
+.g-nohy img{border-radius:var(--necht)}
+
+/* O nás */
+.onas{border-top:1px solid var(--linka)}
+.onas-mriezka{display:grid;gap:44px}
+.onas-text p+p{margin-top:18px}
+.onas-text .uvodna{font-family:var(--nadpis);font-size:clamp(26px,3.2vw,34px);line-height:1.25;color:var(--slivka);margin-top:26px;max-width:26ch}
+.zasady{margin-top:36px;display:grid;gap:22px}
+.zasady li{display:grid;grid-template-columns:40px 1fr;gap:14px;align-items:start}
+.zasady svg{color:var(--sipka);margin-top:2px}
+.zasady strong{display:block;font-weight:600}
+.zasady span{display:block;font-size:16px;color:var(--tichy)}
+.onas-foto img{width:100%;aspect-ratio:3/2;object-fit:cover;border-radius:16px}
+.onas-foto figcaption{margin-top:8px;font-size:15px;color:var(--tichy)}
+
+/* Hodiny a cesta */
+.kde{background:var(--slivka);color:var(--mlieko);--fokus:#f3c7cf}
+.kde h2{color:#fff}
+.kde-mriezka{display:grid;gap:48px;margin-top:40px}
+.kde h3{font-size:30px;margin-bottom:14px;color:#fff}
+.hodiny{width:100%;border-collapse:collapse;font-size:18px}
+.hodiny th,.hodiny td{padding:13px 12px;text-align:left;border-bottom:1px solid rgba(248,238,235,.16)}
+.hodiny th{font-weight:500}
+.hodiny td{text-align:right;white-space:nowrap}
+.hodiny tr.dnes{background:rgba(248,238,235,.1)}
+.hodiny tr.dnes th,.hodiny tr.dnes td{font-weight:700;color:#fff}
+.znacka-dnes{display:inline-block;margin-left:10px;padding:2px 10px;border-radius:999px;background:var(--sipka);color:#fff;font-size:13px;font-weight:600;vertical-align:2px}
+.znacka-dnes[hidden]{display:none}
+.zatvorene{color:var(--slivka-svetla)}
+.hodiny-pozn{margin-top:16px;font-size:16px;color:var(--slivka-svetla)}
+.kde .stav{background:rgba(248,238,235,.1);margin-top:0;margin-bottom:18px}
+.mapa{border-radius:20px;overflow:hidden;background:#f4e4e0}
+.mapa svg{display:block;width:100%;height:auto}
+.mapa-pozn{margin-top:10px;font-size:14px;line-height:1.5;color:var(--slivka-svetla)}
+.adresa{margin-top:24px;font-style:normal;font-size:19px;line-height:1.5}
+.adresa strong{font-family:var(--nadpis);font-weight:400;font-size:30px;display:block;color:#fff;margin-bottom:4px}
+.adresa span{display:block;font-size:16px;color:var(--slivka-svetla);margin-top:6px}
+.kde .akcie{display:flex;flex-wrap:wrap;gap:12px;margin-top:22px}
+.kontakty{margin-top:26px;display:grid;gap:4px;font-size:17px}
+.kontakty a{display:inline-flex;align-items:center;min-height:44px}
+.kontakty .tichy{color:var(--slivka-svetla);font-size:15px}
+
+/* Päta */
+.pata{background:#1d0a16;color:#ead6dd;padding:44px 0 132px;font-size:16px;--fokus:#f3c7cf}
+.pata-mriezka{display:grid;gap:26px}
+.pata strong{color:#fff}
+.pata a{color:#fff;display:inline-flex;align-items:center;min-height:44px}
+.pata .male{font-size:14px;color:#c9adb8;max-width:70ch;margin-top:8px}
+.pata-odkazy{display:grid;gap:0;align-content:start}
+
+/* Spodný panel na mobile */
+.lista{position:fixed;left:0;right:0;bottom:0;z-index:20;display:grid;grid-template-columns:1.25fr 1fr;gap:10px;padding:10px 12px calc(10px + env(safe-area-inset-bottom));background:#2a1020;box-shadow:0 -10px 28px rgba(42,16,32,.28);--fokus:#f3c7cf}
+.lista .akcia{width:100%;padding:0 12px}
+
+/* Dialógy (popover, bez skriptu) */
+.okno{border:0;padding:0;margin:auto;width:min(440px,calc(100vw - 32px));border-radius:22px;background:var(--mlieko);color:var(--atrament);box-shadow:0 30px 60px -20px rgba(42,16,32,.6);opacity:1;transform:none;transition:opacity .22s ease,transform .26s cubic-bezier(.2,.8,.2,1),overlay .26s allow-discrete,display .26s allow-discrete}
+.okno::backdrop{background:rgba(42,16,32,.55);transition:background-color .22s ease,overlay .26s allow-discrete,display .26s allow-discrete}
+@starting-style{.okno:popover-open{opacity:0;transform:translateY(14px) scale(.98)}.okno:popover-open::backdrop{background:rgba(42,16,32,0)}}
+.okno:not(:popover-open){opacity:0;transform:translateY(8px)}
+.okno-hlava{background:var(--sipka);color:#fff;padding:22px 22px 20px;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;--fokus:var(--mlieko)}
+.okno-hlava h2{font-size:34px}
+.zavriet{flex:none;width:44px;height:44px;margin:-6px -8px 0 0;border:0;border-radius:50%;background:transparent;color:#fff;cursor:pointer;display:grid;place-items:center}
+.zavriet:hover{background:rgba(255,255,255,.14)}
+.okno-telo{padding:22px 22px 26px;display:grid;gap:14px;font-size:17px}
+.okno-cislo{font-family:var(--nadpis);font-size:44px;line-height:1;color:var(--sipka);font-variant-numeric:tabular-nums}
+.okno-pozn{font-size:15px;color:var(--tichy);background:var(--puder);border-radius:12px;padding:12px 14px}
+
+/* Pohyb: jeden moment, vzorkovník sa po načítaní raz rozvinie ako vejár */
+@media (prefers-reduced-motion:no-preference){
+  .vejar .tip{animation:rozvinut 1.15s cubic-bezier(.22,.9,.24,1) .35s both}
+  @keyframes rozvinut{from{transform:rotate(-4deg)}}
+}
+@media (prefers-reduced-motion:reduce){
+  .akcia,.okno,.okno::backdrop,.prst,.odtien svg{transition:none}
+}
+
+/* Pás ukážky na úzkych telefónoch: menšie písmo a tesnejšie riadky */
+@media (max-width:420px){
+  .pas{font-size:13px;line-height:1.38}
+  .pas .obsah{padding-block:7px;gap:2px 12px}
+  .pas a{min-height:40px}
+  .hlava{min-height:60px}
+}
+/* Väčšie obrazovky */
+@media (min-width:640px){
+  .skuska{grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:16px 22px;padding:26px 26px 26px 18px}
+  .prsty{max-width:220px}
+  .odtiene{grid-template-columns:repeat(4,minmax(0,1fr));gap:12px 6px}
+  .odtien{font-size:15px;padding:10px 2px 12px}
+  .odtien svg{width:34px}
+  .odtien span{position:static;width:auto;height:auto;overflow:visible;clip:auto;white-space:normal;display:block;font-weight:400;font-size:13px;color:var(--tichy)}
+  .galeria{grid-template-columns:repeat(12,1fr);gap:16px}
+  .g-vzorkovnik{grid-column:1/span 7;grid-row:1}
+  .g-nohy{grid-column:8/span 5;grid-row:1/span 2;display:grid;grid-template-rows:1fr auto}
+  .g-nohy img{aspect-ratio:auto;height:100%;min-height:0;object-position:50% 58%}
+  .g-manikura{grid-column:1/span 4;grid-row:2}
+  .g-manikura img{aspect-ratio:1}
+  .g-hotove{grid-column:5/span 3;grid-row:2}
+  .g-hotove img{aspect-ratio:3/4;object-position:50% 50%}
+}
+@media (min-width:960px){
+  .menu{display:flex}
+  .lista{display:none}
+  .pata{padding-bottom:56px}
+  .uvod-mriezka{grid-template-columns:minmax(0,7fr) minmax(0,5fr);grid-template-areas:"meno foto" "telo foto";column-gap:48px;row-gap:0;align-items:center;padding:40px 0 112px}
+  .uvod h1{align-self:end}
+  .uvod-telo{align-self:start}
+  .uvod-foto{width:100%;max-width:440px;margin-right:0}
+  .vejar{left:-46%;top:auto;bottom:-10%;width:86%}
+  .cennik-mriezka{grid-template-columns:minmax(0,4fr) minmax(0,7fr);gap:80px}
+  .cennik-mriezka>div:first-child{position:sticky;top:32px;align-self:start}
+  .vzorky-hlava{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:24px 64px;align-items:end}
+  .vzorky-hlava .uvodny-text{margin-top:0;max-width:50ch;padding-bottom:8px}
+  .skuska{grid-template-columns:minmax(0,5fr) minmax(0,8fr);gap:24px 40px;padding:36px 44px 36px 28px}
+  .prsty{max-width:236px}
+  .odtien svg{width:40px}
+  .onas-mriezka{grid-template-columns:minmax(0,6fr) minmax(0,5fr);gap:80px;align-items:start}
+  .onas-foto{margin-top:12px}
+  .kde-mriezka{grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:72px;align-items:start}
+  .pata-mriezka{grid-template-columns:2fr 1fr}
+}
+/* Veľké monitory (N7): úvod a pás sa rozšíria, oblúk s fotkou do 560 px a väčšie meno, aby po stranách neostala prázdna červená */
+@media (min-width:1600px){
+  .pas .obsah,.uvod .obsah{width:min(1440px,calc(100vw - 160px))}
+  .uvod h1{font-size:clamp(232px,15.5vw,300px)}
+  .uvod-mriezka{column-gap:72px;padding:56px 0 136px}
+  .uvod-foto{max-width:560px}
+  .uvod-veta{font-size:26px;max-width:32ch}
+}
+@media (max-width:959px){
+  .hlava .rezervovat-hore,.uvod-akcie{display:none}
+  .znak-meno{display:none}
+  .znak-popis{display:inline}
+}
+</style>
+</head>
+<body>
+<a class="preskocit" href="#obsah">Preskočiť na obsah</a>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <symbol id="necht" viewBox="0 0 34 80">
+    <path d="M2.6 72C2 47 6.4 23 14.6 8.6Q17 4.6 19.4 8.6C27.6 23 32 47 31.4 72C22 76.6 12 76.6 2.6 72Z" fill="currentColor" stroke="rgba(42,16,32,.4)" stroke-width="1.3"/>
+    <path d="M9.6 58c0-17 2.4-30 5.8-39" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="2.6" stroke-linecap="round"/>
+  </symbol>
+</svg>
+
+<div class="pas" role="note">
+  <div class="obsah">
+    <p><strong>Ukážka webu od ARLing, vymyslená prevádzka.</strong> Salón Šípka neexistuje, mená, adresa a&nbsp;čísla sú vymyslené.</p>
+    <a href="https://arling.sk/web/?z=salon" target="_top">Chcem taký web</a>
+    <a href="../../index.html#ukazky" target="_top">Späť na ukážky</a>
+  </div>
+</div>
+
+<header class="uvod">
+  <div class="obsah hlava">
+    <a class="znak" href="#obsah" aria-label="Salón Šípka, na začiatok">
+      <svg width="20" height="44" viewBox="0 0 34 80" aria-hidden="true" style="color:#f8eeeb"><use href="#necht"/></svg>
+      <span class="znak-meno">Šípka</span><span class="znak-popis" aria-hidden="true">Nechty a&nbsp;kozmetika, Levice</span>
+    </a>
+    <nav aria-label="Hlavná">
+      <ul class="menu">
+        <li><a href="#cennik">Cenník</a></li>
+        <li><a href="#galeria">Galéria</a></li>
+        <li><a href="#o-nas">O&nbsp;nás</a></li>
+        <li><a href="#kde-sme">Hodiny a&nbsp;mapa</a></li>
+      </ul>
+    </nav>
+    <button class="akcia akcia-mliecna akcia-mala rezervovat-hore" type="button" popovertarget="okno-rezervacia">Rezervovať termín</button>
+  </div>
+</header>
+
+<main id="obsah">
+  <section class="uvod" aria-labelledby="meno">
+    <div class="obsah uvod-mriezka">
+      <h1 id="meno">Šípka</h1>
+      <figure class="uvod-foto">
+        <img src="img/nechty-800.webp" srcset="img/nechty-800.webp 800w, img/nechty-1600.webp 1600w, img/nechty-2400.webp 2400w" sizes="(min-width: 1600px) 560px, (min-width: 1144px) 440px, (min-width: 960px) calc(41.67vw - 37px), min(66vw, 440px)" width="2400" height="3000" alt="Detail ruky s hotovými lesklými nechtami v šípkovo červenej, tvar mandle" fetchpriority="high">
+        <svg class="vejar" viewBox="-30 -245 280 275" aria-hidden="true" focusable="false">
+          <g class="tip" style="--u:0deg"><rect x="-4.5" y="-162" width="9" height="162" rx="4.5" fill="#fbf4f2" stroke="#d9bdb7"/><use href="#necht" x="-17" y="-232" width="34" height="80" style="color:#f6ebe7"/></g>
+          <g class="tip" style="--u:12deg"><rect x="-4.5" y="-162" width="9" height="162" rx="4.5" fill="#fbf4f2" stroke="#d9bdb7"/><use href="#necht" x="-17" y="-232" width="34" height="80" style="color:#e9b8b2"/></g>
+          <g class="tip" style="--u:24deg"><rect x="-4.5" y="-162" width="9" height="162" rx="4.5" fill="#fbf4f2" stroke="#d9bdb7"/><use href="#necht" x="-17" y="-232" width="34" height="80" style="color:#e58a63"/></g>
+          <g class="tip" style="--u:36deg"><rect x="-4.5" y="-162" width="9" height="162" rx="4.5" fill="#fbf4f2" stroke="#d9bdb7"/><use href="#necht" x="-17" y="-232" width="34" height="80" style="color:#d6223f"/></g>
+          <g class="tip" style="--u:48deg"><rect x="-4.5" y="-162" width="9" height="162" rx="4.5" fill="#fbf4f2" stroke="#d9bdb7"/><use href="#necht" x="-17" y="-232" width="34" height="80" style="color:#7c0f2a"/></g>
+          <g class="tip" style="--u:60deg"><rect x="-4.5" y="-162" width="9" height="162" rx="4.5" fill="#fbf4f2" stroke="#d9bdb7"/><use href="#necht" x="-17" y="-232" width="34" height="80" style="color:#5b1d47"/></g>
+          <g class="tip" style="--u:72deg"><rect x="-4.5" y="-162" width="9" height="162" rx="4.5" fill="#fbf4f2" stroke="#d9bdb7"/><use href="#necht" x="-17" y="-232" width="34" height="80" style="color:#b9a3d9"/></g>
+          <g class="tip" style="--u:84deg"><rect x="-4.5" y="-162" width="9" height="162" rx="4.5" fill="#fbf4f2" stroke="#d9bdb7"/><use href="#necht" x="-17" y="-232" width="34" height="80" style="color:#a3d2bf"/></g>
+          <circle r="15" fill="none" stroke="#e8dde0" stroke-width="5"/>
+          <circle r="8" fill="#fbf4f2" stroke="#d9bdb7"/>
+        </svg>
+      </figure>
+      <div class="uvod-telo">
+        <p class="uvod-veta">Nechtový a&nbsp;kozmetický salón v&nbsp;Leviciach. Gélové nechty, manikúra, pedikúra, pleť a&nbsp;mihalnice, vždy na objednaný čas.</p>
+        <p class="stav"><span class="stav-bod" aria-hidden="true"></span><span class="stav-text">Otváracie hodiny nájdete nižšie</span></p>
+        <div class="uvod-akcie">
+          <button class="akcia akcia-mliecna" type="button" popovertarget="okno-rezervacia">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4M9 14.5l2 2 4-4"/></svg>
+            Rezervovať termín
+          </button>
+          <button class="akcia akcia-obrys" type="button" popovertarget="okno-volat">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3.5h3.2l1.6 4.4-2.2 1.5a11 11 0 0 0 7 7l1.5-2.2 4.4 1.6V19a1.6 1.6 0 0 1-1.7 1.6A16.5 16.5 0 0 1 3.4 5.2 1.6 1.6 0 0 1 5 3.5z"/></svg>
+            Zavolať
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+<section class="sekcia" id="cennik" aria-labelledby="cennik-nadpis">
+  <div class="obsah cennik-mriezka">
+    <div>
+      <h2 id="cennik-nadpis">Cenník</h2>
+      <p class="uvodny-text">Pri každej službe vidíte cenu aj to, ako dlho u&nbsp;nás budete. Zdobenie nechtov a&nbsp;kamienky doladíme na mieste podľa toho, čo si vyberiete.</p>
+      <p class="cennik-pozn">Ceny platia od 1. 11. 2026. Platiť môžete v&nbsp;hotovosti aj kartou. Ak termín nestihnete, dajte vedieť aspoň deň vopred.</p>
+    </div>
+    <div>
+      <div class="skupina">
+        <h3><svg width="16" height="38" viewBox="0 0 34 80" aria-hidden="true" style="color:#9a1536"><use href="#necht"/></svg>Nechty</h3>
+        <ul>
+          <li class="sluzba"><h4>Gélové nechty, nová modeláž</h4><p class="cena">40&nbsp;€</p><p>Tvar a&nbsp;dĺžku vyberiete spolu s&nbsp;nami, farba zo vzorkovníka je v&nbsp;cene. <span class="cas">2&nbsp;h 30&nbsp;min</span></p></li>
+          <li class="sluzba"><h4>Doplnenie gélových nechtov</h4><p class="cena">30&nbsp;€</p><p>Po troch až štyroch týždňoch, vrátane novej farby. <span class="cas">2&nbsp;h</span></p></li>
+          <li class="sluzba"><h4>Gél lak na prírodné nechty</h4><p class="cena">30&nbsp;€</p><p>S&nbsp;manikúrou, drží zvyčajne dva až tri týždne. <span class="cas">1&nbsp;h 15&nbsp;min</span></p></li>
+          <li class="sluzba"><h4>Klasická manikúra</h4><p class="cena">20&nbsp;€</p><p>Tvar nechtov, kožička, výživa a&nbsp;masáž rúk, bez laku. <span class="cas">45&nbsp;min</span></p></li>
+          <li class="sluzba"><h4>Odstránenie gélu</h4><p class="cena">15&nbsp;€</p><p>Šetrne, bez brúsenia do prírodného nechtu. <span class="cas">30&nbsp;min</span></p></li>
+        </ul>
+      </div>
+      <div class="skupina">
+        <h3><svg width="16" height="38" viewBox="0 0 34 80" aria-hidden="true" style="color:#e58a63"><use href="#necht"/></svg>Nohy</h3>
+        <ul>
+          <li class="sluzba"><h4>Mokrá pedikúra</h4><p class="cena">30&nbsp;€</p><p>Kúpeľ, nechty, kožička, päty a&nbsp;krém. <span class="cas">1&nbsp;h</span></p></li>
+          <li class="sluzba"><h4>Pedikúra s&nbsp;gél lakom</h4><p class="cena">40&nbsp;€</p><p>Celá pedikúra a&nbsp;farba, ktorá vydrží celé leto aj dovolenku. <span class="cas">1&nbsp;h 30&nbsp;min</span></p></li>
+        </ul>
+      </div>
+      <div class="skupina">
+        <h3><svg width="16" height="38" viewBox="0 0 34 80" aria-hidden="true" style="color:#e9b8b2"><use href="#necht"/></svg>Pleť</h3>
+        <ul>
+          <li class="sluzba"><h4>Hĺbkové čistenie pleti</h4><p class="cena">35&nbsp;€</p><p>Odlíčenie, peeling, čistenie a&nbsp;upokojujúca maska. <span class="cas">1&nbsp;h</span></p></li>
+          <li class="sluzba"><h4>Kompletné ošetrenie pleti</h4><p class="cena">50&nbsp;€</p><p>Čistenie, sérum podľa typu pleti, masáž tváre a&nbsp;dekoltu, maska. <span class="cas">1&nbsp;h 30&nbsp;min</span></p></li>
+        </ul>
+      </div>
+      <div class="skupina">
+        <h3><svg width="16" height="38" viewBox="0 0 34 80" aria-hidden="true" style="color:#5b1d47"><use href="#necht"/></svg>Mihalnice</h3>
+        <ul>
+          <li class="sluzba"><h4>Lash lifting (laminácia mihalníc)</h4><p class="cena">35&nbsp;€</p><p>Natočenie a&nbsp;farba vlastných mihalníc, drží šesť až osem týždňov. <span class="cas">1&nbsp;h</span></p></li>
+          <li class="sluzba"><h4>Predĺženie mihalníc, nová sada</h4><p class="cena">50&nbsp;€</p><p>Klasika jedna na jednu alebo objem, poradíme podľa vašich mihalníc. <span class="cas">2&nbsp;h</span></p></li>
+          <li class="sluzba"><h4>Doplnenie mihalníc</h4><p class="cena">35&nbsp;€</p><p>Do troch týždňov od poslednej návštevy. <span class="cas">1&nbsp;h 15&nbsp;min</span></p></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sekcia vzorky" aria-labelledby="vzorky-nadpis">
+  <div class="obsah vzorky-mriezka">
+    <div class="vzorky-hlava">
+      <h2 id="vzorky-nadpis">Vzorkovník</h2>
+      <p class="uvodny-text">Farbu si vyberiete pri stolíku z&nbsp;celého vzorkovníka gél lakov. Tu je pár odtieňov, ktoré máme tento mesiac najradšej. Ťuknite na jeden a&nbsp;hneď uvidíte, ako vám pristane.</p>
+    </div>
+    <div class="skuska">
+      <div class="ruka" aria-hidden="true">
+        <!-- ruka --><svg class="prsty" viewBox="28 0 164 270" width="164" height="270" focusable="false">
+          <defs>
+            <linearGradient id="ruka-zanik" x1="0" y1="0" x2="0" y2="1"><stop offset=".74" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+            <mask id="ruka-maska" maskUnits="userSpaceOnUse" x="0" y="0" width="220" height="270"><rect width="220" height="270" fill="url(#ruka-zanik)"/></mask>
+            <linearGradient id="porcelan" gradientUnits="userSpaceOnUse" x1="40" y1="20" x2="196" y2="60"><stop offset="0" stop-color="#fcf6f3"/><stop offset=".5" stop-color="#f6e9e3"/><stop offset="1" stop-color="#e8d1c8"/></linearGradient>
+            <radialGradient id="porcelan-lesk" gradientUnits="userSpaceOnUse" cx="110" cy="184" r="58"><stop offset="0" stop-color="#fff" stop-opacity=".8"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+            <path id="ruka-tvar" d="M90 272C88 246 73.7 237.7 77.7 207.7L82.6 137.8L104.9 134.2Q105.9 141.6 107 131L129 131Q129.8 141.7 130.6 134.4L151.1 135.6Q152.1 148.7 153.1 145.8L170.8 152.3C178.8 178.3 166 232 160 272ZM97.1 187.3L83.5 162.6Q88.9 155.4 81.1 124.2L84.1 159.8ZM83.4 163.8C78 101.1 77.3 62.2 76.8 37A10.5 10.5 0 0 1 97.7 35.5C100.7 60.6 105.4 99.1 108.8 162ZM105 159C104 92.6 106.3 49.8 107.5 22A10.5 10.5 0 0 1 128.5 22C129.7 49.8 132 92.6 131 159ZM126.9 162.2C129.8 98.6 134.3 59.2 137.1 33.6A10 10 0 0 1 157 34.8C156.7 60.6 156.3 100.2 151.4 163.7ZM147.2 173.2C154.1 117.1 160.2 86.5 164.2 66.5A8.8 8.8 0 0 1 181.5 69C179.9 89.2 177.3 120.4 168.5 176.2ZM88 229.5C62.3 186.9 53.3 165.3 46.8 151.6A11.8 11.8 0 0 1 67.2 139.9C75.8 152.4 90 170.9 114 214.5Z"/>
+          </defs>
+          <g mask="url(#ruka-maska)">
+            <use href="#ruka-tvar" fill="none" stroke="#d4b0a5" stroke-width="3.2" stroke-linejoin="round"/>
+            <use href="#ruka-tvar" fill="url(#porcelan)"/>
+            <use href="#ruka-tvar" fill="url(#porcelan-lesk)"/>
+            <path d="M84 85.1Q90.5 83.4 97.2 84.2M86.2 82.9Q90.4 81.4 94.8 82.3M84.3 60.7Q88.8 59.2 93.5 60.1M111.2 75.5Q118 74.3 124.8 75.5M113.6 73.5Q118 72.3 122.4 73.5M113.3 48.8Q118 47.5 122.7 48.8M137.7 83.2Q144.1 82.4 150.4 84M140 81.3Q144.2 80.4 148.3 81.9M141.1 58.6Q145.6 57.7 149.9 59.2M161.9 105.6Q167.6 105.2 173 107.2M164.1 103.9Q167.9 103.2 171.3 104.9M166.3 86.5Q170.3 85.9 174 87.6M64.2 173.8Q70.3 168.8 77.7 166M65.5 170.7Q69.3 167.1 74.3 165.6" fill="none" stroke="#d9b9ae" stroke-width="1.05" stroke-linecap="round" opacity=".8"/>
+            <path d="M97.3 172.9Q97.9 202.9 98.8 230.9M118.5 169Q117 199 116 227M139.1 173Q135.7 202.8 133 230.7" fill="none" stroke="#e4cbc1" stroke-width="2.4" stroke-linecap="round" opacity=".45"/>
+          </g>
+          <use class="prst" style="--i:0" href="#necht" width="34" height="80" transform="translate(87.9 46.1) rotate(-4) scale(0.529 0.420) translate(-17 -74)"/><use class="prst" style="--i:1" href="#necht" width="34" height="80" transform="translate(118 31.9) rotate(0) scale(0.529 0.420) translate(-17 -74)"/><use class="prst" style="--i:2" href="#necht" width="34" height="80" transform="translate(146.5 43.4) rotate(3.5) scale(0.500 0.397) translate(-17 -74)"/><use class="prst" style="--i:3" href="#necht" width="34" height="80" transform="translate(171.7 75.9) rotate(8) scale(0.441 0.350) translate(-17 -74)"/><use class="prst" style="--i:4" href="#necht" width="34" height="80" transform="translate(62.5 155.2) rotate(-30) scale(0.588 0.467) translate(-17 -74)"/>
+        </svg><!-- /ruka -->
+        <p class="ruka-nazov"><span data-lak="mlieko">Mlieko <small>mliečna béžová</small></span><span data-lak="puder">Púder <small>jemná ružová</small></span><span data-lak="marhula">Marhuľa <small>teplá oranžová</small></span><span data-lak="mak">Mak <small>jasná červená</small></span><span data-lak="sipka">Šípka <small>naša červená</small></span><span data-lak="slivka">Slivka <small>tmavá fialová</small></span><span data-lak="levandula">Levanduľa <small>chladná fialová</small></span><span data-lak="mata">Mäta <small>svetlá zelená</small></span></p>
+      </div>
+      <fieldset class="odtiene">
+      <legend class="skryte">Vyskúšajte si odtieň gél laku</legend>
+      <label class="odtien"><input type="radio" name="lak" id="lak-mlieko" value="mlieko"><svg viewBox="0 0 34 80" aria-hidden="true" style="color:#f6ebe7"><use href="#necht"/></svg>Mlieko<span>mliečna béžová</span></label>
+      <label class="odtien"><input type="radio" name="lak" id="lak-puder" value="puder"><svg viewBox="0 0 34 80" aria-hidden="true" style="color:#e9b8b2"><use href="#necht"/></svg>Púder<span>jemná ružová</span></label>
+      <label class="odtien"><input type="radio" name="lak" id="lak-marhula" value="marhula"><svg viewBox="0 0 34 80" aria-hidden="true" style="color:#e58a63"><use href="#necht"/></svg>Marhuľa<span>teplá oranžová</span></label>
+      <label class="odtien"><input type="radio" name="lak" id="lak-mak" value="mak"><svg viewBox="0 0 34 80" aria-hidden="true" style="color:#d6223f"><use href="#necht"/></svg>Mak<span>jasná červená</span></label>
+      <label class="odtien"><input type="radio" name="lak" id="lak-sipka" value="sipka" checked><svg viewBox="0 0 34 80" aria-hidden="true" style="color:#9a1536"><use href="#necht"/></svg>Šípka<span>naša červená</span></label>
+      <label class="odtien"><input type="radio" name="lak" id="lak-slivka" value="slivka"><svg viewBox="0 0 34 80" aria-hidden="true" style="color:#5b1d47"><use href="#necht"/></svg>Slivka<span>tmavá fialová</span></label>
+      <label class="odtien"><input type="radio" name="lak" id="lak-levandula" value="levandula"><svg viewBox="0 0 34 80" aria-hidden="true" style="color:#b9a3d9"><use href="#necht"/></svg>Levanduľa<span>chladná fialová</span></label>
+      <label class="odtien"><input type="radio" name="lak" id="lak-mata" value="mata"><svg viewBox="0 0 34 80" aria-hidden="true" style="color:#a3d2bf"><use href="#necht"/></svg>Mäta<span>svetlá zelená</span></label>
+    </fieldset>
+    </div>
+  </div>
+</section>
+
+<section class="sekcia" id="galeria" aria-labelledby="galeria-nadpis">
+  <div class="obsah">
+    <h2 id="galeria-nadpis">Z&nbsp;nášho salónu</h2>
+    <div class="galeria">
+      <figure class="g-vzorkovnik">
+        <img src="img/vyber-1600.webp" srcset="img/vyber-800.webp 800w, img/vyber-1600.webp 1600w" sizes="(min-width: 1240px) 693px, (min-width: 640px) calc(58.3vw - 30px), calc(100vw - 40px)" width="1600" height="1200" loading="lazy" decoding="async" alt="Dve klientky vyberajú odtieň z vejára vzoriek gél lakov na svetlom stolíku">
+        <figcaption>Výber farby pri stolíku, vzorky máte v&nbsp;ruke, nie na obrazovke.</figcaption>
+      </figure>
+      <figure class="g-nohy">
+        <img src="img/nohy-800.webp" srcset="img/nohy-800.webp 800w, img/nohy-1600.webp 1600w, img/nohy-2400.webp 2400w" sizes="(min-width: 1240px) 650px, (min-width: 640px) calc(58vw - 20px), calc(50vw - 26px)" width="2400" height="3600" loading="lazy" decoding="async" alt="Chodidlá s červeným lakom na nechtoch vykúkajú spod bielej perinky">
+        <figcaption>Pedikúra s&nbsp;gél lakom vydrží celé leto.</figcaption>
+      </figure>
+      <figure class="g-manikura">
+        <img src="img/manikura-1200.webp" srcset="img/manikura-600.webp 600w, img/manikura-1200.webp 1200w" sizes="(min-width: 1240px) 390px, (min-width: 640px) calc(33.3vw - 24px), calc(50vw - 26px)" width="1200" height="1200" loading="lazy" decoding="async" alt="Nanášanie svetlého laku štetčekom na prírodné nechty, ruka s prsteňom na drevenom stolíku">
+        <figcaption>Gél lak na prírodné nechty drží dva až tri týždne.</figcaption>
+      </figure>
+      <figure class="g-hotove">
+        <img src="img/hotove-1200.webp" srcset="img/hotove-600.webp 600w, img/hotove-1200.webp 1200w" sizes="(min-width: 1240px) 288px, (min-width: 640px) calc(25vw - 22px), calc(100vw - 40px)" width="1200" height="1600" loading="lazy" decoding="async" alt="Ruky s hotovými červenými nechtami na pracovnom stolíku, v pozadí fľaštičky laku">
+        <figcaption>Gél lak v&nbsp;odtieni Šípka, hotový za hodinu a&nbsp;štvrť.</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<section class="sekcia onas" id="o-nas" aria-labelledby="onas-nadpis">
+  <div class="obsah onas-mriezka">
+    <div class="onas-text">
+      <h2 id="onas-nadpis">O&nbsp;nás</h2>
+      <p class="uvodna">Sme dve a&nbsp;pracujeme len na objednávku, takže u&nbsp;nás nikto nečaká v&nbsp;rade.</p>
+      <p style="margin-top:22px">Šípku sme otvorili v&nbsp;roku 2019 v&nbsp;tichom dvore kúsok od centra Levíc. Lucia robí nechty a&nbsp;pedikúru, Zuzana sa stará o&nbsp;pleť a&nbsp;mihalnice. Ak neviete, čo si vybrať, napíšte nám pár slov a&nbsp;poradíme ešte pred návštevou.</p>
+      <ul class="zasady">
+        <li>
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v5.5c0 4.3-3 8-7 9.5-4-1.5-7-5.2-7-9.5V6z"/><path d="M8.8 12.2l2.3 2.3 4.3-4.6"/></svg>
+          <p><strong>Čisté nástroje pre každú klientku</strong><span>Kovové nástroje sterilizujeme v&nbsp;autokláve, pilníky a&nbsp;bloky sú na jedno použitie.</span></p>
+        </li>
+        <li>
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5h16v10H9l-5 4z"/><path d="M8.5 10.5h7"/></svg>
+          <p><strong>Povieme vám aj to, čo neurobíme</strong><span>Keď necht potrebuje pauzu od gélu, odporučíme radšej výživu.</span></p>
+        </li>
+        <li>
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="8" width="17" height="12" rx="2"/><path d="M3.5 12h17M12 8v12M12 8c-1.5-3-5-3.5-5-1.2C7 8 9.5 8 12 8zm0 0c1.5-3 5-3.5 5-1.2C17 8 14.5 8 12 8z"/></svg>
+          <p><strong>Darčekové poukážky</strong><span>Na konkrétnu službu alebo na sumu, ktorú si určíte. Pripravíme ich do dvoch dní.</span></p>
+        </li>
+      </ul>
+    </div>
+    <figure class="onas-foto">
+      <img src="img/stolik-1600.webp" srcset="img/stolik-800.webp 800w, img/stolik-1600.webp 1600w, img/stolik-2400.webp 2400w" sizes="(min-width: 1240px) 509px, (min-width: 960px) calc(45.5vw - 55px), calc(100vw - 40px)" width="2400" height="1600" loading="lazy" decoding="async" alt="Biely stolík s kvetmi v kvetináči a pohárom štetcov na zdobenie nechtov v svetlom salóne">
+      <figcaption>Stolík pri okne, kde robíme nechty. Kvety meníme každý týždeň.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="sekcia kde" id="kde-sme" aria-labelledby="kde-nadpis">
+  <div class="obsah">
+    <h2 id="kde-nadpis">Hodiny a&nbsp;cesta</h2>
+    <div class="kde-mriezka">
+      <div>
+        <h3>Otváracie hodiny</h3>
+        <p class="stav" hidden><span class="stav-bod" aria-hidden="true"></span><span class="stav-text"></span></p>
+        <table class="hodiny">
+          <caption class="skryte">Otváracie hodiny Salónu Šípka</caption>
+          <tbody>
+            <tr data-den="1" data-od="9:00" data-do="18:00"><th scope="row">Pondelok<span class="znacka-dnes" hidden>dnes</span></th><td>9:00 až 18:00</td></tr>
+            <tr data-den="2" data-od="8:00" data-do="18:00"><th scope="row">Utorok<span class="znacka-dnes" hidden>dnes</span></th><td>8:00 až 18:00</td></tr>
+            <tr data-den="3" data-od="8:00" data-do="18:00"><th scope="row">Streda<span class="znacka-dnes" hidden>dnes</span></th><td>8:00 až 18:00</td></tr>
+            <tr data-den="4" data-od="10:00" data-do="19:00"><th scope="row">Štvrtok<span class="znacka-dnes" hidden>dnes</span></th><td>10:00 až 19:00</td></tr>
+            <tr data-den="5" data-od="8:00" data-do="16:00"><th scope="row">Piatok<span class="znacka-dnes" hidden>dnes</span></th><td>8:00 až 16:00</td></tr>
+            <tr data-den="6" data-od="8:00" data-do="12:00"><th scope="row">Sobota<span class="znacka-dnes" hidden>dnes</span></th><td>8:00 až 12:00</td></tr>
+            <tr data-den="0"><th scope="row">Nedeľa<span class="znacka-dnes" hidden>dnes</span></th><td class="zatvorene">zatvorené</td></tr>
+          </tbody>
+        </table>
+        <p class="hodiny-pozn">Vo štvrtok do siedmej, aby ste stihli prísť aj po práci.</p>
+      </div>
+      <div>
+        <h3>Kde nás nájdete</h3>
+        <div class="mapa">
+          <svg viewBox="0 0 600 380" role="img" aria-labelledby="mapa-popis">
+            <title id="mapa-popis">Ilustračná mapa: Salón Šípka je vo dvore medzi hlavnou a bočnou ulicou, vedľa parku so zrúcaninou hradu. Do dvora sa vchádza z bočnej ulice, parkovať sa dá pri vchode.</title>
+            <rect width="600" height="380" fill="#f4e4e0"/>
+            <g fill="#ead2cc">
+              <rect x="-12" y="-12" width="200" height="132" rx="14"/>
+              <rect x="222" y="-12" width="150" height="132" rx="14"/>
+              <rect x="406" y="-12" width="206" height="132" rx="14"/>
+              <rect x="-12" y="168" width="200" height="106" rx="14"/>
+              <rect x="-12" y="306" width="200" height="86" rx="14"/>
+              <rect x="222" y="306" width="150" height="86" rx="14"/>
+              <rect x="406" y="306" width="206" height="86" rx="14"/>
+            </g>
+            <rect x="222" y="168" width="150" height="106" rx="14" fill="#f0d6d1" stroke="#9a1536" stroke-width="2" stroke-dasharray="6 6"/>
+            <rect x="406" y="168" width="206" height="106" rx="14" fill="#dbe4cc"/>
+            <g fill="#c6d5b3"><circle cx="440" cy="200" r="16"/><circle cx="484" cy="246" r="19"/></g>
+            <g transform="translate(560 252)">
+              <path d="M-44 20C-30 -4 30 -4 44 20Z" fill="#b7c99f"/>
+              <path d="M-28 8V-14h6v-6h5v6h5v-6h5v6h5v-6h6V8M2 8V-28h-4v-6h6v4h4v-4h6v4h4v-4h6v6h-4V8z" fill="#b08d88"/>
+              <path d="M-16 8v-8a4 4 0 0 1 8 0v8M10 -14h6v8h-6z" fill="#f4e4e0"/>
+            </g>
+            <text x="560" y="206" text-anchor="middle" font-family="Šípka Text, system-ui, sans-serif" font-size="20" fill="#6e4757" font-weight="600">hrad</text>
+            <g fill="none" stroke="#fffaf8">
+              <path d="M0 144H600" stroke-width="40"/>
+              <path d="M205 0V380" stroke-width="30"/>
+              <path d="M389 0V380" stroke-width="30"/>
+              <path d="M0 290H600" stroke-width="28"/>
+              <path d="M297 276V236" stroke-width="18" stroke-linecap="round"/>
+            </g>
+            <g font-family="Šípka Text, system-ui, sans-serif" font-size="22" fill="#6e4757" font-weight="600">
+              <text x="20" y="152">hlavná ulica</text>
+              <text x="20" y="298" font-weight="500">bočná ulica</text>
+              <text x="478" y="300" font-weight="500">park</text>
+            </g>
+            <g transform="translate(250 290)">
+              <rect x="-17" y="-17" width="34" height="34" rx="8" fill="#2a1020"/>
+              <text x="0" y="8" text-anchor="middle" font-family="Šípka Text, system-ui, sans-serif" font-size="22" font-weight="700" fill="#fff">P</text>
+            </g>
+            <g transform="translate(297 232)">
+              <ellipse cx="0" cy="2" rx="13" ry="5" fill="#2a1020" opacity=".2"/>
+              <path d="M0 0C-6-14-22-25-22-42a22 22 0 0 1 44 0C22-25 6-14 0 0z" fill="#9a1536"/>
+              <circle cx="0" cy="-42" r="8" fill="#fff"/>
+            </g>
+            <g transform="translate(330 172)">
+              <rect width="124" height="44" rx="22" fill="#9a1536"/>
+              <text x="62" y="30" text-anchor="middle" font-family="Šípka Nadpis, Georgia, serif" font-size="24" fill="#fff">Šípka</text>
+            </g>
+          </svg>
+        </div>
+        <p class="mapa-pozn">Ilustračná mapa, nie v&nbsp;mierke. Ulica Ružový dvor je vymyslená, Levice sú skutočné.</p>
+        <address class="adresa">
+          <strong>Ružový dvor 4</strong>
+          934 01 Levice
+          <span>Vchod do dvora z&nbsp;bočnej ulice, prízemie bez schodov. Parkovanie zadarmo pri vchode.</span>
+        </address>
+        <div class="akcie">
+          <a class="akcia akcia-mliecna" href="https://www.google.com/maps/search/?api=1&amp;query=Levice" target="_blank" rel="noopener noreferrer">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 11.2 20.5 3.5l-7.7 17-2.1-7.2z"/></svg>
+            Navigovať
+          </a>
+        </div>
+        <p class="mapa-pozn">Navigovať otvorí mapy len s&nbsp;mestom Levice. Na vašom webe povedie na presnú adresu.</p>
+        <div class="kontakty">
+          <p>Telefón: <span>0900 XXX XXX</span> <span class="tichy">(vymyslené číslo)</span></p>
+          <p><a href="mailto:rezervacie@salon-sipka.example">rezervacie@salon-sipka.example</a></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="pata">
+  <div class="obsah pata-mriezka">
+    <div>
+      <p><strong>Salón Šípka</strong>, Ružový dvor 4, 934 01 Levice. IČO 00 000 000.</p>
+      <p class="male">Toto je ukážka webu od ARLing s. r. o. Prevádzka, mená, adresa, IČO, telefón a&nbsp;<span class="nw">e-mail</span> sú vymyslené. Fotky sú z&nbsp;Pexels (licencia Pexels), písmo Gloock a&nbsp;Figtree (licencia OFL), mapa a&nbsp;ikony sú vlastné.</p>
+    </div>
+    <div class="pata-odkazy">
+      <a href="../../index.html#ukazky" target="_top">Späť na ukážky webov od ARLing</a>
+      <a href="https://arling.sk/web/?z=salon" target="_top">Čo je web na mieru</a>
+    </div>
+  </div>
+</footer>
+
+<nav class="lista" aria-label="Rýchly kontakt">
+  <button class="akcia akcia-mliecna" type="button" popovertarget="okno-rezervacia">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4M9 14.5l2 2 4-4"/></svg>
+    Rezervovať
+  </button>
+  <button class="akcia akcia-obrys" type="button" popovertarget="okno-volat">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3.5h3.2l1.6 4.4-2.2 1.5a11 11 0 0 0 7 7l1.5-2.2 4.4 1.6V19a1.6 1.6 0 0 1-1.7 1.6A16.5 16.5 0 0 1 3.4 5.2 1.6 1.6 0 0 1 5 3.5z"/></svg>
+    Zavolať
+  </button>
+</nav>
+
+<div class="okno" id="okno-rezervacia" popover role="dialog" aria-labelledby="okno-rezervacia-nadpis">
+  <div class="okno-hlava">
+    <h2 id="okno-rezervacia-nadpis">Rezervácia termínu</h2>
+    <button class="zavriet" type="button" popovertarget="okno-rezervacia" popovertargetaction="hide" aria-label="Zavrieť">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+  </div>
+  <div class="okno-telo">
+    <p>Na vašom webe toto tlačidlo otvorí váš rezervačný systém alebo kalendár, prípadne rovno zavolá.</p>
+    <p class="okno-pozn">Toto je ukážka, nič sa neodošle ani nerezervuje.</p>
+    <a class="akcia akcia-plna" href="https://arling.sk/web/dotaznik/?ukazka=salon" target="_top">Chcem taký web</a>
+  </div>
+</div>
+
+<div class="okno" id="okno-volat" popover role="dialog" aria-labelledby="okno-volat-nadpis">
+  <div class="okno-hlava">
+    <h2 id="okno-volat-nadpis">Zavolať</h2>
+    <button class="zavriet" type="button" popovertarget="okno-volat" popovertargetaction="hide" aria-label="Zavrieť">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+  </div>
+  <div class="okno-telo">
+    <p class="okno-cislo">0900 XXX XXX</p>
+    <p>Na vašom webe toto tlačidlo rovno vytočí vaše číslo, jedným ťukom z&nbsp;mobilu.</p>
+    <p class="okno-pozn">Číslo je vymyslené, v&nbsp;ukážke sa nič nevytáča.</p>
+  </div>
+</div>
+
+<script src="app.js" defer></script>
+</body>
+</html>

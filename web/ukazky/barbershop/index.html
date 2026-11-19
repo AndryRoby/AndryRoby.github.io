@@ -1,0 +1,644 @@
+<!doctype html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; img-src 'self' data:; style-src 'unsafe-inline'; font-src 'self'; connect-src 'none'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex, nofollow">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#1d3f8f">
+<title>Ukážka: Holičstvo Krátko, Bratislava (vymyslená prevádzka)</title>
+<meta name="description" content="Ukážka webu od ARLing pre vymyslené pánske holičstvo v Bratislave: cenník, otváracie hodiny, galéria, mapa a rezervácia na jeden ťuk.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='1' y='1' width='30' height='30' rx='6' fill='%23f4f6f8' stroke='%230f2152' stroke-width='2'/%3E%3Crect x='4' y='4' width='24' height='24' rx='3' fill='none' stroke='%231d3f8f' stroke-width='1.5'/%3E%3Cpath d='M10 9h3.6v5.6L17.8 9h4.1l-4.6 6.3L22.2 23h-4.2l-3-5-1.4 1.8V23H10z' fill='%231d3f8f'/%3E%3C/svg%3E">
+<link rel="preload" href="fonts/sofia-sans-400-700-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" as="image" media="(max-width: 599px)" imagesrcset="img/uvod-mobil-800.webp 800w, img/uvod-mobil-1200.webp 1200w, img/uvod-mobil-1600.webp 1600w" imagesizes="100vw" fetchpriority="high">
+<link rel="preload" as="image" media="(min-width: 600px)" imagesrcset="img/uvod-800.webp 800w, img/uvod-1600.webp 1600w, img/uvod-2400.webp 2400w" imagesizes="(min-width: 1760px) 56vw, (min-width: 960px) 980px, 100vw" fetchpriority="high">
+<style>
+/* Holičstvo Krátko: ukážka webu klienta. Svet: smaltovaná vývesná tabuľa na mosadznej konzole pred holičstvom kúsok od centra
+   Bratislavy, pod ňou mosadzná britva na tmavej látke. Kobaltový smalt nesie veľké plochy, biely smalt tabuľu a cenník,
+   mosadz konzolu a akcie. Písmo Sofia Sans (OFL), lokálne. Nápis tabule a meno v hlavičke sú krivky SVG z toho istého písma
+   (logo nezávisí od načítania písma, ops/weby-na-mieru/v2/oprava-2-nastroje/tabula-svg.py). */
+@font-face{font-family:"Krátko Tabuľa";src:url(fonts/sofia-sans-extra-condensed-700-900-latin-ext.woff2) format("woff2");font-weight:700 900;font-display:swap;unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C4,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"Krátko Tabuľa";src:url(fonts/sofia-sans-extra-condensed-700-900-latin.woff2) format("woff2");font-weight:700 900;font-display:swap;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Krátko Text";src:url(fonts/sofia-sans-400-700-latin-ext.woff2) format("woff2");font-weight:400 700;font-display:swap;unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C4,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"Krátko Text";src:url(fonts/sofia-sans-400-700-latin.woff2) format("woff2");font-weight:400 700;font-display:swap;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+
+:root{
+  --smalt:#1d3f8f;--smalt-hlboky:#0f2152;--smalt-svetly:#9fb6e3;
+  --biely:#f4f6f8;--hmla:#dfe5ef;--mosadz:#e4b03a;--mosadz-tmava:#b9861a;
+  --atrament:#14213d;--tichy:#46557a;
+  --tabula:"Krátko Tabuľa","Arial Narrow","Roboto Condensed",sans-serif;
+  --text:"Krátko Text",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  --siroko:min(1180px,calc(100vw - 32px));
+  --rytmus:clamp(64px,9vw,128px);
+  --fokus:var(--smalt);
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-padding-top:24px;scrollbar-color:var(--smalt) var(--hmla)}
+body{margin:0;background:var(--biely);color:var(--atrament);font:400 18px/1.6 var(--text);overflow-wrap:break-word;font-feature-settings:"kern"}
+::selection{background:var(--mosadz);color:var(--smalt-hlboky)}
+img{display:block;max-width:100%;height:auto}
+a{color:inherit;text-underline-offset:.2em;text-decoration-thickness:1px}
+a:hover{text-decoration-thickness:2px}
+/* Fokus: na svetlých plochách smalt (9 : 1), na kobalte a tmavých plochách mosadz (4,9 až 7,3 : 1) */
+:focus-visible{outline:3px solid var(--fokus);outline-offset:3px;border-radius:4px}
+.pas,.hlava,.uvod-plocha,.galeria-plocha,.kde-plocha,.pata,.lista,.okno-hlava{--fokus:var(--mosadz)}
+.mapa-karta,.okno-telo{--fokus:var(--smalt)}
+h1,h2,h3{margin:0;font-family:var(--tabula);font-weight:800;line-height:.95;letter-spacing:.005em;text-wrap:balance}
+p{margin:0}
+.obsah{width:var(--siroko);margin-inline:auto}
+.nw{white-space:nowrap}
+.skryte{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.preskocit{position:absolute;left:12px;top:-60px;z-index:50;background:var(--mosadz);color:var(--smalt-hlboky);padding:10px 16px;border-radius:6px;font-weight:700}
+.preskocit:focus{top:12px}
+
+/* Pás ukážky */
+.pas{background:var(--smalt-hlboky);color:#e8edf7;font-size:14px;line-height:1.45}
+.pas .obsah{display:flex;flex-wrap:wrap;gap:4px 14px;align-items:center;justify-content:space-between;padding-block:9px}
+.pas strong{font-weight:700;color:#fff}
+.pas a{color:#fff;display:inline-flex;align-items:center;min-height:44px;margin-block:-10px}
+
+/* Hlavička */
+.hlava{background:var(--smalt);color:#fff}
+.hlava .obsah{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:72px}
+.znak{display:inline-flex;align-items:center;gap:11px;text-decoration:none;min-height:44px;color:#fff}
+.znak svg{flex:none}
+.znak-meno{display:block;width:auto;height:23px;margin-top:-3px}
+/* Na mobile a tablete je meno veľké na tabuli hneď pod hlavičkou, preto hlavička namiesto mena povie cenu strihu a či je otvorené */
+.hlava-info{display:none;margin:0 auto 0 0;line-height:1.25;min-width:0}
+.hlava-info strong{display:block;font-weight:700;font-size:16px;letter-spacing:.01em;color:#fff}
+.hlava-stav{display:flex;align-items:center;gap:7px;margin-top:2px;font-size:13px;font-weight:600;color:#d6e0f4;white-space:nowrap}
+.hlava-stav[hidden]{display:none}
+.hlava-stav .stav-bod{width:8px;height:8px;box-shadow:0 0 0 2px rgba(228,176,58,.28)}
+.menu{display:none;gap:4px;margin:0;padding:0;list-style:none}
+.menu a{display:inline-flex;align-items:center;min-height:44px;padding:0 12px;text-decoration:none;font-weight:600;font-size:16px;border-radius:6px}
+.menu a:hover{background:rgba(255,255,255,.1)}
+
+/* Tlačidlá: rovnaký tvar všade, mosadz = rezervácia, obrys = volanie */
+.akcia{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:52px;padding:0 22px;border-radius:8px;border:2px solid transparent;font:700 17px/1 var(--text);cursor:pointer;text-decoration:none;transition:background-color .18s ease,transform .18s cubic-bezier(.2,.8,.2,1)}
+.akcia svg{flex:none}
+.akcia:active{transform:translateY(1px)}
+.akcia-mosadz{background:var(--mosadz);color:var(--smalt-hlboky);box-shadow:0 2px 0 var(--mosadz-tmava),0 6px 18px rgba(15,33,82,.28)}
+.akcia-mosadz:hover{background:#efc154}
+.akcia-obrys{background:transparent;color:#fff;border-color:rgba(255,255,255,.75)}
+.akcia-obrys:hover{background:rgba(255,255,255,.1);border-color:#fff}
+.akcia-smalt{background:var(--smalt);color:#fff}
+.akcia-smalt:hover{background:#264ea8}
+.akcia-mala{min-height:44px;padding:0 16px;font-size:16px}
+
+/* Úvod: smaltovaná tabuľa visí na mosadznej konzole nad fotkou britvy. Na mobile fotka hneď pod tabuľou (tabuľa ju prekrýva),
+   na počítači fotka cez pravú časť úvodu až po okraj okna, tabuľa visí pred jej ľavým okrajom. */
+.uvod-plocha{position:relative;isolation:isolate;background:var(--smalt);color:#fff;overflow:hidden}
+.uvod-hore{position:relative;z-index:2;padding-top:10px}
+.uvod-dole{position:relative;z-index:2;padding:22px 0 var(--rytmus)}
+.konzola{position:relative;max-width:640px;perspective:900px}
+.konzola-rameno{display:block;width:100%;height:auto;overflow:visible}
+.tabula{position:relative;margin-top:-2px;transform-origin:50% 0;border-radius:16px;padding:24px 26px 22px;color:var(--smalt);background-color:#e9eef5;
+  background-image:
+    radial-gradient(130% 120% at 26% -4%,rgba(255,255,255,.96),rgba(255,255,255,0) 56%),
+    radial-gradient(150% 125% at 50% 42%,rgba(255,255,255,0) 60%,rgba(15,33,82,.13) 100%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='z'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .06 0 0 0 0 .12 0 0 0 0 .3 0 0 0 .09 0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23z)'/%3E%3C/svg%3E"),
+    linear-gradient(#f5f7fa,#dde5ef);
+  box-shadow:0 0 0 4px var(--smalt-hlboky),0 0 0 5px rgba(255,255,255,.16),0 4px 0 3px rgba(4,12,34,.45),0 28px 40px -14px rgba(2,8,26,.75),inset 0 2px 1px rgba(255,255,255,.95),inset 0 -4px 6px rgba(15,33,82,.16)}
+.tabula-ram{position:absolute;inset:9px;border:3px solid var(--smalt);border-radius:9px;pointer-events:none;box-shadow:0 1px 0 rgba(255,255,255,.8),inset 0 1px 0 rgba(255,255,255,.6)}
+.nit{position:absolute;top:-4px;width:13px;height:13px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff7da,#e4b03a 46%,#7a5410);box-shadow:0 1px 1px rgba(0,0,0,.45);pointer-events:none}
+.nit-l{left:calc(15% - 6.5px)}.nit-p{right:calc(15% - 6.5px)}
+/* odštiepený smalt pri spodnej hrane: malý čip vnútri bielej plochy (nezasahuje do rohu ani lemu),
+   svetlý okraj odlomenej vrstvy a pod ním tmavé železo */
+.odstiep{position:absolute;right:16%;bottom:0;width:19px;height:6px;pointer-events:none;background:#f7f9fc;clip-path:polygon(0 100%,6% 66%,14% 50%,22% 58%,31% 28%,44% 20%,52% 4%,63% 12%,74% 8%,83% 32%,90% 44%,96% 72%,100% 100%)}
+.odstiep::after{content:"";position:absolute;left:2px;right:2px;top:1.6px;bottom:0;background:linear-gradient(180deg,#6f7b94,#3d4860 72%);clip-path:polygon(0 100%,8% 64%,16% 50%,24% 58%,33% 30%,45% 24%,53% 8%,63% 16%,73% 12%,82% 36%,89% 50%,95% 76%,100% 100%)}
+/* Nápis tabule: krivky SVG (HOLIČSTVO, KRÁTKO, BRATISLAVA s linkami), vypuklé smaltované písmená so svetlou hranou hore
+   a tieňom dole. Šírka vždy podľa tabule, bez náhradného písma. */
+.tabula-napis{position:relative;margin:0}
+.tabula-svg{display:block;width:100%;height:auto;overflow:visible}
+.lesk{position:absolute;inset:0;border-radius:inherit;overflow:hidden;pointer-events:none}
+.lesk::before{content:"";position:absolute;top:-25%;bottom:-25%;left:0;width:42%;opacity:0;background:linear-gradient(100deg,rgba(255,255,255,0) 18%,rgba(255,255,255,.8) 47%,rgba(255,255,255,.25) 56%,rgba(255,255,255,0) 78%);transform:translateX(-130%) skewX(-14deg)}
+.uvod-foto{position:relative;z-index:1;margin:-58px 0 0}
+.uvod-foto picture{display:block}
+.uvod-foto img{width:100%;aspect-ratio:4/5;object-fit:cover;object-position:50% 40%}
+.uvod-foto::before{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
+  background:linear-gradient(180deg,var(--smalt) 0,rgba(29,63,143,.72) 11%,rgba(29,63,143,0) 30%),linear-gradient(0deg,var(--smalt) 0,rgba(29,63,143,.55) 9%,rgba(29,63,143,0) 24%)}
+.uvod-foto figcaption{position:absolute;z-index:2;left:16px;right:16px;bottom:12px;font-size:14px;line-height:1.45;color:#d9e2f4}
+.uvod-text{max-width:36ch;font-size:clamp(19px,2.2vw,22px);line-height:1.5;color:#e9eef9}
+.stav{display:inline-flex;align-items:center;gap:10px;margin-top:20px;padding:8px 14px 8px 12px;border-radius:999px;background:rgba(15,33,82,.6);font-weight:600;font-size:16px}
+.stav[hidden]{display:none}
+.stav-bod{width:10px;height:10px;border-radius:50%;background:var(--mosadz);box-shadow:0 0 0 3px rgba(228,176,58,.25)}
+.uvod-akcie{display:flex;flex-wrap:wrap;gap:12px;margin-top:26px}
+
+/* Spoločné pre sekcie */
+.sekcia{padding-block:var(--rytmus)}
+.nadpis{font-size:clamp(52px,9vw,104px);color:var(--smalt)}
+.pod-nadpisom{margin-top:18px;max-width:42ch;color:var(--tichy);font-size:18px}
+
+/* Cenník */
+.cennik-mriezka{display:grid;gap:36px}
+.cennik{margin:0;padding:0;list-style:none;border-top:3px solid var(--smalt)}
+.polozka{display:grid;grid-template-columns:1fr auto;gap:2px 18px;padding:20px 0;border-bottom:1px solid #c6d0e1}
+.polozka h3{font-size:clamp(28px,4.2vw,38px);font-weight:800;color:var(--atrament);line-height:1.02}
+.polozka p{grid-column:1;font-size:16px;color:var(--tichy);line-height:1.45}
+.cena{grid-row:1/span 2;grid-column:2;align-self:center;font-family:var(--tabula);font-weight:900;font-size:clamp(38px,6vw,54px);line-height:1;color:var(--smalt);font-variant-numeric:tabular-nums;white-space:nowrap}
+.cena small{font-size:.55em;font-weight:800;margin-left:2px}
+.polozka .cena{grid-column:2;color:var(--smalt);font-size:clamp(38px,6vw,54px);line-height:1;text-align:right}
+.cas{display:block;margin-top:6px;font-family:var(--text);font-weight:600;font-size:14px;letter-spacing:0;color:var(--tichy)}
+.cennik-pozn{margin-top:22px;font-size:16px;color:var(--tichy);max-width:52ch}
+.polozka-velka{position:relative;margin-inline:-14px;padding-inline:14px;border-radius:8px;border-bottom-color:transparent;background:linear-gradient(100deg,rgba(228,176,58,.2),rgba(228,176,58,.06) 70%)}
+
+/* Galéria: dve fotky hore, široký pás kontúr dole; na mobile nožnice cez celú šírku a dve na výšku vedľa seba */
+.galeria-plocha{background:var(--smalt-hlboky);color:#fff}
+.galeria-plocha .nadpis{color:#fff}
+.galeria-plocha .pod-nadpisom{color:#c4d0ea}
+.galeria{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:40px 0 0;padding:0;list-style:none}
+.galeria li{margin:0;min-width:0}
+.galeria figure{margin:0;height:100%;display:flex;flex-direction:column}
+.galeria picture{display:block}
+.galeria img{width:100%;height:auto;object-fit:cover;border-radius:8px;background:#22355f}
+.galeria figcaption{margin-top:8px;font-size:15px;color:#c4d0ea}
+.g-noznice{grid-column:1/-1}.g-noznice img{aspect-ratio:3/2}
+.g-kreslo img,.g-kontury img{aspect-ratio:3/4}
+
+/* O nás */
+.onas-mriezka{display:grid;gap:36px}
+.onas-text{max-width:60ch}
+.onas-text p+p{margin-top:1em}
+.onas-text .uvodna{font-size:clamp(22px,2.6vw,27px);line-height:1.4;color:var(--atrament)}
+.fakty{margin:0;padding:0;list-style:none;display:grid;gap:0;border-top:3px solid var(--smalt)}
+.fakty li{padding:16px 0;border-bottom:1px solid #c6d0e1;display:grid;grid-template-columns:40px 1fr;gap:14px;align-items:start}
+.fakty svg{color:var(--smalt);margin-top:2px}
+.fakty strong{display:block;font-weight:700}
+.fakty span{color:var(--tichy);font-size:16px}
+
+/* Hodiny a mapa */
+.kde-plocha{background:var(--smalt);color:#fff}
+.kde-plocha .nadpis{color:#fff}
+.kde-mriezka{display:grid;gap:40px;margin-top:40px}
+.hodiny{width:100%;border-collapse:collapse;font-size:18px;font-variant-numeric:tabular-nums}
+.hodiny caption{text-align:left;font-family:var(--tabula);font-weight:800;font-size:34px;line-height:1;padding-bottom:14px}
+.hodiny th,.hodiny td{padding:13px 12px;text-align:left;border-bottom:1px solid rgba(255,255,255,.22)}
+.hodiny th{font-weight:600}
+.hodiny td{text-align:right;white-space:nowrap}
+.hodiny tr.dnes{background:var(--biely);color:var(--smalt-hlboky)}
+.hodiny tr.dnes th,.hodiny tr.dnes td{font-weight:700;border-bottom-color:transparent}
+.hodiny tr.dnes th:first-child{border-radius:8px 0 0 8px}
+.hodiny tr.dnes td:last-child{border-radius:0 8px 8px 0}
+.znacka-dnes{display:inline-block;margin-left:8px;padding:2px 8px;border-radius:999px;background:var(--mosadz);color:var(--smalt-hlboky);font-size:13px;font-weight:700;vertical-align:2px}
+.znacka-dnes[hidden]{display:none}
+.zatvorene{color:#c9d5ee}
+tr.dnes .zatvorene{color:var(--tichy)}
+.hodiny-pozn{margin-top:16px;font-size:16px;color:#d6e0f4;max-width:44ch}
+.mapa-karta{margin:0;background:var(--biely);color:var(--atrament);border-radius:12px;overflow:hidden;box-shadow:0 22px 40px -20px rgba(5,14,40,.65)}
+.mapa-karta>svg{display:block;width:100%;height:auto}
+.mapa-spodok{padding:20px 20px 22px;display:grid;gap:16px}
+.adresa{font-style:normal;font-size:19px;line-height:1.45}
+.adresa strong{font-family:var(--tabula);font-weight:800;font-size:30px;line-height:1;display:block;margin-bottom:6px;color:var(--smalt)}
+.kontakt-riadky{display:grid;gap:4px;font-size:17px}
+.kontakt-riadky a{display:inline-flex;align-items:center;min-height:44px}
+.mapa-pozn{font-size:14px;color:var(--tichy)}
+
+/* Päta */
+.pata{background:var(--smalt-hlboky);color:#c9d4ec;padding:56px 0 calc(56px + 84px);font-size:16px}
+.pata-mriezka{display:grid;gap:28px}
+.pata strong{color:#fff}
+.pata a{color:#fff;display:inline-flex;align-items:center;min-height:44px}
+.pata .male{font-size:14px;color:#a9b7d8;max-width:70ch}
+
+/* Spodný panel na mobile */
+.lista{position:fixed;left:0;right:0;bottom:0;z-index:20;display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:10px 12px calc(10px + env(safe-area-inset-bottom));background:#0f2152;box-shadow:0 -8px 24px rgba(5,14,40,.3)}
+.lista .akcia{width:100%;padding:0 12px}
+
+/* Dialógy (popover, bez skriptu) */
+.okno{border:0;padding:0;margin:auto;width:min(440px,calc(100vw - 32px));border-radius:14px;background:var(--biely);color:var(--atrament);box-shadow:0 30px 60px -20px rgba(5,14,40,.6);opacity:1;transform:none;transition:opacity .22s ease,transform .26s cubic-bezier(.2,.8,.2,1),overlay .26s allow-discrete,display .26s allow-discrete}
+.okno::backdrop{background:rgba(10,22,56,.55);transition:background-color .22s ease,overlay .26s allow-discrete,display .26s allow-discrete}
+@starting-style{.okno:popover-open{opacity:0;transform:translateY(14px) scale(.98)}.okno:popover-open::backdrop{background:rgba(10,22,56,0)}}
+.okno:not(:popover-open){opacity:0;transform:translateY(8px)}
+.okno-hlava{background:var(--smalt);color:#fff;padding:20px 22px 18px;display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.okno-hlava h2{font-size:34px}
+.zavriet{flex:none;width:44px;height:44px;margin:-6px -8px 0 0;border:0;border-radius:8px;background:transparent;color:#fff;cursor:pointer;display:grid;place-items:center}
+.zavriet:hover{background:rgba(255,255,255,.12)}
+.okno-telo{padding:20px 22px 24px;display:grid;gap:14px;font-size:17px}
+.okno-cislo{font-family:var(--tabula);font-weight:900;font-size:44px;line-height:1;color:var(--smalt);font-variant-numeric:tabular-nums}
+.okno-pozn{font-size:15px;color:var(--tichy);background:var(--hmla);border-radius:8px;padding:12px 14px}
+
+/* Pohyb: jeden moment do 1,7 s. Tabuľa sa po načítaní zhupne na hákoch dopredu a dozadu (ako vo vetre), utlmí sa
+   a pri poslednom kmitnutí po smalte prebehne odlesk; po mosadznom ramene skôr prejde záblesk. Potom pokoj. */
+@media (prefers-reduced-motion:no-preference){
+  .tabula{animation:zhupnut 1.55s cubic-bezier(.37,0,.63,1) .12s both}
+  @keyframes zhupnut{0%{transform:rotateX(30deg) rotate(-1.8deg)}20%{transform:rotateX(-17deg) rotate(1.2deg)}40%{transform:rotateX(9deg) rotate(-.6deg)}60%{transform:rotateX(-4deg) rotate(.25deg)}80%{transform:rotateX(1.4deg) rotate(-.08deg)}100%{transform:rotateX(0) rotate(0)}}
+  .lesk::before{animation:lesk .8s cubic-bezier(.4,0,.2,1) .8s both}
+  @keyframes lesk{0%{opacity:0;transform:translateX(-130%) skewX(-14deg)}14%{opacity:1}82%{opacity:1}100%{opacity:0;transform:translateX(270%) skewX(-14deg)}}
+  .lesk-rameno{animation:lesk-rameno .8s cubic-bezier(.4,0,.2,1) .3s both}
+  @keyframes lesk-rameno{from{transform:translateX(0)}to{transform:translateX(780px)}}
+}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  .akcia,.okno,.okno::backdrop{transition:none}
+  .lesk-rameno{display:none}
+}
+
+/* Pás ukážky na úzkych telefónoch: menšie písmo a tesnejšie riadky, aby nezaberal viac ako 2 riadky a odkazy */
+@media (max-width:420px){
+  .pas{font-size:13px;line-height:1.38}
+  .pas .obsah{padding-block:7px;gap:2px 12px}
+  .pas a{min-height:40px}
+  .hlava .obsah{min-height:60px}
+}
+/* Tablet: fotka pod tabuľou cez celú šírku, ale nižšia */
+@media (min-width:600px){
+  .uvod-foto{margin-top:-74px}
+  .uvod-foto img{aspect-ratio:3/2;object-position:42% 55%}
+}
+/* Väčšie obrazovky */
+@media (min-width:700px){
+  .menu{display:flex}
+  .galeria{grid-template-columns:repeat(6,minmax(0,1fr));gap:14px}
+  .g-noznice{grid-column:1/span 4;grid-row:1}
+  .g-kreslo{grid-column:5/span 2;grid-row:1}
+  .g-kreslo img{flex:1 1 0;min-height:0;aspect-ratio:auto}
+  .g-kontury{grid-column:1/-1;grid-row:2}
+  .g-kontury img{aspect-ratio:12/5}
+  .fakty li{grid-template-columns:44px 1fr}
+}
+@media (min-width:960px){
+  .lista{display:none}
+  .pata{padding-bottom:56px}
+  .uvod-hore{padding-top:28px}
+  .uvod-dole{padding:28px 0 84px}
+  .konzola{max-width:min(640px,calc(50vw - 40px))}
+  .uvod-foto{position:absolute;top:0;right:0;bottom:0;width:56%;margin:0}
+  .uvod-foto picture{height:100%}
+  .uvod-foto img{height:100%;aspect-ratio:auto;object-position:40% 50%}
+  .uvod-foto::before{background:linear-gradient(90deg,var(--smalt) 0,rgba(29,63,143,.86) 7%,rgba(29,63,143,.38) 21%,rgba(29,63,143,0) 38%),linear-gradient(0deg,rgba(10,22,56,.7) 0,rgba(10,22,56,0) 26%)}
+  .uvod-foto figcaption{left:auto;right:32px;bottom:26px;max-width:34ch;text-align:right}
+  .cennik-mriezka{grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:64px}
+  .cennik-mriezka>div:first-child{position:sticky;top:32px;align-self:start}
+  .onas-mriezka{grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:72px;align-items:start}
+  .kde-mriezka{grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:64px;align-items:start}
+  .pata-mriezka{grid-template-columns:2fr 1fr}
+}
+/* Veľké monitory: pás, hlavička a úvod do 1440 px a väčšia tabuľa, aby úvod pri 1920 px nepôsobil malý */
+@media (min-width:1600px){
+  .pas .obsah,.hlava .obsah,.uvod-plocha .obsah{width:min(1440px,calc(100vw - 160px))}
+  .konzola{max-width:min(780px,calc(50vw - 80px))}
+  .uvod-text{font-size:24px}
+}
+@media (max-width:959px){
+  .hlava .rezervovat-hore,.uvod-akcie{display:none}
+  .znak-meno{display:none}
+  .hlava-info{display:block}
+  .uvod-dole .stav{display:none}
+}
+</style>
+</head>
+<body>
+<a class="preskocit" href="#obsah">Preskočiť na obsah</a>
+
+<div class="pas" role="note">
+  <div class="obsah">
+    <p><strong>Ukážka webu od ARLing, vymyslená prevádzka.</strong> Holičstvo Krátko neexistuje, mená, adresa a&nbsp;čísla sú vymyslené.</p>
+    <a href="https://arling.sk/web/?z=barbershop" target="_top">Chcem taký web</a>
+    <a href="../../index.html#ukazky" target="_top">Späť na ukážky</a>
+  </div>
+</div>
+
+<header class="hlava">
+  <div class="obsah">
+    <a class="znak" href="#obsah" aria-label="Holičstvo Krátko, na začiatok">
+      <svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><rect x="1.5" y="1.5" width="31" height="31" rx="6" fill="#f4f6f8" stroke="#0f2152" stroke-width="2"/><rect x="5" y="5" width="24" height="24" rx="3" fill="none" stroke="#1d3f8f" stroke-width="1.5"/><path d="M11 9.5h3.7v5.8l4.3-5.8h4.2l-4.7 6.4 5 7.6h-4.3l-3.1-5-1.4 1.8v3.2H11z" fill="#1d3f8f"/></svg>
+      <!-- znak-meno --><svg class="znak-meno" viewBox="-132.0 -85.1 264.7 86.7" width="69" height="23" aria-hidden="true" focusable="false"><path fill="currentColor" d="M-130 0Q-131 0 -131 -1.2V-64.3Q-131 -65.5 -130 -65.5H-119.6Q-118.6 -65.5 -118.6 -64.3V-50.2Q-118.6 -48.2 -118.7 -45.5Q-118.8 -42.8 -118.9 -40.1Q-119 -37.5 -119.2 -35.4H-119Q-118 -38.5 -116.8 -42.2Q-115.7 -46 -113.8 -50.1L-106.9 -64.9Q-106.7 -65.5 -105.8 -65.5H-94.2Q-92.9 -65.5 -93.6 -64.1L-105.8 -38.2L-91.8 -1.4Q-91.2 0 -92.5 0H-104.8Q-105.6 0 -105.9 -0.8L-114.6 -27.2L-118.6 -19.5V-1.2Q-118.6 0 -119.6 0ZM-82.9 0Q-83.9 0 -83.9 -1.2V-64.3Q-83.9 -65.5 -82.9 -65.5H-68.1Q-58 -65.5 -53.4 -60.9Q-48.7 -56.2 -48.7 -46.1Q-48.7 -38.9 -50.7 -34.5Q-52.6 -30.2 -56.5 -28.3L-56.6 -28.1L-46.2 -1.4Q-45.8 0 -47 0H-58.3Q-59.2 0 -59.5 -0.8L-68.1 -25.8H-71.5V-1.2Q-71.5 0 -72.5 0ZM-71.5 -36.2H-68Q-64.3 -36.2 -62.7 -38.5Q-61.1 -40.8 -61.1 -45.5Q-61.1 -50.2 -62.8 -52.3Q-64.5 -54.4 -68.1 -54.4H-71.5ZM-39.2 0Q-40.2 0 -40 -1.3L-26.5 -64.6Q-26.3 -65.5 -25.4 -65.5H-12Q-11 -65.5 -10.8 -64.6L2.6 -1.3Q2.9 0 1.9 0H-9.6Q-10.5 0 -10.7 -0.9L-16.7 -39.8Q-17.2 -43.2 -17.7 -46.7Q-18.2 -50.1 -18.6 -53.5H-18.8Q-19.3 -50.1 -19.7 -46.7Q-20.1 -43.2 -20.7 -39.7L-26.9 -0.9Q-27 0 -28 0ZM-26.7 -13.6 -25 -23.7H-12.7L-10.8 -13.6ZM-25.3 -71Q-25.8 -71 -26 -71.4Q-26.2 -71.7 -26 -72.2L-20.3 -83.2Q-19.7 -84.1 -18.8 -84.1H-10.5Q-9.9 -84.1 -9.7 -83.7Q-9.5 -83.3 -9.9 -82.6L-16.9 -71.9Q-17.5 -71 -18.6 -71ZM16.7 0Q15.7 0 15.7 -1.2V-54.4H5.2Q4.2 -54.4 4.2 -55.6V-64.3Q4.2 -65.5 5.2 -65.5H38.4Q39.4 -65.5 39.4 -64.3V-55.6Q39.4 -54.4 38.4 -54.4H28V-1.2Q28 0 27 0ZM49.7 0Q48.7 0 48.7 -1.2V-64.3Q48.7 -65.5 49.7 -65.5H60.1Q61.1 -65.5 61.1 -64.3V-50.2Q61.1 -48.2 61 -45.5Q60.9 -42.8 60.8 -40.1Q60.7 -37.5 60.5 -35.4H60.7Q61.7 -38.5 62.9 -42.2Q64 -46 65.9 -50.1L72.8 -64.9Q73 -65.5 73.9 -65.5H85.5Q86.8 -65.5 86.1 -64.1L73.9 -38.2L87.9 -1.4Q88.5 0 87.2 0H74.9Q74.1 0 73.8 -0.8L65.1 -27.2L61.1 -19.5V-1.2Q61.1 0 60.1 0ZM112.3 0.6Q102.8 0.6 97.9 -4.9Q92.9 -10.4 92.9 -21.1V-44.2Q92.9 -55.1 97.9 -60.6Q102.8 -66.1 112.3 -66.1Q121.8 -66.1 126.8 -60.6Q131.8 -55.1 131.8 -44.2V-21.1Q131.8 -10.4 126.8 -4.9Q121.8 0.6 112.3 0.6ZM112.3 -10.6Q116 -10.6 117.7 -13.1Q119.4 -15.7 119.4 -21.6V-43.8Q119.4 -49.8 117.7 -52.4Q116 -54.9 112.3 -54.9Q108.7 -54.9 106.9 -52.4Q105.2 -49.8 105.2 -43.8V-21.6Q105.2 -15.7 106.9 -13.1Q108.7 -10.6 112.3 -10.6Z"/></svg><!-- /znak-meno -->
+    </a>
+    <p class="hlava-info"><strong>Pánsky strih 32&nbsp;€</strong><span class="hlava-stav" hidden><span class="stav-bod" aria-hidden="true"></span><span class="hlava-stav-text"></span></span></p>
+    <nav aria-label="Hlavná">
+      <ul class="menu">
+        <li><a href="#cennik">Cenník</a></li>
+        <li><a href="#galeria">Galéria</a></li>
+        <li><a href="#o-nas">O&nbsp;nás</a></li>
+        <li><a href="#kde-sme">Hodiny a&nbsp;mapa</a></li>
+      </ul>
+    </nav>
+    <button class="akcia akcia-mosadz akcia-mala rezervovat-hore" type="button" popovertarget="okno-rezervacia">Rezervovať termín</button>
+  </div>
+</header>
+
+<main id="obsah">
+  <section class="uvod-plocha" aria-labelledby="meno">
+    <div class="obsah uvod-hore">
+      <div class="konzola">
+        <svg class="konzola-rameno" viewBox="0 0 640 80" width="640" height="80" aria-hidden="true" focusable="false">
+          <defs>
+            <linearGradient id="mz-tyc" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff1c2"/><stop offset=".38" stop-color="#eabd4e"/><stop offset=".72" stop-color="#b98a22"/><stop offset="1" stop-color="#6e4c0c"/></linearGradient>
+            <linearGradient id="mz-plech" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f7dc92"/><stop offset=".5" stop-color="#c99630"/><stop offset="1" stop-color="#7c560f"/></linearGradient>
+            <linearGradient id="mz-lesk" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".95"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+            <clipPath id="mz-orez"><rect x="8" y="12" width="626" height="10" rx="5"/></clipPath>
+          </defs>
+          <rect x="1" y="2" width="16" height="58" rx="4" fill="url(#mz-plech)" stroke="#5a3d08"/>
+          <circle cx="9" cy="10" r="2.3" fill="#5a3d08"/><circle cx="9" cy="52" r="2.3" fill="#5a3d08"/>
+          <path d="M16 52C82 52 150 45 216 22" fill="none" stroke="#5a3d08" stroke-width="7" stroke-linecap="round"/>
+          <path d="M16 52C82 52 150 45 216 22" fill="none" stroke="url(#mz-tyc)" stroke-width="5" stroke-linecap="round"/>
+          <path d="M58 50c-11-1-17-11-10-17 7-6 16 1 11 8" fill="none" stroke="#5a3d08" stroke-width="5" stroke-linecap="round"/>
+          <path d="M58 50c-11-1-17-11-10-17 7-6 16 1 11 8" fill="none" stroke="#e2b24a" stroke-width="3" stroke-linecap="round"/>
+          <rect x="8" y="12" width="626" height="10" rx="5" fill="url(#mz-tyc)" stroke="#5a3d08"/>
+          <g clip-path="url(#mz-orez)"><rect class="lesk-rameno" x="-130" y="10" width="120" height="14" fill="url(#mz-lesk)"/></g>
+          <circle cx="632" cy="17" r="7.5" fill="url(#mz-plech)" stroke="#5a3d08"/>
+          <g fill="none" stroke-linecap="round">
+            <g stroke="#5a3d08" stroke-width="5"><ellipse cx="96" cy="17" rx="4" ry="8"/><ellipse cx="96" cy="37" rx="3.6" ry="8"/><path d="M96 49v8M96 57c0 7 0 13 0 22"/><ellipse cx="544" cy="17" rx="4" ry="8"/><ellipse cx="544" cy="37" rx="3.6" ry="8"/><path d="M544 49v8M544 57c0 7 0 13 0 22"/></g>
+            <g stroke="#e4b03a" stroke-width="2.6"><ellipse cx="96" cy="17" rx="4" ry="8"/><ellipse cx="96" cy="37" rx="3.6" ry="8"/><path d="M96 49v8M96 57c0 7 0 13 0 22"/><ellipse cx="544" cy="17" rx="4" ry="8"/><ellipse cx="544" cy="37" rx="3.6" ry="8"/><path d="M544 49v8M544 57c0 7 0 13 0 22"/></g>
+          </g>
+        </svg>
+        <div class="tabula">
+          <span class="tabula-ram" aria-hidden="true"></span>
+          <!-- napis-tabule -->
+          <h1 id="meno" class="tabula-napis"><span class="skryte">Holičstvo Krátko, Bratislava</span>
+          <svg class="tabula-svg" viewBox="0 -9 1000 477" width="1000" height="477" aria-hidden="true" focusable="false">
+            <defs>
+              <linearGradient id="smalt-pismo" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2652ad"/><stop offset=".55" stop-color="#1d3f8f"/><stop offset="1" stop-color="#16347c"/></linearGradient>
+              <g id="napis-tabule"><path d="M307 52Q306.3 52 306.3 51.2V9.6Q306.3 8.8 307 8.8H313.8Q314.5 8.8 314.5 9.6V26.4H323.4V9.6Q323.4 8.8 324.1 8.8H330.8Q331.5 8.8 331.5 9.6V51.2Q331.5 52 330.8 52H324.1Q323.4 52 323.4 51.2V33.7H314.5V51.2Q314.5 52 313.8 52ZM368.8 52.4Q362.5 52.4 359.2 48.8Q355.9 45.1 355.9 38V22.8Q355.9 15.6 359.2 12Q362.5 8.4 368.8 8.4Q375 8.4 378.3 12Q381.6 15.6 381.6 22.8V38Q381.6 45.1 378.3 48.8Q375 52.4 368.8 52.4ZM368.8 45Q371.2 45 372.3 43.3Q373.5 41.7 373.5 37.7V23.1Q373.5 19.1 372.3 17.4Q371.2 15.8 368.8 15.8Q366.4 15.8 365.2 17.4Q364.1 19.1 364.1 23.1V37.7Q364.1 41.7 365.2 43.3Q366.4 45 368.8 45ZM406.8 52Q406.1 52 406.1 51.2V9.6Q406.1 8.8 406.8 8.8H413.5Q414.2 8.8 414.2 9.6V44.7H424.6Q425.4 44.7 425.4 45.5V51.2Q425.4 52 424.7 52ZM449.2 52Q448.6 52 448.6 51.2V9.6Q448.6 8.8 449.2 8.8H456.1Q456.7 8.8 456.7 9.6V51.2Q456.7 52 456.1 52ZM494 52.4Q487.7 52.4 484.4 48.8Q481.1 45.2 481.1 37.5V23.2Q481.1 15.8 484.4 12.1Q487.7 8.4 494 8.4Q498.4 8.4 501.3 10.3Q504.2 12.2 505.6 15.6Q506.9 19 506.4 23.7Q506.2 24.4 505.7 24.4H498.9Q498.1 24.4 498.2 23.6Q498.5 19.8 497.5 17.8Q496.5 15.8 493.9 15.8Q491.5 15.8 490.4 17.5Q489.3 19.3 489.3 23.5V37.1Q489.3 41.4 490.4 43.2Q491.6 45 494 45Q496.7 45 497.6 42.8Q498.5 40.7 498.3 37.1Q498.2 36.3 498.9 36.3H505.7Q506.3 36.3 506.4 37.1Q507 44.1 503.9 48.3Q500.7 52.4 494 52.4ZM493.4 4.8 487.5 1.9Q487.2 1.7 487.2 1.1V-3Q487.2 -3.6 487.9 -3.3L493.9 -0.9L499.9 -3.3Q500.6 -3.6 500.6 -3V1.1Q500.6 1.7 500.2 1.9L494.3 4.8Q493.9 5 493.4 4.8ZM540.9 52.4Q536.7 52.4 534.1 50.8Q531.6 49.3 530.6 46.4Q529.5 43.4 529.9 39.4Q529.9 38.6 530.5 38.6H537.2Q537.9 38.6 537.8 39.4Q537.5 42.2 538.4 43.7Q539.2 45.3 541 45.3Q542.7 45.3 543.5 44.3Q544.3 43.3 544.3 41Q544.3 39.2 543.7 37.7Q543.1 36.3 541.6 35.2L536 30.9Q532.9 28.5 531.4 25.8Q529.9 23.1 529.9 19.1Q530 13.9 532.7 11.2Q535.4 8.4 540.7 8.4Q546.8 8.4 549.6 11.7Q552.4 14.9 551.9 20.9Q551.8 21.9 551.2 21.9H544.4Q543.7 21.9 543.8 20.9Q544.1 18.6 543.4 17Q542.7 15.5 541 15.5Q539.6 15.5 538.9 16.4Q538.1 17.3 538.1 19.2Q538.1 21.1 538.9 22.4Q539.6 23.7 541 24.7L546.5 29Q548.7 30.6 550 32.3Q551.3 34 551.9 36.1Q552.5 38.1 552.5 41Q552.4 46.5 549.7 49.4Q546.9 52.4 540.9 52.4ZM582.6 52Q581.9 52 581.9 51.2V16.1H575Q574.4 16.1 574.4 15.3V9.6Q574.4 8.8 575 8.8H596.9Q597.6 8.8 597.6 9.6V15.3Q597.6 16.1 596.9 16.1H590.1V51.2Q590.1 52 589.4 52ZM628.5 52Q628 52 627.8 51.4L619.2 9.7Q619.1 8.8 619.8 8.8H627.2Q627.9 8.8 628 9.4L631.9 34.6Q632.3 36.9 632.6 39.2Q632.9 41.6 633.1 44.1H633.3Q633.5 41.6 633.8 39.2Q634.1 36.9 634.4 34.6L638.2 9.4Q638.3 8.8 638.9 8.8H646.4Q647.1 8.8 647 9.6L638.5 51.4Q638.3 52 637.8 52ZM681.3 52.4Q675.1 52.4 671.8 48.8Q668.5 45.1 668.5 38V22.8Q668.5 15.6 671.8 12Q675.1 8.4 681.3 8.4Q687.6 8.4 690.9 12Q694.2 15.6 694.2 22.8V38Q694.2 45.1 690.9 48.8Q687.6 52.4 681.3 52.4ZM681.3 45Q683.8 45 684.9 43.3Q686 41.7 686 37.7V23.1Q686 19.1 684.9 17.4Q683.8 15.8 681.3 15.8Q678.9 15.8 677.8 17.4Q676.7 19.1 676.7 23.1V37.7Q676.7 41.7 677.8 43.3Q678.9 45 681.3 45Z"/><path d="M53.1 379.5Q49.3 379.5 49.3 375V161.2Q49.3 156.8 53.1 156.8H95.8Q99.6 156.8 99.6 161.2V199Q99.6 205.5 99.3 215.6Q99 225.7 98.5 235.6Q98.1 245.6 97.5 252.5H98.1Q101.1 242.4 104.8 228.6Q108.4 214.9 115.2 199.3L133.2 159.2Q134.1 156.8 137.3 156.8H185Q189.5 156.8 187.2 162.2L147.5 251L194.1 374Q196.4 379.5 191.4 379.5H140.8Q137.3 379.5 136.4 376.6L110.9 293.2L99.6 314.7V375Q99.6 379.5 95.8 379.5ZM213.9 379.5Q210.1 379.5 210.1 375V161.2Q210.1 156.8 213.9 156.8H269.7Q306.3 156.8 323.3 172.8Q340.3 188.9 340.3 224.8Q340.3 248.9 334 263.9Q327.7 278.8 314.2 285.8L313.9 286.5L349.2 374Q351 379.5 346.5 379.5H299.9Q296.3 379.5 295.2 376.6L267.3 295.4H260.4V375Q260.4 379.5 256.6 379.5ZM260.4 254.1H269.9Q280.4 254.1 285.2 247.4Q290 240.7 290 227.1Q290 213.9 285.1 207.6Q280.2 201.4 269.7 201.4H260.4ZM365.3 379.5Q361.3 379.5 362.2 374.7L408.6 160.3Q409.5 156.8 413.1 156.8H467.6Q471.1 156.8 472 160.3L518.2 374.4Q519.4 379.5 515.4 379.5H467.9Q464.5 379.5 463.8 376L446.3 250Q444.8 238.4 443.4 226.8Q442 215.2 440.6 203.6H439.9Q438.5 215.2 437.2 226.8Q435.9 238.4 434 250.1L415.7 375.7Q415.4 379.5 411.4 379.5ZM414 337 420.6 297.2H458.5L465.8 337ZM414.4 138.7Q412.2 138.7 411.4 137.2Q410.6 135.8 411.6 133.9L431.5 95.6Q433.5 92.4 436.9 92.4H470Q471.9 92.4 472.7 93.9Q473.5 95.3 471.9 97.6L447 135.2Q444.6 138.7 440.6 138.7ZM556.4 379.5Q552.7 379.5 552.7 375V201.4H517.2Q513.4 201.4 513.4 196.9V161.2Q513.4 156.8 517.2 156.8H638.1Q641.9 156.8 641.9 161.2V196.9Q641.9 201.4 638.1 201.4H602.9V375Q602.9 379.5 599.1 379.5ZM665.8 379.5Q662 379.5 662 375V161.2Q662 156.8 665.8 156.8H708.5Q712.3 156.8 712.3 161.2V199Q712.3 205.5 712 215.6Q711.7 225.7 711.2 235.6Q710.8 245.6 710.1 252.5H710.8Q713.8 242.4 717.4 228.6Q721.1 214.9 727.9 199.3L745.9 159.2Q746.8 156.8 750 156.8H797.7Q802.2 156.8 799.9 162.2L760.2 251L806.8 374Q809.1 379.5 804.1 379.5H753.4Q750 379.5 749.1 376.6L723.6 293.2L712.3 314.7V375Q712.3 379.5 708.5 379.5ZM882 381.5Q847 381.5 828.7 361.5Q810.5 341.6 810.5 303V233.7Q810.5 194.7 828.7 174.7Q847 154.7 882 154.7Q917 154.7 935.2 174.7Q953.5 194.7 953.5 233.7V303Q953.5 341.6 935.2 361.5Q917 381.5 882 381.5ZM882 336.4Q893.4 336.4 898.3 328.5Q903.2 320.6 903.2 301.3V235.3Q903.2 215.6 898.3 207.7Q893.4 199.9 882 199.9Q870.6 199.9 865.7 207.7Q860.8 215.6 860.8 235.3V301.3Q860.8 320.6 865.7 328.5Q870.6 336.4 882 336.4Z"/><path d="M349.3 459.5Q348.7 459.5 348.7 458.9V427.3Q348.7 426.8 349.2 426.8H356.4Q361 426.8 363.2 428.8Q365.5 430.8 365.5 435Q365.5 437.5 364.5 439.3Q363.5 441.1 361.5 442.1V442.3Q363.9 443 365.2 445Q366.4 447 366.4 450Q366.4 454.8 364.1 457.2Q361.7 459.5 356.7 459.5ZM354.8 454.3H356.7Q358.5 454.3 359.4 453.1Q360.4 452 360.4 449.6Q360.4 447.4 359.4 446.3Q358.5 445.1 356.7 445.1H354.8ZM354.8 440.4H356.4Q357.9 440.4 358.6 439.3Q359.4 438.1 359.4 436Q359.4 433.8 358.7 432.9Q357.9 431.9 356.3 431.9H354.8ZM383 459.5Q382.5 459.5 382.5 458.9V427.3Q382.5 426.8 383 426.8H390.4Q395.4 426.8 397.8 429.1Q400.1 431.4 400.1 436.4Q400.1 440 399.1 442.2Q398.1 444.4 396.2 445.4L396.2 445.5L401.3 458.8Q401.6 459.5 401 459.5H395.3Q394.9 459.5 394.7 459.1L390.4 446.6H388.7V458.9Q388.7 459.5 388.2 459.5ZM388.7 441.4H390.5Q392.3 441.4 393.1 440.3Q393.9 439.1 393.9 436.7Q393.9 434.4 393.1 433.4Q392.2 432.3 390.4 432.3H388.7ZM415.9 459.5Q415.3 459.5 415.4 458.9L422.2 427.2Q422.3 426.8 422.8 426.8H429.5Q429.9 426.8 430 427.2L436.8 458.8Q436.9 459.5 436.4 459.5H430.7Q430.2 459.5 430.1 459.1L427.1 439.6Q426.8 437.9 426.6 436.2Q426.4 434.5 426.1 432.7H426Q425.8 434.5 425.6 436.2Q425.4 437.9 425.1 439.6L422 459Q421.9 459.5 421.4 459.5ZM422.1 452.7 422.9 447.7H429.1L430 452.7ZM454.8 459.5Q454.3 459.5 454.3 458.9V432.3H449.1Q448.6 432.3 448.6 431.7V427.3Q448.6 426.8 449.1 426.8H465.7Q466.2 426.8 466.2 427.3V431.7Q466.2 432.3 465.7 432.3H460.5V458.9Q460.5 459.5 459.9 459.5ZM482.3 459.5Q481.8 459.5 481.8 458.9V427.3Q481.8 426.8 482.3 426.8H487.5Q488 426.8 488 427.3V458.9Q488 459.5 487.5 459.5ZM512.4 459.8Q509.3 459.8 507.3 458.6Q505.4 457.4 504.6 455.2Q503.9 453 504.1 450Q504.2 449.4 504.6 449.4H509.7Q510.2 449.4 510.1 450Q509.9 452.1 510.5 453.2Q511.2 454.4 512.5 454.4Q513.8 454.4 514.4 453.7Q515.1 452.9 515.1 451.2Q515.1 449.8 514.6 448.7Q514.1 447.6 513 446.8L508.7 443.5Q506.4 441.7 505.2 439.7Q504.1 437.6 504.1 434.6Q504.2 430.7 506.2 428.6Q508.3 426.5 512.3 426.5Q516.9 426.5 519 428.9Q521.2 431.4 520.8 436Q520.7 436.7 520.3 436.7H515.1Q514.6 436.7 514.7 436Q514.9 434.2 514.3 433Q513.8 431.8 512.6 431.8Q511.5 431.8 510.9 432.5Q510.3 433.2 510.3 434.6Q510.3 436.1 510.9 437.1Q511.5 438 512.5 438.8L516.7 442Q518.4 443.3 519.4 444.6Q520.4 445.9 520.8 447.4Q521.3 449 521.2 451.2Q521.2 455.3 519.1 457.6Q517 459.8 512.4 459.8ZM537.8 459.5Q537.3 459.5 537.3 458.9V427.3Q537.3 426.8 537.8 426.8H543Q543.5 426.8 543.5 427.3V454H551.4Q551.9 454 551.9 454.5V458.9Q551.9 459.5 551.4 459.5ZM566.6 459.5Q566 459.5 566.1 458.9L572.9 427.2Q573 426.8 573.5 426.8H580.2Q580.6 426.8 580.7 427.2L587.5 458.8Q587.6 459.5 587.1 459.5H581.4Q580.9 459.5 580.8 459.1L577.8 439.6Q577.5 437.9 577.3 436.2Q577.1 434.5 576.8 432.7H576.7Q576.5 434.5 576.3 436.2Q576.1 437.9 575.8 439.6L572.7 459Q572.6 459.5 572.1 459.5ZM572.8 452.7 573.6 447.7H579.8L580.7 452.7ZM606.2 459.5Q605.8 459.5 605.7 459L599.2 427.4Q599.1 426.8 599.6 426.8H605.3Q605.8 426.8 605.8 427.2L608.8 446.3Q609.1 448.1 609.3 449.8Q609.5 451.6 609.7 453.5H609.8Q610 451.6 610.2 449.8Q610.4 448.1 610.7 446.3L613.6 427.2Q613.7 426.8 614.1 426.8H619.8Q620.3 426.8 620.2 427.4L613.8 459Q613.7 459.5 613.3 459.5ZM632.4 459.5Q631.8 459.5 631.9 458.9L638.7 427.2Q638.8 426.8 639.3 426.8H646Q646.4 426.8 646.5 427.2L653.3 458.8Q653.4 459.5 652.9 459.5H647.2Q646.7 459.5 646.6 459.1L643.6 439.6Q643.3 437.9 643.1 436.2Q642.9 434.5 642.6 432.7H642.5Q642.3 434.5 642.1 436.2Q641.9 437.9 641.6 439.6L638.5 459Q638.4 459.5 637.9 459.5ZM638.6 452.7 639.4 447.7H645.6L646.5 452.7Z"/><path d="M188.7 439.6h132.0v7h-132.0zM681.3 439.6h132.0v7h-132.0z"/></g>
+            </defs>
+            <use href="#napis-tabule" transform="translate(1.4 4.2)" fill="#0b1d4c" fill-opacity=".3"/>
+            <use href="#napis-tabule" transform="translate(-.8 -2.6)" fill="#fff"/>
+            <use href="#napis-tabule" fill="url(#smalt-pismo)"/>
+          </svg></h1>
+          <!-- /napis-tabule -->
+          <span class="nit nit-l" aria-hidden="true"></span><span class="nit nit-p" aria-hidden="true"></span>
+          <span class="odstiep" aria-hidden="true"></span>
+          <span class="lesk" aria-hidden="true"></span>
+        </div>
+      </div>
+    </div>
+    <figure class="uvod-foto">
+      <picture>
+        <source media="(min-width: 600px)" srcset="img/uvod-800.webp 800w, img/uvod-1600.webp 1600w, img/uvod-2400.webp 2400w" sizes="(min-width: 1760px) 56vw, (min-width: 960px) 980px, 100vw" width="2400" height="1920">
+        <img src="img/uvod-mobil-800.webp" srcset="img/uvod-mobil-800.webp 800w, img/uvod-mobil-1200.webp 1200w, img/uvod-mobil-1600.webp 1600w" sizes="100vw" width="1600" height="2000" alt="Mosadzná britva, oceľové nožnice a hrebeň na tmavej látke" fetchpriority="high">
+      </picture>
+      <figcaption>Britva, nožnice a&nbsp;hrebeň. Holenie u&nbsp;nás trvá tri štvrte hodiny a&nbsp;nikam sa neponáhľa.</figcaption>
+    </figure>
+    <div class="obsah uvod-dole">
+      <p class="uvod-text">Pánsky strih, úprava brady a&nbsp;holenie britvou s&nbsp;horúcim uterákom. Strihávame aj chlapcov. Na objednávku, na čas, za cenu z&nbsp;cenníka.</p>
+      <p class="stav" id="stav"><span class="stav-bod" aria-hidden="true"></span><span class="stav-text">Otváracie hodiny nájdete nižšie</span></p>
+      <div class="uvod-akcie">
+        <button class="akcia akcia-mosadz" type="button" popovertarget="okno-rezervacia">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4M9 14.5l2 2 4-4"/></svg>
+          Rezervovať termín
+        </button>
+        <button class="akcia akcia-obrys" type="button" popovertarget="okno-volat">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3.5h3.2l1.6 4.4-2.2 1.5a11 11 0 0 0 7 7l1.5-2.2 4.4 1.6V19a1.6 1.6 0 0 1-1.7 1.6A16.5 16.5 0 0 1 3.4 5.2 1.6 1.6 0 0 1 5 3.5z"/></svg>
+          Zavolať
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <section class="sekcia" id="cennik" aria-labelledby="cennik-nadpis">
+    <div class="obsah cennik-mriezka">
+      <div>
+        <h2 class="nadpis" id="cennik-nadpis">Cenník</h2>
+        <p class="pod-nadpisom">V&nbsp;cene strihu je umytie, styling a&nbsp;zaholenie krku britvou. Platíte v&nbsp;hotovosti alebo kartou.</p>
+      </div>
+      <div>
+        <ul class="cennik">
+          <li class="polozka">
+            <h3>Pánsky strih</h3>
+            <p>Nožnice aj strojček, umytie a&nbsp;styling.</p>
+            <p class="cena">32<small>€</small><span class="cas">45&nbsp;min</span></p>
+          </li>
+          <li class="polozka">
+            <h3>Strih a&nbsp;úprava brady</h3>
+            <p>Strih, tvarovanie brady a&nbsp;kontúry britvou. O&nbsp;9&nbsp;€ menej, než keby ste si ich dali zvlášť.</p>
+            <p class="cena">45<small>€</small><span class="cas">75&nbsp;min</span></p>
+          </li>
+          <li class="polozka">
+            <h3>Úprava brady</h3>
+            <p>Strojček, nožnice a&nbsp;čisté kontúry britvou.</p>
+            <p class="cena">22<small>€</small><span class="cas">30&nbsp;min</span></p>
+          </li>
+          <li class="polozka">
+            <h3>Holenie britvou</h3>
+            <p>Horúci uterák, pena štetkou, holenie a&nbsp;balzam.</p>
+            <p class="cena">28<small>€</small><span class="cas">45&nbsp;min</span></p>
+          </li>
+          <li class="polozka">
+            <h3>Strih strojčekom</h3>
+            <p>Jedna dĺžka po celej hlave, bez stylingu.</p>
+            <p class="cena">18<small>€</small><span class="cas">20&nbsp;min</span></p>
+          </li>
+          <li class="polozka">
+            <h3>Strih pre chlapcov</h3>
+            <p>Do 12&nbsp;rokov. Podsedák a&nbsp;trpezlivosť sú v&nbsp;cene.</p>
+            <p class="cena">24<small>€</small><span class="cas">30&nbsp;min</span></p>
+          </li>
+          <li class="polozka polozka-velka">
+            <h3>Pred veľkým dňom</h3>
+            <p>Strih, holenie britvou s&nbsp;dvoma horúcimi uterákmi, úprava obočia a&nbsp;masáž hlavy. Na svadbu, pohovor alebo len tak.</p>
+            <p class="cena">75<small>€</small><span class="cas">120&nbsp;min</span></p>
+          </li>
+        </ul>
+        <p class="cennik-pozn">Prídete otec so synom naraz? Napíšte to pri rezervácii, dáme vás do dvoch kresiel vedľa seba.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="sekcia galeria-plocha" id="galeria" aria-labelledby="galeria-nadpis">
+    <div class="obsah">
+      <h2 class="nadpis" id="galeria-nadpis">Z&nbsp;dielne</h2>
+      <p class="pod-nadpisom">Nástroje, ktoré po každom klientovi čistíme, a&nbsp;kreslá, v&nbsp;ktorých sa dá na chvíľu vypnúť.</p>
+      <ul class="galeria">
+        <li class="g-noznice">
+          <figure>
+            <img src="img/noznice-1600.webp" srcset="img/noznice-800.webp 800w, img/noznice-1600.webp 1600w" sizes="(min-width: 1212px) 782px, (min-width: 700px) calc(66.7vw - 26px), calc(100vw - 32px)" width="1600" height="1067" loading="lazy" decoding="async" alt="Rad holičských nožníc zavesených na drevenej stene">
+            <figcaption>Nožnice na strih aj na zostrihávanie</figcaption>
+          </figure>
+        </li>
+        <li class="g-kreslo">
+          <figure>
+            <img src="img/kreslo-600.webp" srcset="img/kreslo-600.webp 600w, img/kreslo-1200.webp 1200w" sizes="(min-width: 1212px) 384px, (min-width: 700px) calc(33.3vw - 20px), calc(50vw - 21px)" width="1200" height="1800" loading="lazy" decoding="async" alt="Detail holičského kresla z hnedej kože so svetlým lemom a chrómovou pákou">
+            <figcaption>Kreslo z&nbsp;hnedej kože</figcaption>
+          </figure>
+        </li>
+        <li class="g-kontury">
+          <figure>
+            <picture>
+              <source media="(min-width: 700px)" srcset="img/brada-siroke-800.webp 800w, img/brada-siroke-1600.webp 1600w, img/brada-siroke-2400.webp 2400w" sizes="(min-width: 1212px) 1180px, calc(100vw - 32px)" width="2400" height="1000">
+              <img src="img/brada-600.webp" srcset="img/brada-600.webp 600w, img/brada-1200.webp 1200w" sizes="calc(50vw - 21px)" width="1200" height="1600" loading="lazy" decoding="async" alt="Holič britvou čistí líniu medzi bradou a oholeným krkom, detail s penou">
+            </picture>
+            <figcaption>Kontúra brady a&nbsp;krku britvou, s&nbsp;penou a&nbsp;horúcim uterákom</figcaption>
+          </figure>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="sekcia" id="o-nas" aria-labelledby="onas-nadpis">
+    <div class="obsah onas-mriezka">
+      <div class="onas-text">
+        <h2 class="nadpis" id="onas-nadpis">O&nbsp;nás</h2>
+        <p class="uvodna" style="margin-top:24px">Krátko sú dvaja holiči, Matúš a&nbsp;Ondrej. Strihať sme sa učili v&nbsp;Bratislave a&nbsp;vo Viedni, v&nbsp;roku 2019 sme otvorili vlastné holičstvo s&nbsp;dvoma kreslami kúsok od centra.</p>
+        <p>Nerobíme z&nbsp;holičstva salón. Prídete na čas, poviete, čo chcete, a&nbsp;odídete upravený. Ak neviete, čo chcete, poradíme podľa tvaru hlavy a&nbsp;toho, koľko času máte ráno pred zrkadlom.</p>
+        <p>Chlapcov strihávame od troch rokov. Pri prvom strihu môže sedieť rodič vedľa.</p>
+      </div>
+      <ul class="fakty">
+        <li>
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>
+          <div><strong>Na objednávku</strong><span>Keď je kreslo voľné, vezmeme vás aj bez objednávky. S&nbsp;ňou nečakáte.</span></div>
+        </li>
+        <li>
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h16M6 20V9l6-4.5L18 9v11M10 20v-5h4v5"/></svg>
+          <div><strong>Vchod z&nbsp;ulice</strong><span>Bez schodov, s&nbsp;kočíkom aj s&nbsp;barlami.</span></div>
+        </li>
+        <li>
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="6" width="17" height="12" rx="2"/><path d="M3.5 10h17M7 14.5h4"/></svg>
+          <div><strong>Hotovosť aj karta</strong><span>Aj darčekové poukážky na strih alebo holenie.</span></div>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="sekcia kde-plocha" id="kde-sme" aria-labelledby="kde-nadpis">
+    <div class="obsah">
+      <h2 class="nadpis" id="kde-nadpis">Hodiny a&nbsp;cesta</h2>
+      <div class="kde-mriezka">
+        <div>
+          <table class="hodiny">
+            <caption>Otváracie hodiny</caption>
+            <tbody>
+              <tr data-den="1" data-od="9:00" data-do="19:00"><th scope="row">Pondelok<span class="znacka-dnes" hidden>dnes</span></th><td>9:00 až 19:00</td></tr>
+              <tr data-den="2" data-od="8:00" data-do="20:00"><th scope="row">Utorok<span class="znacka-dnes" hidden>dnes</span></th><td>8:00 až 20:00</td></tr>
+              <tr data-den="3" data-od="8:00" data-do="20:00"><th scope="row">Streda<span class="znacka-dnes" hidden>dnes</span></th><td>8:00 až 20:00</td></tr>
+              <tr data-den="4" data-od="10:00" data-do="21:00"><th scope="row">Štvrtok<span class="znacka-dnes" hidden>dnes</span></th><td>10:00 až 21:00</td></tr>
+              <tr data-den="5" data-od="8:00" data-do="20:00"><th scope="row">Piatok<span class="znacka-dnes" hidden>dnes</span></th><td>8:00 až 20:00</td></tr>
+              <tr data-den="6" data-od="9:00" data-do="14:00"><th scope="row">Sobota<span class="znacka-dnes" hidden>dnes</span></th><td>9:00 až 14:00</td></tr>
+              <tr data-den="0"><th scope="row">Nedeľa<span class="znacka-dnes" hidden>dnes</span></th><td class="zatvorene">zatvorené</td></tr>
+            </tbody>
+          </table>
+          <p class="hodiny-pozn">Vo štvrtok strihávame do deviatej, aby ste to stihli aj po práci.</p>
+        </div>
+
+        <figure class="mapa-karta">
+          <svg viewBox="0 0 640 400" role="img" aria-labelledby="mapa-titul">
+            <title id="mapa-titul">Ilustračná mapa: holičstvo na Mosadznej ulici, kúsok od námestia a zastávky električky, pod hradom a blízko mosta cez Dunaj v Bratislave</title>
+            <rect width="640" height="400" fill="#e9eef5"/>
+            <path d="M0 322 C 120 300 220 352 360 326 S 560 276 640 292 L 640 400 L 0 400 Z" fill="#b8cbec"/>
+            <path d="M0 322 C 120 300 220 352 360 326 S 560 276 640 292" fill="none" stroke="#9fb6e3" stroke-width="3"/>
+            <g fill="#d4dcea">
+              <rect x="24" y="24" width="160" height="104" rx="6"/>
+              <rect x="24" y="172" width="160" height="104" rx="6"/>
+              <rect x="428" y="24" width="188" height="104" rx="6"/>
+              <rect x="226" y="226" width="158" height="50" rx="6"/>
+              <rect x="504" y="168" width="112" height="40" rx="6"/>
+              <rect x="430" y="250" width="186" height="26" rx="6"/>
+            </g>
+            <g transform="translate(104 58)" aria-hidden="true">
+              <path d="M-38 34h76v-8h-6v-34h4v-10h-10v8h-6v-8h-8v8h-24v-8h-8v8h-6v-8h-10v10h4v34h-6z" fill="#9fb0cf"/>
+              <path d="M-30 -12v-8h8v8M22 -12v-8h8v8" fill="#9fb0cf"/>
+              <text x="0" y="56" text-anchor="middle" font-family="Krátko Text, system-ui, sans-serif" font-size="18" font-weight="600" fill="#46557a">hrad</text>
+            </g>
+            <rect x="226" y="24" width="158" height="104" rx="10" fill="#f4f6f8" stroke="#c6d0e1" stroke-width="2"/>
+            <g fill="none" stroke="#ffffff" stroke-linecap="butt">
+              <path d="M0 150 H640" stroke-width="24"/>
+              <path d="M205 0 V306" stroke-width="18"/>
+              <path d="M405 0 V292" stroke-width="16"/>
+              <path d="M405 160 C 432 205 452 228 492 230 L 640 230" stroke-width="20"/>
+              <path d="M205 200 H405" stroke-width="12"/>
+            </g>
+            <g aria-hidden="true">
+              <path d="M196 300 V400 M214 300 V400" stroke="#8ea3c9" stroke-width="3"/>
+              <path d="M205 296 V400" stroke="#ffffff" stroke-width="16"/>
+              <path d="M205 330 L 168 352 M205 330 L 242 352 M205 330 L 178 372 M205 330 L 232 372" stroke="#7f95bd" stroke-width="1.6"/>
+              <rect x="201" y="318" width="8" height="18" rx="2" fill="#5f7299"/>
+            </g>
+            <g transform="translate(305 150)">
+              <rect x="-16" y="-16" width="32" height="32" rx="8" fill="#0f2152"/>
+              <rect x="-8" y="-10" width="16" height="15" rx="3" fill="none" stroke="#ffffff" stroke-width="2.2"/>
+              <path d="M-8 -3.5h16M-5 9l-3 4M5 9l3 4" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round"/>
+              <circle cx="-4" cy="1.5" r="1.4" fill="#ffffff"/><circle cx="4" cy="1.5" r="1.4" fill="#ffffff"/>
+            </g>
+            <g font-family="Krátko Text, system-ui, sans-serif" fill="#46557a" font-size="22" font-weight="600">
+              <text x="305" y="190" text-anchor="middle" font-size="20">električka</text>
+              <text x="305" y="85" text-anchor="middle" fill="#1d3f8f" font-size="26" font-weight="700">Námestie</text>
+              <text x="40" y="158">hlavná ulica</text>
+              <text x="626" y="271" text-anchor="end">Mosadzná</text>
+              <text x="560" y="360" text-anchor="middle" font-style="italic" fill="#1d3f8f">Dunaj</text>
+              <text x="252" y="388" font-size="18" font-style="italic">most</text>
+            </g>
+            <g transform="translate(518 232)">
+              <ellipse cx="0" cy="3" rx="13" ry="4.5" fill="#0f2152" opacity=".25"/>
+              <path d="M0 2 C -6 -12 -19 -20 -19 -35 A 19 19 0 0 1 19 -35 C 19 -20 6 -12 0 2 Z" fill="#e4b03a" stroke="#0f2152" stroke-width="3"/>
+              <circle cx="0" cy="-35" r="6.5" fill="#0f2152"/>
+            </g>
+            <g transform="translate(544 176)">
+              <rect width="90" height="30" rx="6" fill="#0f2152"/>
+              <text x="45" y="21" text-anchor="middle" font-family="Krátko Tabuľa, Arial Narrow, sans-serif" font-weight="800" font-size="19" fill="#ffffff" letter-spacing="1.5">KRÁTKO</text>
+            </g>
+          </svg>
+          <figcaption class="mapa-spodok">
+            <address class="adresa"><strong>Mosadzná 7</strong>811 01 Bratislava<br>tri minúty pešo od električky</address>
+            <div>
+              <a class="akcia akcia-smalt" href="https://www.google.com/maps/search/?api=1&amp;query=Bratislava" target="_blank" rel="noopener">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 11 20.5 3.5 13 20.5l-2-7.5z"/></svg>
+                Navigovať
+              </a>
+            </div>
+            <div class="kontakt-riadky">
+              <span>Telefón: <strong>0900 XXX XXX</strong> (vymyslené číslo)</span>
+              <a href="mailto:rezervacie@holicstvo-kratko.example">rezervacie@holicstvo-kratko.example</a>
+            </div>
+            <p class="mapa-pozn">Mapa je ilustračná, nie v&nbsp;mierke. V&nbsp;ukážke Navigovať otvorí mapy len s&nbsp;mestom Bratislava, ulica Mosadzná je vymyslená.</p>
+          </figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="pata">
+  <div class="obsah pata-mriezka">
+    <div>
+      <p><strong>Holičstvo Krátko</strong>, Mosadzná 7, 811 01 Bratislava. IČO 00 000 000.</p>
+      <p class="male" style="margin-top:12px">Toto je ukážka webu od ARLing. Prevádzka, ľudia, adresa, IČO, telefón aj <span class="nw">e-mail</span> sú vymyslené. Fotky sú z&nbsp;Pexels pod licenciou Pexels, nezobrazujú nikoho z&nbsp;vymysleného holičstva.</p>
+    </div>
+    <div>
+      <a href="../../index.html#ukazky" target="_top">Späť na ukážky webov od ARLing</a>
+    </div>
+  </div>
+</footer>
+
+<nav class="lista" aria-label="Rýchly kontakt">
+  <button class="akcia akcia-mosadz" type="button" popovertarget="okno-rezervacia">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4M9 14.5l2 2 4-4"/></svg>
+    Rezervovať
+  </button>
+  <button class="akcia akcia-obrys" type="button" popovertarget="okno-volat">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3.5h3.2l1.6 4.4-2.2 1.5a11 11 0 0 0 7 7l1.5-2.2 4.4 1.6V19a1.6 1.6 0 0 1-1.7 1.6A16.5 16.5 0 0 1 3.4 5.2 1.6 1.6 0 0 1 5 3.5z"/></svg>
+    Zavolať
+  </button>
+</nav>
+
+<div class="okno" id="okno-rezervacia" popover role="dialog" aria-labelledby="okno-rezervacia-nadpis">
+  <div class="okno-hlava">
+    <h2 id="okno-rezervacia-nadpis">Rezervácia termínu</h2>
+    <button class="zavriet" type="button" popovertarget="okno-rezervacia" popovertargetaction="hide" aria-label="Zavrieť">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+  </div>
+  <div class="okno-telo">
+    <p>Na vašom webe toto tlačidlo otvorí váš rezervačný systém alebo kalendár, prípadne rovno zavolá.</p>
+    <p class="okno-pozn">Toto je ukážka, nič sa neodošle ani nerezervuje.</p>
+    <a class="akcia akcia-smalt" href="https://arling.sk/web/dotaznik/?ukazka=barbershop" target="_top">Chcem taký web</a>
+  </div>
+</div>
+
+<div class="okno" id="okno-volat" popover role="dialog" aria-labelledby="okno-volat-nadpis">
+  <div class="okno-hlava">
+    <h2 id="okno-volat-nadpis">Zavolať</h2>
+    <button class="zavriet" type="button" popovertarget="okno-volat" popovertargetaction="hide" aria-label="Zavrieť">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+  </div>
+  <div class="okno-telo">
+    <p class="okno-cislo">0900 XXX XXX</p>
+    <p>Na vašom webe toto tlačidlo rovno vytočí vaše číslo, jedným ťukom z&nbsp;mobilu.</p>
+    <p class="okno-pozn">Číslo je vymyslené, v&nbsp;ukážke sa nič nevytáča.</p>
+  </div>
+</div>
+
+<script src="app.js" defer></script>
+</body>
+</html>
