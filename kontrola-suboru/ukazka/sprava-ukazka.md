@@ -3,6 +3,7 @@
 Objednávka: a1b2c3d4
 Dátum kontroly: 2026-09-24
 Vety o termíne adries aktualizované 19. 11. 2026 podľa rozhodnutia EPC z 29. 10. 2026.
+Riadky v pôvodnom a v opravenom súbore doplnené 20. 11. 2026, odkedy ich správa uvádza pri nálezoch, ktoré sa viažu na miesto v súbore.
 
 ## Čo sme kontrolovali
 
@@ -14,15 +15,22 @@ Vety o termíne adries aktualizované 19. 11. 2026 podľa rozhodnutia EPC z 29. 
 
 2 blokujúce chyby. Najzávažnejšie: GrpHdr/NbOfTxs uvádza 2, ale súbor obsahuje 3 transakcií <CdtTrfTxInf>. Nezhoda počtu transakcií je jeden z najčastejších dôvodov zamietnutia importu.
 
+Pri nálezoch, ktoré sa viažu na miesto v súbore, uvádzame riadok v pôvodnom súbore, ktorý ste poslali, a ak nález ostáva aj v opravenom súbore, aj riadok v ňom, lebo opravy riadky posúvajú. Stĺpec je poradie znaku v riadku, tabulátor sa počíta ako jeden znak.
+
 - [blokuje import] GrpHdr/NbOfTxs uvádza 2, ale súbor obsahuje 3 transakcií <CdtTrfTxInf>. Nezhoda počtu transakcií je jeden z najčastejších dôvodov zamietnutia importu. (kde: CstmrCdtTrfInitn/GrpHdr/NbOfTxs; hodnota: 2)
+  - Pôvodný súbor: riadok 10.
 - [blokuje import] CstmrCdtTrfInitn/PmtInf[1]/CdtTrfTxInf[2]: CdtrAcct/Id/IBAN "SK6702000000001234567890" má platný medzinárodný kontrolný súčet (MOD-97), ale posledných 10 číslic neprejde slovenskou kontrolou modulo-11 na základné číslo účtu. Tatra banka túto kontrolu vykonáva pri slovenských kreditných IBAN a platbu by zamietla. Skontrolujte prepis čísla účtu. (kde: CstmrCdtTrfInitn/PmtInf[1]/CdtTrfTxInf[2]/CdtrAcct/Id/IBAN; hodnota: SK6702000000001234567890)
-- [treba opraviť] Adresa platiteľa je zapísaná ako voľný text v <AdrLine>. Pravidlá SEPA takú adresu zatiaľ povoľujú, odporúčame však štruktúrovanú adresu: aspoň mesto (TwnNm) a kód krajiny (Ctry) vo vlastných poliach. EPC 9. 9. 2026 odložila koniec neštruktúrovaných adries a 29. 10. 2026 rozhodla nový termín zatiaľ neurčiť; vráti sa k nemu do februára 2027. Vaša banka môže mať vlastné pravidlá skôr. (kde: Document/CstmrCdtTrfInitn/PmtInf/Dbtr/PstlAdr; hodnota: Vymyslena 12 | 851 01 Bratislava)
+  - Pôvodný súbor: riadok 53, stĺpec 23. Opravený súbor: riadok 59, stĺpec 23.
+- [treba opraviť] Adresa platiteľa a príjemcu je zapísaná ako voľný text v <AdrLine>. Pravidlá SEPA takú adresu zatiaľ povoľujú, odporúčame však štruktúrovanú adresu: aspoň mesto (TwnNm) a kód krajiny (Ctry) vo vlastných poliach. EPC 9. 9. 2026 odložila koniec neštruktúrovaných adries a 29. 10. 2026 rozhodla nový termín zatiaľ neurčiť; vráti sa k nemu do februára 2027. Vaša banka môže mať vlastné pravidlá skôr. (kde: Document/CstmrCdtTrfInitn/PmtInf/Dbtr/PstlAdr; hodnota: Vymyslena 12 | 851 01 Bratislava)
+  - Pôvodný súbor: riadky 22, 35, 48. Opravený súbor: riadok 54.
 - [treba opraviť] Adresa príjemcu má štruktúrované polia, ale chýba v nej mesto (TwnNm). Mesto a kód krajiny sú podľa pravidiel EPC minimum každej štruktúrovanej aj hybridnej adresy. (kde: Document/CstmrCdtTrfInitn/PmtInf/CdtTrfTxInf/Cdtr/PstlAdr; hodnota: Ctry)
+  - Pôvodný súbor: riadok 61. Opravený súbor: riadok 67.
 - [drobnosť] PmtInf[1]/DbtrAcct/Id/IBAN obsahuje medzery. IBAN v XML sa zapisuje bez medzier. (kde: CstmrCdtTrfInitn/PmtInf[1]/DbtrAcct/Id/IBAN; hodnota: SK24 1100 0000 0026 1234 5678)
+  - Pôvodný súbor: riadok 27, stĺpec 21.
 
 ## Čo sme opravili automaticky
 
-- 2 adresy rozdelené z voľného textu (AdrLine) na ulicu, číslo, PSČ, mesto a kód krajiny (StrtNm, BldgNb, PstCd, TwnNm, Ctry).
+- 2 adresy rozdelené z voľného textu (AdrLine) na ulicu, číslo, PSČ, mesto a kód krajiny (StrtNm, BldgNb, PstCd, TwnNm, Ctry). Miesta v pôvodnom súbore: riadky 22, 35.
 - 1 názov krajiny prepísaný na dvojpísmenový kód ISO (napríklad Slovensko na SK).
 - 1 IBAN zbavený medzier.
 - NbOfTxs v GrpHdr: 2 prepísané na 3.
@@ -37,6 +45,7 @@ Opravený súbor je hotový pre túto dávku. Rovnaká chyba sa však objaví v 
 Adresy, ktoré sme nechali v pôvodnom tvare, lebo sa nedali rozdeliť s istotou (na ručné rozhodnutie):
 
 - Cdtr: P. O. Box 214 | 040 01 Kosice (poštový priečinok namiesto ulice)
+  - Pôvodný súbor: riadok 48. Opravený súbor: riadok 54.
 
 Text pre dodávateľa softvéru (skopírujte a pošlite):
 
