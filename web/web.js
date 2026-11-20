@@ -20,7 +20,7 @@ const RGBA = /^rgba\(\d{1,3},\d{1,3},\d{1,3},(0|1|0?\.\d+)\)$/;
 const SKUPINY = new Set(['odvazne', 'elegantne', 'hrave', 'pokojne']);
 // Pevná medzera za jednopísmenovou predložkou alebo spojkou v textoch, ktoré skript vkladá (ako generátor stránky).
 const nbsp = (t) => t.replace(/(^|\s)([aiouvkszAIOUVKSZ])\s+/g, '$1$2 ');
-const ukazok = (n) => (n === 1 ? '1 ukážka' : n >= 2 && n <= 4 ? `${n} ukážky` : `${n} ukážok`);
+const ukazok = (n) => (n === 1 ? '1 ukážka' : n >= 2 && n <= 4 ? `${n} ukážky` : `${n} ukážok`);
 // Čo netreba na prvé vykreslenie, až po načítaní stránky A po prvom vykreslení (dva snímky): na rýchlej sieti
 // príde load skôr než prvé vykreslenie a ďalšie obrázky by sa inak stiahli pred LCP.
 const poNacitani = (fn) => {
@@ -48,6 +48,7 @@ const UKAZKY = riadky.map((li, i) => ({
   znacka: li.dataset.znacka || '',
   ziara: RGBA.test(li.dataset.ziara || '') ? li.dataset.ziara : '',
   ziara2: RGBA.test(li.dataset.ziara2 || '') ? li.dataset.ziara2 : '',
+  rozsah: li.dataset.rozsah || '',
   href: `/web/ukazky/${li.dataset.slug}/`,
 }));
 const POVOLENE = new Set(UKAZKY.map((u) => u.slug));
@@ -103,6 +104,35 @@ function nastavDotaznik(param, hodnota, odkazy) {
     a.setAttribute('href', u.pathname + u.search + u.hash);
   }
 }
+// Ktorou ukážkou vejár v hrdinovi začne pri ?z=. Ukážka e-shopu (data-rozsah="eshop") dopredu nejde: hrdina hovorí
+// „Web, ktorý vyzerá ako vy. Nie ako šablóna.“, kým e-shop na Shoptete má vzhľad šablóny Shoptetu (podmienky 7c,
+// pred-fb nález 1). Zvýraznenie v zozname a ?ukazka= pre dotazník ostávajú. Neznáma ukážka alebo chyba: prvá (0).
+// Samovoľné točenie (brána p1 G1 odp. 1, 20. 11. 2026): dalsiaVejara preskočí ukážky e-shopu, takže pod tým istým
+// nadpisom nikdy nie je vpredu košík; v zozname, v páse a pri ručnom ovládaní (šípky, ťahanie, klik) ostávajú.
+// Jedno kolo (koloVejara) má toľko výmen, koľko je ukážok mimo e-shopu, a skončí tam, kde začalo. Chybné dáta alebo
+// žiadna ukážka mimo e-shopu: vejár ostane stáť na k (nič nepríde dopredu), prázdny zoznam 0.
+// Čisté funkcie medzi značkami číta test ops/weby-na-mieru/v2/front-20/pred-fb/testy/web-vejar-eshop.test.mjs.
+// @start-zaciatok
+function startVejara(ukazky, slug) {
+  if (!slug || !Array.isArray(ukazky)) return 0;
+  const z = ukazky.findIndex((u) => u && u.slug === slug);
+  if (z <= 0 || ukazky[z].rozsah === 'eshop') return 0;
+  return z;
+}
+function dalsiaVejara(ukazky, k) {
+  const n = Array.isArray(ukazky) ? ukazky.length : 0;
+  if (!n) return 0;
+  const od = Number.isInteger(k) ? ((k % n) + n) % n : 0;
+  for (let j = 1; j <= n; j++) {
+    const i = (od + j) % n;
+    if (ukazky[i] && ukazky[i].rozsah !== 'eshop') return i;
+  }
+  return od;
+}
+function koloVejara(ukazky) {
+  return Array.isArray(ukazky) ? ukazky.filter((u) => u && u.rozsah !== 'eshop').length : 0;
+}
+// @start-koniec
 if (zdroj) {
   nastavDotaznik('ukazka', zdroj);
   const li = d.getElementById('u-' + zdroj);
@@ -114,6 +144,40 @@ if (zdroj) {
     meta.appendChild(em);
   }
 }
+
+// Prenos utm z adresy /web/ do každého odkazu na /web/dotaznik/ (KONTRAKT.md 4.10, front-20 20. 11. 2026): len kľúče
+// z UTM_KLUCE, v hodnote ostanú len znaky A-Z a-z 0-9 _ . : - a najviac 40 znakov; fbclid, gclid a iné parametre nikdy.
+// Od pred-fb (20. 11. 2026, nález 46) aj do odkazov na /web/ukazky/, aby ich ukážka mohla vrátiť na /web/?z=.
+// Existujúce parametre odkazu (ukazka, styl, kotva) ostávajú. Čisté funkcie medzi značkami číta test
+// ops/weby-na-mieru/v2/front-20/testy/utm.test.mjs.
+// @utm-zaciatok
+const UTM_KLUCE = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content'];
+const UTM_ODKAZY = 'a[href^="/web/dotaznik/"], a[href^="/web/ukazky/"]';
+function utmZAdresy(search) {
+  const p = new URLSearchParams(search || '');
+  const pary = [];
+  for (const k of UTM_KLUCE) {
+    const v = p.get(k);
+    if (v === null) continue;
+    const ciste = v.replace(/[^A-Za-z0-9_.:-]/g, '').slice(0, 40);
+    if (ciste) pary.push([k, ciste]);
+  }
+  return pary;
+}
+function sUtm(href, pary, origin) {
+  const u = new URL(href, origin);
+  for (const [k, v] of pary) u.searchParams.set(k, v);
+  return u.pathname + u.search + u.hash;
+}
+function prenesUtm(doc, search, origin) {
+  const pary = utmZAdresy(search);
+  if (!pary.length) return 0;
+  const odkazy = doc.querySelectorAll(UTM_ODKAZY);
+  for (const a of odkazy) a.setAttribute('href', sUtm(a.getAttribute('href'), pary, origin));
+  return odkazy.length;
+}
+// @utm-koniec
+try { prenesUtm(d, w.location.search, w.location.origin); } catch (e) { /* odkazy ostanú bez utm */ }
 
 // Hlavička a mobilná ponuka (ako úvod hubu).
 const hlava = d.getElementById('hlava');
@@ -261,8 +325,8 @@ function vejar() {
       stavEl.setAttribute('aria-live', rucne ? 'polite' : 'off');
       stavEl.textContent = `${u.meno}, ${u.mesto}, ${k + 1} z ${n}`;
     }
-    // písmo ďalšej značky vopred
-    pismoZnacky(UKAZKY[(k + 1) % n]);
+    // písmo značky, ktorá príde pri točení, vopred
+    pismoZnacky(UKAZKY[dalsiaVejara(UKAZKY, k)]);
   }
 
   // Ručné ovládanie zastaví samovoľné točenie (WCAG 2.2.2) a prepínač to ukáže.
@@ -324,9 +388,11 @@ function vejar() {
   vejarEl.addEventListener('pointerup', pusti);
   vejarEl.addEventListener('pointercancel', () => { start = null; vejarEl.classList.remove('taha'); if (pas) pas.style.transform = ''; });
 
-  // Samovoľné točenie: jedno kolo (n výmen), potom pokoj (N8). Pauza: myš nad scénou, fokus v nej, mimo obrazu,
-  // skrytá karta prehliadača, prepínač Zastaviť pohyb, ručné ovládanie, obmedzený pohyb.
-  const stoji = () => stav.mys || stav.fokus || stav.mimo || stav.skryte || stav.stop || stav.koniec || stav.rucne || pokoj() || !otvoreny;
+  // Samovoľné točenie: jedno kolo (výmeny len medzi ukážkami mimo e-shopu, dalsiaVejara a koloVejara), potom pokoj (N8).
+  // Pauza: myš nad scénou, fokus v nej, mimo obrazu, skrytá karta prehliadača, prepínač Zastaviť pohyb, ručné ovládanie,
+  // obmedzený pohyb.
+  const kolo = koloVejara(UKAZKY);
+  const stoji = () => stav.mys || stav.fokus || stav.mimo || stav.skryte || stav.stop || stav.koniec || stav.rucne || pokoj() || !otvoreny || !kolo;
   const interval = () => (MOBIL.matches ? 2600 : 2900);
   function planuj(ms) {
     clearTimeout(timer);
@@ -346,9 +412,9 @@ function vejar() {
   function krok() {
     timer = 0;
     if (stoji()) return;
-    prepni(k + 1, false);
+    prepni(dalsiaVejara(UKAZKY, k), false);
     vymen += 1;
-    if (vymen >= n) {
+    if (vymen >= kolo) {
       stav.koniec = true;
       if (stop) stop.checked = true;
     }
@@ -392,7 +458,7 @@ function vejar() {
   // Štart: ?z= posunie vejár bez animácie; po načítaní stránky sa uvoľnia obrázky bočných kariet, vejár sa otvorí
   // a meno značky sa ukáže vo svojom písme. Potom začne jedno kolo samovoľného točenia.
   if (zdroj) {
-    const z = UKAZKY.findIndex((u) => u.slug === zdroj);
+    const z = startVejara(UKAZKY, zdroj);
     if (z > 0) {
       vejarEl.classList.add('bez');
       k = z;
@@ -418,7 +484,7 @@ function vejar() {
     otvoreny = true;
     vejarEl.classList.add('otvoreny');
     rozloz();
-    pismoZnacky(UKAZKY[(k + 1) % n]);
+    pismoZnacky(UKAZKY[dalsiaVejara(UKAZKY, k)]);
     if (!pokoj()) { zostava = 1500; aktualizuj(); }
   });
   if (UZKE.addEventListener) UZKE.addEventListener('change', () => { if (otvoreny) rozloz(); });
@@ -618,7 +684,10 @@ if (telVelky) {
     vybrany = slug;
     const moje = ++poradie;
     spustit.setAttribute('data-umami-event-target', slug);
-    cela.setAttribute('href', u.href);
+    // odkaz sa mení po štarte, preto utm z adresy znova (inak by ho prenos pri štarte stratil, nález 46)
+    let celaHref = u.href;
+    try { celaHref = sUtm(u.href, utmZAdresy(w.location.search), w.location.origin); } catch (e) { celaHref = u.href; }
+    cela.setAttribute('href', celaHref);
     cela.setAttribute('data-umami-event-target', slug);
     const nove = plagat.cloneNode(false);
     nove.removeAttribute('loading');
@@ -808,7 +877,7 @@ if (akcie && hrdinaSekcia && 'IntersectionObserver' in w) {
     for (const x of z) { if (x.isIntersecting) zakryte.add(x.target); else zakryte.delete(x.target); }
     nastav();
   });
-  [d.getElementById('cena'), d.getElementById('kontakt'), d.querySelector('.pata')].forEach((el) => { if (el) io.observe(el); });
+  [d.getElementById('cena'), d.getElementById('eshop'), d.getElementById('kontakt'), d.querySelector('.pata')].forEach((el) => { if (el) io.observe(el); });
 }
 if (hore) {
   hore.addEventListener('click', () => {

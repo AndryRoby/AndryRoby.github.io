@@ -409,7 +409,7 @@
       if (!n) return;
       var doprava = DOPRAVA[stav.doprava];
       ukazka('Objednávka v' + NB + 'ukážke',
-        'Toto je ukážka e-shopu, nič sa neobjednalo ani nezaplatilo. Pri vašom e-shope tu bude pokladňa; čo presne k' + NB + 'nej dodáme, napíšeme v' + NB + 'ponuke.',
+        'Toto je ukážka e-shopu, nič sa neobjednalo ani nezaplatilo. V' + NB + 'e-shope na Shoptete tu bude pokladňa so spôsobmi dopravy a' + NB + 'platby, ktoré si zmluvne zriadite. Vzhľad bude podľa šablóny Shoptetu, nie podľa tejto ukážky.',
         flias(n) + ', ' + (stav.doprava === 'kurier' ? 'kuriér po Slovensku' : 'osobný odber v' + NB + 'pivnici') + ', spolu ' + eur(sucet() + doprava) + ' s' + NB + 'DPH.',
         tlacidloObj);
     });
@@ -507,7 +507,7 @@
       var kedy = termin.value === 'iny' ? 'iný termín podľa poznámky' : vybrany.textContent;
       var tlacidlo = $('button[type="submit"]', form);
       ukazka('Rezervácia v' + NB + 'ukážke',
-        'Nič sa neodoslalo ani neuložilo. Na vašom webe príde rezervácia vinárovi e-mailom alebo do rezervačného systému a' + NB + 'hosť dostane potvrdenie.',
+        'Nič sa neodoslalo ani neuložilo. Rezervácia je len prvok tejto ukážky; šablóna a' + NB + 'funkcie e-shopu sú súčasťou Shoptetu.',
         t.getAttribute('data-nazov') + ', ' + kedy + ', ' + osoby(n) + ', spolu ' + (n * cena) + NB + '€ na mieste.',
         tlacidlo);
     });
