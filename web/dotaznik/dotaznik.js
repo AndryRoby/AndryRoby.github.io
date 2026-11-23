@@ -1,7 +1,9 @@
 /* Dotazník k webu (ARLing, 18. 11. 2026, v2; odoslanie cez server 20. 11. 2026). Zloží odpovede do textu a odošle ich.
    Odošle odpovede cez api.arling.workers.dev na server (KONTRAKT.md), ten ich len prepošle e-mailom; záloha mailto a kopírovanie. Nič neukladá v prehliadači, nepoužíva cookies.
    Meranie (Umami, ak sa načíta): len číslo časti, do ktorej človek prvý raz niečo zadal, klik na odoslanie a výsledok odoslania.
-   Obsah polí, e-mail ani číslo dotazníka sa nikdy nemerajú. Bez JS funguje odkaz na prázdny e-mail s predmetom. */
+   Obsah polí, e-mail ani číslo dotazníka sa nikdy nemerajú. Bez JS funguje odkaz na prázdny e-mail s predmetom.
+   Od 23. 11. 2026 (linka web-cennik, cenník 4.1): výber z kalkulačky na /web/ len z adresy cez ArlingCennik.zAdresy
+   z ../cennik.js; hore Váš výber a v texte odpovedí blok Výber z kalkulačky. Povinný je len e-mail na odpoveď. */
 (function () {
   'use strict';
 
@@ -92,6 +94,55 @@
   if (!form || !otvorit) return;
 
   function cisty(t) { return (t || '').replace(/\s+/g, ' ').trim(); }
+
+  /* Výber z kalkulačky (SPEC linky web-cennik 2.4): kľúče b, s, p, j, m, ukazka v adrese prečíta len ArlingCennik.zAdresy
+     a sumy vždy počíta cennik.js z cennik.json, adresa ich nenesie. Bez cennik.js, pri chybe alebo bez platného výberu
+     ostáva VYBER null a stránka ukáže statické ceny (zlyhanie zatvára, AGENTS.md bod 12c). Nič sa neukladá v prehliadači. */
+  var C = (window.ArlingCennik && typeof window.ArlingCennik.zAdresy === 'function') ? window.ArlingCennik : null;
+  var VYBER = null;
+  var VYBER_ROZPIS = '';
+  try {
+    if (C) VYBER = C.zAdresy(window.location.search);
+    if (VYBER) VYBER_ROZPIS = C.rozpis(VYBER);
+  } catch (e) { VYBER = null; VYBER_ROZPIS = ''; }
+  if (typeof VYBER_ROZPIS !== 'string' || !VYBER_ROZPIS) { VYBER = null; VYBER_ROZPIS = ''; }
+
+  /* Suma s nezlomiteľnými medzerami (tisíce aj pred €) a pevné medzery za jednopísmenovými slovami, len na zobrazenie;
+     do textu odpovedí ide rozpis bez zmeny. */
+  function eur(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' €'; }
+  function naZobrazenie(s) {
+    return pevneMedzery(String(s || '').replace(/(\d) (?=\d{3}(?!\d))/g, '$1\u00a0').replace(/ €/g, '\u00a0€')
+      .replace(/(\d) (?=[a-záäčďéíĺľňóôŕšťúýž])/g, '$1\u00a0'));
+  }
+  function priplatkov(n) { return n === 1 ? '1 príplatok' : (n >= 2 && n <= 4 ? n + ' príplatky' : n + ' príplatkov'); }
+  function malym(s) { return s ? s.charAt(0).toLowerCase() + s.slice(1) : s; }
+
+  /* Krátke zhrnutie výberu: balík a počet príplatkov, suma, služba (z cennik.js, žiadna suma odinakiaľ). */
+  function zhrnutieVyberu(v) {
+    var s = C.spocitaj(v);
+    var D = C.data;
+    var B = D.baliky[s.balik];
+    var S = D.mesacne[B.sluzba];
+    var navyse = s.polozky.length - 1;
+    var r = {
+      s: s,
+      ukazka: s.ukazka ? D.texty.podlaUkazky + ' ' + s.ukazka.meno : '',
+      suma: eur(s.jednorazovo),
+      co: B.nazov + (navyse > 0 ? ' a ' + priplatkov(navyse) : ''),
+      sluzba: '',
+      sluzbaKratko: '',
+      vCene: B.vCene.slice()
+    };
+    var O = S.obdobia[s.volby.sluzba];
+    if (s.balik === 'eshop') {
+      r.sluzba = D.texty.zaloha + ': ' + eur(s.zaloha) + ', ' + malym(D.texty.zvysok) + ': ' + eur(s.zvysok) + (O.rozpis ? '. ' + O.rozpis : '');
+    } else {
+      r.sluzba = O.rozpis;
+    }
+    if (s.sluzba) r.sluzbaKratko = ', ' + malym(S.nazov) + ' ' + eur(s.sluzba.cena) + (s.sluzba.obdobie === 'rocne' ? ' ročne' : ' mesačne');
+    else if (s.balik !== 'eshop') r.sluzbaKratko = ', bez starostlivosti';
+    return r;
+  }
 
   /* --- čisté funkcie pre server (bez DOM) --- */
 
@@ -280,14 +331,43 @@
     var vstup = pole.querySelector('input, textarea');
     if (!vstup) return null;
     var label = pole.querySelector('label[for="' + vstup.id + '"]');
-    return { otazka: cisty(label ? label.textContent : vstup.name), odpoved: (vstup.value || '').trim() };
+    var odpoved = (vstup.value || '').trim();
+    /* Pole s voľbou „Neviem, zistite vy“ (časť 7): zaškrtnutie je odpoveď, aj keď je pole prázdne. */
+    var neviem = vstup.type !== 'checkbox' ? pole.querySelector('input[type=checkbox]') : null;
+    if (neviem && neviem.checked) odpoved = odpoved ? odpoved + ' (' + neviem.value + ')' : neviem.value;
+    return { otazka: cisty(label ? label.textContent : vstup.name), odpoved: odpoved };
   }
 
-  /* preServer: posledný riadok o prílohách pre server (logo a fotky prídu odpoveďou na potvrdenie), inak pre mailto. */
+  /* Jeden e-mail namiesto troch (audit konverzie, nález 5): predvolene ten istý aj na web a na faktúru. Pre server sa
+     adresa do textu nepíše (ide v poli email), v e-maile cez mailto áno, lebo odosielateľ môže písať z inej adresy. */
+  function emailyRiadky(preServer) {
+    var rovnaky = el('email-rovnaky');
+    if (!rovnaky) return [];
+    if (rovnaky.checked) {
+      var odp = cisty((el('email-odpoved') || {}).value);
+      return ['E-mail na web a na faktúru: ' + (preServer ? 'rovnaký ako e-mail na odpoveď' : (odp || 'rovnaký ako e-mail, z ktorého píšem'))];
+    }
+    var r = [];
+    var web = cisty((el('email') || {}).value);
+    var fa = cisty((el('fa-email') || {}).value);
+    if (web) r.push('E-mail na web: ' + web);
+    if (fa) r.push('E-mail na faktúru: ' + fa);
+    if (!r.length) r.push('E-mail na web a na faktúru: neuvedené');
+    return r;
+  }
+
+  /* preServer: posledný riadok o prílohách pre server (logo a fotky prídu odpoveďou na potvrdenie), inak pre mailto.
+     Výber z kalkulačky ide na začiatok presne tak, ako ho zloží ArlingCennik.rozpis (riadok Výpočet s odkazom na kalkulačku). */
   function zlozText(preServer) {
     var riadky = ['Dotazník k webu', ''];
+    if (VYBER) {
+      riadky.push('Výber z kalkulačky');
+      VYBER_ROZPIS.split('\n').forEach(function (r) { riadky.push(r); });
+      riadky.push('');
+    }
     var prazdne = 0;
-    form.querySelectorAll('fieldset, details').forEach(function (sekcia) {
+    /* Časti sú fieldset a details s id (časť 15); zbalené „Čo bude ďalej“ pri tlačidle nie je časť dotazníka. */
+    form.querySelectorAll('fieldset, details[id]').forEach(function (sekcia) {
       var polozky = [];
       var nieco = false;
       sekcia.querySelectorAll('.pole').forEach(function (pole) {
@@ -303,6 +383,7 @@
       });
       riadky.push('');
     });
+    emailyRiadky(preServer).forEach(function (r) { riadky.push(r); });
     if (prazdne) riadky.push('Nevyplnených otázok: ' + prazdne + ' (doplníme spolu e-mailom).');
     riadky.push(preServer ? 'Prílohy: logo a fotky pošle klient odpoveďou na potvrdenie.' : 'Prílohy: logo, fotky a cenník priložte k tomuto e-mailu.');
     return riadky.join(NL);
@@ -401,7 +482,7 @@
   } catch (e) { /* bez URLSearchParams sa nepredvypĺňa nič */ }
 
   /* Priebeh: ktoré časti už majú odpoveď, aktívna časť v obsahu a počet v hlavičke (na mobile a tablete s tlačidlom Obsah) */
-  var sekcie = [].slice.call(form.querySelectorAll('fieldset, details'));
+  var sekcie = [].slice.call(form.querySelectorAll('fieldset, details[id]'));
   var odkazy = {};
   document.querySelectorAll('.casti a[href^="#"]').forEach(function (a) { odkazy[a.getAttribute('href').slice(1)] = a; });
   var pocet = document.getElementById('pocet-vyplnenych');
@@ -436,7 +517,7 @@
 
   form.addEventListener('input', function (e) {
     obnovPriebeh();
-    var s = e.target.closest ? e.target.closest('fieldset, details') : null;
+    var s = e.target.closest ? e.target.closest('fieldset, details[id]') : null;
     if (s && s.id && !zmerane[s.id]) {
       zmerane[s.id] = true;
       zmeraj('web_dotaznik_krok', { krok: s.id.replace('cast-', '') });
@@ -471,7 +552,8 @@
 
   /* Veta do prvku len ako textové uzly; slová „e-mail“, „e-mailom“ a pod. v <span class="nw">, aby sa nelámali za
      spojovníkom (písmo ARLing Draw Text nemá nezlomiteľný spojovník U+2011, preto obal ako inde na stránke). Nikdy HTML. */
-  var EMAIL_SLOVO = /([Ee]-mail[a-záäčďéíĺľňóôŕšťúýž]*)/;
+  /* Od linky web-cennik aj „e-shop…“ (výber z kalkulačky: „správa e-shopu“), aby sa nezlomilo za spojovníkom. */
+  var EMAIL_SLOVO = /([Ee]-(?:mail|shop)[a-záäčďéíĺľňóôŕšťúýž]*)/;
   function vlozVetu(cielEl, text) {
     cielEl.textContent = '';
     String(text || '').split(EMAIL_SLOVO).forEach(function (kus, i) {
@@ -632,7 +714,8 @@
       if (dlzky[k] > RIADOK_MAX[k]) chyby.push([k, RIADOK_MAX[k] === 40 ? T.najviac40 : T.najviac120]);
     });
     if (!platnyEmail(email)) chyby.push(['email', T.email]);
-    if (!vyplnene) chyby.push(['text', T.text]);
+    /* Povinný je len e-mail (prvá veta stránky, cenník 4.1 a audit nález 4): dotazník bez odpovedí sa pošle tiež, text má
+       vždy aspoň hlavičku, riadok o e-maile a počet nevyplnených otázok (server chce aspoň 30 znakov, KONTRAKT.md 2). */
     if (chyby.length) {
       var prve = null;
       chyby.forEach(function (c) { var f = ukazChybuPola(c[0], c[1]); if (!prve) prve = f; });
@@ -705,13 +788,8 @@
     }
   }
 
-  /* Polovica vety o náhľade e-shopu v bloku odoslania len pri vyplnenej časti 15, inak doslova KONTRAKT.md 5.1 (B5). */
-  function obnovEshopVetu() {
-    var e = el('odoslat-eshop');
-    if (e) e.hidden = !eshopVyplneny();
-  }
-
-  /* Stav úspechu (KONTRAKT.md 4.4 a 5.2). Číslo a e-mail len cez textContent; polia formulára sa nemažú. */
+  /* Stav úspechu (KONTRAKT.md 4.4 a 5.2, termín odpovede podľa cenníka 4.1). Číslo a e-mail len cez textContent; polia
+     formulára sa nemažú. S výberom z kalkulačky termín náhľadu, stávka a platba presne pre vybraný balík (cennik.js). */
   function ukazUspech(v, email) {
     el('uspech-cislo').textContent = v.id;
     el('uspech-email').textContent = email;
@@ -720,6 +798,16 @@
     el('dalej-ano').hidden = !v.potvrdenie;
     el('dalej-nie').hidden = !!v.potvrdenie;
     var es = eshopVyplneny();
+    var nahlad = el('dalej-nahlad');
+    var platba = el('dalej-platba');
+    if (VYBER && nahlad && platba) {
+      try {
+        var sv = C.spocitaj(VYBER);
+        vlozVetu(nahlad, naZobrazenie('Náhľad pošleme ' + sv.nahlad + '. ' + sv.stavka));
+        vlozVetu(platba, naZobrazenie(sv.balik === 'eshop' ? C.data.texty.platbaEshop : C.data.texty.platbaWeb));
+        es = false;
+      } catch (e) { /* ostanú všeobecné vety */ }
+    }
     el('dalej-eshop-nahlad').hidden = !es;
     el('dalej-eshop-platba').hidden = !es;
     odoslanie.hidden = true;
@@ -812,11 +900,62 @@
     });
     form.addEventListener('input', function () { if (!chybaOdpovede.hidden && pocetVyplnenych()) skryChybu(null, chybaOdpovede); });
     form.addEventListener('input', obnovPoSkrateni);
-    form.addEventListener('input', obnovEshopVetu);
-    form.addEventListener('change', obnovEshopVetu);
-    window.addEventListener('pageshow', obnovEshopVetu);
-    obnovEshopVetu();
   }
+
+  /* Rovnaký e-mail aj na web a na faktúru (predvolené): inak sa pod ním ukážu dve nepovinné polia. Stav zaškrtnutia
+     po návrate na stránku (pageshow) sa prečíta znova, nič sa neukladá. */
+  var rovnaky = el('email-rovnaky');
+  var ineEmaily = el('ine-emaily');
+  function obnovIneEmaily() { if (rovnaky && ineEmaily) ineEmaily.hidden = !!rovnaky.checked; }
+  if (rovnaky) rovnaky.addEventListener('change', obnovIneEmaily);
+  window.addEventListener('pageshow', obnovIneEmaily);
+  obnovIneEmaily();
+
+  /* Váš výber hore a jedna veta pri tlačidle (R78: suma viditeľná až do odoslania). Všetko len cez textové uzly
+     (vlozVetu, textContent, createElement); odkaz Zmeniť len v tvare, ktorý vyrába ArlingCennik.adresa. */
+  function polozka(zoznam, text, trieda) {
+    var li = document.createElement('li');
+    if (trieda) li.className = trieda;
+    vlozVetu(li, naZobrazenie(text));
+    zoznam.appendChild(li);
+  }
+  function ukazVyber() {
+    var blok = el('vyber-moj');
+    var cennik = el('vyber-cennik');
+    if (!VYBER || !blok || !cennik) return false;
+    var z;
+    try { z = zhrnutieVyberu(VYBER); } catch (e) { return false; }
+    var D = C.data;
+    var uk = el('vyber-ukazka');
+    if (uk) { vlozVetu(uk, naZobrazenie(z.ukazka)); uk.hidden = !z.ukazka; }
+    el('vyber-suma').textContent = naZobrazenie(z.suma);
+    vlozVetu(el('vyber-co'), naZobrazenie(z.co));
+    vlozVetu(el('vyber-sluzba'), naZobrazenie(z.sluzba));
+    var rozpis = el('vyber-rozpis');
+    var vcene = el('vyber-vcene');
+    if (rozpis) {
+      rozpis.textContent = '';
+      VYBER_ROZPIS.split('\n').forEach(function (r) {
+        if (r.indexOf(D.texty.podlaUkazky + ' ') === 0 || r.indexOf(D.texty.vypocet + ':') === 0) return;
+        polozka(rozpis, r, r.indexOf(D.texty.spolu + ':') === 0 ? 'spolu' : '');
+      });
+    }
+    if (vcene) { vcene.textContent = ''; z.vCene.forEach(function (r) { polozka(vcene, r); }); }
+    var zmenit = el('vyber-zmenit');
+    var h = '';
+    try { h = C.adresa(VYBER, 'kalkulacka', window.location.search); } catch (e) { h = ''; }
+    if (zmenit && /^\/web\/\?[A-Za-z0-9_.,=&-]+#kalkulacka$/.test(h)) zmenit.setAttribute('href', h);
+    var veta = el('odoslat-vyber');
+    if (veta) {
+      vlozVetu(veta, naZobrazenie('S dotazníkom pošlete aj váš výber z kalkulačky: ' + z.co + ', ' + z.suma + ' jednorazovo' + z.sluzbaKratko + '.'));
+      veta.hidden = false;
+    }
+    if (z.s.balik === 'eshop') { var c15 = el('cast-15'); if (c15) c15.setAttribute('open', ''); }
+    cennik.hidden = true;
+    blok.hidden = false;
+    return true;
+  }
+  try { ukazVyber(); } catch (e) { /* pri chybe ostanú statické ceny */ }
 
   /* Lepiaci obsah na počítači sa posúva sám v sebe (CSS max-height). Aktívnu časť doňho posunieme, aby bola vždy vidno,
      a okraj, za ktorým je ďalší obsah, jemne vyblednime. Posúva sa len obsah, nikdy stránka. */
@@ -937,7 +1076,8 @@
     window.__dotaznikTest({
       vyhodnot: vyhodnot, zdrojZAdresy: zdrojZAdresy, vAppkeFacebooku: vAppkeFacebooku, riadokPreServer: riadokPreServer,
       bezRiadiacich: bezRiadiacich, jednoriadok: jednoriadok, upravEmail: upravEmail, platnyEmail: platnyEmail,
-      zlozText: zlozText, ukazUspech: ukazUspech, cezServer: cezServer, T: T, pevneMedzery: pevneMedzery, vlozVetu: vlozVetu, emailNaZobrazenie: emailNaZobrazenie
+      zlozText: zlozText, ukazUspech: ukazUspech, cezServer: cezServer, T: T, pevneMedzery: pevneMedzery, vlozVetu: vlozVetu, emailNaZobrazenie: emailNaZobrazenie,
+      VYBER: VYBER, VYBER_ROZPIS: VYBER_ROZPIS, zhrnutieVyberu: zhrnutieVyberu, emailyRiadky: emailyRiadky, naZobrazenie: naZobrazenie
     });
   }
 })();

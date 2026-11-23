@@ -11,7 +11,8 @@
 <meta name="description" content="Otázky pred stavbou webu pre vašu firmu, značku alebo prevádzku. Odpovede náš server len prepošle e-mailom, neukladá ich.">
 <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
 <link rel="preload" href="../../fonts/ARLingDrawText-VF.woff2?v=db08e281" as="font" type="font/woff2" crossorigin>
-<script src="dotaznik.js?v=542ad11f" defer></script>
+<script src="../cennik.js?v=9bc4bb72" defer></script>
+<script src="dotaznik.js?v=06420d2d" defer></script>
 <script defer src="https://api.arling.workers.dev/script.js" data-website-id="be534d51-4d01-4860-b267-9596d91606de"></script>
 <style>
 /* Dotazník pred stavbou webu (ARLing, 18. 11. 2026, v2). Vzhľad novej /web/ podľa úvodu hubu: teplá noc, porcelánový hárok,
@@ -93,6 +94,48 @@ h1{font-size:clamp(2.4rem,4.3vw,4.1rem);line-height:1.03;letter-spacing:-.04em;f
 .cena-riadok b.mensia{font-size:1.375rem}
 .cena-riadok span{font-size:.9375rem;line-height:1.45;color:var(--ink-2)}
 .cena-pozn{margin-top:14px;font-size:.875rem;line-height:1.5;color:var(--ink-3)}
+/* Cenník 4.1 a výber z kalkulačky v karte hrdinu (linka web-cennik, 23. 11. 2026). Bez výberu v adrese štyri balíky
+   a starostlivosť (statický text, stráži ho test proti cennik.json); s výberom ho dotaznik.js nahradí blokom Váš výber
+   zo súboru ../cennik.js, len cez textové uzly. „Čo bude ďalej“ je zbalené, aby bolo prvé pole na mobile v prvej obrazovke. */
+.hrdina-udaje{margin-top:12px;font-size:.9063rem;line-height:1.5;color:var(--ink-3);max-width:36em}
+.hrdina-udaje a{color:var(--ink-2);text-decoration-color:rgba(246,240,232,.3);transition:text-decoration-color .2s ease}
+.hrdina-udaje a:hover{text-decoration-color:var(--ink-2)}
+.ceny4{margin-top:20px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 22px}
+.ceny4 div{display:grid;gap:5px;align-content:start;min-width:0}
+.ceny4 b{font-size:1.75rem;font-weight:660;letter-spacing:-.03em;line-height:1;color:var(--ink);white-space:nowrap;font-variant-numeric:tabular-nums}
+.ceny4 span{font-size:.9063rem;line-height:1.4;color:var(--ink-2)}
+.cena-sluzba{margin-top:18px;padding-top:16px;border-top:1px solid var(--linka);font-size:.9375rem;line-height:1.5;color:var(--ink-2)}
+.cena-sluzba b{color:var(--ink);font-weight:640;white-space:nowrap}
+.len-uzke{display:none}
+.odkaz-kalk{display:inline-flex;align-items:center;gap:8px;min-height:44px;margin-top:4px;font-weight:600;color:var(--ink);text-decoration-color:rgba(246,240,232,.35);transition:text-decoration-color .2s ease}
+.odkaz-kalk:hover{text-decoration-color:var(--ink)}
+.odkaz-kalk svg{width:18px;height:18px;transition:transform .25s var(--vstup)}
+.odkaz-kalk:is(:hover,:focus-visible) svg{transform:translateX(3px)}
+.zbal{margin-top:12px;padding:0;border-top:1px solid var(--linka)}
+.zbal[open]{padding-bottom:2px}
+.zbal>summary{align-items:center;gap:10px;min-height:48px;font-size:1rem;font-weight:600;letter-spacing:-.005em;line-height:1.35;color:var(--ink)}
+.zbal .sipka-dole{width:20px;height:20px;color:var(--ink-2)}
+.zbal .kroky{margin-top:10px}
+.zbal-dalej{margin-top:18px;max-width:40em}
+.kroky li:nth-child(4){--k:3}
+.vyber-hlava{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:4px 16px}
+.vyber-zmenit{display:inline-flex;align-items:center;min-height:44px;margin-block:-12px;font-size:.9375rem;font-weight:600;color:var(--koral-2);text-decoration-color:rgba(255,141,97,.45);transition:text-decoration-color .2s ease}
+.vyber-zmenit:hover{text-decoration-color:var(--koral-2)}
+.vyber-ukazka{margin-top:4px;font-size:.875rem;line-height:1.45;color:var(--ink-3)}
+.vyber-suma{margin-top:14px;display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 10px}
+.vyber-suma b{font-size:2.25rem;font-weight:660;letter-spacing:-.035em;line-height:1;color:var(--ink);white-space:nowrap;font-variant-numeric:tabular-nums}
+.vyber-suma span{font-size:.9375rem;color:var(--ink-2)}
+.vyber-co{margin-top:8px;font-size:1rem;line-height:1.45;color:var(--ink)}
+.vyber-sluzba{margin-top:4px;font-size:.9375rem;line-height:1.45;color:var(--ink-2)}
+.vyber-rozpis,.vyber-vcene{list-style:none;padding:0;margin:6px 0 0;display:grid;gap:6px;font-size:.9063rem;line-height:1.45;color:var(--ink-2)}
+.vyber-rozpis li:first-child,.vyber-rozpis .spolu{color:var(--ink)}
+.vyber-rozpis .spolu{font-weight:600}
+.vyber-vcene li{position:relative;padding-left:18px}
+.vyber-vcene li::before{content:"";position:absolute;left:2px;top:.6em;width:6px;height:6px;border-radius:50%;background:var(--salvia)}
+.vyber-podnadpis{margin-top:16px;font-size:.875rem;font-weight:640;color:var(--ink)}
+@media (prefers-reduced-motion:no-preference){
+  .vyber-moj,#ine-emaily{animation:objav .2s var(--vstup) both}
+}
 @media (prefers-reduced-motion:no-preference){
   .js .kroky.hra li::after{animation:krok-ciara .45s var(--vstup) calc(.5s + var(--k,0) * .4s) both}
   .js .kroky.hra li::before{animation:krok-uzol .6s var(--vstup) calc(.35s + var(--k,0) * .4s) both}
@@ -204,6 +247,21 @@ details[open]{padding-bottom:44px}
 input[aria-invalid="true"]{border-color:var(--koral-text);box-shadow:inset 0 0 0 1px var(--koral-text)}
 .odoslat input[aria-invalid="true"]{border-color:var(--koral-2);box-shadow:0 0 0 1px var(--koral-2)}
 .pole-pasca{position:absolute;left:-10000px;top:auto;width:1px;height:1px;overflow:hidden}
+/* Jeden e-mail namiesto troch (audit konverzie, nález 5): rovnaký e-mail aj na web a na faktúru je predvolený,
+   inak sa pod ním ukážu dve nepovinné polia. Výber z kalkulačky pri tlačidle, aby suma bola viditeľná až do odoslania. */
+.odoslat-vyber{margin-top:16px;max-width:36em;padding:12px 14px;border-radius:14px;background:rgba(246,240,232,.06);border:1px solid var(--linka-2);font-size:.9688rem;line-height:1.5;color:var(--ink);text-wrap:pretty}
+.odoslat .volba-tmava{display:flex;margin:14px 0 0;min-height:48px;font-weight:500;line-height:1.35;background:rgba(246,240,232,.05);border-color:var(--linka-2);color:var(--ink)}
+.odoslat .volba-tmava:hover{border-color:rgba(246,240,232,.34)}
+.odoslat .volba-tmava:has(input:checked){background:rgba(246,240,232,.09);border-color:rgba(246,240,232,.4);box-shadow:none}
+.odoslat .volba-tmava input{accent-color:var(--koral)}
+.ine-emaily{display:grid;gap:18px;margin-top:18px}
+.ine-emaily label{display:block;margin-bottom:8px;font-size:1rem;font-weight:600;line-height:1.4;color:var(--ink)}
+.ine-emaily .pomoc{color:var(--ink-2)}
+.ine-emaily input{color-scheme:light}
+.odoslat-pozn .stav{margin:0 0 6px;padding:0;border:0;max-width:none;font-size:inherit;color:var(--ink-2)}
+.odoslat-pozn .stav svg{color:var(--koral-2)}
+legend small{display:block;margin-top:6px;font-size:.9375rem;font-weight:450;letter-spacing:0;line-height:1.45;color:var(--grafit-2)}
+.volba-sama{display:inline-flex;margin-top:10px}
 .tlac[disabled]{cursor:progress;opacity:.82}
 .tlac[disabled]:active{transform:none}
 /* Počas odosielania namiesto šípky malý kruh priebehu (0,8 s, lineárne); pri obmedzenom pohybe stojí */
@@ -259,9 +317,21 @@ input[aria-invalid="true"]{border-color:var(--koral-text);box-shadow:inset 0 0 0
   body{font-size:1rem}
   h1{font-size:clamp(2.15rem,9.6vw,2.9rem);line-height:1.05}
   .vedla{margin-top:16px;font-size:1.0625rem}
-  .hrdina{padding:calc(var(--hlava) + 36px) 0 calc(80px + 22px)}
-  .postup{padding:24px 20px 22px;border-radius:18px}
-  .harok{border-radius:22px 22px 0 0;margin-top:-22px;padding:64px 0 88px}
+  /* Prvé pole dotazníka musí byť pri 390 × 844 v prvej obrazovke (audit konverzie, nález 4): tesnejší hrdina a hárok */
+  .hrdina{padding:calc(var(--hlava) + 22px) 0 calc(36px + 22px)}
+  .hrdina-in{gap:22px}
+  .postup{padding:20px 18px 14px;border-radius:18px}
+  .ceny4{margin-top:16px;gap:14px 16px}
+  .ceny4 b{font-size:1.5rem}
+  .ceny4 span{font-size:.875rem}
+  .cena-sluzba{margin-top:12px;padding-top:10px;font-size:.9063rem}
+  /* na mobile krátka veta o starostlivosti, celý obsah je v časti 13 */
+  .len-siroke{display:none}
+  .len-uzke{display:inline}
+  .ceny4{row-gap:12px}
+  .vyber-suma{margin-top:10px}
+  .vyber-suma b{font-size:2rem}
+  .harok{border-radius:22px 22px 0 0;margin-top:-22px;padding:34px 0 88px}
   fieldset{padding:32px 0 36px}
   details{padding-top:28px}
   .odoslat{padding:34px 20px 30px;border-radius:20px}
@@ -272,7 +342,9 @@ input[aria-invalid="true"]{border-color:var(--koral-text);box-shadow:inset 0 0 0
   .zaloha-veta{padding:12px 14px;font-size:.9688rem}
   .dalej{font-size:1rem}
 }
-@media (max-width:359px){
+/* Od linky web-cennik je formulár v prvej obrazovke, takže hlavička ukáže priebeh hneď; pri 360 až 374 px by tlačidlo
+   Obsah pretieklo o necelý pixel, preto tesnejšia hlavička už od 374 px */
+@media (max-width:374px){
   .hlava-odkaz span{display:none}
   .priebeh-text{font-size:.875rem}
   .priebeh-obsah{padding:0 10px}
@@ -299,23 +371,33 @@ input[aria-invalid="true"]{border-color:var(--koral-text);box-shadow:inset 0 0 0
     <div class="wrap hrdina-in">
       <div class="hrdina-text">
         <h1 id="nadpis">Dotazník k&nbsp;webu.</h1>
-        <p class="vedla">Asi 10&nbsp;minút, ak vyplníte len to, čo viete. Kde odpoveď nemáte, nechajte pole prázdne a&nbsp;poradíme. Na konci dotazník odošlete jedným tlačidlom a&nbsp;pošleme vám potvrdenie; logo a&nbsp;fotky pošlete odpoveďou naň. Pri <span class="nw">e-shope</span> vyplňte aj časť&nbsp;15 na konci.</p>
-        <p class="stav"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 5 6v5c0 4.4 3 8.3 7 9.5 4-1.2 7-5.1 7-9.5V6z M9 12l2 2 4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          <span>Odpovede náš server neukladá, len ich prepošle <span class="nw">e-mailom</span> na andrej@arling.sk a&nbsp;vám pošle potvrdenie. Použijeme ich len na odpoveď, ponuku a&nbsp;prípravu webu alebo <span class="nw">e-shopu</span> (<a href="https://arling.sk/privacy/#s8c">ochrana údajov</a>). Meriame len návštevu, ku ktorej časti ste sa dostali, a&nbsp;či ste stlačili odoslanie (pri odoslaní cez stránku aj jeho výsledok), nie to, čo píšete.</span></p>
+        <p class="vedla">Nič tým neobjednávate ani neplatíte. Povinný je len váš <span class="nw">e-mail</span>. Vyplňte, čo viete, žiadna časť nie je povinná. Pri <span class="nw">e-shope</span> vyplňte aj časť&nbsp;15 na konci.</p>
+        <p class="hrdina-udaje">Server odpovede neukladá. <a href="https://arling.sk/privacy/#s8c">Ochrana údajov</a></p>
       </div>
-      <div class="postup">
-        <h2 class="postup-nadpis">Čo bude ďalej.</h2>
-        <ol class="kroky">
-          <li class="teraz"><b>Vyplníte dotazník <em>teraz</em></b><span>Čo robíte, pár viet alebo vaše texty, fotky, cenník a&nbsp;weby, ktoré sa vám páčia. Pri <span class="nw">e-shope</span> texty a&nbsp;popisy produktov dodáte vy.</span></li>
-          <li><b>Do 48&nbsp;hodín máte náhľad</b><span>Od nášho <span class="nw">e-mailu</span>, že máme všetky podklady. Celý web na skúšobnej adrese a&nbsp;dve kolá pripomienok. Pri <span class="nw">e-shope</span> pošleme náhľad do 5&nbsp;pracovných dní od pripísania zálohy a&nbsp;nášho potvrdenia, že máme kompletné podklady.</span></li>
-          <li><b>Schválite, zaplatíte, zapojíme</b><span>Faktúru pošleme, až keď hotový web schválite. Potom ho zapojíme na vašu doménu. Pri <span class="nw">e-shope</span> platíte zálohu 190&nbsp;€ pred začiatkom prác, až keď <span class="nw">e-mailom</span> odsúhlasíte rozsah, a&nbsp;zvyšok 400&nbsp;€ po schválení.</span></li>
-        </ol>
-        <div class="cena-riadok">
-          <b>290&nbsp;€</b><span>jednostránkový web, platíte až po schválení.</span>
-          <b class="mensia">19&nbsp;€</b><span>mesačne za správu webu, voliteľne a&nbsp;bez viazanosti.</span>
-          <b class="mensia">590&nbsp;€</b><span><span class="nw">E-shop</span> na Shoptete: záloha 190&nbsp;€, až keď <span class="nw">e-mailom</span> odsúhlasíte rozsah, zvyšok po schválení.</span>
+      <div class="postup" id="vyber">
+        <div id="vyber-cennik">
+          <div class="vyber-hlava"><h2 class="postup-nadpis">Koľko to stojí.</h2><a class="vyber-zmenit odkaz-kalk" href="/web/#kalkulacka">Kalkulačka<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></a></div>
+          <div class="ceny4">
+            <div><b>290&nbsp;€</b><span>jednostránkový web</span></div>
+            <div><b>490&nbsp;€</b><span>firemný web do 6&nbsp;stránok</span></div>
+            <div><b>690&nbsp;€</b><span>firemný web s&nbsp;referenciami</span></div>
+            <div><b>590&nbsp;€</b><span><span class="nw">e-shop</span> na Shoptete, záloha 190&nbsp;€</span></div>
+          </div>
+          <p class="cena-sluzba"><b>29&nbsp;€ mesačne</b> alebo 290&nbsp;€ ročne za starostlivosť o&nbsp;web<span class="len-siroke">: hosting, dohľad, do 3&nbsp;zmien mesačne a&nbsp;Facebook raz týždenne</span><span class="len-uzke"> s&nbsp;hostingom</span>. Bez viazanosti.</p>
         </div>
-        <p class="cena-pozn">Väčší web: cenu pošleme do 2&nbsp;pracovných dní. DPH na faktúre nebude: ARLing s.&nbsp;r.&nbsp;o. nie je platiteľom DPH (registrácia len podľa §&nbsp;7a), preto si ju neodpočítate, ale ani sa k&nbsp;cenám vyššie nič nepripočíta.</p>
+        <div class="vyber-moj" id="vyber-moj" hidden>
+          <div class="vyber-hlava"><h2 class="postup-nadpis">Váš výber</h2><a class="vyber-zmenit" id="vyber-zmenit" href="/web/#kalkulacka">Zmeniť v&nbsp;kalkulačke</a></div>
+          <p class="vyber-ukazka" id="vyber-ukazka" hidden></p>
+          <p class="vyber-suma"><b id="vyber-suma"></b><span id="vyber-suma-text">jednorazovo</span></p>
+          <p class="vyber-co" id="vyber-co"></p>
+          <p class="vyber-sluzba" id="vyber-sluzba"></p>
+          <details class="zbal">
+            <summary>Rozpis a&nbsp;čo je v&nbsp;cene<svg class="sipka-dole" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></summary>
+            <ul class="vyber-rozpis" id="vyber-rozpis"></ul>
+            <p class="vyber-podnadpis">V&nbsp;cene balíka</p>
+            <ul class="vyber-vcene" id="vyber-vcene"></ul>
+          </details>
+        </div>
       </div>
     </div>
   </section>
@@ -332,13 +414,13 @@ input[aria-invalid="true"]{border-color:var(--koral-text);box-shadow:inset 0 0 0
           <li><a href="#cast-4"><span class="casti-cislo">4</span><span>Texty</span><svg class="casti-ok" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="9"/><path d="M5.2 9.3l2.4 2.3 5-5" fill="none" stroke="#1b1714" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a></li>
           <li><a href="#cast-5"><span class="casti-cislo">5</span><span>Fotky</span><svg class="casti-ok" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="9"/><path d="M5.2 9.3l2.4 2.3 5-5" fill="none" stroke="#1b1714" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a></li>
           <li><a href="#cast-6"><span class="casti-cislo">6</span><span>Služby a&nbsp;ceny</span><svg class="casti-ok" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="9"/><path d="M5.2 9.3l2.4 2.3 5-5" fill="none" stroke="#1b1714" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a></li>
-          <li><a href="#cast-7"><span class="casti-cislo">7</span><span>Doména a&nbsp;<span class="nw">e-mail</span></span><svg class="casti-ok" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="9"/><path d="M5.2 9.3l2.4 2.3 5-5" fill="none" stroke="#1b1714" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a></li>
+          <li><a href="#cast-7"><span class="casti-cislo">7</span><span>Web a&nbsp;doména</span><svg class="casti-ok" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="9"/><path d="M5.2 9.3l2.4 2.3 5-5" fill="none" stroke="#1b1714" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a></li>
           <li><a href="#cast-8"><span class="casti-cislo">8</span><span>Rezervácie a&nbsp;objednávky</span><svg class="casti-ok" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="9"/><path d="M5.2 9.3l2.4 2.3 5-5" fill="none" stroke="#1b1714" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a></li>
           <li><a href="#cast-9"><span class="casti-cislo">9</span><span>Sociálne siete</span><svg class="casti-ok" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="9"/><path d="M5.2 9.3l2.4 2.3 5-5" fill="none" stroke="#1b1714" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a></li>
           <li><a href="#cast-10"><span class="casti-cislo">10</span><span>Jazyk</span><svg class="casti-ok" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="9"/><path d="M5.2 9.3l2.4 2.3 5-5" fill="none" stroke="#1b1714" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a></li>
           <li><a href="#cast-11"><span class="casti-cislo">11</span><span>Štýl</span><svg class="casti-ok" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="9"/><path d="M5.2 9.3l2.4 2.3 5-5" fill="none" stroke="#1b1714" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a></li>
           <li><a href="#cast-12"><span class="casti-cislo">12</span><span>Čo nesmie chýbať</span><svg class="casti-ok" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="9"/><path d="M5.2 9.3l2.4 2.3 5-5" fill="none" stroke="#1b1714" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a></li>
-          <li><a href="#cast-13"><span class="casti-cislo">13</span><span>Správa po spustení</span><svg class="casti-ok" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="9"/><path d="M5.2 9.3l2.4 2.3 5-5" fill="none" stroke="#1b1714" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a></li>
+          <li><a href="#cast-13"><span class="casti-cislo">13</span><span>Starostlivosť po spustení</span><svg class="casti-ok" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="9"/><path d="M5.2 9.3l2.4 2.3 5-5" fill="none" stroke="#1b1714" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a></li>
           <li><a href="#cast-14"><span class="casti-cislo">14</span><span>Fakturačné údaje</span><svg class="casti-ok" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="9"/><path d="M5.2 9.3l2.4 2.3 5-5" fill="none" stroke="#1b1714" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a></li>
           <li><a href="#cast-15"><span class="casti-cislo">15</span><span><span class="nw">E-shop</span>, len ak ho chcete</span><svg class="casti-ok" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="9"/><path d="M5.2 9.3l2.4 2.3 5-5" fill="none" stroke="#1b1714" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a></li>
           <li><a href="#odoslat"><span class="casti-cislo" aria-hidden="true"></span><span>Odoslanie</span></a></li>
@@ -352,8 +434,7 @@ input[aria-invalid="true"]{border-color:var(--koral-text);box-shadow:inset 0 0 0
           <div class="pole"><label for="nazov">Názov firmy, značky alebo prevádzky, ako má byť na webe</label><input type="text" id="nazov" name="Názov" autocomplete="organization" maxlength="120"></div>
           <div class="pole"><label for="cinnost">Čím sa zaoberáte a&nbsp;pre koho</label><span class="pomoc" id="cinnost-pomoc">Stačia 2 až 3&nbsp;vety.</span><textarea id="cinnost" name="Čím sa zaoberáte a pre koho" aria-describedby="cinnost-pomoc"></textarea></div>
           <div class="pole"><label for="osoba">Meno kontaktnej osoby</label><span class="pomoc" id="osoba-pomoc">Pre nás, na web len ak chcete.</span><input type="text" id="osoba" name="Kontaktná osoba" autocomplete="name" aria-describedby="osoba-pomoc" maxlength="120"></div>
-          <div class="pole"><label for="telefon">Telefón, ktorý má byť na webe</label><input type="tel" id="telefon" name="Telefón na web" autocomplete="tel" maxlength="40"></div>
-          <div class="pole"><label for="email"><span class="nw">E-mail</span>, ktorý má byť na webe</label><input type="email" id="email" name="E-mail na web" autocomplete="email"></div>
+          <div class="pole"><label for="telefon">Telefón</label><span class="pomoc" id="telefon-pomoc">Nepovinné, napríklad číslo, ktoré má byť na webe. Odpovedáme <span class="nw">e-mailom</span>.</span><input type="tel" id="telefon" name="Telefón" autocomplete="tel" maxlength="40" aria-describedby="telefon-pomoc"></div>
         </fieldset>
 
         <fieldset id="cast-2">
@@ -391,7 +472,7 @@ input[aria-invalid="true"]{border-color:var(--koral-text);box-shadow:inset 0 0 0
           <legend><span>5</span><span class="nazov">Fotky</span></legend>
           <div class="pole" role="radiogroup" aria-labelledby="fotky-n" aria-describedby="fotky-pomoc">
             <span class="skupina-nadpis" id="fotky-n">Pošlete 3 až 10&nbsp;fotiek priestorov, práce alebo produktov?</span>
-            <span class="pomoc" id="fotky-pomoc">Bez rozpoznateľných ľudí a&nbsp;bez mien zamestnancov.</span>
+            <span class="pomoc" id="fotky-pomoc">Fotky, na ktorých sú rozpoznateľní ľudia, a&nbsp;mená zamestnancov od vás neprijímame kvôli ochrane ich údajov. Ak ich na webe chcete, doplníte ich po odovzdaní sami.</span>
             <div class="volby">
               <label class="volba"><input type="radio" name="Fotky" value="áno, pošlem ich v prílohe"><span>Áno, pošlem ich v&nbsp;prílohe</span></label>
               <label class="volba"><input type="radio" name="Fotky" value="fotky nemám"><span>Fotky nemám</span></label>
@@ -406,29 +487,21 @@ input[aria-invalid="true"]{border-color:var(--koral-text);box-shadow:inset 0 0 0
         </fieldset>
 
         <fieldset id="cast-7">
-          <legend><span>7</span><span class="nazov">Doména a&nbsp;<span class="nw">e-mail</span></span></legend>
-          <div class="pole" role="radiogroup" aria-labelledby="domena-n">
-            <span class="skupina-nadpis" id="domena-n">Máte doménu (napríklad vasafirma.sk)?</span>
-            <div class="volby">
-              <label class="volba"><input type="radio" name="Doména" value="áno"><span>Áno</span></label>
-              <label class="volba"><input type="radio" name="Doména" value="nie"><span>Nie</span></label>
-              <label class="volba"><input type="radio" name="Doména" value="neviem"><span>Neviem</span></label>
-            </div>
-          </div>
-          <div class="pole"><label for="domena-nazov">Aká doména a&nbsp;u&nbsp;koho je registrovaná</label><input type="text" id="domena-nazov" name="Doména a registrátor"></div>
-          <div class="pole"><label for="domena-spravca">Kto ju spravuje</label><span class="pomoc" id="spravca-pomoc">Vy, známy alebo firma, stačí meno alebo kontakt.</span><input type="text" id="domena-spravca" name="Kto spravuje doménu" aria-describedby="spravca-pomoc"></div>
-          <div class="pole"><label for="email-domena">Máte <span class="nw">e-mail</span> na doméne? U&nbsp;koho?</label><span class="pomoc" id="emaildom-pomoc">Napríklad adresa info@ na vašej doméne u&nbsp;Websupportu. Pred prepnutím ho skontrolujeme, aby pošta nevypadla.</span><input type="text" id="email-domena" name="E-mail na doméne" aria-describedby="emaildom-pomoc"></div>
-          <div class="pole"><label for="sucasny-web">Adresa súčasného webu, ak nejaký máte</label><input type="url" id="sucasny-web" name="Súčasný web" inputmode="url"></div>
+          <legend><span>7</span><span class="nazov">Web a&nbsp;doména</span></legend>
+          <div class="pole"><label for="domena">Máte už web alebo doménu? Napíšte adresu</label><span class="pomoc" id="domena-pomoc">Napríklad vasafirma.sk. Kde je doména registrovaná a&nbsp;ako ide pošta, zistíme my. Vaše heslo k&nbsp;doméne nepotrebujeme a&nbsp;pošta pôjde ďalej bez zmeny.</span><input type="text" id="domena" name="Web alebo doména" inputmode="url" autocomplete="url" maxlength="200" aria-describedby="domena-pomoc">
+            <div class="volba-obal"><label class="volba volba-sama"><input type="checkbox" id="domena-neviem" value="neviem, zistite vy"><span>Neviem, zistite vy</span></label></div></div>
         </fieldset>
 
         <fieldset id="cast-8">
           <legend><span>8</span><span class="nazov">Rezervácie a&nbsp;objednávky</span></legend>
-          <div class="pole"><label for="rezervacie">Používate rezervačný alebo objednávkový systém? Pošlite odkaz</label><span class="pomoc" id="rez-pomoc">Napríklad Bookio, Reservio, Booqme, Noona.</span><input type="text" id="rezervacie" name="Rezervačný systém" aria-describedby="rez-pomoc"></div>
-          <div class="pole" role="radiogroup" aria-labelledby="tlacidlo-n">
+          <div class="pole"><label for="rezervacie">Používate rezervačný alebo objednávkový systém? Pošlite odkaz</label><span class="pomoc" id="rez-pomoc">Napríklad Bookio, Reservio, Booqme, Noona. Odkaz na systém, ktorý už máte, je v&nbsp;cene webu.</span><input type="text" id="rezervacie" name="Rezervačný systém" aria-describedby="rez-pomoc"></div>
+          <div class="pole" role="radiogroup" aria-labelledby="tlacidlo-n" aria-describedby="tlacidlo-pomoc">
             <span class="skupina-nadpis" id="tlacidlo-n">Ak systém nemáte, kam má viesť tlačidlo na webe?</span>
+            <span class="pomoc" id="tlacidlo-pomoc">Rezervačný systém vám vieme zriadiť za 80&nbsp;€: Bookio, Reservio alebo Booqme v&nbsp;bezplatnom tarife so službami, časmi, skúšobnou rezerváciou, krátkym zaškolením a&nbsp;tlačidlom na webe. Robíme ho až po schválení náhľadu.</span>
             <div class="volby">
               <label class="volba"><input type="radio" name="Tlačidlo bez systému" value="na telefón"><span>Na telefón</span></label>
               <label class="volba"><input type="radio" name="Tlačidlo bez systému" value="na e-mail"><span>Na <span class="nw">e-mail</span></span></label>
+              <label class="volba"><input type="radio" name="Tlačidlo bez systému" value="do rezervačného systému, zriaďte mi ho (80 €)"><span>Do systému, zriaďte mi ho za 80&nbsp;€</span></label>
               <label class="volba"><input type="radio" name="Tlačidlo bez systému" value="neviem, poraďte"><span>Neviem, poraďte</span></label>
             </div>
           </div>
@@ -445,10 +518,10 @@ input[aria-invalid="true"]{border-color:var(--koral-text);box-shadow:inset 0 0 0
             <span class="skupina-nadpis" id="jazyk-n">V&nbsp;akom jazyku má byť web?</span>
             <div class="volby">
               <label class="volba"><input type="radio" name="Jazyk" value="slovenčina"><span>Slovenčina</span></label>
-              <label class="volba"><input type="radio" name="Jazyk" value="slovenčina a ďalší jazyk (cenu pošlete vopred)"><span>Slovenčina a&nbsp;ďalší jazyk</span></label>
+              <label class="volba"><input type="radio" name="Jazyk" value="slovenčina a ďalší jazyk"><span>Slovenčina a&nbsp;ďalší jazyk</span></label>
             </div>
           </div>
-          <div class="pole"><label for="jazyk-dalsi">Ktorý ďalší jazyk</label><span class="pomoc" id="jazyk-pomoc">Cenu za ďalší jazyk pošleme do 2&nbsp;pracovných dní.</span><input type="text" id="jazyk-dalsi" name="Ďalší jazyk" aria-describedby="jazyk-pomoc"></div>
+          <div class="pole"><label for="jazyk-dalsi">Ktorý ďalší jazyk</label><span class="pomoc" id="jazyk-pomoc">Ďalší jazyk stojí 90&nbsp;€ pri jednostránkovom webe, 150&nbsp;€ pri firemnom a&nbsp;210&nbsp;€ pri firemnom webe s&nbsp;referenciami. Preklad pripravíme, vy ho skontrolujete. Pri <span class="nw">e-shope</span> ho naceníme podľa sadzby 40&nbsp;€ za hodinu s&nbsp;odhadom vopred.</span><input type="text" id="jazyk-dalsi" name="Ďalší jazyk" aria-describedby="jazyk-pomoc"></div>
         </fieldset>
 
         <fieldset id="cast-11">
@@ -475,30 +548,30 @@ input[aria-invalid="true"]{border-color:var(--koral-text);box-shadow:inset 0 0 0
         </fieldset>
 
         <fieldset id="cast-13">
-          <legend><span>13</span><span class="nazov">Správa po spustení</span></legend>
+          <legend><span>13</span><span class="nazov">Starostlivosť po spustení</span></legend>
           <div class="pole" role="radiogroup" aria-labelledby="sprava-n" aria-describedby="sprava-pomoc">
-            <span class="skupina-nadpis" id="sprava-n">Chcete mesačnú správu jednostránkového webu za 19&nbsp;€?</span>
-            <span class="pomoc" id="sprava-pomoc">Raz mesačne vám pošleme <span class="nw">e-mail</span> s&nbsp;meraním rýchlosti a&nbsp;so záznamom, či bol web celý mesiac dostupný. V&nbsp;cene sú najviac 3&nbsp;drobné úpravy za mesiac (text, telefón, hodiny, cenník alebo výmena fotky) do 2&nbsp;pracovných dní. Voliteľné a&nbsp;bez viazanosti, zrušíte jedným <span class="nw">e-mailom</span>. Web funguje aj bez nej. Správa <span class="nw">e-shopu</span> po odovzdaní v&nbsp;cene nie je (podmienky, časť&nbsp;7c).</span>
+            <span class="skupina-nadpis" id="sprava-n">Chcete starostlivosť o&nbsp;web za 29&nbsp;€ mesačne alebo 290&nbsp;€ ročne?</span>
+            <span class="pomoc" id="sprava-pomoc">Hosting a&nbsp;SSL na našom účte, dohľad dostupnosti a&nbsp;rýchlosti (keď web prestane fungovať, ozveme sa my), do 3&nbsp;zmien mesačne do 2&nbsp;pracovných dní (text, telefón, hodiny, cenník, fotky) a&nbsp;raz mesačne <span class="nw">e-mail</span> so stavom. Napojenie na Facebook bez poplatku: raz týždenne prenesieme nové príspevky z&nbsp;vášho Facebooku na web a&nbsp;skontrolujeme ich. Bez viazanosti, zrušíte jedným <span class="nw">e-mailom</span>. Bez starostlivosti súbory webu odovzdáme a&nbsp;zapojíme na váš hosting. Ak web objednáte do 31.&nbsp;decembra 2026, môžete si namiesto starostlivosti vybrať aj doterajšiu možnosť: hosting u&nbsp;nás za 0&nbsp;€ a&nbsp;nepovinnú správu webu za 19&nbsp;€ mesačne (podmienky, časť&nbsp;7b). Pri <span class="nw">e-shope</span> je hosting v&nbsp;predplatnom Shoptetu, správu <span class="nw">e-shopu</span> nájdete v&nbsp;časti&nbsp;15.</span>
             <div class="volby">
-              <label class="volba"><input type="radio" name="Mesačná správa za 19 €" value="áno, chcem správu za 19 € mesačne"><span>Áno, chcem správu</span></label>
-              <label class="volba"><input type="radio" name="Mesačná správa za 19 €" value="nie, stačí mi hotový web"><span>Nie, stačí mi web</span></label>
-              <label class="volba"><input type="radio" name="Mesačná správa za 19 €" value="neviem, poraďte"><span>Neviem, poraďte</span></label>
+              <label class="volba"><input type="radio" name="Starostlivosť o web" value="áno, mesačne za 29 €"><span>Áno, mesačne za 29&nbsp;€</span></label>
+              <label class="volba"><input type="radio" name="Starostlivosť o web" value="áno, ročne za 290 €"><span>Áno, ročne za 290&nbsp;€</span></label>
+              <label class="volba"><input type="radio" name="Starostlivosť o web" value="nie, súbory na môj hosting"><span>Nie, súbory na môj hosting</span></label>
+              <label class="volba"><input type="radio" name="Starostlivosť o web" value="neviem, poraďte"><span>Neviem, poraďte</span></label>
             </div>
           </div>
         </fieldset>
 
         <fieldset id="cast-14">
-          <legend><span>14</span><span class="nazov">Fakturačné údaje</span></legend>
+          <legend><span>14</span><span class="nazov">Fakturačné údaje<small>Stačia až po schválení náhľadu, faktúru posielame až potom. Ak ich teraz nemáte po ruke, časť preskočte.</small></span></legend>
           <div class="pole"><label for="fa-meno">Obchodné meno a&nbsp;sídlo</label><textarea id="fa-meno" name="Obchodné meno a sídlo"></textarea></div>
           <div class="pole"><label for="fa-ico">IČO</label><input type="text" id="fa-ico" name="IČO" inputmode="numeric"></div>
           <div class="pole"><label for="fa-dic">DIČ, prípadne IČ DPH</label><input type="text" id="fa-dic" name="DIČ a IČ DPH"></div>
-          <div class="pole"><label for="fa-email"><span class="nw">E-mail</span> na faktúru</label><input type="email" id="fa-email" name="E-mail na faktúru" autocomplete="email"></div>
         </fieldset>
 
         <details id="cast-15">
           <summary><span>15</span><span class="nazov"><span class="nw">E-shop</span><small>Vyplňte len, ak chcete <span class="nw">e-shop</span> na Shoptete za 590&nbsp;€ so zálohou 190&nbsp;€.</small></span><svg class="sipka-dole" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></summary>
           <p class="pomoc es-uvod">Odoslaním dotazníka nič neobjednávate ani neplatíte. Rozsah <span class="nw">e-shopu</span> vám pošleme <span class="nw">e-mailom</span> a&nbsp;až keď ho <span class="nw">e-mailom</span> odsúhlasíte, pošleme zálohovú faktúru na 190&nbsp;€; zvyšok 400&nbsp;€ platíte po schválení. Náhľad vo vašom účte pošleme do 5&nbsp;pracovných dní od pripísania zálohy a&nbsp;nášho potvrdenia, že máme kompletné podklady; kompletnosť potvrdíme do 2&nbsp;pracovných dní od ich doručenia. Predplatné Shoptetu platíte priamo Shoptetu. Vzhľad <span class="nw">e-shopu</span> je šablóna Shoptetu s&nbsp;vaším logom, farbami, písmom a&nbsp;úvodným bannerom, nie dizajn na mieru ako v&nbsp;ukážkach. Popisy produktov a&nbsp;texty troch informačných stránok dodáte vy; ich písanie ani správa <span class="nw">e-shopu</span> po odovzdaní v&nbsp;cene nie sú. Podrobne v&nbsp;<a href="https://arling.sk/podmienky/#s7c">podmienkach, časť&nbsp;7c</a>.</p>
-          <div class="pole"><label for="es-co">Čo predávate a&nbsp;približne koľko produktov</label><span class="pomoc" id="es-co-pomoc">V&nbsp;cene je najviac 30&nbsp;produktov a&nbsp;najviac 5&nbsp;kategórií, viac naceníme vopred <span class="nw">e-mailom</span>.</span><textarea id="es-co" name="E-shop: čo a koľko produktov" aria-describedby="es-co-pomoc"></textarea></div>
+          <div class="pole"><label for="es-co">Čo predávate a&nbsp;približne koľko produktov</label><span class="pomoc" id="es-co-pomoc">V&nbsp;cene je najviac 30&nbsp;produktov a&nbsp;najviac 5&nbsp;kategórií. Do 60&nbsp;produktov je príplatok 60&nbsp;€, do 100&nbsp;produktov 120&nbsp;€, viac naceníme vopred <span class="nw">e-mailom</span>.</span><textarea id="es-co" name="E-shop: čo a koľko produktov" aria-describedby="es-co-pomoc"></textarea></div>
           <div class="pole"><label for="es-ucet">Máte už účet na Shoptete alebo inej platforme?</label><input type="text" id="es-ucet" name="E-shop: platforma"></div>
           <div class="pole"><label for="es-doprava">Doprava a&nbsp;platby, ktoré chcete ponúkať</label><textarea id="es-doprava" name="E-shop: doprava a platby"></textarea></div>
           <div class="pole" role="radiogroup" aria-labelledby="es-pravo-n" aria-describedby="es-pravo-pomoc">
@@ -509,18 +582,33 @@ input[aria-invalid="true"]{border-color:var(--koral-text);box-shadow:inset 0 0 0
               <label class="volba"><input type="radio" name="E-shop: právne texty" value="zatiaľ nie"><span>Zatiaľ nie</span></label>
             </div>
           </div>
+          <div class="pole" role="radiogroup" aria-labelledby="es-sprava-n" aria-describedby="es-sprava-pomoc">
+            <span class="skupina-nadpis" id="es-sprava-n">Chcete po odovzdaní správu <span class="nw">e-shopu</span> za 59&nbsp;€ mesačne?</span>
+            <span class="pomoc" id="es-sprava-pomoc">Do 60&nbsp;minút úprav mesačne, skúšobná objednávka raz mesačne a&nbsp;<span class="nw">e-mail</span> so stavom, bez viazanosti. Hosting <span class="nw">e-shopu</span> je v&nbsp;predplatnom Shoptetu.</span>
+            <div class="volby">
+              <label class="volba"><input type="radio" name="E-shop: správa po odovzdaní" value="áno, za 59 € mesačne"><span>Áno, za 59&nbsp;€ mesačne</span></label>
+              <label class="volba"><input type="radio" name="E-shop: správa po odovzdaní" value="nie"><span>Nie</span></label>
+              <label class="volba"><input type="radio" name="E-shop: správa po odovzdaní" value="neviem, poraďte"><span>Neviem, poraďte</span></label>
+            </div>
+          </div>
         </details>
 
         <div class="odoslat" id="odoslat">
           <div id="odoslanie">
             <h2>Odošlite dotazník.</h2>
             <div id="server-odoslanie" hidden>
-              <p class="odoslat-text">Odpovede prídu na andrej@arling.sk a&nbsp;vám pošleme potvrdenie s&nbsp;číslom dotazníka. Logo a&nbsp;fotky potom pošlete odpoveďou na potvrdenie. Náhľad webu pošleme do 48&nbsp;hodín od <span class="nw">e-mailu</span>, že máme všetky podklady<span id="odoslat-eshop" hidden>, náhľad <span class="nw">e-shopu</span> do 5&nbsp;pracovných dní od pripísania zálohy a&nbsp;nášho potvrdenia, že máme kompletné podklady</span>.</p>
+              <p class="odoslat-text">Odpovede prídu na andrej@arling.sk a&nbsp;vám pošleme potvrdenie s&nbsp;číslom dotazníka. Odpovieme <span class="nw">e-mailom</span> do 1&nbsp;pracovného dňa a&nbsp;všetko, na čom sa dohodneme, máte napísané. Logo a&nbsp;fotky potom pošlete odpoveďou na potvrdenie.</p>
+              <p class="odoslat-vyber" id="odoslat-vyber" hidden></p>
               <div class="odpoved-pole">
                 <label for="email-odpoved">Váš <span class="nw">e-mail</span>, na ktorý odpíšeme</label>
-                <span class="pomoc" id="email-odpoved-pomoc">Sem vám pošleme potvrdenie a&nbsp;odpoveď do 2&nbsp;pracovných dní.</span>
+                <span class="pomoc" id="email-odpoved-pomoc">Jediné povinné pole. Sem vám pošleme potvrdenie a&nbsp;odpoveď do 1&nbsp;pracovného dňa.</span>
                 <input type="email" id="email-odpoved" name="dz_odpoved" autocomplete="email" inputmode="email" required aria-describedby="email-odpoved-pomoc">
                 <p class="chyba-pola" id="email-odpoved-chyba" hidden></p>
+                <label class="volba volba-tmava"><input type="checkbox" id="email-rovnaky" checked aria-controls="ine-emaily"><span>Rovnaký <span class="nw">e-mail</span> dať aj na web a&nbsp;na faktúru</span></label>
+                <div class="ine-emaily" id="ine-emaily" hidden>
+                  <div><label for="email"><span class="nw">E-mail</span> na web</label><span class="pomoc" id="email-pomoc">Nepovinné, napríklad info@ vašej firmy.</span><input type="email" id="email" name="E-mail na web" autocomplete="email" inputmode="email" aria-describedby="email-pomoc"></div>
+                  <div><label for="fa-email"><span class="nw">E-mail</span> na faktúru</label><span class="pomoc" id="fa-email-pomoc">Nepovinné, stačí aj až po schválení náhľadu.</span><input type="email" id="fa-email" name="E-mail na faktúru" autocomplete="email" inputmode="email" aria-describedby="fa-email-pomoc"></div>
+                </div>
               </div>
               <div class="pole-pasca" aria-hidden="true" inert>
                 <label for="dz-poznamka">Toto pole nechajte prázdne</label>
@@ -537,6 +625,15 @@ input[aria-invalid="true"]{border-color:var(--koral-text);box-shadow:inset 0 0 0
               <button class="tlac tlac-obrys" type="button" id="kopirovat" hidden>Skopírovať odpovede</button>
             </div>
             <p class="stav-odoslania" id="stav" role="status" aria-live="polite"></p>
+            <details class="zbal zbal-dalej">
+              <summary>Čo bude ďalej<svg class="sipka-dole" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></summary>
+              <ol class="kroky">
+                <li class="teraz"><b>Vyplníte dotazník <em>teraz</em></b><span>Čo robíte, pár viet alebo vaše texty, fotky, cenník a&nbsp;weby, ktoré sa vám páčia. Pri <span class="nw">e-shope</span> texty a&nbsp;popisy produktov dodáte vy.</span></li>
+                <li><b>Odpovieme do 1&nbsp;pracovného dňa</b><span><span class="nw">E-mailom</span>. Všetko, na čom sa dohodneme, máte napísané.</span></li>
+                <li><b>Náhľad v&nbsp;termíne balíka</b><span>Jednostránkový web do 48&nbsp;hodín, firemný do 3&nbsp;pracovných dní, s&nbsp;referenciami do 5&nbsp;pracovných dní, vždy od nášho <span class="nw">e-mailu</span>, že máme všetky podklady. Ak ho nepošleme v&nbsp;termíne, dáme vám 40&nbsp;€ dole z&nbsp;faktúry. Pri <span class="nw">e-shope</span> pošleme náhľad do 5&nbsp;pracovných dní od pripísania zálohy a&nbsp;nášho potvrdenia, že máme kompletné podklady.</span></li>
+                <li><b>Schválite, zaplatíte, zapojíme</b><span>Faktúru pošleme, až keď hotový web schválite, a&nbsp;potom ho zapojíme na vašu doménu. Ak sa vám ani po dvoch kolách pripomienok nepáči, neplatíte nič. Pri <span class="nw">e-shope</span> platíte zálohu 190&nbsp;€ pred začiatkom prác, až keď <span class="nw">e-mailom</span> odsúhlasíte rozsah, a&nbsp;zvyšok po schválení.</span></li>
+              </ol>
+            </details>
             <noscript><p class="odoslat-text">Bez JavaScriptu sa otvorí prázdny <span class="nw">e-mail</span> s&nbsp;predmetom. Odpovede doň napíšte alebo skopírujte otázky z&nbsp;tejto stránky.</p></noscript>
             <div class="nahlad" id="nahlad" hidden>
               <label for="nahlad-text">Text <span class="nw">e-mailu</span> (ak sa <span class="nw">e-mail</span> neotvoril, skopírujte ho a&nbsp;pošlite na andrej@arling.sk)</label>
@@ -548,16 +645,18 @@ input[aria-invalid="true"]{border-color:var(--koral-text);box-shadow:inset 0 0 0
             <p class="odoslat-text">Číslo dotazníka: <b class="uspech-cislo" id="uspech-cislo"></b>. <span id="uspech-ano">Potvrdenie sme poslali na <b class="uspech-email" id="uspech-email"></b>. Ak ho nevidíte, pozrite sa aj do priečinka Spam alebo Reklamy.</span><span id="uspech-nie" hidden>Potvrdenie <span class="nw">e-mailom</span> vám tentoraz nemusí prísť, dotazník však máme.</span></p>
             <h3 class="uspech-dalej">Čo bude ďalej</h3>
             <ol class="dalej">
-              <li>Andrej vám odpíše do 2&nbsp;pracovných dní z&nbsp;adresy andrej@arling.sk.</li>
+              <li>Andrej vám odpíše do 1&nbsp;pracovného dňa z&nbsp;adresy andrej@arling.sk. Všetko, na čom sa dohodneme, máte napísané.</li>
               <li><span id="dalej-ano">Logo a&nbsp;fotky pošlite odpoveďou na potvrdenie.</span><span id="dalej-nie" hidden>Logo a&nbsp;fotky pošlite na andrej@arling.sk a&nbsp;do predmetu napíšte číslo dotazníka.</span></li>
-              <li>Náhľad webu pošleme do 48&nbsp;hodín od <span class="nw">e-mailu</span>, že máme všetky podklady.<span id="dalej-eshop-nahlad" hidden> Pri <span class="nw">e-shope</span> pošleme náhľad do 5&nbsp;pracovných dní od pripísania zálohy a&nbsp;nášho potvrdenia, že máme kompletné podklady.</span></li>
-              <li>Jednostránkový web 290&nbsp;€ platíte až po schválení hotového webu.<span id="dalej-eshop-platba" hidden> Pri <span class="nw">e-shope</span> platíte zálohu 190&nbsp;€ pred začiatkom prác, až keď <span class="nw">e-mailom</span> odsúhlasíte rozsah, a&nbsp;zvyšok 400&nbsp;€ po schválení.</span></li>
+              <li><span id="dalej-nahlad">Náhľad pošleme v&nbsp;termíne balíka od <span class="nw">e-mailu</span>, že máme všetky podklady: jednostránkový web do 48&nbsp;hodín, firemný do 3&nbsp;pracovných dní, s&nbsp;referenciami do 5&nbsp;pracovných dní.</span><span id="dalej-eshop-nahlad" hidden> Pri <span class="nw">e-shope</span> pošleme náhľad do 5&nbsp;pracovných dní od pripísania zálohy a&nbsp;nášho potvrdenia, že máme kompletné podklady.</span></li>
+              <li><span id="dalej-platba">Web platíte až po schválení hotového webu.</span><span id="dalej-eshop-platba" hidden> Pri <span class="nw">e-shope</span> platíte zálohu 190&nbsp;€ pred začiatkom prác, až keď <span class="nw">e-mailom</span> odsúhlasíte rozsah, a&nbsp;zvyšok po schválení.</span></li>
             </ol>
           </div>
           <div class="odoslat-pozn">
-            <p><b>Jednostránkový web 290&nbsp;€</b> platíte až po schválení hotového webu. Správa za 19&nbsp;€ mesačne je voliteľná. <b><span class="nw">E-shop</span> na Shoptete 590&nbsp;€</b>: záloha 190&nbsp;€, až keď <span class="nw">e-mailom</span> odsúhlasíte rozsah, zvyšok 400&nbsp;€ po schválení. Väčší web alebo ďalší jazyk: cenu pošleme do 2&nbsp;pracovných dní. Odoslaním dotazníka nič neplatíte; zmluva vzniká až <span class="nw">e-mailom</span> podľa podmienok, časť&nbsp;7b pre web a&nbsp;7c pre <span class="nw">e-shop</span>.</p>
+            <p class="stav" id="udaje"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 5 6v5c0 4.4 3 8.3 7 9.5 4-1.2 7-5.1 7-9.5V6z M9 12l2 2 4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <span>Odpovede náš server neukladá, len ich prepošle <span class="nw">e-mailom</span> na andrej@arling.sk a&nbsp;vám pošle potvrdenie. Použijeme ich len na odpoveď, ponuku a&nbsp;prípravu webu alebo <span class="nw">e-shopu</span> (<a href="https://arling.sk/privacy/#s8c">ochrana údajov</a>). Meriame len návštevu, ku ktorej časti ste sa dostali, a&nbsp;či ste stlačili odoslanie (pri odoslaní cez stránku aj jeho výsledok), nie to, čo píšete.</span></p>
+            <p><b>Jednostránkový web 290&nbsp;€</b>, <b>firemný 490&nbsp;€</b> a&nbsp;<b>firemný s&nbsp;referenciami 690&nbsp;€</b> platíte až po schválení hotového webu; starostlivosť o&nbsp;web za 29&nbsp;€ mesačne alebo 290&nbsp;€ ročne je bez viazanosti. <b><span class="nw">E-shop</span> na Shoptete 590&nbsp;€</b>: záloha 190&nbsp;€, až keď <span class="nw">e-mailom</span> odsúhlasíte rozsah, zvyšok 400&nbsp;€ po schválení. Sú to úvodné ceny pre prvých 5&nbsp;platiacich klientov. Príplatky a&nbsp;presný súčet spočíta <a href="/web/#kalkulacka">kalkulačka</a>. Odoslaním dotazníka nič neplatíte; zmluva vzniká až <span class="nw">e-mailom</span> podľa podmienok, časť&nbsp;7b pre web a&nbsp;7c pre <span class="nw">e-shop</span>.</p>
             <p>DPH na faktúre nebude: ARLing s.&nbsp;r.&nbsp;o. nie je platiteľom DPH (registrácia len podľa §&nbsp;7a), preto si ju neodpočítate, ale ani sa k&nbsp;cenám vyššie nič nepripočíta.</p>
-            <p>Robíme len pre podnikateľov a&nbsp;firmy. Odpovede použijeme len na odpoveď, ponuku a&nbsp;prípravu webu alebo <span class="nw">e-shopu</span>.</p>
+            <p>Robíme len pre podnikateľov a&nbsp;firmy.</p>
           </div>
         </div>
       </form>

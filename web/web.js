@@ -92,9 +92,11 @@ function nastavBodky(koren, u) {
 }
 
 // ?z=<slug>: človek prišiel z ukážky. Zvýrazniť ju, začať ňou vejár a poslať ju do dotazníka (?ukazka=).
+// Od cenníka 4.1 (SPEC 2.4) to isté pri ?ukazka=<slug> bez ?z= (odkaz z úvodu do kalkulačky).
 let zdroj = null;
 try {
-  const z = new URLSearchParams(w.location.search).get('z');
+  const q = new URLSearchParams(w.location.search);
+  const z = q.get('z') || q.get('ukazka');
   if (z && POVOLENE.has(z)) zdroj = z;
 } catch (e) { zdroj = null; }
 function nastavDotaznik(param, hodnota, odkazy) {
@@ -586,7 +588,8 @@ if (filterObal && riadky.length) {
       if (ok) n += 1;
     }
     if (pocetEl) pocetEl.textContent = ukazok(n);
-    if (nieJe) nastavDotaznik('styl', v === 'vsetky' ? null : v, [nieJe]);
+    // štýl patrí len odkazu na dotazník; odkaz do kalkulačky (#kalkulacka) ostáva na tejto stránke bez parametrov
+    if (nieJe && (nieJe.getAttribute('href') || '').startsWith('/web/dotaznik/')) nastavDotaznik('styl', v === 'vsetky' ? null : v, [nieJe]);
     if (PAS.matches) {
       zoznam.scrollTo({ left: 0, behavior: pokoj() ? 'auto' : 'smooth' });
       riadky.forEach((li) => { if (!li.hidden) uvolni(li); });
@@ -845,7 +848,8 @@ if (!pokoj() && 'IntersectionObserver' in w) poNacitani(() => import('/motion/sr
 }).catch(() => {}));
 
 // ---------------------------------------------------------------- lepiaca lišta na mobile a Späť na začiatok
-// Lišta sa ukáže, keď hlavné tlačidlo hrdinu odíde z obrazovky hore; skrytá pri cene, závere a päte.
+// Lišta sa ukáže, keď hlavné tlačidlo hrdinu odíde z obrazovky hore; skrytá pri balíkoch cenníka, kalkulačke (nesmie
+// zakryť pole dopytu), závere a päte.
 const akcie = d.querySelector('.hrdina .akcie');
 const hrdinaSekcia = d.querySelector('.hrdina');
 const lista = d.getElementById('lista');
@@ -877,7 +881,66 @@ if (akcie && hrdinaSekcia && 'IntersectionObserver' in w) {
     for (const x of z) { if (x.isIntersecting) zakryte.add(x.target); else zakryte.delete(x.target); }
     nastav();
   });
-  [d.getElementById('cena'), d.getElementById('eshop'), d.getElementById('kontakt'), d.querySelector('.pata')].forEach((el) => { if (el) io.observe(el); });
+  [d.querySelector('.baliky'), d.getElementById('kalkulacka'), d.getElementById('kontakt'), d.querySelector('.pata')].forEach((el) => { if (el) io.observe(el); });
+}
+
+// ---------------------------------------------------------------- kalkulačka a krátky dopyt (cenník 4.1, SPEC 3.3)
+// Modul /web/kalkulacka.js a dáta /web/cennik.js sa načítajú lenivo, až keď je kalkulačka do 900 px pod oknom, pri kotve
+// #kalkulacka alebo #dopyt, pri ?ukazka= alebo ?b= v adrese, alebo pri prvom dotyku výzvy, ktorá do kalkulačky vedie
+// (pri štarte stránky nepribudne žiadna práca, R15). Adresy modulov sú v atribútoch sekcie, ktoré píše generátor, a berú
+// sa len v presnom tvare /web/<súbor>.js?v=<8 znakov>. Keď sa modul nenačíta, sekcia ukáže vetu s cenníkom a e-mailom.
+const kalkEl = d.getElementById('kalkulacka');
+const KALK_MODUL = /^\/web\/kalkulacka\.js\?v=[0-9a-f]{8}$/;
+const KALK_CENNIK = /^\/web\/cennik\.js\?v=[0-9a-f]{8}$/;
+const KALK_BALIKY = new Set(['jednostrankovy', 'firemny', 'referencie', 'eshop']);
+let kalkSlub = null;
+function kalkulacka() {
+  if (kalkSlub) return kalkSlub;
+  const m = kalkEl ? kalkEl.getAttribute('data-modul') || '' : '';
+  const c = kalkEl ? kalkEl.getAttribute('data-cennik') || '' : '';
+  if (!KALK_MODUL.test(m) || !KALK_CENNIK.test(c)) {
+    if (kalkEl) kalkEl.classList.add('kalk-chyba');
+    kalkSlub = Promise.resolve(null);
+    return kalkSlub;
+  }
+  kalkSlub = import(c).then(() => import(m)).then((mod) => {
+    const api = mod.spusti(kalkEl, {});
+    if (!api) throw new Error('kalkulačka sa nespustila');
+    return api;
+  }).catch(() => {
+    kalkEl.classList.add('kalk-chyba');
+    return null;
+  });
+  return kalkSlub;
+}
+if (kalkEl) {
+  let q = null;
+  try { q = new URLSearchParams(w.location.search); } catch (e) { q = null; }
+  // Kontrola 23. 11. 2026: predvoľba z adresy (?b=, ?ukazka=) po spustení modulu zmení výšku formulára nad #dopyt, a keď
+  // prehliadač posunul stránku na kotvu skôr, cieľ skončil o 90 až 250 px nižšie alebo pod hlavičkou (Chrome aj Firefox).
+  // Kotva do kalkulačky sa preto po spustení zarovná znova, ešte pred ďalším snímkom, ale len kým človek nezasiahol
+  // (koliesko, dotyk, kláves, klik): staršia operácia neprepíše novší stav (AGENTS 12).
+  let zasah = false;
+  for (const t of ['wheel', 'touchstart', 'keydown', 'pointerdown']) w.addEventListener(t, () => { zasah = true; }, { once: true, passive: true, capture: true });
+  const zarovnaj = (api) => {
+    const k = w.location.hash.slice(1);
+    const el = api && !zasah && /^(kalkulacka|dopyt)$/.test(k) ? d.getElementById(k) : null;
+    if (el) el.scrollIntoView({ block: 'start', behavior: 'instant' });
+  };
+  if (/^#(kalkulacka|dopyt)$/.test(w.location.hash) || (q && (q.has('ukazka') || q.has('b')))) poPrvomSnimku(() => kalkulacka().then(zarovnaj));
+  if ('IntersectionObserver' in w) {
+    const io = new IntersectionObserver((z) => { if (z.some((x) => x.isIntersecting)) { io.disconnect(); kalkulacka(); } }, { rootMargin: '0px 0px 900px 0px' });
+    io.observe(kalkEl);
+  } else poNacitani(kalkulacka);
+  const VYZVA = 'a[href="#kalkulacka"], a[href="#dopyt"], a[data-balik]';
+  d.addEventListener('pointerdown', (e) => { if (e.target.closest && e.target.closest(VYZVA)) kalkulacka(); }, { passive: true });
+  d.addEventListener('click', (e) => {
+    const a = e.target.closest && e.target.closest(VYZVA);
+    if (!a) return;
+    const b = a.getAttribute('data-balik');
+    kalkulacka().then((api) => { if (api && b && KALK_BALIKY.has(b)) api.balik(b); });
+  });
+  w.addEventListener('hashchange', () => { if (/^#(kalkulacka|dopyt)$/.test(w.location.hash)) kalkulacka(); });
 }
 if (hore) {
   hore.addEventListener('click', () => {
