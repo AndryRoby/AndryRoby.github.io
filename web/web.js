@@ -718,7 +718,11 @@ if (telVelky) {
     if (!ram) {
       ram = d.createElement('iframe');
       ram.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
-      ram.addEventListener('load', () => ram.classList.add('nacitane'));
+      // telefón nemá posuvník: Windows by ho v ráme ukázal a ukážku zúžil z 390 na 373 px (Andrej 26. 11. 2026, Firefox)
+      ram.addEventListener('load', () => {
+        try { ram.contentDocument.documentElement.style.setProperty('scrollbar-width', 'none'); } catch (e) { /* iný pôvod */ }
+        ram.classList.add('nacitane');
+      });
       obrazovka.append(ram);
     }
     nacitajRam(u);

@@ -813,13 +813,44 @@
     var p = obmedz((innerHeight - r.top) / (innerHeight + r.height), 0, 1);
     rady.forEach(function (rad) { rad.style.setProperty('--posun', ((p - 0.5) * 140 * (+rad.getAttribute('data-smer') || 1)).toFixed(1) + 'px'); });
   }
+  // na mobile (do 1023 px, aj v telefóne na /web/) sa hlavička pri posune dole schová a pri posune hore vráti, aby pri
+  // čítaní neprekrývala nadpisy (Andrej 26. 11. 2026); pri vrchu stránky, s otvoreným menu a s fokusom z klávesnice ostáva
+  var mqMobil = mm('(max-width: 1023px)');
+  var pasUkazky = doc.querySelector('.pas');
+  var poslednyY = Math.max(0, window.scrollY);
+  function vidnoNutne() {
+    var m = doc.getElementById('mobil-menu');
+    try { return !!((m && m.matches(':popover-open')) || hlava.querySelector(':focus-visible')); } catch (e) { return false; }
+  }
+  function hlavickaPodlaSmeru() {
+    if (!hlava) return;
+    var y = Math.max(0, window.scrollY);
+    var prah = (pasUkazky ? pasUkazky.offsetHeight : 0) + hlava.offsetHeight + 40;
+    if (!mqMobil.matches || y <= prah || vidnoNutne()) {
+      hlava.classList.remove('skryta');
+      poslednyY = y;
+      return;
+    }
+    if (Math.abs(y - poslednyY) < 8) return;
+    hlava.classList.toggle('skryta', y > poslednyY);
+    poslednyY = y;
+  }
   function naPosun() {
     cakaSnimka = false;
     if (hlava) hlava.classList.toggle('posun', window.scrollY > 8);
+    hlavickaPodlaSmeru();
     posunInt();
   }
   window.addEventListener('scroll', function () { if (!cakaSnimka) { cakaSnimka = true; requestAnimationFrame(naPosun); } }, { passive: true });
   naPosun();
+  if (hlava) {
+    hlava.addEventListener('focusin', function (e) {
+      var zKlavesnice = false;
+      try { zKlavesnice = e.target.matches(':focus-visible'); } catch (x) { zKlavesnice = true; }
+      if (zKlavesnice) hlava.classList.remove('skryta');
+    });
+    if (mqMobil.addEventListener) mqMobil.addEventListener('change', function () { hlava.classList.remove('skryta'); });
+  }
   // na mobile sú rady napojení posuvné: vtedy ich musí byť možné posúvať aj klávesnicou (fokus na rade)
   function radyFokus() {
     rady.forEach(function (rad) {
