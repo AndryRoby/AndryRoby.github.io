@@ -1,12 +1,14 @@
 # Náhľady ukážok na arling.sk/web/
 
-Obrázky v tomto priečinku sú snímky obrazovky vlastných ukážok webov ARLing s. r. o., ktoré sú na https://arling.sk/web/ukazky/<slug>/, zmenšené do formátu WebP. Pás „Ukážka webu od ARLing“ je pri snímke skrytý, inak je obraz stránky nezmenený. Snímky aj ukážky sú dielo ARLing s. r. o.
+Súbory bmbuilding-pocitac-*.webp a bmbuilding-telefon-*.webp sú snímky obrazovky živého webu https://bmbuilding.sk/ z 27. 11. 2026. Web navrhol a postavil ARLing s. r. o. pre BM Building, s.r.o.; fotky stavieb a logo na snímkach patria BM Building, s.r.o. Snímky sú zverejnené so súhlasom klienta ako referencia.
+
+Ostatné obrázky v tomto priečinku sú snímky obrazovky vlastných ukážok webov ARLing s. r. o., ktoré sú na https://arling.sk/web/ukazky/<slug>/, zmenšené do formátu WebP. Pás „Ukážka webu od ARLing“ je pri snímke skrytý, inak je obraz stránky nezmenený. Snímky aj ukážky sú dielo ARLing s. r. o.
 
 Firmy, mená, adresy, telefónne čísla a e-maily v ukážkach sú vymyslené.
 
 ## Fotky
 
-Fotky viditeľné v náhľadoch sú z fotobánk Pexels (licencia https://www.pexels.com/license/) a Unsplash (licencia https://unsplash.com/license). Obe licencie dovoľujú bezplatné použitie aj na komerčné účely a úpravy, uvedenie autora nie je povinné. Autor, odkaz na pôvodnú fotku a licencia každej fotky sú v súbore LICENCIE.md príslušnej ukážky:
+Fotky viditeľné v náhľadoch ukážok sú z fotobánk Pexels (licencia https://www.pexels.com/license/) a Unsplash (licencia https://unsplash.com/license). Obe licencie dovoľujú bezplatné použitie aj na komerčné účely a úpravy, uvedenie autora nie je povinné. Autor, odkaz na pôvodnú fotku a licencia každej fotky sú v súbore LICENCIE.md príslušnej ukážky:
 
 - https://arling.sk/web/ukazky/salon/LICENCIE.md
 - https://arling.sk/web/ukazky/barbershop/LICENCIE.md
